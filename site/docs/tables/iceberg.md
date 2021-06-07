@@ -12,7 +12,7 @@ table format. It provides:
 
 Iceberg exposes two primary classes for working with datasets. These are Catalog and
 TableOperations. Nessie implements each. These classes are available in the
-the [Iceberg source code](https://github.com/apache/iceberg/tree/main/nessie/src/main/java/org/apache/iceberg/nessie)
+the [Iceberg source code](https://github.com/apache/iceberg/tree/master/nessie/src/main/java/org/apache/iceberg/nessie)
 and are available directly in Iceberg releases (eg `spark-runtime`, `spark3-runtime`, `flink-runtime`).
 
 ## Iceberg Snapshots
