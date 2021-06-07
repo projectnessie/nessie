@@ -179,14 +179,33 @@ def set_head(ctx: ContextObject, head: str, delete: bool) -> None:
 
 @cli.command("log")
 @click.option("-n", "--number", help="number of log entries to return", type=int)
-@click.option("--since", "--after", help="Commits more recent than specific date")
-@click.option("--until", "--before", help="Commits older than specific date")
-@click.option("--author", "--committer", multiple=True, help="limit commits to specific committer")
+@click.option("--since", "--after", help="Only include commits newer than specific date")
+@click.option("--until", "--before", help="Only include commits older than specific date")
+@click.option(
+    "--author",
+    multiple=True,
+    help="Limit commits to a specific author (this is the original committer). Supports specifying multiple authors to filter by.",
+)
+@click.option(
+    "--committer",
+    multiple=True,
+    help="Limit commits to a specific committer (this is the logged in user/account who performed the commit). "
+    "Supports specifying multiple committers to filter by.",
+)
 @click.argument("revision_range", nargs=1, required=False)
 @click.argument("paths", nargs=-1, type=click.Path(exists=False), required=False)
 @pass_client
 @error_handler
-def log(ctx: ContextObject, number: int, since: str, until: str, author: List[str], revision_range: str, paths: Tuple[click.Path]) -> None:
+def log(
+    ctx: ContextObject,
+    number: int,
+    since: str,
+    until: str,
+    author: List[str],
+    committer: List[str],
+    revision_range: str,
+    paths: Tuple[click.Path],
+) -> None:
     """Show commit log.
 
     REVISION_RANGE optional branch, tag or hash to start viewing log from. If of the form <hash>..<hash> only show log
@@ -209,6 +228,8 @@ def log(ctx: ContextObject, number: int, since: str, until: str, author: List[st
         filtering_args["max"] = str(number)
     if author:
         filtering_args["authors"] = author
+    if committer:
+        filtering_args["committers"] = committer
     if since:
         filtering_args["after"] = since
     if until:
