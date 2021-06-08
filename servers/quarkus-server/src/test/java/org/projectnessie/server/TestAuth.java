@@ -18,7 +18,6 @@ package org.projectnessie.server;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
 
 import org.junit.jupiter.api.AfterEach;
@@ -28,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.projectnessie.api.ContentsApi;
 import org.projectnessie.api.TreeApi;
+import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.client.NessieClient;
 import org.projectnessie.client.rest.NessieForbiddenException;
 import org.projectnessie.client.rest.NessieNotAuthorizedException;
@@ -91,7 +91,7 @@ class TestAuth {
   void testAdmin() throws NessieNotFoundException, NessieConflictException {
     getCatalog("testx");
     Branch branch = (Branch) tree.getReferenceByName("testx");
-    List<Entry> tables = tree.getEntries("testx", null, null, Collections.emptyList()).getEntries();
+    List<Entry> tables = tree.getEntries("testx", EntriesParams.empty()).getEntries();
     Assertions.assertTrue(tables.isEmpty());
     ContentsKey key = ContentsKey.of("x","x");
     tryEndpointPass(() -> contents.setContents(key, branch.getName(), branch.getHash(), "empty message", IcebergTable.of("foo")));

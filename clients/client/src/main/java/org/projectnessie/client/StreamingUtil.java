@@ -15,7 +15,6 @@
  */
 package org.projectnessie.client;
 
-import java.util.List;
 import java.util.OptionalInt;
 import java.util.stream.Stream;
 
@@ -23,6 +22,7 @@ import javax.validation.constraints.NotNull;
 
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.api.params.CommitLogParams;
+import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.EntriesResponse;
@@ -40,19 +40,23 @@ public final class StreamingUtil {
 
   /**
    * Default implementation to return a stream of objects for a ref, functionally equivalent to
-   * calling {@link TreeApi#getEntries(String, Integer, String, List)} with manual paging.
+   * calling {@link TreeApi#getEntries(String, EntriesParams)} with manual paging.
    * <p>The {@link Stream} returned by {@code getEntriesStream(ref, OptionalInt.empty())},
    * if not limited, returns all commit-log entries.</p>
    *
    * @param ref a named reference (branch or tag name) or a commit-hash
-   * @param pageSizeHint page-size hint for the backend
-   * @param types types to filter on. Empty list means no filtering.
+   * @param entriesParams A wrapper object holding all filtering parameters
    * @return stream of {@link Entry} objects
    */
   public static Stream<Entry> getEntriesStream(@NotNull TreeApi treeApi, @NotNull String ref,
-      OptionalInt pageSizeHint, List<String> types) throws NessieNotFoundException {
+      @NotNull EntriesParams entriesParams) throws NessieNotFoundException {
+
     return new ResultStreamPaginator<>(EntriesResponse::getEntries,
-        (ref1, pageSize, token) -> treeApi.getEntries(ref1, pageSize, token, types)).generateStream(ref, pageSizeHint);
+        (ref1, pageSize, token) -> treeApi.getEntries(ref1, EntriesParams.builder().from(entriesParams)
+            .maxRecords(pageSize)
+            .pageToken(token)
+            .build()))
+        .generateStream(ref, OptionalInt.of(entriesParams.getMaxRecords()));
   }
 
   /**

@@ -16,7 +16,6 @@
 package org.projectnessie.hms;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +29,7 @@ import java.util.stream.Stream;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.projectnessie.api.ContentsApi;
 import org.projectnessie.api.TreeApi;
+import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -120,7 +120,7 @@ class TransactionStore {
   }
 
   public Stream<Entry> getEntriesForDefaultRef() throws NessieNotFoundException {
-    List<Entry> entries = tree.getEntries(reference.getHash(), null, null, Collections.emptyList()).getEntries();
+    List<Entry> entries = tree.getEntries(reference.getHash(), EntriesParams.empty()).getEntries();
     Supplier<Stream<RefKey>> defaultRefKeys = () -> cachedItems.keySet().stream().filter(k -> k.getRef().equals(reference.getHash()));
     Set<ContentsKey> toRemove = defaultRefKeys.get().map(RefKey::getKey).collect(Collectors.toSet());
     return Stream.concat(entries.stream().filter(k -> !toRemove.contains(k.getName())),

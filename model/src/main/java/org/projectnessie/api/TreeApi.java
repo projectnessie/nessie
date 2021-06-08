@@ -40,6 +40,7 @@ import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.projectnessie.api.params.CommitLogParams;
+import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -154,7 +155,9 @@ public interface TreeApi {
           + "treat is as an opaque value.\n"
           + "\n"
           + "It is wrong to assume that invoking this method with a very high 'maxRecords' value "
-          + "will return all commit log entries.")
+          + "will return all commit log entries.\n"
+          + "It is possible to filter entries by 'namespace', where the 'namespace' is the prefix 'a.b.c' for a given table"
+          + "name 'a.b.c.tableName'")
   @APIResponses({
       @APIResponse(description = "all objects for a reference",
         content = {@Content(examples = {@ExampleObject(ref = "entriesResponse")})}),
@@ -168,16 +171,11 @@ public interface TreeApi {
       @Parameter(description = "name of ref to fetch from", examples = {@ExampleObject(ref = "ref")})
       @PathParam("ref")
           String refName,
-      @Parameter(description = "maximum number of entries to return, just a hint for the server")
-      @QueryParam("max")
-          Integer maxRecords,
-      @Parameter(description = "pagination continuation token, as returned in the previous EntriesResponse.token")
-      @QueryParam("pageToken")
-          String pageToken,
-      @Parameter(description = "list of value types to return. Return all if empty", examples = {@ExampleObject(ref = "types")})
-      @QueryParam("types")
-        List<String> types)
-          throws NessieNotFoundException;
+      @NotNull
+      @Valid
+      @BeanParam
+          EntriesParams params)
+      throws NessieNotFoundException;
 
   /**
    * Retrieve the commit log for a ref, potentially truncated by the backend.

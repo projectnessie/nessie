@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 import org.immutables.value.Value;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -40,6 +41,17 @@ public abstract class ContentsKey {
   private static final String ZERO_BYTE_STRING = Character.toString(ZERO_BYTE);
 
   public abstract List<String> getElements();
+
+  /**
+   * Returns the namespace that is always consisting of the first <b>N-1</b> elements from {@link ContentsKey#getElements()}.
+   *
+   * @return A {@link Namespace} instance that is always consisting of the first <b>N-1</b> elements from {@link ContentsKey#getElements()}.
+   */
+  @JsonIgnore
+  @Value.Derived
+  public Namespace getNamespace() {
+    return Namespace.of(getElements());
+  }
 
   public static ContentsKey of(String... elements) {
     return ImmutableContentsKey.builder().elements(Arrays.asList(elements)).build();

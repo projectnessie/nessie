@@ -29,6 +29,7 @@ import javax.inject.Inject;
 
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.api.params.CommitLogParams;
+import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -232,14 +233,9 @@ public class TreeResource extends BaseResource implements TreeApi {
   }
 
   @Override
-  public EntriesResponse getEntries(String refName, Integer maxEntriesHint, String pageToken, List<String> types)
+  public EntriesResponse getEntries(String refName, EntriesParams params)
       throws NessieNotFoundException {
-    final Set<Type> payloads;
-    if (types.isEmpty()) {
-      payloads = Arrays.stream(Type.values()).collect(Collectors.toSet());
-    } else {
-      payloads = types.stream().map(Type::valueOf).collect(Collectors.toSet());
-    }
+
 
     final Hash hash = getHashOrThrow(refName);
     // TODO Implement paging. At the moment, we do not expect that many keys/entries to be returned.
@@ -251,14 +247,37 @@ public class TreeResource extends BaseResource implements TreeApi {
     //  all existing VersionStore implementations have to read all keys anyways so we don't get much
     try {
       List<EntriesResponse.Entry> entries;
-      try (Stream<EntriesResponse.Entry> s = getStore().getKeys(hash).filter(x -> payloads.contains(x.getType()))
+      try (Stream<EntriesResponse.Entry> s = getStore().getKeys(hash)
           .map(key -> EntriesResponse.Entry.builder().name(fromKey(key.getValue())).type((Type) key.getType()).build())) {
-        entries = s.collect(ImmutableList.toImmutableList());
+        entries = filterEntries(s, params).collect(ImmutableList.toImmutableList());
       }
       return EntriesResponse.builder().addAllEntries(entries).build();
     } catch (ReferenceNotFoundException e) {
       throw new NessieNotFoundException(String.format("Unable to find the reference [%s].", refName), e);
     }
+  }
+
+  /**
+   * Applies different filters to the {@link Stream} of entries based on the settings in {@link EntriesParams}.
+   *
+   * @param entries The entries that different filters will be applied to
+   * @param params  The filter parameters for the entries
+   * @return A potentially filtered {@link Stream} of entries based on {@link EntriesParams}
+   */
+  private Stream<EntriesResponse.Entry> filterEntries(Stream<EntriesResponse.Entry> entries, EntriesParams params) {
+    final Set<Type> payloads;
+    if (params.getTypes().isEmpty()) {
+      payloads = Arrays.stream(Type.values()).collect(Collectors.toSet());
+    } else {
+      payloads = params.getTypes().stream().map(Type::valueOf).collect(Collectors.toSet());
+    }
+
+    entries = entries.filter(x -> payloads.contains(x.getType()));
+
+    if (null != params.getNamespace()) {
+      entries = entries.filter(x -> x.getName().getNamespace().name().startsWith(params.getNamespace()));
+    }
+    return entries;
   }
 
   @Override
