@@ -1,5 +1,6 @@
 site_name: "Project Nessie: A Git-Like Experience for your Data Lake"
 site_description: "Project Nessie is a cloud native OSS service that works with Apache Iceberg, Hive Tables and Delta Lake tables to give your data lake cross-table transactions and a Git-like experience to data history."
+site_url: "https://projectnessie.org"
 edit_uri: ""
 strict: true
 remote_name: origin
@@ -20,14 +21,14 @@ theme:
 extra_css:
   - stylesheets/extra.css
 
-google_analytics:
-  - UA-177850801-1
-  - auto
 extra:
   versions:
     java: 0.6.1
     python: v0.6.1
     iceberg: 0.11.1
+  analytics:
+    provider: google
+    property: UA-177850801-1
   social:
     - icon: fontawesome/brands/twitter
       link: https://twitter.com/projectnessie
