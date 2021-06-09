@@ -18,6 +18,7 @@ package org.projectnessie.versioned.tests;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -43,6 +44,7 @@ import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.Operation;
 import org.projectnessie.versioned.Put;
+import org.projectnessie.versioned.PutGlobal;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
@@ -1110,6 +1112,28 @@ public abstract class AbstractITVersionStore {
     assertEquals(1, keys.size());
     assertEquals(Key.of("hi"), keys.get(0).getValue());
     assertEquals(StringSerializer.TestEnum.NO, keys.get(0).getType());
+  }
+
+  @Test
+  void checkGlobalCommit() throws Exception {
+    final BranchName branch = BranchName.of("main");
+    final BranchName branch2 = BranchName.of("another");
+    final Key global = Key.of("global");
+    store().create(branch, Optional.empty());
+    store().create(branch2, Optional.empty());
+    commit("First Commit").add(PutGlobal.of(global, "foo")).put("first", "bar").toBranch(branch);
+    commit("Second Commit").add(PutGlobal.of(global, "foo2")).put("second", "baz").toBranch(branch);
+
+    String valueMain = store().getValue(branch, global);
+    String valueAnother = store().getValue(branch2, global);
+    assertEquals(valueMain, "foo2");
+    assertEquals(valueMain, valueAnother);
+    valueMain = store().getValue(branch, Key.of("first"));
+    assertEquals(valueMain, "bar");
+    valueMain = store().getValue(branch, Key.of("second"));
+    assertEquals(valueMain, "baz");
+    assertNull(store().getValue(branch2, Key.of("first")));
+    assertNull(store().getValue(branch2, Key.of("second")));
   }
 
 

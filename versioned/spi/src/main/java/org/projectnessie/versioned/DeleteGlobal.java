@@ -13,20 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.jgit;
+package org.projectnessie.versioned;
 
-import java.io.IOException;
+import javax.annotation.Nonnull;
 
-import org.eclipse.jgit.internal.storage.dfs.DfsRepositoryDescription;
-import org.eclipse.jgit.internal.storage.dfs.InMemoryRepository;
-import org.junit.jupiter.api.BeforeEach;
+import org.immutables.value.Value;
 
-public class ITJGitInMemoryVersionStore extends AbstractITJGitVersionStore {
+/**
+ * A delete operation.
+ */
+@Value.Immutable
+public interface DeleteGlobal<V> extends Operation<V> {
 
-  @BeforeEach
-  void setUp() throws IOException {
-    repository = new InMemoryRepository.Builder().setRepositoryDescription(new DfsRepositoryDescription()).build();
-    store = new JGitVersionStore<>(repository, WORKER);
+  @Override
+  default boolean shouldMatchHash() {
+    return true;
   }
 
+  /**
+   * Creates a delete operation for the given key.
+   * @param <V> the store value type
+   * @param key the key impacted by the operation
+   * @return a delete operation for the key
+   */
+  @Nonnull
+  static <V> DeleteGlobal<V> of(@Nonnull Key key) {
+    return ImmutableDeleteGlobal.<V>builder().key(key).build();
+  }
 }
