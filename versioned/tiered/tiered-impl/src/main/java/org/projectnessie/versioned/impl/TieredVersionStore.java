@@ -31,6 +31,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import javax.annotation.Nonnull;
+
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Diff;
@@ -168,7 +170,7 @@ public class TieredVersionStore<DATA, METADATA, DATA_TYPE extends Enum<DATA_TYPE
   }
 
   @Override
-  public WithHash<Ref> toRef(String refOfUnknownType) throws ReferenceNotFoundException {
+  public WithHash<Ref> toRef(@Nonnull String refOfUnknownType) throws ReferenceNotFoundException {
     try {
       InternalRef ref = EntityType.REF.loadSingle(store, Id.build(refOfUnknownType));
       if (ref.getType() == Type.TAG) {
@@ -242,7 +244,8 @@ public class TieredVersionStore<DATA, METADATA, DATA_TYPE extends Enum<DATA_TYPE
   }
 
   @Override
-  public Hash commit(BranchName branchName, Optional<Hash> expectedHash, METADATA incomingCommit, List<Operation<DATA>> ops)
+  public Hash commit(@Nonnull BranchName branchName, @Nonnull Optional<Hash> expectedHash, @Nonnull METADATA incomingCommit,
+      @Nonnull List<Operation<DATA>> ops)
       throws ReferenceConflictException, ReferenceNotFoundException {
     final InternalCommitMetadata metadata = InternalCommitMetadata.of(metadataSerializer.toBytes(incomingCommit));
     final List<InternalKey> keys = ops.stream().map(op -> new InternalKey(op.getKey())).collect(Collectors.toList());
@@ -375,7 +378,8 @@ public class TieredVersionStore<DATA, METADATA, DATA_TYPE extends Enum<DATA_TYPE
   }
 
   @Override
-  public Hash toHash(NamedRef ref) throws ReferenceNotFoundException {
+  @Nonnull
+  public Hash toHash(@Nonnull NamedRef ref) throws ReferenceNotFoundException {
     try {
       InternalRef iref = EntityType.REF.loadSingle(store, InternalRefId.ofUnknownName(ref.getName()).getId());
       if (iref.getType() == Type.BRANCH) {

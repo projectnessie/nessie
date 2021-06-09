@@ -144,7 +144,7 @@ public class JGitVersionStore<TABLE, METADATA, TABLE_TYPE extends Enum<TABLE_TYP
   }
 
   @Override
-  public WithHash<Ref> toRef(String refOfUnknownType) throws ReferenceNotFoundException {
+  public WithHash<Ref> toRef(@Nonnull String refOfUnknownType) throws ReferenceNotFoundException {
     try {
       org.eclipse.jgit.lib.Ref jgitRef;
 
@@ -187,8 +187,8 @@ public class JGitVersionStore<TABLE, METADATA, TABLE_TYPE extends Enum<TABLE_TYP
   }
 
   @Override
-  public Hash commit(BranchName branch, Optional<Hash> expectedHash, METADATA metadata,
-                     List<Operation<TABLE>> operations) throws ReferenceNotFoundException, ReferenceConflictException {
+  public Hash commit(@Nonnull BranchName branch, @Nonnull Optional<Hash> expectedHash, @Nonnull METADATA metadata,
+      @Nonnull List<Operation<TABLE>> operations) throws ReferenceNotFoundException, ReferenceConflictException {
     toHash(branch);
     try {
       testExpectedHash(branch, expectedHash);

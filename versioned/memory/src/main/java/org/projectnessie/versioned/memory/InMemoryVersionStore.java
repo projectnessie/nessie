@@ -34,6 +34,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.annotation.Nonnull;
+
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Diff;
@@ -123,7 +125,8 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>> 
   }
 
   @Override
-  public Hash toHash(NamedRef ref) throws ReferenceNotFoundException {
+  @Nonnull
+  public Hash toHash(@Nonnull NamedRef ref) throws ReferenceNotFoundException {
     final Hash hash = namedReferences.get(requireNonNull(ref));
     if (hash == null) {
       throw ReferenceNotFoundException.forReference(ref);
@@ -164,8 +167,7 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>> 
   }
 
   @Override
-  public WithHash<Ref> toRef(String refOfUnknownType) throws ReferenceNotFoundException {
-    requireNonNull(refOfUnknownType);
+  public WithHash<Ref> toRef(@Nonnull String refOfUnknownType) throws ReferenceNotFoundException {
     Optional<WithHash<Ref>> result = Stream.<Function<String, Ref>>of(TagName::of, BranchName::of, Hash::of)
         .map(f -> {
           try {
@@ -182,8 +184,9 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>> 
   }
 
   @Override
-  public Hash commit(BranchName branch, Optional<Hash> referenceHash,
-      MetadataT metadata, List<Operation<ValueT>> operations) throws ReferenceNotFoundException, ReferenceConflictException {
+  public Hash commit(@Nonnull BranchName branch, @Nonnull Optional<Hash> referenceHash,
+      @Nonnull MetadataT metadata, @Nonnull List<Operation<ValueT>> operations)
+      throws ReferenceNotFoundException, ReferenceConflictException {
     final Hash currentHash = toHash(branch);
 
     // Validate commit

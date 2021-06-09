@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import javax.annotation.Nonnull;
+
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.Hash;
@@ -77,13 +79,14 @@ public abstract class AbstractTieredStoreFixture<S extends Store, C> implements 
   }
 
   @Override
-  public Hash toHash(NamedRef ref) throws ReferenceNotFoundException {
+  @Nonnull
+  public Hash toHash(@Nonnull NamedRef ref) throws ReferenceNotFoundException {
     return versionStore.toHash(ref);
   }
 
   @Override
-  public Hash commit(BranchName branch, Optional<Hash> expectedHash, String metadata,
-      List<Operation<String>> operations)
+  public Hash commit(@Nonnull BranchName branch, @Nonnull Optional<Hash> expectedHash, @Nonnull String metadata,
+      @Nonnull List<Operation<String>> operations)
       throws ReferenceNotFoundException, ReferenceConflictException {
     return versionStore.commit(branch, expectedHash, metadata, operations);
   }
@@ -146,7 +149,7 @@ public abstract class AbstractTieredStoreFixture<S extends Store, C> implements 
   }
 
   @Override
-  public WithHash<Ref> toRef(String refOfUnknownType) throws ReferenceNotFoundException {
+  public WithHash<Ref> toRef(@Nonnull String refOfUnknownType) throws ReferenceNotFoundException {
     return versionStore.toRef(refOfUnknownType);
   }
 
