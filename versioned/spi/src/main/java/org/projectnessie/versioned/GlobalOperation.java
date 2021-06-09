@@ -15,7 +15,7 @@
  */
 package org.projectnessie.versioned;
 
-import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import org.immutables.value.Value;
 
@@ -23,7 +23,7 @@ import org.immutables.value.Value;
  * Setting a new value. Can optionally declare whether the prior hash must match.
  */
 @Value.Immutable
-public interface PutGlobal<V> extends GlobalOperation<V> {
+public interface GlobalOperation<V> extends Operation<V> {
 
   @Override
   default boolean shouldMatchHash() {
@@ -31,21 +31,11 @@ public interface PutGlobal<V> extends GlobalOperation<V> {
   }
 
   /**
-   * The value to store for this operation.
+   * The most up to date occ id for this global operation that we know about.
    *
-   * @return the value
+   * @return the current occ id
    */
-  V getValue();
+  @Nullable
+  String getCurrentId();
 
-  /**
-   * Creates a put operation for the given key and value.
-   * @param <V> the store value type
-   * @param key the key impacted by the operation
-   * @param value the new value associated with the key
-   * @return a put operation for the key and value
-   */
-  @Nonnull
-  public static <V> PutGlobal<V> of(@Nonnull Key key, @Nonnull V value, String hash) {
-    return ImmutablePutGlobal.<V>builder().key(key).value(value).currentId(hash).build();
-  }
 }

@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -177,6 +178,14 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
   Stream<WithType<Key, VALUE_TYPE>> getKeys(Ref ref) throws ReferenceNotFoundException;
 
   /**
+   * Get a stream of all available global keys.
+   * @return The stream of keys available.
+   */
+  default Stream<WithTypeAndId<Key, VALUE_TYPE>> getGlobalKeys() {
+    return Stream.of();
+  }
+
+  /**
    * Get the value for a provided ref.
    * @param ref Any ref type allowed
    * @param key The key for the specific value
@@ -194,6 +203,27 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    */
   List<Optional<VALUE>> getValues(Ref ref, List<Key> keys) throws ReferenceNotFoundException;
 
+  default String getCurrentId(Key key) {
+    return null;
+  };
+
+  /**
+   * Get the value of a global key.
+   * @param key The key for the specific value
+   * @return The value.
+   */
+  default VALUE getGlobalValue(Key key) {
+    return null;
+  }
+
+  /**
+   * Get the values for a list of global keys.
+   * @param keys An ordered list of keys to retrieve within the provided ref.
+   * @return A parallel list of values.
+   */
+  default List<Optional<VALUE>> getGlobalValues(List<Key> keys) {
+    return new ArrayList<>();
+  }
 
   /**
    * Get list of diffs between two refs.

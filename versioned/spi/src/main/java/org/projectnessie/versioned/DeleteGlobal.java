@@ -23,7 +23,7 @@ import org.immutables.value.Value;
  * A delete operation.
  */
 @Value.Immutable
-public interface DeleteGlobal<V> extends Operation<V> {
+public interface DeleteGlobal<V> extends GlobalOperation<V> {
 
   @Override
   default boolean shouldMatchHash() {
@@ -37,7 +37,7 @@ public interface DeleteGlobal<V> extends Operation<V> {
    * @return a delete operation for the key
    */
   @Nonnull
-  static <V> DeleteGlobal<V> of(@Nonnull Key key) {
-    return ImmutableDeleteGlobal.<V>builder().key(key).build();
+  static <V> DeleteGlobal<V> of(@Nonnull Key key, String hash) {
+    return ImmutableDeleteGlobal.<V>builder().key(key).currentId(hash).build();
   }
 }

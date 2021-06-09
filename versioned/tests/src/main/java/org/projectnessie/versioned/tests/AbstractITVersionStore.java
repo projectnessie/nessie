@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -55,14 +56,18 @@ import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStoreException;
 import org.projectnessie.versioned.WithHash;
 import org.projectnessie.versioned.WithType;
+import org.projectnessie.versioned.WithTypeAndId;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hashing;
 
 /**
  * Base class used for integration tests against version store implementations.
  */
 public abstract class AbstractITVersionStore {
+  private static final HashFunction COMMIT_HASH_FUNCTION = Hashing.sha256();
 
   protected abstract VersionStore<String, String, StringSerializer.TestEnum> store();
 
@@ -1119,21 +1124,32 @@ public abstract class AbstractITVersionStore {
     final BranchName branch = BranchName.of("main");
     final BranchName branch2 = BranchName.of("another");
     final Key global = Key.of("global");
+    final Key first = Key.of("first");
+    final Key second = Key.of("second");
     store().create(branch, Optional.empty());
     store().create(branch2, Optional.empty());
-    commit("First Commit").add(PutGlobal.of(global, "foo")).put("first", "bar").toBranch(branch);
-    commit("Second Commit").add(PutGlobal.of(global, "foo2")).put("second", "baz").toBranch(branch);
+    commit("First Commit").add(PutGlobal.of(global, "foo", null)).put(first, "bar").toBranch(branch);
+    commit("Second Commit").add(PutGlobal.of(global, "foo2", store().getCurrentId(global))).put(second, "baz").toBranch(branch);
 
-    String valueMain = store().getValue(branch, global);
-    String valueAnother = store().getValue(branch2, global);
+    String valueMain = store().getGlobalValue(global);
+    String valueAnother = store().getGlobalValue(global);
     assertEquals(valueMain, "foo2");
     assertEquals(valueMain, valueAnother);
-    valueMain = store().getValue(branch, Key.of("first"));
+    valueMain = store().getValue(branch, first);
     assertEquals(valueMain, "bar");
-    valueMain = store().getValue(branch, Key.of("second"));
+    valueMain = store().getValue(branch, second);
     assertEquals(valueMain, "baz");
-    assertNull(store().getValue(branch2, Key.of("first")));
-    assertNull(store().getValue(branch2, Key.of("second")));
+    assertNull(store().getValue(branch2, first));
+    assertNull(store().getValue(branch2, second));
+
+    List<WithType<Key, StringSerializer.TestEnum>> keys = store().getKeys(branch).collect(Collectors.toList());
+    assertEquals(2, keys.size());
+    assertEquals(first, keys.get(0).getValue());
+    assertEquals(second, keys.get(1).getValue());
+    assertEquals(0, store().getKeys(branch2).count());
+    List<WithTypeAndId<Key, StringSerializer.TestEnum>> globalKeys = store().getGlobalKeys().collect(Collectors.toList());
+    assertEquals(1, globalKeys.size());
+    assertEquals(global, globalKeys.get(0).getValue());
   }
 
 

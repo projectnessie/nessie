@@ -37,11 +37,13 @@ import java.util.stream.Stream;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Diff;
+import org.projectnessie.versioned.GlobalOperation;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.Operation;
 import org.projectnessie.versioned.Put;
+import org.projectnessie.versioned.PutGlobal;
 import org.projectnessie.versioned.Ref;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
@@ -54,6 +56,7 @@ import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStoreException;
 import org.projectnessie.versioned.WithHash;
 import org.projectnessie.versioned.WithType;
+import org.projectnessie.versioned.WithTypeAndId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,6 +66,9 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.MoreCollectors;
 import com.google.common.collect.Streams;
+import com.google.common.hash.Funnel;
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hashing;
 
 /**
  * In-memory implementation of {@code VersionStore} interface.
@@ -73,9 +79,12 @@ import com.google.common.collect.Streams;
  */
 public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>> implements VersionStore<ValueT, MetadataT, EnumT> {
   private static final Logger LOGGER = LoggerFactory.getLogger(InMemoryVersionStore.class);
+  private static final HashFunction COMMIT_HASH_FUNCTION = Hashing.sha256();
 
+  private final Object lock = new Object();
   private final ConcurrentMap<Hash, Commit<ValueT, MetadataT>> commits = new ConcurrentHashMap<>();
   private final ConcurrentMap<NamedRef, Hash> namedReferences = new ConcurrentHashMap<>();
+  private final ConcurrentMap<Key, GlobalHashPair<ValueT, EnumT>> globalReferences = new ConcurrentHashMap<>();
   private final SerializerWithPayload<ValueT, EnumT> valueSerializer;
   private final Serializer<MetadataT> metadataSerializer;
 
@@ -183,15 +192,32 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>> 
 
   @Override
   public Hash commit(BranchName branch, Optional<Hash> referenceHash,
-      MetadataT metadata, List<Operation<ValueT>> operations) throws ReferenceNotFoundException, ReferenceConflictException {
+      MetadataT metadata, List<Operation<ValueT>> allOperations) throws ReferenceNotFoundException, ReferenceConflictException {
     final Hash currentHash = toHash(branch);
 
+    OpsPair<ValueT> splitOps = allOperations.stream().collect(
+      OpsPair::new,
+      (lists, op) -> {
+        if (op instanceof GlobalOperation) {
+          lists.globals.add((GlobalOperation<ValueT>) op);
+        } else {
+          lists.locals.add(op);
+        }
+      },
+      (l1, l2) -> {
+        l1.globals.addAll(l2.globals);
+        l1.locals.addAll(l2.locals);
+      }
+    );
+    List<Operation<ValueT>> operations = splitOps.locals;
+    List<GlobalOperation<ValueT>> globalOperations = splitOps.globals;
     // Validate commit
-    final List<Key> keys = operations.stream().map(Operation::getKey).distinct().collect(Collectors.toList());
+    final List<Key> keys = allOperations.stream().map(Operation::getKey).distinct().collect(Collectors.toList());
+
     checkConcurrentModification(branch, currentHash, referenceHash, keys);
 
     // Storing
-    return compute(namedReferences, branch, (key, hash) -> {
+    return computeUnderLock(namedReferences, branch, lock, (key, hash) -> {
       final Commit<ValueT, MetadataT> commit = Commit.of(valueSerializer, metadataSerializer, currentHash, metadata, operations);
       final Hash previousHash = Optional.ofNullable(hash).orElse(NO_ANCESTOR);
       if (!previousHash.equals(currentHash)) {
@@ -199,11 +225,30 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>> 
         throw ReferenceConflictException.forReference(branch, referenceHash, Optional.of(previousHash));
       }
 
+      globalOperations.stream().filter(op -> globalReferences.containsKey(op.getKey())).filter(op -> {
+        GlobalHashPair<ValueT, EnumT> v = globalReferences.get(op.getKey());
+        return !op.getCurrentId().equals(v.hash);
+      }).findFirst().ifPresent(op -> new ReferenceConflictException("foo"));
+      globalOperations.forEach(op -> {
+        globalReferences.compute(op.getKey(), (k,v) -> {
+          if (op instanceof PutGlobal) {
+            PutGlobal<ValueT> put = (PutGlobal<ValueT>) op;
+            return new GlobalHashPair<>(put.getValue(), getHash(put), valueSerializer.getType(put.getValue()));
+          } else {
+            return null;
+          }
+        });
+      });
       // Duplicates are very unlikely and also okay to ignore
       final Hash commitHash = commit.getHash();
       commits.putIfAbsent(commitHash, commit);
       return commitHash;
     });
+  }
+
+  private String getHash(PutGlobal<ValueT> put) {
+    return COMMIT_HASH_FUNCTION.hashObject(put.getValue(),
+      (Funnel<ValueT>) (from, into) -> into.putBytes(valueSerializer.toBytes(from).toByteArray())).toString();
   }
 
   @Override
@@ -249,7 +294,7 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>> 
     checkConcurrentModification(targetBranch, currentHash, referenceHash, new ArrayList<>(keys));
 
     // Storing
-    compute(namedReferences, targetBranch, (key, hash) -> {
+    computeUnderLock(namedReferences, targetBranch, lock, (key, hash) -> {
       final Hash previousHash = Optional.ofNullable(hash).orElse(NO_ANCESTOR);
       if (!previousHash.equals(currentHash)) {
         // Concurrent modification
@@ -329,7 +374,7 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>> 
     }
 
     // Storing
-    compute(namedReferences, toBranch, (key, hash) -> {
+    computeUnderLock(namedReferences, toBranch, lock, (key, hash) -> {
       final Hash previousHash = Optional.ofNullable(hash).orElse(NO_ANCESTOR);
       if (!previousHash.equals(currentHash)) {
         // Concurrent modification
@@ -366,7 +411,7 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>> 
 
   private void doAssign(NamedRef ref, Hash expectedHash, final Hash newHash)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    compute(namedReferences, ref, (key, hash) -> {
+    computeUnderLock(namedReferences, ref, lock, (key, hash) -> {
       final Hash previousHash = Optional.ofNullable(hash).orElse(expectedHash);
       // Check if the previous and the new value matches
       if (!expectedHash.equals(previousHash)) {
@@ -381,7 +426,7 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>> 
       throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
     Preconditions.checkArgument(ref instanceof BranchName || targetHash.isPresent(), "Cannot create an unassigned tag reference");
 
-    return compute(namedReferences, ref, (key, currentHash) -> {
+    return computeUnderLock(namedReferences, ref, lock, (key, currentHash) -> {
       if (currentHash != null) {
         throw ReferenceAlreadyExistsException.forReference(ref);
       }
@@ -393,7 +438,7 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>> 
   @Override
   public void delete(NamedRef ref, Optional<Hash> hash) throws ReferenceNotFoundException, ReferenceConflictException {
     try {
-      compute(namedReferences, ref, (key, currentHash) -> {
+      computeUnderLock(namedReferences, ref, lock, (key, currentHash) -> {
         if (currentHash == null) {
           throw ReferenceNotFoundException.forReference(ref);
         }
@@ -515,6 +560,32 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>> 
     return InactiveCollector.of();
   }
 
+  @Override
+  public Stream<WithTypeAndId<Key, EnumT>> getGlobalKeys() {
+    synchronized (lock) {
+      return globalReferences.entrySet().stream().map(e -> WithTypeAndId.of(e.getValue().type, e.getKey(), e.getValue().hash));
+    }
+  }
+
+  @Override
+  public String getCurrentId(Key key) {
+    synchronized (lock) {
+      return Optional.ofNullable(globalReferences.get(key)).map(x -> x.hash).orElse(null);
+    }
+  }
+
+  @Override
+  public ValueT getGlobalValue(Key key) {
+    return getGlobalValues(Collections.singletonList(key)).get(0).orElse(null);
+  }
+
+  @Override
+  public List<Optional<ValueT>> getGlobalValues(List<Key> keys) {
+    synchronized (lock) {
+      return keys.stream().map(globalReferences::get).map(Optional::ofNullable).map(o -> o.map(p -> (ValueT) p.value)).collect(Collectors.toList());
+    }
+  }
+
   /**
    * For testing purposes only, clears the {@link #commits} and {@link #namedReferences} maps and creates a new {@code main} branch.
    */
@@ -522,6 +593,7 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>> 
   public void clearUnsafe() {
     commits.clear();
     namedReferences.clear();
+    globalReferences.clear();
     // Hint: "main" is hard-coded here
     try {
       create(BranchName.of("main"), Optional.empty());
@@ -542,6 +614,23 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>> 
     }
   }
 
+  private static class OpsPair<ValueT> {
+    private final List<GlobalOperation<ValueT>> globals = new ArrayList<>();
+    private final List<Operation<ValueT>> locals = new ArrayList<>();
+  }
+
+  private static class GlobalHashPair<ValueT, EnumT extends Enum<EnumT>> {
+    private final ValueT value;
+    private final String hash;
+    private final EnumT type;
+
+    public GlobalHashPair(ValueT value, String hash, EnumT type) {
+      this.value = value;
+      this.hash = hash;
+      this.type = type;
+    }
+  }
+
   @FunctionalInterface
   private interface ComputeFunction<K, V, E extends VersionStoreException> {
     V apply(K k, V v) throws E;
@@ -550,6 +639,13 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>> 
   @FunctionalInterface
   private interface IfPresentConsumer<V, E extends VersionStoreException> {
     void accept(V v) throws E;
+  }
+
+  private static <K, V, E extends VersionStoreException> V computeUnderLock(ConcurrentMap<K, V> map, K key, Object lock,
+      ComputeFunction<K, V, E> doCompute) throws E {
+    synchronized (lock) {
+      return compute(map, key, doCompute);
+    }
   }
 
   private static <K, V, E extends VersionStoreException> V compute(ConcurrentMap<K, V> map, K key, ComputeFunction<K, V, E> doCompute)
