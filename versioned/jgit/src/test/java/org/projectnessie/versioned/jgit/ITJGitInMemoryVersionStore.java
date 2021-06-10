@@ -19,6 +19,12 @@ import java.io.IOException;
 import org.eclipse.jgit.internal.storage.dfs.DfsRepositoryDescription;
 import org.eclipse.jgit.internal.storage.dfs.InMemoryRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.projectnessie.versioned.VersionStoreException;
+import org.projectnessie.versioned.tests.AbstractITVersionStore;
 
 public class ITJGitInMemoryVersionStore extends AbstractITJGitVersionStore {
 
@@ -29,5 +35,16 @@ public class ITJGitInMemoryVersionStore extends AbstractITJGitVersionStore {
             .setRepositoryDescription(new DfsRepositoryDescription())
             .build();
     store = new JGitVersionStore<>(repository, WORKER);
+  }
+
+  @Nested
+  @DisplayName("when merging")
+  class WhenMerging extends AbstractITVersionStore.WhenMerging {
+    @Override
+    @Test
+    @Disabled
+    protected void mergeWithConflictingKeys() throws VersionStoreException {
+      super.mergeWithConflictingKeys();
+    }
   }
 }
