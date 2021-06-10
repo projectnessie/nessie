@@ -1,5 +1,5 @@
 attrs==21.2.0
-botocore==1.20.90
+botocore==1.20.91
 Click==8.0.1
 confuse==1.4.0
 desert==2020.11.18
