@@ -17,11 +17,8 @@ package org.projectnessie.versioned.impl;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-
 import org.projectnessie.versioned.dynamodb.DynamoStore;
 import org.projectnessie.versioned.dynamodb.DynamoStoreConfig;
-import org.projectnessie.versioned.impl.AbstractTieredStoreFixture;
-
 import software.amazon.awssdk.regions.Region;
 
 /**

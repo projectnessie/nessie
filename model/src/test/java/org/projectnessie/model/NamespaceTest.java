@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.projectnessie.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -22,7 +21,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -93,11 +91,7 @@ public class NamespaceTest {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {
-      ".",
-      "a.",
-      "a.b.c."
-  })
+  @ValueSource(strings = {".", "a.", "a.b.c."})
   void testInvalidParsing(String identifier) {
     assertThatThrownBy(() -> Namespace.parse(identifier))
         .isInstanceOf(IllegalArgumentException.class)
@@ -119,7 +113,8 @@ public class NamespaceTest {
   }
 
   private static Stream<Arguments> invalidElementsProvider() {
-    return Stream.of(Arguments.of(new String[] {"."}, "x"),
+    return Stream.of(
+        Arguments.of(new String[] {"."}, "x"),
         Arguments.of(new String[] {"a", "."}, "x"),
         Arguments.of(new String[] {"a", "b", "c", "."}, "x"));
   }

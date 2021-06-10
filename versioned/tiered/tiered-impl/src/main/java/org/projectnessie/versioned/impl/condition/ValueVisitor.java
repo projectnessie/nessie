@@ -19,11 +19,13 @@ import org.projectnessie.versioned.store.Entity;
 
 /**
  * Visitor for all classes in the Value hierarchy.
+ *
  * @param <T> The type to which the Value will be converted.
  */
 public interface ValueVisitor<T> {
   /**
    * Visit the passed in Entity.
+   *
    * @param entity the Entity to visit.
    * @return the possibly transformed value resulting from the visitation.
    */
@@ -31,6 +33,7 @@ public interface ValueVisitor<T> {
 
   /**
    * Visit the passed in ExpressionFunction.
+   *
    * @param value the ExpressionFunction to visit.
    * @return the possibly transformed value resulting from the visitation.
    */
@@ -38,6 +41,7 @@ public interface ValueVisitor<T> {
 
   /**
    * Visit the passed in ExpressionPath.
+   *
    * @param value the ExpressionPath to visit.
    * @return the possibly transformed value resulting from the visitation.
    */

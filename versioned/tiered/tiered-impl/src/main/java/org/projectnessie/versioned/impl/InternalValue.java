@@ -15,14 +15,11 @@
  */
 package org.projectnessie.versioned.impl;
 
+import com.google.protobuf.ByteString;
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.tiered.Value;
 
-import com.google.protobuf.ByteString;
-
-/**
- * Holds a VersionStore binary value for interaction with the Store.
- */
+/** Holds a VersionStore binary value for interaction with the Store. */
 class InternalValue extends WrappedValueBean<Value> {
 
   private InternalValue(Id id, ByteString value, Long dt) {
@@ -38,10 +35,9 @@ class InternalValue extends WrappedValueBean<Value> {
     return 2829568831168137780L; // an arbitrary but consistent seed to ensure no hash conflicts.
   }
 
-  /**
-   * Implements {@link Value} to builds an {@link InternalValue} object.
-   */
-  // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
+  /** Implements {@link Value} to builds an {@link InternalValue} object. */
+  // Needs to be a package private class, otherwise class-initialization of ValueType fails with
+  // j.l.IllegalAccessError
   static final class Builder extends WrappedValueBean.Builder<InternalValue, Value>
       implements Value {
     Builder() {

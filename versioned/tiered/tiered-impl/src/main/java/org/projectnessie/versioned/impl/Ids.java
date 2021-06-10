@@ -19,8 +19,7 @@ import org.projectnessie.versioned.store.Id;
 
 public final class Ids {
 
-  private Ids() {
-  }
+  private Ids() {}
 
   public static Id getEmptyL1() {
     return InternalL1.EMPTY_ID;

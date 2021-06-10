@@ -13,24 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.projectnessie.api.params;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.StringJoiner;
-
 import javax.ws.rs.QueryParam;
-
 import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 
 /**
- * The purpose of this class is to include optional parameters that can be passed to {@link org.projectnessie.api.TreeApi#getEntries(String,
- * EntriesParams)}.
+ * The purpose of this class is to include optional parameters that can be passed to {@link
+ * org.projectnessie.api.TreeApi#getEntries(String, EntriesParams)}.
  *
- * <p>For easier usage of this class, there is {@link EntriesParams#builder()}, which allows configuring/setting the different parameters.
+ * <p>For easier usage of this class, there is {@link EntriesParams#builder()}, which allows
+ * configuring/setting the different parameters.
  */
 public class EntriesParams {
 
@@ -38,25 +36,32 @@ public class EntriesParams {
   @QueryParam("max")
   private Integer maxRecords;
 
-  @Parameter(description = "pagination continuation token, as returned in the previous EntriesResponse.token")
+  @Parameter(
+      description =
+          "pagination continuation token, as returned in the previous EntriesResponse.token")
   @QueryParam("pageToken")
   private String pageToken;
 
-  @Parameter(description = "list of value types to return. Return all if empty", examples = {@ExampleObject(ref = "types")})
+  @Parameter(
+      description = "list of value types to return. Return all if empty",
+      examples = {@ExampleObject(ref = "types")})
   @QueryParam("types")
   private List<String> types;
 
-  @Parameter(description = "The namespace to filter by. For a given table name 'a.b.c.tableName', the namespace is 'a.b.c', thus a valid"
-      + "namespace to filter by would be 'a' / 'a.b' / 'a.b.c'. Setting the namespace filter to 'a.b.c.tableName' would not return any"
-      + "results, because 'tableName' is not part of the namespace."
-      + "No filtering will happen if this is set to null/empty", examples = {@ExampleObject(ref = "namespace")})
+  @Parameter(
+      description =
+          "The namespace to filter by. For a given table name 'a.b.c.tableName', the namespace is 'a.b.c', thus a valid"
+              + "namespace to filter by would be 'a' / 'a.b' / 'a.b.c'. Setting the namespace filter to 'a.b.c.tableName' would not return any"
+              + "results, because 'tableName' is not part of the namespace."
+              + "No filtering will happen if this is set to null/empty",
+      examples = {@ExampleObject(ref = "namespace")})
   @QueryParam("namespace")
   private String namespace;
 
-  public EntriesParams() {
-  }
+  public EntriesParams() {}
 
-  private EntriesParams(Integer maxRecords, String pageToken, List<String> types, String namespace) {
+  private EntriesParams(
+      Integer maxRecords, String pageToken, List<String> types, String namespace) {
     this.maxRecords = maxRecords;
     this.pageToken = pageToken;
     this.types = types;
@@ -108,8 +113,7 @@ public class EntriesParams {
     private String namespace;
     private List<String> types = Collections.emptyList();
 
-    private Builder() {
-    }
+    private Builder() {}
 
     public EntriesParams.Builder maxRecords(Integer maxRecords) {
       this.maxRecords = maxRecords;
@@ -132,7 +136,10 @@ public class EntriesParams {
     }
 
     public EntriesParams.Builder from(EntriesParams params) {
-      return maxRecords(params.maxRecords).pageToken(params.pageToken).namespace(params.namespace).types(params.types);
+      return maxRecords(params.maxRecords)
+          .pageToken(params.pageToken)
+          .namespace(params.namespace)
+          .types(params.types);
     }
 
     private void validate() {

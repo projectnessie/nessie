@@ -15,16 +15,13 @@
  */
 package org.projectnessie.client.http;
 
-import java.io.IOException;
-import java.io.InputStream;
-
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
+import java.io.IOException;
+import java.io.InputStream;
 
-/**
- * Simple holder for http response object.
- */
+/** Simple holder for http response object. */
 public class HttpResponse {
 
   private final ResponseContext responseContext;

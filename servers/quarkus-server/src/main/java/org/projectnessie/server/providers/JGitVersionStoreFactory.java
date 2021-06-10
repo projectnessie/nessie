@@ -19,10 +19,8 @@ import static org.projectnessie.server.config.VersionStoreConfig.VersionStoreTyp
 
 import java.io.File;
 import java.io.IOException;
-
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
-
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.internal.storage.dfs.DfsRepositoryDescription;
@@ -35,9 +33,7 @@ import org.projectnessie.versioned.jgit.JGitVersionStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * JGit version store factory.
- */
+/** JGit version store factory. */
 @StoreType(JGIT)
 @Dependent
 public class JGitVersionStoreFactory implements VersionStoreFactory {
@@ -51,19 +47,25 @@ public class JGitVersionStoreFactory implements VersionStoreFactory {
   }
 
   @Override
-  public <VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>> VersionStore<VALUE, METADATA, VALUE_TYPE>
-      newStore(StoreWorker<VALUE, METADATA, VALUE_TYPE> worker) throws IOException {
+  public <VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>>
+      VersionStore<VALUE, METADATA, VALUE_TYPE> newStore(
+          StoreWorker<VALUE, METADATA, VALUE_TYPE> worker) throws IOException {
     final Repository repository = newRepository();
     return new JGitVersionStore<>(repository, worker);
   }
-
 
   private Repository newRepository() throws IOException {
     switch (config.getJgitStoreType()) {
       case DISK:
         LOGGER.info("JGit Version store has been configured with the file backend");
-        File jgitDir = new File(config.getJgitDirectory()
-            .orElseThrow(() -> new RuntimeException("Please set nessie.version.store.jgit.directory")));
+        File jgitDir =
+            new File(
+                config
+                    .getJgitDirectory()
+                    .orElseThrow(
+                        () ->
+                            new RuntimeException(
+                                "Please set nessie.version.store.jgit.directory")));
         if (!jgitDir.exists()) {
           if (!jgitDir.mkdirs()) {
             throw new RuntimeException(
@@ -79,11 +81,13 @@ public class JGitVersionStoreFactory implements VersionStoreFactory {
 
       case INMEMORY:
         LOGGER.info("JGit Version store has been configured with the in memory backend");
-        return new InMemoryRepository.Builder().setRepositoryDescription(new DfsRepositoryDescription()).build();
+        return new InMemoryRepository.Builder()
+            .setRepositoryDescription(new DfsRepositoryDescription())
+            .build();
 
       default:
-        throw new RuntimeException(String.format("unknown jgit repo type %s", config.getJgitStoreType()));
+        throw new RuntimeException(
+            String.format("unknown jgit repo type %s", config.getJgitStoreType()));
     }
   }
-
 }

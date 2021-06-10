@@ -19,11 +19,9 @@ import static org.projectnessie.versioned.dynamodb.AttributeValueUtil.deserializ
 
 import java.util.Map;
 import java.util.stream.Stream;
-
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.store.ValueType;
 import org.projectnessie.versioned.tiered.L2;
-
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 class DynamoL2 extends DynamoBaseValue<L2> implements L2 {
@@ -46,9 +44,7 @@ class DynamoL2 extends DynamoBaseValue<L2> implements L2 {
     return super.build();
   }
 
-  /**
-   * Deserialize a DynamoDB entity into the given consumer.
-   */
+  /** Deserialize a DynamoDB entity into the given consumer. */
   static void toConsumer(Map<String, AttributeValue> entity, L2 consumer) {
     baseToConsumer(entity, consumer);
 

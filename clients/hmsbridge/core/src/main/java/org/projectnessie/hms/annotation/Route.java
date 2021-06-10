@@ -21,17 +21,13 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Route the request based on this parameter. Works in two modes:
- * mode1: Applied directly to database String fields
- * mode2: Applied to arbitrary argument types
+ * Route the request based on this parameter. Works in two modes: mode1: Applied directly to
+ * database String fields mode2: Applied to arbitrary argument types
  */
 @Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Route {
 
-  /**
-   * Whether to throw for Nessie references.
-   */
+  /** Whether to throw for Nessie references. */
   boolean value() default false;
-
 }

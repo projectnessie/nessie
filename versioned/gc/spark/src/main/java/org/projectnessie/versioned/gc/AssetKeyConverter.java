@@ -24,6 +24,4 @@ import java.util.stream.Stream;
  * @param <T> Value type. Each value is assumed to have a set of assets it depends on.
  * @param <R> Concrete type of asset key. eg path on a filesystem or database record.
  */
-public interface AssetKeyConverter<T, R extends AssetKey> extends Function<T, Stream<R>> {
-
-}
+public interface AssetKeyConverter<T, R extends AssetKey> extends Function<T, Stream<R>> {}

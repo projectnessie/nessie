@@ -21,15 +21,14 @@ final class DT {
 
   public static final long UNKNOWN = 0;
 
-  private DT() {
-  }
+  private DT() {}
 
   /**
    * The current time since epoch in microseconds.
+   *
    * @return Micros since epoch.
    */
   static long now() {
     return TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis());
   }
-
 }

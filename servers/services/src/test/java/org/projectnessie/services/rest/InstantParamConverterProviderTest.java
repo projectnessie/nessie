@@ -13,21 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.projectnessie.services.rest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Instant;
-
 import javax.ws.rs.ext.ParamConverter;
-
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class InstantParamConverterProviderTest {
 
-  private final ParamConverter<Instant> converter = new InstantParamConverterProvider().getConverter(Instant.class, null, null);
+  private final ParamConverter<Instant> converter =
+      new InstantParamConverterProvider().getConverter(Instant.class, null, null);
 
   @Test
   public void testNulls() {
@@ -43,10 +41,9 @@ public class InstantParamConverterProviderTest {
   }
 
   @Test
-  public void testValid()  {
+  public void testValid() {
     Instant now = Instant.now();
     assertThat(converter.fromString(now.toString())).isEqualTo(now);
     assertThat(converter.toString(now)).isEqualTo(now.toString());
   }
-
 }

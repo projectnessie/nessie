@@ -15,12 +15,6 @@
  */
 package org.projectnessie.versioned;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Stream;
-
-import javax.annotation.Nonnull;
-
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
@@ -28,6 +22,10 @@ import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.Timer.Sample;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 
 /**
  * A {@link VersionStore} wrapper that publishes metrics via Micrometer.
@@ -49,7 +47,8 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
    * @param delegate delegate version-store
    * @param registry metrics-registry
    */
-  MetricsVersionStore(VersionStore<VALUE, METADATA, VALUE_TYPE> delegate, MeterRegistry registry, Clock clock) {
+  MetricsVersionStore(
+      VersionStore<VALUE, METADATA, VALUE_TYPE> delegate, MeterRegistry registry, Clock clock) {
     this.delegate = delegate;
     this.registry = registry;
     this.clock = clock;
@@ -72,50 +71,50 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
   }
 
   @Override
-  public Hash commit(@Nonnull BranchName branch,
+  public Hash commit(
+      @Nonnull BranchName branch,
       @Nonnull Optional<Hash> referenceHash,
       @Nonnull METADATA metadata,
       @Nonnull List<Operation<VALUE>> operations)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    return this.<Hash, ReferenceNotFoundException, ReferenceConflictException>delegate2ExR("commit",
-        () -> delegate.commit(branch, referenceHash, metadata, operations));
+    return this.<Hash, ReferenceNotFoundException, ReferenceConflictException>delegate2ExR(
+        "commit", () -> delegate.commit(branch, referenceHash, metadata, operations));
   }
 
   @Override
-  public void transplant(BranchName targetBranch,
-      Optional<Hash> referenceHash,
-      List<Hash> sequenceToTransplant)
+  public void transplant(
+      BranchName targetBranch, Optional<Hash> referenceHash, List<Hash> sequenceToTransplant)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    this.<ReferenceNotFoundException, ReferenceConflictException>delegate2Ex("transplant",
-        () -> delegate.transplant(targetBranch, referenceHash, sequenceToTransplant));
+    this.<ReferenceNotFoundException, ReferenceConflictException>delegate2Ex(
+        "transplant", () -> delegate.transplant(targetBranch, referenceHash, sequenceToTransplant));
   }
 
   @Override
-  public void merge(Hash fromHash, BranchName toBranch,
-      Optional<Hash> expectedHash) throws ReferenceNotFoundException, ReferenceConflictException {
-    this.<ReferenceNotFoundException, ReferenceConflictException>delegate2Ex("merge",
-        () -> delegate.merge(fromHash, toBranch, expectedHash));
+  public void merge(Hash fromHash, BranchName toBranch, Optional<Hash> expectedHash)
+      throws ReferenceNotFoundException, ReferenceConflictException {
+    this.<ReferenceNotFoundException, ReferenceConflictException>delegate2Ex(
+        "merge", () -> delegate.merge(fromHash, toBranch, expectedHash));
   }
 
   @Override
-  public void assign(NamedRef ref, Optional<Hash> expectedHash,
-      Hash targetHash) throws ReferenceNotFoundException, ReferenceConflictException {
-    this.<ReferenceNotFoundException, ReferenceConflictException>delegate2Ex("assign",
-        () -> delegate.assign(ref, expectedHash, targetHash));
+  public void assign(NamedRef ref, Optional<Hash> expectedHash, Hash targetHash)
+      throws ReferenceNotFoundException, ReferenceConflictException {
+    this.<ReferenceNotFoundException, ReferenceConflictException>delegate2Ex(
+        "assign", () -> delegate.assign(ref, expectedHash, targetHash));
   }
 
   @Override
   public Hash create(NamedRef ref, Optional<Hash> targetHash)
       throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
-    return this.<Hash, ReferenceNotFoundException, ReferenceAlreadyExistsException>delegate2ExR("create",
-        () -> delegate.create(ref, targetHash));
+    return this.<Hash, ReferenceNotFoundException, ReferenceAlreadyExistsException>delegate2ExR(
+        "create", () -> delegate.create(ref, targetHash));
   }
 
   @Override
   public void delete(NamedRef ref, Optional<Hash> hash)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    this.<ReferenceNotFoundException, ReferenceConflictException>delegate2Ex("delete",
-        () -> delegate.delete(ref, hash));
+    this.<ReferenceNotFoundException, ReferenceConflictException>delegate2Ex(
+        "delete", () -> delegate.delete(ref, hash));
   }
 
   @Override
@@ -139,8 +138,8 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
   }
 
   @Override
-  public List<Optional<VALUE>> getValues(Ref ref,
-      List<Key> keys) throws ReferenceNotFoundException {
+  public List<Optional<VALUE>> getValues(Ref ref, List<Key> keys)
+      throws ReferenceNotFoundException {
     return delegate1Ex("getvalues", () -> delegate.getValues(ref, keys));
   }
 
@@ -155,12 +154,13 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
   }
 
   private void measure(String requestName, Sample sample, Exception failure) {
-    Timer timer = Timer.builder("nessie.versionstore.request")
-        .tags(commonTags)
-        .tag("request", requestName)
-        .tag("error", Boolean.toString(failure != null))
-        .publishPercentileHistogram()
-        .register(registry);
+    Timer timer =
+        Timer.builder("nessie.versionstore.request")
+            .tags(commonTags)
+            .tag("request", requestName)
+            .tag("error", Boolean.toString(failure != null))
+            .publishPercentileHistogram()
+            .register(registry);
     sample.stop(timer);
   }
 
@@ -178,8 +178,9 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
     }
   }
 
-  private <R> Stream<R> delegateStream1Ex(String requestName,
-      DelegateWith1<Stream<R>, ReferenceNotFoundException> delegate) throws ReferenceNotFoundException {
+  private <R> Stream<R> delegateStream1Ex(
+      String requestName, DelegateWith1<Stream<R>, ReferenceNotFoundException> delegate)
+      throws ReferenceNotFoundException {
     Sample sample = Timer.start(clock);
     try {
       return delegate.handle().onClose(() -> measure(requestName, sample, null));
@@ -209,8 +210,8 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
     }
   }
 
-  private <R, E1 extends VersionStoreException> R delegate1Ex(String requestName,
-      DelegateWith1<R, E1> delegate) throws E1 {
+  private <R, E1 extends VersionStoreException> R delegate1Ex(
+      String requestName, DelegateWith1<R, E1> delegate) throws E1 {
     Sample sample = Timer.start(clock);
     Exception failure = null;
     try {
@@ -226,8 +227,8 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
     }
   }
 
-  private <E1 extends VersionStoreException, E2 extends VersionStoreException> void delegate2Ex(String requestName,
-      DelegateWith2<E1, E2> delegate) throws E1, E2 {
+  private <E1 extends VersionStoreException, E2 extends VersionStoreException> void delegate2Ex(
+      String requestName, DelegateWith2<E1, E2> delegate) throws E1, E2 {
     Sample sample = Timer.start(clock);
     Exception failure = null;
     try {
@@ -243,8 +244,8 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
     }
   }
 
-  private <R, E1 extends VersionStoreException, E2 extends VersionStoreException> R delegate2ExR(String requestName,
-      DelegateWith2R<R, E1, E2> delegate) throws E1, E2 {
+  private <R, E1 extends VersionStoreException, E2 extends VersionStoreException> R delegate2ExR(
+      String requestName, DelegateWith2R<R, E1, E2> delegate) throws E1, E2 {
     Sample sample = Timer.start(clock);
     Exception failure = null;
     try {

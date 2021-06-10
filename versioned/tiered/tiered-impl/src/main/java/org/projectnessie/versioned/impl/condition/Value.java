@@ -18,9 +18,7 @@ package org.projectnessie.versioned.impl.condition;
 import org.projectnessie.versioned.impl.condition.AliasCollector.Aliasable;
 import org.projectnessie.versioned.store.Entity;
 
-/**
- * A marker interface that exposes a value type in backing store interactions.
- */
+/** A marker interface that exposes a value type in backing store interactions. */
 public interface Value extends Aliasable<Value> {
 
   static Value of(Entity value) {
@@ -32,18 +30,21 @@ public interface Value extends Aliasable<Value> {
 
   /**
    * Return the string representation of this string, if possible.
+   *
    * @return A DynamoDb expression fragment.
    */
   String asString();
 
   /**
    * Return the value type of this value.
+   *
    * @return A value type.
    */
   Type getType();
 
   /**
    * Acceptor for any visitors of the Value hierarchy.
+   *
    * @param visitor the visitor that will be invoked.
    * @param <T> the type of the returned value.
    * @return the possibly transformed value resulting from the visitation.
@@ -63,7 +64,9 @@ public interface Value extends Aliasable<Value> {
   }
 
   enum Type {
-    VALUE, PATH, FUNCTION
+    VALUE,
+    PATH,
+    FUNCTION
   }
 
   class ValueOfEntity implements Value {

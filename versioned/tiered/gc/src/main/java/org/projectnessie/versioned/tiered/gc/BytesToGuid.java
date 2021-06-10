@@ -20,10 +20,7 @@ import org.apache.spark.sql.functions;
 import org.apache.spark.sql.types.DataTypes;
 import org.projectnessie.versioned.store.Id;
 
-
-/**
- * Spark function to convert binary ids into string guids.
- */
+/** Spark function to convert binary ids into string guids. */
 class BytesToGuid implements org.apache.spark.sql.api.java.UDF1<byte[], String> {
 
   private static final long serialVersionUID = -6415976956653691170L;
@@ -33,9 +30,7 @@ class BytesToGuid implements org.apache.spark.sql.api.java.UDF1<byte[], String> 
     return Id.of(t1).toString();
   }
 
-
   public static Column toString(Column col) {
     return functions.udf(new BytesToGuid(), DataTypes.StringType).apply(col);
-
   }
 }

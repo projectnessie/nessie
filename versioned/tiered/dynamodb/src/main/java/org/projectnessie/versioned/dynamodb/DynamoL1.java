@@ -26,17 +26,14 @@ import static org.projectnessie.versioned.dynamodb.AttributeValueUtil.list;
 import static org.projectnessie.versioned.dynamodb.AttributeValueUtil.map;
 import static org.projectnessie.versioned.dynamodb.AttributeValueUtil.number;
 
+import com.google.common.base.Preconditions;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
-
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.store.ValueType;
 import org.projectnessie.versioned.tiered.L1;
 import org.projectnessie.versioned.tiered.Mutation;
-
-import com.google.common.base.Preconditions;
-
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 class DynamoL1 extends DynamoBaseValue<L1> implements L1 {
@@ -110,13 +107,12 @@ class DynamoL1 extends DynamoBaseValue<L1> implements L1 {
   private void addKeysSafe(String key, AttributeValue value) {
     AttributeValue old = keys.put(key, value);
     if (old != null) {
-      throw new IllegalStateException("Duplicate '" + key + "' in 'keys' map. Old={" + old + "} current={" + value + "}");
+      throw new IllegalStateException(
+          "Duplicate '" + key + "' in 'keys' map. Old={" + old + "} current={" + value + "}");
     }
   }
 
-  /**
-   * Deserialize a DynamoDB entity into the given consumer.
-   */
+  /** Deserialize a DynamoDB entity into the given consumer. */
   static void toConsumer(Map<String, AttributeValue> entity, L1 consumer) {
     baseToConsumer(entity, consumer);
 
@@ -130,23 +126,22 @@ class DynamoL1 extends DynamoBaseValue<L1> implements L1 {
       consumer.ancestors(deserializeIdStream(entity, PARENTS));
     }
     if (entity.containsKey(KEY_LIST)) {
-      Map<String, AttributeValue> keys = Preconditions.checkNotNull(
-          attributeValue(entity, KEY_LIST).m(), "mandatory map " + KEY_LIST + " is null");
+      Map<String, AttributeValue> keys =
+          Preconditions.checkNotNull(
+              attributeValue(entity, KEY_LIST).m(), "mandatory map " + KEY_LIST + " is null");
       Boolean checkpoint = attributeValue(keys, IS_CHECKPOINT).bool();
       if (checkpoint != null) {
         if (checkpoint) {
           consumer.completeKeyList(deserializeIdStream(keys, FRAGMENTS));
         } else {
-          consumer.incrementalKeyList(
-              deserializeId(keys, ORIGIN),
-              deserializeInt(keys, DISTANCE)
-          );
+          consumer.incrementalKeyList(deserializeId(keys, ORIGIN), deserializeInt(keys, DISTANCE));
         }
       }
       // See org.projectnessie.versioned.dynamodb.DynamoL1Consumer.addKeyMutation about a
       // proposal to simplify this one.
-      consumer.keyMutations(attributeValue(keys, MUTATIONS).l().stream()
-          .map(AttributeValueUtil::deserializeKeyMutation));
+      consumer.keyMutations(
+          attributeValue(keys, MUTATIONS).l().stream()
+              .map(AttributeValueUtil::deserializeKeyMutation));
     }
   }
 }

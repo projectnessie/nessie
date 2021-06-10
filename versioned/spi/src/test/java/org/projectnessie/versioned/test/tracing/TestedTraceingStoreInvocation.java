@@ -21,14 +21,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
-
 import org.junit.jupiter.api.function.ThrowingConsumer;
 import org.junit.jupiter.params.provider.Arguments;
 
 /**
- * Describes a store (either {@code Store} or {@code VersionStore}) function invocation
- * (for {@code TestTracingStore} and {@code TestTracingVersionStore}), which trace logs + tags
- * it should emit, the expected result and a list of expected exceptions.
+ * Describes a store (either {@code Store} or {@code VersionStore}) function invocation (for {@code
+ * TestTracingStore} and {@code TestTracingVersionStore}), which trace logs + tags it should emit,
+ * the expected result and a list of expected exceptions.
  *
  * @param <S> store type
  */
@@ -57,12 +56,14 @@ public class TestedTraceingStoreInvocation<S> {
 
   /**
    * The function to be tested.
+   *
    * @param function function to be tested
    * @param result supplier for the expected result
    * @param <R> result type
    * @return {@code this}
    */
-  public <R> TestedTraceingStoreInvocation<S> function(ThrowingFunction<R, S> function, Supplier<R> result) {
+  public <R> TestedTraceingStoreInvocation<S> function(
+      ThrowingFunction<R, S> function, Supplier<R> result) {
     this.function = function;
     this.result = result;
     return this;
@@ -70,35 +71,40 @@ public class TestedTraceingStoreInvocation<S> {
 
   /**
    * The method (function returning {@code void}) to be tested.
+   *
    * @param method method to be tested
    * @return {@code this}
    */
   public TestedTraceingStoreInvocation<S> method(ThrowingConsumer<S> method) {
-    this.function = store -> {
-      method.accept(store);
-      return null;
-    };
+    this.function =
+        store -> {
+          method.accept(store);
+          return null;
+        };
     return this;
   }
 
   /**
-   * Convert a stream of {@link TestedTraceingStoreInvocation}s to a stream of {@link Arguments}, which are pairs of
-   * {@link TestedTraceingStoreInvocation} plus {@link Exception}, which are the arguments for the parameterized tests.
+   * Convert a stream of {@link TestedTraceingStoreInvocation}s to a stream of {@link Arguments},
+   * which are pairs of {@link TestedTraceingStoreInvocation} plus {@link Exception}, which are the
+   * arguments for the parameterized tests.
+   *
    * @param versionStoreFunctions stream of {@link TestedTraceingStoreInvocation}s
    * @param <S> store type, a {@code Store} or {@code VersionStore}
-   * @return Stream of {@link Arguments} (pairs of {@link TestedTraceingStoreInvocation} plus {@link Exception});
+   * @return Stream of {@link Arguments} (pairs of {@link TestedTraceingStoreInvocation} plus {@link
+   *     Exception});
    */
-  public static <S> Stream<Arguments> toArguments(Stream<TestedTraceingStoreInvocation<S>> versionStoreFunctions) {
+  public static <S> Stream<Arguments> toArguments(
+      Stream<TestedTraceingStoreInvocation<S>> versionStoreFunctions) {
     // flatten all "normal executions" + "throws XYZ"
-    return versionStoreFunctions.flatMap(invocation -> {
+    return versionStoreFunctions.flatMap(
+        invocation -> {
           // Construct a stream of arguments, both "normal" results and exceptional results.
-          Stream<Arguments> normalExecs = Stream.of(
-              Arguments.of(invocation, null)
-          );
-          Stream<Arguments> exceptionalExecs = invocation.getFailures().stream().map(ex -> Arguments.of(invocation, ex));
+          Stream<Arguments> normalExecs = Stream.of(Arguments.of(invocation, null));
+          Stream<Arguments> exceptionalExecs =
+              invocation.getFailures().stream().map(ex -> Arguments.of(invocation, ex));
           return Stream.concat(normalExecs, exceptionalExecs);
-        }
-    );
+        });
   }
 
   public String getOpName() {
@@ -113,23 +119,17 @@ public class TestedTraceingStoreInvocation<S> {
     return logs;
   }
 
-  /**
-   * The wrapped/delegated store function invocation.
-   */
+  /** The wrapped/delegated store function invocation. */
   public ThrowingFunction<?, S> getFunction() {
     return function;
   }
 
-  /**
-   * Supplier for the expected result.
-   */
+  /** Supplier for the expected result. */
   public Supplier<?> getResult() {
     return result;
   }
 
-  /**
-   * List of exceptions to test.
-   */
+  /** List of exceptions to test. */
   public List<Exception> getFailures() {
     return failures;
   }

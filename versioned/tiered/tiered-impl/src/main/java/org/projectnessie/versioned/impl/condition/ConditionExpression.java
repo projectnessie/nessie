@@ -15,15 +15,13 @@
  */
 package org.projectnessie.versioned.impl.condition;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import java.util.List;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
-
 import org.immutables.value.Value;
 import org.projectnessie.versioned.impl.condition.AliasCollector.Aliasable;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 
 @Value.Immutable
 public abstract class ConditionExpression implements Aliasable<ConditionExpression> {
@@ -35,13 +33,16 @@ public abstract class ConditionExpression implements Aliasable<ConditionExpressi
   }
 
   public String toConditionExpressionString() {
-    return getFunctions().stream().map(ExpressionFunction::asString).collect(Collectors.joining(" AND "));
+    return getFunctions().stream()
+        .map(ExpressionFunction::asString)
+        .collect(Collectors.joining(" AND "));
   }
 
   @Override
   public ConditionExpression alias(AliasCollector c) {
     return ImmutableConditionExpression.builder()
-        .functions(getFunctions().stream().map(f -> f.alias(c)).collect(ImmutableList.toImmutableList()))
+        .functions(
+            getFunctions().stream().map(f -> f.alias(c)).collect(ImmutableList.toImmutableList()))
         .build();
   }
 
@@ -77,17 +78,18 @@ public abstract class ConditionExpression implements Aliasable<ConditionExpressi
 
   /**
    * Collect condition expressions into a single compound condition expression.
+   *
    * @return combined update.
    */
-  public static final Collector<ConditionExpression, List<ExpressionFunction>, ConditionExpression> toConditionExpression() {
+  public static final Collector<ConditionExpression, List<ExpressionFunction>, ConditionExpression>
+      toConditionExpression() {
     return Collector.of(
-      Lists::newArrayList,
-      (o1, l1) -> o1.addAll(l1.getFunctions()),
-      (o1, o2) -> {
-        o1.addAll(o2);
-        return o1;
-      },
-      o1 -> ImmutableConditionExpression.builder().addAllFunctions(o1).build()
-      );
+        Lists::newArrayList,
+        (o1, l1) -> o1.addAll(l1.getFunctions()),
+        (o1, o2) -> {
+          o1.addAll(o2);
+          return o1;
+        },
+        o1 -> ImmutableConditionExpression.builder().addAllFunctions(o1).build());
   }
 }

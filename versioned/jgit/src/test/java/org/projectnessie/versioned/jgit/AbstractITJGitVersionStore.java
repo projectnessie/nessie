@@ -16,7 +16,6 @@
 package org.projectnessie.versioned.jgit;
 
 import java.io.IOException;
-
 import org.eclipse.jgit.lib.Repository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Disabled;
@@ -45,7 +44,8 @@ public abstract class AbstractITJGitVersionStore extends AbstractITVersionStore 
     repository.close();
   }
 
-  @Override protected VersionStore<String, String, StringSerializer.TestEnum> store() {
+  @Override
+  protected VersionStore<String, String, StringSerializer.TestEnum> store() {
     return store;
   }
 }

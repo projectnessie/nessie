@@ -15,9 +15,7 @@
  */
 package org.projectnessie.versioned;
 
-/**
- * Extension of Serializable that includes a single byte payload.
- */
+/** Extension of Serializable that includes a single byte payload. */
 public interface SerializerWithPayload<V, T extends Enum<T>> extends Serializer<V> {
 
   Byte getPayload(V value);
@@ -27,5 +25,4 @@ public interface SerializerWithPayload<V, T extends Enum<T>> extends Serializer<
   }
 
   T getType(Byte payload);
-
 }

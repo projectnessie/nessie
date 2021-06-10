@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.projectnessie.api.params;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -23,7 +22,6 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-
 import org.junit.jupiter.api.Test;
 
 public class CommitLogParamsTest {
@@ -33,7 +31,9 @@ public class CommitLogParamsTest {
     assertThatThrownBy(() -> CommitLogParams.builder().authors(null).build())
         .isInstanceOf(NullPointerException.class)
         .hasMessage("authors must be non-null");
-    assertThatThrownBy(() -> CommitLogParams.builder().authors(Collections.emptyList()).committers(null).build())
+    assertThatThrownBy(
+            () ->
+                CommitLogParams.builder().authors(Collections.emptyList()).committers(null).build())
         .isInstanceOf(NullPointerException.class)
         .hasMessage("committers must be non-null");
   }
@@ -46,14 +46,15 @@ public class CommitLogParamsTest {
     List<String> committers = Arrays.asList("committer1", "committer2");
     Integer maxRecords = 23;
     String pageToken = "aabbcc";
-    CommitLogParams params = CommitLogParams.builder()
-        .authors(authors)
-        .committers(committers)
-        .after(after)
-        .before(before)
-        .maxRecords(maxRecords)
-        .pageToken(pageToken)
-        .build();
+    CommitLogParams params =
+        CommitLogParams.builder()
+            .authors(authors)
+            .committers(committers)
+            .after(after)
+            .before(before)
+            .maxRecords(maxRecords)
+            .pageToken(pageToken)
+            .build();
 
     assertThat(params.getAfter()).isEqualTo(after);
     assertThat(params.getBefore()).isEqualTo(before);

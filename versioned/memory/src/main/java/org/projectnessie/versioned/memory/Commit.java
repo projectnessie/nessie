@@ -18,10 +18,15 @@ package org.projectnessie.versioned.memory;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hasher;
+import com.google.common.hash.Hashing;
+import com.google.protobuf.ByteString;
+import com.google.protobuf.UnsafeByteOperations;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Locale;
-
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
@@ -29,13 +34,6 @@ import org.projectnessie.versioned.Operation;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.Unchanged;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.hash.HashFunction;
-import com.google.common.hash.Hasher;
-import com.google.common.hash.Hashing;
-import com.google.protobuf.ByteString;
-import com.google.protobuf.UnsafeByteOperations;
 
 /**
  * Commit class.
@@ -46,8 +44,14 @@ import com.google.protobuf.UnsafeByteOperations;
 class Commit<ValueT, MetadataT> {
   private static final HashFunction COMMIT_HASH_FUNCTION = Hashing.sha256();
 
-  public static final Hash NO_ANCESTOR = Hash.of(
-      UnsafeByteOperations.unsafeWrap(COMMIT_HASH_FUNCTION.newHasher().putString("empty", StandardCharsets.UTF_8).hash().asBytes()));
+  public static final Hash NO_ANCESTOR =
+      Hash.of(
+          UnsafeByteOperations.unsafeWrap(
+              COMMIT_HASH_FUNCTION
+                  .newHasher()
+                  .putString("empty", StandardCharsets.UTF_8)
+                  .hash()
+                  .asBytes()));
 
   private final Hash hash;
   private final Hash ancestor;
@@ -61,8 +65,11 @@ class Commit<ValueT, MetadataT> {
     this.operations = ImmutableList.copyOf(requireNonNull(operations));
   }
 
-  public static <ValueT, MetadataT> Commit<ValueT, MetadataT> of(final Serializer<ValueT> valueSerializer,
-      final Serializer<MetadataT> metadataSerializer, Hash ancestor, MetadataT metadata,
+  public static <ValueT, MetadataT> Commit<ValueT, MetadataT> of(
+      final Serializer<ValueT> valueSerializer,
+      final Serializer<MetadataT> metadataSerializer,
+      Hash ancestor,
+      MetadataT metadata,
       List<Operation<ValueT>> operations) {
     // Create a hash for the commit
     Hasher hasher = COMMIT_HASH_FUNCTION.newHasher();
@@ -76,7 +83,7 @@ class Commit<ValueT, MetadataT> {
     hash(hasher, metadataSerializer.toBytes(metadata));
 
     // serialize operations and hash
-    for (Operation<ValueT> operation: operations) {
+    for (Operation<ValueT> operation : operations) {
       if (operation instanceof Put) {
         Put<ValueT> put = (Put<ValueT>) operation;
         hasher.putString("put", UTF_8);
@@ -125,10 +132,16 @@ class Commit<ValueT, MetadataT> {
     return operations;
   }
 
-  @Override public String toString() {
-    return "Commit [hash=" + hash + ", ancestor=" + ancestor + ", metadata=" + metadata
-        + ", operations=" + operations + "]";
+  @Override
+  public String toString() {
+    return "Commit [hash="
+        + hash
+        + ", ancestor="
+        + ancestor
+        + ", metadata="
+        + metadata
+        + ", operations="
+        + operations
+        + "]";
   }
-
-
 }

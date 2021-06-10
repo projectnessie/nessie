@@ -13,12 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.projectnessie.services.rest;
 
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
-
 import org.projectnessie.api.ConfigApi;
 import org.projectnessie.model.ImmutableNessieConfiguration;
 import org.projectnessie.model.NessieConfiguration;
@@ -26,10 +24,7 @@ import org.projectnessie.services.config.ServerConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
-/**
- * REST endpoint to retrieve server settings.
- */
+/** REST endpoint to retrieve server settings. */
 @RequestScoped
 public class ConfigResource implements ConfigApi {
 
@@ -44,8 +39,7 @@ public class ConfigResource implements ConfigApi {
   @Override
   public NessieConfiguration getConfig() {
     return ImmutableNessieConfiguration.builder()
-                                       .defaultBranch(this.config.getDefaultBranch()).build();
+        .defaultBranch(this.config.getDefaultBranch())
+        .build();
   }
-
-
 }

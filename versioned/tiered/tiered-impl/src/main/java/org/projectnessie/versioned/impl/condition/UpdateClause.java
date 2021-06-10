@@ -20,7 +20,9 @@ import org.projectnessie.versioned.impl.condition.AliasCollector.Aliasable;
 public interface UpdateClause extends Aliasable<UpdateClause> {
 
   enum Type {
-    SET, REMOVE, DELETE;
+    SET,
+    REMOVE,
+    DELETE;
   }
 
   Type getType();
@@ -29,9 +31,10 @@ public interface UpdateClause extends Aliasable<UpdateClause> {
 
   /**
    * Entry point for visitation.
+   *
    * @param visitor the visitor that will be invoked.
    * @param <T> the type of the returned value.
    * @return the possibly transformed value resulting from the visitation.
    */
-  abstract  <T> T accept(UpdateClauseVisitor<T> visitor);
+  abstract <T> T accept(UpdateClauseVisitor<T> visitor);
 }

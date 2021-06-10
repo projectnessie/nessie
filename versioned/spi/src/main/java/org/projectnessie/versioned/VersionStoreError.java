@@ -15,9 +15,7 @@
  */
 package org.projectnessie.versioned;
 
-/**
- * Base unchecked exception for technical error conditions of a backend store.
- */
+/** Base unchecked exception for technical error conditions of a backend store. */
 public class VersionStoreError extends RuntimeException {
   private static final long serialVersionUID = 1L;
 
@@ -25,8 +23,8 @@ public class VersionStoreError extends RuntimeException {
     super();
   }
 
-  public VersionStoreError(String message, Throwable cause, boolean enableSuppression,
-      boolean writableStackTrace) {
+  public VersionStoreError(
+      String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
     super(message, cause, enableSuppression, writableStackTrace);
   }
 

@@ -16,11 +16,11 @@
 package org.projectnessie.client.http;
 
 /**
- * Filter evaluated post call. The connection, its response streams and response code are available to the filter.
+ * Filter evaluated post call. The connection, its response streams and response code are available
+ * to the filter.
  */
 @FunctionalInterface
 public interface ResponseFilter {
 
   void filter(ResponseContext con);
-
 }

@@ -19,7 +19,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.projectnessie.versioned.tiered.BaseValue;
 import org.projectnessie.versioned.tiered.CommitMetadata;
 import org.projectnessie.versioned.tiered.Fragment;
@@ -36,14 +35,15 @@ public final class ValueType<C extends BaseValue<C>> {
   public static final ValueType<L2> L2 = new ValueType<>(L2.class, "l2", "l2");
   public static final ValueType<L3> L3 = new ValueType<>(L3.class, "l3", "l3");
   public static final ValueType<Value> VALUE = new ValueType<>(Value.class, "v", "values");
-  public static final ValueType<Fragment> KEY_FRAGMENT = new ValueType<>(Fragment.class, "k", "key_lists");
-  public static final ValueType<CommitMetadata> COMMIT_METADATA = new ValueType<>(CommitMetadata.class, "m", "commit_metadata");
+  public static final ValueType<Fragment> KEY_FRAGMENT =
+      new ValueType<>(Fragment.class, "k", "key_lists");
+  public static final ValueType<CommitMetadata> COMMIT_METADATA =
+      new ValueType<>(CommitMetadata.class, "m", "commit_metadata");
 
-  private static final ValueType<?>[] ALL = new ValueType[]{REF, L1, L2, L3, VALUE, KEY_FRAGMENT, COMMIT_METADATA};
+  private static final ValueType<?>[] ALL =
+      new ValueType[] {REF, L1, L2, L3, VALUE, KEY_FRAGMENT, COMMIT_METADATA};
 
-  /**
-   * Schema type field name "{@value #SCHEMA_TYPE}".
-   */
+  /** Schema type field name "{@value #SCHEMA_TYPE}". */
   public static final String SCHEMA_TYPE = "t";
 
   private static final Map<String, ValueType<?>> BY_VALUE_NAME = new HashMap<>();

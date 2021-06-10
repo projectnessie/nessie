@@ -19,19 +19,16 @@ import static org.projectnessie.versioned.TracingUtil.safeSize;
 import static org.projectnessie.versioned.TracingUtil.safeToString;
 import static org.projectnessie.versioned.TracingUtil.traceError;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.stream.Stream;
-
-import javax.annotation.Nonnull;
-
 import com.google.common.annotations.VisibleForTesting;
-
 import io.opentracing.Scope;
 import io.opentracing.Tracer;
 import io.opentracing.Tracer.SpanBuilder;
 import io.opentracing.util.GlobalTracer;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 
 /**
  * A {@link VersionStore} wrapper that publishes tracing information via OpenTracing/OpenTelemetry.
@@ -62,6 +59,7 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
 
   /**
    * Takes the {@link VersionStore} instance to trace.
+   *
    * @param delegate backing/delegate {@link VersionStore}
    */
   public TracingVersionStore(VersionStore<VALUE, METADATA, VALUE_TYPE> delegate) {
@@ -71,137 +69,142 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
   @Override
   @Nonnull
   public Hash toHash(@Nonnull NamedRef ref) throws ReferenceNotFoundException {
-    return callWithOneException("ToHash", b -> b
-        .withTag(TAG_REF, safeRefName(ref)),
-        () -> delegate.toHash(ref));
+    return callWithOneException(
+        "ToHash", b -> b.withTag(TAG_REF, safeRefName(ref)), () -> delegate.toHash(ref));
   }
 
   @Override
   public WithHash<Ref> toRef(@Nonnull String refOfUnknownType) throws ReferenceNotFoundException {
-    return callWithOneException("ToRef", b -> b
-        .withTag(TAG_REF, refOfUnknownType),
-        () -> delegate.toRef(refOfUnknownType));
+    return callWithOneException(
+        "ToRef", b -> b.withTag(TAG_REF, refOfUnknownType), () -> delegate.toRef(refOfUnknownType));
   }
 
   @Override
-  public Hash commit(@Nonnull BranchName branch,
+  public Hash commit(
+      @Nonnull BranchName branch,
       @Nonnull Optional<Hash> referenceHash,
       @Nonnull METADATA metadata,
       @Nonnull List<Operation<VALUE>> operations)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    return this.<Hash, ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions("Commit", b -> b
-        .withTag(TAG_BRANCH, safeRefName(branch))
-        .withTag(TAG_HASH, safeToString(referenceHash))
-        .withTag(TAG_NUM_OPS, safeSize(operations)),
+    return this.<Hash, ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
+        "Commit",
+        b ->
+            b.withTag(TAG_BRANCH, safeRefName(branch))
+                .withTag(TAG_HASH, safeToString(referenceHash))
+                .withTag(TAG_NUM_OPS, safeSize(operations)),
         () -> delegate.commit(branch, referenceHash, metadata, operations));
   }
 
   @Override
-  public void transplant(BranchName targetBranch,
-      Optional<Hash> referenceHash,
-      List<Hash> sequenceToTransplant)
+  public void transplant(
+      BranchName targetBranch, Optional<Hash> referenceHash, List<Hash> sequenceToTransplant)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    this.<ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions("Transplant", b -> b
-        .withTag(TAG_TARGET_BRANCH, safeRefName(targetBranch))
-        .withTag(TAG_HASH, safeToString(referenceHash))
-        .withTag(TAG_TRANSPLANTS, safeSize(sequenceToTransplant)),
+    this.<ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
+        "Transplant",
+        b ->
+            b.withTag(TAG_TARGET_BRANCH, safeRefName(targetBranch))
+                .withTag(TAG_HASH, safeToString(referenceHash))
+                .withTag(TAG_TRANSPLANTS, safeSize(sequenceToTransplant)),
         () -> delegate.transplant(targetBranch, referenceHash, sequenceToTransplant));
   }
 
   @Override
-  public void merge(Hash fromHash, BranchName toBranch,
-      Optional<Hash> expectedHash) throws ReferenceNotFoundException, ReferenceConflictException {
-    this.<ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions("Merge", b -> b
-        .withTag(TAG_FROM_HASH, safeToString(fromHash))
-        .withTag(TAG_TO_BRANCH, safeRefName(toBranch))
-        .withTag(TAG_EXPECTED_HASH, safeToString(expectedHash)),
+  public void merge(Hash fromHash, BranchName toBranch, Optional<Hash> expectedHash)
+      throws ReferenceNotFoundException, ReferenceConflictException {
+    this.<ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
+        "Merge",
+        b ->
+            b.withTag(TAG_FROM_HASH, safeToString(fromHash))
+                .withTag(TAG_TO_BRANCH, safeRefName(toBranch))
+                .withTag(TAG_EXPECTED_HASH, safeToString(expectedHash)),
         () -> delegate.merge(fromHash, toBranch, expectedHash));
   }
 
   @Override
-  public void assign(NamedRef ref, Optional<Hash> expectedHash,
-      Hash targetHash) throws ReferenceNotFoundException, ReferenceConflictException {
-    this.<ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions("Assign", b -> b
-        .withTag(TAG_REF, safeToString(ref))
-        .withTag(TracingVersionStore.TAG_EXPECTED_HASH, safeToString(expectedHash))
-        .withTag(TAG_TARGET_HASH, safeToString(targetHash)),
+  public void assign(NamedRef ref, Optional<Hash> expectedHash, Hash targetHash)
+      throws ReferenceNotFoundException, ReferenceConflictException {
+    this.<ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
+        "Assign",
+        b ->
+            b.withTag(TAG_REF, safeToString(ref))
+                .withTag(TracingVersionStore.TAG_EXPECTED_HASH, safeToString(expectedHash))
+                .withTag(TAG_TARGET_HASH, safeToString(targetHash)),
         () -> delegate.assign(ref, expectedHash, targetHash));
   }
 
   @Override
   public Hash create(NamedRef ref, Optional<Hash> targetHash)
       throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
-    return this.<Hash, ReferenceNotFoundException, ReferenceAlreadyExistsException>callWithTwoExceptions("Create", b -> b
-        .withTag(TAG_REF, safeToString(ref))
-        .withTag(TAG_TARGET_HASH, safeToString(targetHash)),
-        () -> delegate.create(ref, targetHash));
+    return this
+        .<Hash, ReferenceNotFoundException, ReferenceAlreadyExistsException>callWithTwoExceptions(
+            "Create",
+            b ->
+                b.withTag(TAG_REF, safeToString(ref))
+                    .withTag(TAG_TARGET_HASH, safeToString(targetHash)),
+            () -> delegate.create(ref, targetHash));
   }
 
   @Override
   public void delete(NamedRef ref, Optional<Hash> hash)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    this.<ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions("Delete", b -> b
-        .withTag(TAG_REF, safeToString(ref))
-        .withTag(TAG_HASH, safeToString(hash)),
+    this.<ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
+        "Delete",
+        b -> b.withTag(TAG_REF, safeToString(ref)).withTag(TAG_HASH, safeToString(hash)),
         () -> delegate.delete(ref, hash));
   }
 
   @Override
   public Stream<WithHash<NamedRef>> getNamedRefs() {
-    return callStream("GetNamedRefs", b -> {},
-        delegate::getNamedRefs);
+    return callStream("GetNamedRefs", b -> {}, delegate::getNamedRefs);
   }
 
   @Override
   public Stream<WithHash<METADATA>> getCommits(Ref ref) throws ReferenceNotFoundException {
-    return callStreamWithOneException("GetCommits", b -> b
-        .withTag(TAG_REF, safeToString(ref)),
-        () ->  delegate.getCommits(ref));
+    return callStreamWithOneException(
+        "GetCommits", b -> b.withTag(TAG_REF, safeToString(ref)), () -> delegate.getCommits(ref));
   }
 
   @Override
   public Stream<WithType<Key, VALUE_TYPE>> getKeys(Ref ref) throws ReferenceNotFoundException {
-    return callStreamWithOneException("GetKeys", b -> b
-        .withTag(TAG_REF, safeToString(ref)),
-        () -> delegate.getKeys(ref));
+    return callStreamWithOneException(
+        "GetKeys", b -> b.withTag(TAG_REF, safeToString(ref)), () -> delegate.getKeys(ref));
   }
 
   @Override
   public VALUE getValue(Ref ref, Key key) throws ReferenceNotFoundException {
-    return callWithOneException("GetValue", b -> b
-        .withTag(TAG_REF, safeToString(ref))
-        .withTag(TAG_KEY, safeToString(key)),
+    return callWithOneException(
+        "GetValue",
+        b -> b.withTag(TAG_REF, safeToString(ref)).withTag(TAG_KEY, safeToString(key)),
         () -> delegate.getValue(ref, key));
   }
 
   @Override
-  public List<Optional<VALUE>> getValues(Ref ref, List<Key> keys) throws ReferenceNotFoundException {
-    return callWithOneException("GetValues", b -> b
-        .withTag(TAG_REF, safeToString(ref))
-        .withTag(TAG_KEYS, safeToString(keys)),
+  public List<Optional<VALUE>> getValues(Ref ref, List<Key> keys)
+      throws ReferenceNotFoundException {
+    return callWithOneException(
+        "GetValues",
+        b -> b.withTag(TAG_REF, safeToString(ref)).withTag(TAG_KEYS, safeToString(keys)),
         () -> delegate.getValues(ref, keys));
   }
 
   @Override
   public Stream<Diff<VALUE>> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException {
-    return callStreamWithOneException("GetDiffs", b -> b
-        .withTag(TAG_FROM, safeToString(from))
-        .withTag(TAG_TO, safeToString(to)),
+    return callStreamWithOneException(
+        "GetDiffs",
+        b -> b.withTag(TAG_FROM, safeToString(from)).withTag(TAG_TO, safeToString(to)),
         () -> delegate.getDiffs(from, to));
   }
 
   @Override
   public Collector collectGarbage() {
-    return call("CollectGarbage", b -> {},
-        delegate::collectGarbage);
+    return call("CollectGarbage", b -> {}, delegate::collectGarbage);
   }
 
   private Scope createActiveScope(String name, Consumer<SpanBuilder> spanBuilder) {
     Tracer tracer = GlobalTracer.get();
     String spanName = makeSpanName(name);
-    SpanBuilder builder = tracer.buildSpan(spanName)
-        .asChildOf(tracer.activeSpan())
-        .withTag(TAG_OPERATION, name);
+    SpanBuilder builder =
+        tracer.buildSpan(spanName).asChildOf(tracer.activeSpan()).withTag(TAG_OPERATION, name);
     spanBuilder.accept(builder);
     return builder.startActive(true);
   }
@@ -211,7 +214,8 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
     return "VersionStore." + Character.toLowerCase(name.charAt(0)) + name.substring(1);
   }
 
-  private <R> Stream<R> callStream(String spanName, Consumer<SpanBuilder> spanBuilder, Invoker<Stream<R>> invoker) {
+  private <R> Stream<R> callStream(
+      String spanName, Consumer<SpanBuilder> spanBuilder, Invoker<Stream<R>> invoker) {
     Scope scope = createActiveScope(spanName, spanBuilder);
     Stream<R> result = null;
     try {
@@ -230,8 +234,11 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
     }
   }
 
-  private <R, E1 extends VersionStoreException> Stream<R> callStreamWithOneException(String spanName, Consumer<SpanBuilder> spanBuilder,
-      InvokerWithOneException<Stream<R>, E1> invoker) throws E1 {
+  private <R, E1 extends VersionStoreException> Stream<R> callStreamWithOneException(
+      String spanName,
+      Consumer<SpanBuilder> spanBuilder,
+      InvokerWithOneException<Stream<R>, E1> invoker)
+      throws E1 {
     Scope scope = createActiveScope(spanName, spanBuilder);
     Stream<R> result = null;
     try {
@@ -264,8 +271,9 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
     }
   }
 
-  private <R, E1 extends VersionStoreException> R callWithOneException(String spanName, Consumer<SpanBuilder> spanBuilder,
-      InvokerWithOneException<R, E1> invoker) throws E1 {
+  private <R, E1 extends VersionStoreException> R callWithOneException(
+      String spanName, Consumer<SpanBuilder> spanBuilder, InvokerWithOneException<R, E1> invoker)
+      throws E1 {
     try (Scope scope = createActiveScope(spanName, spanBuilder)) {
       try {
         return invoker.handle();
@@ -278,8 +286,12 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
     }
   }
 
-  private <E1 extends VersionStoreException, E2 extends VersionStoreException> void callWithTwoExceptions(String spanName,
-      Consumer<SpanBuilder> spanBuilder, InvokerWithTwoExceptions<E1, E2> invoker) throws E1, E2 {
+  private <E1 extends VersionStoreException, E2 extends VersionStoreException>
+      void callWithTwoExceptions(
+          String spanName,
+          Consumer<SpanBuilder> spanBuilder,
+          InvokerWithTwoExceptions<E1, E2> invoker)
+          throws E1, E2 {
     try (Scope scope = createActiveScope(spanName, spanBuilder)) {
       try {
         invoker.handle();
@@ -292,8 +304,12 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
     }
   }
 
-  private <R, E1 extends VersionStoreException, E2 extends VersionStoreException> R callWithTwoExceptions(String spanName,
-      Consumer<SpanBuilder> spanBuilder, InvokerWithTwoExceptionsR<R, E1, E2> invoker) throws E1, E2 {
+  private <R, E1 extends VersionStoreException, E2 extends VersionStoreException>
+      R callWithTwoExceptions(
+          String spanName,
+          Consumer<SpanBuilder> spanBuilder,
+          InvokerWithTwoExceptionsR<R, E1, E2> invoker)
+          throws E1, E2 {
     try (Scope scope = createActiveScope(spanName, spanBuilder)) {
       try {
         return invoker.handle();
@@ -317,12 +333,14 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
   }
 
   @FunctionalInterface
-  interface InvokerWithTwoExceptions<E1 extends VersionStoreException, E2 extends VersionStoreException> {
+  interface InvokerWithTwoExceptions<
+      E1 extends VersionStoreException, E2 extends VersionStoreException> {
     void handle() throws E1, E2;
   }
 
   @FunctionalInterface
-  interface InvokerWithTwoExceptionsR<R, E1 extends VersionStoreException, E2 extends VersionStoreException> {
+  interface InvokerWithTwoExceptionsR<
+      R, E1 extends VersionStoreException, E2 extends VersionStoreException> {
     R handle() throws E1, E2;
   }
 

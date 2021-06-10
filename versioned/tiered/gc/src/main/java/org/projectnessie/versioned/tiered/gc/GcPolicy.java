@@ -17,9 +17,7 @@ package org.projectnessie.versioned.tiered.gc;
 
 import org.apache.spark.sql.api.java.UDF2;
 
-/**
- * Spark function to determine whether a particular L1 is still considered "referenced".
- */
+/** Spark function to determine whether a particular L1 is still considered "referenced". */
 class GcPolicy implements UDF2<String, Long, Boolean> {
   private static final long serialVersionUID = 3412048190607652836L;
 
@@ -36,5 +34,4 @@ class GcPolicy implements UDF2<String, Long, Boolean> {
     }
     return dt >= youngestAllowedMicros;
   }
-
 }

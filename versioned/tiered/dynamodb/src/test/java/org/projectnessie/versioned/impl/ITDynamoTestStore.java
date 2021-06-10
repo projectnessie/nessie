@@ -19,11 +19,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.versioned.dynamodb.DynamoStore;
 import org.projectnessie.versioned.dynamodb.LocalDynamoDB;
-import org.projectnessie.versioned.impl.AbstractTestStore;
 
-/**
- * A test class that contains DynamoDB tests.
- */
+/** A test class that contains DynamoDB tests. */
 @ExtendWith(LocalDynamoDB.class)
 class ITDynamoTestStore extends AbstractTestStore<DynamoStore> {
   private DynamoStoreFixture fixture;
@@ -35,6 +32,7 @@ class ITDynamoTestStore extends AbstractTestStore<DynamoStore> {
 
   /**
    * Creates an instance of MongoDBStore on which tests are executed.
+   *
    * @return the store to test.
    */
   @Override

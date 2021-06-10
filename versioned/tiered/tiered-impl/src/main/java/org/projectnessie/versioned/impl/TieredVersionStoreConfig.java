@@ -17,7 +17,6 @@ package org.projectnessie.versioned.impl;
 
 import java.util.List;
 import java.util.Optional;
-
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 import org.projectnessie.versioned.BranchName;
@@ -31,6 +30,7 @@ public interface TieredVersionStoreConfig {
 
   /**
    * Number of attempts for {@link TieredVersionStore#commit(BranchName, Optional, Object, List)}.
+   *
    * @return commit attempts
    */
   @Default
@@ -39,7 +39,9 @@ public interface TieredVersionStoreConfig {
   }
 
   /**
-   * Number of attempts for {@code UpdateState.collapseIntentionLog(UpdateState, Store, InternalBranch, TieredVersionStoreConfig)}.
+   * Number of attempts for {@code UpdateState.collapseIntentionLog(UpdateState, Store,
+   * InternalBranch, TieredVersionStoreConfig)}.
+   *
    * @return collapse-intention-log attempts
    */
   @Default
@@ -48,8 +50,9 @@ public interface TieredVersionStoreConfig {
   }
 
   /**
-   * Whether {@code UpdateState.collapseIntentionLog(UpdateState, Store, InternalBranch, TieredVersionStoreConfig)} waits for
-   * the intention-log-collapse to complete.
+   * Whether {@code UpdateState.collapseIntentionLog(UpdateState, Store, InternalBranch,
+   * TieredVersionStoreConfig)} waits for the intention-log-collapse to complete.
+   *
    * @return default=production-setting={@code false}
    */
   @Default
@@ -58,8 +61,9 @@ public interface TieredVersionStoreConfig {
   }
 
   /**
-   * Whether trace-scopes/spans should be emitted for commit + collapse-intention-log,
-   * should reflect the {@code Store}'s configuration.
+   * Whether trace-scopes/spans should be emitted for commit + collapse-intention-log, should
+   * reflect the {@code Store}'s configuration.
+   *
    * @return whether trace-scopes/spans should be emitted
    */
   @Default

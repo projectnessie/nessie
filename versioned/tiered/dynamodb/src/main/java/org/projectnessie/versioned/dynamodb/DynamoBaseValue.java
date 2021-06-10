@@ -20,17 +20,14 @@ import static org.projectnessie.versioned.dynamodb.AttributeValueUtil.idValue;
 import static org.projectnessie.versioned.dynamodb.AttributeValueUtil.idsList;
 import static org.projectnessie.versioned.dynamodb.AttributeValueUtil.string;
 
+import com.google.common.base.Preconditions;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
-
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.store.Store;
 import org.projectnessie.versioned.store.ValueType;
 import org.projectnessie.versioned.tiered.BaseValue;
-
-import com.google.common.base.Preconditions;
-
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 abstract class DynamoBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
@@ -49,21 +46,18 @@ abstract class DynamoBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
     return addEntitySafe(ID, idValue(id));
   }
 
-  /**
-   * Adds an {@link AttributeValue} that consists of a list of {@link Id}s.
-   */
+  /** Adds an {@link AttributeValue} that consists of a list of {@link Id}s. */
   C addIdList(String key, Stream<Id> ids) {
     return addEntitySafe(key, idsList(ids));
   }
 
-  /**
-   * Adds the {@link AttributeValue} for the given key for the final entity.
-   */
+  /** Adds the {@link AttributeValue} for the given key for the final entity. */
   @SuppressWarnings("unchecked")
   C addEntitySafe(String key, AttributeValue value) {
     AttributeValue old = entity.put(key, value);
     if (old != null) {
-      throw new IllegalStateException("Duplicate '" + key + "' in 'entity' map. Old={" + old + "} current={" + value + "}");
+      throw new IllegalStateException(
+          "Duplicate '" + key + "' in 'entity' map. Old={" + old + "} current={" + value + "}");
     }
     return (C) this;
   }
@@ -79,18 +73,20 @@ abstract class DynamoBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
   }
 
   void checkPresent(String id, String name) {
-    Preconditions.checkArgument(entity.containsKey(id),
-        String.format("Method %s of consumer %s has not been called", name, getClass().getSimpleName()));
+    Preconditions.checkArgument(
+        entity.containsKey(id),
+        String.format(
+            "Method %s of consumer %s has not been called", name, getClass().getSimpleName()));
   }
 
   void checkNotPresent(String id, String name) {
-    Preconditions.checkArgument(!entity.containsKey(id),
-        String.format("Method %s of consumer %s must not be called", name, getClass().getSimpleName()));
+    Preconditions.checkArgument(
+        !entity.containsKey(id),
+        String.format(
+            "Method %s of consumer %s must not be called", name, getClass().getSimpleName()));
   }
 
   static <C extends BaseValue<C>> C baseToConsumer(Map<String, AttributeValue> entity, C consumer) {
-    return consumer.id(deserializeId(entity, ID))
-        .dt(AttributeValueUtil.getDt(entity));
+    return consumer.id(deserializeId(entity, ID)).dt(AttributeValueUtil.getDt(entity));
   }
-
 }

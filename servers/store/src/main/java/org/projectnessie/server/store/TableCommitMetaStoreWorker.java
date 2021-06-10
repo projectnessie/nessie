@@ -15,9 +15,13 @@
  */
 package org.projectnessie.server.store;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.protobuf.ByteString;
+import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.protobuf.UnsafeByteOperations;
 import java.io.IOException;
 import java.util.stream.Collectors;
-
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
 import org.projectnessie.model.DeltaLakeTable;
@@ -38,16 +42,12 @@ import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.SerializerWithPayload;
 import org.projectnessie.versioned.StoreWorker;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.protobuf.ByteString;
-import com.google.protobuf.InvalidProtocolBufferException;
-import com.google.protobuf.UnsafeByteOperations;
-
-public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitMeta, Contents.Type> {
+public class TableCommitMetaStoreWorker
+    implements StoreWorker<Contents, CommitMeta, Contents.Type> {
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
-  private final SerializerWithPayload<Contents, Contents.Type> tableSerializer = new TableValueSerializer();
+  private final SerializerWithPayload<Contents, Contents.Type> tableSerializer =
+      new TableValueSerializer();
   private final Serializer<CommitMeta> metaSerializer = new MetadataSerializer();
 
   @Override
@@ -60,19 +60,24 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
     return metaSerializer;
   }
 
-  private static class TableValueSerializer implements SerializerWithPayload<Contents, Contents.Type> {
+  private static class TableValueSerializer
+      implements SerializerWithPayload<Contents, Contents.Type> {
     @Override
     public ByteString toBytes(Contents value) {
       ObjectTypes.Contents.Builder builder = ObjectTypes.Contents.newBuilder().setId(value.getId());
       if (value instanceof IcebergTable) {
         builder.setIcebergTable(
-            ObjectTypes.IcebergTable.newBuilder().setMetadataLocation(((IcebergTable) value).getMetadataLocation()));
+            ObjectTypes.IcebergTable.newBuilder()
+                .setMetadataLocation(((IcebergTable) value).getMetadataLocation()));
 
       } else if (value instanceof DeltaLakeTable) {
 
-        ObjectTypes.DeltaLakeTable.Builder table = ObjectTypes.DeltaLakeTable.newBuilder()
-            .addAllMetadataLocationHistory(((DeltaLakeTable) value).getMetadataLocationHistory())
-            .addAllCheckpointLocationHistory(((DeltaLakeTable) value).getCheckpointLocationHistory());
+        ObjectTypes.DeltaLakeTable.Builder table =
+            ObjectTypes.DeltaLakeTable.newBuilder()
+                .addAllMetadataLocationHistory(
+                    ((DeltaLakeTable) value).getMetadataLocationHistory())
+                .addAllCheckpointLocationHistory(
+                    ((DeltaLakeTable) value).getCheckpointLocationHistory());
         String lastCheckpoint = ((DeltaLakeTable) value).getLastCheckpoint();
         if (lastCheckpoint != null) {
           table.setLastCheckpoint(lastCheckpoint);
@@ -81,17 +86,26 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
 
       } else if (value instanceof HiveTable) {
         HiveTable ht = (HiveTable) value;
-        builder.setHiveTable(ObjectTypes.HiveTable.newBuilder()
-            .setTable(UnsafeByteOperations.unsafeWrap(ht.getTableDefinition())).addAllPartition(
-                ht.getPartitions().stream().map(UnsafeByteOperations::unsafeWrap).collect(Collectors.toList())));
+        builder.setHiveTable(
+            ObjectTypes.HiveTable.newBuilder()
+                .setTable(UnsafeByteOperations.unsafeWrap(ht.getTableDefinition()))
+                .addAllPartition(
+                    ht.getPartitions().stream()
+                        .map(UnsafeByteOperations::unsafeWrap)
+                        .collect(Collectors.toList())));
 
       } else if (value instanceof HiveDatabase) {
-        builder.setHiveDatabase(ObjectTypes.HiveDatabase.newBuilder()
-            .setDatabase(UnsafeByteOperations.unsafeWrap(((HiveDatabase) value).getDatabaseDefinition())));
+        builder.setHiveDatabase(
+            ObjectTypes.HiveDatabase.newBuilder()
+                .setDatabase(
+                    UnsafeByteOperations.unsafeWrap(
+                        ((HiveDatabase) value).getDatabaseDefinition())));
       } else if (value instanceof SqlView) {
         SqlView view = (SqlView) value;
-        builder.setSqlView(ObjectTypes.SqlView.newBuilder().setDialect(view.getDialect().name())
-            .setSqlText(view.getSqlText()));
+        builder.setSqlView(
+            ObjectTypes.SqlView.newBuilder()
+                .setDialect(view.getDialect().name())
+                .setSqlText(view.getSqlText()));
       } else {
         throw new IllegalArgumentException("Unknown type" + value);
       }
@@ -109,37 +123,51 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
       }
       switch (contents.getObjectTypeCase()) {
         case DELTA_LAKE_TABLE:
-          Builder builder = ImmutableDeltaLakeTable.builder().id(contents.getId())
-              .addAllMetadataLocationHistory(contents.getDeltaLakeTable().getMetadataLocationHistoryList())
-              .addAllCheckpointLocationHistory(contents.getDeltaLakeTable().getCheckpointLocationHistoryList());
+          Builder builder =
+              ImmutableDeltaLakeTable.builder()
+                  .id(contents.getId())
+                  .addAllMetadataLocationHistory(
+                      contents.getDeltaLakeTable().getMetadataLocationHistoryList())
+                  .addAllCheckpointLocationHistory(
+                      contents.getDeltaLakeTable().getCheckpointLocationHistoryList());
           if (contents.getDeltaLakeTable().getLastCheckpoint() != null) {
             builder.lastCheckpoint(contents.getDeltaLakeTable().getLastCheckpoint());
           }
           return builder.build();
 
         case HIVE_DATABASE:
-          return ImmutableHiveDatabase.builder().id(contents.getId())
-              .databaseDefinition(contents.getHiveDatabase().getDatabase().toByteArray()).build();
+          return ImmutableHiveDatabase.builder()
+              .id(contents.getId())
+              .databaseDefinition(contents.getHiveDatabase().getDatabase().toByteArray())
+              .build();
 
         case HIVE_TABLE:
-          return ImmutableHiveTable.builder().id(contents.getId())
-              .addAllPartitions(contents.getHiveTable().getPartitionList().stream().map(ByteString::toByteArray)
-                  .collect(Collectors.toList()))
-              .tableDefinition(contents.getHiveTable().getTable().toByteArray()).build();
+          return ImmutableHiveTable.builder()
+              .id(contents.getId())
+              .addAllPartitions(
+                  contents.getHiveTable().getPartitionList().stream()
+                      .map(ByteString::toByteArray)
+                      .collect(Collectors.toList()))
+              .tableDefinition(contents.getHiveTable().getTable().toByteArray())
+              .build();
 
         case ICEBERG_TABLE:
-          return ImmutableIcebergTable.builder().metadataLocation(contents.getIcebergTable().getMetadataLocation())
-              .id(contents.getId()).build();
+          return ImmutableIcebergTable.builder()
+              .metadataLocation(contents.getIcebergTable().getMetadataLocation())
+              .id(contents.getId())
+              .build();
 
         case SQL_VIEW:
           ObjectTypes.SqlView view = contents.getSqlView();
-          return ImmutableSqlView.builder().dialect(Dialect.valueOf(view.getDialect())).sqlText(view.getSqlText())
-              .id(contents.getId()).build();
+          return ImmutableSqlView.builder()
+              .dialect(Dialect.valueOf(view.getDialect()))
+              .sqlText(view.getSqlText())
+              .id(contents.getId())
+              .build();
 
         case OBJECTTYPE_NOT_SET:
         default:
           throw new IllegalArgumentException("Unknown type" + contents.getObjectTypeCase());
-
       }
     }
 
@@ -163,7 +191,8 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
     @Override
     public Contents.Type getType(Byte payload) {
       if (payload == null || payload > Contents.Type.values().length || payload < 0) {
-        throw new IllegalArgumentException(String.format("Cannot create type from payload. Payload %d does not exist", payload));
+        throw new IllegalArgumentException(
+            String.format("Cannot create type from payload. Payload %d does not exist", payload));
       }
       return Contents.Type.values()[payload];
     }
@@ -191,7 +220,5 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
             .build();
       }
     }
-
   }
-
 }

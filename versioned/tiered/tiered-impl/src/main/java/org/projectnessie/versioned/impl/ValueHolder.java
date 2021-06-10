@@ -18,7 +18,6 @@ package org.projectnessie.versioned.impl;
 import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.store.Id;
 
-
 class ValueHolder<V> {
 
   private final Serializer<V> serializer;

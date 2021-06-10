@@ -16,7 +16,6 @@
 package org.projectnessie.hms;
 
 import java.util.List;
-
 import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;
@@ -31,7 +30,9 @@ import org.projectnessie.model.HiveTable;
 
 abstract class Item {
   public static enum Type {
-    CATALOG, DATABASE, TABLE
+    CATALOG,
+    DATABASE,
+    TABLE
   }
 
   public abstract Type getType();
@@ -66,7 +67,7 @@ abstract class Item {
     } else if (c instanceof HiveDatabase) {
       return DatabaseW.fromContents(c);
     } else {
-      //TODO: support translation of Iceberg and Delta native tables.
+      // TODO: support translation of Iceberg and Delta native tables.
       throw new RuntimeException("Unable to convert to known value.");
     }
   }
@@ -89,5 +90,4 @@ abstract class Item {
       throw new RuntimeException(e);
     }
   }
-
 }

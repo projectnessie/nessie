@@ -15,12 +15,10 @@
  */
 package org.projectnessie.versioned.impl;
 
+import com.google.common.base.Objects;
 import java.util.stream.Stream;
-
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.tiered.L2;
-
-import com.google.common.base.Objects;
 
 class InternalL2 extends PersistentBase<L2> {
 
@@ -42,7 +40,6 @@ class InternalL2 extends PersistentBase<L2> {
     this(null, map, DT.now());
   }
 
-
   Id getId(int position) {
     return map.getId(position);
   }
@@ -53,14 +50,16 @@ class InternalL2 extends PersistentBase<L2> {
 
   @Override
   Id generateId() {
-    return Id.build(h -> {
-      h.putLong(HASH_SEED);
-      map.forEach(id -> h.putBytes(id.getValue().asReadOnlyByteBuffer()));
-    });
+    return Id.build(
+        h -> {
+          h.putLong(HASH_SEED);
+          map.forEach(id -> h.putBytes(id.getValue().asReadOnlyByteBuffer()));
+        });
   }
 
   /**
    * return the number of positions that are non-empty.
+   *
    * @return number of non-empty positions.
    */
   int size() {
@@ -92,14 +91,12 @@ class InternalL2 extends PersistentBase<L2> {
 
   @Override
   L2 applyToConsumer(L2 consumer) {
-    return super.applyToConsumer(consumer)
-        .children(this.map.stream());
+    return super.applyToConsumer(consumer).children(this.map.stream());
   }
 
-  /**
-   * implements {@link L2} to build an {@link InternalL2} object.
-   */
-  // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
+  /** implements {@link L2} to build an {@link InternalL2} object. */
+  // Needs to be a package private class, otherwise class-initialization of ValueType fails with
+  // j.l.IllegalAccessError
   static final class Builder extends EntityBuilder<InternalL2, L2> implements L2 {
 
     private Stream<Id> children;
@@ -120,10 +117,7 @@ class InternalL2 extends PersistentBase<L2> {
       // null-id is allowed (will be generated)
       checkSet(children, "children");
 
-      return new InternalL2(
-          id,
-          IdMap.of(children, SIZE),
-          dt);
+      return new InternalL2(id, IdMap.of(children, SIZE), dt);
     }
   }
 

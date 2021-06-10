@@ -18,13 +18,10 @@ package org.projectnessie.client.auth;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Objects;
-
 import org.projectnessie.client.http.RequestContext;
 import org.projectnessie.client.http.RequestFilter;
 
-/**
- * Filter to add auth header to all outgoing requests.
- */
+/** Filter to add auth header to all outgoing requests. */
 public class BasicAuthFilter implements RequestFilter {
 
   private final String authHeaderValue;
@@ -48,5 +45,4 @@ public class BasicAuthFilter implements RequestFilter {
   public void filter(RequestContext context) {
     context.putHeader("Authorization", authHeaderValue);
   }
-
 }

@@ -19,23 +19,22 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
-import org.projectnessie.model.ContentsKey;
 
 class TestContentsKeyEncoding {
 
   @Test
   void singleByte() {
-    assertRoundTrip("a.b","c.d");
+    assertRoundTrip("a.b", "c.d");
   }
 
   @Test
   void strangeCharacters() {
-    assertRoundTrip("/%","#&&");
+    assertRoundTrip("/%", "#&&");
   }
 
   @Test
   void doubleByte() {
-    assertRoundTrip("/%国","国.国");
+    assertRoundTrip("/%国", "国.国");
   }
 
   @Test

@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.projectnessie.versioned.impl.condition;
 
 import org.immutables.value.Value.Immutable;
@@ -23,8 +22,9 @@ import org.junit.jupiter.api.TestInstance;
 import org.projectnessie.versioned.store.Entity;
 
 /**
- * Test basic functionality and show usage of the UpdateClauseVisitor as pertains to UpdateExpression and the UpdateClause
- * hierarchy (ValueOfEntity, ExpressionFunction, ExpressionPath).
+ * Test basic functionality and show usage of the UpdateClauseVisitor as pertains to
+ * UpdateExpression and the UpdateClause hierarchy (ValueOfEntity, ExpressionFunction,
+ * ExpressionPath).
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestUpdateClauseVisitor {
@@ -59,12 +59,13 @@ public class TestUpdateClauseVisitor {
               .build();
         case FUNCTION:
           return ImmutableSetCommand.builder()
-            .operator(UpdateCommand.Operator.SET)
-            .path(clause.getPath())
-            .entity(handleFunction(clause.getValue().getFunction()))
-            .build();
+              .operator(UpdateCommand.Operator.SET)
+              .path(clause.getPath())
+              .entity(handleFunction(clause.getValue().getFunction()))
+              .build();
         default:
-          throw new UnsupportedOperationException(String.format("Unsupported SetClause type: %s", clause.getValue().getType().name()));
+          throw new UnsupportedOperationException(
+              String.format("Unsupported SetClause type: %s", clause.getValue().getType().name()));
       }
     }
 
@@ -72,7 +73,8 @@ public class TestUpdateClauseVisitor {
       if (ExpressionFunction.FunctionName.LIST_APPEND == expressionFunction.getName()) {
         return expressionFunction.getArguments().get(1).getValue();
       }
-      throw new UnsupportedOperationException(String.format("Unsupported Set function: %s", expressionFunction.getName()));
+      throw new UnsupportedOperationException(
+          String.format("Unsupported Set function: %s", expressionFunction.getName()));
     }
   }
 
@@ -83,30 +85,29 @@ public class TestUpdateClauseVisitor {
 
   @Test
   void testSetClauseEquals() {
-    final UpdateCommand command = testClause(SetClause.equals(PATH, ENTITY_STR), UpdateCommand.Operator.SET, PATH);
-    Assertions.assertEquals(ENTITY_STR, ((UpdateCommand.SetCommand)command).getEntity());
+    final UpdateCommand command =
+        testClause(SetClause.equals(PATH, ENTITY_STR), UpdateCommand.Operator.SET, PATH);
+    Assertions.assertEquals(ENTITY_STR, ((UpdateCommand.SetCommand) command).getEntity());
   }
 
   @Test
   void testSetClauseAppendToList() {
-    final UpdateCommand command = testClause(SetClause.appendToList(PATH, ENTITY_STR), UpdateCommand.Operator.SET, PATH);
-    Assertions.assertEquals(ENTITY_STR, ((UpdateCommand.SetCommand)command).getEntity());
+    final UpdateCommand command =
+        testClause(SetClause.appendToList(PATH, ENTITY_STR), UpdateCommand.Operator.SET, PATH);
+    Assertions.assertEquals(ENTITY_STR, ((UpdateCommand.SetCommand) command).getEntity());
   }
 
-  UpdateCommand testClause(UpdateClause clause, UpdateCommand.Operator operator, ExpressionPath path) {
+  UpdateCommand testClause(
+      UpdateClause clause, UpdateCommand.Operator operator, ExpressionPath path) {
     final UpdateCommand command = clause.accept(VISITOR);
     Assertions.assertEquals(operator, command.getOperator());
     Assertions.assertEquals(path, command.getPath());
     return command;
   }
 
-  /**
-   * Sample interface or class into which UpdateClauses are converted.
-   */
+  /** Sample interface or class into which UpdateClauses are converted. */
   static interface UpdateCommand {
-    /**
-     * An enum encapsulating the type of update.
-     */
+    /** An enum encapsulating the type of update. */
     enum Operator {
       // An operator to remove some part or all of an entity.
       REMOVE,
@@ -119,16 +120,11 @@ public class TestUpdateClauseVisitor {
 
     ExpressionPath getPath();
 
-    /**
-     * Sample of a specific type of update command into which UpdateClauses are converted.
-     */
+    /** Sample of a specific type of update command into which UpdateClauses are converted. */
     @Immutable
-    abstract class RemoveCommand implements UpdateCommand {
-    }
+    abstract class RemoveCommand implements UpdateCommand {}
 
-    /**
-     * Sample of a specific type of update command into which UpdateClauses are converted.
-     */
+    /** Sample of a specific type of update command into which UpdateClauses are converted. */
     @Immutable
     abstract class SetCommand implements UpdateCommand {
 

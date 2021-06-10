@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.spark.SparkConf;
 import org.apache.spark.sql.Dataset;
@@ -59,10 +58,7 @@ public abstract class AbstractSparkTest {
         .set("spark.hadoop." + CONF_NESSIE_REF, branch)
         .set("spark.hadoop." + CONF_NESSIE_AUTH_TYPE, authType)
         .set(SQLConf.PARTITION_OVERWRITE_MODE().key(), "dynamic");
-    spark = SparkSession.builder()
-                        .master("local[2]")
-                        .config(conf)
-                        .getOrCreate();
+    spark = SparkSession.builder().master("local[2]").config(conf).getOrCreate();
     spark.sparkContext().setLogLevel("WARN");
 
     nessieClient = NessieClient.builder().withUri(url).build();
@@ -76,25 +72,31 @@ public abstract class AbstractSparkTest {
     }
   }
 
-
   protected static List<Object[]> transform(Dataset<Row> table) {
 
     return table.collectAsList().stream()
-                .map(row -> IntStream.range(0, row.size())
-                                     .mapToObj(pos -> row.isNullAt(pos) ? null : row.get(pos))
-                                     .toArray(Object[]::new)
-                ).collect(Collectors.toList());
+        .map(
+            row ->
+                IntStream.range(0, row.size())
+                    .mapToObj(pos -> row.isNullAt(pos) ? null : row.get(pos))
+                    .toArray(Object[]::new))
+        .collect(Collectors.toList());
   }
 
-  protected static void assertEquals(String context, List<Object[]> expectedRows, List<Object[]> actualRows) {
-    Assertions.assertEquals(expectedRows.size(), actualRows.size(), context + ": number of results should match");
+  protected static void assertEquals(
+      String context, List<Object[]> expectedRows, List<Object[]> actualRows) {
+    Assertions.assertEquals(
+        expectedRows.size(), actualRows.size(), context + ": number of results should match");
     for (int row = 0; row < expectedRows.size(); row += 1) {
       Object[] expected = expectedRows.get(row);
       Object[] actual = actualRows.get(row);
       Assertions.assertEquals(expected.length, actual.length, "Number of columns should match");
       for (int col = 0; col < actualRows.get(row).length; col += 1) {
         if (expected[col] != ANY) {
-          Assertions.assertEquals(expected[col], actual[col], context + ": row " + row + " col " + col + " contents should match");
+          Assertions.assertEquals(
+              expected[col],
+              actual[col],
+              context + ": row " + row + " col " + col + " contents should match");
         }
       }
     }

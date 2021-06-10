@@ -15,6 +15,9 @@
  */
 package org.projectnessie.client.http;
 
+import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -29,19 +32,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
-
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
-
 import org.projectnessie.client.http.HttpClient.Method;
 
-import com.fasterxml.jackson.core.JsonGenerationException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-/**
- * Class to hold an ongoing HTTP request and its parameters/filters.
- */
+/** Class to hold an ongoing HTTP request and its parameters/filters. */
 public class HttpRequest {
 
   private final UriBuilder uriBuilder;
@@ -53,8 +48,15 @@ public class HttpRequest {
   private final List<ResponseFilter> responseFilters;
   private SSLContext sslContext;
 
-  HttpRequest(URI baseUri, String accept, ObjectMapper mapper, List<RequestFilter> requestFilters,
-              List<ResponseFilter> responseFilters, SSLContext context, int readTimeoutMillis, int connectionTimeoutMillis) {
+  HttpRequest(
+      URI baseUri,
+      String accept,
+      ObjectMapper mapper,
+      List<RequestFilter> requestFilters,
+      List<ResponseFilter> responseFilters,
+      SSLContext context,
+      int readTimeoutMillis,
+      int connectionTimeoutMillis) {
     this.uriBuilder = new UriBuilder(baseUri);
     this.mapper = mapper;
     this.readTimeoutMillis = readTimeoutMillis;
@@ -100,10 +102,9 @@ public class HttpRequest {
       ResponseContext responseContext = new ResponseContextImpl(con);
       try {
         requestFilters.forEach(a -> a.filter(context));
-        headers.entrySet()
-               .stream()
-               .flatMap(e -> e.getValue().stream().map(x -> new SimpleImmutableEntry<>(e.getKey(), x)))
-               .forEach(x -> con.setRequestProperty(x.getKey(), x.getValue()));
+        headers.entrySet().stream()
+            .flatMap(e -> e.getValue().stream().map(x -> new SimpleImmutableEntry<>(e.getKey(), x)))
+            .forEach(x -> con.setRequestProperty(x.getKey(), x.getValue()));
         con.setRequestMethod(method.name());
         if (method.equals(Method.PUT) || method.equals(Method.POST)) {
           // Need to set the Content-Type even if body==null, otherwise the server responds with
@@ -139,14 +140,22 @@ public class HttpRequest {
 
       return new HttpResponse(responseContext, mapper);
     } catch (ProtocolException e) {
-      throw new HttpClientException(String.format("Cannot perform request. Invalid protocol %s", method), e);
+      throw new HttpClientException(
+          String.format("Cannot perform request. Invalid protocol %s", method), e);
     } catch (JsonGenerationException | JsonMappingException e) {
-      throw new HttpClientException(String.format("Cannot serialize body of request. Unable to serialize %s", body.getClass()), e);
+      throw new HttpClientException(
+          String.format(
+              "Cannot serialize body of request. Unable to serialize %s", body.getClass()),
+          e);
     } catch (MalformedURLException e) {
-      throw new HttpClientException(String.format("Cannot perform request. Malformed Url for %s", uriBuilder.build()), e);
+      throw new HttpClientException(
+          String.format("Cannot perform request. Malformed Url for %s", uriBuilder.build()), e);
     } catch (SocketTimeoutException e) {
       throw new HttpClientReadTimeoutException(
-          String.format("Cannot finish request. Timeout while waiting for response with a timeout of %ds", readTimeoutMillis / 1000), e);
+          String.format(
+              "Cannot finish request. Timeout while waiting for response with a timeout of %ds",
+              readTimeoutMillis / 1000),
+          e);
     } catch (IOException e) {
       throw new HttpClientException(e);
     }

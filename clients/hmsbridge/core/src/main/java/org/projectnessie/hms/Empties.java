@@ -16,7 +16,6 @@
 package org.projectnessie.hms;
 
 import java.util.Collections;
-
 import org.apache.hadoop.hive.metastore.api.Catalog;
 import org.apache.hadoop.hive.metastore.api.ColumnStatistics;
 import org.apache.hadoop.hive.metastore.api.CurrentNotificationEventId;
@@ -26,23 +25,17 @@ import org.apache.hadoop.hive.metastore.api.PrincipalPrivilegeSet;
 
 public class Empties {
 
-  /**
-   * Default privs.
-   */
+  /** Default privs. */
   public static PrincipalPrivilegeSet privSet() {
     return new PrincipalPrivilegeSet();
   }
 
-  /**
-   * Default col stats.
-   */
+  /** Default col stats. */
   public static ColumnStatistics colStats() {
     return new ColumnStatistics();
   }
 
-  /**
-   * Default catalog.
-   */
+  /** Default catalog. */
   public static Catalog defaultCatalog() {
     Catalog c = new Catalog();
     c.setName("hive");
@@ -50,32 +43,24 @@ public class Empties {
     return c;
   }
 
-  /**
-   * Default event count.
-   */
+  /** Default event count. */
   public static NotificationEventsCountResponse eventCount() {
     NotificationEventsCountResponse n = new NotificationEventsCountResponse();
     n.setEventsCount(0);
     return n;
   }
 
-  /**
-   * Default events list.
-   */
+  /** Default events list. */
   public static NotificationEventResponse event() {
     NotificationEventResponse n = new NotificationEventResponse();
     n.setEvents(Collections.emptyList());
     return n;
   }
 
-  /**
-   * Default event id.
-   */
+  /** Default event id. */
   public static CurrentNotificationEventId eventId() {
     CurrentNotificationEventId n = new CurrentNotificationEventId();
     n.setEventId(0);
     return n;
   }
-
-
 }

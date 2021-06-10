@@ -15,16 +15,14 @@
  */
 package org.projectnessie.hms;
 
+import com.google.common.collect.ImmutableList;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.projectnessie.model.Contents;
 import org.projectnessie.model.HiveTable;
 import org.projectnessie.model.ImmutableHiveTable;
-
-import com.google.common.collect.ImmutableList;
 
 class TableW extends Item {
 
@@ -61,19 +59,19 @@ class TableW extends Item {
     HiveTable ht = (HiveTable) c;
     return Item.wrap(
         fromBytes(new Table(), ht.getTableDefinition()),
-        ht.getPartitions().stream().map(p -> fromBytes(new Partition(), p)).collect(Collectors.toList()),
-        c.getId()
-        );
+        ht.getPartitions().stream()
+            .map(p -> fromBytes(new Partition(), p))
+            .collect(Collectors.toList()),
+        c.getId());
   }
 
   @Override
   public Contents toContents() {
-    return ImmutableHiveTable.builder().id(id).tableDefinition(toBytes(table))
-        .addAllPartitions(getPartitions()
-            .stream()
-            .map(Item::toBytes)
-            .collect(Collectors.toList()))
-            .build();
+    return ImmutableHiveTable.builder()
+        .id(id)
+        .tableDefinition(toBytes(table))
+        .addAllPartitions(getPartitions().stream().map(Item::toBytes).collect(Collectors.toList()))
+        .build();
   }
 
   @Override

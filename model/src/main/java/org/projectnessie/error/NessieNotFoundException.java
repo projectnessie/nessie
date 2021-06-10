@@ -28,5 +28,4 @@ public class NessieNotFoundException extends BaseNessieClientServerException {
   public NessieNotFoundException(NessieError error) {
     super(error);
   }
-
 }

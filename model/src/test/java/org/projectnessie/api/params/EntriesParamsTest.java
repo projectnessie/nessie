@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.projectnessie.api.params;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -21,7 +20,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.Arrays;
 import java.util.List;
-
 import org.junit.jupiter.api.Test;
 import org.projectnessie.model.Contents.Type;
 
@@ -39,13 +37,18 @@ public class EntriesParamsTest {
     Integer maxRecords = 23;
     String pageToken = "aabbcc";
     String namespace = "a.b.c.d";
-    List<String> types = Arrays.asList(Type.UNKNOWN.toString(), Type.ICEBERG_TABLE.toString(), Type.DELTA_LAKE_TABLE.toString());
-    EntriesParams params = EntriesParams.builder()
-        .maxRecords(maxRecords)
-        .pageToken(pageToken)
-        .namespace(namespace)
-        .types(types)
-        .build();
+    List<String> types =
+        Arrays.asList(
+            Type.UNKNOWN.toString(),
+            Type.ICEBERG_TABLE.toString(),
+            Type.DELTA_LAKE_TABLE.toString());
+    EntriesParams params =
+        EntriesParams.builder()
+            .maxRecords(maxRecords)
+            .pageToken(pageToken)
+            .namespace(namespace)
+            .types(types)
+            .build();
 
     assertThat(params.getPageToken()).isEqualTo(pageToken);
     assertThat(params.getMaxRecords()).isEqualTo(maxRecords);

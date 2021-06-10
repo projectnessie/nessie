@@ -19,9 +19,7 @@ import static java.lang.String.format;
 
 import javax.annotation.Nonnull;
 
-/**
- * Exception thrown when a reference already exists in the store.
- */
+/** Exception thrown when a reference already exists in the store. */
 public class ReferenceAlreadyExistsException extends VersionStoreException {
   private static final long serialVersionUID = -6125198004202778224L;
 
@@ -30,8 +28,8 @@ public class ReferenceAlreadyExistsException extends VersionStoreException {
   }
 
   /**
-   * Create a {@code ReferenceConflictException} instance with an accurate message
-   * based on the provided named referenced and the compared hashes.
+   * Create a {@code ReferenceConflictException} instance with an accurate message based on the
+   * provided named referenced and the compared hashes.
    *
    * @param ref the named reference
    * @return a {@code ReferenceNotFoundException} instance
@@ -47,6 +45,7 @@ public class ReferenceAlreadyExistsException extends VersionStoreException {
     } else {
       refType = "named ref";
     }
-    return new ReferenceAlreadyExistsException(format("%s '%s' already exists", refType, ref.getName()));
+    return new ReferenceAlreadyExistsException(
+        format("%s '%s' already exists", refType, ref.getName()));
   }
 }

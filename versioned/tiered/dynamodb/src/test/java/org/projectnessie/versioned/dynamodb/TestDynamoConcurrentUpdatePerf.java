@@ -15,6 +15,8 @@
  */
 package org.projectnessie.versioned.dynamodb;
 
+import com.google.common.base.Stopwatch;
+import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -25,13 +27,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-
-import com.google.common.base.Stopwatch;
-import com.google.common.collect.ImmutableMap;
-
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
@@ -44,14 +41,15 @@ class TestDynamoConcurrentUpdatePerf {
   private static final String TABLE = "jacques-perf";
   private static final int COUNT = 150;
   private static final int UPDATES = 30;
-  private static final AttributeValue KEY = AttributeValue.builder().b(SdkBytes.fromByteArray(new byte[10])).build();
+  private static final AttributeValue KEY =
+      AttributeValue.builder().b(SdkBytes.fromByteArray(new byte[10])).build();
 
   private final AtomicLong failures = new AtomicLong(0);
 
   @Test
   public void test1() throws InterruptedException, ExecutionException {
     DynamoDbAsyncClient client = DynamoDbAsyncClient.create();
-    Map<String,AttributeValue> itemValues = new HashMap<String,AttributeValue>();
+    Map<String, AttributeValue> itemValues = new HashMap<String, AttributeValue>();
 
     // Add all content to the table
     itemValues.put("id", KEY);
@@ -63,7 +61,6 @@ class TestDynamoConcurrentUpdatePerf {
     }
     PutItemRequest put = PutItemRequest.builder().tableName(TABLE).item(itemValues).build();
 
-
     client.putItem(put).get();
 
     ExecutorService service = Executors.newCachedThreadPool();
@@ -71,8 +68,10 @@ class TestDynamoConcurrentUpdatePerf {
     threads.forEach(t -> service.submit(t));
 
     latch.await();
-    System.out.println(String.format("Total Completed %d updates, %d failed. Took %dms.",
-        UPDATES * COUNT, failures.get(), sw.elapsed(TimeUnit.MILLISECONDS)));
+    System.out.println(
+        String.format(
+            "Total Completed %d updates, %d failed. Took %dms.",
+            UPDATES * COUNT, failures.get(), sw.elapsed(TimeUnit.MILLISECONDS)));
   }
 
   private class Worker implements Runnable {
@@ -82,7 +81,8 @@ class TestDynamoConcurrentUpdatePerf {
     private final int attribute;
     private int failCount;
 
-    public Worker(DynamoDbAsyncClient client, CountDownLatch latch, int currentValue, int attribute) {
+    public Worker(
+        DynamoDbAsyncClient client, CountDownLatch latch, int currentValue, int attribute) {
       super();
       this.client = client;
       this.latch = latch;
@@ -96,16 +96,24 @@ class TestDynamoConcurrentUpdatePerf {
       Stopwatch sw = Stopwatch.createStarted();
       for (int i = 0; i < UPDATES; i++) {
         try {
-          UpdateItemRequest update = UpdateItemRequest.builder()
-              .key(ImmutableMap.<String, AttributeValue>of("id", KEY))
-              .tableName(TABLE)
-              .conditionExpression(String.format("f%d = :current", attribute))
-              .updateExpression(String.format("SET f%d = :new", attribute))
-              .expressionAttributeValues(ImmutableMap.<String, AttributeValue>builder()
-                  .put(":new", AttributeValue.builder().n(Integer.toString(currentValue + 1)).build())
-                  .put(":current", AttributeValue.builder().n(Integer.toString(currentValue)).build())
-                  .build())
-              .build();
+          UpdateItemRequest update =
+              UpdateItemRequest.builder()
+                  .key(ImmutableMap.<String, AttributeValue>of("id", KEY))
+                  .tableName(TABLE)
+                  .conditionExpression(String.format("f%d = :current", attribute))
+                  .updateExpression(String.format("SET f%d = :new", attribute))
+                  .expressionAttributeValues(
+                      ImmutableMap.<String, AttributeValue>builder()
+                          .put(
+                              ":new",
+                              AttributeValue.builder()
+                                  .n(Integer.toString(currentValue + 1))
+                                  .build())
+                          .put(
+                              ":current",
+                              AttributeValue.builder().n(Integer.toString(currentValue)).build())
+                          .build())
+                  .build();
           client.updateItem(update).get();
           currentValue++;
         } catch (Exception ex) {
@@ -114,11 +122,11 @@ class TestDynamoConcurrentUpdatePerf {
           failures.incrementAndGet();
         }
       }
-      System.out.println(String.format("Completed %d updates, %d failed. Took %dms.",
-          UPDATES, failCount, sw.elapsed(TimeUnit.MILLISECONDS)));
+      System.out.println(
+          String.format(
+              "Completed %d updates, %d failed. Took %dms.",
+              UPDATES, failCount, sw.elapsed(TimeUnit.MILLISECONDS)));
       latch.countDown();
     }
-
-
   }
 }

@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import org.projectnessie.versioned.impl.KeyList.IncrementalList;
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.store.Store;
@@ -34,7 +33,13 @@ class InternalL1 extends PersistentBase<L1> {
 
   static final int SIZE = 43;
   static InternalL1 EMPTY =
-      new InternalL1(Id.EMPTY, new IdMap(SIZE, InternalL2.EMPTY_ID), null, KeyList.EMPTY, ParentList.EMPTY, DT.UNKNOWN);
+      new InternalL1(
+          Id.EMPTY,
+          new IdMap(SIZE, InternalL2.EMPTY_ID),
+          null,
+          KeyList.EMPTY,
+          ParentList.EMPTY,
+          DT.UNKNOWN);
   static Id EMPTY_ID = EMPTY.getId();
 
   private final IdMap tree;
@@ -43,7 +48,8 @@ class InternalL1 extends PersistentBase<L1> {
   private final KeyList keyList;
   private final ParentList parentList;
 
-  private InternalL1(Id commitId, IdMap tree, Id id, KeyList keyList, ParentList parentList, Long dt) {
+  private InternalL1(
+      Id commitId, IdMap tree, Id id, KeyList keyList, ParentList parentList, Long dt) {
     super(id, dt);
     this.metadataId = commitId;
     this.parentList = parentList;
@@ -65,8 +71,10 @@ class InternalL1 extends PersistentBase<L1> {
   }
 
   InternalL1 withCheckpointAsNecessary(Store store, Map<Id, InternalL1> unsavedL1s) {
-    return keyList.createCheckpointIfNeeded(this, store, unsavedL1s)
-        .map(keylist -> new InternalL1(metadataId, tree, null, keylist, parentList, DT.now())).orElse(this);
+    return keyList
+        .createCheckpointIfNeeded(this, store, unsavedL1s)
+        .map(keylist -> new InternalL1(metadataId, tree, null, keylist, parentList, DT.now()))
+        .orElse(this);
   }
 
   Id getId(int position) {
@@ -86,17 +94,19 @@ class InternalL1 extends PersistentBase<L1> {
   }
 
   InternalL1 set(int position, Id l2Id) {
-    return new InternalL1(metadataId, tree.withId(position, l2Id), null, keyList, parentList, DT.now());
+    return new InternalL1(
+        metadataId, tree.withId(position, l2Id), null, keyList, parentList, DT.now());
   }
 
   @Override
   Id generateId() {
-    return Id.build(h -> {
-      h.putLong(HASH_SEED)
-        .putBytes(metadataId.getValue().asReadOnlyByteBuffer())
-          .putBytes(parentList.getParent().getValue().asReadOnlyByteBuffer());
-      tree.forEach(id -> h.putBytes(id.getValue().asReadOnlyByteBuffer()));
-    });
+    return Id.build(
+        h -> {
+          h.putLong(HASH_SEED)
+              .putBytes(metadataId.getValue().asReadOnlyByteBuffer())
+              .putBytes(parentList.getParent().getValue().asReadOnlyByteBuffer());
+          tree.forEach(id -> h.putBytes(id.getValue().asReadOnlyByteBuffer()));
+        });
   }
 
   Stream<InternalKeyWithPayload> getKeys(Store store) {
@@ -117,6 +127,7 @@ class InternalL1 extends PersistentBase<L1> {
 
   /**
    * return the number of positions that are non-empty.
+   *
    * @return number of non-empty positions.
    */
   int size() {
@@ -163,16 +174,16 @@ class InternalL1 extends PersistentBase<L1> {
       consumer.completeKeyList(keyList.getFragments().stream());
     } else {
       IncrementalList list = (IncrementalList) keyList;
-      consumer.incrementalKeyList(list.getPreviousCheckpoint(), list.getDistanceFromCheckpointCommits());
+      consumer.incrementalKeyList(
+          list.getPreviousCheckpoint(), list.getDistanceFromCheckpointCommits());
     }
 
     return consumer;
   }
 
-  /**
-   * Implements {@link L1} to build an {@link InternalL1} object.
-   */
-  // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
+  /** Implements {@link L1} to build an {@link InternalL1} object. */
+  // Needs to be a package private class, otherwise class-initialization of ValueType fails with
+  // j.l.IllegalAccessError
   static final class Builder extends EntityBuilder<InternalL1, L1> implements L1 {
 
     private Id metadataId;
@@ -210,8 +221,7 @@ class InternalL1 extends PersistentBase<L1> {
 
     @Override
     public L1 keyMutations(Stream<Mutation> keyMutations) {
-      keyMutations.map(InternalMutation::fromMutation)
-          .forEach(keyChanges::add);
+      keyMutations.map(InternalMutation::fromMutation).forEach(keyChanges::add);
       return this;
     }
 
@@ -219,7 +229,8 @@ class InternalL1 extends PersistentBase<L1> {
     public Builder incrementalKeyList(Id checkpointId, int distanceFromCheckpoint) {
       checkCalled(this.checkpointId, "incrementalKeyList");
       if (this.fragmentIds != null) {
-        throw new UnsupportedOperationException("Cannot call incrementalKeyList after completeKeyList.");
+        throw new UnsupportedOperationException(
+            "Cannot call incrementalKeyList after completeKeyList.");
       }
       this.checkpointId = checkpointId;
       this.distanceFromCheckpoint = distanceFromCheckpoint;
@@ -230,7 +241,8 @@ class InternalL1 extends PersistentBase<L1> {
     public Builder completeKeyList(Stream<Id> fragmentIds) {
       checkCalled(this.fragmentIds, "completeKeyList");
       if (this.checkpointId != null) {
-        throw new UnsupportedOperationException("Cannot call completeKeyList after incrementalKeyList.");
+        throw new UnsupportedOperationException(
+            "Cannot call completeKeyList after incrementalKeyList.");
       }
       this.fragmentIds = fragmentIds;
       return this;
@@ -257,12 +269,11 @@ class InternalL1 extends PersistentBase<L1> {
         return KeyList.incremental(checkpointId, keyChanges, distanceFromCheckpoint);
       }
       if (fragmentIds != null) {
-        return new KeyList.CompleteList(
-            fragmentIds.collect(Collectors.toList()),
-            keyChanges);
+        return new KeyList.CompleteList(fragmentIds.collect(Collectors.toList()), keyChanges);
       }
       // todo what if its neither? Fail
-      throw new IllegalStateException("Neither a checkpoint nor a incremental key list were found.");
+      throw new IllegalStateException(
+          "Neither a checkpoint nor a incremental key list were found.");
     }
   }
 
