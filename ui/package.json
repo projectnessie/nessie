@@ -11,7 +11,7 @@
     "@testing-library/jest-dom": "^5.13.0",
     "@testing-library/react": "^11.2.7",
     "@testing-library/user-event": "^13.1.9",
-    "@types/bootstrap": "^5.0.15",
+    "@types/bootstrap": "^5.0.16",
     "@types/history": "^4.7.8",
     "@types/http-proxy-middleware": "^1.0.0",
     "@types/material-ui": "^0.21.8",
