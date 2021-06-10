@@ -17,9 +17,7 @@ package org.projectnessie.versioned.tiered;
 
 /**
  * Consumer for commit-metadata.
- * <p>
- * Implementations must return a shared state ({@code this}) from its method.
- * </p>
+ *
+ * <p>Implementations must return a shared state ({@code this}) from its method.
  */
-public interface CommitMetadata extends BaseWrappedValue<CommitMetadata> {
-}
+public interface CommitMetadata extends BaseWrappedValue<CommitMetadata> {}

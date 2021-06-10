@@ -15,26 +15,22 @@
  */
 package org.projectnessie.versioned.gc;
 
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-
-import org.projectnessie.versioned.Serializer;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.ByteString;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import org.projectnessie.versioned.Serializer;
 
 public final class GcTestUtils {
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
-  private GcTestUtils() {
-
-  }
+  private GcTestUtils() {}
 
   public static class JsonSerializer<T> implements Serializer<T>, Serializable {
 
@@ -63,7 +59,6 @@ public final class GcTestUtils {
         throw new RuntimeException(e);
       }
     }
-
   }
 
   // annoying games w/ Java generics.
@@ -81,10 +76,6 @@ public final class GcTestUtils {
     }
   }
 
-
-
-
-
   public static class DummyAsset extends AssetKey {
 
     private int id;
@@ -94,9 +85,7 @@ public final class GcTestUtils {
       this.id = id;
     }
 
-    public DummyAsset() {
-    }
-
+    public DummyAsset() {}
 
     public int getId() {
       return id;
@@ -119,14 +108,12 @@ public final class GcTestUtils {
 
     @Override
     public boolean equals(Object other) {
-      return other != null && other instanceof DummyAsset && ((DummyAsset)other).id == id;
+      return other != null && other instanceof DummyAsset && ((DummyAsset) other).id == id;
     }
 
     @Override
     public int hashCode() {
       return Integer.hashCode(id);
     }
-
   }
-
 }

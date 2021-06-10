@@ -17,7 +17,6 @@ package org.projectnessie.versioned.jgit;
 
 import java.io.File;
 import java.io.IOException;
-
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,8 +24,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 public class ITJGitOnDiskVersionStore extends AbstractITJGitVersionStore {
 
-  @TempDir
-  File jgitDir;
+  @TempDir File jgitDir;
 
   @BeforeEach
   void setUp() throws IOException {
@@ -37,5 +35,4 @@ public class ITJGitOnDiskVersionStore extends AbstractITJGitVersionStore {
     }
     store = new JGitVersionStore<>(repository, WORKER);
   }
-
 }

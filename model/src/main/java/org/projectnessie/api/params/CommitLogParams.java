@@ -13,9 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.projectnessie.api.params;
-
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -23,52 +21,67 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.StringJoiner;
-
 import javax.ws.rs.QueryParam;
-
 import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 
 /**
- * The purpose of this class is to include optional parameters that can be passed to
- * {@link org.projectnessie.api.TreeApi#getCommitLog(String, CommitLogParams)}.
+ * The purpose of this class is to include optional parameters that can be passed to {@link
+ * org.projectnessie.api.TreeApi#getCommitLog(String, CommitLogParams)}.
  *
- * <p>For easier usage of this class, there is {@link CommitLogParams#builder()}, which allows configuring/setting the different parameters.
+ * <p>For easier usage of this class, there is {@link CommitLogParams#builder()}, which allows
+ * configuring/setting the different parameters.
  */
 public class CommitLogParams {
 
-  @Parameter(description = "maximum number of commit-log entries to return, just a hint for the server")
+  @Parameter(
+      description = "maximum number of commit-log entries to return, just a hint for the server")
   @QueryParam("max")
   private Integer maxRecords;
 
-  @Parameter(description = "pagination continuation token, as returned in the previous LogResponse.token")
+  @Parameter(
+      description = "pagination continuation token, as returned in the previous LogResponse.token")
   @QueryParam("pageToken")
   private String pageToken;
 
-  @Parameter(description = "List of authors to filter by. The author is the original committer. "
-      + "No filtering by author will happen if this is set to null/empty")
+  @Parameter(
+      description =
+          "List of authors to filter by. The author is the original committer. "
+              + "No filtering by author will happen if this is set to null/empty")
   @QueryParam("authors")
   private List<String> authors;
 
-  @Parameter(description = "List of committers to filter by. This is the logged in user/account who performed the commit. "
-      + "No filtering by committer will happen if this is set to null/empty")
+  @Parameter(
+      description =
+          "List of committers to filter by. This is the logged in user/account who performed the commit. "
+              + "No filtering by committer will happen if this is set to null/empty")
   @QueryParam("committers")
   private List<String> committers;
 
-  @Parameter(description = "Only include commits newer than the specified date in ISO-8601 format. "
-      + "No filtering will happen if this is set to null", examples = {@ExampleObject(ref = "javaInstant")})
+  @Parameter(
+      description =
+          "Only include commits newer than the specified date in ISO-8601 format. "
+              + "No filtering will happen if this is set to null",
+      examples = {@ExampleObject(ref = "javaInstant")})
   @QueryParam("after")
   private Instant after;
 
-  @Parameter(description = "Only include commits older than the specified date in ISO-8601 format. "
-      + "No filtering will happen if this is set to null", examples = {@ExampleObject(ref = "javaInstant")})
+  @Parameter(
+      description =
+          "Only include commits older than the specified date in ISO-8601 format. "
+              + "No filtering will happen if this is set to null",
+      examples = {@ExampleObject(ref = "javaInstant")})
   @QueryParam("before")
   private Instant before;
 
-  public CommitLogParams() {
-  }
+  public CommitLogParams() {}
 
-  private CommitLogParams(Integer maxRecords, String pageToken, List<String> authors, List<String> committers, Instant after,
+  private CommitLogParams(
+      Integer maxRecords,
+      String pageToken,
+      List<String> authors,
+      List<String> committers,
+      Instant after,
       Instant before) {
     this.maxRecords = maxRecords;
     this.pageToken = pageToken;
@@ -79,8 +92,13 @@ public class CommitLogParams {
   }
 
   private CommitLogParams(Builder builder) {
-    this(builder.maxRecords, builder.pageToken, new ArrayList<>(builder.authors),
-        new ArrayList<>(builder.committers), builder.after, builder.before);
+    this(
+        builder.maxRecords,
+        builder.pageToken,
+        new ArrayList<>(builder.authors),
+        new ArrayList<>(builder.committers),
+        builder.after,
+        builder.before);
   }
 
   public Integer getMaxRecords() {
@@ -136,8 +154,7 @@ public class CommitLogParams {
     private Instant after;
     private Instant before;
 
-    private Builder() {
-    }
+    private Builder() {}
 
     public Builder maxRecords(Integer maxRecords) {
       this.maxRecords = maxRecords;
@@ -170,8 +187,12 @@ public class CommitLogParams {
     }
 
     public Builder from(CommitLogParams params) {
-      return maxRecords(params.maxRecords).pageToken(params.pageToken).authors(params.authors).committers(params.committers)
-          .after(params.after).before(params.before);
+      return maxRecords(params.maxRecords)
+          .pageToken(params.pageToken)
+          .authors(params.authors)
+          .committers(params.committers)
+          .after(params.after)
+          .before(params.before);
     }
 
     private void validate() {

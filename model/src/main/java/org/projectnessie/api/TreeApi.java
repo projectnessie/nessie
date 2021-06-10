@@ -16,7 +16,6 @@
 package org.projectnessie.api;
 
 import java.util.List;
-
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
@@ -31,7 +30,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
-
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
@@ -56,383 +54,428 @@ import org.projectnessie.model.Validation;
 @Consumes(value = MediaType.APPLICATION_JSON)
 @Path("trees")
 public interface TreeApi {
-  /**
-   * Get all references.
-   */
+  /** Get all references. */
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(summary = "Get all references")
   @APIResponses({@APIResponse(responseCode = "200", description = "Returned references.")})
   List<Reference> getAllReferences();
 
-  /**
-   * Get details for the default reference.
-   */
+  /** Get details for the default reference. */
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   @Path("tree")
   @Operation(summary = "Get default branch for commits and reads")
   @APIResponses({
-      @APIResponse(responseCode = "200", description = "Returns name and latest hash of the default branch."),
-      @APIResponse(responseCode = "404", description = "Default branch not found.")
+    @APIResponse(
+        responseCode = "200",
+        description = "Returns name and latest hash of the default branch."),
+    @APIResponse(responseCode = "404", description = "Default branch not found.")
   })
   Branch getDefaultBranch() throws NessieNotFoundException;
 
-  /**
-   * Create a new reference.
-   */
+  /** Create a new reference. */
   @POST
   @Path("tree")
   @Operation(summary = "Create a new reference")
   @APIResponses({
-      @APIResponse(responseCode = "200", description = "Created successfully.",
-          content = {@Content(examples = {@ExampleObject(ref = "refObj")})}),
-      @APIResponse(responseCode = "409", description = "Reference already exists")
+    @APIResponse(
+        responseCode = "200",
+        description = "Created successfully.",
+        content = {@Content(examples = {@ExampleObject(ref = "refObj")})}),
+    @APIResponse(responseCode = "409", description = "Reference already exists")
   })
   Reference createReference(
       @Valid
-      @NotNull
-      @RequestBody(description = "Reference to create.", content = {@Content(examples = {@ExampleObject(ref = "refObj")})})
+          @NotNull
+          @RequestBody(
+              description = "Reference to create.",
+              content = {@Content(examples = {@ExampleObject(ref = "refObj")})})
           Reference reference)
       throws NessieNotFoundException, NessieConflictException;
 
-  /**
-   * Get details of a particular ref, if it exists.
-   */
+  /** Get details of a particular ref, if it exists. */
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   @Path("tree/{ref}")
   @Operation(summary = "Fetch details of a reference")
   @APIResponses({
-      @APIResponse(responseCode = "200", description = "Found and returned reference.",
+    @APIResponse(
+        responseCode = "200",
+        description = "Found and returned reference.",
         content = {@Content(examples = {@ExampleObject(ref = "refObj")})}),
-      @APIResponse(responseCode = "400", description = "Invalid input, ref name not valid"),
-      @APIResponse(responseCode = "404", description = "Ref not found")
+    @APIResponse(responseCode = "400", description = "Invalid input, ref name not valid"),
+    @APIResponse(responseCode = "404", description = "Ref not found")
   })
   Reference getReferenceByName(
       @NotNull
-      @Pattern(regexp = Validation.REF_NAME_OR_HASH_REGEX, message = Validation.REF_NAME_OR_HASH_MESSAGE)
-      @Parameter(description = "name of ref to fetch", examples = {@ExampleObject(ref = "ref")})
-      @PathParam("ref")
+          @Pattern(
+              regexp = Validation.REF_NAME_OR_HASH_REGEX,
+              message = Validation.REF_NAME_OR_HASH_MESSAGE)
+          @Parameter(
+              description = "name of ref to fetch",
+              examples = {@ExampleObject(ref = "ref")})
+          @PathParam("ref")
           String refName)
       throws NessieNotFoundException;
 
   /**
    * Retrieve objects for a ref, potentially truncated by the backend.
    *
-   * <p>Retrieves up to {@code maxRecords} objects for the
-   * given named reference (tag or branch) or the given {@link org.projectnessie.model.Hash}.
-   * The backend <em>may</em> respect the given {@code max} records hint, but return less or
-   * more entries. Backends may also cap the returned entries at a hard-coded limit, the default
-   * REST server implementation has such a hard-coded limit.</p>
+   * <p>Retrieves up to {@code maxRecords} objects for the given named reference (tag or branch) or
+   * the given {@link org.projectnessie.model.Hash}. The backend <em>may</em> respect the given
+   * {@code max} records hint, but return less or more entries. Backends may also cap the returned
+   * entries at a hard-coded limit, the default REST server implementation has such a hard-coded
+   * limit.
    *
-   * <p>Invoking {@code getEntries()} does <em>not</em> guarantee to return
-   * all commit log entries of a given reference, because the result can be truncated by the
-   * backend.</p>
+   * <p>Invoking {@code getEntries()} does <em>not</em> guarantee to return all commit log entries
+   * of a given reference, because the result can be truncated by the backend.
    *
-   * <p>To implement paging, check {@link EntriesResponse#hasMore() EntriesResponse.hasMore()} and, if
-   * {@code true}, pass the value of {@link EntriesResponse#getToken() EntriesResponse.getToken()}
-   * in the next invocation of {@code getEntries()} as the {@code pageToken} parameter.</p>
+   * <p>To implement paging, check {@link EntriesResponse#hasMore() EntriesResponse.hasMore()} and,
+   * if {@code true}, pass the value of {@link EntriesResponse#getToken()
+   * EntriesResponse.getToken()} in the next invocation of {@code getEntries()} as the {@code
+   * pageToken} parameter.
    *
-   * <p>See {@code org.projectnessie.client.StreamingUtil} in {@code nessie-client}.</p>
+   * <p>See {@code org.projectnessie.client.StreamingUtil} in {@code nessie-client}.
    */
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   @Path("tree/{ref}/entries")
-  @Operation(summary = "Fetch all entries for a given reference", description =
-      "Retrieves objects for a ref, potentially truncated by the backend.\n"
-          + "\n"
-          + "Retrieves up to 'maxRecords' entries for the "
-          + "given named reference (tag or branch) or the given hash. "
-          + "The backend may respect the given 'max' records hint, but return less or more entries. "
-          + "Backends may also cap the returned entries at a hard-coded limit, the default "
-          + "REST server implementation has such a hard-coded limit.\n"
-          + "\n"
-          + "To implement paging, check 'hasMore' in the response and, if 'true', pass the value "
-          + "returned as 'token' in the next invocation as the 'pageToken' parameter.\n"
-          + "\n"
-          + "The content and meaning of the returned 'token' is \"private\" to the implementation,"
-          + "treat is as an opaque value.\n"
-          + "\n"
-          + "It is wrong to assume that invoking this method with a very high 'maxRecords' value "
-          + "will return all commit log entries.\n"
-          + "It is possible to filter entries by 'namespace', where the 'namespace' is the prefix 'a.b.c' for a given table"
-          + "name 'a.b.c.tableName'")
+  @Operation(
+      summary = "Fetch all entries for a given reference",
+      description =
+          "Retrieves objects for a ref, potentially truncated by the backend.\n"
+              + "\n"
+              + "Retrieves up to 'maxRecords' entries for the "
+              + "given named reference (tag or branch) or the given hash. "
+              + "The backend may respect the given 'max' records hint, but return less or more entries. "
+              + "Backends may also cap the returned entries at a hard-coded limit, the default "
+              + "REST server implementation has such a hard-coded limit.\n"
+              + "\n"
+              + "To implement paging, check 'hasMore' in the response and, if 'true', pass the value "
+              + "returned as 'token' in the next invocation as the 'pageToken' parameter.\n"
+              + "\n"
+              + "The content and meaning of the returned 'token' is \"private\" to the implementation,"
+              + "treat is as an opaque value.\n"
+              + "\n"
+              + "It is wrong to assume that invoking this method with a very high 'maxRecords' value "
+              + "will return all commit log entries.\n"
+              + "It is possible to filter entries by 'namespace', where the 'namespace' is the prefix 'a.b.c' for a given table"
+              + "name 'a.b.c.tableName'")
   @APIResponses({
-      @APIResponse(description = "all objects for a reference",
+    @APIResponse(
+        description = "all objects for a reference",
         content = {@Content(examples = {@ExampleObject(ref = "entriesResponse")})}),
-      @APIResponse(responseCode = "200", description = "Returned successfully."),
-      @APIResponse(responseCode = "400", description = "Invalid input, ref name not valid"),
-      @APIResponse(responseCode = "404", description = "Ref not found")
+    @APIResponse(responseCode = "200", description = "Returned successfully."),
+    @APIResponse(responseCode = "400", description = "Invalid input, ref name not valid"),
+    @APIResponse(responseCode = "404", description = "Ref not found")
   })
   public EntriesResponse getEntries(
       @NotNull
-      @Pattern(regexp = Validation.REF_NAME_OR_HASH_REGEX, message = Validation.REF_NAME_OR_HASH_MESSAGE)
-      @Parameter(description = "name of ref to fetch from", examples = {@ExampleObject(ref = "ref")})
-      @PathParam("ref")
+          @Pattern(
+              regexp = Validation.REF_NAME_OR_HASH_REGEX,
+              message = Validation.REF_NAME_OR_HASH_MESSAGE)
+          @Parameter(
+              description = "name of ref to fetch from",
+              examples = {@ExampleObject(ref = "ref")})
+          @PathParam("ref")
           String refName,
-      @NotNull
-      @Valid
-      @BeanParam
-          EntriesParams params)
+      @NotNull @Valid @BeanParam EntriesParams params)
       throws NessieNotFoundException;
 
   /**
    * Retrieve the commit log for a ref, potentially truncated by the backend.
    *
-   * <p>Retrieves up to {@code maxRecords} commit-log-entries starting at the HEAD of the
-   * given named reference (tag or branch) or the given {@link org.projectnessie.model.Hash}.
-   * The backend <em>may</em> respect the given {@code max} records hint, but return less or
-   * more entries. Backends may also cap the returned entries at a hard-coded limit, the default
-   * REST server implementation has such a hard-coded limit.</p>
+   * <p>Retrieves up to {@code maxRecords} commit-log-entries starting at the HEAD of the given
+   * named reference (tag or branch) or the given {@link org.projectnessie.model.Hash}. The backend
+   * <em>may</em> respect the given {@code max} records hint, but return less or more entries.
+   * Backends may also cap the returned entries at a hard-coded limit, the default REST server
+   * implementation has such a hard-coded limit.
    *
-   * <p>Invoking {@code getCommitLog()} does <em>not</em> guarantee to return
-   * all commit log entries of a given reference, because the result can be truncated by the
-   * backend.</p>
+   * <p>Invoking {@code getCommitLog()} does <em>not</em> guarantee to return all commit log entries
+   * of a given reference, because the result can be truncated by the backend.
    *
    * <p>To implement paging, check {@link LogResponse#hasMore() LogResponse.hasMore()} and, if
-   * {@code true}, pass the value of {@link LogResponse#getToken() LogResponse.getToken()}
-   * in the next invocation of {@code getCommitLog()} as the {@code pageToken} parameter.</p>
+   * {@code true}, pass the value of {@link LogResponse#getToken() LogResponse.getToken()} in the
+   * next invocation of {@code getCommitLog()} as the {@code pageToken} parameter.
    *
-   * <p>See {@code org.projectnessie.client.StreamingUtil} in {@code nessie-client}.</p>
+   * <p>See {@code org.projectnessie.client.StreamingUtil} in {@code nessie-client}.
    */
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   @Path("tree/{ref}/log")
-  @Operation(summary = "Get commit log for a reference", description =
-      "Retrieve the commit log for a ref, potentially truncated by the backend.\n"
-          + "\n"
-          + "Retrieves up to 'maxRecords' commit-log-entries starting at the HEAD of the "
-          + "given named reference (tag or branch) or the given hash. "
-          + "The backend may respect the given 'max' records hint, but return less or more entries. "
-          + "Backends may also cap the returned entries at a hard-coded limit, the default "
-          + "REST server implementation has such a hard-coded limit.\n"
-          + "\n"
-          + "To implement paging, check 'hasMore' in the response and, if 'true', pass the value "
-          + "returned as 'token' in the next invocation as the 'pageToken' parameter.\n"
-          + "\n"
-          + "The content and meaning of the returned 'token' is \"private\" to the implementation,"
-          + "treat is as an opaque value.\n"
-          + "\n"
-          + "It is wrong to assume that invoking this method with a very high 'maxRecords' value "
-          + "will return all commit log entries. "
-          + "\n"
-          + "It is possible to filter the log using a list of 'authors' (the actual author of a commit) and/or"
-          + "'committers' (the logged in user/account that performed the commit) fields."
-          + "Filtering the log by ISO-8601 dates is supported via the 'after' and 'before' fields.")
+  @Operation(
+      summary = "Get commit log for a reference",
+      description =
+          "Retrieve the commit log for a ref, potentially truncated by the backend.\n"
+              + "\n"
+              + "Retrieves up to 'maxRecords' commit-log-entries starting at the HEAD of the "
+              + "given named reference (tag or branch) or the given hash. "
+              + "The backend may respect the given 'max' records hint, but return less or more entries. "
+              + "Backends may also cap the returned entries at a hard-coded limit, the default "
+              + "REST server implementation has such a hard-coded limit.\n"
+              + "\n"
+              + "To implement paging, check 'hasMore' in the response and, if 'true', pass the value "
+              + "returned as 'token' in the next invocation as the 'pageToken' parameter.\n"
+              + "\n"
+              + "The content and meaning of the returned 'token' is \"private\" to the implementation,"
+              + "treat is as an opaque value.\n"
+              + "\n"
+              + "It is wrong to assume that invoking this method with a very high 'maxRecords' value "
+              + "will return all commit log entries. "
+              + "\n"
+              + "It is possible to filter the log using a list of 'authors' (the actual author of a commit) and/or"
+              + "'committers' (the logged in user/account that performed the commit) fields."
+              + "Filtering the log by ISO-8601 dates is supported via the 'after' and 'before' fields.")
   @APIResponses({
-      @APIResponse(responseCode = "200", description = "Returned commits.",
-          content = {@Content(examples = {@ExampleObject(ref = "logResponse")})}),
-      @APIResponse(responseCode = "400", description = "Invalid input, ref name not valid"),
-      @APIResponse(responseCode = "404", description = "Ref doesn't exists")
+    @APIResponse(
+        responseCode = "200",
+        description = "Returned commits.",
+        content = {@Content(examples = {@ExampleObject(ref = "logResponse")})}),
+    @APIResponse(responseCode = "400", description = "Invalid input, ref name not valid"),
+    @APIResponse(responseCode = "404", description = "Ref doesn't exists")
   })
   LogResponse getCommitLog(
       @NotNull
-      @Pattern(regexp = Validation.REF_NAME_OR_HASH_REGEX, message = Validation.REF_NAME_OR_HASH_MESSAGE)
-      @Parameter(description = "ref to show log from", examples = {@ExampleObject(ref = "ref")})
-      @PathParam("ref")
+          @Pattern(
+              regexp = Validation.REF_NAME_OR_HASH_REGEX,
+              message = Validation.REF_NAME_OR_HASH_MESSAGE)
+          @Parameter(
+              description = "ref to show log from",
+              examples = {@ExampleObject(ref = "ref")})
+          @PathParam("ref")
           String ref,
-      @NotNull
-      @Valid
-      @BeanParam
-          CommitLogParams commitLogParams) throws NessieNotFoundException;
+      @NotNull @Valid @BeanParam CommitLogParams commitLogParams)
+      throws NessieNotFoundException;
 
-  /**
-   * Update a tag.
-   */
+  /** Update a tag. */
   @PUT
   @Path("tag/{tagName}")
   @Operation(summary = "Set a tag to a specific hash")
   @APIResponses({
-      @APIResponse(responseCode = "204", description = "Assigned successfully"),
-      @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
-      @APIResponse(responseCode = "404", description = "One or more references don't exist"),
-      @APIResponse(responseCode = "412", description = "Update conflict")
+    @APIResponse(responseCode = "204", description = "Assigned successfully"),
+    @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
+    @APIResponse(responseCode = "404", description = "One or more references don't exist"),
+    @APIResponse(responseCode = "412", description = "Update conflict")
   })
   void assignTag(
       @NotNull
-      @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-      @Parameter(description = "Tag name to reassign", examples = {@ExampleObject(ref = "ref")})
-      @PathParam("tagName")
+          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          @Parameter(
+              description = "Tag name to reassign",
+              examples = {@ExampleObject(ref = "ref")})
+          @PathParam("tagName")
           String tagName,
       @NotNull
-      @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
-      @Parameter(description = "Expected previous hash of tag", examples = {@ExampleObject(ref = "hash")})
-      @QueryParam("expectedHash")
+          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          @Parameter(
+              description = "Expected previous hash of tag",
+              examples = {@ExampleObject(ref = "hash")})
+          @QueryParam("expectedHash")
           String oldHash,
       @Valid
-      @NotNull
-      @RequestBody(description = "New tag content", content = @Content(examples = {@ExampleObject(ref = "tagObj")}))
-          Tag tag
-      ) throws NessieNotFoundException, NessieConflictException;
+          @NotNull
+          @RequestBody(
+              description = "New tag content",
+              content = @Content(examples = {@ExampleObject(ref = "tagObj")}))
+          Tag tag)
+      throws NessieNotFoundException, NessieConflictException;
 
-  /**
-   * Delete a tag.
-   */
+  /** Delete a tag. */
   @DELETE
   @Path("tag/{tagName}")
   @Operation(summary = "Delete a tag")
   @APIResponses({
-      @APIResponse(responseCode = "204", description = "Deleted successfully."),
-      @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
-      @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
-      @APIResponse(responseCode = "409", description = "update conflict"),
+    @APIResponse(responseCode = "204", description = "Deleted successfully."),
+    @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
+    @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
+    @APIResponse(responseCode = "409", description = "update conflict"),
   })
   void deleteTag(
       @NotNull
-      @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-      @Parameter(description = "Tag to delete", examples = {@ExampleObject(ref = "ref")})
-      @PathParam("tagName")
+          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          @Parameter(
+              description = "Tag to delete",
+              examples = {@ExampleObject(ref = "ref")})
+          @PathParam("tagName")
           String tagName,
       @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
-      @Parameter(description = "Expected hash of tag", examples = {@ExampleObject(ref = "hash")})
-      @QueryParam("expectedHash")
-          String hash
-      ) throws NessieConflictException, NessieNotFoundException;
+          @Parameter(
+              description = "Expected hash of tag",
+              examples = {@ExampleObject(ref = "hash")})
+          @QueryParam("expectedHash")
+          String hash)
+      throws NessieConflictException, NessieNotFoundException;
 
-  /**
-   * Update a branch.
-   */
+  /** Update a branch. */
   @PUT
   @Path("branch/{branchName}")
   @Operation(summary = "Set a branch to a specific hash")
   @APIResponses({
-      @APIResponse(responseCode = "204", description = "Assigned successfully"),
-      @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
-      @APIResponse(responseCode = "404", description = "One or more references don't exist"),
-      @APIResponse(responseCode = "409", description = "Update conflict")
+    @APIResponse(responseCode = "204", description = "Assigned successfully"),
+    @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
+    @APIResponse(responseCode = "404", description = "One or more references don't exist"),
+    @APIResponse(responseCode = "409", description = "Update conflict")
   })
   void assignBranch(
       @NotNull
-      @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-      @Parameter(description = "Tag name to reassign", examples = {@ExampleObject(ref = "ref")})
-      @PathParam("branchName")
+          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          @Parameter(
+              description = "Tag name to reassign",
+              examples = {@ExampleObject(ref = "ref")})
+          @PathParam("branchName")
           String branchName,
       @NotNull
-      @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
-      @Parameter(description = "Expected previous hash of tag", examples = {@ExampleObject(ref = "hash")})
-      @QueryParam("expectedHash")
+          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          @Parameter(
+              description = "Expected previous hash of tag",
+              examples = {@ExampleObject(ref = "hash")})
+          @QueryParam("expectedHash")
           String oldHash,
       @Valid
-      @NotNull
-      @RequestBody(description = "New branch content", content = @Content(examples = {@ExampleObject(ref = "refObj")}))
-          Branch branch
-      ) throws NessieNotFoundException, NessieConflictException;
+          @NotNull
+          @RequestBody(
+              description = "New branch content",
+              content = @Content(examples = {@ExampleObject(ref = "refObj")}))
+          Branch branch)
+      throws NessieNotFoundException, NessieConflictException;
 
-  /**
-   * Delete a branch.
-   */
+  /** Delete a branch. */
   @DELETE
   @Path("branch/{branchName}")
   @Operation(summary = "Delete a branch endpoint")
   @APIResponses({
-      @APIResponse(responseCode = "204", description = "Deleted successfully."),
-      @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
-      @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
-      @APIResponse(responseCode = "409", description = "update conflict"),
+    @APIResponse(responseCode = "204", description = "Deleted successfully."),
+    @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
+    @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
+    @APIResponse(responseCode = "409", description = "update conflict"),
   })
   void deleteBranch(
       @NotNull
-      @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-      @Parameter(description = "Branch to delete", examples = {@ExampleObject(ref = "ref")})
-      @PathParam("branchName")
+          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          @Parameter(
+              description = "Branch to delete",
+              examples = {@ExampleObject(ref = "ref")})
+          @PathParam("branchName")
           String branchName,
       @NotNull
-      @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
-      @Parameter(description = "Expected hash of tag", examples = {@ExampleObject(ref = "hash")})
-      @QueryParam("expectedHash")
-          String hash
-      ) throws NessieConflictException, NessieNotFoundException;
+          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          @Parameter(
+              description = "Expected hash of tag",
+              examples = {@ExampleObject(ref = "hash")})
+          @QueryParam("expectedHash")
+          String hash)
+      throws NessieConflictException, NessieNotFoundException;
 
-  /**
-   * cherry pick a set of commits into a branch.
-   */
+  /** cherry pick a set of commits into a branch. */
   @POST
   @Path("branch/{branchName}/transplant")
   @Operation(summary = "transplant commits from mergeRef to ref endpoint")
   @APIResponses({
-      @APIResponse(responseCode = "204", description = "Merged successfully."),
-      @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
-      @APIResponse(responseCode = "401", description = "no merge ref supplied"),
-      @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
-      @APIResponse(responseCode = "409", description = "update conflict")
+    @APIResponse(responseCode = "204", description = "Merged successfully."),
+    @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
+    @APIResponse(responseCode = "401", description = "no merge ref supplied"),
+    @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
+    @APIResponse(responseCode = "409", description = "update conflict")
   })
   void transplantCommitsIntoBranch(
       @NotNull
-      @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-      @Parameter(description = "Branch to transplant into", examples = {@ExampleObject(ref = "ref")})
-      @PathParam("branchName")
+          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          @Parameter(
+              description = "Branch to transplant into",
+              examples = {@ExampleObject(ref = "ref")})
+          @PathParam("branchName")
           String branchName,
       @NotNull
-      @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
-      @Parameter(description = "Expected hash of tag", examples = {@ExampleObject(ref = "hash")})
-      @QueryParam("expectedHash")
+          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          @Parameter(
+              description = "Expected hash of tag",
+              examples = {@ExampleObject(ref = "hash")})
+          @QueryParam("expectedHash")
           String hash,
-      @Parameter(description = "commit message", examples = {@ExampleObject(ref = "commitMessage")})
-      @QueryParam("message")
+      @Parameter(
+              description = "commit message",
+              examples = {@ExampleObject(ref = "commitMessage")})
+          @QueryParam("message")
           String message,
       @Valid
-      @RequestBody(description = "Hashes to transplant", content = @Content(examples = {@ExampleObject(ref = "transplant")}))
+          @RequestBody(
+              description = "Hashes to transplant",
+              content = @Content(examples = {@ExampleObject(ref = "transplant")}))
           Transplant transplant)
-          throws NessieNotFoundException, NessieConflictException;
+      throws NessieNotFoundException, NessieConflictException;
 
-  /**
-   * merge mergeRef onto ref.
-   */
+  /** merge mergeRef onto ref. */
   @POST
   @Path("branch/{branchName}/merge")
   @Operation(summary = "merge commits from mergeRef to ref endpoint")
   @APIResponses({
-      @APIResponse(responseCode = "204", description = "Merged successfully."),
-      @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
-      @APIResponse(responseCode = "401", description = "no merge ref supplied"),
-      @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
-      @APIResponse(responseCode = "409", description = "update conflict")
+    @APIResponse(responseCode = "204", description = "Merged successfully."),
+    @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
+    @APIResponse(responseCode = "401", description = "no merge ref supplied"),
+    @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
+    @APIResponse(responseCode = "409", description = "update conflict")
   })
   void mergeRefIntoBranch(
       @NotNull
-      @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-      @Parameter(description = "Branch to merge into", examples = {@ExampleObject(ref = "ref")})
-      @PathParam("branchName")
+          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          @Parameter(
+              description = "Branch to merge into",
+              examples = {@ExampleObject(ref = "ref")})
+          @PathParam("branchName")
           String branchName,
       @NotNull
-      @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
-      @Parameter(description = "Expected hash of tag", examples = {@ExampleObject(ref = "hash")})
-      @QueryParam("expectedHash")
+          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          @Parameter(
+              description = "Expected hash of tag",
+              examples = {@ExampleObject(ref = "hash")})
+          @QueryParam("expectedHash")
           String hash,
       @Valid
-      @NotNull
-      @RequestBody(description = "Merge operation", content = @Content(examples = {@ExampleObject(ref = "merge")}))
+          @NotNull
+          @RequestBody(
+              description = "Merge operation",
+              content = @Content(examples = {@ExampleObject(ref = "merge")}))
           Merge merge)
-          throws NessieNotFoundException, NessieConflictException;
+      throws NessieNotFoundException, NessieConflictException;
 
   @POST
   @Path("branch/{branchName}/commit")
   @Consumes(MediaType.APPLICATION_JSON)
-  @Operation(summary = "Commit multiple operations against the given branch expecting that branch to have "
-      + "the given hash as its latest commit. The hash in the successful response contains the hash of the "
-      + "commit that contains the operations of the invocation.")
+  @Operation(
+      summary =
+          "Commit multiple operations against the given branch expecting that branch to have "
+              + "the given hash as its latest commit. The hash in the successful response contains the hash of the "
+              + "commit that contains the operations of the invocation.")
   @APIResponses({
-      @APIResponse(responseCode = "200", description = "Updated successfully.",
+    @APIResponse(
+        responseCode = "200",
+        description = "Updated successfully.",
         content = {@Content(examples = {@ExampleObject(ref = "refObj")})}),
-      @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
-      @APIResponse(responseCode = "404", description = "Provided ref doesn't exists"),
-      @APIResponse(responseCode = "409", description = "Update conflict")
+    @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
+    @APIResponse(responseCode = "404", description = "Provided ref doesn't exists"),
+    @APIResponse(responseCode = "409", description = "Update conflict")
   })
   Branch commitMultipleOperations(
       @NotNull
-      @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-      @Parameter(description = "Branch to change, defaults to default branch.", examples = {@ExampleObject(ref = "ref")})
-      @PathParam("branchName")
+          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          @Parameter(
+              description = "Branch to change, defaults to default branch.",
+              examples = {@ExampleObject(ref = "ref")})
+          @PathParam("branchName")
           String branchName,
       @NotNull
-      @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
-      @Parameter(description = "Expected hash of branch.", examples = {@ExampleObject(ref = "hash")})
-      @QueryParam("expectedHash")
+          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          @Parameter(
+              description = "Expected hash of branch.",
+              examples = {@ExampleObject(ref = "hash")})
+          @QueryParam("expectedHash")
           String hash,
       @Valid
-      @NotNull
-      @RequestBody(description = "Operations", content = @Content(examples = {@ExampleObject(ref = "operations")}))
+          @NotNull
+          @RequestBody(
+              description = "Operations",
+              content = @Content(examples = {@ExampleObject(ref = "operations")}))
           Operations operations)
       throws NessieNotFoundException, NessieConflictException;
 }

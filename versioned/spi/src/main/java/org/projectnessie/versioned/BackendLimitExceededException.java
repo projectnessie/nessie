@@ -16,9 +16,9 @@
 package org.projectnessie.versioned;
 
 /**
- * Thrown when some limit against the store's backend is exceeded and requests
- * against the store or a specific part of the store (e.g. a DynamoDB partition) have been
- * refused/throttled by the backend store.
+ * Thrown when some limit against the store's backend is exceeded and requests against the store or
+ * a specific part of the store (e.g. a DynamoDB partition) have been refused/throttled by the
+ * backend store.
  */
 public class BackendLimitExceededException extends VersionStoreError {
 
@@ -29,5 +29,4 @@ public class BackendLimitExceededException extends VersionStoreError {
   public BackendLimitExceededException(String message) {
     super(message);
   }
-
 }

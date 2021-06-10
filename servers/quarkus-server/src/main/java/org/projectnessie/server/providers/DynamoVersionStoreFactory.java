@@ -20,10 +20,8 @@ import static org.projectnessie.server.config.VersionStoreConfig.VersionStoreTyp
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Optional;
-
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
-
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.projectnessie.server.config.DynamoVersionStoreConfig;
 import org.projectnessie.versioned.StoreWorker;
@@ -34,12 +32,9 @@ import org.projectnessie.versioned.impl.ImmutableTieredVersionStoreConfig;
 import org.projectnessie.versioned.impl.TieredVersionStore;
 import org.projectnessie.versioned.store.Store;
 import org.projectnessie.versioned.store.TracingStore;
-
 import software.amazon.awssdk.regions.Region;
 
-/**
- * DynamoDB version store factory.
- */
+/** DynamoDB version store factory. */
 @StoreType(DYNAMO)
 @Dependent
 public class DynamoVersionStoreFactory implements VersionStoreFactory {
@@ -48,11 +43,10 @@ public class DynamoVersionStoreFactory implements VersionStoreFactory {
   private final String region;
   private final Optional<String> endpoint;
 
-  /**
-   * Creates a factory for dynamodb version stores.
-   */
+  /** Creates a factory for dynamodb version stores. */
   @Inject
-  public DynamoVersionStoreFactory(DynamoVersionStoreConfig config,
+  public DynamoVersionStoreFactory(
+      DynamoVersionStoreConfig config,
       @ConfigProperty(name = "quarkus.dynamodb.aws.region") String region,
       @ConfigProperty(name = "quarkus.dynamodb.endpoint-override") Optional<String> endpoint) {
     this.config = config;
@@ -61,30 +55,34 @@ public class DynamoVersionStoreFactory implements VersionStoreFactory {
   }
 
   @Override
-  public <VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>> VersionStore<VALUE, METADATA, VALUE_TYPE>
-      newStore(StoreWorker<VALUE, METADATA, VALUE_TYPE> worker) {
-    return new TieredVersionStore<>(worker, newDynamoConnection(), ImmutableTieredVersionStoreConfig.builder()
-        .enableTracing(config.enableTracing()).build());
+  public <VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>>
+      VersionStore<VALUE, METADATA, VALUE_TYPE> newStore(
+          StoreWorker<VALUE, METADATA, VALUE_TYPE> worker) {
+    return new TieredVersionStore<>(
+        worker,
+        newDynamoConnection(),
+        ImmutableTieredVersionStoreConfig.builder().enableTracing(config.enableTracing()).build());
   }
 
-  /**
-   * create a dynamo store based on config.
-   */
+  /** create a dynamo store based on config. */
   private Store newDynamoConnection() {
-    Store store = new DynamoStore(
-        DynamoStoreConfig.builder()
-          .endpoint(endpoint.map(e -> {
-            try {
-              return new URI(e);
-            } catch (URISyntaxException uriSyntaxException) {
-              throw new RuntimeException(uriSyntaxException);
-            }
-          }))
-          .region(Region.of(region))
-          .initializeDatabase(config.isDynamoInitialize())
-          .tablePrefix(config.getTablePrefix())
-          .enableTracing(config.enableTracing())
-          .build());
+    Store store =
+        new DynamoStore(
+            DynamoStoreConfig.builder()
+                .endpoint(
+                    endpoint.map(
+                        e -> {
+                          try {
+                            return new URI(e);
+                          } catch (URISyntaxException uriSyntaxException) {
+                            throw new RuntimeException(uriSyntaxException);
+                          }
+                        }))
+                .region(Region.of(region))
+                .initializeDatabase(config.isDynamoInitialize())
+                .tablePrefix(config.getTablePrefix())
+                .enableTracing(config.enableTracing())
+                .build());
 
     if (config.enableTracing()) {
       store = new TracingStore(store);

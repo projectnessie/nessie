@@ -15,6 +15,8 @@
  */
 package org.projectnessie.versioned.mongodb;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.protobuf.ByteString;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -22,7 +24,6 @@ import java.util.Map.Entry;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
-
 import org.bson.BsonBinary;
 import org.bson.BsonDocument;
 import org.bson.BsonDocumentWriter;
@@ -46,9 +47,6 @@ import org.projectnessie.versioned.tiered.L3;
 import org.projectnessie.versioned.tiered.Mutation;
 import org.projectnessie.versioned.tiered.Ref;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.protobuf.ByteString;
-
 @SuppressWarnings({"unchecked", "rawtypes"})
 final class MongoSerDe {
   static final char ZERO_BYTE = '\u0000';
@@ -70,7 +68,9 @@ final class MongoSerDe {
           .put(ValueType.KEY_FRAGMENT, (d, c) -> MongoFragment.produce(d, (Fragment) c))
           .put(ValueType.REF, (d, c) -> MongoRef.produce(d, (Ref) c))
           .put(ValueType.VALUE, (d, c) -> MongoWrappedValue.produce(d, (BaseWrappedValue) c))
-          .put(ValueType.COMMIT_METADATA, (d, c) -> MongoWrappedValue.produce(d, (BaseWrappedValue) c))
+          .put(
+              ValueType.COMMIT_METADATA,
+              (d, c) -> MongoWrappedValue.produce(d, (BaseWrappedValue) c))
           .build();
 
   private static final String KEY_ADDITION = "a";
@@ -78,13 +78,16 @@ final class MongoSerDe {
 
   static {
     if (!CONSUMERS.keySet().equals(DESERIALIZERS.keySet())) {
-      throw new UnsupportedOperationException("The enum-maps ENTITY_MAP_PRODUCERS and DESERIALIZERS "
-          + "are not equal. This is a bug in the implementation of MongoSerDe.");
+      throw new UnsupportedOperationException(
+          "The enum-maps ENTITY_MAP_PRODUCERS and DESERIALIZERS "
+              + "are not equal. This is a bug in the implementation of MongoSerDe.");
     }
     if (!DESERIALIZERS.keySet().equals(new HashSet<>(ValueType.values()))) {
-      throw new UnsupportedOperationException(String.format("The enum-map producerMaps does not "
-              + "have producer-maps matching the available value types (%s vs %s).",
-          DESERIALIZERS.keySet(), new HashSet<>(ValueType.values())));
+      throw new UnsupportedOperationException(
+          String.format(
+              "The enum-map producerMaps does not "
+                  + "have producer-maps matching the available value types (%s vs %s).",
+              DESERIALIZERS.keySet(), new HashSet<>(ValueType.values())));
     }
   }
 
@@ -92,11 +95,13 @@ final class MongoSerDe {
     // empty
   }
 
-  static <C extends BaseValue<C>> void produceToConsumer(Document d, ValueType<C> valueType, C consumer) {
+  static <C extends BaseValue<C>> void produceToConsumer(
+      Document d, ValueType<C> valueType, C consumer) {
     DESERIALIZERS.get(valueType).accept(d, consumer);
   }
 
-  private static <C extends BaseValue<C>> MongoBaseValue<C> newMongoConsumer(ValueType<C> valueType, BsonWriter bsonWriter) {
+  private static <C extends BaseValue<C>> MongoBaseValue<C> newMongoConsumer(
+      ValueType<C> valueType, BsonWriter bsonWriter) {
     return CONSUMERS.get(valueType).apply(bsonWriter);
   }
 
@@ -139,8 +144,7 @@ final class MongoSerDe {
 
   static Stream<Id> deserializeIds(Document d, String param) {
     List<Binary> ids = (List<Binary>) d.get(param);
-    return ids.stream()
-        .map(b -> Id.of(b.getData()));
+    return ids.stream().map(b -> Id.of(b.getData()));
   }
 
   static BsonBinary serializeBytes(ByteString value) {
@@ -149,28 +153,29 @@ final class MongoSerDe {
 
   static Stream<WithPayload<Key>> deserializeKeys(Document document, String param) {
     List<Object> l = (List<Object>) document.get(param);
-    return l.stream()
-        .map(o -> (List<String>) o)
-        .map(MongoSerDe::deserializeKeyWithPayload);
+    return l.stream().map(o -> (List<String>) o).map(MongoSerDe::deserializeKeyWithPayload);
   }
 
   static WithPayload<Key> deserializeKeyWithPayload(List<String> keyList) {
     ImmutableKey.Builder keyBuilder = ImmutableKey.builder();
     String value = keyList.get(0);
-    Byte payload = value.length() == 1 && value.charAt(0) == ZERO_BYTE ? null : Byte.parseByte(value);
+    Byte payload =
+        value.length() == 1 && value.charAt(0) == ZERO_BYTE ? null : Byte.parseByte(value);
     keyList.subList(1, keyList.size()).forEach(keyBuilder::addElements);
     return WithPayload.of(payload, keyBuilder.build());
   }
 
   static void serializeKeyWithPayload(BsonWriter bsonWriter, String prop, WithPayload<Key> key) {
-    String payload = key.getPayload() == null ? Character.toString(ZERO_BYTE) : key.getPayload().toString();
+    String payload =
+        key.getPayload() == null ? Character.toString(ZERO_BYTE) : key.getPayload().toString();
     bsonWriter.writeStartArray(prop);
     bsonWriter.writeString(payload);
     key.getValue().getElements().forEach(bsonWriter::writeString);
     bsonWriter.writeEndArray();
   }
 
-  static <X> void serializeArray(BsonWriter writer, String prop, Stream<X> src, BiConsumer<BsonWriter, X> inner) {
+  static <X> void serializeArray(
+      BsonWriter writer, String prop, Stream<X> src, BiConsumer<BsonWriter, X> inner) {
     writer.writeStartArray(prop);
     src.forEach(e -> inner.accept(writer, e));
     writer.writeEndArray();
@@ -219,7 +224,8 @@ final class MongoSerDe {
       case KEY_REMOVAL:
         return Mutation.Removal.of(key.getValue());
       default:
-        throw new IllegalArgumentException(String.format("Unsupported key '%s' in key-mutation map", addRemove));
+        throw new IllegalArgumentException(
+            String.format("Unsupported key '%s' in key-mutation map", addRemove));
     }
   }
 }

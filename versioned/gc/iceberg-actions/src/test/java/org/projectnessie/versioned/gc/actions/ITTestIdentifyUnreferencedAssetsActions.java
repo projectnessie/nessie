@@ -18,6 +18,9 @@ package org.projectnessie.versioned.gc.actions;
 import static org.apache.iceberg.types.Types.NestedField.required;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimaps;
 import java.io.File;
 import java.time.Clock;
 import java.util.ArrayList;
@@ -28,7 +31,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.CatalogUtil;
 import org.apache.iceberg.PartitionSpec;
@@ -70,30 +72,30 @@ import org.projectnessie.versioned.tiered.gc.GcOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Multimaps;
-
 class ITTestIdentifyUnreferencedAssetsActions {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(ITTestIdentifyUnreferencedAssetsActions.class);
+  private static final Logger LOGGER =
+      LoggerFactory.getLogger(ITTestIdentifyUnreferencedAssetsActions.class);
 
   private static final String BRANCH = ITTestIdentifyUnreferencedAssetsActions.class.getName();
   private static final String DELETE_BRANCH = "toBeDeleted";
   private static final TableIdentifier TABLE_IDENTIFIER = TableIdentifier.of("test", "table");
   private static final TableIdentifier TABLE_IDENTIFIER2 = TableIdentifier.of("test", "table2");
-  private static final Schema SCHEMA = new Schema(Types.StructType.of(required(1, "foe1", Types.StringType.get()),
-      required(2, "foe2", Types.StringType.get())).fields());
+  private static final Schema SCHEMA =
+      new Schema(
+          Types.StructType.of(
+                  required(1, "foe1", Types.StringType.get()),
+                  required(2, "foe2", Types.StringType.get()))
+              .fields());
 
   private static final int NESSIE_PORT = Integer.getInteger("quarkus.http.test-port", 19120);
-  private static final String NESSIE_ENDPOINT = String.format("http://localhost:%d/api/v1", NESSIE_PORT);
+  private static final String NESSIE_ENDPOINT =
+      String.format("http://localhost:%d/api/v1", NESSIE_PORT);
 
-  @TempDir
-  static File LOCAL_DIR;
+  @TempDir static File LOCAL_DIR;
   private static SparkSession spark;
   private static SparkSession sparkMain;
   private static SparkSession sparkDeleteBranch;
-
 
   protected NessieCatalog catalog;
   protected NessieClient client;
@@ -121,16 +123,18 @@ class ITTestIdentifyUnreferencedAssetsActions {
         .set("spark.sql.catalog.default_iceberg.warehouse", LOCAL_DIR.toURI().toString())
         .set("spark.sql.catalog.default_iceberg.catalog-impl", NessieCatalog.class.getName())
         .set("spark.sql.catalog.default_iceberg", "org.apache.iceberg.spark.SparkCatalog")
-        .set("spark.sql.extensions", "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions")
+        .set(
+            "spark.sql.extensions",
+            "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions")
         .set(SQLConf.PARTITION_OVERWRITE_MODE().key(), "dynamic");
-    spark = SparkSession
-        .builder()
-        .appName("test-nessie-gc-iceberg")
-        .config(conf)
-        .master("local[2]")
-        .getOrCreate();
+    spark =
+        SparkSession.builder()
+            .appName("test-nessie-gc-iceberg")
+            .config(conf)
+            .master("local[2]")
+            .getOrCreate();
 
-    //create new spark session for 2nd branch committer
+    // create new spark session for 2nd branch committer
     sparkDeleteBranch = spark.newSession();
     sparkDeleteBranch.conf().set("spark.sql.catalog.spark_catalog.ref", DELETE_BRANCH);
 
@@ -155,20 +159,25 @@ class ITTestIdentifyUnreferencedAssetsActions {
     props.put("url", NESSIE_ENDPOINT);
     props.put("warehouse", LOCAL_DIR.toURI().toString());
     Configuration hadoopConfig = spark.sessionState().newHadoopConf();
-    catalog = (NessieCatalog) CatalogUtil.loadCatalog(NessieCatalog.class.getName(), "nessie", props, hadoopConfig);
+    catalog =
+        (NessieCatalog)
+            CatalogUtil.loadCatalog(NessieCatalog.class.getName(), "nessie", props, hadoopConfig);
     assetKeySerializer = new AssetKeySerializer(new SerializableConfiguration(hadoopConfig));
 
-    //second catalog for deleted branch
+    // second catalog for deleted branch
     props.put("ref", DELETE_BRANCH);
     hadoopConfig = sparkDeleteBranch.sessionState().newHadoopConf();
-    catalogDeleteBranch = (NessieCatalog) CatalogUtil.loadCatalog(NessieCatalog.class.getName(), "nessie", props, hadoopConfig);
+    catalogDeleteBranch =
+        (NessieCatalog)
+            CatalogUtil.loadCatalog(NessieCatalog.class.getName(), "nessie", props, hadoopConfig);
 
-    //third catalog for main branch
+    // third catalog for main branch
     props.put("ref", "main");
     hadoopConfig = sparkMain.sessionState().newHadoopConf();
-    catalogMainBranch = (NessieCatalog) CatalogUtil.loadCatalog(NessieCatalog.class.getName(), "nessie", props, hadoopConfig);
+    catalogMainBranch =
+        (NessieCatalog)
+            CatalogUtil.loadCatalog(NessieCatalog.class.getName(), "nessie", props, hadoopConfig);
   }
-
 
   static void resetData(TreeApi tree) throws NessieConflictException, NessieNotFoundException {
     for (Reference r : tree.getAllReferences()) {
@@ -187,10 +196,10 @@ class ITTestIdentifyUnreferencedAssetsActions {
     DynamoSupplier.deleteAllTables();
   }
 
-
   private Table createTable(TableIdentifier tableIdentifier, NessieCatalog catalog) {
     try {
-      return catalog.createTable(tableIdentifier, SCHEMA, PartitionSpec.builderFor(SCHEMA).identity("foe1").build());
+      return catalog.createTable(
+          tableIdentifier, SCHEMA, PartitionSpec.builderFor(SCHEMA).identity("foe1").build());
     } catch (Throwable t) {
       LOGGER.error("unable to do create {}", tableIdentifier, t);
       throw t;
@@ -207,16 +216,16 @@ class ITTestIdentifyUnreferencedAssetsActions {
     JavaRDD<Row> rowRDD = sparkContext.parallelize(stringAsList).map(RowFactory::create);
 
     // Create schema
-    StructType schema = DataTypes
-        .createStructType(new StructField[] {
-            DataTypes.createStructField("foe1", DataTypes.StringType, false),
-            DataTypes.createStructField("foe2", DataTypes.StringType, false)
-        });
+    StructType schema =
+        DataTypes.createStructType(
+            new StructField[] {
+              DataTypes.createStructField("foe1", DataTypes.StringType, false),
+              DataTypes.createStructField("foe2", DataTypes.StringType, false)
+            });
 
     Dataset<Row> dataDF = spark.sqlContext().createDataFrame(rowRDD, schema);
 
     dataDF.write().format("iceberg").mode("append").save(tableIdentifier.toString());
-
   }
 
   @Test
@@ -229,68 +238,99 @@ class ITTestIdentifyUnreferencedAssetsActions {
     // create a new table on a different branch, commit then delete the branch.
     createTable(TABLE_IDENTIFIER2, catalogDeleteBranch);
     addFile(sparkDeleteBranch, TABLE_IDENTIFIER2);
-    client.getTreeApi().deleteBranch(DELETE_BRANCH, client.getTreeApi().getReferenceByName(DELETE_BRANCH).getHash());
+    client
+        .getTreeApi()
+        .deleteBranch(
+            DELETE_BRANCH, client.getTreeApi().getReferenceByName(DELETE_BRANCH).getHash());
 
     // now confirm that the unreferenced assets are marked for deletion. These are found based
     // on the no-longer referenced commit as well as the old commits.
-    GcActions actions = new GcActions.Builder(sparkMain).setActionsConfig(actionsConfig()).setGcOptions(gcOptions(Clock.systemUTC()))
-        .setTable(GcActions.DEFAULT_TABLE_IDENTIFIER).build();
+    GcActions actions =
+        new GcActions.Builder(sparkMain)
+            .setActionsConfig(actionsConfig())
+            .setGcOptions(gcOptions(Clock.systemUTC()))
+            .setTable(GcActions.DEFAULT_TABLE_IDENTIFIER)
+            .build();
     Dataset<Row> unreferencedAssets = actions.identifyUnreferencedAssets();
     actions.updateUnreferencedAssetTable(unreferencedAssets);
 
-    //Test asset count
-    //collect into a multimap for assertions
-    Multimap<String, String> unreferencedItems = unreferencedAssets.collectAsList()
-        .stream()
-        .collect(Multimaps.toMultimap(x -> x.getString(4),
-            x -> x.getString(5), HashMultimap::create));
-    Map<String, Integer> count = unreferencedItems.keySet().stream()
-        .collect(Collectors.toMap(Function.identity(), x -> unreferencedItems.get(x).size()));
+    // Test asset count
+    // collect into a multimap for assertions
+    Multimap<String, String> unreferencedItems =
+        unreferencedAssets.collectAsList().stream()
+            .collect(
+                Multimaps.toMultimap(
+                    x -> x.getString(4), x -> x.getString(5), HashMultimap::create));
+    Map<String, Integer> count =
+        unreferencedItems.keySet().stream()
+            .collect(Collectors.toMap(Function.identity(), x -> unreferencedItems.get(x).size()));
     Set<String> paths = new HashSet<>(unreferencedItems.values());
 
-    //1 table should be deleted from deleted branch
-    //2 metadata: 1 from add and one from create
-    //1 manifest lists: 1 from add
-    //1 manifest: 1 manifest file from add
-    //2 data files: 2 data files from table
-    ImmutableMap<String, Integer> expected = ImmutableMap.of("TABLE", 1,
-        "ICEBERG_MANIFEST", 1,
-        "ICEBERG_MANIFEST_LIST", 1,
-        "ICEBERG_METADATA", 2,
-        "DATA_FILE", 2);
+    // 1 table should be deleted from deleted branch
+    // 2 metadata: 1 from add and one from create
+    // 1 manifest lists: 1 from add
+    // 1 manifest: 1 manifest file from add
+    // 2 data files: 2 data files from table
+    ImmutableMap<String, Integer> expected =
+        ImmutableMap.of(
+            "TABLE",
+            1,
+            "ICEBERG_MANIFEST",
+            1,
+            "ICEBERG_MANIFEST_LIST",
+            1,
+            "ICEBERG_METADATA",
+            2,
+            "DATA_FILE",
+            2);
     assertThat(count.entrySet()).containsAll(expected.entrySet());
 
-    //delete second second branch and re-run asset identification
-    client.getTreeApi().deleteBranch(BRANCH, client.getTreeApi().getReferenceByName(BRANCH).getHash());
+    // delete second second branch and re-run asset identification
+    client
+        .getTreeApi()
+        .deleteBranch(BRANCH, client.getTreeApi().getReferenceByName(BRANCH).getHash());
     Dataset<Row> unreferencedAssets2 = actions.identifyUnreferencedAssets();
     actions.updateUnreferencedAssetTable(unreferencedAssets2);
 
-    //Test asset count again to ensure we got both tables
-    //collect into a multimap for assertions
-    Multimap<String, String> unreferencedItems2 = unreferencedAssets2.collectAsList()
-        .stream()
-        .collect(Multimaps.toMultimap(x -> x.getString(4),
-            x -> x.getString(5), HashMultimap::create));
-    Map<String, Integer> count2 = unreferencedItems2.keySet().stream()
-        .collect(Collectors.toMap(Function.identity(), x -> unreferencedItems2.get(x).size()));
+    // Test asset count again to ensure we got both tables
+    // collect into a multimap for assertions
+    Multimap<String, String> unreferencedItems2 =
+        unreferencedAssets2.collectAsList().stream()
+            .collect(
+                Multimaps.toMultimap(
+                    x -> x.getString(4), x -> x.getString(5), HashMultimap::create));
+    Map<String, Integer> count2 =
+        unreferencedItems2.keySet().stream()
+            .collect(Collectors.toMap(Function.identity(), x -> unreferencedItems2.get(x).size()));
     paths.addAll(unreferencedItems2.values());
 
-    //4 table should be deleted from deleted branch  x2 tables
-    //4 metadata: 1 from add and one from create x2 tables
-    //2 manifest lists: 1 from add x2 tables
-    //2 manifest: 1 manifest file from add x2 tables
-    //4 data files: 2 data files from table x2 tables
-    ImmutableMap<String, Integer> expected2 = ImmutableMap.of("TABLE", 2,
-        "ICEBERG_MANIFEST", 2,
-        "ICEBERG_MANIFEST_LIST", 2,
-        "ICEBERG_METADATA", 4,
-        "DATA_FILE", 4);
+    // 4 table should be deleted from deleted branch  x2 tables
+    // 4 metadata: 1 from add and one from create x2 tables
+    // 2 manifest lists: 1 from add x2 tables
+    // 2 manifest: 1 manifest file from add x2 tables
+    // 4 data files: 2 data files from table x2 tables
+    ImmutableMap<String, Integer> expected2 =
+        ImmutableMap.of(
+            "TABLE",
+            2,
+            "ICEBERG_MANIFEST",
+            2,
+            "ICEBERG_MANIFEST_LIST",
+            2,
+            "ICEBERG_METADATA",
+            4,
+            "DATA_FILE",
+            4);
     assertThat(count2.entrySet()).containsAll(expected2.entrySet());
 
     // now collect and remove both tables.
     Table table = catalogMainBranch.loadTable(GcActions.DEFAULT_TABLE_IDENTIFIER);
     GcTableCleanAction.GcTableCleanResult result =
-        new GcTableCleanAction(table, sparkMain).dropGcTable(true).deleteCountThreshold(1).deleteOnPurge(false).execute();
+        new GcTableCleanAction(table, sparkMain)
+            .dropGcTable(true)
+            .deleteCountThreshold(1)
+            .deleteOnPurge(false)
+            .execute();
     assertThat(result.getDeletedAssetCount()).isEqualTo(14);
     assertThat(result.getFailedDeletes()).isEqualTo(0);
     assertThat(result.getDeletedAssetCount()).isEqualTo(paths.size());
@@ -298,8 +338,11 @@ class ITTestIdentifyUnreferencedAssetsActions {
   }
 
   private static GcActionsConfig actionsConfig() {
-    return GcActionsConfig.builder().dynamoRegion("us-west-2").dynamoEndpoint("http://localhost:8000")
-        .storeType(GcActionsConfig.StoreType.DYNAMO).build();
+    return GcActionsConfig.builder()
+        .dynamoRegion("us-west-2")
+        .dynamoEndpoint("http://localhost:8000")
+        .storeType(GcActionsConfig.StoreType.DYNAMO)
+        .build();
   }
 
   private static GcOptions gcOptions(Clock clock) {

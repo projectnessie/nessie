@@ -20,7 +20,6 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.SparkSession;
 import org.projectnessie.versioned.store.Id;
@@ -29,26 +28,21 @@ import org.projectnessie.versioned.store.Store.Acceptor;
 import org.projectnessie.versioned.store.ValueType;
 import org.projectnessie.versioned.tiered.Ref;
 
-/**
- * Class used for Branch/Tag records within Spark.
- */
+/** Class used for Branch/Tag records within Spark. */
 public class RefFrame implements Serializable {
   private static final long serialVersionUID = 2499305773519134099L;
 
   private String name;
   private IdFrame id;
 
-  /**
-   * Construct ref frame.
-   */
+  /** Construct ref frame. */
   public RefFrame(String name, IdFrame id) {
     super();
     this.name = name;
     this.id = id;
   }
 
-  public RefFrame() {
-  }
+  public RefFrame() {}
 
   public static RefFrame of(String name, Id id) {
     return new RefFrame(name, IdFrame.of(id));
@@ -70,14 +64,13 @@ public class RefFrame implements Serializable {
     this.id = id;
   }
 
-  /**
-   * For a stream of Refs, convert each to a RefFrame.
-   */
-  private static final Function<Acceptor<Ref>, RefFrame> CONVERTER = a -> {
-    RefHandler handler = new RefHandler();
-    a.applyValue(handler);
-    return handler.frame;
-  };
+  /** For a stream of Refs, convert each to a RefFrame. */
+  private static final Function<Acceptor<Ref>, RefFrame> CONVERTER =
+      a -> {
+        RefHandler handler = new RefHandler();
+        a.applyValue(handler);
+        return handler.frame;
+      };
 
   private static final class RefHandler implements Ref {
     final RefFrame frame = new RefFrame();
@@ -185,18 +178,9 @@ public class RefFrame implements Serializable {
     }
   }
 
-  /**
-   * Generate spark dataset from store supplier.
-   */
+  /** Generate spark dataset from store supplier. */
   public static Dataset<RefFrame> asDataset(Supplier<Store> store, SparkSession spark) {
     return ValueRetriever.dataset(
-        store,
-        ValueType.REF,
-        RefFrame.class,
-        Optional.empty(),
-        spark,
-        CONVERTER
-        );
+        store, ValueType.REF, RefFrame.class, Optional.empty(), spark, CONVERTER);
   }
-
 }

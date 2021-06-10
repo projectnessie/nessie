@@ -15,9 +15,12 @@
  */
 package org.projectnessie.versioned.impl;
 
+import io.micrometer.core.instrument.DistributionSummary;
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.util.Collection;
 import java.util.Random;
-
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -27,14 +30,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.versioned.dynamodb.DynamoStore;
 import org.projectnessie.versioned.dynamodb.LocalDynamoDB;
-import org.projectnessie.versioned.impl.SampleEntities;
 import org.projectnessie.versioned.store.ValueType;
-
-import io.micrometer.core.instrument.DistributionSummary;
-import io.micrometer.core.instrument.Meter;
-import io.micrometer.core.instrument.Metrics;
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
-
 
 @ExtendWith(LocalDynamoDB.class)
 public class ITDynamoMetrics {
@@ -70,14 +66,21 @@ public class ITDynamoMetrics {
   void testMetrics() {
     store.putIfAbsent(new EntitySaveOp<>(ValueType.REF, SampleEntities.createBranch(random)));
 
-    //make sure standard Dynamo metrics are visible. Expect status codes for each of the 3 dynamo calls made (describe, create, put)
-    Assertions.assertFalse(Metrics.globalRegistry.get("DynamoDB.HttpStatusCode.summary").meters().isEmpty());
+    // make sure standard Dynamo metrics are visible. Expect status codes for each of the 3 dynamo
+    // calls made (describe, create, put)
+    Assertions.assertFalse(
+        Metrics.globalRegistry.get("DynamoDB.HttpStatusCode.summary").meters().isEmpty());
 
-    //make sure extra Dynamo metrics are visible. Expect capacity for put only
-    Collection<Meter> meters = Metrics.globalRegistry.get("DynamoDB.ConsumedCapacity.summary").meters();
+    // make sure extra Dynamo metrics are visible. Expect capacity for put only
+    Collection<Meter> meters =
+        Metrics.globalRegistry.get("DynamoDB.ConsumedCapacity.summary").meters();
     Assertions.assertFalse(meters.isEmpty());
-    DistributionSummary putCapacity = (DistributionSummary) meters.stream()
-        .filter(x -> x.getId().getTag("operation").contains("Put")).findFirst().get();
+    DistributionSummary putCapacity =
+        (DistributionSummary)
+            meters.stream()
+                .filter(x -> x.getId().getTag("operation").contains("Put"))
+                .findFirst()
+                .get();
     Assertions.assertTrue(1 <= putCapacity.count());
     Assertions.assertTrue(1 <= putCapacity.totalAmount());
   }

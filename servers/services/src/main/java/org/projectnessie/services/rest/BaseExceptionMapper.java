@@ -15,22 +15,17 @@
  */
 package org.projectnessie.services.rest;
 
+import com.google.common.base.Throwables;
 import java.util.function.Consumer;
-
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
-
 import org.projectnessie.error.NessieError;
 import org.projectnessie.services.config.ServerConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Throwables;
-
-/**
- * Code shared between concrete exception-mapper implementations.
- */
+/** Code shared between concrete exception-mapper implementations. */
 public abstract class BaseExceptionMapper {
   private static final Logger LOGGER = LoggerFactory.getLogger(BaseExceptionMapper.class);
 
@@ -41,18 +36,10 @@ public abstract class BaseExceptionMapper {
   }
 
   protected Response buildExceptionResponse(
-      int status,
-      String reason,
-      String message,
-      Exception e) {
+      int status, String reason, String message, Exception e) {
 
     return buildExceptionResponse(
-        status,
-        reason,
-        message,
-        e,
-        serverConfig.sendStacktraceToClient(),
-        h -> {});
+        status, reason, message, e, serverConfig.sendStacktraceToClient(), h -> {});
   }
 
   protected Response buildExceptionResponse(
@@ -65,11 +52,14 @@ public abstract class BaseExceptionMapper {
 
     String stack = includeExceptionStackTrace ? Throwables.getStackTraceAsString(e) : null;
     NessieError error = new NessieError(message, status, reason, stack);
-    LOGGER.debug("Failure on server, propagated to client. Status: {} {}, Message: {}.",
-        status, reason, message, e);
-    ResponseBuilder responseBuilder = Response.status(status)
-        .entity(error)
-        .type(MediaType.APPLICATION_JSON_TYPE);
+    LOGGER.debug(
+        "Failure on server, propagated to client. Status: {} {}, Message: {}.",
+        status,
+        reason,
+        message,
+        e);
+    ResponseBuilder responseBuilder =
+        Response.status(status).entity(error).type(MediaType.APPLICATION_JSON_TYPE);
     responseHandler.accept(responseBuilder);
     return responseBuilder.build();
   }

@@ -18,6 +18,9 @@ package org.projectnessie.versioned.gc;
 import static org.apache.iceberg.types.Types.NestedField.required;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimaps;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,7 +28,6 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.BaseTable;
 import org.apache.iceberg.CatalogUtil;
@@ -53,21 +55,20 @@ import org.projectnessie.model.Branch;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.versioned.tiered.gc.DynamoSupplier;
 
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Multimaps;
-
 public class ITIcebergAssetKeyReader {
 
   private static final int NESSIE_PORT = Integer.getInteger("quarkus.http.test-port", 19121);
-  private static final String NESSIE_ENDPOINT = String.format("http://localhost:%d/api/v1", NESSIE_PORT);
-  private static final Consumer<String> NOOP = x -> {
-  };
+  private static final String NESSIE_ENDPOINT =
+      String.format("http://localhost:%d/api/v1", NESSIE_PORT);
+  private static final Consumer<String> NOOP = x -> {};
 
-  @TempDir
-  static File ALLEY_LOCAL_DIR;
-  private static final Schema SCHEMA = new Schema(Types.StructType.of(required(1, "foe1", Types.StringType.get()),
-      required(2, "foe2", Types.StringType.get())).fields());
+  @TempDir static File ALLEY_LOCAL_DIR;
+  private static final Schema SCHEMA =
+      new Schema(
+          Types.StructType.of(
+                  required(1, "foe1", Types.StringType.get()),
+                  required(2, "foe2", Types.StringType.get()))
+              .fields());
   private NessieClient client;
   private TreeApi tree;
   private Catalog catalog;
@@ -97,49 +98,101 @@ public class ITIcebergAssetKeyReader {
   void testAssetKeyReader() {
     Table table = catalog.createTable(TableIdentifier.of("test", "table"), SCHEMA);
 
-    table.newAppend().appendFile(DataFiles.builder(PartitionSpec.unpartitioned()).withPath("file:/x/y/z")
-        .withFormat(FileFormat.PARQUET).withFileSizeInBytes(12L).withRecordCount(12).build()).commit();
+    table
+        .newAppend()
+        .appendFile(
+            DataFiles.builder(PartitionSpec.unpartitioned())
+                .withPath("file:/x/y/z")
+                .withFormat(FileFormat.PARQUET)
+                .withFileSizeInBytes(12L)
+                .withRecordCount(12)
+                .build())
+        .commit();
 
-    IcebergAssetKeyConverter akr = new IcebergAssetKeyConverter(new SerializableConfiguration(hadoopConfig));
+    IcebergAssetKeyConverter akr =
+        new IcebergAssetKeyConverter(new SerializableConfiguration(hadoopConfig));
 
     // 1 of each as a single commit was checked
-    ImmutableMap<String, Long> expected = ImmutableMap.of("TABLE", 1L,
-        "ICEBERG_MANIFEST", 1L,
-        "ICEBERG_MANIFEST_LIST", 1L,
-        "ICEBERG_METADATA", 1L,
-        "DATA_FILE", 1L);
+    ImmutableMap<String, Long> expected =
+        ImmutableMap.of(
+            "TABLE",
+            1L,
+            "ICEBERG_MANIFEST",
+            1L,
+            "ICEBERG_MANIFEST_LIST",
+            1L,
+            "ICEBERG_METADATA",
+            1L,
+            "DATA_FILE",
+            1L);
     check(akr, table, expected);
 
-    table.newAppend().appendFile(DataFiles.builder(PartitionSpec.unpartitioned()).withPath("file:/x/y/zz")
-        .withFormat(FileFormat.PARQUET).withFileSizeInBytes(12L).withRecordCount(12).build()).commit();
+    table
+        .newAppend()
+        .appendFile(
+            DataFiles.builder(PartitionSpec.unpartitioned())
+                .withPath("file:/x/y/zz")
+                .withFormat(FileFormat.PARQUET)
+                .withFileSizeInBytes(12L)
+                .withRecordCount(12)
+                .build())
+        .commit();
 
-    expected = ImmutableMap.of("TABLE", 1L, //still 1 table
-        "ICEBERG_MANIFEST", 2L, // 1 manifest from first commit, 1 from second
-        "ICEBERG_MANIFEST_LIST", 2L, // always one manifest list per snapshot, 2 snapshots currently
-        "ICEBERG_METADATA", 1L, // always 1 metadata file per commit
-        "DATA_FILE", 2L); // 2 data files, 1 for each append
+    expected =
+        ImmutableMap.of(
+            "TABLE",
+            1L, // still 1 table
+            "ICEBERG_MANIFEST",
+            2L, // 1 manifest from first commit, 1 from second
+            "ICEBERG_MANIFEST_LIST",
+            2L, // always one manifest list per snapshot, 2 snapshots currently
+            "ICEBERG_METADATA",
+            1L, // always 1 metadata file per commit
+            "DATA_FILE",
+            2L); // 2 data files, 1 for each append
     check(akr, table, expected);
 
     long commitTime = System.currentTimeMillis();
-    table.expireSnapshots().expireOlderThan(commitTime).deleteWith(NOOP).cleanExpiredFiles(false).commit();
+    table
+        .expireSnapshots()
+        .expireOlderThan(commitTime)
+        .deleteWith(NOOP)
+        .cleanExpiredFiles(false)
+        .commit();
 
-    expected = ImmutableMap.of("TABLE", 1L, //still 1 table
-        "ICEBERG_MANIFEST", 2L, // 1 manifest from first commit, 1 from second
-        "ICEBERG_MANIFEST_LIST", 1L, // always one manifest list per snapshot, all snapshots have been removed
-        "ICEBERG_METADATA", 1L, // always 1 metadata file per commit
-        "DATA_FILE", 2L); // 2 data files, 1 for each append
+    expected =
+        ImmutableMap.of(
+            "TABLE",
+            1L, // still 1 table
+            "ICEBERG_MANIFEST",
+            2L, // 1 manifest from first commit, 1 from second
+            "ICEBERG_MANIFEST_LIST",
+            1L, // always one manifest list per snapshot, all snapshots have been removed
+            "ICEBERG_METADATA",
+            1L, // always 1 metadata file per commit
+            "DATA_FILE",
+            2L); // 2 data files, 1 for each append
     check(akr, table, expected);
   }
 
-  private void check(IcebergAssetKeyConverter akr, Table table, ImmutableMap<String, Long> expected) {
-    Set<AssetKey> fileList = akr.apply(IcebergTable.of(((BaseTable) table).operations().current().metadataFileLocation()))
-        .collect(Collectors.toSet());
+  private void check(
+      IcebergAssetKeyConverter akr, Table table, ImmutableMap<String, Long> expected) {
+    Set<AssetKey> fileList =
+        akr.apply(
+                IcebergTable.of(((BaseTable) table).operations().current().metadataFileLocation()))
+            .collect(Collectors.toSet());
 
-    Multimap<String, AssetKey> unreferencedItems = fileList
-        .stream()
-        .collect(Multimaps.toMultimap(x -> String.join(".", x.toReportableName()), x -> x, ArrayListMultimap::create));
-    Map<String, Long> count = unreferencedItems.keySet().stream()
-        .map(x -> x.split("\\.")[0]).collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+    Multimap<String, AssetKey> unreferencedItems =
+        fileList.stream()
+            .collect(
+                Multimaps.toMultimap(
+                    x -> String.join(".", x.toReportableName()),
+                    x -> x,
+                    ArrayListMultimap::create));
+    Map<String, Long> count =
+        unreferencedItems.keySet().stream()
+            .map(x -> x.split("\\.")[0])
+            .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
 
     assertThat(count.entrySet()).containsAll(expected.entrySet());
   }

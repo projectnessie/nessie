@@ -15,14 +15,11 @@
  */
 package org.projectnessie.server.config;
 
+import io.quarkus.arc.config.ConfigProperties;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.projectnessie.services.config.ServerConfig;
 
-import io.quarkus.arc.config.ConfigProperties;
-
-/**
- * Nessie server config for Quarkus.
- */
+/** Nessie server config for Quarkus. */
 @ConfigProperties(prefix = "nessie.server")
 public interface QuarkusServerConfig extends ServerConfig {
 

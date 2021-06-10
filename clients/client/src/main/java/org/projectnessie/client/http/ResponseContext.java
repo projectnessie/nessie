@@ -18,9 +18,7 @@ package org.projectnessie.client.http;
 import java.io.IOException;
 import java.io.InputStream;
 
-/**
- * Interface for the important parts of a response. This is created after executing the request.
- */
+/** Interface for the important parts of a response. This is created after executing the request. */
 public interface ResponseContext {
 
   Status getResponseCode() throws IOException;
@@ -28,5 +26,4 @@ public interface ResponseContext {
   InputStream getInputStream() throws IOException;
 
   InputStream getErrorStream() throws IOException;
-
 }

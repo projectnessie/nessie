@@ -15,6 +15,13 @@
  */
 package org.projectnessie.client.http;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.io.BaseEncoding;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpsConfigurator;
+import com.sun.net.httpserver.HttpsParameters;
+import com.sun.net.httpserver.HttpsServer;
 import java.io.OutputStream;
 import java.math.BigInteger;
 import java.net.URI;
@@ -28,14 +35,12 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.time.ZonedDateTime;
 import java.util.Date;
-
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
-
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStyle;
@@ -54,51 +59,50 @@ import org.projectnessie.client.util.TestServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.io.BaseEncoding;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.HttpsParameters;
-import com.sun.net.httpserver.HttpsServer;
-
 class TestHttpsClient {
   private static final Logger LOGGER = LoggerFactory.getLogger(TestHttpsClient.class);
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
   @Test
   void testHttps() throws Exception {
-    HttpHandler handler = h -> {
-      Assertions.assertEquals("GET", h.getRequestMethod());
-      String response = "hello";
-      h.sendResponseHeaders(200, response.getBytes().length);
-      OutputStream os = h.getResponseBody();
-      os.write(response.getBytes());
-      os.close();
-    };
+    HttpHandler handler =
+        h -> {
+          Assertions.assertEquals("GET", h.getRequestMethod());
+          String response = "hello";
+          h.sendResponseHeaders(200, response.getBytes().length);
+          OutputStream os = h.getResponseBody();
+          os.write(response.getBytes());
+          os.close();
+        };
     TrustManager[][] trustManager = new TrustManager[1][];
-    try (TestServer server = new TestServer("/", handler, s -> {
-      try {
-        trustManager[0] = ssl(s);
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      }
-    })) {
+    try (TestServer server =
+        new TestServer(
+            "/",
+            handler,
+            s -> {
+              try {
+                trustManager[0] = ssl(s);
+              } catch (Exception e) {
+                throw new RuntimeException(e);
+              }
+            })) {
       SSLContext sc = SSLContext.getInstance("SSL");
       sc.init(null, trustManager[0], new java.security.SecureRandom());
-      HttpRequest client = HttpClient.builder()
-                                     .setBaseUri(URI.create("https://localhost:" + server.getAddress().getPort()))
-                                     .setObjectMapper(MAPPER)
-                                     .setSslContext(sc)
-                                     .build()
-                                     .newRequest();
+      HttpRequest client =
+          HttpClient.builder()
+              .setBaseUri(URI.create("https://localhost:" + server.getAddress().getPort()))
+              .setObjectMapper(MAPPER)
+              .setSslContext(sc)
+              .build()
+              .newRequest();
       client.get();
 
-      final HttpRequest insecureClient = HttpClient.builder()
-                         .setBaseUri(URI.create("https://localhost:" + server.getAddress().getPort()))
-                         .setObjectMapper(MAPPER)
-                         .build()
-                         .newRequest();
+      final HttpRequest insecureClient =
+          HttpClient.builder()
+              .setBaseUri(URI.create("https://localhost:" + server.getAddress().getPort()))
+              .setObjectMapper(MAPPER)
+              .build()
+              .newRequest();
       Assertions.assertThrows(HttpClientException.class, insecureClient::get);
     }
   }
@@ -110,14 +114,16 @@ class TestHttpsClient {
     return keyPair;
   }
 
-  private static X509CertificateHolder generateCertHolder(SecureRandom random, ZonedDateTime now, KeyPair keyPair) throws Exception {
-    final X500NameBuilder nameBuilder = new X500NameBuilder(BCStyle.INSTANCE)
-        .addRDN(BCStyle.CN, "localhost")
-        .addRDN(BCStyle.OU, "Dremio Corp. (auto-generated)")
-        .addRDN(BCStyle.O, "Dremio Corp. (auto-generated)")
-        .addRDN(BCStyle.L, "Mountain View")
-        .addRDN(BCStyle.ST, "California")
-        .addRDN(BCStyle.C, "US");
+  private static X509CertificateHolder generateCertHolder(
+      SecureRandom random, ZonedDateTime now, KeyPair keyPair) throws Exception {
+    final X500NameBuilder nameBuilder =
+        new X500NameBuilder(BCStyle.INSTANCE)
+            .addRDN(BCStyle.CN, "localhost")
+            .addRDN(BCStyle.OU, "Dremio Corp. (auto-generated)")
+            .addRDN(BCStyle.O, "Dremio Corp. (auto-generated)")
+            .addRDN(BCStyle.L, "Mountain View")
+            .addRDN(BCStyle.ST, "California")
+            .addRDN(BCStyle.C, "US");
 
     final Date notBefore = Date.from(now.minusDays(1).toInstant());
     final Date notAfter = Date.from(now.plusYears(1).toInstant());
@@ -130,31 +136,31 @@ class TestHttpsClient {
 
     final X509v3CertificateBuilder certificateBuilder =
         new JcaX509v3CertificateBuilder(
-          nameBuilder.build(),
-          serialNumber,
-          notBefore,
-          notAfter,
-          nameBuilder.build(),
-          keyPair.getPublic()
-        ).addExtension(
-          Extension.subjectAlternativeName,
-          false,
-          new DERSequence(alternativeSubjectNames));
+                nameBuilder.build(),
+                serialNumber,
+                notBefore,
+                notAfter,
+                nameBuilder.build(),
+                keyPair.getPublic())
+            .addExtension(
+                Extension.subjectAlternativeName, false, new DERSequence(alternativeSubjectNames));
 
     // sign the certificate using the private key
     final ContentSigner contentSigner;
     try {
-      contentSigner = new JcaContentSignerBuilder("SHA256WithRSAEncryption").build(keyPair.getPrivate());
+      contentSigner =
+          new JcaContentSignerBuilder("SHA256WithRSAEncryption").build(keyPair.getPrivate());
     } catch (OperatorCreationException e) {
       throw new GeneralSecurityException(e);
     }
     return certificateBuilder.build(contentSigner);
   }
 
+  private static X509Certificate generateCert(ZonedDateTime now, X509CertificateHolder certHolder)
+      throws Exception {
 
-  private static X509Certificate generateCert(ZonedDateTime now, X509CertificateHolder certHolder) throws Exception {
-
-    final X509Certificate certificate = new JcaX509CertificateConverter().getCertificate(certHolder);
+    final X509Certificate certificate =
+        new JcaX509CertificateConverter().getCertificate(certHolder);
 
     // check the validity
     certificate.checkValidity(Date.from(now.toInstant()));
@@ -162,9 +168,10 @@ class TestHttpsClient {
     // make sure the certificate is self-signed
     certificate.verify(certificate.getPublicKey());
 
-    final String fingerprint = BaseEncoding.base16()
-                                           .withSeparator(":", 2)
-                                           .encode(MessageDigest.getInstance("SHA-256").digest(certificate.getEncoded()));
+    final String fingerprint =
+        BaseEncoding.base16()
+            .withSeparator(":", 2)
+            .encode(MessageDigest.getInstance("SHA-256").digest(certificate.getEncoded()));
     LOGGER.info("Certificate created (SHA-256 fingerprint: {})", fingerprint);
     return certificate;
   }
@@ -185,13 +192,11 @@ class TestHttpsClient {
     X509CertificateHolder certHolder = generateCertHolder(random, now, keyPair);
     X509Certificate certificate = generateCert(now, certHolder);
 
-
     keyStore.setKeyEntry(
         "AutoGeneratedPrivateKey",
         keyPair.getPrivate(),
         "password".toCharArray(),
-        new java.security.cert.Certificate[]{certificate}
-    );
+        new java.security.cert.Certificate[] {certificate});
 
     trustStore.setEntry("AutoGeneratedCert", new TrustedCertificateEntry(certificate), null);
 
@@ -205,25 +210,26 @@ class TestHttpsClient {
 
     // Set up the HTTPS context and parameters
     sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-    ((HttpsServer) httpsServer).setHttpsConfigurator(new HttpsConfigurator(sslContext) {
-      public void configure(HttpsParameters params) {
-        try {
-          // Initialise the SSL context
-          SSLContext c = SSLContext.getDefault();
-          SSLEngine engine = c.createSSLEngine();
-          params.setNeedClientAuth(false);
-          params.setCipherSuites(engine.getEnabledCipherSuites());
-          params.setProtocols(engine.getEnabledProtocols());
+    ((HttpsServer) httpsServer)
+        .setHttpsConfigurator(
+            new HttpsConfigurator(sslContext) {
+              public void configure(HttpsParameters params) {
+                try {
+                  // Initialise the SSL context
+                  SSLContext c = SSLContext.getDefault();
+                  SSLEngine engine = c.createSSLEngine();
+                  params.setNeedClientAuth(false);
+                  params.setCipherSuites(engine.getEnabledCipherSuites());
+                  params.setProtocols(engine.getEnabledProtocols());
 
-          // Get the default parameters
-          SSLParameters defaultSSLParameters = c.getDefaultSSLParameters();
-          params.setSSLParameters(defaultSSLParameters);
-        } catch (Exception ex) {
-          throw new RuntimeException(ex);
-        }
-      }
-    });
+                  // Get the default parameters
+                  SSLParameters defaultSSLParameters = c.getDefaultSSLParameters();
+                  params.setSSLParameters(defaultSSLParameters);
+                } catch (Exception ex) {
+                  throw new RuntimeException(ex);
+                }
+              }
+            });
     return tmf.getTrustManagers();
   }
-
 }

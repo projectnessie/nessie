@@ -13,20 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.projectnessie.services.rest;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
-
 import javax.ws.rs.ext.ParamConverter;
 import javax.ws.rs.ext.ParamConverterProvider;
 import javax.ws.rs.ext.Provider;
 
 /**
- * JAX-RS parameter converter provider to transform {@code String} into {@code Instant}, and vice-versa.
+ * JAX-RS parameter converter provider to transform {@code String} into {@code Instant}, and
+ * vice-versa.
  */
 @Provider
 public class InstantParamConverterProvider implements ParamConverterProvider {
@@ -41,7 +40,8 @@ public class InstantParamConverterProvider implements ParamConverterProvider {
       try {
         return Instant.parse(instant);
       } catch (DateTimeParseException e) {
-        throw new IllegalArgumentException(String.format("'%s' could not be parsed to an Instant in ISO-8601 format", instant), e);
+        throw new IllegalArgumentException(
+            String.format("'%s' could not be parsed to an Instant in ISO-8601 format", instant), e);
       }
     }
 
@@ -56,7 +56,8 @@ public class InstantParamConverterProvider implements ParamConverterProvider {
 
   @SuppressWarnings("unchecked")
   @Override
-  public <T> ParamConverter<T> getConverter(Class<T> rawType, Type genericType, Annotation[] annotations) {
+  public <T> ParamConverter<T> getConverter(
+      Class<T> rawType, Type genericType, Annotation[] annotations) {
     if (rawType.equals(Instant.class)) {
       return (ParamConverter<T>) new InstantParamConverter();
     }

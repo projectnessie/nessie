@@ -15,20 +15,16 @@
  */
 package org.projectnessie.server.error;
 
-import javax.validation.constraints.NotNull;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import javax.validation.constraints.NotNull;
 
-/**
- * Just a dummy entity.
- */
+/** Just a dummy entity. */
 public class OtherEntity {
   private final String foo;
 
   @JsonCreator
-  public OtherEntity(
-      @NotNull @JsonProperty("foo") String foo) {
+  public OtherEntity(@NotNull @JsonProperty("foo") String foo) {
     this.foo = foo;
   }
 

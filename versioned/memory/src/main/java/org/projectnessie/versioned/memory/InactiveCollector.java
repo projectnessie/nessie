@@ -16,27 +16,21 @@
 package org.projectnessie.versioned.memory;
 
 import java.util.NoSuchElementException;
-
 import org.projectnessie.versioned.VersionStore.CollectionProgress;
 import org.projectnessie.versioned.VersionStore.Collector;
 
-/**
- * A collector implementation which does not collect.
- *
- */
+/** A collector implementation which does not collect. */
 final class InactiveCollector implements Collector {
   private static final InactiveCollector INSTANCE = new InactiveCollector();
 
-  private InactiveCollector() {
-  }
+  private InactiveCollector() {}
 
   public static Collector of() {
     return INSTANCE;
   }
 
   @Override
-  public void close() {
-  }
+  public void close() {}
 
   @Override
   public boolean hasNext() {

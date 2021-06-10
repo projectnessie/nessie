@@ -62,8 +62,9 @@ public class TestMongoDBVersionStore extends AbstractITVersionStore {
 
   @Disabled
   @Override
-  public void commitWithInvalidReference() throws ReferenceNotFoundException,
-      ReferenceConflictException, ReferenceAlreadyExistsException {
+  public void commitWithInvalidReference()
+      throws ReferenceNotFoundException, ReferenceConflictException,
+          ReferenceAlreadyExistsException {
     super.commitWithInvalidReference();
   }
 

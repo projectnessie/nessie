@@ -15,11 +15,11 @@
  */
 package org.projectnessie.perftest;
 
+import com.google.common.base.Joiner;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
-
 import org.apache.jmeter.config.Arguments;
 import org.apache.jmeter.protocol.java.sampler.AbstractJavaSamplerClient;
 import org.apache.jmeter.protocol.java.sampler.JavaSamplerContext;
@@ -32,15 +32,12 @@ import org.projectnessie.model.IcebergTable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Joiner;
-
 /**
  * NessieSampler creates REST calls to the Nessie service.
  *
- * <p>
- * This implements the interface required to create custom JMeter plugins in Java. It defines the arguments required to create a REST call
- * to Nessie via the Nessie client. Result objects are populated based on the return value of the Nessie REST call.
- * </p>
+ * <p>This implements the interface required to create custom JMeter plugins in Java. It defines the
+ * arguments required to create a REST call to Nessie via the Nessie client. Result objects are
+ * populated based on the return value of the Nessie REST call.
  */
 public class NessieSampler extends AbstractJavaSamplerClient {
   private static final Logger logger = LoggerFactory.getLogger(NessieSampler.class);
@@ -65,23 +62,27 @@ public class NessieSampler extends AbstractJavaSamplerClient {
   private ThreadLocal<Branch> commitId = new ThreadLocal<>();
 
   /**
-   * Create a threadlocal nessie client. Multiple threads are run in the same JVM and they each get a client.
+   * Create a threadlocal nessie client. Multiple threads are run in the same JVM and they each get
+   * a client.
    */
   private synchronized NessieClient nessieClient() {
     if (client == null) {
-      client = NessieClient.builder().withUri(URI.create(uri)).withUsername("admin_user").withPassword("test123").build();
+      client =
+          NessieClient.builder()
+              .withUri(URI.create(uri))
+              .withUsername("admin_user")
+              .withPassword("test123")
+              .build();
       try {
         client.getTreeApi().createReference(Branch.of("main", null));
       } catch (Exception t) {
-        //pass - likely already created main
+        // pass - likely already created main
       }
     }
     return client;
   }
 
-  /**
-   * arguments and default values that JMeter test should set per sample.
-   */
+  /** arguments and default values that JMeter test should set per sample. */
   @Override
   public Arguments getDefaultParameters() {
     Arguments defaultParameters = new Arguments();
@@ -93,16 +94,15 @@ public class NessieSampler extends AbstractJavaSamplerClient {
     return defaultParameters;
   }
 
-  /**
-   * construct a sample from the result of a call to Nessie API.
-   */
-  private void fillSampler(SampleResult sampleResult,
-                           String commitId,
-                           int retries,
-                           boolean ok,
-                           String message,
-                           int retCode,
-                           Method method) {
+  /** construct a sample from the result of a call to Nessie API. */
+  private void fillSampler(
+      SampleResult sampleResult,
+      String commitId,
+      int retries,
+      boolean ok,
+      String message,
+      int retCode,
+      Method method) {
     sampleResult.sampleEnd();
     sampleResult.setSuccessful(ok);
     sampleResult.setResponseMessage(message);
@@ -111,7 +111,7 @@ public class NessieSampler extends AbstractJavaSamplerClient {
     try {
       sampleResult.setURL(new URL(SLASH.join(uri, method.name())));
     } catch (MalformedURLException e) {
-      //pass
+      // pass
     }
     sampleResult.setSampleLabel(SLASH.join(branch, baseBranch, retries, commitId));
   }
@@ -153,36 +153,49 @@ public class NessieSampler extends AbstractJavaSamplerClient {
     return sampleResult;
   }
 
-
   /**
-   * generate a rest call based on input parameters for a single Nessie perf test sample, then execute and generate a sample result.
+   * generate a rest call based on input parameters for a single Nessie perf test sample, then
+   * execute and generate a sample result.
    */
   @Override
   public SampleResult runTest(JavaSamplerContext javaSamplerContext) {
     Method method = Method.values()[javaSamplerContext.getIntParameter(METHOD_TAG)];
     String table = javaSamplerContext.getParameter(TABLE_TAG, "y");
     switch (method) {
-      case CREATE_BRANCH: {
-        return handle(() -> {
-          nessieClient().getTreeApi().createReference(Branch.of(branch, baseBranch));
-          return (Branch) nessieClient().getTreeApi().getReferenceByName(branch);
-        }, method);
-      }
+      case CREATE_BRANCH:
+        {
+          return handle(
+              () -> {
+                nessieClient().getTreeApi().createReference(Branch.of(branch, baseBranch));
+                return (Branch) nessieClient().getTreeApi().getReferenceByName(branch);
+              },
+              method);
+        }
       case DELETE_BRANCH:
         break;
-      case COMMIT: {
-        return handle(() -> {
-          if (commitId.get() == null) {
-            Branch branch = (Branch) nessieClient().getTreeApi().getReferenceByName(this.branch);
-            commitId.set(branch);
-          }
-          nessieClient().getContentsApi().setContents(ContentsKey.of("name", "space", table),
-              commitId.get().getName(), commitId.get().getHash(),
-              "test", IcebergTable.of("path_on_disk_" + table));
-          //TODO: this test shouldn't be doing a get branch operation since that isn't required to complete a commit.
-          return (Branch) nessieClient().getTreeApi().getReferenceByName(branch);
-        }, method);
-      }
+      case COMMIT:
+        {
+          return handle(
+              () -> {
+                if (commitId.get() == null) {
+                  Branch branch =
+                      (Branch) nessieClient().getTreeApi().getReferenceByName(this.branch);
+                  commitId.set(branch);
+                }
+                nessieClient()
+                    .getContentsApi()
+                    .setContents(
+                        ContentsKey.of("name", "space", table),
+                        commitId.get().getName(),
+                        commitId.get().getHash(),
+                        "test",
+                        IcebergTable.of("path_on_disk_" + table));
+                // TODO: this test shouldn't be doing a get branch operation since that isn't
+                // required to complete a commit.
+                return (Branch) nessieClient().getTreeApi().getReferenceByName(branch);
+              },
+              method);
+        }
       case MERGE:
         break;
       default:

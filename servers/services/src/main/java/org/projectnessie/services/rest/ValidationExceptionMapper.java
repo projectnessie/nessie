@@ -21,19 +21,16 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
-
 import org.projectnessie.services.config.ServerConfig;
 
 /**
- * "Special" implementation for exceptions that extend {@link ValidationException}, as those
- * do not "go through" {@link NessieExceptionMapper} and there need to be two
- * {@link ExceptionMapper} beans for the Nessie-server.
+ * "Special" implementation for exceptions that extend {@link ValidationException}, as those do not
+ * "go through" {@link NessieExceptionMapper} and there need to be two {@link ExceptionMapper} beans
+ * for the Nessie-server.
  */
 @Provider
-public class ValidationExceptionMapper
-    extends BaseExceptionMapper
+public class ValidationExceptionMapper extends BaseExceptionMapper
     implements ExceptionMapper<ValidationException> {
-
 
   // Unused constructor
   // Required because of https://issues.jboss.org/browse/RESTEASY-1538

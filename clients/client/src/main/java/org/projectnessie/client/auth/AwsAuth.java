@@ -13,22 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.projectnessie.client.auth;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayInputStream;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.RequestContext;
 import org.projectnessie.client.http.RequestFilter;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.auth.signer.Aws4Signer;
@@ -44,22 +40,22 @@ public class AwsAuth implements RequestFilter {
   private final AwsCredentialsProvider awsCredentialsProvider;
   private final Region region = Region.US_WEST_2;
 
-  /**
-   * Construct AWS signer filter.
-   */
+  /** Construct AWS signer filter. */
   public AwsAuth(ObjectMapper objectMapper) {
     this.awsCredentialsProvider = DefaultCredentialsProvider.create();
     this.signer = Aws4Signer.create();
     this.objectMapper = objectMapper;
   }
 
-  private SdkHttpFullRequest prepareRequest(URI uri, HttpClient.Method method, Optional<Object> entity) {
+  private SdkHttpFullRequest prepareRequest(
+      URI uri, HttpClient.Method method, Optional<Object> entity) {
     try {
-      SdkHttpFullRequest.Builder builder = SdkHttpFullRequest.builder()
-                                                             .uri(uri)
-                                                             .method(SdkHttpMethod.fromValue(method.name()));
+      SdkHttpFullRequest.Builder builder =
+          SdkHttpFullRequest.builder().uri(uri).method(SdkHttpMethod.fromValue(method.name()));
 
-      Arrays.stream(uri.getQuery().split("&")).map(s -> s.split("=")).forEach(s -> builder.putRawQueryParameter(s[0], s[1]));
+      Arrays.stream(uri.getQuery().split("&"))
+          .map(s -> s.split("="))
+          .forEach(s -> builder.putRawQueryParameter(s[0], s[1]));
 
       if (entity.isPresent()) {
         try {
@@ -78,12 +74,13 @@ public class AwsAuth implements RequestFilter {
   @Override
   public void filter(RequestContext context) {
     SdkHttpFullRequest modifiedRequest =
-        signer.sign(prepareRequest(context.getUri(), context.getMethod(), context.getBody()),
-                  Aws4SignerParams.builder()
-                                  .signingName("execute-api")
-                                  .awsCredentials(awsCredentialsProvider.resolveCredentials())
-                                  .signingRegion(region)
-                                  .build());
+        signer.sign(
+            prepareRequest(context.getUri(), context.getMethod(), context.getBody()),
+            Aws4SignerParams.builder()
+                .signingName("execute-api")
+                .awsCredentials(awsCredentialsProvider.resolveCredentials())
+                .signingRegion(region)
+                .build());
     for (Map.Entry<String, List<String>> entry : modifiedRequest.toBuilder().headers().entrySet()) {
       if (context.getHeaders().containsKey(entry.getKey())) {
         continue;

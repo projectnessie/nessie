@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import javax.ws.rs.core.Response;
-
 import org.junit.jupiter.api.Test;
 
 class TestNessieError {
@@ -34,47 +33,49 @@ class TestNessieError {
 
   @Test
   void userContructor() {
-    NessieError e = new NessieError(
-        "message",
-        Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
-        Response.Status.INTERNAL_SERVER_ERROR.getReasonPhrase(),
-        "foo.bar.InternalServerError\n"
-            + "\tat some.other.Class",
-        new Exception("processingException"));
+    NessieError e =
+        new NessieError(
+            "message",
+            Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
+            Response.Status.INTERNAL_SERVER_ERROR.getReasonPhrase(),
+            "foo.bar.InternalServerError\n" + "\tat some.other.Class",
+            new Exception("processingException"));
     assertEquals("message", e.getMessage());
     assertThat(e.getFullMessage())
-        .startsWith(Response.Status.INTERNAL_SERVER_ERROR.getReasonPhrase()
-            + " (HTTP/" + Response.Status.INTERNAL_SERVER_ERROR.getStatusCode() + "): message\n"
-            + "foo.bar.InternalServerError\n"
-            + "\tat some.other.Class\n"
-            + "java.lang.Exception: processingException\n"
-            + "\tat org.projectnessie.error.TestNessieError.userContructor(TestNessieError.java:");
+        .startsWith(
+            Response.Status.INTERNAL_SERVER_ERROR.getReasonPhrase()
+                + " (HTTP/"
+                + Response.Status.INTERNAL_SERVER_ERROR.getStatusCode()
+                + "): message\n"
+                + "foo.bar.InternalServerError\n"
+                + "\tat some.other.Class\n"
+                + "java.lang.Exception: processingException\n"
+                + "\tat org.projectnessie.error.TestNessieError.userContructor(TestNessieError.java:");
   }
 
   @Test
   void jsonCreator() {
-    NessieError e = new NessieError(
-        "message",
-        Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
-        Response.Status.INTERNAL_SERVER_ERROR.getReasonPhrase(),
-        "foo.bar.InternalServerError\n"
-            + "\tat some.other.Class");
+    NessieError e =
+        new NessieError(
+            "message",
+            Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
+            Response.Status.INTERNAL_SERVER_ERROR.getReasonPhrase(),
+            "foo.bar.InternalServerError\n" + "\tat some.other.Class");
     assertAll(
-        () -> assertEquals(
-            Response.Status.INTERNAL_SERVER_ERROR.getReasonPhrase()
-                + " (HTTP/" + Response.Status.INTERNAL_SERVER_ERROR.getStatusCode() + "): message\n"
-                + "foo.bar.InternalServerError\n"
-                + "\tat some.other.Class",
-            e.getFullMessage()),
-        () -> assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
-            e.getStatus()),
-        () -> assertEquals("message",
-            e.getMessage()),
-        () -> assertEquals(
-            "foo.bar.InternalServerError\n"
-                + "\tat some.other.Class",
-            e.getServerStackTrace())
-    );
+        () ->
+            assertEquals(
+                Response.Status.INTERNAL_SERVER_ERROR.getReasonPhrase()
+                    + " (HTTP/"
+                    + Response.Status.INTERNAL_SERVER_ERROR.getStatusCode()
+                    + "): message\n"
+                    + "foo.bar.InternalServerError\n"
+                    + "\tat some.other.Class",
+                e.getFullMessage()),
+        () -> assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), e.getStatus()),
+        () -> assertEquals("message", e.getMessage()),
+        () ->
+            assertEquals(
+                "foo.bar.InternalServerError\n" + "\tat some.other.Class",
+                e.getServerStackTrace()));
   }
-
 }

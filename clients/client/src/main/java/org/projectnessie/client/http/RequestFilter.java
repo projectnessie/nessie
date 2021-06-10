@@ -16,8 +16,8 @@
 package org.projectnessie.client.http;
 
 /**
- * Filter to be evaluated before making a request. It is too late to change the URL or method but headers can be changed or other
- * connection parameters set.
+ * Filter to be evaluated before making a request. It is too late to change the URL or method but
+ * headers can be changed or other connection parameters set.
  */
 @FunctionalInterface
 public interface RequestFilter {

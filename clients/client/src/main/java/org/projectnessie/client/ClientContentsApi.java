@@ -16,7 +16,6 @@
 package org.projectnessie.client;
 
 import javax.validation.constraints.NotNull;
-
 import org.projectnessie.api.ContentsApi;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.error.NessieConflictException;
@@ -36,39 +35,55 @@ class ClientContentsApi implements ContentsApi {
 
   @Override
   public Contents getContents(@NotNull ContentsKey key, String ref) throws NessieNotFoundException {
-    return client.newRequest().path("contents").path(key.toPathString())
-                 .queryParam("ref", ref)
-                 .get()
-                 .readEntity(Contents.class);
+    return client
+        .newRequest()
+        .path("contents")
+        .path(key.toPathString())
+        .queryParam("ref", ref)
+        .get()
+        .readEntity(Contents.class);
   }
 
   @Override
-  public MultiGetContentsResponse getMultipleContents(@NotNull String ref, @NotNull MultiGetContentsRequest request)
+  public MultiGetContentsResponse getMultipleContents(
+      @NotNull String ref, @NotNull MultiGetContentsRequest request)
       throws NessieNotFoundException {
-    return client.newRequest().path("contents")
-                 .queryParam("ref", ref)
-                 .post(request)
-                 .readEntity(MultiGetContentsResponse.class);
+    return client
+        .newRequest()
+        .path("contents")
+        .queryParam("ref", ref)
+        .post(request)
+        .readEntity(MultiGetContentsResponse.class);
   }
 
-
   @Override
-  public void setContents(@NotNull ContentsKey key, String branch, @NotNull String hash, String message,
-                          @NotNull Contents contents) throws NessieNotFoundException, NessieConflictException {
-    client.newRequest().path("contents").path(key.toPathString())
-          .queryParam("branch", branch)
-          .queryParam("hash", hash)
-          .queryParam("message", message)
-          .post(contents);
+  public void setContents(
+      @NotNull ContentsKey key,
+      String branch,
+      @NotNull String hash,
+      String message,
+      @NotNull Contents contents)
+      throws NessieNotFoundException, NessieConflictException {
+    client
+        .newRequest()
+        .path("contents")
+        .path(key.toPathString())
+        .queryParam("branch", branch)
+        .queryParam("hash", hash)
+        .queryParam("message", message)
+        .post(contents);
   }
 
   @Override
   public void deleteContents(ContentsKey key, String branch, String hash, String message)
       throws NessieNotFoundException, NessieConflictException {
-    client.newRequest().path("contents").path(key.toPathString())
-          .queryParam("branch", branch)
-          .queryParam("hash", hash)
-          .queryParam("message", message)
-          .delete();
+    client
+        .newRequest()
+        .path("contents")
+        .path(key.toPathString())
+        .queryParam("branch", branch)
+        .queryParam("hash", hash)
+        .queryParam("message", message)
+        .delete();
   }
 }

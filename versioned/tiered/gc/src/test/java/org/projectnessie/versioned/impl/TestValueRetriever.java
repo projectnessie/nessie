@@ -28,7 +28,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.SparkSession;
 import org.junit.jupiter.api.Test;
@@ -47,11 +46,7 @@ public class TestValueRetriever {
   private final Store store = new MockStore();
 
   private SparkSession spark() {
-    return SparkSession
-        .builder()
-        .appName("valueretriever")
-        .master("local[2]")
-        .getOrCreate();
+    return SparkSession.builder().appName("valueretriever").master("local[2]").getOrCreate();
   }
 
   @Test
@@ -68,19 +63,23 @@ public class TestValueRetriever {
 
     // commit 2
     IdMap tree2 = new IdMap(InternalL1.SIZE).withId(1, l21).withId(2, l22);
-    InternalL1 c2 = c1.getChildWithTree(Id.generateRandom(), tree2, KeyMutationList.of(Arrays.asList()));
+    InternalL1 c2 =
+        c1.getChildWithTree(Id.generateRandom(), tree2, KeyMutationList.of(Arrays.asList()));
     store.put(c2.toSaveOp(), Optional.empty());
 
     // commit 3
     IdMap tree3 = new IdMap(InternalL1.SIZE).withId(2, l22);
-    InternalL1 c3 = c2.getChildWithTree(Id.generateRandom(), tree3, KeyMutationList.of(Arrays.asList()));
+    InternalL1 c3 =
+        c2.getChildWithTree(Id.generateRandom(), tree3, KeyMutationList.of(Arrays.asList()));
     store.put(c3.toSaveOp(), Optional.empty());
 
     Dataset<L1Frame> dataset = L1Frame.asDataset(() -> store, spark());
     List<L1Frame> frames = dataset.collectAsList();
-    Map<String, L1Frame> frameMap = frames.stream().collect(Collectors.toMap(l1 -> l1.getId().toString(), c -> c));
+    Map<String, L1Frame> frameMap =
+        frames.stream().collect(Collectors.toMap(l1 -> l1.getId().toString(), c -> c));
 
-    // ensure we don't get the empty id (we inserted 3 items but the empty parent should be stripped).
+    // ensure we don't get the empty id (we inserted 3 items but the empty parent should be
+    // stripped).
     assertEquals(3, frameMap.size());
 
     L1Frame f1 = frameMap.get(c1.getId().toString());
@@ -102,7 +101,6 @@ public class TestValueRetriever {
     assertEquals(2, f3.getParents().size());
     assertFalse(f3.getParents().get(0).isRecurse());
     assertTrue(f3.getParents().get(1).isRecurse());
-
   }
 
   @Test
@@ -117,10 +115,9 @@ public class TestValueRetriever {
     InternalBranch b2 = new InternalBranch("b2", c1);
     store.put(b2.toSaveOp(), Optional.empty());
 
-    Map<String, RefFrame> frames = RefFrame.asDataset(() -> store, spark())
-        .collectAsList()
-        .stream()
-        .collect(Collectors.toMap(RefFrame::getName, Function.identity()));
+    Map<String, RefFrame> frames =
+        RefFrame.asDataset(() -> store, spark()).collectAsList().stream()
+            .collect(Collectors.toMap(RefFrame::getName, Function.identity()));
 
     RefFrame f1 = frames.get(t1.getName());
     assertNotNull(f1);
@@ -142,11 +139,18 @@ public class TestValueRetriever {
     InternalL2 l2 = InternalL2.EMPTY.set(0, l31).set(1, l32);
     store.put(l2.toSaveOp(), Optional.empty());
 
-    IdCarrier carrier1 = single(IdCarrier
-        .asDataset(ValueType.L2, () -> store, IdCarrier.L2_CONVERTER,
-            Optional.of(i -> i.getId().equalsId(l2.getId())), spark()));
-    Set<String> children = carrier1.getChildren().stream().map(IdFrame::toString).collect(Collectors.toSet());
-    assertThat(children).containsExactlyInAnyOrder(l31.toString(), l32.toString(), InternalL3.EMPTY_ID.toString());
+    IdCarrier carrier1 =
+        single(
+            IdCarrier.asDataset(
+                ValueType.L2,
+                () -> store,
+                IdCarrier.L2_CONVERTER,
+                Optional.of(i -> i.getId().equalsId(l2.getId())),
+                spark()));
+    Set<String> children =
+        carrier1.getChildren().stream().map(IdFrame::toString).collect(Collectors.toSet());
+    assertThat(children)
+        .containsExactlyInAnyOrder(l31.toString(), l32.toString(), InternalL3.EMPTY_ID.toString());
   }
 
   public static boolean equals(IdFrame id1, Id id2) {
@@ -157,14 +161,22 @@ public class TestValueRetriever {
   public void l3() {
     Id val1 = Id.generateRandom();
     Id val2 = Id.generateRandom();
-    InternalL3 l3 = InternalL3.EMPTY.set(new InternalKey(Key.of("foo")), val1, DEFAULT_PAYLOAD)
-        .set(new InternalKey(Key.of("bar")), val2, DEFAULT_PAYLOAD);
+    InternalL3 l3 =
+        InternalL3.EMPTY
+            .set(new InternalKey(Key.of("foo")), val1, DEFAULT_PAYLOAD)
+            .set(new InternalKey(Key.of("bar")), val2, DEFAULT_PAYLOAD);
     store.put(l3.toSaveOp(), Optional.empty());
 
-    IdCarrier carrier1 = single(IdCarrier
-        .asDataset(ValueType.L3, () -> store, IdCarrier.L3_CONVERTER,
-            Optional.of(i -> i.getId().equalsId(l3.getId())), spark()));
-    Set<String> children = carrier1.getChildren().stream().map(IdFrame::toString).collect(Collectors.toSet());
+    IdCarrier carrier1 =
+        single(
+            IdCarrier.asDataset(
+                ValueType.L3,
+                () -> store,
+                IdCarrier.L3_CONVERTER,
+                Optional.of(i -> i.getId().equalsId(l3.getId())),
+                spark()));
+    Set<String> children =
+        carrier1.getChildren().stream().map(IdFrame::toString).collect(Collectors.toSet());
     assertThat(children).containsExactlyInAnyOrder(val1.toString(), val2.toString());
   }
 

@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.projectnessie.versioned.dynamodb;
 
+import com.amazonaws.services.dynamodbv2.local.main.ServerRunner;
+import com.amazonaws.services.dynamodbv2.local.server.DynamoDBProxyServer;
 import java.net.URI;
-
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -25,15 +25,12 @@ import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
 import org.junit.jupiter.api.extension.ExtensionContext.Store;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.support.TypeBasedParameterResolver;
-
-import com.amazonaws.services.dynamodbv2.local.main.ServerRunner;
-import com.amazonaws.services.dynamodbv2.local.server.DynamoDBProxyServer;
-
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
-public class LocalDynamoDB extends TypeBasedParameterResolver<DynamoDbClient> implements AfterAllCallback, BeforeAllCallback {
+public class LocalDynamoDB extends TypeBasedParameterResolver<DynamoDbClient>
+    implements AfterAllCallback, BeforeAllCallback {
 
   private static final String DYNAMODB_CLIENT = "dynamodb-local-client";
 
@@ -55,11 +52,12 @@ public class LocalDynamoDB extends TypeBasedParameterResolver<DynamoDbClient> im
       final String[] localArgs = {"-inMemory"};
       server = ServerRunner.createServerFromCommandLineArgs(localArgs);
       server.start();
-      client = DynamoDbClient.builder()
-          .httpClient(UrlConnectionHttpClient.create())
-          .endpointOverride(URI.create("http://localhost:8000"))
-          .region(Region.US_WEST_2)
-          .build();
+      client =
+          DynamoDbClient.builder()
+              .httpClient(UrlConnectionHttpClient.create())
+              .endpointOverride(URI.create("http://localhost:8000"))
+              .region(Region.US_WEST_2)
+              .build();
       client.listTables();
     }
 
@@ -67,7 +65,6 @@ public class LocalDynamoDB extends TypeBasedParameterResolver<DynamoDbClient> im
       client.close();
       server.stop();
     }
-
   }
 
   @Override
@@ -101,8 +98,8 @@ public class LocalDynamoDB extends TypeBasedParameterResolver<DynamoDbClient> im
   }
 
   @Override
-  public DynamoDbClient resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) {
+  public DynamoDbClient resolveParameter(
+      ParameterContext parameterContext, ExtensionContext extensionContext) {
     return getHolder(extensionContext, true).client;
   }
-
 }

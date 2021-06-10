@@ -17,9 +17,10 @@ package org.projectnessie.server;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.security.TestSecurity;
 import java.io.IOException;
 import java.util.List;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
@@ -40,9 +41,6 @@ import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableBranch;
 import org.projectnessie.model.ImmutableIcebergTable;
 import org.projectnessie.model.Reference;
-
-import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.security.TestSecurity;
 
 @QuarkusTest
 class TestAuth {
@@ -87,14 +85,19 @@ class TestAuth {
   }
 
   @Test
-  @TestSecurity(user = "admin_user", roles = {"admin", "user"})
+  @TestSecurity(
+      user = "admin_user",
+      roles = {"admin", "user"})
   void testAdmin() throws NessieNotFoundException, NessieConflictException {
     getCatalog("testx");
     Branch branch = (Branch) tree.getReferenceByName("testx");
     List<Entry> tables = tree.getEntries("testx", EntriesParams.empty()).getEntries();
     Assertions.assertTrue(tables.isEmpty());
-    ContentsKey key = ContentsKey.of("x","x");
-    tryEndpointPass(() -> contents.setContents(key, branch.getName(), branch.getHash(), "empty message", IcebergTable.of("foo")));
+    ContentsKey key = ContentsKey.of("x", "x");
+    tryEndpointPass(
+        () ->
+            contents.setContents(
+                key, branch.getName(), branch.getHash(), "empty message", IcebergTable.of("foo")));
     final IcebergTable table = contents.getContents(key, "testx").unwrap(IcebergTable.class).get();
 
     Branch master = (Branch) tree.getReferenceByName("testx");
@@ -104,9 +107,11 @@ class TestAuth {
     tryEndpointPass(() -> tree.deleteBranch(test2.getName(), test2.getHash()));
     tryEndpointPass(() -> contents.deleteContents(key, master.getName(), master.getHash(), ""));
     assertThrows(NessieNotFoundException.class, () -> contents.getContents(key, "testx"));
-    tryEndpointPass(() -> contents.setContents(key, branch.getName(), branch.getHash(), "", IcebergTable.of("bar")));
+    tryEndpointPass(
+        () ->
+            contents.setContents(
+                key, branch.getName(), branch.getHash(), "", IcebergTable.of("bar")));
   }
-
 
   @Test
   @TestSecurity(authorizationEnabled = false)
@@ -117,8 +122,6 @@ class TestAuth {
   }
 
   private IcebergTable createTable(String name, String location) {
-    return ImmutableIcebergTable.builder()
-                         .metadataLocation("xxx")
-                         .build();
+    return ImmutableIcebergTable.builder().metadataLocation("xxx").build();
   }
 }

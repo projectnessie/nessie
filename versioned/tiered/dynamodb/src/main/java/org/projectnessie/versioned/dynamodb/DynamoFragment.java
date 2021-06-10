@@ -20,12 +20,10 @@ import static org.projectnessie.versioned.dynamodb.AttributeValueUtil.list;
 
 import java.util.Map;
 import java.util.stream.Stream;
-
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.WithPayload;
 import org.projectnessie.versioned.store.ValueType;
 import org.projectnessie.versioned.tiered.Fragment;
-
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 class DynamoFragment extends DynamoBaseValue<Fragment> implements Fragment {
@@ -38,9 +36,7 @@ class DynamoFragment extends DynamoBaseValue<Fragment> implements Fragment {
 
   @Override
   public Fragment keys(Stream<WithPayload<Key>> keys) {
-    return addEntitySafe(
-        KEY_LIST,
-        list(keys.map(AttributeValueUtil::keyElementsWithPayload)));
+    return addEntitySafe(KEY_LIST, list(keys.map(AttributeValueUtil::keyElementsWithPayload)));
   }
 
   @Override
@@ -49,12 +45,11 @@ class DynamoFragment extends DynamoBaseValue<Fragment> implements Fragment {
     return super.build();
   }
 
-  /**
-   * Deserialize a DynamoDB entity into the given consumer.
-   */
+  /** Deserialize a DynamoDB entity into the given consumer. */
   static void toConsumer(Map<String, AttributeValue> entity, Fragment consumer) {
     baseToConsumer(entity, consumer)
-        .keys(attributeValue(entity, KEY_LIST).l().stream().map(AttributeValueUtil::deserializeKeyWithPayload));
+        .keys(
+            attributeValue(entity, KEY_LIST).l().stream()
+                .map(AttributeValueUtil::deserializeKeyWithPayload));
   }
-
 }

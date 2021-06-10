@@ -18,6 +18,4 @@ package org.projectnessie.server;
 import io.quarkus.test.junit.NativeImageTest;
 
 @NativeImageTest
-public class ITNativeRest extends TestRest {
-
-}
+public class ITNativeRest extends TestRest {}

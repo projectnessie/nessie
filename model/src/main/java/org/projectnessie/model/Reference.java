@@ -17,44 +17,38 @@ package org.projectnessie.model;
 
 import static org.projectnessie.model.Validation.validateHash;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import javax.annotation.Nullable;
-
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.DiscriminatorMapping;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
 
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-
 @Schema(
     type = SchemaType.OBJECT,
     title = "Reference",
-    oneOf = { Branch.class, Tag.class, Hash.class },
+    oneOf = {Branch.class, Tag.class, Hash.class},
     discriminatorMapping = {
-        @DiscriminatorMapping(value = "TAG", schema = Tag.class),
-        @DiscriminatorMapping(value = "BRANCH", schema = Branch.class),
-        @DiscriminatorMapping(value = "HASH", schema = Hash.class)
+      @DiscriminatorMapping(value = "TAG", schema = Tag.class),
+      @DiscriminatorMapping(value = "BRANCH", schema = Branch.class),
+      @DiscriminatorMapping(value = "HASH", schema = Hash.class)
     },
-    discriminatorProperty = "type"
-  )
+    discriminatorProperty = "type")
 @JsonSubTypes({@Type(Branch.class), @Type(Tag.class), @Type(Hash.class)})
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 public interface Reference extends Base {
-  /**
-   * Human readable reference name.
-   */
+  /** Human readable reference name. */
   String getName();
 
-  /**
-   * backend system id. Usually the 32-byte hash of the commit this reference points to.
-   */
+  /** backend system id. Usually the 32-byte hash of the commit this reference points to. */
   @Nullable
   String getHash();
 
   /**
-   * Validation rule using {@link org.projectnessie.model.Validation#validateHash(String)} (String)}.
+   * Validation rule using {@link org.projectnessie.model.Validation#validateHash(String)}
+   * (String)}.
    */
   @Value.Check
   default void checkHash() {

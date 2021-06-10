@@ -22,7 +22,6 @@ import org.projectnessie.versioned.store.ConditionFailedException;
 import org.projectnessie.versioned.store.NotFoundException;
 import org.projectnessie.versioned.store.StoreException;
 import org.projectnessie.versioned.store.StoreOperationException;
-
 import software.amazon.awssdk.services.dynamodb.model.LimitExceededException;
 import software.amazon.awssdk.services.dynamodb.model.ProvisionedThroughputExceededException;
 import software.amazon.awssdk.services.dynamodb.model.RequestLimitExceededException;
@@ -30,43 +29,64 @@ import software.amazon.awssdk.services.dynamodb.model.RequestLimitExceededExcept
 public class TestExceptionHandling {
   @Test
   void testRequestLimitExceededException() {
-    testException("testRequestLimitExceededException", RequestLimitExceededException.builder().message("msg").build(),
-        BackendLimitExceededException.class, "Dynamo request-limit exceeded during testRequestLimitExceededException.");
+    testException(
+        "testRequestLimitExceededException",
+        RequestLimitExceededException.builder().message("msg").build(),
+        BackendLimitExceededException.class,
+        "Dynamo request-limit exceeded during testRequestLimitExceededException.");
   }
 
   @Test
   void testLimitExceededException() {
-    testException("testLimitExceededException", LimitExceededException.builder().message("msg").build(),
-        BackendLimitExceededException.class, "Dynamo limit exceeded during testLimitExceededException.");
+    testException(
+        "testLimitExceededException",
+        LimitExceededException.builder().message("msg").build(),
+        BackendLimitExceededException.class,
+        "Dynamo limit exceeded during testLimitExceededException.");
   }
 
   @Test
   void testProvisionedThroughputExceededException() {
-    testException("testProvisionedThroughputExceededException", ProvisionedThroughputExceededException.builder().message("msg").build(),
-        BackendLimitExceededException.class, "Dynamo provisioned throughput exceeded during testProvisionedThroughputExceededException.");
+    testException(
+        "testProvisionedThroughputExceededException",
+        ProvisionedThroughputExceededException.builder().message("msg").build(),
+        BackendLimitExceededException.class,
+        "Dynamo provisioned throughput exceeded during testProvisionedThroughputExceededException.");
   }
 
   @Test
   void testStoreException() {
-    testException("testStoreException", new StoreOperationException("msg"),
-        StoreOperationException.class, "msg");
-    testException("testStoreException", new ConditionFailedException("msg"),
-        ConditionFailedException.class, "msg");
-    testException("testStoreException", new NotFoundException("msg"),
-        NotFoundException.class, "msg");
-    testException("testStoreException", new BackendLimitExceededException("msg"),
-        BackendLimitExceededException.class, "msg");
-    testException("testStoreException", new StoreException("msg"),
-        StoreException.class, "msg");
+    testException(
+        "testStoreException",
+        new StoreOperationException("msg"),
+        StoreOperationException.class,
+        "msg");
+    testException(
+        "testStoreException",
+        new ConditionFailedException("msg"),
+        ConditionFailedException.class,
+        "msg");
+    testException(
+        "testStoreException", new NotFoundException("msg"), NotFoundException.class, "msg");
+    testException(
+        "testStoreException",
+        new BackendLimitExceededException("msg"),
+        BackendLimitExceededException.class,
+        "msg");
+    testException("testStoreException", new StoreException("msg"), StoreException.class, "msg");
   }
 
   @Test
   void testRuntimeException() {
-    testException("testRuntimeException", new RuntimeException("foo bar"),
-        RuntimeException.class, "foo bar");
+    testException(
+        "testRuntimeException", new RuntimeException("foo bar"), RuntimeException.class, "foo bar");
   }
 
-  private void testException(String operation, RuntimeException e, Class<?> expectedExceptionClass, String expectedMessage) {
+  private void testException(
+      String operation,
+      RuntimeException e,
+      Class<?> expectedExceptionClass,
+      String expectedMessage) {
     RuntimeException result = DynamoStore.unhandledException(operation, e);
     Assertions.assertSame(expectedExceptionClass, result.getClass());
     Assertions.assertEquals(expectedMessage, result.getMessage());

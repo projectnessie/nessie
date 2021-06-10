@@ -17,7 +17,6 @@ package org.projectnessie.hms;
 
 import java.util.List;
 import java.util.stream.Collectors;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.common.JavaUtils;
 import org.apache.hadoop.hive.conf.HiveConf;
@@ -26,7 +25,6 @@ import org.apache.hadoop.hive.metastore.PartitionExpressionProxy;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.MetaException;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoFactory;
-import org.projectnessie.hms.PartitionFilterer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,16 +34,17 @@ public class Hive2PartitionFilterer implements PartitionFilterer.PartitionFilter
 
   @Override
   public boolean filterPartitionsByExpr(
-      Configuration conf,
-      List<FieldSchema> partColumns,
-      byte[] expr,
-      List<String> partitionNames) throws MetaException {
+      Configuration conf, List<FieldSchema> partColumns, byte[] expr, List<String> partitionNames)
+      throws MetaException {
 
     String defaultPartName = HiveConf.getVar(conf, ConfVars.DEFAULTPARTITIONNAME);
     PartitionExpressionProxy pems = createExpressionProxy(conf);
     return pems.filterPartitionsByExpr(
         partColumns.stream().map(FieldSchema::getName).collect(Collectors.toList()),
-        partColumns.stream().map(FieldSchema::getType).map(TypeInfoFactory::getPrimitiveTypeInfo).collect(Collectors.toList()),
+        partColumns.stream()
+            .map(FieldSchema::getType)
+            .map(TypeInfoFactory::getPrimitiveTypeInfo)
+            .collect(Collectors.toList()),
         expr,
         defaultPartName,
         partitionNames);
@@ -62,5 +61,4 @@ public class Hive2PartitionFilterer implements PartitionFilterer.PartitionFilter
       throw new RuntimeException("Error loading PartitionExpressionProxy: " + e.getMessage());
     }
   }
-
 }

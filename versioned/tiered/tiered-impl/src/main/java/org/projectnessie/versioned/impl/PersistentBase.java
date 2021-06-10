@@ -15,16 +15,15 @@
  */
 package org.projectnessie.versioned.impl;
 
+import com.google.common.base.Preconditions;
 import org.projectnessie.versioned.store.HasId;
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.store.SaveOp;
 import org.projectnessie.versioned.tiered.BaseValue;
 
-import com.google.common.base.Preconditions;
-
 abstract class PersistentBase<C extends BaseValue<C>> implements HasId {
 
-  //unchanging but only generated once needed.
+  // unchanging but only generated once needed.
   private Id id;
 
   private final long dt;
@@ -73,7 +72,8 @@ abstract class PersistentBase<C extends BaseValue<C>> implements HasId {
     return dt;
   }
 
-  abstract static class EntityBuilder<E extends HasId, C extends BaseValue<C>> implements BaseValue<C> {
+  abstract static class EntityBuilder<E extends HasId, C extends BaseValue<C>>
+      implements BaseValue<C> {
     Id id;
     Long dt;
 

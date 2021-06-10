@@ -19,6 +19,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -26,7 +28,6 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.internal.storage.dfs.DfsRepositoryDescription;
@@ -63,17 +64,12 @@ import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-
-
 class TestJGitVersionStore {
   private static final Hash EMPTY_HASH = Hash.of(ObjectId.zeroId().name());
   private static File jgitDirStatic;
   private final Random random = new Random();
 
-  @TempDir
-  File jgitDir;
+  @TempDir File jgitDir;
 
   enum RepoType {
     INMEMORY,
@@ -82,7 +78,9 @@ class TestJGitVersionStore {
 
   @AfterEach
   void empty() throws IOException {
-    jgitDirStatic = null; //need to copy dir to make it accessible statically...jgit doesn't support parameterised tests with beforeeach
+    jgitDirStatic =
+        null; // need to copy dir to make it accessible statically...jgit doesn't support
+    // parameterised tests with beforeeach
   }
 
   private static Repository repository(RepoType repoType) throws IOException {
@@ -90,7 +88,10 @@ class TestJGitVersionStore {
     switch (repoType) {
       case INMEMORY:
         try {
-          repository = new InMemoryRepository.Builder().setRepositoryDescription(new DfsRepositoryDescription()).build();
+          repository =
+              new InMemoryRepository.Builder()
+                  .setRepositoryDescription(new DfsRepositoryDescription())
+                  .build();
           break;
         } catch (IOException e) {
           throw new RuntimeException(e);
@@ -110,13 +111,16 @@ class TestJGitVersionStore {
 
   @BeforeEach
   void copyTempDir() {
-    //need to copy dir to make it accessible statically...jgit doesn't support parameterised tests with beforeeach
+    // need to copy dir to make it accessible statically...jgit doesn't support parameterised tests
+    // with beforeeach
     jgitDirStatic = jgitDir;
   }
 
   @ParameterizedTest
   @EnumSource(RepoType.class)
-  void createAndDeleteTag(@ConvertWith(RepositoryConverter.class) JGitVersionStore<String, String, StringSerializer.TestEnum> impl)
+  void createAndDeleteTag(
+      @ConvertWith(RepositoryConverter.class)
+          JGitVersionStore<String, String, StringSerializer.TestEnum> impl)
       throws Exception {
     impl.create(BranchName.of("bar"), Optional.empty());
     Optional<Hash> baseCommit = Optional.of(impl.toHash(BranchName.of("bar")));
@@ -156,11 +160,17 @@ class TestJGitVersionStore {
 
   @ParameterizedTest
   @EnumSource(RepoType.class)
-  void unknownRef(@ConvertWith(RepositoryConverter.class) JGitVersionStore<String, String, StringSerializer.TestEnum> impl)
+  void unknownRef(
+      @ConvertWith(RepositoryConverter.class)
+          JGitVersionStore<String, String, StringSerializer.TestEnum> impl)
       throws Exception {
     BranchName branch = BranchName.of("bar");
     impl.create(branch, Optional.empty());
-    impl.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "hello world")));
+    impl.commit(
+        branch,
+        Optional.empty(),
+        "metadata",
+        ImmutableList.of(Put.of(Key.of("hi"), "hello world")));
     TagName tag = TagName.of("foo");
     Hash expected = impl.toHash(branch);
     impl.create(tag, Optional.of(expected));
@@ -170,7 +180,11 @@ class TestJGitVersionStore {
     testRefMatchesToRef(impl, expected, expected, expected.asString());
   }
 
-  private void testRefMatchesToRef(JGitVersionStore<String, String, StringSerializer.TestEnum> impl, Ref ref, Hash hash, String name)
+  private void testRefMatchesToRef(
+      JGitVersionStore<String, String, StringSerializer.TestEnum> impl,
+      Ref ref,
+      Hash hash,
+      String name)
       throws ReferenceNotFoundException {
     WithHash<Ref> val = impl.toRef(name);
     assertEquals(ref, val.getValue());
@@ -179,7 +193,9 @@ class TestJGitVersionStore {
 
   @ParameterizedTest
   @EnumSource(RepoType.class)
-  void createAndDeleteBranch(@ConvertWith(RepositoryConverter.class) JGitVersionStore<String, String, StringSerializer.TestEnum> impl)
+  void createAndDeleteBranch(
+      @ConvertWith(RepositoryConverter.class)
+          JGitVersionStore<String, String, StringSerializer.TestEnum> impl)
       throws Exception {
     BranchName branch = BranchName.of("foo");
 
@@ -193,11 +209,14 @@ class TestJGitVersionStore {
     impl.create(branch, Optional.empty());
 
     // avoid dupe
-    assertThrows(ReferenceAlreadyExistsException.class, () -> impl.create(branch, Optional.empty()));
-    assertThrows(ReferenceAlreadyExistsException.class, () -> impl.create(branch, Optional.of(EMPTY_HASH)));
+    assertThrows(
+        ReferenceAlreadyExistsException.class, () -> impl.create(branch, Optional.empty()));
+    assertThrows(
+        ReferenceAlreadyExistsException.class, () -> impl.create(branch, Optional.of(EMPTY_HASH)));
 
     // check that wrong id is rejected for deletion (non-existing)
-    assertThrows(ReferenceConflictException.class, () -> impl.delete(branch, Optional.of(EMPTY_HASH)));
+    assertThrows(
+        ReferenceConflictException.class, () -> impl.delete(branch, Optional.of(EMPTY_HASH)));
 
     // delete with correct id.
     impl.delete(branch, Optional.empty());
@@ -206,46 +225,72 @@ class TestJGitVersionStore {
     byte[] randomBytes = new byte[20];
     random.nextBytes(randomBytes);
     Hash randomHash = Hash.of(ObjectId.fromRaw(randomBytes).name());
-    assertThrows(ReferenceNotFoundException.class, () -> impl.create(branch, Optional.of(randomHash)));
+    assertThrows(
+        ReferenceNotFoundException.class, () -> impl.create(branch, Optional.of(randomHash)));
 
     // fail on delete of non-existent.
     assertThrows(ReferenceNotFoundException.class, () -> impl.delete(branch, Optional.empty()));
 
     impl.create(branch, Optional.empty());
-    impl.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "world")));
+    impl.commit(
+        branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "world")));
     // check that wrong id is rejected for deletion (valid but not matching)
-    assertThrows(ReferenceConflictException.class, () -> impl.delete(branch, Optional.of(EMPTY_HASH)));
+    assertThrows(
+        ReferenceConflictException.class, () -> impl.delete(branch, Optional.of(EMPTY_HASH)));
 
     // can't use tag delete on branch.
-    assertThrows(ReferenceNotFoundException.class, () -> impl.delete(TagName.of("foo"), Optional.empty()));
+    assertThrows(
+        ReferenceNotFoundException.class, () -> impl.delete(TagName.of("foo"), Optional.empty()));
   }
 
   @ParameterizedTest
   @EnumSource(RepoType.class)
-  void conflictingCommit(@ConvertWith(RepositoryConverter.class) JGitVersionStore<String, String, StringSerializer.TestEnum> impl)
+  void conflictingCommit(
+      @ConvertWith(RepositoryConverter.class)
+          JGitVersionStore<String, String, StringSerializer.TestEnum> impl)
       throws Exception {
     BranchName branch = BranchName.of("foo");
     impl.create(branch, Optional.empty());
     // first commit.
-    impl.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "hello world")));
+    impl.commit(
+        branch,
+        Optional.empty(),
+        "metadata",
+        ImmutableList.of(Put.of(Key.of("hi"), "hello world")));
 
-    //first hash.
+    // first hash.
     Hash originalHash = impl.getCommits(branch).findFirst().get().getHash();
 
-    //second commit.
-    impl.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "goodbye world")));
+    // second commit.
+    impl.commit(
+        branch,
+        Optional.empty(),
+        "metadata",
+        ImmutableList.of(Put.of(Key.of("hi"), "goodbye world")));
 
     // do an extra commit to make sure it has a different hash even though it has the same value.
-    impl.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "goodbye world")));
+    impl.commit(
+        branch,
+        Optional.empty(),
+        "metadata",
+        ImmutableList.of(Put.of(Key.of("hi"), "goodbye world")));
 
-    //attempt commit using first hash which has conflicting key change.
-    assertThrows(ReferenceConflictException.class, () -> impl.commit(branch, Optional.of(originalHash),
-                                                                     "metadata", ImmutableList.of(Put.of(Key.of("hi"), "my world"))));
+    // attempt commit using first hash which has conflicting key change.
+    assertThrows(
+        ReferenceConflictException.class,
+        () ->
+            impl.commit(
+                branch,
+                Optional.of(originalHash),
+                "metadata",
+                ImmutableList.of(Put.of(Key.of("hi"), "my world"))));
   }
 
   @ParameterizedTest
   @EnumSource(RepoType.class)
-  void checkRefs(@ConvertWith(RepositoryConverter.class) JGitVersionStore<String, String, StringSerializer.TestEnum> impl)
+  void checkRefs(
+      @ConvertWith(RepositoryConverter.class)
+          JGitVersionStore<String, String, StringSerializer.TestEnum> impl)
       throws Exception {
     impl.create(BranchName.of("b1"), Optional.empty());
     Optional<Hash> baseCommit = Optional.of(impl.toHash(BranchName.of("b1")));
@@ -253,14 +298,17 @@ class TestJGitVersionStore {
     impl.create(TagName.of("t1"), baseCommit);
     impl.create(TagName.of("t2"), baseCommit);
     try (Stream<WithHash<NamedRef>> str = impl.getNamedRefs()) {
-      assertEquals(ImmutableSet.of("b1", "b2", "t1", "t2"),
+      assertEquals(
+          ImmutableSet.of("b1", "b2", "t1", "t2"),
           str.map(wh -> wh.getValue().getName()).collect(Collectors.toSet()));
     }
   }
 
   @ParameterizedTest
   @EnumSource(RepoType.class)
-  void checkCommits(@ConvertWith(RepositoryConverter.class) JGitVersionStore<String, String, StringSerializer.TestEnum> impl)
+  void checkCommits(
+      @ConvertWith(RepositoryConverter.class)
+          JGitVersionStore<String, String, StringSerializer.TestEnum> impl)
       throws Exception {
     BranchName branch = BranchName.of("foo");
     impl.create(branch, Optional.empty());
@@ -274,7 +322,9 @@ class TestJGitVersionStore {
     impl.commit(branch, Optional.empty(), c1, ImmutableList.of(Put.of(k1, v1), Put.of(k2, v2)));
     impl.commit(branch, Optional.empty(), c2, ImmutableList.of(Put.of(k1, v1p)));
     List<WithHash<String>> commits = impl.getCommits(branch).collect(Collectors.toList());
-    assertEquals(ImmutableList.of(c2, c1), commits.stream().map(wh -> wh.getValue()).collect(Collectors.toList()));
+    assertEquals(
+        ImmutableList.of(c2, c1),
+        commits.stream().map(wh -> wh.getValue()).collect(Collectors.toList()));
 
     // changed across commits
     assertEquals(v1, impl.getValue(commits.get(1).getHash(), k1));
@@ -293,7 +343,9 @@ class TestJGitVersionStore {
 
   @ParameterizedTest
   @EnumSource(RepoType.class)
-  void assignments(@ConvertWith(RepositoryConverter.class) JGitVersionStore<String, String, StringSerializer.TestEnum> impl)
+  void assignments(
+      @ConvertWith(RepositoryConverter.class)
+          JGitVersionStore<String, String, StringSerializer.TestEnum> impl)
       throws Exception {
     BranchName branch = BranchName.of("foo");
     final Key k1 = Key.of("p1");
@@ -324,12 +376,14 @@ class TestJGitVersionStore {
     // ensure branch assignment (with current) is current
     impl.assign(b2, Optional.of(c1), c2);
     assertEquals("v2", impl.getValue(b2, k1));
-
   }
 
   @ParameterizedTest
   @EnumSource(RepoType.class)
-  void delete(@ConvertWith(RepositoryConverter.class) JGitVersionStore<String, String, StringSerializer.TestEnum> impl) throws Exception {
+  void delete(
+      @ConvertWith(RepositoryConverter.class)
+          JGitVersionStore<String, String, StringSerializer.TestEnum> impl)
+      throws Exception {
     BranchName branch = BranchName.of("foo");
     final Key k1 = Key.of("p1");
     impl.create(branch, Optional.empty());
@@ -343,32 +397,55 @@ class TestJGitVersionStore {
 
   @ParameterizedTest
   @EnumSource(RepoType.class)
-  void unchangedOperation(@ConvertWith(RepositoryConverter.class) JGitVersionStore<String, String, StringSerializer.TestEnum> impl)
+  void unchangedOperation(
+      @ConvertWith(RepositoryConverter.class)
+          JGitVersionStore<String, String, StringSerializer.TestEnum> impl)
       throws Exception {
     BranchName branch = BranchName.of("foo");
     impl.create(branch, Optional.empty());
     // first commit.
-    impl.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "hello world")));
+    impl.commit(
+        branch,
+        Optional.empty(),
+        "metadata",
+        ImmutableList.of(Put.of(Key.of("hi"), "hello world")));
 
-    //first hash.
+    // first hash.
     Hash originalHash = impl.getCommits(branch).findFirst().get().getHash();
 
-    //second commit. Ensure first hasn't changed
-    impl.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "goodbye world"), Unchanged.of(Key.of("hi"))));
+    // second commit. Ensure first hasn't changed
+    impl.commit(
+        branch,
+        Optional.empty(),
+        "metadata",
+        ImmutableList.of(Put.of(Key.of("hi"), "goodbye world"), Unchanged.of(Key.of("hi"))));
 
-    //attempt commit using first hash which has conflicting key change.
-    assertThrows(ReferenceConflictException.class, () -> impl.commit(branch, Optional.of(originalHash),
-                                                                     "metadata", ImmutableList.of(Put.of(Key.of("hi"), "my world"))));
+    // attempt commit using first hash which has conflicting key change.
+    assertThrows(
+        ReferenceConflictException.class,
+        () ->
+            impl.commit(
+                branch,
+                Optional.of(originalHash),
+                "metadata",
+                ImmutableList.of(Put.of(Key.of("hi"), "my world"))));
 
     // attempt commit using first hash, put on on-conflicting key, unchanged on conflicting key.
-    assertThrows(ReferenceConflictException.class,
-        () -> impl.commit(branch, Optional.of(originalHash), "metadata",
-                          ImmutableList.of(Put.of(Key.of("bar"), "mellow"), Unchanged.of(Key.of("hi")))));
+    assertThrows(
+        ReferenceConflictException.class,
+        () ->
+            impl.commit(
+                branch,
+                Optional.of(originalHash),
+                "metadata",
+                ImmutableList.of(Put.of(Key.of("bar"), "mellow"), Unchanged.of(Key.of("hi")))));
   }
 
   @ParameterizedTest
   @EnumSource(RepoType.class)
-  void checkEmptyHistory(@ConvertWith(RepositoryConverter.class) JGitVersionStore<String, String, StringSerializer.TestEnum> impl)
+  void checkEmptyHistory(
+      @ConvertWith(RepositoryConverter.class)
+          JGitVersionStore<String, String, StringSerializer.TestEnum> impl)
       throws Exception {
 
     BranchName branch = BranchName.of("foo");
@@ -379,7 +456,8 @@ class TestJGitVersionStore {
   @ParameterizedTest
   @EnumSource(RepoType.class)
   void completeFlow(RepoType repoType) throws Exception {
-    VersionStore<String, String, StringSerializer.TestEnum> impl = new JGitVersionStore<>(repository(repoType), WORKER);
+    VersionStore<String, String, StringSerializer.TestEnum> impl =
+        new JGitVersionStore<>(repository(repoType), WORKER);
     final BranchName branch = ImmutableBranchName.builder().name("main").build();
     final BranchName branch2 = ImmutableBranchName.builder().name("b2").build();
     final TagName tag = ImmutableTagName.builder().name("t1").build();
@@ -394,24 +472,30 @@ class TestJGitVersionStore {
 
     try {
       impl.create(branch, Optional.empty());
-      assertFalse(true, "Creating the a branch with the same name as an existing one should fail but didn't.");
+      assertFalse(
+          true,
+          "Creating the a branch with the same name as an existing one should fail but didn't.");
     } catch (ReferenceAlreadyExistsException ex) {
       // expected.
     }
 
-    impl.commit(branch,
-                Optional.empty(),
-                commit1,
-                ImmutableList.of(ImmutablePut.<String>builder().key(p1).shouldMatchHash(false).value(v1).build()));
+    impl.commit(
+        branch,
+        Optional.empty(),
+        commit1,
+        ImmutableList.of(
+            ImmutablePut.<String>builder().key(p1).shouldMatchHash(false).value(v1).build()));
 
     assertEquals(v1, impl.getValue(branch, p1));
 
     impl.create(tag, Optional.of(impl.toHash(branch)));
 
-    impl.commit(branch,
-                Optional.empty(),
-                commit2,
-                ImmutableList.of(ImmutablePut.<String>builder().key(p1).shouldMatchHash(false).value(v2).build()));
+    impl.commit(
+        branch,
+        Optional.empty(),
+        commit2,
+        ImmutableList.of(
+            ImmutablePut.<String>builder().key(p1).shouldMatchHash(false).value(v2).build()));
 
     assertEquals(v2, impl.getValue(branch, p1));
     assertEquals(v1, impl.getValue(tag, p1));
@@ -441,21 +525,17 @@ class TestJGitVersionStore {
     }
 
     assertEquals(v1, impl.getValue(branch2, p1));
-
-
   }
 
   private static final StoreWorker<String, String, StringSerializer.TestEnum> WORKER =
       StoreWorker.of(StringSerializer.getInstance(), StringSerializer.getInstance());
 
-
-  /**
-   * convert RepoType to VersionStore for each parameterised test.
-   */
+  /** convert RepoType to VersionStore for each parameterised test. */
   private static class RepositoryConverter implements ArgumentConverter {
 
     @Override
-    public Object convert(Object source, ParameterContext context) throws ArgumentConversionException {
+    public Object convert(Object source, ParameterContext context)
+        throws ArgumentConversionException {
       if (source instanceof RepoType) {
         try {
           return new JGitVersionStore<>(repository((RepoType) source), WORKER);

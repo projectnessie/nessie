@@ -15,6 +15,17 @@
  */
 package org.projectnessie.client;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import io.opentracing.Scope;
+import io.opentracing.Span;
+import io.opentracing.Tracer;
+import io.opentracing.log.Fields;
+import io.opentracing.propagation.Format.Builtin;
+import io.opentracing.propagation.TextMap;
+import io.opentracing.propagation.TextMapInjectAdapter;
+import io.opentracing.tag.Tags;
+import io.opentracing.util.GlobalTracer;
 import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
@@ -23,7 +34,6 @@ import java.lang.reflect.Proxy;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.projectnessie.api.ConfigApi;
 import org.projectnessie.api.ContentsApi;
 import org.projectnessie.api.TreeApi;
@@ -36,31 +46,21 @@ import org.projectnessie.client.rest.NessieHttpResponseFilter;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-
-import io.opentracing.Scope;
-import io.opentracing.Span;
-import io.opentracing.Tracer;
-import io.opentracing.log.Fields;
-import io.opentracing.propagation.Format.Builtin;
-import io.opentracing.propagation.TextMap;
-import io.opentracing.propagation.TextMapInjectAdapter;
-import io.opentracing.tag.Tags;
-import io.opentracing.util.GlobalTracer;
-
 class NessieHttpClient implements NessieClient {
 
-  private final ObjectMapper mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT)
-                                                        .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+  private final ObjectMapper mapper =
+      new ObjectMapper()
+          .enable(SerializationFeature.INDENT_OUTPUT)
+          .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
 
   private final TreeApi tree;
   private final ConfigApi config;
   private final ContentsApi contents;
 
   /**
-   * Create new HTTP {@link NessieClient}. All REST api endpoints are mapped here. This client should support
-   * any jaxrs implementation
+   * Create new HTTP {@link NessieClient}. All REST api endpoints are mapped here. This client
+   * should support any jaxrs implementation
+   *
    * @param authType authentication type (AWS, NONE, BASIC)
    * @param uri URL for the nessie client (eg http://localhost:19120/api/v1)
    * @param username username (only for BASIC auth)
@@ -68,10 +68,21 @@ class NessieHttpClient implements NessieClient {
    * @param readTimeout time in milliseconds to wait for a response from the server
    * @param connectionTimeoutMillis time in milliseconds to wait to connect to the server
    */
-  NessieHttpClient(AuthType authType, URI uri, String username, String password, boolean enableTracing, int readTimeout,
-                   int connectionTimeoutMillis) {
-    HttpClient client = HttpClient.builder().setBaseUri(uri).setObjectMapper(mapper).setReadTimeoutMillis(readTimeout)
-        .setConnectionTimeoutMillis(connectionTimeoutMillis).build();
+  NessieHttpClient(
+      AuthType authType,
+      URI uri,
+      String username,
+      String password,
+      boolean enableTracing,
+      int readTimeout,
+      int connectionTimeoutMillis) {
+    HttpClient client =
+        HttpClient.builder()
+            .setBaseUri(uri)
+            .setObjectMapper(mapper)
+            .setReadTimeoutMillis(readTimeout)
+            .setConnectionTimeoutMillis(connectionTimeoutMillis)
+            .build();
     if (enableTracing) {
       addTracing(client);
     }
@@ -88,36 +99,45 @@ class NessieHttpClient implements NessieClient {
     // method will not be called and the JVM won't try to load + initialize `GlobalTracer`.
     Tracer tracer = GlobalTracer.get();
     if (tracer != null) {
-      httpClient.register((RequestFilter) context -> {
-        Span span = tracer.activeSpan();
-        if (span != null) {
-          Scope scope = tracer.buildSpan("Nessie-HTTP").startActive(true);
-          context.addResponseCallback((responseContext, exception) -> {
-            if (responseContext != null) {
-              try {
-                scope.span().setTag("http.status_code", responseContext.getResponseCode().getCode());
-              } catch (IOException e) {
-                // There's not much we can (and probably should) do here.
-              }
-            }
-            if (exception != null) {
-              Map<String, String> log = new HashMap<>();
-              log.put(Fields.EVENT, Tags.ERROR.getKey());
-              log.put(Fields.ERROR_OBJECT, exception.toString());
-              Tags.ERROR.set(scope.span().log(log), true);
-            }
-            scope.close();
-          });
+      httpClient.register(
+          (RequestFilter)
+              context -> {
+                Span span = tracer.activeSpan();
+                if (span != null) {
+                  Scope scope = tracer.buildSpan("Nessie-HTTP").startActive(true);
+                  context.addResponseCallback(
+                      (responseContext, exception) -> {
+                        if (responseContext != null) {
+                          try {
+                            scope
+                                .span()
+                                .setTag(
+                                    "http.status_code",
+                                    responseContext.getResponseCode().getCode());
+                          } catch (IOException e) {
+                            // There's not much we can (and probably should) do here.
+                          }
+                        }
+                        if (exception != null) {
+                          Map<String, String> log = new HashMap<>();
+                          log.put(Fields.EVENT, Tags.ERROR.getKey());
+                          log.put(Fields.ERROR_OBJECT, exception.toString());
+                          Tags.ERROR.set(scope.span().log(log), true);
+                        }
+                        scope.close();
+                      });
 
-          scope.span().setTag("http.uri", context.getUri().toString())
-              .setTag("http.method", context.getMethod().name());
+                  scope
+                      .span()
+                      .setTag("http.uri", context.getUri().toString())
+                      .setTag("http.method", context.getMethod().name());
 
-          HashMap<String, String> headerMap = new HashMap<>();
-          TextMap httpHeadersCarrier = new TextMapInjectAdapter(headerMap);
-          tracer.inject(scope.span().context(), Builtin.HTTP_HEADERS, httpHeadersCarrier);
-          headerMap.forEach(context::putHeader);
-        }
-      });
+                  HashMap<String, String> headerMap = new HashMap<>();
+                  TextMap httpHeadersCarrier = new TextMapInjectAdapter(headerMap);
+                  tracer.inject(scope.span().context(), Builtin.HTTP_HEADERS, httpHeadersCarrier);
+                  headerMap.forEach(context::putHeader);
+                }
+              });
     }
   }
 
@@ -132,18 +152,24 @@ class NessieHttpClient implements NessieClient {
       case NONE:
         break;
       default:
-        throw new IllegalArgumentException(String.format("Cannot instantiate auth filter for %s. Not a valid auth type", authType));
+        throw new IllegalArgumentException(
+            String.format(
+                "Cannot instantiate auth filter for %s. Not a valid auth type", authType));
     }
   }
 
   @SuppressWarnings("unchecked")
   private <T> T wrap(Class<T> iface, T delegate) {
-    return (T) Proxy.newProxyInstance(delegate.getClass().getClassLoader(), new Class[] {iface}, new ExceptionRewriter(delegate));
+    return (T)
+        Proxy.newProxyInstance(
+            delegate.getClass().getClassLoader(),
+            new Class[] {iface},
+            new ExceptionRewriter(delegate));
   }
 
   /**
-   * This will rewrite exceptions so they are correctly thrown by the api classes.
-   * (since the filter will cause them to be wrapped in {@link javax.ws.rs.client.ResponseProcessingException})
+   * This will rewrite exceptions so they are correctly thrown by the api classes. (since the filter
+   * will cause them to be wrapped in {@link javax.ws.rs.client.ResponseProcessingException})
    */
   private static class ExceptionRewriter implements InvocationHandler {
 
@@ -172,12 +198,10 @@ class NessieHttpClient implements NessieClient {
           throw targetException;
         }
 
-
         throw ex;
       }
     }
   }
-
 
   public TreeApi getTreeApi() {
     return tree;
@@ -192,6 +216,5 @@ class NessieHttpClient implements NessieClient {
   }
 
   @Override
-  public void close() {
-  }
+  public void close() {}
 }

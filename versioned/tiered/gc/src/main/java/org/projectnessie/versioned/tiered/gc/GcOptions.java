@@ -22,18 +22,17 @@ public interface GcOptions {
 
   /**
    * The expected bloomfilter capacity.
+   *
    * @return The number of expected items.
    */
   long getBloomFilterCapacity();
 
-  /**
-   * The age in micros beyond which a referenced L1 can be collected.
-   */
+  /** The age in micros beyond which a referenced L1 can be collected. */
   long getMaxAgeMicros();
 
   /**
-   * Describes the the minimum amount of time "slop" before the algorithm can
-   * consider removing an unreferenced value (based on the DT of that value or L1).
+   * Describes the the minimum amount of time "slop" before the algorithm can consider removing an
+   * unreferenced value (based on the DT of that value or L1).
    *
    * @return Time in Micros before the present moment.
    */
@@ -42,5 +41,4 @@ public interface GcOptions {
   public static ImmutableGcOptions.Builder builder() {
     return ImmutableGcOptions.builder();
   }
-
 }

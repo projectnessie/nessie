@@ -22,6 +22,16 @@ import static org.projectnessie.versioned.dynamodb.DynamoBaseValue.ID;
 import static org.projectnessie.versioned.dynamodb.DynamoSerDe.deserializeToConsumer;
 import static org.projectnessie.versioned.dynamodb.DynamoSerDe.serializeWithConsumer;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Multimaps;
+import com.google.common.collect.Sets;
+import io.opentracing.Scope;
+import io.opentracing.Tracer;
+import io.opentracing.noop.NoopScopeManager.NoopScope;
+import io.opentracing.util.GlobalTracer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -36,9 +46,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import javax.annotation.Nonnull;
-
 import org.projectnessie.versioned.BackendLimitExceededException;
 import org.projectnessie.versioned.dynamodb.metrics.DynamoMetricsPublisher;
 import org.projectnessie.versioned.dynamodb.metrics.TracingExecutionInterceptor;
@@ -61,18 +69,6 @@ import org.projectnessie.versioned.tiered.BaseValue;
 import org.projectnessie.versioned.util.AutoCloseables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ListMultimap;
-import com.google.common.collect.Multimaps;
-import com.google.common.collect.Sets;
-
-import io.opentracing.Scope;
-import io.opentracing.Tracer;
-import io.opentracing.noop.NoopScopeManager.NoopScope;
-import io.opentracing.util.GlobalTracer;
 import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
@@ -116,8 +112,9 @@ public class DynamoStore implements Store {
   public static final int LOAD_SIZE = 100;
 
   /**
-   * The <a href="https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_BatchWriteItem.html">Dynamo docs</a>
-   * state a batch-write be rejected, if it contains more than 25 requests in a batch.
+   * The <a
+   * href="https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_BatchWriteItem.html">Dynamo
+   * docs</a> state a batch-write be rejected, if it contains more than 25 requests in a batch.
    */
   static final int DYNAMO_BATCH_WRITE_LIMIT_COUNT = 25;
 
@@ -130,13 +127,13 @@ public class DynamoStore implements Store {
   private DynamoDbAsyncClient async;
   private final ImmutableMap<ValueType<?>, String> tableNames;
 
-  /**
-   * create a DynamoStore.
-   */
+  /** create a DynamoStore. */
   public DynamoStore(DynamoStoreConfig config) {
     this.config = config;
-    this.tableNames = ValueType.values().stream()
-        .collect(ImmutableMap.toImmutableMap(v -> v, v -> v.getTableName(config.getTablePrefix())));
+    this.tableNames =
+        ValueType.values().stream()
+            .collect(
+                ImmutableMap.toImmutableMap(v -> v, v -> v.getTableName(config.getTablePrefix())));
 
     if (tableNames.size() != new HashSet<>(tableNames.values()).size()) {
       throw new IllegalArgumentException("Each Nessie dynamo table must be named distinctly.");
@@ -147,11 +144,14 @@ public class DynamoStore implements Store {
   @VisibleForTesting
   static RuntimeException unhandledException(String operation, RuntimeException e) {
     if (e instanceof RequestLimitExceededException) {
-      return new BackendLimitExceededException(String.format("Dynamo request-limit exceeded during %s.", operation), e);
+      return new BackendLimitExceededException(
+          String.format("Dynamo request-limit exceeded during %s.", operation), e);
     } else if (e instanceof LimitExceededException) {
-      return new BackendLimitExceededException(String.format("Dynamo limit exceeded during %s.", operation), e);
+      return new BackendLimitExceededException(
+          String.format("Dynamo limit exceeded during %s.", operation), e);
     } else if (e instanceof ProvisionedThroughputExceededException) {
-      return new BackendLimitExceededException(String.format("Dynamo provisioned throughput exceeded during %s.", operation), e);
+      return new BackendLimitExceededException(
+          String.format("Dynamo provisioned throughput exceeded during %s.", operation), e);
     } else {
       return e;
     }
@@ -170,30 +170,42 @@ public class DynamoStore implements Store {
       DynamoDbClientBuilder b1 = DynamoDbClient.builder();
       b1.httpClient(UrlConnectionHttpClient.create());
       b1.overrideConfiguration(
-          x -> x.addExecutionInterceptor(publisher.interceptor()).addExecutionInterceptor(tracing).addMetricPublisher(publisher));
+          x ->
+              x.addExecutionInterceptor(publisher.interceptor())
+                  .addExecutionInterceptor(tracing)
+                  .addMetricPublisher(publisher));
 
       DynamoDbAsyncClientBuilder b2 = DynamoDbAsyncClient.builder();
       b2.httpClient(NettyNioAsyncHttpClient.create());
       b2.overrideConfiguration(
-          x -> x.addExecutionInterceptor(publisher.interceptor()).addExecutionInterceptor(tracing).addMetricPublisher(publisher));
+          x ->
+              x.addExecutionInterceptor(publisher.interceptor())
+                  .addExecutionInterceptor(tracing)
+                  .addMetricPublisher(publisher));
 
-      config.getEndpoint().ifPresent(ep -> {
-        b1.endpointOverride(ep);
-        b2.endpointOverride(ep);
-      });
+      config
+          .getEndpoint()
+          .ifPresent(
+              ep -> {
+                b1.endpointOverride(ep);
+                b2.endpointOverride(ep);
+              });
 
-      config.getRegion().ifPresent(r -> {
-        b1.region(r);
-        b2.region(r);
-      });
+      config
+          .getRegion()
+          .ifPresent(
+              r -> {
+                b1.region(r);
+                b2.region(r);
+              });
 
       client = b1.build();
       async = b2.build();
 
       if (config.initializeDatabase()) {
         ValueType.values().stream()
-          .map(tableNames::get)
-          .collect(Collectors.toSet())
+            .map(tableNames::get)
+            .collect(Collectors.toSet())
             .forEach(this::createIfMissing);
 
         // make sure we have an empty l1 (ignore result, doesn't matter)
@@ -231,60 +243,87 @@ public class DynamoStore implements Store {
             ListMultimap<String, LoadOp<?>> stepPage = stepPages.get(pageNumber);
             int pageNum = pageNumber;
             Map<String, String> traceLogs = new HashMap<>();
-            Map<String, KeysAndAttributes> loads = stepPage.keySet().stream().collect(Collectors.toMap(Function.identity(), table -> {
-              List<LoadOp<?>> loadList = stepPage.get(table);
+            Map<String, KeysAndAttributes> loads =
+                stepPage.keySet().stream()
+                    .collect(
+                        Collectors.toMap(
+                            Function.identity(),
+                            table -> {
+                              List<LoadOp<?>> loadList = stepPage.get(table);
 
-              if (config.enableTracing()) {
-                traceLogs.put(
-                    String.format("nessie.load-step.page%03d.%s", pageNum, table),
-                    loadList.stream().map(LoadOp::getId).map(Id::toString).collect(Collectors.joining(", ")));
-              }
+                              if (config.enableTracing()) {
+                                traceLogs.put(
+                                    String.format("nessie.load-step.page%03d.%s", pageNum, table),
+                                    loadList.stream()
+                                        .map(LoadOp::getId)
+                                        .map(Id::toString)
+                                        .collect(Collectors.joining(", ")));
+                              }
 
-              List<Map<String, AttributeValue>> keys = loadList.stream().map(LoadOp::getId)
-                  .map(AttributeValueUtil::idValue)
-                  .map(id -> Collections.singletonMap(DynamoBaseValue.ID, id))
-                  .collect(Collectors.toList());
-              return KeysAndAttributes.builder().keys(keys).consistentRead(true).build();
-            }));
+                              List<Map<String, AttributeValue>> keys =
+                                  loadList.stream()
+                                      .map(LoadOp::getId)
+                                      .map(AttributeValueUtil::idValue)
+                                      .map(id -> Collections.singletonMap(DynamoBaseValue.ID, id))
+                                      .collect(Collectors.toList());
+                              return KeysAndAttributes.builder()
+                                  .keys(keys)
+                                  .consistentRead(true)
+                                  .build();
+                            }));
             scope.span().log(traceLogs);
 
-            BatchGetItemResponse response = client.batchGetItem(BatchGetItemRequest.builder().requestItems(loads).build());
+            BatchGetItemResponse response =
+                client.batchGetItem(BatchGetItemRequest.builder().requestItems(loads).build());
             Map<String, List<Map<String, AttributeValue>>> responses = response.responses();
             Set<String> missingElements = Sets.difference(loads.keySet(), responses.keySet());
-            Preconditions.checkArgument(missingElements.isEmpty(), "Did not receive any objects for table(s) %s.", missingElements);
+            Preconditions.checkArgument(
+                missingElements.isEmpty(),
+                "Did not receive any objects for table(s) %s.",
+                missingElements);
 
             for (String table : responses.keySet()) {
               List<LoadOp<?>> loadList = stepPage.get(table);
-              Map<Id, LoadOp<?>> opMap = loadList.stream().collect(Collectors.toMap(LoadOp::getId, Function.identity()));
+              Map<Id, LoadOp<?>> opMap =
+                  loadList.stream().collect(Collectors.toMap(LoadOp::getId, Function.identity()));
               List<Map<String, AttributeValue>> values = responses.get(table);
               int missingResponses = loadList.size() - values.size();
               if (missingResponses != 0) {
                 ValueType<?> loadType = loadList.get(0).getValueType();
 
-                Set<Id> loaded = values.stream().map(m -> deserializeId(m, ID)).collect(Collectors.toSet());
+                Set<Id> loaded =
+                    values.stream().map(m -> deserializeId(m, ID)).collect(Collectors.toSet());
                 Set<Id> missingLoads = Sets.difference(opMap.keySet(), loaded);
-  
+
                 if (LOGGER.isDebugEnabled()) {
                   LOGGER.debug(
                       "[{}] object(s) missing in table read [{}]."
                           + "\n\nIDs missing: {}\n\nObjects expected: {}\n\nObjects Received: {}",
-                      missingResponses, table, missingLoads, loadList, responses);
+                      missingResponses,
+                      table,
+                      missingLoads,
+                      loadList,
+                      responses);
                 }
 
                 if (loadType == ValueType.REF || loadType == ValueType.L1) {
-                  throw new NotFoundException(String.format("Unable to find requested ref %s:%s.",
-                      loadType, missingLoads));
+                  throw new NotFoundException(
+                      String.format("Unable to find requested ref %s:%s.", loadType, missingLoads));
                 }
 
                 throw new NotFoundException(
-                    String.format("[%d] object(s) missing in table read [%s]."
+                    String.format(
+                        "[%d] object(s) missing in table read [%s]."
                             + "\n\nIDs missing: %s\n\nObjects expected: %s\n\nObjects Received: %s",
-                    missingResponses, table, missingLoads, loadList, responses));
+                        missingResponses, table, missingLoads, loadList, responses));
               }
 
-              // unfortunately, responses don't come in the order of the requests so we need to map between ids.
+              // unfortunately, responses don't come in the order of the requests so we need to map
+              // between ids.
               for (Map<String, AttributeValue> item : values) {
-                @SuppressWarnings("rawtypes") ValueType valueType = ValueType.byValueName(attributeValue(item, ValueType.SCHEMA_TYPE).s());
+                @SuppressWarnings("rawtypes")
+                ValueType valueType =
+                    ValueType.byValueName(attributeValue(item, ValueType.SCHEMA_TYPE).s());
                 Id id = deserializeId(item, ID);
                 LoadOp<?> loadOp = opMap.get(id);
                 if (loadOp == null) {
@@ -316,7 +355,9 @@ public class DynamoStore implements Store {
     List<ListMultimap<String, LoadOp<?>>> paginated = new ArrayList<>();
     for (int i = 0; i < ops.size(); i += size) {
       ListMultimap<String, LoadOp<?>> mm =
-          Multimaps.index(ops.subList(i, Math.min(i + size, ops.size())), l -> tableNames.get(l.getValueType()));
+          Multimaps.index(
+              ops.subList(i, Math.min(i + size, ops.size())),
+              l -> tableNames.get(l.getValueType()));
       paginated.add(mm);
     }
     return paginated;
@@ -324,7 +365,9 @@ public class DynamoStore implements Store {
 
   @Override
   public <C extends BaseValue<C>> boolean putIfAbsent(SaveOp<C> saveOp) {
-    ConditionExpression condition = ConditionExpression.of(ExpressionFunction.attributeNotExists(ExpressionPath.builder(KEY_NAME).build()));
+    ConditionExpression condition =
+        ConditionExpression.of(
+            ExpressionFunction.attributeNotExists(ExpressionPath.builder(KEY_NAME).build()));
     try {
       put(saveOp, Optional.of(condition));
       return true;
@@ -333,30 +376,31 @@ public class DynamoStore implements Store {
     }
   }
 
-  /**
-   * Delete all the tables within this store. For testing purposes only.
-   */
+  /** Delete all the tables within this store. For testing purposes only. */
   @VisibleForTesting
   public void deleteTables() {
-    ValueType.values().stream().map(tableNames::get).collect(Collectors.toSet()).forEach(table -> {
-      try {
-        client.deleteTable(DeleteTableRequest.builder().tableName(table).build());
-      } catch (ResourceNotFoundException ex) {
-        // ignore.
-      } catch (RuntimeException e) {
-        throw unhandledException("deleteTables", e);
-      }
-    });
-
+    ValueType.values().stream()
+        .map(tableNames::get)
+        .collect(Collectors.toSet())
+        .forEach(
+            table -> {
+              try {
+                client.deleteTable(DeleteTableRequest.builder().tableName(table).build());
+              } catch (ResourceNotFoundException ex) {
+                // ignore.
+              } catch (RuntimeException e) {
+                throw unhandledException("deleteTables", e);
+              }
+            });
   }
 
   @Override
-  public <C extends BaseValue<C>> void put(SaveOp<C> saveOp, Optional<ConditionExpression> conditionUnAliased) {
+  public <C extends BaseValue<C>> void put(
+      SaveOp<C> saveOp, Optional<ConditionExpression> conditionUnAliased) {
     Map<String, AttributeValue> attributes = serializeWithConsumer(saveOp);
 
-    PutItemRequest.Builder builder = PutItemRequest.builder()
-        .tableName(tableNames.get(saveOp.getType()))
-        .item(attributes);
+    PutItemRequest.Builder builder =
+        PutItemRequest.builder().tableName(tableNames.get(saveOp.getType())).item(attributes);
     if (conditionUnAliased.isPresent()) {
       AliasCollectorImpl c = new AliasCollectorImpl();
       ConditionExpression aliased = conditionUnAliased.get().alias(c);
@@ -373,10 +417,12 @@ public class DynamoStore implements Store {
   }
 
   @Override
-  public <C extends BaseValue<C>> boolean delete(ValueType<C> type, Id id, Optional<ConditionExpression> condition) {
-    DeleteItemRequest.Builder delete = DeleteItemRequest.builder()
-        .key(Collections.singletonMap(DynamoBaseValue.ID, idValue(id)))
-        .tableName(tableNames.get(type));
+  public <C extends BaseValue<C>> boolean delete(
+      ValueType<C> type, Id id, Optional<ConditionExpression> condition) {
+    DeleteItemRequest.Builder delete =
+        DeleteItemRequest.builder()
+            .key(Collections.singletonMap(DynamoBaseValue.ID, idValue(id)))
+            .tableName(tableNames.get(type));
 
     AliasCollectorImpl collector = new AliasCollectorImpl();
     ConditionExpression aliased = addTypeCheck(type, condition).alias(collector);
@@ -394,30 +440,35 @@ public class DynamoStore implements Store {
     }
   }
 
-  private static ConditionExpression addTypeCheck(ValueType<?> type, Optional<ConditionExpression> possibleExpression) {
-    final ExpressionFunction checkType = ExpressionFunction.equals(
-        ExpressionPath.builder(ValueType.SCHEMA_TYPE).build(),
-        Entity.ofString(type.getValueName()));
-    return possibleExpression.map(ce -> ce.and(checkType)).orElse(ConditionExpression.of(checkType));
+  private static ConditionExpression addTypeCheck(
+      ValueType<?> type, Optional<ConditionExpression> possibleExpression) {
+    final ExpressionFunction checkType =
+        ExpressionFunction.equals(
+            ExpressionPath.builder(ValueType.SCHEMA_TYPE).build(),
+            Entity.ofString(type.getValueName()));
+    return possibleExpression
+        .map(ce -> ce.and(checkType))
+        .orElse(ConditionExpression.of(checkType));
   }
 
   /**
-   * Internal class used to collect batch-operation ({@code BATCH}) of type {@code REQ}, where
-   * each batch-operation gets at max the given number of requests {{@code REQ}}, but in a map of
+   * Internal class used to collect batch-operation ({@code BATCH}) of type {@code REQ}, where each
+   * batch-operation gets at max the given number of requests {{@code REQ}}, but in a map of
    * table-name-to-collection-of-write-requests.
-   * <p>This class is very targeted to be used for DynamoDB batch-write requests, and is
-   * therefore here as a "private" class. If it feels appropriate elsewhere, it can probably
-   * be extended and maybe moved elsewhere.</p>
+   *
+   * <p>This class is very targeted to be used for DynamoDB batch-write requests, and is therefore
+   * here as a "private" class. If it feels appropriate elsewhere, it can probably be extended and
+   * maybe moved elsewhere.
    *
    * @param <IN> Input object type - this is {@link SaveOp} for the {@link #save(List)} use-case
-   * @param <KEY> Key parameter as required by the batch - this is the table-name as a {@link String}
-   *             for DynamoDB batch-writes. The {@code keyMapper} function maps an {@code IN}
-   *             to a {@code KEY}.
+   * @param <KEY> Key parameter as required by the batch - this is the table-name as a {@link
+   *     String} for DynamoDB batch-writes. The {@code keyMapper} function maps an {@code IN} to a
+   *     {@code KEY}.
    * @param <REQ> Value parameter as required by the bach - this is a {@link WriteRequest} for
-   *             DynamoDB batch-writes. The {@code valueMapper} function maps an {@code IN}
-   *             to a {@code REQ}.
+   *     DynamoDB batch-writes. The {@code valueMapper} function maps an {@code IN} to a {@code
+   *     REQ}.
    * @param <BATCH> the resulting type as returned by the {@code emitter} function after submitting
-   *               the batch-operation from the {@code Map<KEY, Collection<REQ>>}.
+   *     the batch-operation from the {@code Map<KEY, Collection<REQ>>}.
    */
   static class BatchesCollector<IN, KEY, REQ, BATCH> {
     private final Function<IN, KEY> keyMapper;
@@ -429,8 +480,11 @@ public class DynamoStore implements Store {
     private int requests;
     private final Map<KEY, Collection<REQ>> current = new HashMap<>();
 
-    BatchesCollector(Function<IN, KEY> keyMapper, Function<IN, REQ> valueMapper,
-        Function<Map<KEY, Collection<REQ>>, BATCH> emitter, int maxBatchSize) {
+    BatchesCollector(
+        Function<IN, KEY> keyMapper,
+        Function<IN, REQ> valueMapper,
+        Function<Map<KEY, Collection<REQ>>, BATCH> emitter,
+        int maxBatchSize) {
       Preconditions.checkArgument(maxBatchSize > 0);
       Preconditions.checkNotNull(keyMapper);
       Preconditions.checkNotNull(valueMapper);
@@ -472,12 +526,18 @@ public class DynamoStore implements Store {
     int maxBatchSize = Math.min(DYNAMO_BATCH_WRITE_LIMIT_COUNT, paginationSize);
 
     // "Collector" for `BatchWriteItemRequest`s, with at `maxBatchSize` requests per batch-write
-    BatchesCollector<SaveOp<?>, String, WriteRequest, CompletableFuture<BatchWriteItemResponse>> saveBatch =
-        new BatchesCollector<>(
-            op -> tableNames.get(op.getType()),
-            op -> WriteRequest.builder().putRequest(PutRequest.builder().item(serializeWithConsumer(op)).build()).build(),
-            grouped -> async.batchWriteItem(BatchWriteItemRequest.builder().requestItems(grouped).build()),
-            maxBatchSize);
+    BatchesCollector<SaveOp<?>, String, WriteRequest, CompletableFuture<BatchWriteItemResponse>>
+        saveBatch =
+            new BatchesCollector<>(
+                op -> tableNames.get(op.getType()),
+                op ->
+                    WriteRequest.builder()
+                        .putRequest(PutRequest.builder().item(serializeWithConsumer(op)).build())
+                        .build(),
+                grouped ->
+                    async.batchWriteItem(
+                        BatchWriteItemRequest.builder().requestItems(grouped).build()),
+                maxBatchSize);
 
     // Collect the already fired `BatchWriteItemRequest`
     List<CompletableFuture<BatchWriteItemResponse>> saves = saveBatch.collect(ops.stream());
@@ -499,11 +559,13 @@ public class DynamoStore implements Store {
   @Override
   public <C extends BaseValue<C>> void loadSingle(ValueType<C> valueType, Id id, C consumer) {
     try {
-      GetItemResponse response = client.getItem(GetItemRequest.builder()
-          .tableName(tableNames.get(valueType))
-          .key(Collections.singletonMap(DynamoBaseValue.ID, idValue(id)))
-          .consistentRead(true)
-          .build());
+      GetItemResponse response =
+          client.getItem(
+              GetItemRequest.builder()
+                  .tableName(tableNames.get(valueType))
+                  .key(Collections.singletonMap(DynamoBaseValue.ID, idValue(id)))
+                  .consistentRead(true)
+                  .build());
       if (!response.hasItem()) {
         throw new NotFoundException(String.format("Unable to load item %s:%s.", valueType, id));
       }
@@ -514,18 +576,26 @@ public class DynamoStore implements Store {
   }
 
   @Override
-  public <C extends BaseValue<C>> boolean update(ValueType<C> type, Id id, UpdateExpression update,
-      Optional<ConditionExpression> condition, Optional<BaseValue<C>> consumer) throws NotFoundException {
+  public <C extends BaseValue<C>> boolean update(
+      ValueType<C> type,
+      Id id,
+      UpdateExpression update,
+      Optional<ConditionExpression> condition,
+      Optional<BaseValue<C>> consumer)
+      throws NotFoundException {
     try {
       AliasCollectorImpl collector = new AliasCollectorImpl();
       UpdateExpression aliased = update.alias(collector);
       Optional<ConditionExpression> aliasedCondition = condition.map(e -> e.alias(collector));
-      UpdateItemRequest.Builder updateRequest = collector.apply(UpdateItemRequest.builder())
-          .returnValues(ReturnValue.ALL_NEW)
-          .tableName(tableNames.get(type))
-          .key(Collections.singletonMap(DynamoBaseValue.ID, idValue(id)))
-          .updateExpression(aliased.toUpdateExpressionString());
-      aliasedCondition.ifPresent(e -> updateRequest.conditionExpression(e.toConditionExpressionString()));
+      UpdateItemRequest.Builder updateRequest =
+          collector
+              .apply(UpdateItemRequest.builder())
+              .returnValues(ReturnValue.ALL_NEW)
+              .tableName(tableNames.get(type))
+              .key(Collections.singletonMap(DynamoBaseValue.ID, idValue(id)))
+              .updateExpression(aliased.toUpdateExpressionString());
+      aliasedCondition.ifPresent(
+          e -> updateRequest.conditionExpression(e.toConditionExpressionString()));
       UpdateItemRequest builtRequest = updateRequest.build();
       UpdateItemResponse response = client.updateItem(builtRequest);
       consumer.ifPresent(c -> deserializeToConsumer(type, response.attributes(), c));
@@ -542,7 +612,8 @@ public class DynamoStore implements Store {
 
   private boolean tableExists(String name) {
     try {
-      DescribeTableResponse table = client.describeTable(DescribeTableRequest.builder().tableName(name).build());
+      DescribeTableResponse table =
+          client.describeTable(DescribeTableRequest.builder().tableName(name).build());
       verifyKeySchema(table.table());
       return true;
     } catch (ResourceNotFoundException e) {
@@ -556,7 +627,8 @@ public class DynamoStore implements Store {
   @Override
   public <C extends BaseValue<C>> Stream<Acceptor<C>> getValues(ValueType<C> type) {
     try {
-      return client.scanPaginator(ScanRequest.builder().tableName(tableNames.get(type)).build())
+      return client
+          .scanPaginator(ScanRequest.builder().tableName(tableNames.get(type)).build())
           .stream()
           .flatMap(r -> r.items().stream())
           .map(i -> consumer -> deserializeToConsumer(type, i, consumer));
@@ -572,18 +644,18 @@ public class DynamoStore implements Store {
   }
 
   private void createTable(String name) {
-    client.createTable(CreateTableRequest.builder()
-        .tableName(name)
-        .attributeDefinitions(AttributeDefinition.builder()
-            .attributeName(KEY_NAME)
-            .attributeType(ScalarAttributeType.B)
-            .build())
-        .billingMode(BillingMode.PAY_PER_REQUEST)
-        .keySchema(KeySchemaElement.builder()
-            .attributeName(KEY_NAME)
-            .keyType(KeyType.HASH)
-            .build())
-        .build());
+    client.createTable(
+        CreateTableRequest.builder()
+            .tableName(name)
+            .attributeDefinitions(
+                AttributeDefinition.builder()
+                    .attributeName(KEY_NAME)
+                    .attributeType(ScalarAttributeType.B)
+                    .build())
+            .billingMode(BillingMode.PAY_PER_REQUEST)
+            .keySchema(
+                KeySchemaElement.builder().attributeName(KEY_NAME).keyType(KeyType.HASH).build())
+            .build());
   }
 
   private static void verifyKeySchema(TableDescription description) {
@@ -597,8 +669,11 @@ public class DynamoStore implements Store {
         }
       }
     }
-    throw new IllegalStateException(String.format("Invalid key schema for table: %s. Key schema should be a hash partitioned "
-        + "attribute with the name 'id'.", description.tableName()));
+    throw new IllegalStateException(
+        String.format(
+            "Invalid key schema for table: %s. Key schema should be a hash partitioned "
+                + "attribute with the name 'id'.",
+            description.tableName()));
   }
 
   private Scope createScope(String name) {

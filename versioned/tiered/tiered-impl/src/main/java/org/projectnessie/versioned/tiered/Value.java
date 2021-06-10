@@ -17,9 +17,7 @@ package org.projectnessie.versioned.tiered;
 
 /**
  * Consumer for binary values.
- * <p>
- * Implementations must return a shared state ({@code this}) from its method.
- * </p>
+ *
+ * <p>Implementations must return a shared state ({@code this}) from its method.
  */
-public interface Value extends BaseWrappedValue<Value> {
-}
+public interface Value extends BaseWrappedValue<Value> {}

@@ -16,7 +16,6 @@
 package org.projectnessie.versioned.jgit;
 
 import java.io.IOException;
-
 import org.eclipse.jgit.internal.storage.dfs.DfsRepositoryDescription;
 import org.eclipse.jgit.internal.storage.dfs.InMemoryRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,8 +24,10 @@ public class ITJGitInMemoryVersionStore extends AbstractITJGitVersionStore {
 
   @BeforeEach
   void setUp() throws IOException {
-    repository = new InMemoryRepository.Builder().setRepositoryDescription(new DfsRepositoryDescription()).build();
+    repository =
+        new InMemoryRepository.Builder()
+            .setRepositoryDescription(new DfsRepositoryDescription())
+            .build();
     store = new JGitVersionStore<>(repository, WORKER);
   }
-
 }

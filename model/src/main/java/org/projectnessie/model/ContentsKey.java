@@ -15,22 +15,21 @@
  */
 package org.projectnessie.model;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import org.immutables.value.Value;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+import org.immutables.value.Value;
 
 /**
  * Key for the contents of an object.
  *
- * <p>For URL encoding, embedded periods within a segment are replaced with zero byte values before passing in a url string.
+ * <p>For URL encoding, embedded periods within a segment are replaced with zero byte values before
+ * passing in a url string.
  */
 @Value.Immutable(prehash = true)
 @JsonSerialize(as = ImmutableContentsKey.class)
@@ -43,9 +42,11 @@ public abstract class ContentsKey {
   public abstract List<String> getElements();
 
   /**
-   * Returns the namespace that is always consisting of the first <b>N-1</b> elements from {@link ContentsKey#getElements()}.
+   * Returns the namespace that is always consisting of the first <b>N-1</b> elements from {@link
+   * ContentsKey#getElements()}.
    *
-   * @return A {@link Namespace} instance that is always consisting of the first <b>N-1</b> elements from {@link ContentsKey#getElements()}.
+   * @return A {@link Namespace} instance that is always consisting of the first <b>N-1</b> elements
+   *     from {@link ContentsKey#getElements()}.
    */
   @JsonIgnore
   @Value.Derived
@@ -78,8 +79,10 @@ public abstract class ContentsKey {
    * @return Actual key.
    */
   public static ContentsKey fromPathString(String encoded) {
-    List<String> elements = Arrays.stream(encoded.split("\\."))
-        .map(x -> x.replace('\u0000', '.')).collect(Collectors.toList());
+    List<String> elements =
+        Arrays.stream(encoded.split("\\."))
+            .map(x -> x.replace('\u0000', '.'))
+            .collect(Collectors.toList());
     return of(elements);
   }
 
@@ -89,7 +92,9 @@ public abstract class ContentsKey {
    * @return String encoded for path use.
    */
   public String toPathString() {
-    return getElements().stream().map(x -> x.replace('.', '\u0000')).collect(Collectors.joining("."));
+    return getElements().stream()
+        .map(x -> x.replace('.', '\u0000'))
+        .collect(Collectors.joining("."));
   }
 
   @Override

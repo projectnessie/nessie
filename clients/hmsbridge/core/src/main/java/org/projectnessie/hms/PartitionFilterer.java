@@ -16,7 +16,6 @@
 package org.projectnessie.hms;
 
 import java.util.List;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.MetaException;
@@ -35,32 +34,23 @@ public final class PartitionFilterer {
     CLAZZ = clazz;
   }
 
-  private PartitionFilterer() {
-
-  }
+  private PartitionFilterer() {}
 
   public interface PartitionFiltererImpl {
     public abstract boolean filterPartitionsByExpr(
-        Configuration conf,
-        List<FieldSchema> partColumns,
-        byte[] expr,
-        List<String> partitionNames) throws MetaException;
+        Configuration conf, List<FieldSchema> partColumns, byte[] expr, List<String> partitionNames)
+        throws MetaException;
   }
 
-
-  /**
-   * Filter the partitions.
-   */
+  /** Filter the partitions. */
   public static boolean filterPartitionsByExpr(
-      Configuration conf,
-      List<FieldSchema> partColumns,
-      byte[] expr,
-      List<String> partitionNames) throws MetaException {
+      Configuration conf, List<FieldSchema> partColumns, byte[] expr, List<String> partitionNames)
+      throws MetaException {
     try {
-      return ((PartitionFiltererImpl) CLAZZ.newInstance()).filterPartitionsByExpr(conf, partColumns, expr, partitionNames);
+      return ((PartitionFiltererImpl) CLAZZ.newInstance())
+          .filterPartitionsByExpr(conf, partColumns, expr, partitionNames);
     } catch (InstantiationException | IllegalAccessException e) {
       throw new RuntimeException(e);
     }
   }
-
 }

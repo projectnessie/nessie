@@ -15,19 +15,18 @@
  */
 package org.projectnessie.versioned.impl;
 
+import com.google.common.base.Preconditions;
+import com.google.protobuf.ByteString;
 import java.util.Objects;
-
 import org.projectnessie.versioned.store.HasId;
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.tiered.BaseWrappedValue;
 
-import com.google.common.base.Preconditions;
-import com.google.protobuf.ByteString;
-
 /**
- * A base implementation of a opaque byte object stored in the VersionStore. Used for both for commit metadata and values.
+ * A base implementation of a opaque byte object stored in the VersionStore. Used for both for
+ * commit metadata and values.
  *
- * <p>Generates an Id based on the hash of the data plus a unique hash seed per object type.</p>
+ * <p>Generates an Id based on the hash of the data plus a unique hash seed per object type.
  */
 abstract class WrappedValueBean<C extends BaseWrappedValue<C>> extends PersistentBase<C> {
 
@@ -37,7 +36,9 @@ abstract class WrappedValueBean<C extends BaseWrappedValue<C>> extends Persisten
   protected WrappedValueBean(Id id, ByteString value, Long dt) {
     super(id, dt);
     this.value = value;
-    Preconditions.checkArgument(value.size() < MAX_SIZE, "Values and commit metadata must be less than 256K once serialized.");
+    Preconditions.checkArgument(
+        value.size() < MAX_SIZE,
+        "Values and commit metadata must be less than 256K once serialized.");
   }
 
   ByteString getBytes() {
@@ -46,15 +47,17 @@ abstract class WrappedValueBean<C extends BaseWrappedValue<C>> extends Persisten
 
   /**
    * Return a consistent hash seed for this object type to avoid accidental object hash conflicts.
+   *
    * @return A seed value that is consistent for this object type.
    */
   protected abstract long getSeed();
 
   @Override
   Id generateId() {
-    return Id.build(h -> {
-      h.putLong(getSeed()).putBytes(value.asReadOnlyByteBuffer());
-    });
+    return Id.build(
+        h -> {
+          h.putLong(getSeed()).putBytes(value.asReadOnlyByteBuffer());
+        });
   }
 
   @Override
@@ -71,14 +74,12 @@ abstract class WrappedValueBean<C extends BaseWrappedValue<C>> extends Persisten
       return false;
     }
     WrappedValueBean<?> other = (WrappedValueBean<?>) obj;
-    return Objects.equals(getSeed(),  other.getSeed())
-        && Objects.equals(value, other.value);
+    return Objects.equals(getSeed(), other.getSeed()) && Objects.equals(value, other.value);
   }
 
   @Override
   C applyToConsumer(C consumer) {
-    return super.applyToConsumer(consumer)
-        .value(getBytes());
+    return super.applyToConsumer(consumer).value(getBytes());
   }
 
   public interface Creator<C> {
@@ -88,9 +89,10 @@ abstract class WrappedValueBean<C extends BaseWrappedValue<C>> extends Persisten
   /**
    * Base builder-implementation for both {@link InternalCommitMetadata} and {@link InternalValue}.
    */
-  // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
-  static class Builder<E extends HasId, C extends BaseWrappedValue<C>>
-      extends EntityBuilder<E, C> implements BaseWrappedValue<C> {
+  // Needs to be a package private class, otherwise class-initialization of ValueType fails with
+  // j.l.IllegalAccessError
+  static class Builder<E extends HasId, C extends BaseWrappedValue<C>> extends EntityBuilder<E, C>
+      implements BaseWrappedValue<C> {
 
     private ByteString value;
 

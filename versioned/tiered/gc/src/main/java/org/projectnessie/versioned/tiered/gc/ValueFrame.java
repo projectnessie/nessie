@@ -15,11 +15,11 @@
  */
 package org.projectnessie.versioned.tiered.gc;
 
+import com.google.protobuf.ByteString;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
-
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.SparkSession;
 import org.projectnessie.versioned.store.Id;
@@ -27,10 +27,9 @@ import org.projectnessie.versioned.store.Store;
 import org.projectnessie.versioned.store.ValueType;
 import org.projectnessie.versioned.tiered.Value;
 
-import com.google.protobuf.ByteString;
-
 /**
- * Container for a value. Holds its serialized representation, its Id and the last time an L1 that references it was modified.
+ * Container for a value. Holds its serialized representation, its Id and the last time an L1 that
+ * references it was modified.
  *
  * <p>This container is useful for passing around inside of Spark
  */
@@ -72,36 +71,37 @@ public class ValueFrame {
     this.key = key;
   }
 
-  public ValueFrame() {
-  }
+  public ValueFrame() {}
 
-  public static Function<Store.Acceptor<Value>, ValueFrame> BUILDER = (a) -> {
-    ValueFrame f = new ValueFrame();
-    a.applyValue(new Value() {
+  public static Function<Store.Acceptor<Value>, ValueFrame> BUILDER =
+      (a) -> {
+        ValueFrame f = new ValueFrame();
+        a.applyValue(
+            new Value() {
 
-      @Override
-      public Value value(ByteString value) {
-        f.bytes = value.toByteArray();
-        return this;
-      }
+              @Override
+              public Value value(ByteString value) {
+                f.bytes = value.toByteArray();
+                return this;
+              }
 
-      @Override
-      public Value id(Id id) {
-        f.id = IdFrame.of(id);
-        return this;
-      }
+              @Override
+              public Value id(Id id) {
+                f.id = IdFrame.of(id);
+                return this;
+              }
 
-      @Override
-      public Value dt(long dt) {
-        f.dt = dt;
-        return this;
-      }
-    });
-    return f;
-  };
+              @Override
+              public Value dt(long dt) {
+                f.dt = dt;
+                return this;
+              }
+            });
+        return f;
+      };
 
   public static Dataset<ValueFrame> asDataset(Supplier<Store> store, SparkSession spark) {
-    return ValueRetriever.dataset(store, ValueType.VALUE, ValueFrame.class, Optional.empty(), spark, BUILDER);
+    return ValueRetriever.dataset(
+        store, ValueType.VALUE, ValueFrame.class, Optional.empty(), spark, BUILDER);
   }
-
 }

@@ -16,7 +16,6 @@
 package org.projectnessie.versioned.gc.actions;
 
 import javax.annotation.Nullable;
-
 import org.immutables.value.Value;
 
 @Value.Immutable

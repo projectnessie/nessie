@@ -13,14 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.projectnessie.client.rest;
 
 import org.projectnessie.error.NessieError;
 
-/**
- * A Nessie REST API runtime exception.
- */
+/** A Nessie REST API runtime exception. */
 public class NessieServiceException extends RuntimeException {
 
   private final NessieError error;
@@ -33,5 +30,4 @@ public class NessieServiceException extends RuntimeException {
   public NessieError getError() {
     return error;
   }
-
 }

@@ -13,24 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.projectnessie.model;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.StringJoiner;
-
-import org.immutables.value.Value;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.StringJoiner;
+import org.immutables.value.Value;
 
 /**
- * For a given table name <b>a.b.c.tableName</b>, the {@link Namespace} would be the prefix <b>a.b.c</b>, since the last element
- * <b>tableName</b> always represents the name of the actual table and is not included in the {@link Namespace} itself. Therefore, the
- * {@link Namespace} is always consisting of the first <b>N-1</b> elements.
+ * For a given table name <b>a.b.c.tableName</b>, the {@link Namespace} would be the prefix
+ * <b>a.b.c</b>, since the last element <b>tableName</b> always represents the name of the actual
+ * table and is not included in the {@link Namespace} itself. Therefore, the {@link Namespace} is
+ * always consisting of the first <b>N-1</b> elements.
  */
 @Value.Immutable(prehash = true)
 @JsonSerialize(as = ImmutableNamespace.class)
@@ -38,7 +36,8 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 public abstract class Namespace {
 
   private static final String DOT = ".";
-  static final String ERROR_MSG_TEMPLATE = "'%s' is not a valid namespace identifier (should not end with '.')";
+  static final String ERROR_MSG_TEMPLATE =
+      "'%s' is not a valid namespace identifier (should not end with '.')";
 
   @JsonValue
   public abstract String name();
@@ -51,8 +50,9 @@ public abstract class Namespace {
    * Builds a {@link Namespace} instance out of the first <b>N-1</b> elements.
    *
    * @param elements The elements to build the namespace from.
-   * @return A {@link Namespace} instance, where the {@link Namespace#name()} represents the first <b>N-1</b> elements. If <b>elements</b>
-   *     consists only of a single element, then {@link Namespace#name()} will be an empty string.
+   * @return A {@link Namespace} instance, where the {@link Namespace#name()} represents the first
+   *     <b>N-1</b> elements. If <b>elements</b> consists only of a single element, then {@link
+   *     Namespace#name()} will be an empty string.
    */
   public static Namespace of(String... elements) {
     Objects.requireNonNull(elements, "elements must be non-null");
@@ -61,7 +61,8 @@ public abstract class Namespace {
     }
 
     if (DOT.equals(elements[elements.length - 1])) {
-      throw new IllegalArgumentException(String.format(ERROR_MSG_TEMPLATE, Arrays.toString(elements)));
+      throw new IllegalArgumentException(
+          String.format(ERROR_MSG_TEMPLATE, Arrays.toString(elements)));
     }
 
     StringJoiner joiner = new StringJoiner(DOT);
@@ -75,8 +76,9 @@ public abstract class Namespace {
    * Builds a {@link Namespace} instance out of the first <b>N-1</b> elements.
    *
    * @param elements The elements to build the namespace from.
-   * @return A {@link Namespace} instance, where the {@link Namespace#name()} represents the first <b>N-1</b> elements. If <b>elements</b>
-   *     consists only of a single element, then {@link Namespace#name()} will be an empty string.
+   * @return A {@link Namespace} instance, where the {@link Namespace#name()} represents the first
+   *     <b>N-1</b> elements. If <b>elements</b> consists only of a single element, then {@link
+   *     Namespace#name()} will be an empty string.
    */
   public static Namespace of(List<String> elements) {
     Objects.requireNonNull(elements, "elements must be non-null");
@@ -84,12 +86,14 @@ public abstract class Namespace {
   }
 
   /**
-   * Builds a {@link Namespace} instance out of the first <b>N-1</b> elements when those are split by the <b>.</b> (dot) character.
+   * Builds a {@link Namespace} instance out of the first <b>N-1</b> elements when those are split
+   * by the <b>.</b> (dot) character.
    *
    * @param identifier The identifier to build the namespace from.
-   * @return Splits the given <b>identifier</b> by <b>.</b> and returns a {@link Namespace} instance, where the {@link Namespace#name()}
-   *     represents the first <b>N-1</b> elements. If <b>identifier</b> consists only of a single element, then {@link Namespace#name()}
-   *     will be an empty string.
+   * @return Splits the given <b>identifier</b> by <b>.</b> and returns a {@link Namespace}
+   *     instance, where the {@link Namespace#name()} represents the first <b>N-1</b> elements. If
+   *     <b>identifier</b> consists only of a single element, then {@link Namespace#name()} will be
+   *     an empty string.
    */
   public static Namespace parse(String identifier) {
     Objects.requireNonNull(identifier, "identifier must be non-null");

@@ -18,11 +18,11 @@ package org.projectnessie.client.http;
 import java.util.Objects;
 
 public final class HttpUtils {
-  private HttpUtils() {
-  }
+  private HttpUtils() {}
 
   /**
    * Check if argument is false. If false throw formatted error.
+   *
    * @param expression expression which should be true
    * @param msg message with formatting
    * @param vars string format args
@@ -35,6 +35,7 @@ public final class HttpUtils {
 
   /**
    * check if base is null and if not trim any whitespace.
+   *
    * @param str string to check if null
    * @return trimmed str
    */
