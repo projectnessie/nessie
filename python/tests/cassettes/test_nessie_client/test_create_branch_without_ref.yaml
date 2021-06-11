@@ -25,7 +25,7 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"name": "main", "hash": null, "type": "BRANCH"}'
+    body: '{"name": "create_branch_without_ref", "hash": null, "type": "BRANCH"}'
     headers:
       Accept:
       - '*/*'
@@ -34,7 +34,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '48'
+      - '69'
       Content-Type:
       - application/json
       User-Agent:
@@ -43,66 +43,11 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree
   response:
     body:
-      string: "{\n  \"message\" : \"A reference of name [main] already exists.\",\n
-        \ \"status\" : 409,\n  \"reason\" : \"Conflict\",\n  \"serverStackTrace\"
-        : null\n}"
-    headers:
-      Content-Length:
-      - '134'
-      Content-Type:
-      - application/json
-    status:
-      code: 409
-      message: Conflict
-- request:
-    body: null
-    headers:
-      Accept:
-      - application/json
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      User-Agent:
-      - python-requests/2.25.1
-    method: GET
-    uri: http://localhost:19120/api/v1/trees/tree/2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
-  response:
-    body:
-      string: "{\n  \"type\" : \"HASH\",\n  \"name\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\",\n
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"create_branch_without_ref\",\n
         \ \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}"
     headers:
       Content-Length:
-      - '179'
-      Content-Type:
-      - application/json
-    status:
-      code: 200
-      message: OK
-- request:
-    body: '{"name": "test", "hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-      "type": "BRANCH"}'
-    headers:
-      Accept:
-      - '*/*'
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '110'
-      Content-Type:
-      - application/json
-      User-Agent:
-      - python-requests/2.25.1
-    method: POST
-    uri: http://localhost:19120/api/v1/trees/tree
-  response:
-    body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"test\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}"
-    headers:
-      Content-Length:
-      - '121'
+      - '142'
       Content-Type:
       - application/json
     status:
@@ -123,13 +68,13 @@ interactions:
     uri: http://localhost:19120/api/v1/trees
   response:
     body:
-      string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
-        \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}, {\n
-        \ \"type\" : \"BRANCH\",\n  \"name\" : \"test\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}
+      string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"create_branch_without_ref\",\n
+        \ \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n},
+        {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}
         ]"
     headers:
       Content-Length:
-      - '248'
+      - '269'
       Content-Type:
       - application/json
     status:
@@ -147,37 +92,14 @@ interactions:
       User-Agent:
       - python-requests/2.25.1
     method: GET
-    uri: http://localhost:19120/api/v1/trees/tree/test
+    uri: http://localhost:19120/api/v1/trees/tree/create_branch_without_ref
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"test\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"create_branch_without_ref\",\n
+        \ \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}"
     headers:
       Content-Length:
-      - '121'
-      Content-Type:
-      - application/json
-    status:
-      code: 200
-      message: OK
-- request:
-    body: null
-    headers:
-      Accept:
-      - application/json
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      User-Agent:
-      - python-requests/2.25.1
-    method: GET
-    uri: http://localhost:19120/api/v1/trees/tree/test/entries
-  response:
-    body:
-      string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"entries\" : [ ]\n}"
-    headers:
-      Content-Length:
-      - '60'
+      - '142'
       Content-Type:
       - application/json
     status:
@@ -197,7 +119,7 @@ interactions:
       User-Agent:
       - python-requests/2.25.1
     method: DELETE
-    uri: http://localhost:19120/api/v1/trees/branch/test?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
+    uri: http://localhost:19120/api/v1/trees/branch/create_branch_without_ref?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
       string: ''

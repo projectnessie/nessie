@@ -85,9 +85,19 @@ class NessieClient(object):
         :param ref: ref to fork from
         :return: Nessie branch object
         """
-        ref_json = ReferenceSchema().dump(Branch(branch, ref))
+        ref_json = ReferenceSchema().dump(Branch(branch, self.get_hash_from_ref(ref)))
         ref_obj = create_reference(self._base_url, ref_json, self._ssl_verify)
         return cast(Branch, ReferenceSchema().load(ref_obj))
+
+    def get_hash_from_ref(self: "NessieClient", ref: Optional[str]) -> Optional[str]:
+        """If ref is set, will try and retrieve the associated hash.
+
+        :param ref: The ref to retrieve the hash from. ref could be pointing to a branch name or a hash
+        :return: The hash associated with ref
+        """
+        if ref:
+            return self.get_reference(ref).hash_
+        return ref
 
     def delete_branch(self: "NessieClient", branch: str, hash_: str) -> None:
         """Delete a branch.
@@ -104,7 +114,7 @@ class NessieClient(object):
         :param ref: ref to fork from
         :return: Nessie tag object
         """
-        ref_json = ReferenceSchema().dump(Tag(tag, ref))
+        ref_json = ReferenceSchema().dump(Tag(tag, self.get_hash_from_ref(ref)))
         ref_obj = create_reference(self._base_url, ref_json, self._ssl_verify)
         return cast(Tag, ReferenceSchema().load(ref_obj))
 
@@ -154,24 +164,21 @@ class NessieClient(object):
 
     def assign_branch(self: "NessieClient", branch: str, to_ref: str, old_hash: Optional[str] = None) -> None:
         """Assign a hash to a branch."""
-        if not old_hash:
-            old_hash = self.get_reference(branch).hash_
+        old_hash = old_hash if old_hash else self.get_hash_from_ref(branch)
         assert old_hash is not None
         branch_json = ReferenceSchema().dumps(Branch(branch, self.get_reference(to_ref).hash_))
         assign_branch(self._base_url, branch, branch_json, old_hash, self._ssl_verify)
 
     def assign_tag(self: "NessieClient", tag: str, to_ref: str, old_hash: Optional[str] = None) -> None:
         """Assign a hash to a tag."""
-        if not old_hash:
-            old_hash = self.get_reference(tag).hash_
+        old_hash = old_hash if old_hash else self.get_hash_from_ref(tag)
         assert old_hash is not None
         tag_json = ReferenceSchema().dumps(Tag(tag, self.get_reference(to_ref).hash_))
         assign_tag(self._base_url, tag, tag_json, old_hash, self._ssl_verify)
 
     def merge(self: "NessieClient", from_branch: str, onto_branch: str, old_hash: Optional[str] = None) -> None:
         """Merge a branch into another branch."""
-        if not old_hash:
-            old_hash = self.get_reference(onto_branch).hash_
+        old_hash = old_hash if old_hash else self.get_hash_from_ref(onto_branch)
         assert old_hash is not None
         from_hash = self.get_reference(from_branch).hash_
         assert from_hash is not None
