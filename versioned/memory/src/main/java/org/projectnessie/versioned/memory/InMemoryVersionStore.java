@@ -401,21 +401,18 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>>
             .map(WithHash::getValue)
             .flatMap(x -> x.getOperations().stream().map(Operation::getKey))
             .collect(Collectors.toSet());
+    Set<Key> conflictingKeys =
+        Streams.stream(new CommitsIterator<>(commits::get, referenceHash))
+            .map(WithHash::getValue)
+            .flatMap(x -> x.getOperations().stream().map(Operation::getKey))
+            .filter(fromBranchKeyChanges::contains)
+            .collect(Collectors.toSet());
 
-    if (null != commits.get(referenceHash)) {
-      Set<Key> conflictingKeys =
-          Streams.stream(new CommitsIterator<>(commits::get, referenceHash))
-              .map(WithHash::getValue)
-              .flatMap(x -> x.getOperations().stream().map(Operation::getKey))
-              .filter(fromBranchKeyChanges::contains)
-              .collect(Collectors.toSet());
-
-      if (!conflictingKeys.isEmpty()) {
-        throw new ReferenceConflictException(
-            String.format(
-                "The following keys have been changed in conflict: %s.",
-                conflictingKeys.stream().map(Key::toString).collect(Collectors.joining(", "))));
-      }
+    if (!conflictingKeys.isEmpty()) {
+      throw new ReferenceConflictException(
+          String.format(
+              "The following keys have been changed in conflict: %s.",
+              conflictingKeys.stream().map(Key::toString).collect(Collectors.joining(", "))));
     }
   }
 
