@@ -20,7 +20,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
@@ -66,16 +65,6 @@ public class ITDynamoVersionStore extends AbstractITVersionStore {
     @Override
     protected void checkInvalidBranchHash() throws VersionStoreException {
       super.checkInvalidBranchHash();
-    }
-  }
-
-  @Nested
-  @DisplayName("when merging")
-  class WhenMerging extends AbstractITVersionStore.WhenMerging {
-    @Override
-    @Test
-    protected void mergeWithConflictingKeys() throws VersionStoreException {
-      super.mergeWithConflictingKeys();
     }
   }
 }

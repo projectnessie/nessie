@@ -379,13 +379,7 @@ public class JGitVersionStore<TABLE, METADATA, TABLE_TYPE extends Enum<TABLE_TYP
         }
 
         List<RevCommit> pickList = calculatePickList(newCommit, headCommit);
-        Set<WithHash<METADATA>> fromHashes = getCommits(fromHash).collect(Collectors.toSet());
-        Set<WithHash<METADATA>> toHashes = getCommits(toBranch).collect(Collectors.toSet());
-        if (fromHashes.stream().noneMatch(toHashes::contains)) {
-          checkIfSameKeysHaveBeenModified(
-              getKeys(fromHash).collect(Collectors.toSet()),
-              getKeys(toBranch).collect(Collectors.toSet()));
-        }
+        checkIfSameKeysHaveBeenModified(fromHash, toBranch);
         transplant(
             toBranch,
             expectedHash,
@@ -396,17 +390,26 @@ public class JGitVersionStore<TABLE, METADATA, TABLE_TYPE extends Enum<TABLE_TYP
     }
   }
 
-  private void checkIfSameKeysHaveBeenModified(
-      Set<WithType<Key, TABLE_TYPE>> fromKeys, Set<WithType<Key, TABLE_TYPE>> toKeys)
-      throws ReferenceConflictException {
-    SetView<WithType<Key, TABLE_TYPE>> conflictingKeys = Sets.intersection(fromKeys, toKeys);
-    if (!conflictingKeys.isEmpty()) {
-      throw new ReferenceConflictException(
-          String.format(
-              "The following keys have been changed in conflict: %s.",
-              conflictingKeys.stream()
-                  .map(x -> x.getValue().toString())
-                  .collect(Collectors.joining(", "))));
+  private void checkIfSameKeysHaveBeenModified(Hash fromHash, BranchName toBranch)
+      throws ReferenceConflictException, ReferenceNotFoundException {
+    Set<WithHash<METADATA>> fromHashes = getCommits(fromHash).collect(Collectors.toSet());
+    Set<WithHash<METADATA>> toHashes = getCommits(toBranch).collect(Collectors.toSet());
+
+    // if there's no common ancestor, we need to check whether the same keys have been modified
+    if (fromHashes.stream().noneMatch(toHashes::contains)) {
+      SetView<WithType<Key, TABLE_TYPE>> conflictingKeys =
+          Sets.intersection(
+              getKeys(fromHash).collect(Collectors.toSet()),
+              getKeys(toBranch).collect(Collectors.toSet()));
+
+      if (!conflictingKeys.isEmpty()) {
+        throw new ReferenceConflictException(
+            String.format(
+                "The following keys have been changed in conflict: %s.",
+                conflictingKeys.stream()
+                    .map(x -> x.getValue().toString())
+                    .collect(Collectors.joining(", "))));
+      }
     }
   }
 
