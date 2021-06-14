@@ -18,6 +18,8 @@ package org.projectnessie.versioned.jgit;
 import static java.lang.String.format;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Sets;
+import com.google.common.collect.Sets.SetView;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -35,6 +37,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.Consumer;
@@ -374,7 +377,15 @@ public class JGitVersionStore<TABLE, METADATA, TABLE_TYPE extends Enum<TABLE_TYP
               throw new IOException("failed update");
           }
         }
+
         List<RevCommit> pickList = calculatePickList(newCommit, headCommit);
+        Set<WithHash<METADATA>> fromHashes = getCommits(fromHash).collect(Collectors.toSet());
+        Set<WithHash<METADATA>> toHashes = getCommits(toBranch).collect(Collectors.toSet());
+        if (fromHashes.stream().noneMatch(toHashes::contains)) {
+          checkIfSameKeysHaveBeenModified(
+              getKeys(fromHash).collect(Collectors.toSet()),
+              getKeys(toBranch).collect(Collectors.toSet()));
+        }
         transplant(
             toBranch,
             expectedHash,
@@ -382,6 +393,20 @@ public class JGitVersionStore<TABLE, METADATA, TABLE_TYPE extends Enum<TABLE_TYP
       }
     } catch (IOException e) {
       throw new RuntimeException("Unknown error", e);
+    }
+  }
+
+  private void checkIfSameKeysHaveBeenModified(
+      Set<WithType<Key, TABLE_TYPE>> fromKeys, Set<WithType<Key, TABLE_TYPE>> toKeys)
+      throws ReferenceConflictException {
+    SetView<WithType<Key, TABLE_TYPE>> conflictingKeys = Sets.intersection(fromKeys, toKeys);
+    if (!conflictingKeys.isEmpty()) {
+      throw new ReferenceConflictException(
+          String.format(
+              "The following keys have been changed in conflict: %s.",
+              conflictingKeys.stream()
+                  .map(x -> x.getValue().toString())
+                  .collect(Collectors.joining(", "))));
     }
   }
 

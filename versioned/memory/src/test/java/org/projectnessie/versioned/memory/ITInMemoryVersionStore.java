@@ -25,8 +25,6 @@ import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.ImmutablePut;
@@ -90,15 +88,5 @@ public class ITInMemoryVersionStore extends AbstractITVersionStore {
   @AfterEach
   protected void afterEach() {
     this.store = null;
-  }
-
-  @Nested
-  @DisplayName("when merging")
-  class WhenMerging extends AbstractITVersionStore.WhenMerging {
-    @Override
-    @Test
-    protected void mergeWithConflictingKeys() throws VersionStoreException {
-      super.mergeWithConflictingKeys();
-    }
   }
 }

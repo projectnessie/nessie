@@ -1118,8 +1118,8 @@ public abstract class AbstractITVersionStore {
       assertThatThrownBy(() -> store().merge(barHash, foo, Optional.empty()))
           .isInstanceOf(ReferenceConflictException.class)
           .hasMessageContaining("The following keys have been changed in conflict:")
-      .hasMessageContaining(key1.toString())
-      .hasMessageContaining(key2.toString());
+          .hasMessageContaining(key1.toString())
+          .hasMessageContaining(key2.toString());
     }
 
     @Test

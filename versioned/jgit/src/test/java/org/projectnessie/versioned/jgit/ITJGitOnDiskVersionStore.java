@@ -20,13 +20,7 @@ import java.io.IOException;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.projectnessie.versioned.VersionStoreException;
-import org.projectnessie.versioned.tests.AbstractITVersionStore;
 
 public class ITJGitOnDiskVersionStore extends AbstractITJGitVersionStore {
 
@@ -40,16 +34,5 @@ public class ITJGitOnDiskVersionStore extends AbstractITJGitVersionStore {
       throw new IOException(e);
     }
     store = new JGitVersionStore<>(repository, WORKER);
-  }
-
-  @Nested
-  @DisplayName("when merging")
-  class WhenMerging extends AbstractITVersionStore.WhenMerging {
-    @Override
-    @Test
-    @Disabled
-    protected void mergeWithConflictingKeys() throws VersionStoreException {
-      super.mergeWithConflictingKeys();
-    }
   }
 }
