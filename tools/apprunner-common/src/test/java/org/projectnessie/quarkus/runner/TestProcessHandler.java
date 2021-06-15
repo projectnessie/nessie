@@ -313,7 +313,7 @@ class TestProcessHandler {
         new ProcessHandler()
             .setStderrTarget(stderrLines::add)
             .setStdoutTarget(stdoutLines::add)
-            .setClock(clock::get)
+            .setTicker(clock::get)
             .setTimeToListenUrlMillis(timeToUrl)
             .setTimeStopMillis(42);
   }
