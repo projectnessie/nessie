@@ -5,8 +5,9 @@ History
 0.7.0 (2021-06-15)
 ------------------
 
-* Author & committer improvements in the Python CLI
 * Fix naming in nessie client merge operation
+* Distinguish between author & committer in the Python CLI
+* Allow setting author when committing via Python CLI
 * Loosen pins for client install on Python cli
 
 0.6.1 (2021-05-25)

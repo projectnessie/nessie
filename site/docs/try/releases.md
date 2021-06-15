@@ -2,9 +2,11 @@
 
 ## 0.7.0 Release (June 15, 2021)
 
-* Server side filtering for entries-listing
-* Author & committer improvements in the Python CLI
+* Server-side filtering improvements for entries-listing and log-listing
+* Distinguish between author & committer in the Python CLI
+* Allow setting author when committing via Python CLI
 * Loosen pins for client install on Python cli
+* Fix edge case when merging using in memory + jgit stores
 * Gradle plugin improvements
 * (Development) change to Google Code Style, add spotless plugin
 * (CI) Add OWASP Dependency Check
