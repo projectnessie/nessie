@@ -109,7 +109,7 @@ class TestQuarkusApp {
   @Test
   void noAppConfigDeps() throws Exception {
     Files.write(
-        buildFile, Streams.concat(prefix.stream(), Stream.of("}")).collect(Collectors.toList()));
+        buildFile, Stream.concat(prefix.stream(), Stream.of("}")).collect(Collectors.toList()));
 
     BuildResult result = createGradleRunner("test").buildAndFail();
     assertThat(result.task(":test"))
@@ -213,24 +213,21 @@ class TestQuarkusApp {
   }
 
   /**
-   * Starting the Nessie-Server via the Nessie-Quarkus-Gradle-Plugin must work fine, if the
-   * quarkus-bom dependency is explicitly specified, although there are conflicting dependencies
-   * declared.
+   * Starting the Nessie-Server via the Nessie-Quarkus-Gradle-Plugin must work fine, even if a
+   * different nessie-client version is being used (despite whether having conflicting versions
+   * makes any sense).
    */
   @Test
   void conflictingDependenciesNessie() throws Exception {
     Files.write(
         buildFile,
-        Streams.concat(
+        Stream.concat(
                 prefix.stream(),
                 Stream.of(
                     "    compile 'org.projectnessie:nessie-client:0.4.0'",
                     "    nessieQuarkusServer 'org.projectnessie:nessie-quarkus:"
-                        + nessieVersion
-                        + "'",
-                    "    nessieQuarkusRuntime(enforcedPlatform('io.quarkus:quarkus-bom:"
-                        + quarkusVersion
-                        + "'))",
+                        + nessieVersionForTest
+                        + ":runner'",
                     "}"))
             .collect(Collectors.toList()));
 
