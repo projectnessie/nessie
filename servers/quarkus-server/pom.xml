@@ -332,12 +332,5 @@
         <quarkus.container-image.build>true</quarkus.container-image.build>
       </properties>
     </profile>
-    <profile>
-      <!-- Profile "release" is rather exclusively used by CI -->
-      <id>release</id>
-      <properties>
-        <quarkus.container-image.build>true</quarkus.container-image.build>
-      </properties>
-    </profile>
   </profiles>
 </project>
