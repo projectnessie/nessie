@@ -2,8 +2,10 @@
 # -*- coding: utf-8 -*-
 """Tests for `pynessie` package."""
 import pytest
+from packaging.version import Version
 
-from pynessie import init
+from pynessie import __required_version_range__, __version__, init
+from pynessie._endpoints import _check_nessie_version_headers
 from pynessie.error import NessieConflictException
 from pynessie.model import Branch
 from pynessie.model import Entries
@@ -33,3 +35,52 @@ def test_client_interface_e2e() -> None:
     client.delete_branch("test", main_commit)
     references = client.list_references()
     assert len(references) == 1
+
+
+def test_nessie_version() -> None:
+    """Test version requirements."""
+    # No Nessie-Version header from server
+    with pytest.raises(Exception) as e:
+        _check_nessie_version_headers({}, (Version("1.2.3"), Version("1.2.4")))
+    assert str(e.value) == "Server replied without the required Nessie-Version header. pynessie requires Nessie-Server version >= 0.7.0"
+
+    # Empty Nessie-Version header from server
+    with pytest.raises(Exception) as e:
+        _check_nessie_version_headers({"Nessie-Version": ""}, (Version("1.2.3"), Version("1.2.4")))
+    assert str(e.value) == "Server replied without the required Nessie-Version header. pynessie requires Nessie-Server version >= 0.7.0"
+
+    # Nessie-Server version is one patch version too new
+    with pytest.raises(Exception) as e:
+        _check_nessie_version_headers({"Nessie-Version": "88.44.22"}, (Version("88.0.0"), Version("88.44.21")))
+    assert str(e.value) == f"Nessie-Server is running version 88.44.22, which is incompatible to pynessie {__version__}"
+
+    # Nessie-Server version is one patch version too old
+    with pytest.raises(Exception) as e:
+        _check_nessie_version_headers({"Nessie-Version": "88.44.22"}, (Version("88.44.23"), Version("88.45.0")))
+    assert str(e.value) == f"Nessie-Server is running version 88.44.22, which is incompatible to pynessie {__version__}"
+
+    # Nessie-Server version is one minor version too new
+    with pytest.raises(Exception) as e:
+        _check_nessie_version_headers({"Nessie-Version": "88.45.0"}, (Version("88.0.0"), Version("88.44.999")))
+    assert str(e.value) == f"Nessie-Server is running version 88.45.0, which is incompatible to pynessie {__version__}"
+
+    # Nessie-Server version is one minor version too old
+    with pytest.raises(Exception) as e:
+        _check_nessie_version_headers({"Nessie-Version": "88.43.0"}, (Version("88.44.0"), Version("88.45.0")))
+    assert str(e.value) == f"Nessie-Server is running version 88.43.0, which is incompatible to pynessie {__version__}"
+
+    # Nessie-Server version is one major version too new
+    with pytest.raises(Exception) as e:
+        _check_nessie_version_headers({"Nessie-Version": "89.0.0"}, (Version("88.0.0"), Version("88.999.999")))
+    assert str(e.value) == f"Nessie-Server is running version 89.0.0, which is incompatible to pynessie {__version__}"
+
+    # Nessie-Server version is one major version too old
+    with pytest.raises(Exception) as e:
+        _check_nessie_version_headers({"Nessie-Version": "87.44.22"}, (Version("88.0.0"), Version("999.999.999")))
+    assert str(e.value) == f"Nessie-Server is running version 87.44.22, which is incompatible to pynessie {__version__}"
+
+    # Verify that server can safely sent versions with -SNAPSHOT
+    _check_nessie_version_headers({"Nessie-Version": "1.2.3-SNAPSHOT"}, (Version("1.2.3"), Version("1.2.4")))
+
+    # Sanity - check that the pynessie global vars make sense
+    _check_nessie_version_headers({"Nessie-Version": f"{__version__}"}, __required_version_range__)

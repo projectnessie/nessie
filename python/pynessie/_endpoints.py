@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
 """Direct API operations on Nessie with requests."""
+import re
 from typing import Any
 from typing import cast
+from typing import MutableMapping
 from typing import Optional
 from typing import Tuple
 from typing import Union
 
 import requests
 import simplejson as jsonlib
+from packaging.version import _BaseVersion, Version, VERSION_PATTERN
 from requests.exceptions import HTTPError
 
 from .error import NessieConflictException
@@ -20,9 +23,11 @@ from .error import NessieUnauthorizedException
 
 
 def _get_headers(has_body: bool = False) -> dict:
-    headers = {"Accept": "application/json"}
+    from . import __version__
+
+    headers = {"Accept": "application/json", "Nessie-Version": __version__}
     if has_body:
-        headers = {"Content-Type": "application/json"}
+        headers["Content-Type"] = "application/json"
     return headers
 
 
@@ -53,6 +58,7 @@ def _put(url: str, json: Union[str, dict] = None, details: str = "", ssl_verify:
 
 
 def _check_error(r: requests.models.Response, details: str = "") -> Union[str, dict, list]:
+    _check_nessie_version(r)
     error, code, _ = _raise_for_status(r)
     if not error:
         try:
@@ -223,6 +229,29 @@ def assign_tag(base_url: str, tag: str, tag_json: dict, old_hash: str, ssl_verif
     _put(base_url + url, tag_json, ssl_verify=ssl_verify, params=params)
 
 
+def _check_nessie_version(self: requests.models.Response) -> None:
+    from . import __required_version_range__
+
+    if 200 < self.status_code <= 399 and "Nessie-Version" not in self.headers:
+        # Ignore missing 'Nessie-Version' header, for HTTP status codes 201...399, because those response codes
+        # don't get the Nessie-Version header (REST API restriction/inconvenience :( ).
+        return
+    _check_nessie_version_headers(self.headers, __required_version_range__)
+
+
+def _check_nessie_version_headers(self: MutableMapping[str, Any], version_range: Tuple[_BaseVersion, _BaseVersion]) -> None:
+    from . import __version__
+
+    if "Nessie-Version" not in self:
+        raise Exception("Server replied without the required Nessie-Version header. pynessie requires Nessie-Server version >= 0.7.0")
+    server_version = self["Nessie-Version"]
+    if len(server_version) == 0:
+        raise Exception("Server replied without the required Nessie-Version header. pynessie requires Nessie-Server version >= 0.7.0")
+    parsed_version = _LooseVersion(server_version)
+    if parsed_version < version_range[0] or parsed_version > version_range[1]:
+        raise Exception(f"Nessie-Server is running version {server_version}, which is incompatible to pynessie {__version__}")
+
+
 def _raise_for_status(self: requests.models.Response) -> Tuple[Union[HTTPError, None], int, Union[Any, str]]:
     """Raises stored :class:`HTTPError`, if one occurred. Copy from requests request.raise_for_status()."""
     http_error_msg = ""
@@ -235,15 +264,23 @@ def _raise_for_status(self: requests.models.Response) -> Tuple[Union[HTTPError, 
         reason = self.reason
 
     if 400 <= self.status_code < 500:
-        http_error_msg = u"%s Client Error: %s for url: %s" % (self.status_code, reason, self.url)
+        http_error_msg = "%s Client Error: %s for url: %s" % (self.status_code, reason, self.url)
 
     elif 500 <= self.status_code < 600:
-        http_error_msg = u"%s Server Error: %s for url: %s" % (self.status_code, reason, self.url)
+        http_error_msg = "%s Server Error: %s for url: %s" % (self.status_code, reason, self.url)
 
     if http_error_msg:
         return HTTPError(http_error_msg, response=self), self.status_code, reason
     else:
         return None, self.status_code, reason
+
+
+class _LooseVersion(Version):
+    """Less strict pattern to allow -SNAPSHOT at the end of the version string pattern."""
+
+    def __init__(self: "_LooseVersion", version: str) -> None:
+        self._regex = re.compile(r"^" + VERSION_PATTERN, re.VERBOSE | re.IGNORECASE)
+        super().__init__(version)
 
 
 def cherry_pick(base_url: str, branch: str, transplant_json: dict, expected_hash: str, ssl_verify: bool = True) -> None:

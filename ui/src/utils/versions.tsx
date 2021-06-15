@@ -21,6 +21,11 @@ const minServerVersion = parseVersion("0.6.2");
 export function verifyServerVersion(headers: Headers) {
   const serverVersion = headers.get("Nessie-Version")
   if (serverVersion == null) {
+    if (headers.get("Content-Type") == null) {
+      // Ignore missing 'Nessie-Version' header when there's no content, because those
+      // responses don't get the Nessie-Version header (REST API restriction/inconvenience).
+      return null;
+    }
     return Promise.reject(`Nessie-Server sent no Nessie-Version header`)
   }
   if (compareArray(minServerVersion, parseVersion(serverVersion)) > 0) {

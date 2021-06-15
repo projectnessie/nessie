@@ -51,6 +51,6 @@ public class NessieVersion {
    * @return {@code true}, if "API compatible", {@code false} otherwise
    */
   public static boolean isApiCompatible(String otherVersion) {
-    return Version.parse(otherVersion).compareTo(NessieVersion.NESSIE_MIN_API_VERSION) >= 0;
+    return Version.parse(otherVersion).compareTo(NESSIE_MIN_API_VERSION) >= 0;
   }
 }

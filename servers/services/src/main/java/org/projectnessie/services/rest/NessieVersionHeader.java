@@ -15,18 +15,17 @@
  */
 package org.projectnessie.services.rest;
 
-import java.io.IOException;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.container.ContainerResponseContext;
+import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.ext.Provider;
-import javax.ws.rs.ext.WriterInterceptor;
-import javax.ws.rs.ext.WriterInterceptorContext;
 import org.projectnessie.common.NessieVersion;
 
 @Provider
-public class NessieVersionHeader implements WriterInterceptor {
+public class NessieVersionHeader implements ContainerResponseFilter {
 
   @Override
-  public void aroundWriteTo(WriterInterceptorContext context) throws IOException {
+  public void filter(ContainerRequestContext requestContext, ContainerResponseContext context) {
     context.getHeaders().add("Nessie-Version", NessieVersion.NESSIE_VERSION.toString());
-    context.proceed();
   }
 }

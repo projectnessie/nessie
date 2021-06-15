@@ -54,6 +54,8 @@ class TestVersion {
     assertThat(Version.parse("1.2.3-SNAPSHOT"))
         .isEqualByComparingTo(Version.parse("1.2.3-SNAPSHOT"));
 
+    assertThat(Version.parse("1.2.3")).isGreaterThanOrEqualTo(Version.parse("1.2.3-SNAPSHOT"));
+
     assertThat(
             new HashSet<>(
                 Arrays.asList(
