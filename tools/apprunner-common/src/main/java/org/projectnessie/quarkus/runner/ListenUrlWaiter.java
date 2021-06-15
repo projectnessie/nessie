@@ -35,6 +35,7 @@ final class ListenUrlWaiter implements Consumer<String> {
       Pattern.compile("^.*Listening on: (http[s]?://[^ ]*)$");
   static final String TIMEOUT_MESSAGE =
       "Did not get the http(s) listen URL from the console output.";
+  private static final long MAX_ITER_WAIT_NANOS = TimeUnit.MILLISECONDS.toNanos(50);
 
   private final LongSupplier clock;
   private final Consumer<String> stdoutTarget;
@@ -74,8 +75,6 @@ final class ListenUrlWaiter implements Consumer<String> {
       throw new RuntimeException();
     }
   }
-
-  private static final long MAX_ITER_WAIT_NANOS = TimeUnit.MILLISECONDS.toNanos(50);
 
   /**
    * Get the first captured {@code Listening on: http...} pattern.

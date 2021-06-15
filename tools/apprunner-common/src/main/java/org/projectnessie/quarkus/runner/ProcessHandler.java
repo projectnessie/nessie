@@ -46,7 +46,7 @@ public class ProcessHandler {
   public static final long MILLIS_TO_HTTP_PORT = 30_000L;
   public static final long MILLIS_TO_STOP = 15_000L;
 
-  private LongSupplier clock = System::nanoTime;
+  private LongSupplier ticker = System::nanoTime;
 
   private static final int NOT_STARTED = -1;
   private static final int RUNNING = -2;
@@ -92,8 +92,8 @@ public class ProcessHandler {
     return this;
   }
 
-  public ProcessHandler setClock(LongSupplier clock) {
-    this.clock = clock;
+  public ProcessHandler setTicker(LongSupplier ticker) {
+    this.ticker = ticker;
     return this;
   }
 
@@ -123,7 +123,7 @@ public class ProcessHandler {
       throw new IllegalStateException("Process already started");
     }
 
-    listenUrlWaiter = new ListenUrlWaiter(clock, timeToListenUrlMillis, stdoutTarget);
+    listenUrlWaiter = new ListenUrlWaiter(ticker, timeToListenUrlMillis, stdoutTarget);
 
     this.process = process;
     exitCode.set(RUNNING);
