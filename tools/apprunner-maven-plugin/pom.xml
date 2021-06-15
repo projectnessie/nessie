@@ -22,7 +22,7 @@
   <parent>
     <groupId>org.projectnessie</groupId>
     <artifactId>nessie-tools</artifactId>
-    <version>0.6.2-SNAPSHOT</version>
+    <version>0.7.0</version>
   </parent>
 
   <artifactId>nessie-apprunner-maven-plugin</artifactId>
