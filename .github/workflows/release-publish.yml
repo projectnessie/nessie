@@ -188,7 +188,7 @@ jobs:
         ./mvnw -B ${GOALS} --file pom.xml ${PROFILES} ${NEXUS_ARGS} ${BUILD_ARGS}
 
         # Build the native-image, it's not released to Maven Central anyway
-        PROFILES="-Pnative"
+        PROFILES="-Pnative -Prelease"
         BUILD_ARGS="-DskipTests"
         if [[ -n ${ACT} ]] ; then
           BUILD_ARGS="${BUILD_ARGS} -Dquarkus.native.remote-container-build=true -Dquarkus.native.container-build=false"
