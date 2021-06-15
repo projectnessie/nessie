@@ -8,6 +8,8 @@ interactions:
       - gzip, deflate
       Connection:
       - keep-alive
+      Nessie-Version:
+      - 0.6.2
       User-Agent:
       - python-requests/2.25.1
     method: GET
@@ -21,6 +23,8 @@ interactions:
       - '125'
       Content-Type:
       - application/json
+      Nessie-Version:
+      - 0.6.2-SNAPSHOT
     status:
       code: 200
       message: OK
@@ -28,7 +32,7 @@ interactions:
     body: '{"name": "main", "hash": null, "type": "BRANCH"}'
     headers:
       Accept:
-      - '*/*'
+      - application/json
       Accept-Encoding:
       - gzip, deflate
       Connection:
@@ -37,6 +41,8 @@ interactions:
       - '48'
       Content-Type:
       - application/json
+      Nessie-Version:
+      - 0.6.2
       User-Agent:
       - python-requests/2.25.1
     method: POST
@@ -51,6 +57,8 @@ interactions:
       - '134'
       Content-Type:
       - application/json
+      Nessie-Version:
+      - 0.6.2-SNAPSHOT
     status:
       code: 409
       message: Conflict
@@ -59,7 +67,7 @@ interactions:
       "type": "BRANCH"}'
     headers:
       Accept:
-      - '*/*'
+      - application/json
       Accept-Encoding:
       - gzip, deflate
       Connection:
@@ -68,6 +76,8 @@ interactions:
       - '110'
       Content-Type:
       - application/json
+      Nessie-Version:
+      - 0.6.2
       User-Agent:
       - python-requests/2.25.1
     method: POST
@@ -80,6 +90,8 @@ interactions:
       - '121'
       Content-Type:
       - application/json
+      Nessie-Version:
+      - 0.6.2-SNAPSHOT
     status:
       code: 200
       message: OK
@@ -92,6 +104,8 @@ interactions:
       - gzip, deflate
       Connection:
       - keep-alive
+      Nessie-Version:
+      - 0.6.2
       User-Agent:
       - python-requests/2.25.1
     method: GET
@@ -107,6 +121,8 @@ interactions:
       - '248'
       Content-Type:
       - application/json
+      Nessie-Version:
+      - 0.6.2-SNAPSHOT
     status:
       code: 200
       message: OK
@@ -119,6 +135,8 @@ interactions:
       - gzip, deflate
       Connection:
       - keep-alive
+      Nessie-Version:
+      - 0.6.2
       User-Agent:
       - python-requests/2.25.1
     method: GET
@@ -131,6 +149,8 @@ interactions:
       - '121'
       Content-Type:
       - application/json
+      Nessie-Version:
+      - 0.6.2-SNAPSHOT
     status:
       code: 200
       message: OK
@@ -143,6 +163,8 @@ interactions:
       - gzip, deflate
       Connection:
       - keep-alive
+      Nessie-Version:
+      - 0.6.2
       User-Agent:
       - python-requests/2.25.1
     method: GET
@@ -155,6 +177,8 @@ interactions:
       - '60'
       Content-Type:
       - application/json
+      Nessie-Version:
+      - 0.6.2-SNAPSHOT
     status:
       code: 200
       message: OK
@@ -169,6 +193,8 @@ interactions:
       - keep-alive
       Content-Length:
       - '0'
+      Nessie-Version:
+      - 0.6.2
       User-Agent:
       - python-requests/2.25.1
     method: DELETE
@@ -176,7 +202,9 @@ interactions:
   response:
     body:
       string: ''
-    headers: {}
+    headers:
+      Nessie-Version:
+      - 0.6.2-SNAPSHOT
     status:
       code: 204
       message: No Content
@@ -189,6 +217,8 @@ interactions:
       - gzip, deflate
       Connection:
       - keep-alive
+      Nessie-Version:
+      - 0.6.2
       User-Agent:
       - python-requests/2.25.1
     method: GET
@@ -202,6 +232,8 @@ interactions:
       - '125'
       Content-Type:
       - application/json
+      Nessie-Version:
+      - 0.6.2-SNAPSHOT
     status:
       code: 200
       message: OK

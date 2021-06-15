@@ -8,6 +8,8 @@ interactions:
       - gzip, deflate
       Connection:
       - keep-alive
+      Nessie-Version:
+      - 0.6.2
       User-Agent:
       - python-requests/2.25.1
     method: GET
@@ -20,6 +22,8 @@ interactions:
       - '121'
       Content-Type:
       - application/json
+      Nessie-Version:
+      - 0.6.2-SNAPSHOT
     status:
       code: 200
       message: OK
@@ -32,6 +36,8 @@ interactions:
       - gzip, deflate
       Connection:
       - keep-alive
+      Nessie-Version:
+      - 0.6.2
       User-Agent:
       - python-requests/2.25.1
     method: GET
@@ -45,6 +51,8 @@ interactions:
       - '125'
       Content-Type:
       - application/json
+      Nessie-Version:
+      - 0.6.2-SNAPSHOT
     status:
       code: 200
       message: OK

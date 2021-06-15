@@ -8,6 +8,8 @@ interactions:
       - gzip, deflate
       Connection:
       - keep-alive
+      Nessie-Version:
+      - 0.6.2
       User-Agent:
       - python-requests/2.25.1
     method: GET
@@ -15,12 +17,14 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
-        \"b001de3fc1d925b69724a71e7ab81945ba3df3fe4315c0d85fcf004514eff8ed\"\n} ]"
+        \"a7a9dec9e97ad2af974b89e28bb5dfd876cad07c1bd7815ab5c02f74b9b69dd2\"\n} ]"
     headers:
       Content-Length:
       - '125'
       Content-Type:
       - application/json
+      Nessie-Version:
+      - 0.6.2-SNAPSHOT
     status:
       code: 200
       message: OK
@@ -28,7 +32,7 @@ interactions:
     body: '{"name": "dev", "hash": null, "type": "BRANCH"}'
     headers:
       Accept:
-      - '*/*'
+      - application/json
       Accept-Encoding:
       - gzip, deflate
       Connection:
@@ -37,6 +41,8 @@ interactions:
       - '47'
       Content-Type:
       - application/json
+      Nessie-Version:
+      - 0.6.2
       User-Agent:
       - python-requests/2.25.1
     method: POST
@@ -49,6 +55,8 @@ interactions:
       - '120'
       Content-Type:
       - application/json
+      Nessie-Version:
+      - 0.6.2-SNAPSHOT
     status:
       code: 200
       message: OK
@@ -61,6 +69,8 @@ interactions:
       - gzip, deflate
       Connection:
       - keep-alive
+      Nessie-Version:
+      - 0.6.2
       User-Agent:
       - python-requests/2.25.1
     method: GET
@@ -68,7 +78,7 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
-        \"b001de3fc1d925b69724a71e7ab81945ba3df3fe4315c0d85fcf004514eff8ed\"\n}, {\n
+        \"a7a9dec9e97ad2af974b89e28bb5dfd876cad07c1bd7815ab5c02f74b9b69dd2\"\n}, {\n
         \ \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}
         ]"
     headers:
@@ -76,6 +86,8 @@ interactions:
       - '247'
       Content-Type:
       - application/json
+      Nessie-Version:
+      - 0.6.2-SNAPSHOT
     status:
       code: 200
       message: OK
@@ -88,6 +100,8 @@ interactions:
       - gzip, deflate
       Connection:
       - keep-alive
+      Nessie-Version:
+      - 0.6.2
       User-Agent:
       - python-requests/2.25.1
     method: GET
@@ -101,6 +115,8 @@ interactions:
       - '124'
       Content-Type:
       - application/json
+      Nessie-Version:
+      - 0.6.2-SNAPSHOT
     status:
       code: 404
       message: Not Found
@@ -113,27 +129,31 @@ interactions:
       - gzip, deflate
       Connection:
       - keep-alive
+      Nessie-Version:
+      - 0.6.2
       User-Agent:
       - python-requests/2.25.1
     method: GET
     uri: http://localhost:19120/api/v1/trees/tree/main
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"b001de3fc1d925b69724a71e7ab81945ba3df3fe4315c0d85fcf004514eff8ed\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"a7a9dec9e97ad2af974b89e28bb5dfd876cad07c1bd7815ab5c02f74b9b69dd2\"\n}"
     headers:
       Content-Length:
       - '121'
       Content-Type:
       - application/json
+      Nessie-Version:
+      - 0.6.2-SNAPSHOT
     status:
       code: 200
       message: OK
 - request:
-    body: '{"name": "etl", "hash": "b001de3fc1d925b69724a71e7ab81945ba3df3fe4315c0d85fcf004514eff8ed",
+    body: '{"name": "etl", "hash": "a7a9dec9e97ad2af974b89e28bb5dfd876cad07c1bd7815ab5c02f74b9b69dd2",
       "type": "BRANCH"}'
     headers:
       Accept:
-      - '*/*'
+      - application/json
       Accept-Encoding:
       - gzip, deflate
       Connection:
@@ -142,18 +162,22 @@ interactions:
       - '109'
       Content-Type:
       - application/json
+      Nessie-Version:
+      - 0.6.2
       User-Agent:
       - python-requests/2.25.1
     method: POST
     uri: http://localhost:19120/api/v1/trees/tree
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"etl\",\n  \"hash\" : \"b001de3fc1d925b69724a71e7ab81945ba3df3fe4315c0d85fcf004514eff8ed\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"etl\",\n  \"hash\" : \"a7a9dec9e97ad2af974b89e28bb5dfd876cad07c1bd7815ab5c02f74b9b69dd2\"\n}"
     headers:
       Content-Length:
       - '120'
       Content-Type:
       - application/json
+      Nessie-Version:
+      - 0.6.2-SNAPSHOT
     status:
       code: 200
       message: OK
@@ -166,6 +190,8 @@ interactions:
       - gzip, deflate
       Connection:
       - keep-alive
+      Nessie-Version:
+      - 0.6.2
       User-Agent:
       - python-requests/2.25.1
     method: GET
@@ -173,8 +199,8 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"etl\",\n  \"hash\" :
-        \"b001de3fc1d925b69724a71e7ab81945ba3df3fe4315c0d85fcf004514eff8ed\"\n}, {\n
-        \ \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"b001de3fc1d925b69724a71e7ab81945ba3df3fe4315c0d85fcf004514eff8ed\"\n},
+        \"a7a9dec9e97ad2af974b89e28bb5dfd876cad07c1bd7815ab5c02f74b9b69dd2\"\n}, {\n
+        \ \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"a7a9dec9e97ad2af974b89e28bb5dfd876cad07c1bd7815ab5c02f74b9b69dd2\"\n},
         {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}
         ]"
     headers:
@@ -182,6 +208,8 @@ interactions:
       - '369'
       Content-Type:
       - application/json
+      Nessie-Version:
+      - 0.6.2-SNAPSHOT
     status:
       code: 200
       message: OK
@@ -194,18 +222,22 @@ interactions:
       - gzip, deflate
       Connection:
       - keep-alive
+      Nessie-Version:
+      - 0.6.2
       User-Agent:
       - python-requests/2.25.1
     method: GET
     uri: http://localhost:19120/api/v1/trees/tree/etl
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"etl\",\n  \"hash\" : \"b001de3fc1d925b69724a71e7ab81945ba3df3fe4315c0d85fcf004514eff8ed\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"etl\",\n  \"hash\" : \"a7a9dec9e97ad2af974b89e28bb5dfd876cad07c1bd7815ab5c02f74b9b69dd2\"\n}"
     headers:
       Content-Length:
       - '120'
       Content-Type:
       - application/json
+      Nessie-Version:
+      - 0.6.2-SNAPSHOT
     status:
       code: 200
       message: OK
@@ -220,14 +252,18 @@ interactions:
       - keep-alive
       Content-Length:
       - '0'
+      Nessie-Version:
+      - 0.6.2
       User-Agent:
       - python-requests/2.25.1
     method: DELETE
-    uri: http://localhost:19120/api/v1/trees/branch/etl?expectedHash=b001de3fc1d925b69724a71e7ab81945ba3df3fe4315c0d85fcf004514eff8ed
+    uri: http://localhost:19120/api/v1/trees/branch/etl?expectedHash=a7a9dec9e97ad2af974b89e28bb5dfd876cad07c1bd7815ab5c02f74b9b69dd2
   response:
     body:
       string: ''
-    headers: {}
+    headers:
+      Nessie-Version:
+      - 0.6.2-SNAPSHOT
     status:
       code: 204
       message: No Content
@@ -240,6 +276,8 @@ interactions:
       - gzip, deflate
       Connection:
       - keep-alive
+      Nessie-Version:
+      - 0.6.2
       User-Agent:
       - python-requests/2.25.1
     method: GET
@@ -252,6 +290,8 @@ interactions:
       - '120'
       Content-Type:
       - application/json
+      Nessie-Version:
+      - 0.6.2-SNAPSHOT
     status:
       code: 200
       message: OK
@@ -266,6 +306,8 @@ interactions:
       - keep-alive
       Content-Length:
       - '0'
+      Nessie-Version:
+      - 0.6.2
       User-Agent:
       - python-requests/2.25.1
     method: DELETE
@@ -273,7 +315,9 @@ interactions:
   response:
     body:
       string: ''
-    headers: {}
+    headers:
+      Nessie-Version:
+      - 0.6.2-SNAPSHOT
     status:
       code: 204
       message: No Content
@@ -286,6 +330,8 @@ interactions:
       - gzip, deflate
       Connection:
       - keep-alive
+      Nessie-Version:
+      - 0.6.2
       User-Agent:
       - python-requests/2.25.1
     method: GET
@@ -293,12 +339,14 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
-        \"b001de3fc1d925b69724a71e7ab81945ba3df3fe4315c0d85fcf004514eff8ed\"\n} ]"
+        \"a7a9dec9e97ad2af974b89e28bb5dfd876cad07c1bd7815ab5c02f74b9b69dd2\"\n} ]"
     headers:
       Content-Length:
       - '125'
       Content-Type:
       - application/json
+      Nessie-Version:
+      - 0.6.2-SNAPSHOT
     status:
       code: 200
       message: OK

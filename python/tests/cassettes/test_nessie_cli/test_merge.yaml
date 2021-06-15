@@ -3,7 +3,7 @@ interactions:
     body: '{"name": "dev", "hash": null, "type": "BRANCH"}'
     headers:
       Accept:
-      - '*/*'
+      - application/json
       Accept-Encoding:
       - gzip, deflate
       Connection:
@@ -12,6 +12,8 @@ interactions:
       - '47'
       Content-Type:
       - application/json
+      Nessie-Version:
+      - 0.6.2
       User-Agent:
       - python-requests/2.25.1
     method: POST
@@ -24,6 +26,8 @@ interactions:
       - '120'
       Content-Type:
       - application/json
+      Nessie-Version:
+      - 0.6.2-SNAPSHOT
     status:
       code: 200
       message: OK
@@ -36,6 +40,8 @@ interactions:
       - gzip, deflate
       Connection:
       - keep-alive
+      Nessie-Version:
+      - 0.6.2
       User-Agent:
       - python-requests/2.25.1
     method: GET
@@ -51,6 +57,8 @@ interactions:
       - '247'
       Content-Type:
       - application/json
+      Nessie-Version:
+      - 0.6.2-SNAPSHOT
     status:
       code: 200
       message: OK
@@ -63,6 +71,8 @@ interactions:
       - gzip, deflate
       Connection:
       - keep-alive
+      Nessie-Version:
+      - 0.6.2
       User-Agent:
       - python-requests/2.25.1
     method: GET
@@ -77,18 +87,20 @@ interactions:
       - '149'
       Content-Type:
       - application/json
+      Nessie-Version:
+      - 0.6.2-SNAPSHOT
     status:
       code: 404
       message: Not Found
 - request:
-    body: '{"operations": [{"contents": {"metadataLocation": "/a/b/c", "id": "uuid",
-      "type": "ICEBERG_TABLE"}, "key": {"elements": ["foo", "bar"]}, "type": "PUT"}],
-      "commitMeta": {"authorTime": null, "author": null, "hash": null, "commitTime":
-      null, "signedOffBy": null, "email": null, "properties": null, "committer": null,
-      "message": "test_message"}}'
+    body: '{"commitMeta": {"signedOffBy": null, "commitTime": null, "committer": null,
+      "author": null, "authorTime": null, "email": null, "properties": null, "message":
+      "test_message", "hash": null}, "operations": [{"contents": {"metadataLocation":
+      "/a/b/c", "id": "uuid", "type": "ICEBERG_TABLE"}, "key": {"elements": ["foo",
+      "bar"]}, "type": "PUT"}]}'
     headers:
       Accept:
-      - '*/*'
+      - application/json
       Accept-Encoding:
       - gzip, deflate
       Connection:
@@ -97,18 +109,22 @@ interactions:
       - '341'
       Content-Type:
       - application/json
+      Nessie-Version:
+      - 0.6.2
       User-Agent:
       - python-requests/2.25.1
     method: POST
     uri: http://localhost:19120/api/v1/trees/branch/dev/commit?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"2b8316c4a2fd84bb070093aa6d6f72882836135dfcb32168056eabbdc30e9dfb\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"1ed6f13719c24243a9827c864872d321ee113c713452b0afba9dfcf0e593ff6d\"\n}"
     headers:
       Content-Length:
       - '120'
       Content-Type:
       - application/json
+      Nessie-Version:
+      - 0.6.2-SNAPSHOT
     status:
       code: 200
       message: OK
@@ -121,6 +137,8 @@ interactions:
       - gzip, deflate
       Connection:
       - keep-alive
+      Nessie-Version:
+      - 0.6.2
       User-Agent:
       - python-requests/2.25.1
     method: GET
@@ -129,13 +147,15 @@ interactions:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
         \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}, {\n
-        \ \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"2b8316c4a2fd84bb070093aa6d6f72882836135dfcb32168056eabbdc30e9dfb\"\n}
+        \ \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"1ed6f13719c24243a9827c864872d321ee113c713452b0afba9dfcf0e593ff6d\"\n}
         ]"
     headers:
       Content-Length:
       - '247'
       Content-Type:
       - application/json
+      Nessie-Version:
+      - 0.6.2-SNAPSHOT
     status:
       code: 200
       message: OK
@@ -148,26 +168,30 @@ interactions:
       - gzip, deflate
       Connection:
       - keep-alive
+      Nessie-Version:
+      - 0.6.2
       User-Agent:
       - python-requests/2.25.1
     method: GET
     uri: http://localhost:19120/api/v1/trees/tree/dev
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"2b8316c4a2fd84bb070093aa6d6f72882836135dfcb32168056eabbdc30e9dfb\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"1ed6f13719c24243a9827c864872d321ee113c713452b0afba9dfcf0e593ff6d\"\n}"
     headers:
       Content-Length:
       - '120'
       Content-Type:
       - application/json
+      Nessie-Version:
+      - 0.6.2-SNAPSHOT
     status:
       code: 200
       message: OK
 - request:
-    body: '{"fromHash": "2b8316c4a2fd84bb070093aa6d6f72882836135dfcb32168056eabbdc30e9dfb"}'
+    body: '{"fromHash": "1ed6f13719c24243a9827c864872d321ee113c713452b0afba9dfcf0e593ff6d"}'
     headers:
       Accept:
-      - '*/*'
+      - application/json
       Accept-Encoding:
       - gzip, deflate
       Connection:
@@ -176,6 +200,8 @@ interactions:
       - '80'
       Content-Type:
       - application/json
+      Nessie-Version:
+      - 0.6.2
       User-Agent:
       - python-requests/2.25.1
     method: POST
@@ -183,7 +209,9 @@ interactions:
   response:
     body:
       string: ''
-    headers: {}
+    headers:
+      Nessie-Version:
+      - 0.6.2-SNAPSHOT
     status:
       code: 204
       message: No Content
@@ -196,6 +224,8 @@ interactions:
       - gzip, deflate
       Connection:
       - keep-alive
+      Nessie-Version:
+      - 0.6.2
       User-Agent:
       - python-requests/2.25.1
     method: GET
@@ -203,14 +233,16 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
-        \"2b8316c4a2fd84bb070093aa6d6f72882836135dfcb32168056eabbdc30e9dfb\"\n}, {\n
-        \ \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"2b8316c4a2fd84bb070093aa6d6f72882836135dfcb32168056eabbdc30e9dfb\"\n}
+        \"1ed6f13719c24243a9827c864872d321ee113c713452b0afba9dfcf0e593ff6d\"\n}, {\n
+        \ \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"1ed6f13719c24243a9827c864872d321ee113c713452b0afba9dfcf0e593ff6d\"\n}
         ]"
     headers:
       Content-Length:
       - '247'
       Content-Type:
       - application/json
+      Nessie-Version:
+      - 0.6.2-SNAPSHOT
     status:
       code: 200
       message: OK
@@ -223,18 +255,22 @@ interactions:
       - gzip, deflate
       Connection:
       - keep-alive
+      Nessie-Version:
+      - 0.6.2
       User-Agent:
       - python-requests/2.25.1
     method: GET
     uri: http://localhost:19120/api/v1/trees/tree/dev
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"2b8316c4a2fd84bb070093aa6d6f72882836135dfcb32168056eabbdc30e9dfb\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"1ed6f13719c24243a9827c864872d321ee113c713452b0afba9dfcf0e593ff6d\"\n}"
     headers:
       Content-Length:
       - '120'
       Content-Type:
       - application/json
+      Nessie-Version:
+      - 0.6.2-SNAPSHOT
     status:
       code: 200
       message: OK
@@ -249,14 +285,18 @@ interactions:
       - keep-alive
       Content-Length:
       - '0'
+      Nessie-Version:
+      - 0.6.2
       User-Agent:
       - python-requests/2.25.1
     method: DELETE
-    uri: http://localhost:19120/api/v1/trees/branch/dev?expectedHash=2b8316c4a2fd84bb070093aa6d6f72882836135dfcb32168056eabbdc30e9dfb
+    uri: http://localhost:19120/api/v1/trees/branch/dev?expectedHash=1ed6f13719c24243a9827c864872d321ee113c713452b0afba9dfcf0e593ff6d
   response:
     body:
       string: ''
-    headers: {}
+    headers:
+      Nessie-Version:
+      - 0.6.2-SNAPSHOT
     status:
       code: 204
       message: No Content
@@ -269,6 +309,8 @@ interactions:
       - gzip, deflate
       Connection:
       - keep-alive
+      Nessie-Version:
+      - 0.6.2
       User-Agent:
       - python-requests/2.25.1
     method: GET
@@ -276,16 +318,18 @@ interactions:
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :
-        [ {\n    \"hash\" : \"2b8316c4a2fd84bb070093aa6d6f72882836135dfcb32168056eabbdc30e9dfb\",\n
+        [ {\n    \"hash\" : \"1ed6f13719c24243a9827c864872d321ee113c713452b0afba9dfcf0e593ff6d\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"\",\n    \"signedOffBy\" : null,\n
-        \   \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-07T16:04:14.660340Z\",\n
-        \   \"authorTime\" : \"2021-06-07T16:04:14.660340Z\",\n    \"properties\"
+        \   \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-15T12:02:03.553226Z\",\n
+        \   \"authorTime\" : \"2021-06-15T12:02:03.553226Z\",\n    \"properties\"
         : { }\n  } ]\n}"
     headers:
       Content-Length:
       - '372'
       Content-Type:
       - application/json
+      Nessie-Version:
+      - 0.6.2-SNAPSHOT
     status:
       code: 200
       message: OK
@@ -298,6 +342,8 @@ interactions:
       - gzip, deflate
       Connection:
       - keep-alive
+      Nessie-Version:
+      - 0.6.2
       User-Agent:
       - python-requests/2.25.1
     method: GET
@@ -311,17 +357,19 @@ interactions:
       - '80'
       Content-Type:
       - application/json
+      Nessie-Version:
+      - 0.6.2-SNAPSHOT
     status:
       code: 200
       message: OK
 - request:
-    body: '{"operations": [{"key": {"elements": ["foo", "bar"]}, "type": "DELETE"}],
-      "commitMeta": {"authorTime": null, "author": null, "hash": null, "commitTime":
-      null, "signedOffBy": null, "email": null, "properties": null, "committer": null,
-      "message": "delete_message"}}'
+    body: '{"commitMeta": {"signedOffBy": null, "commitTime": null, "committer": null,
+      "author": null, "authorTime": null, "email": null, "properties": null, "message":
+      "delete_message", "hash": null}, "operations": [{"key": {"elements": ["foo",
+      "bar"]}, "type": "DELETE"}]}'
     headers:
       Accept:
-      - '*/*'
+      - application/json
       Accept-Encoding:
       - gzip, deflate
       Connection:
@@ -330,18 +378,22 @@ interactions:
       - '263'
       Content-Type:
       - application/json
+      Nessie-Version:
+      - 0.6.2
       User-Agent:
       - python-requests/2.25.1
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/main/commit?expectedHash=2b8316c4a2fd84bb070093aa6d6f72882836135dfcb32168056eabbdc30e9dfb
+    uri: http://localhost:19120/api/v1/trees/branch/main/commit?expectedHash=1ed6f13719c24243a9827c864872d321ee113c713452b0afba9dfcf0e593ff6d
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"cdbce4764bb05c2cee7b0df4b69d17e0677595f16cc97184215f44f4167d1a56\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"9bb1025c0ccad9b7243c63c5fdec2cc7ed3597dd3e751ac76366ebcfb79d685a\"\n}"
     headers:
       Content-Length:
       - '121'
       Content-Type:
       - application/json
+      Nessie-Version:
+      - 0.6.2-SNAPSHOT
     status:
       code: 200
       message: OK
@@ -354,18 +406,22 @@ interactions:
       - gzip, deflate
       Connection:
       - keep-alive
+      Nessie-Version:
+      - 0.6.2
       User-Agent:
       - python-requests/2.25.1
     method: GET
     uri: http://localhost:19120/api/v1/trees/tree/main
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"cdbce4764bb05c2cee7b0df4b69d17e0677595f16cc97184215f44f4167d1a56\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"9bb1025c0ccad9b7243c63c5fdec2cc7ed3597dd3e751ac76366ebcfb79d685a\"\n}"
     headers:
       Content-Length:
       - '121'
       Content-Type:
       - application/json
+      Nessie-Version:
+      - 0.6.2-SNAPSHOT
     status:
       code: 200
       message: OK
@@ -380,14 +436,18 @@ interactions:
       - keep-alive
       Content-Length:
       - '0'
+      Nessie-Version:
+      - 0.6.2
       User-Agent:
       - python-requests/2.25.1
     method: DELETE
-    uri: http://localhost:19120/api/v1/trees/branch/main?expectedHash=cdbce4764bb05c2cee7b0df4b69d17e0677595f16cc97184215f44f4167d1a56
+    uri: http://localhost:19120/api/v1/trees/branch/main?expectedHash=9bb1025c0ccad9b7243c63c5fdec2cc7ed3597dd3e751ac76366ebcfb79d685a
   response:
     body:
       string: ''
-    headers: {}
+    headers:
+      Nessie-Version:
+      - 0.6.2-SNAPSHOT
     status:
       code: 204
       message: No Content
@@ -395,7 +455,7 @@ interactions:
     body: '{"name": "main", "hash": null, "type": "BRANCH"}'
     headers:
       Accept:
-      - '*/*'
+      - application/json
       Accept-Encoding:
       - gzip, deflate
       Connection:
@@ -404,6 +464,8 @@ interactions:
       - '48'
       Content-Type:
       - application/json
+      Nessie-Version:
+      - 0.6.2
       User-Agent:
       - python-requests/2.25.1
     method: POST
@@ -416,6 +478,8 @@ interactions:
       - '121'
       Content-Type:
       - application/json
+      Nessie-Version:
+      - 0.6.2-SNAPSHOT
     status:
       code: 200
       message: OK
