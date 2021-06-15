@@ -354,6 +354,9 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>>
       toMerge.add(commit.getValue());
       commit.getValue().getOperations().forEach(op -> keys.add(op.getKey()));
     }
+    if (null == commonAncestor) {
+      checkIfSameKeysHaveBeenModified(fromHash, referenceHash);
+    }
 
     checkConcurrentModification(toBranch, currentHash, expectedBranchHash, new ArrayList<>(keys));
 
@@ -388,6 +391,29 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>>
           final Commit<ValueT, MetadataT> lastCommit = Iterables.getLast(toStore);
           return lastCommit.getHash();
         });
+  }
+
+  private void checkIfSameKeysHaveBeenModified(Hash fromHash, Hash referenceHash)
+      throws ReferenceConflictException {
+    // if there's no common ancestor, we need to check whether the same keys have been modified
+    Set<Key> fromBranchKeyChanges =
+        Streams.stream(new CommitsIterator<>(commits::get, fromHash))
+            .map(WithHash::getValue)
+            .flatMap(x -> x.getOperations().stream().map(Operation::getKey))
+            .collect(Collectors.toSet());
+    Set<Key> conflictingKeys =
+        Streams.stream(new CommitsIterator<>(commits::get, referenceHash))
+            .map(WithHash::getValue)
+            .flatMap(x -> x.getOperations().stream().map(Operation::getKey))
+            .filter(fromBranchKeyChanges::contains)
+            .collect(Collectors.toSet());
+
+    if (!conflictingKeys.isEmpty()) {
+      throw new ReferenceConflictException(
+          String.format(
+              "The following keys have been changed in conflict: %s.",
+              conflictingKeys.stream().map(Key::toString).collect(Collectors.joining(", "))));
+    }
   }
 
   @Override

@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.tests;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -1097,6 +1098,31 @@ public abstract class AbstractITVersionStore {
     }
 
     @Test
+    protected void mergeWithConflictingKeys() throws VersionStoreException {
+      final BranchName foo = BranchName.of("foofoo");
+      final BranchName bar = BranchName.of("barbar");
+      store().create(foo, Optional.empty());
+      store().create(bar, Optional.empty());
+
+      // we're essentially modifying the same key on both branches and then merging one branch into
+      // the other and expect a conflict
+      Key key1 = Key.of("some_key1");
+      Key key2 = Key.of("some_key2");
+
+      store().commit(foo, Optional.empty(), "commit 1", Arrays.asList(Put.of(key1, "value1")));
+      store().commit(bar, Optional.empty(), "commit 2", Arrays.asList(Put.of(key1, "value2")));
+      store().commit(foo, Optional.empty(), "commit 3", Arrays.asList(Put.of(key2, "value3")));
+      Hash barHash =
+          store().commit(bar, Optional.empty(), "commit 4", Arrays.asList(Put.of(key2, "value4")));
+
+      assertThatThrownBy(() -> store().merge(barHash, foo, Optional.empty()))
+          .isInstanceOf(ReferenceConflictException.class)
+          .hasMessageContaining("The following keys have been changed in conflict:")
+          .hasMessageContaining(key1.toString())
+          .hasMessageContaining(key2.toString());
+    }
+
+    @Test
     protected void mergeIntoConflictingBranch() throws VersionStoreException {
       final BranchName newBranch = BranchName.of("bar_3");
       store().create(newBranch, Optional.empty());
@@ -1108,7 +1134,7 @@ public abstract class AbstractITVersionStore {
     }
 
     @Test
-    protected void mergeIntoNonExistingBranch() throws VersionStoreException {
+    protected void mergeIntoNonExistingBranch() {
       final BranchName newBranch = BranchName.of("bar_5");
       assertThrows(
           ReferenceNotFoundException.class,
