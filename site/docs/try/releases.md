@@ -1,5 +1,14 @@
 # Releases
 
+## 0.7.0 Release (June 15, 2021)
+
+* Server side filtering for entries-listing
+* Author & committer improvements in the Python CLI
+* Loosen pins for client install on Python cli
+* Gradle plugin improvements
+* (Development) change to Google Code Style, add spotless plugin
+* (CI) Add OWASP Dependency Check
+
 ## 0.6.1 Release (May 25, 2021)
 
 * Gradle plugin improvements 
