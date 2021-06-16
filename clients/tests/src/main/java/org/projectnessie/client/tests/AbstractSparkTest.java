@@ -140,7 +140,7 @@ public abstract class AbstractSparkTest {
   }
 
   /**
-   * This looks weird but it gives a clear semantic way to turn a list of objects into a 'row' for spark assertions
+   * This looks weird but it gives a clear semantic way to turn a list of objects into a 'row' for spark assertions.
    */
   protected Object[] row(Object... values) {
     return values;
