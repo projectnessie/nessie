@@ -1334,14 +1334,14 @@ limitations under the License.
                 </google-java-format>
                 <licenseHeader>
                   <file>${maven.multiModuleProjectDirectory}/codestyle/copyright-header-java.txt</file>
-                  <delimiter>package </delimiter>
+                  <delimiter>(package|import) </delimiter>
                 </licenseHeader>
               </java>
               <scala>
                 <scalafmt/>
                 <licenseHeader>
                   <file>${maven.multiModuleProjectDirectory}/codestyle/copyright-header-java.txt</file>
-                  <delimiter>package </delimiter>
+                  <delimiter>(package|import) </delimiter>
                 </licenseHeader>
               </scala>
             </configuration>
