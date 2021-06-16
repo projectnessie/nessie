@@ -74,6 +74,10 @@ public class CommitLogParams {
   @QueryParam("before")
   private Instant before;
 
+  @Parameter(description = "A Common Expression Language (CEL) expression")
+  @QueryParam("cel_expr")
+  private String celExpr;
+
   public CommitLogParams() {}
 
   private CommitLogParams(
@@ -82,13 +86,15 @@ public class CommitLogParams {
       List<String> authors,
       List<String> committers,
       Instant after,
-      Instant before) {
+      Instant before,
+      String celExpr) {
     this.maxRecords = maxRecords;
     this.pageToken = pageToken;
     this.authors = authors;
     this.committers = committers;
     this.after = after;
     this.before = before;
+    this.celExpr = celExpr;
   }
 
   private CommitLogParams(Builder builder) {
@@ -98,7 +104,8 @@ public class CommitLogParams {
         new ArrayList<>(builder.authors),
         new ArrayList<>(builder.committers),
         builder.after,
-        builder.before);
+        builder.before,
+        builder.celExpr);
   }
 
   public Integer getMaxRecords() {
@@ -125,6 +132,10 @@ public class CommitLogParams {
     return before;
   }
 
+  public String getCelExpr() {
+    return celExpr;
+  }
+
   public static CommitLogParams.Builder builder() {
     return new CommitLogParams.Builder();
   }
@@ -142,6 +153,7 @@ public class CommitLogParams {
         .add("committers=" + committers)
         .add("after=" + after)
         .add("before=" + before)
+        .add("celExpr=" + celExpr)
         .toString();
   }
 
@@ -153,6 +165,7 @@ public class CommitLogParams {
     private List<String> committers = Collections.emptyList();
     private Instant after;
     private Instant before;
+    private String celExpr;
 
     private Builder() {}
 
@@ -186,13 +199,19 @@ public class CommitLogParams {
       return this;
     }
 
+    public Builder celEexpr(String celExpr) {
+      this.celExpr = celExpr;
+      return this;
+    }
+
     public Builder from(CommitLogParams params) {
       return maxRecords(params.maxRecords)
           .pageToken(params.pageToken)
           .authors(params.authors)
           .committers(params.committers)
           .after(params.after)
-          .before(params.before);
+          .before(params.before)
+          .celEexpr(params.celExpr);
     }
 
     private void validate() {
