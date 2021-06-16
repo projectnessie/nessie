@@ -106,7 +106,7 @@ class ITDeltaLogBranches extends AbstractSparkTest {
     As the table itself is cached we can't read from main w/o invalidating, hence reading from main above
      */
     DeltaLog.invalidateCache(spark, new Path(tempPath.getAbsolutePath()));
-    spark.sparkContext().hadoopConfiguration().set("nessie.ref", "test");
+    spark.sparkContext().conf().set("spark.sql.catalog.spark_catalog.ref", "test");
     Dataset<Row> targetBranch = spark.read().format("delta").load(tempPath.getAbsolutePath());
 
     // we expect the table from test to be half the size of the table from main

@@ -15,10 +15,6 @@
  */
 package org.projectnessie.client.tests;
 
-import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_AUTH_TYPE;
-import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_REF;
-import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URI;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import java.io.File;
@@ -27,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.spark.SparkConf;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
@@ -42,36 +37,29 @@ import org.projectnessie.client.NessieClient;
 public abstract class AbstractSparkTest {
   private static final Object ANY = new Object();
 
-  @TempDir File tempFile;
+  @TempDir
+  File tempFile;
 
-  private static final int NESSIE_PORT = Integer.getInteger("quarkus.http.test-port", 19120);
+  private static final int NESSIE_PORT = Integer.getInteger("quarkus.http.test-port", 19121);
   protected static SparkConf conf = new SparkConf();
 
   protected static SparkSession spark;
-  protected static Configuration hadoopConfig = new Configuration();
   protected static String url = String.format("http://localhost:%d/api/v1", NESSIE_PORT);
 
   protected static NessieClient nessieClient;
 
   @BeforeEach
   protected void create() throws IOException {
-    String branch = "main";
-    String authType = "NONE";
-
     Map<String, String> nessieParams =
         ImmutableMap.of("ref", "main", "uri", url, "warehouse", tempFile.toURI().toString());
 
     nessieParams.forEach(
         (k, v) -> {
-          hadoopConfig.set(String.format("nessie.%s", k), v);
-          conf.set(String.format("spark.hadoop.nessie.%s", k), v);
           conf.set(String.format("spark.sql.catalog.nessie.%s", k), v);
+          conf.set(String.format("spark.sql.catalog.spark_catalog.%s", k), v);
         });
 
-    conf.set("spark.hadoop." + CONF_NESSIE_URI, url)
-        .set("spark.hadoop." + CONF_NESSIE_REF, branch)
-        .set("spark.hadoop." + CONF_NESSIE_AUTH_TYPE, authType)
-        .set(SQLConf.PARTITION_OVERWRITE_MODE().key(), "dynamic")
+    conf.set(SQLConf.PARTITION_OVERWRITE_MODE().key(), "dynamic")
         .set("spark.testing", "true")
         .set("spark.sql.shuffle.partitions", "4")
         .set("spark.sql.catalog.nessie.catalog-impl", "org.apache.iceberg.nessie.NessieCatalog")
@@ -83,7 +71,7 @@ public abstract class AbstractSparkTest {
   }
 
   @AfterAll
-  static void tearDown() {
+  static void tearDown() throws Exception {
     if (spark != null) {
       spark.stop();
       spark = null;
@@ -151,6 +139,9 @@ public abstract class AbstractSparkTest {
         .toArray(Object[]::new);
   }
 
+  /**
+   * This looks weird but it gives a clear semantic way to turn a list of objects into a 'row' for spark assertions
+   */
   protected Object[] row(Object... values) {
     return values;
   }

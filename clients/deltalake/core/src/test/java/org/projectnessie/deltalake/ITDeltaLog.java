@@ -15,8 +15,6 @@
  */
 package org.projectnessie.deltalake;
 
-import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_REF;
-
 import io.delta.tables.DeltaTable;
 import java.io.File;
 import java.util.ArrayList;
@@ -82,8 +80,7 @@ class ITDeltaLog extends AbstractSparkTest {
             .getTreeApi()
             .createReference(Branch.of("testMultipleBranches", mainBranch.getHash()));
 
-    spark.sparkContext().getConf().set("spark.hadoop." + CONF_NESSIE_REF, devBranch.getName());
-    spark.sparkContext().hadoopConfiguration().set(CONF_NESSIE_REF, devBranch.getName());
+    spark.sparkContext().conf().set("spark.sql.catalog.spark_catalog.ref", devBranch.getName());
 
     Dataset<Row> salariesDf2 = spark.read().option("header", true).csv(csvSalaries2);
     salariesDf2.write().format("delta").mode("append").save(pathSalaries);
@@ -91,8 +88,7 @@ class ITDeltaLog extends AbstractSparkTest {
     Dataset<Row> count2 = spark.sql("SELECT COUNT(*) FROM test_multiple_branches");
     Assertions.assertEquals(30L, count2.collectAsList().get(0).getLong(0));
 
-    spark.sparkContext().getConf().set("spark.hadoop.nessie.ref", "main");
-    spark.sparkContext().hadoopConfiguration().set("nessie.ref", "main");
+    spark.sparkContext().conf().set("spark.sql.catalog.spark_catalog.ref", "main");
 
     Dataset<Row> salariesDf3 = spark.read().option("header", true).csv(csvSalaries3);
     salariesDf3.write().format("delta").mode("append").save(pathSalaries);
@@ -129,8 +125,7 @@ class ITDeltaLog extends AbstractSparkTest {
             .getTreeApi()
             .createReference(Branch.of("testCommitRetry", mainBranch.getHash()));
 
-    spark.sparkContext().getConf().set("spark.hadoop." + CONF_NESSIE_REF, devBranch.getName());
-    spark.sparkContext().hadoopConfiguration().set(CONF_NESSIE_REF, devBranch.getName());
+    spark.sparkContext().conf().set("spark.sql.catalog.spark_catalog.ref", devBranch.getName());
 
     Dataset<Row> salariesDf2 = spark.read().option("header", true).csv(csvSalaries2);
     salariesDf2.write().format("delta").mode("append").save(pathSalaries);
@@ -145,8 +140,7 @@ class ITDeltaLog extends AbstractSparkTest {
         .getTreeApi()
         .mergeRefIntoBranch("main", toHash, ImmutableMerge.builder().fromHash(fromHash).build());
 
-    spark.sparkContext().getConf().set("spark.hadoop.nessie.ref", "main");
-    spark.sparkContext().hadoopConfiguration().set("nessie.ref", "main");
+    spark.sparkContext().conf().set("spark.sql.catalog.spark_catalog.ref", "main");
 
     Dataset<Row> salariesDf3 = spark.read().option("header", true).csv(csvSalaries3);
     salariesDf3.write().format("delta").mode("append").save(pathSalaries);
