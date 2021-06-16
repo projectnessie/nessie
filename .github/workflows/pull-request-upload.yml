@@ -20,8 +20,8 @@ env:
   GATLING_REPORT_JAR: gatling-report-5.1-nessie-1-capsule-fat.jar
   SIMULATION_LOG_DIR: perftest/simulations/target/gatling
   REPORT_DIR: perftest/simulations/target/gatling-report
-  # TODO CHANGE THESE!
-  #PUBLIC_BASE: https://projectnessie.github.io/nessie-ci/
+  # TODO Change to project website included as a git submodule https://docs.github.com/en/pages/getting-started-with-github-pages/using-submodules-with-github-pages
+  #PUBLIC_BASE: https://projectnessie.org/nessie-ci/
   PUBLIC_BASE: https://snazy.github.io/some-test/
   CI_REPORTS_REPO: snazy/some-test
 
@@ -36,7 +36,7 @@ jobs:
     name: Main Report Upload
     runs-on: ubuntu-latest
     # TODO remove this before actually merging the perf-test-stuff-PR !!!
-    if: ${GITHUB_REF} == "refs/pulls/940/merge"
+    if: ${{ github.event.workflow_run.head_branch == "perf-test-stuff" }}
 
     env:
       WEB_DIR: ${{ github.event.workflow_run.event }}/${{ github.event.workflow_run.head_sha }}/gatling
