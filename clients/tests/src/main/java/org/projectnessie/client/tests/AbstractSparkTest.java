@@ -37,8 +37,7 @@ import org.projectnessie.client.NessieClient;
 public abstract class AbstractSparkTest {
   private static final Object ANY = new Object();
 
-  @TempDir
-  File tempFile;
+  @TempDir File tempFile;
 
   private static final int NESSIE_PORT = Integer.getInteger("quarkus.http.test-port", 19121);
   protected static SparkConf conf = new SparkConf();
@@ -140,10 +139,10 @@ public abstract class AbstractSparkTest {
   }
 
   /**
-   * This looks weird but it gives a clear semantic way to turn a list of objects into a 'row' for spark assertions.
+   * This looks weird but it gives a clear semantic way to turn a list of objects into a 'row' for
+   * spark assertions.
    */
   protected Object[] row(Object... values) {
     return values;
   }
 }
-
