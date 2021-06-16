@@ -74,6 +74,18 @@ public class CommitLogParams {
   @QueryParam("before")
   private Instant before;
 
+  @Parameter(
+      description =
+          "A Common Expression Language (CEL) expression. An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n"
+              + "Usable variables within the expression are 'commit.author' (string) / 'commit.committer' (string) / 'commit.commitTime' (timestamp)",
+      examples = {
+        @ExampleObject(ref = "expr_by_commit_author"),
+        @ExampleObject(ref = "expr_by_commit_committer"),
+        @ExampleObject(ref = "expr_by_commitTime")
+      })
+  @QueryParam("query_expression")
+  private String queryExpression;
+
   public CommitLogParams() {}
 
   private CommitLogParams(
@@ -82,13 +94,15 @@ public class CommitLogParams {
       List<String> authors,
       List<String> committers,
       Instant after,
-      Instant before) {
+      Instant before,
+      String queryExpression) {
     this.maxRecords = maxRecords;
     this.pageToken = pageToken;
     this.authors = authors;
     this.committers = committers;
     this.after = after;
     this.before = before;
+    this.queryExpression = queryExpression;
   }
 
   private CommitLogParams(Builder builder) {
@@ -98,7 +112,8 @@ public class CommitLogParams {
         new ArrayList<>(builder.authors),
         new ArrayList<>(builder.committers),
         builder.after,
-        builder.before);
+        builder.before,
+        builder.queryExpression);
   }
 
   public Integer getMaxRecords() {
@@ -125,6 +140,10 @@ public class CommitLogParams {
     return before;
   }
 
+  public String getQueryExpression() {
+    return queryExpression;
+  }
+
   public static CommitLogParams.Builder builder() {
     return new CommitLogParams.Builder();
   }
@@ -142,6 +161,7 @@ public class CommitLogParams {
         .add("committers=" + committers)
         .add("after=" + after)
         .add("before=" + before)
+        .add("queryExpression='" + queryExpression + "'")
         .toString();
   }
 
@@ -153,6 +173,7 @@ public class CommitLogParams {
     private List<String> committers = Collections.emptyList();
     private Instant after;
     private Instant before;
+    private String queryExpression;
 
     private Builder() {}
 
@@ -186,13 +207,19 @@ public class CommitLogParams {
       return this;
     }
 
+    public Builder queryExpression(String queryExpression) {
+      this.queryExpression = queryExpression;
+      return this;
+    }
+
     public Builder from(CommitLogParams params) {
       return maxRecords(params.maxRecords)
           .pageToken(params.pageToken)
           .authors(params.authors)
           .committers(params.committers)
           .after(params.after)
-          .before(params.before);
+          .before(params.before)
+          .queryExpression(params.queryExpression);
     }
 
     private void validate() {

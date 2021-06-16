@@ -15,7 +15,11 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
+<<<<<<< HEAD
         \"287655801a64016c7e6dad1cd80e22df79aa42584a83145ce0f6473416616c2c\"\n} ]"
+=======
+        \"6730d35a503305b4f0c966329c8ed62f9965cf8954dd19826935a9698b134f4e\"\n} ]"
+>>>>>>> Allow using CEL expression when filtering the commit log
     headers:
       Content-Length:
       - '125'
@@ -68,7 +72,11 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
+<<<<<<< HEAD
         \"287655801a64016c7e6dad1cd80e22df79aa42584a83145ce0f6473416616c2c\"\n}, {\n
+=======
+        \"6730d35a503305b4f0c966329c8ed62f9965cf8954dd19826935a9698b134f4e\"\n}, {\n
+>>>>>>> Allow using CEL expression when filtering the commit log
         \ \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}
         ]"
     headers:
@@ -119,7 +127,11 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/main
   response:
     body:
+<<<<<<< HEAD
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"287655801a64016c7e6dad1cd80e22df79aa42584a83145ce0f6473416616c2c\"\n}"
+=======
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"6730d35a503305b4f0c966329c8ed62f9965cf8954dd19826935a9698b134f4e\"\n}"
+>>>>>>> Allow using CEL expression when filtering the commit log
     headers:
       Content-Length:
       - '121'
@@ -129,7 +141,11 @@ interactions:
       code: 200
       message: OK
 - request:
+<<<<<<< HEAD
     body: '{"hash": "287655801a64016c7e6dad1cd80e22df79aa42584a83145ce0f6473416616c2c",
+=======
+    body: '{"hash": "6730d35a503305b4f0c966329c8ed62f9965cf8954dd19826935a9698b134f4e",
+>>>>>>> Allow using CEL expression when filtering the commit log
       "name": "etl", "type": "BRANCH"}'
     headers:
       Accept:
@@ -148,7 +164,11 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree
   response:
     body:
+<<<<<<< HEAD
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"etl\",\n  \"hash\" : \"287655801a64016c7e6dad1cd80e22df79aa42584a83145ce0f6473416616c2c\"\n}"
+=======
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"etl\",\n  \"hash\" : \"6730d35a503305b4f0c966329c8ed62f9965cf8954dd19826935a9698b134f4e\"\n}"
+>>>>>>> Allow using CEL expression when filtering the commit log
     headers:
       Content-Length:
       - '120'
@@ -173,8 +193,13 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"etl\",\n  \"hash\" :
+<<<<<<< HEAD
         \"287655801a64016c7e6dad1cd80e22df79aa42584a83145ce0f6473416616c2c\"\n}, {\n
         \ \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"287655801a64016c7e6dad1cd80e22df79aa42584a83145ce0f6473416616c2c\"\n},
+=======
+        \"6730d35a503305b4f0c966329c8ed62f9965cf8954dd19826935a9698b134f4e\"\n}, {\n
+        \ \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"6730d35a503305b4f0c966329c8ed62f9965cf8954dd19826935a9698b134f4e\"\n},
+>>>>>>> Allow using CEL expression when filtering the commit log
         {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}
         ]"
     headers:
@@ -200,7 +225,11 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/etl
   response:
     body:
+<<<<<<< HEAD
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"etl\",\n  \"hash\" : \"287655801a64016c7e6dad1cd80e22df79aa42584a83145ce0f6473416616c2c\"\n}"
+=======
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"etl\",\n  \"hash\" : \"6730d35a503305b4f0c966329c8ed62f9965cf8954dd19826935a9698b134f4e\"\n}"
+>>>>>>> Allow using CEL expression when filtering the commit log
     headers:
       Content-Length:
       - '120'
@@ -223,7 +252,11 @@ interactions:
       User-Agent:
       - python-requests/2.25.1
     method: DELETE
+<<<<<<< HEAD
     uri: http://localhost:19120/api/v1/trees/branch/etl?expectedHash=287655801a64016c7e6dad1cd80e22df79aa42584a83145ce0f6473416616c2c
+=======
+    uri: http://localhost:19120/api/v1/trees/branch/etl?expectedHash=6730d35a503305b4f0c966329c8ed62f9965cf8954dd19826935a9698b134f4e
+>>>>>>> Allow using CEL expression when filtering the commit log
   response:
     body:
       string: ''
@@ -293,7 +326,11 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
+<<<<<<< HEAD
         \"287655801a64016c7e6dad1cd80e22df79aa42584a83145ce0f6473416616c2c\"\n} ]"
+=======
+        \"6730d35a503305b4f0c966329c8ed62f9965cf8954dd19826935a9698b134f4e\"\n} ]"
+>>>>>>> Allow using CEL expression when filtering the commit log
     headers:
       Content-Length:
       - '125'

@@ -15,12 +15,18 @@
  */
 package org.projectnessie.services.rest;
 
+import static org.projectnessie.services.cel.CELUtil.COMMIT_LOG_DECLARATIONS;
+import static org.projectnessie.services.cel.CELUtil.ENTRIES_DECLARATIONS;
+import static org.projectnessie.services.cel.CELUtil.SCRIPT_HOST;
+
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import java.security.Principal;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.enterprise.context.RequestScoped;
@@ -28,6 +34,8 @@ import javax.inject.Inject;
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.params.EntriesParams;
+import org.projectnessie.cel.tools.Script;
+import org.projectnessie.cel.tools.ScriptException;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -48,6 +56,7 @@ import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
 import org.projectnessie.model.Transplant;
+import org.projectnessie.services.cel.CELTranslator;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Delete;
@@ -166,12 +175,29 @@ public class TreeResource extends BaseResource implements TreeApi {
             MAX_COMMIT_LOG_ENTRIES);
     Hash startRef = getHashOrThrow(params.getPageToken() != null ? params.getPageToken() : ref);
 
+    if (null != params.getQueryExpression()) {
+      Preconditions.checkArgument(
+          params.getAuthors().isEmpty(),
+          "Cannot combine 'query_expression' with the 'authors' parameter");
+      Preconditions.checkArgument(
+          params.getCommitters().isEmpty(),
+          "Cannot combine 'query_expression' with the 'committers' parameter");
+      Preconditions.checkArgument(
+          null == params.getAfter(),
+          "Cannot combine 'query_expression' with the 'after' parameter");
+      Preconditions.checkArgument(
+          null == params.getBefore(),
+          "Cannot combine 'query_expression' with the 'before' parameter");
+    }
+
     try (Stream<ImmutableCommitMeta> s =
         getStore()
             .getCommits(startRef)
             .map(cwh -> cwh.getValue().toBuilder().hash(cwh.getHash().asString()).build())) {
+
       List<CommitMeta> items =
           filterCommitLog(s, params).limit(max + 1).collect(Collectors.toList());
+
       if (items.size() == max + 1) {
         return ImmutableLogResponse.builder()
             .addAllOperations(items.subList(0, max))
@@ -188,7 +214,8 @@ public class TreeResource extends BaseResource implements TreeApi {
 
   /**
    * Applies different filters to the {@link Stream} of commits based on the settings in {@link
-   * CommitLogParams}.
+   * CommitLogParams}. These settings are translated into a CEL expression via {@link CELTranslator}
+   * and applied to the stream.
    *
    * @param commits The commit log that different filters will be applied to
    * @param params The commit log filter parameters
@@ -196,27 +223,41 @@ public class TreeResource extends BaseResource implements TreeApi {
    */
   private Stream<ImmutableCommitMeta> filterCommitLog(
       Stream<ImmutableCommitMeta> commits, CommitLogParams params) {
-    if (null != params.getAuthors() && !params.getAuthors().isEmpty()) {
-      commits = commits.filter(commit -> params.getAuthors().contains(commit.getAuthor()));
+    String expr = CELTranslator.from(params);
+    final String celExpr = "".equals(expr) ? params.getQueryExpression() : expr;
+    if (null == celExpr) {
+      return commits;
     }
-    if (null != params.getCommitters() && !params.getCommitters().isEmpty()) {
-      commits = commits.filter(commit -> params.getCommitters().contains(commit.getCommitter()));
+
+    final Script script;
+    try {
+      script =
+          SCRIPT_HOST.getOrCreateScript(celExpr, COMMIT_LOG_DECLARATIONS, Collections.emptyList());
+    } catch (ScriptException e) {
+      throw new IllegalArgumentException(e);
     }
-    if (null != params.getAfter()) {
-      commits =
-          commits.filter(
-              commit ->
-                  null != commit.getCommitTime()
-                      && commit.getCommitTime().isAfter(params.getAfter()));
-    }
-    if (null != params.getBefore()) {
-      commits =
-          commits.filter(
-              commit ->
-                  null != commit.getCommitTime()
-                      && commit.getCommitTime().isBefore(params.getBefore()));
-    }
-    return commits;
+    return commits.filter(
+        commit -> {
+          // currently this is just a workaround where we put CommitMeta into a hash structure.
+          // Eventually we should have a CommitMetaT that we register to avoid unnecessary object
+          // creation
+          Map<String, Object> arguments =
+              ImmutableMap.of(
+                  "commit",
+                  ImmutableMap.of(
+                      "author",
+                      commit.getAuthor(),
+                      "committer",
+                      commit.getCommitter(),
+                      "commitTime",
+                      commit.getCommitTime()));
+
+          try {
+            return script.execute(Boolean.class, arguments);
+          } catch (ScriptException e) {
+            throw new RuntimeException(e);
+          }
+        });
   }
 
   @Override
@@ -267,6 +308,15 @@ public class TreeResource extends BaseResource implements TreeApi {
       throws NessieNotFoundException {
 
     final Hash hash = getHashOrThrow(refName);
+    if (null != params.getQueryExpression()) {
+      Preconditions.checkArgument(
+          params.getTypes().isEmpty(),
+          "Cannot combine 'query_expression' with the 'types' parameter");
+      Preconditions.checkArgument(
+          null == params.getNamespace(),
+          "Cannot combine 'query_expression' with the 'namespace' parameter");
+    }
+
     // TODO Implement paging. At the moment, we do not expect that many keys/entries to be returned.
     //  So the size of the whole result is probably reasonable and unlikely to "kill" either the
     //  server or client. We have to figure out _how_ to implement paging for keys/entries, i.e.
@@ -297,7 +347,8 @@ public class TreeResource extends BaseResource implements TreeApi {
 
   /**
    * Applies different filters to the {@link Stream} of entries based on the settings in {@link
-   * EntriesParams}.
+   * EntriesParams}. These settings are translated into a CEL expression via {@link CELTranslator}
+   * and applied to the stream.
    *
    * @param entries The entries that different filters will be applied to
    * @param params The filter parameters for the entries
@@ -305,20 +356,40 @@ public class TreeResource extends BaseResource implements TreeApi {
    */
   private Stream<EntriesResponse.Entry> filterEntries(
       Stream<EntriesResponse.Entry> entries, EntriesParams params) {
-    final Set<Type> payloads;
-    if (params.getTypes().isEmpty()) {
-      payloads = Arrays.stream(Type.values()).collect(Collectors.toSet());
-    } else {
-      payloads = params.getTypes().stream().map(Type::valueOf).collect(Collectors.toSet());
+    String expr = CELTranslator.from(params);
+    final String celExpr = "".equals(expr) ? params.getQueryExpression() : expr;
+    if (null == celExpr) {
+      return entries;
     }
 
-    entries = entries.filter(x -> payloads.contains(x.getType()));
-
-    if (null != params.getNamespace()) {
-      entries =
-          entries.filter(x -> x.getName().getNamespace().name().startsWith(params.getNamespace()));
+    final Script script;
+    try {
+      script =
+          SCRIPT_HOST.getOrCreateScript(celExpr, ENTRIES_DECLARATIONS, Collections.emptyList());
+    } catch (ScriptException e) {
+      throw new IllegalArgumentException(e);
     }
-    return entries;
+    return entries.filter(
+        entry -> {
+          // currently this is just a workaround where we put EntriesResponse.Entry into a hash
+          // structure.
+          // Eventually we should have a EntriesT that we register to avoid unnecessary object
+          // creation
+          Map<String, Object> arguments =
+              ImmutableMap.of(
+                  "entry",
+                  ImmutableMap.of(
+                      "namespace",
+                      entry.getName().getNamespace().name(),
+                      "contentType",
+                      entry.getType().name()));
+
+          try {
+            return script.execute(Boolean.class, arguments);
+          } catch (ScriptException e) {
+            throw new RuntimeException(e);
+          }
+        });
   }
 
   @Override

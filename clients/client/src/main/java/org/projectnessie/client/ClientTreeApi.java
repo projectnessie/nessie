@@ -134,6 +134,7 @@ class ClientTreeApi implements TreeApi {
         .queryParam("pageToken", params.getPageToken())
         .queryParam("before", null != params.getBefore() ? params.getBefore().toString() : null)
         .queryParam("after", null != params.getAfter() ? params.getAfter().toString() : null)
+        .queryParam("query_expression", params.getQueryExpression())
         .get()
         .readEntity(LogResponse.class);
   }
@@ -177,6 +178,7 @@ class ClientTreeApi implements TreeApi {
             "max", params.getMaxRecords() != null ? params.getMaxRecords().toString() : null)
         .queryParam("pageToken", params.getPageToken())
         .queryParam("namespace", params.getNamespace())
+        .queryParam("query_expression", params.getQueryExpression())
         .get()
         .readEntity(EntriesResponse.class);
   }

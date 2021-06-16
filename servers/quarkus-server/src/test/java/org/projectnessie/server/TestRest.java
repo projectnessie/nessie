@@ -306,6 +306,185 @@ class TestRest {
   }
 
   @Test
+  public void filterCommitLogByAuthorWithExpr()
+      throws NessieNotFoundException, NessieConflictException {
+    Reference main = tree.getReferenceByName("main");
+    Branch filterCommitLogByAuthor = Branch.of("filterCommitLogByAuthorWithExpr", main.getHash());
+    Reference branch = tree.createReference(filterCommitLogByAuthor);
+    assertThat(branch).isEqualTo(filterCommitLogByAuthor);
+
+    int numAuthors = 5;
+    int commitsPerAuthor = 10;
+
+    String currentHash = main.getHash();
+    createCommits(branch, numAuthors, commitsPerAuthor, currentHash);
+    LogResponse log = tree.getCommitLog(branch.getName(), CommitLogParams.empty());
+    assertThat(log).isNotNull();
+    assertThat(log.getOperations()).hasSize(numAuthors * commitsPerAuthor);
+
+    log =
+        tree.getCommitLog(
+            branch.getName(),
+            CommitLogParams.builder().queryExpression("commit.author == 'author-3'").build());
+    assertThat(log).isNotNull();
+    assertThat(log.getOperations()).hasSize(commitsPerAuthor);
+    log.getOperations().forEach(commit -> assertThat(commit.getAuthor()).isEqualTo("author-3"));
+
+    log =
+        tree.getCommitLog(
+            branch.getName(),
+            CommitLogParams.builder()
+                .queryExpression(
+                    "commit.author == 'author-3' && commit.committer == 'random-committer'")
+                .build());
+    assertThat(log).isNotNull();
+    assertThat(log.getOperations()).isEmpty();
+
+    log =
+        tree.getCommitLog(
+            branch.getName(),
+            CommitLogParams.builder()
+                .queryExpression("commit.author == 'author-3' && commit.committer == ''")
+                .build());
+    assertThat(log).isNotNull();
+    assertThat(log.getOperations()).hasSize(commitsPerAuthor);
+    log.getOperations()
+        .forEach(
+            commit -> {
+              assertThat(commit.getAuthor()).isEqualTo("author-3");
+              assertThat(commit.getCommitter()).isEmpty();
+            });
+
+    log =
+        tree.getCommitLog(
+            branch.getName(),
+            CommitLogParams.builder()
+                .queryExpression(
+                    "commit.author == 'author-1' || commit.author == 'author-3' || commit.author == 'author-4'")
+                .build());
+    assertThat(log).isNotNull();
+    assertThat(log.getOperations()).hasSize(commitsPerAuthor * 3);
+    log.getOperations()
+        .forEach(
+            commit -> {
+              assertThat(ImmutableList.of("author-1", "author-3", "author-4"))
+                  .contains(commit.getAuthor());
+              assertThat(commit.getCommitter()).isEmpty();
+            });
+
+    log =
+        tree.getCommitLog(
+            branch.getName(),
+            CommitLogParams.builder()
+                .queryExpression("commit.author != 'author-1' && commit.author != 'author-0'")
+                .build());
+    assertThat(log).isNotNull();
+    assertThat(log.getOperations()).hasSize(commitsPerAuthor * 3);
+    log.getOperations()
+        .forEach(
+            commit -> {
+              assertThat(ImmutableList.of("author-2", "author-3", "author-4"))
+                  .contains(commit.getAuthor());
+              assertThat(commit.getCommitter()).isEmpty();
+            });
+
+    log =
+        tree.getCommitLog(
+            branch.getName(),
+            CommitLogParams.builder()
+                .queryExpression("commit.author.matches('au.*-(2|4)')")
+                .build());
+    assertThat(log).isNotNull();
+    assertThat(log.getOperations()).hasSize(commitsPerAuthor * 2);
+    log.getOperations()
+        .forEach(
+            commit -> {
+              assertThat(ImmutableList.of("author-2", "author-4")).contains(commit.getAuthor());
+              assertThat(commit.getCommitter()).isEmpty();
+            });
+  }
+
+  @Test
+  public void filterCommitLogByTimeRangeWithExpr()
+      throws NessieNotFoundException, NessieConflictException {
+    Reference main = tree.getReferenceByName("main");
+    Branch filterCommitLogByAuthor =
+        Branch.of("filterCommitLogByTimeRangeWithExpr", main.getHash());
+    Reference branch = tree.createReference(filterCommitLogByAuthor);
+    assertThat(branch).isEqualTo(filterCommitLogByAuthor);
+
+    int numAuthors = 5;
+    int commitsPerAuthor = 10;
+    int expectedTotalSize = numAuthors * commitsPerAuthor;
+
+    String currentHash = main.getHash();
+    createCommits(branch, numAuthors, commitsPerAuthor, currentHash);
+    LogResponse log = tree.getCommitLog(branch.getName(), CommitLogParams.empty());
+    assertThat(log).isNotNull();
+    assertThat(log.getOperations()).hasSize(expectedTotalSize);
+
+    Instant initialCommitTime =
+        log.getOperations().get(log.getOperations().size() - 1).getCommitTime();
+    assertThat(initialCommitTime).isNotNull();
+    Instant lastCommitTime = log.getOperations().get(0).getCommitTime();
+    assertThat(lastCommitTime).isNotNull();
+    Instant fiveMinLater = initialCommitTime.plus(5, ChronoUnit.MINUTES);
+
+    log =
+        tree.getCommitLog(
+            branch.getName(),
+            CommitLogParams.builder()
+                .queryExpression(
+                    String.format(
+                        "timestamp(commit.commitTime) > timestamp('%s')", initialCommitTime))
+                .build());
+    assertThat(log).isNotNull();
+    assertThat(log.getOperations()).hasSize(expectedTotalSize - 1);
+    log.getOperations()
+        .forEach(commit -> assertThat(commit.getCommitTime()).isAfter(initialCommitTime));
+
+    log =
+        tree.getCommitLog(
+            branch.getName(),
+            CommitLogParams.builder()
+                .queryExpression(
+                    String.format("timestamp(commit.commitTime) < timestamp('%s')", fiveMinLater))
+                .build());
+    assertThat(log).isNotNull();
+    assertThat(log.getOperations()).hasSize(expectedTotalSize);
+    log.getOperations()
+        .forEach(commit -> assertThat(commit.getCommitTime()).isBefore(fiveMinLater));
+
+    log =
+        tree.getCommitLog(
+            branch.getName(),
+            CommitLogParams.builder()
+                .queryExpression(
+                    String.format(
+                        "timestamp(commit.commitTime) > timestamp('%s') && timestamp(commit.commitTime) < timestamp('%s')",
+                        initialCommitTime, lastCommitTime))
+                .build());
+    assertThat(log).isNotNull();
+    assertThat(log.getOperations()).hasSize(expectedTotalSize - 2);
+    log.getOperations()
+        .forEach(
+            commit ->
+                assertThat(commit.getCommitTime())
+                    .isAfter(initialCommitTime)
+                    .isBefore(lastCommitTime));
+
+    log =
+        tree.getCommitLog(
+            branch.getName(),
+            CommitLogParams.builder()
+                .queryExpression(
+                    String.format("timestamp(commit.commitTime) > timestamp('%s')", fiveMinLater))
+                .build());
+    assertThat(log).isNotNull();
+    assertThat(log.getOperations()).isEmpty();
+  }
+
+  @Test
   public void filterCommitLogByTimeRange() throws NessieNotFoundException, NessieConflictException {
     Reference main = tree.getReferenceByName("main");
     Branch filterCommitLogByAuthor = Branch.of("filterCommitLogByTimeRange", main.getHash());
@@ -616,6 +795,85 @@ class TestRest {
     assertThat(entries).isEmpty();
 
     tree.deleteBranch(branch, tree.getReferenceByName(branch).getHash());
+  }
+
+  @Test
+  public void filterEntriesWithMixedQueryParams() {
+    assertThatThrownBy(
+            () ->
+                tree.getEntries(
+                    "main", EntriesParams.builder().namespace("x").queryExpression("y").build()))
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Cannot combine 'query_expression' with the 'namespace' parameter");
+
+    assertThatThrownBy(
+            () ->
+                tree.getEntries(
+                    "main",
+                    EntriesParams.builder()
+                        .types(ImmutableList.of(Type.ICEBERG_TABLE.name()))
+                        .queryExpression("y")
+                        .build()))
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Cannot combine 'query_expression' with the 'types' parameter");
+  }
+
+  @Test
+  public void filterCommitLogWithMixedQueryParams() {
+    assertThatThrownBy(
+            () ->
+                tree.getCommitLog(
+                    "main",
+                    CommitLogParams.builder()
+                        .authors(ImmutableList.of("x"))
+                        .queryExpression("y")
+                        .build()))
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Cannot combine 'query_expression' with the 'authors' parameter");
+
+    assertThatThrownBy(
+            () ->
+                tree.getCommitLog(
+                    "main",
+                    CommitLogParams.builder()
+                        .committers(ImmutableList.of("x"))
+                        .queryExpression("y")
+                        .build()))
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Cannot combine 'query_expression' with the 'committers' parameter");
+
+    assertThatThrownBy(
+            () ->
+                tree.getCommitLog(
+                    "main",
+                    CommitLogParams.builder().after(Instant.now()).queryExpression("y").build()))
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Cannot combine 'query_expression' with the 'after' parameter");
+
+    assertThatThrownBy(
+            () ->
+                tree.getCommitLog(
+                    "main",
+                    CommitLogParams.builder().before(Instant.now()).queryExpression("y").build()))
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Cannot combine 'query_expression' with the 'before' parameter");
+  }
+
+  @Test
+  public void checkCelScriptFailureReporting() {
+    assertThatThrownBy(
+            () ->
+                tree.getEntries(
+                    "main", EntriesParams.builder().queryExpression("invalid_script").build()))
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("undeclared reference to 'invalid_script'");
+
+    assertThatThrownBy(
+            () ->
+                tree.getCommitLog(
+                    "main", CommitLogParams.builder().queryExpression("invalid_script").build()))
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("undeclared reference to 'invalid_script'");
   }
 
   @Test

@@ -161,7 +161,10 @@ public interface TreeApi {
               + "It is wrong to assume that invoking this method with a very high 'maxRecords' value "
               + "will return all commit log entries.\n"
               + "It is possible to filter entries by 'namespace', where the 'namespace' is the prefix 'a.b.c' for a given table"
-              + "name 'a.b.c.tableName'")
+              + "name 'a.b.c.tableName'\n"
+              + "\n"
+              + "The 'query_expression' parameter allows for advanced filtering capabilities using the Common Expression Language (CEL).\n"
+              + "An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n")
   @APIResponses({
     @APIResponse(
         description = "all objects for a reference",
@@ -226,7 +229,10 @@ public interface TreeApi {
               + "\n"
               + "It is possible to filter the log using a list of 'authors' (the actual author of a commit) and/or"
               + "'committers' (the logged in user/account that performed the commit) fields."
-              + "Filtering the log by ISO-8601 dates is supported via the 'after' and 'before' fields.")
+              + "Filtering the log by ISO-8601 dates is supported via the 'after' and 'before' fields.\n"
+              + "\n"
+              + "The 'query_expression' parameter allows for advanced filtering capabilities using the Common Expression Language (CEL).\n"
+              + "An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n")
   @APIResponses({
     @APIResponse(
         responseCode = "200",

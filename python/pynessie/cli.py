@@ -194,9 +194,21 @@ def set_head(ctx: ContextObject, head: str, delete: bool) -> None:
 )
 @click.argument("revision_range", nargs=1, required=False)
 @click.argument("paths", nargs=-1, type=click.Path(exists=False), required=False)
+@click.option(
+    "--query",
+    "--query-expression",
+    "query_expression",
+    multiple=False,
+    help="Allows advanced filtering using the Common Expression Language (CEL). "
+    "An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n"
+    "Some examples with usable variables 'commit.author' (string) / 'commit.committer' (string) / 'commit.commitTime' (timestamp) are:\n"
+    "commit.author=='nessie_author'\n"
+    "commit.committer=='nessie_committer'\n"
+    "timestamp(commit.commitTime) > timestamp('2021-06-21T10:39:17.977922Z')\n",
+)
 @pass_client
 @error_handler
-def log(
+def log(  # noqa: C901
     ctx: ContextObject,
     number: int,
     since: str,
@@ -205,6 +217,7 @@ def log(
     committer: List[str],
     revision_range: str,
     paths: Tuple[click.Path],
+    query_expression: str,
 ) -> None:
     """Show commit log.
 
@@ -236,6 +249,8 @@ def log(
         filtering_args["before"] = until
     if end:
         filtering_args["end"] = end
+    if query_expression:
+        filtering_args["query_expression"] = query_expression
 
     log_result = show_log(nessie=ctx.nessie, start_ref=start, limits=paths, **filtering_args)
     if ctx.json:
@@ -449,6 +464,18 @@ def cherry_pick(ctx: ContextObject, branch: str, force: bool, condition: str, ha
     help="entity types to filter on, if no entity types are passed then all types are returned",
     multiple=True,
 )
+@click.option(
+    "--query",
+    "--query-expression",
+    "query_expression",
+    multiple=False,
+    help="Allows advanced filtering using the Common Expression Language (CEL). "
+    "An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n"
+    "Some examples with usable variables 'entry.namespace' (string) & 'entry.contentType' (string) are:\n"
+    "entry.namespace.startsWith('a.b.c')\n"
+    "entry.contentType in ['ICEBERG_TABLE','DELTA_LAKE_TABLE']\n"
+    "entry.namespace.startsWith('some.name.space') && entry.contentType in ['ICEBERG_TABLE','DELTA_LAKE_TABLE']\n",
+)
 @click.option("--author", help="The author to use for the commit")
 @click.argument("key", nargs=-1, required=False)
 @pass_client
@@ -464,13 +491,16 @@ def contents(
     condition: str,
     entity_type: list,
     author: str,
+    query_expression: str,
 ) -> None:
     """Contents operations.
 
     KEY name of object to view, delete. If listing the key will limit by namespace what is included.
     """
     if list:
-        keys = ctx.nessie.list_keys(ref if ref else ctx.nessie.get_default_branch(), entity_types=entity_type)
+        keys = ctx.nessie.list_keys(
+            ref if ref else ctx.nessie.get_default_branch(), entity_types=entity_type, query_expression=query_expression
+        )
         results = EntrySchema().dumps(_format_keys_json(keys, *key), many=True) if ctx.json else _format_keys(keys, *key)
     elif delete:
         ctx.nessie.commit(ref, condition, _get_message(message), author, *_get_contents(ctx.nessie, ref, delete, *key))

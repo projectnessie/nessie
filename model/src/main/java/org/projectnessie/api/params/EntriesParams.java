@@ -58,18 +58,40 @@ public class EntriesParams {
   @QueryParam("namespace")
   private String namespace;
 
+  @Parameter(
+      description =
+          "A Common Expression Language (CEL) expression. An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n"
+              + "Usable variables within the expression are 'entry.namespace' (string) & 'entry.contentType' (string)",
+      examples = {
+        @ExampleObject(ref = "expr_by_namespace"),
+        @ExampleObject(ref = "expr_by_contentType"),
+        @ExampleObject(ref = "expr_by_namespace_and_contentType")
+      })
+  @QueryParam("query_expression")
+  private String queryExpression;
+
   public EntriesParams() {}
 
   private EntriesParams(
-      Integer maxRecords, String pageToken, List<String> types, String namespace) {
+      Integer maxRecords,
+      String pageToken,
+      List<String> types,
+      String namespace,
+      String queryExpression) {
     this.maxRecords = maxRecords;
     this.pageToken = pageToken;
     this.types = types;
     this.namespace = namespace;
+    this.queryExpression = queryExpression;
   }
 
   private EntriesParams(Builder builder) {
-    this(builder.maxRecords, builder.pageToken, builder.types, builder.namespace);
+    this(
+        builder.maxRecords,
+        builder.pageToken,
+        builder.types,
+        builder.namespace,
+        builder.queryExpression);
   }
 
   public static EntriesParams.Builder builder() {
@@ -92,6 +114,10 @@ public class EntriesParams {
     return types;
   }
 
+  public String getQueryExpression() {
+    return queryExpression;
+  }
+
   public String getNamespace() {
     return namespace;
   }
@@ -103,6 +129,7 @@ public class EntriesParams {
         .add("pageToken='" + pageToken + "'")
         .add("types=" + types)
         .add("namespace='" + namespace + "'")
+        .add("queryExpression='" + queryExpression + "'")
         .toString();
   }
 
@@ -112,6 +139,7 @@ public class EntriesParams {
     private String pageToken;
     private String namespace;
     private List<String> types = Collections.emptyList();
+    private String queryExpression;
 
     private Builder() {}
 
@@ -135,11 +163,17 @@ public class EntriesParams {
       return this;
     }
 
+    public EntriesParams.Builder queryExpression(String queryExpression) {
+      this.queryExpression = queryExpression;
+      return this;
+    }
+
     public EntriesParams.Builder from(EntriesParams params) {
       return maxRecords(params.maxRecords)
           .pageToken(params.pageToken)
           .namespace(params.namespace)
-          .types(params.types);
+          .types(params.types)
+          .queryExpression(params.queryExpression);
     }
 
     private void validate() {
