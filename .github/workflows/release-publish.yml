@@ -256,6 +256,8 @@ jobs:
         RELEASE_VERSION: ${{ steps.get_version.outputs.VERSION }}
         GIT_TAG: nessie-${{ steps.get_version.outputs.VERSION }}
       run: |
+        git fetch --tags
+
         DIR=$(mktemp -d)
         NOTES_FILE=${DIR}/release-notes.md
         LAST_TAG=$(git describe --tags --abbrev=0 HEAD^1)
