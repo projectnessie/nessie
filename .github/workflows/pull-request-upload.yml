@@ -61,12 +61,15 @@ jobs:
 
     - name: Download simulation-logs from PR
       if: ${{ github.event.workflow_run.event == 'pull_request' }}
-      run: gh run download ${REF_RUN_ID} --repo projectnessie/nessie -n gatling-logs
+      run: |
+        cd ${SIMULATION_LOG_DIR}
+        gh run download ${REF_RUN_ID} --repo projectnessie/nessie -n gatling-logs
 
     - name: Download last 20 simulation-logs for main
       if: ${{ github.event.workflow_run.event == 'push' }}
       # TODO this should download the simulation-log for the "current" SHA and the simulation-logs for the preceding commits - not just blindly the most recent N commits
       run: |
+        cd ${SIMULATION_LOG_DIR}
         for run_id in $(gh api 'repos/projectnessie/nessie/actions/runs?branch=main&per_page=20' --jq '.workflow_runs[] | .id'); do
           gh run download ${REF_RUN_ID} --repo projectnessie/nessie -n gatling-logs || true
         done
