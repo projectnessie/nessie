@@ -156,6 +156,9 @@ def test_log() -> None:
     result = _run(runner, ["--json", "log", "--committer", ""])
     logs = simplejson.loads(result.output)
     assert len(logs) == 2
+    result = _run(runner, ["--json", "log", "--cel", "commit.author == 'nessie_user2' || commit.author == 'non_existing'"])
+    logs = simplejson.loads(result.output)
+    assert len(logs) == 1
 
 
 @pytest.mark.vcr
