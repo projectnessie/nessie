@@ -36,7 +36,7 @@ jobs:
     name: Main Report Upload
     runs-on: ubuntu-latest
     # TODO remove this before actually merging the perf-test-stuff-PR !!!
-    if: ${{ github.event.workflow_run.head_branch == "perf-test-stuff" }}
+    if: ${{ github.event.workflow_run.head_branch == 'perf-test-stuff' }}
 
     env:
       WEB_DIR: ${{ github.event.workflow_run.event }}/${{ github.event.workflow_run.head_sha }}/gatling
