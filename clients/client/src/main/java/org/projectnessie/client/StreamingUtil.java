@@ -59,7 +59,11 @@ public final class StreamingUtil {
                         .maxRecords(pageSize)
                         .pageToken(token)
                         .build()))
-        .generateStream(ref, OptionalInt.of(entriesParams.getMaxRecords()));
+        .generateStream(
+            ref,
+            entriesParams.getMaxRecords() == null
+                ? OptionalInt.empty()
+                : OptionalInt.of(entriesParams.getMaxRecords()));
   }
 
   /**
@@ -87,6 +91,10 @@ public final class StreamingUtil {
                         .maxRecords(pageSize)
                         .pageToken(token)
                         .build()))
-        .generateStream(ref, OptionalInt.of(commitLogParams.getMaxRecords()));
+        .generateStream(
+            ref,
+            commitLogParams.getMaxRecords() == null
+                ? OptionalInt.empty()
+                : OptionalInt.of(commitLogParams.getMaxRecords()));
   }
 }
