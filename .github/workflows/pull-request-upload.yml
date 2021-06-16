@@ -54,6 +54,9 @@ jobs:
       with:
         java-version: 11
 
+    - name: Create simlog-dir
+      run: mkdir -p ${SIMULATION_LOG_DIR}
+
     - name: Download gatling-report jar
       run: |
         # Jar built from https://github.com/snazy/gatling-report/tree/gatling-3.5-rebased @ 8327f302f1af433150b8bc21789f7bbd4f5d96d5
