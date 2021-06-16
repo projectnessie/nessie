@@ -194,6 +194,7 @@ def set_head(ctx: ContextObject, head: str, delete: bool) -> None:
 )
 @click.argument("revision_range", nargs=1, required=False)
 @click.argument("paths", nargs=-1, type=click.Path(exists=False), required=False)
+@click.option("--cel-expr", "--cel", multiple=False, help="Allows advanced filtering using the Common Expressio Language (CEL)")
 @pass_client
 @error_handler
 def log(
@@ -205,6 +206,7 @@ def log(
     committer: List[str],
     revision_range: str,
     paths: Tuple[click.Path],
+    cel_expr: str,
 ) -> None:
     """Show commit log.
 
@@ -236,6 +238,8 @@ def log(
         filtering_args["before"] = until
     if end:
         filtering_args["end"] = end
+    if cel_expr:
+        filtering_args["cel_expr"] = cel_expr
 
     log_result = show_log(nessie=ctx.nessie, start_ref=start, limits=paths, **filtering_args)
     if ctx.json:

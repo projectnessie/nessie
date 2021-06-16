@@ -167,6 +167,11 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
+        <groupId>org.projectnessie.cel</groupId>
+        <artifactId>cel-tools</artifactId>
+        <version>0.1-SNAPSHOT</version>
+      </dependency>
+      <dependency>
         <groupId>org.eclipse.microprofile.openapi</groupId>
         <artifactId>microprofile-openapi-api</artifactId>
         <version>${openapi.version}</version>

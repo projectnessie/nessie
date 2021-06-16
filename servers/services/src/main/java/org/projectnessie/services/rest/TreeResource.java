@@ -15,10 +15,16 @@
  */
 package org.projectnessie.services.rest;
 
+import static org.projectnessie.cel.common.types.Err.newTypeConversionError;
+
+import com.google.api.expr.v1alpha1.Decl;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import java.security.Principal;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -28,6 +34,12 @@ import javax.inject.Inject;
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.params.EntriesParams;
+import org.projectnessie.cel.checker.Decls;
+import org.projectnessie.cel.common.types.TypeT;
+import org.projectnessie.cel.common.types.ref.BaseVal;
+import org.projectnessie.cel.common.types.ref.Val;
+import org.projectnessie.cel.tools.Script;
+import org.projectnessie.cel.tools.ScriptHost;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -69,6 +81,13 @@ import org.projectnessie.versioned.WithHash;
 public class TreeResource extends BaseResource implements TreeApi {
 
   private static final int MAX_COMMIT_LOG_ENTRIES = 250;
+  private static final ScriptHost SCRIPT_HOST = ScriptHost.newBuilder().build();
+  public static final List<Decl> COMMIT_LOG_DECLARATIONS =
+      Arrays.asList(
+          Decls.newVar("committer", Decls.String),
+          Decls.newVar("author", Decls.String),
+          Decls.newVar("commitTime", Decls.Timestamp),
+          Decls.newVar("commit", Decls.newMapType(Decls.String, Decls.String)));
 
   @Inject
   public TreeResource(
@@ -170,8 +189,15 @@ public class TreeResource extends BaseResource implements TreeApi {
         getStore()
             .getCommits(startRef)
             .map(cwh -> cwh.getValue().toBuilder().hash(cwh.getHash().asString()).build())) {
-      List<CommitMeta> items =
-          filterCommitLog(s, params).limit(max + 1).collect(Collectors.toList());
+
+      List<CommitMeta> items;
+
+      if (null != params.getCelExpr()) {
+        items = filterWithCelExpression(s, params).limit(max + 1).collect(Collectors.toList());
+      } else {
+        items = filterCommitLog(s, params).limit(max + 1).collect(Collectors.toList());
+      }
+
       if (items.size() == max + 1) {
         return ImmutableLogResponse.builder()
             .addAllOperations(items.subList(0, max))
@@ -184,6 +210,33 @@ public class TreeResource extends BaseResource implements TreeApi {
       throw new NessieNotFoundException(
           String.format("Unable to find the requested ref [%s].", ref), e);
     }
+  }
+
+  private Stream<ImmutableCommitMeta> filterWithCelExpression(
+      Stream<ImmutableCommitMeta> items, CommitLogParams params) {
+    return items.filter(
+        commit -> {
+          try {
+            Script script =
+                SCRIPT_HOST.getOrCreateScript(
+                    params.getCelExpr(), COMMIT_LOG_DECLARATIONS, Collections.emptyList());
+            Map<String, Object> arguments =
+                ImmutableMap.of(
+                    "commit",
+                    ImmutableMap.of(
+                        "author",
+                        commit.getAuthor(),
+                        "committer",
+                        commit.getCommitter(),
+                        "commitTime",
+                        commit.getCommitTime()));
+
+            return script.execute(Boolean.class, arguments);
+          } catch (Exception e) {
+            e.printStackTrace();
+          }
+          return true;
+        });
   }
 
   /**
@@ -428,6 +481,60 @@ public class TreeResource extends BaseResource implements TreeApi {
       return Unchanged.of(key);
     } else {
       throw new IllegalStateException("Unknown operation " + o);
+    }
+  }
+
+  private static class CommitMetaT extends BaseVal {
+    private final CommitMeta commit;
+
+    /** CommitMetaT singleton. */
+    public static final TypeT CommitMetaType = TypeT.newTypeValue("commitMeta");
+
+    private CommitMetaT(CommitMeta commit) {
+      this.commit = commit;
+    }
+
+    public static CommitMetaT of(CommitMeta commit) {
+      return new CommitMetaT(commit);
+    }
+
+    @Override
+    public <T> T convertToNative(Class<T> typeDesc) {
+      if (typeDesc == CommitMeta.class
+          || typeDesc == ImmutableCommitMeta.class
+          || typeDesc == Object.class) {
+        return (T) commit;
+      }
+      if (typeDesc == Val.class || typeDesc == CommitMetaT.class) {
+        return (T) this;
+      }
+      throw new RuntimeException(
+          String.format(
+              "native type conversion error from '%s' to '%s'",
+              CommitMetaType, typeDesc.getName()));
+    }
+
+    @Override
+    public Val convertToType(org.projectnessie.cel.common.types.ref.Type typeVal) {
+      if (typeVal == CommitMetaType) {
+        return this;
+      }
+      return newTypeConversionError(CommitMetaType, typeVal);
+    }
+
+    @Override
+    public Val equal(Val other) {
+      return null;
+    }
+
+    @Override
+    public org.projectnessie.cel.common.types.ref.Type type() {
+      return CommitMetaType;
+    }
+
+    @Override
+    public Object value() {
+      return commit;
     }
   }
 }

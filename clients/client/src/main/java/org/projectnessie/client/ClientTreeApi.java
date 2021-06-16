@@ -134,6 +134,7 @@ class ClientTreeApi implements TreeApi {
         .queryParam("pageToken", params.getPageToken())
         .queryParam("before", null != params.getBefore() ? params.getBefore().toString() : null)
         .queryParam("after", null != params.getAfter() ? params.getAfter().toString() : null)
+        .queryParam("cel_expr", params.getCelExpr())
         .get()
         .readEntity(LogResponse.class);
   }
