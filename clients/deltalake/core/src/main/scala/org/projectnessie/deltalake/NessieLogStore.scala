@@ -38,6 +38,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileStatus, Path}
 import org.apache.spark.SparkConf
 import org.apache.spark.internal.Logging
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.delta.storage.LogStore
 import org.apache.spark.sql.delta.util.FileNames.{
   checkpointFileSingular,
@@ -70,14 +71,33 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
   var lastSnapshotUuid: Option[String] = None
 
   private val client: NessieClient = {
-    NessieClient.builder().fromConfig(c => hadoopConf.get(c)).build()
+    val removePrefix = (x: String) => x.replace("nessie.", "")
+    NessieClient
+      .builder()
+      .fromConfig(c => catalogConf.getOrElse(removePrefix(c), null))
+      .build()
+  }
+
+  private def catalogName(): String = {
+    CatalogNameUtil.catalogName()
+  }
+
+  private def prefix(): String = {
+    s"spark.sql.catalog.${catalogName()}."
+  }
+
+  private def catalogConf: Map[String, String] = {
+    SparkSession.active.sparkContext.getConf
+      .getAllWithPrefix(prefix())
+      .toMap
   }
 
   /**
     * Keeps a mapping of reference name to current hash.
     */
   private val referenceMap: util.Map[String, Reference] = {
-    val requestedRef = hadoopConf.get(NessieConfigConstants.CONF_NESSIE_REF)
+    val requestedRef =
+      SparkSession.active.sparkContext.getConf.get(s"${prefix()}ref")
 
     try {
       val ref = Option(requestedRef)
@@ -103,7 +123,8 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
   }
 
   private def configuredRef(): Reference = {
-    val refName = hadoopConf.get(NessieConfigConstants.CONF_NESSIE_REF)
+    val refName =
+      SparkSession.active.sparkContext.getConf.get(s"${prefix()}ref")
     referenceByName(refName)
   }
 
@@ -141,7 +162,11 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
       return (tableRef(0), tableRef(1), null)
     }
 
-    (path, hadoopConf.get("nessie.ref"), hadoopConf.get("nessie.hash"))
+    (
+      path,
+      SparkSession.active.sparkContext.getConf.get(s"${prefix()}ref"),
+      SparkSession.active.sparkContext.getConf.get(s"${prefix()}hash", null)
+    )
   }
 
   override def write(
