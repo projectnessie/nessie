@@ -21,8 +21,8 @@ env:
   GATLING_REPORT_JAR: gatling-report-5.1-nessie-1-capsule-fat.jar
   SIMULATION_LOG_DIR: perftest/simulations/target/gatling
   REPORT_DIR: perftest/simulations/target/gatling-report
-  PUBLIC_BASE: https://snazy.github.io/some-test
-  CI_REPORTS_REPO: snazy/some-test
+  PUBLIC_BASE: https://projectnessie.org/nessie-ci
+  CI_REPORTS_REPO: projectnessie/nessie-ci
 
 jobs:
 
@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      WEB_DIR: ${{ github.event.workflow_run.event }}/${{ github.event.workflow_run.head_sha }}/gatling
+      WEB_DIR: ${{ github.event.workflow_run.event }}/${{ github.event.workflow_run.head_branch }}/${{ github.event.workflow_run.head_sha }}/gatling
       REF_RUN_ID: ${{ github.event.workflow_run.id }}
       EVENT: ${{ github.event.workflow_run.event }}
       BRANCH: ${{ github.event.workflow_run.head_branch }}
@@ -55,7 +55,7 @@ jobs:
 
     - name: Download gatling-report jar
       run: |
-        # Jar built from https://github.com/snazy/gatling-report/tree/gatling-3.5-rebased @ 8327f302f1af433150b8bc21789f7bbd4f5d96d5
+        # Jar built from https://github.com/snazy/gatling-report/tree/gatling-3.5-rebased @ b3806d1f0cb6e9f6806fa7ade1fd57d7e383387d
         curl -s -o ${GATLING_REPORT_JAR} ${PUBLIC_BASE}/lib/${GATLING_REPORT_JAR}
 
     - name: Download Gatling simulation-logs from PR CI run
@@ -91,8 +91,8 @@ jobs:
 
     - name: Upload reports
       run: |
-        gh api -X PUT repos/${CI_REPORTS_REPO}/contents/docs/${WEB_DIR}/report.html -f message="${EVENT} ${BRANCH} ${SHA} Gatling report html" -f content=$(base64 -w0 ${REPORT_DIR}/report.html)
-        gh api -X PUT repos/${CI_REPORTS_REPO}/contents/docs/${WEB_DIR}/report.yaml -f message="${EVENT} ${BRANCH} ${SHA} Gatling report yaml" -f content=$(base64 -w0 ${REPORT_DIR}/report.yaml)
+        gh api -X PUT repos/${CI_REPORTS_REPO}/contents/${WEB_DIR}/report.html -f message="${EVENT} ${BRANCH} ${SHA} Gatling report html" -f content=$(base64 -w0 ${REPORT_DIR}/report.html)
+        gh api -X PUT repos/${CI_REPORTS_REPO}/contents/${WEB_DIR}/report.yaml -f message="${EVENT} ${BRANCH} ${SHA} Gatling report yaml" -f content=$(base64 -w0 ${REPORT_DIR}/report.yaml)
 
     - name: GH Auth
       run: echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token
