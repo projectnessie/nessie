@@ -14,37 +14,23 @@
  * limitations under the License.
  */
 package org.apache.spark.sql.execution.datasources.v2
-
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
-import org.apache.spark.unsafe.types.UTF8String
 import org.projectnessie.client.NessieClient
-import org.projectnessie.model.Branch
 
-import scala.collection.JavaConverters._
-
-case class ListReferenceExec(
-    output: Seq[Attribute],
+abstract class NessieExec(
     currentCatalog: CatalogPlugin,
     catalog: Option[String]
-) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog) {
+) extends V2CommandExec {
 
-  override protected def runInternal(
-      nessieClient: NessieClient
-  ): Seq[InternalRow] = {
-    nessieClient.getTreeApi.getAllReferences.asScala.map(ref => {
-      InternalRow(
-        UTF8String.fromString(
-          if (ref.isInstanceOf[Branch]) NessieUtils.BRANCH else NessieUtils.TAG
-        ),
-        UTF8String.fromString(ref.getName),
-        UTF8String.fromString(ref.getHash)
-      )
-    })
-  }
+  protected def runInternal(nessieClient: NessieClient): Seq[InternalRow]
 
-  override def simpleString(maxFields: Int): String = {
-    s"ListReferenceExec ${catalog.getOrElse(currentCatalog.name())} "
+  override protected def run(): Seq[InternalRow] = {
+    val nessieClient = NessieUtils.nessieClient(currentCatalog, catalog);
+    try {
+      runInternal(nessieClient)
+    } finally {
+      nessieClient.close()
+    }
   }
 }

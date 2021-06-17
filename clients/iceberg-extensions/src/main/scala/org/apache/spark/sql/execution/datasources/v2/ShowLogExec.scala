@@ -32,12 +32,11 @@ case class ShowLogExec(
     branch: Option[String],
     currentCatalog: CatalogPlugin,
     catalog: Option[String]
-) extends V2CommandExec {
+) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog) {
 
-  lazy val nessieClient: NessieClient =
-    NessieUtils.nessieClient(currentCatalog, catalog)
-
-  override protected def run(): Seq[InternalRow] = {
+  override protected def runInternal(
+      nessieClient: NessieClient
+  ): Seq[InternalRow] = {
     val refName = branch.getOrElse(
       NessieUtils.getCurrentRef(currentCatalog, catalog).getName
     )

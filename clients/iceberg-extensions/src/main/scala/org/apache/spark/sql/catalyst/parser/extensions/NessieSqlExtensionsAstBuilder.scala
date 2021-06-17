@@ -18,19 +18,15 @@ package org.apache.spark.sql.catalyst.parser.extensions
 import org.antlr.v4.runtime._
 import org.antlr.v4.runtime.misc.Interval
 import org.antlr.v4.runtime.tree.{ParseTree, TerminalNode}
-import org.apache.spark.sql.catalyst.expressions.{Expression, Literal}
 import org.apache.spark.sql.catalyst.parser.ParserInterface
 import org.apache.spark.sql.catalyst.parser.extensions.NessieParserUtils.withOrigin
 import org.apache.spark.sql.catalyst.parser.extensions.NessieSqlExtensionsParser._
 import org.apache.spark.sql.catalyst.plans.logical.{
-  CallArgument,
   CreateReferenceField,
   DropReferenceField,
   ListReferenceField,
   LogicalPlan,
   MergeBranchField,
-  NamedArgument,
-  PositionalArgument,
   ShowLogField,
   ShowReferenceField,
   UseReferenceField
@@ -47,8 +43,8 @@ class NessieSqlExtensionsAstBuilder(delegate: ParserInterface)
   ): CreateReferenceField = withOrigin(ctx) {
     val isBranch = ctx.TAG == null
     val refName = ctx.identifier(0).getText
-    val catalogName = Option(ctx.catalog).map(x => x.getText)
-    val createdFrom = Option(ctx.reference).map(x => x.getText)
+    val catalogName = asText(ctx.catalog)
+    val createdFrom = asText(ctx.reference)
     CreateReferenceField(refName, isBranch, catalogName, createdFrom)
   }
 
@@ -57,94 +53,52 @@ class NessieSqlExtensionsAstBuilder(delegate: ParserInterface)
   ): DropReferenceField = withOrigin(ctx) {
     val isBranch = ctx.TAG == null
     val refName = ctx.identifier(0).getText
-    val catalogName = Option(ctx.catalog).map(x => x.getText)
+    val catalogName = asText(ctx.catalog)
     DropReferenceField(refName, isBranch, catalogName)
   }
 
   override def visitNessieUseRef(ctx: NessieUseRefContext): UseReferenceField =
     withOrigin(ctx) {
       val refName = ctx.identifier(0).getText
-      val timestamp = Option(ctx.ts).map(x => x.getText)
-      val catalogName = Option(ctx.catalog).map(x => x.getText)
+      val timestamp = asText(ctx.ts)
+      val catalogName = asText(ctx.catalog)
       UseReferenceField(refName, timestamp, catalogName)
     }
 
   override def visitNessieListRef(
       ctx: NessieListRefContext
   ): ListReferenceField = withOrigin(ctx) {
-    val catalogName = Option(ctx.catalog).map(x => x.getText)
+    val catalogName = asText(ctx.catalog)
     ListReferenceField(catalogName)
   }
 
   override def visitNessieShowRef(
       ctx: NessieShowRefContext
   ): ShowReferenceField = withOrigin(ctx) {
-    val catalogName = Option(ctx.catalog).map(x => x.getText)
+    val catalogName = asText(ctx.catalog)
     ShowReferenceField(catalogName)
   }
 
   override def visitNessieMergeRef(
       ctx: NessieMergeRefContext
   ): MergeBranchField = withOrigin(ctx) {
-    val refName = Option(ctx.identifier(0)).map(x => x.getText)
-    val toRefName = Option(ctx.toRef).map(x => x.getText)
-    val catalogName = Option(ctx.catalog).map(x => x.getText)
+    val refName = asText(ctx.identifier(0))
+    val toRefName = asText(ctx.toRef)
+    val catalogName = asText(ctx.catalog)
     MergeBranchField(refName, toRefName, catalogName)
   }
 
   override def visitNessieShowLog(ctx: NessieShowLogContext): ShowLogField =
     withOrigin(ctx) {
-      val refName = Option(ctx.identifier(0)).map(x => x.getText)
-      val catalogName = Option(ctx.catalog).map(x => x.getText)
+      val refName = asText(ctx.identifier(0))
+      val catalogName = asText(ctx.catalog)
       ShowLogField(refName, catalogName)
-    }
-
-  /**
-    * Return a multi-part identifier as Seq[String].
-    */
-  override def visitMultipartIdentifier(
-      ctx: MultipartIdentifierContext
-  ): Seq[String] = withOrigin(ctx) {
-    ctx.parts.asScala.map(_.getText)
-  }
-
-  /**
-    * Create a positional argument in a stored procedure call.
-    */
-  override def visitPositionalArgument(
-      ctx: PositionalArgumentContext
-  ): CallArgument = withOrigin(ctx) {
-    val expr = typedVisit[Expression](ctx.expression)
-    PositionalArgument(expr)
-  }
-
-  /**
-    * Create a named argument in a stored procedure call.
-    */
-  override def visitNamedArgument(ctx: NamedArgumentContext): CallArgument =
-    withOrigin(ctx) {
-      val name = ctx.identifier.getText
-      val expr = typedVisit[Expression](ctx.expression)
-      NamedArgument(name, expr)
     }
 
   override def visitSingleStatement(ctx: SingleStatementContext): LogicalPlan =
     withOrigin(ctx) {
       visit(ctx.statement).asInstanceOf[LogicalPlan]
     }
-
-  def visitConstant(ctx: ConstantContext): Literal = {
-    delegate.parseExpression(ctx.getText).asInstanceOf[Literal]
-  }
-
-  override def visitExpression(ctx: ExpressionContext): Expression = {
-    // reconstruct the SQL string and parse it using the main Spark parser
-    // while we can avoid the logic to build Spark expressions, we still have to parse them
-    // we cannot call ctx.getText directly since it will not render spaces correctly
-    // that's why we need to recurse down the tree in reconstructSqlString
-    val sqlString = reconstructSqlString(ctx)
-    delegate.parseExpression(sqlString)
-  }
 
   private def reconstructSqlString(ctx: ParserRuleContext): String = {
     ctx.children.asScala
@@ -157,6 +111,10 @@ class NessieSqlExtensionsAstBuilder(delegate: ParserInterface)
 
   private def typedVisit[T](ctx: ParseTree): T = {
     ctx.accept(this).asInstanceOf[T]
+  }
+
+  private def asText(parameter: IdentifierContext): Option[String] = {
+    Option(parameter).map(x => x.getText)
   }
 }
 

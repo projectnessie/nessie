@@ -25,6 +25,11 @@ import java.time.{LocalDateTime, ZoneId}
 import scala.collection.JavaConverters._
 
 object NessieUtils {
+
+  val BRANCH: String = "Branch"
+  val TAG: String = "Tag"
+  val HASH: String = "Hash"
+
   def calculateRef(
       branch: String,
       ts: Option[String],
@@ -92,14 +97,6 @@ object NessieUtils {
       new CaseInsensitiveStringMap(catalogConf)
     )
     getCurrentRef(currentCatalog, catalog)
-//    if (isIcebergNessie(catalogImpl)) {
-//      setIcebergRef(getIcebergSparkCatalog(catalogImpl), ref)
-//    } else if (isDeltaNessie) {
-//      // todo, how do we get current Ref?
-//      null
-//    } else {
-//      throw new AnalysisException("Catalog is not Nessie enabled")
-//    }
   }
 
   def getCurrentRef(
@@ -110,96 +107,6 @@ object NessieUtils {
     val refName = SparkSession.active.sparkContext.conf
       .get(s"spark.sql.catalog.$catalogName.ref")
     nessieClient(currentCatalog, catalog).getTreeApi.getReferenceByName(refName)
-//    if (isIcebergNessie(catalogImpl)) {
-//      getIcebergRef(getIcebergSparkCatalog(catalogImpl))
-//    } else if (isDeltaNessie) {
-//      // todo, how do we get current Ref?
-//      null
-//    } else {
-//      throw new AnalysisException("Catalog is not Nessie enabled")
-//    }
   }
 
-  private def isDeltaNessie: Boolean = {
-    SparkSession.active.sparkContext.conf
-      .contains("spark.delta.logStore.class") &&
-    SparkSession.active.sparkContext.conf
-      .get("spark.delta.logStore.class")
-      .contains("NessieLogStore")
-  }
-
-  private def isIcebergNessie(catalogImpl: CatalogPlugin): Boolean = {
-    catalogImpl.getClass.getCanonicalName.equals(
-      "org.apache.iceberg.spark.SparkCatalog"
-    ) || catalogImpl.getClass.getCanonicalName
-      .equals("org.apache.iceberg.spark.SparkSessionCatalog")
-  }
-
-  private def getIcebergSparkCatalog(
-      catalogImpl: CatalogPlugin
-  ): CatalogPlugin = {
-    val className = catalogImpl.getClass.getCanonicalName
-    className match {
-      case "org.apache.iceberg.spark.SparkSessionCatalog" =>
-        getIcebergCatalogFromSessionCatalog(catalogImpl)
-      case "org.apache.iceberg.spark.SparkCatalog" => catalogImpl
-      case _                                       => throw new AnalysisException("Unknown Iceberg Catalog")
-    }
-  }
-
-  private def getIcebergRef(catalogImpl: CatalogPlugin): Reference = {
-    val field = Class
-      .forName("org.apache.iceberg.spark.SparkCatalog")
-      .getDeclaredField("icebergCatalog")
-    field.setAccessible(true)
-    val catalog = unwrapCachingCatalog(field.get(catalogImpl))
-    val updateRef = Class
-      .forName("org.apache.iceberg.nessie.NessieCatalog")
-      .getMethod("copyReference")
-    //todo we need to update Nessie catalog to support these methods
-    updateRef.invoke(catalog).asInstanceOf[Reference]
-  }
-
-  private def setIcebergRef(
-      plugin: CatalogPlugin,
-      reference: Reference
-  ): Reference = {
-    val field = Class
-      .forName("org.apache.iceberg.spark.SparkCatalog")
-      .getDeclaredField("icebergCatalog")
-    field.setAccessible(true)
-    val catalog = unwrapCachingCatalog(field.get(plugin))
-    val updateRef = Class
-      .forName("org.apache.iceberg.nessie.NessieCatalog")
-      .getMethod(
-        "updateReference",
-        Class.forName("org.projectnessie.model.Reference")
-      )
-    updateRef.invoke(catalog, reference)
-    getIcebergRef(plugin)
-  }
-
-  private def unwrapCachingCatalog(catalogImpl: AnyRef): AnyRef = {
-    val className = catalogImpl.getClass.getCanonicalName
-    className match {
-      case "org.apache.iceberg.CachingCatalog" =>
-        val field = Class
-          .forName("org.apache.iceberg.CachingCatalog")
-          .getDeclaredField("catalog")
-        field.setAccessible(true)
-        field.get(catalogImpl)
-      case "org.apache.iceberg.nessie.NessieCatalog" => catalogImpl
-      case _                                         => throw new AnalysisException("Unknown Iceberg Catalog")
-    }
-  }
-
-  private def getIcebergCatalogFromSessionCatalog(
-      catalogImpl: CatalogPlugin
-  ): CatalogPlugin = {
-    val field = Class
-      .forName("org.apache.iceberg.spark.SparkSessionCatalog")
-      .getDeclaredField("icebergCatalog")
-    field.setAccessible(true)
-    field.get(catalogImpl).asInstanceOf[CatalogPlugin]
-  }
 }

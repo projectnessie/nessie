@@ -27,12 +27,11 @@ case class DropReferenceExec(
     currentCatalog: CatalogPlugin,
     isBranch: Boolean,
     catalog: Option[String]
-) extends V2CommandExec {
+) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog) {
 
-  lazy val nessieClient: NessieClient =
-    NessieUtils.nessieClient(currentCatalog, catalog)
-
-  override protected def run(): Seq[InternalRow] = {
+  override protected def runInternal(
+      nessieClient: NessieClient
+  ): Seq[InternalRow] = {
     val hash = nessieClient.getTreeApi.getReferenceByName(branch).getHash
     if (isBranch) {
       nessieClient.getTreeApi.deleteBranch(branch, hash)
