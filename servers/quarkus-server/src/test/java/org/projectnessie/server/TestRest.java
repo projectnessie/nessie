@@ -325,7 +325,7 @@ class TestRest {
     log =
         tree.getCommitLog(
             branch.getName(),
-            CommitLogParams.builder().celEexpr("commit.author == 'author-3'").build());
+            CommitLogParams.builder().celExpr("commit.author == 'author-3'").build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(commitsPerAuthor);
     log.getOperations().forEach(commit -> assertThat(commit.getAuthor()).isEqualTo("author-3"));
@@ -334,7 +334,7 @@ class TestRest {
         tree.getCommitLog(
             branch.getName(),
             CommitLogParams.builder()
-                .celEexpr("commit.author == 'author-3' && commit.committer == 'random-committer'")
+                .celExpr("commit.author == 'author-3' && commit.committer == 'random-committer'")
                 .build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).isEmpty();
@@ -343,7 +343,7 @@ class TestRest {
         tree.getCommitLog(
             branch.getName(),
             CommitLogParams.builder()
-                .celEexpr("commit.author == 'author-3' && commit.committer == ''")
+                .celExpr("commit.author == 'author-3' && commit.committer == ''")
                 .build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(commitsPerAuthor);
@@ -358,7 +358,7 @@ class TestRest {
         tree.getCommitLog(
             branch.getName(),
             CommitLogParams.builder()
-                .celEexpr(
+                .celExpr(
                     "commit.author == 'author-1' || commit.author == 'author-3' || commit.author == 'author-4'")
                 .build());
     assertThat(log).isNotNull();
@@ -375,7 +375,7 @@ class TestRest {
         tree.getCommitLog(
             branch.getName(),
             CommitLogParams.builder()
-                .celEexpr("commit.author != 'author-1' && commit.author != 'author-0'")
+                .celExpr("commit.author != 'author-1' && commit.author != 'author-0'")
                 .build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(commitsPerAuthor * 3);
@@ -390,7 +390,7 @@ class TestRest {
     log =
         tree.getCommitLog(
             branch.getName(),
-            CommitLogParams.builder().celEexpr("commit.author.matches('au.*-(2|4)')").build());
+            CommitLogParams.builder().celExpr("commit.author.matches('au.*-(2|4)')").build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(commitsPerAuthor * 2);
     log.getOperations()
@@ -431,7 +431,7 @@ class TestRest {
         tree.getCommitLog(
             branch.getName(),
             CommitLogParams.builder()
-                .celEexpr(
+                .celExpr(
                     String.format(
                         "timestamp(commit.commitTime) > timestamp('%s')", initialCommitTime))
                 .build());
@@ -444,7 +444,7 @@ class TestRest {
         tree.getCommitLog(
             branch.getName(),
             CommitLogParams.builder()
-                .celEexpr(
+                .celExpr(
                     String.format("timestamp(commit.commitTime) < timestamp('%s')", fiveMinLater))
                 .build());
     assertThat(log).isNotNull();
@@ -456,7 +456,7 @@ class TestRest {
         tree.getCommitLog(
             branch.getName(),
             CommitLogParams.builder()
-                .celEexpr(
+                .celExpr(
                     String.format(
                         "timestamp(commit.commitTime) > timestamp('%s') && timestamp(commit.commitTime) < timestamp('%s')",
                         initialCommitTime, lastCommitTime))
@@ -474,7 +474,7 @@ class TestRest {
         tree.getCommitLog(
             branch.getName(),
             CommitLogParams.builder()
-                .celEexpr(
+                .celExpr(
                     String.format("timestamp(commit.commitTime) > timestamp('%s')", fiveMinLater))
                 .build());
     assertThat(log).isNotNull();

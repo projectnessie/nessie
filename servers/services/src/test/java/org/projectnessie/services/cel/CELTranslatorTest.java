@@ -24,6 +24,8 @@ import java.time.temporal.ChronoUnit;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.params.EntriesParams;
+import org.projectnessie.model.Contents;
+import org.projectnessie.model.Contents.Type;
 
 public class CELTranslatorTest {
 
@@ -116,5 +118,38 @@ public class CELTranslatorTest {
                     + "&& timestamp(commit.commitTime) > timestamp('%s') "
                     + "&& timestamp(commit.commitTime) < timestamp('%s')",
                 now, fiveMinLater));
+  }
+
+  @Test
+  public void testEntriesParamExprBuilding() {
+    assertThat(CELTranslator.from(EntriesParams.builder().namespace("a.b.c").build()))
+        .isEqualTo("entry.namespace.startsWith('a.b.c')");
+
+    assertThat(
+            CELTranslator.from(
+                EntriesParams.builder()
+                    .types(ImmutableList.of(Contents.Type.ICEBERG_TABLE.name()))
+                    .build()))
+        .isEqualTo("entry.contentType in ['ICEBERG_TABLE']");
+
+    assertThat(
+            CELTranslator.from(
+                EntriesParams.builder()
+                    .types(
+                        ImmutableList.of(
+                            Contents.Type.ICEBERG_TABLE.name(), Type.DELTA_LAKE_TABLE.name()))
+                    .build()))
+        .isEqualTo("entry.contentType in ['ICEBERG_TABLE','DELTA_LAKE_TABLE']");
+
+    assertThat(
+            CELTranslator.from(
+                EntriesParams.builder()
+                    .namespace("some.name.space")
+                    .types(
+                        ImmutableList.of(
+                            Contents.Type.ICEBERG_TABLE.name(), Type.DELTA_LAKE_TABLE.name()))
+                    .build()))
+        .isEqualTo(
+            "entry.namespace.startsWith('some.name.space') && entry.contentType in ['ICEBERG_TABLE','DELTA_LAKE_TABLE']");
   }
 }

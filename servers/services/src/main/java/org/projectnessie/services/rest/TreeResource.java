@@ -85,12 +85,10 @@ public class TreeResource extends BaseResource implements TreeApi {
 
   private static final int MAX_COMMIT_LOG_ENTRIES = 250;
   private static final ScriptHost SCRIPT_HOST = ScriptHost.newBuilder().build();
-  public static final List<Decl> COMMIT_LOG_DECLARATIONS =
-      Arrays.asList(
-          Decls.newVar("committer", Decls.String),
-          Decls.newVar("author", Decls.String),
-          Decls.newVar("commitTime", Decls.Timestamp),
-          Decls.newVar("commit", Decls.newMapType(Decls.String, Decls.String)));
+  private static final List<Decl> COMMIT_LOG_DECLARATIONS =
+      Arrays.asList(Decls.newVar("commit", Decls.newMapType(Decls.String, Decls.String)));
+  private static final List<Decl> ENTRIES_DECLARATIONS =
+      Arrays.asList(Decls.newVar("entry", Decls.newMapType(Decls.String, Decls.String)));
 
   @Inject
   public TreeResource(
@@ -207,7 +205,8 @@ public class TreeResource extends BaseResource implements TreeApi {
 
       List<CommitMeta> items;
 
-      items = filterWithCelExpression(s, params).limit(max + 1).collect(Collectors.toList());
+      items =
+          filterCommitLogWithCelExpression(s, params).limit(max + 1).collect(Collectors.toList());
 
       if (items.size() == max + 1) {
         return ImmutableLogResponse.builder()
@@ -223,7 +222,7 @@ public class TreeResource extends BaseResource implements TreeApi {
     }
   }
 
-  private Stream<ImmutableCommitMeta> filterWithCelExpression(
+  private Stream<ImmutableCommitMeta> filterCommitLogWithCelExpression(
       Stream<ImmutableCommitMeta> items, CommitLogParams params) {
     System.out.println("params = " + params);
     String expr = CELTranslator.from(params);
@@ -365,7 +364,8 @@ public class TreeResource extends BaseResource implements TreeApi {
                           .name(fromKey(key.getValue()))
                           .type((Type) key.getType())
                           .build())) {
-        entries = filterEntries(s, params).collect(ImmutableList.toImmutableList());
+        entries =
+            filterEntriesWithCelExpression(s, params).collect(ImmutableList.toImmutableList());
       }
       return EntriesResponse.builder().addAllEntries(entries).build();
     } catch (ReferenceNotFoundException e) {
@@ -398,6 +398,47 @@ public class TreeResource extends BaseResource implements TreeApi {
           entries.filter(x -> x.getName().getNamespace().name().startsWith(params.getNamespace()));
     }
     return entries;
+  }
+
+  private Stream<EntriesResponse.Entry> filterEntriesWithCelExpression(
+      Stream<EntriesResponse.Entry> entries, EntriesParams params) {
+    System.out.println("params = " + params);
+    String expr = CELTranslator.from(params);
+    System.out.println("expr = " + expr);
+    final String celExpr = "".equals(expr) ? params.getCelExpr() : expr;
+    System.out.println("celExpr = " + celExpr);
+    System.out.println("--------------->");
+    if (null == celExpr) {
+      return entries;
+    }
+    final Script script;
+    try {
+      script =
+          SCRIPT_HOST.getOrCreateScript(celExpr, ENTRIES_DECLARATIONS, Collections.emptyList());
+    } catch (ScriptException e) {
+      throw new RuntimeException(e);
+    }
+    return entries.filter(
+        entry -> {
+          // currently this is just a workaround where we put EntriesResponse.Entry into a hash
+          // structure.
+          // Eventually we should have a EntriesT that we register to avoid unnecessary object
+          // creation
+          Map<String, Object> arguments =
+              ImmutableMap.of(
+                  "entry",
+                  ImmutableMap.of(
+                      "namespace",
+                      entry.getName().getNamespace().name(),
+                      "contentType",
+                      entry.getType().name()));
+
+          try {
+            return script.execute(Boolean.class, arguments);
+          } catch (ScriptException e) {
+            throw new RuntimeException(e);
+          }
+        });
   }
 
   @Override

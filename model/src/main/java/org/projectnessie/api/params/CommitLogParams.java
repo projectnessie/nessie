@@ -199,7 +199,7 @@ public class CommitLogParams {
       return this;
     }
 
-    public Builder celEexpr(String celExpr) {
+    public Builder celExpr(String celExpr) {
       this.celExpr = celExpr;
       return this;
     }
@@ -211,7 +211,7 @@ public class CommitLogParams {
           .committers(params.committers)
           .after(params.after)
           .before(params.before)
-          .celEexpr(params.celExpr);
+          .celExpr(params.celExpr);
     }
 
     private void validate() {

@@ -18,10 +18,12 @@ package org.projectnessie.services.cel;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import java.util.List;
+import java.util.Set;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
 import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.params.EntriesParams;
+import org.projectnessie.model.Contents.Type;
 
 /**
  * The purpose of the {@link CELTranslator} is to translate given filtering parameters, such as
@@ -69,7 +71,20 @@ public class CELTranslator {
 
   public static String from(EntriesParams params) {
     Preconditions.checkArgument(null != params, "Entries filtering params must be non-null");
-    return "";
+    StringJoiner and = new StringJoiner(" && ");
+
+    if (!Strings.isNullOrEmpty(params.getNamespace())) {
+      and.add(String.format("entry.namespace.startsWith('%s')", params.getNamespace()));
+    }
+
+    if (null != params.getTypes() && !params.getTypes().isEmpty()) {
+      Set<Type> payloads =
+          params.getTypes().stream().map(Type::valueOf).collect(Collectors.toSet());
+      StringJoiner payloadJoiner = new StringJoiner(",");
+      payloads.forEach(p -> payloadJoiner.add(String.format("'%s'", p)));
+      and.add(String.format("entry.contentType in [%s]", payloadJoiner));
+    }
+    return and.toString();
   }
 
   private static String or(List<String> items) {
