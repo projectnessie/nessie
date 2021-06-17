@@ -45,7 +45,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -403,7 +402,6 @@ class TestRest {
   }
 
   @Test
-  @Disabled("currently not working due to Instant -> TimeStampT conversion")
   public void filterCommitLogByTimeRangeWithExpr()
       throws NessieNotFoundException, NessieConflictException {
     Reference main = tree.getReferenceByName("main");
@@ -432,7 +430,11 @@ class TestRest {
     log =
         tree.getCommitLog(
             branch.getName(),
-            CommitLogParams.builder().celEexpr(String.format("timestamp(commit.commitTime) > timestamp('%s')", initialCommitTime)).build());
+            CommitLogParams.builder()
+                .celEexpr(
+                    String.format(
+                        "timestamp(commit.commitTime) > timestamp('%s')", initialCommitTime))
+                .build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(expectedTotalSize - 1);
     log.getOperations()
@@ -441,7 +443,10 @@ class TestRest {
     log =
         tree.getCommitLog(
             branch.getName(),
-            CommitLogParams.builder().celEexpr("commit.commitTime < " + fiveMinLater).build());
+            CommitLogParams.builder()
+                .celEexpr(
+                    String.format("timestamp(commit.commitTime) < timestamp('%s')", fiveMinLater))
+                .build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(expectedTotalSize);
     log.getOperations()
@@ -453,7 +458,7 @@ class TestRest {
             CommitLogParams.builder()
                 .celEexpr(
                     String.format(
-                        "commit.commitTime > %s && commit.commitTime < %s",
+                        "timestamp(commit.commitTime) > timestamp('%s') && timestamp(commit.commitTime) < timestamp('%s')",
                         initialCommitTime, lastCommitTime))
                 .build());
     assertThat(log).isNotNull();
@@ -466,9 +471,12 @@ class TestRest {
                     .isBefore(lastCommitTime));
 
     log =
-        tree.getCommitLog(branch.getName(), CommitLogParams.builder()
-          .celEexpr("commit.commitTime > " + fiveMinLater)
-          .build());
+        tree.getCommitLog(
+            branch.getName(),
+            CommitLogParams.builder()
+                .celEexpr(
+                    String.format("timestamp(commit.commitTime) > timestamp('%s')", fiveMinLater))
+                .build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).isEmpty();
   }

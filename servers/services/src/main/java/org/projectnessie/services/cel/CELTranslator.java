@@ -23,6 +23,14 @@ import java.util.stream.Collectors;
 import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.params.EntriesParams;
 
+/**
+ * The purpose of the {@link CELTranslator} is to translate given filtering parameters, such as
+ * {@link CommitLogParams} / {@link EntriesParams} into valid CEL expressions as defined in the <a
+ * href="https://github.com/google/cel-spec/blob/master/doc/langdef.md">CEL language definition</a>.
+ *
+ * @see <a href="https://github.com/google/cel-spec/blob/master/doc/langdef.md">CEL language
+ *     definition</a>
+ */
 public class CELTranslator {
 
   public static String from(CommitLogParams params) {

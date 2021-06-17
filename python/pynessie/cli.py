@@ -203,7 +203,7 @@ def set_head(ctx: ContextObject, head: str, delete: bool) -> None:
 )
 @pass_client
 @error_handler
-def log(
+def log(  # noqa: C901
     ctx: ContextObject,
     number: int,
     since: str,
