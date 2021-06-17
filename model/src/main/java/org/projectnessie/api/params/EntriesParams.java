@@ -58,18 +58,23 @@ public class EntriesParams {
   @QueryParam("namespace")
   private String namespace;
 
+  @Parameter(description = "A Common Expression Language (CEL) expression")
+  @QueryParam("cel_expr")
+  private String celExpr;
+
   public EntriesParams() {}
 
   private EntriesParams(
-      Integer maxRecords, String pageToken, List<String> types, String namespace) {
+      Integer maxRecords, String pageToken, List<String> types, String namespace, String celExpr) {
     this.maxRecords = maxRecords;
     this.pageToken = pageToken;
     this.types = types;
     this.namespace = namespace;
+    this.celExpr = celExpr;
   }
 
   private EntriesParams(Builder builder) {
-    this(builder.maxRecords, builder.pageToken, builder.types, builder.namespace);
+    this(builder.maxRecords, builder.pageToken, builder.types, builder.namespace, builder.celExpr);
   }
 
   public static EntriesParams.Builder builder() {
@@ -92,6 +97,10 @@ public class EntriesParams {
     return types;
   }
 
+  public String getCelExpr() {
+    return celExpr;
+  }
+
   public String getNamespace() {
     return namespace;
   }
@@ -103,6 +112,7 @@ public class EntriesParams {
         .add("pageToken='" + pageToken + "'")
         .add("types=" + types)
         .add("namespace='" + namespace + "'")
+        .add("celExpr='" + celExpr + "'")
         .toString();
   }
 
@@ -112,6 +122,7 @@ public class EntriesParams {
     private String pageToken;
     private String namespace;
     private List<String> types = Collections.emptyList();
+    private String celExpr;
 
     private Builder() {}
 
@@ -135,11 +146,17 @@ public class EntriesParams {
       return this;
     }
 
+    public EntriesParams.Builder celExpr(String celExpr) {
+      this.celExpr = celExpr;
+      return this;
+    }
+
     public EntriesParams.Builder from(EntriesParams params) {
       return maxRecords(params.maxRecords)
           .pageToken(params.pageToken)
           .namespace(params.namespace)
-          .types(params.types);
+          .types(params.types)
+          .celExpr(params.celExpr);
     }
 
     private void validate() {
