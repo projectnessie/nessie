@@ -71,11 +71,10 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
   var lastSnapshotUuid: Option[String] = None
 
   private val client: NessieClient = {
-    val catalogConfMap = catalogConf()
     val removePrefix = (x: String) => x.replace("nessie.", "")
     NessieClient
       .builder()
-      .fromConfig(c => catalogConfMap.getOrElse(removePrefix(c), null))
+      .fromConfig(c => catalogConf.getOrElse(removePrefix(c), null))
       .build()
   }
 
@@ -87,7 +86,7 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
     s"spark.sql.catalog.${catalogName()}."
   }
 
-  private def catalogConf(): Map[String, String] = {
+  private def catalogConf: Map[String, String] = {
     SparkSession.active.sparkContext.getConf
       .getAllWithPrefix(prefix())
       .toMap

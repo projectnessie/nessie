@@ -107,16 +107,16 @@ public abstract class AbstractSparkTest {
     }
   }
 
-  protected List<Object[]> sql(String query, Object... args) {
+  protected static List<Object[]> sql(String query, Object... args) {
     List<Row> rows = spark.sql(String.format(query, args)).collectAsList();
     if (rows.size() < 1) {
       return ImmutableList.of();
     }
 
-    return rows.stream().map(this::toJava).collect(Collectors.toList());
+    return rows.stream().map(AbstractSparkTest::toJava).collect(Collectors.toList());
   }
 
-  protected Object[] toJava(Row row) {
+  protected static Object[] toJava(Row row) {
     return IntStream.range(0, row.size())
         .mapToObj(
             pos -> {
@@ -142,7 +142,7 @@ public abstract class AbstractSparkTest {
    * This looks weird but it gives a clear semantic way to turn a list of objects into a 'row' for
    * spark assertions.
    */
-  protected Object[] row(Object... values) {
+  protected static Object[] row(Object... values) {
     return values;
   }
 }
