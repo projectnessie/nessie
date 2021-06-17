@@ -428,8 +428,6 @@ class TestRest {
     Instant lastCommitTime = log.getOperations().get(0).getCommitTime();
     assertThat(lastCommitTime).isNotNull();
     Instant fiveMinLater = initialCommitTime.plus(5, ChronoUnit.MINUTES);
-    Instant a = Instant.parse("2021-06-17T07:44:21.547244Z");
-    Instant x = Instant.parse("2021-06-17T07:44:21.000547244Z");
 
     log =
         tree.getCommitLog(

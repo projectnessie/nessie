@@ -194,7 +194,13 @@ def set_head(ctx: ContextObject, head: str, delete: bool) -> None:
 )
 @click.argument("revision_range", nargs=1, required=False)
 @click.argument("paths", nargs=-1, type=click.Path(exists=False), required=False)
-@click.option("--cel-expr", "--cel", multiple=False, help="Allows advanced filtering using the Common Expressio Language (CEL)")
+@click.option(
+    "--cel-expr",
+    "--cel",
+    multiple=False,
+    help="Allows advanced filtering using the Common Expression Language (CEL). "
+    "An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md",
+)
 @pass_client
 @error_handler
 def log(

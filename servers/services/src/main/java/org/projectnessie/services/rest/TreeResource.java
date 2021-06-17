@@ -18,6 +18,7 @@ package org.projectnessie.services.rest;
 import static org.projectnessie.cel.common.types.Err.newTypeConversionError;
 
 import com.google.api.expr.v1alpha1.Decl;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import java.security.Principal;
@@ -39,6 +40,7 @@ import org.projectnessie.cel.common.types.TypeT;
 import org.projectnessie.cel.common.types.ref.BaseVal;
 import org.projectnessie.cel.common.types.ref.Val;
 import org.projectnessie.cel.tools.Script;
+import org.projectnessie.cel.tools.ScriptException;
 import org.projectnessie.cel.tools.ScriptHost;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -60,6 +62,7 @@ import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
 import org.projectnessie.model.Transplant;
+import org.projectnessie.services.cel.CELTranslator;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Delete;
@@ -185,6 +188,18 @@ public class TreeResource extends BaseResource implements TreeApi {
             MAX_COMMIT_LOG_ENTRIES);
     Hash startRef = getHashOrThrow(params.getPageToken() != null ? params.getPageToken() : ref);
 
+    if (null != params.getCelExpr()) {
+      Preconditions.checkArgument(
+          params.getAuthors().isEmpty(), "Cannot combine 'cel_expr' with the 'authors' parameter");
+      Preconditions.checkArgument(
+          params.getCommitters().isEmpty(),
+          "Cannot combine 'cel_expr' with the 'committers' parameter");
+      Preconditions.checkArgument(
+          null == params.getAfter(), "Cannot combine 'cel_expr' with the 'after' parameter");
+      Preconditions.checkArgument(
+          null == params.getBefore(), "Cannot combine 'cel_expr' with the 'before' parameter");
+    }
+
     try (Stream<ImmutableCommitMeta> s =
         getStore()
             .getCommits(startRef)
@@ -192,11 +207,7 @@ public class TreeResource extends BaseResource implements TreeApi {
 
       List<CommitMeta> items;
 
-      if (null != params.getCelExpr()) {
-        items = filterWithCelExpression(s, params).limit(max + 1).collect(Collectors.toList());
-      } else {
-        items = filterCommitLog(s, params).limit(max + 1).collect(Collectors.toList());
-      }
+      items = filterWithCelExpression(s, params).limit(max + 1).collect(Collectors.toList());
 
       if (items.size() == max + 1) {
         return ImmutableLogResponse.builder()
@@ -214,28 +225,43 @@ public class TreeResource extends BaseResource implements TreeApi {
 
   private Stream<ImmutableCommitMeta> filterWithCelExpression(
       Stream<ImmutableCommitMeta> items, CommitLogParams params) {
+    System.out.println("params = " + params);
+    String expr = CELTranslator.from(params);
+    System.out.println("expr = " + expr);
+    final String celExpr = "".equals(expr) ? params.getCelExpr() : expr;
+    System.out.println("celExpr = " + celExpr);
+    System.out.println("--------------->");
+    if (null == celExpr) {
+      return items;
+    }
+    final Script script;
+    try {
+      script =
+          SCRIPT_HOST.getOrCreateScript(celExpr, COMMIT_LOG_DECLARATIONS, Collections.emptyList());
+    } catch (ScriptException e) {
+      throw new RuntimeException(e);
+    }
     return items.filter(
         commit -> {
-          try {
-            Script script =
-                SCRIPT_HOST.getOrCreateScript(
-                    params.getCelExpr(), COMMIT_LOG_DECLARATIONS, Collections.emptyList());
-            Map<String, Object> arguments =
-                ImmutableMap.of(
-                    "commit",
-                    ImmutableMap.of(
-                        "author",
-                        commit.getAuthor(),
-                        "committer",
-                        commit.getCommitter(),
-                        "commitTime",
-                        commit.getCommitTime()));
+          // currently this is just a workaround where we put CommitMeta into a hash structure.
+          // Eventually we should have a CommitMetaT that we register to avoid unnecessary object
+          // creation
+          Map<String, Object> arguments =
+              ImmutableMap.of(
+                  "commit",
+                  ImmutableMap.of(
+                      "author",
+                      commit.getAuthor(),
+                      "committer",
+                      commit.getCommitter(),
+                      "commitTime",
+                      commit.getCommitTime()));
 
+          try {
             return script.execute(Boolean.class, arguments);
-          } catch (Exception e) {
-            e.printStackTrace();
+          } catch (ScriptException e) {
+            throw new RuntimeException(e);
           }
-          return true;
         });
   }
 
