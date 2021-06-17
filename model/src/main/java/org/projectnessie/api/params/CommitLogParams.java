@@ -153,7 +153,7 @@ public class CommitLogParams {
         .add("committers=" + committers)
         .add("after=" + after)
         .add("before=" + before)
-        .add("celExpr=" + celExpr)
+        .add("celExpr='" + celExpr + "'")
         .toString();
   }
 
