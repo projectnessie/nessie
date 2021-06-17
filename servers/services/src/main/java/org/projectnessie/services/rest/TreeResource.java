@@ -15,8 +15,6 @@
  */
 package org.projectnessie.services.rest;
 
-import static org.projectnessie.cel.common.types.Err.newTypeConversionError;
-
 import com.google.api.expr.v1alpha1.Decl;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
@@ -36,9 +34,6 @@ import org.projectnessie.api.TreeApi;
 import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.cel.checker.Decls;
-import org.projectnessie.cel.common.types.TypeT;
-import org.projectnessie.cel.common.types.ref.BaseVal;
-import org.projectnessie.cel.common.types.ref.Val;
 import org.projectnessie.cel.tools.Script;
 import org.projectnessie.cel.tools.ScriptException;
 import org.projectnessie.cel.tools.ScriptHost;
@@ -548,60 +543,6 @@ public class TreeResource extends BaseResource implements TreeApi {
       return Unchanged.of(key);
     } else {
       throw new IllegalStateException("Unknown operation " + o);
-    }
-  }
-
-  private static class CommitMetaT extends BaseVal {
-    private final CommitMeta commit;
-
-    /** CommitMetaT singleton. */
-    public static final TypeT CommitMetaType = TypeT.newTypeValue("commitMeta");
-
-    private CommitMetaT(CommitMeta commit) {
-      this.commit = commit;
-    }
-
-    public static CommitMetaT of(CommitMeta commit) {
-      return new CommitMetaT(commit);
-    }
-
-    @Override
-    public <T> T convertToNative(Class<T> typeDesc) {
-      if (typeDesc == CommitMeta.class
-          || typeDesc == ImmutableCommitMeta.class
-          || typeDesc == Object.class) {
-        return (T) commit;
-      }
-      if (typeDesc == Val.class || typeDesc == CommitMetaT.class) {
-        return (T) this;
-      }
-      throw new RuntimeException(
-          String.format(
-              "native type conversion error from '%s' to '%s'",
-              CommitMetaType, typeDesc.getName()));
-    }
-
-    @Override
-    public Val convertToType(org.projectnessie.cel.common.types.ref.Type typeVal) {
-      if (typeVal == CommitMetaType) {
-        return this;
-      }
-      return newTypeConversionError(CommitMetaType, typeVal);
-    }
-
-    @Override
-    public Val equal(Val other) {
-      return null;
-    }
-
-    @Override
-    public org.projectnessie.cel.common.types.ref.Type type() {
-      return CommitMetaType;
-    }
-
-    @Override
-    public Object value() {
-      return commit;
     }
   }
 }
