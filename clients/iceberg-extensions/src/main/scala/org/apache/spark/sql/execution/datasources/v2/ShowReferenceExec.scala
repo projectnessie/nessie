@@ -26,19 +26,21 @@ case class ShowReferenceExec(
     output: Seq[Attribute],
     currentCatalog: CatalogPlugin,
     catalog: Option[String]
-) extends V2CommandExec {
+) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog) {
 
-  lazy val nessieClient: NessieClient =
-    NessieUtils.nessieClient(currentCatalog, catalog)
-
-  override protected def run(): Seq[InternalRow] = {
+  override protected def runInternal(
+      nessieClient: NessieClient
+  ): Seq[InternalRow] = {
 
     val ref = NessieUtils.getCurrentRef(currentCatalog, catalog)
     // todo have to figure out if this is delta or iceberg and extract the ref accordingly
     Seq(
       InternalRow(
         UTF8String
-          .fromString(if (ref.isInstanceOf[Branch]) "Branch" else "Tag"),
+          .fromString(
+            if (ref.isInstanceOf[Branch]) NessieUtils.BRANCH
+            else NessieUtils.TAG
+          ),
         UTF8String.fromString(ref.getName),
         UTF8String.fromString(ref.getHash)
       )

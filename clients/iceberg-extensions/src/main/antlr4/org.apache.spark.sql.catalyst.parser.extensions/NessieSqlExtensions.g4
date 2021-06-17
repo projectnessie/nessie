@@ -71,47 +71,6 @@ statement
     // add purge gc action
     ;
 
-callArgument
-    : expression                    #positionalArgument
-    | identifier '=>' expression    #namedArgument
-    ;
-
-expression
-    : constant
-    | stringMap
-    ;
-
-constant
-    : number                          #numericLiteral
-    | booleanValue                    #booleanLiteral
-    | STRING+                         #stringLiteral
-    | identifier STRING               #typeConstructor
-    ;
-
-stringMap
-    : MAP '(' constant (',' constant)* ')'
-    ;
-
-booleanValue
-    : TRUE | FALSE
-    ;
-
-number
-    : MINUS? EXPONENT_VALUE           #exponentLiteral
-    | MINUS? DECIMAL_VALUE            #decimalLiteral
-    | MINUS? INTEGER_VALUE            #integerLiteral
-    | MINUS? BIGINT_LITERAL           #bigIntLiteral
-    | MINUS? SMALLINT_LITERAL         #smallIntLiteral
-    | MINUS? TINYINT_LITERAL          #tinyIntLiteral
-    | MINUS? DOUBLE_LITERAL           #doubleLiteral
-    | MINUS? FLOAT_LITERAL            #floatLiteral
-    | MINUS? BIGDECIMAL_LITERAL       #bigDecimalLiteral
-    ;
-
-multipartIdentifier
-    : parts+=identifier ('.' parts+=identifier)*
-    ;
-
 identifier
     : IDENTIFIER              #unquotedIdentifier
     | quotedIdentifier        #quotedIdentifierAlternative

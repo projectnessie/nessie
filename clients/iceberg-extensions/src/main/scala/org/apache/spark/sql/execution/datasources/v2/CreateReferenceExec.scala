@@ -29,12 +29,11 @@ case class CreateReferenceExec(
     isBranch: Boolean,
     catalog: Option[String],
     createdFrom: Option[String]
-) extends V2CommandExec {
+) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog) {
 
-  lazy val nessieClient: NessieClient =
-    NessieUtils.nessieClient(currentCatalog, catalog)
-
-  override protected def run(): Seq[InternalRow] = {
+  override protected def runInternal(
+      nessieClient: NessieClient
+  ): Seq[InternalRow] = {
     val hash = createdFrom
       .map(nessieClient.getTreeApi.getReferenceByName)
       .orElse(Option(nessieClient.getTreeApi.getDefaultBranch))
@@ -44,9 +43,9 @@ case class CreateReferenceExec(
     nessieClient.getTreeApi.createReference(ref)
     val branchResult = nessieClient.getTreeApi.getReferenceByName(ref.getName)
     val refType = branchResult match {
-      case _: ImmutableHash   => "Hash"
-      case _: ImmutableBranch => "Branch"
-      case _: ImmutableTag    => "Tag"
+      case _: ImmutableHash   => NessieUtils.HASH
+      case _: ImmutableBranch => NessieUtils.BRANCH
+      case _: ImmutableTag    => NessieUtils.TAG
     }
     Seq(
       InternalRow(

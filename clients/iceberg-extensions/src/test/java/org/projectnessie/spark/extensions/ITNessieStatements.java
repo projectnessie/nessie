@@ -46,7 +46,6 @@ import org.projectnessie.model.Tag;
 
 public class ITNessieStatements extends AbstractSparkTest {
 
-  // todo tests!
   private String hash;
   private final String refName = "testBranch";
 
@@ -166,6 +165,7 @@ public class ITNessieStatements extends AbstractSparkTest {
         NessieNotFoundException.class, () -> nessieClient.getTreeApi().getReferenceByName(refName));
   }
 
+  @Disabled("until release of 0.12.0 of iceberg")
   @Test
   void useShowReferencesIn() throws NessieNotFoundException {
     List<Object[]> result = sql("CREATE BRANCH %s IN nessie AS main", refName);
@@ -184,6 +184,7 @@ public class ITNessieStatements extends AbstractSparkTest {
         NessieNotFoundException.class, () -> nessieClient.getTreeApi().getReferenceByName(refName));
   }
 
+  @Disabled("until release of 0.12.0 of iceberg")
   @Test
   void useShowReferencesAt() throws NessieNotFoundException {
     List<Object[]> result = sql("CREATE BRANCH %s IN nessie AS main", refName);
@@ -256,6 +257,7 @@ public class ITNessieStatements extends AbstractSparkTest {
     String catalog = spark.sessionState().catalogManager().currentCatalog().name();
     spark.sessionState().catalogManager().setCurrentCatalog("nessie");
     List<Object[]> resultList = commitAndReturnLog(refName);
+    sql("USE REFERENCE %s", refName);
     sql("MERGE BRANCH");
     List<Object[]> result = sql("SHOW LOG %s", refName);
     assertEquals(

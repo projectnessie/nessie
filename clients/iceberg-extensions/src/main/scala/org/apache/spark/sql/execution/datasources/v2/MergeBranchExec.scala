@@ -28,12 +28,11 @@ case class MergeBranchExec(
     currentCatalog: CatalogPlugin,
     toRefName: Option[String],
     catalog: Option[String]
-) extends V2CommandExec {
+) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog) {
 
-  lazy val nessieClient: NessieClient =
-    NessieUtils.nessieClient(currentCatalog, catalog)
-
-  override protected def run(): Seq[InternalRow] = {
+  override protected def runInternal(
+      nessieClient: NessieClient
+  ): Seq[InternalRow] = {
     nessieClient.getTreeApi.mergeRefIntoBranch(
       toRefName.getOrElse(nessieClient.getTreeApi.getDefaultBranch.getName),
       toRefName
