@@ -17,6 +17,7 @@ from pynessie import __version__
 from pynessie import cli
 from pynessie.model import Branch
 from pynessie.model import ContentsSchema
+from pynessie.model import DeltaLakeTable
 from pynessie.model import EntrySchema
 from pynessie.model import IcebergTable
 from pynessie.model import ReferenceSchema
@@ -366,3 +367,51 @@ def test_all_help_options() -> None:
             for line in result.output.split("\n"):
                 f.write(line + "\n\t")
             f.write("\n\n")
+
+
+@pytest.mark.vcr
+def test_contents_listing() -> None:
+    """Test contents listing and filtering."""
+    runner = CliRunner()
+    branch = "contents_listing_dev"
+    _run(runner, ["branch", branch])
+
+    iceberg_table = IcebergTable(id="uuid", metadata_location="/a/b/c")
+    delta_lake_table = DeltaLakeTable(
+        id="uuid2", metadata_location_history=["asd"], checkpoint_location_history=["def"], last_checkpoint="x"
+    )
+    refs = ReferenceSchema().loads(_run(runner, ["--json", "branch", "-l", branch]).output, many=True)
+    _run(
+        runner,
+        ["contents", "--set", "this.is.iceberg.foo", "--ref", branch, "-m", "test_message1", "-c", refs[0].hash_],
+        input=ContentsSchema().dumps(iceberg_table),
+    )
+
+    refs = ReferenceSchema().loads(_run(runner, ["--json", "branch", "-l", branch]).output, many=True)
+    _run(
+        runner,
+        ["contents", "--set", "this.is.delta.bar", "--ref", branch, "-m", "test_message2", "-c", refs[0].hash_],
+        input=ContentsSchema().dumps(delta_lake_table),
+    )
+
+    result = _run(runner, ["--json", "contents", "--ref", branch, "this.is.iceberg.foo"])
+    tables = ContentsSchema().loads(result.output, many=True)
+    assert len(tables) == 1
+    assert tables[0] == iceberg_table
+
+    result = _run(runner, ["--json", "contents", "--ref", branch, "this.is.delta.bar"])
+    tables = ContentsSchema().loads(result.output, many=True)
+    assert len(tables) == 1
+    assert tables[0] == delta_lake_table
+
+    result = _run(runner, ["--json", "contents", "--ref", branch, "--list", "--type", "ICEBERG_TABLE"])
+    tables = EntrySchema().loads(result.output, many=True)
+    assert len(tables) == 1
+    assert tables[0].kind == "ICEBERG_TABLE"
+
+    result = _run(runner, ["--json", "contents", "--ref", branch, "--list", "--type", "DELTA_LAKE_TABLE"])
+    tables = EntrySchema().loads(result.output, many=True)
+    assert len(tables) == 1
+    assert tables[0].kind == "DELTA_LAKE_TABLE"
+
+    _run(runner, ["branch", branch, "--delete"])

@@ -39,15 +39,15 @@ IcebergTableSchema = desert.schema_class(IcebergTable)
 class DeltaLakeTable(Contents):
     """Dataclass for Nessie Contents."""
 
-    last_checkpoint: str = desert.ib(fields.Str(data_key="metadataLocation"))
-    checkpoint_location_history: List[str] = desert.ib(fields.List(fields.Str))
-    metadata_location_history: List[str] = desert.ib(fields.List(fields.Str))
+    last_checkpoint: str = desert.ib(fields.Str(data_key="lastCheckpoint"))
+    checkpoint_location_history: List[str] = desert.ib(fields.List(fields.Str(), data_key="checkpointLocationHistory"))
+    metadata_location_history: List[str] = desert.ib(fields.List(fields.Str(), data_key="metadataLocationHistory"))
 
     def pretty_print(self: "DeltaLakeTable") -> str:
         """Print out for cli."""
         deltas = "\n\t\t".join(self.metadata_location_history)
         checkpoints = "\n\t\t".join(self.checkpoint_location_history)
-        return "Iceberg table:\n\tLast Checkpoint: {}\n\tDelta History: {}\n\tCheckpoint History: {}".format(
+        return "DeltaLake table:\n\tLast Checkpoint: {}\n\tDelta History: {}\n\tCheckpoint History: {}".format(
             self.last_checkpoint, deltas, checkpoints
         )
 
@@ -64,7 +64,7 @@ class SqlView(Contents):
 
     def pretty_print(self: "SqlView") -> str:
         """Print out for cli."""
-        return "Iceberg table:\n\tDialect: {}\n\tSql: {}".format(self.dialect, self.sql_test)  # todo use a sql parser to pretty print this
+        return "SqlView:\n\tDialect: {}\n\tSql: {}".format(self.dialect, self.sql_test)  # todo use a sql parser to pretty print this
 
 
 SqlViewSchema = desert.schema_class(SqlView)

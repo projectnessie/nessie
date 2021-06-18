@@ -11,7 +11,6 @@
 	  --unset TEXT  unset config parameter
 	  --type TEXT   type to interpret config value to set or get. Allowed options:
 	                bool, int
-	
 	  -h, --help    Show this message and exit.
 	
 	
