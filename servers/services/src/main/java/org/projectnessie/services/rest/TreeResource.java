@@ -25,7 +25,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.enterprise.context.RequestScoped;
@@ -198,10 +197,8 @@ public class TreeResource extends BaseResource implements TreeApi {
             .getCommits(startRef)
             .map(cwh -> cwh.getValue().toBuilder().hash(cwh.getHash().asString()).build())) {
 
-      List<CommitMeta> items;
-
-      items =
-          filterCommitLogWithCelExpression(s, params).limit(max + 1).collect(Collectors.toList());
+      List<CommitMeta> items =
+          filterCommitLog(s, params).limit(max + 1).collect(Collectors.toList());
 
       if (items.size() == max + 1) {
         return ImmutableLogResponse.builder()
@@ -217,25 +214,31 @@ public class TreeResource extends BaseResource implements TreeApi {
     }
   }
 
-  private Stream<ImmutableCommitMeta> filterCommitLogWithCelExpression(
-      Stream<ImmutableCommitMeta> items, CommitLogParams params) {
-    System.out.println("params = " + params);
+  /**
+   * Applies different filters to the {@link Stream} of commits based on the settings in {@link
+   * CommitLogParams}. These settings are translated into a CEL expression via {@link CELTranslator}
+   * and applied to the stream.
+   *
+   * @param commits The commit log that different filters will be applied to
+   * @param params The commit log filter parameters
+   * @return A potentially filtered {@link Stream} of commits based on {@link CommitLogParams}
+   */
+  private Stream<ImmutableCommitMeta> filterCommitLog(
+      Stream<ImmutableCommitMeta> commits, CommitLogParams params) {
     String expr = CELTranslator.from(params);
-    System.out.println("expr = " + expr);
     final String celExpr = "".equals(expr) ? params.getCelExpr() : expr;
-    System.out.println("celExpr = " + celExpr);
-    System.out.println("--------------->");
     if (null == celExpr) {
-      return items;
+      return commits;
     }
+
     final Script script;
     try {
       script =
           SCRIPT_HOST.getOrCreateScript(celExpr, COMMIT_LOG_DECLARATIONS, Collections.emptyList());
     } catch (ScriptException e) {
-      throw new RuntimeException(e);
+      throw new IllegalArgumentException(e);
     }
-    return items.filter(
+    return commits.filter(
         commit -> {
           // currently this is just a workaround where we put CommitMeta into a hash structure.
           // Eventually we should have a CommitMetaT that we register to avoid unnecessary object
@@ -257,39 +260,6 @@ public class TreeResource extends BaseResource implements TreeApi {
             throw new RuntimeException(e);
           }
         });
-  }
-
-  /**
-   * Applies different filters to the {@link Stream} of commits based on the settings in {@link
-   * CommitLogParams}.
-   *
-   * @param commits The commit log that different filters will be applied to
-   * @param params The commit log filter parameters
-   * @return A potentially filtered {@link Stream} of commits based on {@link CommitLogParams}
-   */
-  private Stream<ImmutableCommitMeta> filterCommitLog(
-      Stream<ImmutableCommitMeta> commits, CommitLogParams params) {
-    if (null != params.getAuthors() && !params.getAuthors().isEmpty()) {
-      commits = commits.filter(commit -> params.getAuthors().contains(commit.getAuthor()));
-    }
-    if (null != params.getCommitters() && !params.getCommitters().isEmpty()) {
-      commits = commits.filter(commit -> params.getCommitters().contains(commit.getCommitter()));
-    }
-    if (null != params.getAfter()) {
-      commits =
-          commits.filter(
-              commit ->
-                  null != commit.getCommitTime()
-                      && commit.getCommitTime().isAfter(params.getAfter()));
-    }
-    if (null != params.getBefore()) {
-      commits =
-          commits.filter(
-              commit ->
-                  null != commit.getCommitTime()
-                      && commit.getCommitTime().isBefore(params.getBefore()));
-    }
-    return commits;
   }
 
   @Override
@@ -340,6 +310,14 @@ public class TreeResource extends BaseResource implements TreeApi {
       throws NessieNotFoundException {
 
     final Hash hash = getHashOrThrow(refName);
+    if (null != params.getCelExpr()) {
+      Preconditions.checkArgument(
+          params.getTypes().isEmpty(), "Cannot combine 'cel_expr' with the 'types' parameter");
+      Preconditions.checkArgument(
+          null == params.getNamespace(),
+          "Cannot combine 'cel_expr' with the 'namespace' parameter");
+    }
+
     // TODO Implement paging. At the moment, we do not expect that many keys/entries to be returned.
     //  So the size of the whole result is probably reasonable and unlikely to "kill" either the
     //  server or client. We have to figure out _how_ to implement paging for keys/entries, i.e.
@@ -360,7 +338,7 @@ public class TreeResource extends BaseResource implements TreeApi {
                           .type((Type) key.getType())
                           .build())) {
         entries =
-            filterEntriesWithCelExpression(s, params).collect(ImmutableList.toImmutableList());
+            filterEntries(s, params).collect(ImmutableList.toImmutableList());
       }
       return EntriesResponse.builder().addAllEntries(entries).build();
     } catch (ReferenceNotFoundException e) {
@@ -371,7 +349,8 @@ public class TreeResource extends BaseResource implements TreeApi {
 
   /**
    * Applies different filters to the {@link Stream} of entries based on the settings in {@link
-   * EntriesParams}.
+   * EntriesParams}. These settings are translated into a CEL expression via {@link CELTranslator}
+   * and applied to the stream.
    *
    * @param entries The entries that different filters will be applied to
    * @param params The filter parameters for the entries
@@ -379,39 +358,18 @@ public class TreeResource extends BaseResource implements TreeApi {
    */
   private Stream<EntriesResponse.Entry> filterEntries(
       Stream<EntriesResponse.Entry> entries, EntriesParams params) {
-    final Set<Type> payloads;
-    if (params.getTypes().isEmpty()) {
-      payloads = Arrays.stream(Type.values()).collect(Collectors.toSet());
-    } else {
-      payloads = params.getTypes().stream().map(Type::valueOf).collect(Collectors.toSet());
-    }
-
-    entries = entries.filter(x -> payloads.contains(x.getType()));
-
-    if (null != params.getNamespace()) {
-      entries =
-          entries.filter(x -> x.getName().getNamespace().name().startsWith(params.getNamespace()));
-    }
-    return entries;
-  }
-
-  private Stream<EntriesResponse.Entry> filterEntriesWithCelExpression(
-      Stream<EntriesResponse.Entry> entries, EntriesParams params) {
-    System.out.println("params = " + params);
     String expr = CELTranslator.from(params);
-    System.out.println("expr = " + expr);
     final String celExpr = "".equals(expr) ? params.getCelExpr() : expr;
-    System.out.println("celExpr = " + celExpr);
-    System.out.println("--------------->");
     if (null == celExpr) {
       return entries;
     }
+
     final Script script;
     try {
       script =
           SCRIPT_HOST.getOrCreateScript(celExpr, ENTRIES_DECLARATIONS, Collections.emptyList());
     } catch (ScriptException e) {
-      throw new RuntimeException(e);
+      throw new IllegalArgumentException(e);
     }
     return entries.filter(
         entry -> {

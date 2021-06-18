@@ -795,6 +795,79 @@ class TestRest {
   }
 
   @Test
+  public void filterEntriesWithMixedQueryParams() {
+    assertThatThrownBy(
+            () ->
+                tree.getEntries(
+                    "main", EntriesParams.builder().namespace("x").celExpr("y").build()))
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Cannot combine 'cel_expr' with the 'namespace' parameter");
+
+    assertThatThrownBy(
+            () ->
+                tree.getEntries(
+                    "main",
+                    EntriesParams.builder()
+                        .types(ImmutableList.of(Type.ICEBERG_TABLE.name()))
+                        .celExpr("y")
+                        .build()))
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Cannot combine 'cel_expr' with the 'types' parameter");
+  }
+
+  @Test
+  public void filterCommitLogWithMixedQueryParams() {
+    assertThatThrownBy(
+            () ->
+                tree.getCommitLog(
+                    "main",
+                    CommitLogParams.builder().authors(ImmutableList.of("x")).celExpr("y").build()))
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Cannot combine 'cel_expr' with the 'authors' parameter");
+
+    assertThatThrownBy(
+            () ->
+                tree.getCommitLog(
+                    "main",
+                    CommitLogParams.builder()
+                        .committers(ImmutableList.of("x"))
+                        .celExpr("y")
+                        .build()))
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Cannot combine 'cel_expr' with the 'committers' parameter");
+
+    assertThatThrownBy(
+            () ->
+                tree.getCommitLog(
+                    "main", CommitLogParams.builder().after(Instant.now()).celExpr("y").build()))
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Cannot combine 'cel_expr' with the 'after' parameter");
+
+    assertThatThrownBy(
+            () ->
+                tree.getCommitLog(
+                    "main", CommitLogParams.builder().before(Instant.now()).celExpr("y").build()))
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Cannot combine 'cel_expr' with the 'before' parameter");
+  }
+
+  @Test
+  public void checkCelScriptFailureReporting() {
+    assertThatThrownBy(
+            () ->
+                tree.getEntries("main", EntriesParams.builder().celExpr("invalid_script").build()))
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("undeclared reference to 'invalid_script'");
+
+    assertThatThrownBy(
+            () ->
+                tree.getCommitLog(
+                    "main", CommitLogParams.builder().celExpr("invalid_script").build()))
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("undeclared reference to 'invalid_script'");
+  }
+
+  @Test
   void checkSpecialCharacterRoundTrip() throws NessieNotFoundException, NessieConflictException {
     final String branch = "specialchar";
     Reference r = tree.createReference(Branch.of(branch, null));

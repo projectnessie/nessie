@@ -178,6 +178,7 @@ class ClientTreeApi implements TreeApi {
             "max", params.getMaxRecords() != null ? params.getMaxRecords().toString() : null)
         .queryParam("pageToken", params.getPageToken())
         .queryParam("namespace", params.getNamespace())
+        .queryParam("cel_expr", params.getCelExpr())
         .get()
         .readEntity(EntriesResponse.class);
   }
