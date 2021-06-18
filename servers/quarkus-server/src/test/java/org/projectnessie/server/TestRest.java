@@ -126,9 +126,8 @@ class TestRest {
   }
 
   @Test
-  void nessieVersion() throws Exception {
+  void noNessieVersionFromClient() throws Exception {
     URLConnection conn1 = uri.resolve("config").toURL().openConnection();
-    conn1.getInputStream().close(); // needs to pass
     assertThatThrownBy(() -> conn1.getInputStream().close())
         .isInstanceOf(IOException.class)
         .extracting(Throwable::getMessage, InstanceOfAssertFactories.STRING)
@@ -136,19 +135,28 @@ class TestRest {
             "Server returned HTTP response code: " + Status.BAD_REQUEST.getCode()); // must fail
     assertThat(conn1.getHeaderField("Nessie-Version"))
         .isEqualTo(NessieVersion.NESSIE_VERSION.toString());
+  }
 
+  @Test
+  void nessieVersionFromProduct() throws Exception {
     URLConnection conn2 = uri.resolve("config").toURL().openConnection();
     conn2.setRequestProperty("Nessie-Version", NessieVersion.NESSIE_VERSION.toString());
     conn2.getInputStream().close(); // needs to pass
     assertThat(conn2.getHeaderField("Nessie-Version"))
         .isEqualTo(NessieVersion.NESSIE_VERSION.toString());
+  }
 
+  @Test
+  void nessieVersionFromMinVersion() throws Exception {
     URLConnection conn3 = uri.resolve("config").toURL().openConnection();
     conn3.setRequestProperty("Nessie-Version", NessieVersion.NESSIE_MIN_API_VERSION.toString());
     conn3.getInputStream().close(); // needs to pass
     assertThat(conn3.getHeaderField("Nessie-Version"))
         .isEqualTo(NessieVersion.NESSIE_VERSION.toString());
+  }
 
+  @Test
+  void nessieVersionTooOld() throws Exception {
     URLConnection conn4 = uri.resolve("config").toURL().openConnection();
     conn4.setRequestProperty("Nessie-Version", "0.5.1");
     assertThatThrownBy(() -> conn4.getInputStream().close())
