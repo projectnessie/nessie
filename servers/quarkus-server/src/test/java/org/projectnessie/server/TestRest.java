@@ -65,6 +65,7 @@ import org.projectnessie.client.http.HttpClientException;
 import org.projectnessie.client.http.Status;
 import org.projectnessie.client.rest.NessieBadRequestException;
 import org.projectnessie.client.rest.NessieHttpResponseFilter;
+import org.projectnessie.client.rest.NessieVersionFilters;
 import org.projectnessie.common.NessieVersion;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -115,6 +116,7 @@ class TestRest {
             .enable(SerializationFeature.INDENT_OUTPUT)
             .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     httpClient = HttpClient.builder().setBaseUri(uri).setObjectMapper(mapper).build();
+    NessieVersionFilters.register(httpClient);
     httpClient.register(new NessieHttpResponseFilter(mapper));
   }
 
