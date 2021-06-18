@@ -15,7 +15,8 @@
  */
 
 import {Configuration, DefaultApi, ResponseContext} from "./api";
-import {nessieVersion, verifyServerVersion} from "./versions";
+import {nessieVersion} from "./version-numbers";
+import {verifyServerVersion} from "./versions";
 
 function api() {
   return new DefaultApi(new Configuration({

@@ -13,16 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {authenticationService} from '../services';
-import {nessieVersion} from "./version-numbers";
 
-export function nessieRequestHeaders() : Record<string, string> {
-  // return authorization header with jwt token
-  const currentUser = authenticationService.currentUserValue;
-  // TODO how can we get the current Nessie version here??
-  if (currentUser && currentUser.token) {
-    return {Authorization: `Bearer ${currentUser.token}`, "Nessie-Version": nessieVersion};
-  } else {
-    return {"Nessie-Version": nessieVersion};
-  }
-}
+// THIS IS A GENERATED FILE - DO NOT EDIT!
+
+export const nessieVersion = "${project.version}";
+export const nessieMinApiVersion = "${nessie.min-api-compatibility}";

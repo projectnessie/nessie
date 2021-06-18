@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-// TODO How to get the current Nessie-version + minimum-server-version here?
-export const nessieVersion = "0.6.2";
-const minServerVersion = parseVersion("0.6.2");
+import {nessieMinApiVersion} from "./version-numbers";
+
+export const minServerVersion = parseVersion(nessieMinApiVersion);
 
 export function verifyServerVersion(headers: Headers) {
   const serverVersion = headers.get("Nessie-Version")
@@ -65,3 +65,4 @@ function compareArray(arr1: Array<number>, arr2: Array<number>) {
 function parseVersion(str: string) {
   return str.replace(/(.*)-SNAPSHOT/, "$1").split(".").map(v => parseInt(v));
 }
+
