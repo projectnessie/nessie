@@ -80,9 +80,16 @@ public class TreeResource extends BaseResource implements TreeApi {
   private static final int MAX_COMMIT_LOG_ENTRIES = 250;
   private static final ScriptHost SCRIPT_HOST = ScriptHost.newBuilder().build();
   private static final List<Decl> COMMIT_LOG_DECLARATIONS =
-      Arrays.asList(Decls.newVar("commit", Decls.newMapType(Decls.String, Decls.String)));
+      Arrays.asList(
+          Decls.newVar("commit", Decls.newMapType(Decls.String, Decls.String)),
+          Decls.newVar("author", Decls.String),
+          Decls.newVar("committer", Decls.String),
+          Decls.newVar("commitTime", Decls.Timestamp));
   private static final List<Decl> ENTRIES_DECLARATIONS =
-      Arrays.asList(Decls.newVar("entry", Decls.newMapType(Decls.String, Decls.String)));
+      Arrays.asList(
+          Decls.newVar("entry", Decls.newMapType(Decls.String, Decls.String)),
+          Decls.newVar("namespace", Decls.String),
+          Decls.newVar("contentType", Decls.String));
 
   @Inject
   public TreeResource(
@@ -337,8 +344,7 @@ public class TreeResource extends BaseResource implements TreeApi {
                           .name(fromKey(key.getValue()))
                           .type((Type) key.getType())
                           .build())) {
-        entries =
-            filterEntries(s, params).collect(ImmutableList.toImmutableList());
+        entries = filterEntries(s, params).collect(ImmutableList.toImmutableList());
       }
       return EntriesResponse.builder().addAllEntries(entries).build();
     } catch (ReferenceNotFoundException e) {
