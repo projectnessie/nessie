@@ -40,11 +40,11 @@ class TestNessieVersion {
 
     assertThat(props).extractingByKey("nessie.version").isNotNull();
     assertThat(Version.parse(props.getProperty("nessie.version")))
-        .isGreaterThan(Version.parse("0.6.1"));
+        .isGreaterThan(Version.parse("0.7.0"));
 
-    assertThat(props).extractingByKey("nessie.min-api-version").isNotNull();
-    assertThat(Version.parse(props.getProperty("nessie.min-api-version")))
-        .isGreaterThanOrEqualTo(Version.parse("0.6.0"));
+    assertThat(props).extractingByKey("nessie.min-remote-version").isNotNull();
+    assertThat(Version.parse(props.getProperty("nessie.min-remote-version")))
+        .isGreaterThanOrEqualTo(Version.parse("0.7.1"));
 
     assertThat(props.getProperty("nessie.version"))
         .is(new Condition<>(NessieVersion::isApiCompatible, "api compatible"));

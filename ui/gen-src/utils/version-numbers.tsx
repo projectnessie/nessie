@@ -17,4 +17,4 @@
 // THIS IS A GENERATED FILE - DO NOT EDIT!
 
 export const nessieVersion = "${project.version}";
-export const nessieMinApiVersion = "${nessie.min-api-compatibility}";
+export const nessieMinApiVersion = "${nessie.min-remote-version}";

@@ -35,7 +35,7 @@ public class NessieVersion {
         properties.load(in);
 
         NESSIE_VERSION = Version.parse(properties.getProperty("nessie.version"));
-        NESSIE_MIN_API_VERSION = Version.parse(properties.getProperty("nessie.min-api-version"));
+        NESSIE_MIN_API_VERSION = Version.parse(properties.getProperty("nessie.min-remote-version"));
       }
     } catch (Exception e) {
       throw new RuntimeException("Failed to load nessie.properties", e);
@@ -44,7 +44,7 @@ public class NessieVersion {
 
   /**
    * Verifies that the given Nessie version is "API compatible", which means that the given version
-   * is greater than or equal to the value of the property {@code nessie.min-api-version} in the
+   * is greater than or equal to the value of the property {@code nessie.min-remote-version} in the
    * {@code nessie.properties} file.
    *
    * @param otherVersion version to check

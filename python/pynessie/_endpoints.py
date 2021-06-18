@@ -230,16 +230,16 @@ def assign_tag(base_url: str, tag: str, tag_json: dict, old_hash: str, ssl_verif
 
 
 def _check_nessie_version(self: requests.models.Response) -> None:
-    from . import __required_version_range__
+    from . import __min_remote_version__
 
     if 200 < self.status_code <= 399 and "Nessie-Version" not in self.headers:
         # Ignore missing 'Nessie-Version' header, for HTTP status codes 201...399, because those response codes
         # don't get the Nessie-Version header (REST API restriction/inconvenience :( ).
         return
-    _check_nessie_version_headers(self.headers, __required_version_range__)
+    _check_nessie_version_headers(self.headers, __min_remote_version__)
 
 
-def _check_nessie_version_headers(self: MutableMapping[str, Any], version_range: Tuple[_BaseVersion, _BaseVersion]) -> None:
+def _check_nessie_version_headers(self: MutableMapping[str, Any], min_version: _BaseVersion) -> None:
     from . import __version__
 
     if "Nessie-Version" not in self:
@@ -248,7 +248,7 @@ def _check_nessie_version_headers(self: MutableMapping[str, Any], version_range:
     if len(server_version) == 0:
         raise Exception("Server replied without the required Nessie-Version header. pynessie requires Nessie-Server version >= 0.7.0")
     parsed_version = _LooseVersion(server_version)
-    if parsed_version < version_range[0] or parsed_version > version_range[1]:
+    if parsed_version < min_version:
         raise Exception(f"Nessie-Server is running version {server_version}, which is incompatible to pynessie {__version__}")
 
 
