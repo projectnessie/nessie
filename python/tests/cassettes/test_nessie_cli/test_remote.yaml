@@ -9,7 +9,7 @@ interactions:
       Connection:
       - keep-alive
       Nessie-Version:
-      - 0.6.2
+      - 0.7.1
       User-Agent:
       - python-requests/2.25.1
     method: GET
@@ -23,7 +23,7 @@ interactions:
       Content-Type:
       - application/json
       Nessie-Version:
-      - 0.6.2-SNAPSHOT
+      - 0.7.1-SNAPSHOT
     status:
       code: 200
       message: OK
@@ -37,7 +37,7 @@ interactions:
       Connection:
       - keep-alive
       Nessie-Version:
-      - 0.6.2
+      - 0.7.1
       User-Agent:
       - python-requests/2.25.1
     method: GET
@@ -52,7 +52,7 @@ interactions:
       Content-Type:
       - application/json
       Nessie-Version:
-      - 0.6.2-SNAPSHOT
+      - 0.7.1-SNAPSHOT
     status:
       code: 200
       message: OK

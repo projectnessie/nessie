@@ -9,7 +9,7 @@ interactions:
       Connection:
       - keep-alive
       Nessie-Version:
-      - 0.6.2
+      - 0.7.1
       User-Agent:
       - python-requests/2.25.1
     method: GET
@@ -24,7 +24,7 @@ interactions:
       Content-Type:
       - application/json
       Nessie-Version:
-      - 0.6.2-SNAPSHOT
+      - 0.7.1-SNAPSHOT
     status:
       code: 200
       message: OK
@@ -38,7 +38,7 @@ interactions:
       Connection:
       - keep-alive
       Nessie-Version:
-      - 0.6.2
+      - 0.7.1
       User-Agent:
       - python-requests/2.25.1
     method: GET
@@ -53,7 +53,7 @@ interactions:
       Content-Type:
       - application/json
       Nessie-Version:
-      - 0.6.2-SNAPSHOT
+      - 0.7.1-SNAPSHOT
     status:
       code: 200
       message: OK
@@ -67,7 +67,7 @@ interactions:
       Connection:
       - keep-alive
       Nessie-Version:
-      - 0.6.2
+      - 0.7.1
       User-Agent:
       - python-requests/2.25.1
     method: GET
@@ -83,16 +83,16 @@ interactions:
       Content-Type:
       - application/json
       Nessie-Version:
-      - 0.6.2-SNAPSHOT
+      - 0.7.1-SNAPSHOT
     status:
       code: 404
       message: Not Found
 - request:
-    body: '{"commitMeta": {"signedOffBy": null, "commitTime": null, "committer": null,
-      "author": "nessie_user1", "authorTime": null, "email": null, "properties": null,
-      "message": "test_message", "hash": null}, "operations": [{"contents": {"metadataLocation":
-      "/a/b/c", "id": "uuid", "type": "ICEBERG_TABLE"}, "key": {"elements": ["foo",
-      "bar"]}, "type": "PUT"}]}'
+    body: '{"operations": [{"key": {"elements": ["foo", "bar"]}, "contents": {"id":
+      "uuid", "metadataLocation": "/a/b/c", "type": "ICEBERG_TABLE"}, "type": "PUT"}],
+      "commitMeta": {"properties": null, "committer": null, "author": "nessie_user1",
+      "signedOffBy": null, "commitTime": null, "hash": null, "authorTime": null, "email":
+      null, "message": "test_message"}}'
     headers:
       Accept:
       - application/json
@@ -105,21 +105,21 @@ interactions:
       Content-Type:
       - application/json
       Nessie-Version:
-      - 0.6.2
+      - 0.7.1
       User-Agent:
       - python-requests/2.25.1
     method: POST
     uri: http://localhost:19120/api/v1/trees/branch/main/commit?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"5d74ed4c5ebc1f8a4d9aa06e65c0dcb898f3e42b5cc3b9522dbcb89dc97c3339\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"29aeeff7636f6bbe977e8bd029971321087c2d3ba159e742fd9f30bc199c8b33\"\n}"
     headers:
       Content-Length:
       - '121'
       Content-Type:
       - application/json
       Nessie-Version:
-      - 0.6.2-SNAPSHOT
+      - 0.7.1-SNAPSHOT
     status:
       code: 200
       message: OK
@@ -133,7 +133,7 @@ interactions:
       Connection:
       - keep-alive
       Nessie-Version:
-      - 0.6.2
+      - 0.7.1
       User-Agent:
       - python-requests/2.25.1
     method: GET
@@ -148,7 +148,7 @@ interactions:
       Content-Type:
       - application/json
       Nessie-Version:
-      - 0.6.2-SNAPSHOT
+      - 0.7.1-SNAPSHOT
     status:
       code: 200
       message: OK
@@ -162,7 +162,7 @@ interactions:
       Connection:
       - keep-alive
       Nessie-Version:
-      - 0.6.2
+      - 0.7.1
       User-Agent:
       - python-requests/2.25.1
     method: GET
@@ -170,10 +170,10 @@ interactions:
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :
-        [ {\n    \"hash\" : \"5d74ed4c5ebc1f8a4d9aa06e65c0dcb898f3e42b5cc3b9522dbcb89dc97c3339\",\n
+        [ {\n    \"hash\" : \"29aeeff7636f6bbe977e8bd029971321087c2d3ba159e742fd9f30bc199c8b33\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-15T12:01:58.222181Z\",\n
-        \   \"authorTime\" : \"2021-06-15T12:01:58.222181Z\",\n    \"properties\"
+        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-18T13:57:13.829180Z\",\n
+        \   \"authorTime\" : \"2021-06-18T13:57:13.829180Z\",\n    \"properties\"
         : { }\n  } ]\n}"
     headers:
       Content-Length:
@@ -181,7 +181,7 @@ interactions:
       Content-Type:
       - application/json
       Nessie-Version:
-      - 0.6.2-SNAPSHOT
+      - 0.7.1-SNAPSHOT
     status:
       code: 200
       message: OK
@@ -195,18 +195,18 @@ interactions:
       Connection:
       - keep-alive
       Nessie-Version:
-      - 0.6.2
+      - 0.7.1
       User-Agent:
       - python-requests/2.25.1
     method: GET
-    uri: http://localhost:19120/api/v1/trees/tree/5d74ed4c5ebc1f8a4d9aa06e65c0dcb898f3e42b5cc3b9522dbcb89dc97c3339/log
+    uri: http://localhost:19120/api/v1/trees/tree/29aeeff7636f6bbe977e8bd029971321087c2d3ba159e742fd9f30bc199c8b33/log
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :
-        [ {\n    \"hash\" : \"5d74ed4c5ebc1f8a4d9aa06e65c0dcb898f3e42b5cc3b9522dbcb89dc97c3339\",\n
+        [ {\n    \"hash\" : \"29aeeff7636f6bbe977e8bd029971321087c2d3ba159e742fd9f30bc199c8b33\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-15T12:01:58.222181Z\",\n
-        \   \"authorTime\" : \"2021-06-15T12:01:58.222181Z\",\n    \"properties\"
+        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-18T13:57:13.829180Z\",\n
+        \   \"authorTime\" : \"2021-06-18T13:57:13.829180Z\",\n    \"properties\"
         : { }\n  } ]\n}"
     headers:
       Content-Length:
@@ -214,7 +214,7 @@ interactions:
       Content-Type:
       - application/json
       Nessie-Version:
-      - 0.6.2-SNAPSHOT
+      - 0.7.1-SNAPSHOT
     status:
       code: 200
       message: OK
@@ -228,7 +228,7 @@ interactions:
       Connection:
       - keep-alive
       Nessie-Version:
-      - 0.6.2
+      - 0.7.1
       User-Agent:
       - python-requests/2.25.1
     method: GET
@@ -244,7 +244,7 @@ interactions:
       Content-Type:
       - application/json
       Nessie-Version:
-      - 0.6.2-SNAPSHOT
+      - 0.7.1-SNAPSHOT
     status:
       code: 200
       message: OK
@@ -258,7 +258,7 @@ interactions:
       Connection:
       - keep-alive
       Nessie-Version:
-      - 0.6.2
+      - 0.7.1
       User-Agent:
       - python-requests/2.25.1
     method: GET
@@ -273,15 +273,15 @@ interactions:
       Content-Type:
       - application/json
       Nessie-Version:
-      - 0.6.2-SNAPSHOT
+      - 0.7.1-SNAPSHOT
     status:
       code: 200
       message: OK
 - request:
-    body: '{"commitMeta": {"signedOffBy": null, "commitTime": null, "committer": null,
-      "author": "nessie_user2", "authorTime": null, "email": null, "properties": null,
-      "message": "delete_message", "hash": null}, "operations": [{"key": {"elements":
-      ["foo", "bar"]}, "type": "DELETE"}]}'
+    body: '{"operations": [{"key": {"elements": ["foo", "bar"]}, "type": "DELETE"}],
+      "commitMeta": {"properties": null, "committer": null, "author": "nessie_user2",
+      "signedOffBy": null, "commitTime": null, "hash": null, "authorTime": null, "email":
+      null, "message": "delete_message"}}'
     headers:
       Accept:
       - application/json
@@ -294,21 +294,21 @@ interactions:
       Content-Type:
       - application/json
       Nessie-Version:
-      - 0.6.2
+      - 0.7.1
       User-Agent:
       - python-requests/2.25.1
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/main/commit?expectedHash=5d74ed4c5ebc1f8a4d9aa06e65c0dcb898f3e42b5cc3b9522dbcb89dc97c3339
+    uri: http://localhost:19120/api/v1/trees/branch/main/commit?expectedHash=29aeeff7636f6bbe977e8bd029971321087c2d3ba159e742fd9f30bc199c8b33
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"a7a9dec9e97ad2af974b89e28bb5dfd876cad07c1bd7815ab5c02f74b9b69dd2\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"ba120663e1d212f358fb8de1da2c8621a32d6cc80d5afbad20e4a9e91ac05e14\"\n}"
     headers:
       Content-Length:
       - '121'
       Content-Type:
       - application/json
       Nessie-Version:
-      - 0.6.2-SNAPSHOT
+      - 0.7.1-SNAPSHOT
     status:
       code: 200
       message: OK
@@ -322,7 +322,7 @@ interactions:
       Connection:
       - keep-alive
       Nessie-Version:
-      - 0.6.2
+      - 0.7.1
       User-Agent:
       - python-requests/2.25.1
     method: GET
@@ -330,14 +330,14 @@ interactions:
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :
-        [ {\n    \"hash\" : \"a7a9dec9e97ad2af974b89e28bb5dfd876cad07c1bd7815ab5c02f74b9b69dd2\",\n
+        [ {\n    \"hash\" : \"ba120663e1d212f358fb8de1da2c8621a32d6cc80d5afbad20e4a9e91ac05e14\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user2\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-06-15T12:01:58.357796Z\",\n
-        \   \"authorTime\" : \"2021-06-15T12:01:58.357796Z\",\n    \"properties\"
-        : { }\n  }, {\n    \"hash\" : \"5d74ed4c5ebc1f8a4d9aa06e65c0dcb898f3e42b5cc3b9522dbcb89dc97c3339\",\n
+        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-06-18T13:57:13.906766Z\",\n
+        \   \"authorTime\" : \"2021-06-18T13:57:13.906766Z\",\n    \"properties\"
+        : { }\n  }, {\n    \"hash\" : \"29aeeff7636f6bbe977e8bd029971321087c2d3ba159e742fd9f30bc199c8b33\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-15T12:01:58.222181Z\",\n
-        \   \"authorTime\" : \"2021-06-15T12:01:58.222181Z\",\n    \"properties\"
+        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-18T13:57:13.829180Z\",\n
+        \   \"authorTime\" : \"2021-06-18T13:57:13.829180Z\",\n    \"properties\"
         : { }\n  } ]\n}"
     headers:
       Content-Length:
@@ -345,7 +345,7 @@ interactions:
       Content-Type:
       - application/json
       Nessie-Version:
-      - 0.6.2-SNAPSHOT
+      - 0.7.1-SNAPSHOT
     status:
       code: 200
       message: OK
@@ -359,22 +359,22 @@ interactions:
       Connection:
       - keep-alive
       Nessie-Version:
-      - 0.6.2
+      - 0.7.1
       User-Agent:
       - python-requests/2.25.1
     method: GET
-    uri: http://localhost:19120/api/v1/trees/tree/a7a9dec9e97ad2af974b89e28bb5dfd876cad07c1bd7815ab5c02f74b9b69dd2/log
+    uri: http://localhost:19120/api/v1/trees/tree/ba120663e1d212f358fb8de1da2c8621a32d6cc80d5afbad20e4a9e91ac05e14/log
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :
-        [ {\n    \"hash\" : \"a7a9dec9e97ad2af974b89e28bb5dfd876cad07c1bd7815ab5c02f74b9b69dd2\",\n
+        [ {\n    \"hash\" : \"ba120663e1d212f358fb8de1da2c8621a32d6cc80d5afbad20e4a9e91ac05e14\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user2\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-06-15T12:01:58.357796Z\",\n
-        \   \"authorTime\" : \"2021-06-15T12:01:58.357796Z\",\n    \"properties\"
-        : { }\n  }, {\n    \"hash\" : \"5d74ed4c5ebc1f8a4d9aa06e65c0dcb898f3e42b5cc3b9522dbcb89dc97c3339\",\n
+        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-06-18T13:57:13.906766Z\",\n
+        \   \"authorTime\" : \"2021-06-18T13:57:13.906766Z\",\n    \"properties\"
+        : { }\n  }, {\n    \"hash\" : \"29aeeff7636f6bbe977e8bd029971321087c2d3ba159e742fd9f30bc199c8b33\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-15T12:01:58.222181Z\",\n
-        \   \"authorTime\" : \"2021-06-15T12:01:58.222181Z\",\n    \"properties\"
+        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-18T13:57:13.829180Z\",\n
+        \   \"authorTime\" : \"2021-06-18T13:57:13.829180Z\",\n    \"properties\"
         : { }\n  } ]\n}"
     headers:
       Content-Length:
@@ -382,7 +382,7 @@ interactions:
       Content-Type:
       - application/json
       Nessie-Version:
-      - 0.6.2-SNAPSHOT
+      - 0.7.1-SNAPSHOT
     status:
       code: 200
       message: OK
@@ -396,7 +396,7 @@ interactions:
       Connection:
       - keep-alive
       Nessie-Version:
-      - 0.6.2
+      - 0.7.1
       User-Agent:
       - python-requests/2.25.1
     method: GET
@@ -404,14 +404,14 @@ interactions:
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :
-        [ {\n    \"hash\" : \"a7a9dec9e97ad2af974b89e28bb5dfd876cad07c1bd7815ab5c02f74b9b69dd2\",\n
+        [ {\n    \"hash\" : \"ba120663e1d212f358fb8de1da2c8621a32d6cc80d5afbad20e4a9e91ac05e14\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user2\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-06-15T12:01:58.357796Z\",\n
-        \   \"authorTime\" : \"2021-06-15T12:01:58.357796Z\",\n    \"properties\"
-        : { }\n  }, {\n    \"hash\" : \"5d74ed4c5ebc1f8a4d9aa06e65c0dcb898f3e42b5cc3b9522dbcb89dc97c3339\",\n
+        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-06-18T13:57:13.906766Z\",\n
+        \   \"authorTime\" : \"2021-06-18T13:57:13.906766Z\",\n    \"properties\"
+        : { }\n  }, {\n    \"hash\" : \"29aeeff7636f6bbe977e8bd029971321087c2d3ba159e742fd9f30bc199c8b33\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-15T12:01:58.222181Z\",\n
-        \   \"authorTime\" : \"2021-06-15T12:01:58.222181Z\",\n    \"properties\"
+        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-18T13:57:13.829180Z\",\n
+        \   \"authorTime\" : \"2021-06-18T13:57:13.829180Z\",\n    \"properties\"
         : { }\n  } ]\n}"
     headers:
       Content-Length:
@@ -419,7 +419,7 @@ interactions:
       Content-Type:
       - application/json
       Nessie-Version:
-      - 0.6.2-SNAPSHOT
+      - 0.7.1-SNAPSHOT
     status:
       code: 200
       message: OK
@@ -433,7 +433,7 @@ interactions:
       Connection:
       - keep-alive
       Nessie-Version:
-      - 0.6.2
+      - 0.7.1
       User-Agent:
       - python-requests/2.25.1
     method: GET
@@ -441,10 +441,10 @@ interactions:
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :
-        [ {\n    \"hash\" : \"5d74ed4c5ebc1f8a4d9aa06e65c0dcb898f3e42b5cc3b9522dbcb89dc97c3339\",\n
+        [ {\n    \"hash\" : \"29aeeff7636f6bbe977e8bd029971321087c2d3ba159e742fd9f30bc199c8b33\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-15T12:01:58.222181Z\",\n
-        \   \"authorTime\" : \"2021-06-15T12:01:58.222181Z\",\n    \"properties\"
+        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-18T13:57:13.829180Z\",\n
+        \   \"authorTime\" : \"2021-06-18T13:57:13.829180Z\",\n    \"properties\"
         : { }\n  } ]\n}"
     headers:
       Content-Length:
@@ -452,7 +452,7 @@ interactions:
       Content-Type:
       - application/json
       Nessie-Version:
-      - 0.6.2-SNAPSHOT
+      - 0.7.1-SNAPSHOT
     status:
       code: 200
       message: OK
@@ -466,7 +466,7 @@ interactions:
       Connection:
       - keep-alive
       Nessie-Version:
-      - 0.6.2
+      - 0.7.1
       User-Agent:
       - python-requests/2.25.1
     method: GET
@@ -474,10 +474,10 @@ interactions:
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :
-        [ {\n    \"hash\" : \"a7a9dec9e97ad2af974b89e28bb5dfd876cad07c1bd7815ab5c02f74b9b69dd2\",\n
+        [ {\n    \"hash\" : \"ba120663e1d212f358fb8de1da2c8621a32d6cc80d5afbad20e4a9e91ac05e14\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user2\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-06-15T12:01:58.357796Z\",\n
-        \   \"authorTime\" : \"2021-06-15T12:01:58.357796Z\",\n    \"properties\"
+        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-06-18T13:57:13.906766Z\",\n
+        \   \"authorTime\" : \"2021-06-18T13:57:13.906766Z\",\n    \"properties\"
         : { }\n  } ]\n}"
     headers:
       Content-Length:
@@ -485,7 +485,7 @@ interactions:
       Content-Type:
       - application/json
       Nessie-Version:
-      - 0.6.2-SNAPSHOT
+      - 0.7.1-SNAPSHOT
     status:
       code: 200
       message: OK
@@ -499,7 +499,7 @@ interactions:
       Connection:
       - keep-alive
       Nessie-Version:
-      - 0.6.2
+      - 0.7.1
       User-Agent:
       - python-requests/2.25.1
     method: GET
@@ -507,14 +507,14 @@ interactions:
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :
-        [ {\n    \"hash\" : \"a7a9dec9e97ad2af974b89e28bb5dfd876cad07c1bd7815ab5c02f74b9b69dd2\",\n
+        [ {\n    \"hash\" : \"ba120663e1d212f358fb8de1da2c8621a32d6cc80d5afbad20e4a9e91ac05e14\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user2\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-06-15T12:01:58.357796Z\",\n
-        \   \"authorTime\" : \"2021-06-15T12:01:58.357796Z\",\n    \"properties\"
-        : { }\n  }, {\n    \"hash\" : \"5d74ed4c5ebc1f8a4d9aa06e65c0dcb898f3e42b5cc3b9522dbcb89dc97c3339\",\n
+        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-06-18T13:57:13.906766Z\",\n
+        \   \"authorTime\" : \"2021-06-18T13:57:13.906766Z\",\n    \"properties\"
+        : { }\n  }, {\n    \"hash\" : \"29aeeff7636f6bbe977e8bd029971321087c2d3ba159e742fd9f30bc199c8b33\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-15T12:01:58.222181Z\",\n
-        \   \"authorTime\" : \"2021-06-15T12:01:58.222181Z\",\n    \"properties\"
+        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-18T13:57:13.829180Z\",\n
+        \   \"authorTime\" : \"2021-06-18T13:57:13.829180Z\",\n    \"properties\"
         : { }\n  } ]\n}"
     headers:
       Content-Length:
@@ -522,7 +522,7 @@ interactions:
       Content-Type:
       - application/json
       Nessie-Version:
-      - 0.6.2-SNAPSHOT
+      - 0.7.1-SNAPSHOT
     status:
       code: 200
       message: OK
@@ -536,7 +536,7 @@ interactions:
       Connection:
       - keep-alive
       Nessie-Version:
-      - 0.6.2
+      - 0.7.1
       User-Agent:
       - python-requests/2.25.1
     method: GET
@@ -544,14 +544,14 @@ interactions:
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :
-        [ {\n    \"hash\" : \"a7a9dec9e97ad2af974b89e28bb5dfd876cad07c1bd7815ab5c02f74b9b69dd2\",\n
+        [ {\n    \"hash\" : \"ba120663e1d212f358fb8de1da2c8621a32d6cc80d5afbad20e4a9e91ac05e14\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user2\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-06-15T12:01:58.357796Z\",\n
-        \   \"authorTime\" : \"2021-06-15T12:01:58.357796Z\",\n    \"properties\"
-        : { }\n  }, {\n    \"hash\" : \"5d74ed4c5ebc1f8a4d9aa06e65c0dcb898f3e42b5cc3b9522dbcb89dc97c3339\",\n
+        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-06-18T13:57:13.906766Z\",\n
+        \   \"authorTime\" : \"2021-06-18T13:57:13.906766Z\",\n    \"properties\"
+        : { }\n  }, {\n    \"hash\" : \"29aeeff7636f6bbe977e8bd029971321087c2d3ba159e742fd9f30bc199c8b33\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-15T12:01:58.222181Z\",\n
-        \   \"authorTime\" : \"2021-06-15T12:01:58.222181Z\",\n    \"properties\"
+        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-18T13:57:13.829180Z\",\n
+        \   \"authorTime\" : \"2021-06-18T13:57:13.829180Z\",\n    \"properties\"
         : { }\n  } ]\n}"
     headers:
       Content-Length:
@@ -559,7 +559,7 @@ interactions:
       Content-Type:
       - application/json
       Nessie-Version:
-      - 0.6.2-SNAPSHOT
+      - 0.7.1-SNAPSHOT
     status:
       code: 200
       message: OK
