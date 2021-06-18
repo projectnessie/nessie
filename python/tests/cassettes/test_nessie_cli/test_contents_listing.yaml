@@ -1,0 +1,436 @@
+interactions:
+- request:
+    body: '{"hash": null, "name": "contents_listing_dev", "type": "BRANCH"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '64'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.25.1
+    method: POST
+    uri: http://localhost:19120/api/v1/trees/tree
+  response:
+    body:
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\",\n
+        \ \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}"
+    headers:
+      Content-Length:
+      - '137'
+      Content-Type:
+      - application/json
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.25.1
+    method: GET
+    uri: http://localhost:19120/api/v1/trees
+  response:
+    body:
+      string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\",\n
+        \ \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n},
+        {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}
+        ]"
+    headers:
+      Content-Length:
+      - '264'
+      Content-Type:
+      - application/json
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.25.1
+    method: GET
+    uri: http://localhost:19120/api/v1/contents/this.is.iceberg.foo?ref=contents_listing_dev
+  response:
+    body:
+      string: "{\n  \"message\" : \"Requested contents do not exist for specified
+        reference.\",\n  \"status\" : 404,\n  \"reason\" : \"Not Found\",\n  \"serverStackTrace\"
+        : null\n}"
+    headers:
+      Content-Length:
+      - '149'
+      Content-Type:
+      - application/json
+    status:
+      code: 404
+      message: Not Found
+- request:
+    body: '{"commitMeta": {"email": null, "authorTime": null, "commitTime": null,
+      "committer": null, "message": "test_message1", "author": null, "properties":
+      null, "hash": null, "signedOffBy": null}, "operations": [{"contents": {"id":
+      "uuid", "metadataLocation": "/a/b/c", "type": "ICEBERG_TABLE"}, "key": {"elements":
+      ["this", "is", "iceberg", "foo"]}, "type": "PUT"}]}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '360'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.25.1
+    method: POST
+    uri: http://localhost:19120/api/v1/trees/branch/contents_listing_dev/commit?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
+  response:
+    body:
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\",\n
+        \ \"hash\" : \"0173039443b3c583fcee83398e410fa28a375d2ce881a38fc7399781fd42deb8\"\n}"
+    headers:
+      Content-Length:
+      - '137'
+      Content-Type:
+      - application/json
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.25.1
+    method: GET
+    uri: http://localhost:19120/api/v1/trees
+  response:
+    body:
+      string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\",\n
+        \ \"hash\" : \"0173039443b3c583fcee83398e410fa28a375d2ce881a38fc7399781fd42deb8\"\n},
+        {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}
+        ]"
+    headers:
+      Content-Length:
+      - '264'
+      Content-Type:
+      - application/json
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.25.1
+    method: GET
+    uri: http://localhost:19120/api/v1/contents/this.is.delta.bar?ref=contents_listing_dev
+  response:
+    body:
+      string: "{\n  \"message\" : \"Requested contents do not exist for specified
+        reference.\",\n  \"status\" : 404,\n  \"reason\" : \"Not Found\",\n  \"serverStackTrace\"
+        : null\n}"
+    headers:
+      Content-Length:
+      - '149'
+      Content-Type:
+      - application/json
+    status:
+      code: 404
+      message: Not Found
+- request:
+    body: '{"commitMeta": {"email": null, "authorTime": null, "commitTime": null,
+      "committer": null, "message": "test_message2", "author": null, "properties":
+      null, "hash": null, "signedOffBy": null}, "operations": [{"contents": {"metadata_location_history":
+      ["asd"], "id": "uuid2", "metadataLocation": "x", "checkpoint_location_history":
+      ["def"], "type": "DELTA_LAKE_TABLE"}, "key": {"elements": ["this", "is", "delta",
+      "bar"]}, "type": "PUT"}]}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '435'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.25.1
+    method: POST
+    uri: http://localhost:19120/api/v1/trees/branch/contents_listing_dev/commit?expectedHash=0173039443b3c583fcee83398e410fa28a375d2ce881a38fc7399781fd42deb8
+  response:
+    body:
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\",\n
+        \ \"hash\" : \"24a0303721e31f0ffc4bcd55bd772fb0612f989b1606ff9faf9c58a9a722f287\"\n}"
+    headers:
+      Content-Length:
+      - '137'
+      Content-Type:
+      - application/json
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.25.1
+    method: GET
+    uri: http://localhost:19120/api/v1/contents/this.is.iceberg.foo?ref=contents_listing_dev
+  response:
+    body:
+      string: "{\n  \"type\" : \"ICEBERG_TABLE\",\n  \"id\" : \"uuid\",\n  \"metadataLocation\"
+        : \"/a/b/c\"\n}"
+    headers:
+      Content-Length:
+      - '80'
+      Content-Type:
+      - application/json
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.25.1
+    method: GET
+    uri: http://localhost:19120/api/v1/trees/tree/contents_listing_dev/entries?types=ICEBERG_TABLE
+  response:
+    body:
+      string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"entries\" : [ {\n
+        \   \"type\" : \"ICEBERG_TABLE\",\n    \"name\" : {\n      \"elements\" :
+        [ \"this\", \"is\", \"iceberg\", \"foo\" ]\n    }\n  } ]\n}"
+    headers:
+      Content-Length:
+      - '171'
+      Content-Type:
+      - application/json
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.25.1
+    method: GET
+    uri: http://localhost:19120/api/v1/trees/tree/contents_listing_dev/entries?types=DELTA_LAKE_TABLE
+  response:
+    body:
+      string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"entries\" : [ {\n
+        \   \"type\" : \"DELTA_LAKE_TABLE\",\n    \"name\" : {\n      \"elements\"
+        : [ \"this\", \"is\", \"delta\", \"bar\" ]\n    }\n  } ]\n}"
+    headers:
+      Content-Length:
+      - '172'
+      Content-Type:
+      - application/json
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.25.1
+    method: GET
+    uri: http://localhost:19120/api/v1/trees/tree/contents_listing_dev/entries?cel_expr=entry.contentType+%3D%3D+%27ICEBERG_TABLE%27
+  response:
+    body:
+      string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"entries\" : [ {\n
+        \   \"type\" : \"ICEBERG_TABLE\",\n    \"name\" : {\n      \"elements\" :
+        [ \"this\", \"is\", \"iceberg\", \"foo\" ]\n    }\n  } ]\n}"
+    headers:
+      Content-Length:
+      - '171'
+      Content-Type:
+      - application/json
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.25.1
+    method: GET
+    uri: http://localhost:19120/api/v1/trees/tree/contents_listing_dev/entries?cel_expr=entry.contentType+in+%5B%27ICEBERG_TABLE%27%2C+%27DELTA_LAKE_TABLE%27%5D
+  response:
+    body:
+      string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"entries\" : [ {\n
+        \   \"type\" : \"ICEBERG_TABLE\",\n    \"name\" : {\n      \"elements\" :
+        [ \"this\", \"is\", \"iceberg\", \"foo\" ]\n    }\n  }, {\n    \"type\" :
+        \"DELTA_LAKE_TABLE\",\n    \"name\" : {\n      \"elements\" : [ \"this\",
+        \"is\", \"delta\", \"bar\" ]\n    }\n  } ]\n}"
+    headers:
+      Content-Length:
+      - '284'
+      Content-Type:
+      - application/json
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.25.1
+    method: GET
+    uri: http://localhost:19120/api/v1/trees/tree/contents_listing_dev/entries?cel_expr=entry.namespace.startsWith%28%27this.is.del%27%29
+  response:
+    body:
+      string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"entries\" : [ {\n
+        \   \"type\" : \"DELTA_LAKE_TABLE\",\n    \"name\" : {\n      \"elements\"
+        : [ \"this\", \"is\", \"delta\", \"bar\" ]\n    }\n  } ]\n}"
+    headers:
+      Content-Length:
+      - '172'
+      Content-Type:
+      - application/json
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.25.1
+    method: GET
+    uri: http://localhost:19120/api/v1/trees/tree/contents_listing_dev/entries?cel_expr=entry.namespace.startsWith%28%27this.is%27%29
+  response:
+    body:
+      string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"entries\" : [ {\n
+        \   \"type\" : \"ICEBERG_TABLE\",\n    \"name\" : {\n      \"elements\" :
+        [ \"this\", \"is\", \"iceberg\", \"foo\" ]\n    }\n  }, {\n    \"type\" :
+        \"DELTA_LAKE_TABLE\",\n    \"name\" : {\n      \"elements\" : [ \"this\",
+        \"is\", \"delta\", \"bar\" ]\n    }\n  } ]\n}"
+    headers:
+      Content-Length:
+      - '284'
+      Content-Type:
+      - application/json
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.25.1
+    method: GET
+    uri: http://localhost:19120/api/v1/trees/tree/contents_listing_dev
+  response:
+    body:
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\",\n
+        \ \"hash\" : \"24a0303721e31f0ffc4bcd55bd772fb0612f989b1606ff9faf9c58a9a722f287\"\n}"
+    headers:
+      Content-Length:
+      - '137'
+      Content-Type:
+      - application/json
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '0'
+      User-Agent:
+      - python-requests/2.25.1
+    method: DELETE
+    uri: http://localhost:19120/api/v1/trees/branch/contents_listing_dev?expectedHash=24a0303721e31f0ffc4bcd55bd772fb0612f989b1606ff9faf9c58a9a722f287
+  response:
+    body:
+      string: ''
+    headers: {}
+    status:
+      code: 204
+      message: No Content
+version: 1

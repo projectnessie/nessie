@@ -195,8 +195,9 @@ def set_head(ctx: ContextObject, head: str, delete: bool) -> None:
 @click.argument("revision_range", nargs=1, required=False)
 @click.argument("paths", nargs=-1, type=click.Path(exists=False), required=False)
 @click.option(
-    "--cel-expr",
     "--cel",
+    "--cel-expr",
+    "cel_expr",
     multiple=False,
     help="Allows advanced filtering using the Common Expression Language (CEL). "
     "An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md",
@@ -460,8 +461,9 @@ def cherry_pick(ctx: ContextObject, branch: str, force: bool, condition: str, ha
     multiple=True,
 )
 @click.option(
-    "--cel-expr",
     "--cel",
+    "--cel-expr",
+    "cel_expr",
     multiple=False,
     help="Allows advanced filtering using the Common Expression Language (CEL). "
     "An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md",

@@ -10,6 +10,7 @@ from typing import Optional
 import confuse
 import pytest
 import simplejson
+from assertpy import assert_that
 from click.testing import CliRunner
 from click.testing import Result
 
@@ -17,6 +18,7 @@ from pynessie import __version__
 from pynessie import cli
 from pynessie.model import Branch
 from pynessie.model import ContentsSchema
+from pynessie.model import DeltaLakeTable
 from pynessie.model import EntrySchema
 from pynessie.model import IcebergTable
 from pynessie.model import ReferenceSchema
@@ -369,3 +371,76 @@ def test_all_help_options() -> None:
             for line in result.output.split("\n"):
                 f.write(line + "\n\t")
             f.write("\n\n")
+
+
+@pytest.mark.vcr
+def test_contents_listing() -> None:
+    """Test contents listing and filtering."""
+    runner = CliRunner()
+    branch = "contents_listing_dev"
+    _run(runner, ["branch", branch])
+
+    iceberg_table = IcebergTable(id="uuid", metadata_location="/a/b/c")
+    delta_lake_table = DeltaLakeTable(
+        id="uuid2", metadata_location_history=["asd"], checkpoint_location_history=["def"], last_checkpoint="x"
+    )
+    refs = ReferenceSchema().loads(_run(runner, ["--json", "branch", "-l", branch]).output, many=True)
+    _run(
+        runner,
+        ["contents", "--set", "this.is.iceberg.foo", "--ref", branch, "-m", "test_message1", "-c", refs[0].hash_],
+        input=ContentsSchema().dumps(iceberg_table),
+    )
+
+    refs = ReferenceSchema().loads(_run(runner, ["--json", "branch", "-l", branch]).output, many=True)
+    _run(
+        runner,
+        ["contents", "--set", "this.is.delta.bar", "--ref", branch, "-m", "test_message2", "-c", refs[0].hash_],
+        input=ContentsSchema().dumps(delta_lake_table),
+    )
+
+    result = _run(runner, ["--json", "contents", "--ref", branch, "this.is.iceberg.foo"])
+    tables = ContentsSchema().loads(result.output, many=True)
+    assert_that(tables).is_length(1)
+    assert_that(tables[0]).is_equal_to(iceberg_table)
+
+    # FIXME: this is currently broken
+    # result = _run(runner, ["--json", "contents", "this.is.delta.bar"])
+    # tables = ContentsSchema().loads(result.output, many=True)
+    # assert_that(tables).is_length(1)
+    # assert_that(tables[0]).is_equal_to(delta_lake_table)
+
+    result = _run(runner, ["--json", "contents", "--ref", branch, "--list", "--type", "ICEBERG_TABLE"])
+    tables = EntrySchema().loads(result.output, many=True)
+    assert_that(tables).is_length(1)
+    assert_that(tables[0].kind).is_equal_to("ICEBERG_TABLE")
+
+    result = _run(runner, ["--json", "contents", "--ref", branch, "--list", "--type", "DELTA_LAKE_TABLE"])
+    tables = EntrySchema().loads(result.output, many=True)
+    assert_that(tables).is_length(1)
+    assert_that(tables[0].kind).is_equal_to("DELTA_LAKE_TABLE")
+
+    result = _run(runner, ["--json", "contents", "--ref", branch, "--list", "--cel", "entry.contentType == 'ICEBERG_TABLE'"])
+    tables = EntrySchema().loads(result.output, many=True)
+    assert_that(tables).is_length(1)
+    assert_that(tables[0].kind).is_equal_to("ICEBERG_TABLE")
+
+    result = _run(
+        runner, ["--json", "contents", "--ref", branch, "--list", "--cel", "entry.contentType in ['ICEBERG_TABLE', 'DELTA_LAKE_TABLE']"]
+    )
+    tables = EntrySchema().loads(result.output, many=True)
+    assert_that(tables).is_length(2)
+    assert_that(tables[0].kind).is_equal_to("ICEBERG_TABLE")
+    assert_that(tables[1].kind).is_equal_to("DELTA_LAKE_TABLE")
+
+    result = _run(runner, ["--json", "contents", "--ref", branch, "--list", "--cel", "entry.namespace.startsWith('this.is.del')"])
+    tables = EntrySchema().loads(result.output, many=True)
+    assert_that(tables).is_length(1)
+    assert_that(tables[0].kind).is_equal_to("DELTA_LAKE_TABLE")
+
+    result = _run(runner, ["--json", "contents", "--ref", branch, "--list", "--cel", "entry.namespace.startsWith('this.is')"])
+    tables = EntrySchema().loads(result.output, many=True)
+    assert_that(tables).is_length(2)
+    assert_that(tables[0].kind).is_equal_to("ICEBERG_TABLE")
+    assert_that(tables[1].kind).is_equal_to("DELTA_LAKE_TABLE")
+
+    _run(runner, ["branch", branch, "--delete"])
