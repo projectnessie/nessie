@@ -122,4 +122,8 @@ public class Version implements Comparable<Version> {
     }
     return Integer.compare(this.snapshot ? 0 : 1, o.snapshot ? 0 : 1);
   }
+
+  public Version removeSnapshot() {
+    return this.snapshot ? new Version(major, minor, patch, false) : this;
+  }
 }

@@ -39,6 +39,14 @@ class TestVersion {
     assertThat(Version.parse("1.2-SNAPSHOT").toString()).isEqualTo("1.2.0-SNAPSHOT");
     assertThat(Version.parse("1-SNAPSHOT").toString()).isEqualTo("1.0.0-SNAPSHOT");
 
+    assertThat(Version.parse("0.1.3-SNAPSHOT")).extracting("snapshot").isEqualTo(true);
+    assertThat(Version.parse("0.1.3-SNAPSHOT").removeSnapshot())
+        .extracting("snapshot")
+        .isEqualTo(false);
+    assertThat(Version.parse("0.1.3").removeSnapshot()).extracting("snapshot").isEqualTo(false);
+    assertThat(Version.parse("0.1.3-SNAPSHOT").removeSnapshot()).isEqualTo(Version.parse("0.1.3"));
+    assertThat(Version.parse("0.1.3")).isEqualTo(Version.parse("0.1.3-SNAPSHOT").removeSnapshot());
+
     assertThat(Version.parse("1.2.3")).isEqualTo(new Version(1, 2, 3, false));
     assertThat(Version.parse("1.2")).isEqualTo(new Version(1, 2, 0, false));
     assertThat(Version.parse("1")).isEqualTo(new Version(1, 0, 0, false));

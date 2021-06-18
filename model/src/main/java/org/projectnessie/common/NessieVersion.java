@@ -34,7 +34,7 @@ public class NessieVersion {
       try (InputStream in = nessieInfo.openConnection().getInputStream()) {
         properties.load(in);
 
-        NESSIE_VERSION = Version.parse(properties.getProperty("nessie.version"));
+        NESSIE_VERSION = Version.parse(properties.getProperty("nessie.version")).removeSnapshot();
         NESSIE_MIN_API_VERSION = Version.parse(properties.getProperty("nessie.min-remote-version"));
       }
     } catch (Exception e) {
@@ -51,6 +51,6 @@ public class NessieVersion {
    * @return {@code true}, if "API compatible", {@code false} otherwise
    */
   public static boolean isApiCompatible(String otherVersion) {
-    return Version.parse(otherVersion).compareTo(NESSIE_MIN_API_VERSION) >= 0;
+    return Version.parse(otherVersion).removeSnapshot().compareTo(NESSIE_MIN_API_VERSION) >= 0;
   }
 }
