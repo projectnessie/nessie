@@ -2,6 +2,16 @@ name: PR Build Check
 
 on:
   pull_request:
+    paths-ignore:
+      - 'LICENSE'
+      - 'NOTICE'
+      - '*.md'
+      - '**/README.md'
+      - '.github/dependabot.yml'
+      - '.github/workflows/release*.yml'
+      - '.github/workflows/check*.yml'
+      - '.idea/**'
+      - '.editorconfig'
 
 jobs:
   java:
