@@ -70,7 +70,7 @@ jobs:
       run: |
         cd ${SIMULATION_LOG_DIR}
         for run_id in $(gh api 'repos/projectnessie/nessie/actions/runs?branch=main&per_page=20' --jq '.workflow_runs[] | .id'); do
-          gh run download ${REF_RUN_ID} --repo projectnessie/nessie -n gatling-logs || true
+          gh run download ${run_id} --repo projectnessie/nessie -n gatling-logs || true
         done
 
     - name: Generate Gatling reports
