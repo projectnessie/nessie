@@ -109,7 +109,7 @@ jobs:
       with:
         flags: java
         files: |
-          **/target/site/jacoco-aggregate-all/jacoco.xml
+          code-coverage/target/site/jacoco-aggregate-all/jacoco.xml
   python:
     name: Python
     runs-on: ubuntu-latest

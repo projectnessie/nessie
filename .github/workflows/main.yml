@@ -127,7 +127,7 @@ jobs:
       with:
         flags: java
         files: |
-          **/target/site/jacoco-aggregate-all/jacoco.xml
+          code-coverage/target/site/jacoco-aggregate-all/jacoco.xml
     - name: Push Docker images
       run: |
           echo '${{ secrets.DOCKER_TOKEN }}' | docker login -u '${{ secrets.DOCKER_USERNAME }}' --password-stdin

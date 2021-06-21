@@ -91,6 +91,7 @@
     <module>perftest</module>
     <module>servers</module>
     <module>tools</module>
+    <module>code-coverage</module>
   </modules>
 
   <scm>
@@ -1106,64 +1107,6 @@ limitations under the License.
                 <goals>
                   <goal>prepare-agent-integration</goal>
                 </goals>
-              </execution>
-              <execution>
-                <id>default-report</id>
-                <goals>
-                  <goal>report</goal>
-                </goals>
-              </execution>
-              <execution>
-                <id>default-report-integration</id>
-                <goals>
-                  <goal>report-integration</goal>
-                </goals>
-              </execution>
-              <execution>
-                <id>default-aggregate-report</id>
-                <phase>verify</phase>
-                <goals>
-                  <goal>report-aggregate</goal>
-                </goals>
-                <configuration>
-                  <dataFileIncludes>
-                    <dataFileInclude>**/jacoco.exec</dataFileInclude>
-                  </dataFileIncludes>
-                  <excludes>
-                    <exclude>org.projectnessie.versioned.tests.AbstractITVersionStore</exclude>
-                    <exclude>org.projectnessie.versioned.impl.AbstractITTieredVersionStore</exclude>
-                    <exclude>org.projectnessie.versioned.impl.AbstractTestStore</exclude>
-                    <exclude>org.projectnessie.versioned.impl.AbstractTieredStoreFixture</exclude>
-                  </excludes>
-                  <outputDirectory>${project.reporting.outputDirectory}/jacoco-aggregate</outputDirectory>
-                </configuration>
-              </execution>
-              <execution>
-                <id>default-aggregate-report-integration</id>
-                <phase>verify</phase>
-                <goals>
-                  <goal>report-aggregate</goal>
-                </goals>
-                <configuration>
-                  <dataFileIncludes>
-                    <dataFileInclude>**/jacoco-it.exec</dataFileInclude>
-                  </dataFileIncludes>
-                  <outputDirectory>${project.reporting.outputDirectory}/jacoco-aggregate-it</outputDirectory>
-                </configuration>
-              </execution>
-              <execution>
-                <id>default-aggregate-report-all</id>
-                <phase>verify</phase>
-                <goals>
-                  <goal>report-aggregate</goal>
-                </goals>
-                <configuration>
-                  <dataFileIncludes>
-                    <dataFileInclude>**/jacoco.exec</dataFileInclude>
-                    <dataFileInclude>**/jacoco-it.exec</dataFileInclude>
-                  </dataFileIncludes>
-                  <outputDirectory>${project.reporting.outputDirectory}/jacoco-aggregate-all</outputDirectory>
-                </configuration>
               </execution>
             </executions>
           </plugin>
