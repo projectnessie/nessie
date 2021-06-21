@@ -91,7 +91,6 @@
     <module>perftest</module>
     <module>servers</module>
     <module>tools</module>
-    <module>code-coverage</module>
   </modules>
 
   <scm>
@@ -1090,6 +1089,9 @@ limitations under the License.
   <profiles>
     <profile>
       <id>code-coverage</id>
+      <modules>
+        <module>code-coverage</module>
+      </modules>
       <build>
         <plugins>
           <plugin>
