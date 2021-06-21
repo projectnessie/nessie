@@ -29,6 +29,7 @@
   <packaging>pom</packaging>
 
   <name>Nessie - Code Coverage</name>
+  <description>Aggregates all code-projects for Nessie for a consolidated code-coverage report.</description>
 
   <dependencies>
     <dependency>
