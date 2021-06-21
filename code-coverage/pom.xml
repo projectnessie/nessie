@@ -173,8 +173,7 @@
             </goals>
             <configuration>
               <dataFileIncludes>
-                <dataFileInclude>**/jacoco.exec</dataFileInclude>
-                <dataFileInclude>**/jacoco-it.exec</dataFileInclude>
+                <dataFileInclude>**/jacoco*.exec</dataFileInclude>
               </dataFileIncludes>
               <outputDirectory>${project.reporting.outputDirectory}/jacoco-aggregate-all</outputDirectory>
             </configuration>
