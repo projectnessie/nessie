@@ -1151,6 +1151,20 @@ limitations under the License.
                   <outputDirectory>${project.reporting.outputDirectory}/jacoco-aggregate-it</outputDirectory>
                 </configuration>
               </execution>
+              <execution>
+                <id>default-aggregate-report-all</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>report-aggregate</goal>
+                </goals>
+                <configuration>
+                  <dataFileIncludes>
+                    <dataFileInclude>**/jacoco.exec</dataFileInclude>
+                    <dataFileInclude>**/jacoco-it.exec</dataFileInclude>
+                  </dataFileIncludes>
+                  <outputDirectory>${project.reporting.outputDirectory}/jacoco-aggregate-all</outputDirectory>
+                </configuration>
+              </execution>
             </executions>
           </plugin>
         </plugins>
