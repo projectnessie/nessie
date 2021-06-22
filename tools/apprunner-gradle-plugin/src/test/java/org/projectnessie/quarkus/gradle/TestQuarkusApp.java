@@ -269,6 +269,7 @@ class TestQuarkusApp {
         .withPluginClasspath()
         .withProjectDir(testProjectDir.toFile())
         .withArguments("--build-cache", "--info", "--stacktrace", task)
+        .withDebug(true)
         .forwardOutput();
   }
 }
