@@ -403,7 +403,7 @@ def test_contents_listing() -> None:
     assert_that(tables).is_length(1)
     assert_that(tables[0]).is_equal_to(iceberg_table)
 
-    result = _run(runner, ["--json", "contents", "this.is.delta.bar"])
+    result = _run(runner, ["--json", "contents", "--ref", branch, "this.is.delta.bar"])
     tables = ContentsSchema().loads(result.output, many=True)
     assert_that(tables).is_length(1)
     assert_that(tables[0]).is_equal_to(delta_lake_table)

@@ -19,7 +19,7 @@ import static org.projectnessie.services.cel.CELUtil.COMMIT_LOG_DECLARATIONS;
 import static org.projectnessie.services.cel.CELUtil.ENTRIES_DECLARATIONS;
 import static org.projectnessie.services.cel.CELUtil.SCRIPT_HOST;
 
-import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import java.security.Principal;
@@ -56,7 +56,6 @@ import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
 import org.projectnessie.model.Transplant;
-import org.projectnessie.services.cel.CELTranslator;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Delete;
@@ -175,29 +174,12 @@ public class TreeResource extends BaseResource implements TreeApi {
             MAX_COMMIT_LOG_ENTRIES);
     Hash startRef = getHashOrThrow(params.getPageToken() != null ? params.getPageToken() : ref);
 
-    if (null != params.getQueryExpression()) {
-      Preconditions.checkArgument(
-          params.getAuthors().isEmpty(),
-          "Cannot combine 'query_expression' with the 'authors' parameter");
-      Preconditions.checkArgument(
-          params.getCommitters().isEmpty(),
-          "Cannot combine 'query_expression' with the 'committers' parameter");
-      Preconditions.checkArgument(
-          null == params.getAfter(),
-          "Cannot combine 'query_expression' with the 'after' parameter");
-      Preconditions.checkArgument(
-          null == params.getBefore(),
-          "Cannot combine 'query_expression' with the 'before' parameter");
-    }
-
     try (Stream<ImmutableCommitMeta> s =
         getStore()
             .getCommits(startRef)
             .map(cwh -> cwh.getValue().toBuilder().hash(cwh.getHash().asString()).build())) {
-
       List<CommitMeta> items =
           filterCommitLog(s, params).limit(max + 1).collect(Collectors.toList());
-
       if (items.size() == max + 1) {
         return ImmutableLogResponse.builder()
             .addAllOperations(items.subList(0, max))
@@ -213,26 +195,25 @@ public class TreeResource extends BaseResource implements TreeApi {
   }
 
   /**
-   * Applies different filters to the {@link Stream} of commits based on the settings in {@link
-   * CommitLogParams}. These settings are translated into a CEL expression via {@link CELTranslator}
-   * and applied to the stream.
+   * Applies different filters to the {@link Stream} of commits based on the query expression in
+   * {@link CommitLogParams#getQueryExpression()}.
    *
    * @param commits The commit log that different filters will be applied to
-   * @param params The commit log filter parameters
-   * @return A potentially filtered {@link Stream} of commits based on {@link CommitLogParams}
+   * @param params The commit log parameters that contain the query expression to filter by
+   * @return A potentially filtered {@link Stream} of commits based on {@link
+   *     CommitLogParams#getQueryExpression()}
    */
   private Stream<ImmutableCommitMeta> filterCommitLog(
       Stream<ImmutableCommitMeta> commits, CommitLogParams params) {
-    String expr = CELTranslator.from(params);
-    final String celExpr = "".equals(expr) ? params.getQueryExpression() : expr;
-    if (null == celExpr) {
+    if (Strings.isNullOrEmpty(params.getQueryExpression())) {
       return commits;
     }
 
     final Script script;
     try {
       script =
-          SCRIPT_HOST.getOrCreateScript(celExpr, COMMIT_LOG_DECLARATIONS, Collections.emptyList());
+          SCRIPT_HOST.getOrCreateScript(
+              params.getQueryExpression(), COMMIT_LOG_DECLARATIONS, Collections.emptyList());
     } catch (ScriptException e) {
       throw new IllegalArgumentException(e);
     }
@@ -308,15 +289,6 @@ public class TreeResource extends BaseResource implements TreeApi {
       throws NessieNotFoundException {
 
     final Hash hash = getHashOrThrow(refName);
-    if (null != params.getQueryExpression()) {
-      Preconditions.checkArgument(
-          params.getTypes().isEmpty(),
-          "Cannot combine 'query_expression' with the 'types' parameter");
-      Preconditions.checkArgument(
-          null == params.getNamespace(),
-          "Cannot combine 'query_expression' with the 'namespace' parameter");
-    }
-
     // TODO Implement paging. At the moment, we do not expect that many keys/entries to be returned.
     //  So the size of the whole result is probably reasonable and unlikely to "kill" either the
     //  server or client. We have to figure out _how_ to implement paging for keys/entries, i.e.
@@ -346,26 +318,25 @@ public class TreeResource extends BaseResource implements TreeApi {
   }
 
   /**
-   * Applies different filters to the {@link Stream} of entries based on the settings in {@link
-   * EntriesParams}. These settings are translated into a CEL expression via {@link CELTranslator}
-   * and applied to the stream.
+   * Applies different filters to the {@link Stream} of entries based on the query expression in
+   * {@link EntriesParams#getQueryExpression()}.
    *
    * @param entries The entries that different filters will be applied to
-   * @param params The filter parameters for the entries
-   * @return A potentially filtered {@link Stream} of entries based on {@link EntriesParams}
+   * @param params The entries parameters that contain the query expression to filter by
+   * @return A potentially filtered {@link Stream} of entries based on {@link
+   *     EntriesParams#getQueryExpression()}
    */
   private Stream<EntriesResponse.Entry> filterEntries(
       Stream<EntriesResponse.Entry> entries, EntriesParams params) {
-    String expr = CELTranslator.from(params);
-    final String celExpr = "".equals(expr) ? params.getQueryExpression() : expr;
-    if (null == celExpr) {
+    if (Strings.isNullOrEmpty(params.getQueryExpression())) {
       return entries;
     }
 
     final Script script;
     try {
       script =
-          SCRIPT_HOST.getOrCreateScript(celExpr, ENTRIES_DECLARATIONS, Collections.emptyList());
+          SCRIPT_HOST.getOrCreateScript(
+              params.getQueryExpression(), ENTRIES_DECLARATIONS, Collections.emptyList());
     } catch (ScriptException e) {
       throw new IllegalArgumentException(e);
     }

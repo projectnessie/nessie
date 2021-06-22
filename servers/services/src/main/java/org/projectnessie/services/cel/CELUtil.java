@@ -21,7 +21,7 @@ import java.util.List;
 import org.projectnessie.cel.checker.Decls;
 import org.projectnessie.cel.tools.ScriptHost;
 
-/** A utility class for CEL declarations and other things */
+/** A utility class for CEL declarations and other things. */
 public class CELUtil {
 
   public static final ScriptHost SCRIPT_HOST = ScriptHost.newBuilder().build();

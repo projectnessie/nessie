@@ -15,11 +15,6 @@
  */
 package org.projectnessie.api.params;
 
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
 import java.util.StringJoiner;
 import javax.ws.rs.QueryParam;
 import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
@@ -46,36 +41,6 @@ public class CommitLogParams {
 
   @Parameter(
       description =
-          "List of authors to filter by. The author is the original committer. "
-              + "No filtering by author will happen if this is set to null/empty")
-  @QueryParam("authors")
-  private List<String> authors;
-
-  @Parameter(
-      description =
-          "List of committers to filter by. This is the logged in user/account who performed the commit. "
-              + "No filtering by committer will happen if this is set to null/empty")
-  @QueryParam("committers")
-  private List<String> committers;
-
-  @Parameter(
-      description =
-          "Only include commits newer than the specified date in ISO-8601 format. "
-              + "No filtering will happen if this is set to null",
-      examples = {@ExampleObject(ref = "javaInstant")})
-  @QueryParam("after")
-  private Instant after;
-
-  @Parameter(
-      description =
-          "Only include commits older than the specified date in ISO-8601 format. "
-              + "No filtering will happen if this is set to null",
-      examples = {@ExampleObject(ref = "javaInstant")})
-  @QueryParam("before")
-  private Instant before;
-
-  @Parameter(
-      description =
           "A Common Expression Language (CEL) expression. An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n"
               + "Usable variables within the expression are 'commit.author' (string) / 'commit.committer' (string) / 'commit.commitTime' (timestamp)",
       examples = {
@@ -88,32 +53,14 @@ public class CommitLogParams {
 
   public CommitLogParams() {}
 
-  private CommitLogParams(
-      Integer maxRecords,
-      String pageToken,
-      List<String> authors,
-      List<String> committers,
-      Instant after,
-      Instant before,
-      String queryExpression) {
+  private CommitLogParams(Integer maxRecords, String pageToken, String queryExpression) {
     this.maxRecords = maxRecords;
     this.pageToken = pageToken;
-    this.authors = authors;
-    this.committers = committers;
-    this.after = after;
-    this.before = before;
     this.queryExpression = queryExpression;
   }
 
   private CommitLogParams(Builder builder) {
-    this(
-        builder.maxRecords,
-        builder.pageToken,
-        new ArrayList<>(builder.authors),
-        new ArrayList<>(builder.committers),
-        builder.after,
-        builder.before,
-        builder.queryExpression);
+    this(builder.maxRecords, builder.pageToken, builder.queryExpression);
   }
 
   public Integer getMaxRecords() {
@@ -122,22 +69,6 @@ public class CommitLogParams {
 
   public String getPageToken() {
     return pageToken;
-  }
-
-  public List<String> getAuthors() {
-    return authors;
-  }
-
-  public List<String> getCommitters() {
-    return committers;
-  }
-
-  public Instant getAfter() {
-    return after;
-  }
-
-  public Instant getBefore() {
-    return before;
   }
 
   public String getQueryExpression() {
@@ -157,10 +88,6 @@ public class CommitLogParams {
     return new StringJoiner(", ", CommitLogParams.class.getSimpleName() + "[", "]")
         .add("maxRecords=" + maxRecords)
         .add("pageToken='" + pageToken + "'")
-        .add("authors=" + authors)
-        .add("committers=" + committers)
-        .add("after=" + after)
-        .add("before=" + before)
         .add("queryExpression='" + queryExpression + "'")
         .toString();
   }
@@ -169,10 +96,6 @@ public class CommitLogParams {
 
     private Integer maxRecords;
     private String pageToken;
-    private List<String> authors = Collections.emptyList();
-    private List<String> committers = Collections.emptyList();
-    private Instant after;
-    private Instant before;
     private String queryExpression;
 
     private Builder() {}
@@ -187,26 +110,6 @@ public class CommitLogParams {
       return this;
     }
 
-    public Builder authors(List<String> authors) {
-      this.authors = authors;
-      return this;
-    }
-
-    public Builder committers(List<String> committers) {
-      this.committers = committers;
-      return this;
-    }
-
-    public Builder after(Instant after) {
-      this.after = after;
-      return this;
-    }
-
-    public Builder before(Instant before) {
-      this.before = before;
-      return this;
-    }
-
     public Builder queryExpression(String queryExpression) {
       this.queryExpression = queryExpression;
       return this;
@@ -215,17 +118,10 @@ public class CommitLogParams {
     public Builder from(CommitLogParams params) {
       return maxRecords(params.maxRecords)
           .pageToken(params.pageToken)
-          .authors(params.authors)
-          .committers(params.committers)
-          .after(params.after)
-          .before(params.before)
           .queryExpression(params.queryExpression);
     }
 
-    private void validate() {
-      Objects.requireNonNull(authors, "authors must be non-null");
-      Objects.requireNonNull(committers, "committers must be non-null");
-    }
+    private void validate() {}
 
     public CommitLogParams build() {
       validate();
