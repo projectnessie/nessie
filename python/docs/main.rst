@@ -19,7 +19,7 @@
 	  config       Set and view config.
 	  contents     Contents operations.
 	  log          Show commit log.
-	  merge        Merge BRANCH into current branch.
+	  merge        Merge FROM_BRANCH into current branch.
 	  remote       Set and view remote endpoint.
 	  tag          Tag operations.
 	
