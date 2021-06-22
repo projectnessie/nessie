@@ -76,6 +76,11 @@ Follow the instructions for [Eclipse](https://github.com/google/google-java-form
 [IntelliJ](https://github.com/google/google-java-format#intellij-android-studio-and-other-jetbrains-ides),
 note the required manual actions for IntelliJ.
 
+#### Code coverage
+
+Code coverage is measured using jacoco plus codecov. The [aggregator-project](./code-coverage)
+contains all modules that shall be measured. New modules must be added there as a dependency as well.
+
 ### Submitting a pull request
 
 Upon submission of a pull request you will be asked to sign our contributor license agreement. We use [Reviewable.io](https://reviewable.io/) for reviews.
