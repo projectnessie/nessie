@@ -27,6 +27,10 @@ class ResponseContextImpl implements ResponseContext {
     this.connection = connection;
   }
 
+  public String getHeader(String header) {
+    return connection.getRequestProperty(header);
+  }
+
   public Status getResponseCode() throws IOException {
     return Status.fromCode(connection.getResponseCode());
   }

@@ -33,7 +33,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.collect.ImmutableList;
 import io.quarkus.test.junit.QuarkusTest;
+import java.io.IOException;
 import java.net.URI;
+import java.net.URLConnection;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -43,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -59,8 +62,11 @@ import org.projectnessie.client.NessieClient;
 import org.projectnessie.client.StreamingUtil;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpClientException;
+import org.projectnessie.client.http.Status;
 import org.projectnessie.client.rest.NessieBadRequestException;
 import org.projectnessie.client.rest.NessieHttpResponseFilter;
+import org.projectnessie.client.rest.NessieVersionFilters;
+import org.projectnessie.common.NessieVersion;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -92,6 +98,7 @@ class TestRest {
   public static final String COMMA_VALID_HASH_2 = ",1234567890123456789012345678901234567890";
   public static final String COMMA_VALID_HASH_3 = ",1234567890123456";
 
+  private URI uri;
   private NessieClient client;
   private TreeApi tree;
   private ContentsApi contents;
@@ -99,7 +106,7 @@ class TestRest {
 
   @BeforeEach
   void init() {
-    URI uri = URI.create("http://localhost:19121/api/v1");
+    uri = URI.create("http://localhost:19121/api/v1/");
     client = NessieClient.builder().withUri(uri).build();
     tree = client.getTreeApi();
     contents = client.getContentsApi();
@@ -109,12 +116,56 @@ class TestRest {
             .enable(SerializationFeature.INDENT_OUTPUT)
             .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     httpClient = HttpClient.builder().setBaseUri(uri).setObjectMapper(mapper).build();
+    NessieVersionFilters.register(httpClient);
     httpClient.register(new NessieHttpResponseFilter(mapper));
   }
 
   @AfterEach
   void closeClient() {
     client.close();
+  }
+
+  @Test
+  void noNessieVersionFromClient() throws Exception {
+    URLConnection conn1 = uri.resolve("config").toURL().openConnection();
+    assertThatThrownBy(() -> conn1.getInputStream().close())
+        .isInstanceOf(IOException.class)
+        .extracting(Throwable::getMessage, InstanceOfAssertFactories.STRING)
+        .contains(
+            "Server returned HTTP response code: " + Status.BAD_REQUEST.getCode()); // must fail
+    assertThat(conn1.getHeaderField("Nessie-Version"))
+        .isEqualTo(NessieVersion.NESSIE_VERSION.toString());
+  }
+
+  @Test
+  void nessieVersionFromProduct() throws Exception {
+    URLConnection conn2 = uri.resolve("config").toURL().openConnection();
+    conn2.setRequestProperty("Nessie-Version", NessieVersion.NESSIE_VERSION.toString());
+    conn2.getInputStream().close(); // needs to pass
+    assertThat(conn2.getHeaderField("Nessie-Version"))
+        .isEqualTo(NessieVersion.NESSIE_VERSION.toString());
+  }
+
+  @Test
+  void nessieVersionFromMinVersion() throws Exception {
+    URLConnection conn3 = uri.resolve("config").toURL().openConnection();
+    conn3.setRequestProperty("Nessie-Version", NessieVersion.NESSIE_MIN_API_VERSION.toString());
+    conn3.getInputStream().close(); // needs to pass
+    assertThat(conn3.getHeaderField("Nessie-Version"))
+        .isEqualTo(NessieVersion.NESSIE_VERSION.toString());
+  }
+
+  @Test
+  void nessieVersionTooOld() throws Exception {
+    URLConnection conn4 = uri.resolve("config").toURL().openConnection();
+    conn4.setRequestProperty("Nessie-Version", "0.5.1");
+    assertThatThrownBy(() -> conn4.getInputStream().close())
+        .isInstanceOf(IOException.class)
+        .extracting(Throwable::getMessage, InstanceOfAssertFactories.STRING)
+        .contains(
+            "Server returned HTTP response code: " + Status.BAD_REQUEST.getCode()); // must fail
+    assertThat(conn4.getHeaderField("Nessie-Version"))
+        .isEqualTo(NessieVersion.NESSIE_VERSION.toString());
   }
 
   @Test

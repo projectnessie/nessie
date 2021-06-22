@@ -3,6 +3,7 @@
 import os
 
 import confuse
+from packaging.version import Version
 
 from .conf import build_config
 from .nessie_client import NessieClient
@@ -10,6 +11,7 @@ from .nessie_client import NessieClient
 __author__ = """Project Nessie"""
 __email__ = "nessie-release-builder@dremio.com"
 __version__ = "0.7.1"
+__min_remote_version__ = Version("0.7.1")
 
 
 def get_config(config_dir: str = None, args: dict = None) -> confuse.Configuration:

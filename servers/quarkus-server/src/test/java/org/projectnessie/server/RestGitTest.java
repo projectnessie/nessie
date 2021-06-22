@@ -29,6 +29,7 @@ import java.time.Instant;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.projectnessie.common.NessieVersion;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
@@ -205,7 +206,11 @@ public class RestGitTest {
   }
 
   private static RequestSpecification rest() {
-    return given().when().basePath("/api/v1/").contentType(ContentType.JSON);
+    return given()
+        .when()
+        .basePath("/api/v1/")
+        .contentType(ContentType.JSON)
+        .header("Nessie-Version", NessieVersion.NESSIE_VERSION.toString());
   }
 
   private Branch commit(Branch branch, String contentsKey, String metadataUrl) {

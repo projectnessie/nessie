@@ -91,6 +91,12 @@ public class TestResponseFilter {
             public InputStream getErrorStream() {
               return new StringInputStream("this will fail");
             }
+
+            @Override
+            public String getHeader(String header) {
+              Assertions.fail();
+              return null;
+            }
           },
           MAPPER);
     } catch (NessieServiceException e) {
@@ -161,6 +167,12 @@ public class TestResponseFilter {
       }
       String value = MAPPER.writeValueAsString(error);
       return new StringInputStream(value);
+    }
+
+    @Override
+    public String getHeader(String header) {
+      Assertions.fail();
+      return null;
     }
   }
 }

@@ -43,6 +43,7 @@ import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpClientException;
 import org.projectnessie.client.http.RequestFilter;
 import org.projectnessie.client.rest.NessieHttpResponseFilter;
+import org.projectnessie.client.rest.NessieVersionFilters;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 
@@ -87,6 +88,7 @@ class NessieHttpClient implements NessieClient {
       addTracing(client);
     }
     authFilter(client, authType, username, password);
+    NessieVersionFilters.register(client);
     client.register(new NessieHttpResponseFilter(mapper));
     contents = wrap(ContentsApi.class, new ClientContentsApi(client));
     tree = wrap(TreeApi.class, new ClientTreeApi(client));

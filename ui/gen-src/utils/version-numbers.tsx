@@ -13,19 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.http;
 
-import java.io.IOException;
-import java.io.InputStream;
+// THIS IS A GENERATED FILE - DO NOT EDIT!
 
-/** Interface for the important parts of a response. This is created after executing the request. */
-public interface ResponseContext {
-
-  Status getResponseCode() throws IOException;
-
-  InputStream getInputStream() throws IOException;
-
-  InputStream getErrorStream() throws IOException;
-
-  String getHeader(String header);
-}
+export const nessieVersion = "${project.version}";
+export const nessieMinApiVersion = "${nessie.min-remote-version}";

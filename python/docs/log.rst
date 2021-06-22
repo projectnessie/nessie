@@ -12,9 +12,14 @@
 	
 	Options:
 	  -n, --number INTEGER    number of log entries to return
-	  --since, --after TEXT   Commits more recent than specific date
-	  --until, --before TEXT  Commits older than specific date
-	  --author, --committer   limit commits to specific committer
+	  --since, --after TEXT   Only include commits newer than specific date
+	  --until, --before TEXT  Only include commits older than specific date
+	  --author TEXT           Limit commits to a specific author (this is the
+	                          original committer). Supports specifying multiple
+	                          authors to filter by.
+	  --committer TEXT        Limit commits to a specific committer (this is the
+	                          logged in user/account who performed the commit).
+	                          Supports specifying multiple committers to filter by.
 	  --help                  Show this message and exit.
 	
 	

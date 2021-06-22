@@ -21,6 +21,7 @@ requirements = [
     "desert",  # features we use are not regularly changing
     "marshmallow",  # features we use are not regularly changing
     "marshmallow_oneofschema",  # features we use are not regularly changing
+    "packaging",  # provides `Version` et al, comes with pip
     "python-dateutil",  # stable
     "requests",  # stable
     "requests-aws4auth",  # stable

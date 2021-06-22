@@ -61,3 +61,6 @@ venv/
 
 # Maven flatten plugin
 .flattened-pom.xml
+
+# UI / generated from gen-src/
+ui/src/utils/version-numbers.tsx
