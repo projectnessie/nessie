@@ -64,9 +64,7 @@
                   value = "commit.committer=='nessie_committer'"),
               @ExampleObject(
                   name = "expr_by_commitTime",
-                  value =
-                      "timestamp(commit.commitTime) > timestamp('2021-06-21T10:39:17.977922Z')"),
-              @ExampleObject(name = "javaInstant", value = "2021-05-31T08:23:15Z"),
+                  value = "timestamp(commit.commitTime) > timestamp('2021-05-31T08:23:15Z')"),
               @ExampleObject(name = "namespace", value = "a.b.c"),
               @ExampleObject(
                   name = "hash",

@@ -76,19 +76,11 @@ interactions:
       code: 404
       message: Not Found
 - request:
-<<<<<<< HEAD
-    body: '{"commitMeta": {"email": null, "properties": null, "message": "test_message",
-      "hash": null, "author": "nessie_user1", "commitTime": null, "committer": null,
-      "authorTime": null, "signedOffBy": null}, "operations": [{"contents": {"id":
-      "uuid", "metadataLocation": "/a/b/c", "type": "ICEBERG_TABLE"}, "key": {"elements":
-      ["foo", "bar"]}, "type": "PUT"}]}'
-=======
-    body: '{"operations": [{"key": {"elements": ["foo", "bar"]}, "contents": {"id":
-      "uuid", "metadataLocation": "/a/b/c", "type": "ICEBERG_TABLE"}, "type": "PUT"}],
-      "commitMeta": {"message": "test_message", "properties": null, "signedOffBy":
-      null, "email": null, "committer": null, "hash": null, "authorTime": null, "commitTime":
-      null, "author": "nessie_user1"}}'
->>>>>>> Allow using CEL expression when filtering the commit log
+    body: '{"commitMeta": {"email": null, "hash": null, "commitTime": null, "author":
+      "nessie_user1", "committer": null, "authorTime": null, "message": "test_message",
+      "properties": null, "signedOffBy": null}, "operations": [{"contents": {"metadataLocation":
+      "/a/b/c", "id": "uuid", "type": "ICEBERG_TABLE"}, "key": {"elements": ["foo",
+      "bar"]}, "type": "PUT"}]}'
     headers:
       Accept:
       - '*/*'
@@ -106,11 +98,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/branch/main/commit?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
-<<<<<<< HEAD
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"1254b00e46515c1f4774004fd86e7c025797c4ec8a965aa4d257e16c27a6731e\"\n}"
-=======
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"5e166bcdfac62bfff0c99e0e08d99edcfb993b8016563962ec7c46f2ca913c0f\"\n}"
->>>>>>> Allow using CEL expression when filtering the commit log
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"0ef8427802ff370f4d099f77b1aeb41b13b0c98a5497750b6a4303ef43a12a0a\"\n}"
     headers:
       Content-Length:
       - '121'
@@ -160,17 +148,10 @@ interactions:
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :
-<<<<<<< HEAD
-        [ {\n    \"hash\" : \"1254b00e46515c1f4774004fd86e7c025797c4ec8a965aa4d257e16c27a6731e\",\n
+        [ {\n    \"hash\" : \"0ef8427802ff370f4d099f77b1aeb41b13b0c98a5497750b6a4303ef43a12a0a\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-21T16:04:08.991459Z\",\n
-        \   \"authorTime\" : \"2021-06-21T16:04:08.991459Z\",\n    \"properties\"
-=======
-        [ {\n    \"hash\" : \"5e166bcdfac62bfff0c99e0e08d99edcfb993b8016563962ec7c46f2ca913c0f\",\n
-        \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-21T09:52:30.351919Z\",\n
-        \   \"authorTime\" : \"2021-06-21T09:52:30.351919Z\",\n    \"properties\"
->>>>>>> Allow using CEL expression when filtering the commit log
+        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-22T10:40:43.902890Z\",\n
+        \   \"authorTime\" : \"2021-06-22T10:40:43.902890Z\",\n    \"properties\"
         : { }\n  } ]\n}"
     headers:
       Content-Length:
@@ -192,25 +173,14 @@ interactions:
       User-Agent:
       - python-requests/2.25.1
     method: GET
-<<<<<<< HEAD
-    uri: http://localhost:19120/api/v1/trees/tree/1254b00e46515c1f4774004fd86e7c025797c4ec8a965aa4d257e16c27a6731e/log
+    uri: http://localhost:19120/api/v1/trees/tree/0ef8427802ff370f4d099f77b1aeb41b13b0c98a5497750b6a4303ef43a12a0a/log
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :
-        [ {\n    \"hash\" : \"1254b00e46515c1f4774004fd86e7c025797c4ec8a965aa4d257e16c27a6731e\",\n
+        [ {\n    \"hash\" : \"0ef8427802ff370f4d099f77b1aeb41b13b0c98a5497750b6a4303ef43a12a0a\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-21T16:04:08.991459Z\",\n
-        \   \"authorTime\" : \"2021-06-21T16:04:08.991459Z\",\n    \"properties\"
-=======
-    uri: http://localhost:19120/api/v1/trees/tree/5e166bcdfac62bfff0c99e0e08d99edcfb993b8016563962ec7c46f2ca913c0f/log
-  response:
-    body:
-      string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :
-        [ {\n    \"hash\" : \"5e166bcdfac62bfff0c99e0e08d99edcfb993b8016563962ec7c46f2ca913c0f\",\n
-        \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-21T09:52:30.351919Z\",\n
-        \   \"authorTime\" : \"2021-06-21T09:52:30.351919Z\",\n    \"properties\"
->>>>>>> Allow using CEL expression when filtering the commit log
+        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-22T10:40:43.902890Z\",\n
+        \   \"authorTime\" : \"2021-06-22T10:40:43.902890Z\",\n    \"properties\"
         : { }\n  } ]\n}"
     headers:
       Content-Length:
@@ -272,17 +242,10 @@ interactions:
       code: 200
       message: OK
 - request:
-<<<<<<< HEAD
-    body: '{"commitMeta": {"email": null, "properties": null, "message": "delete_message",
-      "hash": null, "author": "nessie_user2", "commitTime": null, "committer": null,
-      "authorTime": null, "signedOffBy": null}, "operations": [{"key": {"elements":
+    body: '{"commitMeta": {"email": null, "hash": null, "commitTime": null, "author":
+      "nessie_user2", "committer": null, "authorTime": null, "message": "delete_message",
+      "properties": null, "signedOffBy": null}, "operations": [{"key": {"elements":
       ["foo", "bar"]}, "type": "DELETE"}]}'
-=======
-    body: '{"operations": [{"key": {"elements": ["foo", "bar"]}, "type": "DELETE"}],
-      "commitMeta": {"message": "delete_message", "properties": null, "signedOffBy":
-      null, "email": null, "committer": null, "hash": null, "authorTime": null, "commitTime":
-      null, "author": "nessie_user2"}}'
->>>>>>> Allow using CEL expression when filtering the commit log
     headers:
       Accept:
       - '*/*'
@@ -297,17 +260,10 @@ interactions:
       User-Agent:
       - python-requests/2.25.1
     method: POST
-<<<<<<< HEAD
-    uri: http://localhost:19120/api/v1/trees/branch/main/commit?expectedHash=1254b00e46515c1f4774004fd86e7c025797c4ec8a965aa4d257e16c27a6731e
+    uri: http://localhost:19120/api/v1/trees/branch/main/commit?expectedHash=0ef8427802ff370f4d099f77b1aeb41b13b0c98a5497750b6a4303ef43a12a0a
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"287655801a64016c7e6dad1cd80e22df79aa42584a83145ce0f6473416616c2c\"\n}"
-=======
-    uri: http://localhost:19120/api/v1/trees/branch/main/commit?expectedHash=5e166bcdfac62bfff0c99e0e08d99edcfb993b8016563962ec7c46f2ca913c0f
-  response:
-    body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"6730d35a503305b4f0c966329c8ed62f9965cf8954dd19826935a9698b134f4e\"\n}"
->>>>>>> Allow using CEL expression when filtering the commit log
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"750dc5abd0677e158e42354042156d940469f979c3c99a59db60e72820837de1\"\n}"
     headers:
       Content-Length:
       - '121'
@@ -332,25 +288,14 @@ interactions:
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :
-<<<<<<< HEAD
-        [ {\n    \"hash\" : \"287655801a64016c7e6dad1cd80e22df79aa42584a83145ce0f6473416616c2c\",\n
+        [ {\n    \"hash\" : \"750dc5abd0677e158e42354042156d940469f979c3c99a59db60e72820837de1\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user2\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-06-21T16:04:09.097704Z\",\n
-        \   \"authorTime\" : \"2021-06-21T16:04:09.097704Z\",\n    \"properties\"
-        : { }\n  }, {\n    \"hash\" : \"1254b00e46515c1f4774004fd86e7c025797c4ec8a965aa4d257e16c27a6731e\",\n
+        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-06-22T10:40:44.011257Z\",\n
+        \   \"authorTime\" : \"2021-06-22T10:40:44.011257Z\",\n    \"properties\"
+        : { }\n  }, {\n    \"hash\" : \"0ef8427802ff370f4d099f77b1aeb41b13b0c98a5497750b6a4303ef43a12a0a\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-21T16:04:08.991459Z\",\n
-        \   \"authorTime\" : \"2021-06-21T16:04:08.991459Z\",\n    \"properties\"
-=======
-        [ {\n    \"hash\" : \"6730d35a503305b4f0c966329c8ed62f9965cf8954dd19826935a9698b134f4e\",\n
-        \   \"committer\" : \"\",\n    \"author\" : \"nessie_user2\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-06-21T09:52:30.453146Z\",\n
-        \   \"authorTime\" : \"2021-06-21T09:52:30.453146Z\",\n    \"properties\"
-        : { }\n  }, {\n    \"hash\" : \"5e166bcdfac62bfff0c99e0e08d99edcfb993b8016563962ec7c46f2ca913c0f\",\n
-        \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-21T09:52:30.351919Z\",\n
-        \   \"authorTime\" : \"2021-06-21T09:52:30.351919Z\",\n    \"properties\"
->>>>>>> Allow using CEL expression when filtering the commit log
+        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-22T10:40:43.902890Z\",\n
+        \   \"authorTime\" : \"2021-06-22T10:40:43.902890Z\",\n    \"properties\"
         : { }\n  } ]\n}"
     headers:
       Content-Length:
@@ -372,33 +317,18 @@ interactions:
       User-Agent:
       - python-requests/2.25.1
     method: GET
-<<<<<<< HEAD
-    uri: http://localhost:19120/api/v1/trees/tree/287655801a64016c7e6dad1cd80e22df79aa42584a83145ce0f6473416616c2c/log
+    uri: http://localhost:19120/api/v1/trees/tree/750dc5abd0677e158e42354042156d940469f979c3c99a59db60e72820837de1/log
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :
-        [ {\n    \"hash\" : \"287655801a64016c7e6dad1cd80e22df79aa42584a83145ce0f6473416616c2c\",\n
+        [ {\n    \"hash\" : \"750dc5abd0677e158e42354042156d940469f979c3c99a59db60e72820837de1\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user2\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-06-21T16:04:09.097704Z\",\n
-        \   \"authorTime\" : \"2021-06-21T16:04:09.097704Z\",\n    \"properties\"
-        : { }\n  }, {\n    \"hash\" : \"1254b00e46515c1f4774004fd86e7c025797c4ec8a965aa4d257e16c27a6731e\",\n
+        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-06-22T10:40:44.011257Z\",\n
+        \   \"authorTime\" : \"2021-06-22T10:40:44.011257Z\",\n    \"properties\"
+        : { }\n  }, {\n    \"hash\" : \"0ef8427802ff370f4d099f77b1aeb41b13b0c98a5497750b6a4303ef43a12a0a\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-21T16:04:08.991459Z\",\n
-        \   \"authorTime\" : \"2021-06-21T16:04:08.991459Z\",\n    \"properties\"
-=======
-    uri: http://localhost:19120/api/v1/trees/tree/6730d35a503305b4f0c966329c8ed62f9965cf8954dd19826935a9698b134f4e/log
-  response:
-    body:
-      string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :
-        [ {\n    \"hash\" : \"6730d35a503305b4f0c966329c8ed62f9965cf8954dd19826935a9698b134f4e\",\n
-        \   \"committer\" : \"\",\n    \"author\" : \"nessie_user2\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-06-21T09:52:30.453146Z\",\n
-        \   \"authorTime\" : \"2021-06-21T09:52:30.453146Z\",\n    \"properties\"
-        : { }\n  }, {\n    \"hash\" : \"5e166bcdfac62bfff0c99e0e08d99edcfb993b8016563962ec7c46f2ca913c0f\",\n
-        \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-21T09:52:30.351919Z\",\n
-        \   \"authorTime\" : \"2021-06-21T09:52:30.351919Z\",\n    \"properties\"
->>>>>>> Allow using CEL expression when filtering the commit log
+        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-22T10:40:43.902890Z\",\n
+        \   \"authorTime\" : \"2021-06-22T10:40:43.902890Z\",\n    \"properties\"
         : { }\n  } ]\n}"
     headers:
       Content-Length:
@@ -424,25 +354,14 @@ interactions:
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :
-<<<<<<< HEAD
-        [ {\n    \"hash\" : \"287655801a64016c7e6dad1cd80e22df79aa42584a83145ce0f6473416616c2c\",\n
+        [ {\n    \"hash\" : \"750dc5abd0677e158e42354042156d940469f979c3c99a59db60e72820837de1\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user2\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-06-21T16:04:09.097704Z\",\n
-        \   \"authorTime\" : \"2021-06-21T16:04:09.097704Z\",\n    \"properties\"
-        : { }\n  }, {\n    \"hash\" : \"1254b00e46515c1f4774004fd86e7c025797c4ec8a965aa4d257e16c27a6731e\",\n
+        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-06-22T10:40:44.011257Z\",\n
+        \   \"authorTime\" : \"2021-06-22T10:40:44.011257Z\",\n    \"properties\"
+        : { }\n  }, {\n    \"hash\" : \"0ef8427802ff370f4d099f77b1aeb41b13b0c98a5497750b6a4303ef43a12a0a\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-21T16:04:08.991459Z\",\n
-        \   \"authorTime\" : \"2021-06-21T16:04:08.991459Z\",\n    \"properties\"
-=======
-        [ {\n    \"hash\" : \"6730d35a503305b4f0c966329c8ed62f9965cf8954dd19826935a9698b134f4e\",\n
-        \   \"committer\" : \"\",\n    \"author\" : \"nessie_user2\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-06-21T09:52:30.453146Z\",\n
-        \   \"authorTime\" : \"2021-06-21T09:52:30.453146Z\",\n    \"properties\"
-        : { }\n  }, {\n    \"hash\" : \"5e166bcdfac62bfff0c99e0e08d99edcfb993b8016563962ec7c46f2ca913c0f\",\n
-        \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-21T09:52:30.351919Z\",\n
-        \   \"authorTime\" : \"2021-06-21T09:52:30.351919Z\",\n    \"properties\"
->>>>>>> Allow using CEL expression when filtering the commit log
+        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-22T10:40:43.902890Z\",\n
+        \   \"authorTime\" : \"2021-06-22T10:40:43.902890Z\",\n    \"properties\"
         : { }\n  } ]\n}"
     headers:
       Content-Length:
@@ -464,21 +383,14 @@ interactions:
       User-Agent:
       - python-requests/2.25.1
     method: GET
-    uri: http://localhost:19120/api/v1/trees/tree/main/log?authors=nessie_user1
+    uri: http://localhost:19120/api/v1/trees/tree/main/log?query_expression=commit.author%3D%3D%27nessie_user1%27
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :
-<<<<<<< HEAD
-        [ {\n    \"hash\" : \"1254b00e46515c1f4774004fd86e7c025797c4ec8a965aa4d257e16c27a6731e\",\n
+        [ {\n    \"hash\" : \"0ef8427802ff370f4d099f77b1aeb41b13b0c98a5497750b6a4303ef43a12a0a\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-21T16:04:08.991459Z\",\n
-        \   \"authorTime\" : \"2021-06-21T16:04:08.991459Z\",\n    \"properties\"
-=======
-        [ {\n    \"hash\" : \"5e166bcdfac62bfff0c99e0e08d99edcfb993b8016563962ec7c46f2ca913c0f\",\n
-        \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-21T09:52:30.351919Z\",\n
-        \   \"authorTime\" : \"2021-06-21T09:52:30.351919Z\",\n    \"properties\"
->>>>>>> Allow using CEL expression when filtering the commit log
+        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-22T10:40:43.902890Z\",\n
+        \   \"authorTime\" : \"2021-06-22T10:40:43.902890Z\",\n    \"properties\"
         : { }\n  } ]\n}"
     headers:
       Content-Length:
@@ -500,21 +412,14 @@ interactions:
       User-Agent:
       - python-requests/2.25.1
     method: GET
-    uri: http://localhost:19120/api/v1/trees/tree/main/log?authors=nessie_user2
+    uri: http://localhost:19120/api/v1/trees/tree/main/log?query_expression=commit.author%3D%3D%27nessie_user2%27
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :
-<<<<<<< HEAD
-        [ {\n    \"hash\" : \"287655801a64016c7e6dad1cd80e22df79aa42584a83145ce0f6473416616c2c\",\n
+        [ {\n    \"hash\" : \"750dc5abd0677e158e42354042156d940469f979c3c99a59db60e72820837de1\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user2\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-06-21T16:04:09.097704Z\",\n
-        \   \"authorTime\" : \"2021-06-21T16:04:09.097704Z\",\n    \"properties\"
-=======
-        [ {\n    \"hash\" : \"6730d35a503305b4f0c966329c8ed62f9965cf8954dd19826935a9698b134f4e\",\n
-        \   \"committer\" : \"\",\n    \"author\" : \"nessie_user2\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-06-21T09:52:30.453146Z\",\n
-        \   \"authorTime\" : \"2021-06-21T09:52:30.453146Z\",\n    \"properties\"
->>>>>>> Allow using CEL expression when filtering the commit log
+        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-06-22T10:40:44.011257Z\",\n
+        \   \"authorTime\" : \"2021-06-22T10:40:44.011257Z\",\n    \"properties\"
         : { }\n  } ]\n}"
     headers:
       Content-Length:
@@ -536,29 +441,18 @@ interactions:
       User-Agent:
       - python-requests/2.25.1
     method: GET
-    uri: http://localhost:19120/api/v1/trees/tree/main/log?authors=nessie_user2&authors=nessie_user1
+    uri: http://localhost:19120/api/v1/trees/tree/main/log?query_expression=%28commit.author%3D%3D%27nessie_user2%27+%7C%7C+commit.author%3D%3D%27nessie_user1%27%29
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :
-<<<<<<< HEAD
-        [ {\n    \"hash\" : \"287655801a64016c7e6dad1cd80e22df79aa42584a83145ce0f6473416616c2c\",\n
+        [ {\n    \"hash\" : \"750dc5abd0677e158e42354042156d940469f979c3c99a59db60e72820837de1\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user2\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-06-21T16:04:09.097704Z\",\n
-        \   \"authorTime\" : \"2021-06-21T16:04:09.097704Z\",\n    \"properties\"
-        : { }\n  }, {\n    \"hash\" : \"1254b00e46515c1f4774004fd86e7c025797c4ec8a965aa4d257e16c27a6731e\",\n
+        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-06-22T10:40:44.011257Z\",\n
+        \   \"authorTime\" : \"2021-06-22T10:40:44.011257Z\",\n    \"properties\"
+        : { }\n  }, {\n    \"hash\" : \"0ef8427802ff370f4d099f77b1aeb41b13b0c98a5497750b6a4303ef43a12a0a\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-21T16:04:08.991459Z\",\n
-        \   \"authorTime\" : \"2021-06-21T16:04:08.991459Z\",\n    \"properties\"
-=======
-        [ {\n    \"hash\" : \"6730d35a503305b4f0c966329c8ed62f9965cf8954dd19826935a9698b134f4e\",\n
-        \   \"committer\" : \"\",\n    \"author\" : \"nessie_user2\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-06-21T09:52:30.453146Z\",\n
-        \   \"authorTime\" : \"2021-06-21T09:52:30.453146Z\",\n    \"properties\"
-        : { }\n  }, {\n    \"hash\" : \"5e166bcdfac62bfff0c99e0e08d99edcfb993b8016563962ec7c46f2ca913c0f\",\n
-        \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-21T09:52:30.351919Z\",\n
-        \   \"authorTime\" : \"2021-06-21T09:52:30.351919Z\",\n    \"properties\"
->>>>>>> Allow using CEL expression when filtering the commit log
+        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-22T10:40:43.902890Z\",\n
+        \   \"authorTime\" : \"2021-06-22T10:40:43.902890Z\",\n    \"properties\"
         : { }\n  } ]\n}"
     headers:
       Content-Length:
@@ -580,29 +474,18 @@ interactions:
       User-Agent:
       - python-requests/2.25.1
     method: GET
-    uri: http://localhost:19120/api/v1/trees/tree/main/log?committers=
+    uri: http://localhost:19120/api/v1/trees/tree/main/log?query_expression=commit.committer%3D%3D%27%27
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :
-<<<<<<< HEAD
-        [ {\n    \"hash\" : \"287655801a64016c7e6dad1cd80e22df79aa42584a83145ce0f6473416616c2c\",\n
+        [ {\n    \"hash\" : \"750dc5abd0677e158e42354042156d940469f979c3c99a59db60e72820837de1\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user2\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-06-21T16:04:09.097704Z\",\n
-        \   \"authorTime\" : \"2021-06-21T16:04:09.097704Z\",\n    \"properties\"
-        : { }\n  }, {\n    \"hash\" : \"1254b00e46515c1f4774004fd86e7c025797c4ec8a965aa4d257e16c27a6731e\",\n
+        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-06-22T10:40:44.011257Z\",\n
+        \   \"authorTime\" : \"2021-06-22T10:40:44.011257Z\",\n    \"properties\"
+        : { }\n  }, {\n    \"hash\" : \"0ef8427802ff370f4d099f77b1aeb41b13b0c98a5497750b6a4303ef43a12a0a\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-21T16:04:08.991459Z\",\n
-        \   \"authorTime\" : \"2021-06-21T16:04:08.991459Z\",\n    \"properties\"
-=======
-        [ {\n    \"hash\" : \"6730d35a503305b4f0c966329c8ed62f9965cf8954dd19826935a9698b134f4e\",\n
-        \   \"committer\" : \"\",\n    \"author\" : \"nessie_user2\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-06-21T09:52:30.453146Z\",\n
-        \   \"authorTime\" : \"2021-06-21T09:52:30.453146Z\",\n    \"properties\"
-        : { }\n  }, {\n    \"hash\" : \"5e166bcdfac62bfff0c99e0e08d99edcfb993b8016563962ec7c46f2ca913c0f\",\n
-        \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-21T09:52:30.351919Z\",\n
-        \   \"authorTime\" : \"2021-06-21T09:52:30.351919Z\",\n    \"properties\"
->>>>>>> Allow using CEL expression when filtering the commit log
+        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-22T10:40:43.902890Z\",\n
+        \   \"authorTime\" : \"2021-06-22T10:40:43.902890Z\",\n    \"properties\"
         : { }\n  } ]\n}"
     headers:
       Content-Length:
@@ -628,10 +511,10 @@ interactions:
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :
-        [ {\n    \"hash\" : \"6730d35a503305b4f0c966329c8ed62f9965cf8954dd19826935a9698b134f4e\",\n
+        [ {\n    \"hash\" : \"750dc5abd0677e158e42354042156d940469f979c3c99a59db60e72820837de1\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user2\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-06-21T09:52:30.453146Z\",\n
-        \   \"authorTime\" : \"2021-06-21T09:52:30.453146Z\",\n    \"properties\"
+        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-06-22T10:40:44.011257Z\",\n
+        \   \"authorTime\" : \"2021-06-22T10:40:44.011257Z\",\n    \"properties\"
         : { }\n  } ]\n}"
     headers:
       Content-Length:

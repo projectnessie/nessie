@@ -25,6 +25,8 @@ from .conf import build_config
 from .conf import process
 from .error import error_handler
 from .error import NessieNotFoundException
+from .expression_util import build_query_expression_for_commit_log_flags
+from .expression_util import build_query_expression_for_contents_listing_flags
 from .model import CommitMeta
 from .model import CommitMetaSchema
 from .model import Contents
@@ -199,6 +201,8 @@ def set_head(ctx: ContextObject, head: str, delete: bool) -> None:
     "--query-expression",
     "query_expression",
     multiple=False,
+    cls=MutuallyExclusiveOption,
+    mutually_exclusive=["author", "committer", "since", "until"],
     help="Allows advanced filtering using the Common Expression Language (CEL). "
     "An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n"
     "Some examples with usable variables 'commit.author' (string) / 'commit.committer' (string) / 'commit.commitTime' (timestamp) are:\n"
@@ -239,18 +243,12 @@ def log(  # noqa: C901
     filtering_args: Any = {}
     if number:
         filtering_args["max"] = str(number)
-    if author:
-        filtering_args["authors"] = author
-    if committer:
-        filtering_args["committers"] = committer
-    if since:
-        filtering_args["after"] = since
-    if until:
-        filtering_args["before"] = until
     if end:
         filtering_args["end"] = end
-    if query_expression:
-        filtering_args["query_expression"] = query_expression
+
+    expr = build_query_expression_for_commit_log_flags(query_expression, author, committer, since, until)
+    if expr:
+        filtering_args["query_expression"] = expr
 
     log_result = show_log(nessie=ctx.nessie, start_ref=start, limits=paths, **filtering_args)
     if ctx.json:
@@ -460,7 +458,7 @@ def cherry_pick(ctx: ContextObject, branch: str, force: bool, condition: str, ha
 @click.option(
     "-t",
     "--type",
-    "entity_type",
+    "entity_types",
     help="entity types to filter on, if no entity types are passed then all types are returned",
     multiple=True,
 )
@@ -469,6 +467,8 @@ def cherry_pick(ctx: ContextObject, branch: str, force: bool, condition: str, ha
     "--query-expression",
     "query_expression",
     multiple=False,
+    cls=MutuallyExclusiveOption,
+    mutually_exclusive=["entity_type"],
     help="Allows advanced filtering using the Common Expression Language (CEL). "
     "An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n"
     "Some examples with usable variables 'entry.namespace' (string) & 'entry.contentType' (string) are:\n"
@@ -489,7 +489,7 @@ def contents(
     ref: str,
     message: str,
     condition: str,
-    entity_type: list,
+    entity_types: List[str],
     author: str,
     query_expression: str,
 ) -> None:
@@ -499,7 +499,8 @@ def contents(
     """
     if list:
         keys = ctx.nessie.list_keys(
-            ref if ref else ctx.nessie.get_default_branch(), entity_types=entity_type, query_expression=query_expression
+            ref if ref else ctx.nessie.get_default_branch(),
+            query_expression=build_query_expression_for_contents_listing_flags(query_expression, entity_types),
         )
         results = EntrySchema().dumps(_format_keys_json(keys, *key), many=True) if ctx.json else _format_keys(keys, *key)
     elif delete:

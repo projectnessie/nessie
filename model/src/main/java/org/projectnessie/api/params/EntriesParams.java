@@ -15,9 +15,6 @@
  */
 package org.projectnessie.api.params;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
 import java.util.StringJoiner;
 import javax.ws.rs.QueryParam;
 import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
@@ -43,22 +40,6 @@ public class EntriesParams {
   private String pageToken;
 
   @Parameter(
-      description = "list of value types to return. Return all if empty",
-      examples = {@ExampleObject(ref = "types")})
-  @QueryParam("types")
-  private List<String> types;
-
-  @Parameter(
-      description =
-          "The namespace to filter by. For a given table name 'a.b.c.tableName', the namespace is 'a.b.c', thus a valid"
-              + "namespace to filter by would be 'a' / 'a.b' / 'a.b.c'. Setting the namespace filter to 'a.b.c.tableName' would not return any"
-              + "results, because 'tableName' is not part of the namespace."
-              + "No filtering will happen if this is set to null/empty",
-      examples = {@ExampleObject(ref = "namespace")})
-  @QueryParam("namespace")
-  private String namespace;
-
-  @Parameter(
       description =
           "A Common Expression Language (CEL) expression. An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n"
               + "Usable variables within the expression are 'entry.namespace' (string) & 'entry.contentType' (string)",
@@ -72,26 +53,14 @@ public class EntriesParams {
 
   public EntriesParams() {}
 
-  private EntriesParams(
-      Integer maxRecords,
-      String pageToken,
-      List<String> types,
-      String namespace,
-      String queryExpression) {
+  private EntriesParams(Integer maxRecords, String pageToken, String queryExpression) {
     this.maxRecords = maxRecords;
     this.pageToken = pageToken;
-    this.types = types;
-    this.namespace = namespace;
     this.queryExpression = queryExpression;
   }
 
   private EntriesParams(Builder builder) {
-    this(
-        builder.maxRecords,
-        builder.pageToken,
-        builder.types,
-        builder.namespace,
-        builder.queryExpression);
+    this(builder.maxRecords, builder.pageToken, builder.queryExpression);
   }
 
   public static EntriesParams.Builder builder() {
@@ -110,16 +79,8 @@ public class EntriesParams {
     return pageToken;
   }
 
-  public List<String> getTypes() {
-    return types;
-  }
-
   public String getQueryExpression() {
     return queryExpression;
-  }
-
-  public String getNamespace() {
-    return namespace;
   }
 
   @Override
@@ -127,8 +88,6 @@ public class EntriesParams {
     return new StringJoiner(", ", EntriesParams.class.getSimpleName() + "[", "]")
         .add("maxRecords=" + maxRecords)
         .add("pageToken='" + pageToken + "'")
-        .add("types=" + types)
-        .add("namespace='" + namespace + "'")
         .add("queryExpression='" + queryExpression + "'")
         .toString();
   }
@@ -137,8 +96,6 @@ public class EntriesParams {
 
     private Integer maxRecords;
     private String pageToken;
-    private String namespace;
-    private List<String> types = Collections.emptyList();
     private String queryExpression;
 
     private Builder() {}
@@ -153,16 +110,6 @@ public class EntriesParams {
       return this;
     }
 
-    public EntriesParams.Builder types(List<String> types) {
-      this.types = types;
-      return this;
-    }
-
-    public EntriesParams.Builder namespace(String namespace) {
-      this.namespace = namespace;
-      return this;
-    }
-
     public EntriesParams.Builder queryExpression(String queryExpression) {
       this.queryExpression = queryExpression;
       return this;
@@ -171,14 +118,10 @@ public class EntriesParams {
     public EntriesParams.Builder from(EntriesParams params) {
       return maxRecords(params.maxRecords)
           .pageToken(params.pageToken)
-          .namespace(params.namespace)
-          .types(params.types)
           .queryExpression(params.queryExpression);
     }
 
-    private void validate() {
-      Objects.requireNonNull(types, "types must be non-null");
-    }
+    private void validate() {}
 
     public EntriesParams build() {
       validate();

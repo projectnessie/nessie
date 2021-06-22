@@ -81,19 +81,11 @@ interactions:
       code: 404
       message: Not Found
 - request:
-<<<<<<< HEAD
-    body: '{"commitMeta": {"email": null, "properties": null, "message": "test_message",
-      "hash": null, "author": null, "commitTime": null, "committer": null, "authorTime":
-      null, "signedOffBy": null}, "operations": [{"contents": {"id": "uuid", "metadataLocation":
-      "/a/b/c", "type": "ICEBERG_TABLE"}, "key": {"elements": ["foo", "bar"]}, "type":
-      "PUT"}]}'
-=======
-    body: '{"operations": [{"key": {"elements": ["foo", "bar"]}, "contents": {"id":
-      "uuid", "metadataLocation": "/a/b/c", "type": "ICEBERG_TABLE"}, "type": "PUT"}],
-      "commitMeta": {"message": "test_message", "properties": null, "signedOffBy":
-      null, "email": null, "committer": null, "hash": null, "authorTime": null, "commitTime":
-      null, "author": null}}'
->>>>>>> Allow using CEL expression when filtering the commit log
+    body: '{"commitMeta": {"email": null, "hash": null, "commitTime": null, "author":
+      null, "committer": null, "authorTime": null, "message": "test_message", "properties":
+      null, "signedOffBy": null}, "operations": [{"contents": {"metadataLocation":
+      "/a/b/c", "id": "uuid", "type": "ICEBERG_TABLE"}, "key": {"elements": ["foo",
+      "bar"]}, "type": "PUT"}]}'
     headers:
       Accept:
       - '*/*'
@@ -111,11 +103,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/branch/dev/commit?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
-<<<<<<< HEAD
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"70e817eab50744da6ab6a6bc36a7fd40b1e88ff4a33cabbb66e6c0b839a9a0c3\"\n}"
-=======
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"e93de4142754a0faa5e8b718e04ed13627be7ca23347eb33e2209f804ec4ce98\"\n}"
->>>>>>> Allow using CEL expression when filtering the commit log
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"97e8feb2778741e5fa3979aba09714f9517062964c3ce7b263caf27192297ab8\"\n}"
     headers:
       Content-Length:
       - '120'
@@ -151,19 +139,11 @@ interactions:
       code: 404
       message: Not Found
 - request:
-<<<<<<< HEAD
-    body: '{"commitMeta": {"email": null, "properties": null, "message": "test_message2",
-      "hash": null, "author": null, "commitTime": null, "committer": null, "authorTime":
-      null, "signedOffBy": null}, "operations": [{"contents": {"id": "uuid", "metadataLocation":
-      "/a/b/c", "type": "ICEBERG_TABLE"}, "key": {"elements": ["bar", "bar"]}, "type":
-      "PUT"}]}'
-=======
-    body: '{"operations": [{"key": {"elements": ["bar", "bar"]}, "contents": {"id":
-      "uuid", "metadataLocation": "/a/b/c", "type": "ICEBERG_TABLE"}, "type": "PUT"}],
-      "commitMeta": {"message": "test_message2", "properties": null, "signedOffBy":
-      null, "email": null, "committer": null, "hash": null, "authorTime": null, "commitTime":
-      null, "author": null}}'
->>>>>>> Allow using CEL expression when filtering the commit log
+    body: '{"commitMeta": {"email": null, "hash": null, "commitTime": null, "author":
+      null, "committer": null, "authorTime": null, "message": "test_message2", "properties":
+      null, "signedOffBy": null}, "operations": [{"contents": {"metadataLocation":
+      "/a/b/c", "id": "uuid", "type": "ICEBERG_TABLE"}, "key": {"elements": ["bar",
+      "bar"]}, "type": "PUT"}]}'
     headers:
       Accept:
       - '*/*'
@@ -181,11 +161,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/branch/dev/commit?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
-<<<<<<< HEAD
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"8a4b5334987b1f2b8e6ca0202707e6c32452f8202ab103bc7b646bd6596d2761\"\n}"
-=======
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"0263b3e097433a4d962d1ba4c879ab8ab3de88a604140aa281d92f84c50bff92\"\n}"
->>>>>>> Allow using CEL expression when filtering the commit log
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"717dc47cb225d7c7b42289cc30cdcd7a8a3725777662901b1b3cd5bf2bb0a342\"\n}"
     headers:
       Content-Length:
       - '120'
@@ -221,19 +197,11 @@ interactions:
       code: 404
       message: Not Found
 - request:
-<<<<<<< HEAD
-    body: '{"commitMeta": {"email": null, "properties": null, "message": "test_message3",
-      "hash": null, "author": null, "commitTime": null, "committer": null, "authorTime":
-      null, "signedOffBy": null}, "operations": [{"contents": {"id": "uuid", "metadataLocation":
-      "/a/b/c", "type": "ICEBERG_TABLE"}, "key": {"elements": ["foo", "baz"]}, "type":
-      "PUT"}]}'
-=======
-    body: '{"operations": [{"key": {"elements": ["foo", "baz"]}, "contents": {"id":
-      "uuid", "metadataLocation": "/a/b/c", "type": "ICEBERG_TABLE"}, "type": "PUT"}],
-      "commitMeta": {"message": "test_message3", "properties": null, "signedOffBy":
-      null, "email": null, "committer": null, "hash": null, "authorTime": null, "commitTime":
-      null, "author": null}}'
->>>>>>> Allow using CEL expression when filtering the commit log
+    body: '{"commitMeta": {"email": null, "hash": null, "commitTime": null, "author":
+      null, "committer": null, "authorTime": null, "message": "test_message3", "properties":
+      null, "signedOffBy": null}, "operations": [{"contents": {"metadataLocation":
+      "/a/b/c", "id": "uuid", "type": "ICEBERG_TABLE"}, "key": {"elements": ["foo",
+      "baz"]}, "type": "PUT"}]}'
     headers:
       Accept:
       - '*/*'
@@ -251,11 +219,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/branch/main/commit?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
-<<<<<<< HEAD
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"ceb7e1281e83025139c50d7487601219dc41936ff070a55390154ff87ffcbfa1\"\n}"
-=======
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"4f69a5eeff0eafa199bb12fb240dab03eef8b4aa8d088af71a19e8532e7c24b4\"\n}"
->>>>>>> Allow using CEL expression when filtering the commit log
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"20a9a0fedef4c22c5e55b8a3df0eb287f720d9139d7331b7fc441d8995a825f4\"\n}"
     headers:
       Content-Length:
       - '121'
@@ -280,13 +244,8 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
-<<<<<<< HEAD
-        \"ceb7e1281e83025139c50d7487601219dc41936ff070a55390154ff87ffcbfa1\"\n}, {\n
-        \ \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"8a4b5334987b1f2b8e6ca0202707e6c32452f8202ab103bc7b646bd6596d2761\"\n}
-=======
-        \"4f69a5eeff0eafa199bb12fb240dab03eef8b4aa8d088af71a19e8532e7c24b4\"\n}, {\n
-        \ \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"0263b3e097433a4d962d1ba4c879ab8ab3de88a604140aa281d92f84c50bff92\"\n}
->>>>>>> Allow using CEL expression when filtering the commit log
+        \"20a9a0fedef4c22c5e55b8a3df0eb287f720d9139d7331b7fc441d8995a825f4\"\n}, {\n
+        \ \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"717dc47cb225d7c7b42289cc30cdcd7a8a3725777662901b1b3cd5bf2bb0a342\"\n}
         ]"
     headers:
       Content-Length:
@@ -312,25 +271,14 @@ interactions:
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :
-<<<<<<< HEAD
-        [ {\n    \"hash\" : \"8a4b5334987b1f2b8e6ca0202707e6c32452f8202ab103bc7b646bd6596d2761\",\n
+        [ {\n    \"hash\" : \"717dc47cb225d7c7b42289cc30cdcd7a8a3725777662901b1b3cd5bf2bb0a342\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"\",\n    \"signedOffBy\" : null,\n
-        \   \"message\" : \"test_message2\",\n    \"commitTime\" : \"2021-06-21T16:04:10.077149Z\",\n
-        \   \"authorTime\" : \"2021-06-21T16:04:10.077149Z\",\n    \"properties\"
-        : { }\n  }, {\n    \"hash\" : \"70e817eab50744da6ab6a6bc36a7fd40b1e88ff4a33cabbb66e6c0b839a9a0c3\",\n
+        \   \"message\" : \"test_message2\",\n    \"commitTime\" : \"2021-06-22T10:40:45.145486Z\",\n
+        \   \"authorTime\" : \"2021-06-22T10:40:45.145486Z\",\n    \"properties\"
+        : { }\n  }, {\n    \"hash\" : \"97e8feb2778741e5fa3979aba09714f9517062964c3ce7b263caf27192297ab8\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"\",\n    \"signedOffBy\" : null,\n
-        \   \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-21T16:04:10.037730Z\",\n
-        \   \"authorTime\" : \"2021-06-21T16:04:10.037730Z\",\n    \"properties\"
-=======
-        [ {\n    \"hash\" : \"0263b3e097433a4d962d1ba4c879ab8ab3de88a604140aa281d92f84c50bff92\",\n
-        \   \"committer\" : \"\",\n    \"author\" : \"\",\n    \"signedOffBy\" : null,\n
-        \   \"message\" : \"test_message2\",\n    \"commitTime\" : \"2021-06-21T09:52:31.574831Z\",\n
-        \   \"authorTime\" : \"2021-06-21T09:52:31.574831Z\",\n    \"properties\"
-        : { }\n  }, {\n    \"hash\" : \"e93de4142754a0faa5e8b718e04ed13627be7ca23347eb33e2209f804ec4ce98\",\n
-        \   \"committer\" : \"\",\n    \"author\" : \"\",\n    \"signedOffBy\" : null,\n
-        \   \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-21T09:52:31.537895Z\",\n
-        \   \"authorTime\" : \"2021-06-21T09:52:31.537895Z\",\n    \"properties\"
->>>>>>> Allow using CEL expression when filtering the commit log
+        \   \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-22T10:40:45.107079Z\",\n
+        \   \"authorTime\" : \"2021-06-22T10:40:45.107079Z\",\n    \"properties\"
         : { }\n  } ]\n}"
     headers:
       Content-Length:
@@ -341,13 +289,8 @@ interactions:
       code: 200
       message: OK
 - request:
-<<<<<<< HEAD
-    body: '{"hashesToTransplant": ["70e817eab50744da6ab6a6bc36a7fd40b1e88ff4a33cabbb66e6c0b839a9a0c3",
-      "8a4b5334987b1f2b8e6ca0202707e6c32452f8202ab103bc7b646bd6596d2761"]}'
-=======
-    body: '{"hashesToTransplant": ["e93de4142754a0faa5e8b718e04ed13627be7ca23347eb33e2209f804ec4ce98",
-      "0263b3e097433a4d962d1ba4c879ab8ab3de88a604140aa281d92f84c50bff92"]}'
->>>>>>> Allow using CEL expression when filtering the commit log
+    body: '{"hashesToTransplant": ["97e8feb2778741e5fa3979aba09714f9517062964c3ce7b263caf27192297ab8",
+      "717dc47cb225d7c7b42289cc30cdcd7a8a3725777662901b1b3cd5bf2bb0a342"]}'
     headers:
       Accept:
       - '*/*'
@@ -362,11 +305,7 @@ interactions:
       User-Agent:
       - python-requests/2.25.1
     method: POST
-<<<<<<< HEAD
-    uri: http://localhost:19120/api/v1/trees/branch/main/transplant?expectedHash=ceb7e1281e83025139c50d7487601219dc41936ff070a55390154ff87ffcbfa1
-=======
-    uri: http://localhost:19120/api/v1/trees/branch/main/transplant?expectedHash=4f69a5eeff0eafa199bb12fb240dab03eef8b4aa8d088af71a19e8532e7c24b4
->>>>>>> Allow using CEL expression when filtering the commit log
+    uri: http://localhost:19120/api/v1/trees/branch/main/transplant?expectedHash=20a9a0fedef4c22c5e55b8a3df0eb287f720d9139d7331b7fc441d8995a825f4
   response:
     body:
       string: ''
@@ -390,33 +329,18 @@ interactions:
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :
-<<<<<<< HEAD
-        [ {\n    \"hash\" : \"b4e3741ffb31e24e8346071d50560456984987f29c7b386fde49489d8a8ca6fe\",\n
+        [ {\n    \"hash\" : \"01e6a7611d3f062ff75a40b322159346f392af11b424499c24e2a525cbcea686\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"\",\n    \"signedOffBy\" : null,\n
-        \   \"message\" : \"test_message2\",\n    \"commitTime\" : \"2021-06-21T16:04:10.077149Z\",\n
-        \   \"authorTime\" : \"2021-06-21T16:04:10.077149Z\",\n    \"properties\"
-        : { }\n  }, {\n    \"hash\" : \"ea1eaf10eb02aa717c8d71d963e7522682b7990ca632ff5d7a8b9abeafdf9bdd\",\n
+        \   \"message\" : \"test_message2\",\n    \"commitTime\" : \"2021-06-22T10:40:45.145486Z\",\n
+        \   \"authorTime\" : \"2021-06-22T10:40:45.145486Z\",\n    \"properties\"
+        : { }\n  }, {\n    \"hash\" : \"73a74c3e89498145cb77943f75509bd67b6ad6b3894cf7fd3b443a9e94d8d57a\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"\",\n    \"signedOffBy\" : null,\n
-        \   \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-21T16:04:10.037730Z\",\n
-        \   \"authorTime\" : \"2021-06-21T16:04:10.037730Z\",\n    \"properties\"
-        : { }\n  }, {\n    \"hash\" : \"ceb7e1281e83025139c50d7487601219dc41936ff070a55390154ff87ffcbfa1\",\n
+        \   \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-22T10:40:45.107079Z\",\n
+        \   \"authorTime\" : \"2021-06-22T10:40:45.107079Z\",\n    \"properties\"
+        : { }\n  }, {\n    \"hash\" : \"20a9a0fedef4c22c5e55b8a3df0eb287f720d9139d7331b7fc441d8995a825f4\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"\",\n    \"signedOffBy\" : null,\n
-        \   \"message\" : \"test_message3\",\n    \"commitTime\" : \"2021-06-21T16:04:10.117234Z\",\n
-        \   \"authorTime\" : \"2021-06-21T16:04:10.117234Z\",\n    \"properties\"
-=======
-        [ {\n    \"hash\" : \"f1781146b04cf926aa0286474fa589de8108574b5223db0f875e7c5608cfdab3\",\n
-        \   \"committer\" : \"\",\n    \"author\" : \"\",\n    \"signedOffBy\" : null,\n
-        \   \"message\" : \"test_message2\",\n    \"commitTime\" : \"2021-06-21T09:52:31.574831Z\",\n
-        \   \"authorTime\" : \"2021-06-21T09:52:31.574831Z\",\n    \"properties\"
-        : { }\n  }, {\n    \"hash\" : \"6dcab901782dfe50d8cf4d5d2a5c06791ab82c403dc64ab99b6b3c6f6ea0e68b\",\n
-        \   \"committer\" : \"\",\n    \"author\" : \"\",\n    \"signedOffBy\" : null,\n
-        \   \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-06-21T09:52:31.537895Z\",\n
-        \   \"authorTime\" : \"2021-06-21T09:52:31.537895Z\",\n    \"properties\"
-        : { }\n  }, {\n    \"hash\" : \"4f69a5eeff0eafa199bb12fb240dab03eef8b4aa8d088af71a19e8532e7c24b4\",\n
-        \   \"committer\" : \"\",\n    \"author\" : \"\",\n    \"signedOffBy\" : null,\n
-        \   \"message\" : \"test_message3\",\n    \"commitTime\" : \"2021-06-21T09:52:31.614147Z\",\n
-        \   \"authorTime\" : \"2021-06-21T09:52:31.614147Z\",\n    \"properties\"
->>>>>>> Allow using CEL expression when filtering the commit log
+        \   \"message\" : \"test_message3\",\n    \"commitTime\" : \"2021-06-22T10:40:45.186164Z\",\n
+        \   \"authorTime\" : \"2021-06-22T10:40:45.186164Z\",\n    \"properties\"
         : { }\n  } ]\n}"
     headers:
       Content-Length:
@@ -452,17 +376,10 @@ interactions:
       code: 200
       message: OK
 - request:
-<<<<<<< HEAD
-    body: '{"commitMeta": {"email": null, "properties": null, "message": "delete_message",
-      "hash": null, "author": null, "commitTime": null, "committer": null, "authorTime":
+    body: '{"commitMeta": {"email": null, "hash": null, "commitTime": null, "author":
+      null, "committer": null, "authorTime": null, "message": "delete_message", "properties":
       null, "signedOffBy": null}, "operations": [{"key": {"elements": ["foo", "bar"]},
       "type": "DELETE"}]}'
-=======
-    body: '{"operations": [{"key": {"elements": ["foo", "bar"]}, "type": "DELETE"}],
-      "commitMeta": {"message": "delete_message", "properties": null, "signedOffBy":
-      null, "email": null, "committer": null, "hash": null, "authorTime": null, "commitTime":
-      null, "author": null}}'
->>>>>>> Allow using CEL expression when filtering the commit log
     headers:
       Accept:
       - '*/*'
@@ -477,17 +394,10 @@ interactions:
       User-Agent:
       - python-requests/2.25.1
     method: POST
-<<<<<<< HEAD
-    uri: http://localhost:19120/api/v1/trees/branch/main/commit?expectedHash=b4e3741ffb31e24e8346071d50560456984987f29c7b386fde49489d8a8ca6fe
+    uri: http://localhost:19120/api/v1/trees/branch/main/commit?expectedHash=01e6a7611d3f062ff75a40b322159346f392af11b424499c24e2a525cbcea686
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"b7ef9fbaafe8bbf2ba441d38df958d55c82f3abf46c793ec520b558683511749\"\n}"
-=======
-    uri: http://localhost:19120/api/v1/trees/branch/main/commit?expectedHash=f1781146b04cf926aa0286474fa589de8108574b5223db0f875e7c5608cfdab3
-  response:
-    body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"210bb3b67169974e4ee0cc54cf47e530c1ede858f17c199f9316efbae63b819a\"\n}"
->>>>>>> Allow using CEL expression when filtering the commit log
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"fc3f7f530a1ea862dc794e31aaf8f8336318fd822181fc320dff28e880791533\"\n}"
     headers:
       Content-Length:
       - '121'
@@ -511,11 +421,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/dev
   response:
     body:
-<<<<<<< HEAD
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"8a4b5334987b1f2b8e6ca0202707e6c32452f8202ab103bc7b646bd6596d2761\"\n}"
-=======
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"0263b3e097433a4d962d1ba4c879ab8ab3de88a604140aa281d92f84c50bff92\"\n}"
->>>>>>> Allow using CEL expression when filtering the commit log
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"717dc47cb225d7c7b42289cc30cdcd7a8a3725777662901b1b3cd5bf2bb0a342\"\n}"
     headers:
       Content-Length:
       - '120'
@@ -538,11 +444,7 @@ interactions:
       User-Agent:
       - python-requests/2.25.1
     method: DELETE
-<<<<<<< HEAD
-    uri: http://localhost:19120/api/v1/trees/branch/dev?expectedHash=8a4b5334987b1f2b8e6ca0202707e6c32452f8202ab103bc7b646bd6596d2761
-=======
-    uri: http://localhost:19120/api/v1/trees/branch/dev?expectedHash=0263b3e097433a4d962d1ba4c879ab8ab3de88a604140aa281d92f84c50bff92
->>>>>>> Allow using CEL expression when filtering the commit log
+    uri: http://localhost:19120/api/v1/trees/branch/dev?expectedHash=717dc47cb225d7c7b42289cc30cdcd7a8a3725777662901b1b3cd5bf2bb0a342
   response:
     body:
       string: ''
@@ -565,11 +467,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/main
   response:
     body:
-<<<<<<< HEAD
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"b7ef9fbaafe8bbf2ba441d38df958d55c82f3abf46c793ec520b558683511749\"\n}"
-=======
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"210bb3b67169974e4ee0cc54cf47e530c1ede858f17c199f9316efbae63b819a\"\n}"
->>>>>>> Allow using CEL expression when filtering the commit log
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"fc3f7f530a1ea862dc794e31aaf8f8336318fd822181fc320dff28e880791533\"\n}"
     headers:
       Content-Length:
       - '121'
@@ -592,11 +490,7 @@ interactions:
       User-Agent:
       - python-requests/2.25.1
     method: DELETE
-<<<<<<< HEAD
-    uri: http://localhost:19120/api/v1/trees/branch/main?expectedHash=b7ef9fbaafe8bbf2ba441d38df958d55c82f3abf46c793ec520b558683511749
-=======
-    uri: http://localhost:19120/api/v1/trees/branch/main?expectedHash=210bb3b67169974e4ee0cc54cf47e530c1ede858f17c199f9316efbae63b819a
->>>>>>> Allow using CEL expression when filtering the commit log
+    uri: http://localhost:19120/api/v1/trees/branch/main?expectedHash=fc3f7f530a1ea862dc794e31aaf8f8336318fd822181fc320dff28e880791533
   response:
     body:
       string: ''

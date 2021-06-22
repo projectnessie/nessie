@@ -15,11 +15,7 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
-<<<<<<< HEAD
-        \"287655801a64016c7e6dad1cd80e22df79aa42584a83145ce0f6473416616c2c\"\n} ]"
-=======
-        \"6730d35a503305b4f0c966329c8ed62f9965cf8954dd19826935a9698b134f4e\"\n} ]"
->>>>>>> Allow using CEL expression when filtering the commit log
+        \"750dc5abd0677e158e42354042156d940469f979c3c99a59db60e72820837de1\"\n} ]"
     headers:
       Content-Length:
       - '125'
@@ -68,11 +64,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/main
   response:
     body:
-<<<<<<< HEAD
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"287655801a64016c7e6dad1cd80e22df79aa42584a83145ce0f6473416616c2c\"\n}"
-=======
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"6730d35a503305b4f0c966329c8ed62f9965cf8954dd19826935a9698b134f4e\"\n}"
->>>>>>> Allow using CEL expression when filtering the commit log
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"750dc5abd0677e158e42354042156d940469f979c3c99a59db60e72820837de1\"\n}"
     headers:
       Content-Length:
       - '121'
@@ -82,11 +74,7 @@ interactions:
       code: 200
       message: OK
 - request:
-<<<<<<< HEAD
-    body: '{"hash": "287655801a64016c7e6dad1cd80e22df79aa42584a83145ce0f6473416616c2c",
-=======
-    body: '{"hash": "6730d35a503305b4f0c966329c8ed62f9965cf8954dd19826935a9698b134f4e",
->>>>>>> Allow using CEL expression when filtering the commit log
+    body: '{"hash": "750dc5abd0677e158e42354042156d940469f979c3c99a59db60e72820837de1",
       "name": "dev-tag", "type": "TAG"}'
     headers:
       Accept:
@@ -105,11 +93,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree
   response:
     body:
-<<<<<<< HEAD
-      string: "{\n  \"type\" : \"TAG\",\n  \"name\" : \"dev-tag\",\n  \"hash\" : \"287655801a64016c7e6dad1cd80e22df79aa42584a83145ce0f6473416616c2c\"\n}"
-=======
-      string: "{\n  \"type\" : \"TAG\",\n  \"name\" : \"dev-tag\",\n  \"hash\" : \"6730d35a503305b4f0c966329c8ed62f9965cf8954dd19826935a9698b134f4e\"\n}"
->>>>>>> Allow using CEL expression when filtering the commit log
+      string: "{\n  \"type\" : \"TAG\",\n  \"name\" : \"dev-tag\",\n  \"hash\" : \"750dc5abd0677e158e42354042156d940469f979c3c99a59db60e72820837de1\"\n}"
     headers:
       Content-Length:
       - '121'
@@ -134,13 +118,8 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"TAG\",\n  \"name\" : \"dev-tag\",\n  \"hash\" :
-<<<<<<< HEAD
-        \"287655801a64016c7e6dad1cd80e22df79aa42584a83145ce0f6473416616c2c\"\n}, {\n
-        \ \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"287655801a64016c7e6dad1cd80e22df79aa42584a83145ce0f6473416616c2c\"\n}
-=======
-        \"6730d35a503305b4f0c966329c8ed62f9965cf8954dd19826935a9698b134f4e\"\n}, {\n
-        \ \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"6730d35a503305b4f0c966329c8ed62f9965cf8954dd19826935a9698b134f4e\"\n}
->>>>>>> Allow using CEL expression when filtering the commit log
+        \"750dc5abd0677e158e42354042156d940469f979c3c99a59db60e72820837de1\"\n}, {\n
+        \ \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"750dc5abd0677e158e42354042156d940469f979c3c99a59db60e72820837de1\"\n}
         ]"
     headers:
       Content-Length:
@@ -190,11 +169,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/main
   response:
     body:
-<<<<<<< HEAD
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"287655801a64016c7e6dad1cd80e22df79aa42584a83145ce0f6473416616c2c\"\n}"
-=======
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"6730d35a503305b4f0c966329c8ed62f9965cf8954dd19826935a9698b134f4e\"\n}"
->>>>>>> Allow using CEL expression when filtering the commit log
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"750dc5abd0677e158e42354042156d940469f979c3c99a59db60e72820837de1\"\n}"
     headers:
       Content-Length:
       - '121'
@@ -204,11 +179,7 @@ interactions:
       code: 200
       message: OK
 - request:
-<<<<<<< HEAD
-    body: '{"hash": "287655801a64016c7e6dad1cd80e22df79aa42584a83145ce0f6473416616c2c",
-=======
-    body: '{"hash": "6730d35a503305b4f0c966329c8ed62f9965cf8954dd19826935a9698b134f4e",
->>>>>>> Allow using CEL expression when filtering the commit log
+    body: '{"hash": "750dc5abd0677e158e42354042156d940469f979c3c99a59db60e72820837de1",
       "name": "etl-tag", "type": "TAG"}'
     headers:
       Accept:
@@ -227,11 +198,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree
   response:
     body:
-<<<<<<< HEAD
-      string: "{\n  \"type\" : \"TAG\",\n  \"name\" : \"etl-tag\",\n  \"hash\" : \"287655801a64016c7e6dad1cd80e22df79aa42584a83145ce0f6473416616c2c\"\n}"
-=======
-      string: "{\n  \"type\" : \"TAG\",\n  \"name\" : \"etl-tag\",\n  \"hash\" : \"6730d35a503305b4f0c966329c8ed62f9965cf8954dd19826935a9698b134f4e\"\n}"
->>>>>>> Allow using CEL expression when filtering the commit log
+      string: "{\n  \"type\" : \"TAG\",\n  \"name\" : \"etl-tag\",\n  \"hash\" : \"750dc5abd0677e158e42354042156d940469f979c3c99a59db60e72820837de1\"\n}"
     headers:
       Content-Length:
       - '121'
@@ -256,15 +223,9 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"TAG\",\n  \"name\" : \"dev-tag\",\n  \"hash\" :
-<<<<<<< HEAD
-        \"287655801a64016c7e6dad1cd80e22df79aa42584a83145ce0f6473416616c2c\"\n}, {\n
-        \ \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"287655801a64016c7e6dad1cd80e22df79aa42584a83145ce0f6473416616c2c\"\n},
-        {\n  \"type\" : \"TAG\",\n  \"name\" : \"etl-tag\",\n  \"hash\" : \"287655801a64016c7e6dad1cd80e22df79aa42584a83145ce0f6473416616c2c\"\n}
-=======
-        \"6730d35a503305b4f0c966329c8ed62f9965cf8954dd19826935a9698b134f4e\"\n}, {\n
-        \ \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"6730d35a503305b4f0c966329c8ed62f9965cf8954dd19826935a9698b134f4e\"\n},
-        {\n  \"type\" : \"TAG\",\n  \"name\" : \"etl-tag\",\n  \"hash\" : \"6730d35a503305b4f0c966329c8ed62f9965cf8954dd19826935a9698b134f4e\"\n}
->>>>>>> Allow using CEL expression when filtering the commit log
+        \"750dc5abd0677e158e42354042156d940469f979c3c99a59db60e72820837de1\"\n}, {\n
+        \ \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"750dc5abd0677e158e42354042156d940469f979c3c99a59db60e72820837de1\"\n},
+        {\n  \"type\" : \"TAG\",\n  \"name\" : \"etl-tag\",\n  \"hash\" : \"750dc5abd0677e158e42354042156d940469f979c3c99a59db60e72820837de1\"\n}
         ]"
     headers:
       Content-Length:
@@ -289,11 +250,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/etl-tag
   response:
     body:
-<<<<<<< HEAD
-      string: "{\n  \"type\" : \"TAG\",\n  \"name\" : \"etl-tag\",\n  \"hash\" : \"287655801a64016c7e6dad1cd80e22df79aa42584a83145ce0f6473416616c2c\"\n}"
-=======
-      string: "{\n  \"type\" : \"TAG\",\n  \"name\" : \"etl-tag\",\n  \"hash\" : \"6730d35a503305b4f0c966329c8ed62f9965cf8954dd19826935a9698b134f4e\"\n}"
->>>>>>> Allow using CEL expression when filtering the commit log
+      string: "{\n  \"type\" : \"TAG\",\n  \"name\" : \"etl-tag\",\n  \"hash\" : \"750dc5abd0677e158e42354042156d940469f979c3c99a59db60e72820837de1\"\n}"
     headers:
       Content-Length:
       - '121'
@@ -316,11 +273,7 @@ interactions:
       User-Agent:
       - python-requests/2.25.1
     method: DELETE
-<<<<<<< HEAD
-    uri: http://localhost:19120/api/v1/trees/tag/etl-tag?expectedHash=287655801a64016c7e6dad1cd80e22df79aa42584a83145ce0f6473416616c2c
-=======
-    uri: http://localhost:19120/api/v1/trees/tag/etl-tag?expectedHash=6730d35a503305b4f0c966329c8ed62f9965cf8954dd19826935a9698b134f4e
->>>>>>> Allow using CEL expression when filtering the commit log
+    uri: http://localhost:19120/api/v1/trees/tag/etl-tag?expectedHash=750dc5abd0677e158e42354042156d940469f979c3c99a59db60e72820837de1
   response:
     body:
       string: ''
@@ -343,11 +296,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/dev-tag
   response:
     body:
-<<<<<<< HEAD
-      string: "{\n  \"type\" : \"TAG\",\n  \"name\" : \"dev-tag\",\n  \"hash\" : \"287655801a64016c7e6dad1cd80e22df79aa42584a83145ce0f6473416616c2c\"\n}"
-=======
-      string: "{\n  \"type\" : \"TAG\",\n  \"name\" : \"dev-tag\",\n  \"hash\" : \"6730d35a503305b4f0c966329c8ed62f9965cf8954dd19826935a9698b134f4e\"\n}"
->>>>>>> Allow using CEL expression when filtering the commit log
+      string: "{\n  \"type\" : \"TAG\",\n  \"name\" : \"dev-tag\",\n  \"hash\" : \"750dc5abd0677e158e42354042156d940469f979c3c99a59db60e72820837de1\"\n}"
     headers:
       Content-Length:
       - '121'
@@ -370,11 +319,7 @@ interactions:
       User-Agent:
       - python-requests/2.25.1
     method: DELETE
-<<<<<<< HEAD
-    uri: http://localhost:19120/api/v1/trees/tag/dev-tag?expectedHash=287655801a64016c7e6dad1cd80e22df79aa42584a83145ce0f6473416616c2c
-=======
-    uri: http://localhost:19120/api/v1/trees/tag/dev-tag?expectedHash=6730d35a503305b4f0c966329c8ed62f9965cf8954dd19826935a9698b134f4e
->>>>>>> Allow using CEL expression when filtering the commit log
+    uri: http://localhost:19120/api/v1/trees/tag/dev-tag?expectedHash=750dc5abd0677e158e42354042156d940469f979c3c99a59db60e72820837de1
   response:
     body:
       string: ''
@@ -398,11 +343,7 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
-<<<<<<< HEAD
-        \"287655801a64016c7e6dad1cd80e22df79aa42584a83145ce0f6473416616c2c\"\n} ]"
-=======
-        \"6730d35a503305b4f0c966329c8ed62f9965cf8954dd19826935a9698b134f4e\"\n} ]"
->>>>>>> Allow using CEL expression when filtering the commit log
+        \"750dc5abd0677e158e42354042156d940469f979c3c99a59db60e72820837de1\"\n} ]"
     headers:
       Content-Length:
       - '125'

@@ -82,19 +82,11 @@ interactions:
       code: 404
       message: Not Found
 - request:
-<<<<<<< HEAD
-    body: '{"commitMeta": {"email": null, "properties": null, "message": "test_message1",
-      "hash": null, "author": null, "commitTime": null, "committer": null, "authorTime":
-      null, "signedOffBy": null}, "operations": [{"contents": {"id": "uuid", "metadataLocation":
-      "/a/b/c", "type": "ICEBERG_TABLE"}, "key": {"elements": ["this", "is", "iceberg",
-      "foo"]}, "type": "PUT"}]}'
-=======
-    body: '{"operations": [{"key": {"elements": ["this", "is", "iceberg", "foo"]},
-      "contents": {"id": "uuid", "metadataLocation": "/a/b/c", "type": "ICEBERG_TABLE"},
-      "type": "PUT"}], "commitMeta": {"message": "test_message1", "properties": null,
-      "signedOffBy": null, "email": null, "committer": null, "hash": null, "authorTime":
-      null, "commitTime": null, "author": null}}'
->>>>>>> Allow using CEL expression when filtering the commit log
+    body: '{"commitMeta": {"email": null, "hash": null, "commitTime": null, "author":
+      null, "committer": null, "authorTime": null, "message": "test_message1", "properties":
+      null, "signedOffBy": null}, "operations": [{"contents": {"metadataLocation":
+      "/a/b/c", "id": "uuid", "type": "ICEBERG_TABLE"}, "key": {"elements": ["this",
+      "is", "iceberg", "foo"]}, "type": "PUT"}]}'
     headers:
       Accept:
       - '*/*'
@@ -113,11 +105,7 @@ interactions:
   response:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\",\n
-<<<<<<< HEAD
-        \ \"hash\" : \"482737b8767867550c4e38d2c5fd4e5b207b503d288447a0075525624235c2e0\"\n}"
-=======
-        \ \"hash\" : \"51d72e85bbcf02b1e81ff3cb07f7bec0a84a3b7093e240eae2a3a67d218864d2\"\n}"
->>>>>>> Allow using CEL expression when filtering the commit log
+        \ \"hash\" : \"2a6e42e80d5042cde4e8a36d48020692459739523c3386aa78fe2cb3b916a9ae\"\n}"
     headers:
       Content-Length:
       - '137'
@@ -142,11 +130,7 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\",\n
-<<<<<<< HEAD
-        \ \"hash\" : \"482737b8767867550c4e38d2c5fd4e5b207b503d288447a0075525624235c2e0\"\n},
-=======
-        \ \"hash\" : \"51d72e85bbcf02b1e81ff3cb07f7bec0a84a3b7093e240eae2a3a67d218864d2\"\n},
->>>>>>> Allow using CEL expression when filtering the commit log
+        \ \"hash\" : \"2a6e42e80d5042cde4e8a36d48020692459739523c3386aa78fe2cb3b916a9ae\"\n},
         {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}
         ]"
     headers:
@@ -184,21 +168,12 @@ interactions:
       code: 404
       message: Not Found
 - request:
-<<<<<<< HEAD
-    body: '{"commitMeta": {"email": null, "properties": null, "message": "test_message2",
-      "hash": null, "author": null, "commitTime": null, "committer": null, "authorTime":
-      null, "signedOffBy": null}, "operations": [{"contents": {"metadataLocationHistory":
-      ["asd"], "checkpointLocationHistory": ["def"], "lastCheckpoint": "x", "id":
-      "uuid2", "type": "DELTA_LAKE_TABLE"}, "key": {"elements": ["this", "is", "delta",
-      "bar"]}, "type": "PUT"}]}'
-=======
-    body: '{"operations": [{"key": {"elements": ["this", "is", "delta", "bar"]}, "contents":
-      {"id": "uuid2", "checkpoint_location_history": ["def"], "metadataLocation":
-      "x", "metadata_location_history": ["asd"], "type": "DELTA_LAKE_TABLE"}, "type":
-      "PUT"}], "commitMeta": {"message": "test_message2", "properties": null, "signedOffBy":
-      null, "email": null, "committer": null, "hash": null, "authorTime": null, "commitTime":
-      null, "author": null}}'
->>>>>>> Allow using CEL expression when filtering the commit log
+    body: '{"commitMeta": {"email": null, "hash": null, "commitTime": null, "author":
+      null, "committer": null, "authorTime": null, "message": "test_message2", "properties":
+      null, "signedOffBy": null}, "operations": [{"contents": {"checkpointLocationHistory":
+      ["def"], "lastCheckpoint": "x", "metadataLocationHistory": ["asd"], "id": "uuid2",
+      "type": "DELTA_LAKE_TABLE"}, "key": {"elements": ["this", "is", "delta", "bar"]},
+      "type": "PUT"}]}'
     headers:
       Accept:
       - '*/*'
@@ -207,29 +182,17 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-<<<<<<< HEAD
       - '429'
-=======
-      - '435'
->>>>>>> Allow using CEL expression when filtering the commit log
       Content-Type:
       - application/json
       User-Agent:
       - python-requests/2.25.1
     method: POST
-<<<<<<< HEAD
-    uri: http://localhost:19120/api/v1/trees/branch/contents_listing_dev/commit?expectedHash=482737b8767867550c4e38d2c5fd4e5b207b503d288447a0075525624235c2e0
+    uri: http://localhost:19120/api/v1/trees/branch/contents_listing_dev/commit?expectedHash=2a6e42e80d5042cde4e8a36d48020692459739523c3386aa78fe2cb3b916a9ae
   response:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\",\n
-        \ \"hash\" : \"4acd6f03448f66290f71948f16af0c038ca5d9c229f08b5271e1e1285568b03d\"\n}"
-=======
-    uri: http://localhost:19120/api/v1/trees/branch/contents_listing_dev/commit?expectedHash=51d72e85bbcf02b1e81ff3cb07f7bec0a84a3b7093e240eae2a3a67d218864d2
-  response:
-    body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\",\n
-        \ \"hash\" : \"f86ef8c5d9306c5f52feb1a0f93da9f94071f975314427dddfddf7f842c6a4b3\"\n}"
->>>>>>> Allow using CEL expression when filtering the commit log
+        \ \"hash\" : \"b4fce2a9f70142b47e1d8d6d2d53676c36f4ce4fdfd2e4a71175694e9e664658\"\n}"
     headers:
       Content-Length:
       - '137'
@@ -275,7 +238,6 @@ interactions:
       User-Agent:
       - python-requests/2.25.1
     method: GET
-<<<<<<< HEAD
     uri: http://localhost:19120/api/v1/contents/this.is.delta.bar?ref=contents_listing_dev
   response:
     body:
@@ -285,17 +247,6 @@ interactions:
     headers:
       Content-Length:
       - '161'
-=======
-    uri: http://localhost:19120/api/v1/trees/tree/contents_listing_dev/entries?types=ICEBERG_TABLE
-  response:
-    body:
-      string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"entries\" : [ {\n
-        \   \"type\" : \"ICEBERG_TABLE\",\n    \"name\" : {\n      \"elements\" :
-        [ \"this\", \"is\", \"iceberg\", \"foo\" ]\n    }\n  } ]\n}"
-    headers:
-      Content-Length:
-      - '171'
->>>>>>> Allow using CEL expression when filtering the commit log
       Content-Type:
       - application/json
     status:
@@ -313,10 +264,33 @@ interactions:
       User-Agent:
       - python-requests/2.25.1
     method: GET
-<<<<<<< HEAD
-    uri: http://localhost:19120/api/v1/trees/tree/contents_listing_dev/entries?types=ICEBERG_TABLE
-=======
-    uri: http://localhost:19120/api/v1/trees/tree/contents_listing_dev/entries?types=DELTA_LAKE_TABLE
+    uri: http://localhost:19120/api/v1/trees/tree/contents_listing_dev/entries?query_expression=entry.contentType+in+%5B%27ICEBERG_TABLE%27%5D
+  response:
+    body:
+      string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"entries\" : [ {\n
+        \   \"type\" : \"ICEBERG_TABLE\",\n    \"name\" : {\n      \"elements\" :
+        [ \"this\", \"is\", \"iceberg\", \"foo\" ]\n    }\n  } ]\n}"
+    headers:
+      Content-Length:
+      - '171'
+      Content-Type:
+      - application/json
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.25.1
+    method: GET
+    uri: http://localhost:19120/api/v1/trees/tree/contents_listing_dev/entries?query_expression=entry.contentType+in+%5B%27DELTA_LAKE_TABLE%27%5D
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"entries\" : [ {\n
@@ -343,7 +317,6 @@ interactions:
       - python-requests/2.25.1
     method: GET
     uri: http://localhost:19120/api/v1/trees/tree/contents_listing_dev/entries?query_expression=entry.contentType+%3D%3D+%27ICEBERG_TABLE%27
->>>>>>> Allow using CEL expression when filtering the commit log
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"entries\" : [ {\n
@@ -369,9 +342,6 @@ interactions:
       User-Agent:
       - python-requests/2.25.1
     method: GET
-<<<<<<< HEAD
-    uri: http://localhost:19120/api/v1/trees/tree/contents_listing_dev/entries?types=DELTA_LAKE_TABLE
-=======
     uri: http://localhost:19120/api/v1/trees/tree/contents_listing_dev/entries?query_expression=entry.contentType+in+%5B%27ICEBERG_TABLE%27%2C+%27DELTA_LAKE_TABLE%27%5D
   response:
     body:
@@ -401,7 +371,6 @@ interactions:
       - python-requests/2.25.1
     method: GET
     uri: http://localhost:19120/api/v1/trees/tree/contents_listing_dev/entries?query_expression=entry.namespace.startsWith%28%27this.is.del%27%29
->>>>>>> Allow using CEL expression when filtering the commit log
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"entries\" : [ {\n
@@ -427,8 +396,6 @@ interactions:
       User-Agent:
       - python-requests/2.25.1
     method: GET
-<<<<<<< HEAD
-=======
     uri: http://localhost:19120/api/v1/trees/tree/contents_listing_dev/entries?query_expression=entry.namespace.startsWith%28%27this.is%27%29
   response:
     body:
@@ -457,16 +424,11 @@ interactions:
       User-Agent:
       - python-requests/2.25.1
     method: GET
->>>>>>> Allow using CEL expression when filtering the commit log
     uri: http://localhost:19120/api/v1/trees/tree/contents_listing_dev
   response:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\",\n
-<<<<<<< HEAD
-        \ \"hash\" : \"4acd6f03448f66290f71948f16af0c038ca5d9c229f08b5271e1e1285568b03d\"\n}"
-=======
-        \ \"hash\" : \"f86ef8c5d9306c5f52feb1a0f93da9f94071f975314427dddfddf7f842c6a4b3\"\n}"
->>>>>>> Allow using CEL expression when filtering the commit log
+        \ \"hash\" : \"b4fce2a9f70142b47e1d8d6d2d53676c36f4ce4fdfd2e4a71175694e9e664658\"\n}"
     headers:
       Content-Length:
       - '137'
@@ -489,11 +451,7 @@ interactions:
       User-Agent:
       - python-requests/2.25.1
     method: DELETE
-<<<<<<< HEAD
-    uri: http://localhost:19120/api/v1/trees/branch/contents_listing_dev?expectedHash=4acd6f03448f66290f71948f16af0c038ca5d9c229f08b5271e1e1285568b03d
-=======
-    uri: http://localhost:19120/api/v1/trees/branch/contents_listing_dev?expectedHash=f86ef8c5d9306c5f52feb1a0f93da9f94071f975314427dddfddf7f842c6a4b3
->>>>>>> Allow using CEL expression when filtering the commit log
+    uri: http://localhost:19120/api/v1/trees/branch/contents_listing_dev?expectedHash=b4fce2a9f70142b47e1d8d6d2d53676c36f4ce4fdfd2e4a71175694e9e664658
   response:
     body:
       string: ''
