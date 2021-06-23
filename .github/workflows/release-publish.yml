@@ -47,6 +47,7 @@ jobs:
   publish-release:
     name: Publish release
     runs-on: ubuntu-latest
+    if: ${{ github.repository == 'projectnessie/nessie' }}
 
     # Runs in the `release` environment, which has the necessary secrets and defines the reviewers.
     # See https://docs.github.com/en/actions/reference/environments
