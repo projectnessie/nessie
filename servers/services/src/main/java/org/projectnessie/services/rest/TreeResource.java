@@ -15,18 +15,12 @@
  */
 package org.projectnessie.services.rest;
 
-import static org.projectnessie.services.cel.CELUtil.COMMIT_LOG_DECLARATIONS;
-import static org.projectnessie.services.cel.CELUtil.ENTRIES_DECLARATIONS;
-import static org.projectnessie.services.cel.CELUtil.SCRIPT_HOST;
-
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import java.security.Principal;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.enterprise.context.RequestScoped;
@@ -34,8 +28,6 @@ import javax.inject.Inject;
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.params.EntriesParams;
-import org.projectnessie.cel.tools.Script;
-import org.projectnessie.cel.tools.ScriptException;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -195,50 +187,36 @@ public class TreeResource extends BaseResource implements TreeApi {
   }
 
   /**
-   * Applies different filters to the {@link Stream} of commits based on the query expression in
-   * {@link CommitLogParams#getQueryExpression()}.
+   * Applies different filters to the {@link Stream} of commits based on the settings in {@link
+   * CommitLogParams}.
    *
    * @param commits The commit log that different filters will be applied to
-   * @param params The commit log parameters that contain the query expression to filter by
-   * @return A potentially filtered {@link Stream} of commits based on {@link
-   *     CommitLogParams#getQueryExpression()}
+   * @param params The commit log filter parameters
+   * @return A potentially filtered {@link Stream} of commits based on {@link CommitLogParams}
    */
   private Stream<ImmutableCommitMeta> filterCommitLog(
       Stream<ImmutableCommitMeta> commits, CommitLogParams params) {
-    if (Strings.isNullOrEmpty(params.getQueryExpression())) {
-      return commits;
+    if (null != params.getAuthors() && !params.getAuthors().isEmpty()) {
+      commits = commits.filter(commit -> params.getAuthors().contains(commit.getAuthor()));
     }
-
-    final Script script;
-    try {
-      script =
-          SCRIPT_HOST.getOrCreateScript(
-              params.getQueryExpression(), COMMIT_LOG_DECLARATIONS, Collections.emptyList());
-    } catch (ScriptException e) {
-      throw new IllegalArgumentException(e);
+    if (null != params.getCommitters() && !params.getCommitters().isEmpty()) {
+      commits = commits.filter(commit -> params.getCommitters().contains(commit.getCommitter()));
     }
-    return commits.filter(
-        commit -> {
-          // currently this is just a workaround where we put CommitMeta into a hash structure.
-          // Eventually we should have a CommitMetaT that we register to avoid unnecessary object
-          // creation
-          Map<String, Object> arguments =
-              ImmutableMap.of(
-                  "commit",
-                  ImmutableMap.of(
-                      "author",
-                      commit.getAuthor(),
-                      "committer",
-                      commit.getCommitter(),
-                      "commitTime",
-                      commit.getCommitTime()));
-
-          try {
-            return script.execute(Boolean.class, arguments);
-          } catch (ScriptException e) {
-            throw new RuntimeException(e);
-          }
-        });
+    if (null != params.getAfter()) {
+      commits =
+          commits.filter(
+              commit ->
+                  null != commit.getCommitTime()
+                      && commit.getCommitTime().isAfter(params.getAfter()));
+    }
+    if (null != params.getBefore()) {
+      commits =
+          commits.filter(
+              commit ->
+                  null != commit.getCommitTime()
+                      && commit.getCommitTime().isBefore(params.getBefore()));
+    }
+    return commits;
   }
 
   @Override
@@ -318,49 +296,29 @@ public class TreeResource extends BaseResource implements TreeApi {
   }
 
   /**
-   * Applies different filters to the {@link Stream} of entries based on the query expression in
-   * {@link EntriesParams#getQueryExpression()}.
+   * Applies different filters to the {@link Stream} of entries based on the settings in {@link
+   * EntriesParams}.
    *
    * @param entries The entries that different filters will be applied to
-   * @param params The entries parameters that contain the query expression to filter by
-   * @return A potentially filtered {@link Stream} of entries based on {@link
-   *     EntriesParams#getQueryExpression()}
+   * @param params The filter parameters for the entries
+   * @return A potentially filtered {@link Stream} of entries based on {@link EntriesParams}
    */
   private Stream<EntriesResponse.Entry> filterEntries(
       Stream<EntriesResponse.Entry> entries, EntriesParams params) {
-    if (Strings.isNullOrEmpty(params.getQueryExpression())) {
-      return entries;
+    final Set<Type> payloads;
+    if (params.getTypes().isEmpty()) {
+      payloads = Arrays.stream(Type.values()).collect(Collectors.toSet());
+    } else {
+      payloads = params.getTypes().stream().map(Type::valueOf).collect(Collectors.toSet());
     }
 
-    final Script script;
-    try {
-      script =
-          SCRIPT_HOST.getOrCreateScript(
-              params.getQueryExpression(), ENTRIES_DECLARATIONS, Collections.emptyList());
-    } catch (ScriptException e) {
-      throw new IllegalArgumentException(e);
-    }
-    return entries.filter(
-        entry -> {
-          // currently this is just a workaround where we put EntriesResponse.Entry into a hash
-          // structure.
-          // Eventually we should have a EntriesT that we register to avoid unnecessary object
-          // creation
-          Map<String, Object> arguments =
-              ImmutableMap.of(
-                  "entry",
-                  ImmutableMap.of(
-                      "namespace",
-                      entry.getName().getNamespace().name(),
-                      "contentType",
-                      entry.getType().name()));
+    entries = entries.filter(x -> payloads.contains(x.getType()));
 
-          try {
-            return script.execute(Boolean.class, arguments);
-          } catch (ScriptException e) {
-            throw new RuntimeException(e);
-          }
-        });
+    if (null != params.getNamespace()) {
+      entries =
+          entries.filter(x -> x.getName().getNamespace().name().startsWith(params.getNamespace()));
+    }
+    return entries;
   }
 
   @Override

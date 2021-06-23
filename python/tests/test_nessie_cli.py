@@ -10,7 +10,6 @@ from typing import Optional
 import confuse
 import pytest
 import simplejson
-from assertpy import assert_that
 from click.testing import CliRunner
 from click.testing import Result
 
@@ -158,9 +157,6 @@ def test_log() -> None:
     result = _run(runner, ["--json", "log", "--committer", ""])
     logs = simplejson.loads(result.output)
     assert len(logs) == 2
-    result = _run(runner, ["--json", "log", "--query", "commit.author == 'nessie_user2' || commit.author == 'non_existing'"])
-    logs = simplejson.loads(result.output)
-    assert len(logs) == 1
 
 
 @pytest.mark.vcr
@@ -400,46 +396,22 @@ def test_contents_listing() -> None:
 
     result = _run(runner, ["--json", "contents", "--ref", branch, "this.is.iceberg.foo"])
     tables = ContentsSchema().loads(result.output, many=True)
-    assert_that(tables).is_length(1)
-    assert_that(tables[0]).is_equal_to(iceberg_table)
+    assert len(tables) == 1
+    assert tables[0] == iceberg_table
 
     result = _run(runner, ["--json", "contents", "--ref", branch, "this.is.delta.bar"])
     tables = ContentsSchema().loads(result.output, many=True)
-    assert_that(tables).is_length(1)
-    assert_that(tables[0]).is_equal_to(delta_lake_table)
+    assert len(tables) == 1
+    assert tables[0] == delta_lake_table
 
     result = _run(runner, ["--json", "contents", "--ref", branch, "--list", "--type", "ICEBERG_TABLE"])
     tables = EntrySchema().loads(result.output, many=True)
-    assert_that(tables).is_length(1)
-    assert_that(tables[0].kind).is_equal_to("ICEBERG_TABLE")
+    assert len(tables) == 1
+    assert tables[0].kind == "ICEBERG_TABLE"
 
     result = _run(runner, ["--json", "contents", "--ref", branch, "--list", "--type", "DELTA_LAKE_TABLE"])
     tables = EntrySchema().loads(result.output, many=True)
-    assert_that(tables).is_length(1)
-    assert_that(tables[0].kind).is_equal_to("DELTA_LAKE_TABLE")
-
-    result = _run(runner, ["--json", "contents", "--ref", branch, "--list", "--query", "entry.contentType == 'ICEBERG_TABLE'"])
-    tables = EntrySchema().loads(result.output, many=True)
-    assert_that(tables).is_length(1)
-    assert_that(tables[0].kind).is_equal_to("ICEBERG_TABLE")
-
-    result = _run(
-        runner, ["--json", "contents", "--ref", branch, "--list", "--query", "entry.contentType in ['ICEBERG_TABLE', 'DELTA_LAKE_TABLE']"]
-    )
-    tables = EntrySchema().loads(result.output, many=True)
-    assert_that(tables).is_length(2)
-    assert_that(tables[0].kind).is_equal_to("ICEBERG_TABLE")
-    assert_that(tables[1].kind).is_equal_to("DELTA_LAKE_TABLE")
-
-    result = _run(runner, ["--json", "contents", "--ref", branch, "--list", "--query", "entry.namespace.startsWith('this.is.del')"])
-    tables = EntrySchema().loads(result.output, many=True)
-    assert_that(tables).is_length(1)
-    assert_that(tables[0].kind).is_equal_to("DELTA_LAKE_TABLE")
-
-    result = _run(runner, ["--json", "contents", "--ref", branch, "--list", "--query", "entry.namespace.startsWith('this.is')"])
-    tables = EntrySchema().loads(result.output, many=True)
-    assert_that(tables).is_length(2)
-    assert_that(tables[0].kind).is_equal_to("ICEBERG_TABLE")
-    assert_that(tables[1].kind).is_equal_to("DELTA_LAKE_TABLE")
+    assert len(tables) == 1
+    assert tables[0].kind == "DELTA_LAKE_TABLE"
 
     _run(runner, ["branch", branch, "--delete"])

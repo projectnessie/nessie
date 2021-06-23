@@ -121,16 +121,17 @@ class NessieClient(object):
         ref: str,
         max_result_hint: Optional[int] = None,
         page_token: Optional[str] = None,
-        query_expression: Optional[str] = None,
+        entity_types: Optional[list] = None,
     ) -> Entries:
         """Fetch a list of all tables from a known branch.
 
         :param ref: name of branch
         :param entity_types: list of types to filter keys on
-        :param query_expression: A CEL expression that allows advanced filtering capabilities
         :return: list of Nessie table names
         """
-        return EntriesSchema().load(list_tables(self._base_url, ref, max_result_hint, page_token, query_expression, self._ssl_verify))
+        if not entity_types:
+            entity_types = list()
+        return EntriesSchema().load(list_tables(self._base_url, ref, max_result_hint, page_token, entity_types, self._ssl_verify))
 
     def get_values(self: "NessieClient", ref: str, *tables: str) -> Generator[Contents, Any, None]:
         """Fetch a table from a known ref.
