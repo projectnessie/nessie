@@ -21,7 +21,7 @@
     "@types/react-dom": "^17.0.8",
     "@types/react-router-dom": "^5.1.7",
     "@types/yup": "^0.29.11",
-    "bootstrap": "^5.0.1",
+    "bootstrap": "^5.0.2",
     "formik": "^2.2.9",
     "history": "^5.0.0",
     "http-proxy-middleware": "^2.0.0",
