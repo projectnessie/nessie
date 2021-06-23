@@ -32,8 +32,6 @@ import java.util.stream.Stream;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import org.projectnessie.api.TreeApi;
-import org.projectnessie.api.params.CommitLogParams;
-import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.cel.tools.Script;
 import org.projectnessie.cel.tools.ScriptException;
 import org.projectnessie.error.NessieConflictException;
@@ -166,20 +164,19 @@ public class TreeResource extends BaseResource implements TreeApi {
   }
 
   @Override
-  public LogResponse getCommitLog(String ref, CommitLogParams params)
+  public LogResponse getCommitLog(
+      String ref, Integer maxRecords, String pageToken, String queryExpression)
       throws NessieNotFoundException {
     int max =
-        Math.min(
-            params.getMaxRecords() != null ? params.getMaxRecords() : MAX_COMMIT_LOG_ENTRIES,
-            MAX_COMMIT_LOG_ENTRIES);
-    Hash startRef = getHashOrThrow(params.getPageToken() != null ? params.getPageToken() : ref);
+        Math.min(maxRecords != null ? maxRecords : MAX_COMMIT_LOG_ENTRIES, MAX_COMMIT_LOG_ENTRIES);
+    Hash startRef = getHashOrThrow(pageToken != null ? pageToken : ref);
 
     try (Stream<ImmutableCommitMeta> s =
         getStore()
             .getCommits(startRef)
             .map(cwh -> cwh.getValue().toBuilder().hash(cwh.getHash().asString()).build())) {
       List<CommitMeta> items =
-          filterCommitLog(s, params).limit(max + 1).collect(Collectors.toList());
+          filterCommitLog(s, queryExpression).limit(max + 1).collect(Collectors.toList());
       if (items.size() == max + 1) {
         return ImmutableLogResponse.builder()
             .addAllOperations(items.subList(0, max))
@@ -195,17 +192,15 @@ public class TreeResource extends BaseResource implements TreeApi {
   }
 
   /**
-   * Applies different filters to the {@link Stream} of commits based on the query expression in
-   * {@link CommitLogParams#getQueryExpression()}.
+   * Applies different filters to the {@link Stream} of commits based on the query expression.
    *
    * @param commits The commit log that different filters will be applied to
-   * @param params The commit log parameters that contain the query expression to filter by
-   * @return A potentially filtered {@link Stream} of commits based on {@link
-   *     CommitLogParams#getQueryExpression()}
+   * @param queryExpression The query expression to filter by
+   * @return A potentially filtered {@link Stream} of commits based on the query expression
    */
   private Stream<ImmutableCommitMeta> filterCommitLog(
-      Stream<ImmutableCommitMeta> commits, CommitLogParams params) {
-    if (Strings.isNullOrEmpty(params.getQueryExpression())) {
+      Stream<ImmutableCommitMeta> commits, String queryExpression) {
+    if (Strings.isNullOrEmpty(queryExpression)) {
       return commits;
     }
 
@@ -213,15 +208,14 @@ public class TreeResource extends BaseResource implements TreeApi {
     try {
       script =
           SCRIPT_HOST.getOrCreateScript(
-              params.getQueryExpression(), COMMIT_LOG_DECLARATIONS, Collections.emptyList());
+              queryExpression, COMMIT_LOG_DECLARATIONS, Collections.emptyList());
     } catch (ScriptException e) {
       throw new IllegalArgumentException(e);
     }
     return commits.filter(
         commit -> {
           // currently this is just a workaround where we put CommitMeta into a hash structure.
-          // Eventually we should have a CommitMetaT that we register to avoid unnecessary object
-          // creation
+          // Eventually we should just be able to do "script.execute(Boolean.class, commit)"
           Map<String, Object> arguments =
               ImmutableMap.of(
                   "commit",
@@ -285,7 +279,8 @@ public class TreeResource extends BaseResource implements TreeApi {
   }
 
   @Override
-  public EntriesResponse getEntries(String refName, EntriesParams params)
+  public EntriesResponse getEntries(
+      String refName, Integer maxRecords, String pageToken, String queryExpression)
       throws NessieNotFoundException {
 
     final Hash hash = getHashOrThrow(refName);
@@ -308,7 +303,7 @@ public class TreeResource extends BaseResource implements TreeApi {
                           .name(fromKey(key.getValue()))
                           .type((Type) key.getType())
                           .build())) {
-        entries = filterEntries(s, params).collect(ImmutableList.toImmutableList());
+        entries = filterEntries(s, queryExpression).collect(ImmutableList.toImmutableList());
       }
       return EntriesResponse.builder().addAllEntries(entries).build();
     } catch (ReferenceNotFoundException e) {
@@ -318,17 +313,15 @@ public class TreeResource extends BaseResource implements TreeApi {
   }
 
   /**
-   * Applies different filters to the {@link Stream} of entries based on the query expression in
-   * {@link EntriesParams#getQueryExpression()}.
+   * Applies different filters to the {@link Stream} of entries based on the query expression.
    *
    * @param entries The entries that different filters will be applied to
-   * @param params The entries parameters that contain the query expression to filter by
-   * @return A potentially filtered {@link Stream} of entries based on {@link
-   *     EntriesParams#getQueryExpression()}
+   * @param queryExpression The query expression to filter by
+   * @return A potentially filtered {@link Stream} of entries based on the query expression
    */
   private Stream<EntriesResponse.Entry> filterEntries(
-      Stream<EntriesResponse.Entry> entries, EntriesParams params) {
-    if (Strings.isNullOrEmpty(params.getQueryExpression())) {
+      Stream<EntriesResponse.Entry> entries, String queryExpression) {
+    if (Strings.isNullOrEmpty(queryExpression)) {
       return entries;
     }
 
@@ -336,7 +329,7 @@ public class TreeResource extends BaseResource implements TreeApi {
     try {
       script =
           SCRIPT_HOST.getOrCreateScript(
-              params.getQueryExpression(), ENTRIES_DECLARATIONS, Collections.emptyList());
+              queryExpression, ENTRIES_DECLARATIONS, Collections.emptyList());
     } catch (ScriptException e) {
       throw new IllegalArgumentException(e);
     }
@@ -344,8 +337,7 @@ public class TreeResource extends BaseResource implements TreeApi {
         entry -> {
           // currently this is just a workaround where we put EntriesResponse.Entry into a hash
           // structure.
-          // Eventually we should have a EntriesT that we register to avoid unnecessary object
-          // creation
+          // Eventually we should just be able to do "script.execute(Boolean.class, entry)"
           Map<String, Object> arguments =
               ImmutableMap.of(
                   "entry",
