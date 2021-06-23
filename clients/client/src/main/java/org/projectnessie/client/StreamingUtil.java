@@ -19,8 +19,6 @@ import java.util.OptionalInt;
 import java.util.stream.Stream;
 import javax.validation.constraints.NotNull;
 import org.projectnessie.api.TreeApi;
-import org.projectnessie.api.params.CommitLogParams;
-import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.EntriesResponse;
@@ -36,65 +34,51 @@ public final class StreamingUtil {
 
   /**
    * Default implementation to return a stream of objects for a ref, functionally equivalent to
-   * calling {@link TreeApi#getEntries(String, EntriesParams)} with manual paging.
+   * calling {@link TreeApi#getEntries(String, Integer, String, String)} with manual paging.
    *
    * <p>The {@link Stream} returned by {@code getEntriesStream(ref, OptionalInt.empty())}, if not
    * limited, returns all commit-log entries.
    *
    * @param ref a named reference (branch or tag name) or a commit-hash
-   * @param entriesParams A wrapper object holding all filtering parameters
+   * @param pageSizeHint page-size hint for the backend
+   * @param queryExpression The query expression to filter by
    * @return stream of {@link Entry} objects
    */
   public static Stream<Entry> getEntriesStream(
-      @NotNull TreeApi treeApi, @NotNull String ref, @NotNull EntriesParams entriesParams)
+      @NotNull TreeApi treeApi,
+      @NotNull String ref,
+      OptionalInt pageSizeHint,
+      String queryExpression)
       throws NessieNotFoundException {
-
     return new ResultStreamPaginator<>(
             EntriesResponse::getEntries,
-            (ref1, pageSize, token) ->
-                treeApi.getEntries(
-                    ref1,
-                    EntriesParams.builder()
-                        .from(entriesParams)
-                        .maxRecords(pageSize)
-                        .pageToken(token)
-                        .build()))
-        .generateStream(
-            ref,
-            entriesParams.getMaxRecords() == null
-                ? OptionalInt.empty()
-                : OptionalInt.of(entriesParams.getMaxRecords()));
+            (ref1, pageSize, token) -> treeApi.getEntries(ref1, pageSize, token, queryExpression))
+        .generateStream(ref, pageSizeHint);
   }
 
   /**
    * Default implementation to return a stream of commit-log entries, functionally equivalent to
-   * calling {@link TreeApi#getCommitLog(String, CommitLogParams)} with manual paging.
+   * calling {@link TreeApi#getCommitLog(String, Integer, String, String)} with manual paging.
    *
    * <p>The {@link Stream} returned by {@code getCommitLogStream(ref, OptionalInt.empty())}, if not
    * limited, returns all commit-log entries.
    *
    * @param treeApi The {@link TreeApi} to use
    * @param ref a named reference (branch or tag name) or a commit-hash
-   * @param commitLogParams A wrapper object holding all filtering parameters for the commit log
+   * @param pageSizeHint page-size hint for the backend
+   * @param queryExpression The query expression to filter by
    * @return stream of {@link CommitMeta} objects
    */
   public static Stream<CommitMeta> getCommitLogStream(
-      @NotNull TreeApi treeApi, @NotNull String ref, @NotNull CommitLogParams commitLogParams)
+      @NotNull TreeApi treeApi,
+      @NotNull String ref,
+      OptionalInt pageSizeHint,
+      String queryExpression)
       throws NessieNotFoundException {
     return new ResultStreamPaginator<>(
             LogResponse::getOperations,
             (reference, pageSize, token) ->
-                treeApi.getCommitLog(
-                    reference,
-                    CommitLogParams.builder()
-                        .from(commitLogParams)
-                        .maxRecords(pageSize)
-                        .pageToken(token)
-                        .build()))
-        .generateStream(
-            ref,
-            commitLogParams.getMaxRecords() == null
-                ? OptionalInt.empty()
-                : OptionalInt.of(commitLogParams.getMaxRecords()));
+                treeApi.getCommitLog(reference, pageSize, token, queryExpression))
+        .generateStream(ref, pageSizeHint);
   }
 }
