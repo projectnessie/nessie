@@ -90,12 +90,19 @@ jobs:
         key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
         restore-keys: ${{ runner.os }}-gradle
     - name: Build with Maven
-      run: ./mvnw -B deploy --file pom.xml -Pcode-coverage,jdk8-tests,native,release -DdeployAtEnd=true -Dtest.log.level=WARN
       env:
         MAVEN_USERNAME: ${{ secrets.OSSRH_ACCESS_ID }}
         MAVEN_OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
         MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
         SPARK_LOCAL_IP: localhost
+      if: ${{ env.MAVEN_USERNAME }}
+      run: ./mvnw -B deploy --file pom.xml -Pcode-coverage,jdk8-tests,native,release -DdeployAtEnd=true -Dtest.log.level=WARN
+    - name: Build with Maven (Fork)
+      env:
+        MAVEN_USERNAME: ${{ secrets.OSSRH_ACCESS_ID }}
+        SPARK_LOCAL_IP: localhost
+      if: ${{ ! env.MAVEN_USERNAME }}
+      run: ./mvnw -B install --file pom.xml -Pcode-coverage,jdk8-tests,native -Dtest.log.level=WARN
     - name: Build with Gradle
       run: ./gradlew --rerun-tasks --no-daemon --info build
       working-directory: ./tools/apprunner-gradle-plugin
@@ -129,6 +136,9 @@ jobs:
         files: |
           code-coverage/target/site/jacoco-aggregate-all/jacoco.xml
     - name: Push Docker images
+      env:
+        DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+      if: ${{ env.DOCKER_TOKEN }}
       run: |
           echo '${{ secrets.DOCKER_TOKEN }}' | docker login -u '${{ secrets.DOCKER_USERNAME }}' --password-stdin
           docker images --filter 'reference=projectnessie/nessie' --format '{{.ID}}\t{{.Tag}}' |
