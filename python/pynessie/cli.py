@@ -25,8 +25,6 @@ from .conf import build_config
 from .conf import process
 from .error import error_handler
 from .error import NessieNotFoundException
-from .expression_util import build_query_expression_for_commit_log_flags
-from .expression_util import build_query_expression_for_contents_listing_flags
 from .model import CommitMeta
 from .model import CommitMetaSchema
 from .model import Contents
@@ -196,23 +194,9 @@ def set_head(ctx: ContextObject, head: str, delete: bool) -> None:
 )
 @click.argument("revision_range", nargs=1, required=False)
 @click.argument("paths", nargs=-1, type=click.Path(exists=False), required=False)
-@click.option(
-    "--query",
-    "--query-expression",
-    "query_expression",
-    multiple=False,
-    cls=MutuallyExclusiveOption,
-    mutually_exclusive=["author", "committer", "since", "until"],
-    help="Allows advanced filtering using the Common Expression Language (CEL). "
-    "An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n"
-    "Some examples with usable variables 'commit.author' (string) / 'commit.committer' (string) / 'commit.commitTime' (timestamp) are:\n"
-    "commit.author=='nessie_author'\n"
-    "commit.committer=='nessie_committer'\n"
-    "timestamp(commit.commitTime) > timestamp('2021-06-21T10:39:17.977922Z')\n",
-)
 @pass_client
 @error_handler
-def log(  # noqa: C901
+def log(
     ctx: ContextObject,
     number: int,
     since: str,
@@ -221,7 +205,6 @@ def log(  # noqa: C901
     committer: List[str],
     revision_range: str,
     paths: Tuple[click.Path],
-    query_expression: str,
 ) -> None:
     """Show commit log.
 
@@ -243,12 +226,16 @@ def log(  # noqa: C901
     filtering_args: Any = {}
     if number:
         filtering_args["max"] = str(number)
+    if author:
+        filtering_args["authors"] = author
+    if committer:
+        filtering_args["committers"] = committer
+    if since:
+        filtering_args["after"] = since
+    if until:
+        filtering_args["before"] = until
     if end:
         filtering_args["end"] = end
-
-    expr = build_query_expression_for_commit_log_flags(query_expression, author, committer, since, until)
-    if expr:
-        filtering_args["query_expression"] = expr
 
     log_result = show_log(nessie=ctx.nessie, start_ref=start, limits=paths, **filtering_args)
     if ctx.json:
@@ -458,23 +445,9 @@ def cherry_pick(ctx: ContextObject, branch: str, force: bool, condition: str, ha
 @click.option(
     "-t",
     "--type",
-    "entity_types",
+    "entity_type",
     help="entity types to filter on, if no entity types are passed then all types are returned",
     multiple=True,
-)
-@click.option(
-    "--query",
-    "--query-expression",
-    "query_expression",
-    multiple=False,
-    cls=MutuallyExclusiveOption,
-    mutually_exclusive=["entity_type"],
-    help="Allows advanced filtering using the Common Expression Language (CEL). "
-    "An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n"
-    "Some examples with usable variables 'entry.namespace' (string) & 'entry.contentType' (string) are:\n"
-    "entry.namespace.startsWith('a.b.c')\n"
-    "entry.contentType in ['ICEBERG_TABLE','DELTA_LAKE_TABLE']\n"
-    "entry.namespace.startsWith('some.name.space') && entry.contentType in ['ICEBERG_TABLE','DELTA_LAKE_TABLE']\n",
 )
 @click.option("--author", help="The author to use for the commit")
 @click.argument("key", nargs=-1, required=False)
@@ -489,19 +462,15 @@ def contents(
     ref: str,
     message: str,
     condition: str,
-    entity_types: List[str],
+    entity_type: list,
     author: str,
-    query_expression: str,
 ) -> None:
     """Contents operations.
 
     KEY name of object to view, delete. If listing the key will limit by namespace what is included.
     """
     if list:
-        keys = ctx.nessie.list_keys(
-            ref if ref else ctx.nessie.get_default_branch(),
-            query_expression=build_query_expression_for_contents_listing_flags(query_expression, entity_types),
-        )
+        keys = ctx.nessie.list_keys(ref if ref else ctx.nessie.get_default_branch(), entity_types=entity_type)
         results = EntrySchema().dumps(_format_keys_json(keys, *key), many=True) if ctx.json else _format_keys(keys, *key)
     elif delete:
         ctx.nessie.commit(ref, condition, _get_message(message), author, *_get_contents(ctx.nessie, ref, delete, *key))

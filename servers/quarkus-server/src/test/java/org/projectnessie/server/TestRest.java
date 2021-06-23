@@ -66,6 +66,7 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
+import org.projectnessie.model.Contents.Type;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.Hash;
@@ -257,14 +258,8 @@ class TestRest {
 
     log =
         tree.getCommitLog(
-            branch.getName(), CommitLogParams.builder().queryExpression(null).build());
-    assertThat(log).isNotNull();
-    assertThat(log.getOperations()).hasSize(numAuthors * commitsPerAuthor);
-
-    log =
-        tree.getCommitLog(
             branch.getName(),
-            CommitLogParams.builder().queryExpression("commit.author == 'author-3'").build());
+            CommitLogParams.builder().authors(ImmutableList.of("author-3")).build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(commitsPerAuthor);
     log.getOperations().forEach(commit -> assertThat(commit.getAuthor()).isEqualTo("author-3"));
@@ -273,8 +268,8 @@ class TestRest {
         tree.getCommitLog(
             branch.getName(),
             CommitLogParams.builder()
-                .queryExpression(
-                    "commit.author == 'author-3' && commit.committer == 'random-committer'")
+                .authors(ImmutableList.of("author-3"))
+                .committers(ImmutableList.of("random-committer"))
                 .build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).isEmpty();
@@ -283,7 +278,8 @@ class TestRest {
         tree.getCommitLog(
             branch.getName(),
             CommitLogParams.builder()
-                .queryExpression("commit.author == 'author-3' && commit.committer == ''")
+                .authors(ImmutableList.of("author-3"))
+                .committers(ImmutableList.of(""))
                 .build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(commitsPerAuthor);
@@ -294,50 +290,17 @@ class TestRest {
               assertThat(commit.getCommitter()).isEmpty();
             });
 
+    List<String> authors = ImmutableList.of("author-1", "author-3", "author-4");
     log =
         tree.getCommitLog(
             branch.getName(),
-            CommitLogParams.builder()
-                .queryExpression("commit.author in ['author-1', 'author-3', 'author-4']")
-                .build());
+            CommitLogParams.builder().authors(authors).committers(ImmutableList.of("")).build());
     assertThat(log).isNotNull();
-    assertThat(log.getOperations()).hasSize(commitsPerAuthor * 3);
+    assertThat(log.getOperations()).hasSize(commitsPerAuthor * authors.size());
     log.getOperations()
         .forEach(
             commit -> {
-              assertThat(ImmutableList.of("author-1", "author-3", "author-4"))
-                  .contains(commit.getAuthor());
-              assertThat(commit.getCommitter()).isEmpty();
-            });
-
-    log =
-        tree.getCommitLog(
-            branch.getName(),
-            CommitLogParams.builder()
-                .queryExpression("!(commit.author in ['author-1', 'author-0'])")
-                .build());
-    assertThat(log).isNotNull();
-    assertThat(log.getOperations()).hasSize(commitsPerAuthor * 3);
-    log.getOperations()
-        .forEach(
-            commit -> {
-              assertThat(ImmutableList.of("author-2", "author-3", "author-4"))
-                  .contains(commit.getAuthor());
-              assertThat(commit.getCommitter()).isEmpty();
-            });
-
-    log =
-        tree.getCommitLog(
-            branch.getName(),
-            CommitLogParams.builder()
-                .queryExpression("commit.author.matches('au.*-(2|4)')")
-                .build());
-    assertThat(log).isNotNull();
-    assertThat(log.getOperations()).hasSize(commitsPerAuthor * 2);
-    log.getOperations()
-        .forEach(
-            commit -> {
-              assertThat(ImmutableList.of("author-2", "author-4")).contains(commit.getAuthor());
+              assertThat(authors).contains(commit.getAuthor());
               assertThat(commit.getCommitter()).isEmpty();
             });
   }
@@ -368,24 +331,14 @@ class TestRest {
 
     log =
         tree.getCommitLog(
-            branch.getName(),
-            CommitLogParams.builder()
-                .queryExpression(
-                    String.format(
-                        "timestamp(commit.commitTime) > timestamp('%s')", initialCommitTime))
-                .build());
+            branch.getName(), CommitLogParams.builder().after(initialCommitTime).build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(expectedTotalSize - 1);
     log.getOperations()
         .forEach(commit -> assertThat(commit.getCommitTime()).isAfter(initialCommitTime));
 
     log =
-        tree.getCommitLog(
-            branch.getName(),
-            CommitLogParams.builder()
-                .queryExpression(
-                    String.format("timestamp(commit.commitTime) < timestamp('%s')", fiveMinLater))
-                .build());
+        tree.getCommitLog(branch.getName(), CommitLogParams.builder().before(fiveMinLater).build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(expectedTotalSize);
     log.getOperations()
@@ -394,12 +347,7 @@ class TestRest {
     log =
         tree.getCommitLog(
             branch.getName(),
-            CommitLogParams.builder()
-                .queryExpression(
-                    String.format(
-                        "timestamp(commit.commitTime) > timestamp('%s') && timestamp(commit.commitTime) < timestamp('%s')",
-                        initialCommitTime, lastCommitTime))
-                .build());
+            CommitLogParams.builder().after(initialCommitTime).before(lastCommitTime).build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(expectedTotalSize - 2);
     log.getOperations()
@@ -410,12 +358,7 @@ class TestRest {
                     .isBefore(lastCommitTime));
 
     log =
-        tree.getCommitLog(
-            branch.getName(),
-            CommitLogParams.builder()
-                .queryExpression(
-                    String.format("timestamp(commit.commitTime) > timestamp('%s')", fiveMinLater))
-                .build());
+        tree.getCommitLog(branch.getName(), CommitLogParams.builder().after(fiveMinLater).build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).isEmpty();
   }
@@ -533,7 +476,7 @@ class TestRest {
     for (int pos = 0; pos < commits; pos += pageSizeHint) {
       Builder builder = CommitLogParams.builder().maxRecords(pageSizeHint).pageToken(pageToken);
       if (null != filterByAuthor) {
-        builder = builder.queryExpression(String.format("commit.author=='%s'", filterByAuthor));
+        builder = builder.authors(ImmutableList.of(filterByAuthor));
       }
       CommitLogParams commitLogParams = builder.build();
       LogResponse response = tree.getCommitLog(branchName, commitLogParams);
@@ -605,15 +548,14 @@ class TestRest {
         tree.getEntries(
                 branch,
                 EntriesParams.builder()
-                    .queryExpression("entry.contentType=='ICEBERG_TABLE'")
+                    .types(ImmutableList.of(Contents.Type.ICEBERG_TABLE.name()))
                     .build())
             .getEntries();
     assertEquals(Collections.singletonList(expected.get(0)), entries);
 
     entries =
         tree.getEntries(
-                branch,
-                EntriesParams.builder().queryExpression("entry.contentType=='VIEW'").build())
+                branch, EntriesParams.builder().types(ImmutableList.of(Type.VIEW.name())).build())
             .getEntries();
     assertEquals(Collections.singletonList(expected.get(1)), entries);
 
@@ -621,7 +563,9 @@ class TestRest {
         tree.getEntries(
                 branch,
                 EntriesParams.builder()
-                    .queryExpression("entry.contentType in ['ICEBERG_TABLE', 'VIEW']")
+                    .types(
+                        ImmutableList.of(
+                            Contents.Type.VIEW.name(), Contents.Type.ICEBERG_TABLE.name()))
                     .build())
             .getEntries();
     assertThat(entries).containsExactlyInAnyOrderElementsOf(expected);
@@ -646,67 +590,32 @@ class TestRest {
         tree.getEntries(branch, EntriesParams.empty()).getEntries();
     assertThat(entries).isNotNull().hasSize(4);
 
-    entries = tree.getEntries(branch, EntriesParams.empty()).getEntries();
+    entries = tree.getEntries(branch, EntriesParams.builder().namespace("").build()).getEntries();
+    assertThat(entries).isNotNull().hasSize(4);
+
+    entries = tree.getEntries(branch, EntriesParams.builder().namespace(null).build()).getEntries();
     assertThat(entries).isNotNull().hasSize(4);
 
     entries =
-        tree.getEntries(branch, EntriesParams.builder().queryExpression(null).build()).getEntries();
-    assertThat(entries).isNotNull().hasSize(4);
-
-    entries =
-        tree.getEntries(
-                branch,
-                EntriesParams.builder()
-                    .queryExpression("entry.namespace.startsWith('a.b')")
-                    .build())
-            .getEntries();
+        tree.getEntries(branch, EntriesParams.builder().namespace("a.b").build()).getEntries();
     assertThat(entries).hasSize(2);
     entries.forEach(e -> assertThat(e.getName().getNamespace().name()).startsWith("a.b"));
 
-    entries =
-        tree.getEntries(
-                branch,
-                EntriesParams.builder().queryExpression("entry.namespace.startsWith('a')").build())
-            .getEntries();
+    entries = tree.getEntries(branch, EntriesParams.builder().namespace("a").build()).getEntries();
     assertThat(entries).hasSize(4);
     entries.forEach(e -> assertThat(e.getName().getNamespace().name()).startsWith("a"));
 
     entries =
-        tree.getEntries(
-                branch,
-                EntriesParams.builder()
-                    .queryExpression("entry.namespace.startsWith('a.b.c.firstTable')")
-                    .build())
+        tree.getEntries(branch, EntriesParams.builder().namespace("a.b.c.firstTable").build())
             .getEntries();
     assertThat(entries).isEmpty();
 
     entries =
-        tree.getEntries(
-                branch,
-                EntriesParams.builder()
-                    .queryExpression("entry.namespace.startsWith('a.fourthTable')")
-                    .build())
+        tree.getEntries(branch, EntriesParams.builder().namespace("a.fourthTable").build())
             .getEntries();
     assertThat(entries).isEmpty();
 
     tree.deleteBranch(branch, tree.getReferenceByName(branch).getHash());
-  }
-
-  @Test
-  public void checkCelScriptFailureReporting() {
-    assertThatThrownBy(
-            () ->
-                tree.getEntries(
-                    "main", EntriesParams.builder().queryExpression("invalid_script").build()))
-        .isInstanceOf(NessieBadRequestException.class)
-        .hasMessageContaining("undeclared reference to 'invalid_script'");
-
-    assertThatThrownBy(
-            () ->
-                tree.getCommitLog(
-                    "main", CommitLogParams.builder().queryExpression("invalid_script").build()))
-        .isInstanceOf(NessieBadRequestException.class)
-        .hasMessageContaining("undeclared reference to 'invalid_script'");
   }
 
   @Test

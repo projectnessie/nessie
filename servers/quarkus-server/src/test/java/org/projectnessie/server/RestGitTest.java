@@ -285,7 +285,7 @@ public class RestGitTest {
     String author = "author-1";
     log =
         rest()
-            .queryParam("query_expression", String.format("commit.author=='%s'", author))
+            .queryParam("authors", author)
             .get(String.format("trees/tree/%s/log", branchName))
             .then()
             .statusCode(200)
@@ -296,9 +296,7 @@ public class RestGitTest {
 
     log =
         rest()
-            .queryParam(
-                "query_expression",
-                String.format("timestamp(commit.commitTime) > timestamp('%s')", firstCommitTime))
+            .queryParam("after", firstCommitTime.toString())
             .get(String.format("trees/tree/%s/log", branchName))
             .then()
             .statusCode(200)
@@ -310,9 +308,7 @@ public class RestGitTest {
 
     log =
         rest()
-            .queryParam(
-                "query_expression",
-                String.format("timestamp(commit.commitTime) < timestamp('%s')", lastCommitTime))
+            .queryParam("before", lastCommitTime.toString())
             .get(String.format("trees/tree/%s/log", branchName))
             .then()
             .statusCode(200)
@@ -324,11 +320,8 @@ public class RestGitTest {
 
     log =
         rest()
-            .queryParam(
-                "query_expression",
-                String.format(
-                    "timestamp(commit.commitTime) > timestamp('%s') && timestamp(commit.commitTime) < timestamp('%s')",
-                    firstCommitTime, lastCommitTime))
+            .queryParam("before", lastCommitTime.toString())
+            .queryParam("after", firstCommitTime.toString())
             .get(String.format("trees/tree/%s/log", branchName))
             .then()
             .statusCode(200)

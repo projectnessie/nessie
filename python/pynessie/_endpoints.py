@@ -146,7 +146,7 @@ def list_tables(
     ref: str,
     max_result_hint: Optional[int] = None,
     page_token: Optional[str] = None,
-    query_expression: Optional[str] = None,
+    types: Optional[list] = None,
     ssl_verify: bool = True,
 ) -> list:
     """Fetch a list of all tables from a known reference.
@@ -155,17 +155,18 @@ def list_tables(
     :param ref: reference
     :param max_result_hint: hint for the server, maximum number of results to return
     :param page_token: the token retrieved from a previous page returned for the same ref
-    :param query_expression: A CEL expression that allows advanced filtering capabilities
+    :param types: list of types to filter keys on
     :param ssl_verify: ignore ssl errors if False
     :return: json list of Nessie table names
     """
     params = dict()
+    if types:
+        entity_type_header = ",".join(types)
+        params["types"] = entity_type_header
     if max_result_hint:
         params["max"] = str(max_result_hint)
     if page_token:
         params["pageToken"] = page_token
-    if query_expression:
-        params["query_expression"] = query_expression
     return cast(list, _get(base_url + "/trees/tree/{}/entries".format(ref), ssl_verify=ssl_verify, params=params))
 
 
