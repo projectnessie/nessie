@@ -122,18 +122,11 @@ class ClientTreeApi implements TreeApi {
       throws NessieNotFoundException {
     HttpRequest builder =
         client.newRequest().path("trees/tree/{ref}/log").resolveTemplate("ref", ref);
-    if (null != params.getAuthors()) {
-      params.getAuthors().forEach(x -> builder.queryParam("authors", x));
-    }
-    if (null != params.getCommitters()) {
-      params.getCommitters().forEach(x -> builder.queryParam("committers", x));
-    }
     return builder
         .queryParam(
             "max", params.getMaxRecords() != null ? params.getMaxRecords().toString() : null)
         .queryParam("pageToken", params.getPageToken())
-        .queryParam("before", null != params.getBefore() ? params.getBefore().toString() : null)
-        .queryParam("after", null != params.getAfter() ? params.getAfter().toString() : null)
+        .queryParam("query_expression", params.getQueryExpression())
         .get()
         .readEntity(LogResponse.class);
   }
@@ -171,12 +164,11 @@ class ClientTreeApi implements TreeApi {
       throws NessieNotFoundException {
     HttpRequest builder =
         client.newRequest().path("trees/tree/{ref}/entries").resolveTemplate("ref", refName);
-    params.getTypes().forEach(x -> builder.queryParam("types", x));
     return builder
         .queryParam(
             "max", params.getMaxRecords() != null ? params.getMaxRecords().toString() : null)
         .queryParam("pageToken", params.getPageToken())
-        .queryParam("namespace", params.getNamespace())
+        .queryParam("query_expression", params.getQueryExpression())
         .get()
         .readEntity(EntriesResponse.class);
   }
