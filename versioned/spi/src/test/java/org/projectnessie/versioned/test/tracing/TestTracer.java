@@ -24,6 +24,7 @@ import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
 import io.opentracing.propagation.Format;
+import io.opentracing.tag.Tag;
 import io.opentracing.util.GlobalTracer;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
@@ -88,6 +89,15 @@ public class TestTracer implements Tracer {
   }
 
   @Override
+  public Scope activateSpan(Span span) {
+    activeSpan = (TestSpan) span;
+    return () -> {
+      assertFalse(closed);
+      closed = true;
+    };
+  }
+
+  @Override
   public SpanBuilder buildSpan(String operationName) {
     opName = operationName;
     return new SpanBuilder() {
@@ -113,21 +123,8 @@ public class TestTracer implements Tracer {
       }
 
       @Override
-      public Scope startActive(boolean finishSpanOnClose) {
-        activeSpan = new TestSpan(tags);
-
-        return new Scope() {
-          @Override
-          public void close() {
-            assertFalse(closed);
-            closed = true;
-          }
-
-          @Override
-          public Span span() {
-            return activeSpan;
-          }
-        };
+      public <T> SpanBuilder withTag(Tag<T> tag, T t) {
+        throw new UnsupportedOperationException();
       }
 
       @Override
@@ -159,13 +156,9 @@ public class TestTracer implements Tracer {
       }
 
       @Override
-      public Span startManual() {
-        throw new UnsupportedOperationException();
-      }
-
-      @Override
       public Span start() {
-        throw new UnsupportedOperationException();
+        activeSpan = new TestSpan(tags);
+        return activeSpan;
       }
     };
   }
@@ -179,6 +172,9 @@ public class TestTracer implements Tracer {
   public <C> SpanContext extract(Format<C> format, C carrier) {
     throw new UnsupportedOperationException();
   }
+
+  @Override
+  public void close() {}
 
   public class TestSpan implements Span {
 
@@ -218,6 +214,11 @@ public class TestTracer implements Tracer {
     public Span setTag(String key, Number value) {
       tags.put(key, value);
       return this;
+    }
+
+    @Override
+    public <T> Span setTag(Tag<T> tag, T t) {
+      throw new UnsupportedOperationException();
     }
 
     @Override

@@ -23,9 +23,11 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import io.opentracing.Scope;
+import io.opentracing.Span;
 import io.opentracing.Tracer;
 import io.opentracing.Tracer.SpanBuilder;
 import io.opentracing.log.Fields;
+import io.opentracing.noop.NoopScopeManager.NoopScope;
 import io.opentracing.noop.NoopSpanBuilder;
 import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
@@ -442,18 +444,18 @@ class InternalBranch extends InternalRef {
         InternalBranch branch,
         TieredVersionStoreConfig config)
         throws ReferenceNotFoundException, ReferenceConflictException {
-      try (Scope outerScope =
+      Span outerSpan =
           createSpan(config.enableTracing(), "InternalBranch.collapseIntentionLog")
               .withTag(TAG_OPERATION, "CollapseIntentionLog")
               .withTag(TAG_BRANCH, branch.getName())
-              .startActive(true)) {
+              .start();
+      try (Scope ignore = scope(config.enableTracing(), outerSpan)) {
         try {
           for (int attempt = 0; attempt < config.getP2CommitAttempts(); attempt++) {
-            try (Scope innerScope =
-                createSpan(config.enableTracing(), "Attempt-" + attempt).startActive(true)) {
+            Span innerSpan = createSpan(config.enableTracing(), "Attempt-" + attempt).start();
+            try (Scope ignored = scope(config.enableTracing(), innerSpan)) {
 
-              innerScope
-                  .span()
+              innerSpan
                   .setTag("nessie.num-saves", updateState.saves.size())
                   .setTag("nessie.num-deletes", updateState.deletes.size());
 
@@ -461,7 +463,7 @@ class InternalBranch extends InternalRef {
                   tryCollapseIntentionLog(store, branch, updateState, attempt);
 
               if (updated.isPresent()) {
-                innerScope.span().setTag("nessie.completed", true);
+                innerSpan.setTag("nessie.completed", true);
                 return updated.get();
               }
 
@@ -485,16 +487,23 @@ class InternalBranch extends InternalRef {
           throw ex;
         } catch (Exception ex) {
           Tags.ERROR.set(
-              outerScope
-                  .span()
-                  .log(
-                      ImmutableMap.of(
-                          Fields.EVENT, Tags.ERROR.getKey(), Fields.ERROR_OBJECT, ex.toString())),
+              outerSpan.log(
+                  ImmutableMap.of(
+                      Fields.EVENT, Tags.ERROR.getKey(), Fields.ERROR_OBJECT, ex.toString())),
               true);
           LOGGER.debug("Exception when trying to collapse intention log.", ex);
           Throwables.throwIfUnchecked(ex);
           throw new RuntimeException(ex);
         }
+      }
+    }
+
+    private static Scope scope(boolean enableTracing, Span span) {
+      if (enableTracing) {
+        Tracer tracer = GlobalTracer.get();
+        return tracer.activateSpan(span);
+      } else {
+        return NoopScope.INSTANCE;
       }
     }
 

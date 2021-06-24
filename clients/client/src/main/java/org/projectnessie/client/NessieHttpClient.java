@@ -23,7 +23,7 @@ import io.opentracing.Tracer;
 import io.opentracing.log.Fields;
 import io.opentracing.propagation.Format.Builtin;
 import io.opentracing.propagation.TextMap;
-import io.opentracing.propagation.TextMapInjectAdapter;
+import io.opentracing.propagation.TextMapAdapter;
 import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
 import java.io.IOException;
@@ -104,16 +104,14 @@ class NessieHttpClient implements NessieClient {
               context -> {
                 Span span = tracer.activeSpan();
                 if (span != null) {
-                  Scope scope = tracer.buildSpan("Nessie-HTTP").startActive(true);
+                  Span inner = tracer.buildSpan("Nessie-HTTP").start();
+                  Scope scope = tracer.activateSpan(inner);
                   context.addResponseCallback(
                       (responseContext, exception) -> {
                         if (responseContext != null) {
                           try {
-                            scope
-                                .span()
-                                .setTag(
-                                    "http.status_code",
-                                    responseContext.getResponseCode().getCode());
+                            inner.setTag(
+                                "http.status_code", responseContext.getResponseCode().getCode());
                           } catch (IOException e) {
                             // There's not much we can (and probably should) do here.
                           }
@@ -122,19 +120,18 @@ class NessieHttpClient implements NessieClient {
                           Map<String, String> log = new HashMap<>();
                           log.put(Fields.EVENT, Tags.ERROR.getKey());
                           log.put(Fields.ERROR_OBJECT, exception.toString());
-                          Tags.ERROR.set(scope.span().log(log), true);
+                          Tags.ERROR.set(inner.log(log), true);
                         }
                         scope.close();
                       });
 
-                  scope
-                      .span()
+                  inner
                       .setTag("http.uri", context.getUri().toString())
                       .setTag("http.method", context.getMethod().name());
 
                   HashMap<String, String> headerMap = new HashMap<>();
-                  TextMap httpHeadersCarrier = new TextMapInjectAdapter(headerMap);
-                  tracer.inject(scope.span().context(), Builtin.HTTP_HEADERS, httpHeadersCarrier);
+                  TextMap httpHeadersCarrier = new TextMapAdapter(headerMap);
+                  tracer.inject(inner.context(), Builtin.HTTP_HEADERS, httpHeadersCarrier);
                   headerMap.forEach(context::putHeader);
                 }
               });

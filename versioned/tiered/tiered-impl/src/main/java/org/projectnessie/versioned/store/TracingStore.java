@@ -21,6 +21,7 @@ import static org.projectnessie.versioned.TracingUtil.traceError;
 
 import com.google.common.annotations.VisibleForTesting;
 import io.opentracing.Scope;
+import io.opentracing.Span;
 import io.opentracing.Tracer;
 import io.opentracing.Tracer.SpanBuilder;
 import io.opentracing.util.GlobalTracer;
@@ -60,48 +61,52 @@ public class TracingStore implements Store {
 
   @Override
   public void start() {
-    try (Scope scope = createSpan("Start").startActive(true)) {
+    Span span = createSpan("Start").start();
+    try (Scope scope = GlobalTracer.get().activateSpan(span)) {
       try {
         store.start();
       } catch (RuntimeException e) {
-        throw traceRuntimeException(scope, e);
+        throw traceRuntimeException(span, e);
       }
     }
   }
 
   @Override
   public void close() {
-    try (Scope scope = createSpan("Close").startActive(true)) {
+    Span span = createSpan("Close").start();
+    try (Scope scope = GlobalTracer.get().activateSpan(span)) {
       try {
         store.close();
       } catch (RuntimeException e) {
-        throw traceRuntimeException(scope, e);
+        throw traceRuntimeException(span, e);
       }
     }
   }
 
   @Override
   public void load(LoadStep loadstep) {
-    try (Scope scope = createSpan("Load").startActive(true)) {
+    Span span = createSpan("Load").start();
+    try (Scope scope = GlobalTracer.get().activateSpan(span)) {
       try {
         store.load(loadstep);
       } catch (RuntimeException e) {
-        throw traceRuntimeException(scope, e);
+        throw traceRuntimeException(span, e);
       }
     }
   }
 
   @Override
   public <C extends BaseValue<C>> boolean putIfAbsent(SaveOp<C> saveOp) {
-    try (Scope scope =
+    Span span =
         createSpan("PutIfAbsent")
             .withTag(TAG_VALUE_TYPE, safeOpTypeToString(saveOp))
             .withTag(TAG_ID, safeOpIdToString(saveOp))
-            .startActive(true)) {
+            .start();
+    try (Scope scope = GlobalTracer.get().activateSpan(span)) {
       try {
         return store.putIfAbsent(saveOp);
       } catch (RuntimeException e) {
-        throw traceRuntimeException(scope, e);
+        throw traceRuntimeException(span, e);
       }
     }
   }
@@ -109,15 +114,16 @@ public class TracingStore implements Store {
   @Override
   public <C extends BaseValue<C>> void put(
       SaveOp<C> saveOp, Optional<ConditionExpression> condition) {
-    try (Scope scope =
+    Span span =
         createSpan("Put")
             .withTag(TAG_VALUE_TYPE, safeOpTypeToString(saveOp))
             .withTag(TAG_ID, safeOpIdToString(saveOp))
-            .startActive(true)) {
+            .start();
+    try (Scope scope = GlobalTracer.get().activateSpan(span)) {
       try {
         store.put(saveOp, condition);
       } catch (RuntimeException e) {
-        throw traceRuntimeException(scope, e);
+        throw traceRuntimeException(span, e);
       }
     }
   }
@@ -125,51 +131,52 @@ public class TracingStore implements Store {
   @Override
   public <C extends BaseValue<C>> boolean delete(
       ValueType<C> type, Id id, Optional<ConditionExpression> condition) {
-    try (Scope scope =
+    Span span =
         createSpan("Delete")
             .withTag(TAG_VALUE_TYPE, safeName(type))
             .withTag(TAG_ID, safeToString(id))
-            .startActive(true)) {
+            .start();
+    try (Scope scope = GlobalTracer.get().activateSpan(span)) {
       try {
         return store.delete(type, id, condition);
       } catch (RuntimeException e) {
-        throw traceRuntimeException(scope, e);
+        throw traceRuntimeException(span, e);
       }
     }
   }
 
   @Override
   public void save(List<SaveOp<?>> ops) {
-    try (Scope scope = createSpan("Save").withTag(TAG_NUM_OPS, safeSize(ops)).startActive(true)) {
+    Span span = createSpan("Save").withTag(TAG_NUM_OPS, safeSize(ops)).start();
+    try (Scope scope = GlobalTracer.get().activateSpan(span)) {
       try {
-        scope
-            .span()
-            .log(
-                ops.stream()
-                    .collect(
-                        Collectors.groupingBy(
-                            op -> String.format("nessie.store.save.%s.ids", op.getType().name()),
-                            Collectors.mapping(
-                                op -> op.getId().toString(), Collectors.joining(", ")))));
+        span.log(
+            ops.stream()
+                .collect(
+                    Collectors.groupingBy(
+                        op -> String.format("nessie.store.save.%s.ids", op.getType().name()),
+                        Collectors.mapping(
+                            op -> op.getId().toString(), Collectors.joining(", ")))));
 
         store.save(ops);
       } catch (RuntimeException e) {
-        throw traceRuntimeException(scope, e);
+        throw traceRuntimeException(span, e);
       }
     }
   }
 
   @Override
   public <C extends BaseValue<C>> void loadSingle(ValueType<C> type, Id id, C consumer) {
-    try (Scope scope =
+    Span span =
         createSpan("LoadSingle")
             .withTag(TAG_VALUE_TYPE, safeName(type))
             .withTag(TAG_ID, safeToString(id))
-            .startActive(true)) {
+            .start();
+    try (Scope scope = GlobalTracer.get().activateSpan(span)) {
       try {
         store.loadSingle(type, id, consumer);
       } catch (RuntimeException e) {
-        throw traceRuntimeException(scope, e);
+        throw traceRuntimeException(span, e);
       }
     }
   }
@@ -182,28 +189,30 @@ public class TracingStore implements Store {
       Optional<ConditionExpression> condition,
       Optional<BaseValue<C>> consumer)
       throws NotFoundException {
-    try (Scope scope =
+    Span span =
         createSpan("Update")
             .withTag(TAG_VALUE_TYPE, safeName(type))
             .withTag(TAG_ID, safeToString(id))
             .withTag(TAG_UPDATE, safeToString(update))
             .withTag(TAG_CONDITION, safeToString(condition))
-            .startActive(true)) {
+            .start();
+    try (Scope scope = GlobalTracer.get().activateSpan(span)) {
       try {
         return store.update(type, id, update, condition, consumer);
       } catch (RuntimeException e) {
-        throw traceRuntimeException(scope, e);
+        throw traceRuntimeException(span, e);
       }
     }
   }
 
   @Override
   public <C extends BaseValue<C>> Stream<Acceptor<C>> getValues(ValueType<C> type) {
-    Scope scope = createSpan("GetValues").withTag(TAG_VALUE_TYPE, type.name()).startActive(true);
+    Span span = createSpan("GetValues").withTag(TAG_VALUE_TYPE, type.name()).start();
+    Scope scope = GlobalTracer.get().activateSpan(span);
     try {
       return store.getValues(type).onClose(scope::close);
     } catch (RuntimeException e) {
-      e = traceRuntimeException(scope, e);
+      e = traceRuntimeException(span, e);
       scope.close();
       throw e;
     }
@@ -221,9 +230,9 @@ public class TracingStore implements Store {
     return saveOp != null ? safeName(saveOp.getType()) : "<null>";
   }
 
-  private static RuntimeException traceRuntimeException(Scope scope, RuntimeException e) {
+  private static RuntimeException traceRuntimeException(Span span, RuntimeException e) {
     if (!(e instanceof StoreException) || e instanceof StoreOperationException) {
-      return traceError(scope, e);
+      return traceError(span, e);
     }
     return e;
   }

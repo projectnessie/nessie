@@ -16,7 +16,7 @@
 package org.projectnessie.versioned;
 
 import com.google.common.collect.ImmutableMap;
-import io.opentracing.Scope;
+import io.opentracing.Span;
 import io.opentracing.log.Fields;
 import io.opentracing.tag.Tags;
 import java.util.Collection;
@@ -39,17 +39,14 @@ public final class TracingUtil {
   /**
    * Set {@link Tags#ERROR} with {@link Fields#EVENT} + {@link Fields#ERROR_OBJECT}.
    *
-   * @param scope trace-scope
+   * @param span trace-span
    * @param e exception to trace
    * @return returns {@code e}
    */
-  public static RuntimeException traceError(Scope scope, RuntimeException e) {
+  public static RuntimeException traceError(Span span, RuntimeException e) {
     Tags.ERROR.set(
-        scope
-            .span()
-            .log(
-                ImmutableMap.of(
-                    Fields.EVENT, Tags.ERROR.getKey(), Fields.ERROR_OBJECT, e.toString())),
+        span.log(
+            ImmutableMap.of(Fields.EVENT, Tags.ERROR.getKey(), Fields.ERROR_OBJECT, e.toString())),
         true);
     return e;
   }

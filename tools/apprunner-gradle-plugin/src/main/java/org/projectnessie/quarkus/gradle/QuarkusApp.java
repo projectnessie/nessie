@@ -15,7 +15,7 @@
  */
 package org.projectnessie.quarkus.gradle;
 
-import static io.quarkus.bootstrap.resolver.maven.DeploymentInjectingDependencyVisitor.toArtifact;
+import static io.quarkus.bootstrap.util.DependencyNodeUtils.toArtifact;
 import static org.projectnessie.quarkus.gradle.QuarkusAppPlugin.APP_CONFIG_NAME;
 import static org.projectnessie.quarkus.gradle.QuarkusAppPlugin.LAUNCH_CONFIG_NAME;
 import static org.projectnessie.quarkus.gradle.QuarkusAppPlugin.RUNTIME_CONFIG_NAME;
