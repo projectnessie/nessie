@@ -67,6 +67,10 @@
       <artifactId>quarkus-hibernate-validator</artifactId>
     </dependency>
     <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-jgit</artifactId>
+    </dependency>
+    <dependency>
       <groupId>jakarta.validation</groupId>
       <artifactId>jakarta.validation-api</artifactId>
     </dependency>
@@ -92,6 +96,10 @@
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-resteasy</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-apache-httpclient</artifactId>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
