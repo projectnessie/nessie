@@ -34,7 +34,7 @@
   <dependencies>
     <dependency>
       <groupId>org.projectnessie</groupId>
-      <artifactId>nessie-apprunner-maven-plugin</artifactId>
+      <artifactId>nessie-apprunner-common</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

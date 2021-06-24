@@ -110,6 +110,7 @@ jobs:
         flags: java
         files: |
           code-coverage/target/site/jacoco-aggregate-all/jacoco.xml
+          tools/apprunner-gradle-plugin/build/reports/jacoco/codeCoverageReport/codeCoverageReport.xml
   python:
     name: Python
     runs-on: ubuntu-latest

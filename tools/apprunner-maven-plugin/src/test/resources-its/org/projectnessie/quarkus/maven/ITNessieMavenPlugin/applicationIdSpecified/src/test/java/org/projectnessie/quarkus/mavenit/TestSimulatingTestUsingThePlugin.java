@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.quarkus.gradle;
+package org.projectnessie.quarkus.mavenit;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 

@@ -291,20 +291,16 @@
            <configuration>
              <executionId>hive2</executionId>
              <skip>${skipTests}</skip>
-             <appArtifactId>org.projectnessie:nessie-quarkus:${project.version}</appArtifactId>
-             <applicationProperties>
-               <quarkus.http.test-port>0</quarkus.http.test-port>
-             </applicationProperties>
-             <outputProperties>
-               <quarkus.http.test-port>quarkus.http.test-port</quarkus.http.test-port>
-             </outputProperties>
+             <environment>
+               <HTTP_ACCESS_LOG_LEVEL>${test.log.level}</HTTP_ACCESS_LOG_LEVEL>
+             </environment>
            </configuration>
            <dependencies>
-            <dependency>
-              <groupId>org.projectnessie</groupId>
-              <artifactId>nessie-quarkus</artifactId>
-              <version>${project.version}</version>
-            </dependency>
+           <dependency><!-- we only need it to be resolved and built -->
+             <groupId>org.projectnessie</groupId>
+             <artifactId>nessie-quarkus</artifactId>
+             <version>${project.version}</version>
+           </dependency>
            </dependencies>
            <executions>
              <execution>
