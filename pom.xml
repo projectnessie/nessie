@@ -159,7 +159,7 @@
     <spark2.jackson.version>2.8.8</spark2.jackson.version>
     <spark2.version>2.4.2</spark2.version>
     <spark3.jackson.version>2.10.2</spark3.jackson.version>
-    <spark3.version>3.0.2</spark3.version>
+    <spark3.version>3.0.3</spark3.version>
     <sqlite.version>1.0.392</sqlite.version>
     <surefire.version>3.0.0-M5</surefire.version>
   </properties>
