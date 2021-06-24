@@ -78,7 +78,9 @@ class TestNessieHttpClient {
     try (TestServer server = new TestServer(handlerForHeaderTest("Uber-trace-id", traceId))) {
       NessieClient client =
           NessieClient.builder().withUri(server.getUri()).withTracing(true).build();
-      try (Scope ignore = GlobalTracer.get().buildSpan("testOpenTracing").startActive(true)) {
+      try (Scope ignore =
+          GlobalTracer.get()
+              .activateSpan(GlobalTracer.get().buildSpan("testOpenTracing").start())) {
         client.getConfigApi().getConfig();
       }
     }
@@ -96,7 +98,9 @@ class TestNessieHttpClient {
     try (TestServer server = new TestServer(handlerForHeaderTest("Uber-trace-id", traceId))) {
       NessieClient client =
           NessieClient.builder().withUri(server.getUri()).withTracing(false).build();
-      try (Scope ignore = GlobalTracer.get().buildSpan("testOpenTracing").startActive(true)) {
+      try (Scope ignore =
+          GlobalTracer.get()
+              .activateSpan(GlobalTracer.get().buildSpan("testOpenTracing").start())) {
         client.getConfigApi().getConfig();
       }
     }
