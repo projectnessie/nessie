@@ -1,0 +1,95 @@
+# -*- coding: utf-8 -*-
+
+"""The purpose of this module is to provide different functions that can produce CEL Expressions based on given filtering parameters."""
+
+#  Copyright (C) 2020 Dremio
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#  http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+from typing import List
+from typing import Optional
+
+
+def build_query_expression_for_commit_log_flags(
+    query_expression: str, authors: List[str], committers: List[str], since: Optional[str], until: Optional[str]
+) -> Optional[str]:
+    """Producs a CEL expression to be used for filtering the commit log based on the given filtering parameters."""
+    if query_expression:
+        return query_expression
+    expressions = []
+
+    if authors:
+        expressions.append(_expression_for_commit_log_by_author(authors))
+    if committers:
+        expressions.append(_expression_for_commit_log_by_committer(committers))
+    if since:
+        expressions.append(_expression_for_commit_log_by_commit_time_after(since))
+    if until:
+        expressions.append(_expression_for_commit_log_by_commit_time_before(until))
+
+    if len(expressions) > 0:
+        return _and_join(expressions)
+
+    return None
+
+
+def build_query_expression_for_contents_listing_flags(query_expression: str, types: List[str]) -> Optional[str]:
+    """Producs a CEL expression to be used for filtering the content entries based on the given filtering parameters."""
+    if query_expression:
+        return query_expression
+
+    if types:
+        return _expression_for_entries_by_types(types)
+
+    return None
+
+
+def _expression_for_commit_log_by_author(authors: List[str]) -> str:
+    return __generate_expression(authors, "commit.author=='{}'")
+
+
+def _expression_for_commit_log_by_committer(committers: List[str]) -> str:
+    return __generate_expression(committers, "commit.committer=='{}'")
+
+
+def _expression_for_commit_log_by_commit_time_after(commit_time_after: str) -> str:
+    return "timestamp(commit.commitTime) > timestamp('{}')".format(commit_time_after)
+
+
+def _expression_for_commit_log_by_commit_time_before(commit_time_before: str) -> str:
+    return "timestamp(commit.commitTime) < timestamp('{}')".format(commit_time_before)
+
+
+def _expression_for_entries_by_types(types: List[str]) -> str:
+    return "entry.contentType in [{}]".format(",".join(["'" + t + "'" for t in types]))
+
+
+def _and_join(expressions: List[str]) -> str:
+    result = " && ".join(expressions)
+    if len(expressions) > 1:
+        result = "(" + result + ")"
+    return result
+
+
+def _or_join(expressions: List[str]) -> str:
+    result = " || ".join(expressions)
+    if len(expressions) > 1:
+        result = "(" + result + ")"
+    return result
+
+
+def __generate_expression(items: List[str], expression_template: str) -> str:
+    expressions = []
+    for item in items:
+        expressions.append(expression_template.format(item))
+
+    return _or_join(expressions)

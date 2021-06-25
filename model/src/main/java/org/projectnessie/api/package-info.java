@@ -46,7 +46,25 @@
                           + "    \"uuid\": \"b874b5d5-f926-4eed-9be7-b2380d9810c0\"\n"
                           + "}"),
               @ExampleObject(name = "ref", value = "main"),
-              @ExampleObject(name = "javaInstant", value = "2021-05-31T08:23:15Z"),
+              @ExampleObject(
+                  name = "expr_by_namespace",
+                  value = "entry.namespace.startsWith('a.b.c')"),
+              @ExampleObject(
+                  name = "expr_by_contentType",
+                  value = "entry.contentType in ['ICEBERG_TABLE','DELTA_LAKE_TABLE']"),
+              @ExampleObject(
+                  name = "expr_by_namespace_and_contentType",
+                  value =
+                      "entry.namespace.startsWith('some.name.space') && entry.contentType in ['ICEBERG_TABLE','DELTA_LAKE_TABLE']"),
+              @ExampleObject(
+                  name = "expr_by_commit_author",
+                  value = "commit.author=='nessie_author'"),
+              @ExampleObject(
+                  name = "expr_by_commit_committer",
+                  value = "commit.committer=='nessie_committer'"),
+              @ExampleObject(
+                  name = "expr_by_commitTime",
+                  value = "timestamp(commit.commitTime) > timestamp('2021-05-31T08:23:15Z')"),
               @ExampleObject(name = "namespace", value = "a.b.c"),
               @ExampleObject(
                   name = "hash",
