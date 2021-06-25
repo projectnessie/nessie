@@ -41,6 +41,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalInt;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterEach;
@@ -52,9 +53,6 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.api.ContentsApi;
 import org.projectnessie.api.TreeApi;
-import org.projectnessie.api.params.CommitLogParams;
-import org.projectnessie.api.params.CommitLogParams.Builder;
-import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.client.NessieClient;
 import org.projectnessie.client.StreamingUtil;
 import org.projectnessie.client.http.HttpClient;
@@ -203,14 +201,14 @@ class TestRest {
     assertThat(tree.getReferenceByName(tagName)).isEqualTo(tagRef);
     assertThat(tree.getReferenceByName(branchName)).isEqualTo(branchRef);
 
-    EntriesResponse entries = tree.getEntries(tagName, EntriesParams.empty());
+    EntriesResponse entries = tree.getEntries(tagName, null, null, null);
     assertThat(entries).isNotNull();
-    entries = tree.getEntries(branchName, EntriesParams.empty());
+    entries = tree.getEntries(branchName, null, null, null);
     assertThat(entries).isNotNull();
 
-    LogResponse log = tree.getCommitLog(tagName, CommitLogParams.empty());
+    LogResponse log = tree.getCommitLog(tagName, null, null, null);
     assertThat(log).isNotNull();
-    log = tree.getCommitLog(branchName, CommitLogParams.empty());
+    log = tree.getCommitLog(branchName, null, null, null);
     assertThat(log).isNotNull();
 
     // Need to have at least one op, otherwise all following operations (assignTag/Branch, merge,
@@ -226,7 +224,7 @@ class TestRest {
             .commitMeta(CommitMeta.fromMessage("One dummy op"))
             .build();
     tree.commitMultipleOperations(branchName, branchHash, ops);
-    log = tree.getCommitLog(branchName, CommitLogParams.empty());
+    log = tree.getCommitLog(branchName, null, null, null);
     String newHash = log.getOperations().get(0).getHash();
 
     tree.assignTag(tagName, tagHash, Tag.of(tagName, newHash));
@@ -251,20 +249,11 @@ class TestRest {
 
     String currentHash = main.getHash();
     createCommits(branch, numAuthors, commitsPerAuthor, currentHash);
-    LogResponse log = tree.getCommitLog(branch.getName(), CommitLogParams.empty());
+    LogResponse log = tree.getCommitLog(branch.getName(), null, null, null);
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(numAuthors * commitsPerAuthor);
 
-    log =
-        tree.getCommitLog(
-            branch.getName(), CommitLogParams.builder().queryExpression(null).build());
-    assertThat(log).isNotNull();
-    assertThat(log.getOperations()).hasSize(numAuthors * commitsPerAuthor);
-
-    log =
-        tree.getCommitLog(
-            branch.getName(),
-            CommitLogParams.builder().queryExpression("commit.author == 'author-3'").build());
+    log = tree.getCommitLog(branch.getName(), null, null, "commit.author == 'author-3'");
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(commitsPerAuthor);
     log.getOperations().forEach(commit -> assertThat(commit.getAuthor()).isEqualTo("author-3"));
@@ -272,19 +261,15 @@ class TestRest {
     log =
         tree.getCommitLog(
             branch.getName(),
-            CommitLogParams.builder()
-                .queryExpression(
-                    "commit.author == 'author-3' && commit.committer == 'random-committer'")
-                .build());
+            null,
+            null,
+            "commit.author == 'author-3' && commit.committer == 'random-committer'");
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).isEmpty();
 
     log =
         tree.getCommitLog(
-            branch.getName(),
-            CommitLogParams.builder()
-                .queryExpression("commit.author == 'author-3' && commit.committer == ''")
-                .build());
+            branch.getName(), null, null, "commit.author == 'author-3' && commit.committer == ''");
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(commitsPerAuthor);
     log.getOperations()
@@ -296,10 +281,7 @@ class TestRest {
 
     log =
         tree.getCommitLog(
-            branch.getName(),
-            CommitLogParams.builder()
-                .queryExpression("commit.author in ['author-1', 'author-3', 'author-4']")
-                .build());
+            branch.getName(), null, null, "commit.author in ['author-1', 'author-3', 'author-4']");
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(commitsPerAuthor * 3);
     log.getOperations()
@@ -312,10 +294,7 @@ class TestRest {
 
     log =
         tree.getCommitLog(
-            branch.getName(),
-            CommitLogParams.builder()
-                .queryExpression("!(commit.author in ['author-1', 'author-0'])")
-                .build());
+            branch.getName(), null, null, "!(commit.author in ['author-1', 'author-0'])");
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(commitsPerAuthor * 3);
     log.getOperations()
@@ -326,12 +305,7 @@ class TestRest {
               assertThat(commit.getCommitter()).isEmpty();
             });
 
-    log =
-        tree.getCommitLog(
-            branch.getName(),
-            CommitLogParams.builder()
-                .queryExpression("commit.author.matches('au.*-(2|4)')")
-                .build());
+    log = tree.getCommitLog(branch.getName(), null, null, "commit.author.matches('au.*-(2|4)')");
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(commitsPerAuthor * 2);
     log.getOperations()
@@ -355,7 +329,7 @@ class TestRest {
 
     String currentHash = main.getHash();
     createCommits(branch, numAuthors, commitsPerAuthor, currentHash);
-    LogResponse log = tree.getCommitLog(branch.getName(), CommitLogParams.empty());
+    LogResponse log = tree.getCommitLog(branch.getName(), null, null, null);
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(expectedTotalSize);
 
@@ -369,11 +343,9 @@ class TestRest {
     log =
         tree.getCommitLog(
             branch.getName(),
-            CommitLogParams.builder()
-                .queryExpression(
-                    String.format(
-                        "timestamp(commit.commitTime) > timestamp('%s')", initialCommitTime))
-                .build());
+            null,
+            null,
+            String.format("timestamp(commit.commitTime) > timestamp('%s')", initialCommitTime));
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(expectedTotalSize - 1);
     log.getOperations()
@@ -382,10 +354,9 @@ class TestRest {
     log =
         tree.getCommitLog(
             branch.getName(),
-            CommitLogParams.builder()
-                .queryExpression(
-                    String.format("timestamp(commit.commitTime) < timestamp('%s')", fiveMinLater))
-                .build());
+            null,
+            null,
+            String.format("timestamp(commit.commitTime) < timestamp('%s')", fiveMinLater));
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(expectedTotalSize);
     log.getOperations()
@@ -394,12 +365,11 @@ class TestRest {
     log =
         tree.getCommitLog(
             branch.getName(),
-            CommitLogParams.builder()
-                .queryExpression(
-                    String.format(
-                        "timestamp(commit.commitTime) > timestamp('%s') && timestamp(commit.commitTime) < timestamp('%s')",
-                        initialCommitTime, lastCommitTime))
-                .build());
+            null,
+            null,
+            String.format(
+                "timestamp(commit.commitTime) > timestamp('%s') && timestamp(commit.commitTime) < timestamp('%s')",
+                initialCommitTime, lastCommitTime));
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(expectedTotalSize - 2);
     log.getOperations()
@@ -412,10 +382,9 @@ class TestRest {
     log =
         tree.getCommitLog(
             branch.getName(),
-            CommitLogParams.builder()
-                .queryExpression(
-                    String.format("timestamp(commit.commitTime) > timestamp('%s')", fiveMinLater))
-                .build());
+            null,
+            null,
+            String.format("timestamp(commit.commitTime) > timestamp('%s')", fiveMinLater));
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).isEmpty();
   }
@@ -460,7 +429,7 @@ class TestRest {
     int expectedTotalSize = numAuthors * commits;
 
     createCommits(branch, numAuthors, commits, someHash);
-    LogResponse log = tree.getCommitLog(branch.getName(), CommitLogParams.empty());
+    LogResponse log = tree.getCommitLog(branch.getName(), null, null, null);
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(expectedTotalSize);
 
@@ -475,8 +444,7 @@ class TestRest {
     List<String> allMessages =
         log.getOperations().stream().map(CommitMeta::getMessage).collect(Collectors.toList());
     List<CommitMeta> completeLog =
-        StreamingUtil.getCommitLogStream(
-                tree, branchName, CommitLogParams.builder().maxRecords(pageSizeHint).build())
+        StreamingUtil.getCommitLogStream(tree, branchName, OptionalInt.of(pageSizeHint), null)
             .collect(Collectors.toList());
     assertThat(completeLog.stream().map(CommitMeta::getMessage))
         .containsExactlyElementsOf(allMessages);
@@ -515,8 +483,7 @@ class TestRest {
     verifyPaging(branchName, commits, pageSizeHint, allMessages, null);
 
     List<CommitMeta> completeLog =
-        StreamingUtil.getCommitLogStream(
-                tree, branchName, CommitLogParams.builder().maxRecords(pageSizeHint).build())
+        StreamingUtil.getCommitLogStream(tree, branchName, OptionalInt.of(pageSizeHint), null)
             .collect(Collectors.toList());
     assertEquals(
         completeLog.stream().map(CommitMeta::getMessage).collect(Collectors.toList()), allMessages);
@@ -531,12 +498,12 @@ class TestRest {
       throws NessieNotFoundException {
     String pageToken = null;
     for (int pos = 0; pos < commits; pos += pageSizeHint) {
-      Builder builder = CommitLogParams.builder().maxRecords(pageSizeHint).pageToken(pageToken);
+      String queryExpression = null;
       if (null != filterByAuthor) {
-        builder = builder.queryExpression(String.format("commit.author=='%s'", filterByAuthor));
+        queryExpression = String.format("commit.author=='%s'", filterByAuthor);
       }
-      CommitLogParams commitLogParams = builder.build();
-      LogResponse response = tree.getCommitLog(branchName, commitLogParams);
+      LogResponse response =
+          tree.getCommitLog(branchName, pageSizeHint, pageToken, queryExpression);
       if (pos + pageSizeHint <= commits) {
         assertTrue(response.hasMore());
         assertNotNull(response.getToken());
@@ -593,8 +560,7 @@ class TestRest {
             .build();
     contents.setContents(a, branch, r.getHash(), "commit 1", ta);
     contents.setContents(b, branch, r.getHash(), "commit 2", tb);
-    List<EntriesResponse.Entry> entries =
-        tree.getEntries(branch, EntriesParams.empty()).getEntries();
+    List<EntriesResponse.Entry> entries = tree.getEntries(branch, null, null, null).getEntries();
     List<EntriesResponse.Entry> expected =
         Arrays.asList(
             EntriesResponse.Entry.builder().name(a).type(Contents.Type.ICEBERG_TABLE).build(),
@@ -602,27 +568,14 @@ class TestRest {
     assertThat(entries).containsExactlyInAnyOrderElementsOf(expected);
 
     entries =
-        tree.getEntries(
-                branch,
-                EntriesParams.builder()
-                    .queryExpression("entry.contentType=='ICEBERG_TABLE'")
-                    .build())
-            .getEntries();
+        tree.getEntries(branch, null, null, "entry.contentType=='ICEBERG_TABLE'").getEntries();
     assertEquals(Collections.singletonList(expected.get(0)), entries);
 
-    entries =
-        tree.getEntries(
-                branch,
-                EntriesParams.builder().queryExpression("entry.contentType=='VIEW'").build())
-            .getEntries();
+    entries = tree.getEntries(branch, null, null, "entry.contentType=='VIEW'").getEntries();
     assertEquals(Collections.singletonList(expected.get(1)), entries);
 
     entries =
-        tree.getEntries(
-                branch,
-                EntriesParams.builder()
-                    .queryExpression("entry.contentType in ['ICEBERG_TABLE', 'VIEW']")
-                    .build())
+        tree.getEntries(branch, null, null, "entry.contentType in ['ICEBERG_TABLE', 'VIEW']")
             .getEntries();
     assertThat(entries).containsExactlyInAnyOrderElementsOf(expected);
 
@@ -642,50 +595,27 @@ class TestRest {
     contents.setContents(third, branch, r.getHash(), "commit 3", IcebergTable.of("path3"));
     contents.setContents(fourth, branch, r.getHash(), "commit 4", IcebergTable.of("path4"));
 
-    List<EntriesResponse.Entry> entries =
-        tree.getEntries(branch, EntriesParams.empty()).getEntries();
+    List<EntriesResponse.Entry> entries = tree.getEntries(branch, null, null, null).getEntries();
     assertThat(entries).isNotNull().hasSize(4);
 
-    entries = tree.getEntries(branch, EntriesParams.empty()).getEntries();
+    entries = tree.getEntries(branch, null, null, null).getEntries();
     assertThat(entries).isNotNull().hasSize(4);
 
-    entries =
-        tree.getEntries(branch, EntriesParams.builder().queryExpression(null).build()).getEntries();
-    assertThat(entries).isNotNull().hasSize(4);
-
-    entries =
-        tree.getEntries(
-                branch,
-                EntriesParams.builder()
-                    .queryExpression("entry.namespace.startsWith('a.b')")
-                    .build())
-            .getEntries();
+    entries = tree.getEntries(branch, null, null, "entry.namespace.startsWith('a.b')").getEntries();
     assertThat(entries).hasSize(2);
     entries.forEach(e -> assertThat(e.getName().getNamespace().name()).startsWith("a.b"));
 
-    entries =
-        tree.getEntries(
-                branch,
-                EntriesParams.builder().queryExpression("entry.namespace.startsWith('a')").build())
-            .getEntries();
+    entries = tree.getEntries(branch, null, null, "entry.namespace.startsWith('a')").getEntries();
     assertThat(entries).hasSize(4);
     entries.forEach(e -> assertThat(e.getName().getNamespace().name()).startsWith("a"));
 
     entries =
-        tree.getEntries(
-                branch,
-                EntriesParams.builder()
-                    .queryExpression("entry.namespace.startsWith('a.b.c.firstTable')")
-                    .build())
+        tree.getEntries(branch, null, null, "entry.namespace.startsWith('a.b.c.firstTable')")
             .getEntries();
     assertThat(entries).isEmpty();
 
     entries =
-        tree.getEntries(
-                branch,
-                EntriesParams.builder()
-                    .queryExpression("entry.namespace.startsWith('a.fourthTable')")
-                    .build())
+        tree.getEntries(branch, null, null, "entry.namespace.startsWith('a.fourthTable')")
             .getEntries();
     assertThat(entries).isEmpty();
 
@@ -694,17 +624,11 @@ class TestRest {
 
   @Test
   public void checkCelScriptFailureReporting() {
-    assertThatThrownBy(
-            () ->
-                tree.getEntries(
-                    "main", EntriesParams.builder().queryExpression("invalid_script").build()))
+    assertThatThrownBy(() -> tree.getEntries("main", null, null, "invalid_script"))
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessageContaining("undeclared reference to 'invalid_script'");
 
-    assertThatThrownBy(
-            () ->
-                tree.getCommitLog(
-                    "main", CommitLogParams.builder().queryExpression("invalid_script").build()))
+    assertThatThrownBy(() -> tree.getCommitLog("main", null, null, "invalid_script"))
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessageContaining("undeclared reference to 'invalid_script'");
   }
@@ -769,14 +693,14 @@ class TestRest {
                 "Bad Request (HTTP/400): getCommitLog.ref: " + REF_NAME_OR_HASH_MESSAGE,
                 assertThrows(
                         NessieBadRequestException.class,
-                        () -> tree.getCommitLog(invalidBranchName, CommitLogParams.empty()))
+                        () -> tree.getCommitLog(invalidBranchName, null, null, null))
                     .getMessage()),
         () ->
             assertEquals(
                 "Bad Request (HTTP/400): getEntries.refName: " + REF_NAME_OR_HASH_MESSAGE,
                 assertThrows(
                         NessieBadRequestException.class,
-                        () -> tree.getEntries(invalidBranchName, EntriesParams.empty()))
+                        () -> tree.getEntries(invalidBranchName, null, null, null))
                     .getMessage()),
         () ->
             assertEquals(

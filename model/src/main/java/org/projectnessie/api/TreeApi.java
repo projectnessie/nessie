@@ -19,7 +19,6 @@ import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
-import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -37,8 +36,6 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
-import org.projectnessie.api.params.CommitLogParams;
-import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -181,7 +178,25 @@ public interface TreeApi {
               examples = {@ExampleObject(ref = "ref")})
           @PathParam("ref")
           String refName,
-      @NotNull @Valid @BeanParam EntriesParams params)
+      @Parameter(description = "maximum number of entries to return, just a hint for the server")
+          @QueryParam("max")
+          Integer maxRecords,
+      @Parameter(
+              description =
+                  "pagination continuation token, as returned in the previous EntriesResponse.token")
+          @QueryParam("pageToken")
+          String pageToken,
+      @Parameter(
+              description =
+                  "A Common Expression Language (CEL) expression. An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n"
+                      + "Usable variables within the expression are 'entry.namespace' (string) & 'entry.contentType' (string)",
+              examples = {
+                @ExampleObject(ref = "expr_by_namespace"),
+                @ExampleObject(ref = "expr_by_contentType"),
+                @ExampleObject(ref = "expr_by_namespace_and_contentType")
+              })
+          @QueryParam("query_expression")
+          String queryExpression)
       throws NessieNotFoundException;
 
   /**
@@ -245,7 +260,27 @@ public interface TreeApi {
               examples = {@ExampleObject(ref = "ref")})
           @PathParam("ref")
           String ref,
-      @NotNull @Valid @BeanParam CommitLogParams commitLogParams)
+      @Parameter(
+              description =
+                  "maximum number of commit-log entries to return, just a hint for the server")
+          @QueryParam("max")
+          Integer maxRecords,
+      @Parameter(
+              description =
+                  "pagination continuation token, as returned in the previous LogResponse.token")
+          @QueryParam("pageToken")
+          String pageToken,
+      @Parameter(
+              description =
+                  "A Common Expression Language (CEL) expression. An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n"
+                      + "Usable variables within the expression are 'commit.author' (string) / 'commit.committer' (string) / 'commit.commitTime' (timestamp)",
+              examples = {
+                @ExampleObject(ref = "expr_by_commit_author"),
+                @ExampleObject(ref = "expr_by_commit_committer"),
+                @ExampleObject(ref = "expr_by_commitTime")
+              })
+          @QueryParam("query_expression")
+          String queryExpression)
       throws NessieNotFoundException;
 
   /** Update a tag. */

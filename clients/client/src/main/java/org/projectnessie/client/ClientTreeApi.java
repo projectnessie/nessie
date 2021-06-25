@@ -20,8 +20,6 @@ import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import org.projectnessie.api.TreeApi;
-import org.projectnessie.api.params.CommitLogParams;
-import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpRequest;
 import org.projectnessie.error.NessieConflictException;
@@ -118,15 +116,15 @@ class ClientTreeApi implements TreeApi {
   }
 
   @Override
-  public LogResponse getCommitLog(String ref, CommitLogParams params)
+  public LogResponse getCommitLog(
+      String ref, Integer maxRecords, String pageToken, String queryExpression)
       throws NessieNotFoundException {
     HttpRequest builder =
         client.newRequest().path("trees/tree/{ref}/log").resolveTemplate("ref", ref);
     return builder
-        .queryParam(
-            "max", params.getMaxRecords() != null ? params.getMaxRecords().toString() : null)
-        .queryParam("pageToken", params.getPageToken())
-        .queryParam("query_expression", params.getQueryExpression())
+        .queryParam("max", maxRecords != null ? maxRecords.toString() : null)
+        .queryParam("pageToken", pageToken)
+        .queryParam("query_expression", queryExpression)
         .get()
         .readEntity(LogResponse.class);
   }
@@ -160,15 +158,15 @@ class ClientTreeApi implements TreeApi {
   }
 
   @Override
-  public EntriesResponse getEntries(@NotNull String refName, @NotNull EntriesParams params)
+  public EntriesResponse getEntries(
+      @NotNull String refName, Integer maxRecords, String pageToken, String queryExpression)
       throws NessieNotFoundException {
     HttpRequest builder =
         client.newRequest().path("trees/tree/{ref}/entries").resolveTemplate("ref", refName);
     return builder
-        .queryParam(
-            "max", params.getMaxRecords() != null ? params.getMaxRecords().toString() : null)
-        .queryParam("pageToken", params.getPageToken())
-        .queryParam("query_expression", params.getQueryExpression())
+        .queryParam("max", maxRecords != null ? maxRecords.toString() : null)
+        .queryParam("pageToken", pageToken)
+        .queryParam("query_expression", queryExpression)
         .get()
         .readEntity(EntriesResponse.class);
   }
