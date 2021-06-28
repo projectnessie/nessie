@@ -1,5 +1,5 @@
 mkdocs==1.2.1
-mkdocs-material==7.1.8
+mkdocs-material==7.1.9
 mkdocs-minify-plugin==0.4.0
 mkdocs-redirects==1.0.3
 pymdown-extensions==8.2
