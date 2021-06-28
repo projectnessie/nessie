@@ -22,7 +22,7 @@ import org.projectnessie.client.{NessieClient, StreamingUtil}
 import org.projectnessie.error.NessieNotFoundException
 import org.projectnessie.model.{Hash, Reference}
 
-import java.time.{LocalDateTime, ZoneId, ZoneOffset}
+import java.time.{LocalDateTime, ZoneOffset}
 import java.util.OptionalInt
 import scala.collection.JavaConverters._
 
@@ -45,22 +45,29 @@ object NessieUtils {
     if (timestamp == null) {
       nessieClient.getTreeApi.getReferenceByName(branch)
     } else {
-      StreamingUtil
-        .getCommitLogStream(
-          nessieClient.getTreeApi,
-          branch,
-          OptionalInt.empty(),
-          String
-            .format("timestamp(commit.commitTime) < timestamp('%s')", timestamp)
-        )
-        .findFirst()
-        .map(x => Hash.of(x.getHash))
-        .orElseThrow(
-          () =>
-            new NessieNotFoundException(
-              String.format("Cannot find a hash before %s.", timestamp)
-            )
-        )
+      val cm = Option(
+        StreamingUtil
+          .getCommitLogStream(
+            nessieClient.getTreeApi,
+            branch,
+            OptionalInt.empty(),
+            String
+              .format(
+                "timestamp(commit.commitTime) < timestamp('%s')",
+                timestamp
+              )
+          )
+          .findFirst()
+          .orElse(null)
+      ).map(x => Hash.of(x.getHash))
+
+      cm match {
+        case Some(value) => value
+        case None =>
+          throw new NessieNotFoundException(
+            String.format("Cannot find a hash before %s.", timestamp)
+          )
+      }
     }
   }
 

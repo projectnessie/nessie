@@ -35,6 +35,6 @@
     <module>hmsbridge</module>
     <module>deltalake</module>
     <module>tests</module>
-      <module>iceberg-extensions</module>
+    <module>spark-extensions</module>
   </modules>
 </project>
