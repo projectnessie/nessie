@@ -17,14 +17,14 @@ package org.apache.spark.sql.execution.datasources.v2
 
 import org.apache.spark.sql.{SparkSession, Strategy}
 import org.apache.spark.sql.catalyst.plans.logical.{
-  CreateReferenceField,
-  DropReferenceField,
-  ListReferenceField,
+  CreateReferenceCommand,
+  DropReferenceCommand,
+  ListReferenceCommand,
   LogicalPlan,
-  MergeBranchField,
-  ShowLogField,
-  ShowReferenceField,
-  UseReferenceField
+  MergeBranchCommand,
+  ShowLogCommand,
+  ShowReferenceCommand,
+  UseReferenceCommand
 }
 import org.apache.spark.sql.execution.SparkPlan
 
@@ -32,7 +32,7 @@ case class ExtendedDataSourceV2Strategy(spark: SparkSession) extends Strategy {
 
   override def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
 
-    case c @ CreateReferenceField(branch, isBranch, catalog, reference) =>
+    case c @ CreateReferenceCommand(branch, isBranch, catalog, reference) =>
       CreateReferenceExec(
         c.output,
         branch,
@@ -42,7 +42,7 @@ case class ExtendedDataSourceV2Strategy(spark: SparkSession) extends Strategy {
         reference
       ) :: Nil
 
-    case c @ DropReferenceField(branch, isBranch, catalog) =>
+    case c @ DropReferenceCommand(branch, isBranch, catalog) =>
       DropReferenceExec(
         c.output,
         branch,
@@ -51,7 +51,7 @@ case class ExtendedDataSourceV2Strategy(spark: SparkSession) extends Strategy {
         catalog
       ) :: Nil
 
-    case c @ UseReferenceField(branch, ts, catalog) =>
+    case c @ UseReferenceCommand(branch, ts, catalog) =>
       UseReferenceExec(
         c.output,
         branch,
@@ -60,21 +60,21 @@ case class ExtendedDataSourceV2Strategy(spark: SparkSession) extends Strategy {
         catalog
       ) :: Nil
 
-    case c @ ListReferenceField(catalog) =>
+    case c @ ListReferenceCommand(catalog) =>
       ListReferenceExec(
         c.output,
         spark.sessionState.catalogManager.currentCatalog,
         catalog
       ) :: Nil
 
-    case c @ ShowReferenceField(catalog) =>
+    case c @ ShowReferenceCommand(catalog) =>
       ShowReferenceExec(
         c.output,
         spark.sessionState.catalogManager.currentCatalog,
         catalog
       ) :: Nil
 
-    case c @ MergeBranchField(branch, toRefName, catalog) =>
+    case c @ MergeBranchCommand(branch, toRefName, catalog) =>
       MergeBranchExec(
         c.output,
         branch,
@@ -83,7 +83,7 @@ case class ExtendedDataSourceV2Strategy(spark: SparkSession) extends Strategy {
         catalog
       ) :: Nil
 
-    case c @ ShowLogField(refName, catalog) =>
+    case c @ ShowLogCommand(refName, catalog) =>
       ShowLogExec(
         c.output,
         refName,

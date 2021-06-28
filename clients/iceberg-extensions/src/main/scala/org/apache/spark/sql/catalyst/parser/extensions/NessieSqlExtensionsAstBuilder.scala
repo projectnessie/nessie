@@ -22,14 +22,14 @@ import org.apache.spark.sql.catalyst.parser.ParserInterface
 import org.apache.spark.sql.catalyst.parser.extensions.NessieParserUtils.withOrigin
 import org.apache.spark.sql.catalyst.parser.extensions.NessieSqlExtensionsParser._
 import org.apache.spark.sql.catalyst.plans.logical.{
-  CreateReferenceField,
-  DropReferenceField,
-  ListReferenceField,
+  CreateReferenceCommand,
+  DropReferenceCommand,
+  ListReferenceCommand,
   LogicalPlan,
-  MergeBranchField,
-  ShowLogField,
-  ShowReferenceField,
-  UseReferenceField
+  MergeBranchCommand,
+  ShowLogCommand,
+  ShowReferenceCommand,
+  UseReferenceCommand
 }
 import org.apache.spark.sql.catalyst.trees.{CurrentOrigin, Origin}
 
@@ -40,78 +40,67 @@ class NessieSqlExtensionsAstBuilder(delegate: ParserInterface)
 
   override def visitNessieCreateRef(
       ctx: NessieCreateRefContext
-  ): CreateReferenceField = withOrigin(ctx) {
+  ): CreateReferenceCommand = withOrigin(ctx) {
     val isBranch = ctx.TAG == null
     val refName = ctx.identifier(0).getText
     val catalogName = asText(ctx.catalog)
     val createdFrom = asText(ctx.reference)
-    CreateReferenceField(refName, isBranch, catalogName, createdFrom)
+    CreateReferenceCommand(refName, isBranch, catalogName, createdFrom)
   }
 
   override def visitNessieDropRef(
       ctx: NessieDropRefContext
-  ): DropReferenceField = withOrigin(ctx) {
+  ): DropReferenceCommand = withOrigin(ctx) {
     val isBranch = ctx.TAG == null
     val refName = ctx.identifier(0).getText
     val catalogName = asText(ctx.catalog)
-    DropReferenceField(refName, isBranch, catalogName)
+    DropReferenceCommand(refName, isBranch, catalogName)
   }
 
-  override def visitNessieUseRef(ctx: NessieUseRefContext): UseReferenceField =
+  override def visitNessieUseRef(
+      ctx: NessieUseRefContext
+  ): UseReferenceCommand =
     withOrigin(ctx) {
       val refName = ctx.identifier(0).getText
       val timestamp = asText(ctx.ts)
       val catalogName = asText(ctx.catalog)
-      UseReferenceField(refName, timestamp, catalogName)
+      UseReferenceCommand(refName, timestamp, catalogName)
     }
 
   override def visitNessieListRef(
       ctx: NessieListRefContext
-  ): ListReferenceField = withOrigin(ctx) {
+  ): ListReferenceCommand = withOrigin(ctx) {
     val catalogName = asText(ctx.catalog)
-    ListReferenceField(catalogName)
+    ListReferenceCommand(catalogName)
   }
 
   override def visitNessieShowRef(
       ctx: NessieShowRefContext
-  ): ShowReferenceField = withOrigin(ctx) {
+  ): ShowReferenceCommand = withOrigin(ctx) {
     val catalogName = asText(ctx.catalog)
-    ShowReferenceField(catalogName)
+    ShowReferenceCommand(catalogName)
   }
 
   override def visitNessieMergeRef(
       ctx: NessieMergeRefContext
-  ): MergeBranchField = withOrigin(ctx) {
+  ): MergeBranchCommand = withOrigin(ctx) {
     val refName = asText(ctx.identifier(0))
     val toRefName = asText(ctx.toRef)
     val catalogName = asText(ctx.catalog)
-    MergeBranchField(refName, toRefName, catalogName)
+    MergeBranchCommand(refName, toRefName, catalogName)
   }
 
-  override def visitNessieShowLog(ctx: NessieShowLogContext): ShowLogField =
+  override def visitNessieShowLog(ctx: NessieShowLogContext): ShowLogCommand =
     withOrigin(ctx) {
       val refName = asText(ctx.identifier(0))
       val catalogName = asText(ctx.catalog)
-      ShowLogField(refName, catalogName)
+      ShowLogCommand(refName, catalogName)
     }
 
   override def visitSingleStatement(ctx: SingleStatementContext): LogicalPlan =
     withOrigin(ctx) {
       visit(ctx.statement).asInstanceOf[LogicalPlan]
     }
-
-  private def reconstructSqlString(ctx: ParserRuleContext): String = {
-    ctx.children.asScala
-      .map {
-        case c: ParserRuleContext => reconstructSqlString(c)
-        case t: TerminalNode      => t.getText
-      }
-      .mkString(" ")
-  }
-
-  private def typedVisit[T](ctx: ParseTree): T = {
-    ctx.accept(this).asInstanceOf[T]
-  }
 
   private def asText(parameter: IdentifierContext): Option[String] = {
     Option(parameter).map(x => x.getText)

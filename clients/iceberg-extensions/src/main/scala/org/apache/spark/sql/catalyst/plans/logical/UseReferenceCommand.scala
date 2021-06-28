@@ -16,27 +16,38 @@
 package org.apache.spark.sql.catalyst.plans.logical
 
 import org.apache.spark.sql.catalyst.expressions.Attribute
-import org.apache.spark.sql.types.DataTypes
-import org.apache.spark.sql.types.Metadata
-import org.apache.spark.sql.types.StructField
-import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.types.{DataTypes, Metadata, StructField, StructType}
 
-case class CreateReferenceField(
-    reference: String,
-    isBranch: Boolean,
-    catalog: Option[String],
-    fromReference: Option[String]
+case class UseReferenceCommand(
+    branch: String,
+    ts: Option[String],
+    catalog: Option[String]
 ) extends Command {
 
   override lazy val output: Seq[Attribute] = new StructType(
     Array[StructField](
-      StructField("refType", DataTypes.StringType, false, Metadata.empty),
-      StructField("name", DataTypes.StringType, false, Metadata.empty),
-      StructField("hash", DataTypes.StringType, false, Metadata.empty)
+      StructField(
+        "refType",
+        DataTypes.StringType,
+        nullable = false,
+        Metadata.empty
+      ),
+      StructField(
+        "name",
+        DataTypes.StringType,
+        nullable = false,
+        Metadata.empty
+      ),
+      StructField(
+        "hash",
+        DataTypes.StringType,
+        nullable = false,
+        Metadata.empty
+      )
     )
   ).toAttributes
 
   override def simpleString(maxFields: Int): String = {
-    s"CreateReference ${reference}"
+    s"UseReference ${branch}"
   }
 }

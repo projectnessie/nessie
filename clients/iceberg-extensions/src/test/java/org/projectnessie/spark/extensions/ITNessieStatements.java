@@ -16,16 +16,16 @@
 package org.projectnessie.spark.extensions;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -56,17 +56,13 @@ public class ITNessieStatements extends AbstractSparkTest {
   }
 
   @BeforeEach
-  void getHash() {
-    try {
-      hash = nessieClient.getTreeApi().getDefaultBranch().getHash();
-    } catch (NessieNotFoundException e) {
-      throw new RuntimeException(e);
-    }
+  void getHash() throws NessieNotFoundException {
+    hash = nessieClient.getTreeApi().getDefaultBranch().getHash();
   }
 
   @AfterEach
   void removeBranches() throws NessieConflictException, NessieNotFoundException {
-    for (String s : new String[] {refName, "main"}) {
+    for (String s : Arrays.asList(refName, "main")) {
       try {
         nessieClient
             .getTreeApi()
@@ -82,52 +78,52 @@ public class ITNessieStatements extends AbstractSparkTest {
   void testCreateBranchIn() throws NessieNotFoundException {
 
     List<Object[]> result = sql("CREATE BRANCH %s IN nessie", refName);
-    assertEquals("created branch", Collections.singletonList(row("Branch", refName, hash)), result);
-    Assertions.assertEquals(
-        nessieClient.getTreeApi().getReferenceByName(refName), Branch.of(refName, hash));
+    assertEquals("created branch", row("Branch", refName, hash), result);
+    assertThat(nessieClient.getTreeApi().getReferenceByName(refName))
+        .isEqualTo(Branch.of(refName, hash));
     result = sql("DROP BRANCH %s IN nessie", refName);
-    assertEquals("deleted branch", Collections.singletonList(row("OK")), result);
+    assertEquals("deleted branch", row("OK"), result);
   }
 
   @Test
   void testCreateTagIn() throws NessieNotFoundException {
     List<Object[]> result = sql("CREATE TAG %s IN nessie", refName);
-    assertEquals("created tag", Collections.singletonList(row("Tag", refName, hash)), result);
-    Assertions.assertEquals(
-        nessieClient.getTreeApi().getReferenceByName(refName), Tag.of(refName, hash));
+    assertEquals("created tag", row("Tag", refName, hash), result);
+    assertThat(nessieClient.getTreeApi().getReferenceByName(refName))
+        .isEqualTo(Tag.of(refName, hash));
     result = sql("DROP TAG %s IN nessie", refName);
-    assertEquals("deleted tag", Collections.singletonList(row("OK")), result);
-    Assertions.assertThrows(
-        NessieNotFoundException.class, () -> nessieClient.getTreeApi().getReferenceByName(refName));
+    assertEquals("deleted tag", row("OK"), result);
+    assertThatThrownBy(() -> nessieClient.getTreeApi().getReferenceByName(refName))
+        .isInstanceOf(NessieNotFoundException.class);
   }
 
   @Test
   void testCreateBranchInAs() throws NessieNotFoundException {
     List<Object[]> result = sql("CREATE BRANCH %s IN nessie AS main", refName);
-    assertEquals("created branch", Collections.singletonList(row("Branch", refName, hash)), result);
-    Assertions.assertEquals(
-        nessieClient.getTreeApi().getReferenceByName(refName), Branch.of(refName, hash));
+    assertEquals("created branch", row("Branch", refName, hash), result);
+    assertThat(nessieClient.getTreeApi().getReferenceByName(refName))
+        .isEqualTo(Branch.of(refName, hash));
     result = sql("DROP BRANCH %s IN nessie", refName);
-    assertEquals("deleted branch", Collections.singletonList(row("OK")), result);
-    Assertions.assertThrows(
-        NessieNotFoundException.class, () -> nessieClient.getTreeApi().getReferenceByName(refName));
+    assertEquals("deleted branch", row("OK"), result);
+    assertThatThrownBy(() -> nessieClient.getTreeApi().getReferenceByName(refName))
+        .isInstanceOf(NessieNotFoundException.class);
   }
 
   @Test
   void testCreateTagInAs() throws NessieNotFoundException {
     List<Object[]> result = sql("CREATE TAG %s IN nessie AS main", refName);
-    assertEquals("created tag", Collections.singletonList(row("Tag", refName, hash)), result);
-    Assertions.assertEquals(
-        nessieClient.getTreeApi().getReferenceByName(refName), Tag.of(refName, hash));
+    assertEquals("created tag", row("Tag", refName, hash), result);
+    assertThat(nessieClient.getTreeApi().getReferenceByName(refName))
+        .isEqualTo(Tag.of(refName, hash));
     result = sql("LIST REFERENCES IN nessie");
     List<Object[]> listResult = new ArrayList<>();
     listResult.add(row("Branch", "main", hash));
     listResult.add(row("Tag", refName, hash));
     assertEquals("created branch", listResult, result);
     result = sql("DROP TAG %s IN nessie", refName);
-    assertEquals("deleted tag", Collections.singletonList(row("OK")), result);
-    Assertions.assertThrows(
-        NessieNotFoundException.class, () -> nessieClient.getTreeApi().getReferenceByName(refName));
+    assertEquals("deleted tag", row("OK"), result);
+    assertThatThrownBy(() -> nessieClient.getTreeApi().getReferenceByName(refName))
+        .isInstanceOf(NessieNotFoundException.class);
   }
 
   @Disabled("until release of 0.12.0 of iceberg")
@@ -136,14 +132,14 @@ public class ITNessieStatements extends AbstractSparkTest {
     String catalog = spark.sessionState().catalogManager().currentCatalog().name();
     spark.sessionState().catalogManager().setCurrentCatalog("nessie");
     List<Object[]> result = sql("CREATE BRANCH %s", refName);
-    assertEquals("created branch", Collections.singletonList(row("Branch", refName, hash)), result);
-    Assertions.assertEquals(
-        nessieClient.getTreeApi().getReferenceByName(refName), Branch.of(refName, hash));
+    assertEquals("created branch", row("Branch", refName, hash), result);
+    assertThat(nessieClient.getTreeApi().getReferenceByName(refName))
+        .isEqualTo(Branch.of(refName, hash));
     result = sql("DROP BRANCH %s", refName);
-    assertEquals("deleted branch", Collections.singletonList(row("OK")), result);
+    assertEquals("deleted branch", row("OK"), result);
     spark.sessionState().catalogManager().setCurrentCatalog(catalog);
-    Assertions.assertThrows(
-        NessieNotFoundException.class, () -> nessieClient.getTreeApi().getReferenceByName(refName));
+    assertThatThrownBy(() -> nessieClient.getTreeApi().getReferenceByName(refName))
+        .isInstanceOf(NessieNotFoundException.class);
   }
 
   @Disabled("until release of 0.12.0 of iceberg")
@@ -152,76 +148,76 @@ public class ITNessieStatements extends AbstractSparkTest {
     String catalog = spark.sessionState().catalogManager().currentCatalog().name();
     spark.sessionState().catalogManager().setCurrentCatalog("nessie");
     List<Object[]> result = sql("CREATE TAG %s", refName);
-    assertEquals("created branch", Collections.singletonList(row("Tag", refName, hash)), result);
-    Assertions.assertEquals(
-        nessieClient.getTreeApi().getReferenceByName(refName), Tag.of(refName, hash));
+    assertEquals("created branch", row("Tag", refName, hash), result);
+    assertThat(nessieClient.getTreeApi().getReferenceByName(refName))
+        .isEqualTo(Tag.of(refName, hash));
     result = sql("LIST REFERENCES");
     assertThat(result)
         .containsExactlyInAnyOrder(row("Tag", refName, hash), row("Branch", "main", hash));
     result = sql("DROP TAG %s", refName);
-    assertEquals("deleted branch", Collections.singletonList(row("OK")), result);
+    assertEquals("deleted branch", row("OK"), result);
     spark.sessionState().catalogManager().setCurrentCatalog(catalog);
-    Assertions.assertThrows(
-        NessieNotFoundException.class, () -> nessieClient.getTreeApi().getReferenceByName(refName));
+    assertThatThrownBy(() -> nessieClient.getTreeApi().getReferenceByName(refName))
+        .isInstanceOf(NessieNotFoundException.class);
   }
 
   @Disabled("until release of 0.12.0 of iceberg")
   @Test
   void useShowReferencesIn() throws NessieNotFoundException {
     List<Object[]> result = sql("CREATE BRANCH %s IN nessie AS main", refName);
-    assertEquals("created branch", Collections.singletonList(row("Branch", refName, hash)), result);
-    Assertions.assertEquals(
-        nessieClient.getTreeApi().getReferenceByName(refName), Branch.of(refName, hash));
+    assertEquals("created branch", row("Branch", refName, hash), result);
+    assertThat(nessieClient.getTreeApi().getReferenceByName(refName))
+        .isEqualTo(Branch.of(refName, hash));
 
     result = sql("USE REFERENCE %s IN nessie", refName);
-    assertEquals("use branch", Collections.singletonList(row("Branch", refName, hash)), result);
+    assertEquals("use branch", row("Branch", refName, hash), result);
     result = sql("SHOW REFERENCE IN nessie");
-    assertEquals("show branch", Collections.singletonList(row("Branch", refName, hash)), result);
+    assertEquals("show branch", row("Branch", refName, hash), result);
 
     result = sql("DROP BRANCH %s IN nessie", refName);
-    assertEquals("deleted branch", Collections.singletonList(row("OK")), result);
-    Assertions.assertThrows(
-        NessieNotFoundException.class, () -> nessieClient.getTreeApi().getReferenceByName(refName));
+    assertEquals("deleted branch", row("OK"), result);
+    assertThatThrownBy(() -> nessieClient.getTreeApi().getReferenceByName(refName))
+        .isInstanceOf(NessieNotFoundException.class);
   }
 
   @Disabled("until release of 0.12.0 of iceberg")
   @Test
   void useShowReferencesAt() throws NessieNotFoundException {
     List<Object[]> result = sql("CREATE BRANCH %s IN nessie AS main", refName);
-    assertEquals("created branch", Collections.singletonList(row("Branch", refName, hash)), result);
-    Assertions.assertEquals(
-        nessieClient.getTreeApi().getReferenceByName(refName), Branch.of(refName, hash));
+    assertEquals("created branch", row("Branch", refName, hash), result);
+    assertThat(nessieClient.getTreeApi().getReferenceByName(refName))
+        .isEqualTo(Branch.of(refName, hash));
 
     result = sql("USE REFERENCE %s AT %s IN nessie ", refName, "`2012-06-01T14:14:14`");
-    assertEquals("use branch", Collections.singletonList(row("Branch", refName, hash)), result);
+    assertEquals("use branch", row("Branch", refName, hash), result);
     result = sql("SHOW REFERENCE IN nessie");
-    assertEquals("show branch", Collections.singletonList(row("Branch", refName, hash)), result);
+    assertEquals("show branch", row("Branch", refName, hash), result);
 
     result = sql("DROP BRANCH %s IN nessie", refName);
-    assertEquals("deleted branch", Collections.singletonList(row("OK")), result);
-    Assertions.assertThrows(
-        NessieNotFoundException.class, () -> nessieClient.getTreeApi().getReferenceByName(refName));
+    assertEquals("deleted branch", row("OK"), result);
+    assertThatThrownBy(() -> nessieClient.getTreeApi().getReferenceByName(refName))
+        .isInstanceOf(NessieNotFoundException.class);
   }
 
   @Disabled("until release of 0.12.0 of iceberg")
   @Test
   void useShowReferences() throws NessieNotFoundException {
     List<Object[]> result = sql("CREATE BRANCH %s IN nessie AS main", refName);
-    assertEquals("created branch", Collections.singletonList(row("Branch", refName, hash)), result);
-    Assertions.assertEquals(
-        nessieClient.getTreeApi().getReferenceByName(refName), Branch.of(refName, hash));
+    assertEquals("created branch", row("Branch", refName, hash), result);
+    assertThat(nessieClient.getTreeApi().getReferenceByName(refName))
+        .isEqualTo(Branch.of(refName, hash));
 
     String catalog = spark.sessionState().catalogManager().currentCatalog().name();
     spark.sessionState().catalogManager().setCurrentCatalog("nessie");
     result = sql("USE REFERENCE %s", refName);
-    assertEquals("use branch", Collections.singletonList(row("Branch", refName, hash)), result);
+    assertEquals("use branch", row("Branch", refName, hash), result);
     result = sql("SHOW REFERENCE");
-    assertEquals("show branch", Collections.singletonList(row("Branch", refName, hash)), result);
+    assertEquals("show branch", row("Branch", refName, hash), result);
 
     result = sql("DROP BRANCH %s IN nessie", refName);
-    assertEquals("deleted branch", Collections.singletonList(row("OK")), result);
-    Assertions.assertThrows(
-        NessieNotFoundException.class, () -> nessieClient.getTreeApi().getReferenceByName(refName));
+    assertEquals("deleted branch", row("OK"), result);
+    assertThatThrownBy(() -> nessieClient.getTreeApi().getReferenceByName(refName))
+        .isInstanceOf(NessieNotFoundException.class);
     spark.sessionState().catalogManager().setCurrentCatalog(catalog);
   }
 

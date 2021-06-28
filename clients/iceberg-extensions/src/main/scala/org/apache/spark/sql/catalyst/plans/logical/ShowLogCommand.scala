@@ -18,17 +18,47 @@ package org.apache.spark.sql.catalyst.plans.logical
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.types.{DataTypes, Metadata, StructField, StructType}
 
-case class ShowLogField(refName: Option[String], catalog: Option[String])
+case class ShowLogCommand(refName: Option[String], catalog: Option[String])
     extends Command {
 
   override lazy val output: Seq[Attribute] = new StructType(
     Array[StructField](
-      StructField("author", DataTypes.StringType, false, Metadata.empty),
-      StructField("committer", DataTypes.StringType, false, Metadata.empty),
-      StructField("hash", DataTypes.StringType, false, Metadata.empty),
-      StructField("message", DataTypes.StringType, false, Metadata.empty),
-      StructField("signedOffBy", DataTypes.StringType, false, Metadata.empty),
-      StructField("authorTime", DataTypes.TimestampType, false, Metadata.empty),
+      StructField(
+        "author",
+        DataTypes.StringType,
+        nullable = false,
+        Metadata.empty
+      ),
+      StructField(
+        "committer",
+        DataTypes.StringType,
+        nullable = false,
+        Metadata.empty
+      ),
+      StructField(
+        "hash",
+        DataTypes.StringType,
+        nullable = false,
+        Metadata.empty
+      ),
+      StructField(
+        "message",
+        DataTypes.StringType,
+        nullable = false,
+        Metadata.empty
+      ),
+      StructField(
+        "signedOffBy",
+        DataTypes.StringType,
+        nullable = false,
+        Metadata.empty
+      ),
+      StructField(
+        "authorTime",
+        DataTypes.TimestampType,
+        nullable = false,
+        Metadata.empty
+      ),
       StructField(
         "committerTime",
         DataTypes.TimestampType,

@@ -18,20 +18,32 @@ package org.apache.spark.sql.catalyst.plans.logical
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.types.{DataTypes, Metadata, StructField, StructType}
 
-case class MergeBranchField(
-    branch: Option[String],
-    toRefName: Option[String],
-    catalog: Option[String]
-) extends Command {
+case class ShowReferenceCommand(catalog: Option[String]) extends Command {
 
   override lazy val output: Seq[Attribute] = new StructType(
     Array[StructField](
-      StructField("name", DataTypes.StringType, false, Metadata.empty),
-      StructField("hash", DataTypes.StringType, false, Metadata.empty)
+      StructField(
+        "refType",
+        DataTypes.StringType,
+        nullable = false,
+        Metadata.empty
+      ),
+      StructField(
+        "name",
+        DataTypes.StringType,
+        nullable = false,
+        Metadata.empty
+      ),
+      StructField(
+        "hash",
+        DataTypes.StringType,
+        nullable = false,
+        Metadata.empty
+      )
     )
   ).toAttributes
 
   override def simpleString(maxFields: Int): String = {
-    s"MergeBranch ${branch}"
+    s"ShowReference"
   }
 }

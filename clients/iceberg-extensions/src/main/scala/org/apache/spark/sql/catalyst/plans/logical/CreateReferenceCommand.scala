@@ -16,21 +16,42 @@
 package org.apache.spark.sql.catalyst.plans.logical
 
 import org.apache.spark.sql.catalyst.expressions.Attribute
-import org.apache.spark.sql.types.{DataTypes, Metadata, StructField, StructType}
+import org.apache.spark.sql.types.DataTypes
+import org.apache.spark.sql.types.Metadata
+import org.apache.spark.sql.types.StructField
+import org.apache.spark.sql.types.StructType
 
-case class DropReferenceField(
+case class CreateReferenceCommand(
     reference: String,
     isBranch: Boolean,
-    catalog: Option[String]
+    catalog: Option[String],
+    fromReference: Option[String]
 ) extends Command {
 
   override lazy val output: Seq[Attribute] = new StructType(
     Array[StructField](
-      StructField("status", DataTypes.StringType, false, Metadata.empty)
+      StructField(
+        "refType",
+        DataTypes.StringType,
+        nullable = false,
+        Metadata.empty
+      ),
+      StructField(
+        "name",
+        DataTypes.StringType,
+        nullable = false,
+        Metadata.empty
+      ),
+      StructField(
+        "hash",
+        DataTypes.StringType,
+        nullable = false,
+        Metadata.empty
+      )
     )
   ).toAttributes
 
   override def simpleString(maxFields: Int): String = {
-    s"DropReference ${reference}"
+    s"CreateReference ${reference}"
   }
 }

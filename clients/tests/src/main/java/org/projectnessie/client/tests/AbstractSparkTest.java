@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -86,6 +87,11 @@ public abstract class AbstractSparkTest {
                     .mapToObj(pos -> row.isNullAt(pos) ? null : row.get(pos))
                     .toArray(Object[]::new))
         .collect(Collectors.toList());
+  }
+
+  protected static void assertEquals(
+      String context, Object[] expectedRow, List<Object[]> actualRows) {
+    assertEquals(context, Collections.singletonList(expectedRow), actualRows);
   }
 
   protected static void assertEquals(

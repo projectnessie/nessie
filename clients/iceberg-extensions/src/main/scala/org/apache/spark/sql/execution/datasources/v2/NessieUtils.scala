@@ -14,14 +14,16 @@
  * limitations under the License.
  */
 package org.apache.spark.sql.execution.datasources.v2
+
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
-import org.apache.spark.sql.{AnalysisException, SparkSession}
-import org.projectnessie.api.params.CommitLogParams
 import org.projectnessie.client.{NessieClient, StreamingUtil}
-import org.projectnessie.model.{Branch, CommitMeta, Hash, Reference}
+import org.projectnessie.error.NessieNotFoundException
+import org.projectnessie.model.{Hash, Reference}
 
-import java.time.{LocalDateTime, ZoneId}
+import java.time.{LocalDateTime, ZoneId, ZoneOffset}
+import java.util.OptionalInt
 import scala.collection.JavaConverters._
 
 object NessieUtils {
@@ -38,29 +40,27 @@ object NessieUtils {
     //todo we are assuming always in UTC. ignoring tz set by spark etc
     val timestamp = ts
       .map(x => x.replaceAll("`", ""))
-      .map(x => LocalDateTime.parse(x).atZone(ZoneId.of("UTC")).toInstant)
+      .map(x => LocalDateTime.parse(x).atZone(ZoneOffset.UTC).toInstant)
       .orNull
     if (timestamp == null) {
       nessieClient.getTreeApi.getReferenceByName(branch)
     } else {
-      var last: Option[CommitMeta] = None
-      // todo this is icky
-      for (cm <- StreamingUtil
-             .getCommitLogStream(
-               nessieClient.getTreeApi,
-               branch,
-               CommitLogParams.empty()
-             )
-             .iterator
-             .asScala) {
-        if (cm.getCommitTime.isBefore(timestamp)) {
-          Hash.of(cm.getHash)
-        }
-        last = Some(cm)
-      }
-      last
+      StreamingUtil
+        .getCommitLogStream(
+          nessieClient.getTreeApi,
+          branch,
+          OptionalInt.empty(),
+          String
+            .format("timestamp(commit.commitTime) < timestamp('%s')", timestamp)
+        )
+        .findFirst()
         .map(x => Hash.of(x.getHash))
-        .getOrElse(nessieClient.getTreeApi.getReferenceByName(branch))
+        .orElseThrow(
+          () =>
+            new NessieNotFoundException(
+              String.format("Cannot find a hash before %s.", timestamp)
+            )
+        )
     }
   }
 
