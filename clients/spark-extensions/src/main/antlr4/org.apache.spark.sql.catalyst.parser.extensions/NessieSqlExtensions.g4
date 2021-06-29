@@ -67,6 +67,7 @@ statement
     | SHOW REFERENCE (IN catalog=identifier)?                                               #nessieShowRef
     | MERGE BRANCH (identifier)? (INTO toRef=identifier)?  (IN catalog=identifier)?         #nessieMergeRef
     | SHOW LOG (identifier)? (IN catalog=identifier)?                                       #nessieShowLog
+    | ASSIGN (BRANCH|TAG) (identifier)? (AS toRef=identifier)? (IN catalog=identifier)?     #nessieAssignRef
     // add collect gc action
     // add purge gc action
     ;
@@ -82,7 +83,7 @@ quotedIdentifier
     ;
 
 nonReserved
-    : AS | AT | BRANCH | CREATE| DROP | IN | TAG | LOG | USE | REFERENCE | REFERENCES
+    : AS | ASSIGN | AT | BRANCH | CREATE| DROP | IN | TAG | LOG | USE | REFERENCE | REFERENCES
     | SHOW | LIST | MERGE | INTO
     ;
 
@@ -101,7 +102,7 @@ DROP: 'DROP';
 IN: 'IN';
 INTO: 'INTO';
 TAG: 'TAG';
-
+ASSIGN: 'ASSIGN';
 PLUS: '+';
 MINUS: '-';
 

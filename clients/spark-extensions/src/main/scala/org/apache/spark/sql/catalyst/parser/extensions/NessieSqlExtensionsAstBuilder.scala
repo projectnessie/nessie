@@ -17,23 +17,11 @@ package org.apache.spark.sql.catalyst.parser.extensions
 
 import org.antlr.v4.runtime._
 import org.antlr.v4.runtime.misc.Interval
-import org.antlr.v4.runtime.tree.{ParseTree, TerminalNode}
 import org.apache.spark.sql.catalyst.parser.ParserInterface
 import org.apache.spark.sql.catalyst.parser.extensions.NessieParserUtils.withOrigin
 import org.apache.spark.sql.catalyst.parser.extensions.NessieSqlExtensionsParser._
-import org.apache.spark.sql.catalyst.plans.logical.{
-  CreateReferenceCommand,
-  DropReferenceCommand,
-  ListReferenceCommand,
-  LogicalPlan,
-  MergeBranchCommand,
-  ShowLogCommand,
-  ShowReferenceCommand,
-  UseReferenceCommand
-}
+import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.trees.{CurrentOrigin, Origin}
-
-import scala.collection.JavaConverters._
 
 class NessieSqlExtensionsAstBuilder(delegate: ParserInterface)
     extends NessieSqlExtensionsBaseVisitor[AnyRef] {
@@ -100,6 +88,17 @@ class NessieSqlExtensionsAstBuilder(delegate: ParserInterface)
   override def visitSingleStatement(ctx: SingleStatementContext): LogicalPlan =
     withOrigin(ctx) {
       visit(ctx.statement).asInstanceOf[LogicalPlan]
+    }
+
+  override def visitNessieAssignRef(
+      ctx: NessieAssignRefContext
+  ): AssignReferenceCommand =
+    withOrigin(ctx) {
+      val isBranch = ctx.TAG == null
+      val refName = ctx.identifier(0).getText
+      val toRefName = asText(ctx.toRef)
+      val catalogName = asText(ctx.catalog)
+      AssignReferenceCommand(refName, isBranch, toRefName, catalogName)
     }
 
   private def asText(parameter: IdentifierContext): Option[String] = {

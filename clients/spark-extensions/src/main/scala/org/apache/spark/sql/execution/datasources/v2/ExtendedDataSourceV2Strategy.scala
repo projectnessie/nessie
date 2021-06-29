@@ -17,6 +17,7 @@ package org.apache.spark.sql.execution.datasources.v2
 
 import org.apache.spark.sql.{SparkSession, Strategy}
 import org.apache.spark.sql.catalyst.plans.logical.{
+  AssignReferenceCommand,
   CreateReferenceCommand,
   DropReferenceCommand,
   ListReferenceCommand,
@@ -91,6 +92,15 @@ case class ExtendedDataSourceV2Strategy(spark: SparkSession) extends Strategy {
         catalog
       ) :: Nil
 
+    case c @ AssignReferenceCommand(reference, isBranch, toRefName, catalog) =>
+      AssignReferenceExec(
+        c.output,
+        reference,
+        isBranch,
+        spark.sessionState.catalogManager.currentCatalog,
+        toRefName,
+        catalog
+      ) :: Nil
     case _ => Nil
   }
 

@@ -109,7 +109,10 @@ class NessieSparkSqlExtensionsParser(delegate: ParserInterface)
       "list reference"
     ) ||
     normalized.startsWith("show reference") || normalized.startsWith("show log") ||
-    normalized.startsWith("merge branch")
+    normalized.startsWith("merge branch") || normalized.startsWith(
+      "assign branch"
+    ) ||
+    normalized.startsWith("assign tag")
   }
 
   protected def parse[T](
