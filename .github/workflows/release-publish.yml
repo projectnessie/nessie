@@ -77,10 +77,13 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
       if: ${{ github.event_name == 'push' }}
+      with:
+        fetch-depth: '0'
     - name: Checkout
       uses: actions/checkout@v2
       if: ${{ github.event_name == 'workflow_dispatch' }}
       with:
+        fetch-depth: '0'
         ref: refs/tags/${{ github.event.inputs.releaseTag }}
     - name: Set up JDK 11
       uses: actions/setup-java@v2
@@ -256,11 +259,9 @@ jobs:
         RELEASE_VERSION: ${{ steps.get_version.outputs.VERSION }}
         GIT_TAG: nessie-${{ steps.get_version.outputs.VERSION }}
       run: |
-        git fetch --tags
-
         DIR=$(mktemp -d)
         NOTES_FILE=${DIR}/release-notes.md
-        LAST_TAG=$(git describe --tags --abbrev=0 HEAD^1)
+        LAST_TAG=$(git describe --abbrev=0 --tags $(git rev-list --tags --skip=1 --max-count=1))
         NUM_COMMITS=$(git log --format='format:%h' ${LAST_TAG}..HEAD | wc -l)
 
         csplit site/docs/try/releases.md '%##%' {0} '/##/' {0} '%##%' {*} -f ${DIR}/release-highlights -b '-%d.txt' > /dev/null
