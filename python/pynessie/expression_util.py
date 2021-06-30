@@ -15,8 +15,11 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from typing import List
-from typing import Optional
+
+from datetime import timezone
+from typing import List, Optional
+
+from dateutil import parser
 
 
 def build_query_expression_for_commit_log_flags(
@@ -32,9 +35,9 @@ def build_query_expression_for_commit_log_flags(
     if committers:
         expressions.append(_expression_for_commit_log_by_committer(committers))
     if since:
-        expressions.append(_expression_for_commit_log_by_commit_time_after(since))
+        expressions.append(_expression_for_commit_log_by_commit_time_after(parse_to_iso8601(since)))
     if until:
-        expressions.append(_expression_for_commit_log_by_commit_time_before(until))
+        expressions.append(_expression_for_commit_log_by_commit_time_before(parse_to_iso8601(until)))
 
     if len(expressions) > 0:
         return _and_join(expressions)
@@ -91,5 +94,16 @@ def __generate_expression(items: List[str], expression_template: str) -> str:
     expressions = []
     for item in items:
         expressions.append(expression_template.format(item))
-
     return _or_join(expressions)
+
+
+def parse_to_iso8601(date_str: str) -> str:
+    """Parses a given Date string to an ISO 8601 compliant string in UTC.
+
+    :param date_str A string representation of a date
+    :return An ISO 8601 string in the form YYYY-MM-DD HH:MM:SS.mmmmmm+HH:MM
+    """
+    try:
+        return parser.parse(date_str).astimezone(tz=timezone.utc).isoformat(sep="T")
+    except Exception as e:
+        raise ValueError("Unable to parse '{}' to an ISO 8601-compliant string. Reason: {}".format(date_str, e), e)

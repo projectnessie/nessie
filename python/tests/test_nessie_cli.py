@@ -161,6 +161,9 @@ def test_log() -> None:
     result = _run(runner, ["--json", "log", "--query", "commit.author == 'nessie_user2' || commit.author == 'non_existing'"])
     logs = simplejson.loads(result.output)
     assert len(logs) == 1
+    result = _run(runner, ["--json", "log", "--after", "2001-01-01T00:00:00+00:00", "--before", "2999-12-30T23:00:00+00:00"])
+    logs = simplejson.loads(result.output)
+    assert len(logs) == 2
 
 
 @pytest.mark.vcr

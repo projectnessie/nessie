@@ -18,6 +18,7 @@ from assertpy import assert_that
 
 from pynessie.expression_util import build_query_expression_for_commit_log_flags
 from pynessie.expression_util import build_query_expression_for_contents_listing_flags
+from pynessie.expression_util import parse_to_iso8601
 
 
 def test_building_empty_query_expression() -> None:
@@ -76,21 +77,21 @@ def test_building_query_expression_for_commit_log() -> None:
         build_query_expression_for_commit_log_flags(
             query_expression=query_expr, authors=[], committers=[], since="2021-05-31T08:23:15Z", until=until
         )
-    ).is_equal_to("timestamp(commit.commitTime) > timestamp('2021-05-31T08:23:15Z')")
+    ).is_equal_to("timestamp(commit.commitTime) > timestamp('2021-05-31T08:23:15+00:00')")
 
     assert_that(
         build_query_expression_for_commit_log_flags(
             query_expression=query_expr, authors=[], committers=[], since="", until="2021-05-31T10:23:15Z"
         )
-    ).is_equal_to("timestamp(commit.commitTime) < timestamp('2021-05-31T10:23:15Z')")
+    ).is_equal_to("timestamp(commit.commitTime) < timestamp('2021-05-31T10:23:15+00:00')")
 
     assert_that(
         build_query_expression_for_commit_log_flags(
             query_expression=query_expr, authors=[], committers=[], since="2021-05-31T08:23:15Z", until="2021-05-31T10:23:15Z"
         )
     ).is_equal_to(
-        "(timestamp(commit.commitTime) > timestamp('2021-05-31T08:23:15Z') "
-        "&& timestamp(commit.commitTime) < timestamp('2021-05-31T10:23:15Z'))"
+        "(timestamp(commit.commitTime) > timestamp('2021-05-31T08:23:15+00:00') "
+        "&& timestamp(commit.commitTime) < timestamp('2021-05-31T10:23:15+00:00'))"
     )
 
     assert_that(
@@ -104,8 +105,8 @@ def test_building_query_expression_for_commit_log() -> None:
     ).is_equal_to(
         "((commit.author=='one' || commit.author=='two') "
         "&& (commit.committer=='two' || commit.committer=='three') "
-        "&& timestamp(commit.commitTime) > timestamp('2021-05-31T08:23:15Z') "
-        "&& timestamp(commit.commitTime) < timestamp('2021-05-31T10:23:15Z'))"
+        "&& timestamp(commit.commitTime) > timestamp('2021-05-31T08:23:15+00:00') "
+        "&& timestamp(commit.commitTime) < timestamp('2021-05-31T10:23:15+00:00'))"
     )
 
 
@@ -125,3 +126,20 @@ def test_building_query_expression_for_content_entries() -> None:
     assert_that(
         build_query_expression_for_contents_listing_flags(query_expression="", types=["ICEBERG_TABLE", "DELTA_LAKE_TABLE"])
     ).is_equal_to("entry.contentType in ['ICEBERG_TABLE','DELTA_LAKE_TABLE']")
+
+
+def test_date_parsing() -> None:
+    """Tests date parsing."""
+    assert_that(parse_to_iso8601("2021-05-31 08:23:15Z")).is_equal_to("2021-05-31T08:23:15+00:00")
+    assert_that(parse_to_iso8601("2021-05-31T08:23:15+01:00")).is_equal_to("2021-05-31T07:23:15+00:00")
+    assert_that(parse_to_iso8601("2021-05-31T08:23:15+02:00")).is_equal_to("2021-05-31T06:23:15+00:00")
+    assert_that(parse_to_iso8601("2021-05-31 08:23:15Z+00:00")).is_equal_to("2021-05-31T08:23:15+00:00")
+    assert_that(parse_to_iso8601("2021-06-30T08:19:04.826051Z")).is_equal_to("2021-06-30T08:19:04.826051+00:00")
+
+
+def test_invalid_date_parsing() -> None:
+    """Tests invalid date parsing."""
+    assert_that(parse_to_iso8601).raises(ValueError).when_called_with(None)
+    assert_that(parse_to_iso8601).raises(ValueError).when_called_with("")
+    assert_that(parse_to_iso8601).raises(ValueError).when_called_with("some_invalid_str")
+    assert_that(parse_to_iso8601).raises(ValueError).when_called_with("99999")
