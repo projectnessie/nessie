@@ -82,9 +82,9 @@ interactions:
       code: 404
       message: Not Found
 - request:
-    body: '{"commitMeta": {"email": null, "hash": null, "commitTime": null, "author":
-      null, "committer": null, "authorTime": null, "message": "test_message1", "properties":
-      null, "signedOffBy": null}, "operations": [{"contents": {"metadataLocation":
+    body: '{"commitMeta": {"hash": null, "committer": null, "email": null, "author":
+      null, "message": "test_message1", "commitTime": null, "signedOffBy": null, "authorTime":
+      null, "properties": null}, "operations": [{"contents": {"metadataLocation":
       "/a/b/c", "id": "uuid", "type": "ICEBERG_TABLE"}, "key": {"elements": ["this",
       "is", "iceberg", "foo"]}, "type": "PUT"}]}'
     headers:
@@ -105,7 +105,7 @@ interactions:
   response:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\",\n
-        \ \"hash\" : \"2a6e42e80d5042cde4e8a36d48020692459739523c3386aa78fe2cb3b916a9ae\"\n}"
+        \ \"hash\" : \"69e12e84434b40aa8e4fa95e988cd75e07c1b1772526fc12efbdac2d496a2566\"\n}"
     headers:
       Content-Length:
       - '137'
@@ -130,7 +130,7 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\",\n
-        \ \"hash\" : \"2a6e42e80d5042cde4e8a36d48020692459739523c3386aa78fe2cb3b916a9ae\"\n},
+        \ \"hash\" : \"69e12e84434b40aa8e4fa95e988cd75e07c1b1772526fc12efbdac2d496a2566\"\n},
         {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}
         ]"
     headers:
@@ -168,10 +168,10 @@ interactions:
       code: 404
       message: Not Found
 - request:
-    body: '{"commitMeta": {"email": null, "hash": null, "commitTime": null, "author":
-      null, "committer": null, "authorTime": null, "message": "test_message2", "properties":
-      null, "signedOffBy": null}, "operations": [{"contents": {"checkpointLocationHistory":
-      ["def"], "lastCheckpoint": "x", "metadataLocationHistory": ["asd"], "id": "uuid2",
+    body: '{"commitMeta": {"hash": null, "committer": null, "email": null, "author":
+      null, "message": "test_message2", "commitTime": null, "signedOffBy": null, "authorTime":
+      null, "properties": null}, "operations": [{"contents": {"checkpointLocationHistory":
+      ["def"], "id": "uuid2", "lastCheckpoint": "x", "metadataLocationHistory": ["asd"],
       "type": "DELTA_LAKE_TABLE"}, "key": {"elements": ["this", "is", "delta", "bar"]},
       "type": "PUT"}]}'
     headers:
@@ -188,11 +188,11 @@ interactions:
       User-Agent:
       - python-requests/2.25.1
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/contents_listing_dev/commit?expectedHash=2a6e42e80d5042cde4e8a36d48020692459739523c3386aa78fe2cb3b916a9ae
+    uri: http://localhost:19120/api/v1/trees/branch/contents_listing_dev/commit?expectedHash=69e12e84434b40aa8e4fa95e988cd75e07c1b1772526fc12efbdac2d496a2566
   response:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\",\n
-        \ \"hash\" : \"b4fce2a9f70142b47e1d8d6d2d53676c36f4ce4fdfd2e4a71175694e9e664658\"\n}"
+        \ \"hash\" : \"8abd1e42fc86700926fbe7e23b48ba454a15c676d8b234409e8164e3d754847a\"\n}"
     headers:
       Content-Length:
       - '137'
@@ -428,7 +428,7 @@ interactions:
   response:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\",\n
-        \ \"hash\" : \"b4fce2a9f70142b47e1d8d6d2d53676c36f4ce4fdfd2e4a71175694e9e664658\"\n}"
+        \ \"hash\" : \"8abd1e42fc86700926fbe7e23b48ba454a15c676d8b234409e8164e3d754847a\"\n}"
     headers:
       Content-Length:
       - '137'
@@ -451,7 +451,7 @@ interactions:
       User-Agent:
       - python-requests/2.25.1
     method: DELETE
-    uri: http://localhost:19120/api/v1/trees/branch/contents_listing_dev?expectedHash=b4fce2a9f70142b47e1d8d6d2d53676c36f4ce4fdfd2e4a71175694e9e664658
+    uri: http://localhost:19120/api/v1/trees/branch/contents_listing_dev?expectedHash=8abd1e42fc86700926fbe7e23b48ba454a15c676d8b234409e8164e3d754847a
   response:
     body:
       string: ''
