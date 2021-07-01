@@ -1,6 +1,5 @@
 arrange:
   - index.md
-  - architecture.md
   - spec.md
   - kernel.md
   - nessie_vs_git.md
