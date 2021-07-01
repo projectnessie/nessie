@@ -16,6 +16,7 @@
 package org.projectnessie.services.rest;
 
 import static org.projectnessie.services.cel.CELUtil.COMMIT_LOG_DECLARATIONS;
+import static org.projectnessie.services.cel.CELUtil.COMMIT_LOG_TYPES;
 import static org.projectnessie.services.cel.CELUtil.ENTRIES_DECLARATIONS;
 import static org.projectnessie.services.cel.CELUtil.SCRIPT_HOST;
 
@@ -207,28 +208,18 @@ public class TreeResource extends BaseResource implements TreeApi {
     final Script script;
     try {
       script =
-          SCRIPT_HOST.getOrCreateScript(
-              queryExpression, COMMIT_LOG_DECLARATIONS, Collections.emptyList());
+          SCRIPT_HOST
+              .buildScript(queryExpression)
+              .withDeclarations(COMMIT_LOG_DECLARATIONS)
+              .withTypes(COMMIT_LOG_TYPES)
+              .build();
     } catch (ScriptException e) {
       throw new IllegalArgumentException(e);
     }
     return commits.filter(
         commit -> {
-          // currently this is just a workaround where we put CommitMeta into a hash structure.
-          // Eventually we should just be able to do "script.execute(Boolean.class, commit)"
-          Map<String, Object> arguments =
-              ImmutableMap.of(
-                  "commit",
-                  ImmutableMap.of(
-                      "author",
-                      commit.getAuthor(),
-                      "committer",
-                      commit.getCommitter(),
-                      "commitTime",
-                      commit.getCommitTime()));
-
           try {
-            return script.execute(Boolean.class, arguments);
+            return script.execute(Boolean.class, ImmutableMap.of("commit", commit));
           } catch (ScriptException e) {
             throw new RuntimeException(e);
           }

@@ -273,7 +273,7 @@ public interface TreeApi {
       @Parameter(
               description =
                   "A Common Expression Language (CEL) expression. An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n"
-                      + "Usable variables within the expression are 'commit.author' (string) / 'commit.committer' (string) / 'commit.commitTime' (timestamp)",
+                      + "Usable variables within the expression are 'commit.author' (string) / 'commit.committer' (string) / 'commit.commitTime' (timestamp) / 'commit.hash' (string) / 'commit.message' (string) / 'commit.properties' (map)",
               examples = {
                 @ExampleObject(ref = "expr_by_commit_author"),
                 @ExampleObject(ref = "expr_by_commit_committer"),
