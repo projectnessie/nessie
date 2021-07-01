@@ -19,8 +19,8 @@ Google Groups as a mailing list.
 
 [GitHub Issues](https://github.com/projectnessie/nessie/issues)
 : Nessie is developed via GitHub issues and pull requests. If you see a problem
-or want to enhance the product, we suggest you file a GitHub issue for developers to
-review.
+  or want to enhance the product, we suggest you file a GitHub issue for developers to
+  review.
 
 [Twitter](https://twitter.com/projectnessie)
 : The [@projectnessie](https://twitter.com/projectnessie) account on Twitter is our official account. Follow-up to keep
@@ -41,3 +41,6 @@ review.
 
 All contributors are welcome to Project Nessie. To get started, feel free to introduce yourself
 on Slack or our Google Group. Nessie is open to everyone!
+
+Please see the [CONTRIBUTING.md guide](https://github.com/projectnessie/nessie/blob/main/CONTRIBUTING.md) for more information
+on how to contribute.
