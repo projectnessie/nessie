@@ -157,6 +157,11 @@
       <artifactId>nessie-versioned-tiered-tests</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.projectnessie</groupId>
+      <artifactId>nessie-spark-extensions</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
 
   <build>

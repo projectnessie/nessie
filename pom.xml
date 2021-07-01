@@ -125,6 +125,7 @@
     <!--<dynamodb-local.repository.url>https://s3.us-west-2.amazonaws.com/dynamodb-local/release</dynamodb-local.repository.url>-->
 
     <!-- Version properties -->
+    <antlr.version>4.7.1</antlr.version>
     <assertj.version>3.20.2</assertj.version>
     <awssdk.version>2.16.93</awssdk.version>
     <bouncycastle.version>1.66</bouncycastle.version>
@@ -498,6 +499,11 @@
         <artifactId>assertj-core</artifactId>
         <version>${assertj.version}</version>
       </dependency>
+      <dependency>
+        <groupId>org.antlr</groupId>
+        <artifactId>antlr4-runtime</artifactId>
+        <version>${antlr.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -645,6 +651,14 @@
         </plugin>
 
         <!-- 3rd party plugins -->
+        <plugin>
+          <groupId>org.antlr</groupId>
+          <artifactId>antlr4-maven-plugin</artifactId>
+          <version>${antlr.version}</version>
+          <configuration>
+            <visitor>true</visitor>
+          </configuration>
+        </plugin>
         <plugin>
           <groupId>com.github.eirslett</groupId>
           <artifactId>frontend-maven-plugin</artifactId>
@@ -1012,6 +1026,7 @@ limitations under the License.
             <tsx>SLASHSTAR_STYLE</tsx>
             <ts>SLASHSTAR_STYLE</ts>
             <jmx>XML_STYLE</jmx>
+            <g4>SLASHSTAR_STYLE</g4>
           </mapping>
         </configuration>
         <executions>
