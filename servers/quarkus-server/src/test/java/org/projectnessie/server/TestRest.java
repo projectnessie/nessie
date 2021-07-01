@@ -32,6 +32,7 @@ import static org.projectnessie.model.Validation.REF_NAME_OR_HASH_MESSAGE;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import io.quarkus.test.junit.QuarkusTest;
 import java.net.URI;
 import java.time.Instant;
@@ -389,6 +390,34 @@ class TestRest {
     assertThat(log.getOperations()).isEmpty();
   }
 
+  @Test
+  public void filterCommitLogByProperties()
+      throws NessieNotFoundException, NessieConflictException {
+    Reference main = tree.getReferenceByName("main");
+    Branch filterCommitLogByAuthor = Branch.of("filterCommitLogByProperties", main.getHash());
+    Reference branch = tree.createReference(filterCommitLogByAuthor);
+    assertThat(branch).isEqualTo(filterCommitLogByAuthor);
+
+    int numAuthors = 5;
+    int commitsPerAuthor = 10;
+
+    String currentHash = main.getHash();
+    createCommits(branch, numAuthors, commitsPerAuthor, currentHash);
+    LogResponse log = tree.getCommitLog(branch.getName(), null, null, null);
+    assertThat(log).isNotNull();
+    assertThat(log.getOperations()).hasSize(numAuthors * commitsPerAuthor);
+
+    log = tree.getCommitLog(branch.getName(), null, null, "commit.properties['prop1'] == 'val1'");
+    assertThat(log).isNotNull();
+    assertThat(log.getOperations()).hasSize(numAuthors * commitsPerAuthor);
+    log.getOperations()
+        .forEach(commit -> assertThat(commit.getProperties().get("prop1")).isEqualTo("val1"));
+
+    log = tree.getCommitLog(branch.getName(), null, null, "commit.properties['prop1'] == 'val3'");
+    assertThat(log).isNotNull();
+    assertThat(log.getOperations()).isEmpty();
+  }
+
   private void createCommits(
       Reference branch, int numAuthors, int commitsPerAuthor, String currentHash)
       throws NessieNotFoundException, NessieConflictException {
@@ -404,6 +433,7 @@ class TestRest {
                             CommitMeta.builder()
                                 .author(author)
                                 .message("committed-by-" + author)
+                                .properties(ImmutableMap.of("prop1", "val1", "prop2", "val2"))
                                 .build())
                         .addOperations(
                             Put.of(ContentsKey.of("table"), IcebergTable.of("some-file-" + i)))

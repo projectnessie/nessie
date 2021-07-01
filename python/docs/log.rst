@@ -28,7 +28,9 @@
 	                                  spec/blob/master/doc/intro.md. Some examples
 	                                  with usable variables 'commit.author' (string)
 	                                  / 'commit.committer' (string) /
-	                                  'commit.commitTime' (timestamp) are:
+	                                  'commit.commitTime' (timestamp) /
+	                                  'commit.hash' (string) / 'commit.message'
+	                                  (string) / 'commit.properties' (map) are:
 	                                  commit.author=='nessie_author'
 	                                  commit.committer=='nessie_committer'
 	                                  timestamp(commit.commitTime) >
