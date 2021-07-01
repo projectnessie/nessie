@@ -1,44 +1,36 @@
-# Community
+# Architecture
 
-Nessie is developed as a consensus-driven open source product under the Apache 2.0 
-license. Development is done in the open leveraging GitHub issues, PRs and using 
-Google Groups as a mailing list. 
+Nessie builds on the recent ecosystem developments around table formats. The rise of
+very large metadata and eventually consistent cloud data lakes (S3 specifically) drove
+the need for an updated model around metadata managmeent. Where consistent directory
+listings in HDFS used to be sufficient, there were many features lacking. This includes
+snapshotting, consistency and fast planning. Apache Iceberg and Delta Lake were both
+created to help alleviate those problems.
 
-## Get In Touch
+For more insight into why we created Nessie, you can read the founding [blog post](https://www.dremio.com/introducing-project-nessie/) by one of Nessie's
+creators.
 
-[Slack Channel](mailto:slack-subscribe@projectnessie.org)
-: The developers on Nessie frequent the nessie-public Slack channel. You can get an 
-  invite to the channel by emailing [slack-subscribe@projectnessie.org](mailto:slack-subscribe@projectnessie.org). 
-  If you want your organization invited to the channel, please state that in the request. 
-  Whether you're super excited about development or just want to hear what is happening, 
-  everyone is welcome to join. 
+## Inspiration
 
-[Google Group](https://groups.google.com/g/projectnessie)
-: If long form is more your thing, we also have created a mailing list on Google groups 
-  that you can subscribe to.
+The Iceberg format (as well as the Delta Lake format) relies on a set of metadata files stored with (or near) the actual
+data tables. This allows Iceberg to fulfill the same role as the Hive Metastore for transactions without the need for
+expensive metadata scans or centralized planning (see [Iceberg
+performance](https://iceberg.apache.org/performance/)). This includes
+things such as partitioning (including hidden partitions), schema migrations, appends and deletes.  It does however
+require a pointer to the active metadata set to function. This pointer allows the Iceberg client to acquire and read the
+current schema, files and partitions in the dataset. Iceberg currently relies on the Hive metastore or hdfs to perform
+this role. The requirements for this root pointer store is it must hold (at least) information about the location of the
+current up to date metadata file and it must be able to update this location atomically. In Hive this is accomplished by
+locks and in hdfs by using atomic file swap operations. These operations don’t exist in eventually consistent cloud
+object stores, necessitating a Hive metastore for cloud data lakes. The Nessie system is designed to store the
+root metadata pointer and perform atomic updates to this pointer, obviating the need for a Hive metastore. Removing the
+need for a Hive metastore simplifies deployment and broadens the reach of tools that can work with Iceberg tables.
+The above is specific to how Iceberg behaves however Delta Lake operates in a near identical way.
 
-[GitHub Issues](https://github.com/projectnessie/nessie/issues)
-: Nessie is developed via GitHub issues and pull requests. If you see a problem
-or want to enhance the product, we suggest you file a GitHub issue for developers to
-review.
-
-[Twitter](https://twitter.com/projectnessie)
-: The [@projectnessie](https://twitter.com/projectnessie) account on Twitter is our official account. Follow-up to keep 
-  to date on what is happening with Project Nessie!   
-
-[YouTube Channel](https://www.youtube.com/channel/UC5xjzYuGGuGPCY9FNtqZMsQ)
-: Video content for Nessie will be hosted on our YouTube channel. 
-
-[Docs](https://github.com/projectnessie/nessie/tree/main/site/docs)
-: Our website is all maintained in our source repository. If there is something you think 
-  can be improved, feel free to fork our repository and post a pull request.
-
-[Reviewable](https://reviewable.io/)
-: We use Reviewable (in addition to GitHub reviews) to collaborate on code and docs. They are 
-  a great service and support OSS projects.
-
-## Contribution
-
-All contributors are welcome to Project Nessie. To get started, feel free to introduce yourself 
-on Slack or our Google Group. Nessie is open to everyone!  
-
+The Nessie service is a lightweight Java based REST API server. It uses a standard optimistic locking strategy
+to ensure atomic transactions. This relies on every operation carrying an expected
+hash state for the store and allows for a very light weight and
+scalable implementation. The implementation uses configurable authentication (eg IAM on AWS, JWT elsewhere) and a
+configurable backend (currently supporting DynamoDB on AWS) and uses the optimistic locking features of cloud based
+key value stores to ensure scalability across servers. This architecture allows for Nessie to run in a docker container,
+as a Lambda function or in a number of other configurations.
