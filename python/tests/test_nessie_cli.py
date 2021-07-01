@@ -49,6 +49,21 @@ def test_command_line_interface() -> None:
     assert isinstance(references[0], Branch)
 
 
+@pytest.mark.vcr
+def test_owner_repo_incomplete() -> None:
+    """Ensure the CLI barks when either owner or repo but not both are specified."""
+    runner = CliRunner()
+    result = _run(runner, ["--owner", "robert", "log"], ret_val=1)
+    assert "Error: Options '--owner' and '--repo' must both be specified, or none of those" in result.output
+    result = _run(runner, ["--repo", "elani", "log"], ret_val=1)
+    assert "Error: Options '--owner' and '--repo' must both be specified, or none of those" in result.output
+    result = _run(runner, ["remote", "show"])
+    assert "Remote URL: http://localhost:19120/api/v1\n" in result.output
+    # ignore the exit code (it's probably 1, if the server doesn't properly handle owner+repo)
+    result = runner.invoke(cli.cli, ["--owner", "robert", "--repo", "elani", "remote", "show"])
+    assert "Remote URL: http://localhost:19120/api/v1/robert/elani\n" in result.output
+
+
 def test_config_options() -> None:
     """Ensure config cli option is consistent."""
     runner = CliRunner()

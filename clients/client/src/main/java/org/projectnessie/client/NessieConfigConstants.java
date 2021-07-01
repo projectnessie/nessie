@@ -35,6 +35,10 @@ public final class NessieConfigConstants {
    * authentication.
    */
   public static final String CONF_NESSIE_PASSWORD = "nessie.password";
+  /** Config property name ({@value #CONF_NESSIE_OWNER}) for the Nessie repository owner. */
+  public static final String CONF_NESSIE_OWNER = "nessie.owner";
+  /** Config property name ({@value #CONF_NESSIE_REPOSITORY}) for the Nessie repository ID. */
+  public static final String CONF_NESSIE_REPOSITORY = "nessie.repository";
   /**
    * Config property name ({@value #CONF_NESSIE_AUTH_TYPE}) for the authentication type, see {@link
    * org.projectnessie.client.NessieClient.AuthType}.

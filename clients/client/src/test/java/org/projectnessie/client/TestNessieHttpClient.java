@@ -28,6 +28,8 @@ import io.opentracing.util.GlobalTracer;
 import java.io.OutputStream;
 import java.net.URI;
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -45,6 +47,39 @@ class TestNessieHttpClient {
     assertThatThrownBy(() -> NessieClient.builder().withUri((URI) null).build())
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Cannot construct Http client. Must have a non-null uri");
+  }
+
+  @Test
+  void testDefaultRepo() throws Exception {
+    NessieClient client = NessieClient.builder().withUri("http://127.9.9.9:1234/foo/bar").build();
+    assertThat(client)
+        .extracting(NessieClient::getOwner, NessieClient::getRepo, NessieClient::getUri)
+        .containsExactly(null, null, new URI("http://127.9.9.9:1234/foo/bar"));
+  }
+
+  @Test
+  void testCustomRepo() throws Exception {
+    NessieClient client =
+        NessieClient.builder()
+            .withUri("http://127.9.9.9:1234/api/v1")
+            .withRepoOwner("robert", "elani")
+            .build();
+    assertThat(client)
+        .extracting(NessieClient::getOwner, NessieClient::getRepo, NessieClient::getUri)
+        .containsExactly("robert", "elani", new URI("http://127.9.9.9:1234/api/v1/robert/elani"));
+  }
+
+  @Test
+  void testCustomRepoFromConfig() throws Exception {
+    Map<String, String> map = new HashMap<>();
+    map.put(NessieConfigConstants.CONF_NESSIE_OWNER, "robert");
+    map.put(NessieConfigConstants.CONF_NESSIE_REPOSITORY, "elani");
+    map.put(NessieConfigConstants.CONF_NESSIE_REF, "ref");
+    map.put(NessieConfigConstants.CONF_NESSIE_URI, "https://1.2.3.4/");
+    NessieClient client = NessieClient.builder().fromConfig(map::get).build();
+    assertThat(client)
+        .extracting(NessieClient::getOwner, NessieClient::getRepo, NessieClient::getUri)
+        .containsExactly("robert", "elani", new URI("https://1.2.3.4/robert/elani"));
   }
 
   @Test

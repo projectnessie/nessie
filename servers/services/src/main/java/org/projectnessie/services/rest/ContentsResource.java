@@ -44,9 +44,10 @@ public class ContentsResource extends BaseResource implements ContentsApi {
   @Inject
   public ContentsResource(
       ServerConfig config,
+      MultiTenant multiTenant,
       Principal principal,
       VersionStore<Contents, CommitMeta, Contents.Type> store) {
-    super(config, principal, store);
+    super(config, multiTenant, principal, store);
   }
 
   @Override

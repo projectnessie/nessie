@@ -107,6 +107,10 @@ public class HttpClient {
     return new HttpClientBuilder();
   }
 
+  public URI getBaseUri() {
+    return baseUri;
+  }
+
   public static class HttpClientBuilder {
     private URI baseUri;
     private String accept = "application/json";
