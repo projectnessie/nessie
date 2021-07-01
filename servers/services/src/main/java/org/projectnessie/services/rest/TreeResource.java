@@ -81,9 +81,10 @@ public class TreeResource extends BaseResource implements TreeApi {
   @Inject
   public TreeResource(
       ServerConfig config,
+      MultiTenant multiTenant,
       Principal principal,
       VersionStore<Contents, CommitMeta, Contents.Type> store) {
-    super(config, principal, store);
+    super(config, multiTenant, principal, store);
   }
 
   @Override

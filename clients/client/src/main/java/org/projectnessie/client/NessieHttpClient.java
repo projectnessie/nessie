@@ -32,6 +32,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 import org.projectnessie.api.ConfigApi;
@@ -53,8 +54,11 @@ class NessieHttpClient implements NessieClient {
           .enable(SerializationFeature.INDENT_OUTPUT)
           .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
 
-  private final TreeApi tree;
+  private final HttpClient client;
+  private final String repo;
+  private final String owner;
   private final ConfigApi config;
+  private final TreeApi tree;
   private final ContentsApi contents;
 
   /**
@@ -69,6 +73,8 @@ class NessieHttpClient implements NessieClient {
    * @param connectionTimeoutMillis time in milliseconds to wait to connect to the server
    */
   NessieHttpClient(
+      String owner,
+      String repo,
       AuthType authType,
       URI uri,
       String username,
@@ -76,7 +82,29 @@ class NessieHttpClient implements NessieClient {
       boolean enableTracing,
       int readTimeout,
       int connectionTimeoutMillis) {
-    HttpClient client =
+    this.repo = repo;
+    this.owner = owner;
+    if (owner != null && repo != null) {
+      try {
+        uri =
+            new URI(
+                uri.getScheme(),
+                uri.getUserInfo(),
+                uri.getHost(),
+                uri.getPort(),
+                String.format(
+                    "%s%s%s/%s",
+                    uri.getPath(), uri.getPath().endsWith("/") ? "" : "/", owner, repo),
+                uri.getQuery(),
+                uri.getFragment());
+      } catch (URISyntaxException e) {
+        throw new RuntimeException(e);
+      }
+    } else if (owner != null || repo != null) {
+      throw new IllegalArgumentException(
+          "'owner' and 'repo' must both be specified or both be null");
+    }
+    this.client =
         HttpClient.builder()
             .setBaseUri(uri)
             .setObjectMapper(mapper)
@@ -200,14 +228,32 @@ class NessieHttpClient implements NessieClient {
     }
   }
 
+  @Override
+  public String getOwner() {
+    return owner;
+  }
+
+  @Override
+  public String getRepo() {
+    return repo;
+  }
+
+  @Override
+  public URI getUri() {
+    return client.getBaseUri();
+  }
+
+  @Override
   public TreeApi getTreeApi() {
     return tree;
   }
 
+  @Override
   public ContentsApi getContentsApi() {
     return contents;
   }
 
+  @Override
   public ConfigApi getConfigApi() {
     return config;
   }
