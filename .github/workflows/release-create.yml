@@ -46,8 +46,6 @@ jobs:
   create-release:
     name: Create release
     runs-on: ubuntu-latest
-    if: ${{ github.repository == 'projectnessie/nessie' }}
-
     env:
       GIT_TAG: nessie-${{ github.event.inputs.releaseVersion }}
       RELEASE_VERSION: ${{ github.event.inputs.releaseVersion }}

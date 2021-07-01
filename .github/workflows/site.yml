@@ -10,7 +10,7 @@ jobs:
   site:
     name: Build & Deploy Website
     runs-on: ubuntu-latest
-    if: ${{ github.repository == 'projectnessie/nessie' }}
+    if: ${{ secrets.NESSIE_SITE_DEPLOY_KEY }}
     steps:
       - uses: actions/checkout@v2
       - name: Setup Python
