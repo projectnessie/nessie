@@ -30,6 +30,7 @@ import javax.ws.rs.core.MediaType;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
@@ -55,7 +56,11 @@ public interface ContentsApi {
     @APIResponse(
         responseCode = "200",
         description = "Information for table",
-        content = @Content(examples = {@ExampleObject(ref = "iceberg")})),
+        content =
+            @Content(
+                mediaType = MediaType.APPLICATION_JSON,
+                examples = {@ExampleObject(ref = "iceberg")},
+                schema = @Schema(implementation = Contents.class))),
     @APIResponse(responseCode = "400", description = "Invalid input, ref name not valid"),
     @APIResponse(responseCode = "404", description = "Table not found on ref")
   })
@@ -80,7 +85,13 @@ public interface ContentsApi {
   @Consumes(MediaType.APPLICATION_JSON)
   @Operation(summary = "Get multiple objects' content")
   @APIResponses({
-    @APIResponse(responseCode = "200", description = "Retrieved successfully."),
+    @APIResponse(
+        responseCode = "200",
+        description = "Retrieved successfully.",
+        content =
+            @Content(
+                mediaType = MediaType.APPLICATION_JSON,
+                schema = @Schema(implementation = MultiGetContentsResponse.class))),
     @APIResponse(responseCode = "400", description = "Invalid input, ref name not valid"),
     @APIResponse(responseCode = "404", description = "Provided ref doesn't exists")
   })

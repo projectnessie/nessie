@@ -18,9 +18,12 @@ package org.projectnessie.model;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.List;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
 
 @Value.Immutable(prehash = true)
+@Schema(type = SchemaType.OBJECT, title = "LogResponse")
 @JsonSerialize(as = ImmutableLogResponse.class)
 @JsonDeserialize(as = ImmutableLogResponse.class)
 public interface LogResponse extends PaginatedResponse {
