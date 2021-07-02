@@ -12,7 +12,6 @@ export * from './Hash';
 export * from './HiveDatabase';
 export * from './HiveTable';
 export * from './IcebergTable';
-export * from './Instant';
 export * from './LogResponse';
 export * from './Merge';
 export * from './MultiGetContentsRequest';
