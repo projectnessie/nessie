@@ -129,7 +129,7 @@
     <assertj.version>3.20.2</assertj.version>
     <awssdk.version>2.16.93</awssdk.version>
     <bouncycastle.version>1.66</bouncycastle.version>
-    <cel.version>0.1.1</cel.version>
+    <cel.version>0.2.0</cel.version>
     <deltalake2.version>0.6.2-nessie</deltalake2.version>
     <deltalake3.version>0.8.0-nessie</deltalake3.version>
     <dynamodb.version>1.12.0</dynamodb.version>
