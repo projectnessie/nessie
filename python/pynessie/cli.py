@@ -205,7 +205,8 @@ def set_head(ctx: ContextObject, head: str, delete: bool) -> None:
     mutually_exclusive=["author", "committer", "since", "until"],
     help="Allows advanced filtering using the Common Expression Language (CEL). "
     "An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n"
-    "Some examples with usable variables 'commit.author' (string) / 'commit.committer' (string) / 'commit.commitTime' (timestamp) are:\n"
+    "Some examples with usable variables 'commit.author' (string) / 'commit.committer' (string) / 'commit.commitTime' (timestamp) / "
+    "'commit.hash' (string) / 'commit.message' (string) / 'commit.properties' (map) are:\n"
     "commit.author=='nessie_author'\n"
     "commit.committer=='nessie_committer'\n"
     "timestamp(commit.commitTime) > timestamp('2021-06-21T10:39:17.977922Z')\n",

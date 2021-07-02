@@ -17,25 +17,29 @@ package org.projectnessie.services.cel;
 
 import com.google.api.expr.v1alpha1.Decl;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import org.projectnessie.cel.checker.Decls;
 import org.projectnessie.cel.tools.ScriptHost;
+import org.projectnessie.cel.types.jackson.JacksonRegistry;
+import org.projectnessie.model.CommitMeta;
 
 /** A utility class for CEL declarations and other things. */
 public class CELUtil {
 
-  public static final ScriptHost SCRIPT_HOST = ScriptHost.newBuilder().build();
+  public static final String CONTAINER = "org.projectnessie.model";
+  public static final ScriptHost SCRIPT_HOST =
+      ScriptHost.newBuilder().registry(JacksonRegistry.newRegistry()).build();
 
   public static final List<Decl> COMMIT_LOG_DECLARATIONS =
-      Arrays.asList(
-          Decls.newVar("commit", Decls.newMapType(Decls.String, Decls.String)),
-          Decls.newVar("author", Decls.String),
-          Decls.newVar("committer", Decls.String),
-          Decls.newVar("commitTime", Decls.Timestamp));
+      Collections.singletonList(
+          Decls.newVar("commit", Decls.newObjectType(CommitMeta.class.getName())));
 
   public static final List<Decl> ENTRIES_DECLARATIONS =
       Arrays.asList(
           Decls.newVar("entry", Decls.newMapType(Decls.String, Decls.String)),
           Decls.newVar("namespace", Decls.String),
           Decls.newVar("contentType", Decls.String));
+
+  public static final List<Object> COMMIT_LOG_TYPES = Collections.singletonList(CommitMeta.class);
 }
