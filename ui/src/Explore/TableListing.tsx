@@ -19,7 +19,7 @@ import InsertDriveFileOutlinedIcon from '@material-ui/icons/InsertDriveFileOutli
 import FolderIcon from '@material-ui/icons/Folder';
 import ExploreLink from "./ExploreLink";
 import {api} from "../utils";
-import {Entry} from "../utils/api/api";
+import {Entry} from "../utils";
 
 
 function groupItem(key: Key, ref: string, path: Array<string>) {

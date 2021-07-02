@@ -42,7 +42,7 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "generate-api": "openapi-generator-cli generate -g typescript-fetch -i http://localhost:19120/openapi -o ./src/utils/api --skip-validate-spec --additional-properties=supportsES6=true"
+    "generate-api": "openapi-generator-cli generate -g typescript-fetch -i target/openapi/META-INF/openapi/openapi.yaml -o ./src/utils/api --skip-validate-spec --additional-properties=supportsES6=true"
   },
   "eslintConfig": {
     "extends": "react-app"

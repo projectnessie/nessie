@@ -78,6 +78,29 @@
         </configuration>
       </plugin>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>unpack</goal>
+            </goals>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>org.projectnessie</groupId>
+                  <artifactId>nessie-model</artifactId>
+                  <version>${project.version}</version>
+                  <outputDirectory>${project.build.directory}/openapi</outputDirectory>
+                  <includes>META-INF/openapi/**</includes>
+                </artifactItem>
+              </artifactItems>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>com.github.eirslett</groupId>
         <artifactId>frontend-maven-plugin</artifactId>
         <configuration>
@@ -101,6 +124,16 @@
             </goals>
             <configuration>
               <arguments>install</arguments>
+            </configuration>
+          </execution>
+          <execution>
+            <id>generate OpenAPI client code</id>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>npm</goal>
+            </goals>
+            <configuration>
+              <arguments>run generate-api</arguments>
             </configuration>
           </execution>
           <execution>
