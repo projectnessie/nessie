@@ -30,8 +30,10 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
@@ -55,7 +57,15 @@ public interface TreeApi {
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(summary = "Get all references")
-  @APIResponses({@APIResponse(responseCode = "200", description = "Returned references.")})
+  @APIResponses({
+    @APIResponse(
+        responseCode = "200",
+        description = "Returned references.",
+        content =
+            @Content(
+                mediaType = MediaType.APPLICATION_JSON,
+                schema = @Schema(type = SchemaType.ARRAY, implementation = Reference.class)))
+  })
   List<Reference> getAllReferences();
 
   /** Get details for the default reference. */
@@ -66,7 +76,11 @@ public interface TreeApi {
   @APIResponses({
     @APIResponse(
         responseCode = "200",
-        description = "Returns name and latest hash of the default branch."),
+        description = "Returns name and latest hash of the default branch.",
+        content =
+            @Content(
+                mediaType = MediaType.APPLICATION_JSON,
+                schema = @Schema(implementation = Branch.class))),
     @APIResponse(responseCode = "404", description = "Default branch not found.")
   })
   Branch getDefaultBranch() throws NessieNotFoundException;
@@ -79,7 +93,12 @@ public interface TreeApi {
     @APIResponse(
         responseCode = "200",
         description = "Created successfully.",
-        content = {@Content(examples = {@ExampleObject(ref = "refObj")})}),
+        content = {
+          @Content(
+              mediaType = MediaType.APPLICATION_JSON,
+              examples = {@ExampleObject(ref = "refObj")},
+              schema = @Schema(implementation = Reference.class))
+        }),
     @APIResponse(responseCode = "409", description = "Reference already exists")
   })
   Reference createReference(
@@ -87,7 +106,11 @@ public interface TreeApi {
           @NotNull
           @RequestBody(
               description = "Reference to create.",
-              content = {@Content(examples = {@ExampleObject(ref = "refObj")})})
+              content = {
+                @Content(
+                    mediaType = MediaType.APPLICATION_JSON,
+                    examples = {@ExampleObject(ref = "refObj")})
+              })
           Reference reference)
       throws NessieNotFoundException, NessieConflictException;
 
@@ -100,7 +123,12 @@ public interface TreeApi {
     @APIResponse(
         responseCode = "200",
         description = "Found and returned reference.",
-        content = {@Content(examples = {@ExampleObject(ref = "refObj")})}),
+        content = {
+          @Content(
+              mediaType = MediaType.APPLICATION_JSON,
+              examples = {@ExampleObject(ref = "refObj")},
+              schema = @Schema(implementation = Reference.class))
+        }),
     @APIResponse(responseCode = "400", description = "Invalid input, ref name not valid"),
     @APIResponse(responseCode = "404", description = "Ref not found")
   })
@@ -163,7 +191,12 @@ public interface TreeApi {
   @APIResponses({
     @APIResponse(
         description = "all objects for a reference",
-        content = {@Content(examples = {@ExampleObject(ref = "entriesResponse")})}),
+        content = {
+          @Content(
+              mediaType = MediaType.APPLICATION_JSON,
+              examples = {@ExampleObject(ref = "entriesResponse")},
+              schema = @Schema(implementation = EntriesResponse.class))
+        }),
     @APIResponse(responseCode = "200", description = "Returned successfully."),
     @APIResponse(responseCode = "400", description = "Invalid input, ref name not valid"),
     @APIResponse(responseCode = "404", description = "Ref not found")
@@ -246,7 +279,12 @@ public interface TreeApi {
     @APIResponse(
         responseCode = "200",
         description = "Returned commits.",
-        content = {@Content(examples = {@ExampleObject(ref = "logResponse")})}),
+        content = {
+          @Content(
+              mediaType = MediaType.APPLICATION_JSON,
+              examples = {@ExampleObject(ref = "logResponse")},
+              schema = @Schema(implementation = LogResponse.class))
+        }),
     @APIResponse(responseCode = "400", description = "Invalid input, ref name not valid"),
     @APIResponse(responseCode = "404", description = "Ref doesn't exists")
   })
@@ -312,7 +350,10 @@ public interface TreeApi {
           @NotNull
           @RequestBody(
               description = "New tag content",
-              content = @Content(examples = {@ExampleObject(ref = "tagObj")}))
+              content =
+                  @Content(
+                      mediaType = MediaType.APPLICATION_JSON,
+                      examples = {@ExampleObject(ref = "tagObj")}))
           Tag tag)
       throws NessieNotFoundException, NessieConflictException;
 
@@ -371,7 +412,10 @@ public interface TreeApi {
           @NotNull
           @RequestBody(
               description = "New branch content",
-              content = @Content(examples = {@ExampleObject(ref = "refObj")}))
+              content =
+                  @Content(
+                      mediaType = MediaType.APPLICATION_JSON,
+                      examples = {@ExampleObject(ref = "refObj")}))
           Branch branch)
       throws NessieNotFoundException, NessieConflictException;
 
@@ -436,7 +480,10 @@ public interface TreeApi {
       @Valid
           @RequestBody(
               description = "Hashes to transplant",
-              content = @Content(examples = {@ExampleObject(ref = "transplant")}))
+              content =
+                  @Content(
+                      mediaType = MediaType.APPLICATION_JSON,
+                      examples = {@ExampleObject(ref = "transplant")}))
           Transplant transplant)
       throws NessieNotFoundException, NessieConflictException;
 
@@ -470,7 +517,10 @@ public interface TreeApi {
           @NotNull
           @RequestBody(
               description = "Merge operation",
-              content = @Content(examples = {@ExampleObject(ref = "merge")}))
+              content =
+                  @Content(
+                      mediaType = MediaType.APPLICATION_JSON,
+                      examples = {@ExampleObject(ref = "merge")}))
           Merge merge)
       throws NessieNotFoundException, NessieConflictException;
 
@@ -486,7 +536,12 @@ public interface TreeApi {
     @APIResponse(
         responseCode = "200",
         description = "Updated successfully.",
-        content = {@Content(examples = {@ExampleObject(ref = "refObj")})}),
+        content = {
+          @Content(
+              mediaType = MediaType.APPLICATION_JSON,
+              examples = {@ExampleObject(ref = "refObj")},
+              schema = @Schema(implementation = Branch.class))
+        }),
     @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
     @APIResponse(responseCode = "404", description = "Provided ref doesn't exists"),
     @APIResponse(responseCode = "409", description = "Update conflict")
@@ -510,7 +565,10 @@ public interface TreeApi {
           @NotNull
           @RequestBody(
               description = "Operations",
-              content = @Content(examples = {@ExampleObject(ref = "operations")}))
+              content =
+                  @Content(
+                      mediaType = MediaType.APPLICATION_JSON,
+                      examples = {@ExampleObject(ref = "operations")}))
           Operations operations)
       throws NessieNotFoundException, NessieConflictException;
 }

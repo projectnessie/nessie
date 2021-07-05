@@ -20,10 +20,13 @@ import static org.projectnessie.model.Validation.validateReferenceName;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
 
 /** Api representation of an Nessie Tag/Branch. This object is akin to a Ref in Git terminology. */
 @Value.Immutable(prehash = true)
+@Schema(type = SchemaType.OBJECT, title = "Branch")
 @JsonSerialize(as = ImmutableBranch.class)
 @JsonDeserialize(as = ImmutableBranch.class)
 @JsonTypeName("BRANCH")

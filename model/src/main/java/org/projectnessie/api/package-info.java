@@ -19,7 +19,7 @@
     info =
         @Info(
             title = "Nessie API",
-            version = "0.6.0",
+            version = "0.8.0",
             contact = @Contact(name = "Project Nessie", url = "https://projectnessie.org"),
             license =
                 @License(

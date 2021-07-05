@@ -90,6 +90,26 @@
       <artifactId>junit-jupiter-params</artifactId>
       <scope>test</scope>
     </dependency>
-
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>io.smallrye</groupId>
+        <artifactId>smallrye-open-api-maven-plugin</artifactId>
+        <configuration>
+          <scanPackages>org.projectnessie.api,org.projectnessie.model</scanPackages>
+          <outputDirectory>${project.build.directory}/classes/META-INF/openapi</outputDirectory>
+          <operationIdStrategy>METHOD</operationIdStrategy>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>generate-schema</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 </project>
