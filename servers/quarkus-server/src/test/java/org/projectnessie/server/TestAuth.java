@@ -34,11 +34,15 @@ import org.projectnessie.client.rest.NessieNotAuthorizedException;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
+import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableBranch;
+import org.projectnessie.model.ImmutableDelete;
 import org.projectnessie.model.ImmutableIcebergTable;
+import org.projectnessie.model.ImmutableOperations;
+import org.projectnessie.model.ImmutablePut;
 import org.projectnessie.model.Reference;
 
 @QuarkusTest
@@ -95,8 +99,14 @@ class TestAuth {
     ContentsKey key = ContentsKey.of("x", "x");
     tryEndpointPass(
         () ->
-            contents.setContents(
-                key, branch.getName(), branch.getHash(), "empty message", IcebergTable.of("foo")));
+            tree.commitMultipleOperations(
+                branch.getName(),
+                branch.getHash(),
+                ImmutableOperations.builder()
+                    .addOperations(
+                        ImmutablePut.builder().key(key).contents(IcebergTable.of("foo")).build())
+                    .commitMeta(CommitMeta.fromMessage("empty message"))
+                    .build()));
     final IcebergTable table = contents.getContents(key, "testx").unwrap(IcebergTable.class).get();
 
     Branch master = (Branch) tree.getReferenceByName("testx");
@@ -104,12 +114,26 @@ class TestAuth {
     tryEndpointPass(() -> tree.createReference(Branch.of(test.getName(), test.getHash())));
     Branch test2 = (Branch) tree.getReferenceByName("testy");
     tryEndpointPass(() -> tree.deleteBranch(test2.getName(), test2.getHash()));
-    tryEndpointPass(() -> contents.deleteContents(key, master.getName(), master.getHash(), ""));
+    tryEndpointPass(
+        () ->
+            tree.commitMultipleOperations(
+                master.getName(),
+                master.getHash(),
+                ImmutableOperations.builder()
+                    .addOperations(ImmutableDelete.builder().key(key).build())
+                    .commitMeta(CommitMeta.fromMessage(""))
+                    .build()));
     assertThrows(NessieNotFoundException.class, () -> contents.getContents(key, "testx"));
     tryEndpointPass(
         () ->
-            contents.setContents(
-                key, branch.getName(), branch.getHash(), "", IcebergTable.of("bar")));
+            tree.commitMultipleOperations(
+                branch.getName(),
+                branch.getHash(),
+                ImmutableOperations.builder()
+                    .addOperations(
+                        ImmutablePut.builder().key(key).contents(IcebergTable.of("bar")).build())
+                    .commitMeta(CommitMeta.fromMessage(""))
+                    .build()));
   }
 
   @Test

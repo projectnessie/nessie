@@ -18,7 +18,6 @@ package org.projectnessie.client;
 import javax.validation.constraints.NotNull;
 import org.projectnessie.api.ContentsApi;
 import org.projectnessie.client.http.HttpClient;
-import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Contents;
 import org.projectnessie.model.ContentsKey;
@@ -54,36 +53,5 @@ class ClientContentsApi implements ContentsApi {
         .queryParam("ref", ref)
         .post(request)
         .readEntity(MultiGetContentsResponse.class);
-  }
-
-  @Override
-  public void setContents(
-      @NotNull ContentsKey key,
-      String branch,
-      @NotNull String hash,
-      String message,
-      @NotNull Contents contents)
-      throws NessieNotFoundException, NessieConflictException {
-    client
-        .newRequest()
-        .path("contents")
-        .path(key.toPathString())
-        .queryParam("branch", branch)
-        .queryParam("hash", hash)
-        .queryParam("message", message)
-        .post(contents);
-  }
-
-  @Override
-  public void deleteContents(ContentsKey key, String branch, String hash, String message)
-      throws NessieNotFoundException, NessieConflictException {
-    client
-        .newRequest()
-        .path("contents")
-        .path(key.toPathString())
-        .queryParam("branch", branch)
-        .queryParam("hash", hash)
-        .queryParam("message", message)
-        .delete();
   }
 }

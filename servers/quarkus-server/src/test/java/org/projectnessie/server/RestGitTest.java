@@ -81,13 +81,24 @@ public class RestGitTest {
 
     IcebergTable table = IcebergTable.of("/the/directory/over/there");
 
-    rest()
-        .body(table)
-        .queryParam("branch", newReference.getName())
-        .queryParam("hash", newReference.getHash())
-        .post("contents/xxx.test")
-        .then()
-        .statusCode(204);
+    Branch commitResponse =
+        rest()
+            .body(
+                ImmutableOperations.builder()
+                    .addOperations(
+                        ImmutablePut.builder()
+                            .key(ContentsKey.of("xxx", "test"))
+                            .contents(table)
+                            .build())
+                    .commitMeta(CommitMeta.fromMessage(""))
+                    .build())
+            .queryParam("expectedHash", newReference.getHash())
+            .post("trees/branch/{branch}/commit", newReference.getName())
+            .then()
+            .statusCode(200)
+            .extract()
+            .as(Branch.class);
+    Assertions.assertNotEquals(newReference.getHash(), commitResponse.getHash());
 
     Put[] updates = new Put[11];
     for (int i = 0; i < 10; i++) {
@@ -118,7 +129,7 @@ public class RestGitTest {
             .commitMeta(CommitMeta.fromMessage(""))
             .build();
 
-    Branch commitResponse =
+    commitResponse =
         rest()
             .body(contents)
             .queryParam("expectedHash", branch.getHash())
@@ -141,12 +152,21 @@ public class RestGitTest {
 
     Branch b2 = rest().get("trees/tree/test").as(Branch.class);
     rest()
-        .body(table)
-        .queryParam("branch", b2.getName())
-        .queryParam("hash", b2.getHash())
-        .post("contents/xxx.test")
+        .body(
+            ImmutableOperations.builder()
+                .addOperations(
+                    ImmutablePut.builder()
+                        .key(ContentsKey.of("xxx", "test"))
+                        .contents(table)
+                        .build())
+                .commitMeta(CommitMeta.fromMessage(""))
+                .build())
+        .queryParam("expectedHash", b2.getHash())
+        .post("trees/branch/{branch}/commit", b2.getName())
         .then()
-        .statusCode(204);
+        .statusCode(200)
+        .extract()
+        .as(Branch.class);
     Contents returned =
         rest()
             .queryParam("ref", "test")

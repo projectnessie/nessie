@@ -25,6 +25,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import java.security.Principal;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -359,6 +360,44 @@ public class TreeResource extends BaseResource implements TreeApi {
             .collect(ImmutableList.toImmutableList());
     String newHash = doOps(branch, hash, operations.getCommitMeta(), ops).asString();
     return Branch.of(branch, newHash);
+  }
+
+  protected Hash doOps(
+      String branch,
+      String hash,
+      CommitMeta commitMeta,
+      List<org.projectnessie.versioned.Operation<Contents>> operations)
+      throws NessieConflictException, NessieNotFoundException {
+    try {
+      return getStore()
+          .commit(
+              BranchName.of(Optional.ofNullable(branch).orElse(getConfig().getDefaultBranch())),
+              Optional.ofNullable(hash).map(Hash::of),
+              meta(getPrincipal(), commitMeta),
+              operations);
+    } catch (IllegalArgumentException e) {
+      throw new NessieNotFoundException("Invalid hash provided. " + e.getMessage(), e);
+    } catch (ReferenceConflictException e) {
+      throw new NessieConflictException("Failed to commit data. " + e.getMessage(), e);
+    } catch (ReferenceNotFoundException e) {
+      throw new NessieNotFoundException("Failed to commit data. " + e.getMessage(), e);
+    }
+  }
+
+  private static CommitMeta meta(Principal principal, CommitMeta commitMeta)
+      throws NessieConflictException {
+    if (commitMeta.getCommitter() != null) {
+      throw new NessieConflictException(
+          "Cannot set the committer on the client side. It is set by the server.");
+    }
+    String committer = principal == null ? "" : principal.getName();
+    Instant now = Instant.now();
+    return commitMeta.toBuilder()
+        .committer(committer)
+        .commitTime(now)
+        .author(commitMeta.getAuthor() == null ? committer : commitMeta.getAuthor())
+        .authorTime(commitMeta.getAuthorTime() == null ? now : commitMeta.getAuthorTime())
+        .build();
   }
 
   private static Optional<Hash> toHash(String hash, boolean required)

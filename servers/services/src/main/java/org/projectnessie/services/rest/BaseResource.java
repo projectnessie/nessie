@@ -16,19 +16,13 @@
 package org.projectnessie.services.rest;
 
 import java.security.Principal;
-import java.time.Instant;
-import java.util.List;
 import java.util.Optional;
-import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
 import org.projectnessie.services.config.ServerConfig;
-import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Operation;
 import org.projectnessie.versioned.Ref;
-import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
@@ -76,37 +70,7 @@ abstract class BaseResource {
     return store;
   }
 
-  protected Hash doOps(
-      String branch, String hash, CommitMeta commitMeta, List<Operation<Contents>> operations)
-      throws NessieConflictException, NessieNotFoundException {
-    try {
-      return store.commit(
-          BranchName.of(Optional.ofNullable(branch).orElse(config.getDefaultBranch())),
-          Optional.ofNullable(hash).map(Hash::of),
-          meta(principal, commitMeta),
-          operations);
-    } catch (IllegalArgumentException e) {
-      throw new NessieNotFoundException("Invalid hash provided. " + e.getMessage(), e);
-    } catch (ReferenceConflictException e) {
-      throw new NessieConflictException("Failed to commit data. " + e.getMessage(), e);
-    } catch (ReferenceNotFoundException e) {
-      throw new NessieNotFoundException("Failed to commit data. " + e.getMessage(), e);
-    }
-  }
-
-  private static CommitMeta meta(Principal principal, CommitMeta commitMeta)
-      throws NessieConflictException {
-    if (commitMeta.getCommitter() != null) {
-      throw new NessieConflictException(
-          "Cannot set the committer on the client side. It is set by the server.");
-    }
-    String committer = principal == null ? "" : principal.getName();
-    Instant now = Instant.now();
-    return commitMeta.toBuilder()
-        .committer(committer)
-        .commitTime(now)
-        .author(commitMeta.getAuthor() == null ? committer : commitMeta.getAuthor())
-        .authorTime(commitMeta.getAuthorTime() == null ? now : commitMeta.getAuthorTime())
-        .build();
+  protected Principal getPrincipal() {
+    return principal;
   }
 }

@@ -19,7 +19,6 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -34,7 +33,6 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
-import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Contents;
 import org.projectnessie.model.ContentsKey;
@@ -84,7 +82,7 @@ public interface ContentsApi {
     @APIResponse(responseCode = "400", description = "Invalid input, ref name not valid"),
     @APIResponse(responseCode = "404", description = "Provided ref doesn't exists")
   })
-  public MultiGetContentsResponse getMultipleContents(
+  MultiGetContentsResponse getMultipleContents(
       @Pattern(
               regexp = Validation.REF_NAME_OR_HASH_REGEX,
               message = Validation.REF_NAME_OR_HASH_MESSAGE)
@@ -96,93 +94,4 @@ public interface ContentsApi {
       @Valid @NotNull @RequestBody(description = "Keys to retrieve.")
           MultiGetContentsRequest request)
       throws NessieNotFoundException;
-
-  /** create/update an object on a specific ref. */
-  @POST
-  @Path("{key}")
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Operation(
-      summary =
-          "Update object content associated with key. "
-              + "This operation is deprecated, use TreeApi.commitMultipleOperations instead,")
-  @APIResponses({
-    @APIResponse(responseCode = "204", description = "Contents updated successfully."),
-    @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
-    @APIResponse(responseCode = "404", description = "Provided ref doesn't exists"),
-    @APIResponse(responseCode = "409", description = "Update conflict")
-  })
-  @Deprecated
-  void setContents(
-      @Valid
-          @NotNull
-          @Parameter(
-              description = "object name to search for",
-              examples = {@ExampleObject(ref = "ContentsKey")})
-          @PathParam("key")
-          ContentsKey key,
-      @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-          @Parameter(
-              description = "Branch to change. Defaults to default branch.",
-              examples = {@ExampleObject(ref = "ref")})
-          @QueryParam("branch")
-          String branch,
-      @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
-          @NotNull
-          @Parameter(
-              description = "Expected hash of branch.",
-              examples = {@ExampleObject(ref = "hash")})
-          @QueryParam("hash")
-          String hash,
-      @Parameter(
-              description = "Commit message",
-              examples = {@ExampleObject(ref = "commitMessage")})
-          @QueryParam("message")
-          String message,
-      @Valid
-          @NotNull
-          @RequestBody(
-              description = "Contents to be upserted",
-              content = @Content(examples = {@ExampleObject(ref = "iceberg")}))
-          Contents contents)
-      throws NessieNotFoundException, NessieConflictException;
-
-  /** Delete a single object. */
-  @DELETE
-  @Path("{key}")
-  @Operation(
-      summary =
-          "Delete object content associated with key. "
-              + "This operation is deprecated, use TreeApi.commitMultipleOperations instead.")
-  @APIResponses({
-    @APIResponse(responseCode = "204", description = "Deleted successfully."),
-    @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
-    @APIResponse(responseCode = "404", description = "Provided ref doesn't exists"),
-    @APIResponse(responseCode = "409", description = "Delete conflict"),
-  })
-  @Deprecated
-  void deleteContents(
-      @Valid
-          @Parameter(
-              description = "object name to search for",
-              examples = {@ExampleObject(ref = "ContentsKey")})
-          @PathParam("key")
-          ContentsKey key,
-      @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-          @Parameter(
-              description = "Branch to delete from. Defaults to default branch.",
-              examples = {@ExampleObject(ref = "ref")})
-          @QueryParam("branch")
-          String branch,
-      @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
-          @Parameter(
-              description = "Expected hash of branch.",
-              examples = {@ExampleObject(ref = "hash")})
-          @QueryParam("hash")
-          String hash,
-      @Parameter(
-              description = "Commit message",
-              examples = {@ExampleObject(ref = "commitMessage")})
-          @QueryParam("message")
-          String message)
-      throws NessieNotFoundException, NessieConflictException;
 }

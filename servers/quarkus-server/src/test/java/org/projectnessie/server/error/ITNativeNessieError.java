@@ -22,11 +22,14 @@ import io.quarkus.test.junit.NativeImageTest;
 import java.net.URI;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.projectnessie.api.ContentsApi;
+import org.projectnessie.api.TreeApi;
 import org.projectnessie.client.NessieClient;
 import org.projectnessie.client.rest.NessieBadRequestException;
+import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.IcebergTable;
+import org.projectnessie.model.ImmutableOperations;
+import org.projectnessie.model.ImmutablePut;
 
 /**
  * Rudimentary version of {@link TestNessieError}, because we cannot dynamically add beans and
@@ -36,13 +39,13 @@ import org.projectnessie.model.IcebergTable;
 @NativeImageTest
 public class ITNativeNessieError {
 
-  private ContentsApi contents;
+  private TreeApi tree;
 
   @BeforeEach
   void init() {
     URI uri = URI.create("http://localhost:19121/api/v1");
     NessieClient client = NessieClient.builder().withUri(uri).build();
-    contents = client.getContentsApi();
+    tree = client.getTreeApi();
   }
 
   @Test
@@ -53,7 +56,14 @@ public class ITNativeNessieError {
         "Bad Request (HTTP/400): setContents.hash: must not be null",
         assertThrows(
                 NessieBadRequestException.class,
-                () -> contents.setContents(k, "branchName", null, "message", t))
+                () ->
+                    tree.commitMultipleOperations(
+                        "branchName",
+                        null,
+                        ImmutableOperations.builder()
+                            .addOperations(ImmutablePut.builder().key(k).contents(t).build())
+                            .commitMeta(CommitMeta.fromMessage("message"))
+                            .build()))
             .getMessage());
   }
 }
