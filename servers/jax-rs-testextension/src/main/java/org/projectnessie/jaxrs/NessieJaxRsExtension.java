@@ -24,6 +24,7 @@ import org.jboss.weld.environment.se.WeldContainer;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.projectnessie.services.authz.AccessCheckerExtension;
 import org.projectnessie.services.config.ServerConfigExtension;
 import org.projectnessie.services.rest.ConfigResource;
 import org.projectnessie.services.rest.ContentsKeyParamConverterProvider;
@@ -47,6 +48,7 @@ public class NessieJaxRsExtension implements BeforeAllCallback, AfterAllCallback
     // Inject external beans
     weld.addExtension(new ServerConfigExtension());
     weld.addExtension(new VersionStoreExtension());
+    weld.addExtension(new AccessCheckerExtension());
     final WeldContainer container = weld.initialize();
 
     jerseyTest =
