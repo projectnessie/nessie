@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.enterprise.context.RequestScoped;
+import javax.enterprise.inject.Alternative;
 import javax.inject.Inject;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.SecurityContext;
@@ -61,6 +62,7 @@ import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
 import org.projectnessie.model.Transplant;
+import org.projectnessie.services.authz.AccessChecker;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Delete;
@@ -79,9 +81,15 @@ import org.projectnessie.versioned.WithHash;
 
 /** REST endpoint for trees. */
 @RequestScoped
+@Alternative
 public class TreeResource extends BaseResource implements TreeApi {
 
   private static final int MAX_COMMIT_LOG_ENTRIES = 250;
+
+  // Mandated by CDI 2.0
+  public TreeResource() {
+    this(null, null, null, null);
+  }
 
   @Context SecurityContext securityContext;
 
@@ -89,8 +97,9 @@ public class TreeResource extends BaseResource implements TreeApi {
   public TreeResource(
       ServerConfig config,
       MultiTenant multiTenant,
-      VersionStore<Contents, CommitMeta, Contents.Type> store) {
-    super(config, multiTenant, store);
+      VersionStore<Contents, CommitMeta, Contents.Type> store,
+      AccessChecker accessChecker) {
+    super(config, multiTenant, store, accessChecker);
   }
 
   @Override
@@ -301,8 +310,7 @@ public class TreeResource extends BaseResource implements TreeApi {
   @Override
   public EntriesResponse getEntries(String namedRef, EntriesParams params)
       throws NessieNotFoundException {
-
-    final Hash hash = namedRefWithHashOrThrow(namedRef, params.hashOnRef()).getHash();
+    WithHash<NamedRef> refWithHash = namedRefWithHashOrThrow(namedRef, params.hashOnRef());
     // TODO Implement paging. At the moment, we do not expect that many keys/entries to be returned.
     //  So the size of the whole result is probably reasonable and unlikely to "kill" either the
     //  server or client. We have to figure out _how_ to implement paging for keys/entries, i.e.
@@ -315,7 +323,7 @@ public class TreeResource extends BaseResource implements TreeApi {
       List<EntriesResponse.Entry> entries;
       try (Stream<EntriesResponse.Entry> s =
           getStore()
-              .getKeys(hash)
+              .getKeys(refWithHash.getHash())
               .map(
                   key ->
                       EntriesResponse.Entry.builder()
@@ -438,23 +446,23 @@ public class TreeResource extends BaseResource implements TreeApi {
     return Optional.of(Hash.of(hash));
   }
 
-  private void deleteReference(NamedRef name, String hash)
+  protected void deleteReference(NamedRef ref, String hash)
       throws NessieConflictException, NessieNotFoundException {
     try {
-      getStore().delete(name, toHash(hash, true));
+      getStore().delete(ref, toHash(hash, true));
     } catch (ReferenceNotFoundException e) {
       throw new NessieNotFoundException(
-          String.format("Unable to find reference [%s] to delete.", name.getName()), e);
+          String.format("Unable to find reference [%s] to delete.", ref.getName()), e);
     } catch (ReferenceConflictException e) {
       throw new NessieConflictException(
           String.format(
               "The hash provided %s does not match the current status of the reference %s.",
-              hash, name.getName()),
+              hash, ref.getName()),
           e);
     }
   }
 
-  private void assignReference(NamedRef ref, String oldHash, String newHash)
+  protected void assignReference(NamedRef ref, String oldHash, String newHash)
       throws NessieNotFoundException, NessieConflictException {
     try {
       WithHash<Ref> resolved = getStore().toRef(ref.getName());
@@ -513,7 +521,7 @@ public class TreeResource extends BaseResource implements TreeApi {
     }
   }
 
-  private static org.projectnessie.versioned.Operation<Contents> toOp(Operation o) {
+  protected static org.projectnessie.versioned.Operation<Contents> toOp(Operation o) {
     Key key = Key.of(o.getKey().getElements().toArray(new String[0]));
     if (o instanceof Operation.Delete) {
       return Delete.of(key);

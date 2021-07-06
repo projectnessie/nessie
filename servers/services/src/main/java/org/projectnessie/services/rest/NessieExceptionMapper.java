@@ -18,6 +18,7 @@ package org.projectnessie.services.rest;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.common.base.Throwables;
+import java.security.AccessControlException;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.ws.rs.WebApplicationException;
@@ -79,6 +80,10 @@ public class NessieExceptionMapper extends BaseExceptionMapper<Exception> {
       status = Status.TOO_MANY_REQUESTS.getStatusCode();
       reason = Status.TOO_MANY_REQUESTS.getReasonPhrase();
       message = "Backend store refused to process the request: " + exception.toString();
+    } else if (exception instanceof AccessControlException) {
+      status = Status.FORBIDDEN.getStatusCode();
+      reason = Status.FORBIDDEN.getReasonPhrase();
+      message = exception.getMessage();
     } else {
       LOGGER.warn("Unhandled exception returned as HTTP/500 to client", exception);
       status = Status.INTERNAL_SERVER_ERROR.getStatusCode();

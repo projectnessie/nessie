@@ -16,6 +16,7 @@
 package org.projectnessie.services.cel;
 
 import com.google.api.expr.v1alpha1.Decl;
+import com.google.common.collect.ImmutableList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -40,6 +41,13 @@ public class CELUtil {
           Decls.newVar("entry", Decls.newMapType(Decls.String, Decls.String)),
           Decls.newVar("namespace", Decls.String),
           Decls.newVar("contentType", Decls.String));
+
+  public static final List<Decl> AUTHORIZATION_RULE_DECLARATIONS =
+      ImmutableList.of(
+          Decls.newVar("ref", Decls.String),
+          Decls.newVar("path", Decls.String),
+          Decls.newVar("role", Decls.String),
+          Decls.newVar("op", Decls.String));
 
   public static final List<Object> COMMIT_LOG_TYPES = Collections.singletonList(CommitMeta.class);
 }
