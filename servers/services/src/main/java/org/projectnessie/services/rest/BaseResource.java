@@ -18,12 +18,15 @@ package org.projectnessie.services.rest;
 import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.ws.rs.core.SecurityContext;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
+import org.projectnessie.services.authz.AccessChecker;
+import org.projectnessie.services.authz.ServerAccessContext;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.NamedRef;
@@ -39,24 +42,32 @@ abstract class BaseResource {
 
   private final VersionStore<Contents, CommitMeta, Contents.Type> store;
 
+  private final AccessChecker accessChecker;
+
   // Mandated by CDI 2.0
   protected BaseResource() {
-    this(null, null, null);
+    this(null, null, null, null);
   }
 
   protected BaseResource(
       ServerConfig config,
       MultiTenant multiTenant,
-      VersionStore<Contents, CommitMeta, Contents.Type> store) {
+      VersionStore<Contents, CommitMeta, Contents.Type> store,
+      AccessChecker accessChecker) {
     this.config = config;
     this.multiTenant = multiTenant;
     this.store = store;
+    this.accessChecker = accessChecker;
   }
 
   Optional<Hash> getHash(String ref) {
+    return getRefWithHash(ref).map(WithHash::getHash);
+  }
+
+  Optional<WithHash<Ref>> getRefWithHash(String ref) {
     try {
       WithHash<Ref> whr = store.toRef(Optional.ofNullable(ref).orElse(config.getDefaultBranch()));
-      return Optional.of(whr.getHash());
+      return Optional.of(whr);
     } catch (ReferenceNotFoundException e) {
       return Optional.empty();
     }
@@ -124,5 +135,13 @@ abstract class BaseResource {
 
   public MultiTenant getMultiTenant() {
     return multiTenant;
+  }
+
+  protected AccessChecker getAccessChecker() {
+    return accessChecker;
+  }
+
+  protected ServerAccessContext createAccessContext() {
+    return ServerAccessContext.of(UUID.randomUUID().toString(), getPrincipal());
   }
 }

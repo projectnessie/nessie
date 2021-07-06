@@ -48,15 +48,21 @@ Some operations like performing garbage collection or changing access control do
 
 
 ## Server interface
-Although multiple server implementations may exist and conversely multiple access control interface may exist, this section aims to describe an interface to be used by the `JAX-RS` reference implementation of Nessie present under `servers/services`. The interface is composed of various methods for each operation to validate, which accept some access control context providing user identity and some arguments regarding the object to be accessed.
+Although multiple server implementations may exist and conversely multiple access control interfaces may exist, this section aims to describe an interface to be used by the `JAX-RS` reference implementation of Nessie present under `servers/services`. The interface is composed of various methods for each operation to validate, which accept some access control context providing user identity and some arguments regarding the object to be accessed.
 
 More concretely, interface would look like this:
 
     interface AccessChecker {
+      void canViewReference(AccessContext context, NamedRef ref) throws AccessControlException;
       void canCreateReference(AccessContext context, NamedRef ref) throws AccessControlException;
       void canDeleteReference(AccessContext context, NamedRef ref) throws AccessControlException;
-      [...]
-      void canReadValue(AccessContext context, Reference ref, ContentsKey key) throws AccessControlException;
+      void canAssignRefToHash(AccessContext context, NamedRef ref) throws AccessControlException;
+      void canReadEntries(AccessContext context, NamedRef ref) throws AccessControlException;
+      void canListCommitLog(AccessContext context, NamedRef ref) throws AccessControlException;
+      void canCommitChangeAgainstReference(AccessContext context, NamedRef ref) throws AccessControlException;
+      void canReadEntityValue(AccessContext context, NamedRef ref, ContentsKey key, String contentsId) throws AccessControlException;
+      void canUpdateEntity(AccessContext context, NamedRef ref, ContentsKey key, String contentsId) throws AccessControlException;
+      void canDeleteEntity(AccessContext context, NamedRef ref, ContentsKey key, String contentsId) throws AccessControlException;
     }
 
 The `AccessContext` object passed as argument contains information regarding the overall context of the operation and will be created by the server itself:
@@ -78,8 +84,33 @@ The `AccessContext` object passed as argument contains information regarding the
 ## Server reference implementation
 
 An implementation of the `AccessChecker` interface could be written with the following characteristics:
-* Rules are written for either references or paths. Each rule contains a list of operations, and for each operation, a list of users (or group of users) and if the operation is granted or denied
-* To designate references or path, the use of wildcard is allowed. Rule ordering is based on how specific the match is. For example, `foo/bar/baz` matches both`foo/*` and `foo/bar/*`, but `foo/bar/*` is more specific, so rules under `foo/bar/*` would take precedence over `foo/*`
-* Rules would be stored under a special branch inside Nessie itself (meaning access control over rules would be done in the same manner as regular access control), under two different entities, one for the reference rules and one for the path rules (allowing for example to do an initial reference rule check at the edge).
+* Rules would be configured through a Quarkus configuration file (`application.properties`), where the rule itself is a CEL expression (Common Expression Language).
+* Within the CEL expression, variables for `ref` / `role` / `path` / `op` would be available, which then would allow quite flexible rule definitions
+* Rule definitions are of the form `nessie.server.authorization.rules.<ruleId>="<rule_expression>"`
+* The `ref` refers to a string representing a branch/tag name
+* The `role` refers to the user's role and can be any string
+* The `path` refers to the Key for the contents of an object and can be any string
+* The `op` variable in the `<rule_expression>` can be any of:
+  * `VIEW_REFERENCE`
+  * `CREATE_REFERENCE`
+  * `DELETE_REFERENCE`
+  * `ASSIGN_REFERENCE_TO_HASH`
+  * `READ_ENTRIES`,
+  * `LIST_COMMIT_LOG`
+  * `COMMIT_CHANGE_AGAINST_REFERENCE`
+  * `READ_ENTITY_VALUE`
+  * `UPDATE_ENTITY`
+  * `DELETE_ENTITY`
+* Note that in order to be able to do something on a branch/tag (such as `LIST_COMMIT_LOG` / `READ_ENTRIES`), one needs to have the `VIEW_REFERENCE` permission for the given branch/tag.
+
+Some example rules are shown below:
+```
+nessie.server.authorization.enabled=true
+nessie.server.authorization.rules.allow_branch_listing="op=='VIEW_REFERENCE' && role.startsWith('test_user') && ref.startsWith('allowedBranch')"
+nessie.server.authorization.rules.allow_branch_creation="op=='CREATE_REFERENCE' && role.startsWith('test_user') && ref.startsWith('allowedBranch')"
+nessie.server.authorization.rules.allow_branch_deletion="op=='DELETE_REFERENCE' && role.startsWith('test_user') && ref.startsWith('allowedBranch')"
+nessie.server.authorization.rules.allow_updating_entity="op=='UPDATE_ENTITY' && role=='test_user' && path.startsWith('allowed.')"
+nessie.server.authorization.rules.allow_deleting_entity="op=='DELETE_ENTITY' && role=='test_user' && path.startsWith('allowed.')"
+```
 
 > Written with [StackEdit](https://stackedit.io/).
