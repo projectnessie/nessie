@@ -13,22 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.services.config;
+package org.projectnessie.services.authz;
 
-/** Nessie server configuration to be injected into the JAX-RS application. */
-public interface ServerConfig {
+import java.security.Principal;
 
-  /**
-   * Gets the branch to use if not provided by the user.
-   *
-   * @return the branch to use
-   */
-  String getDefaultBranch();
+/** Provides some context about a role/principal that accesses Nessie resources. */
+public interface AccessContext {
+  /** Provide a unique id for the operation being validated (for correlation purposes). */
+  String operationId();
 
-  /**
-   * Returns {@code true} if server stack trace should be sent to the client in case of error.
-   *
-   * @return {@code true} if the server should send the stack trace to the client.
-   */
-  boolean sendStacktraceToClient();
+  /** Provide the user identity. */
+  Principal user();
 }
