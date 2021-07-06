@@ -206,7 +206,16 @@
                           + "      \"signedOffBy\": \"signedOffByName <signedOffBy@example.com>\"\n"
                           + "    }\n"
                           + "  ]\n"
-                          + "}")
+                          + "}"),
+              @ExampleObject(
+                  name = "authRuleObj",
+                  value =
+                      "{\n"
+                          + "  \"id\": \"secret_branch_access_for_some_roles\""
+                          + "  \"type\": \"LIST_OBJECTS\""
+                          + "  \"ruleExpression\": \"ref.startsWith('secretBranch')\",\n"
+                          + "  \"roleExpression\": \"role in ['roleA', 'roleB']\"\n"
+                          + "}"),
             }))
 package org.projectnessie.api;
 
