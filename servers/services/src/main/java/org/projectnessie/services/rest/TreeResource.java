@@ -61,6 +61,7 @@ import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
 import org.projectnessie.model.Transplant;
+import org.projectnessie.services.authz.AccessChecker;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Delete;
@@ -89,8 +90,9 @@ public class TreeResource extends BaseResource implements TreeApi {
   public TreeResource(
       ServerConfig config,
       MultiTenant multiTenant,
-      VersionStore<Contents, CommitMeta, Contents.Type> store) {
-    super(config, multiTenant, store);
+      VersionStore<Contents, CommitMeta, Contents.Type> store,
+      AccessChecker accessChecker) {
+    super(config, multiTenant, store, accessChecker);
   }
 
   @Override
@@ -121,10 +123,12 @@ public class TreeResource extends BaseResource implements TreeApi {
     final NamedRef namedReference;
     if (reference instanceof Branch) {
       namedReference = BranchName.of(reference.getName());
+      getAccessChecker().canCreateReference(createAccessContext(), namedReference);
       Hash hash = createReference(namedReference, reference.getHash());
       return Branch.of(reference.getName(), hash.asString());
     } else if (reference instanceof Tag) {
       namedReference = TagName.of(reference.getName());
+      getAccessChecker().canCreateReference(createAccessContext(), namedReference);
       Hash hash = createReference(namedReference, reference.getHash());
       return Tag.of(reference.getName(), hash.asString());
     } else {
@@ -188,7 +192,9 @@ public class TreeResource extends BaseResource implements TreeApi {
     Ref endRef;
     if (null == params.pageToken()) {
       // we should only allow named references when no paging is defined
-      endRef = namedRefWithHashOrThrow(namedRef, params.endHash()).getHash();
+      WithHash<NamedRef> namedRefWithHash = namedRefWithHashOrThrow(namedRef, params.endHash());
+      endRef = namedRefWithHash.getHash();
+      getAccessChecker().canListCommitLog(createAccessContext(), namedRefWithHash.getValue());
     } else {
       // TODO: this is atm an insecure design where users can put it any hashes and retrieve all the
       // commits. Once authz + tvs2 is in place we should revisit this
@@ -259,6 +265,8 @@ public class TreeResource extends BaseResource implements TreeApi {
   public void transplantCommitsIntoBranch(
       String branchName, String hash, String message, Transplant transplant)
       throws NessieNotFoundException, NessieConflictException {
+    getAccessChecker()
+        .canCommitChangeAgainstReference(createAccessContext(), BranchName.of(branchName));
     try {
       List<Hash> transplants;
       try (Stream<Hash> s = transplant.getHashesToTransplant().stream().map(Hash::of)) {
@@ -282,6 +290,8 @@ public class TreeResource extends BaseResource implements TreeApi {
   @Override
   public void mergeRefIntoBranch(String branchName, String hash, Merge merge)
       throws NessieNotFoundException, NessieConflictException {
+    getAccessChecker()
+        .canCommitChangeAgainstReference(createAccessContext(), BranchName.of(branchName));
     try {
       getStore()
           .merge(
@@ -302,7 +312,8 @@ public class TreeResource extends BaseResource implements TreeApi {
   public EntriesResponse getEntries(String namedRef, EntriesParams params)
       throws NessieNotFoundException {
 
-    final Hash hash = namedRefWithHashOrThrow(namedRef, params.hashOnRef()).getHash();
+    WithHash<NamedRef> refWithHash = namedRefWithHashOrThrow(namedRef, params.hashOnRef());
+    getAccessChecker().canReadEntries(createAccessContext(), refWithHash.getValue());
     // TODO Implement paging. At the moment, we do not expect that many keys/entries to be returned.
     //  So the size of the whole result is probably reasonable and unlikely to "kill" either the
     //  server or client. We have to figure out _how_ to implement paging for keys/entries, i.e.
@@ -315,7 +326,7 @@ public class TreeResource extends BaseResource implements TreeApi {
       List<EntriesResponse.Entry> entries;
       try (Stream<EntriesResponse.Entry> s =
           getStore()
-              .getKeys(hash)
+              .getKeys(refWithHash.getHash())
               .map(
                   key ->
                       EntriesResponse.Entry.builder()
@@ -385,6 +396,18 @@ public class TreeResource extends BaseResource implements TreeApi {
         operations.getOperations().stream()
             .map(TreeResource::toOp)
             .collect(ImmutableList.toImmutableList());
+    BranchName branchName = BranchName.of(branch);
+    getAccessChecker().canCommitChangeAgainstReference(createAccessContext(), branchName);
+    operations
+        .getOperations()
+        .forEach(
+            op -> {
+              if (op instanceof Operation.Delete) {
+                getAccessChecker().canDeleteEntity(createAccessContext(), branchName, op.getKey());
+              } else if (op instanceof Operation.Put) {
+                getAccessChecker().canUpdateEntity(createAccessContext(), branchName, op.getKey());
+              }
+            });
     String newHash = doOps(branch, hash, operations.getCommitMeta(), ops).asString();
     return Branch.of(branch, newHash);
   }
@@ -438,18 +461,19 @@ public class TreeResource extends BaseResource implements TreeApi {
     return Optional.of(Hash.of(hash));
   }
 
-  private void deleteReference(NamedRef name, String hash)
+  private void deleteReference(NamedRef ref, String hash)
       throws NessieConflictException, NessieNotFoundException {
     try {
-      getStore().delete(name, toHash(hash, true));
+      getAccessChecker().canDeleteReference(createAccessContext(), ref);
+      getStore().delete(ref, toHash(hash, true));
     } catch (ReferenceNotFoundException e) {
       throw new NessieNotFoundException(
-          String.format("Unable to find reference [%s] to delete.", name.getName()), e);
+          String.format("Unable to find reference [%s] to delete.", ref.getName()), e);
     } catch (ReferenceConflictException e) {
       throw new NessieConflictException(
           String.format(
               "The hash provided %s does not match the current status of the reference %s.",
-              hash, name.getName()),
+              hash, ref.getName()),
           e);
     }
   }
@@ -459,6 +483,7 @@ public class TreeResource extends BaseResource implements TreeApi {
     try {
       WithHash<Ref> resolved = getStore().toRef(ref.getName());
       Ref resolvedRef = resolved.getValue();
+      getAccessChecker().canAssignRefToHash(createAccessContext(), ref);
       if (resolvedRef instanceof NamedRef) {
         getStore()
             .assign(

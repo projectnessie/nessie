@@ -32,11 +32,13 @@ import org.projectnessie.model.ImmutableMultiGetContentsResponse;
 import org.projectnessie.model.MultiGetContentsRequest;
 import org.projectnessie.model.MultiGetContentsResponse;
 import org.projectnessie.model.MultiGetContentsResponse.ContentsWithKey;
+import org.projectnessie.services.authz.AccessChecker;
 import org.projectnessie.services.config.ServerConfig;
-import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.WithHash;
 
 /** REST endpoint for contents. */
 @RequestScoped
@@ -48,8 +50,9 @@ public class ContentsResource extends BaseResource implements ContentsApi {
   public ContentsResource(
       ServerConfig config,
       MultiTenant multiTenant,
-      VersionStore<Contents, CommitMeta, Contents.Type> store) {
-    super(config, multiTenant, store);
+      VersionStore<Contents, CommitMeta, Contents.Type> store,
+      AccessChecker accessChecker) {
+    super(config, multiTenant, store, accessChecker);
   }
 
   @Override
@@ -60,9 +63,10 @@ public class ContentsResource extends BaseResource implements ContentsApi {
   @Override
   public Contents getContents(ContentsKey key, String namedRef, String hashOnRef)
       throws NessieNotFoundException {
-    Hash ref = namedRefWithHashOrThrow(namedRef, hashOnRef).getHash();
+    WithHash<NamedRef> ref = namedRefWithHashOrThrow(namedRef, hashOnRef);
+    getAccessChecker().canReadEntityValue(createAccessContext(), ref.getValue(), key);
     try {
-      Contents obj = getStore().getValue(ref, toKey(key));
+      Contents obj = getStore().getValue(ref.getHash(), toKey(key));
       if (obj != null) {
         return obj;
       }
@@ -78,11 +82,13 @@ public class ContentsResource extends BaseResource implements ContentsApi {
       String namedRef, String hashOnRef, MultiGetContentsRequest request)
       throws NessieNotFoundException {
     try {
-      Hash ref = namedRefWithHashOrThrow(namedRef, hashOnRef).getHash();
+      WithHash<NamedRef> ref = namedRefWithHashOrThrow(namedRef, hashOnRef);
       List<ContentsKey> externalKeys = request.getRequestedKeys();
+      externalKeys.forEach(
+          k -> getAccessChecker().canReadEntityValue(createAccessContext(), ref.getValue(), k));
       List<Key> internalKeys =
           externalKeys.stream().map(ContentsResource::toKey).collect(Collectors.toList());
-      List<Optional<Contents>> values = getStore().getValues(ref, internalKeys);
+      List<Optional<Contents>> values = getStore().getValues(ref.getHash(), internalKeys);
       List<ContentsWithKey> output = new ArrayList<>();
 
       for (int i = 0; i < externalKeys.size(); i++) {
