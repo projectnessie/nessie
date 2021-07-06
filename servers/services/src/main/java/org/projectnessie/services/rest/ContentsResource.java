@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.enterprise.context.RequestScoped;
+import javax.enterprise.inject.Alternative;
 import javax.inject.Inject;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.SecurityContext;
@@ -32,15 +33,23 @@ import org.projectnessie.model.ImmutableMultiGetContentsResponse;
 import org.projectnessie.model.MultiGetContentsRequest;
 import org.projectnessie.model.MultiGetContentsResponse;
 import org.projectnessie.model.MultiGetContentsResponse.ContentsWithKey;
+import org.projectnessie.services.authz.AccessChecker;
 import org.projectnessie.services.config.ServerConfig;
-import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.WithHash;
 
 /** REST endpoint for contents. */
 @RequestScoped
+@Alternative
 public class ContentsResource extends BaseResource implements ContentsApi {
+
+  // Mandated by CDI 2.0
+  public ContentsResource() {
+    this(null, null, null, null);
+  }
 
   @Context SecurityContext securityContext;
 
@@ -48,8 +57,9 @@ public class ContentsResource extends BaseResource implements ContentsApi {
   public ContentsResource(
       ServerConfig config,
       MultiTenant multiTenant,
-      VersionStore<Contents, CommitMeta, Contents.Type> store) {
-    super(config, multiTenant, store);
+      VersionStore<Contents, CommitMeta, Contents.Type> store,
+      AccessChecker accessChecker) {
+    super(config, multiTenant, store, accessChecker);
   }
 
   @Override
@@ -60,9 +70,9 @@ public class ContentsResource extends BaseResource implements ContentsApi {
   @Override
   public Contents getContents(ContentsKey key, String namedRef, String hashOnRef)
       throws NessieNotFoundException {
-    Hash ref = namedRefWithHashOrThrow(namedRef, hashOnRef).getHash();
+    WithHash<NamedRef> ref = namedRefWithHashOrThrow(namedRef, hashOnRef);
     try {
-      Contents obj = getStore().getValue(ref, toKey(key));
+      Contents obj = getStore().getValue(ref.getHash(), toKey(key));
       if (obj != null) {
         return obj;
       }
@@ -78,11 +88,11 @@ public class ContentsResource extends BaseResource implements ContentsApi {
       String namedRef, String hashOnRef, MultiGetContentsRequest request)
       throws NessieNotFoundException {
     try {
-      Hash ref = namedRefWithHashOrThrow(namedRef, hashOnRef).getHash();
+      WithHash<NamedRef> ref = namedRefWithHashOrThrow(namedRef, hashOnRef);
       List<ContentsKey> externalKeys = request.getRequestedKeys();
       List<Key> internalKeys =
           externalKeys.stream().map(ContentsResource::toKey).collect(Collectors.toList());
-      List<Optional<Contents>> values = getStore().getValues(ref, internalKeys);
+      List<Optional<Contents>> values = getStore().getValues(ref.getHash(), internalKeys);
       List<ContentsWithKey> output = new ArrayList<>();
 
       for (int i = 0; i < externalKeys.size(); i++) {
