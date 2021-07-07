@@ -3,7 +3,7 @@ botocore==1.20.105
 Click==8.0.1
 confuse==1.5.0
 desert==2020.11.18
-marshmallow==3.12.1
+marshmallow==3.12.2
 marshmallow_oneofschema==2.1.0
 python-dateutil>=2.8.0
 requests==2.25.1
