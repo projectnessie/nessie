@@ -15,12 +15,13 @@
  */
 package org.projectnessie.server.config;
 
-import io.quarkus.arc.config.ConfigProperties;
-import io.quarkus.runtime.annotations.RegisterForReflection;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
+import io.quarkus.runtime.annotations.RegisterForReflection;
+import io.smallrye.config.ConfigMapping;
+
 /** Version store configuration. */
-@ConfigProperties(prefix = "nessie.version.store")
+@ConfigMapping(prefix = "nessie.version.store")
 public interface VersionStoreConfig {
 
   @RegisterForReflection

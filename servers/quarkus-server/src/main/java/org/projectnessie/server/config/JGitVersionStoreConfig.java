@@ -15,13 +15,15 @@
  */
 package org.projectnessie.server.config;
 
-import io.quarkus.arc.config.ConfigProperties;
-import io.quarkus.runtime.annotations.RegisterForReflection;
 import java.util.Optional;
+
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
+import io.quarkus.runtime.annotations.RegisterForReflection;
+import io.smallrye.config.ConfigMapping;
+
 /** JGit version store configuration. */
-@ConfigProperties(prefix = "nessie.version.store.jgit")
+@ConfigMapping(prefix = "nessie.version.store.jgit")
 public interface JGitVersionStoreConfig {
   @RegisterForReflection
   public enum JGitStoreType {

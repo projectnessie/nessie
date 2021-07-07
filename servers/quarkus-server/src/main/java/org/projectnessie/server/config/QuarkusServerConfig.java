@@ -15,12 +15,13 @@
  */
 package org.projectnessie.server.config;
 
-import io.quarkus.arc.config.ConfigProperties;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.projectnessie.services.config.ServerConfig;
 
+import io.smallrye.config.ConfigMapping;
+
 /** Nessie server config for Quarkus. */
-@ConfigProperties(prefix = "nessie.server")
+@ConfigMapping(prefix = "nessie.server")
 public interface QuarkusServerConfig extends ServerConfig {
 
   @ConfigProperty(name = "default-branch", defaultValue = "main")
