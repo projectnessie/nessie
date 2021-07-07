@@ -67,6 +67,7 @@
         <artifactId>protobuf-maven-plugin</artifactId>
         <executions>
           <execution>
+            <id>protobuf-java</id>
             <goals>
               <goal>compile</goal>
             </goals>
