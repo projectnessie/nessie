@@ -14,7 +14,7 @@
     "@types/bootstrap": "^5.0.17",
     "@types/history": "^4.7.9",
     "@types/http-proxy-middleware": "^1.0.0",
-    "@types/material-ui": "^0.21.8",
+    "@types/material-ui": "^0.21.9",
     "@types/ramda": "^0.27.42",
     "@types/react": "^17.0.13",
     "@types/react-bootstrap": "^0.32.25",
