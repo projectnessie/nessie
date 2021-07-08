@@ -931,14 +931,18 @@ class TestRest {
     MultiGetContentsRequest mgReq = MultiGetContentsRequest.of(key);
     Tag tag = Tag.of("valid", validHash);
 
+    String opsCountMsg = "commitMultipleOperations.operations.operations: size must be between 1 and 2147483647";
+
     assertAll(
         () ->
-            assertEquals(
-                "Bad Request (HTTP/400): commitMultipleOperations.branchName: " + REF_NAME_MESSAGE,
-                assertThrows(
-                        NessieBadRequestException.class,
-                        () -> tree.commitMultipleOperations(invalidBranchName, validHash, ops))
-                    .getMessage()),
+            assertThat(
+                    assertThrows(
+                            NessieBadRequestException.class,
+                            () -> tree.commitMultipleOperations(invalidBranchName, validHash, ops))
+                        .getMessage())
+                .contains("Bad Request (HTTP/400): ")
+                .contains("commitMultipleOperations.branchName: " + REF_NAME_MESSAGE)
+                .contains(opsCountMsg),
         () ->
             assertEquals(
                 "Bad Request (HTTP/400): deleteBranch.branchName: " + REF_NAME_MESSAGE,
@@ -1032,14 +1036,18 @@ class TestRest {
     Contents cts = IcebergTable.of("moo");
     Tag tag = Tag.of("valid", validHash);
 
+    String opsCountMsg = "commitMultipleOperations.operations.operations: size must be between 1 and 2147483647";
+
     assertAll(
         () ->
-            assertEquals(
-                "Bad Request (HTTP/400): commitMultipleOperations.hash: " + HASH_MESSAGE,
-                assertThrows(
-                        NessieBadRequestException.class,
-                        () -> tree.commitMultipleOperations(validBranchName, invalidHash, ops))
-                    .getMessage()),
+            assertThat(
+                    assertThrows(
+                            NessieBadRequestException.class,
+                            () -> tree.commitMultipleOperations(validBranchName, invalidHash, ops))
+                        .getMessage())
+                .contains("Bad Request (HTTP/400): ")
+                .contains("commitMultipleOperations.hash: " + HASH_MESSAGE)
+                .contains(opsCountMsg),
         () ->
             assertEquals(
                 "Bad Request (HTTP/400): deleteBranch.hash: " + HASH_MESSAGE,
