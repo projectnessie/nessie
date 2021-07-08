@@ -15,12 +15,10 @@
  */
 package org.projectnessie.server.config;
 
-import java.util.Optional;
-
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.smallrye.config.ConfigMapping;
+import java.util.Optional;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /** JGit version store configuration. */
 @ConfigMapping(prefix = "nessie.version.store.jgit")

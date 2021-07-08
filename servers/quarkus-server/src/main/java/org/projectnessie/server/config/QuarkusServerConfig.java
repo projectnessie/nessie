@@ -15,10 +15,9 @@
  */
 package org.projectnessie.server.config;
 
+import io.smallrye.config.ConfigMapping;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.projectnessie.services.config.ServerConfig;
-
-import io.smallrye.config.ConfigMapping;
 
 /** Nessie server config for Quarkus. */
 @ConfigMapping(prefix = "nessie.server")

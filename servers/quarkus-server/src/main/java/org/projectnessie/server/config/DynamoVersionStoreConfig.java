@@ -15,10 +15,9 @@
  */
 package org.projectnessie.server.config;
 
+import io.smallrye.config.ConfigMapping;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.projectnessie.versioned.dynamodb.DynamoStoreConfig;
-
-import io.smallrye.config.ConfigMapping;
 
 /** DynamoDB version store configuration. */
 @ConfigMapping(prefix = "nessie.version.store.dynamo")
