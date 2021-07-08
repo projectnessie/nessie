@@ -39,6 +39,8 @@ public abstract class Namespace {
   static final String ERROR_MSG_TEMPLATE =
       "'%s' is not a valid namespace identifier (should not end with '.')";
 
+  public static final ImmutableNamespace EMPTY = ImmutableNamespace.builder().name("").build();
+
   @JsonValue
   public abstract String name();
 
@@ -57,7 +59,7 @@ public abstract class Namespace {
   public static Namespace of(String... elements) {
     Objects.requireNonNull(elements, "elements must be non-null");
     if (elements.length == 0) {
-      return ImmutableNamespace.builder().name("").build();
+      return EMPTY;
     }
 
     if (DOT.equals(elements[elements.length - 1])) {
