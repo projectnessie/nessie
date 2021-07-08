@@ -931,7 +931,8 @@ class TestRest {
     MultiGetContentsRequest mgReq = MultiGetContentsRequest.of(key);
     Tag tag = Tag.of("valid", validHash);
 
-    String opsCountMsg = "commitMultipleOperations.operations.operations: size must be between 1 and 2147483647";
+    String opsCountMsg =
+        "commitMultipleOperations.operations.operations: size must be between 1 and 2147483647";
 
     assertAll(
         () ->
@@ -1036,7 +1037,8 @@ class TestRest {
     Contents cts = IcebergTable.of("moo");
     Tag tag = Tag.of("valid", validHash);
 
-    String opsCountMsg = "commitMultipleOperations.operations.operations: size must be between 1 and 2147483647";
+    String opsCountMsg =
+        "commitMultipleOperations.operations.operations: size must be between 1 and 2147483647";
 
     assertAll(
         () ->
