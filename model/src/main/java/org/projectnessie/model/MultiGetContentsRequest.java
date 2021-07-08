@@ -18,6 +18,8 @@ package org.projectnessie.model;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.List;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
@@ -28,6 +30,8 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ImmutableMultiGetContentsRequest.class)
 public interface MultiGetContentsRequest {
 
+  @NotNull
+  @Size(min = 1)
   List<ContentsKey> getRequestedKeys();
 
   static ImmutableMultiGetContentsRequest.Builder builder() {

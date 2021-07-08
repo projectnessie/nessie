@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import javax.validation.constraints.NotNull;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.DiscriminatorMapping;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -44,6 +45,7 @@ import org.immutables.value.Value;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 public interface Operation {
 
+  @NotNull
   ContentsKey getKey();
 
   @Value.Immutable(prehash = true)
@@ -51,6 +53,7 @@ public interface Operation {
   @JsonDeserialize(as = ImmutablePut.class)
   @JsonTypeName("PUT")
   interface Put extends Operation {
+    @NotNull
     Contents getContents();
 
     public static Put of(ContentsKey key, Contents contents) {

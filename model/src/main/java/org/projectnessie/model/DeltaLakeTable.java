@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.List;
 import javax.annotation.Nullable;
+import javax.validation.constraints.NotNull;
 import org.immutables.value.Value;
 
 @Value.Immutable(prehash = true)
@@ -28,8 +29,10 @@ import org.immutables.value.Value;
 @JsonTypeName("DELTA_LAKE_TABLE")
 public abstract class DeltaLakeTable extends Contents {
 
+  @NotNull
   public abstract List<String> getMetadataLocationHistory();
 
+  @NotNull
   public abstract List<String> getCheckpointLocationHistory();
 
   @Nullable

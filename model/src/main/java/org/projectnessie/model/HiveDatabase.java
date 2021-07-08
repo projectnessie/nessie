@@ -18,6 +18,7 @@ package org.projectnessie.model;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import javax.validation.constraints.Size;
 import org.immutables.value.Value;
 
 @Value.Immutable(prehash = true)
@@ -26,5 +27,6 @@ import org.immutables.value.Value;
 @JsonTypeName("HIVE_DATABASE")
 public abstract class HiveDatabase extends Contents {
 
+  @Size(min = 1)
   public abstract byte[] getDatabaseDefinition();
 }
