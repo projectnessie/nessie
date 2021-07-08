@@ -18,6 +18,8 @@ package org.projectnessie.model;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import org.immutables.value.Value;
 
 @Value.Immutable(prehash = true)
@@ -26,6 +28,8 @@ import org.immutables.value.Value;
 @JsonTypeName("ICEBERG_TABLE")
 public abstract class IcebergTable extends Contents {
 
+  @NotNull
+  @NotBlank
   public abstract String getMetadataLocation();
 
   public static IcebergTable of(String metadataLocation) {

@@ -17,13 +17,16 @@ package org.projectnessie.model;
 
 import static org.projectnessie.model.Validation.validateHash;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import javax.annotation.Nullable;
+import javax.validation.constraints.NotBlank;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.DiscriminatorMapping;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.media.SchemaProperty;
 import org.immutables.value.Value;
 
 @Schema(
@@ -35,15 +38,23 @@ import org.immutables.value.Value;
       @DiscriminatorMapping(value = "BRANCH", schema = Branch.class),
       @DiscriminatorMapping(value = "HASH", schema = Hash.class)
     },
-    discriminatorProperty = "type")
+    discriminatorProperty = "type",
+    // Smallrye does neither support JsonFormat nor javax.validation.constraints.Pattern :(
+    properties = {
+      @SchemaProperty(name = "name", pattern = Validation.REF_NAME_REGEX),
+      @SchemaProperty(name = "hash", pattern = Validation.HASH_REGEX)
+    })
 @JsonSubTypes({@Type(Branch.class), @Type(Tag.class), @Type(Hash.class)})
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 public interface Reference extends Base {
   /** Human readable reference name. */
+  @NotBlank
+  @JsonFormat(pattern = Validation.REF_NAME_REGEX)
   String getName();
 
   /** backend system id. Usually the 32-byte hash of the commit this reference points to. */
   @Nullable
+  @JsonFormat(pattern = Validation.HASH_REGEX)
   String getHash();
 
   /**

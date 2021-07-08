@@ -23,6 +23,8 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import org.immutables.value.Value;
 
 /**
@@ -39,6 +41,8 @@ public abstract class ContentsKey {
   private static final char ZERO_BYTE = '\u0000';
   private static final String ZERO_BYTE_STRING = Character.toString(ZERO_BYTE);
 
+  @NotNull
+  @Size(min = 1)
   public abstract List<String> getElements();
 
   /**

@@ -21,6 +21,8 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import org.immutables.value.Value;
 
 @Value.Immutable(prehash = true)
@@ -29,8 +31,10 @@ import org.immutables.value.Value;
 @JsonTypeName("HIVE_TABLE")
 public abstract class HiveTable extends Contents {
 
+  @Size(min = 1)
   public abstract byte[] getTableDefinition();
 
+  @NotNull
   public abstract List<byte[]> getPartitions();
 
   /**

@@ -19,6 +19,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import javax.annotation.Nullable;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import org.immutables.value.Value;
 
 /** configuration object to tell a client how a server is configured. */
@@ -30,9 +32,11 @@ public abstract class NessieConfiguration {
   @JsonIgnore private static final String CURRENT_VERSION = "1.0";
 
   @Nullable
+  @Size(min = 1)
   public abstract String getDefaultBranch();
 
   @Value.Default
+  @NotNull
   public String getVersion() {
     return CURRENT_VERSION;
   }

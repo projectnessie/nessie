@@ -20,16 +20,24 @@ import static org.projectnessie.model.Validation.validateHash;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.List;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.media.SchemaProperty;
 import org.immutables.value.Value;
 
-@Schema(type = SchemaType.OBJECT, title = "Transplant")
+@Schema(
+    type = SchemaType.OBJECT,
+    title = "Transplant",
+    properties = {@SchemaProperty(name = "hashesToTransplant", uniqueItems = true)})
 @Value.Immutable(prehash = true)
 @JsonSerialize(as = ImmutableTransplant.class)
 @JsonDeserialize(as = ImmutableTransplant.class)
 public interface Transplant {
 
+  @NotNull
+  @Size(min = 1)
   List<String> getHashesToTransplant();
 
   /**

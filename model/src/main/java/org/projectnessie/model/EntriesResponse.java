@@ -18,6 +18,7 @@ package org.projectnessie.model;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import org.immutables.value.Value;
 
 @Value.Immutable(prehash = true)
@@ -29,6 +30,7 @@ public interface EntriesResponse extends PaginatedResponse {
     return ImmutableEntriesResponse.builder();
   }
 
+  @NotNull
   List<Entry> getEntries();
 
   @Value.Immutable(prehash = true)
@@ -40,8 +42,10 @@ public interface EntriesResponse extends PaginatedResponse {
       return ImmutableEntry.builder();
     }
 
+    @NotNull
     Contents.Type getType();
 
+    @NotNull
     ContentsKey getName();
   }
 }

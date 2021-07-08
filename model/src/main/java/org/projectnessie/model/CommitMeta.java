@@ -29,12 +29,19 @@ import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import javax.annotation.Nullable;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.media.SchemaProperty;
 import org.immutables.value.Value;
 
 @Value.Immutable(prehash = true)
-@Schema(type = SchemaType.OBJECT, title = "CommitMeta")
+@Schema(
+    type = SchemaType.OBJECT,
+    title = "CommitMeta",
+    // Smallrye does neither support JsonFormat nor javax.validation.constraints.Pattern :(
+    properties = {@SchemaProperty(name = "hash", pattern = Validation.HASH_REGEX)})
 @JsonSerialize(as = ImmutableCommitMeta.class)
 @JsonDeserialize(as = ImmutableCommitMeta.class)
 public abstract class CommitMeta {
@@ -78,6 +85,7 @@ public abstract class CommitMeta {
    *
    * <p>Like github if this message is in markdown it may be displayed cleanly in the UI.
    */
+  @NotBlank
   public abstract String getMessage();
 
   /** Commit time in UTC. Set by the server. */
@@ -98,6 +106,7 @@ public abstract class CommitMeta {
    * <p>examples are spark id, the client type (eg iceberg, delta etc), application or job names,
    * hostnames etc
    */
+  @NotNull
   public abstract Map<String, String> getProperties();
 
   public ImmutableCommitMeta.Builder toBuilder() {

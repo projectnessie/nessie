@@ -16,6 +16,7 @@
 package org.projectnessie.model;
 
 import javax.annotation.Nullable;
+import javax.validation.constraints.Size;
 import org.immutables.value.Value.Default;
 
 public interface PaginatedResponse {
@@ -43,5 +44,6 @@ public interface PaginatedResponse {
    *     {@code true}. Undefined, if {@link #hasMore()} is {@code false}.
    */
   @Nullable
+  @Size(min = 1)
   String getToken();
 }

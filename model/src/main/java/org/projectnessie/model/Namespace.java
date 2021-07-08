@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.StringJoiner;
+import javax.validation.constraints.NotNull;
 import org.immutables.value.Value;
 
 /**
@@ -42,6 +43,7 @@ public abstract class Namespace {
   public static final ImmutableNamespace EMPTY = ImmutableNamespace.builder().name("").build();
 
   @JsonValue
+  @NotNull
   public abstract String name();
 
   public boolean isEmpty() {

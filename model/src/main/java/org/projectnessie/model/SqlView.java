@@ -18,6 +18,8 @@ package org.projectnessie.model;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import org.immutables.value.Value;
 
 @Value.Immutable(prehash = true)
@@ -33,8 +35,10 @@ public abstract class SqlView extends Contents {
     PRESTO
   }
 
+  @NotBlank
   public abstract String getSqlText();
 
+  @NotNull
   public abstract Dialect getDialect();
 
   // Schema getSchema();
