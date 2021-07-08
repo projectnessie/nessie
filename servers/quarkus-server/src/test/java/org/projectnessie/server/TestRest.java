@@ -15,6 +15,9 @@
  */
 package org.projectnessie.server;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -38,19 +41,20 @@ import java.net.URI;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.OptionalInt;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.api.ContentsApi;
 import org.projectnessie.api.TreeApi;
@@ -65,10 +69,16 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
+import org.projectnessie.model.Contents.Type;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.EntriesResponse;
+import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.Hash;
 import org.projectnessie.model.IcebergTable;
+import org.projectnessie.model.ImmutableDeltaLakeTable;
+import org.projectnessie.model.ImmutableEntry;
+import org.projectnessie.model.ImmutableHiveDatabase;
+import org.projectnessie.model.ImmutableHiveTable;
 import org.projectnessie.model.ImmutableMerge;
 import org.projectnessie.model.ImmutableOperations;
 import org.projectnessie.model.ImmutablePut;
@@ -76,10 +86,14 @@ import org.projectnessie.model.ImmutableSqlView;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.MultiGetContentsRequest;
 import org.projectnessie.model.MultiGetContentsResponse.ContentsWithKey;
+import org.projectnessie.model.Operation;
+import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
+import org.projectnessie.model.Operation.Unchanged;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.SqlView;
+import org.projectnessie.model.SqlView.Dialect;
 import org.projectnessie.model.Tag;
 
 @QuarkusTest
@@ -582,10 +596,166 @@ class TestRest {
         contents
             .getMultipleContents("foo", MultiGetContentsRequest.of(a, b, ContentsKey.of("noexist")))
             .getContents();
-    List<ContentsWithKey> expected =
-        Arrays.asList(ContentsWithKey.of(a, ta), ContentsWithKey.of(b, tb));
+    List<ContentsWithKey> expected = asList(ContentsWithKey.of(a, ta), ContentsWithKey.of(b, tb));
     assertThat(keys).containsExactlyInAnyOrderElementsOf(expected);
     tree.deleteBranch(branch, tree.getReferenceByName(branch).getHash());
+  }
+
+  private static final class ContentAndOperationType {
+    final Contents.Type type;
+    final Operation operation;
+
+    ContentAndOperationType(Contents.Type type, Operation operation) {
+      this.type = type;
+      this.operation = operation;
+    }
+
+    @Override
+    public String toString() {
+      String s;
+      if (operation instanceof Put) {
+        s = "Put_" + ((Put) operation).getContents().getClass().getSimpleName();
+      } else {
+        s = operation.getClass().getSimpleName();
+      }
+      return s + "_" + operation.getKey().toPathString();
+    }
+  }
+
+  static Stream<ContentAndOperationType> contentAndOperationTypes() {
+    return Stream.of(
+        new ContentAndOperationType(
+            Type.ICEBERG_TABLE,
+            Put.of(ContentsKey.of("iceberg"), IcebergTable.of("/iceberg/table"))),
+        new ContentAndOperationType(
+            Type.VIEW,
+            Put.of(
+                ContentsKey.of("view_dremio"),
+                ImmutableSqlView.builder()
+                    .dialect(Dialect.DREMIO)
+                    .sqlText("SELECT foo FROM dremio")
+                    .build())),
+        new ContentAndOperationType(
+            Type.VIEW,
+            Put.of(
+                ContentsKey.of("view_hive"),
+                ImmutableSqlView.builder()
+                    .dialect(Dialect.HIVE)
+                    .sqlText("SELECT foo FROM hive")
+                    .build())),
+        new ContentAndOperationType(
+            Type.VIEW,
+            Put.of(
+                ContentsKey.of("view_presto"),
+                ImmutableSqlView.builder()
+                    .dialect(Dialect.PRESTO)
+                    .sqlText("SELECT foo FROM presto")
+                    .build())),
+        new ContentAndOperationType(
+            Type.VIEW,
+            Put.of(
+                ContentsKey.of("view_spark"),
+                ImmutableSqlView.builder()
+                    .dialect(Dialect.SPARK)
+                    .sqlText("SELECT foo FROM spark")
+                    .build())),
+        new ContentAndOperationType(
+            Type.DELTA_LAKE_TABLE,
+            Put.of(
+                ContentsKey.of("delta"),
+                ImmutableDeltaLakeTable.builder()
+                    .addCheckpointLocationHistory("checkpoint")
+                    .addMetadataLocationHistory("metadata")
+                    .build())),
+        new ContentAndOperationType(
+            Type.HIVE_DATABASE,
+            Put.of(
+                ContentsKey.of("hivedb"),
+                ImmutableHiveDatabase.builder()
+                    .databaseDefinition((byte) 1, (byte) 2, (byte) 3)
+                    .build())),
+        new ContentAndOperationType(
+            Type.HIVE_TABLE,
+            Put.of(
+                ContentsKey.of("hivetable"),
+                ImmutableHiveTable.builder()
+                    .tableDefinition((byte) 1, (byte) 2, (byte) 3)
+                    .build())),
+        new ContentAndOperationType(
+            Type.ICEBERG_TABLE, Delete.of(ContentsKey.of("iceberg_delete"))),
+        new ContentAndOperationType(
+            Type.ICEBERG_TABLE, Unchanged.of(ContentsKey.of("iceberg_unchanged"))),
+        new ContentAndOperationType(Type.VIEW, Delete.of(ContentsKey.of("view_dremio_delete"))),
+        new ContentAndOperationType(
+            Type.VIEW, Unchanged.of(ContentsKey.of("view_dremio_unchanged"))),
+        new ContentAndOperationType(Type.VIEW, Delete.of(ContentsKey.of("view_spark_delete"))),
+        new ContentAndOperationType(
+            Type.VIEW, Unchanged.of(ContentsKey.of("view_spark_unchanged"))),
+        new ContentAndOperationType(
+            Type.DELTA_LAKE_TABLE, Delete.of(ContentsKey.of("delta_delete"))),
+        new ContentAndOperationType(
+            Type.DELTA_LAKE_TABLE, Unchanged.of(ContentsKey.of("delta_unchanged"))),
+        new ContentAndOperationType(Type.HIVE_DATABASE, Delete.of(ContentsKey.of("hivedb_delete"))),
+        new ContentAndOperationType(
+            Type.HIVE_DATABASE, Unchanged.of(ContentsKey.of("hivedb_unchanged"))),
+        new ContentAndOperationType(Type.HIVE_TABLE, Delete.of(ContentsKey.of("hivetable_delete"))),
+        new ContentAndOperationType(
+            Type.HIVE_TABLE, Unchanged.of(ContentsKey.of("hivetable_unchanged"))));
+  }
+
+  @Test
+  void veriryAllContentAndOperationTypes() throws NessieNotFoundException, NessieConflictException {
+    String branchName = "contentAndOperationAll";
+    Reference r = tree.createReference(Branch.of(branchName, null));
+    tree.commitMultipleOperations(
+        branchName,
+        r.getHash(),
+        ImmutableOperations.builder()
+            .addAllOperations(
+                contentAndOperationTypes().map(c -> c.operation).collect(Collectors.toList()))
+            .commitMeta(CommitMeta.fromMessage("verifyAllContentAndOperationTypes"))
+            .build());
+    List<EntriesResponse.Entry> entries =
+        tree.getEntries(branchName, null, null, null).getEntries();
+    List<ImmutableEntry> expect =
+        contentAndOperationTypes()
+            .filter(c -> c.operation instanceof Put)
+            .map(c -> Entry.builder().type(c.type).name(c.operation.getKey()).build())
+            .collect(Collectors.toList());
+    assertThat(entries).containsExactlyInAnyOrderElementsOf(expect);
+  }
+
+  @ParameterizedTest
+  @MethodSource("contentAndOperationTypes")
+  void verifyContentAndOperationTypesIndividually(ContentAndOperationType contentAndOperationType)
+      throws NessieNotFoundException, NessieConflictException {
+    String branchName = "contentAndOperation_" + contentAndOperationType;
+    Reference r = tree.createReference(Branch.of(branchName, null));
+    tree.commitMultipleOperations(
+        branchName,
+        r.getHash(),
+        ImmutableOperations.builder()
+            .addOperations(contentAndOperationType.operation)
+            .commitMeta(CommitMeta.fromMessage("commit " + contentAndOperationType))
+            .build());
+    List<EntriesResponse.Entry> entries =
+        tree.getEntries(branchName, null, null, null).getEntries();
+    // Oh, yea - this is weird. The property ContentAndOperationType.operation.key.namespace is null
+    // (!!!)
+    // here, because somehow JUnit @MethodSource implementation re-constructs the objects returned
+    // from
+    // the source-method contentAndOperationTypes.
+    ContentsKey fixedContentKey =
+        ContentsKey.of(contentAndOperationType.operation.getKey().getElements());
+    List<EntriesResponse.Entry> expect =
+        contentAndOperationType.operation instanceof Put
+            ? singletonList(
+                EntriesResponse.Entry.builder()
+                    .name(fixedContentKey)
+                    .type(contentAndOperationType.type)
+                    .build())
+            : emptyList();
+    assertThat(entries).containsExactlyInAnyOrderElementsOf(expect);
   }
 
   @Test
@@ -616,17 +786,17 @@ class TestRest {
             .build());
     List<EntriesResponse.Entry> entries = tree.getEntries(branch, null, null, null).getEntries();
     List<EntriesResponse.Entry> expected =
-        Arrays.asList(
+        asList(
             EntriesResponse.Entry.builder().name(a).type(Contents.Type.ICEBERG_TABLE).build(),
             EntriesResponse.Entry.builder().name(b).type(Contents.Type.VIEW).build());
     assertThat(entries).containsExactlyInAnyOrderElementsOf(expected);
 
     entries =
         tree.getEntries(branch, null, null, "entry.contentType=='ICEBERG_TABLE'").getEntries();
-    assertEquals(Collections.singletonList(expected.get(0)), entries);
+    assertEquals(singletonList(expected.get(0)), entries);
 
     entries = tree.getEntries(branch, null, null, "entry.contentType=='VIEW'").getEntries();
-    assertEquals(Collections.singletonList(expected.get(1)), entries);
+    assertEquals(singletonList(expected.get(1)), entries);
 
     entries =
         tree.getEntries(branch, null, null, "entry.contentType in ['ICEBERG_TABLE', 'VIEW']")
