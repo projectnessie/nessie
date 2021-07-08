@@ -30,7 +30,6 @@ jobs:
   report-upload:
     name: Report Upload
     runs-on: ubuntu-latest
-    if: ${{ secrets.CI_REPORTS_TOKEN }}
 
     env:
       WEB_DIR: ${{ github.event.workflow_run.event }}/${{ github.event.workflow_run.head_branch }}/${{ github.event.workflow_run.head_sha }}/gatling

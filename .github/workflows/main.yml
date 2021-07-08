@@ -91,16 +91,10 @@ jobs:
         restore-keys: ${{ runner.os }}-gradle
     - name: Build with Maven
       run: ./mvnw -B deploy --file pom.xml -Pcode-coverage,jdk8-tests,native,release -DdeployAtEnd=true -Dtest.log.level=WARN
-      if: ${{ secrets.OSSRH_ACCESS_ID }}
       env:
         MAVEN_USERNAME: ${{ secrets.OSSRH_ACCESS_ID }}
         MAVEN_OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
         MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
-        SPARK_LOCAL_IP: localhost
-    - name: Build with Maven (Fork)
-      run: ./mvnw -B install --file pom.xml -Pcode-coverage,jdk8-tests,native -Dtest.log.level=WARN
-      if: ${{ ! secrets.OSSRH_ACCESS_ID }}
-      env:
         SPARK_LOCAL_IP: localhost
     - name: Build with Gradle
       run: ./gradlew --rerun-tasks --no-daemon --info build
@@ -135,7 +129,6 @@ jobs:
         files: |
           code-coverage/target/site/jacoco-aggregate-all/jacoco.xml
     - name: Push Docker images
-      if: ${{ secrets.DOCKER_TOKEN && secrets.DOCKER_USERNAME }}
       run: |
           echo '${{ secrets.DOCKER_TOKEN }}' | docker login -u '${{ secrets.DOCKER_USERNAME }}' --password-stdin
           docker images --filter 'reference=projectnessie/nessie' --format '{{.ID}}\t{{.Tag}}' |
