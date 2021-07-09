@@ -20,7 +20,7 @@
     "@types/react-bootstrap": "^0.32.26",
     "@types/react-dom": "^17.0.9",
     "@types/react-router-dom": "^5.1.8",
-    "@types/yup": "^0.29.12",
+    "@types/yup": "^0.29.13",
     "bootstrap": "^5.0.2",
     "formik": "^2.2.9",
     "history": "^5.0.0",
