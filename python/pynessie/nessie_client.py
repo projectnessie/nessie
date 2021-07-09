@@ -52,11 +52,13 @@ class NessieClient(object):
     def __init__(self: "NessieClient", config: confuse.Configuration) -> None:
         """Create a Nessie Client from known config."""
         url = config["endpoint"].get()
-        if "owner" in config and "repo" in config:
+        owner = config["owner"].get() if "owner" in config else None
+        repo = config["repo"].get() if "repo" in config else None
+        if owner and repo:
             sep = "" if url[-1:] == "/" else "/"
-            owner = config["owner"].get()
-            repo = config["repo"].get()
             url = f"{url}{sep}{owner}/{repo}"
+        elif owner or repo:
+            raise Exception(f"Options 'owner' (={owner}) and 'repo' (={repo}) must both be specified, or none of those")
         self._base_url = url
         self._ssl_verify = config["verify"].get(bool)
         self._commit_id: str = cast(str, None)
