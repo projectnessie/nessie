@@ -25,7 +25,6 @@ import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.PreMatching;
 import javax.ws.rs.ext.Provider;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.projectnessie.model.Validation;
 
 /**
@@ -46,12 +45,9 @@ public class MultiTenantFilter implements ContainerRequestFilter {
 
   @Inject MultiTenant multiTenant;
 
-  // TODO @ConfigProperty is the way in Quarkus to get the REST-API base path, but it's probabyl
-  //  not the right thing in Jersey. It would also be much nicer to have the owner+repo part
-  //  before the /api/v1 URI part.
   @Inject
-  public MultiTenantFilter(@ConfigProperty(name = "quarkus.resteasy.path") String restPath) {
-    this.restPath = restPath;
+  public MultiTenantFilter(MultiTenantConfig multiTenantConfig) {
+    this.restPath = multiTenantConfig.getRestPath();
 
     this.multiTenantPathPattern =
         Pattern.compile(String.format("%s/(\\w+)/(\\w+)/((trees|contents|config).*)", restPath));
