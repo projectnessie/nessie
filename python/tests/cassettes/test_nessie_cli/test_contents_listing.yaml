@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"hash": null, "name": "contents_listing_dev", "type": "BRANCH"}'
+    body: '{"name": "contents_listing_dev", "hash": null, "type": "BRANCH"}'
     headers:
       Accept:
       - '*/*'
@@ -82,11 +82,11 @@ interactions:
       code: 404
       message: Not Found
 - request:
-    body: '{"commitMeta": {"hash": null, "committer": null, "email": null, "author":
-      null, "message": "test_message1", "commitTime": null, "signedOffBy": null, "authorTime":
-      null, "properties": null}, "operations": [{"contents": {"metadataLocation":
-      "/a/b/c", "id": "uuid", "type": "ICEBERG_TABLE"}, "key": {"elements": ["this",
-      "is", "iceberg", "foo"]}, "type": "PUT"}]}'
+    body: '{"commitMeta": {"author": null, "signedOffBy": null, "properties": null,
+      "hash": null, "message": "test_message1", "committer": null, "email": null,
+      "authorTime": null, "commitTime": null}, "operations": [{"key": {"elements":
+      ["this", "is", "iceberg", "foo"]}, "contents": {"metadataLocation": "/a/b/c",
+      "id": "uuid", "type": "ICEBERG_TABLE"}, "type": "PUT"}]}'
     headers:
       Accept:
       - '*/*'
@@ -105,7 +105,7 @@ interactions:
   response:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\",\n
-        \ \"hash\" : \"69e12e84434b40aa8e4fa95e988cd75e07c1b1772526fc12efbdac2d496a2566\"\n}"
+        \ \"hash\" : \"0a3f9f8051ed660a10289e4dd4cce3712a2b5811768ad1b2eed2a963a40a2b98\"\n}"
     headers:
       Content-Length:
       - '137'
@@ -130,7 +130,7 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\",\n
-        \ \"hash\" : \"69e12e84434b40aa8e4fa95e988cd75e07c1b1772526fc12efbdac2d496a2566\"\n},
+        \ \"hash\" : \"0a3f9f8051ed660a10289e4dd4cce3712a2b5811768ad1b2eed2a963a40a2b98\"\n},
         {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}
         ]"
     headers:
@@ -168,12 +168,12 @@ interactions:
       code: 404
       message: Not Found
 - request:
-    body: '{"commitMeta": {"hash": null, "committer": null, "email": null, "author":
-      null, "message": "test_message2", "commitTime": null, "signedOffBy": null, "authorTime":
-      null, "properties": null}, "operations": [{"contents": {"checkpointLocationHistory":
-      ["def"], "id": "uuid2", "lastCheckpoint": "x", "metadataLocationHistory": ["asd"],
-      "type": "DELTA_LAKE_TABLE"}, "key": {"elements": ["this", "is", "delta", "bar"]},
-      "type": "PUT"}]}'
+    body: '{"commitMeta": {"author": null, "signedOffBy": null, "properties": null,
+      "hash": null, "message": "test_message2", "committer": null, "email": null,
+      "authorTime": null, "commitTime": null}, "operations": [{"key": {"elements":
+      ["this", "is", "delta", "bar"]}, "contents": {"metadataLocationHistory": ["asd"],
+      "lastCheckpoint": "x", "checkpointLocationHistory": ["def"], "id": "uuid2",
+      "type": "DELTA_LAKE_TABLE"}, "type": "PUT"}]}'
     headers:
       Accept:
       - '*/*'
@@ -188,11 +188,11 @@ interactions:
       User-Agent:
       - python-requests/2.25.1
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/contents_listing_dev/commit?expectedHash=69e12e84434b40aa8e4fa95e988cd75e07c1b1772526fc12efbdac2d496a2566
+    uri: http://localhost:19120/api/v1/trees/branch/contents_listing_dev/commit?expectedHash=0a3f9f8051ed660a10289e4dd4cce3712a2b5811768ad1b2eed2a963a40a2b98
   response:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\",\n
-        \ \"hash\" : \"8abd1e42fc86700926fbe7e23b48ba454a15c676d8b234409e8164e3d754847a\"\n}"
+        \ \"hash\" : \"a1d105072cb6c74e87ed2b0e35c144f3c1f1da402de573d7bf8ee61f7e14c966\"\n}"
     headers:
       Content-Length:
       - '137'
@@ -428,7 +428,7 @@ interactions:
   response:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\",\n
-        \ \"hash\" : \"8abd1e42fc86700926fbe7e23b48ba454a15c676d8b234409e8164e3d754847a\"\n}"
+        \ \"hash\" : \"a1d105072cb6c74e87ed2b0e35c144f3c1f1da402de573d7bf8ee61f7e14c966\"\n}"
     headers:
       Content-Length:
       - '137'
@@ -451,7 +451,7 @@ interactions:
       User-Agent:
       - python-requests/2.25.1
     method: DELETE
-    uri: http://localhost:19120/api/v1/trees/branch/contents_listing_dev?expectedHash=8abd1e42fc86700926fbe7e23b48ba454a15c676d8b234409e8164e3d754847a
+    uri: http://localhost:19120/api/v1/trees/branch/contents_listing_dev?expectedHash=a1d105072cb6c74e87ed2b0e35c144f3c1f1da402de573d7bf8ee61f7e14c966
   response:
     body:
       string: ''
