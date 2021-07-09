@@ -15,60 +15,16 @@
  */
 package org.projectnessie.services.rest;
 
-import javax.ws.rs.core.Application;
-import org.glassfish.jersey.server.ResourceConfig;
-import org.glassfish.jersey.test.JerseyTest;
-import org.jboss.weld.environment.se.Weld;
-import org.jboss.weld.environment.se.WeldContainer;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.projectnessie.services.config.ServerConfigExtension;
-import org.projectnessie.versioned.VersionStoreExtension;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 public class TestJerseyRest extends AbstractTestRest {
-  private Weld weld;
-  private JerseyTest jerseyTest;
+  @RegisterExtension NessieJaxRsExtension server = new NessieJaxRsExtension();
 
   @Override
   @BeforeEach
   public void setUp() throws Exception {
-    weld = new Weld();
-    // Let Weld scan all the resources to discover injection points and dependencies
-    weld.addPackages(true, TreeResource.class);
-    // Inject external beans
-    weld.addExtension(new ServerConfigExtension());
-    weld.addExtension(new VersionStoreExtension());
-    final WeldContainer container = weld.initialize();
-
-    jerseyTest =
-        new JerseyTest() {
-          @Override
-          protected Application configure() {
-            ResourceConfig config = new ResourceConfig();
-            config.register(TreeResource.class);
-            config.register(ContentsResource.class);
-            config.register(ConfigResource.class);
-            config.register(ContentsKeyParamConverterProvider.class);
-            config.register(InstantParamConverterProvider.class);
-            config.register(ValidationExceptionMapper.class, 10);
-            config.register(NessieExceptionMapper.class);
-            config.register(NessieJaxRsJsonParseExceptionMapper.class, 10);
-            config.register(NessieJaxRsJsonMappingExceptionMapper.class, 10);
-            return config;
-          }
-        };
-
-    jerseyTest.setUp();
-    init(jerseyTest.target().getUri());
-
+    init(server.getURI());
     super.setUp();
-  }
-
-  @Override
-  @AfterEach
-  public void tearDown() throws Exception {
-    super.tearDown();
-    jerseyTest.tearDown();
-    weld.shutdown();
   }
 }
