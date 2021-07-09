@@ -24,6 +24,12 @@ export interface CommitMeta {
      * @type {string}
      * @memberof CommitMeta
      */
+    hash?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof CommitMeta
+     */
     author?: string;
     /**
      * 
@@ -48,19 +54,13 @@ export interface CommitMeta {
      * @type {string}
      * @memberof CommitMeta
      */
-    hash?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof CommitMeta
-     */
     message?: string;
     /**
      * 
      * @type {{ [key: string]: string; }}
      * @memberof CommitMeta
      */
-    properties?: { [key: string]: string; };
+    properties: { [key: string]: string; };
     /**
      * 
      * @type {string}
@@ -79,13 +79,13 @@ export function CommitMetaFromJSONTyped(json: any, ignoreDiscriminator: boolean)
     }
     return {
         
+        'hash': !exists(json, 'hash') ? undefined : json['hash'],
         'author': !exists(json, 'author') ? undefined : json['author'],
         'authorTime': !exists(json, 'authorTime') ? undefined : (new Date(json['authorTime'])),
         'commitTime': !exists(json, 'commitTime') ? undefined : (new Date(json['commitTime'])),
         'committer': !exists(json, 'committer') ? undefined : json['committer'],
-        'hash': !exists(json, 'hash') ? undefined : json['hash'],
         'message': !exists(json, 'message') ? undefined : json['message'],
-        'properties': !exists(json, 'properties') ? undefined : json['properties'],
+        'properties': json['properties'],
         'signedOffBy': !exists(json, 'signedOffBy') ? undefined : json['signedOffBy'],
     };
 }
@@ -99,11 +99,11 @@ export function CommitMetaToJSON(value?: CommitMeta | null): any {
     }
     return {
         
+        'hash': value.hash,
         'author': value.author,
         'authorTime': value.authorTime === undefined ? undefined : (value.authorTime.toISOString()),
         'commitTime': value.commitTime === undefined ? undefined : (value.commitTime.toISOString()),
         'committer': value.committer,
-        'hash': value.hash,
         'message': value.message,
         'properties': value.properties,
         'signedOffBy': value.signedOffBy,

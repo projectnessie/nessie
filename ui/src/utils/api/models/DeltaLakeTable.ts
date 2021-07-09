@@ -30,7 +30,7 @@ export interface DeltaLakeTable {
      * @type {Array<string>}
      * @memberof DeltaLakeTable
      */
-    checkpointLocationHistory?: Array<string>;
+    checkpointLocationHistory: Array<string>;
     /**
      * 
      * @type {string}
@@ -42,7 +42,7 @@ export interface DeltaLakeTable {
      * @type {Array<string>}
      * @memberof DeltaLakeTable
      */
-    metadataLocationHistory?: Array<string>;
+    metadataLocationHistory: Array<string>;
 }
 
 export function DeltaLakeTableFromJSON(json: any): DeltaLakeTable {
@@ -56,9 +56,9 @@ export function DeltaLakeTableFromJSONTyped(json: any, ignoreDiscriminator: bool
     return {
         
         'id': !exists(json, 'id') ? undefined : json['id'],
-        'checkpointLocationHistory': !exists(json, 'checkpointLocationHistory') ? undefined : json['checkpointLocationHistory'],
+        'checkpointLocationHistory': json['checkpointLocationHistory'],
         'lastCheckpoint': !exists(json, 'lastCheckpoint') ? undefined : json['lastCheckpoint'],
-        'metadataLocationHistory': !exists(json, 'metadataLocationHistory') ? undefined : json['metadataLocationHistory'],
+        'metadataLocationHistory': json['metadataLocationHistory'],
     };
 }
 

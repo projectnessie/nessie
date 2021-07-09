@@ -35,13 +35,13 @@ export interface Entry {
      * @type {ContentsKey}
      * @memberof Entry
      */
-    name?: ContentsKey;
+    name: ContentsKey;
     /**
      * 
      * @type {Type}
      * @memberof Entry
      */
-    type?: Type;
+    type: Type;
 }
 
 export function EntryFromJSON(json: any): Entry {
@@ -54,8 +54,8 @@ export function EntryFromJSONTyped(json: any, ignoreDiscriminator: boolean): Ent
     }
     return {
         
-        'name': !exists(json, 'name') ? undefined : ContentsKeyFromJSON(json['name']),
-        'type': !exists(json, 'type') ? undefined : TypeFromJSON(json['type']),
+        'name': ContentsKeyFromJSON(json['name']),
+        'type': TypeFromJSON(json['type']),
     };
 }
 

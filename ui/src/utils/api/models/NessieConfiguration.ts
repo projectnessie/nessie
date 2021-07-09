@@ -30,7 +30,7 @@ export interface NessieConfiguration {
      * @type {string}
      * @memberof NessieConfiguration
      */
-    version?: string;
+    version: string;
 }
 
 export function NessieConfigurationFromJSON(json: any): NessieConfiguration {
@@ -44,7 +44,7 @@ export function NessieConfigurationFromJSONTyped(json: any, ignoreDiscriminator:
     return {
         
         'defaultBranch': !exists(json, 'defaultBranch') ? undefined : json['defaultBranch'],
-        'version': !exists(json, 'version') ? undefined : json['version'],
+        'version': json['version'],
     };
 }
 
