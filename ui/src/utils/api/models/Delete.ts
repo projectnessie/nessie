@@ -31,7 +31,7 @@ export interface Delete {
      * @type {ContentsKey}
      * @memberof Delete
      */
-    key?: ContentsKey;
+    key: ContentsKey;
 }
 
 export function DeleteFromJSON(json: any): Delete {
@@ -44,7 +44,7 @@ export function DeleteFromJSONTyped(json: any, ignoreDiscriminator: boolean): De
     }
     return {
         
-        'key': !exists(json, 'key') ? undefined : ContentsKeyFromJSON(json['key']),
+        'key': ContentsKeyFromJSON(json['key']),
     };
 }
 

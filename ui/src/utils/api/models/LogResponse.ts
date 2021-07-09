@@ -37,7 +37,7 @@ export interface LogResponse {
      * @type {Array<CommitMeta>}
      * @memberof LogResponse
      */
-    operations?: Array<CommitMeta>;
+    operations: Array<CommitMeta>;
 }
 
 export function LogResponseFromJSON(json: any): LogResponse {
@@ -51,7 +51,7 @@ export function LogResponseFromJSONTyped(json: any, ignoreDiscriminator: boolean
     return {
         
         'token': !exists(json, 'token') ? undefined : json['token'],
-        'operations': !exists(json, 'operations') ? undefined : ((json['operations'] as Array<any>).map(CommitMetaFromJSON)),
+        'operations': ((json['operations'] as Array<any>).map(CommitMetaFromJSON)),
     };
 }
 
@@ -65,7 +65,7 @@ export function LogResponseToJSON(value?: LogResponse | null): any {
     return {
         
         'token': value.token,
-        'operations': value.operations === undefined ? undefined : ((value.operations as Array<any>).map(CommitMetaToJSON)),
+        'operations': ((value.operations as Array<any>).map(CommitMetaToJSON)),
     };
 }
 

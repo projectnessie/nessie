@@ -21,10 +21,10 @@ import { exists, mapValues } from '../runtime';
 export interface Transplant {
     /**
      * 
-     * @type {Array<string>}
+     * @type {Set<string>}
      * @memberof Transplant
      */
-    hashesToTransplant?: Array<string>;
+    hashesToTransplant: Set<string>;
 }
 
 export function TransplantFromJSON(json: any): Transplant {
@@ -37,7 +37,7 @@ export function TransplantFromJSONTyped(json: any, ignoreDiscriminator: boolean)
     }
     return {
         
-        'hashesToTransplant': !exists(json, 'hashesToTransplant') ? undefined : json['hashesToTransplant'],
+        'hashesToTransplant': json['hashesToTransplant'],
     };
 }
 

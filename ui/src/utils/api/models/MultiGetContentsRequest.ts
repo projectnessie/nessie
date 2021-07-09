@@ -31,7 +31,7 @@ export interface MultiGetContentsRequest {
      * @type {Array<ContentsKey>}
      * @memberof MultiGetContentsRequest
      */
-    requestedKeys?: Array<ContentsKey>;
+    requestedKeys: Array<ContentsKey>;
 }
 
 export function MultiGetContentsRequestFromJSON(json: any): MultiGetContentsRequest {
@@ -44,7 +44,7 @@ export function MultiGetContentsRequestFromJSONTyped(json: any, ignoreDiscrimina
     }
     return {
         
-        'requestedKeys': !exists(json, 'requestedKeys') ? undefined : ((json['requestedKeys'] as Array<any>).map(ContentsKeyFromJSON)),
+        'requestedKeys': ((json['requestedKeys'] as Array<any>).map(ContentsKeyFromJSON)),
     };
 }
 
@@ -57,7 +57,7 @@ export function MultiGetContentsRequestToJSON(value?: MultiGetContentsRequest | 
     }
     return {
         
-        'requestedKeys': value.requestedKeys === undefined ? undefined : ((value.requestedKeys as Array<any>).map(ContentsKeyToJSON)),
+        'requestedKeys': ((value.requestedKeys as Array<any>).map(ContentsKeyToJSON)),
     };
 }
 

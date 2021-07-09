@@ -35,13 +35,13 @@ export interface Operations {
      * @type {CommitMeta}
      * @memberof Operations
      */
-    commitMeta?: CommitMeta;
+    commitMeta: CommitMeta;
     /**
      * 
      * @type {Array<Operation>}
      * @memberof Operations
      */
-    operations?: Array<Operation>;
+    operations: Array<Operation>;
 }
 
 export function OperationsFromJSON(json: any): Operations {
@@ -54,8 +54,8 @@ export function OperationsFromJSONTyped(json: any, ignoreDiscriminator: boolean)
     }
     return {
         
-        'commitMeta': !exists(json, 'commitMeta') ? undefined : CommitMetaFromJSON(json['commitMeta']),
-        'operations': !exists(json, 'operations') ? undefined : ((json['operations'] as Array<any>).map(OperationFromJSON)),
+        'commitMeta': CommitMetaFromJSON(json['commitMeta']),
+        'operations': ((json['operations'] as Array<any>).map(OperationFromJSON)),
     };
 }
 
@@ -69,7 +69,7 @@ export function OperationsToJSON(value?: Operations | null): any {
     return {
         
         'commitMeta': CommitMetaToJSON(value.commitMeta),
-        'operations': value.operations === undefined ? undefined : ((value.operations as Array<any>).map(OperationToJSON)),
+        'operations': ((value.operations as Array<any>).map(OperationToJSON)),
     };
 }
 

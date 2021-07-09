@@ -24,7 +24,7 @@ export interface ContentsKey {
      * @type {Array<string>}
      * @memberof ContentsKey
      */
-    elements?: Array<string>;
+    elements: Array<string>;
 }
 
 export function ContentsKeyFromJSON(json: any): ContentsKey {
@@ -37,7 +37,7 @@ export function ContentsKeyFromJSONTyped(json: any, ignoreDiscriminator: boolean
     }
     return {
         
-        'elements': !exists(json, 'elements') ? undefined : json['elements'],
+        'elements': json['elements'],
     };
 }
 

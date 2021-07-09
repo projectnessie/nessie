@@ -37,7 +37,7 @@ export interface SqlView {
      * @type {Dialect}
      * @memberof SqlView
      */
-    dialect?: Dialect;
+    dialect: Dialect;
     /**
      * 
      * @type {string}
@@ -57,7 +57,7 @@ export function SqlViewFromJSONTyped(json: any, ignoreDiscriminator: boolean): S
     return {
         
         'id': !exists(json, 'id') ? undefined : json['id'],
-        'dialect': !exists(json, 'dialect') ? undefined : DialectFromJSON(json['dialect']),
+        'dialect': DialectFromJSON(json['dialect']),
         'sqlText': !exists(json, 'sqlText') ? undefined : json['sqlText'],
     };
 }
