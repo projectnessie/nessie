@@ -46,21 +46,9 @@ from .nessie_client import NessieClient
 class ContextObject(object):
     """Click context object."""
 
-    config: confuse.Configuration
+    nessie: NessieClient
     verbose: bool
     json: bool
-
-    _nessie: Optional[NessieClient] = attr.ib(default=None)
-
-    def nessie(self: "ContextObject") -> NessieClient:
-        """Get the ``NessieClient`` instance, create it, if necessary."""
-        if not self._nessie:
-            try:
-                self._nessie = NessieClient(self.config)
-            except Exception as e:
-                click.echo(f"Error: {str(e)}", err=True)
-                sys.exit(1)
-        return self._nessie
 
 
 pass_client = click.make_pass_decorator(ContextObject)
@@ -113,11 +101,10 @@ class DefaultHelp(click.Command):
 @click.option("--json", is_flag=True, help="write output in json format.")
 @click.option("-v", "--verbose", is_flag=True, help="Verbose output.")
 @click.option("--endpoint", help="Optional endpoint, if different from config file.")
-@click.option("--owner", help="Optional repository owner, if different from config file.")
-@click.option("--repo", help="Optional repository name, if different from config file.")
+@click.option("--repo", help="Optional repository owner + name, if different from config file, separated by a slash..")
 @click.option("--version", is_flag=True, callback=_print_version, expose_value=False, is_eager=True)
 @click.pass_context
-def cli(ctx: click.core.Context, json: bool, verbose: bool, endpoint: str, owner: str, repo: str) -> None:
+def cli(ctx: click.core.Context, json: bool, verbose: bool, endpoint: str, repo: str) -> None:
     """Nessie cli tool.
 
     Interact with Nessie branches and tables via the command line
@@ -128,12 +115,11 @@ def cli(ctx: click.core.Context, json: bool, verbose: bool, endpoint: str, owner
             cfg_map["endpoint"] = endpoint
         # Handle owner+repo parameters individually to tackle the case when for example the owner is specified in
         # the config file, but the user wants to specify a different repo.
-        if owner:
-            cfg_map["owner"] = owner
         if repo:
             cfg_map["repo"] = repo
         config = build_config(cfg_map)
-        ctx.obj = ContextObject(config, verbose, json)
+        nessie = NessieClient(config)
+        ctx.obj = ContextObject(nessie, verbose, json)
     except confuse.exceptions.ConfigTypeError as e:
         raise click.ClickException(str(e))
 
@@ -172,10 +158,10 @@ def config(ctx: ContextObject, get: str, add: str, list: bool, unset: str, type:
 @error_handler
 def show(ctx: ContextObject) -> None:
     """Show current remote."""
-    click.echo("Remote URL: " + ctx.nessie()._base_url)
-    click.echo("Default branch: " + ctx.nessie().get_reference(None).name)
+    click.echo("Remote URL: " + ctx.nessie._base_url)
+    click.echo("Default branch: " + ctx.nessie.get_reference(None).name)
     click.echo("Remote branches: ")
-    for i in ctx.nessie().list_references():
+    for i in ctx.nessie.list_references():
         click.echo("\t" + i.name)
 
 
@@ -254,7 +240,7 @@ def log(  # noqa: C901
     PATHS optional list of paths. If given, only show commits which affected the given paths
     """
     if not revision_range:
-        start = ctx.nessie().get_default_branch()
+        start = ctx.nessie.get_default_branch()
         end = None
     else:
         if ".." in revision_range:
@@ -273,7 +259,7 @@ def log(  # noqa: C901
     if expr:
         filtering_args["query_expression"] = expr
 
-    log_result = show_log(nessie=ctx.nessie(), start_ref=start, limits=paths, **filtering_args)
+    log_result = show_log(nessie=ctx.nessie, start_ref=start, limits=paths, **filtering_args)
     if ctx.json:
         click.echo(CommitMetaSchema().dumps(log_result, many=True))
     else:
@@ -333,7 +319,7 @@ def branch_(
         nessie branch -f main test -> assign main to head of test
 
     """
-    results = handle_branch_tag(ctx.nessie(), list, delete, branch, new_branch, True, ctx.json, force, ctx.verbose, condition)
+    results = handle_branch_tag(ctx.nessie, list, delete, branch, new_branch, True, ctx.json, force, ctx.verbose, condition)
     if ctx.json:
         click.echo(results)
     elif results:
@@ -375,7 +361,7 @@ def tag(ctx: ContextObject, list: bool, force: bool, delete: bool, tag_name: str
         nessie tag -f main test -> assign xxx to head of test
 
     """
-    results = handle_branch_tag(ctx.nessie(), list, delete, tag_name, new_tag, False, ctx.json, force, ctx.verbose, condition)
+    results = handle_branch_tag(ctx.nessie, list, delete, tag_name, new_tag, False, ctx.json, force, ctx.verbose, condition)
     if ctx.json:
         click.echo(results)
     elif results:
@@ -411,7 +397,7 @@ def merge(ctx: ContextObject, onto_branch: str, force: bool, condition: str, fro
             """Either condition or force must be set. Condition should be set to a valid hash for concurrency
             control or force to ignore current state of Nessie Store."""
         )
-    ctx.nessie().merge(from_branch, onto_branch if onto_branch else ctx.nessie().get_default_branch(), condition)
+    ctx.nessie.merge(from_branch, onto_branch if onto_branch else ctx.nessie.get_default_branch(), condition)
     click.echo()
 
 
@@ -442,7 +428,7 @@ def cherry_pick(ctx: ContextObject, branch: str, force: bool, condition: str, ha
             """Either condition or force must be set. Condition should be set to a valid hash for concurrency
             control or force to ignore current state of Nessie Store."""
         )
-    ctx.nessie().cherry_pick(branch if branch else ctx.nessie().get_default_branch(), condition, *hashes)
+    ctx.nessie.cherry_pick(branch if branch else ctx.nessie.get_default_branch(), condition, *hashes)
     click.echo()
 
 
@@ -521,21 +507,21 @@ def contents(
     KEY name of object to view, delete. If listing the key will limit by namespace what is included.
     """
     if list:
-        keys = ctx.nessie().list_keys(
-            ref if ref else ctx.nessie().get_default_branch(),
+        keys = ctx.nessie.list_keys(
+            ref if ref else ctx.nessie.get_default_branch(),
             query_expression=build_query_expression_for_contents_listing_flags(query_expression, entity_types),
         )
         results = EntrySchema().dumps(_format_keys_json(keys, *key), many=True) if ctx.json else _format_keys(keys, *key)
     elif delete:
-        ctx.nessie().commit(ref, condition, _get_message(message), author, *_get_contents(ctx.nessie(), ref, delete, *key))
+        ctx.nessie.commit(ref, condition, _get_message(message), author, *_get_contents(ctx.nessie, ref, delete, *key))
         results = ""
     elif set:
-        ctx.nessie().commit(ref, condition, _get_message(message), author, *_get_contents(ctx.nessie(), ref, delete, *key))
+        ctx.nessie.commit(ref, condition, _get_message(message), author, *_get_contents(ctx.nessie, ref, delete, *key))
         results = ""
     else:
 
         def content(*x: str) -> Generator[Contents, Any, None]:
-            return ctx.nessie().get_values(ref if ref else ctx.nessie().get_default_branch(), *x)
+            return ctx.nessie.get_values(ref if ref else ctx.nessie.get_default_branch(), *x)
 
         results = ContentsSchema().dumps(content(*key), many=True) if ctx.json else "\n".join((i.pretty_print() for i in content(*key)))
     click.echo(results)

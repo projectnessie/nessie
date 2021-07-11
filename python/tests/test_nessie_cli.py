@@ -55,66 +55,23 @@ def test_owner_repo_config_cli() -> None:
     runner = CliRunner()
 
     # clean up config file
-    runner.invoke(cli.cli, ["config", "--unset", "owner"])
     runner.invoke(cli.cli, ["config", "--unset", "repo"])
 
-    result = _run(runner, ["--owner", "robert", "log"], ret_val=1)
-    assert "Error: Options 'owner' (=robert) and 'repo' (=None) must both be specified, or none of those" in result.output
-    result = _run(runner, ["--repo", "elani", "log"], ret_val=1)
-    assert "Error: Options 'owner' (=None) and 'repo' (=elani) must both be specified, or none of those" in result.output
-    _run(runner, ["log"])
     result = _run(runner, ["remote", "show"])
     assert "Remote URL: http://localhost:19120/api/v1\n" in result.output
-    # ignore the exit code (it's probably 1, if the server doesn't properly handle owner+repo)
-    result = runner.invoke(cli.cli, ["--owner", "robert", "--repo", "elani", "remote", "show"])
+    result = _run(runner, ["--repo", "robert/elani", "remote", "show"])
     assert "Remote URL: http://localhost:19120/api/v1/robert/elani\n" in result.output
 
-    _run(runner, ["config", "--add", "owner", "robert"])
+    _run(runner, ["config", "--add", "repo", "robert/elani"])
 
-    # Owner specified in config, on command-line --> OK
-    _run(runner, ["--repo", "elani", "log"])
-    result = _run(runner, ["--repo", "elani", "remote", "show"])
+    result = _run(runner, ["remote", "show"])
     assert "Remote URL: http://localhost:19120/api/v1/robert/elani\n" in result.output
-
-    # Owner specified in config, but repo neither in config nor command-line --> KO
-    result = _run(runner, ["log"], ret_val=1)
-    assert "Error: Options 'owner' (=robert) and 'repo' (=None) must both be specified, or none of those" in result.output
-
-    _run(runner, ["config", "--unset", "owner"])
-    _run(runner, ["config", "--add", "repo", "elani"])
-
-    # Owner specified in config, on command-line --> OK
-    result = _run(runner, ["--owner", "robert", "remote", "show"])
-    assert "Remote URL: http://localhost:19120/api/v1/robert/elani\n" in result.output
-
-    # Owner specified in config, but repo neither in config nor command-line --> KO
-    result = _run(runner, ["log"], ret_val=1)
-    assert "Error: Options 'owner' (=None) and 'repo' (=elani) must both be specified, or none of those" in result.output
-
-    _run(runner, ["config", "--add", "owner", "robert"])
-
-    # Owner + repo in config --> OK
-    _run(runner, ["log"])
+    result = _run(runner, ["--repo", "snazy/ursus", "remote", "show"])
+    assert "Remote URL: http://localhost:19120/api/v1/snazy/ursus\n" in result.output
     result = _run(runner, ["remote", "show"])
     assert "Remote URL: http://localhost:19120/api/v1/robert/elani\n" in result.output
 
-    # Owner + repo in config, override owner --> OK
-    _run(runner, ["--owner", "snazy", "log"])
-    result = _run(runner, ["--owner", "snazy", "remote", "show"])
-    assert "Remote URL: http://localhost:19120/api/v1/snazy/elani\n" in result.output
-
-    # Owner + repo in config, override repo --> OK
-    _run(runner, ["--repo", "ursus", "log"])
-    result = _run(runner, ["--repo", "ursus", "remote", "show"])
-    assert "Remote URL: http://localhost:19120/api/v1/robert/ursus\n" in result.output
-
-    # Owner + repo in config, override owner + repo --> OK
-    _run(runner, ["--owner", "snazy", "--repo", "ursus", "log"])
-    result = _run(runner, ["--owner", "snazy", "--repo", "ursus", "remote", "show"])
-    assert "Remote URL: http://localhost:19120/api/v1/snazy/ursus\n" in result.output
-
-    runner.invoke(cli.cli, ["config", "--unset", "owner"])
-    runner.invoke(cli.cli, ["config", "--unset", "repo"])
+    _run(runner, ["config", "--unset", "repo"])
 
 
 def test_config_options() -> None:
