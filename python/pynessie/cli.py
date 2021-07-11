@@ -50,17 +50,17 @@ class ContextObject(object):
     verbose: bool
     json: bool
 
-    __nessie: Optional[NessieClient] = None
+    _nessie: Optional[NessieClient] = None
 
     def nessie(self: "ContextObject") -> NessieClient:
         """Get the ``NessieClient`` instance, create it, if necessary."""
-        if not self.__nessie:
+        if not self._nessie:
             try:
-                self.__nessie = NessieClient(self.config)
+                self._nessie = NessieClient(self.config)
             except Exception as e:
                 click.echo(f"Error: {str(e)}", err=True)
                 sys.exit(1)
-        return self.__nessie
+        return self._nessie
 
 
 pass_client = click.make_pass_decorator(ContextObject)
