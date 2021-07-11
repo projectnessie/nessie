@@ -113,8 +113,6 @@ def cli(ctx: click.core.Context, json: bool, verbose: bool, endpoint: str, repo:
         cfg_map = {}
         if endpoint:
             cfg_map["endpoint"] = endpoint
-        # Handle owner+repo parameters individually to tackle the case when for example the owner is specified in
-        # the config file, but the user wants to specify a different repo.
         if repo:
             cfg_map["repo"] = repo
         config = build_config(cfg_map)
