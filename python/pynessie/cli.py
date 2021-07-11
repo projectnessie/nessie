@@ -50,7 +50,7 @@ class ContextObject(object):
     verbose: bool
     json: bool
 
-    _nessie: Optional[NessieClient] = None
+    _nessie: Optional[NessieClient] = attr.ib(default=None)
 
     def nessie(self: "ContextObject") -> NessieClient:
         """Get the ``NessieClient`` instance, create it, if necessary."""
