@@ -17,11 +17,17 @@ package org.projectnessie.model;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.projectnessie.model.Validation.isValidOwner;
+import static org.projectnessie.model.Validation.isValidRepo;
 import static org.projectnessie.model.Validation.validateHash;
+import static org.projectnessie.model.Validation.validateOwner;
 import static org.projectnessie.model.Validation.validateReferenceName;
 import static org.projectnessie.model.Validation.validateReferenceNameOrHash;
+import static org.projectnessie.model.Validation.validateRepo;
 
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -30,8 +36,42 @@ import org.junit.jupiter.params.provider.ValueSource;
 class TestValidation {
 
   @ParameterizedTest
+  @ValueSource(strings = {"a", "a_b-.", "answer_42"})
+  void validOwners(String owner) {
+    validateOwner(owner);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"42", ".42", ".ab", "in%alid", "some/path", "config", "trees"})
+  void invalidOwners(String owner) {
+    assertAll(
+        () ->
+            Assertions.assertThatThrownBy(() -> validateOwner(owner))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(Validation.OWNER_MESSAGE + " - but was: " + owner),
+        () -> assertFalse(isValidOwner(owner)));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"a", "a_b-.", "answer_42"})
+  void validRepos(String repo) {
+    validateRepo(repo);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"42", ".42", ".ab", "in%alid", "some/path", "config", "contents"})
+  void invalidRepos(String repo) {
+    assertAll(
+        () ->
+            Assertions.assertThatThrownBy(() -> validateRepo(repo))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(Validation.REPO_MESSAGE + " - but was: " + repo),
+        () -> assertFalse(isValidRepo(repo)));
+  }
+
+  @ParameterizedTest
   @ValueSource(strings = {"a", "a_b-", "a_-c", "abc/def"})
-  void validNames(String referenceName) {
+  void validRefNames(String referenceName) {
     validateReferenceName(referenceName);
     validateReferenceNameOrHash(referenceName);
     Branch.of(referenceName, null);
@@ -40,7 +80,7 @@ class TestValidation {
 
   @ParameterizedTest
   @ValueSource(strings = {"", "abc/", ".foo", "abc/def/../blah", "abc/de..blah", "abc/de@{blah"})
-  void invalidNames(String referenceName) {
+  void invalidRefNames(String referenceName) {
     assertAll(
         () ->
             assertEquals(

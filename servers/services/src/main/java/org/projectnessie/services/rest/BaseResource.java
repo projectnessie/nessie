@@ -30,20 +30,24 @@ import org.projectnessie.versioned.WithHash;
 abstract class BaseResource {
   private final ServerConfig config;
 
+  private final MultiTenant multiTenant;
+
   private final Principal principal;
 
   private final VersionStore<Contents, CommitMeta, Contents.Type> store;
 
   // Mandated by CDI 2.0
   protected BaseResource() {
-    this(null, null, null);
+    this(null, null, null, null);
   }
 
   protected BaseResource(
       ServerConfig config,
+      MultiTenant multiTenant,
       Principal principal,
       VersionStore<Contents, CommitMeta, Contents.Type> store) {
     this.config = config;
+    this.multiTenant = multiTenant;
     this.principal = principal;
     this.store = store;
   }
@@ -72,5 +76,9 @@ abstract class BaseResource {
 
   protected Principal getPrincipal() {
     return principal;
+  }
+
+  public MultiTenant getMultiTenant() {
+    return multiTenant;
   }
 }

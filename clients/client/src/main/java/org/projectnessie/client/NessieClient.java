@@ -16,7 +16,9 @@
 package org.projectnessie.client;
 
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_AUTH_TYPE;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OWNER;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_PASSWORD;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_REPOSITORY;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_TRACING;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URI;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URL;
@@ -29,6 +31,7 @@ import org.projectnessie.api.ContentsApi;
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.client.http.HttpClientException;
 import org.projectnessie.client.http.HttpClientReadTimeoutException;
+import org.projectnessie.model.Validation;
 
 public interface NessieClient extends AutoCloseable {
 
@@ -41,8 +44,21 @@ public interface NessieClient extends AutoCloseable {
   // Overridden to "remove 'throws Exception'"
   void close();
 
+  String getOwner();
+
+  String getRepo();
+
+  URI getUri();
+
+  /**
+   * Tree-API scoped to the repository returned by {@link #getRepo()} for this {@link NessieClient}.
+   */
   TreeApi getTreeApi();
 
+  /**
+   * Contents-API scoped to the repository returned by {@link #getRepo()} for this {@link
+   * NessieClient}.
+   */
   ContentsApi getContentsApi();
 
   ConfigApi getConfigApi();
@@ -64,6 +80,8 @@ public interface NessieClient extends AutoCloseable {
     private URI uri;
     private String username;
     private String password;
+    private String owner;
+    private String repo;
     private boolean tracing;
     private int readTimeoutMillis =
         Integer.parseInt(System.getProperty("sun.net.client.defaultReadTimeout", "25000"));
@@ -114,6 +132,16 @@ public interface NessieClient extends AutoCloseable {
       if (tracing != null) {
         this.tracing = Boolean.parseBoolean(tracing);
       }
+      String owner = configuration.apply(CONF_NESSIE_OWNER);
+      if (owner != null) {
+        Validation.validateOwner(owner);
+        this.owner = owner;
+      }
+      String repo = configuration.apply(CONF_NESSIE_REPOSITORY);
+      if (repo != null) {
+        Validation.validateRepo(repo);
+        this.repo = repo;
+      }
       return this;
     }
 
@@ -147,6 +175,23 @@ public interface NessieClient extends AutoCloseable {
      */
     public Builder withUri(String uri) {
       return withUri(URI.create(uri));
+    }
+
+    /**
+     * Set the repository owner + ID within the Nessie instance.
+     *
+     * <p>{@link NessieClient#getContentsApi()} and {@link NessieClient#getTreeApi()} are scoped to
+     * the repository specified by this option.
+     *
+     * @param owner repository owner
+     * @param repo repository ID
+     * @return {@code this}
+     */
+    public Builder withRepoOwner(String owner, String repo) {
+      Validation.validateOwner(owner);
+      this.owner = owner;
+      this.repo = repo;
+      return this;
     }
 
     /**
@@ -214,7 +259,15 @@ public interface NessieClient extends AutoCloseable {
      */
     public NessieClient build() {
       return new NessieHttpClient(
-          authType, uri, username, password, tracing, readTimeoutMillis, connectionTimeoutMillis);
+          owner,
+          repo,
+          authType,
+          uri,
+          username,
+          password,
+          tracing,
+          readTimeoutMillis,
+          connectionTimeoutMillis);
     }
   }
 }
