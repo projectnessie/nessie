@@ -101,7 +101,7 @@ class DefaultHelp(click.Command):
 @click.option("--json", is_flag=True, help="write output in json format.")
 @click.option("-v", "--verbose", is_flag=True, help="Verbose output.")
 @click.option("--endpoint", help="Optional endpoint, if different from config file.")
-@click.option("--repo", help="Optional repository owner + name, if different from config file, separated by a slash..")
+@click.option("--repo", help="Optional repository owner + name, if different from config file, separated by a slash.")
 @click.option("--version", is_flag=True, callback=_print_version, expose_value=False, is_eager=True)
 @click.pass_context
 def cli(ctx: click.core.Context, json: bool, verbose: bool, endpoint: str, repo: str) -> None:
