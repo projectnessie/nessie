@@ -142,6 +142,7 @@
     <immutables.version>2.8.9-ea-1</immutables.version>
     <jackson.version>2.12.4</jackson.version>
     <javax.version>4.0.1</javax.version>
+    <jersey.version>2.34</jersey.version>
     <jetty.version>9.4.31.v20200723</jetty.version>
     <jgit.version>5.12.0.202106070339-r</jgit.version>
     <jjwt.version>0.11.2</jjwt.version>
@@ -164,6 +165,7 @@
     <spark3.version>3.0.3</spark3.version>
     <sqlite.version>1.0.392</sqlite.version>
     <surefire.version>3.0.0-M5</surefire.version>
+    <weld.version>3.1.7.Final</weld.version>
   </properties>
 
   <dependencyManagement>
@@ -508,6 +510,18 @@
         <groupId>org.antlr</groupId>
         <artifactId>antlr4-runtime</artifactId>
         <version>${antlr.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.glassfish.jersey</groupId>
+        <artifactId>jersey-bom</artifactId>
+        <version>${jersey.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.jboss.weld.se</groupId>
+        <artifactId>weld-se-core</artifactId>
+        <version>${weld.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
