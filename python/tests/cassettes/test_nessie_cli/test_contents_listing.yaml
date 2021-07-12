@@ -82,11 +82,11 @@ interactions:
       code: 404
       message: Not Found
 - request:
-    body: '{"commitMeta": {"hash": null, "committer": null, "email": null, "author":
-      null, "message": "test_message1", "commitTime": null, "signedOffBy": null, "authorTime":
-      null, "properties": null}, "operations": [{"contents": {"metadataLocation":
-      "/a/b/c", "id": "uuid", "type": "ICEBERG_TABLE"}, "key": {"elements": ["this",
-      "is", "iceberg", "foo"]}, "type": "PUT"}]}'
+    body: '{"commitMeta": {"commitTime": null, "hash": null, "signedOffBy": null,
+      "authorTime": null, "message": "test_message1", "email": null, "committer":
+      null, "author": null, "properties": null}, "operations": [{"key": {"elements":
+      ["this", "is", "iceberg", "foo"]}, "contents": {"metadataLocation": "/a/b/c",
+      "id": "uuid", "type": "ICEBERG_TABLE"}, "type": "PUT"}]}'
     headers:
       Accept:
       - '*/*'
@@ -105,7 +105,7 @@ interactions:
   response:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\",\n
-        \ \"hash\" : \"69e12e84434b40aa8e4fa95e988cd75e07c1b1772526fc12efbdac2d496a2566\"\n}"
+        \ \"hash\" : \"c787fa2a4db4c4a6cb2d933be6372ffb20a38974a23bb07e8818b2c3e05c89ff\"\n}"
     headers:
       Content-Length:
       - '137'
@@ -130,7 +130,7 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\",\n
-        \ \"hash\" : \"69e12e84434b40aa8e4fa95e988cd75e07c1b1772526fc12efbdac2d496a2566\"\n},
+        \ \"hash\" : \"c787fa2a4db4c4a6cb2d933be6372ffb20a38974a23bb07e8818b2c3e05c89ff\"\n},
         {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}
         ]"
     headers:
@@ -168,12 +168,12 @@ interactions:
       code: 404
       message: Not Found
 - request:
-    body: '{"commitMeta": {"hash": null, "committer": null, "email": null, "author":
-      null, "message": "test_message2", "commitTime": null, "signedOffBy": null, "authorTime":
-      null, "properties": null}, "operations": [{"contents": {"checkpointLocationHistory":
-      ["def"], "id": "uuid2", "lastCheckpoint": "x", "metadataLocationHistory": ["asd"],
-      "type": "DELTA_LAKE_TABLE"}, "key": {"elements": ["this", "is", "delta", "bar"]},
-      "type": "PUT"}]}'
+    body: '{"commitMeta": {"commitTime": null, "hash": null, "signedOffBy": null,
+      "authorTime": null, "message": "test_message2", "email": null, "committer":
+      null, "author": null, "properties": null}, "operations": [{"key": {"elements":
+      ["this", "is", "delta", "bar"]}, "contents": {"checkpointLocationHistory": ["def"],
+      "metadataLocationHistory": ["asd"], "id": "uuid2", "lastCheckpoint": "x", "type":
+      "DELTA_LAKE_TABLE"}, "type": "PUT"}]}'
     headers:
       Accept:
       - '*/*'
@@ -188,11 +188,11 @@ interactions:
       User-Agent:
       - python-requests/2.25.1
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/contents_listing_dev/commit?expectedHash=69e12e84434b40aa8e4fa95e988cd75e07c1b1772526fc12efbdac2d496a2566
+    uri: http://localhost:19120/api/v1/trees/branch/contents_listing_dev/commit?expectedHash=c787fa2a4db4c4a6cb2d933be6372ffb20a38974a23bb07e8818b2c3e05c89ff
   response:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\",\n
-        \ \"hash\" : \"8abd1e42fc86700926fbe7e23b48ba454a15c676d8b234409e8164e3d754847a\"\n}"
+        \ \"hash\" : \"45a97dc5238189a5191359a3b89bbce93b350db629a0d68d0c43114d6f6ef07f\"\n}"
     headers:
       Content-Length:
       - '137'
@@ -428,7 +428,7 @@ interactions:
   response:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\",\n
-        \ \"hash\" : \"8abd1e42fc86700926fbe7e23b48ba454a15c676d8b234409e8164e3d754847a\"\n}"
+        \ \"hash\" : \"45a97dc5238189a5191359a3b89bbce93b350db629a0d68d0c43114d6f6ef07f\"\n}"
     headers:
       Content-Length:
       - '137'
@@ -451,7 +451,7 @@ interactions:
       User-Agent:
       - python-requests/2.25.1
     method: DELETE
-    uri: http://localhost:19120/api/v1/trees/branch/contents_listing_dev?expectedHash=8abd1e42fc86700926fbe7e23b48ba454a15c676d8b234409e8164e3d754847a
+    uri: http://localhost:19120/api/v1/trees/branch/contents_listing_dev?expectedHash=45a97dc5238189a5191359a3b89bbce93b350db629a0d68d0c43114d6f6ef07f
   response:
     body:
       string: ''

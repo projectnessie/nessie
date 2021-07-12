@@ -371,7 +371,7 @@ def test_transplant() -> None:
     )
     refs = ReferenceSchema().loads(_run(runner, ["--json", "branch", "-l"]).output, many=True)
     main_hash = next(i.hash_ for i in refs if i.name == "main")
-    result = _run(runner, ["--json", "log", "dev"])
+    result = _run(runner, ["--json", "log", "--ref", "dev"])
     logs = simplejson.loads(result.output)
     first_hash = [i["hash"] for i in logs]
     _run(runner, ["cherry-pick", "-c", main_hash, first_hash[1], first_hash[0]])

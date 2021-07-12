@@ -22,13 +22,15 @@ def show_log(
     raw_log = nessie.get_log(start_ref=start_ref, **filtering_args)
 
     def generator() -> Generator[CommitMeta, Any, None]:
-        found_start = False
+        # start returning data if we don't have a start point, otherwise
+        # only start returning data when the start point was found
+        start_yielding = start is None
         for i in raw_log:
             if start and i.hash_ == start:
-                found_start = True
+                start_yielding = True
             if end and i.hash_ == end:
                 break
-            if found_start:
+            if start_yielding:
                 yield i
 
     return generator()

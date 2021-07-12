@@ -241,7 +241,6 @@ def log(  # noqa: C901
     """
     if not ref:
         ref = ctx.nessie.get_default_branch()
-
     start = None
     end = None
     if revision_range:
