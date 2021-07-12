@@ -920,6 +920,7 @@ public abstract class AbstractTestRest {
     Contents cts = IcebergTable.of("moo");
     MultiGetContentsRequest mgReq = MultiGetContentsRequest.of(key);
     Tag tag = Tag.of("valid", validHash);
+    String ref = "1234567890123456";
 
     String opsCountMsg =
         "commitMultipleOperations.operations.operations: size must be between 1 and 2147483647";
@@ -1183,6 +1184,29 @@ public abstract class AbstractTestRest {
                 .hasMessageStartingWith(
                     "Bad Request (HTTP/400): Could not resolve type id 'FOOBAR' as a subtype of "
                         + "`org.projectnessie.model.Tag`: known type ids = []\n"));
+  }
+
+  @Test
+  public void testInvalidRefs() {
+    ContentsKey key = ContentsKey.of("x");
+    MultiGetContentsRequest mgReq = MultiGetContentsRequest.of(key);
+    String invalidRef = "1234567890123456";
+
+    assertThatThrownBy(() -> tree.getCommitLog(invalidRef, null, null, null))
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessage("Bad Request (HTTP/400): " + REF_NAME_MESSAGE);
+
+    assertThatThrownBy(() -> tree.getEntries(invalidRef, null, null, null))
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessage("Bad Request (HTTP/400): " + REF_NAME_MESSAGE);
+
+    assertThatThrownBy(() -> contents.getContents(key, invalidRef))
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessage("Bad Request (HTTP/400): " + REF_NAME_MESSAGE);
+
+    assertThatThrownBy(() -> contents.getMultipleContents(invalidRef, mgReq))
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessage("Bad Request (HTTP/400): " + REF_NAME_MESSAGE);
   }
 
   void unwrap(Executable exec) throws Throwable {

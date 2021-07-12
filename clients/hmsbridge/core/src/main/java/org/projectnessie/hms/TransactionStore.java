@@ -123,9 +123,9 @@ class TransactionStore {
   }
 
   public Stream<Entry> getEntriesForDefaultRef() throws NessieNotFoundException {
-    List<Entry> entries = tree.getEntries(reference.getHash(), null, null, null).getEntries();
+    List<Entry> entries = tree.getEntries(reference.getName(), null, null, null).getEntries();
     Supplier<Stream<RefKey>> defaultRefKeys =
-        () -> cachedItems.keySet().stream().filter(k -> k.getRef().equals(reference.getHash()));
+        () -> cachedItems.keySet().stream().filter(k -> k.getRef().equals(reference.getName()));
     Set<ContentsKey> toRemove =
         defaultRefKeys.get().map(RefKey::getKey).collect(Collectors.toSet());
     return Stream.concat(
@@ -137,7 +137,7 @@ class TransactionStore {
 
   void setItem(ContentsKey key, Item item) {
     checkWritable();
-    cachedItems.put(new RefKey(reference.getHash(), key), item);
+    cachedItems.put(new RefKey(reference.getName(), key), item);
     operations.add(Operation.Put.of(key, item.toContents()));
   }
 
@@ -159,7 +159,7 @@ class TransactionStore {
 
   void deleteItem(ContentsKey key) {
     checkWritable();
-    cachedItems.put(new RefKey(reference.getHash(), key), null);
+    cachedItems.put(new RefKey(reference.getName(), key), null);
     operations.add(Operation.Delete.of(key));
   }
 

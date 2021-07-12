@@ -125,7 +125,7 @@ class NessieTransaction {
   public List<Table> getTables(String dbName, List<String> tableNames) {
     List<RefKey> keys =
         tableNames.stream()
-            .map(t -> new RefKey(defaultHash, ContentsKey.of(dbName, t)))
+            .map(t -> new RefKey(defaultName, ContentsKey.of(dbName, t)))
             .collect(Collectors.toList());
     try {
       return store.getItemsForRef(keys).stream()
@@ -158,7 +158,7 @@ class NessieTransaction {
 
   public void alterDatabase(Database db) throws MetaException {
     try {
-      Optional<Item> oldDb = getItemForRef(defaultHash, db.getName());
+      Optional<Item> oldDb = getItemForRef(defaultName, db.getName());
       setItem(
           Item.wrap(db, oldDb.orElseThrow(() -> new MetaException("Db not found")).getId()),
           db.getName());
@@ -228,7 +228,7 @@ class NessieTransaction {
       throws NoSuchObjectException {
 
     if (!tableName.contains("@")) {
-      return getItemForRef(defaultHash, dbName, tableName)
+      return getItemForRef(defaultName, dbName, tableName)
           .map(i -> new TableAndPartition(i.getTable(), i.getPartitions(), i.getId()));
     }
 
@@ -243,7 +243,7 @@ class NessieTransaction {
 
     if (ref.equalsIgnoreCase(defaultName) || ref.equalsIgnoreCase(defaultHash)) {
       // stay in transaction rather than possibly doing a newer read.
-      return getItemForRef(defaultHash, dbName, tableName)
+      return getItemForRef(defaultName, dbName, tableName)
           .map(i -> new TableAndPartition(i.getTable(), i.getPartitions(), i.getId()));
     }
 
@@ -308,7 +308,7 @@ class NessieTransaction {
   }
 
   Optional<Database> getDatabase(String database) throws NoSuchObjectException {
-    return getItemForRef(defaultHash, database).map(Item::getDatabase);
+    return getItemForRef(defaultName, database).map(Item::getDatabase);
   }
 
   private Optional<Item> getItemForRef(String ref, String... elements)

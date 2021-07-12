@@ -15,12 +15,14 @@
  */
 package org.projectnessie.services.rest;
 
+import com.google.common.base.Preconditions;
 import java.security.Principal;
 import java.util.Optional;
 import javax.ws.rs.core.SecurityContext;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
+import org.projectnessie.model.Validation;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Ref;
@@ -55,6 +57,18 @@ abstract class BaseResource {
       return Optional.of(whr.getHash());
     } catch (ReferenceNotFoundException e) {
       return Optional.empty();
+    }
+  }
+
+  WithHash<Ref> namedRefWithHashOrThrow(String ref) throws NessieNotFoundException {
+    try {
+      if (null != ref) {
+        Preconditions.checkArgument(
+            ref.matches(Validation.REF_NAME_REGEX), Validation.REF_NAME_MESSAGE);
+      }
+      return store.toRef(Optional.ofNullable(ref).orElse(config.getDefaultBranch()));
+    } catch (ReferenceNotFoundException e) {
+      throw new NessieNotFoundException(String.format("Ref for %s not found", ref));
     }
   }
 
