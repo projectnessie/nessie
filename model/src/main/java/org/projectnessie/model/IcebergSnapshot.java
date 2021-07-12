@@ -25,9 +25,12 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
 
 /**
- * Represents the global state of an Iceberg table in Nessie. An Iceberg table is globally
+ * Represents the state of an Iceberg table in a Nessie branch. An Iceberg table is globally
  * identified via its fully qualified name via {@link ContentsKey} plus a unique ID, the latter is
  * represented via {@link Contents#getId()}.
+ *
+ * <p>Note: If the Iceberg {@code TableMetadata} contains no snapshot, the properties {@link
+ * #getCurrentSnapshotId()} and {@link #getManifestListLocation()} will be {@code null}.
  *
  * <p>A Nessie commit-operation, performed via {@link
  * org.projectnessie.api.TreeApi#commitMultipleOperations(String, String, Operations)}, for Iceberg
@@ -36,23 +39,23 @@ import org.immutables.value.Value;
  */
 @Schema(
     type = SchemaType.OBJECT,
-    title = "Iceberg table global state",
+    title = "Iceberg table snapshot",
     description =
-        "Represents the global state of an Iceberg table in Nessie. An Iceberg table is globally "
-            + "identified via its fully qualified name via 'ContentsKey' plus a unique ID, the latter is "
-            + "represented via 'Contents.id'.\n"
+        "Represents the state of an Iceberg table in a Nessie branch. An Iceberg table is globally "
+            + "identified via its fully qualified name via 'ContentsKey' plus a unique ID, the latter "
+            + "is represented via 'Contents.id'.\n"
             + "\n"
-            + "A Nessie commit-operation, performed via 'TreeApi.commitMultipleOperations', for Iceberg "
+            + "Note: If the Iceberg 'TableMetadata' contains no snapshot, the properties "
+            + "'currentSnapshotId' and 'manifestListLocation' will be null.\n"
+            + "\n"
+            + "A Nessie commit-operation, performed via 'TreeApi.commitMultipleOperations', "
             + "for Iceberg consists of a 'Operation.Put' with an 'IcebergSnapshot' and an "
-            + "'IcebergTable' as the expected-global-state.\n"
-            + "\n"
-            + "During a commit-operation, Nessie checks whether the known global state of the "
-            + "Iceberg table is compatible (think: equal) to 'Operation.Put.expectedContents'.")
+            + "'IcebergTable' as the expected-global-state.")
 @Value.Immutable(prehash = true)
-@JsonSerialize(as = ImmutableIcebergTable.class)
-@JsonDeserialize(as = ImmutableIcebergTable.class)
-@JsonTypeName("ICEBERG_TABLE")
-public abstract class IcebergTable extends GlobalContents {
+@JsonSerialize(as = ImmutableIcebergSnapshot.class)
+@JsonDeserialize(as = ImmutableIcebergSnapshot.class)
+@JsonTypeName("ICEBERG_SNAPSHOT")
+public abstract class IcebergSnapshot extends Contents {
 
   /**
    * Location where Iceberg stored its {@code TableMetadata} file. The location depends on the
@@ -62,7 +65,20 @@ public abstract class IcebergTable extends GlobalContents {
   @NotBlank
   public abstract String getMetadataLocation();
 
-  public static IcebergTable of(String metadataLocation) {
-    return ImmutableIcebergTable.builder().metadataLocation(metadataLocation).build();
+  /** ID of the current Iceberg snapshot. This value is not present, if there is no snapshot. */
+  public abstract Long getCurrentSnapshotId();
+
+  /**
+   * Manifest-list location of the current Iceberg snapshot. This value is not present, if there is
+   * no snapshot.
+   */
+  @NotBlank
+  public abstract String getManifestListLocation();
+
+  public static IcebergSnapshot of(long currentSnapshotId, String manifestListLocation) {
+    return ImmutableIcebergSnapshot.builder()
+        .currentSnapshotId(currentSnapshotId)
+        .manifestListLocation(manifestListLocation)
+        .build();
   }
 }
