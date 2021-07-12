@@ -24,6 +24,7 @@ import javax.inject.Inject;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.PreMatching;
+import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Provider;
 import org.projectnessie.model.Validation;
 
@@ -40,23 +41,24 @@ import org.projectnessie.model.Validation;
 @Provider
 public class MultiTenantFilter implements ContainerRequestFilter {
 
-  private final Pattern multiTenantPathPattern;
-  private final String restPath;
+  private static final Pattern MULTI_TENANT_PATTERN =
+      Pattern.compile("/(\\w+)/(\\w+)/((trees|contents|config).*)");
 
   @Inject MultiTenant multiTenant;
 
-  @Inject
-  public MultiTenantFilter(MultiTenantConfig multiTenantConfig) {
-    this.restPath = multiTenantConfig.getRestPath();
-
-    this.multiTenantPathPattern =
-        Pattern.compile(String.format("%s/(\\w+)/(\\w+)/((trees|contents|config).*)", restPath));
-  }
-
   @Override
   public void filter(ContainerRequestContext requestContext) throws IOException {
+    UriInfo uriInfo = requestContext.getUriInfo();
+    URI baseUri = uriInfo.getBaseUri();
     URI reqUri = requestContext.getUriInfo().getRequestUri();
-    Matcher m = multiTenantPathPattern.matcher(reqUri.getPath());
+
+    // contains something like '/api/v1/'
+    String basePath = baseUri.getPath();
+    // contains something like '/api/v1/trees/tree' or '/api/v1/robert/elani/trees/tree'
+    String reqPath = reqUri.getPath();
+
+    String ctxPath = reqPath.substring(basePath.length() - 1); // -1 to include the trailing slash
+    Matcher m = MULTI_TENANT_PATTERN.matcher(ctxPath);
     if (m.matches()) {
       // If the request-URI is a multi-tenant URI with /owner/repo after the REST base path,
       // continue with that /owner/repo part removed from the request URI and set owner + repo
@@ -65,9 +67,11 @@ public class MultiTenantFilter implements ContainerRequestFilter {
       String repo = m.group(2);
 
       if (Validation.isValidOwner(owner) && Validation.isValidRepo(repo)) {
+        // 'rest' contains the API endpoint without the base-path, without the owner+repo
+        // and without a leading slash.
         String rest = m.group(3);
         multiTenant.setOwnerAndRepo(owner, repo);
-        String path = String.format("%s/%s", restPath, rest);
+        String path = basePath + rest;
         try {
           URI newUri =
               new URI(
