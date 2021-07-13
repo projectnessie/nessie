@@ -21,22 +21,24 @@
 
   <parent>
     <groupId>org.projectnessie</groupId>
-    <artifactId>nessie</artifactId>
+    <artifactId>nessie-server-parent</artifactId>
     <version>0.7.1-SNAPSHOT</version>
   </parent>
 
-  <artifactId>nessie-server-parent</artifactId>
-  <packaging>pom</packaging>
+  <artifactId>nessie-jaxrs-testextension</artifactId>
 
-  <name>Nessie - Servers - Parent</name>
+  <name>Nessie - JUnit Jupyter Test Extension</name>
+  <description>JUnit Jupyter Extension to run tests against an "embedded" Nessie instance.</description>
 
-  <modules>
-    <module>lambda</module>
-    <module>quarkus-server</module>
-    <module>services</module>
-    <module>store</module>
-    <module>jax-rs</module>
-    <module>jax-rs-testextension</module>
-    <module>jax-rs-tests</module>
-  </modules>
+  <dependencies>
+    <dependency>
+      <groupId>org.projectnessie</groupId>
+      <artifactId>nessie-jaxrs</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+    </dependency>
+  </dependencies>
 </project>

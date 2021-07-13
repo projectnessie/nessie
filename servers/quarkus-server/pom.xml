@@ -44,10 +44,8 @@
     </dependency>
     <dependency>
       <groupId>org.projectnessie</groupId>
-      <artifactId>nessie-jaxrs</artifactId>
+      <artifactId>nessie-jaxrs-tests</artifactId>
       <version>${project.version}</version>
-      <type>test-jar</type>
-      <classifier>tests</classifier>
       <scope>test</scope>
     </dependency>
     <dependency>
