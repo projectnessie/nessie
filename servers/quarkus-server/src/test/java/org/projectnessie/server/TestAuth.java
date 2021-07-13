@@ -94,7 +94,7 @@ class TestAuth {
   void testAdmin() throws NessieNotFoundException, NessieConflictException {
     getCatalog("testx");
     Branch branch = (Branch) tree.getReferenceByName("testx");
-    List<Entry> tables = tree.getEntries("testx", null, null, null).getEntries();
+    List<Entry> tables = tree.getEntries("testx", null, null, null, null).getEntries();
     Assertions.assertTrue(tables.isEmpty());
     ContentsKey key = ContentsKey.of("x", "x");
     tryEndpointPass(
@@ -107,7 +107,8 @@ class TestAuth {
                         ImmutablePut.builder().key(key).contents(IcebergTable.of("foo")).build())
                     .commitMeta(CommitMeta.fromMessage("empty message"))
                     .build()));
-    final IcebergTable table = contents.getContents(key, "testx").unwrap(IcebergTable.class).get();
+    final IcebergTable table =
+        contents.getContents(key, "testx", null).unwrap(IcebergTable.class).get();
 
     Branch master = (Branch) tree.getReferenceByName("testx");
     Branch test = ImmutableBranch.builder().hash(master.getHash()).name("testy").build();
@@ -123,7 +124,7 @@ class TestAuth {
                     .addOperations(ImmutableDelete.builder().key(key).build())
                     .commitMeta(CommitMeta.fromMessage(""))
                     .build()));
-    assertThrows(NessieNotFoundException.class, () -> contents.getContents(key, "testx"));
+    assertThrows(NessieNotFoundException.class, () -> contents.getContents(key, "testx", null));
     tryEndpointPass(
         () ->
             tree.commitMultipleOperations(

@@ -16,6 +16,7 @@
 package org.projectnessie.api;
 
 import java.util.List;
+import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
@@ -203,14 +204,19 @@ public interface TreeApi {
   })
   public EntriesResponse getEntries(
       @NotNull
-          @Pattern(
-              regexp = Validation.REF_NAME_OR_HASH_REGEX,
-              message = Validation.REF_NAME_OR_HASH_MESSAGE)
+          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           @Parameter(
               description = "name of ref to fetch from",
               examples = {@ExampleObject(ref = "ref")})
           @PathParam("ref")
           String refName,
+      @Nullable
+          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          @Parameter(
+              description = "a particular hash on the given ref",
+              examples = {@ExampleObject(ref = "hash")})
+          @QueryParam("hashOnRef")
+          String hashOnRef,
       @Parameter(description = "maximum number of entries to return, just a hint for the server")
           @QueryParam("max")
           Integer maxRecords,
@@ -290,14 +296,19 @@ public interface TreeApi {
   })
   LogResponse getCommitLog(
       @NotNull
-          @Pattern(
-              regexp = Validation.REF_NAME_OR_HASH_REGEX,
-              message = Validation.REF_NAME_OR_HASH_MESSAGE)
+          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           @Parameter(
               description = "ref to show log from",
               examples = {@ExampleObject(ref = "ref")})
           @PathParam("ref")
           String ref,
+      @Nullable
+          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          @Parameter(
+              description = "a particular hash on the given ref",
+              examples = {@ExampleObject(ref = "hash")})
+          @QueryParam("hashOnRef")
+          String hashOnRef,
       @Parameter(
               description =
                   "maximum number of commit-log entries to return, just a hint for the server")

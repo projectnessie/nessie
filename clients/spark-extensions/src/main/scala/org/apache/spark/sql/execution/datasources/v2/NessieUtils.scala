@@ -50,6 +50,7 @@ object NessieUtils {
           .getCommitLogStream(
             nessieClient.getTreeApi,
             branch,
+            null,
             OptionalInt.empty(),
             String
               .format(

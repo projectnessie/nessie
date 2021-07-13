@@ -484,7 +484,7 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
   }
 
   private def getTable(path: Path, branch: String): Option[DeltaLakeTable] = {
-    Try(client.getContentsApi.getContents(pathToKey(path), branch))
+    Try(client.getContentsApi.getContents(pathToKey(path), branch, null))
       .filter(x => x != null && x.isInstanceOf[DeltaLakeTable])
       .map(_.asInstanceOf[DeltaLakeTable])
       .toOption

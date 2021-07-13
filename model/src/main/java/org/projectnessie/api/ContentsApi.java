@@ -15,6 +15,7 @@
  */
 package org.projectnessie.api;
 
+import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
@@ -69,14 +70,19 @@ public interface ContentsApi {
               examples = {@ExampleObject(ref = "ContentsKey")})
           @PathParam("key")
           ContentsKey key,
-      @Pattern(
-              regexp = Validation.REF_NAME_OR_HASH_REGEX,
-              message = Validation.REF_NAME_OR_HASH_MESSAGE)
+      @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           @Parameter(
               description = "Reference to use. Defaults to default branch if not provided.",
               examples = {@ExampleObject(ref = "ref")})
           @QueryParam("ref")
-          String ref)
+          String ref,
+      @Nullable
+          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          @Parameter(
+              description = "a particular hash on the given ref",
+              examples = {@ExampleObject(ref = "hash")})
+          @QueryParam("hashOnRef")
+          String hashOnRef)
       throws NessieNotFoundException;
 
   @POST
@@ -94,14 +100,19 @@ public interface ContentsApi {
     @APIResponse(responseCode = "404", description = "Provided ref doesn't exists")
   })
   MultiGetContentsResponse getMultipleContents(
-      @Pattern(
-              regexp = Validation.REF_NAME_OR_HASH_REGEX,
-              message = Validation.REF_NAME_OR_HASH_MESSAGE)
+      @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           @Parameter(
               description = "Reference to use. Defaults to default branch if not provided.",
               examples = {@ExampleObject(ref = "ref")})
           @QueryParam("ref")
           String ref,
+      @Nullable
+          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          @Parameter(
+              description = "a particular hash on the given ref",
+              examples = {@ExampleObject(ref = "hash")})
+          @QueryParam("hashOnRef")
+          String hashOnRef,
       @Valid @NotNull @RequestBody(description = "Keys to retrieve.")
           MultiGetContentsRequest request)
       throws NessieNotFoundException;

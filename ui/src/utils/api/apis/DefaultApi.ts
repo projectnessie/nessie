@@ -90,6 +90,7 @@ export interface DeleteTagRequest {
 
 export interface GetCommitLogRequest {
     ref: string;
+    hashOnRef?: string;
     max?: number;
     pageToken?: string;
     queryExpression?: string;
@@ -97,17 +98,20 @@ export interface GetCommitLogRequest {
 
 export interface GetContentsRequest {
     key: ContentsKey;
+    hashOnRef?: string;
     ref?: string;
 }
 
 export interface GetEntriesRequest {
     ref: string;
+    hashOnRef?: string;
     max?: number;
     pageToken?: string;
     queryExpression?: string;
 }
 
 export interface GetMultipleContentsRequest {
+    hashOnRef?: string;
     ref?: string;
     multiGetContentsRequest?: MultiGetContentsRequest;
 }
@@ -391,6 +395,10 @@ export class DefaultApi extends runtime.BaseAPI {
 
         const queryParameters: any = {};
 
+        if (requestParameters.hashOnRef !== undefined) {
+            queryParameters['hashOnRef'] = requestParameters.hashOnRef;
+        }
+
         if (requestParameters.max !== undefined) {
             queryParameters['max'] = requestParameters.max;
         }
@@ -460,6 +468,10 @@ export class DefaultApi extends runtime.BaseAPI {
 
         const queryParameters: any = {};
 
+        if (requestParameters.hashOnRef !== undefined) {
+            queryParameters['hashOnRef'] = requestParameters.hashOnRef;
+        }
+
         if (requestParameters.ref !== undefined) {
             queryParameters['ref'] = requestParameters.ref;
         }
@@ -521,6 +533,10 @@ export class DefaultApi extends runtime.BaseAPI {
 
         const queryParameters: any = {};
 
+        if (requestParameters.hashOnRef !== undefined) {
+            queryParameters['hashOnRef'] = requestParameters.hashOnRef;
+        }
+
         if (requestParameters.max !== undefined) {
             queryParameters['max'] = requestParameters.max;
         }
@@ -559,6 +575,10 @@ export class DefaultApi extends runtime.BaseAPI {
      */
     async getMultipleContentsRaw(requestParameters: GetMultipleContentsRequest): Promise<runtime.ApiResponse<MultiGetContentsResponse>> {
         const queryParameters: any = {};
+
+        if (requestParameters.hashOnRef !== undefined) {
+            queryParameters['hashOnRef'] = requestParameters.hashOnRef;
+        }
 
         if (requestParameters.ref !== undefined) {
             queryParameters['ref'] = requestParameters.ref;

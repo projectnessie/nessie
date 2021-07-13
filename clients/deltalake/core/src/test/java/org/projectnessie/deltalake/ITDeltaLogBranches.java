@@ -133,7 +133,7 @@ class ITDeltaLogBranches extends AbstractSparkTest {
 
     String tableName = tempPath.getAbsolutePath() + "/_delta_log";
     Contents contents =
-        client.getContentsApi().getContents(ContentsKey.of(tableName.split("/")), "main");
+        client.getContentsApi().getContents(ContentsKey.of(tableName.split("/")), "main", null);
     Optional<DeltaLakeTable> table = contents.unwrap(DeltaLakeTable.class);
     Assertions.assertTrue(table.isPresent());
     Assertions.assertEquals(1, table.get().getCheckpointLocationHistory().size());

@@ -43,6 +43,7 @@ case class ShowLogExec(
     val stream = StreamingUtil.getCommitLogStream(
       nessieClient.getTreeApi,
       refName,
+      null,
       OptionalInt.empty(),
       null
     )

@@ -33,24 +33,27 @@ class ClientContentsApi implements ContentsApi {
   }
 
   @Override
-  public Contents getContents(@NotNull ContentsKey key, String ref) throws NessieNotFoundException {
+  public Contents getContents(@NotNull ContentsKey key, String ref, String hashOnRef)
+      throws NessieNotFoundException {
     return client
         .newRequest()
         .path("contents")
         .path(key.toPathString())
         .queryParam("ref", ref)
+        .queryParam("hashOnRef", hashOnRef)
         .get()
         .readEntity(Contents.class);
   }
 
   @Override
   public MultiGetContentsResponse getMultipleContents(
-      @NotNull String ref, @NotNull MultiGetContentsRequest request)
+      @NotNull String ref, String hashOnRef, @NotNull MultiGetContentsRequest request)
       throws NessieNotFoundException {
     return client
         .newRequest()
         .path("contents")
         .queryParam("ref", ref)
+        .queryParam("hashOnRef", hashOnRef)
         .post(request)
         .readEntity(MultiGetContentsResponse.class);
   }

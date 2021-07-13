@@ -74,7 +74,7 @@ class TransactionStore {
     }
 
     try {
-      Item item = Item.fromContents(contents.getContents(contentsKey, ref));
+      Item item = Item.fromContents(contents.getContents(contentsKey, ref, null));
       cachedItems.put(key, item);
       return Optional.ofNullable(item);
     } catch (NessieNotFoundException e) {
@@ -105,7 +105,9 @@ class TransactionStore {
           keysByRef.get(ref).stream().map(RefKey::getKey).collect(Collectors.toList());
       MultiGetContentsResponse response =
           contents.getMultipleContents(
-              ref, ImmutableMultiGetContentsRequest.builder().addAllRequestedKeys(keys).build());
+              ref,
+              null,
+              ImmutableMultiGetContentsRequest.builder().addAllRequestedKeys(keys).build());
       response
           .getContents()
           .forEach(
@@ -123,7 +125,7 @@ class TransactionStore {
   }
 
   public Stream<Entry> getEntriesForDefaultRef() throws NessieNotFoundException {
-    List<Entry> entries = tree.getEntries(reference.getName(), null, null, null).getEntries();
+    List<Entry> entries = tree.getEntries(reference.getName(), null, null, null, null).getEntries();
     Supplier<Stream<RefKey>> defaultRefKeys =
         () -> cachedItems.keySet().stream().filter(k -> k.getRef().equals(reference.getName()));
     Set<ContentsKey> toRemove =
