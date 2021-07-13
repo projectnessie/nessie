@@ -256,7 +256,7 @@ def log(  # noqa: C901
         filtering_args["start"] = start
     if end:
         filtering_args["end"] = end
-
+    # TODO: we should eventually move "start..end" filtering to the server
     expr = build_query_expression_for_commit_log_flags(query_expression, author, committer, since, until)
     if expr:
         filtering_args["query_expression"] = expr

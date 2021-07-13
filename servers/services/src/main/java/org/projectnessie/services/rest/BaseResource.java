@@ -15,7 +15,6 @@
  */
 package org.projectnessie.services.rest;
 
-import com.google.common.base.Preconditions;
 import java.security.Principal;
 import java.util.Optional;
 import javax.ws.rs.core.SecurityContext;
@@ -63,8 +62,7 @@ abstract class BaseResource {
   WithHash<Ref> namedRefWithHashOrThrow(String ref) throws NessieNotFoundException {
     try {
       if (null != ref) {
-        Preconditions.checkArgument(
-            ref.matches(Validation.REF_NAME_REGEX), Validation.REF_NAME_MESSAGE);
+        ref = Validation.validateReferenceName(ref);
       }
       return store.toRef(Optional.ofNullable(ref).orElse(config.getDefaultBranch()));
     } catch (ReferenceNotFoundException e) {

@@ -920,7 +920,6 @@ public abstract class AbstractTestRest {
     Contents cts = IcebergTable.of("moo");
     MultiGetContentsRequest mgReq = MultiGetContentsRequest.of(key);
     Tag tag = Tag.of("valid", validHash);
-    String ref = "1234567890123456";
 
     String opsCountMsg =
         "commitMultipleOperations.operations.operations: size must be between 1 and 2147483647";
@@ -1194,19 +1193,19 @@ public abstract class AbstractTestRest {
 
     assertThatThrownBy(() -> tree.getCommitLog(invalidRef, null, null, null))
         .isInstanceOf(NessieBadRequestException.class)
-        .hasMessage("Bad Request (HTTP/400): " + REF_NAME_MESSAGE);
+        .hasMessageStartingWith("Bad Request (HTTP/400): " + REF_NAME_MESSAGE);
 
     assertThatThrownBy(() -> tree.getEntries(invalidRef, null, null, null))
         .isInstanceOf(NessieBadRequestException.class)
-        .hasMessage("Bad Request (HTTP/400): " + REF_NAME_MESSAGE);
+        .hasMessageStartingWith("Bad Request (HTTP/400): " + REF_NAME_MESSAGE);
 
     assertThatThrownBy(() -> contents.getContents(key, invalidRef))
         .isInstanceOf(NessieBadRequestException.class)
-        .hasMessage("Bad Request (HTTP/400): " + REF_NAME_MESSAGE);
+        .hasMessageStartingWith("Bad Request (HTTP/400): " + REF_NAME_MESSAGE);
 
     assertThatThrownBy(() -> contents.getMultipleContents(invalidRef, mgReq))
         .isInstanceOf(NessieBadRequestException.class)
-        .hasMessage("Bad Request (HTTP/400): " + REF_NAME_MESSAGE);
+        .hasMessageStartingWith("Bad Request (HTTP/400): " + REF_NAME_MESSAGE);
   }
 
   void unwrap(Executable exec) throws Throwable {

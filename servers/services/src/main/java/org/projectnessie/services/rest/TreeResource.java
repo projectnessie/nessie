@@ -186,6 +186,8 @@ public class TreeResource extends BaseResource implements TreeApi {
       // we should only allow named references when no paging is defined
       startRef = namedRefWithHashOrThrow(ref).getValue();
     } else {
+      // TODO: this is atm an insecure design where users can put it any hashes and retrieve all the
+      // commits. Once authz + tvs2 is in place we should revisit this
       startRef = getHashOrThrow(pageToken);
     }
 
