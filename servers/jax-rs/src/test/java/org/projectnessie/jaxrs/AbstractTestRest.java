@@ -1185,6 +1185,29 @@ public abstract class AbstractTestRest {
                         + "`org.projectnessie.model.Tag`: known type ids = []\n"));
   }
 
+  @Test
+  public void testInvalidRefs() {
+    ContentsKey key = ContentsKey.of("x");
+    MultiGetContentsRequest mgReq = MultiGetContentsRequest.of(key);
+    String invalidRef = "1234567890123456";
+
+    assertThatThrownBy(() -> tree.getCommitLog(invalidRef, null, null, null))
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageStartingWith("Bad Request (HTTP/400): " + REF_NAME_MESSAGE);
+
+    assertThatThrownBy(() -> tree.getEntries(invalidRef, null, null, null))
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageStartingWith("Bad Request (HTTP/400): " + REF_NAME_MESSAGE);
+
+    assertThatThrownBy(() -> contents.getContents(key, invalidRef))
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageStartingWith("Bad Request (HTTP/400): " + REF_NAME_MESSAGE);
+
+    assertThatThrownBy(() -> contents.getMultipleContents(invalidRef, mgReq))
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageStartingWith("Bad Request (HTTP/400): " + REF_NAME_MESSAGE);
+  }
+
   void unwrap(Executable exec) throws Throwable {
     try {
       exec.execute();

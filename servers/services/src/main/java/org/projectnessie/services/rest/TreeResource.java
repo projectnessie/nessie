@@ -180,7 +180,16 @@ public class TreeResource extends BaseResource implements TreeApi {
       throws NessieNotFoundException {
     int max =
         Math.min(maxRecords != null ? maxRecords : MAX_COMMIT_LOG_ENTRIES, MAX_COMMIT_LOG_ENTRIES);
-    Hash startRef = getHashOrThrow(pageToken != null ? pageToken : ref);
+
+    Ref startRef;
+    if (null == pageToken) {
+      // we should only allow named references when no paging is defined
+      startRef = namedRefWithHashOrThrow(ref).getValue();
+    } else {
+      // TODO: this is atm an insecure design where users can put it any hashes and retrieve all the
+      // commits. Once authz + tvs2 is in place we should revisit this
+      startRef = getHashOrThrow(pageToken);
+    }
 
     try (Stream<ImmutableCommitMeta> s =
         getStore()
@@ -285,7 +294,7 @@ public class TreeResource extends BaseResource implements TreeApi {
       String refName, Integer maxRecords, String pageToken, String queryExpression)
       throws NessieNotFoundException {
 
-    final Hash hash = getHashOrThrow(refName);
+    final Hash hash = namedRefWithHashOrThrow(refName).getHash();
     // TODO Implement paging. At the moment, we do not expect that many keys/entries to be returned.
     //  So the size of the whole result is probably reasonable and unlikely to "kill" either the
     //  server or client. We have to figure out _how_ to implement paging for keys/entries, i.e.

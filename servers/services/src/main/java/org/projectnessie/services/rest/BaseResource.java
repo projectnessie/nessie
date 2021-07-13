@@ -21,6 +21,7 @@ import javax.ws.rs.core.SecurityContext;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
+import org.projectnessie.model.Validation;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Ref;
@@ -55,6 +56,17 @@ abstract class BaseResource {
       return Optional.of(whr.getHash());
     } catch (ReferenceNotFoundException e) {
       return Optional.empty();
+    }
+  }
+
+  WithHash<Ref> namedRefWithHashOrThrow(String ref) throws NessieNotFoundException {
+    try {
+      if (null != ref) {
+        ref = Validation.validateReferenceName(ref);
+      }
+      return store.toRef(Optional.ofNullable(ref).orElse(config.getDefaultBranch()));
+    } catch (ReferenceNotFoundException e) {
+      throw new NessieNotFoundException(String.format("Ref for %s not found", ref));
     }
   }
 

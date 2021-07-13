@@ -186,6 +186,7 @@ def set_head(ctx: ContextObject, head: str, delete: bool) -> None:
 
 
 @cli.command("log")
+@click.option("-r", "--ref", help="branch to list from. If not supplied the default branch from config is used")
 @click.option("-n", "--number", help="number of log entries to return", type=int)
 @click.option("--since", "--after", help="Only include commits newer than specific date")
 @click.option("--until", "--before", help="Only include commits older than specific date")
@@ -221,6 +222,7 @@ def set_head(ctx: ContextObject, head: str, delete: bool) -> None:
 @error_handler
 def log(  # noqa: C901
     ctx: ContextObject,
+    ref: str,
     number: int,
     since: str,
     until: str,
@@ -232,32 +234,34 @@ def log(  # noqa: C901
 ) -> None:
     """Show commit log.
 
-    REVISION_RANGE optional branch, tag or hash to start viewing log from. If of the form <hash>..<hash> only show log
-    for given range
+    REVISION_RANGE optional hash to start viewing log from. If of the form <hash>..<hash> only show log
+    for given range on the particular ref that was provided
 
     PATHS optional list of paths. If given, only show commits which affected the given paths
     """
-    if not revision_range:
-        start = ctx.nessie.get_default_branch()
-        end = None
-    else:
+    if not ref:
+        ref = ctx.nessie.get_default_branch()
+    start = None
+    end = None
+    if revision_range:
         if ".." in revision_range:
             start, end = revision_range.split("..")
         else:
             start = revision_range
-            end = None
 
     filtering_args: Any = {}
     if number:
         filtering_args["max"] = str(number)
+    if start:
+        filtering_args["start"] = start
     if end:
         filtering_args["end"] = end
-
+    # TODO: we should eventually move "start..end" filtering to the server
     expr = build_query_expression_for_commit_log_flags(query_expression, author, committer, since, until)
     if expr:
         filtering_args["query_expression"] = expr
 
-    log_result = show_log(nessie=ctx.nessie, start_ref=start, limits=paths, **filtering_args)
+    log_result = show_log(nessie=ctx.nessie, start_ref=ref, limits=paths, **filtering_args)
     if ctx.json:
         click.echo(CommitMetaSchema().dumps(log_result, many=True))
     else:
