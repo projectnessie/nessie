@@ -54,6 +54,7 @@
             <phase>pre-integration-test</phase>
             <goals><goal>start</goal></goals>
             <configuration>
+              <skip>${skipTests}</skip>
               <name>nessie</name>
               <waitAfterLaunch>1</waitAfterLaunch>
               <workingDir>${project.basedir}</workingDir>
