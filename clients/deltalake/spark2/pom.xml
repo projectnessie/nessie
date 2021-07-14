@@ -22,7 +22,7 @@
   <parent>
     <groupId>org.projectnessie</groupId>
     <artifactId>nessie-deltalake</artifactId>
-    <version>0.7.1-SNAPSHOT</version>
+    <version>0.8.0</version>
   </parent>
 
   <artifactId>nessie-deltalake-spark2</artifactId>
