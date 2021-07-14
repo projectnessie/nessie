@@ -1,5 +1,19 @@
 # Releases
 
+## 0.8.0 Release (July 14, 2021)
+
+* Add JAX-RS server implementation based on Glassfish/Jersey/Weld for integration testing
+  in Iceberg
+* REST-API change: only accept named-references
+* OpenAPI: more explicit constraints on parameters
+* OpenAPI: include OpenAPI yaml+json files in nessie-model artifact
+* Remove already deprecated methods from ContentsApi
+* Commit-log filtering on all fields of CommitMeta
+* Use "Common Expression Language" for commit-log and entries filtering
+* Spark-extensions for Iceberg
+* Prepare for multi-tenancy
+* Gatling support + simulations
+
 ## 0.7.0 Release (June 15, 2021)
 
 * Server-side filtering improvements for entries-listing and log-listing

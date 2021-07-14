@@ -2,6 +2,15 @@
 History
 =======
 
+0.8.0 (2021-07-14)
+------------------
+
+* REST-API change: only accept named-references
+* OpenAPI: more explicit constraints on parameters
+* Commit-log filtering on all fields of CommitMeta
+* Use "Common Expression Language" for commit-log and entries filtering
+* Prepare for multi-tenancy
+
 0.7.0 (2021-06-15)
 ------------------
 
