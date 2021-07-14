@@ -23,8 +23,8 @@ extra_css:
 
 extra:
   versions:
-    java: 0.8.0
-    python: v0.8.0
+    java: 0.8.1
+    python: v0.8.1
     iceberg: 0.11.1
   analytics:
     provider: google
