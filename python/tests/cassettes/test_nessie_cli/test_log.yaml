@@ -76,9 +76,9 @@ interactions:
       code: 404
       message: Not Found
 - request:
-    body: '{"commitMeta": {"hash": null, "email": null, "committer": null, "commitTime":
-      null, "signedOffBy": null, "message": "test_message", "author": "nessie_user1",
-      "authorTime": null, "properties": null}, "operations": [{"contents": {"metadataLocation":
+    body: '{"commitMeta": {"message": "test_message", "signedOffBy": null, "author":
+      "nessie_user1", "authorTime": null, "committer": null, "email": null, "commitTime":
+      null, "hash": null, "properties": null}, "operations": [{"contents": {"metadataLocation":
       "/a/b/c", "id": "uuid", "type": "ICEBERG_TABLE"}, "key": {"elements": ["foo",
       "bar"]}, "type": "PUT"}]}'
     headers:
@@ -98,7 +98,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/branch/main/commit?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"cdb1c598c3dfd50df36af32a0cc39e03570a7a2071818760f49465248e28f049\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"8feffffac745cc772e4ab386606749adacf33906ae759a72f30613e1bb7a4f43\"\n}"
     headers:
       Content-Length:
       - '121'
@@ -148,10 +148,10 @@ interactions:
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :
-        [ {\n    \"hash\" : \"cdb1c598c3dfd50df36af32a0cc39e03570a7a2071818760f49465248e28f049\",\n
+        [ {\n    \"hash\" : \"8feffffac745cc772e4ab386606749adacf33906ae759a72f30613e1bb7a4f43\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-07-13T16:25:29.154350Z\",\n
-        \   \"authorTime\" : \"2021-07-13T16:25:29.154350Z\",\n    \"properties\"
+        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-07-14T14:14:04.618400Z\",\n
+        \   \"authorTime\" : \"2021-07-14T14:14:04.618400Z\",\n    \"properties\"
         : { }\n  } ]\n}"
     headers:
       Content-Length:
@@ -173,14 +173,14 @@ interactions:
       User-Agent:
       - python-requests/2.25.1
     method: GET
-    uri: http://localhost:19120/api/v1/trees/tree/main/log?hashOnRef=cdb1c598c3dfd50df36af32a0cc39e03570a7a2071818760f49465248e28f049
+    uri: http://localhost:19120/api/v1/trees/tree/main/log?endHash=8feffffac745cc772e4ab386606749adacf33906ae759a72f30613e1bb7a4f43
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :
-        [ {\n    \"hash\" : \"cdb1c598c3dfd50df36af32a0cc39e03570a7a2071818760f49465248e28f049\",\n
+        [ {\n    \"hash\" : \"8feffffac745cc772e4ab386606749adacf33906ae759a72f30613e1bb7a4f43\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-07-13T16:25:29.154350Z\",\n
-        \   \"authorTime\" : \"2021-07-13T16:25:29.154350Z\",\n    \"properties\"
+        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-07-14T14:14:04.618400Z\",\n
+        \   \"authorTime\" : \"2021-07-14T14:14:04.618400Z\",\n    \"properties\"
         : { }\n  } ]\n}"
     headers:
       Content-Length:
@@ -242,9 +242,9 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"commitMeta": {"hash": null, "email": null, "committer": null, "commitTime":
-      null, "signedOffBy": null, "message": "delete_message", "author": "nessie_user2",
-      "authorTime": null, "properties": null}, "operations": [{"key": {"elements":
+    body: '{"commitMeta": {"message": "delete_message", "signedOffBy": null, "author":
+      "nessie_user2", "authorTime": null, "committer": null, "email": null, "commitTime":
+      null, "hash": null, "properties": null}, "operations": [{"key": {"elements":
       ["foo", "bar"]}, "type": "DELETE"}]}'
     headers:
       Accept:
@@ -260,10 +260,10 @@ interactions:
       User-Agent:
       - python-requests/2.25.1
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/main/commit?expectedHash=cdb1c598c3dfd50df36af32a0cc39e03570a7a2071818760f49465248e28f049
+    uri: http://localhost:19120/api/v1/trees/branch/main/commit?expectedHash=8feffffac745cc772e4ab386606749adacf33906ae759a72f30613e1bb7a4f43
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"d536270c4d665eaa03018aa74cff1fdfcdfceedc4a2dddda57970c92a96a7d04\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"2f8af0480a94cdc55ecc85dcad7d1f9b56f373d34353c9da4c8935321ea9021b\"\n}"
     headers:
       Content-Length:
       - '121'
@@ -288,14 +288,14 @@ interactions:
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :
-        [ {\n    \"hash\" : \"d536270c4d665eaa03018aa74cff1fdfcdfceedc4a2dddda57970c92a96a7d04\",\n
+        [ {\n    \"hash\" : \"2f8af0480a94cdc55ecc85dcad7d1f9b56f373d34353c9da4c8935321ea9021b\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user2\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-07-13T16:25:29.254085Z\",\n
-        \   \"authorTime\" : \"2021-07-13T16:25:29.254085Z\",\n    \"properties\"
-        : { }\n  }, {\n    \"hash\" : \"cdb1c598c3dfd50df36af32a0cc39e03570a7a2071818760f49465248e28f049\",\n
+        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-07-14T14:14:04.734637Z\",\n
+        \   \"authorTime\" : \"2021-07-14T14:14:04.734637Z\",\n    \"properties\"
+        : { }\n  }, {\n    \"hash\" : \"8feffffac745cc772e4ab386606749adacf33906ae759a72f30613e1bb7a4f43\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-07-13T16:25:29.154350Z\",\n
-        \   \"authorTime\" : \"2021-07-13T16:25:29.154350Z\",\n    \"properties\"
+        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-07-14T14:14:04.618400Z\",\n
+        \   \"authorTime\" : \"2021-07-14T14:14:04.618400Z\",\n    \"properties\"
         : { }\n  } ]\n}"
     headers:
       Content-Length:
@@ -317,22 +317,18 @@ interactions:
       User-Agent:
       - python-requests/2.25.1
     method: GET
-    uri: http://localhost:19120/api/v1/trees/tree/main/log?hashOnRef=d536270c4d665eaa03018aa74cff1fdfcdfceedc4a2dddda57970c92a96a7d04
+    uri: http://localhost:19120/api/v1/trees/tree/main/log?startHash=2f8af0480a94cdc55ecc85dcad7d1f9b56f373d34353c9da4c8935321ea9021b&endHash=8feffffac745cc772e4ab386606749adacf33906ae759a72f30613e1bb7a4f43
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :
-        [ {\n    \"hash\" : \"d536270c4d665eaa03018aa74cff1fdfcdfceedc4a2dddda57970c92a96a7d04\",\n
-        \   \"committer\" : \"\",\n    \"author\" : \"nessie_user2\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-07-13T16:25:29.254085Z\",\n
-        \   \"authorTime\" : \"2021-07-13T16:25:29.254085Z\",\n    \"properties\"
-        : { }\n  }, {\n    \"hash\" : \"cdb1c598c3dfd50df36af32a0cc39e03570a7a2071818760f49465248e28f049\",\n
+        [ {\n    \"hash\" : \"8feffffac745cc772e4ab386606749adacf33906ae759a72f30613e1bb7a4f43\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-07-13T16:25:29.154350Z\",\n
-        \   \"authorTime\" : \"2021-07-13T16:25:29.154350Z\",\n    \"properties\"
+        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-07-14T14:14:04.618400Z\",\n
+        \   \"authorTime\" : \"2021-07-14T14:14:04.618400Z\",\n    \"properties\"
         : { }\n  } ]\n}"
     headers:
       Content-Length:
-      - '708'
+      - '384'
       Content-Type:
       - application/json
     status:
@@ -354,14 +350,14 @@ interactions:
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :
-        [ {\n    \"hash\" : \"d536270c4d665eaa03018aa74cff1fdfcdfceedc4a2dddda57970c92a96a7d04\",\n
+        [ {\n    \"hash\" : \"2f8af0480a94cdc55ecc85dcad7d1f9b56f373d34353c9da4c8935321ea9021b\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user2\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-07-13T16:25:29.254085Z\",\n
-        \   \"authorTime\" : \"2021-07-13T16:25:29.254085Z\",\n    \"properties\"
-        : { }\n  }, {\n    \"hash\" : \"cdb1c598c3dfd50df36af32a0cc39e03570a7a2071818760f49465248e28f049\",\n
+        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-07-14T14:14:04.734637Z\",\n
+        \   \"authorTime\" : \"2021-07-14T14:14:04.734637Z\",\n    \"properties\"
+        : { }\n  }, {\n    \"hash\" : \"8feffffac745cc772e4ab386606749adacf33906ae759a72f30613e1bb7a4f43\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-07-13T16:25:29.154350Z\",\n
-        \   \"authorTime\" : \"2021-07-13T16:25:29.154350Z\",\n    \"properties\"
+        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-07-14T14:14:04.618400Z\",\n
+        \   \"authorTime\" : \"2021-07-14T14:14:04.618400Z\",\n    \"properties\"
         : { }\n  } ]\n}"
     headers:
       Content-Length:
@@ -387,10 +383,10 @@ interactions:
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :
-        [ {\n    \"hash\" : \"cdb1c598c3dfd50df36af32a0cc39e03570a7a2071818760f49465248e28f049\",\n
+        [ {\n    \"hash\" : \"8feffffac745cc772e4ab386606749adacf33906ae759a72f30613e1bb7a4f43\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-07-13T16:25:29.154350Z\",\n
-        \   \"authorTime\" : \"2021-07-13T16:25:29.154350Z\",\n    \"properties\"
+        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-07-14T14:14:04.618400Z\",\n
+        \   \"authorTime\" : \"2021-07-14T14:14:04.618400Z\",\n    \"properties\"
         : { }\n  } ]\n}"
     headers:
       Content-Length:
@@ -416,10 +412,10 @@ interactions:
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :
-        [ {\n    \"hash\" : \"d536270c4d665eaa03018aa74cff1fdfcdfceedc4a2dddda57970c92a96a7d04\",\n
+        [ {\n    \"hash\" : \"2f8af0480a94cdc55ecc85dcad7d1f9b56f373d34353c9da4c8935321ea9021b\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user2\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-07-13T16:25:29.254085Z\",\n
-        \   \"authorTime\" : \"2021-07-13T16:25:29.254085Z\",\n    \"properties\"
+        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-07-14T14:14:04.734637Z\",\n
+        \   \"authorTime\" : \"2021-07-14T14:14:04.734637Z\",\n    \"properties\"
         : { }\n  } ]\n}"
     headers:
       Content-Length:
@@ -445,14 +441,14 @@ interactions:
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :
-        [ {\n    \"hash\" : \"d536270c4d665eaa03018aa74cff1fdfcdfceedc4a2dddda57970c92a96a7d04\",\n
+        [ {\n    \"hash\" : \"2f8af0480a94cdc55ecc85dcad7d1f9b56f373d34353c9da4c8935321ea9021b\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user2\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-07-13T16:25:29.254085Z\",\n
-        \   \"authorTime\" : \"2021-07-13T16:25:29.254085Z\",\n    \"properties\"
-        : { }\n  }, {\n    \"hash\" : \"cdb1c598c3dfd50df36af32a0cc39e03570a7a2071818760f49465248e28f049\",\n
+        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-07-14T14:14:04.734637Z\",\n
+        \   \"authorTime\" : \"2021-07-14T14:14:04.734637Z\",\n    \"properties\"
+        : { }\n  }, {\n    \"hash\" : \"8feffffac745cc772e4ab386606749adacf33906ae759a72f30613e1bb7a4f43\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-07-13T16:25:29.154350Z\",\n
-        \   \"authorTime\" : \"2021-07-13T16:25:29.154350Z\",\n    \"properties\"
+        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-07-14T14:14:04.618400Z\",\n
+        \   \"authorTime\" : \"2021-07-14T14:14:04.618400Z\",\n    \"properties\"
         : { }\n  } ]\n}"
     headers:
       Content-Length:
@@ -478,14 +474,14 @@ interactions:
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :
-        [ {\n    \"hash\" : \"d536270c4d665eaa03018aa74cff1fdfcdfceedc4a2dddda57970c92a96a7d04\",\n
+        [ {\n    \"hash\" : \"2f8af0480a94cdc55ecc85dcad7d1f9b56f373d34353c9da4c8935321ea9021b\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user2\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-07-13T16:25:29.254085Z\",\n
-        \   \"authorTime\" : \"2021-07-13T16:25:29.254085Z\",\n    \"properties\"
-        : { }\n  }, {\n    \"hash\" : \"cdb1c598c3dfd50df36af32a0cc39e03570a7a2071818760f49465248e28f049\",\n
+        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-07-14T14:14:04.734637Z\",\n
+        \   \"authorTime\" : \"2021-07-14T14:14:04.734637Z\",\n    \"properties\"
+        : { }\n  }, {\n    \"hash\" : \"8feffffac745cc772e4ab386606749adacf33906ae759a72f30613e1bb7a4f43\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-07-13T16:25:29.154350Z\",\n
-        \   \"authorTime\" : \"2021-07-13T16:25:29.154350Z\",\n    \"properties\"
+        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-07-14T14:14:04.618400Z\",\n
+        \   \"authorTime\" : \"2021-07-14T14:14:04.618400Z\",\n    \"properties\"
         : { }\n  } ]\n}"
     headers:
       Content-Length:
@@ -511,10 +507,10 @@ interactions:
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :
-        [ {\n    \"hash\" : \"d536270c4d665eaa03018aa74cff1fdfcdfceedc4a2dddda57970c92a96a7d04\",\n
+        [ {\n    \"hash\" : \"2f8af0480a94cdc55ecc85dcad7d1f9b56f373d34353c9da4c8935321ea9021b\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user2\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-07-13T16:25:29.254085Z\",\n
-        \   \"authorTime\" : \"2021-07-13T16:25:29.254085Z\",\n    \"properties\"
+        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-07-14T14:14:04.734637Z\",\n
+        \   \"authorTime\" : \"2021-07-14T14:14:04.734637Z\",\n    \"properties\"
         : { }\n  } ]\n}"
     headers:
       Content-Length:
@@ -540,14 +536,14 @@ interactions:
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :
-        [ {\n    \"hash\" : \"d536270c4d665eaa03018aa74cff1fdfcdfceedc4a2dddda57970c92a96a7d04\",\n
+        [ {\n    \"hash\" : \"2f8af0480a94cdc55ecc85dcad7d1f9b56f373d34353c9da4c8935321ea9021b\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user2\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-07-13T16:25:29.254085Z\",\n
-        \   \"authorTime\" : \"2021-07-13T16:25:29.254085Z\",\n    \"properties\"
-        : { }\n  }, {\n    \"hash\" : \"cdb1c598c3dfd50df36af32a0cc39e03570a7a2071818760f49465248e28f049\",\n
+        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-07-14T14:14:04.734637Z\",\n
+        \   \"authorTime\" : \"2021-07-14T14:14:04.734637Z\",\n    \"properties\"
+        : { }\n  }, {\n    \"hash\" : \"8feffffac745cc772e4ab386606749adacf33906ae759a72f30613e1bb7a4f43\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-07-13T16:25:29.154350Z\",\n
-        \   \"authorTime\" : \"2021-07-13T16:25:29.154350Z\",\n    \"properties\"
+        : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-07-14T14:14:04.618400Z\",\n
+        \   \"authorTime\" : \"2021-07-14T14:14:04.618400Z\",\n    \"properties\"
         : { }\n  } ]\n}"
     headers:
       Content-Length:

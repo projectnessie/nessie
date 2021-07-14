@@ -126,7 +126,8 @@ class ClientTreeApi implements TreeApi {
         .queryParam("max", params.maxRecords() != null ? params.maxRecords().toString() : null)
         .queryParam("pageToken", params.pageToken())
         .queryParam("query_expression", params.queryExpression())
-        .queryParam("hashOnRef", params.hashOnRef())
+        .queryParam("startHash", params.startHash())
+        .queryParam("endHash", params.endHash())
         .get()
         .readEntity(LogResponse.class);
   }

@@ -15,7 +15,7 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
-        \"d536270c4d665eaa03018aa74cff1fdfcdfceedc4a2dddda57970c92a96a7d04\"\n} ]"
+        \"2f8af0480a94cdc55ecc85dcad7d1f9b56f373d34353c9da4c8935321ea9021b\"\n} ]"
     headers:
       Content-Length:
       - '125'
@@ -25,7 +25,7 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"name": "dev", "hash": null, "type": "BRANCH"}'
+    body: '{"hash": null, "name": "dev", "type": "BRANCH"}'
     headers:
       Accept:
       - '*/*'
@@ -68,7 +68,7 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
-        \"d536270c4d665eaa03018aa74cff1fdfcdfceedc4a2dddda57970c92a96a7d04\"\n}, {\n
+        \"2f8af0480a94cdc55ecc85dcad7d1f9b56f373d34353c9da4c8935321ea9021b\"\n}, {\n
         \ \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}
         ]"
     headers:
@@ -119,7 +119,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/main
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"d536270c4d665eaa03018aa74cff1fdfcdfceedc4a2dddda57970c92a96a7d04\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"2f8af0480a94cdc55ecc85dcad7d1f9b56f373d34353c9da4c8935321ea9021b\"\n}"
     headers:
       Content-Length:
       - '121'
@@ -129,8 +129,8 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"name": "etl", "hash": "d536270c4d665eaa03018aa74cff1fdfcdfceedc4a2dddda57970c92a96a7d04",
-      "type": "BRANCH"}'
+    body: '{"hash": "2f8af0480a94cdc55ecc85dcad7d1f9b56f373d34353c9da4c8935321ea9021b",
+      "name": "etl", "type": "BRANCH"}'
     headers:
       Accept:
       - '*/*'
@@ -148,7 +148,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"etl\",\n  \"hash\" : \"d536270c4d665eaa03018aa74cff1fdfcdfceedc4a2dddda57970c92a96a7d04\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"etl\",\n  \"hash\" : \"2f8af0480a94cdc55ecc85dcad7d1f9b56f373d34353c9da4c8935321ea9021b\"\n}"
     headers:
       Content-Length:
       - '120'
@@ -173,8 +173,8 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"etl\",\n  \"hash\" :
-        \"d536270c4d665eaa03018aa74cff1fdfcdfceedc4a2dddda57970c92a96a7d04\"\n}, {\n
-        \ \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"d536270c4d665eaa03018aa74cff1fdfcdfceedc4a2dddda57970c92a96a7d04\"\n},
+        \"2f8af0480a94cdc55ecc85dcad7d1f9b56f373d34353c9da4c8935321ea9021b\"\n}, {\n
+        \ \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"2f8af0480a94cdc55ecc85dcad7d1f9b56f373d34353c9da4c8935321ea9021b\"\n},
         {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}
         ]"
     headers:
@@ -200,7 +200,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/etl
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"etl\",\n  \"hash\" : \"d536270c4d665eaa03018aa74cff1fdfcdfceedc4a2dddda57970c92a96a7d04\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"etl\",\n  \"hash\" : \"2f8af0480a94cdc55ecc85dcad7d1f9b56f373d34353c9da4c8935321ea9021b\"\n}"
     headers:
       Content-Length:
       - '120'
@@ -223,7 +223,7 @@ interactions:
       User-Agent:
       - python-requests/2.25.1
     method: DELETE
-    uri: http://localhost:19120/api/v1/trees/branch/etl?expectedHash=d536270c4d665eaa03018aa74cff1fdfcdfceedc4a2dddda57970c92a96a7d04
+    uri: http://localhost:19120/api/v1/trees/branch/etl?expectedHash=2f8af0480a94cdc55ecc85dcad7d1f9b56f373d34353c9da4c8935321ea9021b
   response:
     body:
       string: ''
@@ -293,7 +293,7 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
-        \"d536270c4d665eaa03018aa74cff1fdfcdfceedc4a2dddda57970c92a96a7d04\"\n} ]"
+        \"2f8af0480a94cdc55ecc85dcad7d1f9b56f373d34353c9da4c8935321ea9021b\"\n} ]"
     headers:
       Content-Length:
       - '125'

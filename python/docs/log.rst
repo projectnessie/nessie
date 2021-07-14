@@ -5,8 +5,8 @@
 	  Show commit log.
 	
 	  REVISION_RANGE optional hash to start viewing log from. If of the form
-	  <hash>..<hash> only show log for given range on the particular ref that was
-	  provided
+	  <start_hash>..<end_hash> only show log for given range on the particular ref
+	  that was provided
 	
 	  PATHS optional list of paths. If given, only show commits which affected the
 	  given paths
