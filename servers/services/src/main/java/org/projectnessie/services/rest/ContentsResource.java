@@ -58,8 +58,9 @@ public class ContentsResource extends BaseResource implements ContentsApi {
   }
 
   @Override
-  public Contents getContents(ContentsKey key, String incomingRef) throws NessieNotFoundException {
-    Hash ref = namedRefWithHashOrThrow(incomingRef).getHash();
+  public Contents getContents(ContentsKey key, String namedRef, String hashOnRef)
+      throws NessieNotFoundException {
+    Hash ref = namedRefWithHashOrThrow(namedRef, hashOnRef).getHash();
     try {
       Contents obj = getStore().getValue(ref, toKey(key));
       if (obj != null) {
@@ -68,15 +69,16 @@ public class ContentsResource extends BaseResource implements ContentsApi {
       throw new NessieNotFoundException("Requested contents do not exist for specified reference.");
     } catch (ReferenceNotFoundException e) {
       throw new NessieNotFoundException(
-          String.format("Provided reference [%s] does not exist.", incomingRef), e);
+          String.format("Provided reference [%s] does not exist.", namedRef), e);
     }
   }
 
   @Override
   public MultiGetContentsResponse getMultipleContents(
-      String refName, MultiGetContentsRequest request) throws NessieNotFoundException {
+      String namedRef, String hashOnRef, MultiGetContentsRequest request)
+      throws NessieNotFoundException {
     try {
-      Hash ref = namedRefWithHashOrThrow(refName).getHash();
+      Hash ref = namedRefWithHashOrThrow(namedRef, hashOnRef).getHash();
       List<ContentsKey> externalKeys = request.getRequestedKeys();
       List<Key> internalKeys =
           externalKeys.stream().map(ContentsResource::toKey).collect(Collectors.toList());

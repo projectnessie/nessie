@@ -117,7 +117,7 @@ class ClientTreeApi implements TreeApi {
 
   @Override
   public LogResponse getCommitLog(
-      String ref, Integer maxRecords, String pageToken, String queryExpression)
+      String ref, String hashOnRef, Integer maxRecords, String pageToken, String queryExpression)
       throws NessieNotFoundException {
     HttpRequest builder =
         client.newRequest().path("trees/tree/{ref}/log").resolveTemplate("ref", ref);
@@ -125,6 +125,7 @@ class ClientTreeApi implements TreeApi {
         .queryParam("max", maxRecords != null ? maxRecords.toString() : null)
         .queryParam("pageToken", pageToken)
         .queryParam("query_expression", queryExpression)
+        .queryParam("hashOnRef", hashOnRef)
         .get()
         .readEntity(LogResponse.class);
   }
@@ -159,7 +160,11 @@ class ClientTreeApi implements TreeApi {
 
   @Override
   public EntriesResponse getEntries(
-      @NotNull String refName, Integer maxRecords, String pageToken, String queryExpression)
+      @NotNull String refName,
+      String hashOnRef,
+      Integer maxRecords,
+      String pageToken,
+      String queryExpression)
       throws NessieNotFoundException {
     HttpRequest builder =
         client.newRequest().path("trees/tree/{ref}/entries").resolveTemplate("ref", refName);
@@ -167,6 +172,7 @@ class ClientTreeApi implements TreeApi {
         .queryParam("max", maxRecords != null ? maxRecords.toString() : null)
         .queryParam("pageToken", pageToken)
         .queryParam("query_expression", queryExpression)
+        .queryParam("hashOnRef", hashOnRef)
         .get()
         .readEntity(EntriesResponse.class);
   }

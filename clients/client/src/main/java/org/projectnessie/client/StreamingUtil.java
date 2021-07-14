@@ -34,12 +34,13 @@ public final class StreamingUtil {
 
   /**
    * Default implementation to return a stream of objects for a ref, functionally equivalent to
-   * calling {@link TreeApi#getEntries(String, Integer, String, String)} with manual paging.
+   * calling {@link TreeApi#getEntries(String, String, Integer, String, String)} with manual paging.
    *
    * <p>The {@link Stream} returned by {@code getEntriesStream(ref, OptionalInt.empty())}, if not
    * limited, returns all commit-log entries.
    *
-   * @param ref a named reference (branch or tag name) or a commit-hash
+   * @param ref a named reference (branch or tag name)
+   * @param hashOnRef the hash on the given ref
    * @param pageSizeHint page-size hint for the backend
    * @param queryExpression The query expression to filter by
    * @return stream of {@link Entry} objects
@@ -47,24 +48,28 @@ public final class StreamingUtil {
   public static Stream<Entry> getEntriesStream(
       @NotNull TreeApi treeApi,
       @NotNull String ref,
+      String hashOnRef,
       OptionalInt pageSizeHint,
       String queryExpression)
       throws NessieNotFoundException {
     return new ResultStreamPaginator<>(
             EntriesResponse::getEntries,
-            (ref1, pageSize, token) -> treeApi.getEntries(ref1, pageSize, token, queryExpression))
+            (ref1, pageSize, token) ->
+                treeApi.getEntries(ref1, hashOnRef, pageSize, token, queryExpression))
         .generateStream(ref, pageSizeHint);
   }
 
   /**
    * Default implementation to return a stream of commit-log entries, functionally equivalent to
-   * calling {@link TreeApi#getCommitLog(String, Integer, String, String)} with manual paging.
+   * calling {@link TreeApi#getCommitLog(String, String, Integer, String, String)} with manual
+   * paging.
    *
    * <p>The {@link Stream} returned by {@code getCommitLogStream(ref, OptionalInt.empty())}, if not
    * limited, returns all commit-log entries.
    *
    * @param treeApi The {@link TreeApi} to use
-   * @param ref a named reference (branch or tag name) or a commit-hash
+   * @param ref a named reference (branch or tag name)
+   * @param hashOnRef the hash on the given ref
    * @param pageSizeHint page-size hint for the backend
    * @param queryExpression The query expression to filter by
    * @return stream of {@link CommitMeta} objects
@@ -72,13 +77,14 @@ public final class StreamingUtil {
   public static Stream<CommitMeta> getCommitLogStream(
       @NotNull TreeApi treeApi,
       @NotNull String ref,
+      String hashOnRef,
       OptionalInt pageSizeHint,
       String queryExpression)
       throws NessieNotFoundException {
     return new ResultStreamPaginator<>(
             LogResponse::getOperations,
             (reference, pageSize, token) ->
-                treeApi.getCommitLog(reference, pageSize, token, queryExpression))
+                treeApi.getCommitLog(reference, hashOnRef, pageSize, token, queryExpression))
         .generateStream(ref, pageSizeHint);
   }
 }

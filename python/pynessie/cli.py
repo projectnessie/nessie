@@ -253,7 +253,7 @@ def log(  # noqa: C901
     if number:
         filtering_args["max"] = str(number)
     if start:
-        filtering_args["start"] = start
+        filtering_args["hashOnRef"] = start
     if end:
         filtering_args["end"] = end
     # TODO: we should eventually move "start..end" filtering to the server

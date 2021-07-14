@@ -176,7 +176,11 @@ public class TreeResource extends BaseResource implements TreeApi {
 
   @Override
   public LogResponse getCommitLog(
-      String ref, Integer maxRecords, String pageToken, String queryExpression)
+      String namedRef,
+      String hashOnRef,
+      Integer maxRecords,
+      String pageToken,
+      String queryExpression)
       throws NessieNotFoundException {
     int max =
         Math.min(maxRecords != null ? maxRecords : MAX_COMMIT_LOG_ENTRIES, MAX_COMMIT_LOG_ENTRIES);
@@ -184,7 +188,7 @@ public class TreeResource extends BaseResource implements TreeApi {
     Ref startRef;
     if (null == pageToken) {
       // we should only allow named references when no paging is defined
-      startRef = namedRefWithHashOrThrow(ref).getValue();
+      startRef = namedRefWithHashOrThrow(namedRef, hashOnRef).getHash();
     } else {
       // TODO: this is atm an insecure design where users can put it any hashes and retrieve all the
       // commits. Once authz + tvs2 is in place we should revisit this
@@ -207,7 +211,7 @@ public class TreeResource extends BaseResource implements TreeApi {
       return ImmutableLogResponse.builder().addAllOperations(items).build();
     } catch (ReferenceNotFoundException e) {
       throw new NessieNotFoundException(
-          String.format("Unable to find the requested ref [%s].", ref), e);
+          String.format("Unable to find the requested ref [%s].", namedRef), e);
     }
   }
 
@@ -291,10 +295,14 @@ public class TreeResource extends BaseResource implements TreeApi {
 
   @Override
   public EntriesResponse getEntries(
-      String refName, Integer maxRecords, String pageToken, String queryExpression)
+      String namedRef,
+      String hashOnRef,
+      Integer maxRecords,
+      String pageToken,
+      String queryExpression)
       throws NessieNotFoundException {
 
-    final Hash hash = namedRefWithHashOrThrow(refName).getHash();
+    final Hash hash = namedRefWithHashOrThrow(namedRef, hashOnRef).getHash();
     // TODO Implement paging. At the moment, we do not expect that many keys/entries to be returned.
     //  So the size of the whole result is probably reasonable and unlikely to "kill" either the
     //  server or client. We have to figure out _how_ to implement paging for keys/entries, i.e.
@@ -319,7 +327,7 @@ public class TreeResource extends BaseResource implements TreeApi {
       return EntriesResponse.builder().addAllEntries(entries).build();
     } catch (ReferenceNotFoundException e) {
       throw new NessieNotFoundException(
-          String.format("Unable to find the reference [%s].", refName), e);
+          String.format("Unable to find the reference [%s].", namedRef), e);
     }
   }
 
