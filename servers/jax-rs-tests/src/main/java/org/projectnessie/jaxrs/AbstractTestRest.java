@@ -43,7 +43,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.OptionalInt;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -58,6 +57,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.api.ContentsApi;
 import org.projectnessie.api.TreeApi;
+import org.projectnessie.api.params.CommitLogParams;
+import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.client.NessieClient;
 import org.projectnessie.client.StreamingUtil;
 import org.projectnessie.client.http.HttpClient;
@@ -215,14 +216,14 @@ public abstract class AbstractTestRest {
     assertThat(tree.getReferenceByName(tagName)).isEqualTo(tagRef);
     assertThat(tree.getReferenceByName(branchName)).isEqualTo(branchRef);
 
-    EntriesResponse entries = tree.getEntries(tagName, null, null, null, null);
+    EntriesResponse entries = tree.getEntries(tagName, EntriesParams.empty());
     assertThat(entries).isNotNull();
-    entries = tree.getEntries(branchName, null, null, null, null);
+    entries = tree.getEntries(branchName, EntriesParams.empty());
     assertThat(entries).isNotNull();
 
-    LogResponse log = tree.getCommitLog(tagName, null, null, null, null);
+    LogResponse log = tree.getCommitLog(tagName, CommitLogParams.empty());
     assertThat(log).isNotNull();
-    log = tree.getCommitLog(branchName, null, null, null, null);
+    log = tree.getCommitLog(branchName, CommitLogParams.empty());
     assertThat(log).isNotNull();
 
     // Need to have at least one op, otherwise all following operations (assignTag/Branch, merge,
@@ -238,7 +239,7 @@ public abstract class AbstractTestRest {
             .commitMeta(CommitMeta.fromMessage("One dummy op"))
             .build();
     tree.commitMultipleOperations(branchName, branchHash, ops);
-    log = tree.getCommitLog(branchName, null, null, null, null);
+    log = tree.getCommitLog(branchName, CommitLogParams.empty());
     String newHash = log.getOperations().get(0).getHash();
 
     tree.assignTag(tagName, tagHash, Tag.of(tagName, newHash));
@@ -263,11 +264,14 @@ public abstract class AbstractTestRest {
 
     String currentHash = main.getHash();
     createCommits(branch, numAuthors, commitsPerAuthor, currentHash);
-    LogResponse log = tree.getCommitLog(branch.getName(), null, null, null, null);
+    LogResponse log = tree.getCommitLog(branch.getName(), CommitLogParams.empty());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(numAuthors * commitsPerAuthor);
 
-    log = tree.getCommitLog(branch.getName(), null, null, null, "commit.author == 'author-3'");
+    log =
+        tree.getCommitLog(
+            branch.getName(),
+            CommitLogParams.builder().expression("commit.author == 'author-3'").build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(commitsPerAuthor);
     log.getOperations().forEach(commit -> assertThat(commit.getAuthor()).isEqualTo("author-3"));
@@ -275,20 +279,18 @@ public abstract class AbstractTestRest {
     log =
         tree.getCommitLog(
             branch.getName(),
-            null,
-            null,
-            null,
-            "commit.author == 'author-3' && commit.committer == 'random-committer'");
+            CommitLogParams.builder()
+                .expression("commit.author == 'author-3' && commit.committer == 'random-committer'")
+                .build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).isEmpty();
 
     log =
         tree.getCommitLog(
             branch.getName(),
-            null,
-            null,
-            null,
-            "commit.author == 'author-3' && commit.committer == ''");
+            CommitLogParams.builder()
+                .expression("commit.author == 'author-3' && commit.committer == ''")
+                .build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(commitsPerAuthor);
     log.getOperations()
@@ -301,10 +303,9 @@ public abstract class AbstractTestRest {
     log =
         tree.getCommitLog(
             branch.getName(),
-            null,
-            null,
-            null,
-            "commit.author in ['author-1', 'author-3', 'author-4']");
+            CommitLogParams.builder()
+                .expression("commit.author in ['author-1', 'author-3', 'author-4']")
+                .build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(commitsPerAuthor * 3);
     log.getOperations()
@@ -317,7 +318,10 @@ public abstract class AbstractTestRest {
 
     log =
         tree.getCommitLog(
-            branch.getName(), null, null, null, "!(commit.author in ['author-1', 'author-0'])");
+            branch.getName(),
+            CommitLogParams.builder()
+                .expression("!(commit.author in ['author-1', 'author-0'])")
+                .build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(commitsPerAuthor * 3);
     log.getOperations()
@@ -330,7 +334,8 @@ public abstract class AbstractTestRest {
 
     log =
         tree.getCommitLog(
-            branch.getName(), null, null, null, "commit.author.matches('au.*-(2|4)')");
+            branch.getName(),
+            CommitLogParams.builder().expression("commit.author.matches('au.*-(2|4)')").build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(commitsPerAuthor * 2);
     log.getOperations()
@@ -354,7 +359,7 @@ public abstract class AbstractTestRest {
 
     String currentHash = main.getHash();
     createCommits(branch, numAuthors, commitsPerAuthor, currentHash);
-    LogResponse log = tree.getCommitLog(branch.getName(), null, null, null, null);
+    LogResponse log = tree.getCommitLog(branch.getName(), CommitLogParams.empty());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(expectedTotalSize);
 
@@ -368,10 +373,11 @@ public abstract class AbstractTestRest {
     log =
         tree.getCommitLog(
             branch.getName(),
-            null,
-            null,
-            null,
-            String.format("timestamp(commit.commitTime) > timestamp('%s')", initialCommitTime));
+            CommitLogParams.builder()
+                .expression(
+                    String.format(
+                        "timestamp(commit.commitTime) > timestamp('%s')", initialCommitTime))
+                .build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(expectedTotalSize - 1);
     log.getOperations()
@@ -380,10 +386,10 @@ public abstract class AbstractTestRest {
     log =
         tree.getCommitLog(
             branch.getName(),
-            null,
-            null,
-            null,
-            String.format("timestamp(commit.commitTime) < timestamp('%s')", fiveMinLater));
+            CommitLogParams.builder()
+                .expression(
+                    String.format("timestamp(commit.commitTime) < timestamp('%s')", fiveMinLater))
+                .build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(expectedTotalSize);
     log.getOperations()
@@ -392,12 +398,12 @@ public abstract class AbstractTestRest {
     log =
         tree.getCommitLog(
             branch.getName(),
-            null,
-            null,
-            null,
-            String.format(
-                "timestamp(commit.commitTime) > timestamp('%s') && timestamp(commit.commitTime) < timestamp('%s')",
-                initialCommitTime, lastCommitTime));
+            CommitLogParams.builder()
+                .expression(
+                    String.format(
+                        "timestamp(commit.commitTime) > timestamp('%s') && timestamp(commit.commitTime) < timestamp('%s')",
+                        initialCommitTime, lastCommitTime))
+                .build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(expectedTotalSize - 2);
     log.getOperations()
@@ -410,10 +416,10 @@ public abstract class AbstractTestRest {
     log =
         tree.getCommitLog(
             branch.getName(),
-            null,
-            null,
-            null,
-            String.format("timestamp(commit.commitTime) > timestamp('%s')", fiveMinLater));
+            CommitLogParams.builder()
+                .expression(
+                    String.format("timestamp(commit.commitTime) > timestamp('%s')", fiveMinLater))
+                .build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).isEmpty();
   }
@@ -431,13 +437,14 @@ public abstract class AbstractTestRest {
 
     String currentHash = main.getHash();
     createCommits(branch, numAuthors, commitsPerAuthor, currentHash);
-    LogResponse log = tree.getCommitLog(branch.getName(), null, null, null, null);
+    LogResponse log = tree.getCommitLog(branch.getName(), CommitLogParams.empty());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(numAuthors * commitsPerAuthor);
 
     log =
         tree.getCommitLog(
-            branch.getName(), null, null, null, "commit.properties['prop1'] == 'val1'");
+            branch.getName(),
+            CommitLogParams.builder().expression("commit.properties['prop1'] == 'val1'").build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(numAuthors * commitsPerAuthor);
     log.getOperations()
@@ -445,7 +452,8 @@ public abstract class AbstractTestRest {
 
     log =
         tree.getCommitLog(
-            branch.getName(), null, null, null, "commit.properties['prop1'] == 'val3'");
+            branch.getName(),
+            CommitLogParams.builder().expression("commit.properties['prop1'] == 'val3'").build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).isEmpty();
   }
@@ -491,7 +499,7 @@ public abstract class AbstractTestRest {
     int expectedTotalSize = numAuthors * commits;
 
     createCommits(branch, numAuthors, commits, someHash);
-    LogResponse log = tree.getCommitLog(branch.getName(), null, null, null, null);
+    LogResponse log = tree.getCommitLog(branch.getName(), CommitLogParams.empty());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(expectedTotalSize);
 
@@ -506,7 +514,8 @@ public abstract class AbstractTestRest {
     List<String> allMessages =
         log.getOperations().stream().map(CommitMeta::getMessage).collect(Collectors.toList());
     List<CommitMeta> completeLog =
-        StreamingUtil.getCommitLogStream(tree, branchName, null, OptionalInt.of(pageSizeHint), null)
+        StreamingUtil.getCommitLogStream(
+                tree, branchName, CommitLogParams.builder().maxRecords(pageSizeHint).build())
             .collect(Collectors.toList());
     assertThat(completeLog.stream().map(CommitMeta::getMessage))
         .containsExactlyElementsOf(allMessages);
@@ -545,7 +554,8 @@ public abstract class AbstractTestRest {
     verifyPaging(branchName, commits, pageSizeHint, allMessages, null);
 
     List<CommitMeta> completeLog =
-        StreamingUtil.getCommitLogStream(tree, branchName, null, OptionalInt.of(pageSizeHint), null)
+        StreamingUtil.getCommitLogStream(
+                tree, branchName, CommitLogParams.builder().maxRecords(pageSizeHint).build())
             .collect(Collectors.toList());
     assertEquals(
         completeLog.stream().map(CommitMeta::getMessage).collect(Collectors.toList()), allMessages);
@@ -565,7 +575,13 @@ public abstract class AbstractTestRest {
         queryExpression = String.format("commit.author=='%s'", filterByAuthor);
       }
       LogResponse response =
-          tree.getCommitLog(branchName, null, pageSizeHint, pageToken, queryExpression);
+          tree.getCommitLog(
+              branchName,
+              CommitLogParams.builder()
+                  .maxRecords(pageSizeHint)
+                  .pageToken(pageToken)
+                  .expression(queryExpression)
+                  .build());
       if (pos + pageSizeHint <= commits) {
         assertTrue(response.hasMore());
         assertNotNull(response.getToken());
@@ -734,7 +750,7 @@ public abstract class AbstractTestRest {
                 contentAndOperationTypes().map(c -> c.operation).collect(Collectors.toList()))
             .commitMeta(CommitMeta.fromMessage("verifyAllContentAndOperationTypes"))
             .build());
-    List<Entry> entries = tree.getEntries(branchName, null, null, null, null).getEntries();
+    List<Entry> entries = tree.getEntries(branchName, EntriesParams.empty()).getEntries();
     List<ImmutableEntry> expect =
         contentAndOperationTypes()
             .filter(c -> c.operation instanceof Put)
@@ -756,7 +772,7 @@ public abstract class AbstractTestRest {
             .addOperations(contentAndOperationType.operation)
             .commitMeta(CommitMeta.fromMessage("commit " + contentAndOperationType))
             .build());
-    List<Entry> entries = tree.getEntries(branchName, null, null, null, null).getEntries();
+    List<Entry> entries = tree.getEntries(branchName, EntriesParams.empty()).getEntries();
     // Oh, yea - this is weird. The property ContentAndOperationType.operation.key.namespace is null
     // (!!!)
     // here, because somehow JUnit @MethodSource implementation re-constructs the objects returned
@@ -795,7 +811,7 @@ public abstract class AbstractTestRest {
             .addOperations(ImmutablePut.builder().key(b).contents(tb).build())
             .commitMeta(CommitMeta.fromMessage("commit 2"))
             .build());
-    List<Entry> entries = tree.getEntries(branch, null, null, null, null).getEntries();
+    List<Entry> entries = tree.getEntries(branch, EntriesParams.empty()).getEntries();
     List<Entry> expected =
         asList(
             Entry.builder().name(a).type(Type.ICEBERG_TABLE).build(),
@@ -803,15 +819,24 @@ public abstract class AbstractTestRest {
     assertThat(entries).containsExactlyInAnyOrderElementsOf(expected);
 
     entries =
-        tree.getEntries(branch, null, null, null, "entry.contentType=='ICEBERG_TABLE'")
+        tree.getEntries(
+                branch,
+                EntriesParams.builder().expression("entry.contentType=='ICEBERG_TABLE'").build())
             .getEntries();
     assertEquals(singletonList(expected.get(0)), entries);
 
-    entries = tree.getEntries(branch, null, null, null, "entry.contentType=='VIEW'").getEntries();
+    entries =
+        tree.getEntries(
+                branch, EntriesParams.builder().expression("entry.contentType=='VIEW'").build())
+            .getEntries();
     assertEquals(singletonList(expected.get(1)), entries);
 
     entries =
-        tree.getEntries(branch, null, null, null, "entry.contentType in ['ICEBERG_TABLE', 'VIEW']")
+        tree.getEntries(
+                branch,
+                EntriesParams.builder()
+                    .expression("entry.contentType in ['ICEBERG_TABLE', 'VIEW']")
+                    .build())
             .getEntries();
     assertThat(entries).containsExactlyInAnyOrderElementsOf(expected);
 
@@ -859,29 +884,43 @@ public abstract class AbstractTestRest {
             .commitMeta(CommitMeta.fromMessage("commit 4"))
             .build());
 
-    List<Entry> entries = tree.getEntries(branch, null, null, null, null).getEntries();
+    List<Entry> entries = tree.getEntries(branch, EntriesParams.empty()).getEntries();
     assertThat(entries).isNotNull().hasSize(4);
 
-    entries = tree.getEntries(branch, null, null, null, null).getEntries();
+    entries = tree.getEntries(branch, EntriesParams.empty()).getEntries();
     assertThat(entries).isNotNull().hasSize(4);
 
     entries =
-        tree.getEntries(branch, null, null, null, "entry.namespace.startsWith('a.b')").getEntries();
+        tree.getEntries(
+                branch,
+                EntriesParams.builder().expression("entry.namespace.startsWith('a.b')").build())
+            .getEntries();
     assertThat(entries).hasSize(2);
     entries.forEach(e -> assertThat(e.getName().getNamespace().name()).startsWith("a.b"));
 
     entries =
-        tree.getEntries(branch, null, null, null, "entry.namespace.startsWith('a')").getEntries();
+        tree.getEntries(
+                branch,
+                EntriesParams.builder().expression("entry.namespace.startsWith('a')").build())
+            .getEntries();
     assertThat(entries).hasSize(4);
     entries.forEach(e -> assertThat(e.getName().getNamespace().name()).startsWith("a"));
 
     entries =
-        tree.getEntries(branch, null, null, null, "entry.namespace.startsWith('a.b.c.firstTable')")
+        tree.getEntries(
+                branch,
+                EntriesParams.builder()
+                    .expression("entry.namespace.startsWith('a.b.c.firstTable')")
+                    .build())
             .getEntries();
     assertThat(entries).isEmpty();
 
     entries =
-        tree.getEntries(branch, null, null, null, "entry.namespace.startsWith('a.fourthTable')")
+        tree.getEntries(
+                branch,
+                EntriesParams.builder()
+                    .expression("entry.namespace.startsWith('a.fourthTable')")
+                    .build())
             .getEntries();
     assertThat(entries).isEmpty();
 
@@ -890,11 +929,17 @@ public abstract class AbstractTestRest {
 
   @Test
   public void checkCelScriptFailureReporting() {
-    assertThatThrownBy(() -> tree.getEntries("main", null, null, null, "invalid_script"))
+    assertThatThrownBy(
+            () ->
+                tree.getEntries(
+                    "main", EntriesParams.builder().expression("invalid_script").build()))
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessageContaining("undeclared reference to 'invalid_script'");
 
-    assertThatThrownBy(() -> tree.getCommitLog("main", null, null, null, "invalid_script"))
+    assertThatThrownBy(
+            () ->
+                tree.getCommitLog(
+                    "main", CommitLogParams.builder().expression("invalid_script").build()))
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessageContaining("undeclared reference to 'invalid_script'");
   }
@@ -973,14 +1018,20 @@ public abstract class AbstractTestRest {
                 "Bad Request (HTTP/400): getCommitLog.ref: " + REF_NAME_MESSAGE,
                 assertThrows(
                         NessieBadRequestException.class,
-                        () -> tree.getCommitLog(invalidBranchName, validHash, null, null, null))
+                        () ->
+                            tree.getCommitLog(
+                                invalidBranchName,
+                                CommitLogParams.builder().hashOnRef(validHash).build()))
                     .getMessage()),
         () ->
             assertEquals(
                 "Bad Request (HTTP/400): getEntries.refName: " + REF_NAME_MESSAGE,
                 assertThrows(
                         NessieBadRequestException.class,
-                        () -> tree.getEntries(invalidBranchName, validHash, null, null, null))
+                        () ->
+                            tree.getEntries(
+                                invalidBranchName,
+                                EntriesParams.builder().hashOnRef(validHash).build()))
                     .getMessage()),
         () ->
             assertEquals(
@@ -1122,16 +1173,22 @@ public abstract class AbstractTestRest {
                 .hasMessageContaining("getContents.hashOnRef: " + HASH_MESSAGE),
         () ->
             assertThatThrownBy(
-                    () -> tree.getCommitLog(validBranchName, invalidHash, null, null, null))
+                    () ->
+                        tree.getCommitLog(
+                            validBranchName,
+                            CommitLogParams.builder().hashOnRef(invalidHash).build()))
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400): ")
-                .hasMessageContaining("getCommitLog.hashOnRef: " + HASH_MESSAGE),
+                .hasMessageContaining("getCommitLog.params.hashOnRef: " + HASH_MESSAGE),
         () ->
             assertThatThrownBy(
-                    () -> tree.getEntries(validBranchName, invalidHash, null, null, null))
+                    () ->
+                        tree.getEntries(
+                            validBranchName,
+                            EntriesParams.builder().hashOnRef(invalidHash).build()))
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400): ")
-                .hasMessageContaining("getEntries.hashOnRef: " + HASH_MESSAGE));
+                .hasMessageContaining("getEntries.params.hashOnRef: " + HASH_MESSAGE));
   }
 
   @ParameterizedTest
@@ -1241,11 +1298,11 @@ public abstract class AbstractTestRest {
     MultiGetContentsRequest mgReq = MultiGetContentsRequest.of(key);
     String invalidRef = "1234567890123456";
 
-    assertThatThrownBy(() -> tree.getCommitLog(invalidRef, null, null, null, null))
+    assertThatThrownBy(() -> tree.getCommitLog(invalidRef, CommitLogParams.empty()))
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessageStartingWith("Bad Request (HTTP/400): getCommitLog.ref: " + REF_NAME_MESSAGE);
 
-    assertThatThrownBy(() -> tree.getEntries(invalidRef, null, null, null, null))
+    assertThatThrownBy(() -> tree.getEntries(invalidRef, EntriesParams.empty()))
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessageStartingWith("Bad Request (HTTP/400): getEntries.refName: " + REF_NAME_MESSAGE);
 
@@ -1271,11 +1328,11 @@ public abstract class AbstractTestRest {
 
     String currentHash = main.getHash();
     createCommits(branch, 1, commits, currentHash);
-    LogResponse entireLog = tree.getCommitLog(branch.getName(), null, null, null, null);
+    LogResponse entireLog = tree.getCommitLog(branch.getName(), CommitLogParams.empty());
     assertThat(entireLog).isNotNull();
     assertThat(entireLog.getOperations()).hasSize(commits);
 
-    EntriesResponse allEntries = tree.getEntries(branch.getName(), null, null, null, null);
+    EntriesResponse allEntries = tree.getEntries(branch.getName(), EntriesParams.empty());
     assertThat(allEntries).isNotNull();
     assertThat(allEntries.getEntries()).hasSize(commits);
 
@@ -1289,13 +1346,15 @@ public abstract class AbstractTestRest {
 
     for (int i = 0; i < commits; i++) {
       String hash = entireLog.getOperations().get(i).getHash();
-      LogResponse log = tree.getCommitLog(branch.getName(), hash, null, null, null);
+      LogResponse log =
+          tree.getCommitLog(branch.getName(), CommitLogParams.builder().hashOnRef(hash).build());
       assertThat(log).isNotNull();
       assertThat(log.getOperations()).hasSize(commits - i);
       assertThat(ImmutableList.copyOf(entireLog.getOperations()).subList(i, commits))
           .containsExactlyElementsOf(log.getOperations());
 
-      EntriesResponse entries = tree.getEntries(branch.getName(), hash, null, null, null);
+      EntriesResponse entries =
+          tree.getEntries(branch.getName(), EntriesParams.builder().hashOnRef(hash).build());
       assertThat(entries).isNotNull();
       assertThat(entries.getEntries()).hasSize(commits - i);
 
@@ -1318,12 +1377,18 @@ public abstract class AbstractTestRest {
 
     String currentHash = main.getHash();
     createCommits(branch, 1, commits, currentHash);
-    assertThatThrownBy(() -> tree.getCommitLog(branch.getName(), invalidHash, null, null, null))
+    assertThatThrownBy(
+            () ->
+                tree.getCommitLog(
+                    branch.getName(), CommitLogParams.builder().hashOnRef(invalidHash).build()))
         .isInstanceOf(NessieNotFoundException.class)
         .hasMessage(
             String.format("Hash %s on Ref %s could not be found", invalidHash, b.getName()));
 
-    assertThatThrownBy(() -> tree.getEntries(branch.getName(), invalidHash, null, null, null))
+    assertThatThrownBy(
+            () ->
+                tree.getEntries(
+                    branch.getName(), EntriesParams.builder().hashOnRef(invalidHash).build()))
         .isInstanceOf(NessieNotFoundException.class)
         .hasMessage(
             String.format("Hash %s on Ref %s could not be found", invalidHash, b.getName()));
