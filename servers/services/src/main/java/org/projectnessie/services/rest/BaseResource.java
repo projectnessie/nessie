@@ -16,7 +16,9 @@
 package org.projectnessie.services.rest;
 
 import java.security.Principal;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.ws.rs.core.SecurityContext;
 import org.projectnessie.error.NessieNotFoundException;
@@ -62,13 +64,26 @@ abstract class BaseResource {
 
   WithHash<NamedRef> namedRefWithHashOrThrow(String namedRef, @Nullable String hashOnRef)
       throws NessieNotFoundException {
-    WithHash<NamedRef> namedRefWithHash =
+    List<WithHash<NamedRef>> collect =
         store
             .getNamedRefs()
-            .filter(r -> r.getValue().getName().equals(namedRef))
-            .findFirst()
-            .orElseThrow(
-                () -> new NessieNotFoundException(String.format("Ref for %s not found", namedRef)));
+            .filter(
+                r ->
+                    r.getValue().getName().equals(namedRef)
+                        || r.getValue().getName().equals(config.getDefaultBranch()))
+            .collect(Collectors.toList());
+    WithHash<NamedRef> namedRefWithHash;
+    if (collect.size() == 1) {
+      namedRefWithHash = collect.get(0);
+    } else {
+      namedRefWithHash =
+          collect.stream()
+              .filter(r -> r.getValue().getName().equals(namedRef))
+              .findFirst()
+              .orElseThrow(
+                  () ->
+                      new NessieNotFoundException(String.format("Ref for %s not found", namedRef)));
+    }
 
     try {
       if (null == hashOnRef) {
