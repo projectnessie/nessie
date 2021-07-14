@@ -75,6 +75,10 @@ public abstract class Contents {
     return UUID.randomUUID().toString();
   }
 
+  public Contents mergeGlobalState(GlobalContents globalContents) {
+    return this;
+  }
+
   /**
    * Unwrap object if possible, otherwise throw.
    *

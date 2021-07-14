@@ -28,6 +28,7 @@ import javax.enterprise.util.TypeLiteral;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
 import org.projectnessie.model.Contents.Type;
+import org.projectnessie.model.GlobalContents;
 import org.projectnessie.server.store.TableCommitMetaStoreWorker;
 import org.projectnessie.versioned.memory.InMemoryVersionStore;
 
@@ -36,8 +37,8 @@ public class VersionStoreExtension implements Extension {
   @SuppressWarnings("unused")
   public void afterBeanDiscovery(@Observes AfterBeanDiscovery abd, BeanManager bm) {
     final TableCommitMetaStoreWorker storeWorker = new TableCommitMetaStoreWorker();
-    final VersionStore<Contents, CommitMeta, Type> store =
-        InMemoryVersionStore.<Contents, CommitMeta, Type>builder()
+    final VersionStore<Contents, GlobalContents, CommitMeta, Type> store =
+        InMemoryVersionStore.<Contents, GlobalContents, CommitMeta, Type>builder()
             .valueSerializer(storeWorker.getValueSerializer())
             .metadataSerializer(storeWorker.getMetadataSerializer())
             .build();
@@ -49,7 +50,7 @@ public class VersionStoreExtension implements Extension {
     }
 
     abd.addBean()
-        .addType(new TypeLiteral<VersionStore<Contents, CommitMeta, Type>>() {})
+        .addType(new TypeLiteral<VersionStore<Contents, GlobalContents, CommitMeta, Type>>() {})
         .addQualifier(Default.Literal.INSTANCE)
         .scope(ApplicationScoped.class)
         .produceWith(i -> store);

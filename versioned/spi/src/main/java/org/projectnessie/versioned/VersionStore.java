@@ -32,7 +32,7 @@ import javax.annotation.concurrent.ThreadSafe;
  *     provide an associated Serializer.
  */
 @ThreadSafe
-public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>> {
+public interface VersionStore<VALUE, STATE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>> {
 
   /**
    * Provide the current hash for the given NamedRef.
@@ -52,11 +52,12 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * <p>If a branch or tag has the same name as the string form of a valid hash, the branch or tag
    * name are returned.
    *
-   * @param refOfUnknownType A string that may be a branch, tag or hash.
+   * @param refOfUnknownType A string that may be a branch or tag, not a hash.
    * @return The concrete ref type with its hash.
    * @throws ReferenceNotFoundException If the string doesn't map to a valid ref.
    * @throws NullPointerException if {@code refOfUnknownType} is {@code null}.
    */
+  // TODO refactor return type to WithHash<NamedRef>
   WithHash<Ref> toRef(@Nonnull String refOfUnknownType) throws ReferenceNotFoundException;
 
   /**
@@ -80,7 +81,7 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
       @Nonnull BranchName branch,
       @Nonnull Optional<Hash> referenceHash,
       @Nonnull METADATA metadata,
-      @Nonnull List<Operation<VALUE>> operations)
+      @Nonnull List<Operation<VALUE, STATE>> operations)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**
@@ -99,9 +100,22 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @throws ReferenceNotFoundException if {@code branch} or if any of the hashes from {@code
    *     sequenceToTransplant} is not present in the store.
    */
-  void transplant(
+  @Deprecated
+  default void transplant(
       BranchName targetBranch, Optional<Hash> referenceHash, List<Hash> sequenceToTransplant)
-      throws ReferenceNotFoundException, ReferenceConflictException;
+      throws ReferenceNotFoundException, ReferenceConflictException {
+    throw new UnsupportedOperationException();
+  }
+
+  default Hash transplant(
+      BranchName targetBranch,
+      Optional<Hash> referenceHash,
+      NamedRef source,
+      List<Hash> sequenceToTransplant)
+      throws ReferenceNotFoundException, ReferenceConflictException {
+    transplant(targetBranch, referenceHash, sequenceToTransplant);
+    return null;
+  }
 
   /**
    * Merge items from an existing hash into the requested branch. The merge is always a rebase +
@@ -126,8 +140,18 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @throws ReferenceNotFoundException if {@code toBranch} or {@code fromHash} is not present in
    *     the store.
    */
-  void merge(Hash fromHash, BranchName toBranch, Optional<Hash> expectedHash)
-      throws ReferenceNotFoundException, ReferenceConflictException;
+  @Deprecated
+  default void merge(Hash fromHash, BranchName toBranch, Optional<Hash> expectedHash)
+      throws ReferenceNotFoundException, ReferenceConflictException {
+    throw new UnsupportedOperationException();
+  }
+
+  default Hash merge(
+      NamedRef from, Optional<Hash> fromHash, BranchName toBranch, Optional<Hash> expectedHash)
+      throws ReferenceNotFoundException, ReferenceConflictException {
+    merge(fromHash.get(), toBranch, expectedHash);
+    return null;
+  }
 
   /**
    * Assign the NamedRef to point to a particular hash.
@@ -145,8 +169,17 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @throws ReferenceConflictException if {@code expectedHash} is not empty and its value doesn't
    *     match the stored hash for {@code ref}
    */
-  void assign(NamedRef ref, Optional<Hash> expectedHash, Hash targetHash)
-      throws ReferenceNotFoundException, ReferenceConflictException;
+  @Deprecated
+  default void assign(NamedRef ref, Optional<Hash> expectedHash, Hash targetHash)
+      throws ReferenceNotFoundException, ReferenceConflictException {
+    assign(ref, expectedHash, ref, Optional.of(targetHash));
+  }
+
+  default void assign(
+      NamedRef ref, Optional<Hash> expectedHash, NamedRef target, Optional<Hash> targetHash)
+      throws ReferenceNotFoundException, ReferenceConflictException {
+    assign(ref, expectedHash, targetHash.get());
+  }
 
   /**
    * Assign the NamedRef to point to a particular hash. If the NamedRef does not exist, it will be
@@ -159,8 +192,16 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    *     store
    * @throws ReferenceAlreadyExistsException if {@code ref} already exists
    */
-  Hash create(NamedRef ref, Optional<Hash> targetHash)
-      throws ReferenceNotFoundException, ReferenceAlreadyExistsException;
+  @Deprecated
+  default Hash create(NamedRef ref, Optional<Hash> targetHash)
+      throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
+    throw new UnsupportedOperationException();
+  }
+
+  default Hash create(NamedRef ref, Optional<NamedRef> target, Optional<Hash> targetHash)
+      throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
+    return create(ref, targetHash);
+  }
 
   /**
    * Delete the provided NamedRef
@@ -193,7 +234,16 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @return A stream of commits.
    * @throws ReferenceNotFoundException if {@code ref} is not present in the store
    */
-  Stream<WithHash<METADATA>> getCommits(Ref ref) throws ReferenceNotFoundException;
+  @Deprecated
+  default Stream<WithHash<METADATA>> getCommits(Ref ref) throws ReferenceNotFoundException {
+    return getCommits((NamedRef) ref, Optional.empty(), Optional.empty());
+  }
+
+  default Stream<WithHash<METADATA>> getCommits(
+      NamedRef ref, Optional<Hash> offset, Optional<Hash> untilExcluding)
+      throws ReferenceNotFoundException {
+    return getCommits(offset.map(Ref.class::cast).orElse(ref));
+  }
 
   /**
    * Get a stream of all available keys for the given ref.
@@ -202,7 +252,15 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @return The stream of keys available for this ref.
    * @throws ReferenceNotFoundException if {@code ref} is not present in the store
    */
-  Stream<WithType<Key, VALUE_TYPE>> getKeys(Ref ref) throws ReferenceNotFoundException;
+  @Deprecated
+  default Stream<WithType<Key, VALUE_TYPE>> getKeys(Ref ref) throws ReferenceNotFoundException {
+    return getKeys((NamedRef) ref, Optional.empty());
+  }
+
+  default Stream<WithType<Key, VALUE_TYPE>> getKeys(NamedRef ref, Optional<Hash> hashOnRef)
+      throws ReferenceNotFoundException {
+    return getKeys(hashOnRef.map(Ref.class::cast).orElse(ref));
+  }
 
   /**
    * Get the value for a provided ref.
@@ -212,7 +270,15 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @return The value.
    * @throws ReferenceNotFoundException if {@code ref} is not present in the store
    */
-  VALUE getValue(Ref ref, Key key) throws ReferenceNotFoundException;
+  @Deprecated
+  default VALUE getValue(Ref ref, Key key) throws ReferenceNotFoundException {
+    return getValue((NamedRef) ref, Optional.empty(), key);
+  }
+
+  default VALUE getValue(NamedRef ref, Optional<Hash> hashOnRef, Key key)
+      throws ReferenceNotFoundException {
+    return getValue(hashOnRef.map(Ref.class::cast).orElse(ref), key);
+  }
 
   /**
    * Get the values for a list of keys.
@@ -222,7 +288,16 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @return A parallel list of values.
    * @throws ReferenceNotFoundException if {@code ref} is not present in the store
    */
-  List<Optional<VALUE>> getValues(Ref ref, List<Key> keys) throws ReferenceNotFoundException;
+  @Deprecated
+  default List<Optional<VALUE>> getValues(Ref ref, List<Key> keys)
+      throws ReferenceNotFoundException {
+    return getValues((NamedRef) ref, Optional.empty(), keys);
+  }
+
+  default List<Optional<VALUE>> getValues(NamedRef ref, Optional<Hash> hashOnRef, List<Key> keys)
+      throws ReferenceNotFoundException {
+    return getValues(hashOnRef.map(Ref.class::cast).orElse(ref), keys);
+  }
 
   /**
    * Get list of diffs between two refs.
@@ -231,7 +306,16 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @param to The to part of the diff.
    * @return A stream of values that are different.
    */
-  Stream<Diff<VALUE>> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException;
+  @Deprecated
+  default Stream<Diff<VALUE>> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException {
+    return getDiffs((NamedRef) from, Optional.empty(), (NamedRef) to, Optional.empty());
+  }
+
+  default Stream<Diff<VALUE>> getDiffs(
+      NamedRef from, Optional<Hash> hashOnFrom, NamedRef to, Optional<Hash> hashOnTo)
+      throws ReferenceNotFoundException {
+    return getDiffs(from, to);
+  }
 
   /**
    * Collect some garbage. Each time this is called, it collects some garbage and reports the

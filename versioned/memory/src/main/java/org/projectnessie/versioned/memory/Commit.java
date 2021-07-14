@@ -41,7 +41,7 @@ import org.projectnessie.versioned.Unchanged;
  * @param <ValueT> commit value
  * @param <MetadataT> commit metadata
  */
-class Commit<ValueT, MetadataT> {
+class Commit<ValueT, StateT, MetadataT> {
   private static final HashFunction COMMIT_HASH_FUNCTION = Hashing.sha256();
 
   public static final Hash NO_ANCESTOR =
@@ -56,21 +56,22 @@ class Commit<ValueT, MetadataT> {
   private final Hash hash;
   private final Hash ancestor;
   private final MetadataT metadata;
-  private final List<Operation<ValueT>> operations;
+  private final List<Operation<ValueT, StateT>> operations;
 
-  public Commit(Hash hash, Hash ancestor, MetadataT metadata, List<Operation<ValueT>> operations) {
+  public Commit(
+      Hash hash, Hash ancestor, MetadataT metadata, List<Operation<ValueT, StateT>> operations) {
     this.hash = requireNonNull(hash);
     this.ancestor = requireNonNull(ancestor);
     this.metadata = requireNonNull(metadata);
     this.operations = ImmutableList.copyOf(requireNonNull(operations));
   }
 
-  public static <ValueT, MetadataT> Commit<ValueT, MetadataT> of(
+  public static <ValueT, StateT, MetadataT> Commit<ValueT, StateT, MetadataT> of(
       final Serializer<ValueT> valueSerializer,
       final Serializer<MetadataT> metadataSerializer,
       Hash ancestor,
       MetadataT metadata,
-      List<Operation<ValueT>> operations) {
+      List<Operation<ValueT, StateT>> operations) {
     // Create a hash for the commit
     Hasher hasher = COMMIT_HASH_FUNCTION.newHasher();
 
@@ -83,18 +84,18 @@ class Commit<ValueT, MetadataT> {
     hash(hasher, metadataSerializer.toBytes(metadata));
 
     // serialize operations and hash
-    for (Operation<ValueT> operation : operations) {
+    for (Operation<ValueT, StateT> operation : operations) {
       if (operation instanceof Put) {
-        Put<ValueT> put = (Put<ValueT>) operation;
+        Put<ValueT, StateT> put = (Put<ValueT, StateT>) operation;
         hasher.putString("put", UTF_8);
         hash(hasher, put.getKey());
         hash(hasher, valueSerializer.toBytes(put.getValue()));
       } else if (operation instanceof Delete) {
-        Delete<ValueT> delete = (Delete<ValueT>) operation;
+        Delete<ValueT, StateT> delete = (Delete<ValueT, StateT>) operation;
         hasher.putString("delete", UTF_8);
         hash(hasher, delete.getKey());
       } else if (operation instanceof Unchanged) {
-        Unchanged<ValueT> unchanged = (Unchanged<ValueT>) operation;
+        Unchanged<ValueT, StateT> unchanged = (Unchanged<ValueT, StateT>) operation;
         hash(hasher, unchanged.getKey());
         unchanged.getKey().getElements().forEach(e -> hasher.putString(e, UTF_8));
       } else {
@@ -128,7 +129,7 @@ class Commit<ValueT, MetadataT> {
     return metadata;
   }
 
-  public List<Operation<ValueT>> getOperations() {
+  public List<Operation<ValueT, StateT>> getOperations() {
     return operations;
   }
 

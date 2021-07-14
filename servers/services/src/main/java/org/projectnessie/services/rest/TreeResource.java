@@ -49,6 +49,7 @@ import org.projectnessie.model.Contents;
 import org.projectnessie.model.Contents.Type;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.EntriesResponse;
+import org.projectnessie.model.GlobalContents;
 import org.projectnessie.model.ImmutableBranch;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableHash;
@@ -89,7 +90,7 @@ public class TreeResource extends BaseResource implements TreeApi {
   public TreeResource(
       ServerConfig config,
       MultiTenant multiTenant,
-      VersionStore<Contents, CommitMeta, Contents.Type> store) {
+      VersionStore<Contents, GlobalContents, CommitMeta, Contents.Type> store) {
     super(config, multiTenant, store);
   }
 
@@ -381,7 +382,7 @@ public class TreeResource extends BaseResource implements TreeApi {
   @Override
   public Branch commitMultipleOperations(String branch, String hash, Operations operations)
       throws NessieNotFoundException, NessieConflictException {
-    List<org.projectnessie.versioned.Operation<Contents>> ops =
+    List<org.projectnessie.versioned.Operation<Contents, GlobalContents>> ops =
         operations.getOperations().stream()
             .map(TreeResource::toOp)
             .collect(ImmutableList.toImmutableList());
@@ -393,7 +394,7 @@ public class TreeResource extends BaseResource implements TreeApi {
       String branch,
       String hash,
       CommitMeta commitMeta,
-      List<org.projectnessie.versioned.Operation<Contents>> operations)
+      List<org.projectnessie.versioned.Operation<Contents, GlobalContents>> operations)
       throws NessieConflictException, NessieNotFoundException {
     try {
       return getStore()
@@ -513,7 +514,7 @@ public class TreeResource extends BaseResource implements TreeApi {
     }
   }
 
-  private static org.projectnessie.versioned.Operation<Contents> toOp(Operation o) {
+  private static org.projectnessie.versioned.Operation<Contents, GlobalContents> toOp(Operation o) {
     Key key = Key.of(o.getKey().getElements().toArray(new String[0]));
     if (o instanceof Operation.Delete) {
       return Delete.of(key);

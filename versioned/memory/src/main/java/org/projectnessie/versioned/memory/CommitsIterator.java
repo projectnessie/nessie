@@ -21,14 +21,15 @@ import java.util.function.Function;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.WithHash;
 
-final class CommitsIterator<ValueT, MetadataT>
-    implements Iterator<WithHash<Commit<ValueT, MetadataT>>> {
-  private final Function<Hash, Commit<ValueT, MetadataT>> commitAccessor;
+final class CommitsIterator<ValueT, StateT, MetadataT>
+    implements Iterator<WithHash<Commit<ValueT, StateT, MetadataT>>> {
+  private final Function<Hash, Commit<ValueT, StateT, MetadataT>> commitAccessor;
 
-  private WithHash<Commit<ValueT, MetadataT>> current;
+  private WithHash<Commit<ValueT, StateT, MetadataT>> current;
   private Hash ancestor = Commit.NO_ANCESTOR;
 
-  CommitsIterator(Function<Hash, Commit<ValueT, MetadataT>> commitAccessor, Hash initialHash) {
+  CommitsIterator(
+      Function<Hash, Commit<ValueT, StateT, MetadataT>> commitAccessor, Hash initialHash) {
     this.commitAccessor = commitAccessor;
     this.ancestor = initialHash;
   }
@@ -43,7 +44,7 @@ final class CommitsIterator<ValueT, MetadataT>
       return false;
     }
 
-    final Commit<ValueT, MetadataT> commit = commitAccessor.apply(ancestor);
+    final Commit<ValueT, StateT, MetadataT> commit = commitAccessor.apply(ancestor);
     if (commit == null) {
       throw new IllegalStateException("Missing entry for commit " + ancestor.asString());
     }
@@ -54,11 +55,11 @@ final class CommitsIterator<ValueT, MetadataT>
   }
 
   @Override
-  public WithHash<Commit<ValueT, MetadataT>> next() {
+  public WithHash<Commit<ValueT, StateT, MetadataT>> next() {
     if (!hasNext()) {
       throw new NoSuchElementException();
     }
-    final WithHash<Commit<ValueT, MetadataT>> result = current;
+    final WithHash<Commit<ValueT, StateT, MetadataT>> result = current;
     current = null;
     return result;
   }

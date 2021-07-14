@@ -16,11 +16,12 @@
 package org.projectnessie.versioned;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
 /** Setting a new value. Can optionally declare whether the prior hash must match. */
 @Value.Immutable
-public interface Put<V> extends Operation<V> {
+public interface Put<V, S> extends Operation<V, S> {
 
   /**
    * The value to store for this operation.
@@ -28,6 +29,13 @@ public interface Put<V> extends Operation<V> {
    * @return the value
    */
   V getValue();
+
+  /** The new global state for this operation. */
+  S getNewState();
+
+  /** The expected global state for this operation. */
+  @Nullable
+  S getExpectedState();
 
   /**
    * Creates a put operation for the given key and value.
@@ -38,7 +46,19 @@ public interface Put<V> extends Operation<V> {
    * @return a put operation for the key and value
    */
   @Nonnull
-  public static <V> Put<V> of(@Nonnull Key key, @Nonnull V value) {
-    return ImmutablePut.<V>builder().key(key).value(value).build();
+  @Deprecated
+  static <V, S> Put<V, S> of(@Nonnull Key key, @Nonnull V value) {
+    return ImmutablePut.<V, S>builder().key(key).value(value).build();
+  }
+
+  @Nonnull
+  static <V, S> Put<V, S> of(
+      @Nonnull Key key, @Nonnull V value, @Nonnull S newState, @Nullable S expectedState) {
+    return ImmutablePut.<V, S>builder()
+        .key(key)
+        .value(value)
+        .newState(newState)
+        .expectedState(expectedState)
+        .build();
   }
 }

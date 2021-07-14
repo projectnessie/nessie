@@ -70,26 +70,29 @@ import org.slf4j.LoggerFactory;
  * @param <MetadataT> Commit metadata type
  * @param <EnumT> the value enum type
  */
-public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>>
-    implements VersionStore<ValueT, MetadataT, EnumT> {
+public class InMemoryVersionStore<ValueT, StateT, MetadataT, EnumT extends Enum<EnumT>>
+    implements VersionStore<ValueT, StateT, MetadataT, EnumT> {
   private static final Logger LOGGER = LoggerFactory.getLogger(InMemoryVersionStore.class);
 
-  private final ConcurrentMap<Hash, Commit<ValueT, MetadataT>> commits = new ConcurrentHashMap<>();
+  private final ConcurrentMap<Hash, Commit<ValueT, StateT, MetadataT>> commits =
+      new ConcurrentHashMap<>();
   private final ConcurrentMap<NamedRef, Hash> namedReferences = new ConcurrentHashMap<>();
   private final SerializerWithPayload<ValueT, EnumT> valueSerializer;
   private final Serializer<MetadataT> metadataSerializer;
 
-  public static final class Builder<ValueT, MetadataT, EnumT extends Enum<EnumT>> {
+  public static final class Builder<ValueT, StateT, MetadataT, EnumT extends Enum<EnumT>> {
     private SerializerWithPayload<ValueT, EnumT> valueSerializer = null;
+    private Serializer<StateT> stateSerializer = null;
     private Serializer<MetadataT> metadataSerializer = null;
 
-    public Builder<ValueT, MetadataT, EnumT> valueSerializer(
+    public Builder<ValueT, StateT, MetadataT, EnumT> valueSerializer(
         SerializerWithPayload<ValueT, EnumT> serializer) {
       this.valueSerializer = requireNonNull(serializer);
       return this;
     }
 
-    public Builder<ValueT, MetadataT, EnumT> metadataSerializer(Serializer<MetadataT> serializer) {
+    public Builder<ValueT, StateT, MetadataT, EnumT> metadataSerializer(
+        Serializer<MetadataT> serializer) {
       this.metadataSerializer = requireNonNull(serializer);
       return this;
     }
@@ -99,7 +102,7 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>>
      *
      * @return a memory store instance
      */
-    public InMemoryVersionStore<ValueT, MetadataT, EnumT> build() {
+    public InMemoryVersionStore<ValueT, StateT, MetadataT, EnumT> build() {
       checkState(this.valueSerializer != null, "Value serializer hasn't been set");
       checkState(this.metadataSerializer != null, "Metadata serializer hasn't been set");
 
@@ -107,7 +110,7 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>>
     }
   }
 
-  private InMemoryVersionStore(Builder<ValueT, MetadataT, EnumT> builder) {
+  private InMemoryVersionStore(Builder<ValueT, StateT, MetadataT, EnumT> builder) {
     this.valueSerializer = builder.valueSerializer;
     this.metadataSerializer = builder.metadataSerializer;
   }
@@ -120,8 +123,8 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>>
    * @param <EnumT> the value enum type
    * @return a builder for a in memory store
    */
-  public static <ValueT, MetadataT, EnumT extends Enum<EnumT>>
-      Builder<ValueT, MetadataT, EnumT> builder() {
+  public static <ValueT, StateT, MetadataT, EnumT extends Enum<EnumT>>
+      Builder<ValueT, StateT, MetadataT, EnumT> builder() {
     return new Builder<>();
   }
 
@@ -158,7 +161,8 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>>
       return;
     }
     final Optional<Hash> foundHash =
-        Streams.stream(new CommitsIterator<ValueT, MetadataT>(commits::get, currentBranchHash))
+        Streams.stream(
+                new CommitsIterator<ValueT, StateT, MetadataT>(commits::get, currentBranchHash))
             .map(WithHash::getHash)
             .filter(hash -> hash.equals(referenceHash))
             .collect(MoreCollectors.toOptional());
@@ -195,7 +199,7 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>>
       @Nonnull BranchName branch,
       @Nonnull Optional<Hash> referenceHash,
       @Nonnull MetadataT metadata,
-      @Nonnull List<Operation<ValueT>> operations)
+      @Nonnull List<Operation<ValueT, StateT>> operations)
       throws ReferenceNotFoundException, ReferenceConflictException {
     final Hash currentHash = toHash(branch);
 
@@ -209,7 +213,7 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>>
         namedReferences,
         branch,
         (key, hash) -> {
-          final Commit<ValueT, MetadataT> commit =
+          final Commit<ValueT, StateT, MetadataT> commit =
               Commit.of(valueSerializer, metadataSerializer, currentHash, metadata, operations);
           final Hash previousHash = Optional.ofNullable(hash).orElse(NO_ANCESTOR);
           if (!previousHash.equals(currentHash)) {
@@ -239,14 +243,15 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>>
     }
 
     final Set<Key> keys = new HashSet<>();
-    final List<Commit<ValueT, MetadataT>> toStore = new ArrayList<>(sequenceToTransplant.size());
+    final List<Commit<ValueT, StateT, MetadataT>> toStore =
+        new ArrayList<>(sequenceToTransplant.size());
 
     // check that all hashes exist in the store
     Hash ancestor = null;
     Hash newAncestor = currentHash;
 
     for (final Hash hash : sequenceToTransplant) {
-      final Commit<ValueT, MetadataT> commit = commits.get(hash);
+      final Commit<ValueT, StateT, MetadataT> commit = commits.get(hash);
       if (commit == null) {
         throw ReferenceNotFoundException.forReference(hash);
       }
@@ -258,7 +263,7 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>>
 
       commit.getOperations().forEach(op -> keys.add(op.getKey()));
 
-      Commit<ValueT, MetadataT> newCommit =
+      Commit<ValueT, StateT, MetadataT> newCommit =
           Commit.of(
               valueSerializer,
               metadataSerializer,
@@ -288,7 +293,7 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>>
 
           toStore.forEach(commit -> commits.putIfAbsent(commit.getHash(), commit));
 
-          final Commit<ValueT, MetadataT> lastCommit = Iterables.getLast(toStore);
+          final Commit<ValueT, StateT, MetadataT> lastCommit = Iterables.getLast(toStore);
           return lastCommit.getHash();
         });
   }
@@ -340,12 +345,12 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>>
             .collect(Collectors.toSet());
 
     final Set<Key> keys = new HashSet<>();
-    final List<Commit<ValueT, MetadataT>> toMerge = new ArrayList<>();
+    final List<Commit<ValueT, StateT, MetadataT>> toMerge = new ArrayList<>();
     Hash commonAncestor = null;
-    for (final Iterator<WithHash<Commit<ValueT, MetadataT>>> iterator =
-            new CommitsIterator<ValueT, MetadataT>(commits::get, fromHash);
+    for (final Iterator<WithHash<Commit<ValueT, StateT, MetadataT>>> iterator =
+            new CommitsIterator<ValueT, StateT, MetadataT>(commits::get, fromHash);
         iterator.hasNext(); ) {
-      final WithHash<Commit<ValueT, MetadataT>> commit = iterator.next();
+      final WithHash<Commit<ValueT, StateT, MetadataT>> commit = iterator.next();
       if (toBranchHashes.contains(commit.getHash())) {
         commonAncestor = commit.getHash();
         break;
@@ -361,10 +366,10 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>>
     checkConcurrentModification(toBranch, currentHash, expectedBranchHash, new ArrayList<>(keys));
 
     // Create new commits
-    final List<Commit<ValueT, MetadataT>> toStore = new ArrayList<>(toMerge.size());
+    final List<Commit<ValueT, StateT, MetadataT>> toStore = new ArrayList<>(toMerge.size());
     Hash newAncestor = currentHash;
-    for (final Commit<ValueT, MetadataT> commit : Lists.reverse(toMerge)) {
-      final Commit<ValueT, MetadataT> newCommit =
+    for (final Commit<ValueT, StateT, MetadataT> commit : Lists.reverse(toMerge)) {
+      final Commit<ValueT, StateT, MetadataT> newCommit =
           Commit.of(
               valueSerializer,
               metadataSerializer,
@@ -388,7 +393,7 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>>
           }
 
           toStore.forEach(commit -> commits.putIfAbsent(commit.getHash(), commit));
-          final Commit<ValueT, MetadataT> lastCommit = Iterables.getLast(toStore);
+          final Commit<ValueT, StateT, MetadataT> lastCommit = Iterables.getLast(toStore);
           return lastCommit.getHash();
         });
   }
@@ -516,7 +521,7 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>>
   public Stream<WithHash<MetadataT>> getCommits(Ref ref) throws ReferenceNotFoundException {
     final Hash hash = toHash(ref);
 
-    final Iterator<WithHash<Commit<ValueT, MetadataT>>> iterator =
+    final Iterator<WithHash<Commit<ValueT, StateT, MetadataT>>> iterator =
         new CommitsIterator<>(commits::get, hash);
     return Streams.stream(iterator)
         .map(wh -> WithHash.of(wh.getHash(), wh.getValue().getMetadata()));
@@ -526,7 +531,7 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>>
   public Stream<WithType<Key, EnumT>> getKeys(Ref ref) throws ReferenceNotFoundException {
     final Hash hash = toHash(ref);
 
-    final Iterator<WithHash<Commit<ValueT, MetadataT>>> iterator =
+    final Iterator<WithHash<Commit<ValueT, StateT, MetadataT>>> iterator =
         new CommitsIterator<>(commits::get, hash);
     final Set<Key> deleted = new HashSet<>();
     return Streams.stream(iterator)
@@ -543,7 +548,10 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>>
             })
         .filter(Put.class::isInstance)
         // extract the keys
-        .map(o -> WithType.of(valueSerializer.getType(((Put<ValueT>) o).getValue()), o.getKey()))
+        .map(
+            o ->
+                WithType.of(
+                    valueSerializer.getType(((Put<ValueT, StateT>) o).getValue()), o.getKey()))
         // filter keys which have been seen already
         .collect(Collectors.toMap(WithType::getValue, Function.identity(), (k1, k2) -> k2))
         .values()
@@ -567,7 +575,7 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>>
     final Set<Key> toFind = new HashSet<Key>();
     toFind.addAll(keys);
 
-    final Iterator<WithHash<Commit<ValueT, MetadataT>>> iterator =
+    final Iterator<WithHash<Commit<ValueT, StateT, MetadataT>>> iterator =
         new CommitsIterator<>(commits::get, hash);
     while (iterator.hasNext()) {
       if (toFind.isEmpty()) {
@@ -575,8 +583,8 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>>
         break;
       }
 
-      final Commit<ValueT, MetadataT> commit = iterator.next().getValue();
-      for (Operation<ValueT> operation : Lists.reverse(commit.getOperations())) {
+      final Commit<ValueT, StateT, MetadataT> commit = iterator.next().getValue();
+      for (Operation<ValueT, StateT> operation : Lists.reverse(commit.getOperations())) {
         final Key operationKey = operation.getKey();
         // ignore keys of no interest
         if (!toFind.contains(operationKey)) {
@@ -584,7 +592,7 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>>
         }
 
         if (operation instanceof Put) {
-          final Put<ValueT> put = (Put<ValueT>) operation;
+          final Put<ValueT, StateT> put = (Put<ValueT, StateT>) operation;
           int index = keys.indexOf(operationKey);
           results.set(index, Optional.of(put.getValue()));
           toFind.remove(operationKey);

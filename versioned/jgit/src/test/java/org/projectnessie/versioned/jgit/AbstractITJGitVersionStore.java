@@ -19,6 +19,7 @@ import java.io.IOException;
 import org.eclipse.jgit.lib.Repository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Nested;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.StringSerializer;
 import org.projectnessie.versioned.VersionStore;
@@ -27,10 +28,14 @@ import org.projectnessie.versioned.tests.AbstractITVersionStore;
 
 public abstract class AbstractITJGitVersionStore extends AbstractITVersionStore {
   protected Repository repository;
-  protected VersionStore<String, String, StringSerializer.TestEnum> store;
+  protected VersionStore<String, String, String, StringSerializer.TestEnum> store;
 
-  protected static final StoreWorker<String, String, StringSerializer.TestEnum> WORKER =
-      StoreWorker.of(StringSerializer.getInstance(), StringSerializer.getInstance());
+  protected static final StoreWorker<String, String, String, StringSerializer.TestEnum> WORKER =
+      StoreWorker.of(
+          StringSerializer.getInstance(),
+          StringSerializer.getInstance(),
+          StringSerializer.getInstance(),
+          (v, s) -> v);
 
   abstract void setUp() throws IOException;
 
@@ -45,7 +50,16 @@ public abstract class AbstractITJGitVersionStore extends AbstractITVersionStore 
   }
 
   @Override
-  protected VersionStore<String, String, StringSerializer.TestEnum> store() {
+  protected VersionStore<String, String, String, StringSerializer.TestEnum> store() {
     return store;
+  }
+
+  @Nested
+  protected class WhenMerging extends AbstractITVersionStore.WhenMerging {
+
+    @Disabled("Bug in old implementation w/ an existent common-ancestor")
+    protected void mergeWithConflictingKeys() throws VersionStoreException {
+      super.mergeWithConflictingKeys();
+    }
   }
 }

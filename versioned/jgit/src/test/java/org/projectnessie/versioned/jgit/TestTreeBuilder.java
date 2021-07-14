@@ -83,22 +83,22 @@ class TestTreeBuilder {
     ObjectId oid1 =
         TreeBuilder.commitObjects(
             ImmutableList.of(
-                Put.of(Key.of("a", "b", "c.txt"), "foobar"),
-                Put.of(Key.of("a", "b", "d.txt"), "foobar"),
-                Put.of(Key.of("a", "i", "j.txt"), "foobar"),
-                Put.of(Key.of("a", "f.txt"), "foobar1"),
-                Put.of(Key.of("k", "l.txt"), "foobar")),
+                Put.of(Key.of("a", "b", "c.txt"), "foobar", "", null),
+                Put.of(Key.of("a", "b", "d.txt"), "foobar", "", null),
+                Put.of(Key.of("a", "i", "j.txt"), "foobar", "", null),
+                Put.of(Key.of("a", "f.txt"), "foobar1", "", null),
+                Put.of(Key.of("k", "l.txt"), "foobar", "", null)),
             repository,
             serializer,
             emptyObject);
     ObjectId oid2 =
         TreeBuilder.commitObjects(
             ImmutableList.of(
-                Put.of(Key.of("a", "g", "h.txt"), "foobar"),
+                Put.of(Key.of("a", "g", "h.txt"), "foobar", "", null),
                 Delete.of(Key.of("a", "b", "d.txt")),
-                Put.of(Key.of("a", "f.txt"), "foobar"),
-                Put.of(Key.of("a", "b", "p.txt"), "foobar"),
-                Put.of(Key.of("m", "n", "o.txt"), "foobar"),
+                Put.of(Key.of("a", "f.txt"), "foobar", "", null),
+                Put.of(Key.of("a", "b", "p.txt"), "foobar", "", null),
+                Put.of(Key.of("m", "n", "o.txt"), "foobar", "", null),
                 Unchanged.of(Key.of("a", "b", "c.txt"))),
             repository,
             serializer,

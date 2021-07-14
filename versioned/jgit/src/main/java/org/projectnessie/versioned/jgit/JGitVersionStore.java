@@ -90,20 +90,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** VersionStore interface for JGit backend. */
-public class JGitVersionStore<TABLE, METADATA, TABLE_TYPE extends Enum<TABLE_TYPE>>
-    implements VersionStore<TABLE, METADATA, TABLE_TYPE> {
+public class JGitVersionStore<TABLE, STATE, METADATA, TABLE_TYPE extends Enum<TABLE_TYPE>>
+    implements VersionStore<TABLE, STATE, METADATA, TABLE_TYPE> {
 
   private static final Logger logger = LoggerFactory.getLogger(JGitVersionStore.class);
   private static final String SLASH = "/";
 
   private final Repository repository;
-  private final StoreWorker<TABLE, METADATA, TABLE_TYPE> storeWorker;
+  private final StoreWorker<TABLE, STATE, METADATA, TABLE_TYPE> storeWorker;
   private final ObjectId emptyObject;
 
   /** Construct a JGitVersionStore. */
   @Inject
   public JGitVersionStore(
-      Repository repository, StoreWorker<TABLE, METADATA, TABLE_TYPE> storeWorker) {
+      Repository repository, StoreWorker<TABLE, STATE, METADATA, TABLE_TYPE> storeWorker) {
     this.storeWorker = storeWorker;
     this.repository = repository;
     ObjectId objectId;
@@ -196,7 +196,7 @@ public class JGitVersionStore<TABLE, METADATA, TABLE_TYPE extends Enum<TABLE_TYP
       @Nonnull BranchName branch,
       @Nonnull Optional<Hash> expectedHash,
       @Nonnull METADATA metadata,
-      @Nonnull List<Operation<TABLE>> operations)
+      @Nonnull List<Operation<TABLE, STATE>> operations)
       throws ReferenceNotFoundException, ReferenceConflictException {
     toHash(branch);
     try {

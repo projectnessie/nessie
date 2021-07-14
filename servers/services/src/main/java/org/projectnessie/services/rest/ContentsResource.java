@@ -28,6 +28,7 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
 import org.projectnessie.model.ContentsKey;
+import org.projectnessie.model.GlobalContents;
 import org.projectnessie.model.ImmutableMultiGetContentsResponse;
 import org.projectnessie.model.MultiGetContentsRequest;
 import org.projectnessie.model.MultiGetContentsResponse;
@@ -48,7 +49,7 @@ public class ContentsResource extends BaseResource implements ContentsApi {
   public ContentsResource(
       ServerConfig config,
       MultiTenant multiTenant,
-      VersionStore<Contents, CommitMeta, Contents.Type> store) {
+      VersionStore<Contents, GlobalContents, CommitMeta, Contents.Type> store) {
     super(config, multiTenant, store);
   }
 

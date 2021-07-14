@@ -33,10 +33,10 @@ import javax.annotation.Nonnull;
  * @param <VALUE> see {@link VersionStore}
  * @param <METADATA> see {@link VersionStore}
  */
-public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>>
-    implements VersionStore<VALUE, METADATA, VALUE_TYPE> {
+public final class MetricsVersionStore<VALUE, STATE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>>
+    implements VersionStore<VALUE, STATE, METADATA, VALUE_TYPE> {
 
-  private final VersionStore<VALUE, METADATA, VALUE_TYPE> delegate;
+  private final VersionStore<VALUE, STATE, METADATA, VALUE_TYPE> delegate;
   private final MeterRegistry registry;
   private final Clock clock;
   private final Iterable<Tag> commonTags;
@@ -48,14 +48,16 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
    * @param registry metrics-registry
    */
   MetricsVersionStore(
-      VersionStore<VALUE, METADATA, VALUE_TYPE> delegate, MeterRegistry registry, Clock clock) {
+      VersionStore<VALUE, STATE, METADATA, VALUE_TYPE> delegate,
+      MeterRegistry registry,
+      Clock clock) {
     this.delegate = delegate;
     this.registry = registry;
     this.clock = clock;
     this.commonTags = Tags.of("application", "Nessie");
   }
 
-  public MetricsVersionStore(VersionStore<VALUE, METADATA, VALUE_TYPE> delegate) {
+  public MetricsVersionStore(VersionStore<VALUE, STATE, METADATA, VALUE_TYPE> delegate) {
     this(delegate, Metrics.globalRegistry, Clock.SYSTEM);
   }
 
@@ -75,7 +77,7 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
       @Nonnull BranchName branch,
       @Nonnull Optional<Hash> referenceHash,
       @Nonnull METADATA metadata,
-      @Nonnull List<Operation<VALUE>> operations)
+      @Nonnull List<Operation<VALUE, STATE>> operations)
       throws ReferenceNotFoundException, ReferenceConflictException {
     return this.<Hash, ReferenceNotFoundException, ReferenceConflictException>delegate2ExR(
         "commit", () -> delegate.commit(branch, referenceHash, metadata, operations));

@@ -24,6 +24,7 @@ import javax.ws.rs.core.SecurityContext;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
+import org.projectnessie.model.GlobalContents;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.NamedRef;
@@ -37,7 +38,7 @@ abstract class BaseResource {
 
   private final MultiTenant multiTenant;
 
-  private final VersionStore<Contents, CommitMeta, Contents.Type> store;
+  private final VersionStore<Contents, GlobalContents, CommitMeta, Contents.Type> store;
 
   // Mandated by CDI 2.0
   protected BaseResource() {
@@ -47,7 +48,7 @@ abstract class BaseResource {
   protected BaseResource(
       ServerConfig config,
       MultiTenant multiTenant,
-      VersionStore<Contents, CommitMeta, Contents.Type> store) {
+      VersionStore<Contents, GlobalContents, CommitMeta, Contents.Type> store) {
     this.config = config;
     this.multiTenant = multiTenant;
     this.store = store;
@@ -112,7 +113,7 @@ abstract class BaseResource {
     return config;
   }
 
-  protected VersionStore<Contents, CommitMeta, Contents.Type> getStore() {
+  protected VersionStore<Contents, GlobalContents, CommitMeta, Contents.Type> getStore() {
     return store;
   }
 

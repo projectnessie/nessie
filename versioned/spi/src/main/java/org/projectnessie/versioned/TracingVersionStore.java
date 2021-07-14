@@ -37,8 +37,8 @@ import javax.annotation.Nonnull;
  * @param <VALUE> see {@link VersionStore}
  * @param <METADATA> see {@link VersionStore}
  */
-public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>>
-    implements VersionStore<VALUE, METADATA, VALUE_TYPE> {
+public class TracingVersionStore<VALUE, STATE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>>
+    implements VersionStore<VALUE, STATE, METADATA, VALUE_TYPE> {
 
   private static final String TAG_OPERATION = "nessie.version-store.operation";
   private static final String TAG_REF = "nessie.version-store.ref";
@@ -56,14 +56,14 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
   private static final String TAG_FROM = "nessie.version-store.from";
   private static final String TAG_TO = "nessie.version-store.to";
 
-  private final VersionStore<VALUE, METADATA, VALUE_TYPE> delegate;
+  private final VersionStore<VALUE, STATE, METADATA, VALUE_TYPE> delegate;
 
   /**
    * Takes the {@link VersionStore} instance to trace.
    *
    * @param delegate backing/delegate {@link VersionStore}
    */
-  public TracingVersionStore(VersionStore<VALUE, METADATA, VALUE_TYPE> delegate) {
+  public TracingVersionStore(VersionStore<VALUE, STATE, METADATA, VALUE_TYPE> delegate) {
     this.delegate = delegate;
   }
 
@@ -85,7 +85,7 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
       @Nonnull BranchName branch,
       @Nonnull Optional<Hash> referenceHash,
       @Nonnull METADATA metadata,
-      @Nonnull List<Operation<VALUE>> operations)
+      @Nonnull List<Operation<VALUE, STATE>> operations)
       throws ReferenceNotFoundException, ReferenceConflictException {
     return this.<Hash, ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
         "Commit",

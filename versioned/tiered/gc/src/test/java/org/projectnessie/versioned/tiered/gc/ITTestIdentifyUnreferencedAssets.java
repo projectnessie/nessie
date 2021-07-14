@@ -216,12 +216,12 @@ public class ITTestIdentifyUnreferencedAssets {
     versionStore = null;
   }
 
-  private CommitBuilder<DummyValue, String, StringSerializer.TestEnum> commit() {
-    return new CommitBuilder<DummyValue, String, StringSerializer.TestEnum>(versionStore);
+  private CommitBuilder<DummyValue, String, String, StringSerializer.TestEnum> commit() {
+    return new CommitBuilder<>(versionStore);
   }
 
   private static class StoreW
-      implements StoreWorker<DummyValue, String, StringSerializer.TestEnum> {
+      implements StoreWorker<DummyValue, String, String, StringSerializer.TestEnum> {
     @Override
     public SerializerWithPayload<DummyValue, StringSerializer.TestEnum> getValueSerializer() {
       return new DummyValueSerializer();

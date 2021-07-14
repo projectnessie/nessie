@@ -75,6 +75,15 @@ public abstract class IcebergSnapshot extends Contents {
   @NotBlank
   public abstract String getManifestListLocation();
 
+  @Override
+  public Contents mergeGlobalState(GlobalContents globalContents) {
+    IcebergTable global = (IcebergTable) globalContents;
+    return ImmutableIcebergSnapshot.builder()
+        .from(this)
+        .metadataLocation(global.getMetadataLocation())
+        .build();
+  }
+
   public static IcebergSnapshot of(long currentSnapshotId, String manifestListLocation) {
     return ImmutableIcebergSnapshot.builder()
         .currentSnapshotId(currentSnapshotId)

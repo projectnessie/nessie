@@ -72,6 +72,7 @@ class TestMetricsVersionStore {
   // Implemented as a parameterized-tests with each set of arguments representing one version-store
   // invocation.
 
+  @SuppressWarnings("unused")
   private static Stream<Arguments> versionStoreInvocations() {
     // Exception-throws to be tested, one list per distinct throws clause
     List<Exception> runtimeThrows =
@@ -207,7 +208,7 @@ class TestMetricsVersionStore {
       String opName,
       Exception expectedThrow,
       Supplier<?> resultSupplier,
-      ThrowingFunction<?, VersionStore<String, String, DummyEnum>> versionStoreFunction)
+      ThrowingFunction<?, VersionStore<String, String, String, DummyEnum>> versionStoreFunction)
       throws Throwable {
     TestMeterRegistry registry = new TestMeterRegistry();
 
@@ -226,14 +227,14 @@ class TestMetricsVersionStore {
     }
 
     @SuppressWarnings("unchecked")
-    VersionStore<String, String, DummyEnum> mockedVersionStore = mock(VersionStore.class);
+    VersionStore<String, String, String, DummyEnum> mockedVersionStore = mock(VersionStore.class);
     versionStoreFunction.accept(stubber.when(mockedVersionStore));
-    VersionStore<String, String, DummyEnum> versionStore =
+    VersionStore<String, String, String, DummyEnum> versionStore =
         new MetricsVersionStore<>(mockedVersionStore, registry, registry.clock);
 
     Id timerId = timerId(opName, expectedThrow);
 
-    ThrowingConsumer<VersionStore<String, String, DummyEnum>> versionStoreExec =
+    ThrowingConsumer<VersionStore<String, String, String, DummyEnum>> versionStoreExec =
         vs -> {
           Object r = versionStoreFunction.accept(vs);
           if (result != null) {
@@ -278,13 +279,13 @@ class TestMetricsVersionStore {
 
   static class VersionStoreInvocation<R> {
     final String opName;
-    final ThrowingFunction<?, VersionStore<String, String, DummyEnum>> function;
+    final ThrowingFunction<?, VersionStore<String, String, String, DummyEnum>> function;
     final Supplier<R> result;
     final List<Exception> failures;
 
     VersionStoreInvocation(
         String opName,
-        ThrowingFunction<?, VersionStore<String, String, DummyEnum>> function,
+        ThrowingFunction<?, VersionStore<String, String, String, DummyEnum>> function,
         Supplier<R> result,
         List<Exception> failures) {
       this.opName = opName;
@@ -295,7 +296,7 @@ class TestMetricsVersionStore {
 
     VersionStoreInvocation(
         String opName,
-        ThrowingConsumer<VersionStore<String, String, DummyEnum>> function,
+        ThrowingConsumer<VersionStore<String, String, String, DummyEnum>> function,
         List<Exception> failures) {
       this.opName = opName;
       this.function =
