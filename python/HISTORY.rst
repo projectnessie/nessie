@@ -2,7 +2,7 @@
 History
 =======
 
-0.8.0 (2021-07-14)
+0.8.1 (2021-07-14)
 ------------------
 
 * REST-API change: only accept named-references

@@ -1,6 +1,6 @@
 # Releases
 
-## 0.8.0 Release (July 14, 2021)
+## 0.8.1 Release (July 14, 2021)
 
 * Add JAX-RS server implementation based on Glassfish/Jersey/Weld for integration testing
   in Iceberg
