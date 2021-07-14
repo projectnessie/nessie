@@ -24,7 +24,8 @@ public class CommitLogParamsTest {
   @Test
   public void testBuilder() {
     Integer maxRecords = 23;
-    String hash = "1234567890123456";
+    String startHash = "1234567890123456";
+    String endHash = "00000";
     String pageToken = "aabbcc";
     String queryExpression = "some_expression";
     CommitLogParams params =
@@ -32,13 +33,15 @@ public class CommitLogParamsTest {
             .expression(queryExpression)
             .maxRecords(maxRecords)
             .pageToken(pageToken)
-            .hashOnRef(hash)
+            .startHash(startHash)
+            .endHash(endHash)
             .build();
 
     assertThat(params.pageToken()).isEqualTo(pageToken);
     assertThat(params.maxRecords()).isEqualTo(maxRecords);
     assertThat(params.queryExpression()).isEqualTo(queryExpression);
-    assertThat(params.hashOnRef()).isEqualTo(hash);
+    assertThat(params.startHash()).isEqualTo(startHash);
+    assertThat(params.endHash()).isEqualTo(endHash);
   }
 
   @Test
@@ -48,6 +51,7 @@ public class CommitLogParamsTest {
     assertThat(params.maxRecords()).isNull();
     assertThat(params.pageToken()).isNull();
     assertThat(params.queryExpression()).isNull();
-    assertThat(params.hashOnRef()).isNull();
+    assertThat(params.startHash()).isNull();
+    assertThat(params.endHash()).isNull();
   }
 }

@@ -35,10 +35,18 @@ public class CommitLogParams {
   @Nullable
   @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
   @Parameter(
-      description = "a particular hash on the given ref",
+      description = "a particular hash on the given ref to start from",
       examples = {@ExampleObject(ref = "hash")})
-  @QueryParam("hashOnRef")
-  private String hashOnRef;
+  @QueryParam("startHash")
+  private String startHash;
+
+  @Nullable
+  @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+  @Parameter(
+      description = "a particular hash on the given ref to end at",
+      examples = {@ExampleObject(ref = "hash")})
+  @QueryParam("endHash")
+  private String endHash;
 
   @Parameter(
       description = "maximum number of commit-log entries to return, just a hint for the server")
@@ -65,20 +73,35 @@ public class CommitLogParams {
   public CommitLogParams() {}
 
   private CommitLogParams(
-      String hashOnRef, Integer maxRecords, String pageToken, String queryExpression) {
-    this.hashOnRef = hashOnRef;
+      String startHash,
+      String endHash,
+      Integer maxRecords,
+      String pageToken,
+      String queryExpression) {
+    this.startHash = startHash;
+    this.endHash = endHash;
     this.maxRecords = maxRecords;
     this.pageToken = pageToken;
     this.queryExpression = queryExpression;
   }
 
   private CommitLogParams(Builder builder) {
-    this(builder.hashOnRef, builder.maxRecords, builder.pageToken, builder.queryExpression);
+    this(
+        builder.startHash,
+        builder.endHash,
+        builder.maxRecords,
+        builder.pageToken,
+        builder.queryExpression);
   }
 
   @Nullable
-  public String hashOnRef() {
-    return hashOnRef;
+  public String startHash() {
+    return startHash;
+  }
+
+  @Nullable
+  public String endHash() {
+    return endHash;
   }
 
   public Integer maxRecords() {
@@ -104,7 +127,8 @@ public class CommitLogParams {
   @Override
   public String toString() {
     return new StringJoiner(", ", CommitLogParams.class.getSimpleName() + "[", "]")
-        .add("hashOnRef='" + hashOnRef + "'")
+        .add("startHash='" + startHash + "'")
+        .add("endHash='" + endHash + "'")
         .add("maxRecords=" + maxRecords)
         .add("pageToken='" + pageToken + "'")
         .add("queryExpression='" + queryExpression + "'")
@@ -113,15 +137,21 @@ public class CommitLogParams {
 
   public static class Builder {
 
-    private String hashOnRef;
+    private String startHash;
+    private String endHash;
     private Integer maxRecords;
     private String pageToken;
     private String queryExpression;
 
     private Builder() {}
 
-    public Builder hashOnRef(String hashOnRef) {
-      this.hashOnRef = hashOnRef;
+    public Builder startHash(String startHash) {
+      this.startHash = startHash;
+      return this;
+    }
+
+    public Builder endHash(String endHash) {
+      this.endHash = endHash;
       return this;
     }
 
@@ -141,7 +171,8 @@ public class CommitLogParams {
     }
 
     public Builder from(CommitLogParams params) {
-      return hashOnRef(params.hashOnRef)
+      return startHash(params.startHash)
+          .endHash(params.endHash)
           .maxRecords(params.maxRecords)
           .pageToken(params.pageToken)
           .expression(params.queryExpression);

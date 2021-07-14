@@ -19,7 +19,6 @@ from click import UsageError
 from dateutil.tz import tzlocal
 
 from . import __version__
-from ._log import show_log
 from ._ref import handle_branch_tag
 from .conf import build_config
 from .conf import process
@@ -234,34 +233,34 @@ def log(  # noqa: C901
 ) -> None:
     """Show commit log.
 
-    REVISION_RANGE optional hash to start viewing log from. If of the form <hash>..<hash> only show log
+    REVISION_RANGE optional hash to start viewing log from. If of the form <start_hash>..<end_hash> only show log
     for given range on the particular ref that was provided
 
     PATHS optional list of paths. If given, only show commits which affected the given paths
     """
     if not ref:
         ref = ctx.nessie.get_default_branch()
-    start = None
-    end = None
+    start_hash = None
+    end_hash = None
     if revision_range:
         if ".." in revision_range:
-            start, end = revision_range.split("..")
+            start_hash, end_hash = revision_range.split("..")
         else:
-            start = revision_range
+            end_hash = revision_range
 
     filtering_args: Any = {}
     if number:
         filtering_args["max"] = str(number)
-    if start:
-        filtering_args["hashOnRef"] = start
-    if end:
-        filtering_args["end"] = end
-    # TODO: we should eventually move "start..end" filtering to the server
+    if start_hash:
+        filtering_args["startHash"] = start_hash
+    if end_hash:
+        filtering_args["endHash"] = end_hash
     expr = build_query_expression_for_commit_log_flags(query_expression, author, committer, since, until)
     if expr:
         filtering_args["query_expression"] = expr
 
-    log_result = show_log(nessie=ctx.nessie, start_ref=ref, limits=paths, **filtering_args)
+    # TODO: limiting by path is not yet supported.
+    log_result = ctx.nessie.get_log(start_ref=ref, **filtering_args)
     if ctx.json:
         click.echo(CommitMetaSchema().dumps(log_result, many=True))
     else:

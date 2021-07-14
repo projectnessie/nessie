@@ -90,10 +90,11 @@ export interface DeleteTagRequest {
 
 export interface GetCommitLogRequest {
     ref: string;
-    hashOnRef?: string;
+    endHash?: string;
     max?: number;
     pageToken?: string;
     queryExpression?: string;
+    startHash?: string;
 }
 
 export interface GetContentsRequest {
@@ -395,8 +396,8 @@ export class DefaultApi extends runtime.BaseAPI {
 
         const queryParameters: any = {};
 
-        if (requestParameters.hashOnRef !== undefined) {
-            queryParameters['hashOnRef'] = requestParameters.hashOnRef;
+        if (requestParameters.endHash !== undefined) {
+            queryParameters['endHash'] = requestParameters.endHash;
         }
 
         if (requestParameters.max !== undefined) {
@@ -409,6 +410,10 @@ export class DefaultApi extends runtime.BaseAPI {
 
         if (requestParameters.queryExpression !== undefined) {
             queryParameters['query_expression'] = requestParameters.queryExpression;
+        }
+
+        if (requestParameters.startHash !== undefined) {
+            queryParameters['startHash'] = requestParameters.startHash;
         }
 
         const headerParameters: runtime.HTTPHeaders = {};

@@ -458,6 +458,46 @@ public abstract class AbstractTestRest {
     assertThat(log.getOperations()).isEmpty();
   }
 
+  @Test
+  public void filterCommitLogByCommitRange()
+      throws NessieNotFoundException, NessieConflictException {
+    Reference main = tree.getReferenceByName("main");
+    Branch b = Branch.of("filterCommitLogByCommitRange", main.getHash());
+    Reference branch = tree.createReference(b);
+    assertThat(branch).isEqualTo(b);
+
+    int numCommits = 10;
+
+    String currentHash = main.getHash();
+    createCommits(branch, 1, numCommits, currentHash);
+    LogResponse entireLog = tree.getCommitLog(branch.getName(), CommitLogParams.empty());
+    assertThat(entireLog).isNotNull();
+    assertThat(entireLog.getOperations()).hasSize(numCommits);
+
+    // if startHash > endHash, then we return all commits starting from startHash
+    String startHash = entireLog.getOperations().get(numCommits / 2).getHash();
+    String endHash = entireLog.getOperations().get(0).getHash();
+    LogResponse log =
+        tree.getCommitLog(
+            branch.getName(),
+            CommitLogParams.builder().startHash(startHash).endHash(endHash).build());
+    assertThat(log).isNotNull();
+    assertThat(log.getOperations()).hasSize(numCommits / 2 + 1);
+
+    for (int i = 0, j = numCommits - 1; i < j; i++, j--) {
+      startHash = entireLog.getOperations().get(j).getHash();
+      endHash = entireLog.getOperations().get(i).getHash();
+      log =
+          tree.getCommitLog(
+              branch.getName(),
+              CommitLogParams.builder().startHash(startHash).endHash(endHash).build());
+      assertThat(log).isNotNull();
+      assertThat(log.getOperations()).hasSize(numCommits - (i * 2));
+      assertThat(ImmutableList.copyOf(entireLog.getOperations()).subList(i, j + 1))
+          .containsExactlyElementsOf(log.getOperations());
+    }
+  }
+
   private void createCommits(
       Reference branch, int numAuthors, int commitsPerAuthor, String currentHash)
       throws NessieNotFoundException, NessieConflictException {
@@ -1021,7 +1061,7 @@ public abstract class AbstractTestRest {
                         () ->
                             tree.getCommitLog(
                                 invalidBranchName,
-                                CommitLogParams.builder().hashOnRef(validHash).build()))
+                                CommitLogParams.builder().startHash(validHash).build()))
                     .getMessage()),
         () ->
             assertEquals(
@@ -1176,10 +1216,19 @@ public abstract class AbstractTestRest {
                     () ->
                         tree.getCommitLog(
                             validBranchName,
-                            CommitLogParams.builder().hashOnRef(invalidHash).build()))
+                            CommitLogParams.builder().startHash(invalidHash).build()))
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400): ")
-                .hasMessageContaining("getCommitLog.params.hashOnRef: " + HASH_MESSAGE),
+                .hasMessageContaining("getCommitLog.params.startHash: " + HASH_MESSAGE),
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        tree.getCommitLog(
+                            validBranchName,
+                            CommitLogParams.builder().endHash(invalidHash).build()))
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400): ")
+                .hasMessageContaining("getCommitLog.params.endHash: " + HASH_MESSAGE),
         () ->
             assertThatThrownBy(
                     () ->
@@ -1347,7 +1396,7 @@ public abstract class AbstractTestRest {
     for (int i = 0; i < commits; i++) {
       String hash = entireLog.getOperations().get(i).getHash();
       LogResponse log =
-          tree.getCommitLog(branch.getName(), CommitLogParams.builder().hashOnRef(hash).build());
+          tree.getCommitLog(branch.getName(), CommitLogParams.builder().endHash(hash).build());
       assertThat(log).isNotNull();
       assertThat(log.getOperations()).hasSize(commits - i);
       assertThat(ImmutableList.copyOf(entireLog.getOperations()).subList(i, commits))
@@ -1380,7 +1429,7 @@ public abstract class AbstractTestRest {
     assertThatThrownBy(
             () ->
                 tree.getCommitLog(
-                    branch.getName(), CommitLogParams.builder().hashOnRef(invalidHash).build()))
+                    branch.getName(), CommitLogParams.builder().endHash(invalidHash).build()))
         .isInstanceOf(NessieNotFoundException.class)
         .hasMessage(
             String.format("Hash %s on Ref %s could not be found", invalidHash, b.getName()));
