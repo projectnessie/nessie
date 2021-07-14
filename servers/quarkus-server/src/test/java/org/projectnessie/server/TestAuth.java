@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.projectnessie.api.ContentsApi;
 import org.projectnessie.api.TreeApi;
+import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.client.NessieClient;
 import org.projectnessie.client.rest.NessieForbiddenException;
 import org.projectnessie.client.rest.NessieNotAuthorizedException;
@@ -94,7 +95,7 @@ class TestAuth {
   void testAdmin() throws NessieNotFoundException, NessieConflictException {
     getCatalog("testx");
     Branch branch = (Branch) tree.getReferenceByName("testx");
-    List<Entry> tables = tree.getEntries("testx", null, null, null, null).getEntries();
+    List<Entry> tables = tree.getEntries("testx", EntriesParams.empty()).getEntries();
     Assertions.assertTrue(tables.isEmpty());
     ContentsKey key = ContentsKey.of("x", "x");
     tryEndpointPass(

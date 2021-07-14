@@ -36,6 +36,8 @@ import javax.inject.Inject;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.SecurityContext;
 import org.projectnessie.api.TreeApi;
+import org.projectnessie.api.params.CommitLogParams;
+import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.cel.tools.Script;
 import org.projectnessie.cel.tools.ScriptException;
 import org.projectnessie.error.NessieConflictException;
@@ -175,24 +177,21 @@ public class TreeResource extends BaseResource implements TreeApi {
   }
 
   @Override
-  public LogResponse getCommitLog(
-      String namedRef,
-      String hashOnRef,
-      Integer maxRecords,
-      String pageToken,
-      String queryExpression)
+  public LogResponse getCommitLog(String namedRef, CommitLogParams params)
       throws NessieNotFoundException {
     int max =
-        Math.min(maxRecords != null ? maxRecords : MAX_COMMIT_LOG_ENTRIES, MAX_COMMIT_LOG_ENTRIES);
+        Math.min(
+            params.maxRecords() != null ? params.maxRecords() : MAX_COMMIT_LOG_ENTRIES,
+            MAX_COMMIT_LOG_ENTRIES);
 
     Ref startRef;
-    if (null == pageToken) {
+    if (null == params.pageToken()) {
       // we should only allow named references when no paging is defined
-      startRef = namedRefWithHashOrThrow(namedRef, hashOnRef).getHash();
+      startRef = namedRefWithHashOrThrow(namedRef, params.hashOnRef()).getHash();
     } else {
       // TODO: this is atm an insecure design where users can put it any hashes and retrieve all the
       // commits. Once authz + tvs2 is in place we should revisit this
-      startRef = getHashOrThrow(pageToken);
+      startRef = getHashOrThrow(params.pageToken());
     }
 
     try (Stream<ImmutableCommitMeta> s =
@@ -200,7 +199,7 @@ public class TreeResource extends BaseResource implements TreeApi {
             .getCommits(startRef)
             .map(cwh -> cwh.getValue().toBuilder().hash(cwh.getHash().asString()).build())) {
       List<CommitMeta> items =
-          filterCommitLog(s, queryExpression).limit(max + 1).collect(Collectors.toList());
+          filterCommitLog(s, params.queryExpression()).limit(max + 1).collect(Collectors.toList());
       if (items.size() == max + 1) {
         return ImmutableLogResponse.builder()
             .addAllOperations(items.subList(0, max))
@@ -294,15 +293,10 @@ public class TreeResource extends BaseResource implements TreeApi {
   }
 
   @Override
-  public EntriesResponse getEntries(
-      String namedRef,
-      String hashOnRef,
-      Integer maxRecords,
-      String pageToken,
-      String queryExpression)
+  public EntriesResponse getEntries(String namedRef, EntriesParams params)
       throws NessieNotFoundException {
 
-    final Hash hash = namedRefWithHashOrThrow(namedRef, hashOnRef).getHash();
+    final Hash hash = namedRefWithHashOrThrow(namedRef, params.hashOnRef()).getHash();
     // TODO Implement paging. At the moment, we do not expect that many keys/entries to be returned.
     //  So the size of the whole result is probably reasonable and unlikely to "kill" either the
     //  server or client. We have to figure out _how_ to implement paging for keys/entries, i.e.
@@ -322,7 +316,8 @@ public class TreeResource extends BaseResource implements TreeApi {
                           .name(fromKey(key.getValue()))
                           .type((Type) key.getType())
                           .build())) {
-        entries = filterEntries(s, queryExpression).collect(ImmutableList.toImmutableList());
+        entries =
+            filterEntries(s, params.queryExpression()).collect(ImmutableList.toImmutableList());
       }
       return EntriesResponse.builder().addAllEntries(entries).build();
     } catch (ReferenceNotFoundException e) {

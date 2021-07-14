@@ -18,12 +18,12 @@ package org.apache.spark.sql.execution.datasources.v2
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
+import org.projectnessie.api.params.CommitLogParams
 import org.projectnessie.client.{NessieClient, StreamingUtil}
 import org.projectnessie.error.NessieNotFoundException
 import org.projectnessie.model.{Hash, Reference}
 
 import java.time.{LocalDateTime, ZoneOffset}
-import java.util.OptionalInt
 import scala.collection.JavaConverters._
 
 object NessieUtils {
@@ -50,13 +50,15 @@ object NessieUtils {
           .getCommitLogStream(
             nessieClient.getTreeApi,
             branch,
-            null,
-            OptionalInt.empty(),
-            String
-              .format(
-                "timestamp(commit.commitTime) < timestamp('%s')",
-                timestamp
+            CommitLogParams
+              .builder()
+              .expression(
+                String.format(
+                  "timestamp(commit.commitTime) < timestamp('%s')",
+                  timestamp
+                )
               )
+              .build()
           )
           .findFirst()
           .orElse(null)

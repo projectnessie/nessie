@@ -20,6 +20,8 @@ import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import org.projectnessie.api.TreeApi;
+import org.projectnessie.api.params.CommitLogParams;
+import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpRequest;
 import org.projectnessie.error.NessieConflictException;
@@ -116,16 +118,15 @@ class ClientTreeApi implements TreeApi {
   }
 
   @Override
-  public LogResponse getCommitLog(
-      String ref, String hashOnRef, Integer maxRecords, String pageToken, String queryExpression)
+  public LogResponse getCommitLog(@NotNull String ref, @NotNull CommitLogParams params)
       throws NessieNotFoundException {
     HttpRequest builder =
         client.newRequest().path("trees/tree/{ref}/log").resolveTemplate("ref", ref);
     return builder
-        .queryParam("max", maxRecords != null ? maxRecords.toString() : null)
-        .queryParam("pageToken", pageToken)
-        .queryParam("query_expression", queryExpression)
-        .queryParam("hashOnRef", hashOnRef)
+        .queryParam("max", params.maxRecords() != null ? params.maxRecords().toString() : null)
+        .queryParam("pageToken", params.pageToken())
+        .queryParam("query_expression", params.queryExpression())
+        .queryParam("hashOnRef", params.hashOnRef())
         .get()
         .readEntity(LogResponse.class);
   }
@@ -159,20 +160,15 @@ class ClientTreeApi implements TreeApi {
   }
 
   @Override
-  public EntriesResponse getEntries(
-      @NotNull String refName,
-      String hashOnRef,
-      Integer maxRecords,
-      String pageToken,
-      String queryExpression)
+  public EntriesResponse getEntries(@NotNull String refName, @NotNull EntriesParams params)
       throws NessieNotFoundException {
     HttpRequest builder =
         client.newRequest().path("trees/tree/{ref}/entries").resolveTemplate("ref", refName);
     return builder
-        .queryParam("max", maxRecords != null ? maxRecords.toString() : null)
-        .queryParam("pageToken", pageToken)
-        .queryParam("query_expression", queryExpression)
-        .queryParam("hashOnRef", hashOnRef)
+        .queryParam("max", params.maxRecords() != null ? params.maxRecords().toString() : null)
+        .queryParam("pageToken", params.pageToken())
+        .queryParam("query_expression", params.queryExpression())
+        .queryParam("hashOnRef", params.hashOnRef())
         .get()
         .readEntity(EntriesResponse.class);
   }

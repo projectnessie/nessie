@@ -20,6 +20,7 @@ import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.util.{ArrayBasedMapData, MapData}
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
 import org.apache.spark.unsafe.types.UTF8String
+import org.projectnessie.api.params.CommitLogParams
 import org.projectnessie.client.{NessieClient, StreamingUtil}
 
 import java.time.Instant
@@ -43,9 +44,7 @@ case class ShowLogExec(
     val stream = StreamingUtil.getCommitLogStream(
       nessieClient.getTreeApi,
       refName,
-      null,
-      OptionalInt.empty(),
-      null
+      CommitLogParams.empty()
     )
 
     stream.iterator.asScala
