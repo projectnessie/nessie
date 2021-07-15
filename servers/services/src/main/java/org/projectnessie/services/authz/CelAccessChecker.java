@@ -31,26 +31,23 @@ import java.util.Collections;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.ws.rs.ForbiddenException;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.projectnessie.cel.tools.ScriptException;
 import org.projectnessie.model.AuthorizationRule;
 import org.projectnessie.model.AuthorizationRuleType;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.services.cel.CELUtil;
+import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.rest.RulesResource;
 import org.projectnessie.versioned.NamedRef;
 
 @ApplicationScoped
 public class CelAccessChecker implements AccessChecker {
 
-  private final boolean authorizationEnabled;
+  private final ServerConfig config;
 
-  // TODO how should we determine whether authz is enabled or not?
   @Inject
-  public CelAccessChecker(
-      @ConfigProperty(name = "quarkus.oauth2.enabled", defaultValue = "true")
-          boolean authorizationEnabled) {
-    this.authorizationEnabled = authorizationEnabled;
+  public CelAccessChecker(ServerConfig config) {
+    this.config = config;
   }
 
   @Override
@@ -104,7 +101,7 @@ public class CelAccessChecker implements AccessChecker {
 
   private void canPerformOpOnReference(
       AccessContext context, NamedRef ref, AuthorizationRuleType type) {
-    if (!authorizationEnabled) {
+    if (!config.authorizationEnabled()) {
       return;
     }
     boolean allowed =
@@ -142,7 +139,7 @@ public class CelAccessChecker implements AccessChecker {
 
   private void canPerformOpOnPath(
       AccessContext context, ContentsKey contentsKey, AuthorizationRuleType type) {
-    if (!authorizationEnabled) {
+    if (!config.authorizationEnabled()) {
       return;
     }
     boolean allowed =

@@ -26,9 +26,16 @@ public interface ServerConfig {
   String getDefaultBranch();
 
   /**
-   * Returns if server stack trace should be sent to the client in case of error.
+   * Returns {@code true} if server stack trace should be sent to the client in case of error.
    *
    * @return {@code true} if the server should send the stack trace to the client.
    */
   boolean sendStacktraceToClient();
+
+  /**
+   * Returns {@code true} if Nessie authorization is enabled.
+   *
+   * @return {@code true} if Nessie authorization is enabled.
+   */
+  boolean authorizationEnabled();
 }
