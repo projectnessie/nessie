@@ -5,8 +5,8 @@ on:
     paths-ignore:
       - 'LICENSE'
       - 'NOTICE'
-      - '*.md'
-      - '**/README.md'
+      - '**.md'
+      - '!site/**'
       - '.github/dependabot.yml'
       - '.github/workflows/release*.yml'
       - '.github/workflows/check*.yml'
