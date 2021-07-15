@@ -165,7 +165,7 @@
     <spark3.version>3.0.3</spark3.version>
     <sqlite.version>1.0.392</sqlite.version>
     <surefire.version>3.0.0-M5</surefire.version>
-    <weld.version>3.1.7.Final</weld.version>
+    <weld.version>4.0.2.Final</weld.version>
   </properties>
 
   <dependencyManagement>
