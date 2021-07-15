@@ -220,8 +220,8 @@ case object NessieParseErrorListener extends BaseErrorListener {
 
 /**
   * Copied from Apache Spark
-  * A [[ParseException]] is an [[AnalysisException]] that is thrown during the parse process. It
-  * contains fields and an extended error message that make reporting and diagnosing errors easier.
+  * A [[NessieParseException]] is an `AnalysisException` that is thrown during the parse process.
+  * It contains fields and an extended error message that make reporting and diagnosing errors easier.
   */
 class NessieParseException(
     val command: Option[String],

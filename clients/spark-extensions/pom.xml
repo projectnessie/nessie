@@ -234,7 +234,39 @@
         </execution>
       </executions>
     </plugin>
-
-  </plugins>
+    </plugins>
   </build>
+
+  <profiles>
+    <profile>
+      <id>release</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>net.alchim31.maven</groupId>
+            <artifactId>scala-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>attach-javadocs</id>
+                <goals>
+                  <goal>doc-jar</goal>
+                </goals>
+                <configuration>
+                  <scalaVersion>${scala2.12.version}</scalaVersion>
+                  <additionalDependencies>
+                    <!-- Hack to let scaladoc pick up the generated code -->
+                    <dependency>
+                      <groupId>${project.groupId}</groupId>
+                      <artifactId>${project.artifactId}</artifactId>
+                      <version>${project.version}</version>
+                    </dependency>
+                  </additionalDependencies>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

@@ -50,6 +50,12 @@
               <goal>add-source</goal>
             </goals>
           </execution>
+          <execution>
+            <id>attach-javadocs</id>
+            <configuration>
+              <skip>true</skip>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
       <plugin>

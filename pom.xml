@@ -1211,6 +1211,21 @@ limitations under the License.
             </executions>
           </plugin>
           <plugin>
+            <groupId>net.alchim31.maven</groupId>
+            <artifactId>scala-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>attach-javadocs</id>
+                <goals>
+                  <goal>doc-jar</goal>
+                </goals>
+                <configuration>
+                  <scalaVersion>${scala2.12.version}</scalaVersion>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-javadoc-plugin</artifactId>
             <executions>
@@ -1232,6 +1247,7 @@ limitations under the License.
                   <goal>sign</goal>
                 </goals>
                 <configuration>
+                  <skip>${skipGpg}</skip>
                   <gpgArguments>
                     <arg>--pinentry-mode</arg>
                     <arg>loopback</arg>
