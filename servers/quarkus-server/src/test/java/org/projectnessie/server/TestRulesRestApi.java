@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.TestProfile;
 import io.quarkus.test.security.TestSecurity;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,8 +29,10 @@ import org.projectnessie.client.rest.NessieNotAuthorizedException;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.model.AuthorizationRule;
 import org.projectnessie.model.AuthorizationRuleType;
+import org.projectnessie.server.authz.NessieAuthorizationTestProfile;
 
 @QuarkusTest
+@TestProfile(value = NessieAuthorizationTestProfile.class)
 class TestRulesRestApi {
 
   private NessieClient client;

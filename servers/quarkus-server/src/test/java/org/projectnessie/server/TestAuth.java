@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.projectnessie.model.AuthorizationRuleType.ALLOW_ALL;
 
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.TestProfile;
 import io.quarkus.test.security.TestSecurity;
 import java.io.IOException;
 import java.util.List;
@@ -47,8 +48,10 @@ import org.projectnessie.model.ImmutableIcebergTable;
 import org.projectnessie.model.ImmutableOperations;
 import org.projectnessie.model.ImmutablePut;
 import org.projectnessie.model.Reference;
+import org.projectnessie.server.authz.NessieAuthorizationTestProfile;
 
 @QuarkusTest
+@TestProfile(value = NessieAuthorizationTestProfile.class)
 class TestAuth {
 
   private NessieClient client;

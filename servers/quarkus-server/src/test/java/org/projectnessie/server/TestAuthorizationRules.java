@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.TestProfile;
 import io.quarkus.test.security.TestSecurity;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
@@ -44,8 +45,10 @@ import org.projectnessie.model.ImmutableDelete;
 import org.projectnessie.model.ImmutableOperations;
 import org.projectnessie.model.ImmutablePut;
 import org.projectnessie.model.Operations;
+import org.projectnessie.server.authz.NessieAuthorizationTestProfile;
 
 @QuarkusTest
+@TestProfile(value = NessieAuthorizationTestProfile.class)
 class TestAuthorizationRules {
 
   private NessieClient client;
