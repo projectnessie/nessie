@@ -1,10 +1,12 @@
 # Releases
 
-## 0.8.1 Release (July 14, 2021)
+## 0.8.2 Release (July 15, 2021)
 
 * Add JAX-RS server implementation based on Glassfish/Jersey/Weld for integration testing
   in Iceberg
 * REST-API change: only accept named-references
+* REST-API change: support time-travel on named-references
+* REST-API change: Server-side commit range filtering
 * OpenAPI: more explicit constraints on parameters
 * OpenAPI: include OpenAPI yaml+json files in nessie-model artifact
 * Remove already deprecated methods from ContentsApi
@@ -13,6 +15,7 @@
 * Spark-extensions for Iceberg
 * Prepare for multi-tenancy
 * Gatling support + simulations
+* Python CLI: Fix ser/de of DeltaLakeTable when listing contents
 
 ## 0.7.0 Release (June 15, 2021)
 
