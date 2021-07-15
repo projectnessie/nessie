@@ -2,14 +2,16 @@
 History
 =======
 
-0.8.1 (2021-07-14)
+0.8.2 (2021-07-15)
 ------------------
 
 * REST-API change: only accept named-references
+* REST-API change: Server-side commit range filtering
 * OpenAPI: more explicit constraints on parameters
 * Commit-log filtering on all fields of CommitMeta
 * Use "Common Expression Language" for commit-log and entries filtering
 * Prepare for multi-tenancy
+* Fix ser/de of DeltaLakeTable when listing contents
 
 0.7.0 (2021-06-15)
 ------------------
