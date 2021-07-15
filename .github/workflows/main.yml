@@ -116,7 +116,7 @@ jobs:
         MAVEN_USERNAME: ${{ secrets.OSSRH_ACCESS_ID }}
         SPARK_LOCAL_IP: localhost
       if: ${{ ! env.MAVEN_USERNAME }}
-      run: ./mvnw -B install --file pom.xml -Pcode-coverage,jdk8-tests,native -Dtest.log.level=WARN
+      run: ./mvnw -B install --file pom.xml -Pcode-coverage,jdk8-tests,native,release -DskipGpg -Dtest.log.level=WARN
     - name: Build with Gradle
       run: ./gradlew --rerun-tasks --no-daemon --info build
       working-directory: ./tools/apprunner-gradle-plugin
