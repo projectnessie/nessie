@@ -116,28 +116,29 @@ class TestAuthorizationRules {
   private void createBranch(Branch branch) throws NessieConflictException, NessieNotFoundException {
     assertThatThrownBy(() -> tree.createReference(branch))
         .isInstanceOf(NessieForbiddenException.class)
-        .hasMessageContaining("'CREATE_REFERENCE' is not allowed for Role ''");
+        .hasMessageContaining("'CREATE_REFERENCE' is not allowed for Role 'admin_user'");
 
     rules.addRule(
         AuthorizationRule.of(
             "allow_branch_creation_" + branch.getName(),
             AuthorizationRuleType.CREATE_REFERENCE,
             String.format("ref=='%s'", branch.getName()),
-            "role==''"));
+            "role=='admin_user'"));
     tree.createReference(branch);
   }
 
   private void deleteBranch(Branch branch) throws NessieConflictException, NessieNotFoundException {
     assertThatThrownBy(() -> tree.deleteBranch(branch.getName(), branch.getHash()))
         .isInstanceOf(NessieForbiddenException.class)
-        .hasMessageContaining("'DELETE_REFERENCE' is not allowed for Role '' on Reference");
+        .hasMessageContaining(
+            "'DELETE_REFERENCE' is not allowed for Role 'admin_user' on Reference");
 
     rules.addRule(
         AuthorizationRule.of(
             "allow_branch_deletion_" + branch.getName(),
             AuthorizationRuleType.DELETE_REFERENCE,
             String.format("ref=='%s'", branch.getName()),
-            "role==''"));
+            "role=='admin_user'"));
     tree.deleteBranch(branch.getName(), branch.getHash());
   }
 
@@ -148,7 +149,7 @@ class TestAuthorizationRules {
         .isInstanceOf(NessieForbiddenException.class)
         .hasMessageContaining(
             String.format(
-                "'READ_ENTITY_VALUE' is not allowed for Role '' on Content '%s'",
+                "'READ_ENTITY_VALUE' is not allowed for Role 'admin_user' on Content '%s'",
                 key.toPathString()));
 
     rules.addRule(
@@ -156,7 +157,7 @@ class TestAuthorizationRules {
             "allow_reading_contents_for_" + branchName,
             AuthorizationRuleType.READ_ENTITY_VALUE,
             String.format("path=='%s'", key.toPathString()),
-            "role==''"));
+            "role=='admin_user'"));
     assertThat(contents.getContents(key, branchName, null).unwrap(IcebergTable.class).get())
         .isNotNull()
         .isInstanceOf(IcebergTable.class);
@@ -166,14 +167,14 @@ class TestAuthorizationRules {
       throws NessieNotFoundException, NessieConflictException {
     assertThatThrownBy(() -> tree.getEntries(branchName, EntriesParams.empty()).getEntries())
         .isInstanceOf(NessieForbiddenException.class)
-        .hasMessageContaining("'READ_OBJECT_CONTENT' is not allowed for Role ''");
+        .hasMessageContaining("'READ_OBJECT_CONTENT' is not allowed for Role 'admin_user'");
 
     rules.addRule(
         AuthorizationRule.of(
             "allow_reading_objects_" + branchName,
             AuthorizationRuleType.READ_OBJECT_CONTENT,
             String.format("ref=='%s'", branchName),
-            "role==''"));
+            "role=='admin_user'"));
 
     List<Entry> tables = tree.getEntries(branchName, EntriesParams.empty()).getEntries();
     assertThat(tables).isEmpty();
@@ -186,21 +187,21 @@ class TestAuthorizationRules {
             () -> tree.commitMultipleOperations(branch.getName(), branch.getHash(), operations))
         .isInstanceOf(NessieForbiddenException.class)
         .hasMessageContaining(
-            "'COMMIT_CHANGE_AGAINST_REFERENCE' is not allowed for Role '' on Reference");
+            "'COMMIT_CHANGE_AGAINST_REFERENCE' is not allowed for Role 'admin_user' on Reference");
 
     rules.addRule(
         AuthorizationRule.of(
             "allow_committing_objects_against_" + branch.getName(),
             AuthorizationRuleType.COMMIT_CHANGE_AGAINST_REFERENCE,
             String.format("ref=='%s'", branch.getName()),
-            "role==''"));
+            "role=='admin_user'"));
 
     assertThatThrownBy(
             () -> tree.commitMultipleOperations(branch.getName(), branch.getHash(), operations))
         .isInstanceOf(NessieForbiddenException.class)
         .hasMessageContaining(
             String.format(
-                "'UPDATE_ENTITY' is not allowed for Role '' on Content '%s'",
+                "'UPDATE_ENTITY' is not allowed for Role 'admin_user' on Content '%s'",
                 operations.getOperations().get(0).getKey().toPathString()));
 
     operations
@@ -213,7 +214,7 @@ class TestAuthorizationRules {
                         "allow_updating_entity_for_" + op.getKey().toPathString(),
                         AuthorizationRuleType.UPDATE_ENTITY,
                         String.format("path=='%s'", op.getKey().toPathString()),
-                        "role==''"));
+                        "role=='admin_user'"));
               } catch (NessieConflictException e) {
                 throw new RuntimeException(e);
               }
@@ -229,7 +230,7 @@ class TestAuthorizationRules {
         .isInstanceOf(NessieForbiddenException.class)
         .hasMessageContaining(
             String.format(
-                "'DELETE_ENTITY' is not allowed for Role '' on Content '%s'",
+                "'DELETE_ENTITY' is not allowed for Role 'admin_user' on Content '%s'",
                 operations.getOperations().get(0).getKey().toPathString()));
 
     operations
@@ -242,7 +243,7 @@ class TestAuthorizationRules {
                         "allow_deleting_entity_for_" + op.getKey().toPathString(),
                         AuthorizationRuleType.DELETE_ENTITY,
                         String.format("path=='%s'", op.getKey().toPathString()),
-                        "role==''"));
+                        "role=='admin_user'"));
               } catch (NessieConflictException e) {
                 throw new RuntimeException(e);
               }
