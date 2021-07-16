@@ -37,7 +37,6 @@ import java.util.HashMap;
 import java.util.Map;
 import org.projectnessie.api.ConfigApi;
 import org.projectnessie.api.ContentsApi;
-import org.projectnessie.api.RulesApi;
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.client.auth.AwsAuth;
 import org.projectnessie.client.auth.BasicAuthFilter;
@@ -61,7 +60,6 @@ class NessieHttpClient implements NessieClient {
   private final ConfigApi config;
   private final TreeApi tree;
   private final ContentsApi contents;
-  private final RulesApi rules;
 
   /**
    * Create new HTTP {@link NessieClient}. All REST api endpoints are mapped here. This client
@@ -121,7 +119,6 @@ class NessieHttpClient implements NessieClient {
     contents = wrap(ContentsApi.class, new ClientContentsApi(client));
     tree = wrap(TreeApi.class, new ClientTreeApi(client));
     config = wrap(ConfigApi.class, new ClientConfigApi(client));
-    rules = wrap(RulesApi.class, new ClientRulesApi(client));
   }
 
   private static void addTracing(HttpClient httpClient) {
@@ -259,10 +256,6 @@ class NessieHttpClient implements NessieClient {
   @Override
   public ConfigApi getConfigApi() {
     return config;
-  }
-
-  public RulesApi getRulesApi() {
-    return rules;
   }
 
   @Override

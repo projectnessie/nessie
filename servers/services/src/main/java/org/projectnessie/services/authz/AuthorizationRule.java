@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.model;
+package org.projectnessie.server.authz;
 
-import static org.projectnessie.model.AuthorizationRuleType.ALLOW_ALL;
-import static org.projectnessie.model.AuthorizationRuleType.DELETE_ENTITY;
-import static org.projectnessie.model.AuthorizationRuleType.READ_ENTITY_VALUE;
-import static org.projectnessie.model.AuthorizationRuleType.UPDATE_ENTITY;
+import static org.projectnessie.server.authz.AuthorizationRuleType.ALLOW_ALL;
+import static org.projectnessie.server.authz.AuthorizationRuleType.DELETE_ENTITY;
+import static org.projectnessie.server.authz.AuthorizationRuleType.READ_ENTITY_VALUE;
+import static org.projectnessie.server.authz.AuthorizationRuleType.UPDATE_ENTITY;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -26,6 +26,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
+import org.projectnessie.model.ImmutableAuthorizationRule;
 
 @Schema(type = SchemaType.OBJECT, title = "Authorization Rule")
 @Value.Immutable(prehash = true)

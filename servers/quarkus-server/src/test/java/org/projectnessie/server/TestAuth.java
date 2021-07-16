@@ -16,7 +16,6 @@
 package org.projectnessie.server;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.projectnessie.model.AuthorizationRuleType.ALLOW_ALL;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
@@ -36,7 +35,6 @@ import org.projectnessie.client.rest.NessieForbiddenException;
 import org.projectnessie.client.rest.NessieNotAuthorizedException;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
-import org.projectnessie.model.AuthorizationRule;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentsKey;
@@ -71,7 +69,6 @@ class TestAuth {
     tree = client.getTreeApi();
     contents = client.getContentsApi();
     if (branch != null) {
-      client.getRulesApi().addRule(AuthorizationRule.of("allow_all", ALLOW_ALL));
       tree.createReference(Branch.of(branch, null));
     }
   }

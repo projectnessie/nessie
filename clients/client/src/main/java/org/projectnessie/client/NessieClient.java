@@ -28,7 +28,6 @@ import java.net.URI;
 import java.util.function.Function;
 import org.projectnessie.api.ConfigApi;
 import org.projectnessie.api.ContentsApi;
-import org.projectnessie.api.RulesApi;
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.client.http.HttpClientException;
 import org.projectnessie.client.http.HttpClientReadTimeoutException;
@@ -63,8 +62,6 @@ public interface NessieClient extends AutoCloseable {
   ContentsApi getContentsApi();
 
   ConfigApi getConfigApi();
-
-  RulesApi getRulesApi();
 
   /**
    * Create a new {@link Builder} to configure a new {@link NessieClient}. Currently, the {@link

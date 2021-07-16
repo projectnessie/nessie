@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.model;
+package org.projectnessie.server.authz;
 
 public enum AuthorizationRuleType {
   ALLOW_ALL,
