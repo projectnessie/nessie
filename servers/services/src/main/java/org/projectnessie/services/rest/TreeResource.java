@@ -194,7 +194,7 @@ public class TreeResource extends BaseResource implements TreeApi {
       // we should only allow named references when no paging is defined
       WithHash<NamedRef> namedRefWithHash = namedRefWithHashOrThrow(namedRef, params.endHash());
       endRef = namedRefWithHash.getHash();
-      getAccessChecker().canListObjects(createAccessContext(), namedRefWithHash.getValue());
+      getAccessChecker().canListCommitLog(createAccessContext(), namedRefWithHash.getValue());
     } else {
       // TODO: this is atm an insecure design where users can put it any hashes and retrieve all the
       // commits. Once authz + tvs2 is in place we should revisit this
@@ -313,7 +313,7 @@ public class TreeResource extends BaseResource implements TreeApi {
       throws NessieNotFoundException {
 
     WithHash<NamedRef> refWithHash = namedRefWithHashOrThrow(namedRef, params.hashOnRef());
-    getAccessChecker().canReadObjectContent(createAccessContext(), refWithHash.getValue());
+    getAccessChecker().canReadEntries(createAccessContext(), refWithHash.getValue());
     // TODO Implement paging. At the moment, we do not expect that many keys/entries to be returned.
     //  So the size of the whole result is probably reasonable and unlikely to "kill" either the
     //  server or client. We have to figure out _how_ to implement paging for keys/entries, i.e.

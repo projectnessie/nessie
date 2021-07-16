@@ -15,16 +15,16 @@
  */
 package org.projectnessie.services.authz;
 
-import static org.projectnessie.model.AuthorizationRuleType.ALLOW_ALL;
-import static org.projectnessie.model.AuthorizationRuleType.ASSIGN_REFERENCE_TO_HASH;
-import static org.projectnessie.model.AuthorizationRuleType.COMMIT_CHANGE_AGAINST_REFERENCE;
-import static org.projectnessie.model.AuthorizationRuleType.CREATE_REFERENCE;
-import static org.projectnessie.model.AuthorizationRuleType.DELETE_ENTITY;
-import static org.projectnessie.model.AuthorizationRuleType.DELETE_REFERENCE;
-import static org.projectnessie.model.AuthorizationRuleType.LIST_OBJECTS;
-import static org.projectnessie.model.AuthorizationRuleType.READ_ENTITY_VALUE;
-import static org.projectnessie.model.AuthorizationRuleType.READ_OBJECT_CONTENT;
-import static org.projectnessie.model.AuthorizationRuleType.UPDATE_ENTITY;
+import static org.projectnessie.services.authz.AuthorizationRuleType.ALLOW_ALL;
+import static org.projectnessie.services.authz.AuthorizationRuleType.ASSIGN_REFERENCE_TO_HASH;
+import static org.projectnessie.services.authz.AuthorizationRuleType.COMMIT_CHANGE_AGAINST_REFERENCE;
+import static org.projectnessie.services.authz.AuthorizationRuleType.CREATE_REFERENCE;
+import static org.projectnessie.services.authz.AuthorizationRuleType.DELETE_ENTITY;
+import static org.projectnessie.services.authz.AuthorizationRuleType.DELETE_REFERENCE;
+import static org.projectnessie.services.authz.AuthorizationRuleType.LIST_COMMIT_LOG;
+import static org.projectnessie.services.authz.AuthorizationRuleType.READ_ENTITY_VALUE;
+import static org.projectnessie.services.authz.AuthorizationRuleType.READ_ENTRIES;
+import static org.projectnessie.services.authz.AuthorizationRuleType.UPDATE_ENTITY;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Collections;
@@ -32,22 +32,23 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.ws.rs.ForbiddenException;
 import org.projectnessie.cel.tools.ScriptException;
-import org.projectnessie.model.AuthorizationRule;
-import org.projectnessie.model.AuthorizationRuleType;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.services.cel.CELUtil;
+import org.projectnessie.services.config.AuthorizationRulesConfig;
 import org.projectnessie.services.config.ServerConfig;
-import org.projectnessie.services.rest.RulesResource;
 import org.projectnessie.versioned.NamedRef;
 
 @ApplicationScoped
 public class CelAccessChecker implements AccessChecker {
 
   private final ServerConfig config;
+  private final AuthorizationRules rules;
 
   @Inject
-  public CelAccessChecker(ServerConfig config) {
+  public CelAccessChecker(ServerConfig config, AuthorizationRulesConfig authorizationRulesConfig) {
     this.config = config;
+    System.out.println("authorizationRulesConfig = " + authorizationRulesConfig.rules());
+    this.rules = null;
   }
 
   @Override
@@ -66,13 +67,13 @@ public class CelAccessChecker implements AccessChecker {
   }
 
   @Override
-  public void canReadObjectContent(AccessContext context, NamedRef ref) throws ForbiddenException {
-    canPerformOpOnReference(context, ref, READ_OBJECT_CONTENT);
+  public void canReadEntries(AccessContext context, NamedRef ref) throws ForbiddenException {
+    canPerformOpOnReference(context, ref, READ_ENTRIES);
   }
 
   @Override
-  public void canListObjects(AccessContext context, NamedRef ref) throws ForbiddenException {
-    canPerformOpOnReference(context, ref, LIST_OBJECTS);
+  public void canListCommitLog(AccessContext context, NamedRef ref) throws ForbiddenException {
+    canPerformOpOnReference(context, ref, LIST_COMMIT_LOG);
   }
 
   @Override
@@ -105,8 +106,8 @@ public class CelAccessChecker implements AccessChecker {
       return;
     }
     boolean allowed =
-        RulesResource.rulesByType.containsKey(ALLOW_ALL)
-            || RulesResource.rulesByType.getOrDefault(type, Collections.emptySet()).stream()
+        rules.getRulesByType().containsKey(ALLOW_ALL)
+            || rules.getRulesByType().getOrDefault(type, Collections.emptySet()).stream()
                 .filter(AuthorizationRule::isReferenceRule)
                 .filter(r -> isRoleAllowed(context, r))
                 .anyMatch(
@@ -143,8 +144,8 @@ public class CelAccessChecker implements AccessChecker {
       return;
     }
     boolean allowed =
-        RulesResource.rulesByType.containsKey(ALLOW_ALL)
-            || RulesResource.rulesByType.getOrDefault(type, Collections.emptySet()).stream()
+        rules.getRulesByType().containsKey(ALLOW_ALL)
+            || rules.getRulesByType().getOrDefault(type, Collections.emptySet()).stream()
                 .filter(AuthorizationRule::isPathRule)
                 .filter(r -> isRoleAllowed(context, r))
                 .anyMatch(

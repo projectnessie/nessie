@@ -38,10 +38,10 @@ public class AccessCheckerExtension implements Extension {
         public void canDeleteReference(AccessContext context, NamedRef ref) {}
 
         @Override
-        public void canReadObjectContent(AccessContext context, NamedRef ref) {}
+        public void canReadEntries(AccessContext context, NamedRef ref) {}
 
         @Override
-        public void canListObjects(AccessContext context, NamedRef ref) {}
+        public void canListCommitLog(AccessContext context, NamedRef ref) {}
 
         @Override
         public void canCommitChangeAgainstReference(AccessContext context, NamedRef ref) {}
