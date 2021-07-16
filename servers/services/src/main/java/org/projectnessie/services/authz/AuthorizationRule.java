@@ -13,25 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.server.authz;
+package org.projectnessie.services.authz;
 
-import static org.projectnessie.server.authz.AuthorizationRuleType.ALLOW_ALL;
-import static org.projectnessie.server.authz.AuthorizationRuleType.DELETE_ENTITY;
-import static org.projectnessie.server.authz.AuthorizationRuleType.READ_ENTITY_VALUE;
-import static org.projectnessie.server.authz.AuthorizationRuleType.UPDATE_ENTITY;
+import static org.projectnessie.services.authz.AuthorizationRuleType.ALLOW_ALL;
+import static org.projectnessie.services.authz.AuthorizationRuleType.DELETE_ENTITY;
+import static org.projectnessie.services.authz.AuthorizationRuleType.READ_ENTITY_VALUE;
+import static org.projectnessie.services.authz.AuthorizationRuleType.UPDATE_ENTITY;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
-import org.projectnessie.model.ImmutableAuthorizationRule;
 
-@Schema(type = SchemaType.OBJECT, title = "Authorization Rule")
 @Value.Immutable(prehash = true)
-@JsonSerialize(as = ImmutableAuthorizationRule.class)
-@JsonDeserialize(as = ImmutableAuthorizationRule.class)
 public interface AuthorizationRule {
 
   String id();

@@ -15,15 +15,18 @@
  */
 package org.projectnessie.services.authz;
 
-public enum AuthorizationRuleType {
-  ALLOW_ALL,
-  CREATE_REFERENCE,
-  DELETE_REFERENCE,
-  LIST_OBJECTS,
-  READ_OBJECT_CONTENT,
-  ASSIGN_REFERENCE_TO_HASH,
-  COMMIT_CHANGE_AGAINST_REFERENCE,
-  UPDATE_ENTITY,
-  DELETE_ENTITY,
-  READ_ENTITY_VALUE;
+import java.util.Map;
+import java.util.Set;
+
+public class AuthorizationRules {
+
+  private final Map<AuthorizationRuleType, Set<AuthorizationRule>> rulesByType;
+
+  public AuthorizationRules(Map<AuthorizationRuleType, Set<AuthorizationRule>> rulesByType) {
+    this.rulesByType = rulesByType;
+  }
+
+  public Map<AuthorizationRuleType, Set<AuthorizationRule>> getRulesByType() {
+    return rulesByType;
+  }
 }

@@ -13,17 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.services.authz;
+package org.projectnessie.server.config;
 
-public enum AuthorizationRuleType {
-  ALLOW_ALL,
-  CREATE_REFERENCE,
-  DELETE_REFERENCE,
-  LIST_OBJECTS,
-  READ_OBJECT_CONTENT,
-  ASSIGN_REFERENCE_TO_HASH,
-  COMMIT_CHANGE_AGAINST_REFERENCE,
-  UPDATE_ENTITY,
-  DELETE_ENTITY,
-  READ_ENTITY_VALUE;
+import io.smallrye.config.ConfigMapping;
+import io.smallrye.config.WithName;
+import java.util.Map;
+import org.projectnessie.services.config.AuthorizationRulesConfig;
+
+@ConfigMapping(prefix = "nessie.server.authorization")
+public interface QuarkusAuthorizationRulesConfig extends AuthorizationRulesConfig {
+
+  @Override
+  @WithName("enabled")
+  boolean enabled();
+
+  @Override
+  @WithName("rules")
+  Map<String, String> rules();
 }
