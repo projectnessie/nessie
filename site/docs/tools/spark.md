@@ -79,7 +79,7 @@ These are set as follows in code (or through other methods as described [here](h
             "org.apache.iceberg:iceberg-spark3-runtime:{{ versions.iceberg}}")
         .set("spark.sql.catalog.nessie.url", url)
         .set("spark.sql.catalog.nessie.ref", ref)
-        .set("spark.sql.nessie.nessie.auth_type", authType)
+        .set("spark.sql.nessie.nessie.auth-type", authType)
         .set("spark.sql.nessie.nessie.catalog-impl",
             "org.apache.iceberg.nessie.NessieCatalog")
         .set("spark.sql.nessie.nessie.warehouse", fullPathToWarehouse)
@@ -107,7 +107,7 @@ These are set as follows in code (or through other methods as described [here](h
                 "org.apache.iceberg:iceberg-spark3-runtime:{{ versions.iceberg}}") \
             .config("spark.sql.catalog.nessie.url", url) \
             .config("spark.sql.catalog.nessie.ref", ref) \
-            .config("spark.sql.nessie.nessie.auth_type", auth_type) \
+            .config("spark.sql.nessie.nessie.auth-type", auth_type) \
             .config("spark.sql.nessie.nessie.catalog-impl", 
                 "org.apache.iceberg.nessie.NessieCatalog") \
             .config("spark.sql.nessie.nessie.warehouse", full_path_to_warehouse) \
@@ -392,7 +392,7 @@ These are set as follows in code (or through other methods as described [here](h
             "org.projectnessie:nessie-deltalake-spark3:{{ versions.java}}")
         .set("spark.hadoop.nessie.url", url)
         .set("spark.hadoop.nessie.ref", branch)
-        .set("spark.hadoop.nessie.auth_type", authType)
+        .set("spark.hadoop.nessie.auth-type", authType)
         .set("spark.sql.catalog.spark_catalog",
             "org.apache.spark.sql.delta.catalog.DeltaCatalog")
         .set("spark.sql.extensions",

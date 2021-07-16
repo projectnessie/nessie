@@ -49,7 +49,7 @@ public final class NessieConfigConstants {
    * will be {@link org.projectnessie.client.NessieClient.AuthType#NONE}. Note that "basic" HTTP
    * authentication is not considered secure.
    */
-  public static final String CONF_NESSIE_AUTH_TYPE = "nessie.auth_type";
+  public static final String CONF_NESSIE_AUTH_TYPE = "nessie.auth-type";
   /** Config property name ({@value #CONF_NESSIE_REF}) for the nessie reference used by clients. */
   public static final String CONF_NESSIE_REF = "nessie.ref";
   /**
