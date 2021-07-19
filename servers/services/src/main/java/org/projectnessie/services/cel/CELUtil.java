@@ -42,14 +42,12 @@ public class CELUtil {
           Decls.newVar("namespace", Decls.String),
           Decls.newVar("contentType", Decls.String));
 
-  public static final List<Decl> AUTHORIZATION_RULE_REF_DECLARATIONS =
-      ImmutableList.of(Decls.newVar("ref", Decls.String));
-
-  public static final List<Decl> AUTHORIZATION_RULE_PATH_DECLARATIONS =
-      ImmutableList.of(Decls.newVar("path", Decls.String));
-
-  public static final List<Decl> ROLE_DECLARATION =
-      ImmutableList.of(Decls.newVar("role", Decls.String));
+  public static final List<Decl> AUTHORIZATION_RULE_DECLARATIONS =
+      ImmutableList.of(
+          Decls.newVar("ref", Decls.String),
+          Decls.newVar("path", Decls.String),
+          Decls.newVar("role", Decls.String),
+          Decls.newVar("op", Decls.String));
 
   public static final List<Object> COMMIT_LOG_TYPES = Collections.singletonList(CommitMeta.class);
 }

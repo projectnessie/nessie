@@ -35,11 +35,6 @@ public class ServerConfigExtension implements Extension {
         public boolean sendStacktraceToClient() {
           return false;
         }
-
-        @Override
-        public boolean authorizationEnabled() {
-          return false;
-        }
       };
 
   @SuppressWarnings("unused")

@@ -17,7 +17,7 @@ package org.projectnessie.services.authz;
 
 import java.security.Principal;
 
-/** Provides some context about a role/principal that accesses Nessie resources */
+/** Provides some context about a role/principal that accesses Nessie resources. */
 public interface AccessContext {
   /** Provide a unique id for the operation being validated (for correlation purposes). */
   String operationId();

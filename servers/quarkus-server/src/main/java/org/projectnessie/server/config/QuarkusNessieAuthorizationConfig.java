@@ -16,18 +16,28 @@
 package org.projectnessie.server.config;
 
 import io.smallrye.config.ConfigMapping;
+import io.smallrye.config.WithDefault;
 import io.smallrye.config.WithName;
 import java.util.Map;
-import org.projectnessie.services.config.AuthorizationRulesConfig;
 
+/** Configuration for Nessie authorization settings */
 @ConfigMapping(prefix = "nessie.server.authorization")
-public interface QuarkusAuthorizationRulesConfig extends AuthorizationRulesConfig {
+public interface QuarkusNessieAuthorizationConfig {
 
-  @Override
+  /**
+   * Returns {@code true} if Nessie authorization is enabled.
+   *
+   * @return {@code true} if Nessie authorization is enabled.
+   */
   @WithName("enabled")
+  @WithDefault("false")
   boolean enabled();
 
-  @Override
-  @WithName("rules")
+  /**
+   * The authorization rules where the key represents the rule id and the value the CEL expression.
+   *
+   * @return The authorization rules where the key represents the rule id and the value the CEL
+   *     expression.
+   */
   Map<String, String> rules();
 }

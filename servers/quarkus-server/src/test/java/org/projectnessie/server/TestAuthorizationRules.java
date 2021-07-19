@@ -25,16 +25,16 @@ import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.api.ContentsApi;
-import org.projectnessie.api.RulesApi;
 import org.projectnessie.api.TreeApi;
+import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.client.NessieClient;
 import org.projectnessie.client.rest.NessieForbiddenException;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
-import org.projectnessie.model.AuthorizationRule;
-import org.projectnessie.model.AuthorizationRuleType;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentsKey;
@@ -51,17 +51,16 @@ import org.projectnessie.server.authz.NessieAuthorizationTestProfile;
 @TestProfile(value = NessieAuthorizationTestProfile.class)
 class TestAuthorizationRules {
 
-  private NessieClient client;
-  private TreeApi tree;
-  private ContentsApi contents;
-  private RulesApi rules;
+  private static NessieClient client;
+  private static TreeApi tree;
+  private static ContentsApi contents;
 
   @BeforeEach
+  @TestSecurity(user = "admin_user")
   void setupClient() {
     client = NessieClient.builder().withUri("http://localhost:19121/api/v1").build();
     tree = client.getTreeApi();
     contents = client.getContentsApi();
-    rules = client.getRulesApi();
   }
 
   @AfterEach
@@ -72,36 +71,141 @@ class TestAuthorizationRules {
     }
   }
 
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  @TestSecurity(user = "test_user")
+  void testAllOpsWithTestUser(boolean shouldFail)
+      throws NessieNotFoundException, NessieConflictException {
+    String branchName = "allowedBranchForTestUser";
+    ContentsKey key = ContentsKey.of("allowed", "x");
+    if (shouldFail) {
+      branchName = "disallowedBranchForTestUser";
+      key = ContentsKey.of("disallowed", "x");
+    }
+    String role = "test_user";
+
+    createBranch(Branch.of(branchName, null), role, shouldFail);
+
+    Branch branch =
+        shouldFail
+            ? Branch.of(branchName, "1234567890123456")
+            : (Branch) tree.getReferenceByName(branchName);
+
+    addContent(
+        branch,
+        ImmutableOperations.builder()
+            .addOperations(ImmutablePut.builder().key(key).contents(IcebergTable.of("foo")).build())
+            .commitMeta(CommitMeta.fromMessage("empty message"))
+            .build(),
+        role,
+        shouldFail);
+
+    getCommitLog(branchName, role, shouldFail);
+    getEntriesFor(branchName, role, shouldFail);
+    readContent(branchName, key, role, shouldFail);
+
+    branch =
+        shouldFail
+            ? Branch.of(branchName, "1234567890123456")
+            : (Branch) tree.getReferenceByName(branchName);
+
+    deleteContent(
+        branch,
+        ImmutableOperations.builder()
+            .addOperations(ImmutableDelete.builder().key(key).build())
+            .commitMeta(CommitMeta.fromMessage(""))
+            .build(),
+        role,
+        shouldFail);
+
+    branch =
+        shouldFail
+            ? Branch.of(branchName, "1234567890123456")
+            : (Branch) tree.getReferenceByName(branchName);
+    deleteBranch(branch, role, shouldFail);
+  }
+
   @Test
-  @TestSecurity(
-      user = "admin_user",
-      roles = {"admin", "user"})
-  void testRules() throws NessieNotFoundException, NessieConflictException {
-    String branchName = "testRulesBranch";
-    createBranch(Branch.of(branchName, null));
+  // test_user2 has all permissions on a Branch, but not permissions on a Key
+  @TestSecurity(user = "test_user2")
+  void testCanCommitButNotUpdateOrDeleteEntity()
+      throws NessieNotFoundException, NessieConflictException {
+    String role = "test_user2";
+    ContentsKey key = ContentsKey.of("allowed", "some");
+    String branchName = "allowedBranchForTestUser2";
+    createBranch(Branch.of(branchName, null), role, false);
+
+    final Branch branch = (Branch) tree.getReferenceByName(branchName);
+    ImmutableOperations updateOps =
+        ImmutableOperations.builder()
+            .addOperations(ImmutablePut.builder().key(key).contents(IcebergTable.of("foo")).build())
+            .commitMeta(CommitMeta.fromMessage("empty message"))
+            .build();
+
+    assertThatThrownBy(
+            () -> tree.commitMultipleOperations(branch.getName(), branch.getHash(), updateOps))
+        .isInstanceOf(NessieForbiddenException.class)
+        .hasMessageContaining(
+            String.format(
+                "'UPDATE_ENTITY' is not allowed for Role '%s' on Content '%s'",
+                role, updateOps.getOperations().get(0).getKey().toPathString()));
+
+    readContent(branchName, key, role, true);
+
+    final Branch b = (Branch) tree.getReferenceByName(branchName);
+
+    ImmutableOperations deleteOps =
+        ImmutableOperations.builder()
+            .addOperations(ImmutableDelete.builder().key(key).build())
+            .commitMeta(CommitMeta.fromMessage(""))
+            .build();
+
+    assertThatThrownBy(() -> tree.commitMultipleOperations(b.getName(), b.getHash(), deleteOps))
+        .isInstanceOf(NessieForbiddenException.class)
+        .hasMessageContaining(
+            String.format(
+                "'DELETE_ENTITY' is not allowed for Role '%s' on Content '%s'",
+                role, deleteOps.getOperations().get(0).getKey().toPathString()));
+
+    deleteBranch(branch, role, false);
+  }
+
+  @Test
+  @TestSecurity(user = "admin_user")
+  void testAdminUserIsAllowedEverything() throws NessieNotFoundException, NessieConflictException {
+    String branchName = "testAdminUserIsAllowedAllBranch";
+    String role = "admin_user";
+    createBranch(Branch.of(branchName, null), role, false);
 
     Branch branch = (Branch) tree.getReferenceByName(branchName);
-    getEntriesFor(branchName);
+
     ContentsKey key = ContentsKey.of("x", "x");
     addContent(
         branch,
         ImmutableOperations.builder()
             .addOperations(ImmutablePut.builder().key(key).contents(IcebergTable.of("foo")).build())
             .commitMeta(CommitMeta.fromMessage("empty message"))
-            .build());
-    readContent(branchName, key);
+            .build(),
+        role,
+        false);
+
+    getEntriesFor(branchName, role, false);
+    getCommitLog(branchName, role, false);
+    readContent(branchName, key, role, false);
 
     Branch master = (Branch) tree.getReferenceByName(branchName);
     Branch test = ImmutableBranch.builder().hash(master.getHash()).name("testy").build();
-    createBranch(Branch.of(test.getName(), test.getHash()));
-    deleteBranch((Branch) tree.getReferenceByName("testy"));
+    createBranch(Branch.of(test.getName(), test.getHash()), role, false);
+    deleteBranch((Branch) tree.getReferenceByName("testy"), role, false);
 
     deleteContent(
         master,
         ImmutableOperations.builder()
             .addOperations(ImmutableDelete.builder().key(key).build())
             .commitMeta(CommitMeta.fromMessage(""))
-            .build());
+            .build(),
+        role,
+        false);
 
     // all required rules are already defined
     tree.commitMultipleOperations(
@@ -113,142 +217,111 @@ class TestAuthorizationRules {
             .build());
   }
 
-  private void createBranch(Branch branch) throws NessieConflictException, NessieNotFoundException {
-    assertThatThrownBy(() -> tree.createReference(branch))
-        .isInstanceOf(NessieForbiddenException.class)
-        .hasMessageContaining("'CREATE_REFERENCE' is not allowed for Role 'admin_user'");
-
-    rules.addRule(
-        AuthorizationRule.of(
-            "allow_branch_creation_" + branch.getName(),
-            AuthorizationRuleType.CREATE_REFERENCE,
-            String.format("ref=='%s'", branch.getName()),
-            "role=='admin_user'"));
-    tree.createReference(branch);
-  }
-
-  private void deleteBranch(Branch branch) throws NessieConflictException, NessieNotFoundException {
-    assertThatThrownBy(() -> tree.deleteBranch(branch.getName(), branch.getHash()))
-        .isInstanceOf(NessieForbiddenException.class)
-        .hasMessageContaining(
-            "'DELETE_REFERENCE' is not allowed for Role 'admin_user' on Reference");
-
-    rules.addRule(
-        AuthorizationRule.of(
-            "allow_branch_deletion_" + branch.getName(),
-            AuthorizationRuleType.DELETE_REFERENCE,
-            String.format("ref=='%s'", branch.getName()),
-            "role=='admin_user'"));
-    tree.deleteBranch(branch.getName(), branch.getHash());
-  }
-
-  private void readContent(String branchName, ContentsKey key)
-      throws NessieNotFoundException, NessieConflictException {
-    assertThatThrownBy(
-            () -> contents.getContents(key, branchName, null).unwrap(IcebergTable.class).get())
-        .isInstanceOf(NessieForbiddenException.class)
-        .hasMessageContaining(
-            String.format(
-                "'READ_ENTITY_VALUE' is not allowed for Role 'admin_user' on Content '%s'",
-                key.toPathString()));
-
-    rules.addRule(
-        AuthorizationRule.of(
-            "allow_reading_contents_for_" + branchName,
-            AuthorizationRuleType.READ_ENTITY_VALUE,
-            String.format("path=='%s'", key.toPathString()),
-            "role=='admin_user'"));
-    assertThat(contents.getContents(key, branchName, null).unwrap(IcebergTable.class).get())
-        .isNotNull()
-        .isInstanceOf(IcebergTable.class);
-  }
-
-  private void getEntriesFor(String branchName)
-      throws NessieNotFoundException, NessieConflictException {
-    assertThatThrownBy(() -> tree.getEntries(branchName, EntriesParams.empty()).getEntries())
-        .isInstanceOf(NessieForbiddenException.class)
-        .hasMessageContaining("'READ_OBJECT_CONTENT' is not allowed for Role 'admin_user'");
-
-    rules.addRule(
-        AuthorizationRule.of(
-            "allow_reading_objects_" + branchName,
-            AuthorizationRuleType.READ_OBJECT_CONTENT,
-            String.format("ref=='%s'", branchName),
-            "role=='admin_user'"));
-
-    List<Entry> tables = tree.getEntries(branchName, EntriesParams.empty()).getEntries();
-    assertThat(tables).isEmpty();
-  }
-
-  private void addContent(Branch branch, Operations operations)
-      throws NessieNotFoundException, NessieConflictException {
-
-    assertThatThrownBy(
-            () -> tree.commitMultipleOperations(branch.getName(), branch.getHash(), operations))
-        .isInstanceOf(NessieForbiddenException.class)
-        .hasMessageContaining(
-            "'COMMIT_CHANGE_AGAINST_REFERENCE' is not allowed for Role 'admin_user' on Reference");
-
-    rules.addRule(
-        AuthorizationRule.of(
-            "allow_committing_objects_against_" + branch.getName(),
-            AuthorizationRuleType.COMMIT_CHANGE_AGAINST_REFERENCE,
-            String.format("ref=='%s'", branch.getName()),
-            "role=='admin_user'"));
-
-    assertThatThrownBy(
-            () -> tree.commitMultipleOperations(branch.getName(), branch.getHash(), operations))
-        .isInstanceOf(NessieForbiddenException.class)
-        .hasMessageContaining(
-            String.format(
-                "'UPDATE_ENTITY' is not allowed for Role 'admin_user' on Content '%s'",
-                operations.getOperations().get(0).getKey().toPathString()));
-
-    operations
-        .getOperations()
-        .forEach(
-            op -> {
-              try {
-                rules.addRule(
-                    AuthorizationRule.of(
-                        "allow_updating_entity_for_" + op.getKey().toPathString(),
-                        AuthorizationRuleType.UPDATE_ENTITY,
-                        String.format("path=='%s'", op.getKey().toPathString()),
-                        "role=='admin_user'"));
-              } catch (NessieConflictException e) {
-                throw new RuntimeException(e);
-              }
-            });
-
-    tree.commitMultipleOperations(branch.getName(), branch.getHash(), operations);
-  }
-
-  private void deleteContent(Branch branch, Operations operations)
+  private static void createBranch(Branch branch, String role, boolean shouldFail)
       throws NessieConflictException, NessieNotFoundException {
-    assertThatThrownBy(
-            () -> tree.commitMultipleOperations(branch.getName(), branch.getHash(), operations))
-        .isInstanceOf(NessieForbiddenException.class)
-        .hasMessageContaining(
-            String.format(
-                "'DELETE_ENTITY' is not allowed for Role 'admin_user' on Content '%s'",
-                operations.getOperations().get(0).getKey().toPathString()));
+    if (shouldFail) {
+      assertThatThrownBy(() -> tree.createReference(branch))
+          .isInstanceOf(NessieForbiddenException.class)
+          .hasMessageContaining(
+              String.format(
+                  "'CREATE_REFERENCE' is not allowed for Role '%s' on Reference '%s'",
+                  role, branch.getName()));
+    } else {
+      tree.createReference(branch);
+    }
+  }
 
-    operations
-        .getOperations()
-        .forEach(
-            op -> {
-              try {
-                rules.addRule(
-                    AuthorizationRule.of(
-                        "allow_deleting_entity_for_" + op.getKey().toPathString(),
-                        AuthorizationRuleType.DELETE_ENTITY,
-                        String.format("path=='%s'", op.getKey().toPathString()),
-                        "role=='admin_user'"));
-              } catch (NessieConflictException e) {
-                throw new RuntimeException(e);
-              }
-            });
+  private void deleteBranch(Branch branch, String role, boolean shouldFail)
+      throws NessieConflictException, NessieNotFoundException {
+    if (shouldFail) {
+      assertThatThrownBy(() -> tree.deleteBranch(branch.getName(), branch.getHash()))
+          .isInstanceOf(NessieForbiddenException.class)
+          .hasMessageContaining(
+              String.format(
+                  "'DELETE_REFERENCE' is not allowed for Role '%s' on Reference '%s'",
+                  role, branch.getName()));
+    } else {
+      tree.deleteBranch(branch.getName(), branch.getHash());
+    }
+  }
 
-    tree.commitMultipleOperations(branch.getName(), branch.getHash(), operations);
+  private void readContent(String branchName, ContentsKey key, String role, boolean shouldFail)
+      throws NessieNotFoundException {
+    if (shouldFail) {
+      assertThatThrownBy(
+              () -> contents.getContents(key, branchName, null).unwrap(IcebergTable.class).get())
+          .isInstanceOf(NessieForbiddenException.class)
+          .hasMessageContaining(
+              String.format(
+                  "'READ_ENTITY_VALUE' is not allowed for Role '%s' on Content '%s'",
+                  role, key.toPathString()));
+    } else {
+      assertThat(contents.getContents(key, branchName, null).unwrap(IcebergTable.class).get())
+          .isNotNull()
+          .isInstanceOf(IcebergTable.class);
+    }
+  }
+
+  private void getEntriesFor(String branchName, String role, boolean shouldFail)
+      throws NessieNotFoundException {
+    if (shouldFail) {
+      assertThatThrownBy(() -> tree.getEntries(branchName, EntriesParams.empty()).getEntries())
+          .isInstanceOf(NessieForbiddenException.class)
+          .hasMessageContaining(
+              String.format("'READ_ENTRIES' is not allowed for Role '%s' on Reference", role));
+    } else {
+      List<Entry> tables = tree.getEntries(branchName, EntriesParams.empty()).getEntries();
+      assertThat(tables).isNotEmpty();
+    }
+  }
+
+  private void getCommitLog(String branchName, String role, boolean shouldFail)
+      throws NessieNotFoundException {
+    if (shouldFail) {
+      assertThatThrownBy(
+              () -> tree.getCommitLog(branchName, CommitLogParams.empty()).getOperations())
+          .isInstanceOf(NessieForbiddenException.class)
+          .hasMessageContaining(
+              String.format("'LIST_COMMIT_LOG' is not allowed for Role '%s' on Reference", role));
+    } else {
+      List<CommitMeta> commits =
+          tree.getCommitLog(branchName, CommitLogParams.empty()).getOperations();
+      assertThat(commits).isNotEmpty();
+    }
+  }
+
+  private void addContent(Branch branch, Operations operations, String role, boolean shouldFail)
+      throws NessieNotFoundException, NessieConflictException {
+
+    if (shouldFail) {
+      // adding content requires COMMIT_CHANGE_AGAINST_REFERENCE & UPDATE_ENTITY, but this is
+      // difficult to test here, so we're testing this in a separate method
+      assertThatThrownBy(
+              () -> tree.commitMultipleOperations(branch.getName(), branch.getHash(), operations))
+          .isInstanceOf(NessieForbiddenException.class)
+          .hasMessageContaining(
+              String.format(
+                  "'COMMIT_CHANGE_AGAINST_REFERENCE' is not allowed for Role '%s' on Reference '%s'",
+                  role, branch.getName()));
+    } else {
+      tree.commitMultipleOperations(branch.getName(), branch.getHash(), operations);
+    }
+  }
+
+  private void deleteContent(Branch branch, Operations operations, String role, boolean shouldFail)
+      throws NessieConflictException, NessieNotFoundException {
+    if (shouldFail) {
+      // deleting content requires COMMIT_CHANGE_AGAINST_REFERENCE & DELETE_ENTITY, but this is
+      // difficult to test here, so we're testing this in a separate method
+      assertThatThrownBy(
+              () -> tree.commitMultipleOperations(branch.getName(), branch.getHash(), operations))
+          .isInstanceOf(NessieForbiddenException.class)
+          .hasMessageContaining(
+              String.format(
+                  "'COMMIT_CHANGE_AGAINST_REFERENCE' is not allowed for Role '%s' on Reference '%s'",
+                  role, branch.getName()));
+    } else {
+      tree.commitMultipleOperations(branch.getName(), branch.getHash(), operations);
+    }
   }
 }

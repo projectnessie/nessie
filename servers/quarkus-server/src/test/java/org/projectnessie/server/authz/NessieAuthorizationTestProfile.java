@@ -18,20 +18,16 @@ package org.projectnessie.server.authz;
 import com.google.common.collect.ImmutableMap;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import java.util.Map;
-import org.projectnessie.server.config.QuarkusServerConfig;
+import org.projectnessie.server.config.QuarkusNessieAuthorizationConfig;
 
 /**
  * A simple {@link QuarkusTestProfile} that enables the Nessie authorization flag, which is fetched
- * by {@link QuarkusServerConfig#authorizationEnabled()}.
+ * by {@link QuarkusNessieAuthorizationConfig#enabled()}.
  */
 public class NessieAuthorizationTestProfile implements QuarkusTestProfile {
 
   @Override
   public Map<String, String> getConfigOverrides() {
-    return ImmutableMap.of(
-        "nessie.server.authorization-enabled",
-        "true",
-        "nessie.server.authorization.enabled",
-        "true");
+    return ImmutableMap.of("nessie.server.authorization.enabled", "true");
   }
 }

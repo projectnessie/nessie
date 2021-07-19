@@ -31,11 +31,4 @@ public interface ServerConfig {
    * @return {@code true} if the server should send the stack trace to the client.
    */
   boolean sendStacktraceToClient();
-
-  /**
-   * Returns {@code true} if Nessie authorization is enabled.
-   *
-   * @return {@code true} if Nessie authorization is enabled.
-   */
-  boolean authorizationEnabled();
 }

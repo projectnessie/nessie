@@ -30,9 +30,4 @@ public interface QuarkusServerConfig extends ServerConfig {
   @ConfigProperty(name = "send-stacktrace-to-client", defaultValue = "false")
   @Override
   boolean sendStacktraceToClient();
-
-  // TODO how should we determine whether authz is enabled or not?
-  @ConfigProperty(name = "authorization-enabled", defaultValue = "false")
-  @Override
-  boolean authorizationEnabled();
 }

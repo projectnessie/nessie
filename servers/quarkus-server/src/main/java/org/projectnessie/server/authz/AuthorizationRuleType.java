@@ -13,23 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.services.config;
+package org.projectnessie.server.authz;
 
-import java.util.Map;
-
-public interface AuthorizationRulesConfig {
-
-  /**
-   * Returns {@code true} if Nessie authorization is enabled.
-   *
-   * @return {@code true} if Nessie authorization is enabled.
-   */
-  boolean enabled();
-
-  /**
-   * The authorization rules as defined for each role.
-   *
-   * @return The authorization rules as defined for each role.
-   */
-  Map<String, String> rules();
+public enum AuthorizationRuleType {
+  ALLOW_ALL,
+  CREATE_REFERENCE,
+  DELETE_REFERENCE,
+  LIST_COMMIT_LOG,
+  READ_ENTRIES,
+  ASSIGN_REFERENCE_TO_HASH,
+  COMMIT_CHANGE_AGAINST_REFERENCE,
+  READ_ENTITY_VALUE,
+  UPDATE_ENTITY,
+  DELETE_ENTITY;
 }

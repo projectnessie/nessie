@@ -56,10 +56,6 @@ import {
     TransplantToJSON,
 } from '../models';
 
-export interface AddRuleRequest {
-    body?: object;
-}
-
 export interface AssignBranchRequest {
     branchName: string;
     expectedHash: string;
@@ -85,10 +81,6 @@ export interface CreateReferenceRequest {
 export interface DeleteBranchRequest {
     branchName: string;
     expectedHash: string;
-}
-
-export interface DeleteRuleRequest {
-    id: string;
 }
 
 export interface DeleteTagRequest {
@@ -146,34 +138,6 @@ export interface TransplantCommitsIntoBranchRequest {
  * 
  */
 export class DefaultApi extends runtime.BaseAPI {
-
-    /**
-     * Add a new authorization rule
-     */
-    async addRuleRaw(requestParameters: AddRuleRequest): Promise<runtime.ApiResponse<void>> {
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        headerParameters['Content-Type'] = 'application/json';
-
-        const response = await this.request({
-            path: `/rules/rule`,
-            method: 'POST',
-            headers: headerParameters,
-            query: queryParameters,
-            body: requestParameters.body as any,
-        });
-
-        return new runtime.VoidApiResponse(response);
-    }
-
-    /**
-     * Add a new authorization rule
-     */
-    async addRule(requestParameters: AddRuleRequest): Promise<void> {
-        await this.addRuleRaw(requestParameters);
-    }
 
     /**
      * Set a branch to a specific hash
@@ -360,33 +324,6 @@ export class DefaultApi extends runtime.BaseAPI {
      */
     async deleteBranch(requestParameters: DeleteBranchRequest): Promise<void> {
         await this.deleteBranchRaw(requestParameters);
-    }
-
-    /**
-     */
-    async deleteRuleRaw(requestParameters: DeleteRuleRequest): Promise<runtime.ApiResponse<void>> {
-        if (requestParameters.id === null || requestParameters.id === undefined) {
-            throw new runtime.RequiredError('id','Required parameter requestParameters.id was null or undefined when calling deleteRule.');
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        const response = await this.request({
-            path: `/rules/rule/{id}`.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters.id))),
-            method: 'DELETE',
-            headers: headerParameters,
-            query: queryParameters,
-        });
-
-        return new runtime.VoidApiResponse(response);
-    }
-
-    /**
-     */
-    async deleteRule(requestParameters: DeleteRuleRequest): Promise<void> {
-        await this.deleteRuleRaw(requestParameters);
     }
 
     /**
@@ -702,30 +639,6 @@ export class DefaultApi extends runtime.BaseAPI {
      */
     async getReferenceByName(requestParameters: GetReferenceByNameRequest): Promise<Reference> {
         const response = await this.getReferenceByNameRaw(requestParameters);
-        return await response.value();
-    }
-
-    /**
-     */
-    async getRulesRaw(): Promise<runtime.ApiResponse<Set<object>>> {
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        const response = await this.request({
-            path: `/rules`,
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        });
-
-        return new runtime.JSONApiResponse<any>(response);
-    }
-
-    /**
-     */
-    async getRules(): Promise<Set<object>> {
-        const response = await this.getRulesRaw();
         return await response.value();
     }
 
