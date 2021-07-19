@@ -2,6 +2,11 @@
 History
 =======
 
+0.8.3 (2021-07-19)
+------------------
+
+* Fix ser/de of SqlView when listing contents
+
 0.8.2 (2021-07-15)
 ------------------
 

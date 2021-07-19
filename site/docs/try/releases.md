@@ -1,5 +1,10 @@
 # Releases
 
+## 0.8.3 Release (July 19, 2021)
+
+* Fix issue in spark sql extensions
+* Python CLI: Fix ser/de of DeltaLakeTable when listing contents
+
 ## 0.8.2 Release (July 15, 2021)
 
 * Add JAX-RS server implementation based on Glassfish/Jersey/Weld for integration testing
@@ -30,7 +35,7 @@
 
 ## 0.6.1 Release (May 25, 2021)
 
-* Gradle plugin improvements 
+* Gradle plugin improvements
 
 ## 0.6.0 Release (May 12, 2021)
 
