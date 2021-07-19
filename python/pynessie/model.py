@@ -60,11 +60,11 @@ class SqlView(Contents):
     """Dataclass for Nessie SQL View."""
 
     dialect: str = desert.ib(fields.Str())
-    sql_test: str = desert.ib(fields.Str(data_key="sqlTest"))
+    sql_text: str = desert.ib(fields.Str(data_key="sqlText"))
 
     def pretty_print(self: "SqlView") -> str:
         """Print out for cli."""
-        return "SqlView:\n\tDialect: {}\n\tSql: {}".format(self.dialect, self.sql_test)  # todo use a sql parser to pretty print this
+        return "SqlView:\n\tDialect: {}\n\tSql: {}".format(self.dialect, self.sql_text)  # todo use a sql parser to pretty print this
 
 
 SqlViewSchema = desert.schema_class(SqlView)

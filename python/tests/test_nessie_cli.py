@@ -22,6 +22,7 @@ from pynessie.model import DeltaLakeTable
 from pynessie.model import EntrySchema
 from pynessie.model import IcebergTable
 from pynessie.model import ReferenceSchema
+from pynessie.model import SqlView
 
 
 def _run(runner: CliRunner, args: List[str], input: Optional[str] = None, ret_val: int = 0) -> Result:
@@ -412,6 +413,8 @@ def test_contents_listing() -> None:
     delta_lake_table = DeltaLakeTable(
         id="uuid2", metadata_location_history=["asd"], checkpoint_location_history=["def"], last_checkpoint="x"
     )
+    sql_view = SqlView(id="uuid3", sql_text="SELECT * FROM foo", dialect="HIVE")
+
     refs = ReferenceSchema().loads(_run(runner, ["--json", "branch", "-l", branch]).output, many=True)
     _run(
         runner,
@@ -424,6 +427,13 @@ def test_contents_listing() -> None:
         runner,
         ["contents", "--set", "this.is.delta.bar", "--ref", branch, "-m", "test_message2", "-c", refs[0].hash_],
         input=ContentsSchema().dumps(delta_lake_table),
+    )
+
+    refs = ReferenceSchema().loads(_run(runner, ["--json", "branch", "-l", branch]).output, many=True)
+    _run(
+        runner,
+        ["contents", "--set", "this.is.sql.baz", "--ref", branch, "-m", "test_message3", "-c", refs[0].hash_],
+        input=ContentsSchema().dumps(sql_view),
     )
 
     result = _run(runner, ["--json", "contents", "--ref", branch, "this.is.iceberg.foo"])
@@ -466,8 +476,7 @@ def test_contents_listing() -> None:
 
     result = _run(runner, ["--json", "contents", "--ref", branch, "--list", "--query", "entry.namespace.startsWith('this.is')"])
     tables = EntrySchema().loads(result.output, many=True)
-    assert_that(tables).is_length(2)
-    assert_that(tables[0].kind).is_equal_to("ICEBERG_TABLE")
-    assert_that(tables[1].kind).is_equal_to("DELTA_LAKE_TABLE")
+    assert_that(tables).is_length(3)
+    assert set(i.kind for i in tables) == {"ICEBERG_TABLE", "VIEW", "DELTA_LAKE_TABLE"}
 
     _run(runner, ["branch", branch, "--delete"])
