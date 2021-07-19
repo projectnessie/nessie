@@ -40,7 +40,6 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.IcebergTable;
-import org.projectnessie.model.ImmutableBranch;
 import org.projectnessie.model.ImmutableDelete;
 import org.projectnessie.model.ImmutableOperations;
 import org.projectnessie.model.ImmutablePut;
@@ -56,7 +55,6 @@ class TestAuthorizationRules {
   private static ContentsApi contents;
 
   @BeforeEach
-  @TestSecurity(user = "admin_user")
   void setupClient() {
     client = NessieClient.builder().withUri("http://localhost:19121/api/v1").build();
     tree = client.getTreeApi();
@@ -76,52 +74,50 @@ class TestAuthorizationRules {
   @TestSecurity(user = "test_user")
   void testAllOpsWithTestUser(boolean shouldFail)
       throws NessieNotFoundException, NessieConflictException {
-    String branchName = "allowedBranchForTestUser";
+    testAllOps("allowedBranchForTestUser", "test_user", shouldFail);
+  }
+
+  @Test
+  @TestSecurity(user = "admin_user")
+  void testAdminUserIsAllowedEverything() throws NessieNotFoundException, NessieConflictException {
+    testAllOps("testAdminUserIsAllowedAllBranch", "admin_user", false);
+  }
+
+  private void testAllOps(String branchName, String role, boolean shouldFail)
+      throws NessieConflictException, NessieNotFoundException {
     ContentsKey key = ContentsKey.of("allowed", "x");
     if (shouldFail) {
       branchName = "disallowedBranchForTestUser";
       key = ContentsKey.of("disallowed", "x");
     }
-    String role = "test_user";
 
     createBranch(Branch.of(branchName, null), role, shouldFail);
 
+    Branch branchWithInvalidHash = Branch.of(branchName, "1234567890123456");
     Branch branch =
-        shouldFail
-            ? Branch.of(branchName, "1234567890123456")
-            : (Branch) tree.getReferenceByName(branchName);
+        shouldFail ? branchWithInvalidHash : (Branch) tree.getReferenceByName(branchName);
 
-    addContent(
-        branch,
+    ImmutableOperations createOps =
         ImmutableOperations.builder()
             .addOperations(ImmutablePut.builder().key(key).contents(IcebergTable.of("foo")).build())
-            .commitMeta(CommitMeta.fromMessage("empty message"))
-            .build(),
-        role,
-        shouldFail);
+            .commitMeta(CommitMeta.fromMessage("add stuff"))
+            .build();
+    addContent(branch, createOps, role, shouldFail);
 
     getCommitLog(branchName, role, shouldFail);
     getEntriesFor(branchName, role, shouldFail);
     readContent(branchName, key, role, shouldFail);
 
-    branch =
-        shouldFail
-            ? Branch.of(branchName, "1234567890123456")
-            : (Branch) tree.getReferenceByName(branchName);
+    branch = shouldFail ? branchWithInvalidHash : (Branch) tree.getReferenceByName(branchName);
 
-    deleteContent(
-        branch,
+    ImmutableOperations deleteOps =
         ImmutableOperations.builder()
             .addOperations(ImmutableDelete.builder().key(key).build())
-            .commitMeta(CommitMeta.fromMessage(""))
-            .build(),
-        role,
-        shouldFail);
+            .commitMeta(CommitMeta.fromMessage("delete stuff"))
+            .build();
+    deleteContent(branch, deleteOps, role, shouldFail);
 
-    branch =
-        shouldFail
-            ? Branch.of(branchName, "1234567890123456")
-            : (Branch) tree.getReferenceByName(branchName);
+    branch = shouldFail ? branchWithInvalidHash : (Branch) tree.getReferenceByName(branchName);
     deleteBranch(branch, role, shouldFail);
   }
 
@@ -136,19 +132,19 @@ class TestAuthorizationRules {
     createBranch(Branch.of(branchName, null), role, false);
 
     final Branch branch = (Branch) tree.getReferenceByName(branchName);
-    ImmutableOperations updateOps =
+    ImmutableOperations createOps =
         ImmutableOperations.builder()
             .addOperations(ImmutablePut.builder().key(key).contents(IcebergTable.of("foo")).build())
-            .commitMeta(CommitMeta.fromMessage("empty message"))
+            .commitMeta(CommitMeta.fromMessage("add stuff"))
             .build();
 
     assertThatThrownBy(
-            () -> tree.commitMultipleOperations(branch.getName(), branch.getHash(), updateOps))
+            () -> tree.commitMultipleOperations(branch.getName(), branch.getHash(), createOps))
         .isInstanceOf(NessieForbiddenException.class)
         .hasMessageContaining(
             String.format(
                 "'UPDATE_ENTITY' is not allowed for Role '%s' on Content '%s'",
-                role, updateOps.getOperations().get(0).getKey().toPathString()));
+                role, createOps.getOperations().get(0).getKey().toPathString()));
 
     readContent(branchName, key, role, true);
 
@@ -157,7 +153,7 @@ class TestAuthorizationRules {
     ImmutableOperations deleteOps =
         ImmutableOperations.builder()
             .addOperations(ImmutableDelete.builder().key(key).build())
-            .commitMeta(CommitMeta.fromMessage(""))
+            .commitMeta(CommitMeta.fromMessage("delete stuff"))
             .build();
 
     assertThatThrownBy(() -> tree.commitMultipleOperations(b.getName(), b.getHash(), deleteOps))
@@ -168,53 +164,6 @@ class TestAuthorizationRules {
                 role, deleteOps.getOperations().get(0).getKey().toPathString()));
 
     deleteBranch(branch, role, false);
-  }
-
-  @Test
-  @TestSecurity(user = "admin_user")
-  void testAdminUserIsAllowedEverything() throws NessieNotFoundException, NessieConflictException {
-    String branchName = "testAdminUserIsAllowedAllBranch";
-    String role = "admin_user";
-    createBranch(Branch.of(branchName, null), role, false);
-
-    Branch branch = (Branch) tree.getReferenceByName(branchName);
-
-    ContentsKey key = ContentsKey.of("x", "x");
-    addContent(
-        branch,
-        ImmutableOperations.builder()
-            .addOperations(ImmutablePut.builder().key(key).contents(IcebergTable.of("foo")).build())
-            .commitMeta(CommitMeta.fromMessage("empty message"))
-            .build(),
-        role,
-        false);
-
-    getEntriesFor(branchName, role, false);
-    getCommitLog(branchName, role, false);
-    readContent(branchName, key, role, false);
-
-    Branch master = (Branch) tree.getReferenceByName(branchName);
-    Branch test = ImmutableBranch.builder().hash(master.getHash()).name("testy").build();
-    createBranch(Branch.of(test.getName(), test.getHash()), role, false);
-    deleteBranch((Branch) tree.getReferenceByName("testy"), role, false);
-
-    deleteContent(
-        master,
-        ImmutableOperations.builder()
-            .addOperations(ImmutableDelete.builder().key(key).build())
-            .commitMeta(CommitMeta.fromMessage(""))
-            .build(),
-        role,
-        false);
-
-    // all required rules are already defined
-    tree.commitMultipleOperations(
-        branch.getName(),
-        branch.getHash(),
-        ImmutableOperations.builder()
-            .addOperations(ImmutablePut.builder().key(key).contents(IcebergTable.of("bar")).build())
-            .commitMeta(CommitMeta.fromMessage(""))
-            .build());
   }
 
   private static void createBranch(Branch branch, String role, boolean shouldFail)

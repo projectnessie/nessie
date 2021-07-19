@@ -15,15 +15,15 @@
  */
 package org.projectnessie.server.authz;
 
-import static org.projectnessie.server.authz.AuthorizationRuleType.ASSIGN_REFERENCE_TO_HASH;
-import static org.projectnessie.server.authz.AuthorizationRuleType.COMMIT_CHANGE_AGAINST_REFERENCE;
-import static org.projectnessie.server.authz.AuthorizationRuleType.CREATE_REFERENCE;
-import static org.projectnessie.server.authz.AuthorizationRuleType.DELETE_ENTITY;
-import static org.projectnessie.server.authz.AuthorizationRuleType.DELETE_REFERENCE;
-import static org.projectnessie.server.authz.AuthorizationRuleType.LIST_COMMIT_LOG;
-import static org.projectnessie.server.authz.AuthorizationRuleType.READ_ENTITY_VALUE;
-import static org.projectnessie.server.authz.AuthorizationRuleType.READ_ENTRIES;
-import static org.projectnessie.server.authz.AuthorizationRuleType.UPDATE_ENTITY;
+import static org.projectnessie.server.authz.CelAccessChecker.AuthorizationRuleType.ASSIGN_REFERENCE_TO_HASH;
+import static org.projectnessie.server.authz.CelAccessChecker.AuthorizationRuleType.COMMIT_CHANGE_AGAINST_REFERENCE;
+import static org.projectnessie.server.authz.CelAccessChecker.AuthorizationRuleType.CREATE_REFERENCE;
+import static org.projectnessie.server.authz.CelAccessChecker.AuthorizationRuleType.DELETE_ENTITY;
+import static org.projectnessie.server.authz.CelAccessChecker.AuthorizationRuleType.DELETE_REFERENCE;
+import static org.projectnessie.server.authz.CelAccessChecker.AuthorizationRuleType.LIST_COMMIT_LOG;
+import static org.projectnessie.server.authz.CelAccessChecker.AuthorizationRuleType.READ_ENTITY_VALUE;
+import static org.projectnessie.server.authz.CelAccessChecker.AuthorizationRuleType.READ_ENTRIES;
+import static org.projectnessie.server.authz.CelAccessChecker.AuthorizationRuleType.UPDATE_ENTITY;
 
 import com.google.common.collect.ImmutableMap;
 import javax.enterprise.context.ApplicationScoped;
@@ -45,6 +45,19 @@ import org.projectnessie.versioned.NamedRef;
 public class CelAccessChecker implements AccessChecker {
 
   private final QuarkusNessieAuthorizationConfig config;
+
+  public enum AuthorizationRuleType {
+    ALLOW_ALL,
+    CREATE_REFERENCE,
+    DELETE_REFERENCE,
+    LIST_COMMIT_LOG,
+    READ_ENTRIES,
+    ASSIGN_REFERENCE_TO_HASH,
+    COMMIT_CHANGE_AGAINST_REFERENCE,
+    READ_ENTITY_VALUE,
+    UPDATE_ENTITY,
+    DELETE_ENTITY;
+  }
 
   @Inject
   public CelAccessChecker(QuarkusNessieAuthorizationConfig config) {

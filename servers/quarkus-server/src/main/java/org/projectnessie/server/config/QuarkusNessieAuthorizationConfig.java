@@ -20,7 +20,7 @@ import io.smallrye.config.WithDefault;
 import io.smallrye.config.WithName;
 import java.util.Map;
 
-/** Configuration for Nessie authorization settings */
+/** Configuration for Nessie authorization settings. */
 @ConfigMapping(prefix = "nessie.server.authorization")
 public interface QuarkusNessieAuthorizationConfig {
 
