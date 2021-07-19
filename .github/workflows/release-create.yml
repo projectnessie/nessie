@@ -41,6 +41,9 @@ on:
       releaseVersion:
         description: 'The version to release - e.g. `0.5.0`'
         required: true
+      skipChecks:
+        description: 'Enter SKIP to skip main-CI and release-notes check.'
+        required: false
 
 jobs:
   create-release:
@@ -67,6 +70,7 @@ jobs:
     # Note: intentionally hard-coded projectnessie/nessie, so this check even works when *testing*
     # the workflow on a PR-branch.
     - name: Check commit status
+      if: ${{ github.event.inputs.skipChecks != 'SKIP' }}
       run: |
         echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token
         gh api repos/projectnessie/nessie/commits/${GITHUB_SHA}/check-runs --jq 'if ([.check_runs[] | select(.name | endswith(" release") or startswith("codecov/") or startswith("Report ") | not ) | .conclusion // "pending" ] | unique == ["success"]) then "OK" else error("Commit checks are not OK") end'
@@ -110,8 +114,10 @@ jobs:
 
     # Two steps that verify that the HISTORY.rst and releases.md files contain information about the release
     - name: Check HISTORY.rst file
+      if: ${{ github.event.inputs.skipChecks != 'SKIP' }}
       run: cat python/HISTORY.rst | grep -q "^${RELEASE_VERSION} [(][0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9][)]$"
     - name: Check releases.md file
+      if: ${{ github.event.inputs.skipChecks != 'SKIP' }}
       run: cat site/docs/try/releases.md | grep -q "^## ${RELEASE_VERSION} Release [(][A-Z][a-z]* [0-9][0-9]*, [0-9][0-9][0-9][0-9][)]$"
 
     - name: Bump Python release version ${{ github.event.inputs.releaseVersion }}
