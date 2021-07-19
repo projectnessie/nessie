@@ -22,9 +22,11 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
+import org.apache.spark.sql.AnalysisException;
+import org.apache.spark.sql.functions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -272,7 +274,7 @@ public class ITNessieStatements extends AbstractSparkTest {
   }
 
   @Test
-  void showLogIn() throws NessieConflictException, NessieNotFoundException {
+  void showLogIn() throws NessieConflictException, NessieNotFoundException, AnalysisException {
     List<Object[]> resultList = commitAndReturnLog(refName);
     List<Object[]> result = sql("SHOW LOG %s IN nessie", refName);
     // here we are skipping commit time as its variable
@@ -280,6 +282,38 @@ public class ITNessieStatements extends AbstractSparkTest {
         "log",
         result.stream().map(ITNessieStatements::convert).collect(Collectors.toList()),
         resultList);
+
+    // test to ensure property map is correctly encoded by Spark
+    spark.sql(String.format("SHOW LOG %s IN nessie", refName)).createTempView("nessie_log");
+    result =
+        spark
+            .sql(
+                "SELECT author, committer, hash, message, signedOffBy, authorTime, committerTime, EXPLODE(properties) from nessie_log")
+            .groupBy(
+                "author",
+                "committer",
+                "hash",
+                "message",
+                "signedOffBy",
+                "authorTime",
+                "committerTime")
+            .pivot("key")
+            .agg(functions.first("value"))
+            .collectAsList()
+            .stream()
+            .map(AbstractSparkTest::toJava)
+            .collect(Collectors.toList());
+
+    assertEquals(
+        "log",
+        result.stream().map(ITNessieStatements::convert).collect(Collectors.toList()),
+        resultList.stream()
+            .map(
+                x -> {
+                  x[6] = ((Map<String, String>) x[6]).get("test");
+                  return x;
+                })
+            .collect(Collectors.toList()));
   }
 
   private List<Object[]> commitAndReturnLog(String branch)
@@ -291,6 +325,7 @@ public class ITNessieStatements extends AbstractSparkTest {
             .author("sue")
             .authorTime(Instant.ofEpochMilli(1))
             .message("1")
+            .putProperties("test", "123")
             .build();
 
     CommitMeta cm2 =
@@ -298,6 +333,7 @@ public class ITNessieStatements extends AbstractSparkTest {
             .author("janet")
             .authorTime(Instant.ofEpochMilli(10))
             .message("2")
+            .putProperties("test", "123")
             .build();
 
     CommitMeta cm3 =
@@ -305,6 +341,7 @@ public class ITNessieStatements extends AbstractSparkTest {
             .author("alice")
             .authorTime(Instant.ofEpochMilli(100))
             .message("3")
+            .putProperties("test", "123")
             .build();
     Operations ops =
         ImmutableOperations.builder()
@@ -363,7 +400,7 @@ public class ITNessieStatements extends AbstractSparkTest {
       cm.getMessage(),
       "",
       cm.getAuthorTime() == null ? null : Timestamp.from(cm.getAuthorTime()),
-      new HashMap<>()
+      cm.getProperties()
     };
   }
 }

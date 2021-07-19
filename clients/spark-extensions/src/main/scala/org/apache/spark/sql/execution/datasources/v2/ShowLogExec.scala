@@ -25,7 +25,6 @@ import org.projectnessie.client.{NessieClient, StreamingUtil}
 
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import java.util.OptionalInt
 import scala.collection.JavaConverters._
 
 case class ShowLogExec(
@@ -77,6 +76,14 @@ case class ShowLogExec(
   }
 
   private def convert(input: java.util.Map[String, String]): MapData = {
-    ArrayBasedMapData(input, x => x, x => x)
+    ArrayBasedMapData(input, x => convertMapKV(x), x => convertMapKV(x))
+  }
+
+  private def convertMapKV(input: Any): Any = {
+    input match {
+      case c: String  => convert(c)
+      case c: Instant => convert(c)
+      case c          => c
+    }
   }
 }
