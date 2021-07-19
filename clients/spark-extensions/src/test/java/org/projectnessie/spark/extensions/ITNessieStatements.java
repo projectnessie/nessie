@@ -299,6 +299,7 @@ public class ITNessieStatements extends AbstractSparkTest {
                 "committerTime")
             .pivot("key")
             .agg(functions.first("value"))
+            .orderBy(functions.desc("committerTime"))
             .collectAsList()
             .stream()
             .map(AbstractSparkTest::toJava)
