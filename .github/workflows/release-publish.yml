@@ -74,6 +74,21 @@ jobs:
         fi
 
     ### BEGIN runner setup
+    - name: Memory report
+      run: |
+        echo "Memory and swap:"
+        free
+        echo
+        swapon --show
+        echo
+        echo "Available storage:"
+        df -h
+        echo
+    - name: Add 6G more swap for native-image build
+      run: |
+        sudo dd if=/dev/zero of=/mnt/swapfile-2 bs=1MiB count=$((6*1024))
+        sudo mkswap /mnt/swapfile-2
+        sudo swapon /mnt/swapfile-2
     - name: Checkout
       uses: actions/checkout@v2
       if: ${{ github.event_name == 'push' }}
