@@ -7,7 +7,7 @@
     "@material-ui/core": "^4.12.1",
     "@material-ui/icons": "^4.11.2",
     "@material-ui/lab": "^4.0.0-alpha.60",
-    "@openapitools/openapi-generator-cli": "^2.3.6",
+    "@openapitools/openapi-generator-cli": "^2.3.7",
     "@testing-library/jest-dom": "^5.14.1",
     "@testing-library/react": "^12.0.0",
     "@testing-library/user-event": "^13.2.0",
