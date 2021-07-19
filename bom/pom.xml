@@ -22,12 +22,12 @@
   <parent>
     <groupId>org.projectnessie</groupId>
     <artifactId>nessie</artifactId>
-    <version>0.8.3</version>
+    <version>0.8.4-SNAPSHOT</version>
   </parent>
 
   <groupId>org.projectnessie</groupId>
   <artifactId>nessie-bom</artifactId>
-  <version>0.8.3</version>
+  <version>0.8.4-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Nessie - Bill of Materials (BOM)</name>
