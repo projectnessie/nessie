@@ -75,7 +75,7 @@ public abstract class Contents {
     return UUID.randomUUID().toString();
   }
 
-  public Contents mergeGlobalState(GlobalContents globalContents) {
+  public Contents withGlobalState(GlobalContents globalContents) {
     return this;
   }
 

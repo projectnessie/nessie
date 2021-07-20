@@ -14,7 +14,11 @@
 
 import { exists, mapValues } from '../runtime';
 /**
+ * Represents the global state of an Iceberg table in Nessie. An Iceberg table is globally identified via its fully qualified name via 'ContentsKey' plus a unique ID, the latter is represented via 'Contents.id'.
  * 
+ * A Nessie commit-operation, performed via 'TreeApi.commitMultipleOperations', for Iceberg for Iceberg consists of a 'Operation.Put' with an 'IcebergSnapshot' and an 'IcebergTable' as the expected-global-state.
+ * 
+ * During a commit-operation, Nessie checks whether the known global state of the Iceberg table is compatible (think: equal) to 'Operation.Put.expectedContents'.
  * @export
  * @interface IcebergTable
  */

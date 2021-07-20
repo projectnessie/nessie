@@ -46,7 +46,8 @@ public interface GlobalStatePointer {
   default Hash branchHead(NamedRef ref) throws ReferenceNotFoundException {
     Hash branchHead = getNamedReferences().get(ref);
     if (branchHead == null) {
-      throw new ReferenceNotFoundException(String.format("Named reference '%s' not found", ref));
+      throw new ReferenceNotFoundException(
+          String.format("Named reference '%s' not found", ref.getName()));
     }
     return branchHead;
   }

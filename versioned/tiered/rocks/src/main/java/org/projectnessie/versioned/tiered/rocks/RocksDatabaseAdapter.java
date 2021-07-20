@@ -200,8 +200,14 @@ public class RocksDatabaseAdapter extends NonTxDatabaseAdapter {
     Lock lock = dbInstance.getLockFor().writeLock();
     lock.lock();
     try {
+      GlobalStatePointer oldPointer =
+          deserialize(
+              db.get(dbInstance.getCfGlobalPointer(), globalPointerKey()),
+              GlobalStatePointer.class);
+      if (oldPointer == null || !oldPointer.getGlobalId().equals(expected.getGlobalId())) {
+        return false;
+      }
       db.put(dbInstance.getCfGlobalPointer(), globalPointerKey(), serialize(newPointer));
-      // we have a lock, it can't go wrong
       return true;
     } catch (RocksDBException e) {
       throw new RuntimeException(e); // TODO VersionStoreException

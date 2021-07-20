@@ -138,4 +138,9 @@ public class TestedTraceingStoreInvocation<S> {
   public interface ThrowingFunction<R, A> {
     R accept(A arg) throws Throwable;
   }
+
+  @Override
+  public String toString() {
+    return opName;
+  }
 }

@@ -16,6 +16,7 @@
 package org.projectnessie.versioned;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import org.immutables.value.Value.Immutable;
 
 @Immutable
@@ -23,6 +24,7 @@ public interface ContentsAndState<CONTENTS, STATE> {
   @Nonnull
   CONTENTS getContents();
 
+  @Nullable
   STATE getState();
 
   @Nonnull

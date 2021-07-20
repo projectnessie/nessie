@@ -44,6 +44,5 @@
     <module>spanner</module>
     <module>bench</module>
     <module>tests</module>
-    <module>gc</module>
   </modules>
 </project>

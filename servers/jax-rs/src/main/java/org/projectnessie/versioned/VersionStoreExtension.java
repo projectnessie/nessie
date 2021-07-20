@@ -17,7 +17,6 @@ package org.projectnessie.versioned;
 
 import static org.projectnessie.services.config.ServerConfigExtension.SERVER_CONFIG;
 
-import java.util.Optional;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Default;
@@ -30,24 +29,33 @@ import org.projectnessie.model.Contents;
 import org.projectnessie.model.Contents.Type;
 import org.projectnessie.model.GlobalContents;
 import org.projectnessie.server.store.TableCommitMetaStoreWorker;
-import org.projectnessie.versioned.memory.InMemoryVersionStore;
+import org.projectnessie.versioned.tiered.adapter.DatabaseAdapter;
+import org.projectnessie.versioned.tiered.impl.TieredVersionStore;
+import org.projectnessie.versioned.tiered.inmem.InmemoryDatabaseAdapterFactory;
 
 /** This class needs to be in the same package as {@link VersionStore}. */
 public class VersionStoreExtension implements Extension {
   @SuppressWarnings("unused")
   public void afterBeanDiscovery(@Observes AfterBeanDiscovery abd, BeanManager bm) {
-    final TableCommitMetaStoreWorker storeWorker = new TableCommitMetaStoreWorker();
-    final VersionStore<Contents, GlobalContents, CommitMeta, Type> store =
-        InMemoryVersionStore.<Contents, GlobalContents, CommitMeta, Type>builder()
-            .valueSerializer(storeWorker.getValueSerializer())
-            .metadataSerializer(storeWorker.getMetadataSerializer())
+    TableCommitMetaStoreWorker storeWorker = new TableCommitMetaStoreWorker();
+    DatabaseAdapter databaseAdapter =
+        new InmemoryDatabaseAdapterFactory()
+            .newBuilder()
+            .configure(
+                c -> {
+                  DatabaseAdapter.DEFAULT_BRANCH.set(c, SERVER_CONFIG.getDefaultBranch());
+                })
             .build();
 
+    // TODO update this piece !!
     try {
-      store.create(BranchName.of(SERVER_CONFIG.getDefaultBranch()), Optional.empty());
-    } catch (ReferenceNotFoundException | ReferenceAlreadyExistsException e) {
+      databaseAdapter.initializeRepo();
+    } catch (ReferenceConflictException e) {
       throw new RuntimeException(e);
     }
+
+    VersionStore<Contents, GlobalContents, CommitMeta, Type> store =
+        new TieredVersionStore<>(databaseAdapter, storeWorker);
 
     abd.addBean()
         .addType(new TypeLiteral<VersionStore<Contents, GlobalContents, CommitMeta, Type>>() {})

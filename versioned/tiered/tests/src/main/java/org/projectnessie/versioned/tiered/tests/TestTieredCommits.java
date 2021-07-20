@@ -151,7 +151,7 @@ public class TestTieredCommits {
 
     Hash head = versionStore.commit(branch, Optional.empty(), "initial commit meta", operations);
     for (int commitNum = 0; commitNum < 3; commitNum++) {
-      List<Optional<String>> contents = versionStore.getValues(branch, keys);
+      List<Optional<String>> contents = versionStore.getValues(branch, Optional.empty(), keys);
 
       operations = new ArrayList<>(tablesPerCommit);
       for (int i = 0; i < tablesPerCommit; i++) {

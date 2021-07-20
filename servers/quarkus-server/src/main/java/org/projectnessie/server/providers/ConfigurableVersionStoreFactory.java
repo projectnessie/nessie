@@ -29,6 +29,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
+import org.projectnessie.model.GlobalContents;
 import org.projectnessie.server.config.VersionStoreConfig;
 import org.projectnessie.server.config.VersionStoreConfig.VersionStoreType;
 import org.projectnessie.server.store.TableCommitMetaStoreWorker;
@@ -82,13 +83,14 @@ public class ConfigurableVersionStoreFactory {
   @Produces
   @Singleton
   @Startup
-  public VersionStore<Contents, CommitMeta, Contents.Type> getVersionStore() {
-    VersionStore<Contents, CommitMeta, Contents.Type> store = newVersionStore();
+  public VersionStore<Contents, GlobalContents, CommitMeta, Contents.Type> getVersionStore() {
+    VersionStore<Contents, GlobalContents, CommitMeta, Contents.Type> store = newVersionStore();
     try (Stream<WithHash<NamedRef>> str = store.getNamedRefs()) {
       if (!str.findFirst().isPresent()) {
         // if this is a new database, create a branch with the default branch name.
         try {
-          store.create(BranchName.of(serverConfig.getDefaultBranch()), Optional.empty());
+          store.create(
+              BranchName.of(serverConfig.getDefaultBranch()), Optional.empty(), Optional.empty());
         } catch (ReferenceNotFoundException | ReferenceAlreadyExistsException e) {
           LOGGER.warn("Failed to create default branch of {}.", serverConfig.getDefaultBranch(), e);
         }
@@ -98,7 +100,7 @@ public class ConfigurableVersionStoreFactory {
     return store;
   }
 
-  private VersionStore<Contents, CommitMeta, Contents.Type> newVersionStore() {
+  private VersionStore<Contents, GlobalContents, CommitMeta, Contents.Type> newVersionStore() {
     final VersionStoreType versionStoreType = storeConfig.getVersionStoreType();
     if (System.nanoTime() - lastUnsuccessfulStart < START_RETRY_MIN_INTERVAL_NANOS) {
       LOGGER.warn("{} version store failed to start recently, try again later.", versionStoreType);
@@ -111,9 +113,9 @@ public class ConfigurableVersionStoreFactory {
       VersionStoreFactory factory =
           versionStoreFactory.select(new StoreType.Literal(versionStoreType)).get();
       LOGGER.info("Using {} Version store", versionStoreType);
-      VersionStore<Contents, CommitMeta, Contents.Type> versionStore;
+      VersionStore<Contents, GlobalContents, CommitMeta, Contents.Type> versionStore;
       try {
-        versionStore = factory.newStore(new TableCommitMetaStoreWorker());
+        versionStore = factory.newStore(new TableCommitMetaStoreWorker(), serverConfig);
       } catch (IOException e) {
         throw new IOError(e);
       }

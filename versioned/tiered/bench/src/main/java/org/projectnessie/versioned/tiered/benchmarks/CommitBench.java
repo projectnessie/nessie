@@ -65,11 +65,13 @@ public class CommitBench {
     List<Key> keys;
     BranchName branch = BranchName.of("main");
 
-    @SuppressWarnings("unchecked")
     @Setup
     public void init() throws Exception {
       DatabaseAdapterFactory factory =
           ServiceLoader.load(DatabaseAdapterFactory.class).iterator().next();
+
+      databaseAdapter = factory.newBuilder().build();
+      databaseAdapter.initializeRepo();
 
       StoreWorker<String, String, String, TestEnum> storeWorker =
           StoreWorker.of(
@@ -77,11 +79,6 @@ public class CommitBench {
               StringSerializer.getInstanceNoSpy(),
               StringSerializer.getInstanceNoSpy(),
               (value, state) -> state + '|' + value.substring(value.indexOf('|') + 1));
-
-      Builder builder = factory.newBuilder();
-
-      databaseAdapter = builder.build();
-      databaseAdapter.initializeRepo();
 
       versionStore = new TieredVersionStore<>(databaseAdapter, storeWorker);
 
@@ -105,7 +102,8 @@ public class CommitBench {
   @Benchmark
   public void commit(Adapter adapter) throws Exception {
 
-    List<Optional<String>> contents = adapter.versionStore.getValues(adapter.branch, adapter.keys);
+    List<Optional<String>> contents =
+        adapter.versionStore.getValues(adapter.branch, Optional.empty(), adapter.keys);
 
     List<Operation<String, String>> operations = new ArrayList<>(adapter.tablesPerCommit);
     for (int i = 0; i < adapter.tablesPerCommit; i++) {

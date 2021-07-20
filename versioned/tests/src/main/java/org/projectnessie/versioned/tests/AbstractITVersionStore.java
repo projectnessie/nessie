@@ -37,6 +37,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Delete;
@@ -1096,13 +1098,31 @@ public abstract class AbstractITVersionStore {
   }
 
   @Nested
-  protected class WhenMerging {
+  protected class WhenMergingCommonAncestor extends AbstractWhenMerging {
+    protected WhenMergingCommonAncestor() {
+      super(true);
+    }
+  }
+
+  @Nested
+  protected class WhenMerging extends AbstractWhenMerging {
+    protected WhenMerging() {
+      super(false);
+    }
+  }
+
+  protected abstract class AbstractWhenMerging {
 
     private Hash initialHash;
     private Hash firstCommit;
     private Hash secondCommit;
     private Hash thirdCommit;
     private BranchName branch;
+    private final boolean commonAncestor;
+
+    protected AbstractWhenMerging(boolean commonAncestorRequired) {
+      this.commonAncestor = commonAncestorRequired;
+    }
 
     @BeforeEach
     protected void setupCommits() throws VersionStoreException {
@@ -1115,7 +1135,10 @@ public abstract class AbstractITVersionStore {
       // common ancestor and did merge "everything" from the "merge-from" into "merge-to".
       // Note: "beginning-of-time" (aka creating a branch without specifying a "create-from")
       // creates a new commit-tree that is decoupled from other commit-trees.
-      initialHash = commit("Default common ancestor").toBranch(branch);
+      initialHash =
+          commonAncestor
+              ? commit("Default common ancestor").toBranch(branch)
+              : store().toHash(branch);
 
       firstCommit =
           commit("First Commit")
@@ -1138,7 +1161,13 @@ public abstract class AbstractITVersionStore {
       final BranchName newBranch = BranchName.of("bar_1");
       store().create(newBranch, Optional.of(branch), Optional.of(initialHash));
 
-      store().merge(branch, Optional.of(thirdCommit), newBranch, Optional.of(initialHash));
+      store()
+          .merge(
+              branch,
+              Optional.of(thirdCommit),
+              newBranch,
+              Optional.of(initialHash),
+              commonAncestor);
       assertThat(
               store()
                   .getValues(
@@ -1157,7 +1186,7 @@ public abstract class AbstractITVersionStore {
       store().create(newBranch, Optional.of(branch), Optional.of(initialHash));
       final Hash newCommit = commit("Unrelated commit").put("t5", "v5_1", "").toBranch(newBranch);
 
-      store().merge(branch, Optional.of(thirdCommit), newBranch, Optional.empty());
+      store().merge(branch, Optional.of(thirdCommit), newBranch, Optional.empty(), commonAncestor);
       assertThat(
               store()
                   .getValues(
@@ -1174,8 +1203,10 @@ public abstract class AbstractITVersionStore {
 
       final List<WithHash<String>> commits =
           commitsList(newBranch, Optional.empty(), Optional.empty());
-      assertThat(commits).hasSize(5);
-      assertThat(commits.get(4).getHash()).isEqualTo(initialHash);
+      assertThat(commits).hasSize(commonAncestor ? 5 : 4);
+      if (commonAncestor) {
+        assertThat(commits.get(4).getHash()).isEqualTo(initialHash);
+      }
       assertThat(commits.get(3).getHash()).isEqualTo(newCommit);
       assertThat(commits.get(2).getValue()).isEqualTo("First Commit");
       assertThat(commits.get(1).getValue()).isEqualTo("Second Commit");
@@ -1195,14 +1226,16 @@ public abstract class AbstractITVersionStore {
               Optional.empty(),
               "commit 1",
               Collections.singletonList(Put.of(key, "value1", "", null)));
-      store().merge(etl, Optional.of(store().toHash(etl)), review, Optional.empty());
+      store()
+          .merge(etl, Optional.of(store().toHash(etl)), review, Optional.empty(), commonAncestor);
       store()
           .commit(
               etl,
               Optional.empty(),
               "commit 2",
               Collections.singletonList(Put.of(key, "value2", "", null)));
-      store().merge(etl, Optional.of(store().toHash(etl)), review, Optional.empty());
+      store()
+          .merge(etl, Optional.of(store().toHash(etl)), review, Optional.empty(), commonAncestor);
       assertEquals(store().getValue(review, Optional.empty(), key), "value2");
     }
 
@@ -1213,7 +1246,7 @@ public abstract class AbstractITVersionStore {
 
       final Hash newCommit = commit("Unrelated commit").put("t5", "v5_1", "").toBranch(newBranch);
 
-      store().merge(branch, Optional.of(thirdCommit), newBranch, Optional.empty());
+      store().merge(branch, Optional.of(thirdCommit), newBranch, Optional.empty(), commonAncestor);
       assertThat(
               store()
                   .getValues(
@@ -1230,8 +1263,10 @@ public abstract class AbstractITVersionStore {
 
       final List<WithHash<String>> commits =
           commitsList(newBranch, Optional.empty(), Optional.empty());
-      assertThat(commits).hasSize(5);
-      assertThat(commits.get(4).getHash()).isEqualTo(initialHash);
+      assertThat(commits).hasSize(commonAncestor ? 5 : 4);
+      if (commonAncestor) {
+        assertThat(commits.get(4).getHash()).isEqualTo(initialHash);
+      }
       assertThat(commits.get(3).getHash()).isEqualTo(firstCommit);
       assertThat(commits.get(2).getHash()).isEqualTo(newCommit);
       assertThat(commits.get(1).getValue()).isEqualTo("Second Commit");
@@ -1276,7 +1311,8 @@ public abstract class AbstractITVersionStore {
                   "commit 4",
                   Collections.singletonList(Put.of(key2, "value4", "", null)));
 
-      assertThatThrownBy(() -> store().merge(bar, Optional.of(barHash), foo, Optional.empty()))
+      assertThatThrownBy(
+              () -> store().merge(bar, Optional.of(barHash), foo, Optional.empty(), commonAncestor))
           .isInstanceOf(ReferenceConflictException.class)
           .hasMessageContaining("The following keys have been changed in conflict:")
           .hasMessageContaining(key1.toString())
@@ -1292,7 +1328,13 @@ public abstract class AbstractITVersionStore {
       assertThrows(
           ReferenceConflictException.class,
           () ->
-              store().merge(branch, Optional.of(thirdCommit), newBranch, Optional.of(initialHash)));
+              store()
+                  .merge(
+                      branch,
+                      Optional.of(thirdCommit),
+                      newBranch,
+                      Optional.of(initialHash),
+                      commonAncestor));
     }
 
     @Test
@@ -1301,7 +1343,13 @@ public abstract class AbstractITVersionStore {
       assertThrows(
           ReferenceNotFoundException.class,
           () ->
-              store().merge(branch, Optional.of(thirdCommit), newBranch, Optional.of(initialHash)));
+              store()
+                  .merge(
+                      branch,
+                      Optional.of(thirdCommit),
+                      newBranch,
+                      Optional.of(initialHash),
+                      commonAncestor));
     }
 
     @Test
@@ -1316,7 +1364,8 @@ public abstract class AbstractITVersionStore {
                       branch,
                       Optional.of(Hash.of("1234567890abcdef")),
                       newBranch,
-                      Optional.of(initialHash)));
+                      Optional.of(initialHash),
+                      commonAncestor));
     }
   }
 
@@ -1432,6 +1481,387 @@ public abstract class AbstractITVersionStore {
     assertEquals(1, keys.size());
     assertEquals(Key.of("hi"), keys.get(0).getValue());
     assertEquals(StringSerializer.TestEnum.NO, keys.get(0).getType());
+  }
+
+  private static class ReferenceNotFoundFunction {
+
+    final String name;
+    String msg;
+    ThrowingFunction setup;
+    ThrowingFunction function;
+
+    ReferenceNotFoundFunction(String name) {
+      this.name = name;
+    }
+
+    ReferenceNotFoundFunction setup(ThrowingFunction setup) {
+      this.setup = setup;
+      return this;
+    }
+
+    ReferenceNotFoundFunction function(ThrowingFunction function) {
+      this.function = function;
+      return this;
+    }
+
+    ReferenceNotFoundFunction msg(String msg) {
+      this.msg = msg;
+      return this;
+    }
+
+    @Override
+    public String toString() {
+      return name;
+    }
+
+    @FunctionalInterface
+    interface ThrowingFunction {
+      void run(VersionStore<String, String, String, StringSerializer.TestEnum> store)
+          throws VersionStoreException;
+    }
+  }
+
+  static List<ReferenceNotFoundFunction> referenceNotFoundFunctions() {
+    return Arrays.asList(
+        // getCommits()
+        new ReferenceNotFoundFunction("getCommits/branch")
+            .msg("Named reference 'this-one-should-not-exist' not found")
+            .function(
+                s ->
+                    s.getCommits(
+                        BranchName.of("this-one-should-not-exist"),
+                        Optional.empty(),
+                        Optional.empty())),
+        new ReferenceNotFoundFunction("getCommits/tag")
+            .msg("Named reference 'this-one-should-not-exist' not found")
+            .function(
+                s ->
+                    s.getCommits(
+                        TagName.of("this-one-should-not-exist"),
+                        Optional.empty(),
+                        Optional.empty())),
+        new ReferenceNotFoundFunction("getCommits/hash")
+            .msg(
+                "Could not find commit '12341234123412341234123412341234123412341234' in reference 'main'.")
+            .function(
+                s ->
+                    s.getCommits(
+                        BranchName.of("main"),
+                        Optional.of(Hash.of("12341234123412341234123412341234123412341234")),
+                        Optional.empty())),
+        // getValue()
+        new ReferenceNotFoundFunction("getValue/branch")
+            .msg("Named reference 'this-one-should-not-exist' not found")
+            .function(
+                s ->
+                    s.getValue(
+                        BranchName.of("this-one-should-not-exist"),
+                        Optional.empty(),
+                        Key.of("foo"))),
+        new ReferenceNotFoundFunction("getValue/tag")
+            .msg("Named reference 'this-one-should-not-exist' not found")
+            .function(
+                s ->
+                    s.getValue(
+                        TagName.of("this-one-should-not-exist"), Optional.empty(), Key.of("foo"))),
+        new ReferenceNotFoundFunction("getValue/hash")
+            .msg(
+                "Could not find commit '12341234123412341234123412341234123412341234' in reference 'main'.")
+            .function(
+                s ->
+                    s.getValue(
+                        BranchName.of("main"),
+                        Optional.of(Hash.of("12341234123412341234123412341234123412341234")),
+                        Key.of("foo"))),
+        // getValues()
+        new ReferenceNotFoundFunction("getValues/branch")
+            .msg("Named reference 'this-one-should-not-exist' not found")
+            .function(
+                s ->
+                    s.getValues(
+                        BranchName.of("this-one-should-not-exist"),
+                        Optional.empty(),
+                        Collections.singletonList(Key.of("foo")))),
+        new ReferenceNotFoundFunction("getValues/tag")
+            .msg("Named reference 'this-one-should-not-exist' not found")
+            .function(
+                s ->
+                    s.getValues(
+                        TagName.of("this-one-should-not-exist"),
+                        Optional.empty(),
+                        Collections.singletonList(Key.of("foo")))),
+        new ReferenceNotFoundFunction("getValues/hash")
+            .msg(
+                "Could not find commit '12341234123412341234123412341234123412341234' in reference 'main'.")
+            .function(
+                s ->
+                    s.getValues(
+                        BranchName.of("main"),
+                        Optional.of(Hash.of("12341234123412341234123412341234123412341234")),
+                        Collections.singletonList(Key.of("foo")))),
+        // getKeys()
+        new ReferenceNotFoundFunction("getKeys/branch")
+            .msg("Named reference 'this-one-should-not-exist' not found")
+            .function(s -> s.getKeys(BranchName.of("this-one-should-not-exist"), Optional.empty())),
+        new ReferenceNotFoundFunction("getKeys/tag")
+            .msg("Named reference 'this-one-should-not-exist' not found")
+            .function(s -> s.getKeys(TagName.of("this-one-should-not-exist"), Optional.empty())),
+        new ReferenceNotFoundFunction("getKeys/hash")
+            .msg(
+                "Could not find commit '12341234123412341234123412341234123412341234' in reference 'main'.")
+            .function(
+                s ->
+                    s.getKeys(
+                        BranchName.of("main"),
+                        Optional.of(Hash.of("12341234123412341234123412341234123412341234")))),
+        // assign()
+        new ReferenceNotFoundFunction("assign/branch/ok")
+            .msg("Named reference 'this-one-should-not-exist' not found")
+            .function(
+                s ->
+                    s.assign(
+                        BranchName.of("this-one-should-not-exist"),
+                        Optional.empty(),
+                        BranchName.of("main"),
+                        Optional.empty())),
+        new ReferenceNotFoundFunction("assign/ok/branch")
+            .msg("Named reference 'this-one-should-not-exist' not found")
+            .function(
+                s ->
+                    s.assign(
+                        BranchName.of("main"),
+                        Optional.empty(),
+                        BranchName.of("this-one-should-not-exist"),
+                        Optional.empty())),
+        new ReferenceNotFoundFunction("assign/hash")
+            .msg(
+                "Could not find commit '12341234123412341234123412341234123412341234' in reference 'main'.")
+            .function(
+                s ->
+                    s.assign(
+                        BranchName.of("main"),
+                        Optional.empty(),
+                        BranchName.of("main"),
+                        Optional.of(Hash.of("12341234123412341234123412341234123412341234")))),
+        // delete()
+        new ReferenceNotFoundFunction("delete/branch")
+            .msg("Named reference 'this-one-should-not-exist' not found")
+            .function(s -> s.delete(BranchName.of("this-one-should-not-exist"), Optional.empty())),
+        new ReferenceNotFoundFunction("delete/tag")
+            .msg("Named reference 'this-one-should-not-exist' not found")
+            .function(s -> s.delete(BranchName.of("this-one-should-not-exist"), Optional.empty())),
+        // create()
+        new ReferenceNotFoundFunction("create/branch")
+            .msg("Named reference 'this-one-should-not-exist' not found")
+            .function(
+                s ->
+                    s.create(
+                        BranchName.of("foo"),
+                        Optional.of(BranchName.of("this-one-should-not-exist")),
+                        Optional.empty())),
+        new ReferenceNotFoundFunction("create/tag")
+            .msg("Named reference 'this-one-should-not-exist' not found")
+            .function(
+                s ->
+                    s.create(
+                        BranchName.of("foo"),
+                        Optional.of(TagName.of("this-one-should-not-exist")),
+                        Optional.empty())),
+        new ReferenceNotFoundFunction("create/hash")
+            .msg(
+                "Could not find commit '12341234123412341234123412341234123412341234' in reference 'main'.")
+            .function(
+                s ->
+                    s.create(
+                        BranchName.of("foo"),
+                        Optional.of(BranchName.of("main")),
+                        Optional.of(Hash.of("12341234123412341234123412341234123412341234")))),
+        // commit()
+        new ReferenceNotFoundFunction("commit/branch")
+            .msg("Named reference 'this-one-should-not-exist' not found")
+            .function(
+                s ->
+                    s.commit(
+                        BranchName.of("this-one-should-not-exist"),
+                        Optional.empty(),
+                        "meta",
+                        Collections.singletonList(Delete.of(Key.of("meep"))))),
+        new ReferenceNotFoundFunction("commit/hash")
+            .msg(
+                "Could not find commit '12341234123412341234123412341234123412341234' in reference 'main'.")
+            .function(
+                s ->
+                    s.commit(
+                        BranchName.of("main"),
+                        Optional.of(Hash.of("12341234123412341234123412341234123412341234")),
+                        "meta",
+                        Collections.singletonList(Delete.of(Key.of("meep"))))),
+        // getDiffs()
+        new ReferenceNotFoundFunction("getDiffs/branch/ok")
+            .msg("Named reference 'this-one-should-not-exist' not found")
+            .function(
+                s ->
+                    s.getDiffs(
+                        BranchName.of("this-one-should-not-exist"),
+                        Optional.empty(),
+                        BranchName.of("main"),
+                        Optional.empty())),
+        new ReferenceNotFoundFunction("getDiffs/ok/branch")
+            .msg("Named reference 'this-one-should-not-exist' not found")
+            .function(
+                s ->
+                    s.getDiffs(
+                        BranchName.of("main"),
+                        Optional.empty(),
+                        BranchName.of("this-one-should-not-exist"),
+                        Optional.empty())),
+        new ReferenceNotFoundFunction("getDiffs/tag/ok")
+            .msg("Named reference 'this-one-should-not-exist' not found")
+            .function(
+                s ->
+                    s.getDiffs(
+                        TagName.of("this-one-should-not-exist"),
+                        Optional.empty(),
+                        BranchName.of("main"),
+                        Optional.empty())),
+        new ReferenceNotFoundFunction("getDiffs/ok/tag")
+            .msg("Named reference 'this-one-should-not-exist' not found")
+            .function(
+                s ->
+                    s.getDiffs(
+                        BranchName.of("main"),
+                        Optional.empty(),
+                        TagName.of("this-one-should-not-exist"),
+                        Optional.empty())),
+        new ReferenceNotFoundFunction("getDiffs/hash/empty")
+            .msg(
+                "Could not find commit '12341234123412341234123412341234123412341234' in reference 'main'.")
+            .function(
+                s ->
+                    s.getDiffs(
+                        BranchName.of("main"),
+                        Optional.of(Hash.of("12341234123412341234123412341234123412341234")),
+                        BranchName.of("main"),
+                        Optional.empty())),
+        new ReferenceNotFoundFunction("getDiffs/empty/hash")
+            .msg(
+                "Could not find commit '12341234123412341234123412341234123412341234' in reference 'main'.")
+            .function(
+                s ->
+                    s.getDiffs(
+                        BranchName.of("main"),
+                        Optional.empty(),
+                        BranchName.of("main"),
+                        Optional.of(Hash.of("12341234123412341234123412341234123412341234")))),
+        // transplant()
+        new ReferenceNotFoundFunction("transplant/branch/ok")
+            .msg("Named reference 'this-one-should-not-exist' not found")
+            .function(
+                s ->
+                    s.transplant(
+                        BranchName.of("this-one-should-not-exist"),
+                        Optional.empty(),
+                        BranchName.of("main"),
+                        Collections.singletonList(
+                            Hash.of("12341234123412341234123412341234123412341234")))),
+        new ReferenceNotFoundFunction("transplant/ok/branch")
+            .msg("Named reference 'this-one-should-not-exist' not found")
+            .function(
+                s ->
+                    s.transplant(
+                        BranchName.of("main"),
+                        Optional.empty(),
+                        BranchName.of("this-one-should-not-exist"),
+                        Collections.singletonList(
+                            Hash.of("12341234123412341234123412341234123412341234")))),
+        new ReferenceNotFoundFunction("transplant/ok/tag")
+            .msg("Named reference 'this-one-should-not-exist' not found")
+            .function(
+                s ->
+                    s.transplant(
+                        BranchName.of("main"),
+                        Optional.empty(),
+                        TagName.of("this-one-should-not-exist"),
+                        Collections.singletonList(
+                            Hash.of("12341234123412341234123412341234123412341234")))),
+        new ReferenceNotFoundFunction("transplant/hash/empty")
+            .msg(
+                "Could not find commit '12341234123412341234123412341234123412341234' in reference 'main'.")
+            .function(
+                s ->
+                    s.transplant(
+                        BranchName.of("main"),
+                        Optional.of(Hash.of("12341234123412341234123412341234123412341234")),
+                        BranchName.of("main"),
+                        Collections.singletonList(
+                            Hash.of("12341234123412341234123412341234123412341234")))),
+        new ReferenceNotFoundFunction("transplant/empty/hash")
+            .msg(
+                "Could not find commit '12341234123412341234123412341234123412341234' in reference 'main'.")
+            .function(
+                s ->
+                    s.transplant(
+                        BranchName.of("main"),
+                        Optional.empty(),
+                        BranchName.of("main"),
+                        Collections.singletonList(
+                            Hash.of("12341234123412341234123412341234123412341234")))),
+        // merge()
+        new ReferenceNotFoundFunction("merge/branch/ok")
+            .msg("Named reference 'this-one-should-not-exist' not found")
+            .function(
+                s ->
+                    s.merge(
+                        BranchName.of("this-one-should-not-exist"),
+                        Optional.empty(),
+                        BranchName.of("main"),
+                        Optional.empty(),
+                        false)),
+        new ReferenceNotFoundFunction("merge/ok/branch")
+            .msg("Named reference 'this-one-should-not-exist' not found")
+            .function(
+                s ->
+                    s.merge(
+                        BranchName.of("main"),
+                        Optional.empty(),
+                        BranchName.of("this-one-should-not-exist"),
+                        Optional.of(Hash.of("12341234123412341234123412341234123412341234")),
+                        false)),
+        new ReferenceNotFoundFunction("merge/hash/empty")
+            .msg(
+                "Could not find commit '12341234123412341234123412341234123412341234' in reference 'main'.")
+            .function(
+                s ->
+                    s.merge(
+                        BranchName.of("main"),
+                        Optional.of(Hash.of("12341234123412341234123412341234123412341234")),
+                        BranchName.of("main"),
+                        Optional.empty(),
+                        false)),
+        new ReferenceNotFoundFunction("merge/empty/hash")
+            .msg(
+                "Could not find commit '12341234123412341234123412341234123412341234' in reference 'main'.")
+            .function(
+                s ->
+                    s.merge(
+                        BranchName.of("main"),
+                        Optional.empty(),
+                        BranchName.of("main"),
+                        Optional.of(Hash.of("12341234123412341234123412341234123412341234")),
+                        false))
+        //
+        );
+  }
+
+  @ParameterizedTest
+  @MethodSource("referenceNotFoundFunctions")
+  void referenceNotFound(ReferenceNotFoundFunction f) throws Exception {
+    if (f.setup != null) {
+      f.setup.run(store());
+    }
+    assertThatThrownBy(() -> f.function.run(store()))
+        .isInstanceOf(ReferenceNotFoundException.class)
+        .hasMessage(f.msg);
   }
 
   protected CommitBuilder<String, String, String, StringSerializer.TestEnum> forceCommit(

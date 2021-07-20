@@ -15,6 +15,8 @@
  */
 package org.projectnessie.versioned.tiered.adapter;
 
+import java.util.function.Consumer;
+
 public interface DatabaseAdapterFactory {
   Builder newBuilder();
 
@@ -28,5 +30,10 @@ public interface DatabaseAdapterFactory {
     }
 
     public abstract DatabaseAdapter build();
+
+    public Builder configure(Consumer<DatabaseAdapterConfiguration> configurator) {
+      configurator.accept(getConfig());
+      return this;
+    }
   }
 }

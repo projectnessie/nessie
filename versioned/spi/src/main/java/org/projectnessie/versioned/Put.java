@@ -31,6 +31,7 @@ public interface Put<V, S> extends Operation<V, S> {
   V getValue();
 
   /** The new global state for this operation. */
+  @Nullable
   S getNewState();
 
   /** The expected global state for this operation. */

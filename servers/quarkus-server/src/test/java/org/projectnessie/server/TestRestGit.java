@@ -13,21 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.jgit;
+package org.projectnessie.server;
 
-import java.io.IOException;
-import org.eclipse.jgit.internal.storage.dfs.DfsRepositoryDescription;
-import org.eclipse.jgit.internal.storage.dfs.InMemoryRepository;
-import org.junit.jupiter.api.BeforeEach;
+import io.quarkus.test.junit.QuarkusTest;
+import org.projectnessie.jaxrs.AbstractRestGitTest;
 
-public class ITJGitInMemoryVersionStore extends AbstractITJGitVersionStore {
-
-  @BeforeEach
-  void setUp() throws IOException {
-    repository =
-        new InMemoryRepository.Builder()
-            .setRepositoryDescription(new DfsRepositoryDescription())
-            .build();
-    store = new JGitVersionStore<>(repository, WORKER);
-  }
-}
+@QuarkusTest
+public class TestRestGit extends AbstractRestGitTest {}

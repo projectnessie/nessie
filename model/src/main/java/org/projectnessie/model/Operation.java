@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.DiscriminatorMapping;
@@ -65,6 +66,7 @@ public interface Operation {
     @NotNull
     Contents getContents();
 
+    @Nullable
     GlobalContents getExpectedContents();
 
     static Put of(ContentsKey key, Contents contents) {

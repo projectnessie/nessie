@@ -13,14 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.server;
+package org.projectnessie.jaxrs;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.security.TestSecurity;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
@@ -33,9 +31,10 @@ import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
 import org.projectnessie.model.ContentsKey;
-import org.projectnessie.model.IcebergTable;
+import org.projectnessie.model.CreateReference;
+import org.projectnessie.model.IcebergSnapshot;
 import org.projectnessie.model.ImmutableBranch;
-import org.projectnessie.model.ImmutableIcebergTable;
+import org.projectnessie.model.ImmutableIcebergSnapshot;
 import org.projectnessie.model.ImmutableOperations;
 import org.projectnessie.model.ImmutablePut;
 import org.projectnessie.model.LogResponse;
@@ -44,8 +43,9 @@ import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
 
-@QuarkusTest
-public class RestGitTest {
+public class AbstractRestGitTest {
+
+  protected static String basePath = "/api/v1/";
 
   @BeforeEach
   public void enableLogging() {
@@ -53,12 +53,15 @@ public class RestGitTest {
   }
 
   @Test
-  @TestSecurity(authorizationEnabled = false)
   public void testBasic() {
     int preSize = rest().get("trees").then().statusCode(200).extract().as(Reference[].class).length;
 
     rest().get("trees/tree/mainx").then().statusCode(404);
-    rest().body(Branch.of("mainx", null)).post("trees/tree").then().statusCode(200);
+    rest()
+        .body(CreateReference.of(Branch.of("mainx", null), null))
+        .post("trees/tree")
+        .then()
+        .statusCode(200);
 
     Reference[] references =
         rest().get("trees").then().statusCode(200).extract().as(Reference[].class);
@@ -71,7 +74,7 @@ public class RestGitTest {
     Branch newReference = ImmutableBranch.builder().hash(reference.getHash()).name("test").build();
     rest()
         .queryParam("expectedHash", reference.getHash())
-        .body(Branch.of("test", null))
+        .body(CreateReference.of(Branch.of("test", null), null))
         .post("trees/tree")
         .then()
         .statusCode(200);
@@ -79,7 +82,7 @@ public class RestGitTest {
         newReference,
         rest().get("trees/tree/test").then().statusCode(200).extract().as(Branch.class));
 
-    IcebergTable table = IcebergTable.of("/the/directory/over/there");
+    IcebergSnapshot table = IcebergSnapshot.of("/the/directory/over/there", 0L, "");
 
     Branch commitResponse =
         rest()
@@ -106,7 +109,7 @@ public class RestGitTest {
           ImmutablePut.builder()
               .key(ContentsKey.of("item", Integer.toString(i)))
               .contents(
-                  ImmutableIcebergTable.builder()
+                  ImmutableIcebergSnapshot.builder()
                       .from(table)
                       .metadataLocation("/the/directory/over/there/" + i)
                       .build())
@@ -116,7 +119,7 @@ public class RestGitTest {
         ImmutablePut.builder()
             .key(ContentsKey.of("xxx", "test"))
             .contents(
-                ImmutableIcebergTable.builder()
+                ImmutableIcebergSnapshot.builder()
                     .from(table)
                     .metadataLocation("/the/directory/over/there/has/been/moved")
                     .build())
@@ -145,7 +148,7 @@ public class RestGitTest {
     Assertions.assertEquals(updates[10].getContents(), res.body().as(Contents.class));
 
     table =
-        ImmutableIcebergTable.builder()
+        ImmutableIcebergSnapshot.builder()
             .from(table)
             .metadataLocation("/the/directory/over/there/has/been/moved/again")
             .build();
@@ -178,7 +181,11 @@ public class RestGitTest {
     Assertions.assertEquals(table, returned);
 
     Branch b3 = rest().get("trees/tree/test").as(Branch.class);
-    rest().body(Tag.of("tagtest", b3.getHash())).post("trees/tree").then().statusCode(200);
+    rest()
+        .body(CreateReference.of(Tag.of("tagtest", b3.getHash()), b3.getName()))
+        .post("trees/tree")
+        .then()
+        .statusCode(200);
 
     assertThat(
             rest()
@@ -225,7 +232,7 @@ public class RestGitTest {
   }
 
   private static RequestSpecification rest() {
-    return given().when().basePath("/api/v1/").contentType(ContentType.JSON);
+    return given().when().basePath(basePath).contentType(ContentType.JSON);
   }
 
   private Branch commit(Branch branch, String contentsKey, String metadataUrl) {
@@ -235,7 +242,8 @@ public class RestGitTest {
   private Branch commit(Branch branch, String contentsKey, String metadataUrl, String author) {
     Operations contents =
         ImmutableOperations.builder()
-            .addOperations(Put.of(ContentsKey.of(contentsKey), IcebergTable.of(metadataUrl)))
+            .addOperations(
+                Put.of(ContentsKey.of(contentsKey), IcebergSnapshot.of(metadataUrl, 0L, "")))
             .commitMeta(CommitMeta.builder().author(author).message("").build())
             .build();
     return rest()
@@ -253,13 +261,13 @@ public class RestGitTest {
   }
 
   private Branch makeBranch(String name) {
-    Branch test = ImmutableBranch.builder().name(name).build();
-    rest().body(test).post("trees/tree").then().statusCode(200);
-    return test;
+    Branch branch = ImmutableBranch.builder().name(name).build();
+    CreateReference create = CreateReference.of(branch, null);
+    rest().body(create).post("trees/tree").then().statusCode(200);
+    return branch;
   }
 
   @Test
-  @TestSecurity(authorizationEnabled = false)
   public void testOptimisticLocking() {
     makeBranch("test3");
     Branch b1 = getBranch("test3");
@@ -276,7 +284,6 @@ public class RestGitTest {
   }
 
   @Test
-  @TestSecurity(authorizationEnabled = false)
   public void testLogFiltering() {
     String branchName = "logFiltering";
     makeBranch(branchName);

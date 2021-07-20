@@ -145,7 +145,6 @@
     <javax.version>4.0.1</javax.version>
     <jersey.version>2.34</jersey.version>
     <jetty.version>9.4.31.v20200723</jetty.version>
-    <jgit.version>5.12.0.202106070339-r</jgit.version>
     <jjwt.version>0.11.2</jjwt.version>
     <jmh.version>1.32</jmh.version>
     <jsr305.version>3.0.2</jsr305.version>
@@ -192,11 +191,6 @@
         <groupId>com.google.protobuf</groupId>
         <artifactId>protobuf-java</artifactId>
         <version>${protobuf.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.eclipse.jgit</groupId>
-        <artifactId>org.eclipse.jgit</artifactId>
-        <version>${jgit.version}</version>
       </dependency>
       <dependency>
         <groupId>software.amazon.awssdk</groupId>
@@ -627,6 +621,7 @@
           <artifactId>maven-surefire-plugin</artifactId>
           <version>${surefire.version}</version>
           <configuration>
+            <trimStackTrace>false</trimStackTrace>
             <argLine>@{argLine} -Dfile.encoding=UTF-8</argLine>
             <systemProperties>
               <user.language>en</user.language>

@@ -71,7 +71,7 @@ public class TableCommitMetaStoreWorker
 
   @Override
   public Contents mergeGlobalState(Contents contents, GlobalContents globalContents) {
-    return contents.mergeGlobalState(globalContents);
+    return contents.withGlobalState(globalContents);
   }
 
   private static class GlobalStateSerializer implements Serializer<GlobalContents> {

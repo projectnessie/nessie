@@ -52,7 +52,7 @@ public interface DatabaseAdapter extends AutoCloseable {
       NamedRef ref, Optional<Hash> hashOnRef, List<Key> keys) throws ReferenceNotFoundException;
 
   Stream<CommitLogEntry> commitLog(
-      NamedRef ref, Optional<Hash> offset, Optional<Hash> untilExcluding)
+      NamedRef ref, Optional<Hash> offset, Optional<Hash> untilIncluding)
       throws ReferenceNotFoundException;
 
   Stream<ByteString> entries(NamedRef ref, Optional<Hash> hash) throws ReferenceNotFoundException;
@@ -80,7 +80,11 @@ public interface DatabaseAdapter extends AutoCloseable {
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   Hash merge(
-      NamedRef from, Optional<Hash> fromHash, BranchName toBranch, Optional<Hash> expectedHash)
+      NamedRef from,
+      Optional<Hash> fromHash,
+      BranchName toBranch,
+      Optional<Hash> expectedHash,
+      boolean commonAncestorRequired)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   void initializeRepo() throws ReferenceConflictException;

@@ -110,7 +110,11 @@ public class TieredVersionStore<
           expectedStates.put(
               op.getKey(), storeWorker.getStateSerializer().toBytes(op.getExpectedState()));
         }
-        global.put(op.getKey(), storeWorker.getStateSerializer().toBytes(op.getNewState()));
+        ByteString newState =
+            op.getNewState() != null
+                ? storeWorker.getStateSerializer().toBytes(op.getNewState())
+                : ByteString.EMPTY;
+        global.put(op.getKey(), newState);
       } else if (operation instanceof Delete) {
         deletes.add(operation.getKey());
       } else if (operation instanceof Unchanged) {
@@ -146,9 +150,13 @@ public class TieredVersionStore<
 
   @Override
   public Hash merge(
-      NamedRef from, Optional<Hash> fromHash, BranchName toBranch, Optional<Hash> expectedHash)
+      NamedRef from,
+      Optional<Hash> fromHash,
+      BranchName toBranch,
+      Optional<Hash> expectedHash,
+      boolean commonAncestorRequired)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    return databaseAdapter.merge(from, fromHash, toBranch, expectedHash);
+    return databaseAdapter.merge(from, fromHash, toBranch, expectedHash, commonAncestorRequired);
   }
 
   @Override
@@ -177,10 +185,10 @@ public class TieredVersionStore<
 
   @Override
   public Stream<WithHash<METADATA>> getCommits(
-      NamedRef ref, Optional<Hash> offset, Optional<Hash> untilExcluding)
+      NamedRef ref, Optional<Hash> offset, Optional<Hash> untilIncluding)
       throws ReferenceNotFoundException {
     return databaseAdapter
-        .commitLog(ref, offset, untilExcluding)
+        .commitLog(ref, offset, untilIncluding)
         .map(
             e ->
                 WithHash.of(
@@ -212,9 +220,12 @@ public class TieredVersionStore<
                 v ->
                     v.map(
                         s ->
-                            ContentsAndState.of(
-                                storeWorker.getValueSerializer().fromBytes(s.getContents()),
-                                storeWorker.getStateSerializer().fromBytes(s.getState()))))
+                            s.getState() != null && !s.getState().isEmpty()
+                                ? ContentsAndState.of(
+                                    storeWorker.getValueSerializer().fromBytes(s.getContents()),
+                                    storeWorker.getStateSerializer().fromBytes(s.getState()))
+                                : ContentsAndState.<CONTENTS, STATE>of(
+                                    storeWorker.getValueSerializer().fromBytes(s.getContents()))))
             .map(
                 csOpt ->
                     csOpt.map(
