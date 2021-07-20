@@ -127,7 +127,7 @@
     <!-- Version properties -->
     <antlr.version>4.9.2</antlr.version>
     <assertj.version>3.20.2</assertj.version>
-    <awssdk.version>2.16.104</awssdk.version>
+    <awssdk.version>2.17.0</awssdk.version>
     <bouncycastle.version>1.66</bouncycastle.version>
     <cel.version>0.2.0</cel.version>
     <deltalake2.version>0.6.2-nessie</deltalake2.version>
