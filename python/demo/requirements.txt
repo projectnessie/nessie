@@ -1,4 +1,4 @@
-pynessie==0.8.2
+pynessie==0.8.3
 jupyterlab==3.0.16
 findspark==1.4.2
 pyspark==3.0.2
