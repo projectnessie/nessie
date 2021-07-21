@@ -17,20 +17,19 @@ package org.projectnessie.versioned.tiered.rocks;
 
 import java.nio.file.Path;
 import org.junit.jupiter.api.io.TempDir;
-import org.projectnessie.versioned.tiered.adapter.DatabaseAdapterConfiguration;
 import org.projectnessie.versioned.tiered.tests.TestVersionStore;
 
-public class TestVersionStoreRocks extends TestVersionStore {
+public class TestVersionStoreRocks extends TestVersionStore<RocksDatabaseAdapterConfig> {
   @TempDir Path rocksDir;
 
   RocksDbInstance instance;
 
   @Override
-  protected void configureDatabaseAdapter(DatabaseAdapterConfiguration config) throws Exception {
+  protected RocksDatabaseAdapterConfig configureDatabaseAdapter(RocksDatabaseAdapterConfig config) {
     instance = new RocksDbInstance();
-    instance.setDbPath(rocksDir);
+    instance.setDbPath(rocksDir.toString());
 
-    RocksDatabaseAdapter.ROCKS_DB.set(config, instance);
+    return ImmutableRocksDatabaseAdapterConfig.builder().from(config).dbInstance(instance).build();
   }
 
   @Override

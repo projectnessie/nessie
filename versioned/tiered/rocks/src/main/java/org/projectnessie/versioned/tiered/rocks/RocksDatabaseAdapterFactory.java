@@ -18,7 +18,8 @@ package org.projectnessie.versioned.tiered.rocks;
 import org.projectnessie.versioned.tiered.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.tiered.adapter.DatabaseAdapterFactory;
 
-public class RocksDatabaseAdapterFactory implements DatabaseAdapterFactory {
+public class RocksDatabaseAdapterFactory
+    implements DatabaseAdapterFactory<RocksDatabaseAdapterConfig> {
 
   @Override
   public String getName() {
@@ -26,8 +27,13 @@ public class RocksDatabaseAdapterFactory implements DatabaseAdapterFactory {
   }
 
   @Override
-  public Builder newBuilder() {
-    return new Builder() {
+  public Builder<RocksDatabaseAdapterConfig> newBuilder() {
+    return new Builder<RocksDatabaseAdapterConfig>() {
+      @Override
+      protected RocksDatabaseAdapterConfig getDefaultConfig() {
+        return ImmutableRocksDatabaseAdapterConfig.builder().build();
+      }
+
       @Override
       public DatabaseAdapter build() {
         return new RocksDatabaseAdapter(getConfig());

@@ -16,9 +16,12 @@
 package org.projectnessie.versioned.tiered.inmem;
 
 import org.projectnessie.versioned.tiered.adapter.DatabaseAdapter;
+import org.projectnessie.versioned.tiered.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.tiered.adapter.DatabaseAdapterFactory;
+import org.projectnessie.versioned.tiered.adapter.ImmutableDatabaseAdapterConfig;
 
-public class InmemoryDatabaseAdapterFactory implements DatabaseAdapterFactory {
+public class InmemoryDatabaseAdapterFactory
+    implements DatabaseAdapterFactory<DatabaseAdapterConfig> {
 
   @Override
   public String getName() {
@@ -26,8 +29,13 @@ public class InmemoryDatabaseAdapterFactory implements DatabaseAdapterFactory {
   }
 
   @Override
-  public Builder newBuilder() {
-    return new Builder() {
+  public Builder<DatabaseAdapterConfig> newBuilder() {
+    return new Builder<DatabaseAdapterConfig>() {
+      @Override
+      protected DatabaseAdapterConfig getDefaultConfig() {
+        return ImmutableDatabaseAdapterConfig.builder().build();
+      }
+
       @Override
       public DatabaseAdapter build() {
         return new InmemoryDatabaseAdapter(getConfig());

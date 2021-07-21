@@ -37,16 +37,13 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.tiered.adapter.AbstractDatabaseAdapter;
 import org.projectnessie.versioned.tiered.adapter.CommitLogEntry;
-import org.projectnessie.versioned.tiered.adapter.DatabaseAdapterConfiguration;
-import org.projectnessie.versioned.tiered.adapter.DatabaseAdapterConfiguration.ConfigItem;
-import org.projectnessie.versioned.tiered.adapter.DatabaseAdapterConfiguration.IntegerConfigItem;
-import org.projectnessie.versioned.tiered.adapter.DatabaseAdapterConfiguration.StringConfigItem;
 import org.projectnessie.versioned.tiered.adapter.DbObjectsSerializers;
 import org.projectnessie.versioned.tiered.adapter.GlobalStateLogEntry;
 import org.projectnessie.versioned.tiered.adapter.GlobalStatePointer;
 import org.projectnessie.versioned.tiered.tx.TxConnectionProvider.LocalConnectionProvider;
 
-public abstract class TxDatabaseAdapter extends AbstractDatabaseAdapter<Connection> {
+public abstract class TxDatabaseAdapter
+    extends AbstractDatabaseAdapter<Connection, TxDatabaseAdapterConfig> {
 
   protected static final String TABLE_COMMIT_LOG = "commit_log";
   protected static final String TABLE_GLOBAL_LOG = "global_log";
@@ -105,26 +102,15 @@ public abstract class TxDatabaseAdapter extends AbstractDatabaseAdapter<Connecti
   protected static final String INSERT_GLOBAL_LOG =
       String.format("INSERT INTO %s (key_prefix, id, value) VALUES (?, ?, ?)", TABLE_GLOBAL_LOG);
 
-  public static final ConfigItem<TxConnectionProvider> CONNECTION_PROVIDER =
-      new ConfigItem<>("tx.connection-provider", null, false);
-  public static final ConfigItem<Integer> BATCH_SIZE =
-      new IntegerConfigItem("tx.db.batch-size", 20, false);
-  public static final ConfigItem<String> CATALOG =
-      new StringConfigItem("tx.db.catalog", null, false);
-  public static final ConfigItem<String> SCHEMA = new StringConfigItem("tx.db.schema", null, false);
-
   private static final ObjectMapper MAPPER = DbObjectsSerializers.register(new IonObjectMapper());
 
-  private final String keyPrefix;
   private final TxConnectionProvider db;
 
-  public TxDatabaseAdapter(DatabaseAdapterConfiguration config) {
+  public TxDatabaseAdapter(TxDatabaseAdapterConfig config) {
     super(config);
 
-    this.keyPrefix = KEY_PREFIX.get(config);
-
     // get the externally configured RocksDbInstance
-    TxConnectionProvider db = CONNECTION_PROVIDER.get(config);
+    TxConnectionProvider db = config.getConnectionProvider();
 
     if (db == null) {
       // Create a ConnectionProvider, if none has been configured externally. This is mostly used
@@ -136,8 +122,8 @@ public abstract class TxDatabaseAdapter extends AbstractDatabaseAdapter<Connecti
           databaseSqlFormatParameters(),
           metadataUpperCase(),
           batchDDL(),
-          CATALOG.get(config),
-          SCHEMA.get(config));
+          config.getCatalog(),
+          config.getSchema());
     }
 
     this.db = db;
@@ -185,7 +171,7 @@ public abstract class TxDatabaseAdapter extends AbstractDatabaseAdapter<Connecti
   @Override
   protected GlobalStatePointer fetchGlobalPointer(Connection c) {
     try (PreparedStatement ps = c.prepareStatement(SELECT_GLOBAL_POINTER)) {
-      ps.setString(1, keyPrefix);
+      ps.setString(1, config.getKeyPrefix());
       try (ResultSet rs = ps.executeQuery()) {
         rs.next();
         return deserialize(rs.getBytes(1), GlobalStatePointer.class);
@@ -207,7 +193,7 @@ public abstract class TxDatabaseAdapter extends AbstractDatabaseAdapter<Connecti
 
   private <T> T fetchSingle(Connection c, String sql, Hash pk, Class<T> type) {
     try (PreparedStatement ps = c.prepareStatement(sql)) {
-      ps.setString(1, keyPrefix);
+      ps.setString(1, config.getKeyPrefix());
       ps.setString(2, pk.asString());
       try (ResultSet rs = ps.executeQuery()) {
         return rs.next() ? deserialize(rs.getBytes(1), type) : null;
@@ -236,7 +222,7 @@ public abstract class TxDatabaseAdapter extends AbstractDatabaseAdapter<Connecti
     sql = String.format(sql, placeholders);
 
     try (PreparedStatement ps = c.prepareStatement(sql)) {
-      ps.setString(1, keyPrefix);
+      ps.setString(1, config.getKeyPrefix());
       for (int i = 0; i < hashes.size(); i++) {
         ps.setString(2 + i, hashes.get(i).asString());
       }
@@ -258,13 +244,13 @@ public abstract class TxDatabaseAdapter extends AbstractDatabaseAdapter<Connecti
   @Override
   protected void unsafeWriteGlobalPointer(Connection c, GlobalStatePointer pointer) {
     try (PreparedStatement ps = c.prepareStatement(DELETE_GLOBAL_POINTER)) {
-      ps.setString(1, keyPrefix);
+      ps.setString(1, config.getKeyPrefix());
       ps.executeUpdate();
     } catch (SQLException e) {
       throw new RuntimeException(e); // TODO VersionStoreException
     }
     try (PreparedStatement ps = c.prepareStatement(INSERT_GLOBAL_POINTER)) {
-      ps.setString(1, keyPrefix);
+      ps.setString(1, config.getKeyPrefix());
       ps.setString(2, pointer.getGlobalId().asString());
       ps.setBytes(3, serialize(pointer));
       ps.executeUpdate();
@@ -277,7 +263,7 @@ public abstract class TxDatabaseAdapter extends AbstractDatabaseAdapter<Connecti
   protected void writeIndividualCommit(Connection c, CommitLogEntry entry)
       throws ReferenceConflictException {
     try (PreparedStatement ps = c.prepareStatement(INSERT_COMMIT_LOG)) {
-      ps.setString(1, keyPrefix);
+      ps.setString(1, config.getKeyPrefix());
       ps.setString(2, entry.getHash().asString());
       ps.setBytes(3, serialize(entry));
       ps.executeUpdate();
@@ -289,16 +275,15 @@ public abstract class TxDatabaseAdapter extends AbstractDatabaseAdapter<Connecti
   @Override
   protected void writeIndividualCommits(Connection c, List<CommitLogEntry> entries)
       throws ReferenceConflictException {
-    int batchSize = BATCH_SIZE.get(config);
     int cnt = 0;
     try (PreparedStatement ps = c.prepareStatement(INSERT_COMMIT_LOG)) {
       for (CommitLogEntry e : entries) {
-        ps.setString(1, keyPrefix);
+        ps.setString(1, config.getKeyPrefix());
         ps.setString(2, e.getHash().asString());
         ps.setBytes(3, serialize(e));
         ps.addBatch();
         cnt++;
-        if (cnt == batchSize) {
+        if (cnt == config.getBatchSize()) {
           ps.executeBatch();
           cnt = 0;
         }
@@ -315,7 +300,7 @@ public abstract class TxDatabaseAdapter extends AbstractDatabaseAdapter<Connecti
   protected void writeGlobalCommit(Connection c, GlobalStateLogEntry entry)
       throws ReferenceConflictException {
     try (PreparedStatement ps = c.prepareStatement(INSERT_GLOBAL_LOG)) {
-      ps.setString(1, keyPrefix);
+      ps.setString(1, config.getKeyPrefix());
       ps.setString(2, entry.getId().asString());
       ps.setBytes(3, serialize(entry));
       ps.executeUpdate();
@@ -331,7 +316,7 @@ public abstract class TxDatabaseAdapter extends AbstractDatabaseAdapter<Connecti
       // "UPDATE %s SET value = ? WHERE key_prefix = ? AND global_id = ?", TABLE_GLOBAL_POINTER);
       ps.setBytes(1, serialize(newPointer));
       ps.setString(2, newPointer.getGlobalId().asString());
-      ps.setString(3, keyPrefix);
+      ps.setString(3, config.getKeyPrefix());
       ps.setString(4, expected.getGlobalId().asString());
       return ps.executeUpdate() == 1;
     } catch (SQLException e) {

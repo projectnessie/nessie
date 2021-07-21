@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.tiered.inmem;
 
+import org.projectnessie.versioned.tiered.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.tiered.tests.TestVersionStore;
 
-public class TestVersionStoreInmemory extends TestVersionStore {}
+public class TestVersionStoreInmemory extends TestVersionStore<DatabaseAdapterConfig> {}

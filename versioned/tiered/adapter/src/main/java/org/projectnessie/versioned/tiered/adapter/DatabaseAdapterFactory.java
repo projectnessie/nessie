@@ -15,24 +15,35 @@
  */
 package org.projectnessie.versioned.tiered.adapter;
 
-import java.util.function.Consumer;
+import java.util.function.Function;
 
-public interface DatabaseAdapterFactory {
-  Builder newBuilder();
+public interface DatabaseAdapterFactory<CONFIG extends DatabaseAdapterConfig> {
+  Builder<CONFIG> newBuilder();
 
   String getName();
 
-  abstract class Builder {
-    private final DatabaseAdapterConfiguration config = new DatabaseAdapterConfiguration();
+  abstract class Builder<CONFIG extends DatabaseAdapterConfig> {
+    private CONFIG config;
 
-    public DatabaseAdapterConfiguration getConfig() {
+    public Builder<CONFIG> withConfig(CONFIG config) {
+      this.config = config;
+      return this;
+    }
+
+    protected abstract CONFIG getDefaultConfig();
+
+    protected CONFIG getConfig() {
+      if (config == null) {
+        config = getDefaultConfig();
+      }
       return config;
     }
 
     public abstract DatabaseAdapter build();
 
-    public Builder configure(Consumer<DatabaseAdapterConfiguration> configurator) {
-      configurator.accept(getConfig());
+    @SuppressWarnings("unchecked")
+    public Builder<CONFIG> configure(Function<CONFIG, DatabaseAdapterConfig> configurator) {
+      this.config = (CONFIG) configurator.apply(getConfig());
       return this;
     }
   }

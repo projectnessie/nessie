@@ -24,23 +24,22 @@ import org.projectnessie.versioned.StringSerializer.TestEnum;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.tests.AbstractITVersionStore;
 import org.projectnessie.versioned.tiered.adapter.DatabaseAdapter;
-import org.projectnessie.versioned.tiered.adapter.DatabaseAdapterConfiguration;
+import org.projectnessie.versioned.tiered.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.tiered.adapter.DatabaseAdapterFactory;
-import org.projectnessie.versioned.tiered.adapter.DatabaseAdapterFactory.Builder;
 import org.projectnessie.versioned.tiered.impl.TieredVersionStore;
 
-public class TestVersionStore extends AbstractITVersionStore {
+public class TestVersionStore<CONFIG extends DatabaseAdapterConfig> extends AbstractITVersionStore {
   protected DatabaseAdapter databaseAdapter;
   protected TieredVersionStore<String, String, String, TestEnum> versionStore;
 
   @BeforeEach
   public void loadDatabaseAdapter() throws Exception {
-    DatabaseAdapterFactory factory =
+    @SuppressWarnings("unchecked")
+    DatabaseAdapterFactory<CONFIG> factory =
         ServiceLoader.load(DatabaseAdapterFactory.class).iterator().next();
 
-    Builder builder = factory.newBuilder();
-
-    configureDatabaseAdapter(builder.getConfig());
+    databaseAdapter = factory.newBuilder().configure(this::configureDatabaseAdapter).build();
+    databaseAdapter.initializeRepo();
 
     StoreWorker<String, String, String, TestEnum> storeWorker =
         StoreWorker.of(
@@ -49,13 +48,12 @@ public class TestVersionStore extends AbstractITVersionStore {
             StringSerializer.getInstanceNoSpy(),
             (value, state) -> value);
 
-    databaseAdapter = builder.build();
-    databaseAdapter.initializeRepo();
-
     versionStore = new TieredVersionStore<>(databaseAdapter, storeWorker);
   }
 
-  protected void configureDatabaseAdapter(DatabaseAdapterConfiguration config) throws Exception {}
+  protected CONFIG configureDatabaseAdapter(CONFIG config) {
+    return config;
+  }
 
   @AfterEach
   void closeDatabaseAdapter() throws Exception {

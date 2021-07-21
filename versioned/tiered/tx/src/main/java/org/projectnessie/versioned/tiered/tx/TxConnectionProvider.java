@@ -36,12 +36,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.sql.DataSource;
-import org.projectnessie.versioned.tiered.adapter.DatabaseAdapterConfiguration;
-import org.projectnessie.versioned.tiered.adapter.DatabaseAdapterConfiguration.ConfigItem;
-import org.projectnessie.versioned.tiered.adapter.DatabaseAdapterConfiguration.StringConfigItem;
 
 public class TxConnectionProvider implements AutoCloseable {
-  public void configure(DatabaseAdapterConfiguration config) {}
+  public void configure(TxDatabaseAdapterConfig config) {}
 
   public void setupDatabase(
       Map<String, List<String>> perTableDDLs,
@@ -119,15 +116,8 @@ public class TxConnectionProvider implements AutoCloseable {
   public static class LocalConnectionProvider extends TxConnectionProvider {
     private DataSource dataSource;
 
-    public static final ConfigItem<String> JDBC_URL =
-        new StringConfigItem("tx.local.jdbc-url", null, true);
-    public static final ConfigItem<String> JDBC_USER =
-        new StringConfigItem("tx.local.jdbc-user", null, false);
-    public static final ConfigItem<String> JDBC_PASS =
-        new StringConfigItem("tx.local.jdbc-pass", null, false);
-
     @Override
-    public void configure(DatabaseAdapterConfiguration config) {
+    public void configure(TxDatabaseAdapterConfig config) {
       AgroalDataSourceConfigurationSupplier dataSourceConfiguration =
           new AgroalDataSourceConfigurationSupplier();
       AgroalConnectionPoolConfigurationSupplier poolConfiguration =
@@ -144,10 +134,10 @@ public class TxConnectionProvider implements AutoCloseable {
           .acquisitionTimeout(Duration.of(30, ChronoUnit.SECONDS));
 
       // configure supplier
-      connectionFactoryConfiguration.jdbcUrl(JDBC_URL.get(config));
-      if (JDBC_USER.get(config) != null) {
-        connectionFactoryConfiguration.credential(new NamePrincipal(JDBC_USER.get(config)));
-        connectionFactoryConfiguration.credential(new SimplePassword(JDBC_PASS.get(config)));
+      connectionFactoryConfiguration.jdbcUrl(config.getJdbcUrl());
+      if (config.getJdbcUser() != null) {
+        connectionFactoryConfiguration.credential(new NamePrincipal(config.getJdbcUser()));
+        connectionFactoryConfiguration.credential(new SimplePassword(config.getJdbcPass()));
       }
       connectionFactoryConfiguration.jdbcTransactionIsolation(TransactionIsolation.READ_COMMITTED);
       connectionFactoryConfiguration.autoCommit(false);

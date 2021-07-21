@@ -36,6 +36,7 @@ import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.Spliterators.AbstractSpliterator;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -58,10 +59,11 @@ import org.projectnessie.versioned.VersionStoreException;
 import org.projectnessie.versioned.WithHash;
 
 /** Base database-adapter class. */
-public abstract class AbstractDatabaseAdapter<OP_CONTEXT extends AutoCloseable>
+public abstract class AbstractDatabaseAdapter<
+        OP_CONTEXT extends AutoCloseable, CONFIG extends DatabaseAdapterConfig>
     implements DatabaseAdapter {
 
-  protected final DatabaseAdapterConfiguration config;
+  protected final CONFIG config;
 
   @SuppressWarnings("UnstableApiUsage")
   public static final Hash NO_ANCESTOR =
@@ -73,7 +75,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT extends AutoCloseable>
 
   protected static long COMMIT_LOG_HASH_SEED = 946928273206945677L;
 
-  protected AbstractDatabaseAdapter(DatabaseAdapterConfiguration config) {
+  protected AbstractDatabaseAdapter(CONFIG config) {
+    Objects.requireNonNull(config, "config parameter must not be null");
     this.config = config;
   }
 
@@ -366,7 +369,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT extends AutoCloseable>
             CommitLogEntry currentBranchEntry =
                 fetchFromCommitLog(ctx, currentHeads.getBranchHead());
 
-            int parentsPerCommit = PARENTS_PER_COMMIT.get(config);
+            int parentsPerCommit = config.getParentsPerCommit();
             List<Hash> newParents = new ArrayList<>(parentsPerCommit);
             newParents.add(currentHeads.getBranchHead());
             if (currentBranchEntry != null) {
@@ -421,7 +424,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT extends AutoCloseable>
             Hash hash;
             if (beginning.get().equals(NO_ANCESTOR)
                 && !target.isPresent()
-                && ref.equals(BranchName.of(DEFAULT_BRANCH.get(config)))) {
+                && ref.equals(BranchName.of(config.getDefaultBranch()))) {
               // Handle the special case when the default-branch does not exist and the current
               // request creates it. This mostly happens during tests.
               hash = NO_ANCESTOR;
@@ -543,7 +546,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT extends AutoCloseable>
       Hash globalHead = writeGlobalCommit(ctx, NO_ANCESTOR, Collections.emptyMap());
 
       Map<NamedRef, Hash> refMap =
-          Collections.singletonMap(BranchName.of(DEFAULT_BRANCH.get(config)), NO_ANCESTOR);
+          Collections.singletonMap(BranchName.of(config.getDefaultBranch()), NO_ANCESTOR);
 
       unsafeWriteGlobalPointer(ctx, GlobalStatePointer.of(globalHead, refMap));
 
@@ -608,7 +611,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT extends AutoCloseable>
       Optional<Hash> hashOnRef,
       Consumer<CommitLogEntry> commitLogVisitor)
       throws ReferenceNotFoundException {
-    NamedRef ref = refOpt.orElseGet(() -> BranchName.of(DEFAULT_BRANCH.get(config)));
+    NamedRef ref = refOpt.orElseGet(() -> BranchName.of(config.getDefaultBranch()));
     if (hashOnRef.isPresent()) {
       Hash knownHead = pointer.branchHead(ref);
       Hash suspect = hashOnRef.get();
@@ -892,7 +895,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT extends AutoCloseable>
                     Stream.of(parentHash),
                     currentEntry.getParents().stream()
                         .skip(1)
-                        .limit(PARENTS_PER_COMMIT.get(config) - 1))
+                        .limit(config.getParentsPerCommit() - 1))
                 .collect(Collectors.toList())
             : Collections.singletonList(parentHash);
 
@@ -921,9 +924,17 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT extends AutoCloseable>
 
     CommitLogEntry entry =
         CommitLogEntry.of(
-            commitHash, parentHashes, commitMeta, puts, unchanged, deletes, keyListDistance, null);
+            currentTimeInMicros(),
+            commitHash,
+            parentHashes,
+            commitMeta,
+            puts,
+            unchanged,
+            deletes,
+            keyListDistance,
+            null);
 
-    if (keyListDistance >= KEY_LIST_INTERVAL.get(config)) {
+    if (keyListDistance >= config.getKeyListDistance()) {
       entry = buildKeyList(ctx, entry);
     }
     return entry;
@@ -1039,7 +1050,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT extends AutoCloseable>
   protected void writeGlobalCommit(
       OP_CONTEXT ctx, Hash id, List<Hash> parents, Map<Key, ByteString> puts)
       throws ReferenceConflictException {
-    GlobalStateLogEntry entry = GlobalStateLogEntry.of(id, parents, puts);
+    GlobalStateLogEntry entry = GlobalStateLogEntry.of(currentTimeInMicros(), id, parents, puts);
     writeGlobalCommit(ctx, entry);
   }
 
@@ -1113,7 +1124,6 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT extends AutoCloseable>
     //  max number of "to"-commits to fetch, max number of "from"-commits to fetch,
     //  both impact the cost (CPU, memory, I/O) of a merge operation.
 
-    int fetchCount = PARENTS_PER_COMMIT.get(config);
     Iterator<Hash> toLog =
         Spliterators.iterator(
             commitLogFetcher(ctx, toHead).map(CommitLogEntry::getHash).spliterator());
@@ -1124,7 +1134,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT extends AutoCloseable>
     List<Hash> fromCommitHashes = new ArrayList<>();
     while (true) {
       boolean anyFetched = false;
-      for (int i = 0; i < fetchCount; i++) {
+      for (int i = 0; i < config.getParentsPerCommit(); i++) {
         if (toLog.hasNext()) {
           toCommitHashes.add(toLog.next());
           anyFetched = true;
@@ -1201,7 +1211,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT extends AutoCloseable>
   protected Hash copyCommits(
       OP_CONTEXT ctx, Hash targetHead, List<CommitLogEntry> commitsChronological)
       throws ReferenceNotFoundException {
-    int parentsPerCommit = PARENTS_PER_COMMIT.get(config);
+    int parentsPerCommit = config.getParentsPerCommit();
 
     List<Hash> parents = new ArrayList<>(parentsPerCommit);
     CommitLogEntry targetHeadCommit = fetchFromCommitLog(ctx, targetHead);
@@ -1285,5 +1295,11 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT extends AutoCloseable>
     return new ReferenceNotFoundException(
         String.format(
             "Could not find commit '%s' in reference '%s'.", hash.asString(), ref.getName()));
+  }
+
+  protected static long currentTimeInMicros() {
+    long microsFraction = TimeUnit.NANOSECONDS.toMicros(System.nanoTime());
+    microsFraction %= 1000L;
+    return TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis()) + microsFraction;
   }
 }

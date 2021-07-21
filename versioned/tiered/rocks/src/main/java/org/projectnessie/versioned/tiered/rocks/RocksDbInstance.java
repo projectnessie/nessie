@@ -18,7 +18,6 @@ package org.projectnessie.versioned.tiered.rocks;
 import static org.rocksdb.RocksDB.DEFAULT_COLUMN_FAMILY;
 
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -48,7 +47,7 @@ public class RocksDbInstance implements AutoCloseable {
 
   private TransactionDB db;
 
-  private Path dbPath;
+  private String dbPath;
 
   public static final String CF_GLOBAL_POINTER = "global_pointer";
   public static final String CF_GLOBAL_LOG = "global_log";
@@ -65,7 +64,7 @@ public class RocksDbInstance implements AutoCloseable {
 
   private int starts;
 
-  public void setDbPath(Path dbPath) {
+  public void setDbPath(String dbPath) {
     this.dbPath = dbPath;
   }
 
@@ -91,7 +90,7 @@ public class RocksDbInstance implements AutoCloseable {
             TransactionDB.open(
                 dbOptions,
                 new TransactionDBOptions(),
-                dbPath.toString(),
+                dbPath,
                 columnFamilyDescriptors,
                 columnFamilyHandles);
 

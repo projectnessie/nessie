@@ -16,11 +16,12 @@
 package org.projectnessie.versioned.tiered.nontx;
 
 import org.projectnessie.versioned.tiered.adapter.AbstractDatabaseAdapter;
-import org.projectnessie.versioned.tiered.adapter.DatabaseAdapterConfiguration;
+import org.projectnessie.versioned.tiered.adapter.DatabaseAdapterConfig;
 
-public abstract class NonTxDatabaseAdapter extends AbstractDatabaseAdapter<NonTxOperationContext> {
+public abstract class NonTxDatabaseAdapter<CONFIG extends DatabaseAdapterConfig>
+    extends AbstractDatabaseAdapter<NonTxOperationContext, CONFIG> {
 
-  protected NonTxDatabaseAdapter(DatabaseAdapterConfiguration config) {
+  protected NonTxDatabaseAdapter(CONFIG config) {
     super(config);
   }
 

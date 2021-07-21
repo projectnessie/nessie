@@ -24,20 +24,20 @@ import java.util.stream.Collectors;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.tiered.adapter.CommitLogEntry;
-import org.projectnessie.versioned.tiered.adapter.DatabaseAdapterConfiguration;
+import org.projectnessie.versioned.tiered.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.tiered.adapter.GlobalStateLogEntry;
 import org.projectnessie.versioned.tiered.adapter.GlobalStatePointer;
 import org.projectnessie.versioned.tiered.nontx.NonTxDatabaseAdapter;
 import org.projectnessie.versioned.tiered.nontx.NonTxOperationContext;
 
-public class InmemoryDatabaseAdapter extends NonTxDatabaseAdapter {
+public class InmemoryDatabaseAdapter extends NonTxDatabaseAdapter<DatabaseAdapterConfig> {
 
   private final AtomicReference<GlobalStatePointer> globalStatePointer = new AtomicReference<>();
 
   private final ConcurrentMap<Hash, GlobalStateLogEntry> globalStateLog = new ConcurrentHashMap<>();
   private final ConcurrentMap<Hash, CommitLogEntry> commitLog = new ConcurrentHashMap<>();
 
-  public InmemoryDatabaseAdapter(DatabaseAdapterConfiguration config) {
+  public InmemoryDatabaseAdapter(DatabaseAdapterConfig config) {
     super(config);
   }
 

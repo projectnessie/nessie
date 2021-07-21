@@ -13,9 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.tiered.inmem;
+package org.projectnessie.versioned.tiered.rocks;
 
+import javax.annotation.Nullable;
+import org.immutables.value.Value;
 import org.projectnessie.versioned.tiered.adapter.DatabaseAdapterConfig;
-import org.projectnessie.versioned.tiered.tests.TestTieredCommits;
 
-public class TestTieredCommitsInmemory extends TestTieredCommits<DatabaseAdapterConfig> {}
+@Value.Immutable(lazyhash = true)
+public interface RocksDatabaseAdapterConfig extends DatabaseAdapterConfig {
+
+  @Nullable
+  RocksDbInstance getDbInstance();
+
+  RocksDatabaseAdapterConfig withDbInstance(RocksDbInstance dbInstance);
+
+  @Nullable
+  String getDbPath();
+
+  RocksDatabaseAdapterConfig withDbPath(String dbPath);
+}

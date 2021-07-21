@@ -31,22 +31,9 @@ import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.WithHash;
-import org.projectnessie.versioned.tiered.adapter.DatabaseAdapterConfiguration.ConfigItem;
-import org.projectnessie.versioned.tiered.adapter.DatabaseAdapterConfiguration.IntegerConfigItem;
-import org.projectnessie.versioned.tiered.adapter.DatabaseAdapterConfiguration.StringConfigItem;
 
 /** Base database-adapter class. */
 public interface DatabaseAdapter extends AutoCloseable {
-
-  ConfigItem<String> DEFAULT_BRANCH = new StringConfigItem("common.default-branch", "main", true);
-
-  ConfigItem<String> KEY_PREFIX = new StringConfigItem("common.key-prefix", "", true);
-
-  ConfigItem<Integer> PARENTS_PER_COMMIT =
-      new IntegerConfigItem("common.parents-per-commit", 20, true);
-
-  ConfigItem<Integer> KEY_LIST_INTERVAL =
-      new IntegerConfigItem("common.key-list-distance", 20, true);
 
   Stream<Optional<ContentsAndState<ByteString, ByteString>>> values(
       NamedRef ref, Optional<Hash> hashOnRef, List<Key> keys) throws ReferenceNotFoundException;

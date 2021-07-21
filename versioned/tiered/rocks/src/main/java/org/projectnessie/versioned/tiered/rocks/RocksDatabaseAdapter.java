@@ -28,9 +28,6 @@ import java.util.stream.Collectors;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.tiered.adapter.CommitLogEntry;
-import org.projectnessie.versioned.tiered.adapter.DatabaseAdapterConfiguration;
-import org.projectnessie.versioned.tiered.adapter.DatabaseAdapterConfiguration.ConfigItem;
-import org.projectnessie.versioned.tiered.adapter.DatabaseAdapterConfiguration.DirectoryConfigItem;
 import org.projectnessie.versioned.tiered.adapter.DbObjectsSerializers;
 import org.projectnessie.versioned.tiered.adapter.GlobalStateLogEntry;
 import org.projectnessie.versioned.tiered.adapter.GlobalStatePointer;
@@ -43,13 +40,7 @@ import org.rocksdb.TransactionDB;
 import org.rocksdb.WriteBatch;
 import org.rocksdb.WriteOptions;
 
-public class RocksDatabaseAdapter extends NonTxDatabaseAdapter {
-
-  public static final DirectoryConfigItem DB_PATH =
-      new DirectoryConfigItem("rocks.database-path", null, true);
-
-  public static final ConfigItem<RocksDbInstance> ROCKS_DB =
-      new ConfigItem<>("rocks.database-instance", null, false);
+public class RocksDatabaseAdapter extends NonTxDatabaseAdapter<RocksDatabaseAdapterConfig> {
 
   // see
   // https://github.com/projectnessie/nessie/pull/819/files#diff-48761b7e82ad6c57e0858c3829a4b13ef6e25c34d7d4a60381ecf973dd37b093R68
@@ -62,19 +53,19 @@ public class RocksDatabaseAdapter extends NonTxDatabaseAdapter {
 
   private static final ObjectMapper MAPPER = DbObjectsSerializers.register(new IonObjectMapper());
 
-  public RocksDatabaseAdapter(DatabaseAdapterConfiguration config) {
+  public RocksDatabaseAdapter(RocksDatabaseAdapterConfig config) {
     super(config);
 
-    this.keyPrefix = ByteString.copyFromUtf8(KEY_PREFIX.get(config) + ':');
+    this.keyPrefix = ByteString.copyFromUtf8(config.getKeyPrefix() + ':');
 
     // get the externally configured RocksDbInstance
-    RocksDbInstance dbInstance = ROCKS_DB.get(config);
+    RocksDbInstance dbInstance = config.getDbInstance();
 
     if (dbInstance == null) {
       // Create a RocksDbInstance, if none has been configured externally. This is mostly used
       // for tests and benchmarks.
       dbInstance = new RocksDbInstance();
-      dbInstance.setDbPath(DB_PATH.get(config));
+      dbInstance.setDbPath(config.getDbPath());
     }
 
     this.dbInstance = dbInstance;

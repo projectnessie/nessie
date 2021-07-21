@@ -15,15 +15,18 @@
  */
 package org.projectnessie.versioned.tiered.hsql;
 
-import org.projectnessie.versioned.tiered.adapter.DatabaseAdapterConfiguration;
 import org.projectnessie.versioned.tiered.tests.TestTieredCommits;
-import org.projectnessie.versioned.tiered.tx.TxConnectionProvider.LocalConnectionProvider;
+import org.projectnessie.versioned.tiered.tx.ImmutableTxDatabaseAdapterConfig;
+import org.projectnessie.versioned.tiered.tx.TxDatabaseAdapterConfig;
 
-public class TestTieredCommitsHSql extends TestTieredCommits {
+public class TestTieredCommitsHSql extends TestTieredCommits<TxDatabaseAdapterConfig> {
 
   @Override
-  protected void configureDatabaseAdapter(DatabaseAdapterConfiguration config) {
-    LocalConnectionProvider.JDBC_URL.set(config, "jdbc:hsqldb:mem:nessie");
+  protected TxDatabaseAdapterConfig configureDatabaseAdapter(TxDatabaseAdapterConfig config) {
+    return ImmutableTxDatabaseAdapterConfig.builder()
+        .from(config)
+        .jdbcUrl("jdbc:hsqldb:mem:nessie")
+        .build();
   }
 
   @Override

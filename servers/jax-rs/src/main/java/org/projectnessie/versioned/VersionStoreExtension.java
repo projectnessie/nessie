@@ -41,10 +41,7 @@ public class VersionStoreExtension implements Extension {
     DatabaseAdapter databaseAdapter =
         new InmemoryDatabaseAdapterFactory()
             .newBuilder()
-            .configure(
-                c -> {
-                  DatabaseAdapter.DEFAULT_BRANCH.set(c, SERVER_CONFIG.getDefaultBranch());
-                })
+            .configure(c -> c.withDefaultBranch(SERVER_CONFIG.getDefaultBranch()))
             .build();
 
     // TODO update this piece !!

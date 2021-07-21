@@ -17,8 +17,10 @@ package org.projectnessie.versioned.tiered.hsql;
 
 import org.projectnessie.versioned.tiered.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.tiered.adapter.DatabaseAdapterFactory;
+import org.projectnessie.versioned.tiered.tx.ImmutableTxDatabaseAdapterConfig;
+import org.projectnessie.versioned.tiered.tx.TxDatabaseAdapterConfig;
 
-public class HSqlDatabaseAdapterFactory implements DatabaseAdapterFactory {
+public class HSqlDatabaseAdapterFactory implements DatabaseAdapterFactory<TxDatabaseAdapterConfig> {
 
   @Override
   public String getName() {
@@ -26,8 +28,13 @@ public class HSqlDatabaseAdapterFactory implements DatabaseAdapterFactory {
   }
 
   @Override
-  public Builder newBuilder() {
-    return new Builder() {
+  public Builder<TxDatabaseAdapterConfig> newBuilder() {
+    return new Builder<TxDatabaseAdapterConfig>() {
+      @Override
+      protected TxDatabaseAdapterConfig getDefaultConfig() {
+        return ImmutableTxDatabaseAdapterConfig.builder().build();
+      }
+
       @Override
       public DatabaseAdapter build() {
         return new HSqlDatabaseAdapter(getConfig());

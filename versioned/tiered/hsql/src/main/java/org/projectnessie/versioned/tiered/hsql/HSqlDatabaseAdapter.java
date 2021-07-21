@@ -17,12 +17,12 @@ package org.projectnessie.versioned.tiered.hsql;
 
 import java.util.Arrays;
 import java.util.List;
-import org.projectnessie.versioned.tiered.adapter.DatabaseAdapterConfiguration;
 import org.projectnessie.versioned.tiered.tx.TxDatabaseAdapter;
+import org.projectnessie.versioned.tiered.tx.TxDatabaseAdapterConfig;
 
 public class HSqlDatabaseAdapter extends TxDatabaseAdapter {
 
-  public HSqlDatabaseAdapter(DatabaseAdapterConfiguration config) {
+  public HSqlDatabaseAdapter(TxDatabaseAdapterConfig config) {
     super(config);
   }
 
