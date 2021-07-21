@@ -158,7 +158,7 @@
     <scala2.12.version>2.12.13</scala2.12.version>
     <scala2.13.version>2.13.6</scala2.13.version>
     <serverless.version>1.5</serverless.version>
-    <slf4j.version>1.7.31</slf4j.version>
+    <slf4j.version>1.7.32</slf4j.version>
     <spark2.jackson.version>2.8.8</spark2.jackson.version>
     <spark2.version>2.4.2</spark2.version>
     <spark3.jackson.version>2.10.2</spark3.jackson.version>
