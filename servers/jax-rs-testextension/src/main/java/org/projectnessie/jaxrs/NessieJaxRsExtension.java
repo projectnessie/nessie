@@ -45,6 +45,7 @@ import org.projectnessie.services.rest.TreeResource;
 import org.projectnessie.services.rest.ValidationExceptionMapper;
 import org.projectnessie.versioned.VersionStoreExtension;
 import org.projectnessie.versioned.tiered.adapter.DatabaseAdapter;
+import org.projectnessie.versioned.tiered.adapter.SystemPropertiesConfigurer;
 import org.projectnessie.versioned.tiered.h2.H2DatabaseAdapterFactory;
 import org.projectnessie.versioned.tiered.inmem.InmemoryDatabaseAdapterFactory;
 import org.projectnessie.versioned.tiered.rocks.RocksDatabaseAdapterFactory;
@@ -124,6 +125,7 @@ public class NessieJaxRsExtension implements BeforeAllCallback, AfterAllCallback
     return new InmemoryDatabaseAdapterFactory()
         .newBuilder()
         .configure(c -> c.withDefaultBranch(SERVER_CONFIG.getDefaultBranch()))
+        .configure(SystemPropertiesConfigurer::configureFromSystemProperties)
         .build();
   }
 
@@ -134,6 +136,7 @@ public class NessieJaxRsExtension implements BeforeAllCallback, AfterAllCallback
             c ->
                 c.withDbPath(tempDir.toString())
                     .withDefaultBranch(SERVER_CONFIG.getDefaultBranch()))
+        .configure(SystemPropertiesConfigurer::configureFromSystemProperties)
         .build();
   }
 
@@ -144,6 +147,7 @@ public class NessieJaxRsExtension implements BeforeAllCallback, AfterAllCallback
             c ->
                 c.withJdbcUrl("jdbc:h2:mem:nessie")
                     .withDefaultBranch(SERVER_CONFIG.getDefaultBranch()))
+        .configure(SystemPropertiesConfigurer::configureFromSystemProperties)
         .build();
   }
 

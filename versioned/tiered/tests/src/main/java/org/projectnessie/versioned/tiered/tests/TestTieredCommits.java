@@ -44,6 +44,7 @@ import org.projectnessie.versioned.WithHash;
 import org.projectnessie.versioned.tiered.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.tiered.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.tiered.adapter.DatabaseAdapterFactory;
+import org.projectnessie.versioned.tiered.adapter.SystemPropertiesConfigurer;
 import org.projectnessie.versioned.tiered.impl.TieredVersionStore;
 
 public class TestTieredCommits<CONFIG extends DatabaseAdapterConfig> {
@@ -56,7 +57,12 @@ public class TestTieredCommits<CONFIG extends DatabaseAdapterConfig> {
     DatabaseAdapterFactory<CONFIG> factory =
         ServiceLoader.load(DatabaseAdapterFactory.class).iterator().next();
 
-    databaseAdapter = factory.newBuilder().configure(this::configureDatabaseAdapter).build();
+    databaseAdapter =
+        factory
+            .newBuilder()
+            .configure(SystemPropertiesConfigurer::configureFromSystemProperties)
+            .configure(this::configureDatabaseAdapter)
+            .build();
     databaseAdapter.initializeRepo();
 
     StoreWorker<String, String, String, TestEnum> storeWorker =

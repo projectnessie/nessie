@@ -42,8 +42,9 @@ import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.StringSerializer;
 import org.projectnessie.versioned.StringSerializer.TestEnum;
 import org.projectnessie.versioned.tiered.adapter.DatabaseAdapter;
+import org.projectnessie.versioned.tiered.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.tiered.adapter.DatabaseAdapterFactory;
-import org.projectnessie.versioned.tiered.adapter.DatabaseAdapterFactory.Builder;
+import org.projectnessie.versioned.tiered.adapter.SystemPropertiesConfigurer;
 import org.projectnessie.versioned.tiered.impl.TieredVersionStore;
 
 @Warmup(iterations = 2, time = 2000, timeUnit = TimeUnit.MILLISECONDS)
@@ -67,10 +68,15 @@ public class CommitBench {
 
     @Setup
     public void init() throws Exception {
-      DatabaseAdapterFactory factory =
+      @SuppressWarnings("unchecked")
+      DatabaseAdapterFactory<DatabaseAdapterConfig> factory =
           ServiceLoader.load(DatabaseAdapterFactory.class).iterator().next();
 
-      databaseAdapter = factory.newBuilder().build();
+      databaseAdapter =
+          factory
+              .newBuilder()
+              .configure(SystemPropertiesConfigurer::configureFromSystemProperties)
+              .build();
       databaseAdapter.initializeRepo();
 
       StoreWorker<String, String, String, TestEnum> storeWorker =
