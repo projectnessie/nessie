@@ -23,7 +23,7 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 
-@Value.Immutable
+@Value.Immutable(lazyhash = true)
 @JsonSerialize(as = ImmutableGlobalStatePointer.class)
 @JsonDeserialize(as = ImmutableGlobalStatePointer.class)
 public interface GlobalStatePointer {

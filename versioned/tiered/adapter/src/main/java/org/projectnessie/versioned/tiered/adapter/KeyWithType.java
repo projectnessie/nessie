@@ -20,7 +20,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.Key;
 
-@Value.Immutable
+@Value.Immutable(lazyhash = true)
 @JsonSerialize(as = ImmutableKeyWithType.class)
 @JsonDeserialize(as = ImmutableKeyWithType.class)
 public interface KeyWithType {

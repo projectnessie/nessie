@@ -21,7 +21,7 @@ import com.google.protobuf.ByteString;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.Key;
 
-@Value.Immutable
+@Value.Immutable(lazyhash = true)
 @JsonSerialize(as = ImmutableKeyWithBytes.class)
 @JsonDeserialize(as = ImmutableKeyWithBytes.class)
 public interface KeyWithBytes {

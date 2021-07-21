@@ -20,7 +20,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.List;
 import org.immutables.value.Value;
 
-@Value.Immutable
+@Value.Immutable(lazyhash = true)
 @JsonSerialize(as = ImmutableEmbeddedKeyList.class)
 @JsonDeserialize(as = ImmutableEmbeddedKeyList.class)
 public interface EmbeddedKeyList {

@@ -24,7 +24,7 @@ import org.immutables.value.Value;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 
-@Value.Immutable
+@Value.Immutable(lazyhash = true)
 @JsonSerialize(as = ImmutableCommitLogEntry.class)
 @JsonDeserialize(as = ImmutableCommitLogEntry.class)
 public interface CommitLogEntry {

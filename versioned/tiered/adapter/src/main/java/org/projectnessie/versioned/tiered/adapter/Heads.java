@@ -18,7 +18,7 @@ package org.projectnessie.versioned.tiered.adapter;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.Hash;
 
-@Value.Immutable
+@Value.Immutable(lazyhash = true)
 public interface Heads {
   Hash getGlobalId();
 
