@@ -20,19 +20,54 @@ import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.projectnessie.jaxrs.NessieJaxRsExtension.Type;
 
-public class TestJerseyRestGit extends AbstractRestGitTest {
-  @RegisterExtension static NessieJaxRsExtension server = new NessieJaxRsExtension();
+public class TestJerseyRestGit {
+  public static class InMemory extends AbstractRestGitTest {
+    @RegisterExtension static NessieJaxRsExtension server = new NessieJaxRsExtension(Type.INMEMORY);
 
-  @BeforeAll
-  static void foo() {
-    RestAssured.baseURI = server.getURI().toString();
-    RestAssured.port = server.getURI().getPort();
-    RestAssured.requestSpecification =
-        new RequestSpecBuilder()
-            .setContentType(ContentType.JSON)
-            .setAccept(ContentType.JSON)
-            .build();
-    basePath = "/";
+    @BeforeAll
+    static void foo() {
+      RestAssured.baseURI = server.getURI().toString();
+      RestAssured.port = server.getURI().getPort();
+      RestAssured.requestSpecification =
+          new RequestSpecBuilder()
+              .setContentType(ContentType.JSON)
+              .setAccept(ContentType.JSON)
+              .build();
+      basePath = "/";
+    }
+  }
+
+  public static class Rocks extends AbstractRestGitTest {
+    @RegisterExtension static NessieJaxRsExtension server = new NessieJaxRsExtension(Type.ROCKS);
+
+    @BeforeAll
+    static void foo() {
+      RestAssured.baseURI = server.getURI().toString();
+      RestAssured.port = server.getURI().getPort();
+      RestAssured.requestSpecification =
+          new RequestSpecBuilder()
+              .setContentType(ContentType.JSON)
+              .setAccept(ContentType.JSON)
+              .build();
+      basePath = "/";
+    }
+  }
+
+  public static class H2 extends AbstractRestGitTest {
+    @RegisterExtension static NessieJaxRsExtension server = new NessieJaxRsExtension(Type.H2);
+
+    @BeforeAll
+    static void foo() {
+      RestAssured.baseURI = server.getURI().toString();
+      RestAssured.port = server.getURI().getPort();
+      RestAssured.requestSpecification =
+          new RequestSpecBuilder()
+              .setContentType(ContentType.JSON)
+              .setAccept(ContentType.JSON)
+              .build();
+      basePath = "/";
+    }
   }
 }

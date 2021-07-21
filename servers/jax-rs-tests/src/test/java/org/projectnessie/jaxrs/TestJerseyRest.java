@@ -17,14 +17,39 @@ package org.projectnessie.jaxrs;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.projectnessie.jaxrs.NessieJaxRsExtension.Type;
 
-public class TestJerseyRest extends AbstractTestRest {
-  @RegisterExtension static NessieJaxRsExtension server = new NessieJaxRsExtension();
+public abstract class TestJerseyRest {
+  public static class InMemory extends AbstractTestRest {
+    @RegisterExtension static NessieJaxRsExtension server = new NessieJaxRsExtension(Type.INMEMORY);
 
-  @Override
-  @BeforeEach
-  public void setUp() throws Exception {
-    init(server.getURI());
-    super.setUp();
+    @Override
+    @BeforeEach
+    public void setUp() throws Exception {
+      init(server.getURI());
+      super.setUp();
+    }
+  }
+
+  public static class Rocks extends AbstractTestRest {
+    @RegisterExtension static NessieJaxRsExtension server = new NessieJaxRsExtension(Type.ROCKS);
+
+    @Override
+    @BeforeEach
+    public void setUp() throws Exception {
+      init(server.getURI());
+      super.setUp();
+    }
+  }
+
+  public static class H2 extends AbstractTestRest {
+    @RegisterExtension static NessieJaxRsExtension server = new NessieJaxRsExtension(Type.H2);
+
+    @Override
+    @BeforeEach
+    public void setUp() throws Exception {
+      init(server.getURI());
+      super.setUp();
+    }
   }
 }

@@ -15,8 +15,6 @@
  */
 package org.projectnessie.versioned;
 
-import static org.projectnessie.services.config.ServerConfigExtension.SERVER_CONFIG;
-
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Default;
@@ -31,25 +29,20 @@ import org.projectnessie.model.GlobalContents;
 import org.projectnessie.server.store.TableCommitMetaStoreWorker;
 import org.projectnessie.versioned.tiered.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.tiered.impl.TieredVersionStore;
-import org.projectnessie.versioned.tiered.inmem.InmemoryDatabaseAdapterFactory;
 
 /** This class needs to be in the same package as {@link VersionStore}. */
 public class VersionStoreExtension implements Extension {
+
+  private static DatabaseAdapter databaseAdapter;
+
+  public static VersionStoreExtension forDatabaseAdapter(DatabaseAdapter databaseAdapter) {
+    VersionStoreExtension.databaseAdapter = databaseAdapter;
+    return new VersionStoreExtension();
+  }
+
   @SuppressWarnings("unused")
   public void afterBeanDiscovery(@Observes AfterBeanDiscovery abd, BeanManager bm) {
     TableCommitMetaStoreWorker storeWorker = new TableCommitMetaStoreWorker();
-    DatabaseAdapter databaseAdapter =
-        new InmemoryDatabaseAdapterFactory()
-            .newBuilder()
-            .configure(c -> c.withDefaultBranch(SERVER_CONFIG.getDefaultBranch()))
-            .build();
-
-    // TODO update this piece !!
-    try {
-      databaseAdapter.initializeRepo();
-    } catch (ReferenceConflictException e) {
-      throw new RuntimeException(e);
-    }
 
     VersionStore<Contents, GlobalContents, CommitMeta, Type> store =
         new TieredVersionStore<>(databaseAdapter, storeWorker);
