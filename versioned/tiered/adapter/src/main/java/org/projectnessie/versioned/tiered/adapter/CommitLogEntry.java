@@ -28,6 +28,7 @@ import org.projectnessie.versioned.Key;
 @JsonSerialize(as = ImmutableCommitLogEntry.class)
 @JsonDeserialize(as = ImmutableCommitLogEntry.class)
 public interface CommitLogEntry {
+  long getCreatedTime();
 
   Hash getHash();
 
@@ -55,6 +56,7 @@ public interface CommitLogEntry {
   int getKeyListDistance();
 
   static CommitLogEntry of(
+      long createdTime,
       Hash hash,
       List<Hash> parents,
       ByteString metadata,
@@ -64,6 +66,7 @@ public interface CommitLogEntry {
       int keyListDistance,
       EmbeddedKeyList keyList) {
     return ImmutableCommitLogEntry.builder()
+        .createdTime(createdTime)
         .hash(hash)
         .parents(parents)
         .metadata(metadata)

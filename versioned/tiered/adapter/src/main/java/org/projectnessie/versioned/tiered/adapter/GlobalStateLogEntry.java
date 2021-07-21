@@ -28,14 +28,18 @@ import org.projectnessie.versioned.Key;
 @JsonSerialize(as = ImmutableGlobalStateLogEntry.class)
 @JsonDeserialize(as = ImmutableGlobalStateLogEntry.class)
 public interface GlobalStateLogEntry {
+  long getCreatedTime();
+
   Hash getId();
 
   List<Hash> getParents();
 
   Map<Key, ByteString> getStatePuts();
 
-  static GlobalStateLogEntry of(Hash id, List<Hash> parents, Map<Key, ByteString> statePuts) {
+  static GlobalStateLogEntry of(
+      long createdTime, Hash id, List<Hash> parents, Map<Key, ByteString> statePuts) {
     return ImmutableGlobalStateLogEntry.builder()
+        .createdTime(createdTime)
         .id(id)
         .parents(parents)
         .statePuts(statePuts)
