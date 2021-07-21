@@ -23,6 +23,7 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 
+/** Points to the most recent {@link GlobalStateLogEntry} and HEADs of all named references. */
 @Value.Immutable(lazyhash = true)
 @JsonSerialize(as = ImmutableGlobalStatePointer.class)
 @JsonDeserialize(as = ImmutableGlobalStatePointer.class)

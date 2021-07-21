@@ -41,6 +41,7 @@ import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.TagName;
 
+/** Jackson (de)serializers needed by {@link DatabaseAdapter} implementations. */
 public class DbObjectsSerializers extends Serializers.Base {
 
   private static final JsonSerializer<Hash> HASH_SERIALIZER =

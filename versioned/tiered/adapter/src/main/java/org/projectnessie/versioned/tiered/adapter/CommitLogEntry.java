@@ -24,6 +24,7 @@ import org.immutables.value.Value;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 
+/** Represents a commit-log-entry, reachable via named references. */
 @Value.Immutable(lazyhash = true)
 @JsonSerialize(as = ImmutableCommitLogEntry.class)
 @JsonDeserialize(as = ImmutableCommitLogEntry.class)

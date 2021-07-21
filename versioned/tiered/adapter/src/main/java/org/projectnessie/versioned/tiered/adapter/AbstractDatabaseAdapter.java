@@ -58,7 +58,7 @@ import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.VersionStoreException;
 import org.projectnessie.versioned.WithHash;
 
-/** Base database-adapter class. */
+/** Tiered-Version-Store database-adapter implementing all the required logic. */
 public abstract class AbstractDatabaseAdapter<
         OP_CONTEXT extends AutoCloseable, CONFIG extends DatabaseAdapterConfig>
     implements DatabaseAdapter {
@@ -138,7 +138,8 @@ public abstract class AbstractDatabaseAdapter<
   public Hash toHash(NamedRef ref) throws ReferenceNotFoundException {
     OP_CONTEXT ctx = operationContext();
     try {
-      return fetchGlobalAndRefHeads(ctx, ref).getBranchHead();
+      GlobalStatePointer pointer = fetchGlobalPointer(ctx);
+      return pointer.branchHead(ref);
     } finally {
       ctxClose(ctx);
     }
@@ -352,7 +353,7 @@ public abstract class AbstractDatabaseAdapter<
           branch,
           false,
           (ctx, pointer, x) -> {
-            Heads currentHeads = headsFromGlobalState(branch, pointer);
+            Hash branchHead = pointer.branchHead(branch);
 
             List<String> mismatches = new ArrayList<>();
 
@@ -360,18 +361,17 @@ public abstract class AbstractDatabaseAdapter<
             checkExpectedGlobalStates(ctx, expectedStates, mismatches);
 
             checkForModifiedKeysBetweenExpectedAndCurrentCommit(
-                branch, expectedHead, operationsKeys, ctx, currentHeads, mismatches);
+                branch, expectedHead, operationsKeys, ctx, branchHead, mismatches);
 
             if (!mismatches.isEmpty()) {
               throw new ReferenceConflictException(String.join("\n", mismatches));
             }
 
-            CommitLogEntry currentBranchEntry =
-                fetchFromCommitLog(ctx, currentHeads.getBranchHead());
+            CommitLogEntry currentBranchEntry = fetchFromCommitLog(ctx, branchHead);
 
             int parentsPerCommit = config.getParentsPerCommit();
             List<Hash> newParents = new ArrayList<>(parentsPerCommit);
-            newParents.add(currentHeads.getBranchHead());
+            newParents.add(branchHead);
             if (currentBranchEntry != null) {
               List<Hash> p = currentBranchEntry.getParents();
               newParents.addAll(p.subList(0, Math.min(p.size(), parentsPerCommit - 1)));
@@ -388,7 +388,7 @@ public abstract class AbstractDatabaseAdapter<
                     currentBranchEntry != null ? currentBranchEntry.getKeyListDistance() : 0);
             writeIndividualCommit(ctx, newBranchCommit);
 
-            Hash newGlobalHead = writeGlobalCommit(ctx, currentHeads.getGlobalId(), global);
+            Hash newGlobalHead = writeGlobalCommit(ctx, pointer.getGlobalId(), global);
 
             Map<NamedRef, Hash> refs = new HashMap<>(pointer.getNamedReferences());
             refs.put(branch, newBranchCommit.getHash());
@@ -623,13 +623,14 @@ public abstract class AbstractDatabaseAdapter<
         return suspect;
       }
 
-      Stream<CommitLogEntry> checker = commitLogFetcher(ctx, knownHead);
-      // TODO only need to fetch each CommitLogEntry if 'commitLogVisitor != null', otherwise
-      //  the implementation can operate on the list of parents via CommitLogEntry.getParents().
+      Stream<Hash> hashes;
       if (commitLogVisitor != null) {
-        checker = checker.peek(commitLogVisitor);
+        hashes =
+            commitLogFetcher(ctx, knownHead).peek(commitLogVisitor).map(CommitLogEntry::getHash);
+      } else {
+        hashes = commitLogHashFetcher(ctx, knownHead);
       }
-      if (checker.map(CommitLogEntry::getHash).noneMatch(suspect::equals)) {
+      if (hashes.noneMatch(suspect::equals)) {
         throw hashNotFound(ref, suspect);
       }
       return suspect;
@@ -697,22 +698,6 @@ public abstract class AbstractDatabaseAdapter<
     return writeGlobalCommit(ctx, pointer.getGlobalId(), Collections.emptyMap());
   }
 
-  /**
-   * Fetches the HEADs of both the global-state log and of the requested branch. Implementations
-   * shall fetch both values concurrently.
-   */
-  protected Heads fetchGlobalAndRefHeads(OP_CONTEXT ctx, NamedRef ref)
-      throws ReferenceNotFoundException {
-    GlobalStatePointer pointer = fetchGlobalPointer(ctx);
-    return headsFromGlobalState(ref, pointer);
-  }
-
-  protected Heads headsFromGlobalState(NamedRef ref, GlobalStatePointer pointer)
-      throws ReferenceNotFoundException {
-    Hash branchHead = pointer.branchHead(ref);
-    return Heads.of(pointer.getGlobalId(), branchHead);
-  }
-
   /** Load the current global-state-pointer. */
   protected abstract GlobalStatePointer fetchGlobalPointer(OP_CONTEXT ctx);
 
@@ -722,7 +707,7 @@ public abstract class AbstractDatabaseAdapter<
     Map<Key, ByteString> result = new HashMap<>();
     Hash globalHead = fetchGlobalPointer(ctx).getGlobalId();
 
-    Stream<GlobalStateLogEntry> log = globalLog(ctx, globalHead);
+    Stream<GlobalStateLogEntry> log = globalLogFetcher(ctx, globalHead);
     log = takeUntil(log, x -> remainingKeys.isEmpty());
     log.forEach(
         entry -> {
@@ -746,7 +731,7 @@ public abstract class AbstractDatabaseAdapter<
    * commitSha}.
    */
   protected Stream<Optional<ContentsAndState<ByteString, ByteString>>> fetchValues(
-      OP_CONTEXT ctx, Hash refHead, List<Key> keys) throws ReferenceNotFoundException {
+      OP_CONTEXT ctx, Hash refHead, List<Key> keys) {
     Map<Key, ContentsAndState<ByteString, ByteString>> result = new HashMap<>(keys.size() * 2);
     Map<Key, Integer> remainingKeys = new HashMap<>(keys.size() * 2);
     for (int i = 0; i < keys.size(); i++) {
@@ -779,21 +764,47 @@ public abstract class AbstractDatabaseAdapter<
   /** Load the commit-log entry for the given hash. */
   protected abstract CommitLogEntry fetchFromCommitLog(OP_CONTEXT ctx, Hash hash);
 
+  /** Fetch multiple {@link CommitLogEntry commit-log-entries} from the commit-log. */
   protected abstract List<CommitLogEntry> fetchPageFromCommitLog(OP_CONTEXT ctx, List<Hash> hashes);
 
-  private Stream<CommitLogEntry> commitLogFetcher(OP_CONTEXT ctx, Hash initialHash)
-      throws ReferenceNotFoundException {
+  /** Reads from the commit-log starting at the given commit-log-hash. */
+  private Stream<CommitLogEntry> commitLogFetcher(OP_CONTEXT ctx, Hash initialHash) {
     return logFetcher(ctx, initialHash, this::fetchPageFromCommitLog, CommitLogEntry::getParents);
   }
 
-  private Stream<GlobalStateLogEntry> globalLog(OP_CONTEXT ctx, Hash initialHash) {
+  /**
+   * Like {@link #commitLogFetcher(AutoCloseable, Hash)}, but only returns the {@link Hash
+   * commit-log-entry hashes}, which can be taken from {@link CommitLogEntry#getParents()}, thus no
+   * need to perform a read-operation against every hash.
+   */
+  private Stream<Hash> commitLogHashFetcher(OP_CONTEXT ctx, Hash initialHash) {
     return logFetcher(
-        ctx, initialHash, this::fetchPageFromGlobalLog, GlobalStateLogEntry::getParents);
+        ctx,
+        initialHash,
+        (c, hashes) -> hashes,
+        hash -> {
+          CommitLogEntry entry = fetchFromCommitLog(ctx, hash);
+          if (entry == null) {
+            return Collections.emptyList();
+          }
+          return entry.getParents();
+        });
   }
 
+  /** Reads from the global-state-log starting at the given global-state-log-ID. */
+  private Stream<GlobalStateLogEntry> globalLogFetcher(OP_CONTEXT ctx, Hash initialId) {
+    return logFetcher(
+        ctx, initialId, this::fetchPageFromGlobalLog, GlobalStateLogEntry::getParents);
+  }
+
+  /**
+   * Constructs a {@link Stream} of entries for either the global-state-log or a commit-log. Use
+   * {@link #globalLogFetcher(AutoCloseable, Hash)} or {@link #commitLogFetcher(AutoCloseable,
+   * Hash)}.
+   */
   protected <T> Stream<T> logFetcher(
       OP_CONTEXT ctx,
-      Hash initialHash,
+      Hash startAt,
       BiFunction<OP_CONTEXT, List<Hash>, List<T>> fetcher,
       Function<T, List<Hash>> nextPage) {
     AbstractSpliterator<T> split =
@@ -807,7 +818,7 @@ public abstract class AbstractDatabaseAdapter<
             if (eof) {
               return false;
             } else if (currentBatch == null) {
-              currentBatch = fetcher.apply(ctx, Collections.singletonList(initialHash)).iterator();
+              currentBatch = fetcher.apply(ctx, Collections.singletonList(startAt)).iterator();
             } else if (!currentBatch.hasNext()) {
               if (previous == null) {
                 eof = true;
@@ -833,11 +844,15 @@ public abstract class AbstractDatabaseAdapter<
     return StreamSupport.stream(split, false);
   }
 
+  /**
+   * Same as {@link #takeUntil(Stream, Predicate, boolean)} with the {@code includeLast == false}.
+   */
   private <T> Stream<T> takeUntil(Stream<T> s, Predicate<T> predicate) {
     return takeUntil(s, predicate, false);
   }
 
-  private <T> Stream<T> takeUntil(Stream<T> s, Predicate<T> predicate, boolean including) {
+  /** Lets the given {@link Stream} stop when {@link Predicate predicate} returns {@code true}. */
+  private <T> Stream<T> takeUntil(Stream<T> s, Predicate<T> predicate, boolean includeLast) {
     Spliterator<T> src = s.spliterator();
     AbstractSpliterator<T> split =
         new AbstractSpliterator<T>(src.estimateSize(), 0) {
@@ -851,13 +866,13 @@ public abstract class AbstractDatabaseAdapter<
             return src.tryAdvance(
                 elem -> {
                   boolean t = predicate.test(elem);
-                  if (t && !including) {
+                  if (t && !includeLast) {
                     done = true;
                   }
                   if (!done) {
                     consumer.accept(elem);
                   }
-                  if (t && including) {
+                  if (t && includeLast) {
                     done = true;
                   }
                 });
@@ -899,7 +914,9 @@ public abstract class AbstractDatabaseAdapter<
                 .collect(Collectors.toList())
             : Collections.singletonList(parentHash);
 
-    writeGlobalCommit(ctx, hash, newParents, globals);
+    GlobalStateLogEntry entry =
+        GlobalStateLogEntry.of(currentTimeInMicros(), hash, newParents, globals);
+    writeGlobalCommit(ctx, entry);
 
     return hash;
   }
@@ -940,6 +957,7 @@ public abstract class AbstractDatabaseAdapter<
     return entry;
   }
 
+  /** Calculate the hash for the contents of a {@link CommitLogEntry}. */
   @SuppressWarnings("UnstableApiUsage")
   private Hash individualCommitHash(
       List<Hash> parentHashes,
@@ -961,8 +979,8 @@ public abstract class AbstractDatabaseAdapter<
     return Hash.of(UnsafeByteOperations.unsafeWrap(hasher.hash().asBytes()));
   }
 
-  protected CommitLogEntry buildKeyList(OP_CONTEXT ctx, CommitLogEntry unwrittenEntry)
-      throws ReferenceNotFoundException {
+  /** Adds a complete key-list to the given {@link CommitLogEntry}, will read from the database. */
+  protected CommitLogEntry buildKeyList(OP_CONTEXT ctx, CommitLogEntry unwrittenEntry) {
     // Read commit-log until the previous persisted key-list
 
     Hash startHash = unwrittenEntry.getParents().get(0);
@@ -989,15 +1007,15 @@ public abstract class AbstractDatabaseAdapter<
       Optional<Hash> expectedHead,
       Set<Key> operationsKeys,
       OP_CONTEXT ctx,
-      Heads currentHeads,
+      Hash branchHead,
       List<String> mismatches)
       throws ReferenceConflictException, ReferenceNotFoundException {
 
-    if (expectedHead.isPresent() && !expectedHead.get().equals(currentHeads.getBranchHead())) {
+    if (expectedHead.isPresent() && !expectedHead.get().equals(branchHead)) {
       boolean[] sinceSeen = new boolean[1];
       mismatches.addAll(
           checkConflictingKeysForCommit(
-                  ctx, currentHeads.getBranchHead(), expectedHead.get(), operationsKeys, sinceSeen)
+                  ctx, branchHead, expectedHead.get(), operationsKeys, sinceSeen)
               .values());
 
       // If the expectedHead is the special value NO_ANCESTOR, which is not persisted,
@@ -1010,9 +1028,9 @@ public abstract class AbstractDatabaseAdapter<
     }
   }
 
-  protected Stream<KeyWithType> keysForCommitEntry(OP_CONTEXT ctx, Hash startHash)
-      throws ReferenceNotFoundException {
-    Stream<CommitLogEntry> log = commitLogFetcher(ctx, startHash);
+  /** Retrieve the contents-keys and their types for the commit-log-entry with the given hash. */
+  protected Stream<KeyWithType> keysForCommitEntry(OP_CONTEXT ctx, Hash hash) {
+    Stream<CommitLogEntry> log = commitLogFetcher(ctx, hash);
     log = takeUntil(log, e -> e.getKeyList() != null);
     List<CommitLogEntry> list = log.collect(Collectors.toList());
 
@@ -1034,26 +1052,26 @@ public abstract class AbstractDatabaseAdapter<
   }
 
   /**
-   * Write a new commit with a best-effort approach to prevent hash-collisions but without any
-   * consistency other checks.
+   * Write a new commit-entry with a best-effort approach to prevent hash-collisions but without any
+   * other consistency checks/guarantees. Some implementations however can enforce strict
+   * consistency checks/guarantees.
    */
   protected abstract void writeIndividualCommit(OP_CONTEXT ctx, CommitLogEntry entry)
       throws ReferenceConflictException;
 
+  /**
+   * Write multiple new commit-entriess with a best-effort approach to prevent hash-collisions but
+   * without any other consistency checks/guarantees. Some implementations however can enforce
+   * strict consistency checks/guarantees.
+   */
   protected abstract void writeIndividualCommits(OP_CONTEXT ctx, List<CommitLogEntry> entries)
       throws ReferenceConflictException;
 
   /**
-   * Write a global-commit-log with a best-effort approach to prevent id-collisions but without any
-   * consistency other checks.
+   * Write a new global-state-log-entry with a best-effort approach to prevent hash-collisions but
+   * without any other consistency checks/guarantees. Some implementations however can enforce
+   * strict consistency checks/guarantees.
    */
-  protected void writeGlobalCommit(
-      OP_CONTEXT ctx, Hash id, List<Hash> parents, Map<Key, ByteString> puts)
-      throws ReferenceConflictException {
-    GlobalStateLogEntry entry = GlobalStateLogEntry.of(currentTimeInMicros(), id, parents, puts);
-    writeGlobalCommit(ctx, entry);
-  }
-
   protected abstract void writeGlobalCommit(OP_CONTEXT ctx, GlobalStateLogEntry entry)
       throws ReferenceConflictException;
 
@@ -1075,8 +1093,7 @@ public abstract class AbstractDatabaseAdapter<
       Hash upToCommitIncluding,
       Hash sinceCommitExcluding,
       Set<Key> keys,
-      boolean[] sinceSeen)
-      throws ReferenceNotFoundException {
+      boolean[] sinceSeen) {
     Stream<CommitLogEntry> log = commitLogFetcher(ctx, upToCommitIncluding);
     log =
         takeUntil(
@@ -1111,6 +1128,11 @@ public abstract class AbstractDatabaseAdapter<
     return mismatches;
   }
 
+  /**
+   * Finds the common-ancestor of two commit-log-entries. If no common-ancestor is found, throws a
+   * {@link ReferenceConflictException} or, if {@code commonAncestorRequired} is {@code false},
+   * returns {@link #NO_ANCESTOR}. Otherwise this method returns the hash of the common-ancestor.
+   */
   protected Hash findCommonAncestor(
       OP_CONTEXT ctx,
       NamedRef from,
@@ -1124,12 +1146,9 @@ public abstract class AbstractDatabaseAdapter<
     //  max number of "to"-commits to fetch, max number of "from"-commits to fetch,
     //  both impact the cost (CPU, memory, I/O) of a merge operation.
 
-    Iterator<Hash> toLog =
-        Spliterators.iterator(
-            commitLogFetcher(ctx, toHead).map(CommitLogEntry::getHash).spliterator());
+    Iterator<Hash> toLog = Spliterators.iterator(commitLogHashFetcher(ctx, toHead).spliterator());
     Iterator<Hash> fromLog =
-        Spliterators.iterator(
-            commitLogFetcher(ctx, fromHead).map(CommitLogEntry::getHash).spliterator());
+        Spliterators.iterator(commitLogHashFetcher(ctx, fromHead).spliterator());
     Set<Hash> toCommitHashes = new HashSet<>();
     List<Hash> fromCommitHashes = new ArrayList<>();
     while (true) {
@@ -1291,13 +1310,18 @@ public abstract class AbstractDatabaseAdapter<
    */
   protected abstract void cleanUpCommitCas(OP_CONTEXT ctx, Hash globalId, Set<Hash> branchCommit);
 
+  /** Builds a {@link ReferenceNotFoundException} exception with a human-readable message. */
   protected static ReferenceNotFoundException hashNotFound(NamedRef ref, Hash hash) {
     return new ReferenceNotFoundException(
         String.format(
             "Could not find commit '%s' in reference '%s'.", hash.asString(), ref.getName()));
   }
 
+  /** Returns the microseconds since epoch. */
   protected static long currentTimeInMicros() {
+    // We only have System.currentTimeMillis() as the current wall-clock-value, but want
+    // microsecond "precision" here, which is implemented by taking the microsecond-part from
+    // System.nanoTime().
     long microsFraction = TimeUnit.NANOSECONDS.toMicros(System.nanoTime());
     microsFraction %= 1000L;
     return TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis()) + microsFraction;

@@ -24,6 +24,7 @@ import org.immutables.value.Value;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 
+/** Represents a global-state-log-entry that tracks the global state of all known contents. */
 @Value.Immutable(lazyhash = true)
 @JsonSerialize(as = ImmutableGlobalStateLogEntry.class)
 @JsonDeserialize(as = ImmutableGlobalStateLogEntry.class)

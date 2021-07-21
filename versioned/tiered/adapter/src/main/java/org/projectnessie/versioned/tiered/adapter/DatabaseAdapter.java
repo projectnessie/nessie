@@ -32,7 +32,7 @@ import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.WithHash;
 
-/** Base database-adapter class. */
+/** Tiered-Version-Store Database-adapter interface. */
 public interface DatabaseAdapter extends AutoCloseable {
 
   Stream<Optional<ContentsAndState<ByteString, ByteString>>> values(
