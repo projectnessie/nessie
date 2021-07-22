@@ -15,9 +15,6 @@
  */
 package org.projectnessie.versioned;
 
-import static org.projectnessie.services.config.ServerConfigExtension.SERVER_CONFIG;
-
-import java.util.Optional;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Default;
@@ -28,28 +25,30 @@ import javax.enterprise.util.TypeLiteral;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
 import org.projectnessie.model.Contents.Type;
+import org.projectnessie.model.GlobalContents;
 import org.projectnessie.server.store.TableCommitMetaStoreWorker;
-import org.projectnessie.versioned.memory.InMemoryVersionStore;
+import org.projectnessie.versioned.tiered.adapter.DatabaseAdapter;
+import org.projectnessie.versioned.tiered.impl.TieredVersionStore;
 
 /** This class needs to be in the same package as {@link VersionStore}. */
 public class VersionStoreExtension implements Extension {
+
+  private static DatabaseAdapter databaseAdapter;
+
+  public static VersionStoreExtension forDatabaseAdapter(DatabaseAdapter databaseAdapter) {
+    VersionStoreExtension.databaseAdapter = databaseAdapter;
+    return new VersionStoreExtension();
+  }
+
   @SuppressWarnings("unused")
   public void afterBeanDiscovery(@Observes AfterBeanDiscovery abd, BeanManager bm) {
-    final TableCommitMetaStoreWorker storeWorker = new TableCommitMetaStoreWorker();
-    final VersionStore<Contents, CommitMeta, Type> store =
-        InMemoryVersionStore.<Contents, CommitMeta, Type>builder()
-            .valueSerializer(storeWorker.getValueSerializer())
-            .metadataSerializer(storeWorker.getMetadataSerializer())
-            .build();
+    TableCommitMetaStoreWorker storeWorker = new TableCommitMetaStoreWorker();
 
-    try {
-      store.create(BranchName.of(SERVER_CONFIG.getDefaultBranch()), Optional.empty());
-    } catch (ReferenceNotFoundException | ReferenceAlreadyExistsException e) {
-      throw new RuntimeException(e);
-    }
+    VersionStore<Contents, GlobalContents, CommitMeta, Type> store =
+        new TieredVersionStore<>(databaseAdapter, storeWorker);
 
     abd.addBean()
-        .addType(new TypeLiteral<VersionStore<Contents, CommitMeta, Type>>() {})
+        .addType(new TypeLiteral<VersionStore<Contents, GlobalContents, CommitMeta, Type>>() {})
         .addQualifier(Default.Literal.INSTANCE)
         .scope(ApplicationScoped.class)
         .produceWith(i -> store);
