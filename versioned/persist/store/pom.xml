@@ -25,44 +25,20 @@
     <version>0.9.3-SNAPSHOT</version>
   </parent>
 
-  <artifactId>nessie-versioned-persist-tests</artifactId>
+  <artifactId>nessie-versioned-persist-store</artifactId>
 
-  <name>Nessie - Versioned - Persist - Tests</name>
+  <name>Nessie - Versioned - Persist - Version Store</name>
 
   <dependencies>
     <dependency>
       <groupId>org.projectnessie</groupId>
-      <artifactId>nessie-versioned-persist-store</artifactId>
+      <artifactId>nessie-versioned-spi</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.projectnessie</groupId>
-      <artifactId>nessie-versioned-tests</artifactId>
+      <artifactId>nessie-versioned-persist-adapter</artifactId>
       <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-api</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-engine</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-params</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.assertj</groupId>
-      <artifactId>assertj-core</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-core</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
     </dependency>
   </dependencies>
 </project>
