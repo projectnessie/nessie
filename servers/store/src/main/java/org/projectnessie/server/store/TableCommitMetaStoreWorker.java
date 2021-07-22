@@ -25,14 +25,17 @@ import java.util.stream.Collectors;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
 import org.projectnessie.model.DeltaLakeTable;
+import org.projectnessie.model.GlobalContents;
 import org.projectnessie.model.HiveDatabase;
 import org.projectnessie.model.HiveTable;
+import org.projectnessie.model.IcebergSnapshot;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
 import org.projectnessie.model.ImmutableDeltaLakeTable.Builder;
 import org.projectnessie.model.ImmutableHiveDatabase;
 import org.projectnessie.model.ImmutableHiveTable;
+import org.projectnessie.model.ImmutableIcebergSnapshot;
 import org.projectnessie.model.ImmutableIcebergTable;
 import org.projectnessie.model.ImmutableSqlView;
 import org.projectnessie.model.SqlView;
@@ -43,11 +46,12 @@ import org.projectnessie.versioned.SerializerWithPayload;
 import org.projectnessie.versioned.StoreWorker;
 
 public class TableCommitMetaStoreWorker
-    implements StoreWorker<Contents, CommitMeta, Contents.Type> {
+    implements StoreWorker<Contents, GlobalContents, CommitMeta, Contents.Type> {
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
   private final SerializerWithPayload<Contents, Contents.Type> tableSerializer =
       new TableValueSerializer();
+  private final Serializer<GlobalContents> stateSerializer = new GlobalStateSerializer();
   private final Serializer<CommitMeta> metaSerializer = new MetadataSerializer();
 
   @Override
@@ -60,15 +64,73 @@ public class TableCommitMetaStoreWorker
     return metaSerializer;
   }
 
+  @Override
+  public Serializer<GlobalContents> getStateSerializer() {
+    return stateSerializer;
+  }
+
+  @Override
+  public Contents mergeGlobalState(Contents contents, GlobalContents globalContents) {
+    return contents.withGlobalState(globalContents);
+  }
+
+  @Override
+  public GlobalContents extractGlobalState(Contents contents) {
+    return contents.extractGlobalState();
+  }
+
+  private static class GlobalStateSerializer implements Serializer<GlobalContents> {
+    @Override
+    public ByteString toBytes(GlobalContents value) {
+      ObjectTypes.GLobalContents.Builder builder =
+          ObjectTypes.GLobalContents.newBuilder().setId(value.getId());
+      if (value instanceof IcebergTable) {
+        IcebergTable snapshot = (IcebergTable) value;
+        builder.setIcebergTable(
+            ObjectTypes.IcebergTable.newBuilder()
+                .setMetadataLocation(snapshot.getMetadataLocation()));
+      } else {
+        throw new IllegalArgumentException("Unknown type" + value);
+      }
+
+      return builder.build().toByteString();
+    }
+
+    @Override
+    public GlobalContents fromBytes(ByteString bytes) {
+      ObjectTypes.GLobalContents contents;
+      try {
+        contents = ObjectTypes.GLobalContents.parseFrom(bytes);
+      } catch (InvalidProtocolBufferException e) {
+        throw new RuntimeException("Failure parsing data", e);
+      }
+      switch (contents.getObjectTypeCase()) {
+        case ICEBERG_TABLE:
+          return ImmutableIcebergTable.builder()
+              .metadataLocation(contents.getIcebergTable().getMetadataLocation())
+              .id(contents.getId())
+              .build();
+        case OBJECTTYPE_NOT_SET:
+        default:
+          throw new IllegalArgumentException("Unknown type" + contents.getObjectTypeCase());
+      }
+    }
+  }
+
   private static class TableValueSerializer
       implements SerializerWithPayload<Contents, Contents.Type> {
     @Override
     public ByteString toBytes(Contents value) {
       ObjectTypes.Contents.Builder builder = ObjectTypes.Contents.newBuilder().setId(value.getId());
-      if (value instanceof IcebergTable) {
-        builder.setIcebergTable(
-            ObjectTypes.IcebergTable.newBuilder()
-                .setMetadataLocation(((IcebergTable) value).getMetadataLocation()));
+      if (value instanceof IcebergSnapshot) {
+        IcebergSnapshot snapshot = (IcebergSnapshot) value;
+        ObjectTypes.IcebergSnapshot.Builder snapshotBuilder =
+            ObjectTypes.IcebergSnapshot.newBuilder()
+                .setMetadataLocation(snapshot.getMetadataLocation());
+        if (snapshot.getCurrentSnapshotId() != null) {
+          snapshotBuilder.setCurrentSnapshotId(snapshot.getCurrentSnapshotId());
+        }
+        builder.setIcebergSnapshot(snapshotBuilder);
 
       } else if (value instanceof DeltaLakeTable) {
 
@@ -151,9 +213,10 @@ public class TableCommitMetaStoreWorker
               .tableDefinition(contents.getHiveTable().getTable().toByteArray())
               .build();
 
-        case ICEBERG_TABLE:
-          return ImmutableIcebergTable.builder()
-              .metadataLocation(contents.getIcebergTable().getMetadataLocation())
+        case ICEBERG_SNAPSHOT:
+          return ImmutableIcebergSnapshot.builder()
+              .metadataLocation(contents.getIcebergSnapshot().getMetadataLocation())
+              .currentSnapshotId(contents.getIcebergSnapshot().getCurrentSnapshotId())
               .id(contents.getId())
               .build();
 
@@ -173,8 +236,8 @@ public class TableCommitMetaStoreWorker
 
     @Override
     public Byte getPayload(Contents value) {
-      if (value instanceof IcebergTable) {
-        return (byte) Contents.Type.ICEBERG_TABLE.ordinal();
+      if (value instanceof IcebergSnapshot) {
+        return (byte) Contents.Type.ICEBERG_SNAPSHOT.ordinal();
       } else if (value instanceof DeltaLakeTable) {
         return (byte) Contents.Type.DELTA_LAKE_TABLE.ordinal();
       } else if (value instanceof HiveTable) {

@@ -35,7 +35,7 @@ import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
 import org.projectnessie.model.ImmutableHiveDatabase;
 import org.projectnessie.model.ImmutableHiveTable;
-import org.projectnessie.model.ImmutableIcebergTable;
+import org.projectnessie.model.ImmutableIcebergSnapshot;
 import org.projectnessie.model.ImmutableSqlView;
 import org.projectnessie.model.SqlView;
 import org.projectnessie.store.ObjectTypes;
@@ -97,11 +97,19 @@ class TestStoreWorker {
 
   private static Map.Entry<ByteString, Contents> getIceberg() {
     String path = "foo/bar";
-    Contents contents = ImmutableIcebergTable.builder().metadataLocation(path).id(ID).build();
+    Contents contents =
+        ImmutableIcebergSnapshot.builder()
+            .metadataLocation(path)
+            .currentSnapshotId(42L)
+            .id(ID)
+            .build();
     ByteString bytes =
         ObjectTypes.Contents.newBuilder()
             .setId(ID)
-            .setIcebergTable(ObjectTypes.IcebergTable.newBuilder().setMetadataLocation(path))
+            .setIcebergSnapshot(
+                ObjectTypes.IcebergSnapshot.newBuilder()
+                    .setMetadataLocation(path)
+                    .setCurrentSnapshotId(42L))
             .build()
             .toByteString();
     return new AbstractMap.SimpleImmutableEntry<>(bytes, contents);

@@ -22,7 +22,7 @@ option java_generate_equals_and_hash = true;
 
 message Contents {
   oneof object_type {
-    IcebergTable iceberg_table = 1;
+    IcebergSnapshot iceberg_snapshot = 1;
     HiveTable hive_table = 2;
     HiveDatabase hive_database = 3;
     SqlView sql_view = 4;
@@ -31,8 +31,9 @@ message Contents {
   string id = 6;
 }
 
-message IcebergTable {
+message IcebergSnapshot {
   string metadata_location = 1;
+  int64 currentSnapshotId = 2;
 }
 
 message HiveTable {
@@ -53,4 +54,15 @@ message DeltaLakeTable {
   string last_checkpoint = 1;
   repeated string checkpoint_location_history = 2;
   repeated string metadata_location_history = 3;
+}
+
+message GLobalContents {
+  oneof object_type {
+    IcebergTable iceberg_table = 1;
+  }
+  string id = 6;
+}
+
+message IcebergTable {
+  string metadata_location = 1;
 }
