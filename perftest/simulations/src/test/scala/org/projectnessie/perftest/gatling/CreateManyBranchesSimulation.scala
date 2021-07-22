@@ -58,6 +58,7 @@ class CreateManyBranchesSimulation extends Simulation {
           val branchNum: Int = session("branchNum").asOption[Int].get
           val branchName = s"branch-${session.userId}-$branchNum"
           client.getTreeApi.createReference(
+            defaultBranch.getName,
             Branch.of(branchName, defaultBranch.getHash)
           )
           session
