@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.DiscriminatorMapping;
@@ -42,12 +43,21 @@ import org.immutables.value.Value;
   @Type(Operation.Delete.class),
   @Type(Operation.Unchanged.class)
 })
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public interface Operation {
 
   @NotNull
   ContentsKey getKey();
 
+  @Schema(
+      type = SchemaType.OBJECT,
+      title = "Put-'Contents'-operation for a 'ContentsKey'.",
+      description =
+          "Add or replace (put) a 'Contents' object for a 'ContentsKey'. "
+              + "Depending on the actual table type (Iceberg, Delta, Hive, SQL-View), Nessie "
+              + "tracks the 'global state' of individual tables. For example put-operations for "
+              + "Iceberg tables must include the 'expectedContents', except for the very first "
+              + "put-operation for a newly created table (think: CREATE TABLE).")
   @Value.Immutable(prehash = true)
   @JsonSerialize(as = ImmutablePut.class)
   @JsonDeserialize(as = ImmutablePut.class)
@@ -56,8 +66,19 @@ public interface Operation {
     @NotNull
     Contents getContents();
 
-    public static Put of(ContentsKey key, Contents contents) {
+    @Nullable
+    GlobalContents getExpectedContents();
+
+    static Put of(ContentsKey key, Contents contents) {
       return ImmutablePut.builder().key(key).contents(contents).build();
+    }
+
+    static Put of(ContentsKey key, Contents contents, GlobalContents expectedContents) {
+      return ImmutablePut.builder()
+          .key(key)
+          .contents(contents)
+          .expectedContents(expectedContents)
+          .build();
     }
   }
 
@@ -67,7 +88,7 @@ public interface Operation {
   @JsonTypeName("DELETE")
   interface Delete extends Operation {
 
-    public static Delete of(ContentsKey key) {
+    static Delete of(ContentsKey key) {
       return ImmutableDelete.builder().key(key).build();
     }
   }
@@ -78,7 +99,7 @@ public interface Operation {
   @JsonTypeName("UNCHANGED")
   interface Unchanged extends Operation {
 
-    public static Unchanged of(ContentsKey key) {
+    static Unchanged of(ContentsKey key) {
       return ImmutableUnchanged.builder().key(key).build();
     }
   }

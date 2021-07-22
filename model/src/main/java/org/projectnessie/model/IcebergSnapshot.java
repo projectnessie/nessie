@@ -18,6 +18,7 @@ package org.projectnessie.model;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import javax.annotation.Nullable;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -25,7 +26,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
 
 /**
- * Represents the global state of an Iceberg table in Nessie. An Iceberg table is globally
+ * Represents the state of an Iceberg table in a Nessie branch. An Iceberg table is globally
  * identified via its fully qualified name via {@link ContentsKey} plus a unique ID, the latter is
  * represented via {@link Contents#getId()}.
  *
@@ -36,23 +37,23 @@ import org.immutables.value.Value;
  */
 @Schema(
     type = SchemaType.OBJECT,
-    title = "Iceberg table global state",
+    title = "Iceberg table snapshot",
     description =
-        "Represents the global state of an Iceberg table in Nessie. An Iceberg table is globally "
-            + "identified via its fully qualified name via 'ContentsKey' plus a unique ID, the latter is "
-            + "represented via 'Contents.id'.\n"
+        "Represents the state of an Iceberg table in a Nessie branch. An Iceberg table is globally "
+            + "identified via its fully qualified name via 'ContentsKey' plus a unique ID, the latter "
+            + "is represented via 'Contents.id'.\n"
             + "\n"
-            + "A Nessie commit-operation, performed via 'TreeApi.commitMultipleOperations', for Iceberg "
+            + "Note: If the Iceberg 'TableMetadata' contains no snapshot, the properties "
+            + "'currentSnapshotId' and 'manifestListLocation' will be null.\n"
+            + "\n"
+            + "A Nessie commit-operation, performed via 'TreeApi.commitMultipleOperations', "
             + "for Iceberg consists of a 'Operation.Put' with an 'IcebergSnapshot' and an "
-            + "'IcebergTable' as the expected-global-state.\n"
-            + "\n"
-            + "During a commit-operation, Nessie checks whether the known global state of the "
-            + "Iceberg table is compatible (think: equal) to 'Operation.Put.expectedContents'.")
+            + "'IcebergTable' as the expected-global-state.")
 @Value.Immutable(prehash = true)
-@JsonSerialize(as = ImmutableIcebergTable.class)
-@JsonDeserialize(as = ImmutableIcebergTable.class)
-@JsonTypeName("ICEBERG_TABLE")
-public abstract class IcebergTable extends GlobalContents {
+@JsonSerialize(as = ImmutableIcebergSnapshot.class)
+@JsonDeserialize(as = ImmutableIcebergSnapshot.class)
+@JsonTypeName("ICEBERG_SNAPSHOT")
+public abstract class IcebergSnapshot extends Contents {
 
   /**
    * Location where Iceberg stored its {@code TableMetadata} file. The location depends on the
@@ -62,7 +63,31 @@ public abstract class IcebergTable extends GlobalContents {
   @NotBlank
   public abstract String getMetadataLocation();
 
-  public static IcebergTable of(String metadataLocation) {
-    return ImmutableIcebergTable.builder().metadataLocation(metadataLocation).build();
+  /** ID of the current Iceberg snapshot. This value is not present, if there is no snapshot. */
+  @Nullable
+  public abstract Long getCurrentSnapshotId();
+
+  @Override
+  public IcebergSnapshot withGlobalState(GlobalContents globalContents) {
+    if (globalContents == null) {
+      return this;
+    }
+    IcebergTable global = (IcebergTable) globalContents;
+    return ImmutableIcebergSnapshot.builder()
+        .from(this)
+        .metadataLocation(global.getMetadataLocation())
+        .build();
+  }
+
+  @Override
+  public IcebergTable extractGlobalState() {
+    return IcebergTable.of(getMetadataLocation());
+  }
+
+  public static IcebergSnapshot of(String metadataLocation, long currentSnapshotId) {
+    return ImmutableIcebergSnapshot.builder()
+        .metadataLocation(metadataLocation)
+        .currentSnapshotId(currentSnapshotId)
+        .build();
   }
 }

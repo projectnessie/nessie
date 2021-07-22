@@ -26,42 +26,22 @@ import org.eclipse.microprofile.openapi.annotations.media.DiscriminatorMapping;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
 
-/** Abstract implementation of per-reference contents within Nessie. */
+/** Abstract implementation of global contents within Nessie. */
 @Schema(
     type = SchemaType.OBJECT,
-    title = "Contents",
-    oneOf = {
-      IcebergSnapshot.class,
-      DeltaLakeTable.class,
-      SqlView.class,
-      HiveTable.class,
-      HiveDatabase.class
-    },
+    title = "GlobalContents",
+    oneOf = {IcebergTable.class},
     discriminatorMapping = {
-      @DiscriminatorMapping(value = "ICEBERG_SNAPSHOT", schema = IcebergSnapshot.class),
-      @DiscriminatorMapping(value = "DELTA_LAKE_TABLE", schema = DeltaLakeTable.class),
-      @DiscriminatorMapping(value = "VIEW", schema = SqlView.class),
-      @DiscriminatorMapping(value = "HIVE_TABLE", schema = HiveTable.class),
-      @DiscriminatorMapping(value = "HIVE_DATABASE", schema = HiveDatabase.class)
+      @DiscriminatorMapping(value = "ICEBERG_TABLE", schema = IcebergTable.class)
     },
     discriminatorProperty = "type")
-@JsonSubTypes({
-  @Type(IcebergSnapshot.class),
-  @Type(DeltaLakeTable.class),
-  @Type(SqlView.class),
-  @Type(HiveTable.class),
-  @Type(HiveDatabase.class)
-})
+@JsonSubTypes({@Type(IcebergTable.class)})
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public abstract class Contents {
+public abstract class GlobalContents {
 
   public enum Type {
     UNKNOWN,
-    ICEBERG_SNAPSHOT,
-    DELTA_LAKE_TABLE,
-    HIVE_TABLE,
-    HIVE_DATABASE,
-    VIEW
+    ICEBERG_TABLE
   }
 
   /**
@@ -73,14 +53,6 @@ public abstract class Contents {
   @Value.Default
   public String getId() {
     return UUID.randomUUID().toString();
-  }
-
-  public Contents withGlobalState(GlobalContents globalContents) {
-    return this;
-  }
-
-  public GlobalContents extractGlobalState() {
-    return null;
   }
 
   /**
