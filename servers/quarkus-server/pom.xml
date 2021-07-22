@@ -55,26 +55,22 @@
     </dependency>
     <dependency>
       <groupId>org.projectnessie</groupId>
-      <artifactId>nessie-versioned-jgit</artifactId>
+      <artifactId>nessie-versioned-tiered-impl</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.projectnessie</groupId>
-      <artifactId>nessie-versioned-tiered-dynamodb</artifactId>
+      <artifactId>nessie-versioned-tiered-inmem</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.projectnessie</groupId>
-      <artifactId>nessie-versioned-memory</artifactId>
+      <artifactId>nessie-versioned-tiered-rocks</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-hibernate-validator</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-jgit</artifactId>
     </dependency>
     <dependency>
       <groupId>jakarta.validation</groupId>
@@ -110,11 +106,6 @@
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-junit5</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.rest-assured</groupId>
-      <artifactId>rest-assured</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -224,6 +215,41 @@
         </configuration>
       </plugin>
       <plugin>
+        <artifactId>maven-clean-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>clean-rocks-it</id>
+            <phase>pre-integration-test</phase>
+            <goals>
+              <goal>clean</goal>
+            </goals>
+            <configuration>
+              <excludeDefaultDirectories>true</excludeDefaultDirectories>
+              <filesets>
+                <fileset>
+                  <directory>${project.build.directory}/rocksdb-test</directory>
+                </fileset>
+              </filesets>
+            </configuration>
+          </execution>
+          <execution>
+            <id>clean-rocks-test</id>
+            <phase>test-compile</phase>
+            <goals>
+              <goal>clean</goal>
+            </goals>
+            <configuration>
+              <excludeDefaultDirectories>true</excludeDefaultDirectories>
+              <filesets>
+                <fileset>
+                  <directory>${project.build.directory}/rocksdb-test</directory>
+                </fileset>
+              </filesets>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
           <systemPropertyVariables>
@@ -231,6 +257,8 @@
             <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
             <quarkus.log.level>${test.log.level}</quarkus.log.level>
             <quarkus.log.console.level>${test.log.level}</quarkus.log.console.level>
+            <nessie.version.store.type>ROCKS</nessie.version.store.type>
+            <nessie.version.store.rocks.db-path>${project.build.directory}/rocksdb-test</nessie.version.store.rocks.db-path>
           </systemPropertyVariables>
         </configuration>
       </plugin>
@@ -275,7 +303,8 @@
                     <QUARKUS_LOG_LEVEL>DEBUG</QUARKUS_LOG_LEVEL>
                     <MP_JWT_VERIFY_PUBLICKEY_LOCATION>${project.build.directory}/test-classes/META-INF/resources/publicKey.pem</MP_JWT_VERIFY_PUBLICKEY_LOCATION>
                     <QUARKUS_SMALLRYE_JWT_ENABLED>true</QUARKUS_SMALLRYE_JWT_ENABLED>
-                    <NESSIE_VERSION_STORE_JGIT_TYPE>INMEMORY</NESSIE_VERSION_STORE_JGIT_TYPE>
+                    <NESSIE_VERSION_STORE_TYPE>ROCKS</NESSIE_VERSION_STORE_TYPE>
+                    <NESSIE_VERSION_STORE_ROCKS_DB_PATH>${project.build.directory}/rocksdb-test</NESSIE_VERSION_STORE_ROCKS_DB_PATH>
                   </environmentVariables>
                   <systemPropertyVariables>
                     <native.image.path>${project.build.directory}/${project.build.finalName}-runner</native.image.path>

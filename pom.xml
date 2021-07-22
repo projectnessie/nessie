@@ -132,20 +132,22 @@
     <cel.version>0.2.0</cel.version>
     <deltalake2.version>0.6.2-nessie</deltalake2.version>
     <deltalake3.version>0.8.0-nessie</deltalake3.version>
+    <dockerjava.version>3.2.11</dockerjava.version>
     <dynamodb.version>1.12.0</dynamodb.version>
     <flapdoodle.version>3.0.0</flapdoodle.version>
     <gatling.maven.version>3.1.2</gatling.maven.version>
     <gatling.version>3.6.1</gatling.version>
     <guava.version>30.1.1-jre</guava.version>
     <hadoop.version>3.3.1</hadoop.version>
+    <hsqldb.version>2.6.0</hsqldb.version>
     <iceberg.version>0.11.1</iceberg.version>
     <immutables.version>2.8.9-ea-1</immutables.version>
     <jackson.version>2.12.4</jackson.version>
     <javax.version>4.0.1</javax.version>
     <jersey.version>2.34</jersey.version>
     <jetty.version>9.4.31.v20200723</jetty.version>
-    <jgit.version>5.12.0.202106070339-r</jgit.version>
     <jjwt.version>0.11.2</jjwt.version>
+    <jmh.version>1.32</jmh.version>
     <jsr305.version>3.0.2</jsr305.version>
     <junit.version>5.7.2</junit.version>
     <logback.version>1.2.4-groovyless</logback.version>
@@ -155,6 +157,7 @@
     <protobuf.version>3.17.3</protobuf.version>
     <quarkus.version>2.1.0.Final</quarkus.version>
     <reactor.version>2020.0.9</reactor.version>
+    <rocksdb.version>6.20.3</rocksdb.version>
     <scala2.12.version>2.12.13</scala2.12.version>
     <scala2.13.version>2.13.6</scala2.13.version>
     <serverless.version>1.5</serverless.version>
@@ -165,6 +168,7 @@
     <spark3.version>3.0.3</spark3.version>
     <sqlite.version>1.0.392</sqlite.version>
     <surefire.version>3.0.0-M5</surefire.version>
+    <testcontainers.version>1.16.0</testcontainers.version>
     <weld.version>3.1.7.Final</weld.version>
   </properties>
 
@@ -189,11 +193,6 @@
         <groupId>com.google.protobuf</groupId>
         <artifactId>protobuf-java</artifactId>
         <version>${protobuf.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.eclipse.jgit</groupId>
-        <artifactId>org.eclipse.jgit</artifactId>
-        <version>${jgit.version}</version>
       </dependency>
       <dependency>
         <groupId>software.amazon.awssdk</groupId>
@@ -223,6 +222,11 @@
             <artifactId>commons-logging</artifactId>
           </exclusion>
         </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.rocksdb</groupId>
+        <artifactId>rocksdbjni</artifactId>
+        <version>${rocksdb.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.hadoop</groupId>
@@ -438,6 +442,16 @@
         <scope>import</scope>
       </dependency>
       <dependency>
+        <groupId>org.openjdk.jmh</groupId>
+        <artifactId>jmh-core</artifactId>
+        <version>${jmh.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.openjdk.jmh</groupId>
+        <artifactId>jmh-generator-annprocess</artifactId>
+        <version>${jmh.version}</version>
+      </dependency>
+      <dependency>
         <groupId>org.immutables</groupId>
         <artifactId>value</artifactId>
         <version>${immutables.version}</version>
@@ -609,6 +623,7 @@
           <artifactId>maven-surefire-plugin</artifactId>
           <version>${surefire.version}</version>
           <configuration>
+            <trimStackTrace>false</trimStackTrace>
             <argLine>@{argLine} -Dfile.encoding=UTF-8</argLine>
             <systemProperties>
               <user.language>en</user.language>
@@ -622,6 +637,7 @@
           <artifactId>maven-failsafe-plugin</artifactId>
           <version>${surefire.version}</version>
           <configuration>
+            <trimStackTrace>false</trimStackTrace>
             <argLine>@{argLine} -Dfile.encoding=UTF-8</argLine>
             <systemProperties>
               <user.language>en</user.language>

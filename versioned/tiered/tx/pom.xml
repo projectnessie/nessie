@@ -21,26 +21,38 @@
 
   <parent>
     <groupId>org.projectnessie</groupId>
-    <artifactId>nessie-versioned</artifactId>
+    <artifactId>nessie-versioned-tiered</artifactId>
     <version>0.8.4-SNAPSHOT</version>
   </parent>
 
-  <artifactId>nessie-versioned-tiered</artifactId>
-  <packaging>pom</packaging>
+  <artifactId>nessie-versioned-tiered-tx</artifactId>
 
-  <name>Nessie - Versioned - Tiered - Parent</name>
+  <name>Nessie - Versioned - Tiered - TX</name>
 
-  <modules>
-    <module>impl</module>
-    <module>adapter</module>
-    <module>nontx</module>
-    <module>inmem</module>
-    <module>rocks</module>
-    <module>tx</module>
-    <module>h2</module>
-    <module>hsql</module>
-    <module>postgres</module>
-    <module>tests</module>
-    <module>bench</module>
-  </modules>
+  <dependencies>
+    <dependency>
+      <groupId>org.projectnessie</groupId>
+      <artifactId>nessie-versioned-tiered-adapter</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.projectnessie</groupId>
+      <artifactId>nessie-versioned-tiered-tests</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.dataformat</groupId>
+      <artifactId>jackson-dataformat-cbor</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.agroal</groupId>
+      <artifactId>agroal-pool</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.immutables</groupId>
+      <artifactId>value</artifactId>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
 </project>

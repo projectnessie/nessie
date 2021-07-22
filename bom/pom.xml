@@ -146,17 +146,7 @@
       </dependency>
       <dependency>
         <groupId>org.projectnessie</groupId>
-        <artifactId>nessie-versioned-jgit</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.projectnessie</groupId>
         <artifactId>nessie-versioned-tiered</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.projectnessie</groupId>
-        <artifactId>nessie-versioned-tiered-impl</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -166,12 +156,52 @@
       </dependency>
       <dependency>
         <groupId>org.projectnessie</groupId>
-        <artifactId>nessie-versioned-tiered-dynamodb</artifactId>
+        <artifactId>nessie-versioned-tiered-adapter</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.projectnessie</groupId>
-        <artifactId>nessie-versioned-memory</artifactId>
+        <artifactId>nessie-versioned-tiered-h2</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.projectnessie</groupId>
+        <artifactId>nessie-versioned-tiered-hsql</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.projectnessie</groupId>
+        <artifactId>nessie-versioned-tiered-impl</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.projectnessie</groupId>
+        <artifactId>nessie-versioned-tiered-inmem</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.projectnessie</groupId>
+        <artifactId>nessie-versioned-tiered-nontx</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.projectnessie</groupId>
+        <artifactId>nessie-versioned-tiered-postgres</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.projectnessie</groupId>
+        <artifactId>nessie-versioned-tiered-rocks</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.projectnessie</groupId>
+        <artifactId>nessie-versioned-tiered-tx</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.projectnessie</groupId>
+        <artifactId>nessie-versioned-tiered-bench</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -192,36 +222,6 @@
       <dependency>
         <groupId>org.projectnessie</groupId>
         <artifactId>nessie-deltalake-spark3</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.projectnessie</groupId>
-        <artifactId>nessie-versioned-gc-parent</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.projectnessie</groupId>
-        <artifactId>nessie-versioned-gc</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.projectnessie</groupId>
-        <artifactId>nessie-versioned-tiered-gc</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.projectnessie</groupId>
-        <artifactId>nessie-versioned-tiered-mongodb</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.projectnessie</groupId>
-        <artifactId>nessie-versioned-gc-iceberg</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.projectnessie</groupId>
-        <artifactId>nessie-versioned-gc-iceberg-actions</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
