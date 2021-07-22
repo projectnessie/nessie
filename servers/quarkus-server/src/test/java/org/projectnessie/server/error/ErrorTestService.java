@@ -37,10 +37,9 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.versioned.BackendLimitExceededException;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.StringSerializer;
-import org.projectnessie.versioned.impl.ImmutableTieredVersionStoreConfig;
-import org.projectnessie.versioned.impl.TieredVersionStore;
-import org.projectnessie.versioned.store.Store;
-import org.projectnessie.versioned.store.ValueType;
+import org.projectnessie.versioned.StringSerializer.TestEnum;
+import org.projectnessie.versioned.tiered.adapter.DatabaseAdapter;
+import org.projectnessie.versioned.tiered.impl.TieredVersionStore;
 
 /** REST service used to generate a bunch of violations for {@link TestNessieError}. */
 @RequestScoped
@@ -111,7 +110,7 @@ public class ErrorTestService {
   }
 
   /**
-   * Throws an exception depending on the parameter via {@link Store#getValues(ValueType)}.
+   * Throws an exception depending on the parameter.
    *
    * @return nothing
    * @see TestNessieError#unhandledRuntimeExceptionInStore()
@@ -133,14 +132,18 @@ public class ErrorTestService {
         throw new IllegalArgumentException("test code error");
     }
 
-    Store store = Mockito.mock(Store.class);
-    Mockito.when(store.getValues(ValueType.REF)).thenThrow(ex);
+    DatabaseAdapter databaseAdapter = Mockito.mock(DatabaseAdapter.class);
+    Mockito.when(databaseAdapter.namedRefs()).thenThrow(ex);
 
-    TieredVersionStore<String, String, StringSerializer.TestEnum> tvs =
+    TieredVersionStore<String, String, String, TestEnum> tvs =
         new TieredVersionStore<>(
-            StoreWorker.of(StringSerializer.getInstance(), StringSerializer.getInstance()),
-            store,
-            ImmutableTieredVersionStoreConfig.builder().waitOnCollapse(true).build());
+            databaseAdapter,
+            StoreWorker.of(
+                StringSerializer.getInstance(),
+                StringSerializer.getInstance(),
+                StringSerializer.getInstance(),
+                (a, b) -> "",
+                a -> ""));
     tvs.getNamedRefs().forEach(ref -> {});
     return "we should not get here";
   }

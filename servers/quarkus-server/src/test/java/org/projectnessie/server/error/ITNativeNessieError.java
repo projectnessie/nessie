@@ -27,7 +27,7 @@ import org.projectnessie.client.NessieClient;
 import org.projectnessie.client.rest.NessieBadRequestException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentsKey;
-import org.projectnessie.model.IcebergTable;
+import org.projectnessie.model.IcebergSnapshot;
 import org.projectnessie.model.ImmutableOperations;
 import org.projectnessie.model.ImmutablePut;
 
@@ -51,7 +51,7 @@ public class ITNativeNessieError {
   @Test
   void testNullParamViolation() {
     ContentsKey k = ContentsKey.of("a");
-    IcebergTable t = IcebergTable.of("path1");
+    IcebergSnapshot t = IcebergSnapshot.of("path1", -1L);
     assertEquals(
         "Bad Request (HTTP/400): commitMultipleOperations.hash: must not be null",
         assertThrows(

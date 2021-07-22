@@ -13,9 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.server;
+package org.projectnessie.jaxrs;
 
-import io.quarkus.test.junit.NativeImageTest;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.projectnessie.jaxrs.NessieJaxRsExtension.Type;
 
-@NativeImageTest
-public class ITNativeRestGit extends TestRestGit {}
+public class TestJerseyRestInMemory extends AbstractTestRest {
+
+  @RegisterExtension static NessieJaxRsExtension server = new NessieJaxRsExtension(Type.INMEMORY);
+
+  @Override
+  @BeforeEach
+  public void setUp() throws Exception {
+    init(server.getURI());
+    super.setUp();
+  }
+}

@@ -17,9 +17,11 @@ package org.projectnessie.jaxrs;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.projectnessie.jaxrs.NessieJaxRsExtension.Type;
 
-public class TestJerseyRest extends AbstractTestRest {
-  @RegisterExtension static NessieJaxRsExtension server = new NessieJaxRsExtension();
+public class TestJerseyRestH2 extends AbstractTestRest {
+
+  @RegisterExtension static NessieJaxRsExtension server = new NessieJaxRsExtension(Type.H2);
 
   @Override
   @BeforeEach

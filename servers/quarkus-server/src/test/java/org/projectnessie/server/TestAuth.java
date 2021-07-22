@@ -38,6 +38,7 @@ import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.EntriesResponse.Entry;
+import org.projectnessie.model.IcebergSnapshot;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableBranch;
 import org.projectnessie.model.ImmutableDelete;
@@ -66,7 +67,7 @@ class TestAuth {
     tree = client.getTreeApi();
     contents = client.getContentsApi();
     if (branch != null) {
-      tree.createReference(Branch.of(branch, null));
+      tree.createReference("main", Branch.of(branch, null));
     }
   }
 
@@ -105,15 +106,18 @@ class TestAuth {
                 branch.getHash(),
                 ImmutableOperations.builder()
                     .addOperations(
-                        ImmutablePut.builder().key(key).contents(IcebergTable.of("foo")).build())
+                        ImmutablePut.builder()
+                            .key(key)
+                            .contents(IcebergSnapshot.of("foo", -1L))
+                            .build())
                     .commitMeta(CommitMeta.fromMessage("empty message"))
                     .build()));
-    final IcebergTable table =
-        contents.getContents(key, "testx", null).unwrap(IcebergTable.class).get();
+    final IcebergSnapshot table =
+        contents.getContents(key, "testx", null).unwrap(IcebergSnapshot.class).get();
 
     Branch master = (Branch) tree.getReferenceByName("testx");
     Branch test = ImmutableBranch.builder().hash(master.getHash()).name("testy").build();
-    tryEndpointPass(() -> tree.createReference(Branch.of(test.getName(), test.getHash())));
+    tryEndpointPass(() -> tree.createReference("testx", Branch.of(test.getName(), test.getHash())));
     Branch test2 = (Branch) tree.getReferenceByName("testy");
     tryEndpointPass(() -> tree.deleteBranch(test2.getName(), test2.getHash()));
     tryEndpointPass(
@@ -127,15 +131,23 @@ class TestAuth {
                     .build()));
     assertThrows(NessieNotFoundException.class, () -> contents.getContents(key, "testx", null));
     tryEndpointPass(
-        () ->
-            tree.commitMultipleOperations(
-                branch.getName(),
-                branch.getHash(),
-                ImmutableOperations.builder()
-                    .addOperations(
-                        ImmutablePut.builder().key(key).contents(IcebergTable.of("bar")).build())
-                    .commitMeta(CommitMeta.fromMessage(""))
-                    .build()));
+        () -> {
+          Reference b = tree.getReferenceByName(branch.getName());
+          // Note: the initial version-store implementations just committed this operation, but it
+          // should actually fail, because the operations of the 1st commit above and this commit
+          // have conflicts.
+          tree.commitMultipleOperations(
+              b.getName(),
+              b.getHash(),
+              ImmutableOperations.builder()
+                  .addOperations(
+                      ImmutablePut.builder()
+                          .key(key)
+                          .contents(IcebergSnapshot.of("bar", -1L))
+                          .build())
+                  .commitMeta(CommitMeta.fromMessage(""))
+                  .build());
+        });
   }
 
   @Test
