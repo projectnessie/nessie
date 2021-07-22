@@ -26,6 +26,7 @@ import org.projectnessie.client.NessieClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
+import org.projectnessie.model.CreateReference;
 import org.projectnessie.model.Reference;
 
 @ExtendWith(HiveRunnerExtension.class)
@@ -60,7 +61,7 @@ public abstract class BaseHiveOps {
         client.getTreeApi().deleteTag(r.getName(), r.getHash());
       }
     }
-    client.getTreeApi().createReference(Branch.of("main", null));
+    client.getTreeApi().createReference(CreateReference.of(Branch.of("main", null), null));
     shell.start();
   }
 }
