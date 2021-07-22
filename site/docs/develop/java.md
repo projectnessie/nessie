@@ -51,8 +51,9 @@ Deeper in the server, the core commit kernel is built on top of the [VersionStor
 
 ### New Backing Store
 
-Nessie comes pre-packaged with three storage engines: JGit, In-Memory and DynamoDB. 
-For production deployments, DynamoDB is the recommended storage engine. The Nessie 
+Nessie comes pre-packaged with four storage engines: RocksDB, Mongo, JDBC and In-Memory,
+RocksDB and In-Memory are available out of the box via the Nessie-Quarkus images.
+For production deployments, RocksDB is the recommended storage engine. The Nessie 
 team is always evaluating new potential backing stores. If you're looking to implement 
 something new, shout out to us via one of our [communication channels](index.md) to 
 discuss what you're thinking so we can figure out the best way to move forward. 

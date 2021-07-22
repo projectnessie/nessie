@@ -39,8 +39,7 @@ for the awesome [JGit library](https://www.eclipse.org/jgit/). This showed bette
 providing up to 20/commits second when run against DynamoDB. However, it was still 
 insufficient. As such, we ultimately built our own [commit kernel](kernel.md) to power Nessie.
 
-In Nessie, we continue to include an experimental backing store built on top of JGit. 
-This serves as both a good trial tool and homage to git.  
+In Nessie, we do not continue to include a backing store built on top of JGit. 
 
 ## So Which is Better
 
