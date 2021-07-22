@@ -13,22 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.server.profiles;
+package org.projectnessie.jaxrs;
 
-import com.google.common.collect.ImmutableMap;
-import io.quarkus.test.junit.QuarkusTestProfile;
-import java.util.Map;
-import org.projectnessie.server.config.VersionStoreConfig.VersionStoreType;
+import org.projectnessie.versioned.persist.rocks.RocksDatabaseAdapterFactory;
+import org.projectnessie.versioned.persist.rocks.RocksTestConnectionProviderSource;
+import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterName;
+import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
-public class QuarkusNativeProfileInmemory implements QuarkusTestProfile {
-
-  @Override
-  public Map<String, String> getConfigOverrides() {
-    return ImmutableMap.of("nessie.version.store.type", VersionStoreType.INMEMORY.name());
-  }
-
-  @Override
-  public String getConfigProfile() {
-    return "prod";
-  }
-}
+@NessieDbAdapterName(RocksDatabaseAdapterFactory.NAME)
+@NessieExternalDatabase(RocksTestConnectionProviderSource.class)
+class TestJerseyResteasyRocks extends AbstractTestJerseyResteasy {}

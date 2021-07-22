@@ -151,7 +151,7 @@ public abstract class AbstractTestRest {
                             .reference(Tag.of(tagName2, null))
                             .create())
                 .isInstanceOf(NessieNotFoundException.class)
-                .hasMessage("Ref 'unknownSource' does not exist"),
+                .hasMessageContainingAll("'unknownSource'", "not"),
         // Tag without hash
         () ->
             assertThatThrownBy(
