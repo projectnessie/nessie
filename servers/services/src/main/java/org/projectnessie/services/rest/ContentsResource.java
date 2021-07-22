@@ -28,6 +28,7 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
 import org.projectnessie.model.ContentsKey;
+import org.projectnessie.model.GlobalContents;
 import org.projectnessie.model.ImmutableMultiGetContentsResponse;
 import org.projectnessie.model.MultiGetContentsRequest;
 import org.projectnessie.model.MultiGetContentsResponse;
@@ -35,6 +36,7 @@ import org.projectnessie.model.MultiGetContentsResponse.ContentsWithKey;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
 
@@ -48,7 +50,7 @@ public class ContentsResource extends BaseResource implements ContentsApi {
   public ContentsResource(
       ServerConfig config,
       MultiTenant multiTenant,
-      VersionStore<Contents, CommitMeta, Contents.Type> store) {
+      VersionStore<Contents, GlobalContents, CommitMeta, Contents.Type> store) {
     super(config, multiTenant, store);
   }
 
@@ -60,16 +62,16 @@ public class ContentsResource extends BaseResource implements ContentsApi {
   @Override
   public Contents getContents(ContentsKey key, String namedRef, String hashOnRef)
       throws NessieNotFoundException {
-    Hash ref = namedRefWithHashOrThrow(namedRef, hashOnRef).getHash();
     try {
-      Contents obj = getStore().getValue(ref, toKey(key));
+      NamedRef ref = namedRefOrThrow(namedRef);
+      Optional<Hash> hash = toHashIA(hashOnRef, false);
+      Contents obj = getStore().getValue(ref, hash, toKey(key));
       if (obj != null) {
         return obj;
       }
       throw new NessieNotFoundException("Requested contents do not exist for specified reference.");
     } catch (ReferenceNotFoundException e) {
-      throw new NessieNotFoundException(
-          String.format("Provided reference [%s] does not exist.", namedRef), e);
+      throw new NessieNotFoundException(e.getMessage(), e);
     }
   }
 
@@ -78,11 +80,12 @@ public class ContentsResource extends BaseResource implements ContentsApi {
       String namedRef, String hashOnRef, MultiGetContentsRequest request)
       throws NessieNotFoundException {
     try {
-      Hash ref = namedRefWithHashOrThrow(namedRef, hashOnRef).getHash();
+      NamedRef ref = namedRefOrThrow(namedRef);
+      Optional<Hash> hash = toHashIA(hashOnRef, false);
       List<ContentsKey> externalKeys = request.getRequestedKeys();
       List<Key> internalKeys =
           externalKeys.stream().map(ContentsResource::toKey).collect(Collectors.toList());
-      List<Optional<Contents>> values = getStore().getValues(ref, internalKeys);
+      List<Optional<Contents>> values = getStore().getValues(ref, hash, internalKeys);
       List<ContentsWithKey> output = new ArrayList<>();
 
       for (int i = 0; i < externalKeys.size(); i++) {
@@ -92,7 +95,7 @@ public class ContentsResource extends BaseResource implements ContentsApi {
 
       return ImmutableMultiGetContentsResponse.builder().contents(output).build();
     } catch (ReferenceNotFoundException ex) {
-      throw new NessieNotFoundException("Unable to find the requested ref.", ex);
+      throw new NessieNotFoundException(ex.getMessage(), ex);
     }
   }
 
