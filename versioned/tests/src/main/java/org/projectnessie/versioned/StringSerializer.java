@@ -26,8 +26,9 @@ import javax.annotation.Nonnull;
  * Serializer}.
  */
 public class StringSerializer implements SerializerWithPayload<String, StringSerializer.TestEnum> {
-  private static final SerializerWithPayload<String, TestEnum> INSTANCE =
-      spy(new StringSerializer());
+  private static final SerializerWithPayload<String, TestEnum> INSTANCE_NO_SPY =
+      new StringSerializer();
+  private static final SerializerWithPayload<String, TestEnum> INSTANCE = spy(INSTANCE_NO_SPY);
 
   public enum TestEnum {
     YES,
@@ -38,13 +39,23 @@ public class StringSerializer implements SerializerWithPayload<String, StringSer
   private StringSerializer() {}
 
   /**
-   * Get a instance of a string serializer.
+   * Get a "Mockito spy"-instance of a string serializer.
    *
    * @return the instance
    */
   @Nonnull
   public static SerializerWithPayload<String, TestEnum> getInstance() {
     return INSTANCE;
+  }
+
+  /**
+   * Get a instance of a string serializer, which is suitable for microbenchmarks.
+   *
+   * @return the instance
+   */
+  @Nonnull
+  public static SerializerWithPayload<String, TestEnum> getInstanceNoSpy() {
+    return INSTANCE_NO_SPY;
   }
 
   @Override
