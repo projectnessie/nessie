@@ -27,12 +27,12 @@ import org.projectnessie.client.http.HttpRequest;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
+import org.projectnessie.model.CreateReference;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Merge;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
-import org.projectnessie.model.Tag;
 import org.projectnessie.model.Transplant;
 
 class ClientTreeApi implements TreeApi {
@@ -52,7 +52,7 @@ class ClientTreeApi implements TreeApi {
   }
 
   @Override
-  public Reference createReference(@NotNull Reference reference)
+  public Reference createReference(@NotNull CreateReference reference)
       throws NessieNotFoundException, NessieConflictException {
     return client.newRequest().path("trees/tree").post(reference).readEntity(Reference.class);
   }
@@ -68,14 +68,15 @@ class ClientTreeApi implements TreeApi {
   }
 
   @Override
-  public void assignTag(@NotNull String tagName, @NotNull String expectedHash, @NotNull Tag tag)
+  public void assignTag(
+      @NotNull String tagName, @NotNull String expectedHash, @NotNull Reference ref)
       throws NessieNotFoundException, NessieConflictException {
     client
         .newRequest()
         .path("trees/tag/{tagName}")
         .resolveTemplate("tagName", tagName)
         .queryParam("expectedHash", expectedHash)
-        .put(tag);
+        .put(ref);
   }
 
   @Override
@@ -91,14 +92,14 @@ class ClientTreeApi implements TreeApi {
 
   @Override
   public void assignBranch(
-      @NotNull String branchName, @NotNull String expectedHash, @NotNull Branch branch)
+      @NotNull String branchName, @NotNull String expectedHash, @NotNull Reference ref)
       throws NessieNotFoundException, NessieConflictException {
     client
         .newRequest()
         .path("trees/branch/{branchName}")
         .resolveTemplate("branchName", branchName)
         .queryParam("expectedHash", expectedHash)
-        .put(branch);
+        .put(ref);
   }
 
   @Override

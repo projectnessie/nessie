@@ -15,52 +15,41 @@
  */
 package org.projectnessie.model;
 
-import static org.projectnessie.model.Validation.validateHash;
-
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import java.util.List;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.media.SchemaProperty;
 import org.immutables.value.Value;
 
+@Value.Immutable(prehash = true)
 @Schema(
     type = SchemaType.OBJECT,
-    title = "Transplant",
+    title = "CreateReference",
     // Smallrye does neither support JsonFormat nor javax.validation.constraints.Pattern :(
     properties = {
       @SchemaProperty(name = "sourceRef", pattern = Validation.REF_NAME_REGEX),
-      @SchemaProperty(name = "hashesToTransplant", uniqueItems = true)
+      @SchemaProperty(name = "hash", pattern = Validation.HASH_REGEX)
     })
-@Value.Immutable(prehash = true)
-@JsonSerialize(as = ImmutableTransplant.class)
-@JsonDeserialize(as = ImmutableTransplant.class)
-public interface Transplant {
-
+@JsonSerialize(as = ImmutableCreateReference.class)
+@JsonDeserialize(as = ImmutableCreateReference.class)
+public interface CreateReference extends Base {
+  /** Name (and type) of the reference to create, and optional target hash. */
   @NotNull
-  @Size(min = 1)
-  List<String> getHashesToTransplant();
+  Reference getReference();
 
+  /**
+   * Name of the reference off which the reference shall be created. The hash, if given in {@link
+   * #getReference()}, must exist on this source-ref.
+   */
   @Nullable
   @JsonFormat(pattern = Validation.REF_NAME_REGEX)
   String getSourceRef();
 
-  /**
-   * Validation rule using {@link org.projectnessie.model.Validation#validateHash(String)}
-   * (String)}.
-   */
-  @Value.Check
-  default void checkHashes() {
-    List<String> hashes = getHashesToTransplant();
-    if (hashes != null) {
-      for (String hash : hashes) {
-        validateHash(hash);
-      }
-    }
+  static CreateReference of(Reference reference, String sourceRef) {
+    return ImmutableCreateReference.builder().reference(reference).sourceRef(sourceRef).build();
   }
 }
