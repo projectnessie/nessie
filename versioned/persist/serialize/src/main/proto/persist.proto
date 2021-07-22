@@ -1,0 +1,94 @@
+/*
+ * Copyright (C) 2020 Dremio
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+syntax = "proto3";
+package nessie.persist;
+
+option java_package = "org.projectnessie.versioned.persist.serialize";
+option java_outer_classname = "AdapterTypes";
+option java_generate_equals_and_hash = true;
+
+message CommitLogEntry {
+  int64 createdTime = 1;
+  bytes hash = 2;
+  repeated bytes parents = 3;
+  bytes metadata = 4;
+  repeated KeyWithBytes puts = 5;
+  repeated Key unchanged = 6;
+  repeated Key deletes = 7;
+  int32 key_list_distance = 8;
+  repeated KeyWithType key_list = 9;
+  repeated bytes key_list_ids = 10;
+}
+
+message Key {
+  repeated string element = 1;
+}
+
+message KeyWithType {
+  Key key = 1;
+  ContentsId contents_id = 2;
+  int32 type = 3;
+}
+
+message KeyWithBytes {
+  Key key = 1;
+  ContentsId contents_id = 2;
+  int32 type = 3;
+  bytes value = 4;
+}
+
+message KeyList {
+  repeated KeyWithType keys = 1;
+}
+
+message ContentsId {
+  string id = 1;
+}
+
+message ContentsIdWithType {
+  ContentsId contents_id = 2;
+  int32 type = 3;
+}
+
+message ContentsIdWithBytes {
+  ContentsId contents_id = 2;
+  int32 type = 3;
+  bytes value = 4;
+}
+
+// Used by non-transactional database-adapters
+message GlobalStateLogEntry {
+  int64 createdTime = 1;
+  bytes id = 2;
+  repeated bytes parents = 3;
+  repeated ContentsIdWithBytes puts = 4;
+}
+
+// Used by non-transactional database-adapters
+message GlobalStatePointer {
+  bytes global_id = 1;
+  map<string, RefPointer> named_references = 2;
+}
+
+// Used by non-transactional database-adapters
+message RefPointer {
+  enum Type {
+    Branch = 0;
+    Tag = 1;
+  }
+  Type type = 1;
+  bytes hash = 2;
+}
