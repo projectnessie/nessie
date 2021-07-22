@@ -28,6 +28,18 @@ public class HSqlDatabaseAdapter extends TxDatabaseAdapter {
 
   @Override
   protected List<String> databaseSqlFormatParameters() {
-    return Arrays.asList("VARBINARY(390000)", "VARCHAR(80)", "VARCHAR(120)");
+    return Arrays.asList(
+        // BLOB column
+        "VARBINARY(390000)",
+        // Hash
+        "VARCHAR(80)",
+        // key-prefix
+        "VARCHAR(120)",
+        // Key
+        "VARCHAR(200)",
+        // NamedRef,
+        "VARCHAR(200)",
+        // named-reference type
+        "VARCHAR(1)");
   }
 }

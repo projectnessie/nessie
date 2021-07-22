@@ -24,6 +24,8 @@ import org.immutables.value.Value;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 
+// TODO move into non-transactional !!!
+
 /** Represents a global-state-log-entry that tracks the global state of all known contents. */
 @Value.Immutable(lazyhash = true)
 @JsonSerialize(as = ImmutableGlobalStateLogEntry.class)

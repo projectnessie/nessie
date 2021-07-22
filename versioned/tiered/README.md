@@ -17,22 +17,47 @@ only perform reads and writes and do not implement any logic.
 
 Note: not all database adapters are available via Nessie running via Quarkus!
 
-## Logical Data model for non-transactional databases
+## Nessie logic vs database-adapters
 
-The logical data model shared by all database adapters consists of three entities:
+The whole logic around commits, merges, transplants, fetching keys and values resides in
+[AbstractDatabaseAdapter](adapter/src/main/java/org/projectnessie/versioned/tiered/adapter/AbstractDatabaseAdapter.java)
+and is shared across all kinds of database adapters.
 
-* _Commit-log_ contains all commit-log-entries, identified by a deterministic hash.
-* _Global-state-log_ contains all changes to Iceberg/Delta/Hive tables and views, identified by a
-  rather random ID.
-* _Global-pointer_ a single "table row" that points to the current _global-state-log_ and all HEADs
-  for the named references.
+Database adapters, for both transactional and non-transactional databases, have the database
+specific implementations around the CAS-loop for non-transactional, catching
+integrity-constraint-violations for transactional, the concrete physical data model, concrete read &
+write implementations.
+
+## Logical Data model
 
 The [DatabaseAdapter](adapter/src/main/java/org/projectnessie/versioned/tiered/adapter/DatabaseAdapter.java)
 interface defines the functions needed by the tiered-version-store implementation to access the
 data.
 
-Implementations of `DatabaseAdapter` are free to implement their own optimizations on top of the
-logical data model.
+Implementations of `DatabaseAdapter` are free to implement their own optimizations.
+
+### Non-transactional
+
+The logical data model shared by all database adapters consists of three entities:
+
+* _Commit-log_ contains all commit-log-entries, identified by a deterministic hash. This is the same
+  as for transactional databases.
+* _Global-state-log_ contains all changes to Iceberg/Delta/Hive tables and views, identified by a
+  rather random ID.
+* _Global-pointer_ a single "table row" that points to the current _global-state-log_ and all HEADs
+  for the named references. Consistent updates are guaranteed via a CAS operation on this entity
+  comparing the HEAD of the global-state-log.
+
+### Transactional
+
+The data for transactional is a classic relational data model that consists of three tables:
+
+* _Commit-log_ contains all commit-log-entries, identified by a deterministic hash. This is the same
+  as for non-transactional databases.
+* _Named-references_ contains all named-references and their current HEAD, the latter is used to
+  guarantee consistent updates.
+* _Global-state_ contains the current global state for a contents-key. Consistent changes are
+  guaranteed by tracking the hash of the contents of the global-state-value.
 
 ## TODOs
 
@@ -68,12 +93,14 @@ logical data model.
     3. Distinct implementations per content-type then have to find out which actual contents can be
        removed from object/file storage. (This is the step that identifies the no-longer-needed huge
        data-files.)
-       * Nessie-GC (not Nessie "itself" like a Nessie-server or Nessie-client) needs access to the
-         contents of the data lake.
-       * Per-content-type implementations can leverage public APIs and code from for example
-         Iceberg to read metadata/manifests/snapshots to identify actual data files.
-         In case of Iceberg, Nessie-GC needs to identify the table snapshots that are no longer
-         needed (GC-able) and after that it needs to  
+
+    * Nessie-GC (not Nessie "itself" like a Nessie-server or Nessie-client) needs access to the
+      contents of the data lake.
+    * Per-content-type implementations can leverage public APIs and code from for example Iceberg to
+      read metadata/manifests/snapshots to identify actual data files. In case of Iceberg, Nessie-GC
+      needs to identify the table snapshots that are no longer needed (GC-able) and after that it
+      needs to
+
     4. Once a "per-content-type" implementation has deleted files from an object/file storage, it
        should modify the most-recent global-state and remove the information from
        metadata/manifests/snapshots/etc.

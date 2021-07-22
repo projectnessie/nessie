@@ -17,6 +17,10 @@ package org.projectnessie.versioned.tiered.nontx;
 
 public class NonTxOperationContext implements AutoCloseable {
 
+  public static final NonTxOperationContext DUMMY = new NonTxOperationContext();
+
+  private NonTxOperationContext() {}
+
   @Override
   public void close() {}
 }

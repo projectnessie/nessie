@@ -284,7 +284,7 @@ public class DbObjectsSerializers extends Serializers.Base {
    * @param flattened the {@link #flattenKey(Key)} representation
    * @return parsed {@link Key}
    */
-  static Key fromFlattened(String flattened) {
+  public static Key fromFlattened(String flattened) {
     ImmutableKey.Builder b = ImmutableKey.builder();
     StringBuilder sb = new StringBuilder();
     int l = flattened.length();
@@ -318,7 +318,7 @@ public class DbObjectsSerializers extends Serializers.Base {
    * @return the flattened representation
    * @see #fromFlattened(String)
    */
-  static String flattenKey(Key key) {
+  public static String flattenKey(Key key) {
     StringBuilder sb = new StringBuilder();
     for (String element : key.getElements()) {
       if (sb.length() > 0) {
