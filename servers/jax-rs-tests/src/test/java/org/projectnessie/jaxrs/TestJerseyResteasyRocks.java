@@ -13,22 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.server;
+package org.projectnessie.jaxrs;
 
-import io.quarkus.test.junit.NativeImageTest;
-import io.quarkus.test.junit.TestProfile;
-import java.net.URI;
-import org.junit.jupiter.api.BeforeEach;
-import org.projectnessie.jaxrs.AbstractTestRest;
-import org.projectnessie.server.profiles.QuarkusNativeProfileInmemoryOld;
+import org.projectnessie.versioned.persist.rocks.RocksDatabaseAdapterFactory;
+import org.projectnessie.versioned.persist.rocks.RocksTestConnectionProviderSource;
+import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterName;
+import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
-@NativeImageTest
-@TestProfile(QuarkusNativeProfileInmemoryOld.class)
-public class ITNativeRest extends AbstractTestRest {
-  @Override
-  @BeforeEach
-  public void setUp() throws Exception {
-    super.init(URI.create("http://localhost:19121/api/v1"));
-    super.setUp();
-  }
-}
+@NessieDbAdapterName(RocksDatabaseAdapterFactory.NAME)
+@NessieExternalDatabase(RocksTestConnectionProviderSource.class)
+class TestJerseyResteasyRocks extends AbstractTestJerseyResteasy {}

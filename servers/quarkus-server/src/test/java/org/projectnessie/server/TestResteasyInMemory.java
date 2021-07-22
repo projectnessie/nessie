@@ -15,20 +15,11 @@
  */
 package org.projectnessie.server;
 
-import io.quarkus.test.junit.NativeImageTest;
+import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
-import java.net.URI;
-import org.junit.jupiter.api.BeforeEach;
-import org.projectnessie.jaxrs.AbstractTestRest;
-import org.projectnessie.server.profiles.QuarkusNativeProfileInmemoryOld;
+import org.projectnessie.jaxrs.AbstractResteasyTest;
+import org.projectnessie.server.profiles.QuarkusTestProfileInmemory;
 
-@NativeImageTest
-@TestProfile(QuarkusNativeProfileInmemoryOld.class)
-public class ITNativeRest extends AbstractTestRest {
-  @Override
-  @BeforeEach
-  public void setUp() throws Exception {
-    super.init(URI.create("http://localhost:19121/api/v1"));
-    super.setUp();
-  }
-}
+@QuarkusTest
+@TestProfile(QuarkusTestProfileInmemory.class)
+public class TestResteasyInMemory extends AbstractResteasyTest {}
