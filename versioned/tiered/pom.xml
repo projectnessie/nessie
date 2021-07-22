@@ -31,10 +31,18 @@
   <name>Nessie - Versioned - Tiered - Parent</name>
 
   <modules>
-    <module>dynamodb</module>
-    <module>gc</module>
-    <module>mongodb</module>
-    <module>tiered-impl</module>
-    <module>tiered-tests</module>
+    <module>impl</module>
+    <module>adapter</module>
+    <module>nontx</module>
+    <module>inmem</module>
+    <module>rocks</module>
+    <module>dynamo</module>
+    <module>tx</module>
+    <module>h2</module>
+    <module>hsql</module>
+    <module>postgres</module>
+    <module>spanner</module>
+    <module>bench</module>
+    <module>tests</module>
   </modules>
 </project>
