@@ -48,9 +48,6 @@ import {
     Reference,
     ReferenceFromJSON,
     ReferenceToJSON,
-    Tag,
-    TagFromJSON,
-    TagToJSON,
     Transplant,
     TransplantFromJSON,
     TransplantToJSON,
@@ -59,13 +56,13 @@ import {
 export interface AssignBranchRequest {
     branchName: string;
     expectedHash: string;
-    branch?: Branch;
+    reference?: Reference;
 }
 
 export interface AssignTagRequest {
     tagName: string;
     expectedHash: string;
-    tag?: Tag;
+    reference?: Reference;
 }
 
 export interface CommitMultipleOperationsRequest {
@@ -75,6 +72,7 @@ export interface CommitMultipleOperationsRequest {
 }
 
 export interface CreateReferenceRequest {
+    sourceRef?: string;
     reference?: Reference;
 }
 
@@ -166,7 +164,7 @@ export class DefaultApi extends runtime.BaseAPI {
             method: 'PUT',
             headers: headerParameters,
             query: queryParameters,
-            body: BranchToJSON(requestParameters.branch),
+            body: ReferenceToJSON(requestParameters.reference),
         });
 
         return new runtime.VoidApiResponse(response);
@@ -206,7 +204,7 @@ export class DefaultApi extends runtime.BaseAPI {
             method: 'PUT',
             headers: headerParameters,
             query: queryParameters,
-            body: TagToJSON(requestParameters.tag),
+            body: ReferenceToJSON(requestParameters.reference),
         });
 
         return new runtime.VoidApiResponse(response);
@@ -265,6 +263,10 @@ export class DefaultApi extends runtime.BaseAPI {
      */
     async createReferenceRaw(requestParameters: CreateReferenceRequest): Promise<runtime.ApiResponse<Reference>> {
         const queryParameters: any = {};
+
+        if (requestParameters.sourceRef !== undefined) {
+            queryParameters['sourceRef'] = requestParameters.sourceRef;
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
@@ -464,7 +466,8 @@ export class DefaultApi extends runtime.BaseAPI {
     }
 
     /**
-     * Get object content associated with key
+     * This operation returns a consistent view for a contents-key in a branch or tag.  Nessie may return a \'Contents\' object, that is updated compared to the value that has been passed when the \'Contents\' object has been commited, to reflect a more recent, but semantically equal state. For example, the Iceberg table-metadata-location returned in \'IcebergSnapshot\' reflects the most recent table-metadata, which still references the Iceberg snapshot.
+     * Get object content associated with key.
      */
     async getContentsRaw(requestParameters: GetContentsRequest): Promise<runtime.ApiResponse<Contents>> {
         if (requestParameters.key === null || requestParameters.key === undefined) {
@@ -494,7 +497,8 @@ export class DefaultApi extends runtime.BaseAPI {
     }
 
     /**
-     * Get object content associated with key
+     * This operation returns a consistent view for a contents-key in a branch or tag.  Nessie may return a \'Contents\' object, that is updated compared to the value that has been passed when the \'Contents\' object has been commited, to reflect a more recent, but semantically equal state. For example, the Iceberg table-metadata-location returned in \'IcebergSnapshot\' reflects the most recent table-metadata, which still references the Iceberg snapshot.
+     * Get object content associated with key.
      */
     async getContents(requestParameters: GetContentsRequest): Promise<Contents> {
         const response = await this.getContentsRaw(requestParameters);
@@ -576,7 +580,8 @@ export class DefaultApi extends runtime.BaseAPI {
     }
 
     /**
-     * Get multiple objects\' content
+     * Similar to \'getContents\', but takes multiple \'ContentKey\'s and returns a consistent view for the contents-key in a branch or tag.  Nessie may return \'Contents\' objects, that are updated compared to the values that have been passed when the \'Contents\' objects have been committed, to reflect a more recent, but semantically equal state. For example, the Iceberg table-metadata-location returned in \'IcebergSnapshot\' reflects the most recent table-metadata, which still references the Iceberg snapshot.
+     * Get multiple objects\' content.
      */
     async getMultipleContentsRaw(requestParameters: GetMultipleContentsRequest): Promise<runtime.ApiResponse<MultiGetContentsResponse>> {
         const queryParameters: any = {};
@@ -605,7 +610,8 @@ export class DefaultApi extends runtime.BaseAPI {
     }
 
     /**
-     * Get multiple objects\' content
+     * Similar to \'getContents\', but takes multiple \'ContentKey\'s and returns a consistent view for the contents-key in a branch or tag.  Nessie may return \'Contents\' objects, that are updated compared to the values that have been passed when the \'Contents\' objects have been committed, to reflect a more recent, but semantically equal state. For example, the Iceberg table-metadata-location returned in \'IcebergSnapshot\' reflects the most recent table-metadata, which still references the Iceberg snapshot.
+     * Get multiple objects\' content.
      */
     async getMultipleContents(requestParameters: GetMultipleContentsRequest): Promise<MultiGetContentsResponse> {
         const response = await this.getMultipleContentsRaw(requestParameters);

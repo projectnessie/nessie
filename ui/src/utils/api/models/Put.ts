@@ -22,10 +22,14 @@ import {
     ContentsKeyFromJSON,
     ContentsKeyFromJSONTyped,
     ContentsKeyToJSON,
+    GlobalContents,
+    GlobalContentsFromJSON,
+    GlobalContentsFromJSONTyped,
+    GlobalContentsToJSON,
 } from './';
 
 /**
- * 
+ * Add or replace (put) a 'Contents' object for a 'ContentsKey'. Depending on the actual table type (Iceberg, Delta, Hive, SQL-View), Nessie tracks the 'global state' of individual tables. For example put-operations for Iceberg tables must include the 'expectedContents', except for the very first put-operation for a newly created table (think: CREATE TABLE).
  * @export
  * @interface Put
  */
@@ -42,6 +46,12 @@ export interface Put {
      * @memberof Put
      */
     contents: Contents;
+    /**
+     * 
+     * @type {GlobalContents}
+     * @memberof Put
+     */
+    expectedContents?: GlobalContents;
 }
 
 export function PutFromJSON(json: any): Put {
@@ -56,6 +66,7 @@ export function PutFromJSONTyped(json: any, ignoreDiscriminator: boolean): Put {
         
         'key': ContentsKeyFromJSON(json['key']),
         'contents': ContentsFromJSON(json['contents']),
+        'expectedContents': !exists(json, 'expectedContents') ? undefined : GlobalContentsFromJSON(json['expectedContents']),
     };
 }
 
@@ -70,6 +81,7 @@ export function PutToJSON(value?: Put | null): any {
         
         'key': ContentsKeyToJSON(value.key),
         'contents': ContentsToJSON(value.contents),
+        'expectedContents': GlobalContentsToJSON(value.expectedContents),
     };
 }
 

@@ -16,7 +16,7 @@ import {
     DeltaLakeTable,
     HiveDatabase,
     HiveTable,
-    IcebergTable,
+    IcebergSnapshot,
     SqlView,
     DeltaLakeTableFromJSONTyped,
     DeltaLakeTableToJSON,
@@ -24,8 +24,8 @@ import {
     HiveDatabaseToJSON,
     HiveTableFromJSONTyped,
     HiveTableToJSON,
-    IcebergTableFromJSONTyped,
-    IcebergTableToJSON,
+    IcebergSnapshotFromJSONTyped,
+    IcebergSnapshotToJSON,
     SqlViewFromJSONTyped,
     SqlViewToJSON,
 } from './';
@@ -35,7 +35,7 @@ import {
  * 
  * @export
  */
-export type Contents = { type: 'DELTA_LAKE_TABLE' } & DeltaLakeTable | { type: 'HIVE_DATABASE' } & HiveDatabase | { type: 'HIVE_TABLE' } & HiveTable | { type: 'ICEBERG_TABLE' } & IcebergTable | { type: 'VIEW' } & SqlView;
+export type Contents = { type: 'DELTA_LAKE_TABLE' } & DeltaLakeTable | { type: 'HIVE_DATABASE' } & HiveDatabase | { type: 'HIVE_TABLE' } & HiveTable | { type: 'ICEBERG_SNAPSHOT' } & IcebergSnapshot | { type: 'VIEW' } & SqlView;
 
 export function ContentsFromJSON(json: any): Contents {
     return ContentsFromJSONTyped(json, false);
@@ -52,8 +52,8 @@ export function ContentsFromJSONTyped(json: any, ignoreDiscriminator: boolean): 
             return {...HiveDatabaseFromJSONTyped(json, true), type: 'HIVE_DATABASE'};
         case 'HIVE_TABLE':
             return {...HiveTableFromJSONTyped(json, true), type: 'HIVE_TABLE'};
-        case 'ICEBERG_TABLE':
-            return {...IcebergTableFromJSONTyped(json, true), type: 'ICEBERG_TABLE'};
+        case 'ICEBERG_SNAPSHOT':
+            return {...IcebergSnapshotFromJSONTyped(json, true), type: 'ICEBERG_SNAPSHOT'};
         case 'VIEW':
             return {...SqlViewFromJSONTyped(json, true), type: 'VIEW'};
         default:
@@ -75,8 +75,8 @@ export function ContentsToJSON(value?: Contents | null): any {
             return HiveDatabaseToJSON(value);
         case 'HIVE_TABLE':
             return HiveTableToJSON(value);
-        case 'ICEBERG_TABLE':
-            return IcebergTableToJSON(value);
+        case 'ICEBERG_SNAPSHOT':
+            return IcebergSnapshotToJSON(value);
         case 'VIEW':
             return SqlViewToJSON(value);
         default:

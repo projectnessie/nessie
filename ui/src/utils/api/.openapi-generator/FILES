@@ -11,9 +11,11 @@ models/DeltaLakeTable.ts
 models/Dialect.ts
 models/EntriesResponse.ts
 models/Entry.ts
+models/GlobalContents.ts
 models/Hash.ts
 models/HiveDatabase.ts
 models/HiveTable.ts
+models/IcebergSnapshot.ts
 models/IcebergTable.ts
 models/LogResponse.ts
 models/Merge.ts
