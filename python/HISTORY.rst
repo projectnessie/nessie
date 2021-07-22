@@ -2,6 +2,11 @@
 History
 =======
 
+0.9.0 (2021-08-xx)
+------------------
+
+* Update REST-API calls for new version-store API requirements
+
 0.8.3 (2021-07-19)
 ------------------
 

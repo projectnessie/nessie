@@ -1,5 +1,9 @@
 # Releases
 
+## 0.9.0 Release (August xx, 2021)
+
+* New tiered-version-store implementation
+
 ## 0.8.3 Release (July 19, 2021)
 
 * Fix issue in spark sql extensions

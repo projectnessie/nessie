@@ -15,11 +15,11 @@ docker run -p 8080:8080 projectnessie/nessie \
 ## Core Nessie Configuration Settings
 
 ```properties
-# which type of version store to use: JGIT, INMEMORY, DYNAMO. JGIT is for local testing, DYNAMO preferred for production
+# which type of version store to use: ROCKS, INMEMORY, DYNAMO. ROCKS is for local testing, DYNAMO preferred for production
 nessie.version.store.type=DYNAMO
 
-# path if using JGIT
-nessie.version.store.jgit.directory=/tmp/jgit
+# path if using RocksDB
+nessie.version.store.rocks.directory=/tmp/rocks-nessie
 
 ## Dynamo version store specific configuration
 # should Nessie create its own dynamo tables
