@@ -15,29 +15,37 @@
  */
 package org.projectnessie.server.providers;
 
-import static org.projectnessie.server.config.VersionStoreConfig.VersionStoreType.INMEMORY;
+import static org.projectnessie.server.config.VersionStoreConfig.VersionStoreType.ROCKS;
 
 import javax.enterprise.context.Dependent;
+import javax.inject.Inject;
+import org.projectnessie.server.config.VersionStoreConfig;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.tiered.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.tiered.impl.TieredVersionStore;
-import org.projectnessie.versioned.tiered.inmem.InmemoryDatabaseAdapterFactory;
+import org.projectnessie.versioned.tiered.rocks.RocksDatabaseAdapterFactory;
 
 /** In-memory version store factory. */
-@StoreType(INMEMORY)
+@StoreType(ROCKS)
 @Dependent
-public class InMemoryVersionStoreFactory implements VersionStoreFactory {
+public class RocksVersionStoreFactory implements VersionStoreFactory {
+
+  @Inject VersionStoreConfig.RocksVersionStoreConfig rocksConfig;
+
   @Override
   public <VALUE, STATE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>>
       VersionStore<VALUE, STATE, METADATA, VALUE_TYPE> newStore(
           StoreWorker<VALUE, STATE, METADATA, VALUE_TYPE> worker, ServerConfig serverConfig) {
     DatabaseAdapter databaseAdapter =
-        new InmemoryDatabaseAdapterFactory()
+        new RocksDatabaseAdapterFactory()
             .newBuilder()
-            .configure(c -> c.withDefaultBranch(serverConfig.getDefaultBranch()))
+            .configure(
+                c ->
+                    c.withDbPath(rocksConfig.getDbPath())
+                        .withDefaultBranch(serverConfig.getDefaultBranch()))
             .build();
 
     try {

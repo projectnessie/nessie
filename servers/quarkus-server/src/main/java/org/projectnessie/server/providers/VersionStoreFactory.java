@@ -16,6 +16,7 @@
 package org.projectnessie.server.providers;
 
 import java.io.IOException;
+import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.VersionStore;
 
@@ -29,10 +30,12 @@ public interface VersionStoreFactory {
    * @param <METADATA> the metadata type
    * @param <VALUE_TYPE> the value type enum
    * @param worker the worker instance
+   * @param serverConfig server configuration
    * @return a store instance
    * @throws IOException if an exception occurs during store instantiation
    */
-  <VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>>
-      VersionStore<VALUE, METADATA, VALUE_TYPE> newStore(
-          StoreWorker<VALUE, METADATA, VALUE_TYPE> worker) throws IOException;
+  <VALUE, STATE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>>
+      VersionStore<VALUE, STATE, METADATA, VALUE_TYPE> newStore(
+          StoreWorker<VALUE, STATE, METADATA, VALUE_TYPE> worker, ServerConfig serverConfig)
+          throws IOException;
 }

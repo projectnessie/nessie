@@ -24,10 +24,10 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 public interface VersionStoreConfig {
 
   @RegisterForReflection
-  public enum VersionStoreType {
+  enum VersionStoreType {
     DYNAMO,
     INMEMORY,
-    JGIT
+    ROCKS
   }
 
   @ConfigProperty(name = "type", defaultValue = "INMEMORY")
@@ -43,4 +43,10 @@ public interface VersionStoreConfig {
   /** Whether metrics for the version-store are enabled (enabled by default). */
   @ConfigProperty(name = "metrics.enable", defaultValue = "true")
   boolean isMetricsEnabled();
+
+  @ConfigProperties(prefix = "nessie.version.store.rocks")
+  interface RocksVersionStoreConfig {
+    @ConfigProperty(name = "db-path")
+    String getDbPath();
+  }
 }

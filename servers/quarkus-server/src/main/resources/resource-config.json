@@ -1,0 +1,9 @@
+{
+  "resources": {
+    "includes": [
+      {
+        "pattern": "\\Qlibrocksdbjni-linux64.so\\E"
+      }
+    ]
+  }
+}
