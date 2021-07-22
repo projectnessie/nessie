@@ -31,14 +31,14 @@ import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
 
 /** Helper to generate commits against a store. */
-public class CommitBuilder<ValueT, MetadataT, EnumT extends Enum<EnumT>> {
-  private final List<Operation<ValueT>> operations = new ArrayList<>();
-  private final VersionStore<ValueT, MetadataT, EnumT> store;
+public class CommitBuilder<ValueT, StateT, MetadataT, EnumT extends Enum<EnumT>> {
+  private final List<Operation<ValueT, StateT>> operations = new ArrayList<>();
+  private final VersionStore<ValueT, StateT, MetadataT, EnumT> store;
   private MetadataT metadata = null;
   private Optional<Hash> referenceHash = Optional.empty();
   private boolean fromLatest = false;
 
-  public CommitBuilder(VersionStore<ValueT, MetadataT, EnumT> store) {
+  public CommitBuilder(VersionStore<ValueT, StateT, MetadataT, EnumT> store) {
     this.store = store;
   }
 
@@ -49,7 +49,7 @@ public class CommitBuilder<ValueT, MetadataT, EnumT extends Enum<EnumT>> {
    * @param value the value associated with the key
    * @return the builder instance
    */
-  public CommitBuilder<ValueT, MetadataT, EnumT> put(String key, ValueT value) {
+  public CommitBuilder<ValueT, StateT, MetadataT, EnumT> put(String key, ValueT value) {
     return put(Key.of(key), value);
   }
 
@@ -60,8 +60,33 @@ public class CommitBuilder<ValueT, MetadataT, EnumT extends Enum<EnumT>> {
    * @param value the value associated with the key
    * @return the builder instance
    */
-  public CommitBuilder<ValueT, MetadataT, EnumT> put(Key key, ValueT value) {
+  public CommitBuilder<ValueT, StateT, MetadataT, EnumT> put(Key key, ValueT value) {
     return add(Put.of(key, value));
+  }
+
+  /**
+   * Adds a put operation to the current commit.
+   *
+   * @param key key's name to add
+   * @param value the value associated with the key
+   * @param expectedState expected global state
+   * @return the builder instance
+   */
+  public CommitBuilder<ValueT, StateT, MetadataT, EnumT> put(
+      String key, ValueT value, StateT expectedState) {
+    return put(Key.of(key), value, expectedState);
+  }
+
+  /**
+   * Adds a put operation to the current commit.
+   *
+   * @param key key to add
+   * @param value the value associated with the key
+   * @return the builder instance
+   */
+  public CommitBuilder<ValueT, StateT, MetadataT, EnumT> put(
+      Key key, ValueT value, StateT expectedState) {
+    return add(Put.of(key, value, expectedState));
   }
 
   /**
@@ -70,7 +95,7 @@ public class CommitBuilder<ValueT, MetadataT, EnumT extends Enum<EnumT>> {
    * @param key key's name to delete
    * @return the builder instance
    */
-  public CommitBuilder<ValueT, MetadataT, EnumT> delete(String key) {
+  public CommitBuilder<ValueT, StateT, MetadataT, EnumT> delete(String key) {
     return delete(Key.of(key));
   }
 
@@ -80,7 +105,7 @@ public class CommitBuilder<ValueT, MetadataT, EnumT extends Enum<EnumT>> {
    * @param key key to delete
    * @return the builder instance
    */
-  public CommitBuilder<ValueT, MetadataT, EnumT> delete(Key key) {
+  public CommitBuilder<ValueT, StateT, MetadataT, EnumT> delete(Key key) {
     return add(Delete.of(key));
   }
 
@@ -90,7 +115,7 @@ public class CommitBuilder<ValueT, MetadataT, EnumT extends Enum<EnumT>> {
    * @param key key's name for the operation
    * @return the builder instance
    */
-  public CommitBuilder<ValueT, MetadataT, EnumT> unchanged(String key) {
+  public CommitBuilder<ValueT, StateT, MetadataT, EnumT> unchanged(String key) {
     return unchanged(Key.of(key));
   }
 
@@ -100,7 +125,7 @@ public class CommitBuilder<ValueT, MetadataT, EnumT extends Enum<EnumT>> {
    * @param key key for the operation
    * @return the builder instance
    */
-  public CommitBuilder<ValueT, MetadataT, EnumT> unchanged(Key key) {
+  public CommitBuilder<ValueT, StateT, MetadataT, EnumT> unchanged(Key key) {
     return add(Unchanged.of(key));
   }
 
@@ -110,7 +135,7 @@ public class CommitBuilder<ValueT, MetadataT, EnumT extends Enum<EnumT>> {
    * @param operation operation to commit
    * @return the builder instance
    */
-  public CommitBuilder<ValueT, MetadataT, EnumT> add(Operation<ValueT> operation) {
+  public CommitBuilder<ValueT, StateT, MetadataT, EnumT> add(Operation<ValueT, StateT> operation) {
     operations.add(operation);
     return this;
   }
@@ -121,7 +146,7 @@ public class CommitBuilder<ValueT, MetadataT, EnumT extends Enum<EnumT>> {
    * @param metadata metadata to associate with the commit
    * @return the builder instance
    */
-  public CommitBuilder<ValueT, MetadataT, EnumT> withMetadata(MetadataT metadata) {
+  public CommitBuilder<ValueT, StateT, MetadataT, EnumT> withMetadata(MetadataT metadata) {
     this.metadata = metadata;
     return this;
   }
@@ -132,7 +157,7 @@ public class CommitBuilder<ValueT, MetadataT, EnumT extends Enum<EnumT>> {
    * @param reference the reference's hash
    * @return the builder instance
    */
-  public CommitBuilder<ValueT, MetadataT, EnumT> fromReference(Hash reference) {
+  public CommitBuilder<ValueT, StateT, MetadataT, EnumT> fromReference(Hash reference) {
     referenceHash = Optional.of(reference);
     fromLatest = false;
     return this;
@@ -143,7 +168,7 @@ public class CommitBuilder<ValueT, MetadataT, EnumT extends Enum<EnumT>> {
    *
    * @return the builder instance
    */
-  public CommitBuilder<ValueT, MetadataT, EnumT> fromLatest() {
+  public CommitBuilder<ValueT, StateT, MetadataT, EnumT> fromLatest() {
     fromLatest = true;
     return this;
   }
