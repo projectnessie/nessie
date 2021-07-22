@@ -63,16 +63,20 @@ public abstract class AbstractITVersionStore {
 
   protected abstract VersionStore<String, String, StringStoreWorker.TestEnum> store();
 
+  protected boolean isLegacyStore() {
+    return true;
+  }
+
   /** Use case simulation: single branch, multiple users, each user updating a separate table. */
   @Test
-  void singleBranchManyUsersDistinctTables() throws Exception {
+  protected void singleBranchManyUsersDistinctTables() throws Exception {
     singleBranchTest(
         "singleBranchManyUsersDistinctTables", user -> String.format("user-table-%d", user), false);
   }
 
   /** Use case simulation: single branch, multiple users, all users updating a single table. */
   @Test
-  void singleBranchManyUsersSingleTable() throws Exception {
+  protected void singleBranchManyUsersSingleTable() throws Exception {
     singleBranchTest("singleBranchManyUsersSingleTable", user -> "single-table", true);
   }
 
@@ -150,7 +154,8 @@ public abstract class AbstractITVersionStore {
     assertEquals(commitHash, otherCreateHash);
 
     List<WithHash<NamedRef>> namedRefs;
-    try (Stream<WithHash<NamedRef>> str = store().getNamedRefs()) {
+    try (Stream<WithHash<NamedRef>> str =
+        store().getNamedRefs().filter(r -> !r.getValue().getName().equals("main"))) {
       namedRefs = str.collect(Collectors.toList());
     }
     assertThat(namedRefs)
@@ -172,7 +177,8 @@ public abstract class AbstractITVersionStore {
 
     store().delete(branch, Optional.of(hash));
     assertThrows(ReferenceNotFoundException.class, () -> store().toHash(branch));
-    try (Stream<WithHash<NamedRef>> str = store().getNamedRefs()) {
+    try (Stream<WithHash<NamedRef>> str =
+        store().getNamedRefs().filter(r -> !r.getValue().getName().equals("main"))) {
       assertThat(str).hasSize(2); // bar + baz
     }
     assertThrows(ReferenceNotFoundException.class, () -> store().delete(branch, Optional.of(hash)));
@@ -975,7 +981,13 @@ public abstract class AbstractITVersionStore {
       final BranchName branch = BranchName.of("foo");
       store().create(branch, Optional.empty());
 
-      initialHash = store().toHash(branch);
+      // The default common ancestor for all merge-tests.
+      // The spec for 'VersionStore.merge' mentions "(...) until we arrive at a common ancestor",
+      // but old implementations allowed a merge even if the "merge-from" and "merge-to" have no
+      // common ancestor and did merge "everything" from the "merge-from" into "merge-to".
+      // Note: "beginning-of-time" (aka creating a branch without specifying a "create-from")
+      // creates a new commit-tree that is decoupled from other commit-trees.
+      initialHash = commit("Default common ancestor").toBranch(branch);
 
       firstCommit =
           commit("First Commit")
@@ -996,7 +1008,7 @@ public abstract class AbstractITVersionStore {
     @Test
     protected void mergeIntoEmptyBranch() throws VersionStoreException {
       final BranchName newBranch = BranchName.of("bar_1");
-      store().create(newBranch, Optional.empty());
+      store().create(newBranch, Optional.of(initialHash));
 
       store().merge(thirdCommit, newBranch, Optional.of(initialHash));
       assertThat(
@@ -1013,7 +1025,7 @@ public abstract class AbstractITVersionStore {
     @Test
     protected void mergeIntoNonConflictingBranch() throws VersionStoreException {
       final BranchName newBranch = BranchName.of("bar_2");
-      store().create(newBranch, Optional.empty());
+      store().create(newBranch, Optional.of(initialHash));
       final Hash newCommit = commit("Unrelated commit").put("t5", "v5_1").toBranch(newBranch);
 
       store().merge(thirdCommit, newBranch, Optional.empty());
@@ -1031,7 +1043,8 @@ public abstract class AbstractITVersionStore {
               Optional.of("v5_1"));
 
       final List<WithHash<String>> commits = commitsList(newBranch);
-      assertThat(commits).hasSize(4);
+      assertThat(commits).hasSize(5);
+      assertThat(commits.get(4).getHash()).isEqualTo(initialHash);
       assertThat(commits.get(3).getHash()).isEqualTo(newCommit);
       assertThat(commits.get(2).getValue()).isEqualTo("First Commit");
       assertThat(commits.get(1).getValue()).isEqualTo("Second Commit");
@@ -1043,8 +1056,8 @@ public abstract class AbstractITVersionStore {
       final Key key = Key.of("t1");
       final BranchName etl = BranchName.of("etl");
       final BranchName review = BranchName.of("review");
-      store().create(etl, Optional.empty());
-      store().create(review, Optional.empty());
+      store().create(etl, Optional.of(initialHash));
+      store().create(review, Optional.of(initialHash));
       store()
           .commit(
               etl, Optional.empty(), "commit 1", Collections.singletonList(Put.of(key, "value1")));
@@ -1078,7 +1091,8 @@ public abstract class AbstractITVersionStore {
               Optional.of("v5_1"));
 
       final List<WithHash<String>> commits = commitsList(newBranch);
-      assertThat(commits).hasSize(4);
+      assertThat(commits).hasSize(5);
+      assertThat(commits.get(4).getHash()).isEqualTo(initialHash);
       assertThat(commits.get(3).getHash()).isEqualTo(firstCommit);
       assertThat(commits.get(2).getHash()).isEqualTo(newCommit);
       assertThat(commits.get(1).getValue()).isEqualTo("Second Commit");
@@ -1089,8 +1103,16 @@ public abstract class AbstractITVersionStore {
     protected void mergeWithConflictingKeys() throws VersionStoreException {
       final BranchName foo = BranchName.of("foofoo");
       final BranchName bar = BranchName.of("barbar");
-      store().create(foo, Optional.empty());
-      store().create(bar, Optional.empty());
+      if (isLegacyStore()) {
+        // Old version-store implementations have a bug: those do only check for conflicting keys,
+        // if no common-ancestor is found, so for this test (and to not change existing code) keep
+        // this test just passing for old version-stores.
+        store().create(foo, Optional.empty());
+        store().create(bar, Optional.empty());
+      } else {
+        store().create(foo, Optional.of(this.initialHash));
+        store().create(bar, Optional.of(this.initialHash));
+      }
 
       // we're essentially modifying the same key on both branches and then merging one branch into
       // the other and expect a conflict
@@ -1124,7 +1146,7 @@ public abstract class AbstractITVersionStore {
     @Test
     protected void mergeIntoConflictingBranch() throws VersionStoreException {
       final BranchName newBranch = BranchName.of("bar_3");
-      store().create(newBranch, Optional.empty());
+      store().create(newBranch, Optional.of(initialHash));
       commit("Another commit").put("t1", "v1_4").toBranch(newBranch);
 
       assertThrows(
@@ -1143,7 +1165,7 @@ public abstract class AbstractITVersionStore {
     @Test
     protected void mergeIntoNonExistingReference() throws VersionStoreException {
       final BranchName newBranch = BranchName.of("bar_6");
-      store().create(newBranch, Optional.empty());
+      store().create(newBranch, Optional.of(initialHash));
       assertThrows(
           ReferenceNotFoundException.class,
           () -> store().merge(Hash.of("1234567890abcdef"), newBranch, Optional.of(initialHash)));

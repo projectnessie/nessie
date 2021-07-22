@@ -38,6 +38,7 @@
     <module>rocks</module>
     <module>mongodb</module>
     <module>tx</module>
+    <module>store</module>
     <module>tests</module>
   </modules>
 </project>
