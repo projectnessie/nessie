@@ -13,42 +13,56 @@
  */
 
 import { exists, mapValues } from '../runtime';
+import {
+    Reference,
+    ReferenceFromJSON,
+    ReferenceFromJSONTyped,
+    ReferenceToJSON,
+} from './';
+
 /**
  * 
  * @export
- * @interface Transplant
+ * @interface CreateReference
  */
-export interface Transplant {
+export interface CreateReference {
     /**
      * 
      * @type {string}
-     * @memberof Transplant
+     * @memberof CreateReference
      */
     sourceRef?: string;
     /**
      * 
-     * @type {Set<string>}
-     * @memberof Transplant
+     * @type {any}
+     * @memberof CreateReference
      */
-    hashesToTransplant: Set<string>;
+    hash?: any | null;
+    /**
+     * 
+     * @type {Reference}
+     * @memberof CreateReference
+     */
+    reference: Reference;
 }
 
-export function TransplantFromJSON(json: any): Transplant {
-    return TransplantFromJSONTyped(json, false);
+export function CreateReferenceFromJSON(json: any): CreateReference {
+    return CreateReferenceFromJSONTyped(json, false);
 }
 
-export function TransplantFromJSONTyped(json: any, ignoreDiscriminator: boolean): Transplant {
+export function CreateReferenceFromJSONTyped(json: any, ignoreDiscriminator: boolean): CreateReference {
     if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         
         'sourceRef': !exists(json, 'sourceRef') ? undefined : json['sourceRef'],
-        'hashesToTransplant': json['hashesToTransplant'],
+        'hash': !exists(json, 'hash') ? undefined : json['hash'],
+        'reference': ReferenceFromJSON(json['reference']),
     };
 }
 
-export function TransplantToJSON(value?: Transplant | null): any {
+export function CreateReferenceToJSON(value?: CreateReference | null): any {
     if (value === undefined) {
         return undefined;
     }
@@ -58,7 +72,8 @@ export function TransplantToJSON(value?: Transplant | null): any {
     return {
         
         'sourceRef': value.sourceRef,
-        'hashesToTransplant': value.hashesToTransplant,
+        'hash': value.hash,
+        'reference': ReferenceToJSON(value.reference),
     };
 }
 
