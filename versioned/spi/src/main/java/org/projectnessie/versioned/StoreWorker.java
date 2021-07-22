@@ -15,24 +15,36 @@
  */
 package org.projectnessie.versioned;
 
+import java.util.function.BiFunction;
+import java.util.function.Function;
+
 /**
  * A set of helpers that users of a VersionStore must implement.
  *
  * @param <VALUE> The value type saved in the VersionStore.
  * @param <COMMIT_METADATA> The commit metadata type saved in the VersionStore.
  */
-public interface StoreWorker<VALUE, COMMIT_METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>> {
+public interface StoreWorker<VALUE, STATE, COMMIT_METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>> {
 
   SerializerWithPayload<VALUE, VALUE_TYPE> getValueSerializer();
 
+  Serializer<STATE> getStateSerializer();
+
   Serializer<COMMIT_METADATA> getMetadataSerializer();
 
+  STATE extractGlobalState(VALUE value);
+
+  VALUE mergeGlobalState(VALUE value, STATE state);
+
   /** Create StoreWorker for provided helpers. */
-  static <VALUE, COMMIT_METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>>
-      StoreWorker<VALUE, COMMIT_METADATA, VALUE_TYPE> of(
+  static <VALUE, STATE, COMMIT_METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>>
+      StoreWorker<VALUE, STATE, COMMIT_METADATA, VALUE_TYPE> of(
           SerializerWithPayload<VALUE, VALUE_TYPE> valueSerializer,
-          Serializer<COMMIT_METADATA> commitSerializer) {
-    return new StoreWorker<VALUE, COMMIT_METADATA, VALUE_TYPE>() {
+          Serializer<COMMIT_METADATA> commitSerializer,
+          Serializer<STATE> stateSerializer,
+          BiFunction<VALUE, STATE, VALUE> globalStateMerger,
+          Function<VALUE, STATE> extractGlobalState) {
+    return new StoreWorker<VALUE, STATE, COMMIT_METADATA, VALUE_TYPE>() {
 
       @Override
       public SerializerWithPayload<VALUE, VALUE_TYPE> getValueSerializer() {
@@ -40,8 +52,23 @@ public interface StoreWorker<VALUE, COMMIT_METADATA, VALUE_TYPE extends Enum<VAL
       }
 
       @Override
+      public Serializer<STATE> getStateSerializer() {
+        return stateSerializer;
+      }
+
+      @Override
       public Serializer<COMMIT_METADATA> getMetadataSerializer() {
         return commitSerializer;
+      }
+
+      @Override
+      public VALUE mergeGlobalState(VALUE value, STATE state) {
+        return globalStateMerger.apply(value, state);
+      }
+
+      @Override
+      public STATE extractGlobalState(VALUE value) {
+        return extractGlobalState.apply(value);
       }
     };
   }

@@ -15,20 +15,13 @@
  */
 package org.projectnessie.versioned;
 
-import org.immutables.value.Value;
-
-public interface Operation<V, S> {
-  /**
-   * Whether the commit expected hash should be reviewed to confirm the key for this operation
-   * hasn't changed since the expected hash.
-   *
-   * @return True if this operation should match the hash.
-   */
-  @Value.Default
-  default boolean shouldMatchHash() {
-    return true;
+/**
+ * Special case of a {@link org.projectnessie.versioned.ReferenceConflictException} indicating that
+ * the requested operation could not be completed within the configured time and number of retries
+ * due to concurrent operations.
+ */
+public class ReferenceRetryFailureException extends ReferenceConflictException {
+  public ReferenceRetryFailureException(String message) {
+    super(message);
   }
-
-  /** The key for this operation. */
-  Key getKey();
 }
