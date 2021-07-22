@@ -25,10 +25,14 @@ import io.smallrye.config.WithName;
 public interface VersionStoreConfig {
 
   @RegisterForReflection
-  public enum VersionStoreType {
+  enum VersionStoreType {
+    @Deprecated
+    IN_MEMORY,
+    @Deprecated
+    JGIT,
     DYNAMO,
     INMEMORY,
-    JGIT
+    ROCKS
   }
 
   @WithName("type")
@@ -47,4 +51,10 @@ public interface VersionStoreConfig {
   @WithName("metrics.enable")
   @WithDefault("true")
   boolean isMetricsEnabled();
+
+  @ConfigMapping(prefix = "nessie.version.store.rocks")
+  interface RocksVersionStoreConfig {
+    @WithName("db-path")
+    String getDbPath();
+  }
 }
