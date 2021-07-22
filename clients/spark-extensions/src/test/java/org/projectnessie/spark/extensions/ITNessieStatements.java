@@ -21,7 +21,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -33,17 +32,17 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.tests.AbstractSparkTest;
-import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentsKey;
-import org.projectnessie.model.IcebergTable;
+import org.projectnessie.model.IcebergSnapshot;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableOperations;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Operations;
+import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
 
 public class ITNessieStatements extends AbstractSparkTest {
@@ -64,16 +63,15 @@ public class ITNessieStatements extends AbstractSparkTest {
 
   @AfterEach
   void removeBranches() throws NessieConflictException, NessieNotFoundException {
-    for (String s : Arrays.asList(refName, "main")) {
-      try {
-        nessieClient
-            .getTreeApi()
-            .deleteBranch(s, nessieClient.getTreeApi().getReferenceByName(s).getHash());
-      } catch (BaseNessieClientServerException e) {
-        // pass
+    for (Reference ref : nessieClient.getTreeApi().getAllReferences()) {
+      if (ref instanceof Branch) {
+        nessieClient.getTreeApi().deleteBranch(ref.getName(), ref.getHash());
+      }
+      if (ref instanceof Tag) {
+        nessieClient.getTreeApi().deleteTag(ref.getName(), ref.getHash());
       }
     }
-    nessieClient.getTreeApi().createReference(Branch.of("main", null));
+    nessieClient.getTreeApi().createReference(null, Branch.of("main", null));
   }
 
   @Test
@@ -97,7 +95,7 @@ public class ITNessieStatements extends AbstractSparkTest {
     assertEquals("deleted tag", row("OK"), result);
     assertThatThrownBy(() -> nessieClient.getTreeApi().getReferenceByName(refName))
         .isInstanceOf(NessieNotFoundException.class)
-        .hasMessage("Unable to find reference [testBranch].");
+        .hasMessage("Named reference 'testBranch' not found");
   }
 
   @Test
@@ -110,7 +108,7 @@ public class ITNessieStatements extends AbstractSparkTest {
     assertEquals("deleted branch", row("OK"), result);
     assertThatThrownBy(() -> nessieClient.getTreeApi().getReferenceByName(refName))
         .isInstanceOf(NessieNotFoundException.class)
-        .hasMessage("Unable to find reference [testBranch].");
+        .hasMessage("Named reference 'testBranch' not found");
   }
 
   @Test
@@ -123,12 +121,12 @@ public class ITNessieStatements extends AbstractSparkTest {
     List<Object[]> listResult = new ArrayList<>();
     listResult.add(row("Branch", "main", hash));
     listResult.add(row("Tag", refName, hash));
-    assertEquals("created branch", listResult, result);
+    assertThat(result).as("created branch").containsExactlyInAnyOrderElementsOf(listResult);
     result = sql("DROP TAG %s IN nessie", refName);
     assertEquals("deleted tag", row("OK"), result);
     assertThatThrownBy(() -> nessieClient.getTreeApi().getReferenceByName(refName))
         .isInstanceOf(NessieNotFoundException.class)
-        .hasMessage("Unable to find reference [testBranch].");
+        .hasMessage("Named reference 'testBranch' not found");
   }
 
   @Disabled("until release of 0.12.0 of iceberg")
@@ -140,12 +138,16 @@ public class ITNessieStatements extends AbstractSparkTest {
     assertEquals("created branch", row("Branch", refName, hash), result);
     assertThat(nessieClient.getTreeApi().getReferenceByName(refName))
         .isEqualTo(Branch.of(refName, hash));
+    result = sql("LIST REFERENCES");
+    // Result of LIST REFERENCES is unordered
+    assertThat(result)
+        .containsExactlyInAnyOrder(row("Branch", refName, hash), row("Branch", "main", hash));
     result = sql("DROP BRANCH %s", refName);
     assertEquals("deleted branch", row("OK"), result);
     spark.sessionState().catalogManager().setCurrentCatalog(catalog);
     assertThatThrownBy(() -> nessieClient.getTreeApi().getReferenceByName(refName))
         .isInstanceOf(NessieNotFoundException.class)
-        .hasMessage("Unable to find reference [testBranch].");
+        .hasMessage("Named reference 'testBranch' not found");
   }
 
   @Disabled("until release of 0.12.0 of iceberg")
@@ -158,6 +160,7 @@ public class ITNessieStatements extends AbstractSparkTest {
     assertThat(nessieClient.getTreeApi().getReferenceByName(refName))
         .isEqualTo(Tag.of(refName, hash));
     result = sql("LIST REFERENCES");
+    // Result of LIST REFERENCES is unordered
     assertThat(result)
         .containsExactlyInAnyOrder(row("Tag", refName, hash), row("Branch", "main", hash));
     result = sql("DROP TAG %s", refName);
@@ -165,7 +168,7 @@ public class ITNessieStatements extends AbstractSparkTest {
     spark.sessionState().catalogManager().setCurrentCatalog(catalog);
     assertThatThrownBy(() -> nessieClient.getTreeApi().getReferenceByName(refName))
         .isInstanceOf(NessieNotFoundException.class)
-        .hasMessage("Unable to find reference [testBranch].");
+        .hasMessage("Named reference 'testBranch' not found");
   }
 
   @Disabled("until release of 0.12.0 of iceberg")
@@ -185,7 +188,7 @@ public class ITNessieStatements extends AbstractSparkTest {
     assertEquals("deleted branch", row("OK"), result);
     assertThatThrownBy(() -> nessieClient.getTreeApi().getReferenceByName(refName))
         .isInstanceOf(NessieNotFoundException.class)
-        .hasMessage("Unable to find reference [testBranch].");
+        .hasMessage("Named reference 'testBranch' not found");
   }
 
   @Disabled("until release of 0.12.0 of iceberg")
@@ -205,7 +208,7 @@ public class ITNessieStatements extends AbstractSparkTest {
     assertEquals("deleted branch", row("OK"), result);
     assertThatThrownBy(() -> nessieClient.getTreeApi().getReferenceByName(refName))
         .isInstanceOf(NessieNotFoundException.class)
-        .hasMessage("Unable to find reference [testBranch].");
+        .hasMessage("Named reference 'testBranch' not found");
   }
 
   @Disabled("until release of 0.12.0 of iceberg")
@@ -227,7 +230,7 @@ public class ITNessieStatements extends AbstractSparkTest {
     assertEquals("deleted branch", row("OK"), result);
     assertThatThrownBy(() -> nessieClient.getTreeApi().getReferenceByName(refName))
         .isInstanceOf(NessieNotFoundException.class)
-        .hasMessage("Unable to find reference [testBranch].");
+        .hasMessage("Named reference 'testBranch' not found");
     spark.sessionState().catalogManager().setCurrentCatalog(catalog);
   }
 
@@ -346,17 +349,17 @@ public class ITNessieStatements extends AbstractSparkTest {
             .build();
     Operations ops =
         ImmutableOperations.builder()
-            .addOperations(Operation.Put.of(key, IcebergTable.of("foo")))
+            .addOperations(Operation.Put.of(key, IcebergSnapshot.of("foo", -1L)))
             .commitMeta(cm1)
             .build();
     Operations ops2 =
         ImmutableOperations.builder()
-            .addOperations(Operation.Put.of(key, IcebergTable.of("bar")))
+            .addOperations(Operation.Put.of(key, IcebergSnapshot.of("bar", -1L)))
             .commitMeta(cm2)
             .build();
     Operations ops3 =
         ImmutableOperations.builder()
-            .addOperations(Operation.Put.of(key, IcebergTable.of("baz")))
+            .addOperations(Operation.Put.of(key, IcebergSnapshot.of("baz", -1L)))
             .commitMeta(cm3)
             .build();
 

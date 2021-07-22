@@ -78,7 +78,8 @@ class ITDeltaLog extends AbstractSparkTest {
     Reference devBranch =
         nessieClient
             .getTreeApi()
-            .createReference(Branch.of("testMultipleBranches", mainBranch.getHash()));
+            .createReference(
+                mainBranch.getName(), Branch.of("testMultipleBranches", mainBranch.getHash()));
 
     spark.sparkContext().conf().set("spark.sql.catalog.spark_catalog.ref", devBranch.getName());
 
@@ -123,7 +124,8 @@ class ITDeltaLog extends AbstractSparkTest {
     Reference devBranch =
         nessieClient
             .getTreeApi()
-            .createReference(Branch.of("testCommitRetry", mainBranch.getHash()));
+            .createReference(
+                mainBranch.getName(), Branch.of("testCommitRetry", mainBranch.getHash()));
 
     spark.sparkContext().conf().set("spark.sql.catalog.spark_catalog.ref", devBranch.getName());
 
@@ -133,12 +135,15 @@ class ITDeltaLog extends AbstractSparkTest {
     Dataset<Row> count2 = spark.sql("SELECT COUNT(*) FROM test_commit_retry");
     Assertions.assertEquals(30L, count2.collectAsList().get(0).getLong(0));
 
-    String toHash = nessieClient.getTreeApi().getReferenceByName("main").getHash();
-    String fromHash = nessieClient.getTreeApi().getReferenceByName("testCommitRetry").getHash();
+    Reference to = nessieClient.getTreeApi().getReferenceByName("main");
+    Reference from = nessieClient.getTreeApi().getReferenceByName("testCommitRetry");
 
     nessieClient
         .getTreeApi()
-        .mergeRefIntoBranch("main", toHash, ImmutableMerge.builder().fromHash(fromHash).build());
+        .mergeRefIntoBranch(
+            to.getName(),
+            to.getHash(),
+            ImmutableMerge.builder().sourceRef(from.getName()).fromHash(from.getHash()).build());
 
     spark.sparkContext().conf().set("spark.sql.catalog.spark_catalog.ref", "main");
 
