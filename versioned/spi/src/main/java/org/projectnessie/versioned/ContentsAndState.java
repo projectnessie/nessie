@@ -16,21 +16,28 @@
 package org.projectnessie.versioned;
 
 import javax.annotation.Nonnull;
-import org.immutables.value.Value;
+import javax.annotation.Nullable;
+import org.immutables.value.Value.Immutable;
 
-/** A delete operation. */
-@Value.Immutable
-public interface Delete<V, S> extends Operation<V, S> {
-
-  /**
-   * Creates a delete operation for the given key.
-   *
-   * @param <V> the store value type
-   * @param key the key impacted by the operation
-   * @return a delete operation for the key
-   */
+@Immutable
+public interface ContentsAndState<CONTENTS, STATE> {
   @Nonnull
-  static <V, S> Delete<V, S> of(@Nonnull Key key) {
-    return ImmutableDelete.<V, S>builder().key(key).build();
+  CONTENTS getContents();
+
+  @Nullable
+  STATE getState();
+
+  @Nonnull
+  static <CONTENTS, STATE> ContentsAndState<CONTENTS, STATE> of(
+      @Nonnull CONTENTS contents, @Nonnull STATE state) {
+    return ImmutableContentsAndState.<CONTENTS, STATE>builder()
+        .contents(contents)
+        .state(state)
+        .build();
+  }
+
+  @Nonnull
+  static <CONTENTS, STATE> ContentsAndState<CONTENTS, STATE> of(@Nonnull CONTENTS contents) {
+    return ImmutableContentsAndState.<CONTENTS, STATE>builder().contents(contents).build();
   }
 }
