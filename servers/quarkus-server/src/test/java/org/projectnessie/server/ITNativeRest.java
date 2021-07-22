@@ -20,10 +20,10 @@ import io.quarkus.test.junit.TestProfile;
 import java.net.URI;
 import org.junit.jupiter.api.BeforeEach;
 import org.projectnessie.jaxrs.AbstractTestRest;
-import org.projectnessie.server.profiles.QuarkusNativeProfileInmemory;
+import org.projectnessie.server.profiles.QuarkusNativeProfileInmemoryOld;
 
 @NativeImageTest
-@TestProfile(QuarkusNativeProfileInmemory.class)
+@TestProfile(QuarkusNativeProfileInmemoryOld.class)
 public class ITNativeRest extends AbstractTestRest {
   @Override
   @BeforeEach

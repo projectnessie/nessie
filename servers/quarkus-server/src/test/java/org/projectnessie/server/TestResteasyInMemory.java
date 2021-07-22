@@ -13,22 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.server.profiles;
+package org.projectnessie.server;
 
-import com.google.common.collect.ImmutableMap;
-import io.quarkus.test.junit.QuarkusTestProfile;
-import java.util.Map;
-import org.projectnessie.server.config.VersionStoreConfig.VersionStoreType;
+import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.TestProfile;
+import org.projectnessie.jaxrs.AbstractResteasyTest;
+import org.projectnessie.server.profiles.QuarkusTestProfileInmemory;
 
-public class QuarkusNativeProfileInmemory implements QuarkusTestProfile {
-
-  @Override
-  public Map<String, String> getConfigOverrides() {
-    return ImmutableMap.of("nessie.version.store.type", VersionStoreType.INMEMORY.name());
-  }
-
-  @Override
-  public String getConfigProfile() {
-    return "prod";
-  }
-}
+@QuarkusTest
+@TestProfile(QuarkusTestProfileInmemory.class)
+public class TestResteasyInMemory extends AbstractResteasyTest {}
