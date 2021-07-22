@@ -31,5 +31,6 @@
   <name>Nessie - Versioned - Persist - Parent</name>
 
   <modules>
+    <module>adapter</module>
   </modules>
 </project>
