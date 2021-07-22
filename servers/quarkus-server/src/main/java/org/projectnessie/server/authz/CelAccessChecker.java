@@ -127,7 +127,7 @@ public class CelAccessChecker implements AccessChecker {
                                 "op",
                                 type.name()));
                   } catch (ScriptException e) {
-                    throw new ForbiddenException(
+                    throw new RuntimeException(
                         String.format(
                             "Failed to compile query expression with id '%s' and expression '%s' due to: %s",
                             entry.getKey(), entry.getValue(), e.getMessage()));
@@ -170,7 +170,7 @@ public class CelAccessChecker implements AccessChecker {
                                 "op",
                                 type.name()));
                   } catch (ScriptException e) {
-                    throw new ForbiddenException(
+                    throw new RuntimeException(
                         String.format(
                             "Failed to compile query expression with id '%s' and expression '%s' due to: %s",
                             entry.getKey(), entry.getValue(), e.getMessage()));
