@@ -21,6 +21,12 @@ import { exists, mapValues } from '../runtime';
 export interface Transplant {
     /**
      * 
+     * @type {string}
+     * @memberof Transplant
+     */
+    sourceRef?: string;
+    /**
+     * 
      * @type {Set<string>}
      * @memberof Transplant
      */
@@ -37,6 +43,7 @@ export function TransplantFromJSONTyped(json: any, ignoreDiscriminator: boolean)
     }
     return {
         
+        'sourceRef': !exists(json, 'sourceRef') ? undefined : json['sourceRef'],
         'hashesToTransplant': json['hashesToTransplant'],
     };
 }
@@ -50,6 +57,7 @@ export function TransplantToJSON(value?: Transplant | null): any {
     }
     return {
         
+        'sourceRef': value.sourceRef,
         'hashesToTransplant': value.hashesToTransplant,
     };
 }

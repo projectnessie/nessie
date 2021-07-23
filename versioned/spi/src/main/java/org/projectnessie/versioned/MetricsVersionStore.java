@@ -33,10 +33,10 @@ import javax.annotation.Nonnull;
  * @param <VALUE> see {@link VersionStore}
  * @param <METADATA> see {@link VersionStore}
  */
-public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>>
-    implements VersionStore<VALUE, METADATA, VALUE_TYPE> {
+public final class MetricsVersionStore<VALUE, STATE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>>
+    implements VersionStore<VALUE, STATE, METADATA, VALUE_TYPE> {
 
-  private final VersionStore<VALUE, METADATA, VALUE_TYPE> delegate;
+  private final VersionStore<VALUE, STATE, METADATA, VALUE_TYPE> delegate;
   private final MeterRegistry registry;
   private final Clock clock;
   private final Iterable<Tag> commonTags;
@@ -48,14 +48,16 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
    * @param registry metrics-registry
    */
   MetricsVersionStore(
-      VersionStore<VALUE, METADATA, VALUE_TYPE> delegate, MeterRegistry registry, Clock clock) {
+      VersionStore<VALUE, STATE, METADATA, VALUE_TYPE> delegate,
+      MeterRegistry registry,
+      Clock clock) {
     this.delegate = delegate;
     this.registry = registry;
     this.clock = clock;
     this.commonTags = Tags.of("application", "Nessie");
   }
 
-  public MetricsVersionStore(VersionStore<VALUE, METADATA, VALUE_TYPE> delegate) {
+  public MetricsVersionStore(VersionStore<VALUE, STATE, METADATA, VALUE_TYPE> delegate) {
     this(delegate, Metrics.globalRegistry, Clock.SYSTEM);
   }
 
@@ -75,39 +77,50 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
       @Nonnull BranchName branch,
       @Nonnull Optional<Hash> referenceHash,
       @Nonnull METADATA metadata,
-      @Nonnull List<Operation<VALUE>> operations)
+      @Nonnull List<Operation<VALUE, STATE>> operations)
       throws ReferenceNotFoundException, ReferenceConflictException {
     return this.<Hash, ReferenceNotFoundException, ReferenceConflictException>delegate2ExR(
         "commit", () -> delegate.commit(branch, referenceHash, metadata, operations));
   }
 
   @Override
-  public void transplant(
-      BranchName targetBranch, Optional<Hash> referenceHash, List<Hash> sequenceToTransplant)
+  public Hash transplant(
+      BranchName targetBranch,
+      Optional<Hash> referenceHash,
+      NamedRef source,
+      List<Hash> sequenceToTransplant)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    this.<ReferenceNotFoundException, ReferenceConflictException>delegate2Ex(
-        "transplant", () -> delegate.transplant(targetBranch, referenceHash, sequenceToTransplant));
+    return this.<Hash, ReferenceNotFoundException, ReferenceConflictException>delegate2ExR(
+        "transplant",
+        () -> delegate.transplant(targetBranch, referenceHash, source, sequenceToTransplant));
   }
 
   @Override
-  public void merge(Hash fromHash, BranchName toBranch, Optional<Hash> expectedHash)
+  public Hash merge(
+      NamedRef from,
+      Optional<Hash> fromHash,
+      BranchName toBranch,
+      Optional<Hash> expectedHash,
+      boolean commonAncestorRequired)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    this.<ReferenceNotFoundException, ReferenceConflictException>delegate2Ex(
-        "merge", () -> delegate.merge(fromHash, toBranch, expectedHash));
+    return this.<Hash, ReferenceNotFoundException, ReferenceConflictException>delegate2ExR(
+        "merge",
+        () -> delegate.merge(from, fromHash, toBranch, expectedHash, commonAncestorRequired));
   }
 
   @Override
-  public void assign(NamedRef ref, Optional<Hash> expectedHash, Hash targetHash)
+  public void assign(
+      NamedRef ref, Optional<Hash> expectedHash, NamedRef target, Optional<Hash> targetHash)
       throws ReferenceNotFoundException, ReferenceConflictException {
     this.<ReferenceNotFoundException, ReferenceConflictException>delegate2Ex(
-        "assign", () -> delegate.assign(ref, expectedHash, targetHash));
+        "assign", () -> delegate.assign(ref, expectedHash, target, targetHash));
   }
 
   @Override
-  public Hash create(NamedRef ref, Optional<Hash> targetHash)
+  public Hash create(NamedRef ref, Optional<NamedRef> target, Optional<Hash> targetHash)
       throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
     return this.<Hash, ReferenceNotFoundException, ReferenceAlreadyExistsException>delegate2ExR(
-        "create", () -> delegate.create(ref, targetHash));
+        "create", () -> delegate.create(ref, target, targetHash));
   }
 
   @Override
@@ -123,29 +136,35 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
   }
 
   @Override
-  public Stream<WithHash<METADATA>> getCommits(Ref ref) throws ReferenceNotFoundException {
-    return delegateStream1Ex("getcommits", () -> delegate.getCommits(ref));
-  }
-
-  @Override
-  public Stream<WithType<Key, VALUE_TYPE>> getKeys(Ref ref) throws ReferenceNotFoundException {
-    return delegateStream1Ex("getkeys", () -> delegate.getKeys(ref));
-  }
-
-  @Override
-  public VALUE getValue(Ref ref, Key key) throws ReferenceNotFoundException {
-    return delegate1Ex("getvalue", () -> delegate.getValue(ref, key));
-  }
-
-  @Override
-  public List<Optional<VALUE>> getValues(Ref ref, List<Key> keys)
+  public Stream<WithHash<METADATA>> getCommits(
+      NamedRef ref, Optional<Hash> offset, Optional<Hash> untilIncluding)
       throws ReferenceNotFoundException {
-    return delegate1Ex("getvalues", () -> delegate.getValues(ref, keys));
+    return delegateStream1Ex("getcommits", () -> delegate.getCommits(ref, offset, untilIncluding));
   }
 
   @Override
-  public Stream<Diff<VALUE>> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException {
-    return delegateStream1Ex("getdiffs", () -> delegate.getDiffs(from, to));
+  public Stream<WithType<Key, VALUE_TYPE>> getKeys(NamedRef ref, Optional<Hash> hashOnRef)
+      throws ReferenceNotFoundException {
+    return delegateStream1Ex("getkeys", () -> delegate.getKeys(ref, hashOnRef));
+  }
+
+  @Override
+  public VALUE getValue(NamedRef ref, Optional<Hash> hashOnRef, Key key)
+      throws ReferenceNotFoundException {
+    return delegate1Ex("getvalue", () -> delegate.getValue(ref, hashOnRef, key));
+  }
+
+  @Override
+  public List<Optional<VALUE>> getValues(NamedRef ref, Optional<Hash> hashOnRef, List<Key> keys)
+      throws ReferenceNotFoundException {
+    return delegate1Ex("getvalues", () -> delegate.getValues(ref, hashOnRef, keys));
+  }
+
+  @Override
+  public Stream<Diff<VALUE>> getDiffs(
+      NamedRef from, Optional<Hash> hashOnFrom, NamedRef to, Optional<Hash> hashOnTo)
+      throws ReferenceNotFoundException {
+    return delegateStream1Ex("getdiffs", () -> delegate.getDiffs(from, hashOnFrom, to, hashOnTo));
   }
 
   @Override

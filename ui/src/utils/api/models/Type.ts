@@ -21,7 +21,7 @@ export enum Type {
     DeltaLakeTable = 'DELTA_LAKE_TABLE',
     HiveDatabase = 'HIVE_DATABASE',
     HiveTable = 'HIVE_TABLE',
-    IcebergTable = 'ICEBERG_TABLE',
+    IcebergSnapshot = 'ICEBERG_SNAPSHOT',
     Unknown = 'UNKNOWN',
     View = 'VIEW'
 }

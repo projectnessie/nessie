@@ -44,12 +44,12 @@ import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
+import org.projectnessie.model.CreateReference;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Merge;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
-import org.projectnessie.model.Tag;
 import org.projectnessie.model.Transplant;
 import org.projectnessie.model.Validation;
 
@@ -114,7 +114,7 @@ public interface TreeApi {
                     mediaType = MediaType.APPLICATION_JSON,
                     examples = {@ExampleObject(ref = "refObj")})
               })
-          Reference reference)
+          CreateReference reference)
       throws NessieNotFoundException, NessieConflictException;
 
   /** Get details of a particular ref, if it exists. */
@@ -204,7 +204,7 @@ public interface TreeApi {
     @APIResponse(responseCode = "400", description = "Invalid input, ref name not valid"),
     @APIResponse(responseCode = "404", description = "Ref not found")
   })
-  public EntriesResponse getEntries(
+  EntriesResponse getEntries(
       @NotNull
           @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           @Parameter(
@@ -315,7 +315,7 @@ public interface TreeApi {
                   @Content(
                       mediaType = MediaType.APPLICATION_JSON,
                       examples = {@ExampleObject(ref = "tagObj")}))
-          Tag tag)
+          Reference tag)
       throws NessieNotFoundException, NessieConflictException;
 
   /** Delete a tag. */
@@ -377,7 +377,7 @@ public interface TreeApi {
                   @Content(
                       mediaType = MediaType.APPLICATION_JSON,
                       examples = {@ExampleObject(ref = "refObj")}))
-          Branch branch)
+          Reference branch)
       throws NessieNotFoundException, NessieConflictException;
 
   /** Delete a branch. */

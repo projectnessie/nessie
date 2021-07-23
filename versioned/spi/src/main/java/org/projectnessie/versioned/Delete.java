@@ -20,7 +20,7 @@ import org.immutables.value.Value;
 
 /** A delete operation. */
 @Value.Immutable
-public interface Delete<V> extends Operation<V> {
+public interface Delete<V, S> extends Operation<V, S> {
 
   /**
    * Creates a delete operation for the given key.
@@ -30,7 +30,7 @@ public interface Delete<V> extends Operation<V> {
    * @return a delete operation for the key
    */
   @Nonnull
-  static <V> Delete<V> of(@Nonnull Key key) {
-    return ImmutableDelete.<V>builder().key(key).build();
+  static <V, S> Delete<V, S> of(@Nonnull Key key) {
+    return ImmutableDelete.<V, S>builder().key(key).build();
   }
 }

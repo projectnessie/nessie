@@ -56,6 +56,7 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.hms.NessieTransaction.Handle;
 import org.projectnessie.hms.NessieTransaction.TableAndPartition;
 import org.projectnessie.model.Branch;
+import org.projectnessie.model.CreateReference;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
 import org.slf4j.Logger;
@@ -238,11 +239,20 @@ public class NessieStoreImpl implements NessieStore {
               + "For example CREATE VIEW v1 DBPROPERTIES(\"type\"=\"branch\", \"ref\"=\"abcd...\") as SELECT 1");
     }
 
-    Reference requestedReference = null;
+    String refName = null;
+    String hash = null;
     try {
       String ref = tbl.getParameters().get("ref");
       if (ref != null) {
-        requestedReference = client.getTreeApi().getReferenceByName(ref);
+        int at = ref.indexOf('@');
+        if (at != -1) {
+          refName = ref.substring(0, at);
+          client.getTreeApi().getReferenceByName(refName); // just validate the name
+          hash = ref.substring(at + 1);
+        } else {
+          refName = ref;
+          hash = client.getTreeApi().getReferenceByName(ref).getHash();
+        }
       }
 
     } catch (NessieNotFoundException ex) {
@@ -264,11 +274,9 @@ public class NessieStoreImpl implements NessieStore {
     }
 
     try {
-      Reference reference =
-          branch
-              ? Branch.of(tblName, requestedReference.getHash())
-              : Tag.of(tblName, requestedReference.getHash());
-      client.getTreeApi().createReference(reference);
+      Reference reference = branch ? Branch.of(tblName, hash) : Tag.of(tblName, hash);
+      CreateReference createReference = CreateReference.of(reference, refName);
+      client.getTreeApi().createReference(createReference);
     } catch (NessieNotFoundException e) {
       throw new MetaException("Cannot find the defined reference.");
     } catch (NessieConflictException e) {

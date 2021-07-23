@@ -20,7 +20,7 @@ import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
 import org.apache.spark.unsafe.types.UTF8String
 import org.projectnessie.client.NessieClient
-import org.projectnessie.model.{Branch, ImmutableMerge}
+import org.projectnessie.model.ImmutableMerge
 
 case class MergeBranchExec(
     output: Seq[Attribute],
@@ -33,21 +33,21 @@ case class MergeBranchExec(
   override protected def runInternal(
       nessieClient: NessieClient
   ): Seq[InternalRow] = {
+    val from = nessieClient.getTreeApi
+      .getReferenceByName(
+        branch.getOrElse(
+          NessieUtils.getCurrentRef(currentCatalog, catalog).getName
+        )
+      )
     nessieClient.getTreeApi.mergeRefIntoBranch(
       toRefName.getOrElse(nessieClient.getTreeApi.getDefaultBranch.getName),
       toRefName
         .map(r => nessieClient.getTreeApi.getReferenceByName(r).getHash)
         .getOrElse(nessieClient.getTreeApi.getDefaultBranch.getHash),
       ImmutableMerge.builder
-        .fromHash(
-          nessieClient.getTreeApi
-            .getReferenceByName(
-              branch.getOrElse(
-                NessieUtils.getCurrentRef(currentCatalog, catalog).getName
-              )
-            )
-            .getHash
-        )
+        .fromHash(from.getHash)
+        .sourceRef(from.getName)
+        .isAncestorRequired(false)
         .build
     )
     val ref = nessieClient.getTreeApi.getReferenceByName(

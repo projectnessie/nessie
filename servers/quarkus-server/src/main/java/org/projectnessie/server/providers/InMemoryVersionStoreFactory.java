@@ -17,23 +17,36 @@ package org.projectnessie.server.providers;
 
 import static org.projectnessie.server.config.VersionStoreConfig.VersionStoreType.INMEMORY;
 
-import java.io.IOException;
 import javax.enterprise.context.Dependent;
+import org.projectnessie.services.config.ServerConfig;
+import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.VersionStore;
-import org.projectnessie.versioned.memory.InMemoryVersionStore;
+import org.projectnessie.versioned.tiered.adapter.DatabaseAdapter;
+import org.projectnessie.versioned.tiered.impl.TieredVersionStore;
+import org.projectnessie.versioned.tiered.inmem.InmemoryDatabaseAdapterFactory;
 
 /** In-memory version store factory. */
 @StoreType(INMEMORY)
 @Dependent
 public class InMemoryVersionStoreFactory implements VersionStoreFactory {
   @Override
-  public <VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>>
-      VersionStore<VALUE, METADATA, VALUE_TYPE> newStore(
-          StoreWorker<VALUE, METADATA, VALUE_TYPE> worker) throws IOException {
-    return InMemoryVersionStore.<VALUE, METADATA, VALUE_TYPE>builder()
-        .metadataSerializer(worker.getMetadataSerializer())
-        .valueSerializer(worker.getValueSerializer())
-        .build();
+  public <VALUE, STATE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>>
+      VersionStore<VALUE, STATE, METADATA, VALUE_TYPE> newStore(
+          StoreWorker<VALUE, STATE, METADATA, VALUE_TYPE> worker, ServerConfig serverConfig) {
+    DatabaseAdapter databaseAdapter =
+        new InmemoryDatabaseAdapterFactory()
+            .newBuilder()
+            .configure(c -> c.withDefaultBranch(serverConfig.getDefaultBranch()))
+            .build();
+
+    // TODO update this piece !!
+    try {
+      databaseAdapter.initializeRepo();
+    } catch (ReferenceConflictException e) {
+      throw new RuntimeException(e);
+    }
+
+    return new TieredVersionStore<>(databaseAdapter, worker);
   }
 }

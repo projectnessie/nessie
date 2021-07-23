@@ -39,6 +39,7 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.Contents;
 import org.projectnessie.model.ContentsKey;
+import org.projectnessie.model.CreateReference;
 import org.projectnessie.model.DeltaLakeTable;
 import org.projectnessie.model.Reference;
 import scala.Tuple2;
@@ -87,9 +88,10 @@ class ITDeltaLogBranches extends AbstractSparkTest {
     // write some data to table
     targetTable.write().format("delta").save(tempPath.getAbsolutePath());
     // create test at the point where there is only 1 commit
+    Branch main = client.getTreeApi().getDefaultBranch();
     client
         .getTreeApi()
-        .createReference(Branch.of("test", client.getTreeApi().getDefaultBranch().getHash()));
+        .createReference(CreateReference.of(Branch.of("test", main.getHash()), main.getName()));
     // add some more data to main
     targetTable.write().format("delta").mode("append").save(tempPath.getAbsolutePath());
 

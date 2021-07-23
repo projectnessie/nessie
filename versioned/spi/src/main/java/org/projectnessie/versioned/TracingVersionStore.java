@@ -37,8 +37,8 @@ import javax.annotation.Nonnull;
  * @param <VALUE> see {@link VersionStore}
  * @param <METADATA> see {@link VersionStore}
  */
-public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>>
-    implements VersionStore<VALUE, METADATA, VALUE_TYPE> {
+public class TracingVersionStore<VALUE, STATE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>>
+    implements VersionStore<VALUE, STATE, METADATA, VALUE_TYPE> {
 
   private static final String TAG_OPERATION = "nessie.version-store.operation";
   private static final String TAG_REF = "nessie.version-store.ref";
@@ -50,20 +50,21 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
   private static final String TAG_FROM_HASH = "nessie.version-store.from-hash";
   private static final String TAG_TO_BRANCH = "nessie.version-store.to-branch";
   private static final String TAG_EXPECTED_HASH = "nessie.version-store.expected-hash";
+  private static final String TAG_TARGET = "nessie.version-store.target";
   private static final String TAG_TARGET_HASH = "nessie.version-store.target-hash";
   private static final String TAG_KEY = "nessie.version-store.key";
   private static final String TAG_KEYS = "nessie.version-store.keys";
   private static final String TAG_FROM = "nessie.version-store.from";
   private static final String TAG_TO = "nessie.version-store.to";
 
-  private final VersionStore<VALUE, METADATA, VALUE_TYPE> delegate;
+  private final VersionStore<VALUE, STATE, METADATA, VALUE_TYPE> delegate;
 
   /**
    * Takes the {@link VersionStore} instance to trace.
    *
    * @param delegate backing/delegate {@link VersionStore}
    */
-  public TracingVersionStore(VersionStore<VALUE, METADATA, VALUE_TYPE> delegate) {
+  public TracingVersionStore(VersionStore<VALUE, STATE, METADATA, VALUE_TYPE> delegate) {
     this.delegate = delegate;
   }
 
@@ -85,7 +86,7 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
       @Nonnull BranchName branch,
       @Nonnull Optional<Hash> referenceHash,
       @Nonnull METADATA metadata,
-      @Nonnull List<Operation<VALUE>> operations)
+      @Nonnull List<Operation<VALUE, STATE>> operations)
       throws ReferenceNotFoundException, ReferenceConflictException {
     return this.<Hash, ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
         "Commit",
@@ -97,52 +98,65 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
   }
 
   @Override
-  public void transplant(
-      BranchName targetBranch, Optional<Hash> referenceHash, List<Hash> sequenceToTransplant)
+  public Hash transplant(
+      BranchName targetBranch,
+      Optional<Hash> referenceHash,
+      NamedRef source,
+      List<Hash> sequenceToTransplant)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    this.<ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
+    return this.<Hash, ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
         "Transplant",
         b ->
             b.withTag(TAG_TARGET_BRANCH, safeRefName(targetBranch))
                 .withTag(TAG_HASH, safeToString(referenceHash))
+                .withTag(TAG_FROM, safeToString(source))
                 .withTag(TAG_TRANSPLANTS, safeSize(sequenceToTransplant)),
-        () -> delegate.transplant(targetBranch, referenceHash, sequenceToTransplant));
+        () -> delegate.transplant(targetBranch, referenceHash, source, sequenceToTransplant));
   }
 
   @Override
-  public void merge(Hash fromHash, BranchName toBranch, Optional<Hash> expectedHash)
+  public Hash merge(
+      NamedRef from,
+      Optional<Hash> fromHash,
+      BranchName toBranch,
+      Optional<Hash> expectedHash,
+      boolean commonAncestorRequired)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    this.<ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
+    return this.<Hash, ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
         "Merge",
         b ->
-            b.withTag(TAG_FROM_HASH, safeToString(fromHash))
+            b.withTag(TAG_FROM, safeRefName(from))
+                .withTag(TAG_FROM_HASH, safeToString(fromHash))
                 .withTag(TAG_TO_BRANCH, safeRefName(toBranch))
                 .withTag(TAG_EXPECTED_HASH, safeToString(expectedHash)),
-        () -> delegate.merge(fromHash, toBranch, expectedHash));
+        () -> delegate.merge(from, fromHash, toBranch, expectedHash, commonAncestorRequired));
   }
 
   @Override
-  public void assign(NamedRef ref, Optional<Hash> expectedHash, Hash targetHash)
+  public void assign(
+      NamedRef ref, Optional<Hash> expectedHash, NamedRef target, Optional<Hash> targetHash)
       throws ReferenceNotFoundException, ReferenceConflictException {
     this.<ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
         "Assign",
         b ->
             b.withTag(TAG_REF, safeToString(ref))
                 .withTag(TracingVersionStore.TAG_EXPECTED_HASH, safeToString(expectedHash))
+                .withTag(TracingVersionStore.TAG_TARGET, safeToString(target))
                 .withTag(TAG_TARGET_HASH, safeToString(targetHash)),
-        () -> delegate.assign(ref, expectedHash, targetHash));
+        () -> delegate.assign(ref, expectedHash, target, targetHash));
   }
 
   @Override
-  public Hash create(NamedRef ref, Optional<Hash> targetHash)
+  public Hash create(NamedRef ref, Optional<NamedRef> target, Optional<Hash> targetHash)
       throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
     return this
         .<Hash, ReferenceNotFoundException, ReferenceAlreadyExistsException>callWithTwoExceptions(
             "Create",
             b ->
                 b.withTag(TAG_REF, safeToString(ref))
+                    .withTag(TAG_TARGET, safeToString(target))
                     .withTag(TAG_TARGET_HASH, safeToString(targetHash)),
-            () -> delegate.create(ref, targetHash));
+            () -> delegate.create(ref, target, targetHash));
   }
 
   @Override
@@ -160,40 +174,60 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
   }
 
   @Override
-  public Stream<WithHash<METADATA>> getCommits(Ref ref) throws ReferenceNotFoundException {
+  public Stream<WithHash<METADATA>> getCommits(
+      NamedRef ref, Optional<Hash> offset, Optional<Hash> untilIncluding)
+      throws ReferenceNotFoundException {
     return callStreamWithOneException(
-        "GetCommits", b -> b.withTag(TAG_REF, safeToString(ref)), () -> delegate.getCommits(ref));
+        "GetCommits",
+        b -> b.withTag(TAG_REF, safeToString(ref)).withTag(TAG_HASH, safeToString(offset)),
+        () -> delegate.getCommits(ref, offset, untilIncluding));
   }
 
   @Override
-  public Stream<WithType<Key, VALUE_TYPE>> getKeys(Ref ref) throws ReferenceNotFoundException {
+  public Stream<WithType<Key, VALUE_TYPE>> getKeys(NamedRef ref, Optional<Hash> hashOnRef)
+      throws ReferenceNotFoundException {
     return callStreamWithOneException(
-        "GetKeys", b -> b.withTag(TAG_REF, safeToString(ref)), () -> delegate.getKeys(ref));
+        "GetKeys",
+        b -> b.withTag(TAG_REF, safeToString(ref)).withTag(TAG_HASH, safeToString(hashOnRef)),
+        () -> delegate.getKeys(ref, hashOnRef));
   }
 
   @Override
-  public VALUE getValue(Ref ref, Key key) throws ReferenceNotFoundException {
+  public VALUE getValue(NamedRef ref, Optional<Hash> hashOnRef, Key key)
+      throws ReferenceNotFoundException {
     return callWithOneException(
         "GetValue",
-        b -> b.withTag(TAG_REF, safeToString(ref)).withTag(TAG_KEY, safeToString(key)),
-        () -> delegate.getValue(ref, key));
+        b ->
+            b.withTag(TAG_REF, safeToString(ref))
+                .withTag(TAG_HASH, safeToString(hashOnRef))
+                .withTag(TAG_KEY, safeToString(key)),
+        () -> delegate.getValue(ref, hashOnRef, key));
   }
 
   @Override
-  public List<Optional<VALUE>> getValues(Ref ref, List<Key> keys)
+  public List<Optional<VALUE>> getValues(NamedRef ref, Optional<Hash> hashOnRef, List<Key> keys)
       throws ReferenceNotFoundException {
     return callWithOneException(
         "GetValues",
-        b -> b.withTag(TAG_REF, safeToString(ref)).withTag(TAG_KEYS, safeToString(keys)),
-        () -> delegate.getValues(ref, keys));
+        b ->
+            b.withTag(TAG_REF, safeToString(ref))
+                .withTag(TAG_HASH, safeToString(hashOnRef))
+                .withTag(TAG_KEYS, safeToString(keys)),
+        () -> delegate.getValues(ref, hashOnRef, keys));
   }
 
   @Override
-  public Stream<Diff<VALUE>> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException {
+  public Stream<Diff<VALUE>> getDiffs(
+      NamedRef from, Optional<Hash> hashOnFrom, NamedRef to, Optional<Hash> hashOnTo)
+      throws ReferenceNotFoundException {
     return callStreamWithOneException(
         "GetDiffs",
-        b -> b.withTag(TAG_FROM, safeToString(from)).withTag(TAG_TO, safeToString(to)),
-        () -> delegate.getDiffs(from, to));
+        b ->
+            b.withTag(TAG_FROM, safeToString(from))
+                .withTag(TAG_FROM_HASH, safeToString(hashOnFrom))
+                .withTag(TAG_TO, safeToString(to))
+                .withTag(TAG_HASH, safeToString(hashOnTo)),
+        () -> delegate.getDiffs(from, hashOnFrom, to, hashOnTo));
   }
 
   @Override
