@@ -1,0 +1,1311 @@
+/*
+ * Copyright (C) 2020 Dremio
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.projectnessie.versioned.persist.tx;
+
+import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.assignConflictMessage;
+import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.commitConflictMessage;
+import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.createConflictMessage;
+import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.deleteConflictMessage;
+import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.mergeConflictMessage;
+import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.newHasher;
+import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.referenceAlreadyExists;
+import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.referenceNotFound;
+import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.transplantConflictMessage;
+import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.verifyExpectedHash;
+import static org.projectnessie.versioned.persist.adapter.spi.TryLoopState.newTryLoopState;
+import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.protoToCommitLogEntry;
+import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.protoToKeyList;
+import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.toProto;
+
+import com.google.common.collect.ImmutableMap;
+import com.google.protobuf.ByteString;
+import com.google.protobuf.UnsafeByteOperations;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.function.ToIntFunction;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.Diff;
+import org.projectnessie.versioned.Hash;
+import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.NamedRef;
+import org.projectnessie.versioned.ReferenceAlreadyExistsException;
+import org.projectnessie.versioned.ReferenceConflictException;
+import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.ReferenceRetryFailureException;
+import org.projectnessie.versioned.TagName;
+import org.projectnessie.versioned.VersionStoreException;
+import org.projectnessie.versioned.WithHash;
+import org.projectnessie.versioned.persist.adapter.CommitAttempt;
+import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
+import org.projectnessie.versioned.persist.adapter.ContentsAndState;
+import org.projectnessie.versioned.persist.adapter.ContentsId;
+import org.projectnessie.versioned.persist.adapter.ContentsIdAndBytes;
+import org.projectnessie.versioned.persist.adapter.ContentsIdWithType;
+import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
+import org.projectnessie.versioned.persist.adapter.KeyListEntity;
+import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
+import org.projectnessie.versioned.persist.adapter.KeyWithType;
+import org.projectnessie.versioned.persist.adapter.spi.AbstractDatabaseAdapter;
+import org.projectnessie.versioned.persist.adapter.spi.TryLoopState;
+import org.projectnessie.versioned.persist.tx.TxConnectionProvider.LocalConnectionProvider;
+
+/**
+ * Transactional/relational {@link AbstractDatabaseAdapter} implementation using JDBC primitives.
+ *
+ * <p>Concrete implementations must at least provide the concrete column types and, if necessary,
+ * provide the implementation to check for constraint-violations.l
+ */
+public abstract class TxDatabaseAdapter
+    extends AbstractDatabaseAdapter<Connection, TxDatabaseAdapterConfig> {
+
+  /** Value for {@link #TABLE_NAMED_REFERENCES}.{@code ref_type} for a branch. */
+  protected static final String REF_TYPE_BRANCH = "b";
+  /** Value for {@link #TABLE_NAMED_REFERENCES}.{@code ref_type} for a tag. */
+  protected static final String REF_TYPE_TAG = "t";
+
+  protected static final String TABLE_NAMED_REFERENCES = "named_refs";
+  protected static final String TABLE_GLOBAL_STATE = "global_state";
+  protected static final String TABLE_COMMIT_LOG = "commit_log";
+  protected static final String TABLE_KEY_LIST = "key_list";
+
+  // SQL / DDL statements
+
+  protected static final String CREATE_TABLE_NAMED_REFERENCES =
+      String.format(
+          "CREATE TABLE %s (\n"
+              + "  key_prefix {2},\n"
+              + "  ref {4},\n"
+              + "  ref_type {5},\n"
+              + "  hash {1},\n"
+              + "  PRIMARY KEY (key_prefix, ref)\n"
+              + ")",
+          TABLE_NAMED_REFERENCES);
+  protected static final String CREATE_TABLE_GLOBAL_STATE =
+      String.format(
+          "CREATE TABLE %s (\n"
+              + "  key_prefix {2},\n"
+              + "  cid {6},\n"
+              + "  chksum {1},\n"
+              + "  value {0},\n"
+              + "  created_at {7},\n"
+              + "  PRIMARY KEY (key_prefix, cid)\n"
+              + ")",
+          TABLE_GLOBAL_STATE);
+  protected static final String CREATE_TABLE_COMMIT_LOG =
+      String.format(
+          "CREATE TABLE %s (\n"
+              + "  key_prefix {2},\n"
+              + "  hash {1},\n"
+              + "  value {0},\n"
+              + "  PRIMARY KEY (key_prefix, hash)\n"
+              + ")",
+          TABLE_COMMIT_LOG);
+  protected static final String CREATE_TABLE_KEY_LIST =
+      String.format(
+          "CREATE TABLE %s (\n"
+              + "  key_prefix {2},\n"
+              + "  id {1},\n"
+              + "  value {0},\n"
+              + "  PRIMARY KEY (key_prefix, id)\n"
+              + ")",
+          TABLE_KEY_LIST);
+
+  // SQL / DML statements
+
+  protected static final String SELECT_NAMED_REFERENCE =
+      String.format(
+          "SELECT hash FROM %s WHERE key_prefix = ? AND ref = ? AND ref_type = ?",
+          TABLE_NAMED_REFERENCES);
+  protected static final String SELECT_NAMED_REFERENCE_NAME =
+      String.format("SELECT hash FROM %s WHERE key_prefix = ? AND ref = ?", TABLE_NAMED_REFERENCES);
+  protected static final String SELECT_NAMED_REFERENCES =
+      String.format(
+          "SELECT ref_type, ref, hash FROM %s WHERE key_prefix = ?", TABLE_NAMED_REFERENCES);
+  protected static final String DELETE_NAMED_REFERENCE =
+      String.format(
+          "DELETE FROM %s WHERE key_prefix = ? AND ref = ? AND hash = ?", TABLE_NAMED_REFERENCES);
+  protected static final String INSERT_NAMED_REFERENCE =
+      String.format(
+          "INSERT INTO %s (key_prefix, ref, ref_type, hash) VALUES (?, ?, ?, ?)",
+          TABLE_NAMED_REFERENCES);
+  protected static final String UPDATE_NAMED_REFERENCE =
+      String.format(
+          "UPDATE %s SET hash = ? WHERE key_prefix = ? AND ref = ? AND hash = ?",
+          TABLE_NAMED_REFERENCES);
+  protected static final String DELETE_NAMED_REFERENCE_ALL =
+      String.format("DELETE FROM %s WHERE key_prefix = ?", TABLE_NAMED_REFERENCES);
+
+  protected static final String SELECT_GLOBAL_STATE_MANY =
+      String.format(
+          "SELECT cid, value FROM %s WHERE key_prefix = ? AND cid IN (%%s)", TABLE_GLOBAL_STATE);
+  protected static final String SELECT_GLOBAL_STATE_ALL =
+      String.format("SELECT cid, value FROM %s WHERE key_prefix = ?", TABLE_GLOBAL_STATE);
+  protected static final String SELECT_GLOBAL_STATE_MANY_WITH_LOGS =
+      String.format(
+          "SELECT cid, value, created_at FROM %s WHERE key_prefix = ? AND cid IN (%%s)",
+          TABLE_GLOBAL_STATE);
+  protected static final String INSERT_GLOBAL_STATE =
+      String.format(
+          "INSERT INTO %s (key_prefix, cid, chksum, value, created_at) VALUES (?, ?, ?, ?, ?)",
+          TABLE_GLOBAL_STATE);
+  protected static final String UPDATE_GLOBAL_STATE =
+      String.format(
+          "UPDATE %s SET value = ?, chksum = ?, created_at = ? WHERE key_prefix = ? AND cid = ? AND chksum = ?",
+          TABLE_GLOBAL_STATE);
+  protected static final String UPDATE_GLOBAL_STATE_UNCOND =
+      String.format(
+          "UPDATE %s SET value = ?, chksum = ?, created_at = ? WHERE key_prefix = ? AND cid = ?",
+          TABLE_GLOBAL_STATE);
+  protected static final String DELETE_GLOBAL_STATE_ALL =
+      String.format("DELETE FROM %s WHERE key_prefix = ?", TABLE_GLOBAL_STATE);
+
+  protected static final String SELECT_COMMIT_LOG =
+      String.format("SELECT value FROM %s WHERE key_prefix = ? AND hash = ?", TABLE_COMMIT_LOG);
+  protected static final String SELECT_COMMIT_LOG_MANY =
+      String.format(
+          "SELECT value FROM %s WHERE key_prefix = ? AND hash IN (%%s)", TABLE_COMMIT_LOG);
+  protected static final String INSERT_COMMIT_LOG =
+      String.format("INSERT INTO %s (key_prefix, hash, value) VALUES (?, ?, ?)", TABLE_COMMIT_LOG);
+  protected static final String DELETE_COMMIT_LOG_ALL =
+      String.format("DELETE FROM %s WHERE key_prefix = ?", TABLE_COMMIT_LOG);
+
+  protected static final String INSERT_KEY_LIST =
+      String.format("INSERT INTO %s (key_prefix, id, value) VALUES (?, ?, ?)", TABLE_KEY_LIST);
+  protected static final String SELECT_KEY_LIST_MANY =
+      String.format(
+          "SELECT id, value FROM %s WHERE key_prefix = ? AND id IN (%%s)", TABLE_KEY_LIST);
+  protected static final String DELETE_KEY_LIST_ALL =
+      String.format("DELETE FROM %s WHERE key_prefix = ?", TABLE_KEY_LIST);
+
+  private final TxConnectionProvider db;
+
+  public TxDatabaseAdapter(TxDatabaseAdapterConfig config) {
+    super(config);
+
+    // get the externally configured RocksDbInstance
+    TxConnectionProvider db = config.getConnectionProvider();
+
+    if (db == null) {
+      // Create a ConnectionProvider, if none has been configured externally. This is mostly used
+      // for tests and benchmarks.
+      db = new LocalConnectionProvider();
+      db.configure(config);
+      db.setupDatabase(
+          allCreateTableDDL(),
+          databaseSqlFormatParameters(),
+          metadataUpperCase(),
+          batchDDL(),
+          config.getCatalog(),
+          config.getSchema());
+    }
+
+    this.db = db;
+  }
+
+  @Override
+  public Hash hashOnReference(NamedRef namedReference, Optional<Hash> hashOnReference)
+      throws ReferenceNotFoundException {
+    Connection ctx = borrowConnection();
+    try {
+      return hashOnRef(ctx, namedReference, hashOnReference);
+    } finally {
+      releaseConnection(ctx);
+    }
+  }
+
+  @Override
+  public Stream<Optional<ContentsAndState<ByteString>>> values(
+      Hash commit, List<Key> keys, KeyFilterPredicate keyFilter) throws ReferenceNotFoundException {
+    Connection ctx = borrowConnection();
+    try {
+      Map<Key, ContentsAndState<ByteString>> result = fetchValues(ctx, commit, keys, keyFilter);
+      return keys.stream().map(result::get).map(Optional::ofNullable);
+    } finally {
+      releaseConnection(ctx);
+    }
+  }
+
+  @Override
+  public Stream<CommitLogEntry> commitLog(Hash offset) throws ReferenceNotFoundException {
+    Connection ctx = borrowConnection();
+    boolean failed = true;
+    try {
+      Stream<CommitLogEntry> intLog = readCommitLogStream(ctx, offset);
+
+      failed = false;
+      return intLog.onClose(() -> releaseConnection(ctx));
+    } finally {
+      if (failed) {
+        releaseConnection(ctx);
+      }
+    }
+  }
+
+  @Override
+  public Stream<WithHash<NamedRef>> namedRefs() {
+    return fetchNamedRefs(borrowConnectionWrapper());
+  }
+
+  @Override
+  public Stream<KeyWithType> keys(Hash commit, KeyFilterPredicate keyFilter)
+      throws ReferenceNotFoundException {
+    Connection ctx = borrowConnection();
+    boolean failed = true;
+    try {
+      Stream<KeyWithType> r = keysForCommitEntry(ctx, commit, keyFilter);
+      failed = false;
+      return r.onClose(() -> releaseConnection(ctx));
+    } finally {
+      if (failed) {
+        releaseConnection(ctx);
+      }
+    }
+  }
+
+  @Override
+  public Hash merge(Hash from, BranchName toBranch, Optional<Hash> expectedHead)
+      throws ReferenceNotFoundException, ReferenceConflictException {
+    // The spec for 'VersionStore.merge' mentions "(...) until we arrive at a common ancestor",
+    // but old implementations allowed a merge even if the "merge-from" and "merge-to" have no
+    // common ancestor and did merge "everything" from the "merge-from" into "merge-to".
+    //
+    // This implementation requires a common-ancestor, where "beginning-of-time" is not a valid
+    // common-ancestor.
+    //
+    // Note: "beginning-of-time" (aka creating a branch without specifying a "create-from")
+    // creates a new commit-tree that is decoupled from other commit-trees.
+    try {
+      return opLoop(
+          toBranch,
+          false,
+          (ctx, currentHead) -> {
+            long timeInMicros = commitTimeInMicros();
+
+            Hash toHead =
+                mergeAttempt(
+                    ctx, timeInMicros, from, toBranch, expectedHead, currentHead, h -> {}, h -> {});
+            return tryMoveNamedReference(ctx, toBranch, currentHead, toHead);
+          },
+          () -> mergeConflictMessage("Conflict", from, toBranch, expectedHead),
+          () -> mergeConflictMessage("Retry-failure", from, toBranch, expectedHead));
+    } catch (ReferenceNotFoundException | ReferenceConflictException | RuntimeException e) {
+      throw e;
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @SuppressWarnings("RedundantThrows")
+  @Override
+  public Hash transplant(BranchName targetBranch, Optional<Hash> expectedHead, List<Hash> commits)
+      throws ReferenceNotFoundException, ReferenceConflictException {
+    try {
+      return opLoop(
+          targetBranch,
+          false,
+          (ctx, currentHead) -> {
+            long timeInMicros = commitTimeInMicros();
+
+            Hash targetHead =
+                transplantAttempt(
+                    ctx,
+                    timeInMicros,
+                    targetBranch,
+                    expectedHead,
+                    currentHead,
+                    commits,
+                    h -> {},
+                    h -> {});
+
+            return tryMoveNamedReference(ctx, targetBranch, currentHead, targetHead);
+          },
+          () -> transplantConflictMessage("Conflict", targetBranch, expectedHead, commits),
+          () -> transplantConflictMessage("Retry-failure", targetBranch, expectedHead, commits));
+
+    } catch (ReferenceNotFoundException | ReferenceConflictException | RuntimeException e) {
+      throw e;
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public Hash commit(CommitAttempt commitAttempt)
+      throws ReferenceConflictException, ReferenceNotFoundException {
+    try {
+      return opLoop(
+          commitAttempt.getCommitToBranch(),
+          false,
+          (ctx, branchHead) -> {
+            long timeInMicros = commitTimeInMicros();
+
+            CommitLogEntry newBranchCommit =
+                commitAttempt(ctx, timeInMicros, branchHead, commitAttempt, h -> {});
+
+            upsertGlobalStates(commitAttempt, ctx, newBranchCommit.getCreatedTime());
+
+            return tryMoveNamedReference(
+                ctx, commitAttempt.getCommitToBranch(), branchHead, newBranchCommit.getHash());
+          },
+          () ->
+              commitConflictMessage(
+                  "Conflict", commitAttempt.getCommitToBranch(), commitAttempt.getExpectedHead()),
+          () ->
+              commitConflictMessage(
+                  "Retry-Failure",
+                  commitAttempt.getCommitToBranch(),
+                  commitAttempt.getExpectedHead()));
+    } catch (ReferenceNotFoundException | ReferenceConflictException | RuntimeException e) {
+      throw e;
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @SuppressWarnings("RedundantThrows")
+  @Override
+  public Hash create(NamedRef ref, Hash target)
+      throws ReferenceAlreadyExistsException, ReferenceNotFoundException {
+    try {
+      return opLoop(
+          ref,
+          true,
+          (ctx, nullHead) -> {
+            if (checkNamedRefExistence(ctx, ref.getName())) {
+              throw referenceAlreadyExists(ref);
+            }
+
+            Hash hash = target;
+            if (hash == null) {
+              // Special case: Don't validate, if the 'target' parameter is null.
+              // This is mostly used for tests that re-create the default-branch.
+              hash = NO_ANCESTOR;
+            }
+
+            validateHashExists(ctx, hash);
+
+            insertNewReference(ctx, ref, hash);
+
+            return hash;
+          },
+          () -> createConflictMessage("Conflict", ref, target),
+          () -> createConflictMessage("Retry-Failure", ref, target));
+    } catch (ReferenceAlreadyExistsException | ReferenceNotFoundException | RuntimeException e) {
+      throw e;
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public void delete(NamedRef reference, Optional<Hash> expectedHead)
+      throws ReferenceNotFoundException, ReferenceConflictException {
+    try {
+      opLoop(
+          reference,
+          false,
+          (ctx, pointer) -> {
+            verifyExpectedHash(pointer, reference, expectedHead);
+
+            try (PreparedStatement ps = ctx.prepareStatement(DELETE_NAMED_REFERENCE)) {
+              ps.setString(1, config.getKeyPrefix());
+              ps.setString(2, reference.getName());
+              ps.setString(3, pointer.asString());
+              if (ps.executeUpdate() == 1) {
+                return pointer;
+              }
+              return null;
+            }
+          },
+          () -> deleteConflictMessage("Conflict", reference, expectedHead),
+          () -> deleteConflictMessage("Retry-Failure", reference, expectedHead));
+    } catch (ReferenceNotFoundException | ReferenceConflictException | RuntimeException e) {
+      throw e;
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public void assign(NamedRef assignee, Optional<Hash> expectedHead, Hash assignTo)
+      throws ReferenceNotFoundException, ReferenceConflictException {
+    try {
+      opLoop(
+          assignee,
+          true,
+          (ctx, pointer) -> {
+            pointer = fetchNamedRefHead(ctx, assignee);
+
+            verifyExpectedHash(pointer, assignee, expectedHead);
+
+            if (!NO_ANCESTOR.equals(assignTo) && fetchFromCommitLog(ctx, assignTo) == null) {
+              throw referenceNotFound(assignTo);
+            }
+
+            return tryMoveNamedReference(ctx, assignee, pointer, assignTo);
+          },
+          () -> assignConflictMessage("Conflict", assignee, expectedHead, assignTo),
+          () -> assignConflictMessage("Retry-Failure", assignee, expectedHead, assignTo));
+    } catch (ReferenceNotFoundException | ReferenceConflictException | RuntimeException e) {
+      throw e;
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public Stream<Diff<ByteString>> diff(Hash from, Hash to, KeyFilterPredicate keyFilter)
+      throws ReferenceNotFoundException {
+    Connection ctx = borrowConnection();
+    try {
+      return buildDiff(ctx, from, to, keyFilter);
+    } finally {
+      releaseConnection(ctx);
+    }
+  }
+
+  @Override
+  public void initializeRepo(String defaultBranchName) {
+    Connection ctx = borrowConnection();
+    try {
+      if (!checkNamedRefExistence(ctx, BranchName.of(defaultBranchName))) {
+        insertNewReference(ctx, BranchName.of(defaultBranchName), NO_ANCESTOR);
+
+        txCommit(ctx);
+      }
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    } finally {
+      releaseConnection(ctx);
+    }
+  }
+
+  @Override
+  public void reinitializeRepo(String defaultBranchName) {
+    Connection ctx = borrowConnection();
+    try {
+      try (PreparedStatement ps = ctx.prepareStatement(DELETE_NAMED_REFERENCE_ALL)) {
+        ps.setString(1, config.getKeyPrefix());
+        ps.executeUpdate();
+      }
+      try (PreparedStatement ps = ctx.prepareStatement(DELETE_GLOBAL_STATE_ALL)) {
+        ps.setString(1, config.getKeyPrefix());
+        ps.executeUpdate();
+      }
+      try (PreparedStatement ps = ctx.prepareStatement(DELETE_COMMIT_LOG_ALL)) {
+        ps.setString(1, config.getKeyPrefix());
+        ps.executeUpdate();
+      }
+      try (PreparedStatement ps = ctx.prepareStatement(DELETE_KEY_LIST_ALL)) {
+        ps.setString(1, config.getKeyPrefix());
+        ps.executeUpdate();
+      }
+
+      txCommit(ctx);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    } finally {
+      releaseConnection(ctx);
+    }
+
+    initializeRepo(defaultBranchName);
+  }
+
+  @Override
+  public void close() throws Exception {
+    db.close();
+  }
+
+  @Override
+  public Stream<ContentsIdWithType> globalKeys(ToIntFunction<ByteString> contentsTypeExtractor) {
+    return JdbcSelectSpliterator.buildStream(
+        borrowConnectionWrapper(),
+        SELECT_GLOBAL_STATE_ALL,
+        ps -> ps.setString(1, config.getKeyPrefix()),
+        (rs) -> {
+          ContentsId contentsId = ContentsId.of(rs.getString(1));
+          byte[] value = rs.getBytes(2);
+          byte type =
+              (byte) contentsTypeExtractor.applyAsInt(UnsafeByteOperations.unsafeWrap(value));
+
+          return ContentsIdWithType.of(contentsId, type);
+        });
+  }
+
+  @Override
+  public Stream<ContentsIdAndBytes> globalLog(
+      Set<ContentsIdWithType> keys, ToIntFunction<ByteString> contentsTypeExtractor) {
+    ConnectionWrapper conn = borrowConnectionWrapper();
+
+    // 1. Fetch the global states,
+    // 1.1. filter the requested keys + contents-ids
+    // 1.2. extract the current state from the GLOBAL_STATE table
+
+    // 1. Fetch the global states,
+    return JdbcSelectSpliterator.buildStream(
+        conn,
+        sqlForManyPlaceholders(SELECT_GLOBAL_STATE_MANY_WITH_LOGS, keys.size()),
+        ps -> {
+          ps.setString(1, config.getKeyPrefix());
+          int i = 2;
+          for (ContentsIdWithType key : keys) {
+            ps.setString(i++, key.getContentsId().getId());
+          }
+        },
+        (rs) -> {
+          ContentsId cid = ContentsId.of(rs.getString(1));
+          ByteString value = UnsafeByteOperations.unsafeWrap(rs.getBytes(2));
+          byte type = (byte) contentsTypeExtractor.applyAsInt(value);
+          ContentsIdWithType ktFromResult = ContentsIdWithType.of(cid, type);
+          if (!keys.contains(ktFromResult)) {
+            // 1.1. filter the requested keys + contents-ids
+            return null;
+          }
+
+          // 1.2. extract the current state from the GLOBAL_STATE table
+          return ContentsIdAndBytes.of(cid, type, value);
+        });
+  }
+
+  @Override
+  public Stream<KeyWithBytes> allContents(
+      BiFunction<NamedRef, CommitLogEntry, Boolean> continueOnRefPredicate) {
+    ConnectionWrapper conn = borrowConnectionWrapper();
+    boolean failed = true;
+    try {
+      Connection c = conn.acquire();
+
+      List<WithHash<NamedRef>> allRefs;
+      try (Stream<WithHash<NamedRef>> namedRefs = fetchNamedRefs(conn)) {
+        allRefs = namedRefs.collect(Collectors.toList());
+      }
+
+      Stream<CommitLogEntry> logs =
+          allRefs.stream()
+              .flatMap(
+                  ref -> {
+                    try {
+                      return readCommitLogStream(c, ref.getHash());
+                    } catch (ReferenceNotFoundException e) {
+                      return Stream.empty();
+                    }
+                  });
+
+      Stream<KeyWithBytes> result = logs.flatMap(l -> l.getPuts().stream());
+
+      failed = false;
+      return result.onClose(conn::closeSilent);
+    } finally {
+      if (failed) {
+        conn.closeSilent();
+      }
+    }
+  }
+
+  // /////////////////////////////////////////////////////////////////////////////////////////////
+  // Transactional DatabaseAdapter subclass API (protected)
+  // /////////////////////////////////////////////////////////////////////////////////////////////
+
+  /**
+   * Convenience for {@link AbstractDatabaseAdapter#hashOnRef(Object, NamedRef, Optional, Hash)
+   * hashOnRef(ctx, ref, fetchNamedRefHead(ctx, ref.getReference()))}.
+   */
+  protected Hash hashOnRef(Connection ctx, NamedRef reference, Optional<Hash> hashOnRef)
+      throws ReferenceNotFoundException {
+    return hashOnRef(ctx, reference, hashOnRef, fetchNamedRefHead(ctx, reference));
+  }
+
+  /** Implementation notes: transactional implementations must rollback changes. */
+  private void releaseConnection(Connection ctx) {
+    try {
+      try {
+        ctx.rollback();
+      } finally {
+        ctx.close();
+      }
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  protected int entitySize(CommitLogEntry entry) {
+    return toProto(entry).getSerializedSize();
+  }
+
+  @Override
+  protected int entitySize(KeyWithType entry) {
+    return toProto(entry).getSerializedSize();
+  }
+
+  protected ConnectionWrapper borrowConnectionWrapper() {
+    return new ConnectionWrapper(this::borrowConnection);
+  }
+
+  protected Connection borrowConnection() {
+    try {
+      return db.borrowConnection();
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  protected void txCommit(Connection ctx) {
+    try {
+      ctx.commit();
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  protected void txRollback(Connection ctx) {
+    try {
+      ctx.rollback();
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @FunctionalInterface
+  public interface LoopOp {
+    /**
+     * Applies an operation within a CAS-loop. The implementation gets the current global-state and
+     * must return an updated global-state with a different global-id.
+     *
+     * @param ctx current JDBC connection
+     * @param targetRefHead current named-reference's HEAD
+     * @return if non-{@code * null}, the JDBC transaction is committed and the hash returned from
+     *     {@link #opLoop(NamedRef, boolean, LoopOp, Supplier, Supplier)}. If {@code null}, the
+     *     {@code opLoop()} tries again.
+     * @throws RetryTransactionException (see {@link #isRetryTransaction(SQLException)}), the
+     *     current JDBC transaction is rolled back and {@link #opLoop(NamedRef, boolean, LoopOp,
+     *     Supplier, Supplier)} tries again
+     * @throws SQLException if this matches {@link #isIntegrityConstraintViolation(Throwable)}, the
+     *     exception is re-thrown as a {@link ReferenceConflictException}
+     * @throws VersionStoreException any other version-store exception
+     * @see #opLoop(NamedRef, boolean, LoopOp, Supplier, Supplier)
+     */
+    Hash apply(Connection ctx, Hash targetRefHead) throws VersionStoreException, SQLException;
+  }
+
+  /**
+   * This is the actual CAS-ish-loop, which applies an operation onto a named-ref.
+   *
+   * <p>Each CAS-loop-iteration fetches the current HEAD of the named reference and calls {@link
+   * LoopOp#apply(Connection, Hash)}. If {@code apply()} throws a {@link RetryTransactionException}
+   * (see {@link #isRetryTransaction(SQLException)}), the current JDBC transaction is rolled back
+   * and the next loop-iteration starts, unless the retry-policy allows no more retries, in which
+   * case a {@link ReferenceRetryFailureException} with the message from {@code retryErrorMessage}
+   * is thrown. If the thrown exception is a {@link #isIntegrityConstraintViolation(Throwable)}, the
+   * exception is re-thrown as a {@link ReferenceConflictException} with an appropriate message from
+   * the {@code conflictErrorMessage} supplier.
+   *
+   * <p>If {@link LoopOp#apply(Connection, Hash)} completes normally and returns a non-{@code null}
+   * hash, the JDBC transaction is committed and the hash returned from this function. If {@code
+   * apply()} returns {@code null}, the operation is retried, unless the retry-policy allows no more
+   * retries, in which * case a {@link ReferenceRetryFailureException} with the message from {@code
+   * retryErrorMessage} * is thrown.
+   *
+   * <p>Uses {@link TryLoopState} for retry handling.
+   *
+   * @param namedReference the named reference on which the Nessie operation works
+   * @param createRef flag, whether this ia a "create-named-reference" operation, which skips the
+   *     retrieval of the current HEAD
+   * @param loopOp the implementation of the Nessie operation
+   * @param conflictErrorMessage message producer to represent an unresolvable conflict in the data
+   * @param retryErrorMessage message producer to represent that no more retries will happen
+   * @see LoopOp#apply(Connection, Hash)
+   */
+  protected Hash opLoop(
+      NamedRef namedReference,
+      boolean createRef,
+      LoopOp loopOp,
+      Supplier<String> conflictErrorMessage,
+      Supplier<String> retryErrorMessage)
+      throws VersionStoreException {
+    Connection ctx = borrowConnection();
+
+    try (TryLoopState tryState = newTryLoopState(retryErrorMessage, config)) {
+      while (true) {
+        Hash pointer = createRef ? null : fetchNamedRefHead(ctx, namedReference);
+
+        Hash newHead;
+        try {
+          newHead = loopOp.apply(ctx, pointer);
+        } catch (RetryTransactionException e) {
+          txRollback(ctx);
+          tryState.retry();
+          continue;
+        } catch (SQLException e) {
+          if (isRetryTransaction(e)) {
+            txRollback(ctx);
+            tryState.retry();
+            continue;
+          }
+          throwIfReferenceConflictException(e, conflictErrorMessage);
+          throw new RuntimeException(e);
+        }
+
+        // The operation succeeded, if it returns a non-null hash value.
+        if (newHead != null) {
+          txCommit(ctx);
+          return tryState.success(newHead);
+        }
+
+        txRollback(ctx);
+        tryState.retry();
+      }
+    } finally {
+      releaseConnection(ctx);
+    }
+  }
+
+  protected Stream<WithHash<NamedRef>> fetchNamedRefs(ConnectionWrapper conn) {
+    return JdbcSelectSpliterator.buildStream(
+        conn,
+        SELECT_NAMED_REFERENCES,
+        ps -> ps.setString(1, config.getKeyPrefix()),
+        (rs) -> {
+          String type = rs.getString(1);
+          String ref = rs.getString(2);
+          Hash head = Hash.of(rs.getString(3));
+
+          NamedRef namedRef = namedRefFromRow(type, ref);
+          if (namedRef != null) {
+            return WithHash.of(head, namedRef);
+          }
+          return null;
+        });
+  }
+
+  /** Similar to {@link #fetchNamedRefHead(Connection, NamedRef)}, but just checks for existence. */
+  protected boolean checkNamedRefExistence(Connection c, NamedRef ref) {
+    try {
+      fetchNamedRefHead(c, ref);
+      return true;
+    } catch (ReferenceNotFoundException e) {
+      return false;
+    }
+  }
+
+  /** Similar to {@link #fetchNamedRefHead(Connection, NamedRef)}, but just checks for existence. */
+  protected boolean checkNamedRefExistence(Connection c, String refName) {
+    try (PreparedStatement ps = c.prepareStatement(SELECT_NAMED_REFERENCE_NAME)) {
+      ps.setString(1, config.getKeyPrefix());
+      ps.setString(2, refName);
+      try (ResultSet rs = ps.executeQuery()) {
+        return rs.next();
+      }
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  /**
+   * Retrieves the current HEAD for a reference, throws a {@link ReferenceNotFoundException}, it the
+   * reference does not exist.
+   */
+  protected Hash fetchNamedRefHead(Connection c, NamedRef ref) throws ReferenceNotFoundException {
+    try (PreparedStatement ps = c.prepareStatement(SELECT_NAMED_REFERENCE)) {
+      ps.setString(1, config.getKeyPrefix());
+      ps.setString(2, ref.getName());
+      ps.setString(3, referenceTypeDiscriminator(ref));
+      try (ResultSet rs = ps.executeQuery()) {
+        if (rs.next()) {
+          return Hash.of(rs.getString(1));
+        }
+        throw referenceNotFound(ref);
+      }
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  protected NamedRef namedRefFromRow(String type, String ref) {
+    switch (type) {
+      case REF_TYPE_BRANCH:
+        return BranchName.of(ref);
+      case REF_TYPE_TAG:
+        return TagName.of(ref);
+      default:
+        return null;
+    }
+  }
+
+  protected void insertNewReference(Connection ctx, NamedRef ref, Hash hash)
+      throws ReferenceAlreadyExistsException, SQLException {
+    try (PreparedStatement ps = ctx.prepareStatement(INSERT_NAMED_REFERENCE)) {
+      ps.setString(1, config.getKeyPrefix());
+      ps.setString(2, ref.getName());
+      ps.setString(3, referenceTypeDiscriminator(ref));
+      ps.setString(4, hash.asString());
+      ps.executeUpdate();
+    } catch (SQLException e) {
+      if (isIntegrityConstraintViolation(e)) {
+        throw referenceAlreadyExists(ref);
+      }
+      throw e;
+    }
+  }
+
+  protected String referenceTypeDiscriminator(NamedRef ref) {
+    String refType;
+    if (ref instanceof BranchName) {
+      refType = REF_TYPE_BRANCH;
+    } else if (ref instanceof TagName) {
+      refType = REF_TYPE_TAG;
+    } else {
+      throw new IllegalArgumentException();
+    }
+    return refType;
+  }
+
+  /**
+   * Upserts the global-states to {@code global} and checks that the current values are equal to
+   * those in {@code expectedStates}.
+   *
+   * <p>The implementation is a bit verbose (b/c JDBC is verbose).
+   *
+   * <p>The algorithm works like this:
+   *
+   * <ol>
+   *   <li>Try to update the existing {@code Key + Contents.id} rows in {@value #TABLE_GLOBAL_STATE}
+   *       <ol>
+   *         <li>Perform a {@code SELECT} on {@value #TABLE_GLOBAL_STATE} fetching all rows for the
+   *             requested keys.
+   *         <li>Filter those rows that match the contents-ids
+   *         <li>Perform the {@code UPDATE} on {@value #TABLE_GLOBAL_STATE}. If the user requested
+   *             to compare the current-global-state, perform a conditional update. Otherwise
+   *             blindly update it.
+   *       </ol>
+   *   <li>Insert the not updated (= new) rows into {@value #TABLE_GLOBAL_STATE}
+   * </ol>
+   */
+  protected void upsertGlobalStates(CommitAttempt commitAttempt, Connection ctx, long newCreatedAt)
+      throws SQLException {
+    if (commitAttempt.getGlobal().isEmpty()) {
+      return;
+    }
+
+    String sql =
+        sqlForManyPlaceholders(
+            SELECT_GLOBAL_STATE_MANY_WITH_LOGS, commitAttempt.getGlobal().size());
+
+    Set<ContentsId> newKeys = new HashSet<>(commitAttempt.getGlobal().keySet());
+
+    try (PreparedStatement psSelect = ctx.prepareStatement(sql);
+        PreparedStatement psUpdate = ctx.prepareStatement(UPDATE_GLOBAL_STATE);
+        PreparedStatement psUpdateUnconditional =
+            ctx.prepareStatement(UPDATE_GLOBAL_STATE_UNCOND)) {
+
+      // 1.2. SELECT returns all already existing rows --> UPDATE
+
+      psSelect.setString(1, config.getKeyPrefix());
+      int i = 2;
+      for (ContentsId cid : commitAttempt.getGlobal().keySet()) {
+        psSelect.setString(i++, cid.getId());
+      }
+
+      try (ResultSet rs = psSelect.executeQuery()) {
+        while (rs.next()) {
+          ContentsId contentsId = ContentsId.of(rs.getString(1));
+
+          // 1.3. Use only those rows from the SELECT against the GLOBAL_STATE table that match the
+          // key + contents-id we need.
+
+          // contents-id exists -> not a new row
+          newKeys.remove(contentsId);
+
+          ByteString newState = commitAttempt.getGlobal().get(contentsId);
+
+          ByteString expected =
+              commitAttempt
+                  .getExpectedStates()
+                  .getOrDefault(contentsId, Optional.empty())
+                  .orElse(ByteString.EMPTY);
+
+          // 1.4. Perform the UPDATE. If an expected-state is present, perform a "conditional"
+          // update that compares the existing value.
+          // Note: always perform the conditional-UPDATE on the checksum field as a concurrent
+          // update might have already changed the GLOBAL_STATE.
+
+          byte[] newStateBytes = newState.toByteArray();
+          @SuppressWarnings("UnstableApiUsage")
+          String newHash = newHasher().putBytes(newStateBytes).hash().toString();
+
+          // Perform a conditional update, if the client asked us to do so.
+          PreparedStatement ps = expected.isEmpty() ? psUpdateUnconditional : psUpdate;
+          ps.setBytes(1, newStateBytes);
+          ps.setString(2, newHash);
+          ps.setLong(3, newCreatedAt);
+          ps.setString(4, config.getKeyPrefix());
+          ps.setString(5, contentsId.getId());
+          if (!expected.isEmpty()) {
+            // Only perform a conditional update, if the client asked us to do so...
+
+            @SuppressWarnings("UnstableApiUsage")
+            String expectedHash =
+                newHasher().putBytes(expected.asReadOnlyByteBuffer()).hash().toString();
+            ps.setString(6, expectedHash);
+          }
+
+          // Check whether the UPDATE worked. If not -> reference-conflict
+          if (ps.executeUpdate() != 1) {
+            // No need to continue, just throw a legit constraint-violation that will be
+            // converted to a "proper ReferenceConflictException" later up in the stack.
+            throw newIntegrityConstraintViolationException();
+          }
+        }
+      }
+
+      // 2. INSERT all global-state values for those keys that were not handled above.
+      if (!newKeys.isEmpty()) {
+        try (PreparedStatement psInsert = ctx.prepareStatement(INSERT_GLOBAL_STATE)) {
+          for (ContentsId contentsId : newKeys) {
+            ByteString newGlob = commitAttempt.getGlobal().get(contentsId);
+            byte[] newGlobBytes = newGlob.toByteArray();
+            @SuppressWarnings("UnstableApiUsage")
+            String newHash = newHasher().putBytes(newGlobBytes).hash().toString();
+
+            if (contentsId == null) {
+              throw new IllegalArgumentException(
+                  String.format(
+                      "No contentsId in CommitAttempt.keyToContents contents-id '%s'", contentsId));
+            }
+
+            psInsert.setString(1, config.getKeyPrefix());
+            psInsert.setString(2, contentsId.getId());
+            psInsert.setString(3, newHash);
+            psInsert.setBytes(4, newGlobBytes);
+            psInsert.setLong(5, newCreatedAt);
+            psInsert.executeUpdate();
+          }
+        }
+      }
+    }
+  }
+
+  protected String sqlForManyPlaceholders(String sql, int num) {
+    String placeholders =
+        IntStream.range(0, num).mapToObj(x -> "?").collect(Collectors.joining(", "));
+    return String.format(sql, placeholders);
+  }
+
+  @Override
+  protected Map<ContentsId, ByteString> fetchGlobalStates(
+      Connection ctx, Set<ContentsId> contentIds) {
+    if (contentIds.isEmpty()) {
+      return Collections.emptyMap();
+    }
+
+    String sql = sqlForManyPlaceholders(SELECT_GLOBAL_STATE_MANY, contentIds.size());
+
+    try (PreparedStatement ps = ctx.prepareStatement(sql)) {
+      ps.setString(1, config.getKeyPrefix());
+      int i = 2;
+      for (ContentsId cid : contentIds) {
+        ps.setString(i++, cid.getId());
+      }
+
+      Map<ContentsId, ByteString> result = new HashMap<>();
+      try (ResultSet rs = ps.executeQuery()) {
+        while (rs.next()) {
+          ContentsId contentsId = ContentsId.of(rs.getString(1));
+          if (contentIds.contains(contentsId)) {
+            byte[] data = rs.getBytes(2);
+            ByteString val = UnsafeByteOperations.unsafeWrap(data);
+            result.put(contentsId, val);
+          }
+        }
+      }
+      return result;
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  protected CommitLogEntry fetchFromCommitLog(Connection c, Hash hash) {
+    try (PreparedStatement ps = c.prepareStatement(TxDatabaseAdapter.SELECT_COMMIT_LOG)) {
+      ps.setString(1, config.getKeyPrefix());
+      ps.setString(2, hash.asString());
+      try (ResultSet rs = ps.executeQuery()) {
+        return rs.next() ? protoToCommitLogEntry(rs.getBytes(1)) : null;
+      }
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  protected List<CommitLogEntry> fetchPageFromCommitLog(Connection c, List<Hash> hashes) {
+    String sql = sqlForManyPlaceholders(SELECT_COMMIT_LOG_MANY, hashes.size());
+
+    try (PreparedStatement ps = c.prepareStatement(sql)) {
+      ps.setString(1, config.getKeyPrefix());
+      for (int i = 0; i < hashes.size(); i++) {
+        ps.setString(2 + i, hashes.get(i).asString());
+      }
+
+      Map<Hash, CommitLogEntry> result = new HashMap<>(hashes.size() * 2);
+      try (ResultSet rs = ps.executeQuery()) {
+        while (rs.next()) {
+          CommitLogEntry entry = protoToCommitLogEntry(rs.getBytes(1));
+          result.put(entry.getHash(), entry);
+        }
+      }
+      return hashes.stream().map(result::get).collect(Collectors.toList());
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  protected void writeIndividualCommit(Connection c, CommitLogEntry entry)
+      throws ReferenceConflictException {
+    try (PreparedStatement ps = c.prepareStatement(INSERT_COMMIT_LOG)) {
+      ps.setString(1, config.getKeyPrefix());
+      ps.setString(2, entry.getHash().asString());
+      ps.setBytes(3, toProto(entry).toByteArray());
+      ps.executeUpdate();
+    } catch (SQLException e) {
+      if (isRetryTransaction(e)) {
+        throw new RetryTransactionException();
+      }
+      throwIfReferenceConflictException(
+          e, () -> String.format("Hash collision for '%s' in commit-log", entry.getHash()));
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  protected void writeMultipleCommits(Connection c, List<CommitLogEntry> entries)
+      throws ReferenceConflictException {
+    writeMany(
+        c, INSERT_COMMIT_LOG, entries, e -> e.getHash().asString(), e -> toProto(e).toByteArray());
+  }
+
+  @Override
+  protected void writeKeyListEntities(Connection c, List<KeyListEntity> newKeyListEntities) {
+    try {
+      writeMany(
+          c,
+          INSERT_KEY_LIST,
+          newKeyListEntities,
+          e -> e.getId().asString(),
+          e -> toProto(e.getKeys()).toByteArray());
+    } catch (ReferenceConflictException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  protected <T> void writeMany(
+      Connection c,
+      String sqlInsert,
+      List<T> entries,
+      Function<T, String> idRetriever,
+      Function<T, byte[]> serializer)
+      throws ReferenceConflictException {
+    int cnt = 0;
+    try (PreparedStatement ps = c.prepareStatement(sqlInsert)) {
+      for (T e : entries) {
+        ps.setString(1, config.getKeyPrefix());
+        ps.setString(2, idRetriever.apply(e));
+        ps.setBytes(3, serializer.apply(e));
+        ps.addBatch();
+        cnt++;
+        if (cnt == config.getBatchSize()) {
+          ps.executeBatch();
+          cnt = 0;
+        }
+      }
+      if (cnt > 0) {
+        ps.executeBatch();
+      }
+    } catch (SQLException e) {
+      if (isRetryTransaction(e)) {
+        throw new RetryTransactionException();
+      }
+      throwIfReferenceConflictException(
+          e,
+          () ->
+              String.format(
+                  "Hash collision for one of the hashes %s in commit-log",
+                  entries.stream()
+                      .map(x -> "'" + idRetriever.apply(x) + "'")
+                      .collect(Collectors.joining(", "))));
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  protected Stream<KeyListEntity> fetchKeyLists(Connection c, List<Hash> keyListsIds) {
+    return JdbcSelectSpliterator.buildStream(
+        c,
+        sqlForManyPlaceholders(SELECT_KEY_LIST_MANY, keyListsIds.size()),
+        ps -> {
+          ps.setString(1, config.getKeyPrefix());
+          int i = 2;
+          for (Hash id : keyListsIds) {
+            ps.setString(i++, id.asString());
+          }
+        },
+        (rs) -> KeyListEntity.of(Hash.of(rs.getString(1)), protoToKeyList(rs.getBytes(2))));
+  }
+
+  /**
+   * If {@code e} represents an {@link #isIntegrityConstraintViolation(Throwable)
+   * integrity-constraint-violation}, throw a {@link ReferenceConflictException} using the message
+   * produced by {@code message}.
+   */
+  protected void throwIfReferenceConflictException(SQLException e, Supplier<String> message)
+      throws ReferenceConflictException {
+    if (isIntegrityConstraintViolation(e)) {
+      throw new ReferenceConflictException(message.get(), e);
+    }
+  }
+
+  /** Deadlock error, returned by Postgres. */
+  protected static final String DEADLOCK_SQL_STATE_POSTGRES = "40P01";
+  /**
+   * Cockroach "retry, write too old" * error, see <a
+   * href="https://www.cockroachlabs.com/docs/v21.1/transaction-retry-error-reference.html#retry_write_too_old">Cockroach's
+   * Transaction Retry Error Reference</a>, and Postgres may return a "deadlock" error.
+   */
+  protected static final String RETRY_SQL_STATE_COCKROACH = "40001";
+  /** Postgres &amp; Cockroach integrity constraint violation. */
+  protected static final String CONSTRAINT_VIOLATION_SQL_STATE = "23505";
+  /** H2 integrity constraint violation. */
+  protected static final int CONSTRAINT_VIOLATION_SQL_CODE = 23505;
+
+  /** Returns an exception that indicates an integrity-constraint-violation. */
+  protected SQLException newIntegrityConstraintViolationException() {
+    return new SQLIntegrityConstraintViolationException();
+  }
+
+  /**
+   * Check whether the given {@link Throwable} represents an exception that indicates an
+   * integrity-constraint-violation.
+   */
+  protected boolean isIntegrityConstraintViolation(Throwable e) {
+    if (e instanceof SQLException) {
+      SQLException sqlException = (SQLException) e;
+      return sqlException instanceof SQLIntegrityConstraintViolationException
+          // e.g. H2
+          || CONSTRAINT_VIOLATION_SQL_CODE == sqlException.getErrorCode()
+          // e.g. Postgres & Cockroach
+          || CONSTRAINT_VIOLATION_SQL_STATE.equals(sqlException.getSQLState());
+    }
+    return false;
+  }
+
+  /**
+   * Check whether the {@link SQLException} indicates a "retry hint". This can happen when there is
+   * too much contention on the database rows. Cockroach may throw return a "retry, write too old"
+   * error, see <a
+   * href="https://www.cockroachlabs.com/docs/v21.1/transaction-retry-error-reference.html#retry_write_too_old">Cockroach's
+   * Transaction Retry Error Reference</a>, and Postgres may return a "deadlock" error.
+   */
+  protected boolean isRetryTransaction(SQLException e) {
+    switch (e.getSQLState()) {
+      case DEADLOCK_SQL_STATE_POSTGRES:
+      case RETRY_SQL_STATE_COCKROACH:
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  /**
+   * Updates the HEAD of the given {@code ref} from {@code expectedHead} to {@code newHead}. Returns
+   * {@code newHead}, if successful, and {@code null} if not.
+   */
+  protected Hash tryMoveNamedReference(
+      Connection ctx, NamedRef ref, Hash expectedHead, Hash newHead) {
+    try (PreparedStatement ps = ctx.prepareStatement(UPDATE_NAMED_REFERENCE)) {
+      ps.setString(1, newHead.asString());
+      ps.setString(2, config.getKeyPrefix());
+      ps.setString(3, ref.getName());
+      ps.setString(4, expectedHead.asString());
+      return ps.executeUpdate() == 1 ? newHead : null;
+    } catch (SQLException e) {
+      if (isRetryTransaction(e)) {
+        throw new RetryTransactionException();
+      }
+      throw new RuntimeException(e);
+    }
+  }
+
+  /**
+   * Provides a map of table name to create-table-DDL. The DDL statements are processed by {@link
+   * java.text.MessageFormat} to inject the parameters returned by {@link
+   * #databaseSqlFormatParameters()}, which is for example used to have the "proper", database
+   * specific column types.
+   *
+   * <p>Names of the tables are defined by the constants defined in this class that start with
+   * {@code TABLE_}, for example {@link #TABLE_COMMIT_LOG}.
+   */
+  protected Map<String, List<String>> allCreateTableDDL() {
+    return ImmutableMap.<String, List<String>>builder()
+        .put(TABLE_GLOBAL_STATE, Collections.singletonList(CREATE_TABLE_GLOBAL_STATE))
+        .put(TABLE_NAMED_REFERENCES, Collections.singletonList(CREATE_TABLE_NAMED_REFERENCES))
+        .put(TABLE_COMMIT_LOG, Collections.singletonList(CREATE_TABLE_COMMIT_LOG))
+        .put(TABLE_KEY_LIST, Collections.singletonList(CREATE_TABLE_KEY_LIST))
+        .build();
+  }
+
+  /**
+   * Get database-specific 'strings' like column definitions for 'BLOB' column types.
+   *
+   * <ul>
+   *   <li>Index #0: column-type string for a 'BLOB' column.
+   *   <li>Index #1: column-type string for the string representation of a {@link Hash}
+   *   <li>Index #2: column-type string for key-prefix
+   *   <li>Index #3: column-type string for the string representation of a {@link Key}
+   *   <li>Index #4: column-type string for the string representation of a {@link NamedRef}
+   *   <li>Index #5: column-type string for the named-reference-type (single char)
+   *   <li>Index #6: column-type string for the contents-id
+   *   <li>Index #7: column-type string for an integer
+   * </ul>
+   */
+  protected abstract List<String> databaseSqlFormatParameters();
+
+  /** Whether the database/JDBC-driver require schema-metadata-queries require upper-case names. */
+  protected boolean metadataUpperCase() {
+    return true;
+  }
+
+  /** Whether this implementation shall use bates for DDL operations to create tables. */
+  protected boolean batchDDL() {
+    return false;
+  }
+}

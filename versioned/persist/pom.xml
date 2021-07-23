@@ -33,6 +33,7 @@
   <modules>
     <module>adapter</module>
     <module>serialize</module>
+    <module>tx</module>
     <module>tests</module>
   </modules>
 </project>
