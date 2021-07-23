@@ -154,6 +154,7 @@
     <jetty.version>9.4.31.v20200723</jetty.version>
     <jgit.version>5.13.0.202109080827-r</jgit.version>
     <jjwt.version>0.11.2</jjwt.version>
+    <jmh.version>1.32</jmh.version>
     <jsr305.version>3.0.2</jsr305.version>
     <junit.version>5.8.0</junit.version>
     <logback.version>1.2.6</logback.version>
@@ -450,6 +451,16 @@
         <version>${junit.version}</version>
         <type>pom</type>
         <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.openjdk.jmh</groupId>
+        <artifactId>jmh-core</artifactId>
+        <version>${jmh.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.openjdk.jmh</groupId>
+        <artifactId>jmh-generator-annprocess</artifactId>
+        <version>${jmh.version}</version>
       </dependency>
       <dependency>
         <groupId>org.immutables</groupId>

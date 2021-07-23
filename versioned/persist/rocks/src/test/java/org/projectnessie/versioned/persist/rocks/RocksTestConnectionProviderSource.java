@@ -27,40 +27,51 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
-import org.projectnessie.versioned.persist.tests.extension.TestConnectionProviderSource;
+import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
+import org.projectnessie.versioned.persist.tests.extension.AbstractTestConnectionProviderSource;
 
+/**
+ * RocksDB test connection-provider source.
+ *
+ * <p>See {@link RocksDbConfig} for configuration options.
+ */
 public class RocksTestConnectionProviderSource
-    implements TestConnectionProviderSource<RocksDbInstance> {
+    extends AbstractTestConnectionProviderSource<RocksDbConfig> {
 
   private Path rocksDir;
-  private RocksDbInstance instance;
+
+  @Override
+  public boolean isCompatibleWith(
+      DatabaseAdapterConfig<?> adapterConfig, DatabaseAdapterFactory<?> databaseAdapterFactory) {
+    return adapterConfig instanceof RocksDatabaseAdapterConfig;
+  }
+
+  @Override
+  public RocksDbConfig createDefaultConnectionProviderConfig() {
+    return ImmutableRocksDbConfig.builder().build();
+  }
+
+  @Override
+  public RocksDbInstance createConnectionProvider() {
+    return new RocksDbInstance();
+  }
 
   @Override
   public void start() throws Exception {
     rocksDir = Files.createTempDirectory("junit-rocks");
-    instance = new RocksDbInstance();
-    instance.configure(ImmutableRocksDbConfig.builder().dbPath(rocksDir.toString()).build());
-    instance.initialize();
+    configureConnectionProviderConfigFromDefaults(c -> c.withDbPath(rocksDir.toString()));
+    super.start();
   }
 
   @Override
   public void stop() throws Exception {
     try {
-      if (instance != null) {
-        instance.close();
-      }
+      super.stop();
     } finally {
-      instance = null;
       if (rocksDir != null) {
         deleteTempDir(rocksDir);
       }
     }
-  }
-
-  @Override
-  public DatabaseAdapterConfig<RocksDbInstance> updateConfig(
-      DatabaseAdapterConfig<RocksDbInstance> config) {
-    return config.withConnectionProvider(instance);
   }
 
   private static void deleteTempDir(Path dir) throws IOException {
