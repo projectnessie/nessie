@@ -28,7 +28,7 @@ import org.immutables.value.Value;
 @Value.Immutable(prehash = true)
 @JsonSerialize(as = ImmutableMultiGetContentsRequest.class)
 @JsonDeserialize(as = ImmutableMultiGetContentsRequest.class)
-public interface MultiGetContentsRequest {
+public interface MultiGetContentsRequest extends Base {
 
   @NotNull
   @Size(min = 1)

@@ -44,7 +44,7 @@ import org.immutables.value.Value;
     properties = {@SchemaProperty(name = "hash", pattern = Validation.HASH_REGEX)})
 @JsonSerialize(as = ImmutableCommitMeta.class)
 @JsonDeserialize(as = ImmutableCommitMeta.class)
-public abstract class CommitMeta {
+public abstract class CommitMeta implements Base {
 
   /**
    * Hash of this commit.

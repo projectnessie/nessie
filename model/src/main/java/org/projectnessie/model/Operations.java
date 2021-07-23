@@ -28,7 +28,7 @@ import org.immutables.value.Value;
 @Value.Immutable(prehash = true)
 @JsonSerialize(as = ImmutableOperations.class)
 @JsonDeserialize(as = ImmutableOperations.class)
-public interface Operations {
+public interface Operations extends Base {
 
   @NotNull
   CommitMeta getCommitMeta();

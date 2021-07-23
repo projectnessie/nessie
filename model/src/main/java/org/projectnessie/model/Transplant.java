@@ -34,7 +34,7 @@ import org.immutables.value.Value;
 @Value.Immutable(prehash = true)
 @JsonSerialize(as = ImmutableTransplant.class)
 @JsonDeserialize(as = ImmutableTransplant.class)
-public interface Transplant {
+public interface Transplant extends Base {
 
   @NotNull
   @Size(min = 1)

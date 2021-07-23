@@ -15,5 +15,8 @@
  */
 package org.projectnessie.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 /** base interface for all model/api classes. */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public interface Base {}
