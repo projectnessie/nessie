@@ -15,12 +15,12 @@
  */
 package org.projectnessie.server.config;
 
-import io.quarkus.arc.config.ConfigProperties;
+import io.smallrye.config.ConfigMapping;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.projectnessie.versioned.dynamodb.DynamoStoreConfig;
 
 /** DynamoDB version store configuration. */
-@ConfigProperties(prefix = "nessie.version.store.dynamo")
+@ConfigMapping(prefix = "nessie.version.store.dynamo")
 public interface DynamoVersionStoreConfig {
 
   @ConfigProperty(name = "initialize", defaultValue = "false")
