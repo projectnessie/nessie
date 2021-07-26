@@ -27,10 +27,10 @@
 	                                  (string) & 'entry.contentType' (string) are:
 	                                  entry.namespace.startsWith('a.b.c')
 	                                  entry.contentType in
-	                                  ['ICEBERG_TABLE','DELTA_LAKE_TABLE']
+	                                  ['ICEBERG_SNAPSHOT','DELTA_LAKE_TABLE']
 	                                  entry.namespace.startsWith('some.name.space')
 	                                  && entry.contentType in
-	                                  ['ICEBERG_TABLE','DELTA_LAKE_TABLE']
+	                                  ['ICEBERG_SNAPSHOT','DELTA_LAKE_TABLE']
 	  --author TEXT                   The author to use for the commit
 	  --help                          Show this message and exit.
 	

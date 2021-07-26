@@ -20,7 +20,7 @@ from pynessie.model import Branch
 from pynessie.model import ContentsSchema
 from pynessie.model import DeltaLakeTable
 from pynessie.model import EntrySchema
-from pynessie.model import IcebergTable
+from pynessie.model import IcebergSnapshot
 from pynessie.model import ReferenceSchema
 from pynessie.model import SqlView
 
@@ -129,12 +129,12 @@ def test_log() -> None:
     _run(
         runner,
         ["contents", "--set", "foo.bar", "--ref", "main", "-m", "test_message", "-c", empty_hash, "--author", "nessie_user1"],
-        input=ContentsSchema().dumps(IcebergTable("uuid", "/a/b/c")),
+        input=ContentsSchema().dumps(IcebergSnapshot("uuid", "/a/b/c", 42)),
     )
     result = _run(runner, ["--json", "contents", "foo.bar"])
     tables = ContentsSchema().loads(result.output, many=True)
     assert len(tables) == 1
-    assert tables[0] == IcebergTable("uuid", "/a/b/c")
+    assert tables[0] == IcebergSnapshot("uuid", "/a/b/c", 42)
     result = _run(runner, ["--json", "log"])
     logs = simplejson.loads(result.output)
     assert len(logs) == 1
@@ -257,7 +257,7 @@ def test_assign() -> None:
             "-c",
             empty_hash,
         ],
-        input=ContentsSchema().dumps(IcebergTable("uuid", "/a/b/c")),
+        input=ContentsSchema().dumps(IcebergSnapshot("uuid", "/a/b/c", 42)),
     )
     _run(runner, ["branch", "main", "dev", "--force"])
     result = _run(runner, ["--json", "branch"])
@@ -301,7 +301,7 @@ def test_merge() -> None:
             "-c",
             empty_hash,
         ],
-        input=ContentsSchema().dumps(IcebergTable("uuid", "/a/b/c")),
+        input=ContentsSchema().dumps(IcebergSnapshot("uuid", "/a/b/c", 42)),
     )
     refs = ReferenceSchema().loads(_run(runner, ["--json", "branch", "-l", "main"]).output, many=True)
     main_hash = next(i.hash_ for i in refs if i.name == "main")
@@ -338,7 +338,7 @@ def test_transplant() -> None:
             "-c",
             empty_hash,
         ],
-        input=ContentsSchema().dumps(IcebergTable("uuid", "/a/b/c")),
+        input=ContentsSchema().dumps(IcebergSnapshot("uuid", "/a/b/c", 42)),
     )
     _run(
         runner,
@@ -353,7 +353,7 @@ def test_transplant() -> None:
             "-c",
             empty_hash,
         ],
-        input=ContentsSchema().dumps(IcebergTable("uuid", "/a/b/c")),
+        input=ContentsSchema().dumps(IcebergSnapshot("uuid", "/a/b/c", 42)),
     )
     _run(
         runner,
@@ -368,14 +368,14 @@ def test_transplant() -> None:
             "-c",
             empty_hash,
         ],
-        input=ContentsSchema().dumps(IcebergTable("uuid", "/a/b/c")),
+        input=ContentsSchema().dumps(IcebergSnapshot("uuid", "/a/b/c", 42)),
     )
     refs = ReferenceSchema().loads(_run(runner, ["--json", "branch", "-l"]).output, many=True)
     main_hash = next(i.hash_ for i in refs if i.name == "main")
     result = _run(runner, ["--json", "log", "--ref", "dev"])
     logs = simplejson.loads(result.output)
     first_hash = [i["hash"] for i in logs]
-    _run(runner, ["cherry-pick", "-c", main_hash, first_hash[1], first_hash[0]])
+    _run(runner, ["cherry-pick", "-c", main_hash, "-s", "dev", first_hash[1], first_hash[0]])
 
     result = _run(runner, ["--json", "log"])
     logs = simplejson.loads(result.output)
@@ -409,7 +409,7 @@ def test_contents_listing() -> None:
     branch = "contents_listing_dev"
     _run(runner, ["branch", branch])
 
-    iceberg_table = IcebergTable(id="uuid", metadata_location="/a/b/c")
+    iceberg_snapshot = IcebergSnapshot(id="uuid", metadata_location="/a/b/c", current_snapshot_id=42)
     delta_lake_table = DeltaLakeTable(
         id="uuid2", metadata_location_history=["asd"], checkpoint_location_history=["def"], last_checkpoint="x"
     )
@@ -419,7 +419,7 @@ def test_contents_listing() -> None:
     _run(
         runner,
         ["contents", "--set", "this.is.iceberg.foo", "--ref", branch, "-m", "test_message1", "-c", refs[0].hash_],
-        input=ContentsSchema().dumps(iceberg_table),
+        input=ContentsSchema().dumps(iceberg_snapshot),
     )
 
     refs = ReferenceSchema().loads(_run(runner, ["--json", "branch", "-l", branch]).output, many=True)
@@ -439,34 +439,35 @@ def test_contents_listing() -> None:
     result = _run(runner, ["--json", "contents", "--ref", branch, "this.is.iceberg.foo"])
     tables = ContentsSchema().loads(result.output, many=True)
     assert_that(tables).is_length(1)
-    assert_that(tables[0]).is_equal_to(iceberg_table)
+    assert_that(tables[0]).is_equal_to(iceberg_snapshot)
 
     result = _run(runner, ["--json", "contents", "--ref", branch, "this.is.delta.bar"])
     tables = ContentsSchema().loads(result.output, many=True)
     assert_that(tables).is_length(1)
     assert_that(tables[0]).is_equal_to(delta_lake_table)
 
-    result = _run(runner, ["--json", "contents", "--ref", branch, "--list", "--type", "ICEBERG_TABLE"])
+    result = _run(runner, ["--json", "contents", "--ref", branch, "--list", "--type", "ICEBERG_SNAPSHOT"])
     tables = EntrySchema().loads(result.output, many=True)
     assert_that(tables).is_length(1)
-    assert_that(tables[0].kind).is_equal_to("ICEBERG_TABLE")
+    assert_that(tables[0].kind).is_equal_to("ICEBERG_SNAPSHOT")
 
     result = _run(runner, ["--json", "contents", "--ref", branch, "--list", "--type", "DELTA_LAKE_TABLE"])
     tables = EntrySchema().loads(result.output, many=True)
     assert_that(tables).is_length(1)
     assert_that(tables[0].kind).is_equal_to("DELTA_LAKE_TABLE")
 
-    result = _run(runner, ["--json", "contents", "--ref", branch, "--list", "--query", "entry.contentType == 'ICEBERG_TABLE'"])
+    result = _run(runner, ["--json", "contents", "--ref", branch, "--list", "--query", "entry.contentType == 'ICEBERG_SNAPSHOT'"])
     tables = EntrySchema().loads(result.output, many=True)
     assert_that(tables).is_length(1)
-    assert_that(tables[0].kind).is_equal_to("ICEBERG_TABLE")
+    assert_that(tables[0].kind).is_equal_to("ICEBERG_SNAPSHOT")
 
     result = _run(
-        runner, ["--json", "contents", "--ref", branch, "--list", "--query", "entry.contentType in ['ICEBERG_TABLE', 'DELTA_LAKE_TABLE']"]
+        runner,
+        ["--json", "contents", "--ref", branch, "--list", "--query", "entry.contentType in ['ICEBERG_SNAPSHOT', 'DELTA_LAKE_TABLE']"],
     )
     tables = EntrySchema().loads(result.output, many=True)
     assert_that(tables).is_length(2)
-    assert_that(tables[0].kind).is_equal_to("ICEBERG_TABLE")
+    assert_that(tables[0].kind).is_equal_to("ICEBERG_SNAPSHOT")
     assert_that(tables[1].kind).is_equal_to("DELTA_LAKE_TABLE")
 
     result = _run(runner, ["--json", "contents", "--ref", branch, "--list", "--query", "entry.namespace.startsWith('this.is.del')"])
@@ -477,6 +478,6 @@ def test_contents_listing() -> None:
     result = _run(runner, ["--json", "contents", "--ref", branch, "--list", "--query", "entry.namespace.startsWith('this.is')"])
     tables = EntrySchema().loads(result.output, many=True)
     assert_that(tables).is_length(3)
-    assert set(i.kind for i in tables) == {"ICEBERG_TABLE", "VIEW", "DELTA_LAKE_TABLE"}
+    assert set(i.kind for i in tables) == {"ICEBERG_SNAPSHOT", "VIEW", "DELTA_LAKE_TABLE"}
 
     _run(runner, ["branch", branch, "--delete"])

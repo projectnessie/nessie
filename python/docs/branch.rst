@@ -25,12 +25,13 @@
 	      nessie branch -f main test -> assign main to head of test
 	
 	Options:
-	  -l, --list            list branches
-	  -d, --delete          delete a branch
-	  -f, --force           force branch assignment
-	  -c, --condition TEXT  Conditional Hash. Only perform the action if branch
-	                        currently points to condition.
-	  --help                Show this message and exit.
+	  -l, --list              list branches
+	  -d, --delete            delete a branch
+	  -f, --force             force branch assignment
+	  -o, --hash-on-ref TEXT  Hash on source-reference
+	  -c, --condition TEXT    Conditional Hash. Only perform the action if branch
+	                          currently points to condition.
+	  --help                  Show this message and exit.
 	
 	
 

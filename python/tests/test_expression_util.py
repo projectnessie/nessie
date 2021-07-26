@@ -120,12 +120,12 @@ def test_building_query_expression_for_content_entries() -> None:
         build_query_expression_for_contents_listing_flags(query_expression="exclusive_expr", types=["VIEW", "DELTA_LAKE_TABLE"])
     ).is_equal_to("exclusive_expr")
 
-    assert_that(build_query_expression_for_contents_listing_flags(query_expression="", types=["ICEBERG_TABLE"])).is_equal_to(
-        "entry.contentType in ['ICEBERG_TABLE']"
+    assert_that(build_query_expression_for_contents_listing_flags(query_expression="", types=["ICEBERG_SNAPSHOT"])).is_equal_to(
+        "entry.contentType in ['ICEBERG_SNAPSHOT']"
     )
     assert_that(
-        build_query_expression_for_contents_listing_flags(query_expression="", types=["ICEBERG_TABLE", "DELTA_LAKE_TABLE"])
-    ).is_equal_to("entry.contentType in ['ICEBERG_TABLE','DELTA_LAKE_TABLE']")
+        build_query_expression_for_contents_listing_flags(query_expression="", types=["ICEBERG_SNAPSHOT", "DELTA_LAKE_TABLE"])
+    ).is_equal_to("entry.contentType in ['ICEBERG_SNAPSHOT','DELTA_LAKE_TABLE']")
 
 
 def test_date_parsing() -> None:

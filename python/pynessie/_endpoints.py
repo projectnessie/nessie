@@ -96,7 +96,7 @@ def get_reference(base_url: str, ref: str, ssl_verify: bool = True) -> dict:
     return cast(dict, _get(base_url + "/trees/tree/{}".format(ref), ssl_verify=ssl_verify))
 
 
-def create_reference(base_url: str, ref_json: dict, ssl_verify: bool = True) -> dict:
+def create_reference(base_url: str, ref_json: dict, source_ref: str = None, ssl_verify: bool = True) -> dict:
     """Create a reference.
 
     :param base_url: base Nessie url
@@ -104,7 +104,10 @@ def create_reference(base_url: str, ref_json: dict, ssl_verify: bool = True) -> 
     :param ssl_verify: ignore ssl errors if False
     :return: json Nessie branch or tag
     """
-    return cast(dict, _post(base_url + "/trees/tree", ref_json, ssl_verify=ssl_verify))
+    params = {}
+    if source_ref:
+        params["sourceRef"] = source_ref
+    return cast(dict, _post(base_url + "/trees/tree", ref_json, ssl_verify=ssl_verify, params=params))
 
 
 def get_default_branch(base_url: str, ssl_verify: bool = True) -> dict:
@@ -144,6 +147,7 @@ def delete_tag(base_url: str, tag: str, hash_: str, reason: str = None, ssl_veri
 def list_tables(
     base_url: str,
     ref: str,
+    hash_on_ref: Optional[str] = None,
     max_result_hint: Optional[int] = None,
     page_token: Optional[str] = None,
     query_expression: Optional[str] = None,
@@ -153,6 +157,7 @@ def list_tables(
 
     :param base_url: base Nessie url
     :param ref: reference
+    :param hash_on_ref: hash on reference
     :param max_result_hint: hint for the server, maximum number of results to return
     :param page_token: the token retrieved from a previous page returned for the same ref
     :param query_expression: A CEL expression that allows advanced filtering capabilities
@@ -162,6 +167,8 @@ def list_tables(
     params = dict()
     if max_result_hint:
         params["max"] = str(max_result_hint)
+    if hash_on_ref:
+        params["hashOnRef"] = hash_on_ref
     if page_token:
         params["pageToken"] = page_token
     if query_expression:
@@ -169,11 +176,12 @@ def list_tables(
     return cast(list, _get(base_url + "/trees/tree/{}/entries".format(ref), ssl_verify=ssl_verify, params=params))
 
 
-def list_logs(base_url: str, ref: str, ssl_verify: bool = True, **filtering_args: Any) -> dict:
+def list_logs(base_url: str, ref: str, hash_on_ref: Optional[str] = None, ssl_verify: bool = True, **filtering_args: Any) -> dict:
     """Fetch a list of all logs from a known starting reference.
 
     :param base_url: base Nessie url
     :param ref: starting reference
+    :param hash_on_ref: hash on reference
     :param ssl_verify: ignore ssl errors if False
     :param filtering_args: All of the args used to filter the log
     :return: json dict of Nessie logs
@@ -181,45 +189,48 @@ def list_logs(base_url: str, ref: str, ssl_verify: bool = True, **filtering_args
     return cast(dict, _get(base_url + "/trees/tree/{}/log".format(ref), ssl_verify=ssl_verify, params=filtering_args))
 
 
-def get_table(base_url: str, ref: str, table: str, ssl_verify: bool = True) -> dict:
+def get_table(base_url: str, ref: str, table: str, hash_on_ref: Optional[str] = None, ssl_verify: bool = True) -> dict:
     """Fetch a table from a known branch.
 
     :param base_url: base Nessie url
     :param ref: ref
+    :param hash_on_ref: hash on reference
     :param table: name of table
     :param ssl_verify: ignore ssl errors if False
     :return: json dict of Nessie table
     """
     params = {"ref": ref}
+    if hash_on_ref:
+        params["hashOnRef"] = hash_on_ref
     return cast(dict, _get(base_url + "/contents/{}".format(table), ssl_verify=ssl_verify, params=params))
 
 
-def assign_branch(base_url: str, branch: str, branch_json: dict, old_hash: str, ssl_verify: bool = True) -> None:
+def assign_branch(base_url: str, branch: str, ref_json: dict, old_hash: Optional[str], ssl_verify: bool = True) -> None:
     """Assign a reference to a branch.
 
     :param base_url: base Nessie url
     :param branch: name of the branch
-    :param branch_json: new definition of the branch
+    :param ref_json: new definition of the branch
     :param old_hash: current hash of the branch
     :param ssl_verify: ignore ssl errors if False
     """
     url = "/trees/branch/{}".format(branch)
     params = {"expectedHash": old_hash}
-    _put(base_url + url, branch_json, ssl_verify=ssl_verify, params=params)
+    _put(base_url + url, ref_json, ssl_verify=ssl_verify, params=params)
 
 
-def assign_tag(base_url: str, tag: str, tag_json: dict, old_hash: str, ssl_verify: bool = True) -> None:
+def assign_tag(base_url: str, tag: str, ref_json: dict, old_hash: Optional[str], ssl_verify: bool = True) -> None:
     """Assign a reference to a tag.
 
     :param base_url: base Nessie url
     :param tag: name of the tag
-    :param tag_json: new definition of the tag
+    :param ref_json: new definition of the tag
     :param old_hash: current hash of the tag
     :param ssl_verify: ignore ssl errors if False
     """
     url = "/trees/tag/{}".format(tag)
     params = {"expectedHash": old_hash}
-    _put(base_url + url, tag_json, ssl_verify=ssl_verify, params=params)
+    _put(base_url + url, ref_json, ssl_verify=ssl_verify, params=params)
 
 
 def _raise_for_status(self: requests.models.Response) -> Tuple[Union[HTTPError, None], int, Union[Any, str]]:
@@ -245,7 +256,7 @@ def _raise_for_status(self: requests.models.Response) -> Tuple[Union[HTTPError, 
         return None, self.status_code, reason
 
 
-def cherry_pick(base_url: str, branch: str, transplant_json: dict, expected_hash: str, ssl_verify: bool = True) -> None:
+def cherry_pick(base_url: str, branch: str, transplant_json: dict, expected_hash: Optional[str], ssl_verify: bool = True) -> None:
     """cherry-pick a list of hashes to a branch.
 
     :param base_url: base Nessie url
@@ -255,11 +266,13 @@ def cherry_pick(base_url: str, branch: str, transplant_json: dict, expected_hash
     :param ssl_verify: ignore ssl errors if False
     """
     url = "/trees/branch/{}/transplant".format(branch)
-    params = {"expectedHash": expected_hash}
+    params = {}
+    if expected_hash:
+        params["expectedHash"] = expected_hash
     _post(base_url + url, json=transplant_json, ssl_verify=ssl_verify, params=params)
 
 
-def merge(base_url: str, branch: str, merge_json: dict, expected_hash: str, ssl_verify: bool = True) -> None:
+def merge(base_url: str, branch: str, merge_json: dict, expected_hash: Optional[str], ssl_verify: bool = True) -> None:
     """Merge a branch into another branch.
 
     :param base_url: base Nessie url
@@ -269,7 +282,9 @@ def merge(base_url: str, branch: str, merge_json: dict, expected_hash: str, ssl_
     :param ssl_verify: ignore ssl errors if False
     """
     url = "/trees/branch/{}/merge".format(branch)
-    params = {"expectedHash": expected_hash}
+    params = {}
+    if expected_hash:
+        params["expectedHash"] = expected_hash
     _post(base_url + url, json=merge_json, ssl_verify=ssl_verify, params=params)
 
 

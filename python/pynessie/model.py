@@ -2,12 +2,36 @@
 """Nessie Data objects."""
 from datetime import datetime
 from typing import List
-from typing import Optional
 
 import attr
 import desert
 from marshmallow import fields
 from marshmallow_oneofschema import OneOfSchema
+
+
+@attr.dataclass
+class GlobalContents:
+    """Dataclass for Nessie GlobalContents."""
+
+    id: str = desert.ib(fields.Str())
+
+    def pretty_print(self: "GlobalContents") -> str:
+        """Print out for cli."""
+        pass
+
+
+@attr.dataclass
+class IcebergTable(GlobalContents):
+    """Dataclass for Nessie Contents."""
+
+    metadata_location: str = desert.ib(fields.Str(data_key="metadataLocation"))
+
+    def pretty_print(self: "IcebergTable") -> str:
+        """Print out for cli."""
+        return "Iceberg table:\n\t{}".format(self.metadata_location)
+
+
+IcebergTableSchema = desert.schema_class(IcebergTable)
 
 
 @attr.dataclass
@@ -22,17 +46,18 @@ class Contents:
 
 
 @attr.dataclass
-class IcebergTable(Contents):
+class IcebergSnapshot(Contents):
     """Dataclass for Nessie Contents."""
 
     metadata_location: str = desert.ib(fields.Str(data_key="metadataLocation"))
+    current_snapshot_id: int = desert.ib(fields.Int(data_key="currentSnapshotId"))
 
-    def pretty_print(self: "IcebergTable") -> str:
+    def pretty_print(self: "IcebergSnapshot") -> str:
         """Print out for cli."""
-        return "Iceberg table:\n\t{}".format(self.metadata_location)
+        return "Iceberg snapshot:\n\t{}".format(self.metadata_location)
 
 
-IcebergTableSchema = desert.schema_class(IcebergTable)
+IcebergSnapshotSchema = desert.schema_class(IcebergSnapshot)
 
 
 @attr.dataclass
@@ -74,15 +99,15 @@ class ContentsSchema(OneOfSchema):
     """Schema for Nessie Content."""
 
     type_schemas = {
-        "ICEBERG_TABLE": IcebergTableSchema,
+        "ICEBERG_SNAPSHOT": IcebergSnapshotSchema,
         "DELTA_LAKE_TABLE": DeltaLakeTableSchema,
         "VIEW": SqlViewSchema,
     }
 
     def get_obj_type(self: "ContentsSchema", obj: Contents) -> str:
         """Returns the object type based on its class."""
-        if isinstance(obj, IcebergTable):
-            return "ICEBERG_TABLE"
+        if isinstance(obj, IcebergSnapshot):
+            return "ICEBERG_SNAPSHOT"
         elif isinstance(obj, DeltaLakeTable):
             return "DELTA_LAKE_TABLE"
         elif isinstance(obj, SqlView):
@@ -164,7 +189,7 @@ class Reference:
     """Dataclass for Nessie Reference."""
 
     name: str = desert.ib(fields.Str())
-    hash_: Optional[str] = desert.ib(fields.Str(data_key="hash"))
+    hash_: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(data_key="hash", allow_none=True)))
 
 
 @attr.dataclass
@@ -285,6 +310,7 @@ LogResponseSchema = desert.schema_class(LogResponse)
 class Transplant:
     """Dataclass for Transplant operation."""
 
+    source_ref: str = attr.ib(metadata=desert.metadata(fields.Str(data_key="sourceRef")))
     hashes_to_transplant: List[str] = attr.ib(metadata=desert.metadata(fields.List(fields.Str(), data_key="hashesToTransplant")))
 
 
@@ -295,7 +321,9 @@ TransplantSchema = desert.schema_class(Transplant)
 class Merge:
     """Dataclass for Merge operation."""
 
+    source_ref: str = attr.ib(metadata=desert.metadata(fields.Str(data_key="sourceRef")))
     from_hash: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(data_key="fromHash")))
+    ancestor_required: bool = attr.ib(default=None, metadata=desert.metadata(fields.Str(data_key="ancestorRequired", allow_none=True)))
 
 
 MergeSchema = desert.schema_class(Merge)
