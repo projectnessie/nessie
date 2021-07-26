@@ -16,9 +16,15 @@
 package org.projectnessie.server.authz;
 
 import com.google.common.collect.ImmutableMap;
+import io.quarkus.runtime.Startup;
+import java.util.HashMap;
+import java.util.Map;
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.ws.rs.ForbiddenException;
+import org.projectnessie.cel.tools.Script;
 import org.projectnessie.cel.tools.ScriptException;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.server.config.QuarkusNessieAuthorizationConfig;
@@ -33,7 +39,6 @@ import org.projectnessie.versioned.NamedRef;
  */
 @ApplicationScoped
 public class CelAccessChecker implements AccessChecker {
-
   private final QuarkusNessieAuthorizationConfig config;
 
   public enum AuthorizationRuleType {
@@ -51,6 +56,39 @@ public class CelAccessChecker implements AccessChecker {
   @Inject
   public CelAccessChecker(QuarkusNessieAuthorizationConfig config) {
     this.config = config;
+  }
+
+  /**
+   * Compiles all authorization rules and returns them.
+   *
+   * @return A map of compiled authorization rules
+   */
+  @Produces
+  @Singleton
+  @Startup
+  private Map<String, Script> getCompiledAuthorizationRules() {
+    Map<String, Script> scripts = new HashMap<>();
+    config
+        .rules()
+        .forEach(
+            (key, value) ->
+                scripts.computeIfAbsent(
+                    value,
+                    (k) -> {
+                      try {
+                        return CELUtil.SCRIPT_HOST
+                            .buildScript(value.replace("\"", ""))
+                            .withContainer(CELUtil.CONTAINER)
+                            .withDeclarations(CELUtil.AUTHORIZATION_RULE_DECLARATIONS)
+                            .build();
+                      } catch (ScriptException e) {
+                        throw new RuntimeException(
+                            String.format(
+                                "Failed to compile query expression with id '%s' and expression '%s' due to: %s",
+                                key, value, e.getMessage()));
+                      }
+                    }));
+    return scripts;
   }
 
   @Override
@@ -108,15 +146,12 @@ public class CelAccessChecker implements AccessChecker {
       return;
     }
     boolean allowed =
-        config.rules().entrySet().stream()
+        getCompiledAuthorizationRules().entrySet().stream()
             .anyMatch(
                 entry -> {
                   try {
-                    return CELUtil.SCRIPT_HOST
-                        .buildScript(entry.getValue().replace("\"", ""))
-                        .withContainer(CELUtil.CONTAINER)
-                        .withDeclarations(CELUtil.AUTHORIZATION_RULE_DECLARATIONS)
-                        .build()
+                    return entry
+                        .getValue()
                         .execute(
                             Boolean.class,
                             ImmutableMap.of(
@@ -129,7 +164,7 @@ public class CelAccessChecker implements AccessChecker {
                   } catch (ScriptException e) {
                     throw new RuntimeException(
                         String.format(
-                            "Failed to compile query expression with id '%s' and expression '%s' due to: %s",
+                            "Failed to execute query expression with id '%s' and expression '%s' due to: %s",
                             entry.getKey(), entry.getValue(), e.getMessage()));
                   }
                 });
@@ -151,15 +186,12 @@ public class CelAccessChecker implements AccessChecker {
       return;
     }
     boolean allowed =
-        config.rules().entrySet().stream()
+        getCompiledAuthorizationRules().entrySet().stream()
             .anyMatch(
                 entry -> {
                   try {
-                    return CELUtil.SCRIPT_HOST
-                        .buildScript(entry.getValue().replace("\"", ""))
-                        .withContainer(CELUtil.CONTAINER)
-                        .withDeclarations(CELUtil.AUTHORIZATION_RULE_DECLARATIONS)
-                        .build()
+                    return entry
+                        .getValue()
                         .execute(
                             Boolean.class,
                             ImmutableMap.of(
@@ -172,7 +204,7 @@ public class CelAccessChecker implements AccessChecker {
                   } catch (ScriptException e) {
                     throw new RuntimeException(
                         String.format(
-                            "Failed to compile query expression with id '%s' and expression '%s' due to: %s",
+                            "Failed to execute query expression with id '%s' and expression '%s' due to: %s",
                             entry.getKey(), entry.getValue(), e.getMessage()));
                   }
                 });
