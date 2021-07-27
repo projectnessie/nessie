@@ -15,6 +15,7 @@
  */
 package org.projectnessie.services.authz;
 
+import java.security.AccessControlException;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.versioned.NamedRef;
 
@@ -26,92 +27,97 @@ import org.projectnessie.versioned.NamedRef;
 public interface AccessChecker {
 
   /**
-   * Checks whether the given role/principal is allowed to create a Branch/Tag. It is up to the
-   * implementor to define which exception should being thrown in case of denial.
+   * Checks whether the given role/principal is allowed to create a Branch/Tag.
    *
    * @param context The context carrying the principal information.
    * @param ref The {@link NamedRef} to check
+   * @throws AccessControlException When the permission to create a Branch/Tag is not granted.
    */
-  void canCreateReference(AccessContext context, NamedRef ref);
+  void canCreateReference(AccessContext context, NamedRef ref) throws AccessControlException;
 
   /**
-   * Checks whether the given role/principal is allowed to assign the given Branch/Tag to a Hash. It
-   * is up to the implementor to define which exception should being thrown in case of denial.
+   * Checks whether the given role/principal is allowed to assign the given Branch/Tag to a Hash.
    *
    * @param context The context carrying the principal information.
    * @param ref The {@link NamedRef} to check
+   * @throws AccessControlException When the permission to assign the given Branch/Tag to a Hash is
+   *     not granted.
    */
-  void canAssignRefToHash(AccessContext context, NamedRef ref);
+  void canAssignRefToHash(AccessContext context, NamedRef ref) throws AccessControlException;
 
   /**
-   * Checks whether the given role/principal is allowed to delete a Branch/Tag. It is up to the
-   * implementor to define which exception should being thrown in case of denial.
+   * Checks whether the given role/principal is allowed to delete a Branch/Tag.
    *
    * @param context The context carrying the principal information.
    * @param ref The {@link NamedRef} to check
+   * @throws AccessControlException When the permission to delete a Branch/Tag is not granted.
    */
-  void canDeleteReference(AccessContext context, NamedRef ref);
+  void canDeleteReference(AccessContext context, NamedRef ref) throws AccessControlException;
 
   /**
    * Checks whether the given role/principal is allowed to read entries content for the given
-   * Branch/Tag. It is up to the implementor to define which exception should being thrown in case
-   * of denial.
+   * Branch/Tag.
    *
    * @param context The context carrying the principal information.
    * @param ref The {@link NamedRef} to check
+   * @throws AccessControlException When the permission to read entries content is not granted.
    */
-  void canReadEntries(AccessContext context, NamedRef ref);
+  void canReadEntries(AccessContext context, NamedRef ref) throws AccessControlException;
 
   /**
    * Checks whether the given role/principal is allowed to list the commit log for the given
-   * Branch/Tag. It is up to the implementor to define which exception should being thrown in case
-   * of denial.
+   * Branch/Tag.
    *
    * @param context The context carrying the principal information.
    * @param ref The {@link NamedRef} to check
+   * @throws AccessControlException When the permission to delete an entity is not granted.
    */
-  void canListCommitLog(AccessContext context, NamedRef ref);
+  void canListCommitLog(AccessContext context, NamedRef ref) throws AccessControlException;
 
   /**
    * Checks whether the given role/principal is allowed to commit changes against the given
-   * Branch/Tag. It is up to the implementor to define which exception should being thrown in case
-   * of denial.
+   * Branch/Tag.
    *
    * @param context The context carrying the principal information.
    * @param ref The {@link NamedRef} to check
+   * @throws AccessControlException When the permission to commit changes is not granted.
    */
-  void canCommitChangeAgainstReference(AccessContext context, NamedRef ref);
+  void canCommitChangeAgainstReference(AccessContext context, NamedRef ref)
+      throws AccessControlException;
 
   /**
    * Checks whether the given role/principal is allowed to read an entity value as defined by the
-   * {@link ContentsKey} for the given Branch/Tag. It is up to the implementor to define which
-   * exception should being thrown in case of denial.
+   * {@link ContentsKey} for the given Branch/Tag.
    *
    * @param context The context carrying the principal information.
    * @param ref The {@link NamedRef} to check
    * @param key The {@link ContentsKey} to check
+   * @throws AccessControlException When the permission to read an entity is not granted.
    */
-  void canReadEntityValue(AccessContext context, NamedRef ref, ContentsKey key);
+  void canReadEntityValue(AccessContext context, NamedRef ref, ContentsKey key)
+      throws AccessControlException;
 
   /**
    * Checks whether the given role/principal is allowed to update an entity value as defined by the
-   * {@link ContentsKey} for the given Branch/Tag. It is up to the implementor to define which
-   * exception should being thrown in case of denial.
+   * {@link ContentsKey} for the given Branch/Tag.
    *
    * @param context The context carrying the principal information.
    * @param ref The {@link NamedRef} to check
    * @param key The {@link ContentsKey} to check
+   * @throws AccessControlException When the permission to update an entity is not granted.
    */
-  void canUpdateEntity(AccessContext context, NamedRef ref, ContentsKey key);
+  void canUpdateEntity(AccessContext context, NamedRef ref, ContentsKey key)
+      throws AccessControlException;
 
   /**
    * Checks whether the given role/principal is allowed to delete an entity value as defined by the
-   * {@link ContentsKey} for the given Branch/Tag. It is up to the implementor to define which
-   * exception should being thrown in case of denial.
+   * {@link ContentsKey} for the given Branch/Tag.
    *
    * @param context The context carrying the principal information.
    * @param ref The {@link NamedRef} to check
    * @param key The {@link ContentsKey} to check
+   * @throws AccessControlException When the permission to delete an entity is not granted.
    */
-  void canDeleteEntity(AccessContext context, NamedRef ref, ContentsKey key);
+  void canDeleteEntity(AccessContext context, NamedRef ref, ContentsKey key)
+      throws AccessControlException;
 }

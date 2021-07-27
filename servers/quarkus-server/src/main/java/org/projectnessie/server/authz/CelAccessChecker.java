@@ -16,9 +16,9 @@
 package org.projectnessie.server.authz;
 
 import com.google.common.collect.ImmutableMap;
+import java.security.AccessControlException;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import javax.ws.rs.ForbiddenException;
 import org.projectnessie.cel.tools.ScriptException;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.server.config.QuarkusNessieAuthorizationConfig;
@@ -55,51 +55,54 @@ public class CelAccessChecker implements AccessChecker {
   }
 
   @Override
-  public void canCreateReference(AccessContext context, NamedRef ref) throws ForbiddenException {
+  public void canCreateReference(AccessContext context, NamedRef ref)
+      throws AccessControlException {
     canPerformOpOnReference(context, ref, AuthorizationRuleType.CREATE_REFERENCE);
   }
 
   @Override
-  public void canAssignRefToHash(AccessContext context, NamedRef ref) throws ForbiddenException {
+  public void canAssignRefToHash(AccessContext context, NamedRef ref)
+      throws AccessControlException {
     canPerformOpOnReference(context, ref, AuthorizationRuleType.ASSIGN_REFERENCE_TO_HASH);
   }
 
   @Override
-  public void canDeleteReference(AccessContext context, NamedRef ref) throws ForbiddenException {
+  public void canDeleteReference(AccessContext context, NamedRef ref)
+      throws AccessControlException {
     canPerformOpOnReference(context, ref, AuthorizationRuleType.DELETE_REFERENCE);
   }
 
   @Override
-  public void canReadEntries(AccessContext context, NamedRef ref) throws ForbiddenException {
+  public void canReadEntries(AccessContext context, NamedRef ref) throws AccessControlException {
     canPerformOpOnReference(context, ref, AuthorizationRuleType.READ_ENTRIES);
   }
 
   @Override
-  public void canListCommitLog(AccessContext context, NamedRef ref) throws ForbiddenException {
+  public void canListCommitLog(AccessContext context, NamedRef ref) throws AccessControlException {
     canPerformOpOnReference(context, ref, AuthorizationRuleType.LIST_COMMIT_LOG);
   }
 
   @Override
   public void canCommitChangeAgainstReference(AccessContext context, NamedRef ref)
-      throws ForbiddenException {
+      throws AccessControlException {
     canPerformOpOnReference(context, ref, AuthorizationRuleType.COMMIT_CHANGE_AGAINST_REFERENCE);
   }
 
   @Override
   public void canReadEntityValue(AccessContext context, NamedRef ref, ContentsKey key)
-      throws ForbiddenException {
+      throws AccessControlException {
     canPerformOpOnPath(context, key, AuthorizationRuleType.READ_ENTITY_VALUE);
   }
 
   @Override
   public void canUpdateEntity(AccessContext context, NamedRef ref, ContentsKey key)
-      throws ForbiddenException {
+      throws AccessControlException {
     canPerformOpOnPath(context, key, AuthorizationRuleType.UPDATE_ENTITY);
   }
 
   @Override
   public void canDeleteEntity(AccessContext context, NamedRef ref, ContentsKey key)
-      throws ForbiddenException {
+      throws AccessControlException {
     canPerformOpOnPath(context, key, AuthorizationRuleType.DELETE_ENTITY);
   }
 
@@ -132,7 +135,7 @@ public class CelAccessChecker implements AccessChecker {
                   }
                 });
     if (!allowed) {
-      throw new ForbiddenException(
+      throw new AccessControlException(
           String.format(
               "'%s' is not allowed for Role '%s' on Reference '%s'",
               type, getRoleName(context), ref.getName()));
@@ -172,7 +175,7 @@ public class CelAccessChecker implements AccessChecker {
                   }
                 });
     if (!allowed) {
-      throw new ForbiddenException(
+      throw new AccessControlException(
           String.format(
               "'%s' is not allowed for Role '%s' on Content '%s'",
               type, getRoleName(context), contentsKey.toPathString()));

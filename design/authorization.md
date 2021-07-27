@@ -53,15 +53,15 @@ Although multiple server implementations may exist and conversely multiple acces
 More concretely, interface would look like this:
 
     interface AccessChecker {
-      void canCreateReference(AccessContext context, NamedRef ref);
-      void canDeleteReference(AccessContext context, NamedRef ref);
-      void canAssignRefToHash(AccessContext context, NamedRef ref);
-      void canReadEntries(AccessContext context, NamedRef ref);
-      void canListCommitLog(AccessContext context, NamedRef ref);
-      void canCommitChangeAgainstReference(AccessContext context, NamedRef ref);
-      void canReadEntityValue(AccessContext context, NamedRef ref, ContentsKey key);
-      void canUpdateEntity(AccessContext context, NamedRef ref, ContentsKey key);
-      void canDeleteEntity(AccessContext context, NamedRef ref, ContentsKey key);
+      void canCreateReference(AccessContext context, NamedRef ref) throws AccessControlException;
+      void canDeleteReference(AccessContext context, NamedRef ref) throws AccessControlException;
+      void canAssignRefToHash(AccessContext context, NamedRef ref) throws AccessControlException;
+      void canReadEntries(AccessContext context, NamedRef ref) throws AccessControlException;
+      void canListCommitLog(AccessContext context, NamedRef ref) throws AccessControlException;
+      void canCommitChangeAgainstReference(AccessContext context, NamedRef ref) throws AccessControlException;
+      void canReadEntityValue(AccessContext context, NamedRef ref, ContentsKey key) throws AccessControlException;
+      void canUpdateEntity(AccessContext context, NamedRef ref, ContentsKey key) throws AccessControlException;
+      void canDeleteEntity(AccessContext context, NamedRef ref, ContentsKey key) throws AccessControlException;
     }
 
 The `AccessContext` object passed as argument contains information regarding the overall context of the operation and will be created by the server itself:
