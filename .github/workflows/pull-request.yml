@@ -19,6 +19,8 @@ jobs:
   java:
     name: Java/Maven
     runs-on: ubuntu-latest
+    outputs:
+      CI_WITH_JACKSON: ${{ steps.ci_options.outputs.CI_WITH_JACKSON }}
 
     steps:
     - uses: actions/checkout@v2
@@ -85,10 +87,22 @@ jobs:
           ~/.gradle/wrapper
         key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
         restore-keys: ${{ runner.os }}-gradle
+    - name: Build/test options
+      id: ci_options
+      run: |
+        echo ::set-output name=CI_WITH_NATIVE::$(jq 'any(.pull_request.labels[]; .name == "pr-native")' < $GITHUB_EVENT_PATH)
+        echo ::set-output name=CI_WITH_JDK8::$(jq 'any(.pull_request.labels[]; .name == "pr-jdk8")' < $GITHUB_EVENT_PATH)
+        echo ::set-output name=CI_WITH_JACKSON::$(jq 'any(.pull_request.labels[]; .name == "pr-jackson")' < $GITHUB_EVENT_PATH)
     - name: Build with Maven
-      run: ./mvnw -B install javadoc:javadoc-no-fork --file pom.xml -Pcode-coverage,jdk8-tests -Dtest.log.level=WARN
       env:
+        CI_WITH_NATIVE: ${{ steps.ci_options.outputs.CI_WITH_NATIVE }}
+        CI_WITH_JDK8: ${{ steps.ci_options.outputs.CI_WITH_JDK8 }}
         SPARK_LOCAL_IP: localhost
+      run: |
+        PROFILES="-Pcode-coverage"
+        [[ $CI_WITH_JDK8 == "true" ]] && PROFILES="$PROFILES,jdk8-tests"
+        [[ $CI_WITH_NATIVE == "true" ]] && PROFILES="$PROFILES,native"
+        ./mvnw -B install javadoc:javadoc-no-fork --file pom.xml $PROFILES -Dtest.log.level=WARN
     - name: Build with Gradle
       run: ./gradlew --rerun-tasks --no-daemon --info build
       working-directory: ./tools/apprunner-gradle-plugin
@@ -112,6 +126,45 @@ jobs:
         flags: java
         files: |
           code-coverage/target/site/jacoco-aggregate-all/jacoco.xml
+  jackson-tests:
+    name: Jackson Integration Tests
+    needs: java
+    if: ${{ needs.java.outputs.CI_WITH_JACKSON == 'true' }}
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 4
+      # note the big include entry in matrix is used to ensure we get human readable names for the jobs
+      matrix:
+        include:
+          - jackson-version: 2.6.5
+            target-library: Hive 2.3.7
+            java-version: 11
+          - jackson-version: 2.9.5
+            target-library: Hive 3.1.2
+            java-version: 11
+          - jackson-version: 2.6.7
+            target-library: Spark 2.4.4
+            java-version: 11
+          - jackson-version: 2.10.0
+            target-library: Spark 3.0.1
+            java-version: 11
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up JDK
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{ matrix.java-version }}
+      - name: Cache local Maven repository
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.m2/repository
+            !~/.m2/repository/org/projectnessie
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+      - name: Jackson Integration Tests ${{ matrix.target-library }}
+        run: mvn verify -pl :nessie-client -am -Pjackson-tests -Djackson.test.version=${{ matrix.jackson-version }} -Dtest.log.level=WARN
   python:
     name: Python
     runs-on: ubuntu-latest
