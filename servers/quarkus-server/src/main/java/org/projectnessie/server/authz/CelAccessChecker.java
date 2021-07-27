@@ -16,21 +16,14 @@
 package org.projectnessie.server.authz;
 
 import com.google.common.collect.ImmutableMap;
-import io.quarkus.runtime.Startup;
-import java.util.HashMap;
-import java.util.Map;
 import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
-import javax.inject.Singleton;
 import javax.ws.rs.ForbiddenException;
-import org.projectnessie.cel.tools.Script;
 import org.projectnessie.cel.tools.ScriptException;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.server.config.QuarkusNessieAuthorizationConfig;
 import org.projectnessie.services.authz.AccessChecker;
 import org.projectnessie.services.authz.AccessContext;
-import org.projectnessie.services.cel.CELUtil;
 import org.projectnessie.versioned.NamedRef;
 
 /**
@@ -40,6 +33,7 @@ import org.projectnessie.versioned.NamedRef;
 @ApplicationScoped
 public class CelAccessChecker implements AccessChecker {
   private final QuarkusNessieAuthorizationConfig config;
+  private final CompiledAuthorizationRules compiledRules;
 
   public enum AuthorizationRuleType {
     CREATE_REFERENCE,
@@ -54,41 +48,10 @@ public class CelAccessChecker implements AccessChecker {
   }
 
   @Inject
-  public CelAccessChecker(QuarkusNessieAuthorizationConfig config) {
+  public CelAccessChecker(
+      QuarkusNessieAuthorizationConfig config, CompiledAuthorizationRules compiledRules) {
     this.config = config;
-  }
-
-  /**
-   * Compiles all authorization rules and returns them.
-   *
-   * @return A map of compiled authorization rules
-   */
-  @Produces
-  @Singleton
-  @Startup
-  private Map<String, Script> getCompiledAuthorizationRules() {
-    Map<String, Script> scripts = new HashMap<>();
-    config
-        .rules()
-        .forEach(
-            (key, value) ->
-                scripts.computeIfAbsent(
-                    value,
-                    (k) -> {
-                      try {
-                        return CELUtil.SCRIPT_HOST
-                            .buildScript(value.replace("\"", ""))
-                            .withContainer(CELUtil.CONTAINER)
-                            .withDeclarations(CELUtil.AUTHORIZATION_RULE_DECLARATIONS)
-                            .build();
-                      } catch (ScriptException e) {
-                        throw new RuntimeException(
-                            String.format(
-                                "Failed to compile query expression with id '%s' and expression '%s' due to: %s",
-                                key, value, e.getMessage()));
-                      }
-                    }));
-    return scripts;
+    this.compiledRules = compiledRules;
   }
 
   @Override
@@ -146,7 +109,7 @@ public class CelAccessChecker implements AccessChecker {
       return;
     }
     boolean allowed =
-        getCompiledAuthorizationRules().entrySet().stream()
+        compiledRules.getRules().entrySet().stream()
             .anyMatch(
                 entry -> {
                   try {
@@ -186,7 +149,7 @@ public class CelAccessChecker implements AccessChecker {
       return;
     }
     boolean allowed =
-        getCompiledAuthorizationRules().entrySet().stream()
+        compiledRules.getRules().entrySet().stream()
             .anyMatch(
                 entry -> {
                   try {
