@@ -127,7 +127,6 @@ public class TreeResource extends BaseResource implements TreeApi {
   @Override
   public Reference createReference(Reference reference)
       throws NessieNotFoundException, NessieConflictException {
-    System.out.println("TreeResource.createReference");
     final NamedRef namedReference;
     if (reference instanceof Branch) {
       namedReference = BranchName.of(reference.getName());
@@ -195,10 +194,15 @@ public class TreeResource extends BaseResource implements TreeApi {
             params.maxRecords() != null ? params.maxRecords() : MAX_COMMIT_LOG_ENTRIES,
             MAX_COMMIT_LOG_ENTRIES);
 
-    Ref endRef =
-        null == params.pageToken()
-            ? namedRefWithHashOrThrow(namedRef, params.endHash()).getHash()
-            : getHashOrThrow(params.pageToken());
+    Ref endRef;
+    if (null == params.pageToken()) {
+      // we should only allow named references when no paging is defined
+      endRef = namedRefWithHashOrThrow(namedRef, params.endHash()).getHash();
+    } else {
+      // TODO: this is atm an insecure design where users can put it any hashes and retrieve all the
+      // commits. Once authz + tvs2 is in place we should revisit this
+      endRef = getHashOrThrow(params.pageToken());
+    }
 
     try (Stream<ImmutableCommitMeta> s =
         StreamSupport.stream(

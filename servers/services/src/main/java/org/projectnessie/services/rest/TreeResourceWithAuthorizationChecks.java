@@ -55,13 +55,11 @@ public class TreeResourceWithAuthorizationChecks extends TreeResource {
       VersionStore<Contents, CommitMeta, Type> store,
       AccessChecker accessChecker) {
     super(config, multiTenant, store, accessChecker);
-    System.out.println("INJECTING");
   }
 
   @Override
   public Reference createReference(Reference reference)
       throws NessieNotFoundException, NessieConflictException {
-    System.out.println("TreeResourceWithAuthorizationChecks.createReference");
     if (reference instanceof Branch) {
       getAccessChecker()
           .canCreateReference(createAccessContext(), BranchName.of(reference.getName()));
