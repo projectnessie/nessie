@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.enterprise.context.RequestScoped;
+import javax.enterprise.inject.Alternative;
 import javax.inject.Inject;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.SecurityContext;
@@ -42,7 +43,13 @@ import org.projectnessie.versioned.WithHash;
 
 /** REST endpoint for contents. */
 @RequestScoped
+@Alternative
 public class ContentsResource extends BaseResource implements ContentsApi {
+
+  // Mandated by CDI 2.0
+  public ContentsResource() {
+    this(null, null, null, null);
+  }
 
   @Context SecurityContext securityContext;
 
@@ -64,7 +71,6 @@ public class ContentsResource extends BaseResource implements ContentsApi {
   public Contents getContents(ContentsKey key, String namedRef, String hashOnRef)
       throws NessieNotFoundException {
     WithHash<NamedRef> ref = namedRefWithHashOrThrow(namedRef, hashOnRef);
-    getAccessChecker().canReadEntityValue(createAccessContext(), ref.getValue(), key);
     try {
       Contents obj = getStore().getValue(ref.getHash(), toKey(key));
       if (obj != null) {
@@ -84,8 +90,6 @@ public class ContentsResource extends BaseResource implements ContentsApi {
     try {
       WithHash<NamedRef> ref = namedRefWithHashOrThrow(namedRef, hashOnRef);
       List<ContentsKey> externalKeys = request.getRequestedKeys();
-      externalKeys.forEach(
-          k -> getAccessChecker().canReadEntityValue(createAccessContext(), ref.getValue(), k));
       List<Key> internalKeys =
           externalKeys.stream().map(ContentsResource::toKey).collect(Collectors.toList());
       List<Optional<Contents>> values = getStore().getValues(ref.getHash(), internalKeys);
