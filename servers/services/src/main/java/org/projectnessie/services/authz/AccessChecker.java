@@ -70,7 +70,7 @@ public interface AccessChecker {
    *
    * @param context The context carrying the principal information.
    * @param ref The {@link NamedRef} to check
-   * @throws AccessControlException When the permission to delete an entity is not granted.
+   * @throws AccessControlException When the permission to list the commit log is not granted.
    */
   void canListCommitLog(AccessContext context, NamedRef ref) throws AccessControlException;
 
@@ -92,7 +92,7 @@ public interface AccessChecker {
    * @param context The context carrying the principal information.
    * @param ref The {@link NamedRef} to check
    * @param key The {@link ContentsKey} to check
-   * @throws AccessControlException When the permission to read an entity is not granted.
+   * @throws AccessControlException When the permission to read an entity value is not granted.
    */
   void canReadEntityValue(AccessContext context, NamedRef ref, ContentsKey key)
       throws AccessControlException;
@@ -104,7 +104,7 @@ public interface AccessChecker {
    * @param context The context carrying the principal information.
    * @param ref The {@link NamedRef} to check
    * @param key The {@link ContentsKey} to check
-   * @throws AccessControlException When the permission to update an entity is not granted.
+   * @throws AccessControlException When the permission to update an entity value is not granted.
    */
   void canUpdateEntity(AccessContext context, NamedRef ref, ContentsKey key)
       throws AccessControlException;
@@ -116,7 +116,7 @@ public interface AccessChecker {
    * @param context The context carrying the principal information.
    * @param ref The {@link NamedRef} to check
    * @param key The {@link ContentsKey} to check
-   * @throws AccessControlException When the permission to delete an entity is not granted.
+   * @throws AccessControlException When the permission to delete an entity value is not granted.
    */
   void canDeleteEntity(AccessContext context, NamedRef ref, ContentsKey key)
       throws AccessControlException;
