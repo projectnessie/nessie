@@ -27,7 +27,7 @@ import org.projectnessie.services.cel.CELUtil;
 
 /**
  * Compiles the authorization rules from {@link QuarkusNessieAuthorizationConfig} at startup and
- * provides access to them via {@link this#getRules()}.
+ * provides access to them via {@link CompiledAuthorizationRules#getRules()}.
  */
 @Singleton
 @Startup
@@ -72,8 +72,7 @@ public class CompiledAuthorizationRules {
   }
 
   /**
-   * Returns a map of compiled authorization rules as defined in {@link
-   * QuarkusNessieAuthorizationConfig}.
+   * Returns a map of compiled authorization rules.
    *
    * @return A map of compiled authorization rules
    */
