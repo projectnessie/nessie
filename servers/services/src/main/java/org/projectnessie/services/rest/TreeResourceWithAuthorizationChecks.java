@@ -103,8 +103,6 @@ public class TreeResourceWithAuthorizationChecks extends TreeResource {
               createAccessContext(),
               namedRefWithHashOrThrow(namedRef, params.endHash()).getValue());
     }
-    // TODO: this is atm an insecure design where users can put it any hashes and retrieve all the
-    // commits via paging. Once authz + tvs2 is in place we should revisit this
     return super.getCommitLog(namedRef, params);
   }
 
