@@ -2,6 +2,7 @@ name: PR Build Check
 
 on:
   pull_request:
+    types: [labeled, unlabeled, opened, synchronize, reopened]
     paths-ignore:
       - 'LICENSE'
       - 'NOTICE'
