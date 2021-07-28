@@ -58,14 +58,14 @@ public class CompiledAuthorizationRules {
                     (k) -> {
                       try {
                         return CELUtil.SCRIPT_HOST
-                            .buildScript(value.replace("\"", ""))
+                            .buildScript(value)
                             .withContainer(CELUtil.CONTAINER)
                             .withDeclarations(CELUtil.AUTHORIZATION_RULE_DECLARATIONS)
                             .build();
                       } catch (ScriptException e) {
                         throw new RuntimeException(
                             String.format(
-                                "Failed to compile query expression with id '%s' and expression '%s' due to: %s",
+                                "Failed to compile authorization rule with id '%s' and expression '%s' due to: %s",
                                 key, value, e.getMessage()),
                             e);
                       }
