@@ -2,6 +2,7 @@ name: PR Build Check
 
 on:
   pull_request:
+    types: [labeled, unlabeled, opened, synchronize, reopened]
 # NOTE: using paths-ignore here doesn't play well with "Require status checks to pass before merging"
 # due to https://github.community/t/feature-request-conditional-required-checks/16761
 #    paths-ignore:
