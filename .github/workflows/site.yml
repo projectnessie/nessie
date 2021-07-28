@@ -5,12 +5,15 @@ on:
     branches: [ main ]
     paths:
       - 'site/**'
+  pull_request:
+    paths:
+      - 'site/**'
+
 jobs:
 
   site:
     name: Build & Deploy Website
     runs-on: ubuntu-latest
-    if: ${{ github.repository == 'projectnessie/nessie' }}
     steps:
       - uses: actions/checkout@v2
       - name: Setup Python
@@ -38,6 +41,9 @@ jobs:
         working-directory: ./site
       - name: Deploy Static Site to GitHub
         uses: peaceiris/actions-gh-pages@v3
+        env:
+          NESSIE_SITE_DEPLOY_KEY: ${{ secrets.NESSIE_SITE_DEPLOY_KEY }}
+        if: ${{ env.NESSIE_SITE_DEPLOY_KEY }}
         with:
           external_repository: projectnessie/projectnessie.github.io
           publish_branch: main

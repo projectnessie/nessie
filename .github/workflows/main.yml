@@ -13,13 +13,42 @@ on:
       - '.github/workflows/check*.yml'
       - '.idea/**'
       - '.editorconfig'
+  pull_request:
+    types: [labeled, unlabeled, opened, synchronize, reopened]
+    paths-ignore:
+      - 'LICENSE'
+      - 'NOTICE'
+      - '**.md'
+      - '!site/**'
+      - '.github/dependabot.yml'
+      - '.github/workflows/release*.yml'
+      - '.github/workflows/check*.yml'
+      - '.idea/**'
+      - '.editorconfig'
 
 jobs:
   java:
     name: Java/Maven
     runs-on: ubuntu-latest
+    outputs:
+      CI_WITH_JACKSON: ${{ steps.ci_options.outputs.CI_WITH_JACKSON }}
 
     steps:
+    - name: Get CI options
+      id: ci_options
+      env:
+        EVENT_NAME: ${{ github.event_name }}
+      run: |
+        if [[ ${EVENT_NAME} == "push" ]]; then
+          # Pushes to the main branch run the "whole CI spiel"
+          echo ::set-output name=CI_WITH_NATIVE::true
+          echo ::set-output name=CI_WITH_JACKSON::true
+        else
+          # PRs run what's been requested via labels
+          echo ::set-output name=CI_WITH_NATIVE::$(jq 'any(.pull_request.labels[]; .name == "pr-native")' < $GITHUB_EVENT_PATH)
+          echo ::set-output name=CI_WITH_JACKSON::$(jq 'any(.pull_request.labels[]; .name == "pr-jackson")' < $GITHUB_EVENT_PATH)
+        fi
+
     - name: Memory report
       run: |
         echo "Memory and swap:"
@@ -31,10 +60,12 @@ jobs:
         df -h
         echo
     - name: Add 6G more swap for native-image build
+      if: ${{ steps.ci_options.outputs.CI_WITH_NATIVE == 'true' }}
       run: |
         sudo dd if=/dev/zero of=/mnt/swapfile-2 bs=1MiB count=$((6*1024))
         sudo mkswap /mnt/swapfile-2
         sudo swapon /mnt/swapfile-2
+
     - uses: actions/checkout@v2
     - name: Set up JDK 11
       uses: actions/setup-java@v1
@@ -79,6 +110,7 @@ jobs:
             </toolchain>
           </toolchains>
           EOT
+
     - name: Cache local Maven repository
       uses: actions/cache@v2
       with:
@@ -103,23 +135,42 @@ jobs:
           ~/.gradle/wrapper
         key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
         restore-keys: ${{ runner.os }}-gradle
-    - name: Build with Maven
+
+    - name: Build with Maven / Main
       env:
         MAVEN_USERNAME: ${{ secrets.OSSRH_ACCESS_ID }}
         MAVEN_OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
         MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
         SPARK_LOCAL_IP: localhost
-      if: ${{ env.MAVEN_USERNAME }}
-      run: ./mvnw -B deploy --file pom.xml -Pcode-coverage,jdk8-tests,native,release -DdeployAtEnd=true -Dtest.log.level=WARN
-    - name: Build with Maven (Fork)
+      if: ${{ github.event_name == 'push' }}
+      run: |
+        PROPS="-Dtest.log.level=WARN"
+        TARGETS="install"
+        if [[ -n ${MAVEN_USERNAME} ]]; then
+          # 'main' branch on projectnessie/nessie
+          TARGETS="deploy"
+          PROPS="${PROPS} -DdeployAtEnd=true"
+        else
+          # 'main' branch on forks
+          PROPS="${PROPS} -DskipGpg=true"
+        fi
+        ./mvnw -B ${TARGETS} javadoc:javadoc-no-fork --file pom.xml -Pcode-coverage,jdk8-tests,native,release ${PROPS}
+
+    - name: Build with Maven / PR
+      if: ${{ github.event_name == 'pull_request' }}
       env:
-        MAVEN_USERNAME: ${{ secrets.OSSRH_ACCESS_ID }}
         SPARK_LOCAL_IP: localhost
-      if: ${{ ! env.MAVEN_USERNAME }}
-      run: ./mvnw -B install --file pom.xml -Pcode-coverage,jdk8-tests,native,release -DskipGpg -Dtest.log.level=WARN
+      run: ./mvnw -B install javadoc:javadoc-no-fork --file pom.xml -Pcode-coverage,jdk8-tests -Dtest.log.level=WARN
+
+    - name: Build with Maven / PR / Native tests
+      if: ${{ github.event_name == 'pull_request' && steps.ci_options.outputs.CI_WITH_NATIVE == 'true' }}
+      # No code-coverage here
+      run: ./mvnw -B install javadoc:javadoc-no-fork --file pom.xml -Pnative -Dtest.log.level=WARN -pl :nessie-quarkus -pl :nessie-lambda
+
     - name: Build with Gradle
       run: ./gradlew --rerun-tasks --no-daemon --info build
       working-directory: ./tools/apprunner-gradle-plugin
+
     - name: Capture test results
       uses: actions/upload-artifact@v2
       if: failure()
@@ -136,9 +187,11 @@ jobs:
         name: gatling-logs
         path: perftest/simulations/target/gatling/*/simulation.log
     - name: Run OWASP Check
+      if: ${{ github.event_name == 'push' }}
       run: |
         ./mvnw dependency-check:aggregate -DskipTests -Powasp-dependency-check
     - name: Upload OWASP Report
+      if: ${{ github.event_name == 'push' }}
       uses: actions/upload-artifact@v2
       with:
         name: owasp-report
@@ -170,9 +223,11 @@ jobs:
         echo "Available storage:"
         df -h
         echo
+
   jackson-tests:
     name: Jackson Integration Tests
     needs: java
+    if: ${{ needs.java.outputs.CI_WITH_JACKSON == 'true' }}
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 4
@@ -208,6 +263,7 @@ jobs:
             ${{ runner.os }}-maven-
       - name: Jackson Integration Tests ${{ matrix.target-library }}
         run: mvn verify -pl :nessie-client -am -Pjackson-tests -Djackson.test.version=${{ matrix.jackson-version }} -Dtest.log.level=WARN
+
   python:
     name: Python
     runs-on: ubuntu-latest

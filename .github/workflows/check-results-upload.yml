@@ -12,7 +12,7 @@ name: Check Results Upload
 
 on:
   workflow_run:
-    workflows: ["PR Build Check", "Main CI"]
+    workflows: ["Main CI"]
     types:
         - completed
 
