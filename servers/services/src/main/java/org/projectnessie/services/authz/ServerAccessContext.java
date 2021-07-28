@@ -16,24 +16,20 @@
 package org.projectnessie.services.authz;
 
 import java.security.Principal;
+import javax.annotation.Nullable;
+import org.immutables.value.Value;
 
-public class ServerAccessContext implements AccessContext {
-
-  private final Principal principal;
-  private final String operationId;
-
-  public ServerAccessContext(String operationId, Principal principal) {
-    this.operationId = operationId;
-    this.principal = principal;
-  }
+@Value.Immutable(prehash = true)
+public abstract class ServerAccessContext implements AccessContext {
 
   @Override
-  public String operationId() {
-    return operationId;
-  }
+  public abstract String operationId();
 
   @Override
-  public Principal user() {
-    return principal;
+  @Nullable
+  public abstract Principal user();
+
+  public static ServerAccessContext of(String operationId, Principal principal) {
+    return ImmutableServerAccessContext.builder().operationId(operationId).user(principal).build();
   }
 }

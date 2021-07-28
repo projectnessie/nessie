@@ -66,7 +66,8 @@ public class CompiledAuthorizationRules {
                         throw new RuntimeException(
                             String.format(
                                 "Failed to compile query expression with id '%s' and expression '%s' due to: %s",
-                                key, value, e.getMessage()));
+                                key, value, e.getMessage()),
+                            e);
                       }
                     }));
     return ImmutableMap.copyOf(scripts);

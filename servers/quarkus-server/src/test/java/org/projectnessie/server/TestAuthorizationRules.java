@@ -143,7 +143,7 @@ class TestAuthorizationRules {
         .isInstanceOf(NessieForbiddenException.class)
         .hasMessageContaining(
             String.format(
-                "'UPDATE_ENTITY' is not allowed for Role '%s' on Content '%s'",
+                "'UPDATE_ENTITY' is not allowed for role '%s' on content '%s'",
                 role, createOps.getOperations().get(0).getKey().toPathString()));
 
     readContent(branchName, key, role, true);
@@ -160,7 +160,7 @@ class TestAuthorizationRules {
         .isInstanceOf(NessieForbiddenException.class)
         .hasMessageContaining(
             String.format(
-                "'DELETE_ENTITY' is not allowed for Role '%s' on Content '%s'",
+                "'DELETE_ENTITY' is not allowed for role '%s' on content '%s'",
                 role, deleteOps.getOperations().get(0).getKey().toPathString()));
 
     deleteBranch(branch, role, false);
@@ -173,7 +173,7 @@ class TestAuthorizationRules {
           .isInstanceOf(NessieForbiddenException.class)
           .hasMessageContaining(
               String.format(
-                  "'CREATE_REFERENCE' is not allowed for Role '%s' on Reference '%s'",
+                  "'CREATE_REFERENCE' is not allowed for role '%s' on reference '%s'",
                   role, branch.getName()));
     } else {
       tree.createReference(branch);
@@ -187,7 +187,7 @@ class TestAuthorizationRules {
           .isInstanceOf(NessieForbiddenException.class)
           .hasMessageContaining(
               String.format(
-                  "'DELETE_REFERENCE' is not allowed for Role '%s' on Reference '%s'",
+                  "'DELETE_REFERENCE' is not allowed for role '%s' on reference '%s'",
                   role, branch.getName()));
     } else {
       tree.deleteBranch(branch.getName(), branch.getHash());
@@ -202,7 +202,7 @@ class TestAuthorizationRules {
           .isInstanceOf(NessieForbiddenException.class)
           .hasMessageContaining(
               String.format(
-                  "'READ_ENTITY_VALUE' is not allowed for Role '%s' on Content '%s'",
+                  "'READ_ENTITY_VALUE' is not allowed for role '%s' on content '%s'",
                   role, key.toPathString()));
     } else {
       assertThat(contents.getContents(key, branchName, null).unwrap(IcebergTable.class).get())
@@ -217,7 +217,7 @@ class TestAuthorizationRules {
       assertThatThrownBy(() -> tree.getEntries(branchName, EntriesParams.empty()).getEntries())
           .isInstanceOf(NessieForbiddenException.class)
           .hasMessageContaining(
-              String.format("'READ_ENTRIES' is not allowed for Role '%s' on Reference", role));
+              String.format("'READ_ENTRIES' is not allowed for role '%s' on reference", role));
     } else {
       List<Entry> tables = tree.getEntries(branchName, EntriesParams.empty()).getEntries();
       assertThat(tables).isNotEmpty();
@@ -231,7 +231,7 @@ class TestAuthorizationRules {
               () -> tree.getCommitLog(branchName, CommitLogParams.empty()).getOperations())
           .isInstanceOf(NessieForbiddenException.class)
           .hasMessageContaining(
-              String.format("'LIST_COMMIT_LOG' is not allowed for Role '%s' on Reference", role));
+              String.format("'LIST_COMMIT_LOG' is not allowed for role '%s' on reference", role));
     } else {
       List<CommitMeta> commits =
           tree.getCommitLog(branchName, CommitLogParams.empty()).getOperations();
@@ -250,7 +250,7 @@ class TestAuthorizationRules {
           .isInstanceOf(NessieForbiddenException.class)
           .hasMessageContaining(
               String.format(
-                  "'COMMIT_CHANGE_AGAINST_REFERENCE' is not allowed for Role '%s' on Reference '%s'",
+                  "'COMMIT_CHANGE_AGAINST_REFERENCE' is not allowed for role '%s' on reference '%s'",
                   role, branch.getName()));
     } else {
       tree.commitMultipleOperations(branch.getName(), branch.getHash(), operations);
@@ -267,7 +267,7 @@ class TestAuthorizationRules {
           .isInstanceOf(NessieForbiddenException.class)
           .hasMessageContaining(
               String.format(
-                  "'COMMIT_CHANGE_AGAINST_REFERENCE' is not allowed for Role '%s' on Reference '%s'",
+                  "'COMMIT_CHANGE_AGAINST_REFERENCE' is not allowed for role '%s' on reference '%s'",
                   role, branch.getName()));
     } else {
       tree.commitMultipleOperations(branch.getName(), branch.getHash(), operations);

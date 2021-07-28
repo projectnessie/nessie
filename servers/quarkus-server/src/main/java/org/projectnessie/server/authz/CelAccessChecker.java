@@ -17,6 +17,8 @@ package org.projectnessie.server.authz;
 
 import com.google.common.collect.ImmutableMap;
 import java.security.AccessControlException;
+import java.util.Map;
+import java.util.function.Supplier;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import org.projectnessie.cel.tools.ScriptException;
@@ -106,44 +108,25 @@ public class CelAccessChecker implements AccessChecker {
     canPerformOpOnPath(context, key, AuthorizationRuleType.DELETE_ENTITY);
   }
 
+  private String getRoleName(AccessContext context) {
+    return null != context.user() ? context.user().getName() : "";
+  }
+
   private void canPerformOpOnReference(
       AccessContext context, NamedRef ref, AuthorizationRuleType type) {
     if (!config.enabled()) {
       return;
     }
-    boolean allowed =
-        compiledRules.getRules().entrySet().stream()
-            .anyMatch(
-                entry -> {
-                  try {
-                    return entry
-                        .getValue()
-                        .execute(
-                            Boolean.class,
-                            ImmutableMap.of(
-                                "ref",
-                                ref.getName(),
-                                "role",
-                                getRoleName(context),
-                                "op",
-                                type.name()));
-                  } catch (ScriptException e) {
-                    throw new RuntimeException(
-                        String.format(
-                            "Failed to execute query expression with id '%s' and expression '%s' due to: %s",
-                            entry.getKey(), entry.getValue(), e.getMessage()));
-                  }
-                });
-    if (!allowed) {
-      throw new AccessControlException(
-          String.format(
-              "'%s' is not allowed for Role '%s' on Reference '%s'",
-              type, getRoleName(context), ref.getName()));
-    }
-  }
+    String roleName = getRoleName(context);
+    ImmutableMap<String, Object> arguments =
+        ImmutableMap.of("ref", ref.getName(), "role", roleName, "op", type.name());
 
-  private String getRoleName(AccessContext context) {
-    return null != context.user() ? context.user().getName() : "";
+    Supplier<String> errorMsgSupplier =
+        () ->
+            String.format(
+                "'%s' is not allowed for role '%s' on reference '%s'",
+                type, roleName, ref.getName());
+    canPerformOp(arguments, errorMsgSupplier);
   }
 
   private void canPerformOpOnPath(
@@ -151,34 +134,36 @@ public class CelAccessChecker implements AccessChecker {
     if (!config.enabled()) {
       return;
     }
+    String roleName = getRoleName(context);
+    ImmutableMap<String, Object> arguments =
+        ImmutableMap.of("path", contentsKey.toPathString(), "role", roleName, "op", type.name());
+
+    Supplier<String> errorMsgSupplier =
+        () ->
+            String.format(
+                "'%s' is not allowed for role '%s' on content '%s'",
+                type, roleName, contentsKey.toPathString());
+
+    canPerformOp(arguments, errorMsgSupplier);
+  }
+
+  private void canPerformOp(Map<String, Object> arguments, Supplier<String> errorMessageSupplier) {
     boolean allowed =
         compiledRules.getRules().entrySet().stream()
             .anyMatch(
                 entry -> {
                   try {
-                    return entry
-                        .getValue()
-                        .execute(
-                            Boolean.class,
-                            ImmutableMap.of(
-                                "path",
-                                contentsKey.toPathString(),
-                                "role",
-                                getRoleName(context),
-                                "op",
-                                type.name()));
+                    return entry.getValue().execute(Boolean.class, arguments);
                   } catch (ScriptException e) {
                     throw new RuntimeException(
                         String.format(
-                            "Failed to execute query expression with id '%s' and expression '%s' due to: %s",
-                            entry.getKey(), entry.getValue(), e.getMessage()));
+                            "Failed to execute authorization rule with id '%s' and expression '%s' due to: %s",
+                            entry.getKey(), entry.getValue(), e.getMessage()),
+                        e);
                   }
                 });
     if (!allowed) {
-      throw new AccessControlException(
-          String.format(
-              "'%s' is not allowed for Role '%s' on Content '%s'",
-              type, getRoleName(context), contentsKey.toPathString()));
+      throw new AccessControlException(errorMessageSupplier.get());
     }
   }
 }

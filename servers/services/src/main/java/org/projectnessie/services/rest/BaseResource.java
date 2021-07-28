@@ -142,6 +142,6 @@ abstract class BaseResource {
   }
 
   protected ServerAccessContext createAccessContext() {
-    return new ServerAccessContext(UUID.randomUUID().toString(), getPrincipal());
+    return ServerAccessContext.of(UUID.randomUUID().toString(), getPrincipal());
   }
 }
