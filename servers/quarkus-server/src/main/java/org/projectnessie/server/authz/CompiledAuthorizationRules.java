@@ -15,6 +15,8 @@
  */
 package org.projectnessie.server.authz;
 
+import static org.projectnessie.server.authz.CelAccessChecker.AuthorizationRuleType.LIST_REFERENCE;
+
 import com.google.common.collect.ImmutableMap;
 import io.quarkus.runtime.Startup;
 import java.util.HashMap;
@@ -35,6 +37,9 @@ import org.projectnessie.services.cel.CELUtil;
 public class CompiledAuthorizationRules {
   private final QuarkusNessieAuthorizationConfig config;
   private final Map<String, Script> compiledRules;
+  private static final String ALLOW_LISTING_REFERENCES_ID = "__ALLOW_LISTING_REF_ID";
+  private static final String ALLOW_LISTING_REFERENCES =
+      String.format("op=='%s' && ref.matches('.*')", LIST_REFERENCE);
 
   @Inject
   public CompiledAuthorizationRules(QuarkusNessieAuthorizationConfig config) {
@@ -48,28 +53,31 @@ public class CompiledAuthorizationRules {
    * @return A map of compiled authorization rules
    */
   private Map<String, Script> compileAuthorizationRules() {
+    Map<String, String> rules = new HashMap<>(config.rules());
+    // by default we allow listing all references until there's a user-defined LIST_REFERENCE rule
+    if (rules.entrySet().stream().noneMatch(r -> r.getValue().contains(LIST_REFERENCE.name()))) {
+      rules.put(ALLOW_LISTING_REFERENCES_ID, ALLOW_LISTING_REFERENCES);
+    }
     Map<String, Script> scripts = new HashMap<>();
-    config
-        .rules()
-        .forEach(
-            (key, value) ->
-                scripts.computeIfAbsent(
-                    value,
-                    (k) -> {
-                      try {
-                        return CELUtil.SCRIPT_HOST
-                            .buildScript(value)
-                            .withContainer(CELUtil.CONTAINER)
-                            .withDeclarations(CELUtil.AUTHORIZATION_RULE_DECLARATIONS)
-                            .build();
-                      } catch (ScriptException e) {
-                        throw new RuntimeException(
-                            String.format(
-                                "Failed to compile authorization rule with id '%s' and expression '%s' due to: %s",
-                                key, value, e.getMessage()),
-                            e);
-                      }
-                    }));
+    rules.forEach(
+        (key, value) ->
+            scripts.computeIfAbsent(
+                value,
+                (k) -> {
+                  try {
+                    return CELUtil.SCRIPT_HOST
+                        .buildScript(value)
+                        .withContainer(CELUtil.CONTAINER)
+                        .withDeclarations(CELUtil.AUTHORIZATION_RULE_DECLARATIONS)
+                        .build();
+                  } catch (ScriptException e) {
+                    throw new RuntimeException(
+                        String.format(
+                            "Failed to compile authorization rule with id '%s' and expression '%s' due to: %s",
+                            key, value, e.getMessage()),
+                        e);
+                  }
+                }));
     return ImmutableMap.copyOf(scripts);
   }
 

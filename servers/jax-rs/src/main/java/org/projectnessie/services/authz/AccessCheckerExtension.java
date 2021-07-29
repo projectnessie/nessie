@@ -29,6 +29,9 @@ public class AccessCheckerExtension implements Extension {
   public static final AccessChecker ACCESS_CHECKER =
       new AccessChecker() {
         @Override
+        public void canListReference(AccessContext context, NamedRef ref) {}
+
+        @Override
         public void canCreateReference(AccessContext context, NamedRef ref) {}
 
         @Override

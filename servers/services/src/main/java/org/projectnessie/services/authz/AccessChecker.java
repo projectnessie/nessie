@@ -27,6 +27,15 @@ import org.projectnessie.versioned.NamedRef;
 public interface AccessChecker {
 
   /**
+   * Checks whether the given role/principal is allowed to view/list the given Branch/Tag.
+   *
+   * @param context The context carrying the principal information.
+   * @param ref The {@link NamedRef} to check
+   * @throws AccessControlException When the permission to view/list a Branch/Tag is not granted.
+   */
+  void canListReference(AccessContext context, NamedRef ref) throws AccessControlException;
+
+  /**
    * Checks whether the given role/principal is allowed to create a Branch/Tag.
    *
    * @param context The context carrying the principal information.

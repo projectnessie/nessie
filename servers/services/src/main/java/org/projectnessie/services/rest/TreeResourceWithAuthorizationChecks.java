@@ -18,6 +18,9 @@ package org.projectnessie.services.rest;
 import static org.projectnessie.model.Operation.Delete;
 import static org.projectnessie.model.Operation.Put;
 
+import java.security.AccessControlException;
+import java.util.List;
+import java.util.stream.Collectors;
 import javax.enterprise.context.RequestScoped;
 import javax.enterprise.inject.Default;
 import javax.inject.Inject;
@@ -37,6 +40,7 @@ import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
 import org.projectnessie.model.Transplant;
 import org.projectnessie.services.authz.AccessChecker;
+import org.projectnessie.services.authz.ServerAccessContext;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.NamedRef;
@@ -55,6 +59,38 @@ public class TreeResourceWithAuthorizationChecks extends TreeResource {
       VersionStore<Contents, CommitMeta, Type> store,
       AccessChecker accessChecker) {
     super(config, multiTenant, store, accessChecker);
+  }
+
+  @Override
+  public List<Reference> getAllReferences() {
+    List<Reference> allReferences = super.getAllReferences();
+    ServerAccessContext accessContext = createAccessContext();
+    return allReferences.stream()
+        .filter(
+            ref -> {
+              try {
+                if (ref instanceof Branch) {
+                  getAccessChecker().canListReference(accessContext, BranchName.of(ref.getName()));
+                } else if (ref instanceof Tag) {
+                  getAccessChecker().canListReference(accessContext, TagName.of(ref.getName()));
+                }
+                return true;
+              } catch (AccessControlException e) {
+                return false;
+              }
+            })
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public Reference getReferenceByName(String refName) throws NessieNotFoundException {
+    Reference ref = super.getReferenceByName(refName);
+    if (ref instanceof Branch) {
+      getAccessChecker().canListReference(createAccessContext(), BranchName.of(ref.getName()));
+    } else if (ref instanceof Tag) {
+      getAccessChecker().canListReference(createAccessContext(), TagName.of(ref.getName()));
+    }
+    return ref;
   }
 
   @Override
