@@ -113,24 +113,18 @@ jobs:
     - name: Build with Maven
       env:
         SPARK_LOCAL_IP: localhost
+        CI_WITH_JDK8: ${{ steps.ci_options.outputs.CI_WITH_JDK8 }}
       run: |
-        ./mvnw -B install javadoc:javadoc-no-fork --file pom.xml -Pcode-coverage -Dtest.log.level=WARN
-    - name: Build with Maven / JDK8 tests
-      if: ${{ steps.ci_options.outputs.CI_WITH_JDK8 == 'true' }}
-      env:
-        SPARK_LOCAL_IP: localhost
-      run: |
-        # No code-coverage here
-        ./mvnw -B install javadoc:javadoc-no-fork --file pom.xml -Pjdk8-tests" -Dtest.log.level=WARN \
-          -pl :nessie-hms-hive2 \
-          -pl :nessie-hms-hive3
+        PROFILES="-Pcode-coverage"
+        if [[ ${CI_WITH_JDK8} == "true" ]]; then
+          PROFILES="${PROFILES},jdk8-tests"
+        fi
+        ./mvnw -B install javadoc:javadoc-no-fork --file pom.xml ${PROFILES} -Dtest.log.level=WARN
     - name: Build with Maven / Native tests
       if: ${{ steps.ci_options.outputs.CI_WITH_NATIVE == 'true' }}
       run: |
         # No code-coverage here
-        ./mvnw -B install javadoc:javadoc-no-fork --file pom.xml -Pnative -Dtest.log.level=WARN \
-          -pl :nessie-quarkus \
-          -pl :nessie-lambda
+        ./mvnw -B install javadoc:javadoc-no-fork --file pom.xml -Pnative -Dtest.log.level=WARN -pl :nessie-quarkus -pl :nessie-lambda
     - name: Build with Gradle
       run: ./gradlew --rerun-tasks --no-daemon --info build
       working-directory: ./tools/apprunner-gradle-plugin
