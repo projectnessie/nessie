@@ -369,7 +369,7 @@ Nessie keeps track of unused data files and collects the garbage for you. See [T
 ## Footnotes
 
 [^1]: Common data file formats are [Apache Iceberg Tables](../tables/iceberg.md),
-  [Delta Lake Tables](../tables/deltalake.md), [Hive Metastore Tables](../tables/hive.md)
+  [Delta Lake Tables](../tables/deltalake.md)
 
 [^2]: Apache, Hive, Spark, Iceberg, Parquet are trademarks of The Apache Software Foundation.
 

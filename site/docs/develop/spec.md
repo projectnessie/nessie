@@ -57,8 +57,6 @@ Therefore, the Iceberg table spec should be considered subject to change in the 
 
 ### Delta Lake Table
 
-### Hive Table & Database
-
 ## Contract for backing database
 
 !!! warning

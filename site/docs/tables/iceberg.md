@@ -44,8 +44,7 @@ to continue to work while also moving versioning responsibilities to Nessie.
 
 In Nessie, we plan to add a capability to [automatically update](https://github.com/projectnessie/nessie/issues/125) one or more Hive Metastore
 servers (including AWS Glue) every time a Iceberg table is updated in Nessie so that
-legacy systems can still be exposed to Nessie updates, even if the [HMS Bridge](../tools/hive.md) service
-we offer is not used.  
+legacy systems can still be exposed to Nessie updates.
 
 ### HMS Bridge Compatibility
 

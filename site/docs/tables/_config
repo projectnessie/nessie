@@ -3,5 +3,4 @@ arrange:
   - index.md
   - iceberg.md
   - deltalake.md
-  - hive.md
   - views.md
