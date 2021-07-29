@@ -27,9 +27,9 @@ The below steps show how to download Spark and set up `SPARK_HOME` in case you h
 
 #### Spark 3
 ```
-wget https://downloads.apache.org/spark/spark-3.0.2/spark-3.0.2-bin-hadoop2.7.tgz
-tar -xzvf spark-3.0.2-bin-hadoop2.7.tgz
-export SPARK_HOME="`pwd`/spark-3.0.2-bin-hadoop2.7"
+wget https://downloads.apache.org/spark/spark-3.0.3/spark-3.0.3-bin-hadoop2.7.tgz
+tar -xzvf spark-3.0.3-bin-hadoop2.7.tgz
+export SPARK_HOME="`pwd`/spark-3.0.3-bin-hadoop2.7"
 ```
 
 #### Spark 2
