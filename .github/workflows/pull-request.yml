@@ -24,6 +24,12 @@ jobs:
       CI_WITH_JACKSON: ${{ steps.ci_options.outputs.CI_WITH_JACKSON }}
 
     steps:
+    - name: Build/test options
+      id: ci_options
+      run: |
+        echo ::set-output name=CI_WITH_NATIVE::$(jq 'any(.pull_request.labels[]; .name == "pr-native")' < $GITHUB_EVENT_PATH)
+        echo ::set-output name=CI_WITH_JDK8::$(jq 'any(.pull_request.labels[]; .name == "pr-jdk8")' < $GITHUB_EVENT_PATH)
+        echo ::set-output name=CI_WITH_JACKSON::$(jq 'any(.pull_request.labels[]; .name == "pr-jackson")' < $GITHUB_EVENT_PATH)
     - name: Memory report
       run: |
         echo "Memory and swap:"
@@ -35,6 +41,7 @@ jobs:
         df -h
         echo
     - name: Add 6G more swap for native-image build
+      if: ${{ steps.ci_options.outputs.CI_WITH_NATIVE == 'true' }}
       run: |
         sudo dd if=/dev/zero of=/mnt/swapfile-2 bs=1MiB count=$((6*1024))
         sudo mkswap /mnt/swapfile-2
@@ -103,12 +110,6 @@ jobs:
           ~/.gradle/wrapper
         key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
         restore-keys: ${{ runner.os }}-gradle
-    - name: Build/test options
-      id: ci_options
-      run: |
-        echo ::set-output name=CI_WITH_NATIVE::$(jq 'any(.pull_request.labels[]; .name == "pr-native")' < $GITHUB_EVENT_PATH)
-        echo ::set-output name=CI_WITH_JDK8::$(jq 'any(.pull_request.labels[]; .name == "pr-jdk8")' < $GITHUB_EVENT_PATH)
-        echo ::set-output name=CI_WITH_JACKSON::$(jq 'any(.pull_request.labels[]; .name == "pr-jackson")' < $GITHUB_EVENT_PATH)
     - name: Build with Maven
       env:
         SPARK_LOCAL_IP: localhost
