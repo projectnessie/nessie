@@ -102,7 +102,9 @@ public interface AccessChecker {
    * @param context The context carrying the principal information.
    * @param ref The {@link NamedRef} to check
    * @param key The {@link ContentsKey} to check
-   * @param contentsId The ID of the {@link Contents} object
+   * @param contentsId The ID of the {@link Contents} object. See the <a
+   *     href="https://projectnessie.org/features/metadata_authorization/#contentsid">ContentsId
+   *     docs</a> for how to use this.
    * @throws AccessControlException When the permission to read an entity value is not granted.
    */
   void canReadEntityValue(AccessContext context, NamedRef ref, ContentsKey key, String contentsId)
@@ -115,7 +117,9 @@ public interface AccessChecker {
    * @param context The context carrying the principal information.
    * @param ref The {@link NamedRef} to check
    * @param key The {@link ContentsKey} to check
-   * @param contentsId The ID of the {@link Contents} object
+   * @param contentsId The ID of the {@link Contents} object. See the <a
+   *     href="https://projectnessie.org/features/metadata_authorization/#contentsid">ContentsId
+   *     docs</a> for how to use this.
    * @throws AccessControlException When the permission to update an entity value is not granted.
    */
   void canUpdateEntity(AccessContext context, NamedRef ref, ContentsKey key, String contentsId)
@@ -128,7 +132,9 @@ public interface AccessChecker {
    * @param context The context carrying the principal information.
    * @param ref The {@link NamedRef} to check
    * @param key The {@link ContentsKey} to check
-   * @param contentsId The ID of the {@link Contents} object
+   * @param contentsId The ID of the {@link Contents} object. See the <a
+   *     href="https://projectnessie.org/features/metadata_authorization/#contentsid">ContentsId
+   *     docs</a> for how to use this.
    * @throws AccessControlException When the permission to delete an entity value is not granted.
    */
   void canDeleteEntity(AccessContext context, NamedRef ref, ContentsKey key, String contentsId)

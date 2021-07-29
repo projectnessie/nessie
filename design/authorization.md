@@ -25,6 +25,7 @@ Any object in Nessie can be designated by a pair of coordinates (reference, path
 References can be designated by name or by hash. However the practicality of using hashes for access control seems very low as those hashes are supposedly random and not known in advance. So focus will be on named references (branches and tags).
 
 Several operations can be exercised against a reference:
+* list available references
 * create a new named reference
 * assign a hash to a reference
 * delete a reference

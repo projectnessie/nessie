@@ -17,3 +17,6 @@ the way that the REST APIs are defined, many operations can be controlled via a 
 7 firewall so that users and systems can be controlled depending on what read/write 
 and types of operations should be allowed. This works especially well with Nessie run 
 as a AWS Lambda using [API gateway policies](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-iam-policy-examples.html).
+
+## Metadata authorization
+Nessie supports authorization on metadata. Details are described in the [Metadata Authorization](metadata_authorization.md) section.
