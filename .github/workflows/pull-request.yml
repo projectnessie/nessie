@@ -50,11 +50,6 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 11
-    - name: Set up JDK 8
-      uses: AdoptOpenJDK/install-jdk@v1
-      with:
-        version: '8'
-        targets: 'JDK8_HOME'
     - name: Update /etc/hosts
       run: echo -e "$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)\t$(hostname -f) $(hostname -s)" | sudo tee -a /etc/hosts
     - name: Set up Maven toolchains.xml
@@ -70,16 +65,6 @@ jobs:
               </provides>
               <configuration>
                 <jdkHome>${env.JAVA_HOME}</jdkHome>
-              </configuration>
-            </toolchain>
-            <toolchain>
-              <type>jdk</type>
-              <provides>
-                <version>1.8</version>
-                <vendor>adoptopenjdk</vendor>
-              </provides>
-              <configuration>
-                <jdkHome>${env.JDK8_HOME}</jdkHome>
               </configuration>
             </toolchain>
           </toolchains>
@@ -113,7 +98,7 @@ jobs:
       env:
         SPARK_LOCAL_IP: localhost
       run: |
-        ./mvnw -B install javadoc:javadoc-no-fork --file pom.xml -Pcode-coverage,jdk8-tests -Dtest.log.level=WARN
+        ./mvnw -B install javadoc:javadoc-no-fork --file pom.xml -Pcode-coverage -Dtest.log.level=WARN
     - name: Build with Maven / Native tests
       if: ${{ steps.ci_options.outputs.CI_WITH_NATIVE == 'true' }}
       run: |

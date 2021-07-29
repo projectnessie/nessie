@@ -6,7 +6,6 @@ table formats with version control techniques:
 
 * Apache Iceberg Tables ([more](../tables/iceberg.md))
 * Delta Lake Tables ([more](../tables/deltalake.md))
-* Hive Metastore Tables ([more](../tables/hive.md))
 * SQL Views ([more](../tables/views.md))
 
 ## Basic Concepts
@@ -70,7 +69,7 @@ $ select count(*) from t1@mytag join t2@mytag
 ## Data and Metadata
 
 Nessie does not make copies of your underlying data. Instead, it works to version 
-separate lists of files associated with your dataset. Whether using Spark, Hive or 
+separate lists of files associated with your dataset. Whether using Spark or 
 some other tool, each mutation operation you do will add or delete one or more files from 
 the definition of your table. Nessie keeps tracks of which files are related to each 
 of your tables at every point in time and then allows you to recall those as needed.

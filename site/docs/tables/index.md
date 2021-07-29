@@ -25,7 +25,6 @@ Nessie currently works with the following formats.
  
 * [Iceberg Tables](iceberg.md)
 * [Delta Lake Tables](deltalake.md)
-* [Hive Tables](hive.md)
 
 We expect that Nessie will continue to add table formats as more are created.
 
