@@ -134,6 +134,7 @@ public interface TreeApi {
               schema = @Schema(implementation = Reference.class))
         }),
     @APIResponse(responseCode = "400", description = "Invalid input, ref name not valid"),
+    @APIResponse(responseCode = "403", description = "Not allowed to view the given reference"),
     @APIResponse(responseCode = "404", description = "Ref not found")
   })
   Reference getReferenceByName(
@@ -205,7 +206,7 @@ public interface TreeApi {
     @APIResponse(responseCode = "400", description = "Invalid input, ref name not valid"),
     @APIResponse(
         responseCode = "403",
-        description = "Not allowed to fetch entries for a given reference"),
+        description = "Not allowed to view the given reference or fetch entries for it"),
     @APIResponse(responseCode = "404", description = "Ref not found")
   })
   public EntriesResponse getEntries(
@@ -273,7 +274,9 @@ public interface TreeApi {
               schema = @Schema(implementation = LogResponse.class))
         }),
     @APIResponse(responseCode = "400", description = "Invalid input, ref name not valid"),
-    @APIResponse(responseCode = "403", description = "Not allowed to get commit log"),
+    @APIResponse(
+        responseCode = "403",
+        description = "Not allowed to view the given reference or get commit log for it"),
     @APIResponse(responseCode = "404", description = "Ref doesn't exists")
   })
   LogResponse getCommitLog(
@@ -294,7 +297,7 @@ public interface TreeApi {
   @APIResponses({
     @APIResponse(responseCode = "204", description = "Assigned successfully"),
     @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
-    @APIResponse(responseCode = "403", description = "Not allowed to assign tag"),
+    @APIResponse(responseCode = "403", description = "Not allowed to view or assign tag"),
     @APIResponse(responseCode = "404", description = "One or more references don't exist"),
     @APIResponse(responseCode = "412", description = "Update conflict")
   })
@@ -331,7 +334,7 @@ public interface TreeApi {
   @APIResponses({
     @APIResponse(responseCode = "204", description = "Deleted successfully."),
     @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
-    @APIResponse(responseCode = "403", description = "Not allowed to delete tag"),
+    @APIResponse(responseCode = "403", description = "Not allowed to view or delete tag"),
     @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
     @APIResponse(responseCode = "409", description = "update conflict"),
   })
@@ -358,7 +361,7 @@ public interface TreeApi {
   @APIResponses({
     @APIResponse(responseCode = "204", description = "Assigned successfully"),
     @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
-    @APIResponse(responseCode = "403", description = "Not allowed to assign branch"),
+    @APIResponse(responseCode = "403", description = "Not allowed to view or assign branch"),
     @APIResponse(responseCode = "404", description = "One or more references don't exist"),
     @APIResponse(responseCode = "409", description = "Update conflict")
   })
@@ -395,7 +398,7 @@ public interface TreeApi {
   @APIResponses({
     @APIResponse(responseCode = "204", description = "Deleted successfully."),
     @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
-    @APIResponse(responseCode = "403", description = "Not allowed to delete branch"),
+    @APIResponse(responseCode = "403", description = "Not allowed to view or delete branch"),
     @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
     @APIResponse(responseCode = "409", description = "update conflict"),
   })
@@ -424,7 +427,9 @@ public interface TreeApi {
     @APIResponse(responseCode = "204", description = "Merged successfully."),
     @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
     @APIResponse(responseCode = "401", description = "no merge ref supplied"),
-    @APIResponse(responseCode = "403", description = "Not allowed to transplant commits"),
+    @APIResponse(
+        responseCode = "403",
+        description = "Not allowed to view the given reference or transplant commits"),
     @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
     @APIResponse(responseCode = "409", description = "update conflict")
   })
@@ -466,7 +471,9 @@ public interface TreeApi {
     @APIResponse(responseCode = "204", description = "Merged successfully."),
     @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
     @APIResponse(responseCode = "401", description = "no merge ref supplied"),
-    @APIResponse(responseCode = "403", description = "Not allowed to merge commits"),
+    @APIResponse(
+        responseCode = "403",
+        description = "Not allowed to view the given reference or merge commits"),
     @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
     @APIResponse(responseCode = "409", description = "update conflict")
   })
@@ -515,7 +522,9 @@ public interface TreeApi {
               schema = @Schema(implementation = Branch.class))
         }),
     @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
-    @APIResponse(responseCode = "403", description = "Not allowed to perform commits"),
+    @APIResponse(
+        responseCode = "403",
+        description = "Not allowed to view the given reference or perform commits"),
     @APIResponse(responseCode = "404", description = "Provided ref doesn't exists"),
     @APIResponse(responseCode = "409", description = "Update conflict")
   })

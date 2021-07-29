@@ -26,6 +26,7 @@ import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.MultiGetContentsRequest;
 import org.projectnessie.model.MultiGetContentsResponse;
 import org.projectnessie.services.authz.AccessChecker;
+import org.projectnessie.services.authz.ServerAccessContext;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.VersionStore;
@@ -48,9 +49,10 @@ public class ContentsResourceWithAuthorizationChecks extends ContentsResource {
   @Override
   public Contents getContents(ContentsKey key, String namedRef, String hashOnRef)
       throws NessieNotFoundException {
-    getAccessChecker()
-        .canReadEntityValue(
-            createAccessContext(), namedRefWithHashOrThrow(namedRef, hashOnRef).getValue(), key);
+    ServerAccessContext accessContext = createAccessContext();
+    NamedRef ref = namedRefWithHashOrThrow(namedRef, hashOnRef).getValue();
+    getAccessChecker().canViewReference(accessContext, ref);
+    getAccessChecker().canReadEntityValue(accessContext, ref, key);
     return super.getContents(key, namedRef, hashOnRef);
   }
 
@@ -59,10 +61,11 @@ public class ContentsResourceWithAuthorizationChecks extends ContentsResource {
       String namedRef, String hashOnRef, MultiGetContentsRequest request)
       throws NessieNotFoundException {
     WithHash<NamedRef> ref = namedRefWithHashOrThrow(namedRef, hashOnRef);
+    ServerAccessContext accessContext = createAccessContext();
+    getAccessChecker().canViewReference(accessContext, ref.getValue());
     request
         .getRequestedKeys()
-        .forEach(
-            k -> getAccessChecker().canReadEntityValue(createAccessContext(), ref.getValue(), k));
+        .forEach(k -> getAccessChecker().canReadEntityValue(accessContext, ref.getValue(), k));
     return super.getMultipleContents(namedRef, hashOnRef, request);
   }
 }

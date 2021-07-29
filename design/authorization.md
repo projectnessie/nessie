@@ -53,6 +53,7 @@ Although multiple server implementations may exist and conversely multiple acces
 More concretely, interface would look like this:
 
     interface AccessChecker {
+      void canViewReference(AccessContext context, NamedRef ref) throws AccessControlException;
       void canCreateReference(AccessContext context, NamedRef ref) throws AccessControlException;
       void canDeleteReference(AccessContext context, NamedRef ref) throws AccessControlException;
       void canAssignRefToHash(AccessContext context, NamedRef ref) throws AccessControlException;
@@ -90,6 +91,7 @@ An implementation of the `AccessChecker` interface could be written with the fol
 * The `role` refers to the user's role and can be any string
 * The `path` refers to the Key for the contents of an object and can be any string
 * The `op` variable in the `<rule_expression>` can be any of:
+  * `VIEW_REFERENCE`
   * `CREATE_REFERENCE`
   * `DELETE_REFERENCE`
   * `ASSIGN_REFERENCE_TO_HASH`
@@ -99,10 +101,12 @@ An implementation of the `AccessChecker` interface could be written with the fol
   * `READ_ENTITY_VALUE`
   * `UPDATE_ENTITY`
   * `DELETE_ENTITY`
+* Note that in order to be able to do something on a branch/tag (such as `LIST_COMMIT_LOG` / `READ_ENTRIES`), one needs to have the `VIEW_REFERENCE` permission for the given branch/tag.
 
 Some example rules are shown below:
 ```
 nessie.server.authorization.enabled=true
+nessie.server.authorization.rules.allow_branch_listing="op=='VIEW_REFERENCE' && role.startsWith('test_user') && ref.startsWith('allowedBranch')"
 nessie.server.authorization.rules.allow_branch_creation="op=='CREATE_REFERENCE' && role.startsWith('test_user') && ref.startsWith('allowedBranch')"
 nessie.server.authorization.rules.allow_branch_deletion="op=='DELETE_REFERENCE' && role.startsWith('test_user') && ref.startsWith('allowedBranch')"
 nessie.server.authorization.rules.allow_updating_entity="op=='UPDATE_ENTITY' && role=='test_user' && path.startsWith('allowed.')"

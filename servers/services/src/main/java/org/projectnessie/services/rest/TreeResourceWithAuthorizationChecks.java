@@ -18,6 +18,9 @@ package org.projectnessie.services.rest;
 import static org.projectnessie.model.Operation.Delete;
 import static org.projectnessie.model.Operation.Put;
 
+import java.security.AccessControlException;
+import java.util.List;
+import java.util.stream.Collectors;
 import javax.enterprise.context.RequestScoped;
 import javax.enterprise.inject.Default;
 import javax.inject.Inject;
@@ -37,6 +40,7 @@ import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
 import org.projectnessie.model.Transplant;
 import org.projectnessie.services.authz.AccessChecker;
+import org.projectnessie.services.authz.ServerAccessContext;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.NamedRef;
@@ -58,6 +62,38 @@ public class TreeResourceWithAuthorizationChecks extends TreeResource {
   }
 
   @Override
+  public List<Reference> getAllReferences() {
+    List<Reference> allReferences = super.getAllReferences();
+    ServerAccessContext accessContext = createAccessContext();
+    return allReferences.stream()
+        .filter(
+            ref -> {
+              try {
+                if (ref instanceof Branch) {
+                  getAccessChecker().canViewReference(accessContext, BranchName.of(ref.getName()));
+                } else if (ref instanceof Tag) {
+                  getAccessChecker().canViewReference(accessContext, TagName.of(ref.getName()));
+                }
+                return true;
+              } catch (AccessControlException e) {
+                return false;
+              }
+            })
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public Reference getReferenceByName(String refName) throws NessieNotFoundException {
+    Reference ref = super.getReferenceByName(refName);
+    if (ref instanceof Branch) {
+      getAccessChecker().canViewReference(createAccessContext(), BranchName.of(ref.getName()));
+    } else if (ref instanceof Tag) {
+      getAccessChecker().canViewReference(createAccessContext(), TagName.of(ref.getName()));
+    }
+    return ref;
+  }
+
+  @Override
   public Reference createReference(Reference reference)
       throws NessieNotFoundException, NessieConflictException {
     if (reference instanceof Branch) {
@@ -72,36 +108,40 @@ public class TreeResourceWithAuthorizationChecks extends TreeResource {
   @Override
   protected void assignReference(NamedRef ref, String oldHash, String newHash)
       throws NessieNotFoundException, NessieConflictException {
-    getAccessChecker().canAssignRefToHash(createAccessContext(), ref);
+    ServerAccessContext accessContext = createAccessContext();
+    getAccessChecker().canViewReference(accessContext, ref);
+    getAccessChecker().canAssignRefToHash(accessContext, ref);
     super.assignReference(ref, oldHash, newHash);
   }
 
   @Override
   protected void deleteReference(NamedRef ref, String hash)
       throws NessieConflictException, NessieNotFoundException {
-    getAccessChecker().canDeleteReference(createAccessContext(), ref);
+    ServerAccessContext accessContext = createAccessContext();
+    getAccessChecker().canViewReference(accessContext, ref);
+    getAccessChecker().canDeleteReference(accessContext, ref);
     super.deleteReference(ref, hash);
   }
 
   @Override
   public EntriesResponse getEntries(String namedRef, EntriesParams params)
       throws NessieNotFoundException {
-    getAccessChecker()
-        .canReadEntries(
-            createAccessContext(),
-            namedRefWithHashOrThrow(namedRef, params.hashOnRef()).getValue());
+    ServerAccessContext accessContext = createAccessContext();
+    NamedRef ref = namedRefWithHashOrThrow(namedRef, params.hashOnRef()).getValue();
+    getAccessChecker().canViewReference(accessContext, ref);
+    getAccessChecker().canReadEntries(accessContext, ref);
     return super.getEntries(namedRef, params);
   }
 
   @Override
   public LogResponse getCommitLog(String namedRef, CommitLogParams params)
       throws NessieNotFoundException {
+    ServerAccessContext accessContext = createAccessContext();
+    NamedRef ref = namedRefWithHashOrThrow(namedRef, params.endHash()).getValue();
+    getAccessChecker().canViewReference(accessContext, ref);
     if (null == params.pageToken()) {
       // we should only allow named references when no paging is defined
-      getAccessChecker()
-          .canListCommitLog(
-              createAccessContext(),
-              namedRefWithHashOrThrow(namedRef, params.endHash()).getValue());
+      getAccessChecker().canListCommitLog(accessContext, ref);
     }
     return super.getCommitLog(namedRef, params);
   }
@@ -110,16 +150,20 @@ public class TreeResourceWithAuthorizationChecks extends TreeResource {
   public void transplantCommitsIntoBranch(
       String branchName, String hash, String message, Transplant transplant)
       throws NessieNotFoundException, NessieConflictException {
-    getAccessChecker()
-        .canCommitChangeAgainstReference(createAccessContext(), BranchName.of(branchName));
+    ServerAccessContext accessContext = createAccessContext();
+    BranchName branch = BranchName.of(branchName);
+    getAccessChecker().canViewReference(accessContext, branch);
+    getAccessChecker().canCommitChangeAgainstReference(accessContext, branch);
     super.transplantCommitsIntoBranch(branchName, hash, message, transplant);
   }
 
   @Override
   public void mergeRefIntoBranch(String branchName, String hash, Merge merge)
       throws NessieNotFoundException, NessieConflictException {
-    getAccessChecker()
-        .canCommitChangeAgainstReference(createAccessContext(), BranchName.of(branchName));
+    ServerAccessContext accessContext = createAccessContext();
+    BranchName branch = BranchName.of(branchName);
+    getAccessChecker().canViewReference(accessContext, branch);
+    getAccessChecker().canCommitChangeAgainstReference(accessContext, branch);
     super.mergeRefIntoBranch(branchName, hash, merge);
   }
 
@@ -127,15 +171,17 @@ public class TreeResourceWithAuthorizationChecks extends TreeResource {
   public Branch commitMultipleOperations(String branch, String hash, Operations operations)
       throws NessieNotFoundException, NessieConflictException {
     BranchName branchName = BranchName.of(branch);
-    getAccessChecker().canCommitChangeAgainstReference(createAccessContext(), branchName);
+    ServerAccessContext accessContext = createAccessContext();
+    getAccessChecker().canViewReference(accessContext, branchName);
+    getAccessChecker().canCommitChangeAgainstReference(accessContext, branchName);
     operations
         .getOperations()
         .forEach(
             op -> {
               if (op instanceof Delete) {
-                getAccessChecker().canDeleteEntity(createAccessContext(), branchName, op.getKey());
+                getAccessChecker().canDeleteEntity(accessContext, branchName, op.getKey());
               } else if (op instanceof Put) {
-                getAccessChecker().canUpdateEntity(createAccessContext(), branchName, op.getKey());
+                getAccessChecker().canUpdateEntity(accessContext, branchName, op.getKey());
               }
             });
     return super.commitMultipleOperations(branch, hash, operations);

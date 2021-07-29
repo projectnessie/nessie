@@ -44,6 +44,7 @@ import org.projectnessie.model.ImmutableDelete;
 import org.projectnessie.model.ImmutableOperations;
 import org.projectnessie.model.ImmutablePut;
 import org.projectnessie.model.Operations;
+import org.projectnessie.model.Reference;
 import org.projectnessie.server.authz.NessieAuthorizationTestProfile;
 
 @QuarkusTest
@@ -95,7 +96,9 @@ class TestAuthorizationRules {
 
     Branch branchWithInvalidHash = Branch.of(branchName, "1234567890123456");
     Branch branch =
-        shouldFail ? branchWithInvalidHash : (Branch) tree.getReferenceByName(branchName);
+        shouldFail ? branchWithInvalidHash : retrieveBranch(branchName, role, shouldFail);
+
+    listAllReferences(branchName, shouldFail);
 
     ImmutableOperations createOps =
         ImmutableOperations.builder()
@@ -108,7 +111,7 @@ class TestAuthorizationRules {
     getEntriesFor(branchName, role, shouldFail);
     readContent(branchName, key, role, shouldFail);
 
-    branch = shouldFail ? branchWithInvalidHash : (Branch) tree.getReferenceByName(branchName);
+    branch = shouldFail ? branchWithInvalidHash : retrieveBranch(branchName, role, shouldFail);
 
     ImmutableOperations deleteOps =
         ImmutableOperations.builder()
@@ -117,7 +120,7 @@ class TestAuthorizationRules {
             .build();
     deleteContent(branch, deleteOps, role, shouldFail);
 
-    branch = shouldFail ? branchWithInvalidHash : (Branch) tree.getReferenceByName(branchName);
+    branch = shouldFail ? branchWithInvalidHash : retrieveBranch(branchName, role, shouldFail);
     deleteBranch(branch, role, shouldFail);
   }
 
@@ -131,7 +134,9 @@ class TestAuthorizationRules {
     String branchName = "allowedBranchForTestUser2";
     createBranch(Branch.of(branchName, null), role, false);
 
-    final Branch branch = (Branch) tree.getReferenceByName(branchName);
+    listAllReferences(branchName, false);
+
+    final Branch branch = retrieveBranch(branchName, role, false);
     ImmutableOperations createOps =
         ImmutableOperations.builder()
             .addOperations(ImmutablePut.builder().key(key).contents(IcebergTable.of("foo")).build())
@@ -148,7 +153,7 @@ class TestAuthorizationRules {
 
     readContent(branchName, key, role, true);
 
-    final Branch b = (Branch) tree.getReferenceByName(branchName);
+    final Branch b = retrieveBranch(branchName, role, false);
 
     ImmutableOperations deleteOps =
         ImmutableOperations.builder()
@@ -164,6 +169,29 @@ class TestAuthorizationRules {
                 role, deleteOps.getOperations().get(0).getKey().toPathString()));
 
     deleteBranch(branch, role, false);
+  }
+
+  private void listAllReferences(String branchName, boolean filteredOut) {
+    if (filteredOut) {
+      assertThat(tree.getAllReferences()).extracting(Reference::getName).doesNotContain(branchName);
+    } else {
+      assertThat(tree.getAllReferences()).extracting(Reference::getName).contains(branchName);
+    }
+  }
+
+  private Branch retrieveBranch(String branchName, String role, boolean shouldFail)
+      throws NessieNotFoundException {
+    if (shouldFail) {
+      assertThatThrownBy(() -> tree.getReferenceByName(branchName))
+          .isInstanceOf(NessieForbiddenException.class)
+          .hasMessageContaining(
+              String.format(
+                  "'VIEW_REFERENCE' is not allowed for role '%s' on reference '%s'",
+                  role, branchName));
+      return null;
+    } else {
+      return (Branch) tree.getReferenceByName(branchName);
+    }
   }
 
   private static void createBranch(Branch branch, String role, boolean shouldFail)

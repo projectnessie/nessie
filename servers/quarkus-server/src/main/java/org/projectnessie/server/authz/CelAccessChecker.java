@@ -38,6 +38,7 @@ public class CelAccessChecker implements AccessChecker {
   private final CompiledAuthorizationRules compiledRules;
 
   public enum AuthorizationRuleType {
+    VIEW_REFERENCE,
     CREATE_REFERENCE,
     DELETE_REFERENCE,
     LIST_COMMIT_LOG,
@@ -54,6 +55,11 @@ public class CelAccessChecker implements AccessChecker {
       QuarkusNessieAuthorizationConfig config, CompiledAuthorizationRules compiledRules) {
     this.config = config;
     this.compiledRules = compiledRules;
+  }
+
+  @Override
+  public void canViewReference(AccessContext context, NamedRef ref) throws AccessControlException {
+    canPerformOpOnReference(context, ref, AuthorizationRuleType.VIEW_REFERENCE);
   }
 
   @Override

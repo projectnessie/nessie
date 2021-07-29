@@ -63,7 +63,7 @@ public interface ContentsApi {
     @APIResponse(responseCode = "400", description = "Invalid input, ref name not valid"),
     @APIResponse(
         responseCode = "403",
-        description = "Not allowed to read object content for a key"),
+        description = "Not allowed to view the given reference or read object content for a key"),
     @APIResponse(responseCode = "404", description = "Table not found on ref")
   })
   Contents getContents(
@@ -102,7 +102,7 @@ public interface ContentsApi {
     @APIResponse(responseCode = "400", description = "Invalid input, ref name not valid"),
     @APIResponse(
         responseCode = "403",
-        description = "Not allowed to read object content for a key"),
+        description = "Not allowed to view the given reference or read object content for a key"),
     @APIResponse(responseCode = "404", description = "Provided ref doesn't exists")
   })
   MultiGetContentsResponse getMultipleContents(
