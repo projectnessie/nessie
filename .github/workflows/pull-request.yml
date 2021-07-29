@@ -111,14 +111,25 @@ jobs:
         echo ::set-output name=CI_WITH_JACKSON::$(jq 'any(.pull_request.labels[]; .name == "pr-jackson")' < $GITHUB_EVENT_PATH)
     - name: Build with Maven
       env:
-        CI_WITH_NATIVE: ${{ steps.ci_options.outputs.CI_WITH_NATIVE }}
-        CI_WITH_JDK8: ${{ steps.ci_options.outputs.CI_WITH_JDK8 }}
         SPARK_LOCAL_IP: localhost
       run: |
-        PROFILES="-Pcode-coverage"
-        [[ $CI_WITH_JDK8 == "true" ]] && PROFILES="$PROFILES,jdk8-tests"
-        [[ $CI_WITH_NATIVE == "true" ]] && PROFILES="$PROFILES,native"
-        ./mvnw -B install javadoc:javadoc-no-fork --file pom.xml $PROFILES -Dtest.log.level=WARN
+        ./mvnw -B install javadoc:javadoc-no-fork --file pom.xml -Pcode-coverage -Dtest.log.level=WARN
+    - name: Build with Maven / JDK8 tests
+      if: ${{ steps.ci_options.outputs.CI_WITH_JDK8 == 'true' }}
+      env:
+        SPARK_LOCAL_IP: localhost
+      run: |
+        # No code-coverage here
+        ./mvnw -B install javadoc:javadoc-no-fork --file pom.xml -Pjdk8-tests" -Dtest.log.level=WARN \
+          -pl :nessie-hms-hive2 \
+          -pl :nessie-hms-hive3
+    - name: Build with Maven / Native tests
+      if: ${{ steps.ci_options.outputs.CI_WITH_NATIVE == 'true' }}
+      run: |
+        # No code-coverage here
+        ./mvnw -B install javadoc:javadoc-no-fork --file pom.xml -Pnative -Dtest.log.level=WARN \
+          -pl :nessie-quarkus \
+          -pl :nessie-lambda
     - name: Build with Gradle
       run: ./gradlew --rerun-tasks --no-daemon --info build
       working-directory: ./tools/apprunner-gradle-plugin
@@ -142,6 +153,7 @@ jobs:
         flags: java
         files: |
           code-coverage/target/site/jacoco-aggregate-all/jacoco.xml
+
   jackson-tests:
     name: Jackson Integration Tests
     needs: java
@@ -181,6 +193,7 @@ jobs:
             ${{ runner.os }}-maven-
       - name: Jackson Integration Tests ${{ matrix.target-library }}
         run: mvn verify -pl :nessie-client -am -Pjackson-tests -Djackson.test.version=${{ matrix.jackson-version }} -Dtest.log.level=WARN
+
   python:
     name: Python
     runs-on: ubuntu-latest
