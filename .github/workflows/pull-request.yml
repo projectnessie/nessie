@@ -28,7 +28,6 @@ jobs:
       id: ci_options
       run: |
         echo ::set-output name=CI_WITH_NATIVE::$(jq 'any(.pull_request.labels[]; .name == "pr-native")' < $GITHUB_EVENT_PATH)
-        echo ::set-output name=CI_WITH_JDK8::$(jq 'any(.pull_request.labels[]; .name == "pr-jdk8")' < $GITHUB_EVENT_PATH)
         echo ::set-output name=CI_WITH_JACKSON::$(jq 'any(.pull_request.labels[]; .name == "pr-jackson")' < $GITHUB_EVENT_PATH)
     - name: Memory report
       run: |
@@ -113,13 +112,8 @@ jobs:
     - name: Build with Maven
       env:
         SPARK_LOCAL_IP: localhost
-        CI_WITH_JDK8: ${{ steps.ci_options.outputs.CI_WITH_JDK8 }}
       run: |
-        PROFILES="-Pcode-coverage"
-        if [[ ${CI_WITH_JDK8} == "true" ]]; then
-          PROFILES="${PROFILES},jdk8-tests"
-        fi
-        ./mvnw -B install javadoc:javadoc-no-fork --file pom.xml ${PROFILES} -Dtest.log.level=WARN
+        ./mvnw -B install javadoc:javadoc-no-fork --file pom.xml -Pcode-coverage,jdk8-tests -Dtest.log.level=WARN
     - name: Build with Maven / Native tests
       if: ${{ steps.ci_options.outputs.CI_WITH_NATIVE == 'true' }}
       run: |
