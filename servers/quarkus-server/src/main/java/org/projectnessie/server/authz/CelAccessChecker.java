@@ -103,6 +103,13 @@ public class CelAccessChecker implements AccessChecker {
   }
 
   @Override
+  public void canReadEntityValueWithId(
+      AccessContext context, NamedRef ref, ContentsKey key, String contentsId)
+      throws AccessControlException {
+    // nothing to do for the reference implementation
+  }
+
+  @Override
   public void canUpdateEntity(AccessContext context, NamedRef ref, ContentsKey key)
       throws AccessControlException {
     canPerformOpOnPath(context, key, AuthorizationRuleType.UPDATE_ENTITY);

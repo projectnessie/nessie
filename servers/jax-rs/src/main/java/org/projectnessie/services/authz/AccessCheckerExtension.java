@@ -53,6 +53,10 @@ public class AccessCheckerExtension implements Extension {
         public void canReadEntityValue(AccessContext context, NamedRef ref, ContentsKey key) {}
 
         @Override
+        public void canReadEntityValueWithId(
+            AccessContext context, NamedRef ref, ContentsKey key, String contentsId) {}
+
+        @Override
         public void canUpdateEntity(AccessContext context, NamedRef ref, ContentsKey key) {}
 
         @Override

@@ -16,6 +16,7 @@
 package org.projectnessie.services.authz;
 
 import java.security.AccessControlException;
+import org.projectnessie.model.Contents;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.versioned.NamedRef;
 
@@ -104,6 +105,24 @@ public interface AccessChecker {
    * @throws AccessControlException When the permission to read an entity value is not granted.
    */
   void canReadEntityValue(AccessContext context, NamedRef ref, ContentsKey key)
+      throws AccessControlException;
+
+  /**
+   * Checks whether the given role/principal is allowed to read an entity value as defined by the
+   * {@link ContentsKey} with the given contentsId for the given Branch/Tag. This check is performed
+   * after {@link AccessChecker#canReadEntityValue(AccessContext, NamedRef, ContentsKey)} while
+   * streaming {@link Contents}. The reason for having this check is that one might want to make
+   * sure that users are only allowed to see {@link Contents} at a particular point in time, which
+   * is expressed by the contentsId.
+   *
+   * @param context The context carrying the principal information.
+   * @param ref The {@link NamedRef} to check
+   * @param key The {@link ContentsKey} to check
+   * @param contentsId The ID of the {@link Contents} object
+   * @throws AccessControlException When the permission to read an entity value is not granted.
+   */
+  void canReadEntityValueWithId(
+      AccessContext context, NamedRef ref, ContentsKey key, String contentsId)
       throws AccessControlException;
 
   /**

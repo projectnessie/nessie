@@ -61,6 +61,7 @@ More concretely, interface would look like this:
       void canListCommitLog(AccessContext context, NamedRef ref) throws AccessControlException;
       void canCommitChangeAgainstReference(AccessContext context, NamedRef ref) throws AccessControlException;
       void canReadEntityValue(AccessContext context, NamedRef ref, ContentsKey key) throws AccessControlException;
+      void canReadEntityValueWithId(AccessContext context, NamedRef ref, ContentsKey key, String contentsId) throws AccessControlException;
       void canUpdateEntity(AccessContext context, NamedRef ref, ContentsKey key) throws AccessControlException;
       void canDeleteEntity(AccessContext context, NamedRef ref, ContentsKey key) throws AccessControlException;
     }
