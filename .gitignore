@@ -61,3 +61,6 @@ venv/
 
 # Maven flatten plugin
 .flattened-pom.xml
+
+# Site
+site/site
