@@ -10,6 +10,6 @@ spec:
     - port: {{ .Values.service.port }}
       targetPort: 19120
       protocol: TCP
-      name: http
+      name: nessie-server
   selector:
     {{- include "nessie.selectorLabels" . | nindent 4 }}
