@@ -8,7 +8,7 @@ This document aims at providing some ideas regarding Nessie and authorization, n
 
 ## Authorization scope
 It is important to remember that Nessie does not store data directly but only data location and other metadata. As a consequence Nessie authorization layer can only really control access to metadata, but might not prevent data itself to be accessed directly without interacting with Nessie. It is then expected that another system can control access to data itself to make sure no authorized access is made.
-The same is true for access to historical data which is one of Nessie main features. For example while it might seem safe when detecting some undesired sensitive data to commit a change to remove it and to restrict access to only the latest version of the dataset, the truth is that the sensitive data may still exist on the datalake and be accessed by other means (similar to how redacting a PDF by adding black boxes on top of sensitive information does not prevent people to read what is written beneath in most cases). The only safe method to remove this data is to remove it from the datalake, and to add commits to Nessie to point to the new data location.
+The same is true for access to historical data which is one of Nessie main features. For example while it might seem safe when detecting some undesired sensitive data to commit a change to remove it and to restrict access to only the latest version of the dataset, the truth is that the sensitive data may still exist on the datalake and be accessed by other means (similar to how redacting a PDF by adding black boxes on top of sensitive information does not prevent people to read what is written beneath in most cases). The only safe way to remove this data is to remove it from the table (e.g. via `DELETE` statements) and then run the [Garbage Collection](https://projectnessie.org/features/management/#garbage-collection) algorithm to ensure the data has been removed from Nessie history and deleted on the data lake.
 
 ## Stories
 Here's a list of common authorization scenarios:
@@ -25,6 +25,7 @@ Any object in Nessie can be designated by a pair of coordinates (reference, path
 References can be designated by name or by hash. However the practicality of using hashes for access control seems very low as those hashes are supposedly random and not known in advance. So focus will be on named references (branches and tags).
 
 Several operations can be exercised against a reference:
+* list available references
 * create a new named reference
 * assign a hash to a reference
 * delete a reference

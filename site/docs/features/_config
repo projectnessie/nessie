@@ -5,3 +5,5 @@ arrange:
   - best-practices.md
   - transactions.md
   - management.md
+  - security.md
+  - metadata_authorization.md
