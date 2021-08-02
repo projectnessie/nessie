@@ -10,7 +10,7 @@ The same is true for access to historical data, which is one of Nessie's main fe
 For example, while it might seem safe committing a change that removes undesired sensitive data and restricting access to only the latest version of the dataset,
 the truth is that the sensitive data may still exist on the data lake and be accessed by other means 
 (similar to how redacting a PDF by adding black boxes on top of sensitive information does not prevent people to read what is written beneath in most cases). 
-The only safe method to remove this data is to remove it from the data lake, and to add commits to Nessie to point to the new data location.
+The only safe way to remove this data is to remove it from the table (e.g. via `DELETE` statements) and then run the [Garbage Collection](https://projectnessie.org/features/management/#garbage-collection) algorithm to ensure the data has been removed from Nessie history and deleted on the data lake.
 
 ## Stories
 Here's a list of common authorization scenarios:
@@ -53,6 +53,8 @@ Implementers of `AccessChecker` are completely free to define their own way of c
 
 ### ContentsId Usage
 Note that there is a `contentsId` parameter in some methods of the [AccessChecker](https://github.com/projectnessie/nessie/blob/main/servers/services/src/main/java/org/projectnessie/services/authz/AccessChecker.java), which allows checking specific rules for a given entity at a given point in time.
+The `contentsId` parameter refers to the ID of a `Contents` object and its contract is defined [here](https://projectnessie.org/develop/spec/#content-id).
+
 One can think of this similar to how permissions are defined in Google Docs. There are some permissions that are specific to the parent folder and to the doc itself. When a Doc is moved from one folder to another, it inherits the permissions of the parent folder.
 However, the doc-specific permissions are carried over with the doc and still apply.
 The same is true in the context of entities. There are some rules that apply to an entity in a global fashion, and then there's the possibility to define rules specific to the `contentsId` of an entity.
@@ -120,4 +122,44 @@ nessie.server.authorization.rules.allow_reading_entity_value=\
 ```
 nessie.server.authorization.rules.allow_deleting_entity=\
   op in ['VIEW_REFERENCE', 'DELETE_ENTITY'] && path.startsWith('dev.')
+```
+
+### Example authorization rules from Stories section
+
+As mentioned in the Stories section, a few common scenarios that are possible are:
+* Alice attempts to execute a query against the table `Foo` on branch `prod`. As she has read access to the table on this branch, Nessie allows the execution engine to get the table details.
+* Bob attempts to execute a query against the table `Foo` on branch `prod`. However, Bob does not have read access to the table. Nessie returns an authorization error, and the execution engine refuses to execute the query.
+* Carol has access to the content on branch `prod`, but not to the table `Foo` on this branch. Carol creates a new reference named `carol-branch` with the same hash as `prod`, and attempts to change permissions on table `Foo`. However, request is denied and Carol cannot access the content of `Foo`.
+* Dave has access to the content on branch `prod`, and wants to update the content of the table `Foo`. He creates a new reference named `dave-experiment`, and executes several queries against this branch to modify table `Foo`. Each modification is a commit done against `dave-experiment` branch which is approved by the Nessie server. When all the desired modifications are done, Dave attempts to merge the changes back to the `prod` branch. However, Dave doesn't have the rights to modify the `prod` branch, causing Nessie to deny the request.
+
+Below are the respective authorization rules for these scenarios:
+```
+# read access for all on the prod branch
+nessie.server.authorization.rules.prod=\
+  op in ['VIEW_REFERENCE'] && ref=='prod' && role in ['Alice', 'Bob', 'Carol', 'Dave']
+
+# alice & dave can read Foo  
+nessie.server.authorization.rules.reading_foo_on_prod=\
+  op in ['READ_ENTITY_VALUE'] && ref=='prod' && path=='Foo' && role in ['Alice', 'Dave']
+
+# specific rules for carol on her branch
+nessie.server.authorization.rules.carol-branch=\
+  op in ['VIEW_REFERENCE', 'CREATE_REFERENCE', 'DELETE_REFERENCE', 'COMMIT_CHANGE_AGAINST_REFERENCE'] && ref=='carol-branch' && role=='Carol'
+
+# specific rules for dave on his branch
+nessie.server.authorization.rules.dave-experiment=\
+  op in ['VIEW_REFERENCE', 'CREATE_REFERENCE', 'DELETE_REFERENCE', 'COMMIT_CHANGE_AGAINST_REFERENCE'] && ref=='dave-experiment' && role=='Dave'
+
+# bob can read/update/delete BobsBar only
+nessie.server.authorization.rules.bob=\
+  op in ['READ_ENTITY_VALUE', 'UPDATE_ENTITY', 'DELETE_ENTITY'] && path=='BobsBar` && role=='Bob')
+
+# carol can read/update/delete CarolsSecret
+nessie.server.authorization.rules.carol=\
+  op in ['READ_ENTITY_VALUE', 'UPDATE_ENTITY', 'DELETE_ENTITY'] && path=='CarolsSecret` && role=='Alice')
+
+# dave can read/update/delete DavesHiddenX
+nessie.server.authorization.rules.dave=\
+  op in ['READ_ENTITY_VALUE', 'UPDATE_ENTITY', 'DELETE_ENTITY'] && path=='DavesHiddenX` && role=='Dave')
+
 ```
