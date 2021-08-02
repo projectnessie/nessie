@@ -106,7 +106,7 @@ public class CelAccessChecker implements AccessChecker {
       AccessContext context, NamedRef ref, ContentsKey key, String contentsId)
       throws AccessControlException {
     canViewReference(context, ref);
-    canPerformOpOnPath(context, key, AuthorizationRuleType.READ_ENTITY_VALUE);
+    canPerformOpOnPath(context, ref, key, AuthorizationRuleType.READ_ENTITY_VALUE);
   }
 
   @Override
@@ -114,7 +114,7 @@ public class CelAccessChecker implements AccessChecker {
       AccessContext context, NamedRef ref, ContentsKey key, String contentsId)
       throws AccessControlException {
     canViewReference(context, ref);
-    canPerformOpOnPath(context, key, AuthorizationRuleType.UPDATE_ENTITY);
+    canPerformOpOnPath(context, ref, key, AuthorizationRuleType.UPDATE_ENTITY);
   }
 
   @Override
@@ -122,7 +122,7 @@ public class CelAccessChecker implements AccessChecker {
       AccessContext context, NamedRef ref, ContentsKey key, String contentsId)
       throws AccessControlException {
     canViewReference(context, ref);
-    canPerformOpOnPath(context, key, AuthorizationRuleType.DELETE_ENTITY);
+    canPerformOpOnPath(context, ref, key, AuthorizationRuleType.DELETE_ENTITY);
   }
 
   private String getRoleName(AccessContext context) {
@@ -147,13 +147,21 @@ public class CelAccessChecker implements AccessChecker {
   }
 
   private void canPerformOpOnPath(
-      AccessContext context, ContentsKey contentsKey, AuthorizationRuleType type) {
+      AccessContext context, NamedRef ref, ContentsKey contentsKey, AuthorizationRuleType type) {
     if (!config.enabled()) {
       return;
     }
     String roleName = getRoleName(context);
     ImmutableMap<String, Object> arguments =
-        ImmutableMap.of("path", contentsKey.toPathString(), "role", roleName, "op", type.name());
+        ImmutableMap.of(
+            "ref",
+            ref.getName(),
+            "path",
+            contentsKey.toPathString(),
+            "role",
+            roleName,
+            "op",
+            type.name());
 
     Supplier<String> errorMsgSupplier =
         () ->
