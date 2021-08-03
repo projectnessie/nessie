@@ -36,6 +36,7 @@ spec:
           env:
             - name: NESSIE_VERSION_STORE_TYPE
               value: {{ .Values.versionStoreType }}
+            {{- if eq .Values.versionStoreType "DYNAMO" }}
             {{- if .Values.dynamodb.region }}
             - name: AWS_REGION
               value: {{ .Values.dynamodb.region }}
@@ -48,6 +49,29 @@ spec:
             - name: AWS_SECRET_ACCESS_KEY
               value: {{ .Values.dynamodb.awsSecretAccessKey }}
             {{- end }}
+            {{- end }}
+            {{- if .Values.jaegerTracing.enabled }}
+            {{- if .Values.jaegerTracing.serviceName }}
+            - name: QUARKUS_JAEGER_SERVICE_NAME
+              value: {{ .Values.jaegerTracing.serviceName }}
+            {{- end }}
+            {{- if .Values.jaegerTracing.publishMetrics }}
+            - name: QUARKUS_JAEGER_METRICS_ENABLED
+              value: {{ .Values.jaegerTracing.publishMetrics | quote }}
+            {{- end }}
+            {{- if .Values.jaegerTracing.samplerType }}
+            - name: QUARKUS_JAEGER_SAMPLER_TYPE
+              value: {{ .Values.jaegerTracing.samplerType }}
+            {{- end }}
+            {{- if .Values.jaegerTracing.samplerParam }}
+            - name: QUARKUS_JAEGER_SAMPLER_PARAM
+              value: {{ .Values.jaegerTracing.samplerParam | quote }}
+            {{- end }}
+            {{- if .Values.jaegerTracing.endpoint }}
+            - name: QUARKUS_JAEGER_ENDPOINT
+              value: {{ .Values.jaegerTracing.endpoint }}
+            {{- end }}
+            {{- end }}
           ports:
             - name: nessie-server
               containerPort: 19120
@@ -58,7 +82,7 @@ spec:
               path: /q/health/live
               port: 19120
               scheme: HTTP
-            initialDelaySeconds: 3
+            initialDelaySeconds: 2
             periodSeconds: 30
             successThreshold: 1
             timeoutSeconds: 10
@@ -68,7 +92,7 @@ spec:
               path: /q/health/ready
               port: 19120
               scheme: HTTP
-            initialDelaySeconds: 10
+            initialDelaySeconds: 3
             periodSeconds: 45
             successThreshold: 1
             timeoutSeconds: 10
