@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.gc;
 
 import org.projectnessie.api.TreeApi;
+import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -24,7 +25,8 @@ import org.projectnessie.model.Reference;
 public final class TestUtils {
   private TestUtils() {}
 
-  static void resetData(TreeApi tree) throws NessieConflictException, NessieNotFoundException {
+  static void resetData(TreeApi tree, HttpClient httpClient)
+      throws NessieConflictException, NessieNotFoundException {
     for (Reference r : tree.getAllReferences()) {
       if (r instanceof Branch) {
         tree.deleteBranch(r.getName(), r.getHash());
@@ -32,6 +34,14 @@ public final class TestUtils {
         tree.deleteTag(r.getName(), r.getHash());
       }
     }
-    tree.createReference(Branch.of("main", null));
+    createReference(httpClient, Branch.of("main", null));
+  }
+
+  /**
+   * {@code TreeApi.createReference()} has an incompatible signature in Nessie versions w/o PR #1693
+   * (add named-ref parameters to API methods).
+   */
+  static void createReference(HttpClient httpClient, Reference reference) {
+    httpClient.newRequest().path("trees/tree").post(reference).readEntity(Reference.class);
   }
 }
