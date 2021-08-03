@@ -2,7 +2,6 @@
 """Nessie Data objects."""
 from datetime import datetime
 from typing import List
-from typing import Optional
 
 import attr
 import desert
@@ -164,7 +163,7 @@ class Reference:
     """Dataclass for Nessie Reference."""
 
     name: str = desert.ib(fields.Str())
-    hash_: Optional[str] = desert.ib(fields.Str(data_key="hash"))
+    hash_: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(data_key="hash", allow_none=True)))
 
 
 @attr.dataclass
@@ -285,6 +284,7 @@ LogResponseSchema = desert.schema_class(LogResponse)
 class Transplant:
     """Dataclass for Transplant operation."""
 
+    source_ref: str = attr.ib(metadata=desert.metadata(fields.Str(data_key="sourceRef")))
     hashes_to_transplant: List[str] = attr.ib(metadata=desert.metadata(fields.List(fields.Str(), data_key="hashesToTransplant")))
 
 
@@ -295,6 +295,7 @@ TransplantSchema = desert.schema_class(Transplant)
 class Merge:
     """Dataclass for Merge operation."""
 
+    source_ref: str = attr.ib(metadata=desert.metadata(fields.Str(data_key="sourceRef")))
     from_hash: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(data_key="fromHash")))
 
 

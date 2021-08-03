@@ -283,6 +283,7 @@ def _format_time(dt: datetime.datetime) -> str:
 @click.option("-l", "--list", cls=MutuallyExclusiveOption, is_flag=True, help="list branches", mutually_exclusive=["delete"])
 @click.option("-d", "--delete", cls=MutuallyExclusiveOption, is_flag=True, help="delete a branch", mutually_exclusive=["list"])
 @click.option("-f", "--force", is_flag=True, help="force branch assignment")
+@click.option("-o", "--hash-on-ref", help="Hash on source-reference")
 @click.option("-c", "--condition", help="Conditional Hash. Only perform the action if branch currently points to condition.")
 @click.argument("branch", nargs=1, required=False)
 @click.argument("new_branch", nargs=1, required=False)
@@ -292,6 +293,7 @@ def branch_(
     ctx: ContextObject,
     list: bool,
     force: bool,
+    hash_on_ref: str,
     delete: bool,
     branch: str,
     new_branch: str,
@@ -320,7 +322,7 @@ def branch_(
         nessie branch -f main test -> assign main to head of test
 
     """
-    results = handle_branch_tag(ctx.nessie, list, delete, branch, new_branch, True, ctx.json, force, ctx.verbose, condition)
+    results = handle_branch_tag(ctx.nessie, list, delete, branch, hash_on_ref, new_branch, True, ctx.json, force, ctx.verbose, condition)
     if ctx.json:
         click.echo(results)
     elif results:
@@ -333,12 +335,13 @@ def branch_(
 @click.option("-l", "--list", cls=MutuallyExclusiveOption, is_flag=True, help="list branches", mutually_exclusive=["delete"])
 @click.option("-d", "--delete", cls=MutuallyExclusiveOption, is_flag=True, help="delete a branches", mutually_exclusive=["list"])
 @click.option("-f", "--force", is_flag=True, help="force branch assignment")
+@click.option("-o", "--hash-on-ref", help="Hash on source-reference")
 @click.option("-c", "--condition", help="Conditional Hash. Only perform the action if branch currently points to condition.")
 @click.argument("tag_name", nargs=1, required=False)
 @click.argument("new_tag", nargs=1, required=False)
 @pass_client
 @error_handler
-def tag(ctx: ContextObject, list: bool, force: bool, delete: bool, tag_name: str, new_tag: str, condition: str) -> None:
+def tag(ctx: ContextObject, list: bool, force: bool, hash_on_ref: str, delete: bool, tag_name: str, new_tag: str, condition: str) -> None:
     """Tag operations.
 
     TAG_NAME name of branch to list or create/assign
@@ -362,7 +365,7 @@ def tag(ctx: ContextObject, list: bool, force: bool, delete: bool, tag_name: str
         nessie tag -f main test -> assign xxx to head of test
 
     """
-    results = handle_branch_tag(ctx.nessie, list, delete, tag_name, new_tag, False, ctx.json, force, ctx.verbose, condition)
+    results = handle_branch_tag(ctx.nessie, list, delete, tag_name, hash_on_ref, new_tag, False, ctx.json, force, ctx.verbose, condition)
     if ctx.json:
         click.echo(results)
     elif results:
@@ -389,16 +392,17 @@ def tag(ctx: ContextObject, list: bool, force: bool, delete: bool, tag_name: str
     mutually_exclusive=["force"],
     help="Conditional Hash. Only perform the action if branch currently points to condition.",
 )
+@click.option("-o", "--hash-on-ref", help="Hash on merge-from-reference")
 @pass_client
 @error_handler
-def merge(ctx: ContextObject, onto_branch: str, force: bool, condition: str, from_branch: str) -> None:
+def merge(ctx: ContextObject, onto_branch: str, force: bool, condition: str, hash_on_ref: str, from_branch: str) -> None:
     """Merge FROM_BRANCH into current branch. FROM_BRANCH can be a hash or branch."""
     if not force and not condition:
         raise UsageError(
             """Either condition or force must be set. Condition should be set to a valid hash for concurrency
             control or force to ignore current state of Nessie Store."""
         )
-    ctx.nessie.merge(from_branch, onto_branch if onto_branch else ctx.nessie.get_default_branch(), condition)
+    ctx.nessie.merge(from_branch, onto_branch if onto_branch else ctx.nessie.get_default_branch(), hash_on_ref, condition)
     click.echo()
 
 
@@ -419,17 +423,18 @@ def merge(ctx: ContextObject, onto_branch: str, force: bool, condition: str, fro
     mutually_exclusive=["force"],
     help="Conditional Hash. Only perform the action if branch currently points to condition.",
 )
+@click.option("-s", "--source-ref", required=True, help="Name of the reference used to read the hashes from.")
 @click.argument("hashes", nargs=-1, required=False)
 @pass_client
 @error_handler
-def cherry_pick(ctx: ContextObject, branch: str, force: bool, condition: str, hashes: Tuple[str]) -> None:
+def cherry_pick(ctx: ContextObject, branch: str, force: bool, condition: str, source_ref: str, hashes: Tuple[str]) -> None:
     """Transplant HASHES onto current branch."""
     if not force and not condition:
         raise UsageError(
             """Either condition or force must be set. Condition should be set to a valid hash for concurrency
             control or force to ignore current state of Nessie Store."""
         )
-    ctx.nessie.cherry_pick(branch if branch else ctx.nessie.get_default_branch(), condition, *hashes)
+    ctx.nessie.cherry_pick(branch if branch else ctx.nessie.get_default_branch(), source_ref, condition, *hashes)
     click.echo()
 
 
