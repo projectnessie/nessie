@@ -24,6 +24,12 @@ export interface Merge {
      * @type {string}
      * @memberof Merge
      */
+    sourceRef?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof Merge
+     */
     fromHash?: string;
 }
 
@@ -37,6 +43,7 @@ export function MergeFromJSONTyped(json: any, ignoreDiscriminator: boolean): Mer
     }
     return {
         
+        'sourceRef': !exists(json, 'sourceRef') ? undefined : json['sourceRef'],
         'fromHash': !exists(json, 'fromHash') ? undefined : json['fromHash'],
     };
 }
@@ -50,6 +57,7 @@ export function MergeToJSON(value?: Merge | null): any {
     }
     return {
         
+        'sourceRef': value.sourceRef,
         'fromHash': value.fromHash,
     };
 }

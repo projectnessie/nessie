@@ -48,9 +48,6 @@ import {
     Reference,
     ReferenceFromJSON,
     ReferenceToJSON,
-    Tag,
-    TagFromJSON,
-    TagToJSON,
     Transplant,
     TransplantFromJSON,
     TransplantToJSON,
@@ -59,13 +56,13 @@ import {
 export interface AssignBranchRequest {
     branchName: string;
     expectedHash: string;
-    branch?: Branch;
+    reference?: Reference;
 }
 
 export interface AssignTagRequest {
     tagName: string;
     expectedHash: string;
-    tag?: Tag;
+    reference?: Reference;
 }
 
 export interface CommitMultipleOperationsRequest {
@@ -75,6 +72,7 @@ export interface CommitMultipleOperationsRequest {
 }
 
 export interface CreateReferenceRequest {
+    sourceRef?: string;
     reference?: Reference;
 }
 
@@ -166,7 +164,7 @@ export class DefaultApi extends runtime.BaseAPI {
             method: 'PUT',
             headers: headerParameters,
             query: queryParameters,
-            body: BranchToJSON(requestParameters.branch),
+            body: ReferenceToJSON(requestParameters.reference),
         });
 
         return new runtime.VoidApiResponse(response);
@@ -206,7 +204,7 @@ export class DefaultApi extends runtime.BaseAPI {
             method: 'PUT',
             headers: headerParameters,
             query: queryParameters,
-            body: TagToJSON(requestParameters.tag),
+            body: ReferenceToJSON(requestParameters.reference),
         });
 
         return new runtime.VoidApiResponse(response);
@@ -261,10 +259,15 @@ export class DefaultApi extends runtime.BaseAPI {
     }
 
     /**
+     * The type of \'refObj\', which can be either a \'Branch\' or \'Tag\', determines the type of the reference to be created.  \'Reference.name\' defines the the name of the reference to be created,\'Reference.hash\' is the hash of the created reference, the HEAD of the created reference. \'sourceRef\' is the name of the reference which contains \'Reference.hash\', and must be present if \'Reference.hash\' is present.  Specifying no \'Reference.hash\' means that the new reference will be created \"at the beginning of time\".
      * Create a new reference
      */
     async createReferenceRaw(requestParameters: CreateReferenceRequest): Promise<runtime.ApiResponse<Reference>> {
         const queryParameters: any = {};
+
+        if (requestParameters.sourceRef !== undefined) {
+            queryParameters['sourceRef'] = requestParameters.sourceRef;
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
@@ -282,6 +285,7 @@ export class DefaultApi extends runtime.BaseAPI {
     }
 
     /**
+     * The type of \'refObj\', which can be either a \'Branch\' or \'Tag\', determines the type of the reference to be created.  \'Reference.name\' defines the the name of the reference to be created,\'Reference.hash\' is the hash of the created reference, the HEAD of the created reference. \'sourceRef\' is the name of the reference which contains \'Reference.hash\', and must be present if \'Reference.hash\' is present.  Specifying no \'Reference.hash\' means that the new reference will be created \"at the beginning of time\".
      * Create a new reference
      */
     async createReference(requestParameters: CreateReferenceRequest): Promise<Reference> {
@@ -464,7 +468,8 @@ export class DefaultApi extends runtime.BaseAPI {
     }
 
     /**
-     * Get object content associated with key
+     * This operation returns a consistent view for a contents-key in a branch or tag.  Nessie may return a \'Contents\' object, that is updated compared to the value that has been passed when the \'Contents\' object has been committed, to reflect a more recent, but semantically equal state.
+     * Get object content associated with a key.
      */
     async getContentsRaw(requestParameters: GetContentsRequest): Promise<runtime.ApiResponse<Contents>> {
         if (requestParameters.key === null || requestParameters.key === undefined) {
@@ -494,7 +499,8 @@ export class DefaultApi extends runtime.BaseAPI {
     }
 
     /**
-     * Get object content associated with key
+     * This operation returns a consistent view for a contents-key in a branch or tag.  Nessie may return a \'Contents\' object, that is updated compared to the value that has been passed when the \'Contents\' object has been committed, to reflect a more recent, but semantically equal state.
+     * Get object content associated with a key.
      */
     async getContents(requestParameters: GetContentsRequest): Promise<Contents> {
         const response = await this.getContentsRaw(requestParameters);
@@ -576,7 +582,8 @@ export class DefaultApi extends runtime.BaseAPI {
     }
 
     /**
-     * Get multiple objects\' content
+     * Similar to \'getContents\', but takes multiple \'ContentKey\'s and returns a consistent view for these contents-keys in a branch or tag.  Nessie may return \'Contents\' objects, that are updated compared to the values that have been passed when the \'Contents\' objects have been committed, to reflect a more recent, but semantically equal state.
+     * Get multiple objects\' content.
      */
     async getMultipleContentsRaw(requestParameters: GetMultipleContentsRequest): Promise<runtime.ApiResponse<MultiGetContentsResponse>> {
         const queryParameters: any = {};
@@ -605,7 +612,8 @@ export class DefaultApi extends runtime.BaseAPI {
     }
 
     /**
-     * Get multiple objects\' content
+     * Similar to \'getContents\', but takes multiple \'ContentKey\'s and returns a consistent view for these contents-keys in a branch or tag.  Nessie may return \'Contents\' objects, that are updated compared to the values that have been passed when the \'Contents\' objects have been committed, to reflect a more recent, but semantically equal state.
+     * Get multiple objects\' content.
      */
     async getMultipleContents(requestParameters: GetMultipleContentsRequest): Promise<MultiGetContentsResponse> {
         const response = await this.getMultipleContentsRaw(requestParameters);
@@ -643,7 +651,8 @@ export class DefaultApi extends runtime.BaseAPI {
     }
 
     /**
-     * merge commits from mergeRef to ref endpoint
+     * Merge items from an existing hash in \'mergeRef\' into the requested branch. The merge is always a rebase + fast-forward merge and is only completed if the rebase is conflict free. The set of commits added to the branch will be all of those until we arrive at a common ancestor. Depending on the underlying implementation, the number of commits allowed as part of this operation may be limited.
+     * Merge commits from \'mergeRef\' onto \'branchName\'.
      */
     async mergeRefIntoBranchRaw(requestParameters: MergeRefIntoBranchRequest): Promise<runtime.ApiResponse<void>> {
         if (requestParameters.branchName === null || requestParameters.branchName === undefined) {
@@ -676,14 +685,16 @@ export class DefaultApi extends runtime.BaseAPI {
     }
 
     /**
-     * merge commits from mergeRef to ref endpoint
+     * Merge items from an existing hash in \'mergeRef\' into the requested branch. The merge is always a rebase + fast-forward merge and is only completed if the rebase is conflict free. The set of commits added to the branch will be all of those until we arrive at a common ancestor. Depending on the underlying implementation, the number of commits allowed as part of this operation may be limited.
+     * Merge commits from \'mergeRef\' onto \'branchName\'.
      */
     async mergeRefIntoBranch(requestParameters: MergeRefIntoBranchRequest): Promise<void> {
         await this.mergeRefIntoBranchRaw(requestParameters);
     }
 
     /**
-     * transplant commits from mergeRef to ref endpoint
+     * This is done as an atomic operation such that only the last of the sequence is ever visible to concurrent readers/writers. The sequence to transplant must be contiguous, in order and share a common ancestor with the target branch.
+     * Transplant commits from \'transplant\' onto \'branchName\'
      */
     async transplantCommitsIntoBranchRaw(requestParameters: TransplantCommitsIntoBranchRequest): Promise<runtime.ApiResponse<void>> {
         if (requestParameters.branchName === null || requestParameters.branchName === undefined) {
@@ -720,7 +731,8 @@ export class DefaultApi extends runtime.BaseAPI {
     }
 
     /**
-     * transplant commits from mergeRef to ref endpoint
+     * This is done as an atomic operation such that only the last of the sequence is ever visible to concurrent readers/writers. The sequence to transplant must be contiguous, in order and share a common ancestor with the target branch.
+     * Transplant commits from \'transplant\' onto \'branchName\'
      */
     async transplantCommitsIntoBranch(requestParameters: TransplantCommitsIntoBranchRequest): Promise<void> {
         await this.transplantCommitsIntoBranchRaw(requestParameters);
