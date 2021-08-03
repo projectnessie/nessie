@@ -87,9 +87,10 @@ class ITDeltaLogBranches extends AbstractSparkTest {
     // write some data to table
     targetTable.write().format("delta").save(tempPath.getAbsolutePath());
     // create test at the point where there is only 1 commit
+    Branch sourceRef = client.getTreeApi().getDefaultBranch();
     client
         .getTreeApi()
-        .createReference(Branch.of("test", client.getTreeApi().getDefaultBranch().getHash()));
+        .createReference(sourceRef.getName(), Branch.of("test", sourceRef.getHash()));
     // add some more data to main
     targetTable.write().format("delta").mode("append").save(tempPath.getAbsolutePath());
 
