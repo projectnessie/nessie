@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.model.Branch;
 
 @ExtendWith(HiveRunnerExtension.class)
 public abstract class BaseTableOperations extends BaseHiveOps {
@@ -67,7 +68,7 @@ public abstract class BaseTableOperations extends BaseHiveOps {
   @Test
   public void changeContext() throws NessieNotFoundException, NessieConflictException {
 
-    String mainOriginalHash = client.getTreeApi().getDefaultBranch().getHash();
+    Branch mainBranch = client.getTreeApi().getDefaultBranch();
 
     // create a table on main and populate it with data.
     shell.execute(
@@ -82,8 +83,8 @@ public abstract class BaseTableOperations extends BaseHiveOps {
     // create a new branch.
     shell.execute(
         String.format(
-            "CREATE VIEW `$nessie`.dev TBLPROPERTIES(\"ref\"=\"%s\") AS SELECT * FROM T1",
-            mainOriginalHash));
+            "CREATE VIEW `$nessie`.dev TBLPROPERTIES(\"ref\"=\"%s@%s\") AS SELECT * FROM T1",
+            mainBranch.getName(), mainBranch.getHash()));
 
     // change to dev context using pseudo database
     shell.execute("alter database `$nessie` set dbproperties (\"ref\"=\"dev\")");

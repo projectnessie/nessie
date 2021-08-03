@@ -21,7 +21,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -33,7 +32,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.tests.AbstractSparkTest;
-import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -44,6 +42,7 @@ import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableOperations;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Operations;
+import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
 
 public class ITNessieStatements extends AbstractSparkTest {
@@ -64,16 +63,15 @@ public class ITNessieStatements extends AbstractSparkTest {
 
   @AfterEach
   void removeBranches() throws NessieConflictException, NessieNotFoundException {
-    for (String s : Arrays.asList(refName, "main")) {
-      try {
-        nessieClient
-            .getTreeApi()
-            .deleteBranch(s, nessieClient.getTreeApi().getReferenceByName(s).getHash());
-      } catch (BaseNessieClientServerException e) {
-        // pass
+    for (Reference ref : nessieClient.getTreeApi().getAllReferences()) {
+      if (ref instanceof Branch) {
+        nessieClient.getTreeApi().deleteBranch(ref.getName(), ref.getHash());
+      }
+      if (ref instanceof Tag) {
+        nessieClient.getTreeApi().deleteTag(ref.getName(), ref.getHash());
       }
     }
-    nessieClient.getTreeApi().createReference(Branch.of("main", null));
+    nessieClient.getTreeApi().createReference(null, Branch.of("main", null));
   }
 
   @Test

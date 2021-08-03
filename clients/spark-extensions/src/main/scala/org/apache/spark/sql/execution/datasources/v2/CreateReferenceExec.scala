@@ -34,13 +34,14 @@ case class CreateReferenceExec(
   override protected def runInternal(
       nessieClient: NessieClient
   ): Seq[InternalRow] = {
-    val hash = createdFrom
+    val sourceRef = createdFrom
       .map(nessieClient.getTreeApi.getReferenceByName)
       .orElse(Option(nessieClient.getTreeApi.getDefaultBranch))
-      .map(x => x.getHash)
       .orNull
-    val ref = if (isBranch) Branch.of(branch, hash) else Tag.of(branch, hash)
-    nessieClient.getTreeApi.createReference(ref)
+    val ref =
+      if (isBranch) Branch.of(branch, sourceRef.getHash)
+      else Tag.of(branch, sourceRef.getHash)
+    nessieClient.getTreeApi.createReference(sourceRef.getName, ref)
     val branchResult = nessieClient.getTreeApi.getReferenceByName(ref.getName)
     val refType = branchResult match {
       case _: ImmutableHash   => NessieUtils.HASH
