@@ -167,14 +167,6 @@
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-kubernetes</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-minikube</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.quarkus</groupId>
       <artifactId>quarkus-amazon-dynamodb</artifactId>
     </dependency>
     <dependency>
@@ -334,6 +326,21 @@
       <properties>
         <quarkus.container-image.build>true</quarkus.container-image.build>
       </properties>
+    </profile>
+    <profile>
+      <!-- Use the k8s profile to generate manifest files for K8s & Minikube, which will be located under target/kubernetes -->
+      <!-- See also https://quarkus.io/guides/deploying-to-kubernetes for additional details -->
+      <id>k8s</id>
+      <dependencies>
+        <dependency>
+          <groupId>io.quarkus</groupId>
+          <artifactId>quarkus-kubernetes</artifactId>
+        </dependency>
+        <dependency>
+          <groupId>io.quarkus</groupId>
+          <artifactId>quarkus-minikube</artifactId>
+        </dependency>
+      </dependencies>
     </profile>
   </profiles>
 </project>
