@@ -51,7 +51,16 @@ public interface HttpContentsApi extends ContentsApi {
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   @Path("{key}")
-  @Operation(summary = "Get object content associated with key")
+  @Operation(
+      summary = "Get object content associated with a key.",
+      description =
+          "This operation returns the contents-value for a contents-key in a named-reference "
+              + "(a branch or tag).\n"
+              + "\n"
+              + "If the table-metadata is tracked globally (Iceberg), "
+              + "Nessie returns a 'Contents' object, that contains the most up-to-date part for "
+              + "the globally tracked part (Iceberg: table-metadata) plus the "
+              + "per-Nessie-reference/hash specific part (Iceberg: snapshot-ID).")
   @APIResponses({
     @APIResponse(
         responseCode = "200",
@@ -92,7 +101,17 @@ public interface HttpContentsApi extends ContentsApi {
 
   @POST
   @Consumes(MediaType.APPLICATION_JSON)
-  @Operation(summary = "Get multiple objects' content")
+  @Operation(
+      summary = "Get multiple objects' content.",
+      description =
+          "Similar to 'getContents', but takes multiple 'ContentKey's and returns the "
+              + "contents-values for the one or more contents-keys in a named-reference "
+              + "(a branch or tag).\n"
+              + "\n"
+              + "If the table-metadata is tracked globally (Iceberg), "
+              + "Nessie returns a 'Contents' object, that contains the most up-to-date part for "
+              + "the globally tracked part (Iceberg: table-metadata) plus the "
+              + "per-Nessie-reference/hash specific part (Iceberg: snapshot-ID).")
   @APIResponses({
     @APIResponse(
         responseCode = "200",

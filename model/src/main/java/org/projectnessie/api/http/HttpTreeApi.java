@@ -16,6 +16,7 @@
 package org.projectnessie.api.http;
 
 import java.util.List;
+import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
@@ -50,7 +51,6 @@ import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Merge;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
-import org.projectnessie.model.Tag;
 import org.projectnessie.model.Transplant;
 import org.projectnessie.model.Validation;
 
@@ -92,10 +92,35 @@ public interface HttpTreeApi extends TreeApi {
   })
   Branch getDefaultBranch() throws NessieNotFoundException;
 
-  /** Create a new reference. */
+  /**
+   * Create a new reference.
+   *
+   * <p>The type of {@code reference}, which can be either a {@link Branch} or {@link
+   * org.projectnessie.model.Tag}, determines the type of the reference to be created.
+   *
+   * <p>{@link Reference#getName()} defines the the name of the reference to be created, {@link
+   * Reference#getHash()} is the hash of the created reference, the HEAD of the created reference.
+   * {@code sourceRefName} is the name of the reference which contains {@link Reference#getHash()},
+   * and must be present if {@link Reference#getHash()} is present.
+   *
+   * <p>Specifying no {@link Reference#getHash()} means that the new reference will be created "at
+   * the beginning of time".
+   */
   @POST
   @Path("tree")
-  @Operation(summary = "Create a new reference")
+  @Operation(
+      summary = "Create a new reference",
+      description =
+          "The type of 'refObj', which can be either a 'Branch' or 'Tag', determines "
+              + "the type of the reference to be created.\n"
+              + "\n"
+              + "'Reference.name' defines the the name of the reference to be created,"
+              + "'Reference.hash' is the hash of the created reference, the HEAD of the "
+              + "created reference. 'sourceRefName' is the name of the reference which contains "
+              + "'Reference.hash', and must be present if 'Reference.hash' is present.\n"
+              + "\n"
+              + "Specifying no 'Reference.hash' means that the new reference will be created "
+              + "\"at the beginning of time\".")
   @APIResponses({
     @APIResponse(
         responseCode = "200",
@@ -111,6 +136,11 @@ public interface HttpTreeApi extends TreeApi {
     @APIResponse(responseCode = "409", description = "Reference already exists"),
   })
   Reference createReference(
+      @Nullable
+          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          @Parameter(description = "Source named reference")
+          @QueryParam("sourceRefName")
+          String sourceRefName,
       @Valid
           @NotNull
           @RequestBody(
@@ -216,7 +246,7 @@ public interface HttpTreeApi extends TreeApi {
         description = "Not allowed to view the given reference or fetch entries for it"),
     @APIResponse(responseCode = "404", description = "Ref not found")
   })
-  public EntriesResponse getEntries(
+  EntriesResponse getEntries(
       @NotNull
           @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           @Parameter(
@@ -301,7 +331,11 @@ public interface HttpTreeApi extends TreeApi {
   /** Update a tag. */
   @PUT
   @Path("tag/{tagName}")
-  @Operation(summary = "Set a tag to a specific hash")
+  @Operation(
+      summary = "Set a tag to a specific hash via a named-reference.",
+      description =
+          "This operation takes the name of the tag to reassign and the hash and the name of a "
+              + "named-reference via which the caller has access to that hash.")
   @APIResponses({
     @APIResponse(responseCode = "204", description = "Assigned successfully"),
     @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
@@ -328,12 +362,14 @@ public interface HttpTreeApi extends TreeApi {
       @Valid
           @NotNull
           @RequestBody(
-              description = "New tag content",
+              description =
+                  "Reference hash to which 'tagName' shall be assigned to. This must be either a "
+                      + "'Branch' or 'Tag' via which the hash is visible to the caller.",
               content =
                   @Content(
                       mediaType = MediaType.APPLICATION_JSON,
-                      examples = {@ExampleObject(ref = "tagObj")}))
-          Tag tag)
+                      examples = {@ExampleObject(ref = "refObj"), @ExampleObject(ref = "tagObj")}))
+          Reference assignTo)
       throws NessieNotFoundException, NessieConflictException;
 
   /** Delete a tag. */
@@ -367,7 +403,11 @@ public interface HttpTreeApi extends TreeApi {
   /** Update a branch. */
   @PUT
   @Path("branch/{branchName}")
-  @Operation(summary = "Set a branch to a specific hash")
+  @Operation(
+      summary = "Set a branch to a specific hash via a named-reference.",
+      description =
+          "This operation takes the name of the branch to reassign and the hash and the name of a "
+              + "named-reference via which the caller has access to that hash.")
   @APIResponses({
     @APIResponse(responseCode = "204", description = "Assigned successfully"),
     @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
@@ -394,12 +434,14 @@ public interface HttpTreeApi extends TreeApi {
       @Valid
           @NotNull
           @RequestBody(
-              description = "New branch content",
+              description =
+                  "Reference hash to which 'branchName' shall be assigned to. This must be either a "
+                      + "'Branch' or 'Tag' via which the hash is visible to the caller.",
               content =
                   @Content(
                       mediaType = MediaType.APPLICATION_JSON,
-                      examples = {@ExampleObject(ref = "refObj")}))
-          Branch branch)
+                      examples = {@ExampleObject(ref = "refObj"), @ExampleObject(ref = "tagObj")}))
+          Reference assignTo)
       throws NessieNotFoundException, NessieConflictException;
 
   /** Delete a branch. */
@@ -434,7 +476,12 @@ public interface HttpTreeApi extends TreeApi {
   /** cherry pick a set of commits into a branch. */
   @POST
   @Path("branch/{branchName}/transplant")
-  @Operation(summary = "transplant commits from mergeRef to ref endpoint")
+  @Operation(
+      summary = "Transplant commits from 'transplant' onto 'branchName'",
+      description =
+          "This is done as an atomic operation such that only the last of the sequence is ever "
+              + "visible to concurrent readers/writers. The sequence to transplant must be "
+              + "contiguous and in order.")
   @APIResponses({
     @APIResponse(responseCode = "204", description = "Merged successfully."),
     @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
@@ -456,7 +503,7 @@ public interface HttpTreeApi extends TreeApi {
       @NotNull
           @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           @Parameter(
-              description = "Expected hash of tag",
+              description = "Expected hash of tag.",
               examples = {@ExampleObject(ref = "hash")})
           @QueryParam("expectedHash")
           String hash,
@@ -478,7 +525,14 @@ public interface HttpTreeApi extends TreeApi {
   /** merge mergeRef onto ref. */
   @POST
   @Path("branch/{branchName}/merge")
-  @Operation(summary = "merge commits from mergeRef to ref endpoint")
+  @Operation(
+      summary = "Merge commits from 'mergeRef' onto 'branchName'.",
+      description =
+          "Merge items from an existing hash in 'mergeRef' into the requested branch. "
+              + "The merge is always a rebase + fast-forward merge and is only completed if the "
+              + "rebase is conflict free. The set of commits added to the branch will be all of "
+              + "those until we arrive at a common ancestor. Depending on the underlying "
+              + "implementation, the number of commits allowed as part of this operation may be limited.")
   @APIResponses({
     @APIResponse(responseCode = "204", description = "Merged successfully."),
     @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
@@ -500,14 +554,16 @@ public interface HttpTreeApi extends TreeApi {
       @NotNull
           @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           @Parameter(
-              description = "Expected hash of tag",
+              description = "Expected current HEAD of 'branchName'",
               examples = {@ExampleObject(ref = "hash")})
           @QueryParam("expectedHash")
           String hash,
       @Valid
           @NotNull
           @RequestBody(
-              description = "Merge operation",
+              description =
+                  "Merge operation that defines the source reference name and an optional hash. "
+                      + "If 'fromHash' is not present, the current 'sourceRef's HEAD will be used.",
               content =
                   @Content(
                       mediaType = MediaType.APPLICATION_JSON,
