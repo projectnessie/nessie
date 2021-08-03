@@ -18,10 +18,12 @@ package org.projectnessie.versioned.gc;
 import static org.apache.iceberg.types.Types.NestedField.required;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import java.io.File;
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -49,6 +51,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.client.NessieClient;
+import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -70,6 +73,7 @@ public class ITIcebergAssetKeyReader {
                   required(2, "foe2", Types.StringType.get()))
               .fields());
   private NessieClient client;
+  private HttpClient httpClient;
   private TreeApi tree;
   private Catalog catalog;
   private Configuration hadoopConfig;
@@ -82,9 +86,14 @@ public class ITIcebergAssetKeyReader {
   @BeforeEach
   void init() throws NessieNotFoundException, NessieConflictException {
     this.client = NessieClient.builder().withUri(NESSIE_ENDPOINT).build();
+    this.httpClient =
+        HttpClient.builder()
+            .setBaseUri(URI.create(NESSIE_ENDPOINT))
+            .setObjectMapper(new ObjectMapper())
+            .build();
     tree = client.getTreeApi();
-    TestUtils.resetData(tree);
-    tree.createReference(Branch.of("ITIcebergAssetKeyReader", null));
+    TestUtils.resetData(tree, httpClient);
+    TestUtils.createReference(httpClient, Branch.of("ITIcebergAssetKeyReader", null));
 
     Map<String, String> props = new HashMap<>();
     props.put("ref", "ITIcebergAssetKeyReader");
@@ -199,7 +208,7 @@ public class ITIcebergAssetKeyReader {
 
   @AfterEach
   void stop() throws NessieNotFoundException, NessieConflictException {
-    TestUtils.resetData(tree);
+    TestUtils.resetData(tree, httpClient);
     DynamoSupplier.deleteAllTables();
     client.close();
   }
