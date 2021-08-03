@@ -36,13 +36,15 @@ case class CreateReferenceExec(
   override protected def runInternal(
       nessieClient: NessieClient
   ): Seq[InternalRow] = {
-    val hash = createdFrom
+    val sourceRef = createdFrom
       .map(nessieClient.getTreeApi.getReferenceByName)
       .orElse(Option(nessieClient.getTreeApi.getDefaultBranch))
-      .map(x => x.getHash)
       .orNull
-    val ref = if (isBranch) Branch.of(branch, hash) else Tag.of(branch, hash)
+    val ref =
+      if (isBranch) Branch.of(branch, sourceRef.getHash)
+      else Tag.of(branch, sourceRef.getHash)
     try {
+      // TODO !!! nessieClient.getTreeApi.createReference(sourceRef.getName, ref)
       nessieClient.getTreeApi.createReference(ref)
     } catch {
       case e: NessieConflictException =>
