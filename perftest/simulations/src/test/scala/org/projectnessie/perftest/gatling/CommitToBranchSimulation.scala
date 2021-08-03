@@ -104,7 +104,10 @@ class CommitToBranchSimulation extends Simulation {
         .execute { (client, session) =>
           // create the branch (errors will be ignored)
           val branch = client.getTreeApi
-            .createReference(Branch.of(params.makeBranchName(session), null))
+            .createReference(
+              null,
+              Branch.of(params.makeBranchName(session), null)
+            )
             .asInstanceOf[Branch]
           session.set("branch", branch)
         }

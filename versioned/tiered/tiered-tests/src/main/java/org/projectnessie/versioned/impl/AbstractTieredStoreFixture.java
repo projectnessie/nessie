@@ -27,12 +27,12 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.Operation;
-import org.projectnessie.versioned.Ref;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.StringSerializer;
+import org.projectnessie.versioned.StringSerializer.TestEnum;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
 import org.projectnessie.versioned.WithType;
@@ -94,28 +94,33 @@ public abstract class AbstractTieredStoreFixture<S extends Store, C>
   }
 
   @Override
-  public void transplant(
-      BranchName targetBranch, Optional<Hash> expectedHash, List<Hash> sequenceToTransplant)
+  public Hash transplant(
+      BranchName targetBranch,
+      Optional<Hash> referenceHash,
+      NamedRef source,
+      List<Hash> sequenceToTransplant)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    versionStore.transplant(targetBranch, expectedHash, sequenceToTransplant);
+    return versionStore.transplant(targetBranch, referenceHash, source, sequenceToTransplant);
   }
 
   @Override
-  public void merge(Hash fromHash, BranchName toBranch, Optional<Hash> expectedHash)
+  public Hash merge(
+      NamedRef from, Optional<Hash> fromHash, BranchName toBranch, Optional<Hash> expectedHash)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    versionStore.merge(fromHash, toBranch, expectedHash);
+    return versionStore.merge(from, fromHash, toBranch, expectedHash);
   }
 
   @Override
-  public void assign(NamedRef ref, Optional<Hash> expectedHash, Hash targetHash)
+  public void assign(
+      NamedRef ref, Optional<Hash> expectedHash, NamedRef target, Optional<Hash> targetHash)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    versionStore.assign(ref, expectedHash, targetHash);
+    versionStore.assign(ref, expectedHash, target, targetHash);
   }
 
   @Override
-  public Hash create(NamedRef ref, Optional<Hash> targetHash)
+  public Hash create(NamedRef ref, Optional<NamedRef> target, Optional<Hash> targetHash)
       throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
-    return versionStore.create(ref, targetHash);
+    return versionStore.create(ref, target, targetHash);
   }
 
   @Override
@@ -130,35 +135,41 @@ public abstract class AbstractTieredStoreFixture<S extends Store, C>
   }
 
   @Override
-  public Stream<WithHash<String>> getCommits(Ref ref) throws ReferenceNotFoundException {
-    return versionStore.getCommits(ref);
-  }
-
-  @Override
-  public Stream<WithType<Key, StringSerializer.TestEnum>> getKeys(Ref ref)
+  public Stream<WithHash<String>> getCommits(
+      NamedRef ref, Optional<Hash> offset, Optional<Hash> untilIncluding)
       throws ReferenceNotFoundException {
-    return versionStore.getKeys(ref);
+    return versionStore.getCommits(ref, offset, untilIncluding);
   }
 
   @Override
-  public String getValue(Ref ref, Key key) throws ReferenceNotFoundException {
-    return versionStore.getValue(ref, key);
-  }
-
-  @Override
-  public List<Optional<String>> getValues(Ref ref, List<Key> key)
+  public Stream<WithType<Key, TestEnum>> getKeys(NamedRef ref, Optional<Hash> hashOnRef)
       throws ReferenceNotFoundException {
-    return versionStore.getValues(ref, key);
+    return versionStore.getKeys(ref, hashOnRef);
   }
 
   @Override
-  public WithHash<Ref> toRef(@Nonnull String refOfUnknownType) throws ReferenceNotFoundException {
+  public String getValue(NamedRef ref, Optional<Hash> hashOnRef, Key key)
+      throws ReferenceNotFoundException {
+    return versionStore.getValue(ref, hashOnRef, key);
+  }
+
+  @Override
+  public List<Optional<String>> getValues(NamedRef ref, Optional<Hash> hashOnRef, List<Key> keys)
+      throws ReferenceNotFoundException {
+    return versionStore.getValues(ref, hashOnRef, keys);
+  }
+
+  @Override
+  public WithHash<NamedRef> toRef(@Nonnull String refOfUnknownType)
+      throws ReferenceNotFoundException {
     return versionStore.toRef(refOfUnknownType);
   }
 
   @Override
-  public Stream<Diff<String>> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException {
-    return versionStore.getDiffs(from, to);
+  public Stream<Diff<String>> getDiffs(
+      NamedRef from, Optional<Hash> hashOnFrom, NamedRef to, Optional<Hash> hashOnTo)
+      throws ReferenceNotFoundException {
+    return versionStore.getDiffs(from, hashOnFrom, to, hashOnTo);
   }
 
   @Override

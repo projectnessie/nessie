@@ -43,7 +43,8 @@ public class VersionStoreExtension implements Extension {
             .build();
 
     try {
-      store.create(BranchName.of(SERVER_CONFIG.getDefaultBranch()), Optional.empty());
+      store.create(
+          BranchName.of(SERVER_CONFIG.getDefaultBranch()), Optional.empty(), Optional.empty());
     } catch (ReferenceNotFoundException | ReferenceAlreadyExistsException e) {
       throw new RuntimeException(e);
     }
