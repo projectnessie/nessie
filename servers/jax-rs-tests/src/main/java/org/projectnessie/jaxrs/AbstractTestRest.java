@@ -133,7 +133,7 @@ public abstract class AbstractTestRest {
   public void setUp() throws Exception {}
 
   @AfterEach
-  public void tearDown() throws Exception {
+  public void tearDown() {
     client.close();
   }
 
@@ -148,28 +148,28 @@ public abstract class AbstractTestRest {
     assertAll(
         // Tag without hash
         () ->
-            assertThatThrownBy(() -> tree.createReference(Tag.of(tagName1, null)))
+            assertThatThrownBy(() -> tree.createReference("main", Tag.of(tagName1, null)))
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining("Cannot create an unassigned tag reference"),
         // legit Tag with name + hash
         () -> {
-          Reference refTag1 = tree.createReference(Tag.of(tagName2, mainHash));
+          Reference refTag1 = tree.createReference("main", Tag.of(tagName2, mainHash));
           assertEquals(Tag.of(tagName2, mainHash), refTag1);
         },
         // Branch without hash
         () -> {
-          Reference refBranch1 = tree.createReference(Branch.of(branchName1, null));
+          Reference refBranch1 = tree.createReference("main", Branch.of(branchName1, null));
           assertEquals(Branch.of(branchName1, mainHash), refBranch1);
         },
         // Branch with name + hash
         () -> {
-          Reference refBranch2 = tree.createReference(Branch.of(branchName2, mainHash));
+          Reference refBranch2 = tree.createReference("main", Branch.of(branchName2, mainHash));
           assertEquals(Branch.of(branchName2, mainHash), refBranch2);
         },
         // Hash
         () ->
-            assertThatThrownBy(() -> tree.createReference(Hash.of("cafebabedeafbeef")))
+            assertThatThrownBy(() -> tree.createReference("main", Hash.of("cafebabedeafbeef")))
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining("Only tag and branch references can be created"));
@@ -185,11 +185,13 @@ public abstract class AbstractTestRest {
     Reference main = tree.getReferenceByName("main");
     String someHash = main.getHash();
 
-    Reference createdTag = tree.createReference(Tag.of(tagName, someHash));
+    Reference createdTag = tree.createReference(main.getName(), Tag.of(tagName, someHash));
     assertEquals(Tag.of(tagName, someHash), createdTag);
-    Reference createdBranch1 = tree.createReference(Branch.of(branchName, someHash));
+    Reference createdBranch1 =
+        tree.createReference(main.getName(), Branch.of(branchName, someHash));
     assertEquals(Branch.of(branchName, someHash), createdBranch1);
-    Reference createdBranch2 = tree.createReference(Branch.of(branchName2, someHash));
+    Reference createdBranch2 =
+        tree.createReference(main.getName(), Branch.of(branchName2, someHash));
     assertEquals(Branch.of(branchName2, someHash), createdBranch2);
 
     Map<String, Reference> references =
@@ -250,11 +252,13 @@ public abstract class AbstractTestRest {
     log = tree.getCommitLog(branchName, CommitLogParams.empty());
     String newHash = log.getOperations().get(0).getHash();
 
-    tree.assignTag(tagName, tagHash, Tag.of(tagName, newHash));
+    tree.assignTag(tagName, tagHash, Branch.of(branchName, newHash));
     tree.assignBranch(branchName, newHash, Branch.of(branchName, newHash));
 
     tree.mergeRefIntoBranch(
-        branchName2, branchHash2, ImmutableMerge.builder().fromHash(newHash).build());
+        branchName2,
+        branchHash2,
+        ImmutableMerge.builder().sourceRefName(branchName).fromHash(newHash).build());
 
     tree.deleteTag(tagName, newHash);
     tree.deleteBranch(branchName, newHash);
@@ -264,7 +268,7 @@ public abstract class AbstractTestRest {
   public void filterCommitLogByAuthor() throws NessieNotFoundException, NessieConflictException {
     Reference main = tree.getReferenceByName("main");
     Branch filterCommitLogByAuthor = Branch.of("filterCommitLogByAuthor", main.getHash());
-    Reference branch = tree.createReference(filterCommitLogByAuthor);
+    Reference branch = tree.createReference(main.getName(), filterCommitLogByAuthor);
     assertThat(branch).isEqualTo(filterCommitLogByAuthor);
 
     int numAuthors = 5;
@@ -347,7 +351,7 @@ public abstract class AbstractTestRest {
   public void filterCommitLogByTimeRange() throws NessieNotFoundException, NessieConflictException {
     Reference main = tree.getReferenceByName("main");
     Branch filterCommitLogByAuthor = Branch.of("filterCommitLogByTimeRange", main.getHash());
-    Reference branch = tree.createReference(filterCommitLogByAuthor);
+    Reference branch = tree.createReference(main.getName(), filterCommitLogByAuthor);
     assertThat(branch).isEqualTo(filterCommitLogByAuthor);
 
     int numAuthors = 5;
@@ -426,7 +430,7 @@ public abstract class AbstractTestRest {
       throws NessieNotFoundException, NessieConflictException {
     Reference main = tree.getReferenceByName("main");
     Branch filterCommitLogByAuthor = Branch.of("filterCommitLogByProperties", main.getHash());
-    Reference branch = tree.createReference(filterCommitLogByAuthor);
+    Reference branch = tree.createReference(main.getName(), filterCommitLogByAuthor);
     assertThat(branch).isEqualTo(filterCommitLogByAuthor);
 
     int numAuthors = 5;
@@ -460,7 +464,7 @@ public abstract class AbstractTestRest {
       throws NessieNotFoundException, NessieConflictException {
     Reference main = tree.getReferenceByName("main");
     Branch b = Branch.of("filterCommitLogByCommitRange", main.getHash());
-    Reference branch = tree.createReference(b);
+    Reference branch = tree.createReference(main.getName(), b);
     assertThat(branch).isEqualTo(b);
 
     int numCommits = 10;
@@ -528,7 +532,7 @@ public abstract class AbstractTestRest {
     String someHash = tree.getReferenceByName("main").getHash();
     String branchName = "commitLogPagingAndFiltering";
     Branch branch = Branch.of(branchName, someHash);
-    tree.createReference(branch);
+    tree.createReference("main", branch);
 
     int numAuthors = 3;
     int commits = 45;
@@ -563,7 +567,7 @@ public abstract class AbstractTestRest {
     String someHash = tree.getReferenceByName("main").getHash();
     String branchName = "commitLogPaging";
     Branch branch = Branch.of(branchName, someHash);
-    tree.createReference(branch);
+    tree.createReference("main", branch);
 
     int commits = 95;
     int pageSizeHint = 10;
@@ -644,7 +648,7 @@ public abstract class AbstractTestRest {
   @Test
   void multiget() throws NessieNotFoundException, NessieConflictException {
     final String branch = "foo";
-    Reference r = tree.createReference(Branch.of(branch, null));
+    Reference r = tree.createReference("main", Branch.of(branch, null));
     ContentsKey a = ContentsKey.of("a");
     ContentsKey b = ContentsKey.of("b");
     IcebergTable ta = IcebergTable.of("path1");
@@ -750,7 +754,7 @@ public abstract class AbstractTestRest {
   @Test
   void verifyAllContentAndOperationTypes() throws NessieNotFoundException, NessieConflictException {
     String branchName = "contentAndOperationAll";
-    Reference r = tree.createReference(Branch.of(branchName, null));
+    Reference r = tree.createReference("main", Branch.of(branchName, null));
     tree.commitMultipleOperations(
         branchName,
         r.getHash(),
@@ -773,7 +777,7 @@ public abstract class AbstractTestRest {
   void verifyContentAndOperationTypesIndividually(ContentAndOperationType contentAndOperationType)
       throws NessieNotFoundException, NessieConflictException {
     String branchName = "contentAndOperation_" + contentAndOperationType;
-    Reference r = tree.createReference(Branch.of(branchName, null));
+    Reference r = tree.createReference("main", Branch.of(branchName, null));
     tree.commitMultipleOperations(
         branchName,
         r.getHash(),
@@ -800,7 +804,7 @@ public abstract class AbstractTestRest {
   @Test
   void filterEntriesByType() throws NessieNotFoundException, NessieConflictException {
     final String branch = "filterTypes";
-    Reference r = tree.createReference(Branch.of(branch, null));
+    Reference r = tree.createReference("main", Branch.of(branch, null));
     ContentsKey a = ContentsKey.of("a");
     ContentsKey b = ContentsKey.of("b");
     IcebergTable ta = IcebergTable.of("path1");
@@ -855,7 +859,7 @@ public abstract class AbstractTestRest {
   @Test
   public void filterEntriesByNamespace() throws NessieConflictException, NessieNotFoundException {
     final String branch = "filterEntriesByNamespace";
-    Reference r = tree.createReference(Branch.of(branch, null));
+    Reference r = tree.createReference("main", Branch.of(branch, null));
     ContentsKey first = ContentsKey.of("a", "b", "c", "firstTable");
     ContentsKey second = ContentsKey.of("a", "b", "c", "secondTable");
     ContentsKey third = ContentsKey.of("a", "thirdTable");
@@ -956,7 +960,7 @@ public abstract class AbstractTestRest {
   @Test
   void checkSpecialCharacterRoundTrip() throws NessieNotFoundException, NessieConflictException {
     final String branch = "specialchar";
-    Reference r = tree.createReference(Branch.of(branch, null));
+    Reference r = tree.createReference("main", Branch.of(branch, null));
     // ContentsKey k = ContentsKey.of("/%国","国.国");
     ContentsKey k = ContentsKey.of("a.b", "c.txt");
     IcebergTable ta = IcebergTable.of("path1");
@@ -980,8 +984,8 @@ public abstract class AbstractTestRest {
   @Test
   void checkServerErrorPropagation() throws NessieNotFoundException, NessieConflictException {
     final String branch = "bar";
-    tree.createReference(Branch.of(branch, null));
-    assertThatThrownBy(() -> tree.createReference(Branch.of(branch, null)))
+    tree.createReference("main", Branch.of(branch, null));
+    assertThatThrownBy(() -> tree.createReference(null, Branch.of(branch, null)))
         .isInstanceOf(NessieConflictException.class)
         .hasMessageContaining("already exists");
   }
@@ -998,7 +1002,6 @@ public abstract class AbstractTestRest {
   void invalidBranchNames(String invalidBranchName, String validHash) {
     Operations ops = ImmutableOperations.builder().commitMeta(CommitMeta.fromMessage("")).build();
     ContentsKey key = ContentsKey.of("x");
-    Contents cts = IcebergTable.of("moo");
     MultiGetContentsRequest mgReq = MultiGetContentsRequest.of(key);
     Tag tag = Tag.of("valid", validHash);
 
@@ -1094,7 +1097,6 @@ public abstract class AbstractTestRest {
     String validBranchName = "hello";
     Operations ops = ImmutableOperations.builder().commitMeta(CommitMeta.fromMessage("")).build();
     ContentsKey key = ContentsKey.of("x");
-    Contents cts = IcebergTable.of("moo");
     Tag tag = Tag.of("valid", validHash);
 
     String opsCountMsg =
@@ -1198,7 +1200,6 @@ public abstract class AbstractTestRest {
     String invalidTagName = invalidTagNameIn != null ? invalidTagNameIn : "";
 
     String validBranchName = "hello";
-    ContentsKey key = ContentsKey.of("x");
     // Need the string-ified JSON representation of `Tag` here, because `Tag` itself performs
     // validation.
     String tag =
@@ -1232,7 +1233,7 @@ public abstract class AbstractTestRest {
                                     .queryParam("expectedHash", validHash)
                                     .put(null)))
                 .isInstanceOf(NessieBadRequestException.class)
-                .hasMessage("Bad Request (HTTP/400): assignTag.tag: must not be null"),
+                .hasMessage("Bad Request (HTTP/400): assignTag.assignTo: must not be null"),
         () ->
             assertThatThrownBy(
                     () ->
@@ -1264,10 +1265,8 @@ public abstract class AbstractTestRest {
                                     .queryParam("expectedHash", validHash)
                                     .put(branch)))
                 .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageStartingWith(
-                    "Bad Request (HTTP/400): Could not resolve type id 'BRANCH' as a subtype of "
-                        + "`org.projectnessie.model.Tag`: Class `org.projectnessie.model.Branch` "
-                        + "not subtype of `org.projectnessie.model.Tag`\n"),
+                .hasMessageStartingWith("Bad Request (HTTP/400): Cannot construct instance of ")
+                .hasMessageContaining(REF_NAME_MESSAGE),
         () ->
             assertThatThrownBy(
                     () ->
@@ -1282,7 +1281,7 @@ public abstract class AbstractTestRest {
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageStartingWith(
                     "Bad Request (HTTP/400): Could not resolve type id 'FOOBAR' as a subtype of "
-                        + "`org.projectnessie.model.Tag`: known type ids = []\n"));
+                        + "`org.projectnessie.model.Reference`: known type ids = []\n"));
   }
 
   @Test
@@ -1317,7 +1316,7 @@ public abstract class AbstractTestRest {
       throws NessieNotFoundException, NessieConflictException {
     Reference main = tree.getReferenceByName("main");
     Branch b = Branch.of("testValidHashesOnValidNamedRefs", main.getHash());
-    Reference branch = tree.createReference(b);
+    Reference branch = tree.createReference(main.getName(), b);
     assertThat(branch).isEqualTo(b);
 
     int commits = 10;
@@ -1365,7 +1364,7 @@ public abstract class AbstractTestRest {
       throws NessieNotFoundException, NessieConflictException {
     Reference main = tree.getReferenceByName("main");
     Branch b = Branch.of("testUnknownHashesOnValidNamedRefs", main.getHash());
-    Reference branch = tree.createReference(b);
+    Reference branch = tree.createReference(main.getName(), b);
     assertThat(branch).isEqualTo(b);
     String invalidHash = "1234567890123456";
 

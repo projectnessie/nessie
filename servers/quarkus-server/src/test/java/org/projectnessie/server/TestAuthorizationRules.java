@@ -188,14 +188,14 @@ class TestAuthorizationRules extends BaseClientAuthTest {
   private void createBranch(Branch branch, String role, boolean shouldFail)
       throws NessieConflictException, NessieNotFoundException {
     if (shouldFail) {
-      assertThatThrownBy(() -> tree.createReference(null, branch))
+      assertThatThrownBy(() -> tree.createReference("main", branch))
           .isInstanceOf(NessieForbiddenException.class)
           .hasMessageContaining(
               String.format(
                   "'CREATE_REFERENCE' is not allowed for role '%s' on reference '%s'",
                   role, branch.getName()));
     } else {
-      tree.createReference(null, branch);
+      tree.createReference("main", branch);
     }
   }
 
