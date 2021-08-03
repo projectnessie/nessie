@@ -178,7 +178,12 @@ public class RestGitTest {
     Assertions.assertEquals(table, returned);
 
     Branch b3 = rest().get("trees/tree/test").as(Branch.class);
-    rest().body(Tag.of("tagtest", b3.getHash())).post("trees/tree").then().statusCode(200);
+    rest()
+        .body(Tag.of("tagtest", b3.getHash()))
+        .queryParam("sourceRefName", b3.getName())
+        .post("trees/tree")
+        .then()
+        .statusCode(200);
 
     assertThat(
             rest()
