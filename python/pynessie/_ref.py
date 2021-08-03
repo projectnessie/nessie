@@ -15,6 +15,7 @@ def handle_branch_tag(
     list_references: bool,
     delete_reference: bool,
     branch: str,
+    hash_on_ref: str,
     new_branch: str,
     is_branch: bool,
     json: bool,
@@ -26,19 +27,20 @@ def handle_branch_tag(
     if list_references or (not list_references and not delete_reference and not branch and not new_branch):
         return _handle_list(nessie, json, verbose, is_branch, branch)
     elif delete_reference:
-        branch_object = nessie.get_reference(branch)
-        getattr(nessie, "delete_{}".format("branch" if is_branch else "tag"))(branch, branch_object.hash_)
+        if not hash_on_ref:
+            hash_on_ref = nessie.get_reference(branch).hash_ or "fail"
+        getattr(nessie, "delete_{}".format("branch" if is_branch else "tag"))(branch, hash_on_ref)
     elif branch and not new_branch:
         getattr(nessie, "create_{}".format("branch" if is_branch else "tag"))(branch)
     elif branch and new_branch and not force:
-
         try:
-            getattr(nessie, "assign_{}".format("branch" if is_branch else "tag"))(branch, new_branch, old_hash)
+            getattr(nessie, "assign_{}".format("branch" if is_branch else "tag"))(branch, new_branch, hash_on_ref, old_hash)
         except NessieNotFoundException:
-            create_on = nessie.get_reference(new_branch).hash_
-            getattr(nessie, "create_{}".format("branch" if is_branch else "tag"))(branch, create_on)
+            if not hash_on_ref:
+                hash_on_ref = nessie.get_reference(new_branch).hash_ or "fail"
+            getattr(nessie, "create_{}".format("branch" if is_branch else "tag"))(branch, new_branch, hash_on_ref)
     else:
-        getattr(nessie, "assign_{}".format("branch" if is_branch else "tag"))(branch, new_branch, old_hash)
+        getattr(nessie, "assign_{}".format("branch" if is_branch else "tag"))(branch, new_branch, hash_on_ref, old_hash)
     return ""
 
 

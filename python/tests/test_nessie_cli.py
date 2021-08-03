@@ -350,7 +350,7 @@ def test_transplant() -> None:
     result = _run(runner, ["--json", "log", "--ref", "dev"])
     logs = simplejson.loads(result.output)
     first_hash = [i["hash"] for i in logs]
-    _run(runner, ["cherry-pick", "-c", main_hash, first_hash[1], first_hash[0]])
+    _run(runner, ["cherry-pick", "-c", main_hash, "-s", "dev", first_hash[1], first_hash[0]])
 
     result = _run(runner, ["--json", "log"])
     logs = simplejson.loads(result.output)
