@@ -20,7 +20,7 @@ import static org.projectnessie.model.Validation.validateHash;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import javax.validation.constraints.NotBlank;
+import javax.annotation.Nullable;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.media.SchemaProperty;
@@ -30,15 +30,22 @@ import org.immutables.value.Value;
     type = SchemaType.OBJECT,
     title = "Merge Operation",
     // Smallrye does neither support JsonFormat nor javax.validation.constraints.Pattern :(
-    properties = {@SchemaProperty(name = "fromHash", pattern = Validation.HASH_REGEX)})
+    properties = {
+      @SchemaProperty(name = "sourceRef", pattern = Validation.REF_NAME_REGEX),
+      @SchemaProperty(name = "fromHash", pattern = Validation.HASH_REGEX)
+    })
 @Value.Immutable(prehash = true)
 @JsonSerialize(as = ImmutableMerge.class)
 @JsonDeserialize(as = ImmutableMerge.class)
 public interface Merge {
 
-  @NotBlank
+  @Nullable
   @JsonFormat(pattern = Validation.HASH_REGEX)
   String getFromHash();
+
+  @Nullable
+  @JsonFormat(pattern = Validation.REF_NAME_REGEX)
+  String getSourceRef();
 
   /**
    * Validation rule using {@link org.projectnessie.model.Validation#validateHash(String)}

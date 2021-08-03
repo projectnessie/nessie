@@ -17,9 +17,11 @@ package org.projectnessie.model;
 
 import static org.projectnessie.model.Validation.validateHash;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.List;
+import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -30,7 +32,11 @@ import org.immutables.value.Value;
 @Schema(
     type = SchemaType.OBJECT,
     title = "Transplant",
-    properties = {@SchemaProperty(name = "hashesToTransplant", uniqueItems = true)})
+    // Smallrye does neither support JsonFormat nor javax.validation.constraints.Pattern :(
+    properties = {
+      @SchemaProperty(name = "sourceRef", pattern = Validation.REF_NAME_REGEX),
+      @SchemaProperty(name = "hashesToTransplant", uniqueItems = true)
+    })
 @Value.Immutable(prehash = true)
 @JsonSerialize(as = ImmutableTransplant.class)
 @JsonDeserialize(as = ImmutableTransplant.class)
@@ -39,6 +45,10 @@ public interface Transplant {
   @NotNull
   @Size(min = 1)
   List<String> getHashesToTransplant();
+
+  @Nullable
+  @JsonFormat(pattern = Validation.REF_NAME_REGEX)
+  String getSourceRef();
 
   /**
    * Validation rule using {@link org.projectnessie.model.Validation#validateHash(String)}

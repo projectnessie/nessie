@@ -50,7 +50,14 @@ public interface ContentsApi {
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   @Path("{key}")
-  @Operation(summary = "Get object content associated with key")
+  @Operation(
+      summary = "Get object content associated with a key.",
+      description =
+          "This operation returns a consistent view for a contents-key in a branch or tag.\n"
+              + "\n"
+              + "Nessie may return a 'Contents' object, that is updated compared to the value "
+              + "that has been passed when the 'Contents' object has been committed, to reflect "
+              + "a more recent, but semantically equal state.")
   @APIResponses({
     @APIResponse(
         responseCode = "200",
@@ -90,7 +97,15 @@ public interface ContentsApi {
 
   @POST
   @Consumes(MediaType.APPLICATION_JSON)
-  @Operation(summary = "Get multiple objects' content")
+  @Operation(
+      summary = "Get multiple objects' content.",
+      description =
+          "Similar to 'getContents', but takes multiple 'ContentKey's and returns a consistent "
+              + "view for these contents-keys in a branch or tag.\n"
+              + "\n"
+              + "Nessie may return 'Contents' objects, that are updated compared to the values "
+              + "that have been passed when the 'Contents' objects have been committed, to reflect "
+              + "a more recent, but semantically equal state.")
   @APIResponses({
     @APIResponse(
         responseCode = "200",

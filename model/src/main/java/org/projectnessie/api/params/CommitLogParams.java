@@ -35,7 +35,8 @@ public class CommitLogParams {
   @Nullable
   @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
   @Parameter(
-      description = "a particular hash on the given ref to start from",
+      description =
+          "Hash on the given ref to start from (in chronological sense), the 'far' end of the commit log, returned 'late' in the result.",
       examples = {@ExampleObject(ref = "hash")})
   @QueryParam("startHash")
   private String startHash;
@@ -43,7 +44,8 @@ public class CommitLogParams {
   @Nullable
   @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
   @Parameter(
-      description = "a particular hash on the given ref to end at",
+      description =
+          "Hash on the given ref to end at (in chronological sense), the 'near' end of the commit log, returned 'early' in the result.",
       examples = {@ExampleObject(ref = "hash")})
   @QueryParam("endHash")
   private String endHash;
