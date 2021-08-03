@@ -61,7 +61,7 @@ class TestBasicOperations {
     tree = client.getTreeApi();
     contents = client.getContentsApi();
     if (branch != null) {
-      tree.createReference(Branch.of(branch, null));
+      tree.createReference(null, Branch.of(branch, null));
     }
   }
 
@@ -95,7 +95,8 @@ class TestBasicOperations {
 
     Branch master = (Branch) tree.getReferenceByName("testx");
     Branch test = ImmutableBranch.builder().hash(master.getHash()).name("testy").build();
-    tryEndpointPass(() -> tree.createReference(Branch.of(test.getName(), test.getHash())));
+    tryEndpointPass(
+        () -> tree.createReference(master.getName(), Branch.of(test.getName(), test.getHash())));
     Branch test2 = (Branch) tree.getReferenceByName("testy");
     tryEndpointPass(() -> tree.deleteBranch(test2.getName(), test2.getHash()));
     tryEndpointPass(
