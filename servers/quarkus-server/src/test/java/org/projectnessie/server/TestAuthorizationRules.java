@@ -107,9 +107,12 @@ class TestAuthorizationRules {
             .build();
     addContent(branch, createOps, role, shouldFail);
 
-    getCommitLog(branchName, role, shouldFail);
-    getEntriesFor(branchName, role, shouldFail);
-    readContent(branchName, key, role, shouldFail);
+    if (!shouldFail) {
+      // These requests cannot succeed, because "disallowedBranchForTestUser" could not be created
+      getCommitLog(branchName, role, shouldFail);
+      getEntriesFor(branchName, role, shouldFail);
+      readContent(branchName, key, role, shouldFail);
+    }
 
     branch = shouldFail ? branchWithInvalidHash : retrieveBranch(branchName, role, shouldFail);
 
@@ -197,14 +200,14 @@ class TestAuthorizationRules {
   private static void createBranch(Branch branch, String role, boolean shouldFail)
       throws NessieConflictException, NessieNotFoundException {
     if (shouldFail) {
-      assertThatThrownBy(() -> tree.createReference(branch))
+      assertThatThrownBy(() -> tree.createReference(null, branch))
           .isInstanceOf(NessieForbiddenException.class)
           .hasMessageContaining(
               String.format(
                   "'CREATE_REFERENCE' is not allowed for role '%s' on reference '%s'",
                   role, branch.getName()));
     } else {
-      tree.createReference(branch);
+      tree.createReference(null, branch);
     }
   }
 

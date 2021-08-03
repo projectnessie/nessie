@@ -88,7 +88,8 @@ public class ConfigurableVersionStoreFactory {
       if (!str.findFirst().isPresent()) {
         // if this is a new database, create a branch with the default branch name.
         try {
-          store.create(BranchName.of(serverConfig.getDefaultBranch()), Optional.empty());
+          store.create(
+              BranchName.of(serverConfig.getDefaultBranch()), Optional.empty(), Optional.empty());
         } catch (ReferenceNotFoundException | ReferenceAlreadyExistsException e) {
           LOGGER.warn("Failed to create default branch of {}.", serverConfig.getDefaultBranch(), e);
         }
