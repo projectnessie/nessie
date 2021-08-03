@@ -94,7 +94,7 @@ public class TreeResourceWithAuthorizationChecks extends TreeResource {
   }
 
   @Override
-  public Reference createReference(Reference reference)
+  public Reference createReference(String sourceRef, Reference reference)
       throws NessieNotFoundException, NessieConflictException {
     if (reference instanceof Branch) {
       getAccessChecker()
@@ -102,14 +102,14 @@ public class TreeResourceWithAuthorizationChecks extends TreeResource {
     } else if (reference instanceof Tag) {
       getAccessChecker().canCreateReference(createAccessContext(), TagName.of(reference.getName()));
     }
-    return super.createReference(reference);
+    return super.createReference(sourceRef, reference);
   }
 
   @Override
-  protected void assignReference(NamedRef ref, String oldHash, String newHash)
+  protected void assignReference(NamedRef ref, String oldHash, String sourceRef, String newHash)
       throws NessieNotFoundException, NessieConflictException {
     getAccessChecker().canAssignRefToHash(createAccessContext(), ref);
-    super.assignReference(ref, oldHash, newHash);
+    super.assignReference(ref, oldHash, sourceRef, newHash);
   }
 
   @Override
@@ -123,9 +123,7 @@ public class TreeResourceWithAuthorizationChecks extends TreeResource {
   public EntriesResponse getEntries(String namedRef, EntriesParams params)
       throws NessieNotFoundException {
     getAccessChecker()
-        .canReadEntries(
-            createAccessContext(),
-            namedRefWithHashOrThrow(namedRef, params.hashOnRef()).getValue());
+        .canReadEntries(createAccessContext(), namedRefWithHashOrThrow(namedRef).getValue());
     return super.getEntries(namedRef, params);
   }
 
@@ -135,9 +133,7 @@ public class TreeResourceWithAuthorizationChecks extends TreeResource {
     if (null == params.pageToken()) {
       // we should only allow named references when no paging is defined
       getAccessChecker()
-          .canListCommitLog(
-              createAccessContext(),
-              namedRefWithHashOrThrow(namedRef, params.endHash()).getValue());
+          .canListCommitLog(createAccessContext(), namedRefWithHashOrThrow(namedRef).getValue());
     }
     return super.getCommitLog(namedRef, params);
   }

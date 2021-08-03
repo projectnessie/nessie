@@ -48,7 +48,7 @@ public class ContentsResourceWithAuthorizationChecks extends ContentsResource {
   @Override
   public Contents getContents(ContentsKey key, String namedRef, String hashOnRef)
       throws NessieNotFoundException {
-    NamedRef ref = namedRefWithHashOrThrow(namedRef, hashOnRef).getValue();
+    NamedRef ref = namedRefWithHashOrThrow(namedRef).getValue();
     getAccessChecker().canReadEntityValue(createAccessContext(), ref, key, null);
     return super.getContents(key, namedRef, hashOnRef);
   }
@@ -57,7 +57,7 @@ public class ContentsResourceWithAuthorizationChecks extends ContentsResource {
   public MultiGetContentsResponse getMultipleContents(
       String namedRef, String hashOnRef, MultiGetContentsRequest request)
       throws NessieNotFoundException {
-    WithHash<NamedRef> ref = namedRefWithHashOrThrow(namedRef, hashOnRef);
+    WithHash<NamedRef> ref = namedRefWithHashOrThrow(namedRef);
     request
         .getRequestedKeys()
         .forEach(
