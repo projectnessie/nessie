@@ -49,9 +49,7 @@ import javax.inject.Inject;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.LogCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.errors.AmbiguousObjectException;
 import org.eclipse.jgit.errors.ConfigInvalidException;
-import org.eclipse.jgit.errors.IncorrectObjectTypeException;
 import org.eclipse.jgit.errors.InvalidObjectIdException;
 import org.eclipse.jgit.lib.CommitBuilder;
 import org.eclipse.jgit.lib.Constants;
@@ -73,6 +71,7 @@ import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.LegacyVersionStore;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.Operation;
 import org.projectnessie.versioned.Ref;
@@ -83,7 +82,6 @@ import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.Unchanged;
-import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
 import org.projectnessie.versioned.WithType;
 import org.slf4j.Logger;
@@ -91,7 +89,7 @@ import org.slf4j.LoggerFactory;
 
 /** VersionStore interface for JGit backend. */
 public class JGitVersionStore<TABLE, METADATA, TABLE_TYPE extends Enum<TABLE_TYPE>>
-    implements VersionStore<TABLE, METADATA, TABLE_TYPE> {
+    extends LegacyVersionStore<TABLE, METADATA, TABLE_TYPE> {
 
   private static final Logger logger = LoggerFactory.getLogger(JGitVersionStore.class);
   private static final String SLASH = "/";
@@ -145,7 +143,8 @@ public class JGitVersionStore<TABLE, METADATA, TABLE_TYPE extends Enum<TABLE_TYP
   }
 
   @Override
-  public WithHash<Ref> toRef(@Nonnull String refOfUnknownType) throws ReferenceNotFoundException {
+  public WithHash<NamedRef> toRef(@Nonnull String refOfUnknownType)
+      throws ReferenceNotFoundException {
     try {
       org.eclipse.jgit.lib.Ref jgitRef;
 
@@ -162,19 +161,8 @@ public class JGitVersionStore<TABLE, METADATA, TABLE_TYPE extends Enum<TABLE_TYP
         return WithHash.of(Hash.of(jgitRef.getObjectId().name()), TagName.of(refOfUnknownType));
       }
 
-      // hash last.
-      try {
-        ObjectId hash = repository.resolve(refOfUnknownType + "^{tree}");
-        if (hash == null) {
-          throw ReferenceNotFoundException.forReference(refOfUnknownType);
-        }
-        return WithHash.of(Hash.of(refOfUnknownType), Hash.of(refOfUnknownType));
-      } catch (IllegalArgumentException
-          | AmbiguousObjectException
-          | IncorrectObjectTypeException e) {
-        throw new ReferenceNotFoundException(
-            String.format("Unable to find the requested reference %s.", refOfUnknownType));
-      }
+      throw new ReferenceNotFoundException(
+          String.format("Unable to find the requested reference %s.", refOfUnknownType));
     } catch (IOException e) {
       throw new RuntimeException("Error talking to git repo", e);
     }

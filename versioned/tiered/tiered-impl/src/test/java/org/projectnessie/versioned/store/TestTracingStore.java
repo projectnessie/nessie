@@ -103,7 +103,7 @@ class TestTracingStore {
                 .tag(TracingStore.TAG_ID, "0000000000000000000000000000000000000000")
                 .tag(TracingStore.TAG_VALUE_TYPE, "l3")
                 .tag(TracingStore.TAG_UPDATE, "UpdateExpression{clauses=[]}")
-                .tag(TracingStore.TAG_CONDITION, "Optional.empty")
+                .tag(TracingStore.TAG_CONDITION, "<null>")
                 .function(
                     s ->
                         s.update(

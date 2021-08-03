@@ -47,6 +47,7 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableBranchName;
 import org.projectnessie.versioned.ImmutableTagName;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.LegacyVersionStore;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.Operation;
 import org.projectnessie.versioned.Put;
@@ -59,7 +60,6 @@ import org.projectnessie.versioned.SerializerWithPayload;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.Unchanged;
-import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
 import org.projectnessie.versioned.WithType;
 import org.projectnessie.versioned.impl.DiffFinder.KeyDiff;
@@ -85,7 +85,7 @@ import org.slf4j.LoggerFactory;
 
 /** A version store that uses a tree of levels to store version information. */
 public class TieredVersionStore<DATA, METADATA, DATA_TYPE extends Enum<DATA_TYPE>>
-    implements VersionStore<DATA, METADATA, DATA_TYPE> {
+    extends LegacyVersionStore<DATA, METADATA, DATA_TYPE> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TieredVersionStore.class);
 
@@ -176,7 +176,8 @@ public class TieredVersionStore<DATA, METADATA, DATA_TYPE extends Enum<DATA_TYPE
   }
 
   @Override
-  public WithHash<Ref> toRef(@Nonnull String refOfUnknownType) throws ReferenceNotFoundException {
+  public WithHash<NamedRef> toRef(@Nonnull String refOfUnknownType)
+      throws ReferenceNotFoundException {
     try {
       InternalRef ref = EntityType.REF.loadSingle(store, Id.build(refOfUnknownType));
       if (ref.getType() == Type.TAG) {
@@ -187,14 +188,6 @@ public class TieredVersionStore<DATA, METADATA, DATA_TYPE extends Enum<DATA_TYPE
       return WithHash.of(id.toHash(), BranchName.of(ref.getBranch().getName()));
     } catch (NotFoundException ex) {
       // ignore. could be a hash.
-    }
-
-    try {
-      Hash hash = Hash.of(refOfUnknownType);
-      InternalL1 l1 = EntityType.L1.loadSingle(store, Id.of(hash));
-      return WithHash.of(l1.getId().toHash(), l1.getId().toHash());
-    } catch (RuntimeException ex) {
-      // ignore.
     }
 
     throw new ReferenceNotFoundException(

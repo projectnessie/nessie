@@ -28,6 +28,7 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.assertj.core.api.Assertions;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.internal.storage.dfs.DfsRepositoryDescription;
@@ -177,7 +178,9 @@ class TestJGitVersionStore {
 
     testRefMatchesToRef(impl, branch, expected, branch.getName());
     testRefMatchesToRef(impl, tag, expected, tag.getName());
-    testRefMatchesToRef(impl, expected, expected, expected.asString());
+    Assertions.assertThatThrownBy(
+            () -> testRefMatchesToRef(impl, expected, expected, expected.asString()))
+        .isInstanceOf(ReferenceNotFoundException.class);
   }
 
   private void testRefMatchesToRef(
@@ -186,7 +189,7 @@ class TestJGitVersionStore {
       Hash hash,
       String name)
       throws ReferenceNotFoundException {
-    WithHash<Ref> val = impl.toRef(name);
+    WithHash<NamedRef> val = impl.toRef(name);
     assertEquals(ref, val.getValue());
     assertEquals(hash, val.getHash());
   }
@@ -468,10 +471,10 @@ class TestJGitVersionStore {
     final String v2 = "my.value2";
 
     // create a branch
-    impl.create(branch, Optional.empty());
+    impl.create(branch, Optional.empty(), Optional.empty());
 
     try {
-      impl.create(branch, Optional.empty());
+      impl.create(branch, Optional.empty(), Optional.empty());
       assertFalse(
           true,
           "Creating the a branch with the same name as an existing one should fail but didn't.");
@@ -486,9 +489,9 @@ class TestJGitVersionStore {
         ImmutableList.of(
             ImmutablePut.<String>builder().key(p1).shouldMatchHash(false).value(v1).build()));
 
-    assertEquals(v1, impl.getValue(branch, p1));
+    assertEquals(v1, impl.getValue(branch, Optional.empty(), p1));
 
-    impl.create(tag, Optional.of(impl.toHash(branch)));
+    impl.create(tag, Optional.empty(), Optional.of(impl.toHash(branch)));
 
     impl.commit(
         branch,
@@ -497,26 +500,33 @@ class TestJGitVersionStore {
         ImmutableList.of(
             ImmutablePut.<String>builder().key(p1).shouldMatchHash(false).value(v2).build()));
 
-    assertEquals(v2, impl.getValue(branch, p1));
-    assertEquals(v1, impl.getValue(tag, p1));
+    assertEquals(v2, impl.getValue(branch, Optional.empty(), p1));
+    assertEquals(v1, impl.getValue(tag, Optional.empty(), p1));
 
-    List<WithHash<String>> commits = impl.getCommits(branch).collect(Collectors.toList());
+    List<WithHash<String>> commits =
+        impl.getCommits(branch, Optional.empty(), Optional.empty()).collect(Collectors.toList());
 
-    assertEquals(v1, impl.getValue(commits.get(1).getHash(), p1));
+    assertEquals(v1, impl.getValue(branch, Optional.of(commits.get(1).getHash()), p1));
     assertEquals(commit1, commits.get(1).getValue());
-    assertEquals(v2, impl.getValue(commits.get(0).getHash(), p1));
+    assertEquals(v2, impl.getValue(branch, Optional.of(commits.get(0).getHash()), p1));
     assertEquals(commit2, commits.get(0).getValue());
 
-    impl.assign(tag, Optional.of(commits.get(1).getHash()), commits.get(0).getHash());
+    impl.assign(
+        tag, Optional.of(commits.get(1).getHash()), branch, Optional.of(commits.get(0).getHash()));
 
-    assertEquals(commits, impl.getCommits(tag).collect(Collectors.toList()));
-    assertEquals(commits, impl.getCommits(commits.get(0).getHash()).collect(Collectors.toList()));
+    assertEquals(
+        commits,
+        impl.getCommits(tag, Optional.empty(), Optional.empty()).collect(Collectors.toList()));
+    assertEquals(
+        commits,
+        impl.getCommits(branch, Optional.of(commits.get(0).getHash()), Optional.empty())
+            .collect(Collectors.toList()));
 
     try (Stream<WithHash<NamedRef>> str = impl.getNamedRefs()) {
       assertEquals(2, str.count());
     }
 
-    impl.create(branch2, Optional.of(commits.get(1).getHash()));
+    impl.create(branch2, Optional.of(branch), Optional.of(commits.get(1).getHash()));
 
     impl.delete(branch, Optional.of(commits.get(0).getHash()));
 
@@ -524,7 +534,7 @@ class TestJGitVersionStore {
       assertEquals(2, str.count());
     }
 
-    assertEquals(v1, impl.getValue(branch2, p1));
+    assertEquals(v1, impl.getValue(branch2, Optional.empty(), p1));
   }
 
   private static final StoreWorker<String, String, StringSerializer.TestEnum> WORKER =

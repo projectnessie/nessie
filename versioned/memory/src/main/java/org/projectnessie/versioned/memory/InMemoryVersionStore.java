@@ -45,6 +45,7 @@ import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.LegacyVersionStore;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.Operation;
 import org.projectnessie.versioned.Put;
@@ -56,7 +57,6 @@ import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.SerializerWithPayload;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.Unchanged;
-import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStoreException;
 import org.projectnessie.versioned.WithHash;
 import org.projectnessie.versioned.WithType;
@@ -71,7 +71,7 @@ import org.slf4j.LoggerFactory;
  * @param <EnumT> the value enum type
  */
 public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>>
-    implements VersionStore<ValueT, MetadataT, EnumT> {
+    extends LegacyVersionStore<ValueT, MetadataT, EnumT> {
   private static final Logger LOGGER = LoggerFactory.getLogger(InMemoryVersionStore.class);
 
   private final ConcurrentMap<Hash, Commit<ValueT, MetadataT>> commits = new ConcurrentHashMap<>();
@@ -172,13 +172,14 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>>
   }
 
   @Override
-  public WithHash<Ref> toRef(@Nonnull String refOfUnknownType) throws ReferenceNotFoundException {
-    Optional<WithHash<Ref>> result =
-        Stream.<Function<String, Ref>>of(TagName::of, BranchName::of, Hash::of)
+  public WithHash<NamedRef> toRef(@Nonnull String refOfUnknownType)
+      throws ReferenceNotFoundException {
+    Optional<WithHash<NamedRef>> result =
+        Stream.<Function<String, NamedRef>>of(TagName::of, BranchName::of)
             .map(
                 f -> {
                   try {
-                    final Ref ref = f.apply(refOfUnknownType);
+                    final NamedRef ref = f.apply(refOfUnknownType);
                     return WithHash.of(toHash(ref), ref);
                   } catch (IllegalArgumentException | ReferenceNotFoundException e) {
                     // ignored malformed or nonexistent reference
