@@ -18,10 +18,12 @@ package org.projectnessie.versioned.gc.actions;
 import static org.apache.iceberg.types.Types.NestedField.required;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import java.io.File;
+import java.net.URI;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -62,6 +64,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.projectnessie.api.ContentsApi;
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.client.NessieClient;
+import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -99,6 +102,7 @@ class ITTestIdentifyUnreferencedAssetsActions {
 
   protected NessieCatalog catalog;
   protected NessieClient client;
+  protected HttpClient httpClient;
   protected TreeApi tree;
   protected ContentsApi contents;
   private NessieCatalog catalogDeleteBranch;
@@ -147,12 +151,17 @@ class ITTestIdentifyUnreferencedAssetsActions {
   void beforeEach() throws NessieConflictException, NessieNotFoundException {
     new DynamoSupplier().get();
     this.client = NessieClient.builder().withUri(NESSIE_ENDPOINT).build();
+    this.httpClient =
+        HttpClient.builder()
+            .setBaseUri(URI.create(NESSIE_ENDPOINT))
+            .setObjectMapper(new ObjectMapper())
+            .build();
     tree = client.getTreeApi();
     contents = client.getContentsApi();
 
-    resetData(tree);
-    tree.createReference(Branch.of(BRANCH, null));
-    tree.createReference(Branch.of(DELETE_BRANCH, null));
+    resetData(tree, httpClient);
+    createReference(httpClient, Branch.of(BRANCH, null));
+    createReference(httpClient, Branch.of(DELETE_BRANCH, null));
 
     Map<String, String> props = new HashMap<>();
     props.put("ref", BRANCH);
@@ -179,7 +188,8 @@ class ITTestIdentifyUnreferencedAssetsActions {
             CatalogUtil.loadCatalog(NessieCatalog.class.getName(), "nessie", props, hadoopConfig);
   }
 
-  static void resetData(TreeApi tree) throws NessieConflictException, NessieNotFoundException {
+  static void resetData(TreeApi tree, HttpClient httpClient)
+      throws NessieConflictException, NessieNotFoundException {
     for (Reference r : tree.getAllReferences()) {
       if (r instanceof Branch) {
         tree.deleteBranch(r.getName(), r.getHash());
@@ -187,12 +197,20 @@ class ITTestIdentifyUnreferencedAssetsActions {
         tree.deleteTag(r.getName(), r.getHash());
       }
     }
-    tree.createReference(Branch.of("main", null));
+    createReference(httpClient, Branch.of("main", null));
+  }
+
+  /**
+   * {@code TreeApi.createReference()} has an incompatible signature in Nessie versions w/o PR #1693
+   * (add named-ref parameters to API methods).
+   */
+  static void createReference(HttpClient httpClient, Reference reference) {
+    httpClient.newRequest().path("trees/tree").post(reference).readEntity(Reference.class);
   }
 
   @AfterEach
   void after() throws NessieNotFoundException, NessieConflictException {
-    resetData(tree);
+    resetData(tree, httpClient);
     DynamoSupplier.deleteAllTables();
   }
 

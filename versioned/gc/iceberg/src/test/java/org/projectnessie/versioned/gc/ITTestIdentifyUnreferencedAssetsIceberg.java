@@ -21,11 +21,13 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.protobuf.ByteString;
 import java.io.File;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Clock;
@@ -67,6 +69,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.projectnessie.api.ContentsApi;
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.client.NessieClient;
+import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -110,6 +113,7 @@ class ITTestIdentifyUnreferencedAssetsIceberg {
 
   protected NessieCatalog catalog;
   protected NessieClient client;
+  private HttpClient httpClient;
   protected TreeApi tree;
   protected ContentsApi contents;
   private NessieCatalog catalogDeleteBranch;
@@ -147,12 +151,17 @@ class ITTestIdentifyUnreferencedAssetsIceberg {
   void beforeEach() throws NessieConflictException, NessieNotFoundException {
     new DynamoSupplier().get();
     this.client = NessieClient.builder().withUri(NESSIE_ENDPOINT).build();
+    this.httpClient =
+        HttpClient.builder()
+            .setBaseUri(URI.create(NESSIE_ENDPOINT))
+            .setObjectMapper(new ObjectMapper())
+            .build();
     tree = client.getTreeApi();
     contents = client.getContentsApi();
 
-    TestUtils.resetData(tree);
-    tree.createReference(Branch.of(BRANCH, null));
-    tree.createReference(Branch.of(DELETE_BRANCH, null));
+    TestUtils.resetData(tree, httpClient);
+    TestUtils.createReference(httpClient, Branch.of(BRANCH, null));
+    TestUtils.createReference(httpClient, Branch.of(DELETE_BRANCH, null));
 
     Map<String, String> props = new HashMap<>();
     props.put("ref", BRANCH);
@@ -175,7 +184,7 @@ class ITTestIdentifyUnreferencedAssetsIceberg {
 
   @AfterEach
   void after() throws NessieNotFoundException, NessieConflictException {
-    TestUtils.resetData(tree);
+    TestUtils.resetData(tree, httpClient);
     DynamoSupplier.deleteAllTables();
     helper = null;
   }
