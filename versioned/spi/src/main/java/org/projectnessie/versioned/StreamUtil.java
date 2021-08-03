@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.services.rest;
+package org.projectnessie.versioned;
 
 import java.util.Spliterator;
 import java.util.Spliterators;

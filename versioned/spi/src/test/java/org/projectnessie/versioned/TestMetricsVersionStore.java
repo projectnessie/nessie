@@ -72,6 +72,7 @@ class TestMetricsVersionStore {
   // Implemented as a parameterized-tests with each set of arguments representing one version-store
   // invocation.
 
+  @SuppressWarnings("unused")
   private static Stream<Arguments> versionStoreInvocations() {
     // Exception-throws to be tested, one list per distinct throws clause
     List<Exception> runtimeThrows =
@@ -122,20 +123,38 @@ class TestMetricsVersionStore {
                 "transplant",
                 vs ->
                     vs.transplant(
-                        BranchName.of("mock-branch"), Optional.empty(), Collections.emptyList()),
+                        BranchName.of("mock-branch"),
+                        Optional.empty(),
+                        BranchName.of("mock-branch"),
+                        Collections.emptyList()),
+                () -> Hash.of("cafebabedeadbeef"),
                 refNotFoundAndRefConflictThrows),
             new VersionStoreInvocation<>(
                 "merge",
-                vs -> vs.merge(Hash.of("42424242"), BranchName.of("mock-branch"), Optional.empty()),
+                vs ->
+                    vs.merge(
+                        BranchName.of("mock-branch"),
+                        Optional.of(Hash.of("42424242")),
+                        BranchName.of("mock-branch"),
+                        Optional.empty()),
+                () -> Hash.of("cafebabedeadbeef"),
                 refNotFoundAndRefConflictThrows),
             new VersionStoreInvocation<>(
                 "assign",
                 vs ->
-                    vs.assign(BranchName.of("mock-branch"), Optional.empty(), Hash.of("12341234")),
+                    vs.assign(
+                        BranchName.of("mock-branch"),
+                        Optional.empty(),
+                        BranchName.of("mock-branch"),
+                        Optional.of(Hash.of("12341234"))),
                 refNotFoundAndRefConflictThrows),
             new VersionStoreInvocation<>(
                 "create",
-                vs -> vs.create(BranchName.of("mock-branch"), Optional.of(Hash.of("cafebabe"))),
+                vs ->
+                    vs.create(
+                        BranchName.of("mock-branch"),
+                        Optional.of(BranchName.of("mock-branch")),
+                        Optional.of(Hash.of("cafebabe"))),
                 () -> Hash.of("cafebabedeadbeef"),
                 refNotFoundAndRefAlreadyExistsThrows),
             new VersionStoreInvocation<>(
@@ -144,7 +163,8 @@ class TestMetricsVersionStore {
                 refNotFoundAndRefConflictThrows),
             new VersionStoreInvocation<>(
                 "getcommits",
-                vs -> vs.getCommits(BranchName.of("mock-branch")),
+                vs ->
+                    vs.getCommits(BranchName.of("mock-branch"), Optional.empty(), Optional.empty()),
                 () ->
                     Stream.of(
                         WithHash.of(Hash.of("cafebabe"), "log#1"),
@@ -152,7 +172,7 @@ class TestMetricsVersionStore {
                 refNotFoundThrows),
             new VersionStoreInvocation<>(
                 "getkeys",
-                vs -> vs.getKeys(Hash.of("cafe4242")),
+                vs -> vs.getKeys(BranchName.of("mock-branch"), Optional.of(Hash.of("cafe4242"))),
                 () -> Stream.of(Key.of("hello", "world")),
                 refNotFoundThrows),
             new VersionStoreInvocation<>(
@@ -165,7 +185,9 @@ class TestMetricsVersionStore {
                 runtimeThrows),
             new VersionStoreInvocation<>(
                 "getvalue",
-                vs -> vs.getValue(BranchName.of("mock-branch"), Key.of("some", "key")),
+                vs ->
+                    vs.getValue(
+                        BranchName.of("mock-branch"), Optional.empty(), Key.of("some", "key")),
                 () -> "foo",
                 refNotFoundThrows),
             new VersionStoreInvocation<>(
@@ -173,12 +195,18 @@ class TestMetricsVersionStore {
                 vs ->
                     vs.getValues(
                         BranchName.of("mock-branch"),
+                        Optional.empty(),
                         Collections.singletonList(Key.of("some", "key"))),
                 () -> Collections.singletonList(Optional.empty()),
                 refNotFoundThrows),
             new VersionStoreInvocation<>(
                 "getdiffs",
-                vs -> vs.getDiffs(BranchName.of("mock-branch"), BranchName.of("foo-branch")),
+                vs ->
+                    vs.getDiffs(
+                        BranchName.of("mock-branch"),
+                        Optional.empty(),
+                        BranchName.of("foo-branch"),
+                        Optional.empty()),
                 Stream::empty,
                 refNotFoundThrows),
             new VersionStoreInvocation<>(

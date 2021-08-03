@@ -55,6 +55,7 @@ class TestTracingVersionStore {
   // Implemented as a parameterized-tests with each set of arguments representing one version-store
   // invocation.
 
+  @SuppressWarnings("unused")
   private static Stream<Arguments> versionStoreInvocations() {
     // Exception-throws to be tested, one list per distinct throws clause
     List<Exception> runtimeThrows =
@@ -98,7 +99,7 @@ class TestTracingVersionStore {
                         "Commit", refNotFoundAndRefConflictThrows)
                     .tag("nessie.version-store.branch", "mock-branch")
                     .tag("nessie.version-store.num-ops", 0)
-                    .tag("nessie.version-store.hash", "Optional.empty")
+                    .tag("nessie.version-store.hash", "<null>")
                     .function(
                         vs ->
                             vs.commit(
@@ -111,48 +112,59 @@ class TestTracingVersionStore {
                         "Transplant", refNotFoundAndRefConflictThrows)
                     .tag("nessie.version-store.target-branch", "mock-branch")
                     .tag("nessie.version-store.transplants", 0)
-                    .tag("nessie.version-store.hash", "Optional.empty")
-                    .method(
+                    .tag("nessie.version-store.from", "BranchName{name=mock-branch}")
+                    .tag("nessie.version-store.hash", "<null>")
+                    .function(
                         vs ->
                             vs.transplant(
                                 BranchName.of("mock-branch"),
                                 Optional.empty(),
-                                Collections.emptyList())),
+                                BranchName.of("mock-branch"),
+                                Collections.emptyList()),
+                        () -> Hash.of("deadbeefcafebabe")),
                 new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>(
                         "Merge", refNotFoundAndRefConflictThrows)
                     .tag("nessie.version-store.to-branch", "mock-branch")
+                    .tag("nessie.version-store.from", "mock-branch")
                     .tag("nessie.version-store.from-hash", "Hash 42424242")
-                    .tag("nessie.version-store.expected-hash", "Optional.empty")
-                    .method(
+                    .tag("nessie.version-store.expected-hash", "<null>")
+                    .function(
                         vs ->
                             vs.merge(
-                                Hash.of("42424242"),
                                 BranchName.of("mock-branch"),
-                                Optional.empty())),
+                                Optional.of(Hash.of("42424242")),
+                                BranchName.of("mock-branch"),
+                                Optional.empty()),
+                        () -> Hash.of("deadbeefcafebabe")),
                 new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>(
                         "Assign", refNotFoundAndRefConflictThrows)
                     .tag("nessie.version-store.ref", "BranchName{name=mock-branch}")
+                    .tag("nessie.version-store.target", "BranchName{name=mock-branch}")
                     .tag("nessie.version-store.target-hash", "Hash 12341234")
-                    .tag("nessie.version-store.expected-hash", "Optional.empty")
+                    .tag("nessie.version-store.expected-hash", "<null>")
                     .method(
                         vs ->
                             vs.assign(
                                 BranchName.of("mock-branch"),
                                 Optional.empty(),
-                                Hash.of("12341234"))),
+                                BranchName.of("mock-branch"),
+                                Optional.of(Hash.of("12341234")))),
                 new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>(
                         "Create", refNotFoundAndRefAlreadyExistsThrows)
-                    .tag("nessie.version-store.target-hash", "Optional[Hash cafebabe]")
+                    .tag("nessie.version-store.target-hash", "Hash cafebabe")
+                    .tag("nessie.version-store.target", "BranchName{name=mock-branch}")
                     .tag("nessie.version-store.ref", "BranchName{name=mock-branch}")
                     .function(
                         vs ->
                             vs.create(
-                                BranchName.of("mock-branch"), Optional.of(Hash.of("cafebabe"))),
+                                BranchName.of("mock-branch"),
+                                Optional.of(BranchName.of("mock-branch")),
+                                Optional.of(Hash.of("cafebabe"))),
                         () -> Hash.of("deadbeefcafebabe")),
                 new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>(
                         "Delete", refNotFoundAndRefConflictThrows)
                     .tag("nessie.version-store.ref", "BranchName{name=mock-branch}")
-                    .tag("nessie.version-store.hash", "Optional[Hash cafebabe]")
+                    .tag("nessie.version-store.hash", "Hash cafebabe")
                     .method(
                         vs ->
                             vs.delete(
@@ -160,17 +172,23 @@ class TestTracingVersionStore {
                 new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>(
                         "GetCommits", refNotFoundThrows)
                     .tag("nessie.version-store.ref", "BranchName{name=mock-branch}")
+                    .tag("nessie.version-store.hash", "<null>")
                     .function(
-                        vs -> vs.getCommits(BranchName.of("mock-branch")),
+                        vs ->
+                            vs.getCommits(
+                                BranchName.of("mock-branch"), Optional.empty(), Optional.empty()),
                         () ->
                             Stream.of(
                                 WithHash.of(Hash.of("cafebabe"), "log#1"),
                                 WithHash.of(Hash.of("deadbeef"), "log#2"))),
                 new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>(
                         "GetKeys", refNotFoundThrows)
-                    .tag("nessie.version-store.ref", "Hash cafe4242")
+                    .tag("nessie.version-store.ref", "BranchName{name=mock-branch}")
+                    .tag("nessie.version-store.hash", "Hash cafe4242")
                     .function(
-                        vs -> vs.getKeys(Hash.of("cafe4242")),
+                        vs ->
+                            vs.getKeys(
+                                BranchName.of("mock-branch"), Optional.of(Hash.of("cafe4242"))),
                         () -> Stream.of(Key.of("hello", "world"))),
                 new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>(
                         "GetNamedRefs", runtimeThrows)
@@ -183,27 +201,40 @@ class TestTracingVersionStore {
                 new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>(
                         "GetValue", refNotFoundThrows)
                     .tag("nessie.version-store.ref", "BranchName{name=mock-branch}")
+                    .tag("nessie.version-store.hash", "<null>")
                     .tag("nessie.version-store.key", "some.key")
                     .function(
-                        vs -> vs.getValue(BranchName.of("mock-branch"), Key.of("some", "key")),
+                        vs ->
+                            vs.getValue(
+                                BranchName.of("mock-branch"),
+                                Optional.empty(),
+                                Key.of("some", "key")),
                         () -> "foo"),
                 new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>(
                         "GetValues", refNotFoundThrows)
                     .tag("nessie.version-store.ref", "BranchName{name=mock-branch}")
+                    .tag("nessie.version-store.hash", "<null>")
                     .tag("nessie.version-store.keys", "[some.key]")
                     .function(
                         vs ->
                             vs.getValues(
                                 BranchName.of("mock-branch"),
+                                Optional.empty(),
                                 Collections.singletonList(Key.of("some", "key"))),
                         () -> Collections.singletonList(Optional.empty())),
                 new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>(
                         "GetDiffs", refNotFoundThrows)
                     .tag("nessie.version-store.from", "BranchName{name=mock-branch}")
+                    .tag("nessie.version-store.from-hash", "<null>")
                     .tag("nessie.version-store.to", "BranchName{name=foo-branch}")
+                    .tag("nessie.version-store.hash", "<null>")
                     .function(
                         vs ->
-                            vs.getDiffs(BranchName.of("mock-branch"), BranchName.of("foo-branch")),
+                            vs.getDiffs(
+                                BranchName.of("mock-branch"),
+                                Optional.empty(),
+                                BranchName.of("foo-branch"),
+                                Optional.empty()),
                         Stream::empty),
                 new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>(
                         "CollectGarbage", runtimeThrows)

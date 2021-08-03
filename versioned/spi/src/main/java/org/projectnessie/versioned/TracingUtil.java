@@ -20,6 +20,7 @@ import io.opentracing.Span;
 import io.opentracing.log.Fields;
 import io.opentracing.tag.Tags;
 import java.util.Collection;
+import java.util.Optional;
 
 /** Utility methods for tracing. */
 public final class TracingUtil {
@@ -28,7 +29,11 @@ public final class TracingUtil {
     // empty
   }
 
+  @SuppressWarnings({"unchecked", "rawtypes"})
   public static String safeToString(Object o) {
+    if (o instanceof Optional) {
+      o = ((Optional) o).orElse(null);
+    }
     return o != null ? o.toString() : "<null>";
   }
 

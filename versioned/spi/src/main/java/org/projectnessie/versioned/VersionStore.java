@@ -52,12 +52,12 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * <p>If a branch or tag has the same name as the string form of a valid hash, the branch or tag
    * name are returned.
    *
-   * @param refOfUnknownType A string that may be a branch, tag or hash.
+   * @param refOfUnknownType A string that may be a branch or tag, not a hash.
    * @return The concrete ref type with its hash.
    * @throws ReferenceNotFoundException If the string doesn't map to a valid ref.
    * @throws NullPointerException if {@code refOfUnknownType} is {@code null}.
    */
-  WithHash<Ref> toRef(@Nonnull String refOfUnknownType) throws ReferenceNotFoundException;
+  WithHash<NamedRef> toRef(@Nonnull String refOfUnknownType) throws ReferenceNotFoundException;
 
   /**
    * Create a new commit and add to a branch.
@@ -99,8 +99,11 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @throws ReferenceNotFoundException if {@code branch} or if any of the hashes from {@code
    *     sequenceToTransplant} is not present in the store.
    */
-  void transplant(
-      BranchName targetBranch, Optional<Hash> referenceHash, List<Hash> sequenceToTransplant)
+  Hash transplant(
+      BranchName targetBranch,
+      Optional<Hash> referenceHash,
+      NamedRef source,
+      List<Hash> sequenceToTransplant)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**
@@ -126,7 +129,8 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @throws ReferenceNotFoundException if {@code toBranch} or {@code fromHash} is not present in
    *     the store.
    */
-  void merge(Hash fromHash, BranchName toBranch, Optional<Hash> expectedHash)
+  Hash merge(
+      NamedRef from, Optional<Hash> fromHash, BranchName toBranch, Optional<Hash> expectedHash)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**
@@ -139,13 +143,16 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @param ref The named ref to be assigned
    * @param expectedHash The current head of the NamedRef to validate before updating. If not
    *     present, force assignment.
-   * @param targetHash The hash that this ref should refer to.
+   * @param target The named reference on which the commit to which {@code ref} shall be assigned to
+   *     exists.
+   * @param targetHash The hash that this ref should refer to, must be reachable from {@code
+   *     target}.
    * @throws ReferenceNotFoundException if {@code ref} is not present in the store or if {@code
    *     targetHash} is not present in the store
    * @throws ReferenceConflictException if {@code expectedHash} is not empty and its value doesn't
    *     match the stored hash for {@code ref}
    */
-  void assign(NamedRef ref, Optional<Hash> expectedHash, Hash targetHash)
+  void assign(NamedRef ref, Optional<Hash> expectedHash, NamedRef target, Optional<Hash> targetHash)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**
@@ -159,7 +166,7 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    *     store
    * @throws ReferenceAlreadyExistsException if {@code ref} already exists
    */
-  Hash create(NamedRef ref, Optional<Hash> targetHash)
+  Hash create(NamedRef ref, Optional<NamedRef> target, Optional<Hash> targetHash)
       throws ReferenceNotFoundException, ReferenceAlreadyExistsException;
 
   /**
@@ -190,10 +197,13 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * Get a stream of all ancestor commits to a provided ref.
    *
    * @param ref the stream to get commits for.
+   * @param untilIncluding if present, return all commits including this hash
    * @return A stream of commits.
    * @throws ReferenceNotFoundException if {@code ref} is not present in the store
    */
-  Stream<WithHash<METADATA>> getCommits(Ref ref) throws ReferenceNotFoundException;
+  Stream<WithHash<METADATA>> getCommits(
+      NamedRef ref, Optional<Hash> offset, Optional<Hash> untilIncluding)
+      throws ReferenceNotFoundException;
 
   /**
    * Get a stream of all available keys for the given ref.
@@ -202,7 +212,8 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @return The stream of keys available for this ref.
    * @throws ReferenceNotFoundException if {@code ref} is not present in the store
    */
-  Stream<WithType<Key, VALUE_TYPE>> getKeys(Ref ref) throws ReferenceNotFoundException;
+  Stream<WithType<Key, VALUE_TYPE>> getKeys(NamedRef ref, Optional<Hash> hashOnRef)
+      throws ReferenceNotFoundException;
 
   /**
    * Get the value for a provided ref.
@@ -212,7 +223,7 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @return The value.
    * @throws ReferenceNotFoundException if {@code ref} is not present in the store
    */
-  VALUE getValue(Ref ref, Key key) throws ReferenceNotFoundException;
+  VALUE getValue(NamedRef ref, Optional<Hash> hashOnRef, Key key) throws ReferenceNotFoundException;
 
   /**
    * Get the values for a list of keys.
@@ -222,7 +233,8 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @return A parallel list of values.
    * @throws ReferenceNotFoundException if {@code ref} is not present in the store
    */
-  List<Optional<VALUE>> getValues(Ref ref, List<Key> keys) throws ReferenceNotFoundException;
+  List<Optional<VALUE>> getValues(NamedRef ref, Optional<Hash> hashOnRef, List<Key> keys)
+      throws ReferenceNotFoundException;
 
   /**
    * Get list of diffs between two refs.
@@ -231,7 +243,9 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @param to The to part of the diff.
    * @return A stream of values that are different.
    */
-  Stream<Diff<VALUE>> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException;
+  Stream<Diff<VALUE>> getDiffs(
+      NamedRef from, Optional<Hash> hashOnFrom, NamedRef to, Optional<Hash> hashOnTo)
+      throws ReferenceNotFoundException;
 
   /**
    * Collect some garbage. Each time this is called, it collects some garbage and reports the
