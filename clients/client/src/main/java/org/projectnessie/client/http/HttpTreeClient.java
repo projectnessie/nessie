@@ -30,7 +30,6 @@ import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Merge;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
-import org.projectnessie.model.Tag;
 import org.projectnessie.model.Transplant;
 
 class HttpTreeClient implements HttpTreeApi {
@@ -50,9 +49,14 @@ class HttpTreeClient implements HttpTreeApi {
   }
 
   @Override
-  public Reference createReference(@NotNull Reference reference)
+  public Reference createReference(String sourceRefName, @NotNull Reference reference)
       throws NessieNotFoundException, NessieConflictException {
-    return client.newRequest().path("trees/tree").post(reference).readEntity(Reference.class);
+    return client
+        .newRequest()
+        .path("trees/tree")
+        .queryParam("sourceRefName", sourceRefName)
+        .post(reference)
+        .readEntity(Reference.class);
   }
 
   @Override
@@ -66,14 +70,15 @@ class HttpTreeClient implements HttpTreeApi {
   }
 
   @Override
-  public void assignTag(@NotNull String tagName, @NotNull String expectedHash, @NotNull Tag tag)
+  public void assignTag(
+      @NotNull String tagName, @NotNull String expectedHash, @NotNull Reference assignTo)
       throws NessieNotFoundException, NessieConflictException {
     client
         .newRequest()
         .path("trees/tag/{tagName}")
         .resolveTemplate("tagName", tagName)
         .queryParam("expectedHash", expectedHash)
-        .put(tag);
+        .put(assignTo);
   }
 
   @Override
@@ -89,14 +94,14 @@ class HttpTreeClient implements HttpTreeApi {
 
   @Override
   public void assignBranch(
-      @NotNull String branchName, @NotNull String expectedHash, @NotNull Branch branch)
+      @NotNull String branchName, @NotNull String expectedHash, @NotNull Reference assignTo)
       throws NessieNotFoundException, NessieConflictException {
     client
         .newRequest()
         .path("trees/branch/{branchName}")
         .resolveTemplate("branchName", branchName)
         .queryParam("expectedHash", expectedHash)
-        .put(branch);
+        .put(assignTo);
   }
 
   @Override
