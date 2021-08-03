@@ -61,7 +61,7 @@ class TestBasicOperations {
     tree = client.getTreeApi();
     contents = client.getContentsApi();
     if (branch != null) {
-      tree.createReference(null, Branch.of(branch, null));
+      tree.createReference("main", Branch.of(branch, null));
     }
   }
 
