@@ -16,6 +16,7 @@
 package org.projectnessie.api;
 
 import java.util.List;
+import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
@@ -29,7 +30,6 @@ import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Merge;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
-import org.projectnessie.model.Tag;
 import org.projectnessie.model.Transplant;
 import org.projectnessie.model.Validation;
 
@@ -41,8 +41,24 @@ public interface TreeApi {
   /** Get details for the default reference. */
   Branch getDefaultBranch() throws NessieNotFoundException;
 
-  /** Create a new reference. */
-  Reference createReference(@Valid @NotNull Reference reference)
+  /**
+   * Create a new reference.
+   *
+   * <p>The type of {@code reference}, which can be either a {@link Branch} or {@link
+   * org.projectnessie.model.Tag}, determines the type of the reference to be created.
+   *
+   * <p>{@link Reference#getName()} defines the the name of the reference to be created, {@link
+   * Reference#getHash()} is the hash of the created reference, the HEAD of the created reference.
+   * {@code sourceRefName} is the name of the reference which contains {@link Reference#getHash()},
+   * and must be present if {@link Reference#getHash()} is present.
+   *
+   * <p>Specifying no {@link Reference#getHash()} means that the new reference will be created "at
+   * the beginning of time".
+   */
+  Reference createReference(
+      @Nullable @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          String sourceRefName,
+      @Valid @NotNull Reference reference)
       throws NessieNotFoundException, NessieConflictException;
 
   /** Get details of a particular ref, if it exists. */
@@ -109,7 +125,7 @@ public interface TreeApi {
           String tagName,
       @NotNull @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String oldHash,
-      @Valid @NotNull Tag tag)
+      @Valid @NotNull Reference assignTo)
       throws NessieNotFoundException, NessieConflictException;
 
   /** Delete a tag. */
@@ -125,7 +141,7 @@ public interface TreeApi {
           String branchName,
       @NotNull @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String oldHash,
-      @Valid @NotNull Branch branch)
+      @Valid @NotNull Reference assignTo)
       throws NessieNotFoundException, NessieConflictException;
 
   /** Delete a branch. */
