@@ -18,9 +18,8 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\"\
-        ,\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\
-        \n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\",\n
+        \ \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}"
     headers:
       Content-Length:
       - '137'
@@ -44,10 +43,10 @@ interactions:
     uri: http://localhost:19120/api/v1/trees
   response:
     body:
-      string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\"\
-        ,\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\
-        \n}, {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"\
-        2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n} ]"
+      string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\",\n
+        \ \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n},
+        {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}
+        ]"
     headers:
       Content-Length:
       - '264'
@@ -71,9 +70,9 @@ interactions:
     uri: http://localhost:19120/api/v1/contents/this.is.iceberg.foo?ref=contents_listing_dev
   response:
     body:
-      string: "{\n  \"message\" : \"Requested contents do not exist for specified\
-        \ reference.\",\n  \"status\" : 404,\n  \"reason\" : \"Not Found\",\n  \"\
-        serverStackTrace\" : null\n}"
+      string: "{\n  \"message\" : \"Requested contents do not exist for specified
+        reference.\",\n  \"status\" : 404,\n  \"reason\" : \"Not Found\",\n  \"serverStackTrace\"
+        : null\n}"
     headers:
       Content-Length:
       - '149'
@@ -83,11 +82,11 @@ interactions:
       code: 404
       message: Not Found
 - request:
-    body: '{"operations": [{"key": {"elements": ["this", "is", "iceberg", "foo"]},
-      "contents": {"id": "uuid", "metadataLocation": "/a/b/c", "type": "ICEBERG_TABLE"},
-      "type": "PUT"}], "commitMeta": {"signedOffBy": null, "email": null, "properties":
-      null, "message": "test_message1", "authorTime": null, "hash": null, "author":
-      null, "commitTime": null, "committer": null}}'
+    body: '{"commitMeta": {"author": null, "properties": null, "authorTime": null,
+      "committer": null, "signedOffBy": null, "commitTime": null, "message": "test_message1",
+      "email": null, "hash": null}, "operations": [{"contents": {"metadataLocation":
+      "/a/b/c", "id": "uuid", "type": "ICEBERG_TABLE"}, "key": {"elements": ["this",
+      "is", "iceberg", "foo"]}, "type": "PUT"}]}'
     headers:
       Accept:
       - '*/*'
@@ -105,9 +104,8 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/branch/contents_listing_dev/commit?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\"\
-        ,\n  \"hash\" : \"0a28d82695ed303cbf5f085b1bfc86f4e69a856f9244749e30ee399ebd0acfbd\"\
-        \n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\",\n
+        \ \"hash\" : \"7d656d6d44103189fe3469593500e930a75977a923ca4239121f7978768f45a1\"\n}"
     headers:
       Content-Length:
       - '137'
@@ -131,10 +129,10 @@ interactions:
     uri: http://localhost:19120/api/v1/trees
   response:
     body:
-      string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\"\
-        ,\n  \"hash\" : \"0a28d82695ed303cbf5f085b1bfc86f4e69a856f9244749e30ee399ebd0acfbd\"\
-        \n}, {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"\
-        2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n} ]"
+      string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\",\n
+        \ \"hash\" : \"7d656d6d44103189fe3469593500e930a75977a923ca4239121f7978768f45a1\"\n},
+        {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}
+        ]"
     headers:
       Content-Length:
       - '264'
@@ -158,9 +156,9 @@ interactions:
     uri: http://localhost:19120/api/v1/contents/this.is.delta.bar?ref=contents_listing_dev
   response:
     body:
-      string: "{\n  \"message\" : \"Requested contents do not exist for specified\
-        \ reference.\",\n  \"status\" : 404,\n  \"reason\" : \"Not Found\",\n  \"\
-        serverStackTrace\" : null\n}"
+      string: "{\n  \"message\" : \"Requested contents do not exist for specified
+        reference.\",\n  \"status\" : 404,\n  \"reason\" : \"Not Found\",\n  \"serverStackTrace\"
+        : null\n}"
     headers:
       Content-Length:
       - '149'
@@ -170,12 +168,12 @@ interactions:
       code: 404
       message: Not Found
 - request:
-    body: '{"operations": [{"key": {"elements": ["this", "is", "delta", "bar"]}, "contents":
-      {"id": "uuid2", "lastCheckpoint": "x", "checkpointLocationHistory": ["def"],
-      "metadataLocationHistory": ["asd"], "type": "DELTA_LAKE_TABLE"}, "type": "PUT"}],
-      "commitMeta": {"signedOffBy": null, "email": null, "properties": null, "message":
-      "test_message2", "authorTime": null, "hash": null, "author": null, "commitTime":
-      null, "committer": null}}'
+    body: '{"commitMeta": {"author": null, "properties": null, "authorTime": null,
+      "committer": null, "signedOffBy": null, "commitTime": null, "message": "test_message2",
+      "email": null, "hash": null}, "operations": [{"contents": {"id": "uuid2", "checkpointLocationHistory":
+      ["def"], "metadataLocationHistory": ["asd"], "lastCheckpoint": "x", "type":
+      "DELTA_LAKE_TABLE"}, "key": {"elements": ["this", "is", "delta", "bar"]}, "type":
+      "PUT"}]}'
     headers:
       Accept:
       - '*/*'
@@ -190,12 +188,11 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/contents_listing_dev/commit?expectedHash=0a28d82695ed303cbf5f085b1bfc86f4e69a856f9244749e30ee399ebd0acfbd
+    uri: http://localhost:19120/api/v1/trees/branch/contents_listing_dev/commit?expectedHash=7d656d6d44103189fe3469593500e930a75977a923ca4239121f7978768f45a1
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\"\
-        ,\n  \"hash\" : \"532d07bcdc76a141ed2132c6958c1b9eb1c271f6025dec9d73567b6943443c14\"\
-        \n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\",\n
+        \ \"hash\" : \"31e66b3135f5dcee528c02f2ecd238c3dff0c1dc8a1e80623731565b08ee1e86\"\n}"
     headers:
       Content-Length:
       - '137'
@@ -219,10 +216,10 @@ interactions:
     uri: http://localhost:19120/api/v1/trees
   response:
     body:
-      string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\"\
-        ,\n  \"hash\" : \"532d07bcdc76a141ed2132c6958c1b9eb1c271f6025dec9d73567b6943443c14\"\
-        \n}, {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"\
-        2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n} ]"
+      string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\",\n
+        \ \"hash\" : \"31e66b3135f5dcee528c02f2ecd238c3dff0c1dc8a1e80623731565b08ee1e86\"\n},
+        {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}
+        ]"
     headers:
       Content-Length:
       - '264'
@@ -246,9 +243,9 @@ interactions:
     uri: http://localhost:19120/api/v1/contents/this.is.sql.baz?ref=contents_listing_dev
   response:
     body:
-      string: "{\n  \"message\" : \"Requested contents do not exist for specified\
-        \ reference.\",\n  \"status\" : 404,\n  \"reason\" : \"Not Found\",\n  \"\
-        serverStackTrace\" : null\n}"
+      string: "{\n  \"message\" : \"Requested contents do not exist for specified
+        reference.\",\n  \"status\" : 404,\n  \"reason\" : \"Not Found\",\n  \"serverStackTrace\"
+        : null\n}"
     headers:
       Content-Length:
       - '149'
@@ -258,11 +255,11 @@ interactions:
       code: 404
       message: Not Found
 - request:
-    body: '{"operations": [{"key": {"elements": ["this", "is", "sql", "baz"]}, "contents":
-      {"dialect": "HIVE", "id": "uuid3", "sqlText": "SELECT * FROM foo", "type": "VIEW"},
-      "type": "PUT"}], "commitMeta": {"signedOffBy": null, "email": null, "properties":
-      null, "message": "test_message3", "authorTime": null, "hash": null, "author":
-      null, "commitTime": null, "committer": null}}'
+    body: '{"commitMeta": {"author": null, "properties": null, "authorTime": null,
+      "committer": null, "signedOffBy": null, "commitTime": null, "message": "test_message3",
+      "email": null, "hash": null}, "operations": [{"contents": {"sqlText": "SELECT
+      * FROM foo", "id": "uuid3", "dialect": "HIVE", "type": "VIEW"}, "key": {"elements":
+      ["this", "is", "sql", "baz"]}, "type": "PUT"}]}'
     headers:
       Accept:
       - '*/*'
@@ -277,12 +274,11 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/contents_listing_dev/commit?expectedHash=532d07bcdc76a141ed2132c6958c1b9eb1c271f6025dec9d73567b6943443c14
+    uri: http://localhost:19120/api/v1/trees/branch/contents_listing_dev/commit?expectedHash=31e66b3135f5dcee528c02f2ecd238c3dff0c1dc8a1e80623731565b08ee1e86
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\"\
-        ,\n  \"hash\" : \"4a048b8b9c121d9d513eb4d91286348337251726380eb7a53d2ef09e038edd53\"\
-        \n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\",\n
+        \ \"hash\" : \"b9efbda6645befbd8bdc0f53c53b601d65fd4d484234fc7446928bc152f52258\"\n}"
     headers:
       Content-Length:
       - '137'
@@ -306,8 +302,8 @@ interactions:
     uri: http://localhost:19120/api/v1/contents/this.is.iceberg.foo?ref=contents_listing_dev
   response:
     body:
-      string: "{\n  \"type\" : \"ICEBERG_TABLE\",\n  \"id\" : \"uuid\",\n  \"metadataLocation\"\
-        \ : \"/a/b/c\"\n}"
+      string: "{\n  \"type\" : \"ICEBERG_TABLE\",\n  \"id\" : \"uuid\",\n  \"metadataLocation\"
+        : \"/a/b/c\"\n}"
     headers:
       Content-Length:
       - '80'
@@ -331,9 +327,9 @@ interactions:
     uri: http://localhost:19120/api/v1/contents/this.is.delta.bar?ref=contents_listing_dev
   response:
     body:
-      string: "{\n  \"type\" : \"DELTA_LAKE_TABLE\",\n  \"id\" : \"uuid2\",\n  \"\
-        metadataLocationHistory\" : [ \"asd\" ],\n  \"checkpointLocationHistory\"\
-        \ : [ \"def\" ],\n  \"lastCheckpoint\" : \"x\"\n}"
+      string: "{\n  \"type\" : \"DELTA_LAKE_TABLE\",\n  \"id\" : \"uuid2\",\n  \"metadataLocationHistory\"
+        : [ \"asd\" ],\n  \"checkpointLocationHistory\" : [ \"def\" ],\n  \"lastCheckpoint\"
+        : \"x\"\n}"
     headers:
       Content-Length:
       - '161'
@@ -357,9 +353,9 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/contents_listing_dev/entries?query_expression=entry.contentType+in+%5B%27ICEBERG_TABLE%27%5D
   response:
     body:
-      string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"entries\" : [ {\n\
-        \    \"type\" : \"ICEBERG_TABLE\",\n    \"name\" : {\n      \"elements\" :\
-        \ [ \"this\", \"is\", \"iceberg\", \"foo\" ]\n    }\n  } ]\n}"
+      string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"entries\" : [ {\n
+        \   \"type\" : \"ICEBERG_TABLE\",\n    \"name\" : {\n      \"elements\" :
+        [ \"this\", \"is\", \"iceberg\", \"foo\" ]\n    }\n  } ]\n}"
     headers:
       Content-Length:
       - '171'
@@ -383,9 +379,9 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/contents_listing_dev/entries?query_expression=entry.contentType+in+%5B%27DELTA_LAKE_TABLE%27%5D
   response:
     body:
-      string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"entries\" : [ {\n\
-        \    \"type\" : \"DELTA_LAKE_TABLE\",\n    \"name\" : {\n      \"elements\"\
-        \ : [ \"this\", \"is\", \"delta\", \"bar\" ]\n    }\n  } ]\n}"
+      string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"entries\" : [ {\n
+        \   \"type\" : \"DELTA_LAKE_TABLE\",\n    \"name\" : {\n      \"elements\"
+        : [ \"this\", \"is\", \"delta\", \"bar\" ]\n    }\n  } ]\n}"
     headers:
       Content-Length:
       - '172'
@@ -409,9 +405,9 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/contents_listing_dev/entries?query_expression=entry.contentType+%3D%3D+%27ICEBERG_TABLE%27
   response:
     body:
-      string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"entries\" : [ {\n\
-        \    \"type\" : \"ICEBERG_TABLE\",\n    \"name\" : {\n      \"elements\" :\
-        \ [ \"this\", \"is\", \"iceberg\", \"foo\" ]\n    }\n  } ]\n}"
+      string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"entries\" : [ {\n
+        \   \"type\" : \"ICEBERG_TABLE\",\n    \"name\" : {\n      \"elements\" :
+        [ \"this\", \"is\", \"iceberg\", \"foo\" ]\n    }\n  } ]\n}"
     headers:
       Content-Length:
       - '171'
@@ -435,11 +431,11 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/contents_listing_dev/entries?query_expression=entry.contentType+in+%5B%27ICEBERG_TABLE%27%2C+%27DELTA_LAKE_TABLE%27%5D
   response:
     body:
-      string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"entries\" : [ {\n\
-        \    \"type\" : \"ICEBERG_TABLE\",\n    \"name\" : {\n      \"elements\" :\
-        \ [ \"this\", \"is\", \"iceberg\", \"foo\" ]\n    }\n  }, {\n    \"type\"\
-        \ : \"DELTA_LAKE_TABLE\",\n    \"name\" : {\n      \"elements\" : [ \"this\"\
-        , \"is\", \"delta\", \"bar\" ]\n    }\n  } ]\n}"
+      string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"entries\" : [ {\n
+        \   \"type\" : \"ICEBERG_TABLE\",\n    \"name\" : {\n      \"elements\" :
+        [ \"this\", \"is\", \"iceberg\", \"foo\" ]\n    }\n  }, {\n    \"type\" :
+        \"DELTA_LAKE_TABLE\",\n    \"name\" : {\n      \"elements\" : [ \"this\",
+        \"is\", \"delta\", \"bar\" ]\n    }\n  } ]\n}"
     headers:
       Content-Length:
       - '284'
@@ -463,9 +459,9 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/contents_listing_dev/entries?query_expression=entry.namespace.startsWith%28%27this.is.del%27%29
   response:
     body:
-      string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"entries\" : [ {\n\
-        \    \"type\" : \"DELTA_LAKE_TABLE\",\n    \"name\" : {\n      \"elements\"\
-        \ : [ \"this\", \"is\", \"delta\", \"bar\" ]\n    }\n  } ]\n}"
+      string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"entries\" : [ {\n
+        \   \"type\" : \"DELTA_LAKE_TABLE\",\n    \"name\" : {\n      \"elements\"
+        : [ \"this\", \"is\", \"delta\", \"bar\" ]\n    }\n  } ]\n}"
     headers:
       Content-Length:
       - '172'
@@ -489,13 +485,13 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/contents_listing_dev/entries?query_expression=entry.namespace.startsWith%28%27this.is%27%29
   response:
     body:
-      string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"entries\" : [ {\n\
-        \    \"type\" : \"VIEW\",\n    \"name\" : {\n      \"elements\" : [ \"this\"\
-        , \"is\", \"sql\", \"baz\" ]\n    }\n  }, {\n    \"type\" : \"ICEBERG_TABLE\"\
-        ,\n    \"name\" : {\n      \"elements\" : [ \"this\", \"is\", \"iceberg\"\
-        , \"foo\" ]\n    }\n  }, {\n    \"type\" : \"DELTA_LAKE_TABLE\",\n    \"name\"\
-        \ : {\n      \"elements\" : [ \"this\", \"is\", \"delta\", \"bar\" ]\n   \
-        \ }\n  } ]\n}"
+      string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"entries\" : [ {\n
+        \   \"type\" : \"VIEW\",\n    \"name\" : {\n      \"elements\" : [ \"this\",
+        \"is\", \"sql\", \"baz\" ]\n    }\n  }, {\n    \"type\" : \"ICEBERG_TABLE\",\n
+        \   \"name\" : {\n      \"elements\" : [ \"this\", \"is\", \"iceberg\", \"foo\"
+        ]\n    }\n  }, {\n    \"type\" : \"DELTA_LAKE_TABLE\",\n    \"name\" : {\n
+        \     \"elements\" : [ \"this\", \"is\", \"delta\", \"bar\" ]\n    }\n  }
+        ]\n}"
     headers:
       Content-Length:
       - '383'
@@ -519,9 +515,8 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/contents_listing_dev
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\"\
-        ,\n  \"hash\" : \"4a048b8b9c121d9d513eb4d91286348337251726380eb7a53d2ef09e038edd53\"\
-        \n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\",\n
+        \ \"hash\" : \"b9efbda6645befbd8bdc0f53c53b601d65fd4d484234fc7446928bc152f52258\"\n}"
     headers:
       Content-Length:
       - '137'
@@ -544,7 +539,7 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: DELETE
-    uri: http://localhost:19120/api/v1/trees/branch/contents_listing_dev?expectedHash=4a048b8b9c121d9d513eb4d91286348337251726380eb7a53d2ef09e038edd53
+    uri: http://localhost:19120/api/v1/trees/branch/contents_listing_dev?expectedHash=b9efbda6645befbd8bdc0f53c53b601d65fd4d484234fc7446928bc152f52258
   response:
     body:
       string: ''
