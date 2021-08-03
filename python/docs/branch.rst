@@ -18,19 +18,32 @@
 	
 	      nessie branch -> list all branches
 	
-	      nessie branch main -> create branch main at current head
+	      nessie branch new_branch -> create new branch named 'new_branch' at
+	      current HEAD of the default branch
 	
-	      nessie branch main test -> create branch main at head of test
+	      nessie branch new_branch test -> create new branch named 'new_branch' at
+	      head of reference named 'test'
 	
-	      nessie branch -f main test -> assign main to head of test
+	      nessie branch -o 12345678abcdef new_branch test -> create new branch named
+	      'new_branch' at hash 12345678abcdef on reference named 'test'
+	
+	      nessie branch -f existing_branch test -> assign branch named
+	      'existing_branch' to head of reference named 'test'
+	
+	      nessie branch -o 12345678abcdef -f existing_branch test -> assign branch
+	      named 'existing_branch' to hash 12345678abcdef on reference named 'test'
 	
 	Options:
-	  -l, --list            list branches
-	  -d, --delete          delete a branch
-	  -f, --force           force branch assignment
-	  -c, --condition TEXT  Conditional Hash. Only perform the action if branch
-	                        currently points to condition.
-	  --help                Show this message and exit.
+	  -l, --list              list branches
+	  -d, --delete            delete a branch
+	  -f, --force             force branch assignment
+	  -o, --hash-on-ref TEXT  Hash on source-reference for 'create' and 'assign'
+	                          operations, if the branch shall not point to the HEAD
+	                          of the given source-reference.
+	  -c, --condition TEXT    Conditional Hash. Only perform the action if the
+	                          branch currently points to the hash specified by this
+	                          option.
+	  --help                  Show this message and exit.
 	
 	
 
