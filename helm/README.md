@@ -24,8 +24,9 @@ The following table lists the configurable parameters of the Nessie chart and th
 | versionStoreType | Version store to use: `JGIT` / `INMEMORY` / `DYNAMO`. `JGIT` is best for local testing, `DYNAMO` preferred for production | `INMEMORY` |
 | dynamodb | Configuration specific to `versionStoreType: DYNAMO` | |
 | dynamodb.region | The region to configure for Dynamo | `us-west-2` |
-| dynamodb.region | The region to configure for Dynamo | `us-west-2` |
-| dynamodb.region | The region to configure for Dynamo | `us-west-2` |
+| dynamodb.secret.name | The name of the secret where credentials are stored | `awscreds` |
+| dynamodb.secret.awsAccessKeyId | The AWS access key id in the secret | `aws_access_key_id` |
+| dynamodb.secret.awsSecretAccessKey | The AWS secret access key | `aws_secret_access_key` |
 | jaegerTracing | Jaeger Tracing configuration | |
 | jaegerTracing.enabled | Determines whether Jaeger Tracing for Nessie is enabled or not via `true` / `false` | `false` |
 | jaegerTracing.endpoint | The traces endpoint, in case the client should connect directly to the Collector, such as `http://jaeger-collector:14268/api/traces` | None |
@@ -38,6 +39,19 @@ The following table lists the configurable parameters of the Nessie chart and th
 | serviceMonitor.interval | Interval at which metrics should be scraped | `30s` |
 | serviceMonitor.labels | Additional labels to add to the created `ServiceMonitor` so that Prometheus can properly pick it up | None |
 
+### Providing secrets for Dynamo Version Store
+
+* Make sure you have a Secret in the following form:
+```
+> cat $PWD/awscreds
+aws_access_key_id=YOURACCESSKEYDATA
+aws_secret_access_key=YOURSECRETKEYDATA
+```
+
+* Create the secret from the given file
+`kubectl create secret generic awscreds --from-env-file="$PWD/awscreds"`
+
+* Now you can use `versionStoreType: DYNAMO`
 
 ## Dev installation
 

@@ -12,8 +12,10 @@ versionStoreType: INMEMORY
 # this is needed when selecting DYNAMO
 dynamodb:
   region: us-west-2
-  awsAccessKeyId:
-  awsSecretAccessKey:
+  secret:
+    name: awscreds
+    awsAccessKeyId: aws_access_key_id
+    awsSecretAccessKey: aws_secret_access_key
 
 # configure jaeger tracing for nessie
 jaegerTracing:

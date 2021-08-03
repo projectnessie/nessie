@@ -41,14 +41,16 @@ spec:
             - name: AWS_REGION
               value: {{ .Values.dynamodb.region }}
             {{- end }}
-            {{- if .Values.dynamodb.awsAccessKeyId }}
             - name: AWS_ACCESS_KEY_ID
-              value: {{ .Values.dynamodb.awsAccessKeyId }}
-            {{- end }}
-            {{- if .Values.dynamodb.awsSecretAccessKey }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.dynamodb.secret.name }}
+                  key: {{ .Values.dynamodb.secret.awsAccessKeyId }}
             - name: AWS_SECRET_ACCESS_KEY
-              value: {{ .Values.dynamodb.awsSecretAccessKey }}
-            {{- end }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.dynamodb.secret.name }}
+                  key: {{ .Values.dynamodb.secret.awsSecretAccessKey }}
             {{- end }}
             {{- if .Values.jaegerTracing.enabled }}
             {{- if .Values.jaegerTracing.serviceName }}
