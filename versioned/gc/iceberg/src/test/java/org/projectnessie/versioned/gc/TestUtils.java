@@ -32,6 +32,6 @@ public final class TestUtils {
         tree.deleteTag(r.getName(), r.getHash());
       }
     }
-    tree.createReference(Branch.of("main", null));
+    tree.createReference(null, Branch.of("main", null));
   }
 }

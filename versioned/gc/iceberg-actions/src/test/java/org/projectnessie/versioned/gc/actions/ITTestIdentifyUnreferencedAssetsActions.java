@@ -151,8 +151,8 @@ class ITTestIdentifyUnreferencedAssetsActions {
     contents = client.getContentsApi();
 
     resetData(tree);
-    tree.createReference(Branch.of(BRANCH, null));
-    tree.createReference(Branch.of(DELETE_BRANCH, null));
+    tree.createReference(null, Branch.of(BRANCH, null));
+    tree.createReference(null, Branch.of(DELETE_BRANCH, null));
 
     Map<String, String> props = new HashMap<>();
     props.put("ref", BRANCH);
@@ -187,7 +187,7 @@ class ITTestIdentifyUnreferencedAssetsActions {
         tree.deleteTag(r.getName(), r.getHash());
       }
     }
-    tree.createReference(Branch.of("main", null));
+    tree.createReference(null, Branch.of("main", null));
   }
 
   @AfterEach

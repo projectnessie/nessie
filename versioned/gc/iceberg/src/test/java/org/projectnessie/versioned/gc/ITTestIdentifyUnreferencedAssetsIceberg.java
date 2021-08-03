@@ -151,8 +151,8 @@ class ITTestIdentifyUnreferencedAssetsIceberg {
     contents = client.getContentsApi();
 
     TestUtils.resetData(tree);
-    tree.createReference(Branch.of(BRANCH, null));
-    tree.createReference(Branch.of(DELETE_BRANCH, null));
+    tree.createReference(null, Branch.of(BRANCH, null));
+    tree.createReference(null, Branch.of(DELETE_BRANCH, null));
 
     Map<String, String> props = new HashMap<>();
     props.put("ref", BRANCH);

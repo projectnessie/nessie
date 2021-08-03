@@ -84,7 +84,7 @@ public class ITIcebergAssetKeyReader {
     this.client = NessieClient.builder().withUri(NESSIE_ENDPOINT).build();
     tree = client.getTreeApi();
     TestUtils.resetData(tree);
-    tree.createReference(Branch.of("ITIcebergAssetKeyReader", null));
+    tree.createReference(null, Branch.of("ITIcebergAssetKeyReader", null));
 
     Map<String, String> props = new HashMap<>();
     props.put("ref", "ITIcebergAssetKeyReader");
