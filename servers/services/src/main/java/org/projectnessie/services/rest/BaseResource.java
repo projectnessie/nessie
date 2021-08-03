@@ -17,7 +17,6 @@ package org.projectnessie.services.rest;
 
 import java.security.Principal;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -31,7 +30,6 @@ import org.projectnessie.services.authz.ServerAccessContext;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.NamedRef;
-import org.projectnessie.versioned.Ref;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
@@ -55,15 +53,6 @@ abstract class BaseResource {
     this.config = config;
     this.store = store;
     this.accessChecker = accessChecker;
-  }
-
-  Optional<WithHash<Ref>> getRefWithHash(String ref) {
-    try {
-      WithHash<Ref> whr = store.toRef(Optional.ofNullable(ref).orElse(config.getDefaultBranch()));
-      return Optional.of(whr);
-    } catch (ReferenceNotFoundException e) {
-      return Optional.empty();
-    }
   }
 
   WithHash<NamedRef> namedRefWithHashOrThrow(String namedRef, @Nullable String hashOnRef)
@@ -93,7 +82,7 @@ abstract class BaseResource {
     }
 
     try {
-      if (null == hashOnRef) {
+      if (null == hashOnRef || store.noAncestorHash().asString().equals(hashOnRef)) {
         return namedRefWithHash;
       }
 

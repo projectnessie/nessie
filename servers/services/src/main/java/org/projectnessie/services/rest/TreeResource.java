@@ -124,7 +124,7 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
   }
 
   @Override
-  public Reference createReference(Reference reference)
+  public Reference createReference(String sourceRefName, Reference reference)
       throws NessieNotFoundException, NessieConflictException {
     final NamedRef namedReference;
     if (reference instanceof Branch) {
@@ -162,9 +162,9 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
   }
 
   @Override
-  public void assignTag(String tagName, String expectedHash, Tag tag)
+  public void assignTag(String tagName, String expectedHash, Reference assignTo)
       throws NessieNotFoundException, NessieConflictException {
-    assignReference(TagName.of(tagName), expectedHash, tag.getHash());
+    assignReference(TagName.of(tagName), expectedHash, assignTo);
   }
 
   @Override
@@ -174,9 +174,9 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
   }
 
   @Override
-  public void assignBranch(String branchName, String expectedHash, Branch branch)
+  public void assignBranch(String branchName, String expectedHash, Reference assignTo)
       throws NessieNotFoundException, NessieConflictException {
-    assignReference(BranchName.of(branchName), expectedHash, branch.getHash());
+    assignReference(BranchName.of(branchName), expectedHash, assignTo);
   }
 
   @Override
@@ -289,7 +289,7 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
     try {
       getStore()
           .merge(
-              toHash(merge.getFromHash(), true).get(),
+              toHash(merge.getSourceRefName(), merge.getFromHash(), true).get(),
               BranchName.of(branchName),
               toHash(hash, true));
     } catch (ReferenceNotFoundException e) {
@@ -430,6 +430,15 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
         .build();
   }
 
+  private Optional<Hash> toHash(String referenceName, String hashOnReference, boolean required)
+      throws NessieConflictException, ReferenceNotFoundException {
+    if (hashOnReference == null) {
+      WithHash<Ref> hash = getStore().toRef(referenceName);
+      return Optional.of(hash.getHash());
+    }
+    return toHash(hashOnReference, required);
+  }
+
   private static Optional<Hash> toHash(String hash, boolean required)
       throws NessieConflictException {
     if (hash == null || hash.isEmpty()) {
@@ -457,7 +466,7 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
     }
   }
 
-  protected void assignReference(NamedRef ref, String oldHash, String newHash)
+  protected void assignReference(NamedRef ref, String oldHash, Reference assignTo)
       throws NessieNotFoundException, NessieConflictException {
     try {
       WithHash<Ref> resolved = getStore().toRef(ref.getName());
@@ -467,7 +476,7 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
             .assign(
                 (NamedRef) resolvedRef,
                 toHash(oldHash, true),
-                toHash(newHash, true)
+                toHash(assignTo.getName(), assignTo.getHash(), true)
                     .orElseThrow(
                         () ->
                             new NessieConflictException(
