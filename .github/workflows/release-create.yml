@@ -136,7 +136,7 @@ jobs:
       working-directory: ./helm/nessie
       run: |
         cp Chart.yaml /tmp/nessie-Chart.yaml
-        cat /tmp/nessie-Chart.yaml | sed "s/^appVersion: [0-9.]*$/appVersion: ${RELEASE_VERSION}/" > Chart.yaml
+        cat /tmp/nessie-Chart.yaml | sed "s/^version: [0-9.]*$/version: ${RELEASE_VERSION}/" > Chart.yaml
 
     - name: Bump UI release version ${{ github.event.inputs.releaseVersion }}
       working-directory: ./ui
