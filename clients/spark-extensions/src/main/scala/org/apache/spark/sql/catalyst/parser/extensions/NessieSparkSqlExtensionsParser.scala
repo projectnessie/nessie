@@ -28,11 +28,18 @@ import org.apache.spark.sql.internal.{SQLConf, VariableSubstitution}
 import org.apache.spark.sql.types.{DataType, StructType}
 
 import java.util.Locale
+import scala.util.Try
 
 class NessieSparkSqlExtensionsParser(delegate: ParserInterface)
     extends ParserInterface {
 
-  private lazy val substitutor = new VariableSubstitution(SQLConf.get)
+  import NessieSparkSqlExtensionsParser._
+
+  private lazy val substitutor = {
+    Try(substitutorCtor.newInstance(SQLConf.get))
+      .getOrElse(substitutorCtor.newInstance())
+  }
+
   private lazy val astBuilder = new NessieSqlExtensionsAstBuilder(delegate)
 
   /**
@@ -45,9 +52,8 @@ class NessieSparkSqlExtensionsParser(delegate: ParserInterface)
   /**
     * Parse a string to a raw DataType without CHAR/VARCHAR replacement.
     */
-  override def parseRawDataType(sqlText: String): DataType = {
-    delegate.parseRawDataType(sqlText)
-  }
+  def parseRawDataType(sqlText: String): DataType =
+    throw new UnsupportedOperationException()
 
   /**
     * Parse a string to an Expression.
@@ -158,6 +164,13 @@ class NessieSparkSqlExtensionsParser(delegate: ParserInterface)
           position
         )
     }
+  }
+}
+
+object NessieSparkSqlExtensionsParser {
+  private val substitutorCtor = {
+    Try(classOf[VariableSubstitution].getConstructor(classOf[SQLConf]))
+      .getOrElse(classOf[VariableSubstitution].getConstructor())
   }
 }
 

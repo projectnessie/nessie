@@ -215,15 +215,8 @@
         <artifactSet>
           <includes>
             <include>org.projectnessie</include>
-            <include>org.antlr</include>
           </includes>
         </artifactSet>
-        <relocations>
-          <relocation>
-            <pattern>org.antlr</pattern>
-            <shadedPattern>org.projectnessie.shaded.org.antlr</shadedPattern>
-          </relocation>
-        </relocations>
       </configuration>
       <executions>
         <execution>
