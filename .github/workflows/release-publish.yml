@@ -223,6 +223,23 @@ jobs:
       run: |
         ./gradlew publishPlugins -Pgradle.publish.key=${{ secrets.GRADLE_PUBLISH_KEY }} -Pgradle.publish.secret=${{ secrets.GRADLE_PUBLISH_SECRET }}
 
+      # Packages Nessie Helm chart
+    - name: Package Nessie Helm chart for release
+      uses: WyriHaximus/github-action-helm3@v2
+      if: ${{ !env.ACT }}
+      with:
+        exec: helm package helm/nessie --version ${{ steps.get_version.outputs.VERSION }}
+
+      # Rename Nessie Helm chart
+    - name: Rename Nessie Helm chart for release
+      id: nessie_helm
+      env:
+        RELEASE_VERSION: ${{ steps.get_version.outputs.VERSION }}
+      if: ${{ !env.ACT }}
+      run: |
+        mv nessie-${RELEASE_VERSION}.tgz nessie-helm-${RELEASE_VERSION}.tgz
+        echo ::set-output name=NESSIE_HELM_CHART::nessie-helm-${RELEASE_VERSION}.tgz
+
     # Deploys pynessie. Build and test steps were already ran in previous steps
     - name: Build pynessie for release
       working-directory: ./python
@@ -286,6 +303,7 @@ jobs:
         Q_NATIVE_URL="https://github.com/projectnessie/nessie/releases/download/nessie-${RELEASE_VERSION}/nessie-quarkus-${RELEASE_VERSION}-runner"
         Q_UBER_URL="https://github.com/projectnessie/nessie/releases/download/nessie-${RELEASE_VERSION}/nessie-quarkus-${RELEASE_VERSION}-runner.jar"
         Q_MC_URL="https://search.maven.org/search?q=g:org.projectnessie+AND+a:nessie-quarkus+AND+v:${RELEASE_VERSION}"
+        Q_HELM_CHART_URL="https://github.com/projectnessie/nessie/releases/download/nessie-${RELEASE_VERSION}/nessie-helm-${RELEASE_VERSION}.tgz"
 
         cat <<EOF > ${DIR}/release-notes.md
         # Highlights
@@ -306,6 +324,8 @@ jobs:
         java -jar nessie-quarkus-${RELEASE_VERSION}-runner.jar
         \`\`\`
 
+        The attached [\`nessie-helm-${RELEASE_VERSION}.tgz\`](${Q_HELM_CHART_URL}) is a packaged Helm chart.
+
         ## Full Changelog (minus dependabot commits):
 
         $(cat ${DIR}/release-log)
@@ -324,5 +344,6 @@ jobs:
       run: |
         QUARKUS_NATIVE_BINARY="${{ steps.build_maven.outputs.QUARKUS_NATIVE_BINARY }}"
         QUARKUS_UBER_JAR="${{ steps.build_maven.outputs.QUARKUS_UBER_JAR }}"
+        NESSIE_HELM_CHART="${{ steps.nessie_helm.outputs.NESSIE_HELM_CHART }}"
         echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token
-        gh release create ${GIT_TAG} --notes-file ${{ steps.prep_release.outputs.NOTES_FILE }} --title "Nessie ${RELEASE_VERSION}" "${QUARKUS_NATIVE_BINARY}" "${QUARKUS_UBER_JAR}"
+        gh release create ${GIT_TAG} --notes-file ${{ steps.prep_release.outputs.NOTES_FILE }} --title "Nessie ${RELEASE_VERSION}" "${QUARKUS_NATIVE_BINARY}" "${QUARKUS_UBER_JAR}" "${NESSIE_HELM_CHART}"
