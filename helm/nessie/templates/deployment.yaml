@@ -1,0 +1,104 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "nessie.fullname" . }}
+  labels:
+    {{- include "nessie.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "nessie.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "nessie.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "nessie.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: NESSIE_VERSION_STORE_TYPE
+              value: {{ .Values.versionStoreType }}
+            {{- if eq .Values.versionStoreType "DYNAMO" }}
+            {{- if .Values.dynamodb.region }}
+            - name: AWS_REGION
+              value: {{ .Values.dynamodb.region }}
+            {{- end }}
+            {{- end }}
+            {{- if .Values.jaegerTracing.enabled }}
+            {{- if .Values.jaegerTracing.serviceName }}
+            - name: QUARKUS_JAEGER_SERVICE_NAME
+              value: {{ .Values.jaegerTracing.serviceName }}
+            {{- end }}
+            {{- if .Values.jaegerTracing.publishMetrics }}
+            - name: QUARKUS_JAEGER_METRICS_ENABLED
+              value: {{ .Values.jaegerTracing.publishMetrics | quote }}
+            {{- end }}
+            {{- if .Values.jaegerTracing.samplerType }}
+            - name: QUARKUS_JAEGER_SAMPLER_TYPE
+              value: {{ .Values.jaegerTracing.samplerType }}
+            {{- end }}
+            {{- if .Values.jaegerTracing.samplerParam }}
+            - name: QUARKUS_JAEGER_SAMPLER_PARAM
+              value: {{ .Values.jaegerTracing.samplerParam | quote }}
+            {{- end }}
+            {{- if .Values.jaegerTracing.endpoint }}
+            - name: QUARKUS_JAEGER_ENDPOINT
+              value: {{ .Values.jaegerTracing.endpoint }}
+            {{- end }}
+            {{- end }}
+          ports:
+            - name: nessie-server
+              containerPort: 19120
+              protocol: TCP
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /q/health/live
+              port: 19120
+              scheme: HTTP
+            initialDelaySeconds: 2
+            periodSeconds: 30
+            successThreshold: 1
+            timeoutSeconds: 10
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /q/health/ready
+              port: 19120
+              scheme: HTTP
+            initialDelaySeconds: 3
+            periodSeconds: 45
+            successThreshold: 1
+            timeoutSeconds: 10
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

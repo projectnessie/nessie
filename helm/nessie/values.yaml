@@ -1,0 +1,97 @@
+replicaCount: 1
+
+image:
+  repository: projectnessie/nessie
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+# which type of version store to use: JGIT, INMEMORY, DYNAMO. JGIT is best for local testing, DYNAMO preferred for production
+versionStoreType: INMEMORY
+
+# this is needed when selecting DYNAMO
+dynamodb:
+  region: us-west-2
+
+
+# configure jaeger tracing for nessie
+jaegerTracing:
+  enabled: false
+  # The traces endpoint, in case the client should connect directly to the Collector, like http://jaeger-collector:14268/api/traces
+  # endpoint: http://localhost:14268/api/traces
+  # the Jaeger service name
+  serviceName: nessie
+  # whether or not metrics are published if tracing is enabled
+  publishMetrics: true
+  # the sampler type (const, probabilistic, ratelimiting or remote)
+  samplerType: ratelimiting
+  # 1=Sample all requests. Set samplerParam to somewhere between 0 and 1, e.g. 0.50, if you do not wish to sample all requests
+  samplerParam: 1
+
+serviceMonitor:
+  # Specifies whether ServiceMonitor for Prometheus operator should be created
+  enabled: true
+    # interval: 30s
+  # labels for the created ServiceMonitor so that Prometheus operator can properly pick it up
+  # labels:
+    # release: prometheus
+
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 19120
+
+ingress:
+  enabled: false
+  annotations: {}
+  hosts:
+    - host: chart-example.local
+      paths: []
+  tls: []
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

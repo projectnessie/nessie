@@ -132,6 +132,12 @@ jobs:
         cp mkdocs.yml /tmp/nessie-mkdocs.yml
         cat /tmp/nessie-mkdocs.yml | sed "s/^    java: [0-9.]*$/    java: ${RELEASE_VERSION}/" | sed "s/^    python: v[0-9.]*$/    python: v${RELEASE_VERSION}/"> mkdocs.yml
 
+    - name: Bump version in helm/nessie to ${{ github.event.inputs.releaseVersion }}
+      working-directory: ./helm/nessie
+      run: |
+        cp Chart.yaml /tmp/nessie-Chart.yaml
+        cat /tmp/nessie-Chart.yaml | sed "s/^appVersion: [0-9.]*$/appVersion: ${RELEASE_VERSION}/" > Chart.yaml
+
     - name: Bump UI release version ${{ github.event.inputs.releaseVersion }}
       working-directory: ./ui
       run: |
