@@ -3,7 +3,7 @@ replicaCount: 1
 image:
   repository: projectnessie/nessie
   pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
+  # Overrides the image tag whose default is the chart version.
   tag: ""
 
 # which type of version store to use: JGIT, INMEMORY, DYNAMO. JGIT is best for local testing, DYNAMO preferred for production

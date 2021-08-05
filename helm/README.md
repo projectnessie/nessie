@@ -21,7 +21,7 @@ The following table lists the configurable parameters of the Nessie chart and th
 | image | Nessie Image settings | |
 | image.repository | The nessie image to use | `projectnessie/nessie` |
 | image.pullPolicy | Image pull policy, such as `IfNotPresent` / `Always` / `Never` | `IfNotPresent` |
-| image.tag | Overrides the image tag whose default is the chart appVersion | `appVersion` from `Chart.yaml` |
+| image.tag | Overrides the image tag whose default is the chart version | `version` from `Chart.yaml` |
 | versionStoreType | Version store to use: `JGIT` / `INMEMORY` / `DYNAMO`. `JGIT` is best for local testing, `DYNAMO` preferred for production | `INMEMORY` |
 | dynamodb | Configuration specific to `versionStoreType: DYNAMO` | |
 | dynamodb.region | The region to configure for Dynamo | `us-west-2` |

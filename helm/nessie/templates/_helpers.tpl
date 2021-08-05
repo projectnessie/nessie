@@ -36,9 +36,7 @@ Common labels
 {{- define "nessie.labels" -}}
 helm.sh/chart: {{ include "nessie.chart" . }}
 {{ include "nessie.selectorLabels" . }}
-{{- if .Chart.AppVersion }}
-app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
-{{- end }}
+app.kubernetes.io/version: {{ .Chart.Version | quote }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
