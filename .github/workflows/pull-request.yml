@@ -2,16 +2,18 @@ name: PR Build Check
 
 on:
   pull_request:
-    paths-ignore:
-      - 'LICENSE'
-      - 'NOTICE'
-      - '**.md'
-      - '!site/**'
-      - '.github/dependabot.yml'
-      - '.github/workflows/release*.yml'
-      - '.github/workflows/check*.yml'
-      - '.idea/**'
-      - '.editorconfig'
+# NOTE: using paths-ignore here doesn't play well with "Require status checks to pass before merging"
+# due to https://github.community/t/feature-request-conditional-required-checks/16761
+#    paths-ignore:
+#      - 'LICENSE'
+#      - 'NOTICE'
+#      - '**.md'
+#      - '!site/**'
+#      - '.github/dependabot.yml'
+#      - '.github/workflows/release*.yml'
+#      - '.github/workflows/check*.yml'
+#      - '.idea/**'
+#      - '.editorconfig'
 
 jobs:
   java:
