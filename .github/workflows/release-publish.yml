@@ -223,12 +223,18 @@ jobs:
       run: |
         ./gradlew publishPlugins -Pgradle.publish.key=${{ secrets.GRADLE_PUBLISH_KEY }} -Pgradle.publish.secret=${{ secrets.GRADLE_PUBLISH_SECRET }}
 
+    - name: Install Helm
+      uses: azure/setup-helm@v1
+      with:
+        version: v3.6.3
+
       # Packages Nessie Helm chart
     - name: Package Nessie Helm chart for release
-      uses: WyriHaximus/github-action-helm3@v2
+      env:
+        RELEASE_VERSION: ${{ steps.get_version.outputs.VERSION }}
       if: ${{ !env.ACT }}
-      with:
-        exec: helm package helm/nessie --version ${{ steps.get_version.outputs.VERSION }}
+      run: |
+        helm package helm/nessie --version ${RELEASE_VERSION}
 
       # Rename Nessie Helm chart
     - name: Rename Nessie Helm chart for release
@@ -239,6 +245,14 @@ jobs:
       run: |
         mv nessie-${RELEASE_VERSION}.tgz nessie-helm-${RELEASE_VERSION}.tgz
         echo ::set-output name=NESSIE_HELM_CHART::nessie-helm-${RELEASE_VERSION}.tgz
+
+    - name: Publish Nessie Helm chart to Helm Repo
+      uses: helm/chart-releaser-action@v1.2.1
+      if: ${{ !env.ACT }}
+      with:
+        charts_dir: helm
+      env:
+        CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
     # Deploys pynessie. Build and test steps were already ran in previous steps
     - name: Build pynessie for release
