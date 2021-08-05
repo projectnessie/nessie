@@ -276,6 +276,7 @@
                     <MP_JWT_VERIFY_PUBLICKEY_LOCATION>${project.build.directory}/test-classes/META-INF/resources/publicKey.pem</MP_JWT_VERIFY_PUBLICKEY_LOCATION>
                     <QUARKUS_SMALLRYE_JWT_ENABLED>true</QUARKUS_SMALLRYE_JWT_ENABLED>
                     <NESSIE_VERSION_STORE_JGIT_TYPE>INMEMORY</NESSIE_VERSION_STORE_JGIT_TYPE>
+                    <HTTP_ACCESS_LOG_LEVEL>${test.log.level}</HTTP_ACCESS_LOG_LEVEL>
                   </environmentVariables>
                   <systemPropertyVariables>
                     <native.image.path>${project.build.directory}/${project.build.finalName}-runner</native.image.path>
