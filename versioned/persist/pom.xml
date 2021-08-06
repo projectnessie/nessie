@@ -21,23 +21,15 @@
 
   <parent>
     <groupId>org.projectnessie</groupId>
-    <artifactId>nessie</artifactId>
+    <artifactId>nessie-versioned</artifactId>
     <version>0.8.4-SNAPSHOT</version>
   </parent>
 
-  <artifactId>nessie-versioned</artifactId>
+  <artifactId>nessie-versioned-persist</artifactId>
   <packaging>pom</packaging>
 
-  <name>Nessie - Versioned - Parent</name>
+  <name>Nessie - Versioned - Persist - Parent</name>
 
   <modules>
-    <module>jgit</module>
-    <module>memory</module>
-    <module>spi</module>
-    <module>tests</module>
-    <module>tiered</module>
-    <module>gc</module>
-
-    <module>persist</module>
   </modules>
 </project>
