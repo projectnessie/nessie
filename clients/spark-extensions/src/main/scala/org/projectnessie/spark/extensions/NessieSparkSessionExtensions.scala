@@ -17,7 +17,7 @@ package org.projectnessie.spark.extensions
 
 import org.apache.spark.sql.SparkSessionExtensions
 import org.apache.spark.sql.catalyst.parser.extensions.NessieSparkSqlExtensionsParser
-import org.apache.spark.sql.execution.datasources.v2.ExtendedDataSourceV2Strategy
+import org.apache.spark.sql.execution.datasources.v2.NessieExtendedDataSourceV2Strategy
 
 class NessieSparkSessionExtensions extends (SparkSessionExtensions => Unit) {
 
@@ -29,7 +29,7 @@ class NessieSparkSessionExtensions extends (SparkSessionExtensions => Unit) {
 
     // planner extensions
     extensions.injectPlannerStrategy { spark =>
-      ExtendedDataSourceV2Strategy(spark)
+      NessieExtendedDataSourceV2Strategy(spark)
     }
   }
 }

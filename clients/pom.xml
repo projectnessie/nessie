@@ -36,5 +36,6 @@
     <module>deltalake</module>
     <module>tests</module>
     <module>spark-extensions</module>
+    <module>spark-antlr-grammar</module>
   </modules>
 </project>

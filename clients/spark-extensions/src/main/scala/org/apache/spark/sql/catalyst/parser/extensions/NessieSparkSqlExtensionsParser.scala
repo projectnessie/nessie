@@ -15,9 +15,23 @@
  */
 package org.apache.spark.sql.catalyst.parser.extensions
 
-import org.antlr.v4.runtime._
-import org.antlr.v4.runtime.atn.PredictionMode
-import org.antlr.v4.runtime.misc.{Interval, ParseCancellationException}
+import org.projectnessie.shaded.org.antlr.v4.runtime.{
+  BaseErrorListener,
+  CharStream,
+  CharStreams,
+  CodePointCharStream,
+  CommonToken,
+  CommonTokenStream,
+  IntStream,
+  ParserRuleContext,
+  RecognitionException,
+  Recognizer
+}
+import org.projectnessie.shaded.org.antlr.v4.runtime.atn.PredictionMode
+import org.projectnessie.shaded.org.antlr.v4.runtime.misc.{
+  Interval,
+  ParseCancellationException
+}
 import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.catalyst.{FunctionIdentifier, TableIdentifier}
 import org.apache.spark.sql.catalyst.expressions.Expression
@@ -125,7 +139,7 @@ class NessieSparkSqlExtensionsParser(delegate: ParserInterface)
       command: String
   )(toResult: NessieSqlExtensionsParser => T): T = {
     val lexer = new NessieSqlExtensionsLexer(
-      new UpperCaseCharStream(CharStreams.fromString(command))
+      new NessieUpperCaseCharStream(CharStreams.fromString(command))
     )
     lexer.removeErrorListeners()
     lexer.addErrorListener(NessieParseErrorListener)
@@ -175,7 +189,8 @@ object NessieSparkSqlExtensionsParser {
 }
 
 /* Copied from Apache Spark's to avoid dependency on Spark Internals */
-class UpperCaseCharStream(wrapped: CodePointCharStream) extends CharStream {
+class NessieUpperCaseCharStream(wrapped: CodePointCharStream)
+    extends CharStream {
   override def consume(): Unit = wrapped.consume
   override def getSourceName(): String = wrapped.getSourceName
   override def index(): Int = wrapped.index
