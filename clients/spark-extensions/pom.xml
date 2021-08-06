@@ -182,7 +182,7 @@
       <groupId>org.apache.maven.plugins</groupId>
       <artifactId>maven-shade-plugin</artifactId>
       <configuration>
-        <dependencyReducedPomLocation>${build.directory}</dependencyReducedPomLocation>
+        <createDependencyReducedPom>false</createDependencyReducedPom>
         <filters>
           <!-- filter to address "Invalid signature file" issue - see https://stackoverflow.com/a/6743609/589215 -->
           <filter>
