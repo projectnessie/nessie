@@ -41,12 +41,6 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>tidy-maven-plugin</artifactId>
-        <configuration>
-          <arguments>
-            <argument>-package</argument>
-            <argument>org.apache.spark.sql.catalyst.parser.extensions</argument>
-          </arguments>
-        </configuration>
         <executions>
           <execution>
             <id>validate-pom</id>
