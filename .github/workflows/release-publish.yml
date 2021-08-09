@@ -251,6 +251,7 @@ jobs:
       if: ${{ !env.ACT }}
       with:
         charts_dir: helm
+        charts_url: https://projectnessie.org/charts/
       env:
         CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
