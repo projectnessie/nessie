@@ -15,8 +15,8 @@
  */
 package org.apache.spark.sql.catalyst.parser.extensions
 
-import org.antlr.v4.runtime._
-import org.antlr.v4.runtime.misc.Interval
+import org.projectnessie.shaded.org.antlr.v4.runtime.{ParserRuleContext, Token}
+import org.projectnessie.shaded.org.antlr.v4.runtime.misc.Interval
 import org.apache.spark.sql.catalyst.parser.ParserInterface
 import org.apache.spark.sql.catalyst.parser.extensions.NessieParserUtils.withOrigin
 import org.apache.spark.sql.catalyst.parser.extensions.NessieSqlExtensionsParser._

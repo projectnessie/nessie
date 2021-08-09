@@ -26,6 +26,7 @@ hs_err_pid*
 
 #misc
 target/
+dependency-reduced-pom.xml
 *.patch
 *.DS_STORE
 .DS_STORE

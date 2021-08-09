@@ -15,21 +15,12 @@
  */
 package org.apache.spark.sql.execution.datasources.v2
 
-import org.apache.spark.sql.{SparkSession, Strategy}
-import org.apache.spark.sql.catalyst.plans.logical.{
-  AssignReferenceCommand,
-  CreateReferenceCommand,
-  DropReferenceCommand,
-  ListReferenceCommand,
-  LogicalPlan,
-  MergeBranchCommand,
-  ShowLogCommand,
-  ShowReferenceCommand,
-  UseReferenceCommand
-}
+import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.execution.SparkPlan
+import org.apache.spark.sql.{SparkSession, Strategy}
 
-case class ExtendedDataSourceV2Strategy(spark: SparkSession) extends Strategy {
+case class NessieExtendedDataSourceV2Strategy(spark: SparkSession)
+    extends Strategy {
 
   override def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
 
@@ -92,7 +83,12 @@ case class ExtendedDataSourceV2Strategy(spark: SparkSession) extends Strategy {
         catalog
       ) :: Nil
 
-    case c @ AssignReferenceCommand(reference, isBranch, toRefName, catalog) =>
+    case c @ AssignReferenceCommand(
+          reference,
+          isBranch,
+          toRefName,
+          catalog
+        ) =>
       AssignReferenceExec(
         c.output,
         reference,
