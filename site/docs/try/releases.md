@@ -1,5 +1,12 @@
 # Releases
 
+## 0.9.0 Release (August 9, 2021)
+
+* Support for Iceberg with Spark 3.0 + 3.1
+* Add docs for Nessie's metadata authorization
+* Add SPI for Nessie authorization with Reference implementation
+* Create Helm chart for Nessie
+
 ## 0.8.3 Release (July 19, 2021)
 
 * Fix issue in spark sql extensions
