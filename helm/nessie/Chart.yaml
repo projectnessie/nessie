@@ -2,4 +2,4 @@ apiVersion: v2
 name: nessie
 description: A Helm chart for Nessie
 type: application
-version: 0.8.3
+version: 0.9.0
