@@ -231,13 +231,18 @@ jobs:
         mv nessie-${RELEASE_VERSION}.tgz nessie-helm-${RELEASE_VERSION}.tgz
         echo ::set-output name=NESSIE_HELM_CHART::nessie-helm-${RELEASE_VERSION}.tgz
 
+      # Publish Nessie Helm chart to Helm Repo
     - name: Publish Nessie Helm chart to Helm Repo
-      uses: helm/chart-releaser-action@v1.2.1
-      if: ${{ !env.ACT }}
-      with:
-        charts_dir: helm
       env:
-        CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+        RELEASE_VERSION: ${{ steps.get_version.outputs.VERSION }}
+      if: ${{ !env.ACT }}
+      run: |
+        wget https://raw.githubusercontent.com/projectnessie/charts/main/index.yaml
+        helm repo index . --merge index.yaml --url https://github.com/projectnessie/nessie/releases/download/nessie-${RELEASE_VERSION}
+        echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token
+        index_sha=$(gh api -X GET /repos/projectnessie/charts/contents/index.yaml --jq '.sha')
+        gh api -X PUT /repos/projectnessie/charts/contents/index.yaml -f message="Publishing Nessie Helm chart ${RELEASE_VERSION}" -f content=$(base64 -w0 index.yaml) -f sha=${index_sha}
+
 
     # Deploys pynessie. Build and test steps were already ran in previous steps
     - name: Build pynessie for release
@@ -312,6 +317,7 @@ jobs:
         * Maven Central: https://search.maven.org/search?q=g:org.projectnessie
         * Docker Hub: https://hub.docker.com/r/projectnessie/nessie
         * PyPI: https://pypi.org/project/pynessie/
+        * Helm Chart repo: https://charts.projectnessie.org/
 
         ## Try it
 
@@ -323,7 +329,8 @@ jobs:
         java -jar nessie-quarkus-${RELEASE_VERSION}-runner.jar
         \`\`\`
 
-        The attached [\`nessie-helm-${RELEASE_VERSION}.tgz\`](${Q_HELM_CHART_URL}) is a packaged Helm chart.
+        The attached [\`nessie-helm-${RELEASE_VERSION}.tgz\`](${Q_HELM_CHART_URL}) is a packaged Helm chart, which can be downloaded and installed via Helm.
+        There is also the [Nessie Helm chart repo](https://charts.projectnessie.org/), which can be added and used to install the Nessie Helm chart.
 
         ## Full Changelog (minus dependabot commits):
 
