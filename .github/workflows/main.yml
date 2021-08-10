@@ -45,11 +45,6 @@ jobs:
         server-password: MAVEN_OSSRH_TOKEN
         gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
         gpg-passphrase: MAVEN_GPG_PASSPHRASE
-    - name: Set up JDK 8
-      uses: AdoptOpenJDK/install-jdk@v1
-      with:
-        version: '8'
-        targets: 'JDK8_HOME'
     - name: Update /etc/hosts
       run: echo -e "$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)\t$(hostname -f) $(hostname -s)" | sudo tee -a /etc/hosts
     - name: Set up Maven toolchains.xml
@@ -65,16 +60,6 @@ jobs:
               </provides>
               <configuration>
                 <jdkHome>${env.JAVA_HOME}</jdkHome>
-              </configuration>
-            </toolchain>
-            <toolchain>
-              <type>jdk</type>
-              <provides>
-                <version>1.8</version>
-                <vendor>adoptopenjdk</vendor>
-              </provides>
-              <configuration>
-                <jdkHome>${env.JDK8_HOME}</jdkHome>
               </configuration>
             </toolchain>
           </toolchains>
@@ -110,13 +95,13 @@ jobs:
         MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
         SPARK_LOCAL_IP: localhost
       if: ${{ env.MAVEN_USERNAME }}
-      run: ./mvnw -B deploy --file pom.xml -Pcode-coverage,jdk8-tests,native,release -DdeployAtEnd=true -Dtest.log.level=WARN
+      run: ./mvnw -B deploy --file pom.xml -Pcode-coverage,native,release -DdeployAtEnd=true -Dtest.log.level=WARN
     - name: Build with Maven (Fork)
       env:
         MAVEN_USERNAME: ${{ secrets.OSSRH_ACCESS_ID }}
         SPARK_LOCAL_IP: localhost
       if: ${{ ! env.MAVEN_USERNAME }}
-      run: ./mvnw -B install --file pom.xml -Pcode-coverage,jdk8-tests,native,release -DskipGpg -Dtest.log.level=WARN
+      run: ./mvnw -B install --file pom.xml -Pcode-coverage,native,release -DskipGpg -Dtest.log.level=WARN
     - name: Build with Gradle
       run: ./gradlew --rerun-tasks --no-daemon --info build
       working-directory: ./tools/apprunner-gradle-plugin
