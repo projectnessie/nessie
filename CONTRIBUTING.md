@@ -87,6 +87,14 @@ Upon submission of a pull request you will be asked to sign our contributor lice
 Anyone can take part in the review process and once the community is happy and the build actions are passing a Pull Request will be merged. Support 
 must be unanimous for a change to be merged.
 
+All pull-requests automatically trigger CI runs. Two long-running parts of the CI workflow are
+skipped for PRs by default, but can be enabled using "labels" on the PR.
+* Quarkus native image generation + tests against the native image. The label `pr-native` label enables this.
+  The label `pr-native` label enables this, CI results do not appear as a separate job, because
+  those run as part of the "Java/Maven" workflow job.
+* Nessie-client tests against various combinations of Jackson versions.
+  The label `pr-jackson` label enables this and CI result will appear as a separate check.
+
 ### Reporting security issues
 
 Please see our [Security Policy](SECURITY.md)

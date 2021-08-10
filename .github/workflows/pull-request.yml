@@ -2,6 +2,7 @@ name: PR Build Check
 
 on:
   pull_request:
+    types: [labeled, unlabeled, opened, synchronize, reopened]
 # NOTE: using paths-ignore here doesn't play well with "Require status checks to pass before merging"
 # due to https://github.community/t/feature-request-conditional-required-checks/16761
 #    paths-ignore:
@@ -19,8 +20,31 @@ jobs:
   java:
     name: Java/Maven
     runs-on: ubuntu-latest
+    outputs:
+      CI_WITH_JACKSON: ${{ steps.ci_options.outputs.CI_WITH_JACKSON }}
 
     steps:
+    - name: Build/test options
+      id: ci_options
+      run: |
+        echo ::set-output name=CI_WITH_NATIVE::$(jq 'any(.pull_request.labels[]; .name == "pr-native")' < $GITHUB_EVENT_PATH)
+        echo ::set-output name=CI_WITH_JACKSON::$(jq 'any(.pull_request.labels[]; .name == "pr-jackson")' < $GITHUB_EVENT_PATH)
+    - name: Memory report
+      run: |
+        echo "Memory and swap:"
+        free
+        echo
+        swapon --show
+        echo
+        echo "Available storage:"
+        df -h
+        echo
+    - name: Add 6G more swap for native-image build
+      if: ${{ steps.ci_options.outputs.CI_WITH_NATIVE == 'true' }}
+      run: |
+        sudo dd if=/dev/zero of=/mnt/swapfile-2 bs=1MiB count=$((6*1024))
+        sudo mkswap /mnt/swapfile-2
+        sudo swapon /mnt/swapfile-2
     - uses: actions/checkout@v2
     - name: Set up JDK 11
       uses: actions/setup-java@v1
@@ -86,9 +110,15 @@ jobs:
         key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
         restore-keys: ${{ runner.os }}-gradle
     - name: Build with Maven
-      run: ./mvnw -B install javadoc:javadoc-no-fork --file pom.xml -Pcode-coverage,jdk8-tests -Dtest.log.level=WARN
       env:
         SPARK_LOCAL_IP: localhost
+      run: |
+        ./mvnw -B install javadoc:javadoc-no-fork --file pom.xml -Pcode-coverage,jdk8-tests -Dtest.log.level=WARN
+    - name: Build with Maven / Native tests
+      if: ${{ steps.ci_options.outputs.CI_WITH_NATIVE == 'true' }}
+      run: |
+        # No code-coverage here
+        ./mvnw -B install javadoc:javadoc-no-fork --file pom.xml -Pnative -Dtest.log.level=WARN -pl :nessie-quarkus -pl :nessie-lambda
     - name: Build with Gradle
       run: ./gradlew --rerun-tasks --no-daemon --info build
       working-directory: ./tools/apprunner-gradle-plugin
@@ -112,6 +142,47 @@ jobs:
         flags: java
         files: |
           code-coverage/target/site/jacoco-aggregate-all/jacoco.xml
+
+  jackson-tests:
+    name: Jackson Integration Tests
+    needs: java
+    if: ${{ needs.java.outputs.CI_WITH_JACKSON == 'true' }}
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 4
+      # note the big include entry in matrix is used to ensure we get human readable names for the jobs
+      matrix:
+        include:
+          - jackson-version: 2.6.5
+            target-library: Hive 2.3.7
+            java-version: 11
+          - jackson-version: 2.9.5
+            target-library: Hive 3.1.2
+            java-version: 11
+          - jackson-version: 2.6.7
+            target-library: Spark 2.4.4
+            java-version: 11
+          - jackson-version: 2.10.0
+            target-library: Spark 3.0.1
+            java-version: 11
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up JDK
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{ matrix.java-version }}
+      - name: Cache local Maven repository
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.m2/repository
+            !~/.m2/repository/org/projectnessie
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+      - name: Jackson Integration Tests ${{ matrix.target-library }}
+        run: mvn verify -pl :nessie-client -am -Pjackson-tests -Djackson.test.version=${{ matrix.jackson-version }} -Dtest.log.level=WARN
+
   python:
     name: Python
     runs-on: ubuntu-latest
