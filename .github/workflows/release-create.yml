@@ -180,7 +180,7 @@ jobs:
         cp package.json /tmp/nessie-ui-package.json
         cp package-lock.json /tmp/nessie-ui-package-lock.json
         cat /tmp/nessie-ui-package.json | jq ".version = \"${NEXT_UI_VERSION}\"" > package.json
-        cat /tmp/nessie-ui-package-lock.json | jq ".version = \"${NEXT_UI_VERSION}\" | .packages[\"\"].version = \"${RELEASE_VERSION}\"" > package-lock.json
+        cat /tmp/nessie-ui-package-lock.json | jq ".version = \"${NEXT_UI_VERSION}\" | .packages[\"\"].version = \"${NEXT_UI_VERSION}\"" > package-lock.json
 
     # Update versions in pom's to next development iteration
     - name: Bump Maven next development version version
