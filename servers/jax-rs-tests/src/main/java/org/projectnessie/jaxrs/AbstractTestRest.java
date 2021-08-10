@@ -42,6 +42,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -107,6 +108,15 @@ public abstract class AbstractTestRest {
   private TreeApi tree;
   private ContentsApi contents;
   private HttpClient httpClient;
+
+  static {
+    // Note: REST tests validate some locale-specific error messages, but expect on the messages to
+    // be in ENGLISH. However, the JRE's startup classes (in particular class loaders) may cause the
+    // default Locale to be initialized before Maven is able to override the user.language system
+    // property. Therefore, we explicitly set the default Locale to ENGLISH here to match tests'
+    // expectations.
+    Locale.setDefault(Locale.ENGLISH);
+  }
 
   protected void init(URI uri) {
     client = NessieClient.builder().withUri(uri).build();
