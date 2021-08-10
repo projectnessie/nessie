@@ -19,11 +19,15 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.immutables.value.Value.Immutable;
 
+/** Composite for the per-named-reference and global state for a contents key. */
 @Immutable
 public interface ContentsAndState<CONTENTS> {
+
+  /** Per-named-reference state for a contents key. For example, Iceberg's snapshot-ID. */
   @Nonnull
   CONTENTS getRefState();
 
+  /** Global state for a contents key. For example, the pointer to Iceberg's table-metadata. */
   @Nullable
   CONTENTS getGlobalState();
 

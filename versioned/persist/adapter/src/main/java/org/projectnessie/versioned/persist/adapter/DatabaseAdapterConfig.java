@@ -23,9 +23,9 @@ import org.immutables.value.Value;
  * <p>See {@link org.projectnessie.versioned.persist.adapter.spi.DefaultDatabaseAdapterConfig} for
  * the default, immutable-annotated type.
  *
- * <p>{@link DatabaseAdapter} implementations that need more configuration options must extend this
- * interface, have the {@link Value.Immutable} annotation and declare the {@code with...} methods
- * implemented by "immutables".
+ * <p>{@link org.projectnessie.versioned.persist.adapter.DatabaseAdapter} implementations that need
+ * more configuration options must extend this interface, have the {@link Value.Immutable}
+ * annotation and declare the {@code with...} methods implemented by "immutables".
  */
 public interface DatabaseAdapterConfig {
 
@@ -34,14 +34,10 @@ public interface DatabaseAdapterConfig {
   int DEFAULT_COMMIT_TIMEOUT = 500;
   int DEFAULT_COMMIT_RETRIES = Integer.MAX_VALUE;
 
-  @Value.Default
-  default String getDefaultBranch() {
-    return "main";
-  }
-
-  DatabaseAdapterConfig withDefaultBranch(String defaultBranch);
-
-  /** Prefix for all primary-keys used by a {@link DatabaseAdapter} instance. */
+  /**
+   * Prefix for all primary-keys used by a {@link
+   * org.projectnessie.versioned.persist.adapter.DatabaseAdapter} instance.
+   */
   @Value.Default
   default String getKeyPrefix() {
     return "";
@@ -50,8 +46,9 @@ public interface DatabaseAdapterConfig {
   DatabaseAdapterConfig withKeyPrefix(String keyPrefix);
 
   /**
-   * The number of parent-commit-hashes stored in {@link CommitLogEntry#getParents()}. Defaults to
-   * {@value #DEFAULT_PARENTS_PER_COMMIT}.
+   * The number of parent-commit-hashes stored in {@link
+   * org.projectnessie.versioned.persist.adapter.CommitLogEntry#getParents()}. Defaults to {@value
+   * #DEFAULT_PARENTS_PER_COMMIT}.
    */
   @Value.Default
   default int getParentsPerCommit() {
@@ -61,8 +58,10 @@ public interface DatabaseAdapterConfig {
   DatabaseAdapterConfig withParentsPerCommit(int parentsPerCommit);
 
   /**
-   * Each {@code n}-th {@link CommitLogEntry}, where {@code n ==} value of this parameter, will
-   * contain a "full" {@link EmbeddedKeyList}. Defaults to {@value #DEFAULT_KEY_LIST_DISTANCE}.
+   * Each {@code n}-th {@link org.projectnessie.versioned.persist.adapter.CommitLogEntry}, where
+   * {@code n ==} value of this parameter, will contain a "full" {@link
+   * org.projectnessie.versioned.persist.adapter.EmbeddedKeyList}. Defaults to {@value
+   * #DEFAULT_KEY_LIST_DISTANCE}.
    */
   @Value.Default
   default int getKeyListDistance() {

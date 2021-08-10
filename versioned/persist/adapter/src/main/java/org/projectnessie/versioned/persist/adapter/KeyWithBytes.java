@@ -21,18 +21,29 @@ import com.google.protobuf.ByteString;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.Key;
 
-/** Composite of key, contents-type and contents. */
+/** Composite of key, contents-id, contents-type and contents. */
 @Value.Immutable(lazyhash = true)
 @JsonSerialize(as = ImmutableKeyWithBytes.class)
 @JsonDeserialize(as = ImmutableKeyWithBytes.class)
 public interface KeyWithBytes {
   Key getKey();
 
+  String getContentsId();
+
   byte getType();
 
   ByteString getValue();
 
-  static KeyWithBytes of(Key key, byte type, ByteString value) {
-    return ImmutableKeyWithBytes.builder().key(key).type(type).value(value).build();
+  static KeyWithBytes of(Key key, String contentsId, byte type, ByteString value) {
+    return ImmutableKeyWithBytes.builder()
+        .key(key)
+        .contentsId(contentsId)
+        .type(type)
+        .value(value)
+        .build();
+  }
+
+  default KeyWithType asKeyWithType() {
+    return KeyWithType.of(getKey(), getContentsId(), getType());
   }
 }

@@ -44,7 +44,7 @@ public interface CommitLogEntry {
    * List of all {@code Put} operations, with their keys, content-types and serialized {@code
    * Contents}.
    */
-  List<KeyWithContentsIdAndBytes> getPuts();
+  List<KeyWithBytes> getPuts();
 
   /** List of "unchanged" keys, from {@code Unchanged} commit operations. */
   List<Key> getUnchanged();
@@ -69,7 +69,7 @@ public interface CommitLogEntry {
       Hash hash,
       List<Hash> parents,
       ByteString metadata,
-      List<KeyWithContentsIdAndBytes> puts,
+      List<KeyWithBytes> puts,
       List<Key> unchanged,
       List<Key> deletes,
       int keyListDistance,

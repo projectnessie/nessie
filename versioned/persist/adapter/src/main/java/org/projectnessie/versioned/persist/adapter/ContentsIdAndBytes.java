@@ -20,7 +20,10 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.protobuf.ByteString;
 import org.immutables.value.Value;
 
-/** Composite of contents-id, contents-type and contents. */
+/**
+ * Used when dealing with global states in operations for Nessie-GC, like enumerating all globally
+ * managed contents. Composite of contents-id, contents-type and contents.
+ */
 @Value.Immutable(lazyhash = true)
 @JsonSerialize(as = ImmutableContentsIdAndBytes.class)
 @JsonDeserialize(as = ImmutableContentsIdAndBytes.class)

@@ -20,8 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.immutables.value.Value;
-import org.projectnessie.versioned.BranchName;
-import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 
 /**
@@ -30,14 +28,11 @@ import org.projectnessie.versioned.Key;
 @Value.Immutable(lazyhash = true)
 public interface CommitAttempt {
 
-  /** Branch to commit to. */
-  BranchName getBranch();
-
-  /** Expected HEAD of the branch to commit to. */
-  Optional<Hash> getExpectedHead();
-
-  /** Mapping of {@link Key}s to contents-ids. */
-  Map<Key, String> getKeyToContentsId();
+  /**
+   * Branch to commit to. If {@link CommitOnReference#getHashOnReference()} is present, the
+   * referenced branch's HEAD must be equal to this hash.
+   */
+  CommitOnReference getCommitToBranch();
 
   /**
    * Mapping of contents-ids to expected global contents-state (think: Iceberg table-metadata),

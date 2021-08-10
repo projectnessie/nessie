@@ -22,7 +22,6 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.ToIntFunction;
 import java.util.stream.Stream;
-import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
@@ -33,72 +32,208 @@ import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.WithHash;
 
 /**
- * Tiered-Version-Store Database-adapter interface.
+ * Database-Adapter interface that encapsulates all database related logic, ab abstraction between a
+ * {@link org.projectnessie.versioned.VersionStore} implementation and a variety of different
+ * databases that share common core implementations for example for the commit/merge/transplant
+ * operations.
+ *
+ * <p>Database-adapters treat the actual "Nessie contents" and "Nessie commit metadata" as an opaque
+ * value ("BLOB") without interpreting the contents. Database-adapter must persist serialized values
+ * for commit-metadata and contents as is and must return those in the exact same representation on
+ * read.
+ *
+ * <p>Actual implementation usually extend either {@code
+ * org.projectnessie.versioned.persist.nontx.NonTxDatabaseAdapter} (NoSQL databases) or {@code
+ * org.projectnessie.versioned.persist.tx.TxDatabaseAdapter} (JDBC/transactional). Both in turn
+ * extend {@link org.projectnessie.versioned.persist.adapter.spi.AbstractDatabaseAdapter}.
  *
  * <p>All returned {@link Stream}s must be closed.
  */
 public interface DatabaseAdapter extends AutoCloseable {
 
   /** Ensures that mandatory data is present in the repository, does not change an existing repo. */
-  void initializeRepo() throws ReferenceConflictException;
+  void initializeRepo(String defaultBranchName);
 
   /** Forces a repository to be re-initialized. */
-  void reinitializeRepo() throws ReferenceConflictException;
+  void reinitializeRepo(String defaultBranchName);
 
+  /**
+   * Retrieve the reference-local and global state for the given keys for the specified named
+   * reference.
+   *
+   * @param commitOnReference named-reference to retrieve the values for. If no value for the hash
+   *     is specified, it defaults to the named reference's HEAD.
+   * @param keys keys to retrieve the values (reference-local and global) for
+   * @param keyFilter predicate to optionally skip specific keys in the result and return those as
+   *     {@link Optional#empty() "not present"}, for example to implement a security policy.
+   * @return Ordered stream
+   * @throws ReferenceNotFoundException if either the named reference in {@code commitOnReference}
+   *     or the commit on that reference, if specified, does not exist.
+   */
   Stream<Optional<ContentsAndState<ByteString>>> values(
-      NamedRef ref, Optional<Hash> hashOnRef, List<Key> keys, KeyFilterPredicate keyFilter)
-      throws ReferenceNotFoundException;
-
-  Stream<CommitLogEntry> commitLog(
-      NamedRef ref, Optional<Hash> offset, Optional<Hash> untilIncluding)
-      throws ReferenceNotFoundException;
-
-  Stream<KeyWithBytes> entries(NamedRef ref, Optional<Hash> hashOnRef, KeyFilterPredicate keyFilter)
-      throws ReferenceNotFoundException;
-
-  Stream<KeyWithType> keys(NamedRef ref, Optional<Hash> hashOnRef, KeyFilterPredicate keyFilter)
+      CommitOnReference commitOnReference, List<Key> keys, KeyFilterPredicate keyFilter)
       throws ReferenceNotFoundException;
 
   /**
-   * Commit operation.
+   * Retrieve the commit-log for the specified named * reference.
+   *
+   * @param offset named-reference to retrieve the commit-log for. If no value for the hash is
+   *     specified, it defaults to the named reference's HEAD.
+   * @return stream of {@link CommitLogEntry}
+   * @throws ReferenceNotFoundException if either the named reference in {@code offset} or the
+   *     commit on that reference, if specified, does not exist.
+   */
+  Stream<CommitLogEntry> commitLog(CommitOnReference offset) throws ReferenceNotFoundException;
+
+  /**
+   * NOTE: THIS FUNCTION WILL PROBABLY GO AWAY! {@code VersionStore} does mention this function, but
+   * it is never used.
+   */
+  Stream<KeyWithBytes> entries(CommitOnReference commitOnReference, KeyFilterPredicate keyFilter)
+      throws ReferenceNotFoundException;
+
+  /**
+   * Retrieve the contents-keys that are "present" for the specified named reference.
+   *
+   * @param commitOnReference named-reference to retrieve the contents-keys for. If no value for the
+   *     hash is specified, it defaults to the named reference's HEAD.
+   * @param keyFilter predicate to optionally skip specific keys in the result and return those as
+   *     {@link Optional#empty() "not present"}, for example to implement a security policy.
+   * @return Ordered stream with content-keys, content-ids and content-types.
+   * @throws ReferenceNotFoundException if either the named reference in {@code commitOnReference}
+   *     or the commit on that reference, if specified, does not exist.
+   */
+  Stream<KeyWithType> keys(CommitOnReference commitOnReference, KeyFilterPredicate keyFilter)
+      throws ReferenceNotFoundException;
+
+  /**
+   * Commit operation, see {@link CommitAttempt} for a description of the parameters.
    *
    * @param commitAttempt parameters for the commit
    * @return optimistically written commit-log-entry
+   * @throws ReferenceNotFoundException if either the named reference in {@link
+   *     CommitAttempt#getCommitToBranch()} or the commit on that reference, if specified, does not
+   *     exist.
+   * @throws ReferenceConflictException if any of the commits could not be committed onto the target
+   *     branch due to a conflicting change or if the expected hash in {@link
+   *     CommitAttempt#getCommitToBranch()}is not its expected hEAD
    */
   Hash commit(CommitAttempt commitAttempt)
       throws ReferenceConflictException, ReferenceNotFoundException;
 
-  Hash transplant(
-      BranchName targetBranch,
-      Optional<Hash> expectedHash,
-      NamedRef source,
-      List<Hash> sequenceToTransplant)
+  /**
+   * Cherry-pick the commits with the hashes {@code sequenceToTransplant} from named reference
+   * {@code source} onto the reference {@code targetBranch}.
+   *
+   * @param targetBranch named-reference to commit to. If no value for the hash is specified, it
+   *     defaults to the named reference's HEAD.
+   * @param source source named-reference via which the commits in {@code sequenceToTransplant} are
+   *     reachable
+   * @param sequenceToTransplant commits in {@code source} to cherry-pick onto {@code targetBranch}
+   * @return the hash of the last cherry-picked commit, in other words the new HEAD of the target
+   *     branch
+   * @throws ReferenceNotFoundException if either the named reference in {@code commitOnReference}
+   *     or the commit on that reference, if specified, does not exist.
+   * @throws ReferenceConflictException if any of the commits could not be committed onto the target
+   *     branch due to a conflicting change or if the expected hash of {@code toBranch} is not its
+   *     expected hEAD
+   */
+  Hash transplant(CommitOnReference targetBranch, NamedRef source, List<Hash> sequenceToTransplant)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
-  Hash merge(
-      NamedRef from, Optional<Hash> fromHash, BranchName toBranch, Optional<Hash> expectedHash)
+  /**
+   * Merge all commits on {@code from} since the common ancestor of {@code from} and {@code to} and
+   * commit those onto {@code to}.
+   *
+   * <p>The implementation first identifies the common-ancestor (the most-recent commit that is both
+   * reachable via {@code from} and {@code to}).
+   *
+   * @param from named-reference to read commits from. If no value for the hash is specified, it
+   *     defaults to the named reference's HEAD.
+   * @param toBranch target branch to commit to
+   * @return the hash of the last cherry-picked commit, in other words the new HEAD of the target
+   *     branch
+   * @throws ReferenceNotFoundException if either the named reference in {@code commitOnReference}
+   *     or the commit on that reference, if specified, does not exist.
+   * @throws ReferenceConflictException if any of the commits could not be committed onto the target
+   *     branch due to a conflicting change or if the expected hash of {@code toBranch} is not its
+   *     expected hEAD
+   */
+  Hash merge(CommitOnReference from, CommitOnReference toBranch)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
+  /**
+   * Resolve the current HEAD of the given named-reference.
+   *
+   * @param ref named reference to resolve
+   * @return current HEAD of {@code ref}
+   * @throws ReferenceNotFoundException if the named reference {@code ref} does not exist.
+   */
   Hash toHash(NamedRef ref) throws ReferenceNotFoundException;
 
+  /**
+   * Get all named references including their current HEAD.
+   *
+   * @return stream with all named references including their current HEAD.
+   */
   Stream<WithHash<NamedRef>> namedRefs();
 
-  Hash create(NamedRef ref, Optional<NamedRef> target, Optional<Hash> targetHash)
+  /**
+   * Create a new named reference.
+   *
+   * @param ref Named reference to create - either a {@link org.projectnessie.versioned.BranchName}
+   *     or {@link org.projectnessie.versioned.TagName}.
+   * @param target The already existing named reference with an optional hash on that branch. This
+   *     parameter can be {@code null} for the edge case when the default branch is re-created after
+   *     it has been dropped.
+   * @return the current HEAD of the created branch or tag
+   * @throws ReferenceNotFoundException if the reference mentioned in {@code target} does not exist.
+   * @throws ReferenceAlreadyExistsException if the reference {@code ref} already exists.
+   */
+  Hash create(NamedRef ref, CommitOnReference target)
       throws ReferenceNotFoundException, ReferenceAlreadyExistsException;
 
-  void delete(NamedRef ref, Optional<Hash> hash)
+  /**
+   * Delete the given reference.
+   *
+   * @param reference named-reference to delete. If a value for the hash is specified, it must be
+   *     equal to the current HEAD.
+   * @throws ReferenceNotFoundException if the named reference in {@code reference} does not exist.
+   * @throws ReferenceConflictException if the named reference's HEAD is not equal to the expected
+   *     HEAD
+   */
+  void delete(CommitOnReference reference)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
-  void assign(
-      NamedRef ref, Optional<Hash> expectedHash, NamedRef assignTo, Optional<Hash> assignToHash)
+  /**
+   * Updates {@code assignee}'s HEAD to {@code assignTo}.
+   *
+   * @param assignee named reference to re-assign
+   * @param assignTo commit to update {@code assignee}'s HEAD to
+   * @throws ReferenceNotFoundException if either the named reference in {@code assignTo} or the
+   *     commit on that reference, if specified, does not exist or if the named reference specified
+   *     in {@code assignee} does not exist.
+   * @throws ReferenceConflictException if the HEAD of the named reference {@code assignee} is not
+   *     equal to the expected HEAD
+   */
+  void assign(CommitOnReference assignee, CommitOnReference assignTo)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
+  /**
+   * Compute the difference of the contents for the two commits identified by {@code from} and
+   * {@code to}.
+   *
+   * @param from {@link Diff#getFromValue() "From"} side of the diff
+   * @param to {@link Diff#getToValue() "To" side} of the diff
+   * @param keyFilter predicate to optionally skip specific keys in the diff result and not return
+   *     those, for example to implement a security policy.
+   * @return stream containing the difference of the contents, excluding both equal values and
+   *     values that were excluded via {@code keyFilter}
+   * @throws ReferenceNotFoundException if either the named references in {@code assignTo} or the
+   *     commit on these reference, if specified, does not exist.
+   */
   Stream<Diff<ByteString>> diff(
-      NamedRef from,
-      Optional<Hash> hashOnFrom,
-      NamedRef to,
-      Optional<Hash> hashOnTo,
-      KeyFilterPredicate keyFilter)
+      CommitOnReference from, CommitOnReference to, KeyFilterPredicate keyFilter)
       throws ReferenceNotFoundException;
 
   // NOTE: the following is NOT a "proposed" API, just an idea of how the supporting functions
@@ -128,6 +263,6 @@ public interface DatabaseAdapter extends AutoCloseable {
    *
    * <p>This operation is primarily used by Nessie-GC and must not be exposed via a public API.
    */
-  Stream<KeyWithContentsIdAndBytes> allContents(
+  Stream<KeyWithBytes> allContents(
       BiFunction<NamedRef, CommitLogEntry, Boolean> continueOnRefPredicate);
 }

@@ -25,7 +25,7 @@ import java.util.function.Predicate;
  * instantiated by an implementation of this factory.
  *
  * <p>This factory approach is useful to have "generic" infrastructure code for unit/integration
- * tests, (micro)benchmarks but also production-code. See {@link SystemPropertiesConfigurer}.
+ * tests, (micro)benchmarks but also production-code. See {@code SystemPropertiesConfigurer}.
  *
  * <p>Concrete database-adapter factory implementations can then be easily filtered and loaded via
  * {@link #loadFactory(Predicate)} or {@link #loadFactoryByName(String)}.
