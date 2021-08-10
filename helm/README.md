@@ -1,8 +1,15 @@
 # Nessie Helm chart
 
-## Installation
+## Installation from local directory
 ```bash
-$ helm install --namespace nessie-ns --name nessie helm/nessie
+$ helm install --namespace nessie-ns nessie helm/nessie
+```
+
+## Installation from Helm repo
+```bash
+$ helm repo add nessie-helm https://charts.projectnessie.org
+$ helm repo update
+$ helm install --namespace nessie-ns nessie nessie-helm/nessie
 ```
 
 ## Uninstalling the Chart

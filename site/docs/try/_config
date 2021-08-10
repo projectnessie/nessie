@@ -2,6 +2,7 @@ title: Try Now
 arrange:
   - index.md
   - docker.md
+  - helm.md
   - configuration.md
   - releases.md
   
