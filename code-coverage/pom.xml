@@ -159,11 +159,6 @@
     </dependency>
     <dependency>
       <groupId>org.projectnessie</groupId>
-      <artifactId>nessie-versioned-spi</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.projectnessie</groupId>
       <artifactId>nessie-versioned-persist-adapter</artifactId>
       <version>${project.version}</version>
     </dependency>
