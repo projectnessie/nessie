@@ -32,6 +32,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.projectnessie.client.HttpClientBuilder;
 import org.projectnessie.client.NessieClient;
 import org.projectnessie.client.tests.AbstractSparkTest;
 import org.projectnessie.error.NessieConflictException;
@@ -59,7 +60,7 @@ class ITDeltaLogBranches extends AbstractSparkTest {
 
   @BeforeEach
   public void createClient() {
-    client = NessieClient.builder().withUri(url).build();
+    client = HttpClientBuilder.builder().withUri(url).build();
   }
 
   @AfterEach

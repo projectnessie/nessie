@@ -35,7 +35,10 @@ import java.util.stream.StreamSupport;
 import javax.enterprise.context.RequestScoped;
 import javax.enterprise.inject.Alternative;
 import javax.inject.Inject;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.SecurityContext;
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.api.params.CommitLogParams;
@@ -82,6 +85,8 @@ import org.projectnessie.versioned.WithHash;
 /** REST endpoint for trees. */
 @RequestScoped
 @Alternative
+@Consumes(value = MediaType.APPLICATION_JSON)
+@Path("trees")
 public class TreeResource extends BaseResource implements TreeApi {
 
   private static final int MAX_COMMIT_LOG_ENTRIES = 250;

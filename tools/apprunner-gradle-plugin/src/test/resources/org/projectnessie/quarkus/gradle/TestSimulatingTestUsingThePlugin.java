@@ -35,7 +35,7 @@ class TestSimulatingTestUsingThePlugin {
 
     String uri = String.format("http://localhost:%s/api/v1", port);
 
-    NessieClient client = NessieClient.builder().withUri(uri).build();
+    NessieClient client = HttpClientBuilder.newBuilder().withUri(uri).build();
     // Just some simple REST request to verify that Nessie is started - no fancy interactions w/ Nessie
     client.getConfigApi().getConfig();
 

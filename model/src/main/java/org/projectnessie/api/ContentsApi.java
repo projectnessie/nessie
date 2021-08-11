@@ -42,8 +42,6 @@ import org.projectnessie.model.MultiGetContentsRequest;
 import org.projectnessie.model.MultiGetContentsResponse;
 import org.projectnessie.model.Validation;
 
-@Consumes(value = MediaType.APPLICATION_JSON)
-@Path("contents")
 public interface ContentsApi {
 
   /** Get the properties of an object. */
