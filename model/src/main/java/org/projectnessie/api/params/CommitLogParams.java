@@ -15,6 +15,7 @@
  */
 package org.projectnessie.api.params;
 
+import java.util.Objects;
 import java.util.StringJoiner;
 import javax.annotation.Nullable;
 import javax.validation.constraints.Pattern;
@@ -135,6 +136,27 @@ public class CommitLogParams {
         .add("pageToken='" + pageToken + "'")
         .add("queryExpression='" + queryExpression + "'")
         .toString();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    CommitLogParams that = (CommitLogParams) o;
+    return Objects.equals(startHash, that.startHash)
+        && Objects.equals(endHash, that.endHash)
+        && Objects.equals(maxRecords, that.maxRecords)
+        && Objects.equals(pageToken, that.pageToken)
+        && Objects.equals(queryExpression, that.queryExpression);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(startHash, endHash, maxRecords, pageToken, queryExpression);
   }
 
   public static class Builder {

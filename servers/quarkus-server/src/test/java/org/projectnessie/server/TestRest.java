@@ -15,10 +15,15 @@
  */
 package org.projectnessie.server;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import java.net.URI;
 import org.junit.jupiter.api.BeforeEach;
+import org.projectnessie.client.NessieClient;
+import org.projectnessie.client.http.HttpClient;
+import org.projectnessie.client.rest.NessieHttpResponseFilter;
 import org.projectnessie.jaxrs.AbstractTestRest;
 import org.projectnessie.server.profiles.QuarkusTestProfileInmemory;
 
@@ -29,7 +34,15 @@ class TestRest extends AbstractTestRest {
   @Override
   @BeforeEach
   public void setUp() throws Exception {
-    super.init(URI.create("http://localhost:19121/api/v1"));
+    URI uri = URI.create("http://localhost:19121/api/v1");
+
+    ObjectMapper mapper =
+        new ObjectMapper()
+            .enable(SerializationFeature.INDENT_OUTPUT)
+            .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+    HttpClient httpClient = HttpClient.builder().setBaseUri(uri).setObjectMapper(mapper).build();
+    httpClient.register(new NessieHttpResponseFilter(mapper));
+    super.init(NessieClient.builder().withUri(uri).build(), httpClient);
     super.setUp();
   }
 }
