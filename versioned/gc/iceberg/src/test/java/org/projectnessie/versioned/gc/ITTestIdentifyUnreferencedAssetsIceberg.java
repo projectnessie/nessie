@@ -66,6 +66,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.projectnessie.api.ContentsApi;
 import org.projectnessie.api.TreeApi;
+import org.projectnessie.client.HttpClientBuilder;
 import org.projectnessie.client.NessieClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -146,7 +147,7 @@ class ITTestIdentifyUnreferencedAssetsIceberg {
   @BeforeEach
   void beforeEach() throws NessieConflictException, NessieNotFoundException {
     new DynamoSupplier().get();
-    this.client = NessieClient.builder().withUri(NESSIE_ENDPOINT).build();
+    this.client = HttpClientBuilder.builder().withUri(NESSIE_ENDPOINT).build();
     tree = client.getTreeApi();
     contents = client.getContentsApi();
 

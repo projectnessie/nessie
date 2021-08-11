@@ -91,6 +91,7 @@
     <module>perftest</module>
     <module>servers</module>
     <module>tools</module>
+    <module>grpc</module>
   </modules>
 
   <scm>

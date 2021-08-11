@@ -20,7 +20,11 @@ import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.FileAlreadyExistsException
 import java.util.UUID
 import java.util.regex.Pattern
-import org.projectnessie.client.{NessieClient, NessieConfigConstants}
+import org.projectnessie.client.{
+  HttpClientBuilder,
+  NessieClient,
+  NessieConfigConstants
+}
 import org.projectnessie.error.{
   NessieConflictException,
   NessieNotFoundException
@@ -72,7 +76,7 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
 
   private val client: NessieClient = {
     val removePrefix = (x: String) => x.replace("nessie.", "")
-    NessieClient
+    HttpClientBuilder
       .builder()
       .fromConfig(c => catalogConf.getOrElse(removePrefix(c), null))
       .build()

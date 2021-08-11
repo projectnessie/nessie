@@ -18,7 +18,7 @@ package org.projectnessie.perftest.gatling
 import io.gatling.core.Predef._
 import io.gatling.core.scenario.Simulation
 import io.gatling.core.structure.{ChainBuilder, ScenarioBuilder}
-import org.projectnessie.client.NessieClient
+import org.projectnessie.client.{HttpClientBuilder, NessieClient}
 import org.projectnessie.error.NessieConflictException
 import org.projectnessie.model.Operation.Put
 import org.projectnessie.model._
@@ -150,7 +150,7 @@ class CommitToBranchSimulation extends Simulation {
   private def doSetUp(): SetUp = {
     val nessieProtocol: NessieProtocol = nessie()
       .client(
-        NessieClient
+        HttpClientBuilder
           .builder()
           .withUri("http://127.0.0.1:19120/api/v1")
           .fromSystemProperties()

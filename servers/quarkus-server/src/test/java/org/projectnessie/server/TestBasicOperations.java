@@ -27,6 +27,7 @@ import org.junit.jupiter.api.function.Executable;
 import org.projectnessie.api.ContentsApi;
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.api.params.EntriesParams;
+import org.projectnessie.client.HttpClientBuilder;
 import org.projectnessie.client.NessieClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -57,7 +58,7 @@ class TestBasicOperations {
   }
 
   void getCatalog(String branch) throws NessieNotFoundException, NessieConflictException {
-    client = NessieClient.builder().withUri("http://localhost:19121/api/v1").build();
+    client = HttpClientBuilder.builder().withUri("http://localhost:19121/api/v1").build();
     tree = client.getTreeApi();
     contents = client.getContentsApi();
     if (branch != null) {

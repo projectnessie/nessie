@@ -53,8 +53,6 @@ import org.projectnessie.model.Tag;
 import org.projectnessie.model.Transplant;
 import org.projectnessie.model.Validation;
 
-@Consumes(value = MediaType.APPLICATION_JSON)
-@Path("trees")
 public interface TreeApi {
   /** Get all references. */
   @GET

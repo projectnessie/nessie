@@ -19,7 +19,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 import org.projectnessie.api.params.CommitLogParams
-import org.projectnessie.client.{NessieClient, StreamingUtil}
+import org.projectnessie.client.{HttpClientBuilder, NessieClient, StreamingUtil}
 import org.projectnessie.error.NessieNotFoundException
 import org.projectnessie.model.{
   Branch,
@@ -101,7 +101,7 @@ object NessieUtils {
     val catalogConf = SparkSession.active.sparkContext.conf
       .getAllWithPrefix(s"spark.sql.catalog.$catalogName.")
       .toMap
-    NessieClient
+    HttpClientBuilder
       .builder()
       .fromConfig(x => catalogConf.getOrElse(x.replace("nessie.", ""), null))
       .build()
