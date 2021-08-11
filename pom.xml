@@ -91,6 +91,7 @@
     <module>perftest</module>
     <module>servers</module>
     <module>tools</module>
+    <module>grpc</module>
   </modules>
 
   <scm>
@@ -138,6 +139,7 @@
     <gatling.maven.version>3.1.2</gatling.maven.version>
     <gatling.version>3.6.1</gatling.version>
     <guava.version>30.1.1-jre</guava.version>
+    <grpc.version>1.40.0</grpc.version>
     <hadoop.version>3.3.1</hadoop.version>
     <iceberg.version>0.12.0</iceberg.version>
     <immutables.version>2.8.9-ea-1</immutables.version>

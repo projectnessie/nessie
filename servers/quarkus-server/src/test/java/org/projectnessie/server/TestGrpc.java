@@ -15,31 +15,32 @@
  */
 package org.projectnessie.server;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.QuarkusTestProfile;
+import io.quarkus.test.junit.TestProfile;
 import java.net.URI;
 import org.junit.jupiter.api.BeforeEach;
-import org.projectnessie.client.http.HttpClient;
-import org.projectnessie.client.http.HttpClientBuilder;
-import org.projectnessie.client.rest.NessieHttpResponseFilter;
+import org.projectnessie.client.grpc.GrpcClientBuilder;
 import org.projectnessie.jaxrs.AbstractTestRest;
 
 @QuarkusTest
-class TestRest extends AbstractTestRest {
+@TestProfile(value = TestGrpc.GrpcTestProfile.class)
+class TestGrpc extends AbstractTestRest {
 
   @Override
   @BeforeEach
   public void setUp() throws Exception {
-    URI uri = URI.create("http://localhost:19121/api/v1");
-
-    ObjectMapper mapper =
-        new ObjectMapper()
-            .enable(SerializationFeature.INDENT_OUTPUT)
-            .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
-    HttpClient httpClient = HttpClient.builder().setBaseUri(uri).setObjectMapper(mapper).build();
-    httpClient.register(new NessieHttpResponseFilter(mapper));
-    super.init(HttpClientBuilder.builder().withUri(uri).build(), httpClient);
+    super.init(
+        GrpcClientBuilder.builder()
+            .withUri(new URI("dns", null, "/localhost", 9001, null, null, null))
+            .build(),
+        null);
     super.setUp();
   }
+
+  /**
+   * The purpose of this is to force a restart of the Quarkus server, because {@link TestRest} and
+   * {@link TestGrpc} effectively create the same branches.
+   */
+  public static class GrpcTestProfile implements QuarkusTestProfile {}
 }
