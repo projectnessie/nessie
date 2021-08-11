@@ -24,6 +24,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.client.NessieClient;
+import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.client.rest.NessieBadRequestException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentsKey;
@@ -44,7 +45,7 @@ public class ITNativeNessieError {
   @BeforeEach
   void init() {
     URI uri = URI.create("http://localhost:19121/api/v1");
-    NessieClient client = NessieClient.builder().withUri(uri).build();
+    NessieClient client = HttpClientBuilder.builder().withUri(uri).build();
     tree = client.getTreeApi();
   }
 

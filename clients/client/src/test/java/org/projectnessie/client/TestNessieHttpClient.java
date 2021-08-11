@@ -33,7 +33,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.projectnessie.client.NessieClient.AuthType;
+import org.projectnessie.client.http.HttpClientBuilder;
+import org.projectnessie.client.http.HttpClientBuilder.AuthType;
 import org.projectnessie.client.util.TestServer;
 
 class TestNessieHttpClient {
@@ -44,14 +45,15 @@ class TestNessieHttpClient {
 
   @Test
   void testNullUri() {
-    assertThatThrownBy(() -> NessieClient.builder().withUri((URI) null).build())
+    assertThatThrownBy(() -> HttpClientBuilder.builder().withUri((URI) null).build())
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Cannot construct Http client. Must have a non-null uri");
   }
 
   @Test
   void testDefaultRepo() throws Exception {
-    NessieClient client = NessieClient.builder().withUri("http://127.9.9.9:1234/foo/bar").build();
+    NessieClient client =
+        HttpClientBuilder.builder().withUri("http://127.9.9.9:1234/foo/bar").build();
     assertThat(client)
         .extracting(NessieClient::getOwner, NessieClient::getRepo, NessieClient::getUri)
         .containsExactly(null, null, new URI("http://127.9.9.9:1234/foo/bar"));
@@ -60,7 +62,7 @@ class TestNessieHttpClient {
   @Test
   void testCustomRepo() throws Exception {
     NessieClient client =
-        NessieClient.builder()
+        HttpClientBuilder.builder()
             .withUri("http://127.9.9.9:1234/api/v1")
             .withRepoOwner("robert", "elani")
             .build();
@@ -76,7 +78,7 @@ class TestNessieHttpClient {
     map.put(NessieConfigConstants.CONF_NESSIE_REPOSITORY, "elani");
     map.put(NessieConfigConstants.CONF_NESSIE_REF, "ref");
     map.put(NessieConfigConstants.CONF_NESSIE_URI, "https://1.2.3.4/");
-    NessieClient client = NessieClient.builder().fromConfig(map::get).build();
+    NessieClient client = HttpClientBuilder.builder().fromConfig(map::get).build();
     assertThat(client)
         .extracting(NessieClient::getOwner, NessieClient::getRepo, NessieClient::getUri)
         .containsExactly("robert", "elani", new URI("https://1.2.3.4/robert/elani"));
@@ -88,7 +90,7 @@ class TestNessieHttpClient {
 
     try (TestServer server = new TestServer(handlerForHeaderTest("Authorization", authHeader))) {
       NessieClient client =
-          NessieClient.builder()
+          HttpClientBuilder.builder()
               .withUri(server.getUri())
               .withAuthType(AuthType.BASIC)
               .withUsername("my_username")
@@ -112,7 +114,7 @@ class TestNessieHttpClient {
 
     try (TestServer server = new TestServer(handlerForHeaderTest("Uber-trace-id", traceId))) {
       NessieClient client =
-          NessieClient.builder().withUri(server.getUri()).withTracing(true).build();
+          HttpClientBuilder.builder().withUri(server.getUri()).withTracing(true).build();
       try (Scope ignore =
           GlobalTracer.get()
               .activateSpan(GlobalTracer.get().buildSpan("testOpenTracing").start())) {
@@ -132,7 +134,7 @@ class TestNessieHttpClient {
 
     try (TestServer server = new TestServer(handlerForHeaderTest("Uber-trace-id", traceId))) {
       NessieClient client =
-          NessieClient.builder().withUri(server.getUri()).withTracing(false).build();
+          HttpClientBuilder.builder().withUri(server.getUri()).withTracing(false).build();
       try (Scope ignore =
           GlobalTracer.get()
               .activateSpan(GlobalTracer.get().buildSpan("testOpenTracing").start())) {

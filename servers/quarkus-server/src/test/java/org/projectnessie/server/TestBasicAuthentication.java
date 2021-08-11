@@ -17,7 +17,7 @@ package org.projectnessie.server;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.projectnessie.client.NessieClient.AuthType.BASIC;
+import static org.projectnessie.client.http.HttpClientBuilder.AuthType.BASIC;
 
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;

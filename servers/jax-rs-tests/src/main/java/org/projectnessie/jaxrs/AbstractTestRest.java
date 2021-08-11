@@ -31,11 +31,8 @@ import static org.projectnessie.model.Validation.HASH_MESSAGE;
 import static org.projectnessie.model.Validation.REF_NAME_MESSAGE;
 import static org.projectnessie.model.Validation.REF_NAME_OR_HASH_MESSAGE;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import java.net.URI;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -65,7 +62,6 @@ import org.projectnessie.client.StreamingUtil;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpClientException;
 import org.projectnessie.client.rest.NessieBadRequestException;
-import org.projectnessie.client.rest.NessieHttpResponseFilter;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -116,17 +112,11 @@ public abstract class AbstractTestRest {
     Locale.setDefault(Locale.ENGLISH);
   }
 
-  protected void init(URI uri) {
-    client = NessieClient.builder().withUri(uri).build();
+  protected void init(NessieClient client, HttpClient httpClient) {
+    this.client = client;
+    this.httpClient = httpClient;
     tree = client.getTreeApi();
     contents = client.getContentsApi();
-
-    ObjectMapper mapper =
-        new ObjectMapper()
-            .enable(SerializationFeature.INDENT_OUTPUT)
-            .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
-    httpClient = HttpClient.builder().setBaseUri(uri).setObjectMapper(mapper).build();
-    httpClient.register(new NessieHttpResponseFilter(mapper));
   }
 
   @BeforeEach
@@ -1080,7 +1070,6 @@ public abstract class AbstractTestRest {
 
   @ParameterizedTest
   @CsvSource({
-    "" + COMMA_VALID_HASH_1,
     "abc'" + COMMA_VALID_HASH_1,
     ".foo" + COMMA_VALID_HASH_2,
     "abc'def'..'blah" + COMMA_VALID_HASH_2,

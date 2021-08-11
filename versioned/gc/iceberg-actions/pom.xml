@@ -30,10 +30,6 @@
 
   <name>Nessie - Versioned - GC for Spark - Iceberg - Actions</name>
 
-  <properties>
-    <iceberg.nessie.version>${project.version}</iceberg.nessie.version>
-  </properties>
-
   <dependencies>
     <dependency>
       <groupId>org.projectnessie</groupId>

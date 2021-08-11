@@ -53,6 +53,7 @@ import org.apache.spark.sql.delta.{
 }
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
+import org.projectnessie.client.http.HttpClientBuilder
 import org.projectnessie.model.Operation.Put
 
 import java.util
@@ -72,7 +73,7 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
 
   private val client: NessieClient = {
     val removePrefix = (x: String) => x.replace("nessie.", "")
-    NessieClient
+    HttpClientBuilder
       .builder()
       .fromConfig(c => catalogConf.getOrElse(removePrefix(c), null))
       .build()

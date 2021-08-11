@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client;
+package org.projectnessie.client.http;
 
 import org.projectnessie.api.ConfigApi;
-import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.model.NessieConfiguration;
 
 class ClientConfigApi implements ConfigApi {

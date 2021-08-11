@@ -36,5 +36,6 @@
     <module>tests</module>
     <module>spark-extensions</module>
     <module>spark-antlr-grammar</module>
+    <module>grpc-client</module>
   </modules>
 </project>

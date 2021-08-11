@@ -1,0 +1,84 @@
+/*
+ * Copyright (C) 2020 Dremio
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "org.projectnessie.api.grpc";
+option java_outer_classname = "ContentsApiProto";
+
+package org.projectnessie.proto;
+
+service ContentsService {
+  rpc getContents (ContentsRequest) returns (Contents) {};
+  rpc getMultipleContents (MultipleContentsRequest) returns (MultipleContentsResponse) {};
+}
+
+enum Dialect {
+  SPARK = 0;
+  DREMIO = 1;
+  PRESTO = 2;
+}
+
+message ContentsRequest {
+  ContentsKey contentsKey = 1;
+  string ref = 2;
+  string hashOnRef = 3;
+}
+
+message MultipleContentsRequest {
+  string ref = 1;
+  string hashOnRef = 2;
+  repeated ContentsKey requestedKeys = 3;
+}
+
+message MultipleContentsResponse {
+  repeated ContentsWithKey contentsWithKey = 1;
+}
+
+message Contents {
+  oneof type {
+    IcebergTable iceberg = 1;
+    DeltaLakeTable deltaLake = 2;
+    SqlView view = 3;
+  }
+}
+
+message ContentsKey {
+  repeated string elements = 1;
+}
+
+message ContentsWithKey {
+  ContentsKey contentsKey = 1;
+  Contents contents = 2;
+}
+
+message IcebergTable {
+  string id = 1;
+  string metadataLocation = 2;
+}
+
+message DeltaLakeTable {
+  string id = 1;
+  repeated string metadataLocationHistory = 2;
+  repeated string checkpointLocationHistory = 3;
+  string lastCheckpoint = 4;
+}
+
+message SqlView {
+  string id = 1;
+  string sqlText = 2;
+  Dialect dialect = 3;
+}

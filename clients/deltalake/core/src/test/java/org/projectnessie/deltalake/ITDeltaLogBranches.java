@@ -33,6 +33,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.projectnessie.client.NessieClient;
+import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.client.tests.AbstractSparkTest;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -59,22 +60,24 @@ class ITDeltaLogBranches extends AbstractSparkTest {
 
   @BeforeEach
   public void createClient() {
-    client = NessieClient.builder().withUri(url).build();
+    client = HttpClientBuilder.builder().withUri(url).build();
   }
 
   @AfterEach
   public void closeClient() throws NessieNotFoundException, NessieConflictException {
-    Reference ref = null;
-    try {
-      ref = client.getTreeApi().getReferenceByName("test");
-    } catch (NessieNotFoundException e) {
-      // pass ignore
+    if (null != client) {
+      Reference ref = null;
+      try {
+        ref = client.getTreeApi().getReferenceByName("test");
+      } catch (NessieNotFoundException e) {
+        // pass ignore
+      }
+      if (ref != null) {
+        client.getTreeApi().deleteBranch("test", ref.getHash());
+      }
+      client.close();
+      client = null;
     }
-    if (ref != null) {
-      client.getTreeApi().deleteBranch("test", ref.getHash());
-    }
-    client.close();
-    client = null;
   }
 
   @Test
