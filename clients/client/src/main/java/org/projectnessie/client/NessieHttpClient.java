@@ -38,6 +38,7 @@ import java.util.Map;
 import org.projectnessie.api.ConfigApi;
 import org.projectnessie.api.ContentsApi;
 import org.projectnessie.api.TreeApi;
+import org.projectnessie.client.HttpClientBuilder.AuthType;
 import org.projectnessie.client.auth.AwsAuth;
 import org.projectnessie.client.auth.BasicAuthFilter;
 import org.projectnessie.client.http.HttpClient;

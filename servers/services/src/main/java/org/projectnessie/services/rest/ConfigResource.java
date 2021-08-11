@@ -17,7 +17,7 @@ package org.projectnessie.services.rest;
 
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
-import org.projectnessie.api.ConfigApi;
+import org.projectnessie.api.HttpConfigApi;
 import org.projectnessie.model.ImmutableNessieConfiguration;
 import org.projectnessie.model.NessieConfiguration;
 import org.projectnessie.services.config.ServerConfig;
@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
 
 /** REST endpoint to retrieve server settings. */
 @RequestScoped
-public class ConfigResource implements ConfigApi {
+public class ConfigResource implements HttpConfigApi {
 
   private static final Logger logger = LoggerFactory.getLogger(ConfigResource.class);
   private final ServerConfig config;

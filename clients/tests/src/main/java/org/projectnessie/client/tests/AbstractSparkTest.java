@@ -34,6 +34,7 @@ import org.apache.spark.sql.internal.SQLConf;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
+import org.projectnessie.client.HttpClientBuilder;
 import org.projectnessie.client.NessieClient;
 
 public abstract class AbstractSparkTest {
@@ -68,7 +69,7 @@ public abstract class AbstractSparkTest {
     spark = SparkSession.builder().master("local[2]").config(conf).getOrCreate();
     spark.sparkContext().setLogLevel("WARN");
 
-    nessieClient = NessieClient.builder().withUri(url).build();
+    nessieClient = HttpClientBuilder.builder().withUri(url).build();
   }
 
   @AfterAll

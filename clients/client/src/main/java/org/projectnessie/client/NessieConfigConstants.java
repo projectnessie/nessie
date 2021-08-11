@@ -41,13 +41,13 @@ public final class NessieConfigConstants {
   public static final String CONF_NESSIE_REPOSITORY = "nessie.repository";
   /**
    * Config property name ({@value #CONF_NESSIE_AUTH_TYPE}) for the authentication type, see {@link
-   * org.projectnessie.client.NessieClient.AuthType}.
+   * org.projectnessie.client.HttpClientBuilder.AuthType}.
    *
    * <p>If no {@value #CONF_NESSIE_AUTH_TYPE} option is specified, the implementation will default
-   * to {@link org.projectnessie.client.NessieClient.AuthType#BASIC} if both {@value
+   * to {@link org.projectnessie.client.HttpClientBuilder.AuthType#BASIC} if both {@value
    * #CONF_NESSIE_USERNAME} and {@value #CONF_NESSIE_PASSWORD} are specified, otherwise the default
-   * will be {@link org.projectnessie.client.NessieClient.AuthType#NONE}. Note that "basic" HTTP
-   * authentication is not considered secure.
+   * will be {@link org.projectnessie.client.HttpClientBuilder.AuthType#NONE}. Note that "basic"
+   * HTTP authentication is not considered secure.
    */
   public static final String CONF_NESSIE_AUTH_TYPE = "nessie.auth-type";
   /** Config property name ({@value #CONF_NESSIE_REF}) for the nessie reference used by clients. */
