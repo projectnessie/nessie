@@ -20,6 +20,8 @@ docker pull projectnessie/nessie
 docker run -p 19120:19120 projectnessie/nessie
 ```
 
+A local [Web UI](https://projectnessie.org/tools/ui/) will be available at this point.
+
 Then install the Nessie CLI tool
 
 ```
