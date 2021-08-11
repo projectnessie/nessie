@@ -1,0 +1,192 @@
+/*
+ * Copyright (C) 2020 Dremio
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+syntax = "proto3";
+
+package org.projectnessie.proto;
+
+import "google/protobuf/timestamp.proto";
+import "config_service.proto";
+import "contents_service.proto";
+
+option java_multiple_files = true;
+option java_package = "org.projectnessie.api.grpc";
+option java_outer_classname = "TreeServiceProto";
+
+service TreeService {
+  rpc getAllReferences (Empty) returns (GetAllReferencesResponse) {}
+  rpc getReferenceByName (GetReferenceByNameRequest) returns (Reference) {}
+  rpc createReference (CreateReferenceRequest) returns (Reference) {}
+  rpc getDefaultBranch (Empty) returns (Reference) {}
+  rpc assignTag (AssignReferenceRequest) returns (Empty) {}
+  rpc deleteTag (DeleteReferenceRequest) returns (Empty) {}
+  rpc assignBranch (AssignReferenceRequest) returns (Empty) {}
+  rpc deleteBranch (DeleteReferenceRequest) returns (Empty) {}
+  rpc getCommitLog (CommitLogRequest) returns (CommitLogResponse) {}
+  rpc getEntries (EntriesRequest) returns (EntriesResponse) {}
+  rpc transplantCommitsIntoBranch (TransplantRequest) returns (Empty) {}
+  rpc mergeRefIntoBranch (MergeRequest) returns (Empty) {}
+  rpc commitMultipleOperations (CommitRequest) returns (Branch) {}
+}
+
+message Reference {
+  oneof type {
+    Branch branch = 1;
+    Tag tag = 2;
+    Hash hash = 3;
+  }
+}
+
+message Branch {
+  string name = 1;
+  string hash = 2;
+}
+
+message Tag {
+  string name = 1;
+  string hash = 2;
+}
+
+message Hash {
+  string hash = 1;
+}
+
+message CreateReferenceRequest {
+  string sourceRefName = 1;
+  Reference reference = 2;
+}
+
+message GetAllReferencesResponse {
+  repeated Reference reference = 1;
+}
+
+message GetReferenceByNameRequest {
+  string namedRef = 1;
+}
+
+message AssignReferenceRequest {
+  string namedRef = 1;
+  string oldHash = 2;
+  oneof assignTo {
+    Branch branch = 3;
+    Tag tag = 4;
+  }
+}
+
+message DeleteReferenceRequest {
+  string namedRef = 1;
+  string hash = 2;
+}
+
+message CommitLogRequest {
+  string namedRef = 1;
+  string startHash = 2;
+  string endHash = 3;
+  int32 maxRecords = 4;
+  string pageToken = 5;
+  string queryExpression = 6;
+}
+
+message CommitLogResponse {
+  repeated CommitMeta operations = 1;
+  bool hasMore = 2;
+  string token = 3;
+}
+
+message CommitMeta {
+  string hash = 1;
+  string committer = 2;
+  string author = 3;
+  string signedOffBy = 4;
+  string message = 5;
+  google.protobuf.Timestamp commitTime = 6;
+  google.protobuf.Timestamp authorTime = 7;
+  map<string, string> properties = 8;
+}
+
+message EntriesRequest {
+  string namedRef = 1;
+  string hashOnRef = 2;
+  int32 maxRecords = 3;
+  string pageToken = 4;
+  string queryExpression = 5;
+}
+
+message EntriesResponse {
+  repeated Entry entries = 1;
+  bool hasMore = 2;
+  string token = 3;
+}
+
+enum ContentsType {
+  UNKNOWN = 0;
+  ICEBERG_TABLE = 1;
+  DELTA_LAKE_TABLE = 2;
+  HIVE_TABLE = 3;
+  HIVE_DATABASE = 4;
+  VIEW = 5;
+}
+
+message Entry {
+  ContentsType type = 1;
+  ContentsKey contentsKey = 2;
+}
+
+message TransplantRequest {
+  string branchName = 1;
+  string hash = 2;
+  string message = 3;
+  string fromRefName = 4;
+  repeated string hashesToTransplant = 5;
+}
+
+message MergeRequest {
+  string fromHash = 1;
+  string toBranch = 2;
+  string expectedHash = 3;
+  string fromRefName = 4;
+}
+
+message CommitRequest {
+  string branch = 1;
+  string hash = 2;
+  CommitOps commitOperations = 3;
+}
+
+message CommitOps {
+  CommitMeta commitMeta = 1;
+  repeated CommitOperation operations = 2;
+}
+
+message CommitOperation {
+  oneof type {
+    Put put = 1;
+    Delete delete = 2;
+    Unchanged unchanged = 3;
+  }
+}
+
+message Put {
+  ContentsKey key = 1;
+  Contents contents = 2;
+}
+
+message Delete {
+  ContentsKey key = 1;
+}
+
+message Unchanged {
+  ContentsKey key = 1;
+}
