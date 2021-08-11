@@ -48,6 +48,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import javax.annotation.Nullable;
 import org.assertj.core.api.Assumptions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -120,7 +121,7 @@ public abstract class AbstractTestRest {
     init(api, httpClient);
   }
 
-  protected void init(NessieApiV1 api, HttpClient httpClient) {
+  protected void init(NessieApiV1 api, @Nullable HttpClient httpClient) {
     this.api = api;
     this.httpClient = httpClient;
   }
@@ -1213,7 +1214,8 @@ public abstract class AbstractTestRest {
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining("assignTag.tagName: " + REF_NAME_MESSAGE),
-        () ->
+        () -> {
+          if (null != httpClient) {
             assertThatThrownBy(
                     () ->
                         httpClient
@@ -1225,7 +1227,9 @@ public abstract class AbstractTestRest {
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining("mergeRefIntoBranch.branchName: " + REF_NAME_MESSAGE)
-                .hasMessageContaining("mergeRefIntoBranch.merge: must not be null"),
+                .hasMessageContaining("mergeRefIntoBranch.merge: must not be null");
+          }
+        },
         () ->
             assertThatThrownBy(
                     () ->
@@ -1329,7 +1333,8 @@ public abstract class AbstractTestRest {
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining("assignTag.oldHash: " + HASH_MESSAGE),
-        () ->
+        () -> {
+          if (null != httpClient) {
             assertThatThrownBy(
                     () ->
                         httpClient
@@ -1341,7 +1346,9 @@ public abstract class AbstractTestRest {
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining("mergeRefIntoBranch.merge: must not be null")
-                .hasMessageContaining("mergeRefIntoBranch.hash: " + HASH_MESSAGE),
+                .hasMessageContaining("mergeRefIntoBranch.hash: " + HASH_MESSAGE);
+          }
+        },
         () ->
             assertThatThrownBy(
                     () ->

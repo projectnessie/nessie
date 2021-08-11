@@ -56,6 +56,16 @@
       </dependency>
       <dependency>
         <groupId>org.projectnessie</groupId>
+        <artifactId>nessie-grpc-client</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.projectnessie</groupId>
+        <artifactId>nessie-grpc</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.projectnessie</groupId>
         <artifactId>nessie-deltalake</artifactId>
         <version>${project.version}</version>
       </dependency>
