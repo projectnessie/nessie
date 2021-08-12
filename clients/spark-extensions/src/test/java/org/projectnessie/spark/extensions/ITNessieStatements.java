@@ -77,6 +77,24 @@ public class ITNessieStatements extends AbstractSparkTest {
   }
 
   @Test
+  void testCreateBranchInExists() throws NessieNotFoundException {
+
+    List<Object[]> result = sql("CREATE BRANCH %s IN nessie", refName);
+    assertEquals("created branch", row("Branch", refName, hash), result);
+    assertThat(nessieClient.getTreeApi().getReferenceByName(refName))
+        .isEqualTo(Branch.of(refName, hash));
+    result = sql("CREATE BRANCH IF NOT EXISTS %s IN nessie", refName);
+    assertEquals("created branch", row("Branch", refName, hash), result);
+    assertThat(nessieClient.getTreeApi().getReferenceByName(refName))
+        .isEqualTo(Branch.of(refName, hash));
+    assertThatThrownBy(() -> sql("CREATE BRANCH %s IN nessie", refName))
+        .isInstanceOf(NessieConflictException.class)
+        .hasMessage("A reference of name [testBranch] already exists.");
+    result = sql("DROP BRANCH %s IN nessie", refName);
+    assertEquals("deleted branch", row("OK"), result);
+  }
+
+  @Test
   void testCreateBranchIn() throws NessieNotFoundException {
 
     List<Object[]> result = sql("CREATE BRANCH %s IN nessie", refName);

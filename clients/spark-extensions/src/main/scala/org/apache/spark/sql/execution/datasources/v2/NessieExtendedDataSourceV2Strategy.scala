@@ -24,14 +24,21 @@ case class NessieExtendedDataSourceV2Strategy(spark: SparkSession)
 
   override def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
 
-    case c @ CreateReferenceCommand(branch, isBranch, catalog, reference) =>
+    case c @ CreateReferenceCommand(
+          branch,
+          isBranch,
+          catalog,
+          reference,
+          failOnCreate
+        ) =>
       CreateReferenceExec(
         c.output,
         branch,
         spark.sessionState.catalogManager.currentCatalog,
         isBranch,
         catalog,
-        reference
+        reference,
+        failOnCreate
       ) :: Nil
 
     case c @ DropReferenceCommand(branch, isBranch, catalog) =>

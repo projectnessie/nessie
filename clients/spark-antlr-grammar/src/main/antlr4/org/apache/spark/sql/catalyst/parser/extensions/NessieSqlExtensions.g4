@@ -60,7 +60,7 @@ singleStatement
     ;
 
 statement
-    : CREATE (BRANCH|TAG) identifier (IN catalog=identifier)? (AS reference=identifier)?    #nessieCreateRef
+    : CREATE (BRANCH|TAG) (IF NOT EXISTS)? identifier (IN catalog=identifier)? (AS reference=identifier)?    #nessieCreateRef
     | DROP (BRANCH|TAG) identifier (IN catalog=identifier)?                                 #nessieDropRef
     | USE REFERENCE identifier (AT ts=identifier)?  (IN catalog=identifier)?                #nessieUseRef
     | LIST REFERENCES (IN catalog=identifier)?                                              #nessieListRef
@@ -84,9 +84,12 @@ quotedIdentifier
 
 nonReserved
     : AS | ASSIGN | AT | BRANCH | CREATE| DROP | IN | TAG | LOG | USE | REFERENCE | REFERENCES
-    | SHOW | LIST | MERGE | INTO
+    | SHOW | LIST | MERGE | INTO | IF | NOT | EXISTS
     ;
 
+IF: 'IF';
+NOT: 'NOT';
+EXISTS: 'EXISTS';
 LOG: 'LOG';
 USE: 'USE';
 REFERENCE: 'REFERENCE';

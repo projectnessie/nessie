@@ -20,6 +20,7 @@ import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
 import org.apache.spark.unsafe.types.UTF8String
 import org.projectnessie.client.NessieClient
+import org.projectnessie.error.NessieConflictException
 import org.projectnessie.model._
 
 case class CreateReferenceExec(
@@ -28,7 +29,8 @@ case class CreateReferenceExec(
     currentCatalog: CatalogPlugin,
     isBranch: Boolean,
     catalog: Option[String],
-    createdFrom: Option[String]
+    createdFrom: Option[String],
+    failOnCreate: Boolean
 ) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog) {
 
   override protected def runInternal(
@@ -40,7 +42,14 @@ case class CreateReferenceExec(
       .map(x => x.getHash)
       .orNull
     val ref = if (isBranch) Branch.of(branch, hash) else Tag.of(branch, hash)
-    nessieClient.getTreeApi.createReference(ref)
+    try {
+      nessieClient.getTreeApi.createReference(ref)
+    } catch {
+      case e: NessieConflictException =>
+        if (failOnCreate) {
+          throw e
+        }
+    }
     val branchResult = nessieClient.getTreeApi.getReferenceByName(ref.getName)
     val refType = branchResult match {
       case _: ImmutableHash   => NessieUtils.HASH
