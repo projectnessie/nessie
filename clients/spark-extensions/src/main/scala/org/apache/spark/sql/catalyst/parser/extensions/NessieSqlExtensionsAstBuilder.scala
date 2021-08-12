@@ -31,9 +31,17 @@ class NessieSqlExtensionsAstBuilder(delegate: ParserInterface)
   ): CreateReferenceCommand = withOrigin(ctx) {
     val isBranch = ctx.TAG == null
     val refName = ctx.identifier(0).getText
+    val failOnCreate = ctx.IF() == null && ctx.NOT() == null && ctx
+      .EXISTS() == null
     val catalogName = asText(ctx.catalog)
     val createdFrom = asText(ctx.reference)
-    CreateReferenceCommand(refName, isBranch, catalogName, createdFrom)
+    CreateReferenceCommand(
+      refName,
+      isBranch,
+      catalogName,
+      createdFrom,
+      failOnCreate
+    )
   }
 
   override def visitNessieDropRef(
