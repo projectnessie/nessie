@@ -32,5 +32,6 @@
 
   <modules>
     <module>adapter</module>
+    <module>tests</module>
   </modules>
 </project>
