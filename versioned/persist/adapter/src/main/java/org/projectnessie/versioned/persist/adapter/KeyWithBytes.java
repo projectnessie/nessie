@@ -28,13 +28,13 @@ import org.projectnessie.versioned.Key;
 public interface KeyWithBytes {
   Key getKey();
 
-  String getContentsId();
+  ContentsId getContentsId();
 
   byte getType();
 
   ByteString getValue();
 
-  static KeyWithBytes of(Key key, String contentsId, byte type, ByteString value) {
+  static KeyWithBytes of(Key key, ContentsId contentsId, byte type, ByteString value) {
     return ImmutableKeyWithBytes.builder()
         .key(key)
         .contentsId(contentsId)

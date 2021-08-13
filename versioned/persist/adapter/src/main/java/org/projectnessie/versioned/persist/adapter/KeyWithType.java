@@ -27,11 +27,11 @@ import org.projectnessie.versioned.Key;
 public interface KeyWithType {
   Key getKey();
 
-  String getContentsId();
+  ContentsId getContentsId();
 
   byte getType();
 
-  static KeyWithType of(Key key, String contentsId, byte type) {
+  static KeyWithType of(Key key, ContentsId contentsId, byte type) {
     return ImmutableKeyWithType.builder().key(key).type(type).contentsId(contentsId).build();
   }
 }

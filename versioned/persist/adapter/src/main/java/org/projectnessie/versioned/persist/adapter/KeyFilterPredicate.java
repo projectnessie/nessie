@@ -24,7 +24,7 @@ import org.projectnessie.versioned.Key;
  * on authorization rules.
  */
 public interface KeyFilterPredicate {
-  boolean check(Key key, String contentsId, byte type);
+  boolean check(Key key, ContentsId contentsId, byte type);
 
   KeyFilterPredicate ALLOW_ALL = (k, c, t) -> true;
 }

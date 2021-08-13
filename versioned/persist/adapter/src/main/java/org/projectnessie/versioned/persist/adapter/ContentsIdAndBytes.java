@@ -28,13 +28,13 @@ import org.immutables.value.Value;
 @JsonSerialize(as = ImmutableContentsIdAndBytes.class)
 @JsonDeserialize(as = ImmutableContentsIdAndBytes.class)
 public interface ContentsIdAndBytes {
-  String getContentsId();
+  ContentsId getContentsId();
 
   byte getType();
 
   ByteString getValue();
 
-  static ContentsIdAndBytes of(String contentsId, byte type, ByteString value) {
+  static ContentsIdAndBytes of(ContentsId contentsId, byte type, ByteString value) {
     return ImmutableContentsIdAndBytes.builder()
         .contentsId(contentsId)
         .type(type)

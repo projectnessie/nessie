@@ -33,8 +33,4 @@ public interface EmbeddedKeyList {
   // TODO add a List<Hash> here that points to a new KeyList-entity to support an arbitrary number
   //  of keys
   // List<Hash> getKeyListsIds();
-
-  static EmbeddedKeyList of(List<KeyWithType> keys) {
-    return ImmutableEmbeddedKeyList.builder().keys(keys).build();
-  }
 }

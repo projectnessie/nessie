@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.persist.adapter;
 
+import java.time.Clock;
 import org.immutables.value.Value;
 
 /**
@@ -88,4 +89,12 @@ public interface DatabaseAdapterConfig {
   }
 
   DatabaseAdapterConfig withCommitRetries(int commitRetries);
+
+  /** The {@link Clock} to use. */
+  @Value.Default
+  default Clock getClock() {
+    return Clock.systemUTC();
+  }
+
+  DatabaseAdapterConfig withClock(Clock clock);
 }

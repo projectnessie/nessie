@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.ToIntFunction;
 import java.util.stream.Stream;
+import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
@@ -58,53 +59,60 @@ public interface DatabaseAdapter extends AutoCloseable {
   void reinitializeRepo(String defaultBranchName);
 
   /**
-   * Retrieve the reference-local and global state for the given keys for the specified named
-   * reference.
+   * Verifies that the given {@code namedReference} exists and that {@code hashOnReference}, if
+   * present, is reachable via that reference.
    *
-   * @param commitOnReference named-reference to retrieve the values for. If no value for the hash
-   *     is specified, it defaults to the named reference's HEAD.
+   * @return verified {@code hashOnReference} or, if {@code hashOnReference} is not present, the
+   *     current HEAD of {@code namedReference}
+   * @throws ReferenceNotFoundException if {@code namedReference} does not exist or {@code
+   *     hashOnReference}, if present, is not reachable from that reference
+   */
+  Hash hashOnReference(NamedRef namedReference, Optional<Hash> hashOnReference)
+      throws ReferenceNotFoundException;
+
+  /**
+   * Resolve the current HEAD of the given named-reference.
+   *
+   * <p>This is actually a convenience for {@link #hashOnReference(NamedRef, Optional)
+   * hashOnReference(ref, Optional.empty()}.
+   *
+   * @param ref named reference to resolve
+   * @return current HEAD of {@code ref}
+   * @throws ReferenceNotFoundException if the named reference {@code ref} does not exist.
+   */
+  Hash toHash(NamedRef ref) throws ReferenceNotFoundException;
+
+  /**
+   * Retrieve the reference-local and global state for the given keys for the specified commit.
+   *
+   * @param commit commit to retrieve the values for.
    * @param keys keys to retrieve the values (reference-local and global) for
    * @param keyFilter predicate to optionally skip specific keys in the result and return those as
    *     {@link Optional#empty() "not present"}, for example to implement a security policy.
-   * @return Ordered stream
-   * @throws ReferenceNotFoundException if either the named reference in {@code commitOnReference}
-   *     or the commit on that reference, if specified, does not exist.
+   * @return Ordered stream, will be empty, if {@code commit} does not exist.
    */
   Stream<Optional<ContentsAndState<ByteString>>> values(
-      CommitOnReference commitOnReference, List<Key> keys, KeyFilterPredicate keyFilter)
-      throws ReferenceNotFoundException;
+      Hash commit, List<Key> keys, KeyFilterPredicate keyFilter);
 
   /**
-   * Retrieve the commit-log for the specified named * reference.
+   * Retrieve the commit-log starting at the commit referenced by {@code offset}.
    *
-   * @param offset named-reference to retrieve the commit-log for. If no value for the hash is
-   *     specified, it defaults to the named reference's HEAD.
-   * @return stream of {@link CommitLogEntry}
-   * @throws ReferenceNotFoundException if either the named reference in {@code offset} or the
-   *     commit on that reference, if specified, does not exist.
+   * @param offset hash to start at
+   * @return stream of {@link CommitLogEntry}s. If {@code offset} does not exists, the stream will
+   *     be empty.
    */
-  Stream<CommitLogEntry> commitLog(CommitOnReference offset) throws ReferenceNotFoundException;
+  Stream<CommitLogEntry> commitLog(Hash offset);
 
   /**
-   * NOTE: THIS FUNCTION WILL PROBABLY GO AWAY! {@code VersionStore} does mention this function, but
-   * it is never used.
-   */
-  Stream<KeyWithBytes> entries(CommitOnReference commitOnReference, KeyFilterPredicate keyFilter)
-      throws ReferenceNotFoundException;
-
-  /**
-   * Retrieve the contents-keys that are "present" for the specified named reference.
+   * Retrieve the contents-keys that are "present" for the specified commit.
    *
-   * @param commitOnReference named-reference to retrieve the contents-keys for. If no value for the
-   *     hash is specified, it defaults to the named reference's HEAD.
+   * @param commit commit to retrieve the values for.
    * @param keyFilter predicate to optionally skip specific keys in the result and return those as
    *     {@link Optional#empty() "not present"}, for example to implement a security policy.
-   * @return Ordered stream with content-keys, content-ids and content-types.
-   * @throws ReferenceNotFoundException if either the named reference in {@code commitOnReference}
-   *     or the commit on that reference, if specified, does not exist.
+   * @return Ordered stream with content-keys, content-ids and content-types, will be empty, if
+   *     {@code commit} does not exist.
    */
-  Stream<KeyWithType> keys(CommitOnReference commitOnReference, KeyFilterPredicate keyFilter)
-      throws ReferenceNotFoundException;
+  Stream<KeyWithType> keys(Hash commit, KeyFilterPredicate keyFilter);
 
   /**
    * Commit operation, see {@link CommitAttempt} for a description of the parameters.
@@ -127,8 +135,7 @@ public interface DatabaseAdapter extends AutoCloseable {
    *
    * @param targetBranch named-reference to commit to. If no value for the hash is specified, it
    *     defaults to the named reference's HEAD.
-   * @param source source named-reference via which the commits in {@code sequenceToTransplant} are
-   *     reachable
+   * @param expectedHead if present, {@code target}'s current HEAD must be equal to this value
    * @param sequenceToTransplant commits in {@code source} to cherry-pick onto {@code targetBranch}
    * @return the hash of the last cherry-picked commit, in other words the new HEAD of the target
    *     branch
@@ -138,7 +145,8 @@ public interface DatabaseAdapter extends AutoCloseable {
    *     branch due to a conflicting change or if the expected hash of {@code toBranch} is not its
    *     expected hEAD
    */
-  Hash transplant(CommitOnReference targetBranch, NamedRef source, List<Hash> sequenceToTransplant)
+  Hash transplant(
+      BranchName targetBranch, Optional<Hash> expectedHead, List<Hash> sequenceToTransplant)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**
@@ -148,28 +156,19 @@ public interface DatabaseAdapter extends AutoCloseable {
    * <p>The implementation first identifies the common-ancestor (the most-recent commit that is both
    * reachable via {@code from} and {@code to}).
    *
-   * @param from named-reference to read commits from. If no value for the hash is specified, it
-   *     defaults to the named reference's HEAD.
+   * @param from commit-hash to start reading commits from.
    * @param toBranch target branch to commit to
+   * @param expectedHead if present, {@code toBranch}'s current HEAD must be equal to this value
    * @return the hash of the last cherry-picked commit, in other words the new HEAD of the target
    *     branch
-   * @throws ReferenceNotFoundException if either the named reference in {@code commitOnReference}
-   *     or the commit on that reference, if specified, does not exist.
+   * @throws ReferenceNotFoundException if either the named reference in {@code toBranch} or the
+   *     commit on that reference, if specified, does not exist.
    * @throws ReferenceConflictException if any of the commits could not be committed onto the target
    *     branch due to a conflicting change or if the expected hash of {@code toBranch} is not its
    *     expected hEAD
    */
-  Hash merge(CommitOnReference from, CommitOnReference toBranch)
+  Hash merge(Hash from, BranchName toBranch, Optional<Hash> expectedHead)
       throws ReferenceNotFoundException, ReferenceConflictException;
-
-  /**
-   * Resolve the current HEAD of the given named-reference.
-   *
-   * @param ref named reference to resolve
-   * @return current HEAD of {@code ref}
-   * @throws ReferenceNotFoundException if the named reference {@code ref} does not exist.
-   */
-  Hash toHash(NamedRef ref) throws ReferenceNotFoundException;
 
   /**
    * Get all named references including their current HEAD.
@@ -187,28 +186,28 @@ public interface DatabaseAdapter extends AutoCloseable {
    *     parameter can be {@code null} for the edge case when the default branch is re-created after
    *     it has been dropped.
    * @return the current HEAD of the created branch or tag
-   * @throws ReferenceNotFoundException if the reference mentioned in {@code target} does not exist.
    * @throws ReferenceAlreadyExistsException if the reference {@code ref} already exists.
    */
-  Hash create(NamedRef ref, CommitOnReference target)
-      throws ReferenceNotFoundException, ReferenceAlreadyExistsException;
+  Hash create(NamedRef ref, Hash target) throws ReferenceAlreadyExistsException;
 
   /**
    * Delete the given reference.
    *
    * @param reference named-reference to delete. If a value for the hash is specified, it must be
    *     equal to the current HEAD.
+   * @param expectedHead if present, {@code reference}'s current HEAD must be equal to this value
    * @throws ReferenceNotFoundException if the named reference in {@code reference} does not exist.
    * @throws ReferenceConflictException if the named reference's HEAD is not equal to the expected
    *     HEAD
    */
-  void delete(CommitOnReference reference)
+  void delete(NamedRef reference, Optional<Hash> expectedHead)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**
    * Updates {@code assignee}'s HEAD to {@code assignTo}.
    *
    * @param assignee named reference to re-assign
+   * @param expectedHead if present, {@code assignee}'s current HEAD must be equal to this value
    * @param assignTo commit to update {@code assignee}'s HEAD to
    * @throws ReferenceNotFoundException if either the named reference in {@code assignTo} or the
    *     commit on that reference, if specified, does not exist or if the named reference specified
@@ -216,7 +215,7 @@ public interface DatabaseAdapter extends AutoCloseable {
    * @throws ReferenceConflictException if the HEAD of the named reference {@code assignee} is not
    *     equal to the expected HEAD
    */
-  void assign(CommitOnReference assignee, CommitOnReference assignTo)
+  void assign(NamedRef assignee, Optional<Hash> expectedHead, Hash assignTo)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**
@@ -229,12 +228,8 @@ public interface DatabaseAdapter extends AutoCloseable {
    *     those, for example to implement a security policy.
    * @return stream containing the difference of the contents, excluding both equal values and
    *     values that were excluded via {@code keyFilter}
-   * @throws ReferenceNotFoundException if either the named references in {@code assignTo} or the
-   *     commit on these reference, if specified, does not exist.
    */
-  Stream<Diff<ByteString>> diff(
-      CommitOnReference from, CommitOnReference to, KeyFilterPredicate keyFilter)
-      throws ReferenceNotFoundException;
+  Stream<Diff<ByteString>> diff(Hash from, Hash to, KeyFilterPredicate keyFilter);
 
   // NOTE: the following is NOT a "proposed" API, just an idea of how the supporting functions
   // for Nessie-GC need to look like.
