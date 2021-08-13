@@ -1,0 +1,164 @@
+#
+# Copyright (C) 2020 Dremio
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+openapi: 3.0.3 # must be compatible with quarkus
+
+# Note: the final OpenAPI definition file is produced at build time by merging this data with OpenAPI java annotations.
+
+info:
+  title: Nessie API
+  version: 0.9.1
+  contact:
+    name: Project Nessie
+    url: https://projectnessie.org
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+
+paths: {} # inferred from java annotations
+
+components:
+  examples:
+
+    namespace:
+      value: "a.b.c"
+
+    ref:
+      value: "main"
+
+    hash:
+      value: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
+
+    refObj:
+      value:
+        type: BRANCH
+        hash: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
+        name: "main"
+
+    tagObj:
+      value:
+        type: TAG
+        hash: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
+        name: "exampleTag"
+
+    ContentsKey:
+      value:
+        elements:
+          - example
+          - key
+
+    iceberg:
+      value:
+        type: ICEBERG_TABLE
+        metadataLocation: "/path/to/metadata/"
+        uuid: b874b5d5-f926-4eed-9be7-b2380d9810c0
+
+    expr_by_namespace:
+      value: "entry.namespace.startsWith('a.b.c')"
+    expr_by_contentType:
+      value: "entry.contentType in ['ICEBERG_TABLE','DELTA_LAKE_TABLE']"
+    expr_by_namespace_and_contentType:
+      value: "entry.namespace.startsWith('some.name.space') && entry.contentType in ['ICEBERG_TABLE','DELTA_LAKE_TABLE']"
+    expr_by_commit_author:
+      value: "commit.author=='nessie_author'"
+    expr_by_commit_committer:
+      value: "commit.committer=='nessie_committer'"
+    expr_by_commitTime:
+      value: "timestamp(commit.commitTime) > timestamp('2021-05-31T08:23:15Z')"
+
+    commitMessage:
+      value: "Example Commit Message"
+
+    multiGetResponse:
+      value:
+        contents:
+          - contents:
+              type: ICEBERG_TABLE
+              metadataLocation: "/path/to/metadata/"
+              uuid: b874b5d5-f926-4eed-9be7-b2380d9810c0
+            key:
+              elements:
+                - example
+                - key
+
+    multiGetRequest:
+      value:
+        requestedKeys:
+          - elements:
+              - example
+              - key
+
+    entriesResponse:
+      value:
+        token: "xxx"
+        entries:
+          - name:
+              elements:
+                - example
+                - key
+            type: ICEBERG_TABLE
+
+    types:
+      value:
+        - ICEBERG_TABLE
+
+    merge:
+      value:
+        fromHash: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
+
+    transplant:
+      value:
+        hashesToTransplant:
+          - "abcdef4242424242424242424242beef00dead42112233445566778899001122"
+
+    operations:
+      value:
+        commitMeta:
+          author: "authorName <authorName@example.com>"
+          authorTime: "2021-04-07T14:42:25.534748Z"
+          hash: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
+          message: "Example Commit Message"
+          properties:
+            additionalProp1: "xxx"
+            additionalProp2: "yyy"
+            additionalProp3: "zzz"
+          signedOffBy: "signedOffByName <signedOffBy@example.com>"
+        operations:
+          - type: PUT
+            key:
+              elements:
+                - example
+                - key
+            contents:
+              type: ICEBERG_TABLE
+              uuid: "b874b5d5-f926-4eed-9be7-b2380d9810c0"
+              metadataLocation: "/path/to/metadata/"
+
+    logResponse:
+      value:
+        token: "xxx"
+        operations:
+          - author: "authorName <authorName@example.com>"
+            authorTime: "2021-04-07T14:42:25.534748Z"
+            commitTime: "2021-04-07T14:42:25.534748Z"
+            committer: "committerName <committerName@example.com>"
+            hash: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
+            message: "Example Commit Message"
+            properties:
+              additionalProp1: "xxx"
+              additionalProp2: "yyy"
+              additionalProp3: "zzz"
+            signedOffBy: "signedOffByName <signedOffBy@example.com>"
