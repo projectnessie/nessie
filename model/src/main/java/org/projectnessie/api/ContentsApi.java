@@ -83,7 +83,7 @@ public interface ContentsApi {
           @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           @Parameter(
               description = "a particular hash on the given ref",
-              examples = {@ExampleObject(ref = "hash")})
+              examples = {@ExampleObject(ref = "nullHash"), @ExampleObject(ref = "hash")})
           @QueryParam("hashOnRef")
           String hashOnRef)
       throws NessieNotFoundException;
@@ -116,7 +116,7 @@ public interface ContentsApi {
           @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           @Parameter(
               description = "a particular hash on the given ref",
-              examples = {@ExampleObject(ref = "hash")})
+              examples = {@ExampleObject(ref = "nullHash"), @ExampleObject(ref = "hash")})
           @QueryParam("hashOnRef")
           String hashOnRef,
       @Valid @NotNull @RequestBody(description = "Keys to retrieve.")

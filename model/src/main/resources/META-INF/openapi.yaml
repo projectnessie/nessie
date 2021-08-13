@@ -40,13 +40,22 @@ components:
       value: "main"
 
     hash:
-      value: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
+      value: "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d"
+
+    nullHash:
+      value:
 
     refObj:
       value:
         type: BRANCH
-        hash: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
+        hash: "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d"
         name: "main"
+
+    refObjNew:
+      value:
+        type: BRANCH
+        hash: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
+        name: "exampleBranch"
 
     tagObj:
       value:

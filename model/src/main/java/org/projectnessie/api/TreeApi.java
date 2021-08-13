@@ -83,6 +83,7 @@ public interface TreeApi {
         content =
             @Content(
                 mediaType = MediaType.APPLICATION_JSON,
+                examples = {@ExampleObject(ref = "refObj")},
                 schema = @Schema(implementation = Branch.class))),
     @APIResponse(responseCode = "404", description = "Default branch not found.")
   })
@@ -99,7 +100,7 @@ public interface TreeApi {
         content = {
           @Content(
               mediaType = MediaType.APPLICATION_JSON,
-              examples = {@ExampleObject(ref = "refObj")},
+              examples = {@ExampleObject(ref = "refObjNew")},
               schema = @Schema(implementation = Reference.class))
         }),
     @APIResponse(responseCode = "403", description = "Not allowed to create reference"),
@@ -113,7 +114,7 @@ public interface TreeApi {
               content = {
                 @Content(
                     mediaType = MediaType.APPLICATION_JSON,
-                    examples = {@ExampleObject(ref = "refObj")})
+                    examples = {@ExampleObject(ref = "refObjNew")})
               })
           Reference reference)
       throws NessieNotFoundException, NessieConflictException;
