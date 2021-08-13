@@ -20,7 +20,7 @@ openapi: 3.0.3 # must be compatible with quarkus
 
 info:
   title: Nessie API
-  version: 0.9.1
+  version: ${project.version}
   contact:
     name: Project Nessie
     url: https://projectnessie.org
