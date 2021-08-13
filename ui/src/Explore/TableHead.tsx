@@ -18,7 +18,7 @@ import {Badge, Nav, NavDropdown} from "react-bootstrap";
 import DeviceHubIcon from "@material-ui/icons/DeviceHub";
 import LocalOfferIcon from "@material-ui/icons/LocalOffer";
 import ExploreLink from "./ExploreLink";
-import {Branch, Tag} from "../utils/api/models";
+import {Branch, Tag} from "../generated/utils/api/models";
 
 function TableHead(props: {
   branches: Array<Branch>,

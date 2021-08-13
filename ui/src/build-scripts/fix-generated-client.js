@@ -13,8 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export * from './auth-header';
-export * from './handle-response';
-export * from './history';
-export * from '../generated/utils/api';
-export * from './api-wrapper';
+console.log("Client API: Applying post-generation code fixups")
+
+const replace = require('replace-in-file');
+
+// openapi-generator produces Line 128 in runtime.ts as
+//    export type FetchAPI = GlobalFetch['fetch'];
+// but must be
+//    export type FetchAPI = WindowOrWorkerGlobalScope['fetch'];
+replace.sync({
+  files: 'src/generated/utils/api/runtime.ts',
+  from: /GlobalFetch/g,
+  to: 'WindowOrWorkerGlobalScope',
+})

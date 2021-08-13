@@ -66,6 +66,7 @@
           <excludes combine.children="append">
             <exclude>target/**</exclude> <!-- todo: ${project.build.directory} not working, unsure why -->
             <exclude>build/**</exclude>
+            <exclude>src/generated/**</exclude>
             <exclude>coverage/**</exclude>
             <exclude>.nyc_output/**</exclude>
             <exclude>**/*.pattern</exclude>
@@ -134,6 +135,16 @@
             </goals>
             <configuration>
               <arguments>run generate-api</arguments>
+            </configuration>
+          </execution>
+          <execution>
+            <id>Fix Generated OpenAPI client code</id>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>npm</goal>
+            </goals>
+            <configuration>
+              <arguments>run fix-generated-client</arguments>
             </configuration>
           </execution>
           <execution>
