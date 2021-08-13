@@ -25,7 +25,6 @@ import com.google.common.hash.Hasher;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.UnsafeByteOperations;
 import java.nio.charset.StandardCharsets;
-import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -48,6 +47,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
@@ -56,8 +56,8 @@ import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.persist.adapter.CommitAttempt;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
-import org.projectnessie.versioned.persist.adapter.CommitOnReference;
 import org.projectnessie.versioned.persist.adapter.ContentsAndState;
+import org.projectnessie.versioned.persist.adapter.ContentsId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.EmbeddedKeyList;
@@ -108,10 +108,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
   }
 
   @Override
-  public Stream<KeyWithBytes> entries(
-      CommitOnReference commitOnReference, KeyFilterPredicate keyFilter)
-      throws ReferenceNotFoundException {
-    throw new UnsupportedOperationException("entries() is not used anywhere");
+  public Hash toHash(NamedRef ref) throws ReferenceNotFoundException {
+    return hashOnReference(ref, Optional.empty());
   }
 
   // /////////////////////////////////////////////////////////////////////////////////////////////
@@ -120,9 +118,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
 
   /** Returns the current time in microseconds since epoch. */
   protected long commitTimeInMicros() {
-    // Function intentionally left in AbstractDatabaseAdapter, so the clock can become configurable.
-    Clock clock = Clock.systemUTC();
-    Instant instant = clock.instant();
+    Instant instant = config.getClock().instant();
     long time = instant.getEpochSecond();
     long nano = instant.getNano();
     return TimeUnit.MILLISECONDS.toMicros(time) + TimeUnit.NANOSECONDS.toMicros(nano);
@@ -178,9 +174,9 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
    * Logic implementation of a merge-attempt.
    *
    * @param ctx technical operation context
-   * @param from merge-from reference with known HEAD
-   * @param fromHead current HEAD of {@code from}
+   * @param from merge-from commit
    * @param toBranch merge-into reference with expected hash of HEAD
+   * @param expectedHead if present, {@code toBranch}'s current HEAD must be equal to this value
    * @param toHead current HEAD of {@code toBranch}
    * @param individualCommits consumer for the individual commits to merge
    * @return hash of the last commit-log-entry written to {@code toBranch}
@@ -188,31 +184,35 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
   protected Hash mergeAttempt(
       OP_CONTEXT ctx,
       long timeInMicros,
-      CommitOnReference from,
-      Hash fromHead,
-      CommitOnReference toBranch,
+      Hash from,
+      BranchName toBranch,
+      Optional<Hash> expectedHead,
       Hash toHead,
       Consumer<Hash> individualCommits)
       throws ReferenceNotFoundException, ReferenceConflictException {
+
     // 1. ensure 'expectedHash' is a parent of HEAD-of-'toBranch'
-    hashOnRef(ctx, toBranch, toHead);
+    hashOnRef(ctx, toBranch, expectedHead, toHead);
 
-    // 2. ensure 'fromHash' is reachable from 'from'
-    fromHead = hashOnRef(ctx, from, fromHead);
+    // 2. find nearest common-ancestor between 'from' + 'fromHash'
+    Hash commonAncestor = findCommonAncestor(ctx, from, toBranch, toHead);
 
-    // 3. find nearest common-ancestor between 'from' + 'fromHash'
-    Hash commonAncestor =
-        findCommonAncestor(ctx, from.getReference(), fromHead, toBranch.getReference(), toHead);
-
-    // 4. Collect commit-log-entries
+    // 3. Collect commit-log-entries
     List<CommitLogEntry> toEntriesReverseChronological =
         takeUntilExcludeLast(commitLogFetcher(ctx, toHead), e -> e.getHash().equals(commonAncestor))
             .collect(Collectors.toList());
     Collections.reverse(toEntriesReverseChronological);
     List<CommitLogEntry> commitsToMergeChronological =
-        takeUntilExcludeLast(
-                commitLogFetcher(ctx, fromHead), e -> e.getHash().equals(commonAncestor))
+        takeUntilExcludeLast(commitLogFetcher(ctx, from), e -> e.getHash().equals(commonAncestor))
             .collect(Collectors.toList());
+
+    if (commitsToMergeChronological.isEmpty()) {
+      // Nothing to merge, shortcut
+      throw new IllegalArgumentException(
+          String.format(
+              "No hashes to merge from '%s' onto '%s' @ '%s'.",
+              from.asString(), toBranch.getName(), toHead));
+    }
 
     // 4. Collect modified keys.
     Set<Key> keysTouchedOnTarget = collectModifiedKeys(toEntriesReverseChronological);
@@ -227,7 +227,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     // 7. Write commits
 
     commitsToMergeChronological.stream().map(CommitLogEntry::getHash).forEach(individualCommits);
-    writeIndividualCommits(ctx, commitsToMergeChronological);
+    writeMultipleCommits(ctx, commitsToMergeChronological);
     return toHead;
   }
 
@@ -236,9 +236,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
    *
    * @param ctx technical operation context
    * @param targetBranch target reference with expected HEAD
+   * @param expectedHead if present, {@code targetBranch}'s current HEAD must be equal to this value
    * @param targetHead current HEAD of {@code targetBranch}
-   * @param source source reference containing the commits in {@code sequenceToTransplant}
-   * @param sourceHead current HEAD of {@code source}
    * @param sequenceToTransplant sequential list of commits to transplant from {@code source}
    * @param individualCommits consumer for the individual commits to merge
    * @return hash of the last commit-log-entry written to {@code targetBranch}
@@ -246,32 +245,34 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
   protected Hash transplantAttempt(
       OP_CONTEXT ctx,
       long timeInMicros,
-      CommitOnReference targetBranch,
+      BranchName targetBranch,
+      Optional<Hash> expectedHead,
       Hash targetHead,
-      NamedRef source,
-      Hash sourceHead,
       List<Hash> sequenceToTransplant,
       Consumer<Hash> individualCommits)
       throws ReferenceNotFoundException, ReferenceConflictException {
+    if (sequenceToTransplant.isEmpty()) {
+      throw new IllegalArgumentException("No hashes to transplant given.");
+    }
+
     // 1. ensure 'expectedHash' is a parent of HEAD-of-'targetBranch' & collect keys
     List<CommitLogEntry> targetEntriesReverseChronological = new ArrayList<>();
-    hashOnRef(
-        ctx,
-        targetHead,
-        targetBranch.getReference(),
-        targetBranch.getHashOnReference(),
-        targetEntriesReverseChronological::add);
+    hashOnRef(ctx, targetHead, targetBranch, expectedHead, targetEntriesReverseChronological::add);
+
+    // Exclude the expected-hash on the target-branch from key-collisions check
+    if (!targetEntriesReverseChronological.isEmpty()
+        && expectedHead.isPresent()
+        && targetEntriesReverseChronological.get(0).getHash().equals(expectedHead.get())) {
+      targetEntriesReverseChronological.remove(0);
+    }
     Collections.reverse(targetEntriesReverseChronological);
 
     // 2. Collect modified keys.
     Set<Key> keysTouchedOnTarget = collectModifiedKeys(targetEntriesReverseChronological);
 
-    // 3. verify last hash in 'sequenceToTransplant' is in 'source'
-    Hash lastHash = sequenceToTransplant.get(sequenceToTransplant.size() - 1);
-    hashOnRef(ctx, CommitOnReference.of(source, Optional.of(lastHash)), sourceHead);
-
     // 4. ensure 'sequenceToTransplant' is sequential
     int[] index = new int[] {sequenceToTransplant.size() - 1};
+    Hash lastHash = sequenceToTransplant.get(sequenceToTransplant.size() - 1);
     List<CommitLogEntry> commitsToTransplantChronological =
         takeUntilExcludeLast(
                 commitLogFetcher(ctx, lastHash),
@@ -299,7 +300,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     commitsToTransplantChronological.stream()
         .map(CommitLogEntry::getHash)
         .forEach(individualCommits);
-    writeIndividualCommits(ctx, commitsToTransplantChronological);
+    writeMultipleCommits(ctx, commitsToTransplantChronological);
     return targetHead;
   }
 
@@ -309,39 +310,32 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
    * @param ctx technical operation context
    * @param from "from" reference to compute the difference from, appears on the "from" side in
    *     {@link Diff} with hash in {@code from} to compute the diff for, must exist in {@code from}
-   * @param fromHead current HEAD of {@code from}
    * @param to "to" reference to compute the difference from, appears on the "to" side in {@link
    *     Diff} with hash in {@code to} to compute the diff for, must exist in {@code to}
-   * @param toHead current HEAD of {@code to}
    * @param keyFilter optional filter on key + contents-id + contents-type
    * @return computed difference
    */
   protected Stream<Diff<ByteString>> buildDiff(
-      OP_CONTEXT ctx,
-      CommitOnReference from,
-      Hash fromHead,
-      CommitOnReference to,
-      Hash toHead,
-      KeyFilterPredicate keyFilter)
-      throws ReferenceNotFoundException {
+      OP_CONTEXT ctx, Hash from, Hash to, KeyFilterPredicate keyFilter) {
     // TODO this implementation works, but is definitely not the most efficient one.
 
-    Hash fromHash = hashOnRef(ctx, from, fromHead);
-    Hash toHash = hashOnRef(ctx, to, toHead);
-
     Set<Key> allKeys = new HashSet<>();
-    try (Stream<Key> s = keysForCommitEntry(ctx, fromHash, keyFilter).map(KeyWithType::getKey)) {
+    try (Stream<Key> s = keysForCommitEntry(ctx, from, keyFilter).map(KeyWithType::getKey)) {
       s.forEach(allKeys::add);
     }
-    try (Stream<Key> s = keysForCommitEntry(ctx, toHash, keyFilter).map(KeyWithType::getKey)) {
+    try (Stream<Key> s = keysForCommitEntry(ctx, to, keyFilter).map(KeyWithType::getKey)) {
       s.forEach(allKeys::add);
+    }
+
+    if (allKeys.isEmpty()) {
+      // no keys, shortcut
+      return Stream.empty();
     }
 
     List<Key> allKeysList = new ArrayList<>(allKeys);
     Map<Key, ContentsAndState<ByteString>> fromValues =
-        fetchValues(ctx, fromHash, allKeysList, keyFilter);
-    Map<Key, ContentsAndState<ByteString>> toValues =
-        fetchValues(ctx, toHash, allKeysList, keyFilter);
+        fetchValues(ctx, from, allKeysList, keyFilter);
+    Map<Key, ContentsAndState<ByteString>> toValues = fetchValues(ctx, to, allKeysList, keyFilter);
 
     Function<ContentsAndState<ByteString>, Optional<ByteString>> valToContents =
         cs -> cs != null ? Optional.of(cs.getRefState()) : Optional.empty();
@@ -361,9 +355,10 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
    * Convenience for {@link #hashOnRef(Object, Hash, NamedRef, Optional, Consumer) hashOnRef(ctx,
    * knownHead, ref.getReference(), ref.getHashOnReference(), null)}.
    */
-  protected Hash hashOnRef(OP_CONTEXT ctx, CommitOnReference ref, Hash knownHead)
+  protected Hash hashOnRef(
+      OP_CONTEXT ctx, NamedRef reference, Optional<Hash> hashOnRef, Hash knownHead)
       throws ReferenceNotFoundException {
-    return hashOnRef(ctx, knownHead, ref.getReference(), ref.getHashOnReference(), null);
+    return hashOnRef(ctx, knownHead, reference, hashOnRef, null);
   }
 
   /**
@@ -389,8 +384,9 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       throws ReferenceNotFoundException {
     if (hashOnRef.isPresent()) {
       Hash suspect = hashOnRef.get();
+
+      // If the client requests 'NO_ANCESTOR' (== beginning of time), skip the existence-check.
       if (suspect.equals(NO_ANCESTOR)) {
-        // If the client requests 'NO_ANCESTOR' (== beginning of time), skip the existence-check.
         if (commitLogVisitor != null) {
           commitLogFetcher(ctx, knownHead).forEach(commitLogVisitor);
         }
@@ -545,7 +541,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     puts.forEach(
         e -> {
           hashKey(hasher, e.getKey());
-          hasher.putString(e.getContentsId(), StandardCharsets.UTF_8);
+          hasher.putString(e.getContentsId().getId(), StandardCharsets.UTF_8);
           hasher.putBytes(e.getValue().asReadOnlyByteBuffer());
         });
     unchanged.forEach(e -> hashKey(hasher, e));
@@ -578,8 +574,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       OP_CONTEXT ctx, CommitAttempt commitAttempt, Hash branchHead, List<String> mismatches)
       throws ReferenceNotFoundException {
 
-    if (commitAttempt.getCommitToBranch().getHashOnReference().isPresent()) {
-      Hash expectedHead = commitAttempt.getCommitToBranch().getHashOnReference().get();
+    if (commitAttempt.getExpectedHead().isPresent()) {
+      Hash expectedHead = commitAttempt.getExpectedHead().get();
       if (!expectedHead.equals(branchHead)) {
         Set<Key> operationKeys = new HashSet<>();
         operationKeys.addAll(commitAttempt.getDeletes());
@@ -595,7 +591,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
         // ReferenceNotFoundException that the expected-hash does not exist on the target
         // branch.
         if (!sinceSeen[0] && !expectedHead.equals(NO_ANCESTOR)) {
-          throw hashNotFound(commitAttempt.getCommitToBranch().getReference(), expectedHead);
+          throw hashNotFound(commitAttempt.getCommitToBranch(), expectedHead);
         }
       }
     }
@@ -643,8 +639,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     Set<Key> remainingKeys = new HashSet<>(keys);
 
     Map<Key, ByteString> nonGlobal = new HashMap<>();
-    Map<Key, String> keyToContentsIds = new HashMap<>();
-    Set<String> contentsIds = new HashSet<>();
+    Map<Key, ContentsId> keyToContentsIds = new HashMap<>();
+    Set<ContentsId> contentsIds = new HashSet<>();
     try (Stream<CommitLogEntry> log =
         takeUntilExcludeLast(commitLogFetcher(ctx, refHead), e -> remainingKeys.isEmpty())) {
       log.peek(entry -> entry.getDeletes().forEach(remainingKeys::remove))
@@ -659,7 +655,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
               });
     }
 
-    Map<String, ByteString> globals = fetchGlobalStates(ctx, contentsIds);
+    Map<ContentsId, ByteString> globals = fetchGlobalStates(ctx, contentsIds);
 
     return nonGlobal.entrySet().stream()
         .collect(
@@ -674,25 +670,30 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
    * Fetches the global-state information for the given content-ids.
    *
    * @param ctx technical context
+   * @param contentIds the contents-ids to fetch
    * @return map of content-id to state
    */
-  protected abstract Map<String, ByteString> fetchGlobalStates(
-      OP_CONTEXT ctx, Set<String> contentIds);
+  protected abstract Map<ContentsId, ByteString> fetchGlobalStates(
+      OP_CONTEXT ctx, Set<ContentsId> contentIds);
 
   /**
-   * Write a new commit-entry with a best-effort approach to prevent hash-collisions but without any
-   * other consistency checks/guarantees. Some implementations however can enforce strict
-   * consistency checks/guarantees.
+   * Write a new commit-entry, the given commit entry is to be persisted as is. All values of the
+   * given {@link CommitLogEntry} can be considered valid and consistent.
+   *
+   * <p>Implementations however can enforce strict consistency checks/guarantees, like a best-effort
+   * approach to prevent hash-collisions but without any other consistency checks/guarantees.
    */
   protected abstract void writeIndividualCommit(OP_CONTEXT ctx, CommitLogEntry entry)
       throws ReferenceConflictException;
 
   /**
-   * Write multiple new commit-entries with a best-effort approach to prevent hash-collisions but
-   * without any other consistency checks/guarantees. Some implementations however can enforce
-   * strict consistency checks/guarantees.
+   * Write multiple new commit-entries, the given commit entries are to be persisted as is. All
+   * values of the * given {@link CommitLogEntry} can be considered valid and consistent.
+   *
+   * <p>Implementations however can enforce strict consistency checks/guarantees, like a best-effort
+   * approach to prevent hash-collisions but without any other consistency checks/guarantees.
    */
-  protected abstract void writeIndividualCommits(OP_CONTEXT ctx, List<CommitLogEntry> entries)
+  protected abstract void writeMultipleCommits(OP_CONTEXT ctx, List<CommitLogEntry> entries)
       throws ReferenceConflictException;
 
   /**
@@ -745,8 +746,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
    * {@link ReferenceConflictException} or. Otherwise this method returns the hash of the
    * common-ancestor.
    */
-  protected Hash findCommonAncestor(
-      OP_CONTEXT ctx, NamedRef from, Hash fromHead, NamedRef toBranch, Hash toHead)
+  protected Hash findCommonAncestor(OP_CONTEXT ctx, Hash from, NamedRef toBranch, Hash toHead)
       throws ReferenceConflictException {
 
     // TODO this implementation requires guardrails:
@@ -754,8 +754,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     //  both impact the cost (CPU, memory, I/O) of a merge operation.
 
     Iterator<Hash> toLog = Spliterators.iterator(commitLogHashFetcher(ctx, toHead).spliterator());
-    Iterator<Hash> fromLog =
-        Spliterators.iterator(commitLogHashFetcher(ctx, fromHead).spliterator());
+    Iterator<Hash> fromLog = Spliterators.iterator(commitLogHashFetcher(ctx, from).spliterator());
     Set<Hash> toCommitHashes = new HashSet<>();
     List<Hash> fromCommitHashes = new ArrayList<>();
     while (true) {
@@ -774,7 +773,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
         throw new ReferenceConflictException(
             String.format(
                 "No common ancestor found for merge of '%s' into branch '%s'",
-                from.getName(), toBranch.getName()));
+                from, toBranch.getName()));
       }
 
       for (Hash f : fromCommitHashes) {
@@ -889,9 +888,9 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
    */
   protected void checkExpectedGlobalStates(
       OP_CONTEXT ctx, CommitAttempt commitAttempt, Consumer<String> mismatches) {
-    Map<String, ByteString> globalStates =
+    Map<ContentsId, ByteString> globalStates =
         fetchGlobalStates(ctx, commitAttempt.getExpectedStates().keySet());
-    for (Entry<String, Optional<ByteString>> expectedState :
+    for (Entry<ContentsId, Optional<ByteString>> expectedState :
         commitAttempt.getExpectedStates().entrySet()) {
       ByteString currentState = globalStates.get(expectedState.getKey());
       if (currentState == null) {

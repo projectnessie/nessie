@@ -19,19 +19,20 @@ import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Optional;
 import java.util.Spliterator;
 import java.util.Spliterators.AbstractSpliterator;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
-import org.projectnessie.versioned.persist.adapter.CommitOnReference;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 
 /** Utility methods for {@link DatabaseAdapter} implementations. */
@@ -66,85 +67,73 @@ public final class DatabaseAdapterUtil {
 
   public static ReferenceAlreadyExistsException referenceAlreadyExists(NamedRef ref) {
     return new ReferenceAlreadyExistsException(
-        String.format("Named reference '%s' already exists.", ref));
+        String.format("Named reference '%s' already exists.", ref.getName()));
   }
 
   public static String mergeConflictMessage(
-      String err, CommitOnReference from, CommitOnReference toBranch) {
+      String err, Hash from, BranchName toBranch, Optional<Hash> expectedHead) {
     return String.format(
-        "%s during merge of %s%s into %s%s requiring a common ancestor",
+        "%s during merge of '%s' into '%s%s' requiring a common ancestor",
         err,
-        from.getReference().getName(),
-        from.getHashOnReference().map(h -> "@" + h.asString()).orElse(""),
-        toBranch.getReference().getName(),
-        toBranch.getHashOnReference().map(h -> "@" + h.asString()).orElse(""));
+        from.asString(),
+        toBranch.getName(),
+        expectedHead.map(h -> "@" + h.asString()).orElse(""));
   }
 
   public static String transplantConflictMessage(
       String err,
-      CommitOnReference targetBranch,
-      NamedRef source,
+      BranchName targetBranch,
+      Optional<Hash> expectedHead,
       List<Hash> sequenceToTransplant) {
     return String.format(
-        "%s during transplant of %d commits from '%s' into '%s%s'",
+        "%s during transplant of %d commits into '%s%s'",
         err,
         sequenceToTransplant.size(),
-        source.getName(),
-        targetBranch.getReference().getName(),
-        targetBranch.getHashOnReference().map(h -> "@" + h.asString()).orElse(""));
+        targetBranch.getName(),
+        expectedHead.map(h -> "@" + h.asString()).orElse(""));
   }
 
-  public static String commitConflictMessage(String err, CommitOnReference commitTo) {
+  public static String commitConflictMessage(
+      String err, BranchName commitTo, Optional<Hash> expectedHead) {
     return String.format(
         "%s during commit against '%s%s'",
-        err,
-        commitTo.getReference().getName(),
-        commitTo.getHashOnReference().map(h -> "@" + h.asString()).orElse(""));
+        err, commitTo.getName(), expectedHead.map(h -> "@" + h.asString()).orElse(""));
   }
 
-  public static String createConflictMessage(String err, NamedRef ref, CommitOnReference target) {
+  public static String createConflictMessage(String err, NamedRef ref, Hash target) {
     return String.format(
-        "%s during create of reference '%s' from '%s%s'",
-        err,
-        ref.getName(),
-        target.getReference(),
-        target.getHashOnReference().map(h -> "@" + h.asString()).orElse(""));
+        "%s during create of reference '%s' at '%s'", err, ref.getName(), target.asString());
   }
 
-  public static String deleteConflictMessage(String err, CommitOnReference reference) {
+  public static String deleteConflictMessage(
+      String err, NamedRef reference, Optional<Hash> expectedHead) {
     return String.format(
         "%s during delete of reference '%s%s'",
-        err,
-        reference.getReference().getName(),
-        reference.getHashOnReference().map(h -> "@" + h.asString()).orElse(""));
+        err, reference.getName(), expectedHead.map(h -> "@" + h.asString()).orElse(""));
   }
 
   public static String assignConflictMessage(
-      String err, CommitOnReference assignee, CommitOnReference assignTo) {
+      String err, NamedRef assignee, Optional<Hash> expectedHead, Hash assignTo) {
     return String.format(
-        "%s during reassign of reference %s%s to '%s%s'",
+        "%s during reassign of reference %s%s to '%s'",
         err,
-        assignee.getReference().getName(),
-        assignee.getHashOnReference().map(h -> "@" + h.asString()).orElse(""),
-        assignTo.getReference().getName(),
-        assignTo.getHashOnReference().map(h -> "@" + h.asString()).orElse(""));
+        assignee.getName(),
+        expectedHead.map(h -> "@" + h.asString()).orElse(""),
+        assignTo.asString());
   }
 
   /**
-   * Verifies that {@link CommitOnReference#getHashOnReference() reference.getHashOnReference()}, if
-   * present, is equal to {@code referenceCurrentHead}. Throws a {@link ReferenceConflictException}
-   * if not.
+   * Verifies that {@code expectedHead}, if present, is equal to {@code referenceCurrentHead}.
+   * Throws a {@link ReferenceConflictException} if not.
    */
-  public static void verifyExpectedHash(Hash referenceCurrentHead, CommitOnReference reference)
+  public static void verifyExpectedHash(
+      Hash referenceCurrentHead, NamedRef reference, Optional<Hash> expectedHead)
       throws ReferenceConflictException {
-    if (reference.getHashOnReference().isPresent()
-        && !referenceCurrentHead.equals(reference.getHashOnReference().get())) {
+    if (expectedHead.isPresent() && !referenceCurrentHead.equals(expectedHead.get())) {
       throw new ReferenceConflictException(
           String.format(
               "Named-reference '%s' is not at expected hash '%s', but at '%s'.",
-              reference.getReference().getName(),
-              reference.getHashOnReference().get().asString(),
-              referenceCurrentHead.asString()));
+              reference.getName(), expectedHead.get().asString(), referenceCurrentHead.asString()));
     }
   }
 

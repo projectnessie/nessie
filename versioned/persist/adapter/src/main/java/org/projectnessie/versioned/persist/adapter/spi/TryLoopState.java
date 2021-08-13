@@ -25,24 +25,33 @@ import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 /** Retry-logic for attempts for compare-and-swap-like operations. */
 public final class TryLoopState implements AutoCloseable {
 
-  private final long t0 = System.nanoTime();
+  static final int INITIAL_LOWER_BOUND = 5;
+  static final int INITIAL_UPPER_BOUND = 25;
+
+  private final MonotonicClock monotonicClock;
+  private final long t0;
   private final long maxTime;
   private final int maxRetries;
   private int retries;
   private final Supplier<String> retryErrorMessage;
 
-  private long lowerBound = 5;
-  private long upperBound = 25;
+  private long lowerBound = INITIAL_LOWER_BOUND;
+  private long upperBound = INITIAL_UPPER_BOUND;
 
-  private TryLoopState(Supplier<String> retryErrorMessage, DatabaseAdapterConfig config) {
+  TryLoopState(
+      Supplier<String> retryErrorMessage,
+      DatabaseAdapterConfig config,
+      MonotonicClock monotonicClock) {
     this.retryErrorMessage = retryErrorMessage;
     this.maxTime = TimeUnit.MILLISECONDS.toNanos(config.getCommitTimeout());
     this.maxRetries = config.getCommitRetries();
+    this.monotonicClock = monotonicClock;
+    this.t0 = monotonicClock.currentNanos();
   }
 
   public static TryLoopState newTryLoopState(
       Supplier<String> retryErrorMessage, DatabaseAdapterConfig config) {
-    return new TryLoopState(retryErrorMessage, config);
+    return new TryLoopState(retryErrorMessage, config, DefaultMonotonicClock.INSTANCE);
   }
 
   /**
@@ -64,21 +73,21 @@ public final class TryLoopState implements AutoCloseable {
    */
   public void retry() throws ReferenceRetryFailureException {
     retries++;
-    long t = System.nanoTime() - t0;
-    if (maxTime < t || maxRetries <= retries) {
+
+    long current = monotonicClock.currentNanos();
+    long elapsed = current - t0;
+
+    if (maxTime < elapsed || maxRetries < retries) {
       throw new ReferenceRetryFailureException(retryErrorMessage.get());
     }
 
     long sleepMillis = ThreadLocalRandom.current().nextLong(lowerBound, upperBound);
 
     // Prevent that we "sleep" too long and exceed 'maxTime'
-    sleepMillis = Math.min(TimeUnit.NANOSECONDS.toMillis(maxTime - t), sleepMillis);
+    sleepMillis = Math.min(TimeUnit.NANOSECONDS.toMillis(maxTime - elapsed), sleepMillis);
 
-    try {
-      Thread.sleep(sleepMillis);
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-    }
+    monotonicClock.sleepMillis(sleepMillis);
+
     lowerBound *= 2;
     upperBound *= 2;
   }
@@ -86,5 +95,33 @@ public final class TryLoopState implements AutoCloseable {
   @Override
   public void close() {
     // Can detect success/failed/too-many-retries here, if needed.
+  }
+
+  /** Abstracts {@code System.nanoTime()} and {@code Thread.sleep()} for testing purposes. */
+  interface MonotonicClock {
+    long currentNanos();
+
+    void sleepMillis(long nanos);
+  }
+
+  static class DefaultMonotonicClock implements MonotonicClock {
+
+    static final MonotonicClock INSTANCE = new DefaultMonotonicClock();
+
+    private DefaultMonotonicClock() {}
+
+    @Override
+    public long currentNanos() {
+      return System.nanoTime();
+    }
+
+    @Override
+    public void sleepMillis(long sleepMillis) {
+      try {
+        Thread.sleep(sleepMillis);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+      }
+    }
   }
 }
