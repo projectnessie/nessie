@@ -875,14 +875,19 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
               .forEach(
                   a -> {
                     if (keys.contains(a.getKey()) && handled.add(a.getKey())) {
-                      mismatches.accept(String.format("Key '%s' has put-operation.", a.getKey()));
+                      mismatches.accept(
+                          String.format(
+                              "Key '%s' has conflicting put-operation from another commit.",
+                              a.getKey()));
                     }
                   });
           e.getDeletes()
               .forEach(
                   a -> {
                     if (keys.contains(a) && handled.add(a)) {
-                      mismatches.accept(String.format("Key '%s' has delete-operation.", a));
+                      mismatches.accept(
+                          String.format(
+                              "Key '%s' has conflicting delete-operation from another commit.", a));
                     }
                   });
         });
