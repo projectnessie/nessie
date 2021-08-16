@@ -138,7 +138,7 @@
     <gatling.version>3.6.1</gatling.version>
     <guava.version>30.1.1-jre</guava.version>
     <hadoop.version>3.3.1</hadoop.version>
-    <iceberg.version>0.11.1</iceberg.version>
+    <iceberg.version>0.12.0</iceberg.version>
     <immutables.version>2.8.9-ea-1</immutables.version>
     <jackson.version>2.12.4</jackson.version>
     <javax.version>4.0.1</javax.version>
