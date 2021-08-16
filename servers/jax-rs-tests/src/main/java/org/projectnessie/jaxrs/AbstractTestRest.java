@@ -26,7 +26,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.projectnessie.model.Validation.HASH_MESSAGE;
 import static org.projectnessie.model.Validation.REF_NAME_MESSAGE;
@@ -48,6 +47,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import org.assertj.core.api.Assumptions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -152,8 +152,8 @@ public abstract class AbstractTestRest {
         () ->
             assertThatThrownBy(() -> tree.createReference(Tag.of(tagName1, null)))
                 .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageStartingWith(
-                    "Bad Request (HTTP/400): Cannot create an unassigned tag reference"),
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining("Cannot create an unassigned tag reference"),
         // legit Tag with name + hash
         () -> {
           Reference refTag1 = tree.createReference(Tag.of(tagName2, mainHash));
@@ -173,8 +173,8 @@ public abstract class AbstractTestRest {
         () ->
             assertThatThrownBy(() -> tree.createReference(Hash.of("cafebabedeafbeef")))
                 .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageStartingWith(
-                    "Bad Request (HTTP/400): Only tag and branch references can be created"));
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining("Only tag and branch references can be created"));
   }
 
   @ParameterizedTest
@@ -303,12 +303,7 @@ public abstract class AbstractTestRest {
                 .build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(commitsPerAuthor);
-    log.getOperations()
-        .forEach(
-            commit -> {
-              assertThat(commit.getAuthor()).isEqualTo("author-3");
-              assertThat(commit.getCommitter()).isEmpty();
-            });
+    log.getOperations().forEach(commit -> assertThat(commit.getAuthor()).isEqualTo("author-3"));
 
     log =
         tree.getCommitLog(
@@ -320,11 +315,9 @@ public abstract class AbstractTestRest {
     assertThat(log.getOperations()).hasSize(commitsPerAuthor * 3);
     log.getOperations()
         .forEach(
-            commit -> {
-              assertThat(ImmutableList.of("author-1", "author-3", "author-4"))
-                  .contains(commit.getAuthor());
-              assertThat(commit.getCommitter()).isEmpty();
-            });
+            commit ->
+                assertThat(ImmutableList.of("author-1", "author-3", "author-4"))
+                    .contains(commit.getAuthor()));
 
     log =
         tree.getCommitLog(
@@ -336,11 +329,9 @@ public abstract class AbstractTestRest {
     assertThat(log.getOperations()).hasSize(commitsPerAuthor * 3);
     log.getOperations()
         .forEach(
-            commit -> {
-              assertThat(ImmutableList.of("author-2", "author-3", "author-4"))
-                  .contains(commit.getAuthor());
-              assertThat(commit.getCommitter()).isEmpty();
-            });
+            commit ->
+                assertThat(ImmutableList.of("author-2", "author-3", "author-4"))
+                    .contains(commit.getAuthor()));
 
     log =
         tree.getCommitLog(
@@ -350,10 +341,8 @@ public abstract class AbstractTestRest {
     assertThat(log.getOperations()).hasSize(commitsPerAuthor * 2);
     log.getOperations()
         .forEach(
-            commit -> {
-              assertThat(ImmutableList.of("author-2", "author-4")).contains(commit.getAuthor());
-              assertThat(commit.getCommitter()).isEmpty();
-            });
+            commit ->
+                assertThat(ImmutableList.of("author-2", "author-4")).contains(commit.getAuthor()));
   }
 
   @Test
@@ -789,7 +778,7 @@ public abstract class AbstractTestRest {
   }
 
   @Test
-  void veriryAllContentAndOperationTypes() throws NessieNotFoundException, NessieConflictException {
+  void verifyAllContentAndOperationTypes() throws NessieNotFoundException, NessieConflictException {
     String branchName = "contentAndOperationAll";
     Reference r = tree.createReference(Branch.of(branchName, null));
     tree.commitMultipleOperations(
@@ -999,7 +988,7 @@ public abstract class AbstractTestRest {
     final String branch = "specialchar";
     Reference r = tree.createReference(Branch.of(branch, null));
     // ContentsKey k = ContentsKey.of("/%国","国.国");
-    ContentsKey k = ContentsKey.of("a.b", "c.d");
+    ContentsKey k = ContentsKey.of("a.b", "c.txt");
     IcebergTable ta = IcebergTable.of("path1");
     tree.commitMultipleOperations(
         branch,
@@ -1048,92 +1037,75 @@ public abstract class AbstractTestRest {
 
     assertAll(
         () ->
-            assertThat(
-                    assertThrows(
-                            NessieBadRequestException.class,
-                            () -> tree.commitMultipleOperations(invalidBranchName, validHash, ops))
-                        .getMessage())
-                .contains("Bad Request (HTTP/400): ")
-                .contains("commitMultipleOperations.branchName: " + REF_NAME_MESSAGE)
-                .contains(opsCountMsg),
+            assertThatThrownBy(
+                    () -> tree.commitMultipleOperations(invalidBranchName, validHash, ops))
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining("commitMultipleOperations.branchName: " + REF_NAME_MESSAGE)
+                .hasMessageContaining(opsCountMsg),
         () ->
-            assertEquals(
-                "Bad Request (HTTP/400): deleteBranch.branchName: " + REF_NAME_MESSAGE,
-                assertThrows(
-                        NessieBadRequestException.class,
-                        () -> tree.deleteBranch(invalidBranchName, validHash))
-                    .getMessage()),
+            assertThatThrownBy(() -> tree.deleteBranch(invalidBranchName, validHash))
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining("deleteBranch.branchName: " + REF_NAME_MESSAGE),
         () ->
-            assertEquals(
-                "Bad Request (HTTP/400): getCommitLog.ref: " + REF_NAME_MESSAGE,
-                assertThrows(
-                        NessieBadRequestException.class,
-                        () ->
-                            tree.getCommitLog(
-                                invalidBranchName,
-                                CommitLogParams.builder().startHash(validHash).build()))
-                    .getMessage()),
+            assertThatThrownBy(
+                    () ->
+                        tree.getCommitLog(
+                            invalidBranchName,
+                            CommitLogParams.builder().startHash(validHash).build()))
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining("getCommitLog.ref: " + REF_NAME_MESSAGE),
         () ->
-            assertEquals(
-                "Bad Request (HTTP/400): getEntries.refName: " + REF_NAME_MESSAGE,
-                assertThrows(
-                        NessieBadRequestException.class,
-                        () ->
-                            tree.getEntries(
-                                invalidBranchName,
-                                EntriesParams.builder().hashOnRef(validHash).build()))
-                    .getMessage()),
+            assertThatThrownBy(
+                    () ->
+                        tree.getEntries(
+                            invalidBranchName,
+                            EntriesParams.builder().hashOnRef(validHash).build()))
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining("getEntries.refName: " + REF_NAME_MESSAGE),
         () ->
-            assertEquals(
-                "Bad Request (HTTP/400): getReferenceByName.refName: " + REF_NAME_OR_HASH_MESSAGE,
-                assertThrows(
-                        NessieBadRequestException.class,
-                        () -> tree.getReferenceByName(invalidBranchName))
-                    .getMessage()),
+            assertThatThrownBy(() -> tree.getReferenceByName(invalidBranchName))
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining("getReferenceByName.refName: " + REF_NAME_OR_HASH_MESSAGE),
         () ->
-            assertEquals(
-                "Bad Request (HTTP/400): assignTag.tagName: " + REF_NAME_MESSAGE,
-                assertThrows(
-                        NessieBadRequestException.class,
-                        () -> tree.assignTag(invalidBranchName, validHash, tag))
-                    .getMessage()),
+            assertThatThrownBy(() -> tree.assignTag(invalidBranchName, validHash, tag))
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining("assignTag.tagName: " + REF_NAME_MESSAGE),
         () ->
             assertThatThrownBy(() -> tree.mergeRefIntoBranch(invalidBranchName, validHash, null))
                 .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageContaining("Bad Request (HTTP/400): ")
+                .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining("mergeRefIntoBranch.branchName: " + REF_NAME_MESSAGE)
                 .hasMessageContaining("mergeRefIntoBranch.merge: must not be null"),
         () ->
-            assertEquals(
-                "Bad Request (HTTP/400): deleteTag.tagName: " + REF_NAME_MESSAGE,
-                assertThrows(
-                        NessieBadRequestException.class,
-                        () -> tree.deleteTag(invalidBranchName, validHash))
-                    .getMessage()),
+            assertThatThrownBy(() -> tree.deleteTag(invalidBranchName, validHash))
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining("deleteTag.tagName: " + REF_NAME_MESSAGE),
         () ->
-            assertEquals(
-                "Bad Request (HTTP/400): transplantCommitsIntoBranch.branchName: "
-                    + REF_NAME_MESSAGE,
-                assertThrows(
-                        NessieBadRequestException.class,
-                        () ->
-                            tree.transplantCommitsIntoBranch(
-                                invalidBranchName, validHash, null, null))
-                    .getMessage()),
+            assertThatThrownBy(
+                    () ->
+                        tree.transplantCommitsIntoBranch(invalidBranchName, validHash, null, null))
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining(
+                    "transplantCommitsIntoBranch.branchName: " + REF_NAME_MESSAGE),
         () ->
-            assertEquals(
-                "Bad Request (HTTP/400): getContents.ref: " + REF_NAME_MESSAGE,
-                assertThrows(
-                        NessieBadRequestException.class,
-                        () -> contents.getContents(key, invalidBranchName, validHash))
-                    .getMessage()),
+            assertThatThrownBy(() -> contents.getContents(key, invalidBranchName, validHash))
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining("getContents.ref: " + REF_NAME_MESSAGE),
         () ->
-            assertEquals(
-                "Bad Request (HTTP/400): getMultipleContents.ref: " + REF_NAME_MESSAGE,
-                assertThrows(
-                        NessieBadRequestException.class,
-                        () -> contents.getMultipleContents(invalidBranchName, validHash, mgReq))
-                    .getMessage()));
+            assertThatThrownBy(
+                    () -> contents.getMultipleContents(invalidBranchName, validHash, mgReq))
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining("getMultipleContents.ref: " + REF_NAME_MESSAGE));
   }
 
   @ParameterizedTest
@@ -1160,66 +1132,57 @@ public abstract class AbstractTestRest {
 
     assertAll(
         () ->
-            assertThat(
-                    assertThrows(
-                            NessieBadRequestException.class,
-                            () -> tree.commitMultipleOperations(validBranchName, invalidHash, ops))
-                        .getMessage())
-                .contains("Bad Request (HTTP/400): ")
-                .contains("commitMultipleOperations.hash: " + HASH_MESSAGE)
-                .contains(opsCountMsg),
+            assertThatThrownBy(
+                    () -> tree.commitMultipleOperations(validBranchName, invalidHash, ops))
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining("commitMultipleOperations.hash: " + HASH_MESSAGE)
+                .hasMessageContaining(opsCountMsg),
         () ->
-            assertEquals(
-                "Bad Request (HTTP/400): deleteBranch.hash: " + HASH_MESSAGE,
-                assertThrows(
-                        NessieBadRequestException.class,
-                        () -> tree.deleteBranch(validBranchName, invalidHash))
-                    .getMessage()),
+            assertThatThrownBy(() -> tree.deleteBranch(validBranchName, invalidHash))
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining("deleteBranch.hash: " + HASH_MESSAGE),
         () ->
-            assertEquals(
-                "Bad Request (HTTP/400): assignTag.oldHash: " + HASH_MESSAGE,
-                assertThrows(
-                        NessieBadRequestException.class,
-                        () -> tree.assignTag(validBranchName, invalidHash, tag))
-                    .getMessage()),
+            assertThatThrownBy(() -> tree.assignTag(validBranchName, invalidHash, tag))
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining("assignTag.oldHash: " + HASH_MESSAGE),
         () ->
             assertThatThrownBy(() -> tree.mergeRefIntoBranch(validBranchName, invalidHash, null))
                 .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageContaining("Bad Request (HTTP/400): ")
+                .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining("mergeRefIntoBranch.merge: must not be null")
                 .hasMessageContaining("mergeRefIntoBranch.hash: " + HASH_MESSAGE),
         () ->
-            assertEquals(
-                "Bad Request (HTTP/400): deleteTag.hash: " + HASH_MESSAGE,
-                assertThrows(
-                        NessieBadRequestException.class,
-                        () -> tree.deleteTag(validBranchName, invalidHash))
-                    .getMessage()),
+            assertThatThrownBy(() -> tree.deleteTag(validBranchName, invalidHash))
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining("deleteTag.hash: " + HASH_MESSAGE),
         () ->
-            assertEquals(
-                "Bad Request (HTTP/400): transplantCommitsIntoBranch.hash: " + HASH_MESSAGE,
-                assertThrows(
-                        NessieBadRequestException.class,
-                        () ->
-                            tree.transplantCommitsIntoBranch(
-                                validBranchName, invalidHash, null, null))
-                    .getMessage()),
+            assertThatThrownBy(
+                    () ->
+                        tree.transplantCommitsIntoBranch(validBranchName, invalidHash, null, null))
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining("transplantCommitsIntoBranch.hash: " + HASH_MESSAGE),
         () ->
             assertThatThrownBy(() -> contents.getMultipleContents(invalidHash, null, null))
                 .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageContaining("Bad Request (HTTP/400): ")
+                .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining("getMultipleContents.request: must not be null")
                 .hasMessageContaining("getMultipleContents.ref: " + REF_NAME_MESSAGE),
         () ->
             assertThatThrownBy(
                     () -> contents.getMultipleContents(validBranchName, invalidHash, null))
                 .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageContaining("Bad Request (HTTP/400): ")
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining("getMultipleContents.request: must not be null")
                 .hasMessageContaining("getMultipleContents.hashOnRef: " + HASH_MESSAGE),
         () ->
             assertThatThrownBy(() -> contents.getContents(key, validBranchName, invalidHash))
                 .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageContaining("Bad Request (HTTP/400): ")
+                .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining("getContents.hashOnRef: " + HASH_MESSAGE),
         () ->
             assertThatThrownBy(
@@ -1228,7 +1191,7 @@ public abstract class AbstractTestRest {
                             validBranchName,
                             CommitLogParams.builder().startHash(invalidHash).build()))
                 .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageContaining("Bad Request (HTTP/400): ")
+                .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining("getCommitLog.params.startHash: " + HASH_MESSAGE),
         () ->
             assertThatThrownBy(
@@ -1237,7 +1200,7 @@ public abstract class AbstractTestRest {
                             validBranchName,
                             CommitLogParams.builder().endHash(invalidHash).build()))
                 .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageContaining("Bad Request (HTTP/400): ")
+                .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining("getCommitLog.params.endHash: " + HASH_MESSAGE),
         () ->
             assertThatThrownBy(
@@ -1246,7 +1209,7 @@ public abstract class AbstractTestRest {
                             validBranchName,
                             EntriesParams.builder().hashOnRef(invalidHash).build()))
                 .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageContaining("Bad Request (HTTP/400): ")
+                .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining("getEntries.params.hashOnRef: " + HASH_MESSAGE));
   }
 
@@ -1260,6 +1223,7 @@ public abstract class AbstractTestRest {
     "abc'de@{blah" + COMMA_VALID_HASH_3
   })
   void invalidTags(String invalidTagNameIn, String validHash) {
+    Assumptions.assumeThat(httpClient).isNotNull();
     // CsvSource maps an empty string as null
     String invalidTagName = invalidTagNameIn != null ? invalidTagNameIn : "";
 
@@ -1359,20 +1323,23 @@ public abstract class AbstractTestRest {
 
     assertThatThrownBy(() -> tree.getCommitLog(invalidRef, CommitLogParams.empty()))
         .isInstanceOf(NessieBadRequestException.class)
-        .hasMessageStartingWith("Bad Request (HTTP/400): getCommitLog.ref: " + REF_NAME_MESSAGE);
+        .hasMessageContaining("Bad Request (HTTP/400):")
+        .hasMessageContaining("getCommitLog.ref: " + REF_NAME_MESSAGE);
 
     assertThatThrownBy(() -> tree.getEntries(invalidRef, EntriesParams.empty()))
         .isInstanceOf(NessieBadRequestException.class)
-        .hasMessageStartingWith("Bad Request (HTTP/400): getEntries.refName: " + REF_NAME_MESSAGE);
+        .hasMessageContaining("Bad Request (HTTP/400):")
+        .hasMessageContaining("getEntries.refName: " + REF_NAME_MESSAGE);
 
     assertThatThrownBy(() -> contents.getContents(key, invalidRef, null))
         .isInstanceOf(NessieBadRequestException.class)
-        .hasMessageStartingWith("Bad Request (HTTP/400): getContents.ref: " + REF_NAME_MESSAGE);
+        .hasMessageContaining("Bad Request (HTTP/400):")
+        .hasMessageContaining("getContents.ref: " + REF_NAME_MESSAGE);
 
     assertThatThrownBy(() -> contents.getMultipleContents(invalidRef, null, mgReq))
         .isInstanceOf(NessieBadRequestException.class)
-        .hasMessageStartingWith(
-            "Bad Request (HTTP/400): getMultipleContents.ref: " + REF_NAME_MESSAGE);
+        .hasMessageContaining("Bad Request (HTTP/400):")
+        .hasMessageContaining("getMultipleContents.ref: " + REF_NAME_MESSAGE);
   }
 
   @Test
@@ -1441,7 +1408,7 @@ public abstract class AbstractTestRest {
                 tree.getCommitLog(
                     branch.getName(), CommitLogParams.builder().endHash(invalidHash).build()))
         .isInstanceOf(NessieNotFoundException.class)
-        .hasMessage(
+        .hasMessageContaining(
             String.format("Hash %s on Ref %s could not be found", invalidHash, b.getName()));
 
     assertThatThrownBy(
@@ -1449,7 +1416,7 @@ public abstract class AbstractTestRest {
                 tree.getEntries(
                     branch.getName(), EntriesParams.builder().hashOnRef(invalidHash).build()))
         .isInstanceOf(NessieNotFoundException.class)
-        .hasMessage(
+        .hasMessageContaining(
             String.format("Hash %s on Ref %s could not be found", invalidHash, b.getName()));
 
     assertThatThrownBy(
@@ -1461,13 +1428,13 @@ public abstract class AbstractTestRest {
                         MultiGetContentsRequest.of(ContentsKey.of("table0")))
                     .getContents())
         .isInstanceOf(NessieNotFoundException.class)
-        .hasMessage(
+        .hasMessageContaining(
             String.format("Hash %s on Ref %s could not be found", invalidHash, b.getName()));
 
     assertThatThrownBy(
             () -> contents.getContents(ContentsKey.of("table0"), branch.getName(), invalidHash))
         .isInstanceOf(NessieNotFoundException.class)
-        .hasMessage(
+        .hasMessageContaining(
             String.format("Hash %s on Ref %s could not be found", invalidHash, b.getName()));
   }
 
