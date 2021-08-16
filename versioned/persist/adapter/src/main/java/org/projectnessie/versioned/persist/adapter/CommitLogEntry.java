@@ -53,15 +53,25 @@ public interface CommitLogEntry {
   List<Key> getDeletes();
 
   /**
-   * List of all "reachable" or "known" {@link Key}s up to this commit-log-entry's <em>parent</em>
-   * commit.
+   * The list of all "reachable" or "known" {@link org.projectnessie.versioned.Key}s up to this
+   * commit-log-entry's <em>parent</em> commit consists of all entries in this {@link
+   * org.projectnessie.versioned.persist.adapter.KeyList} plus the {@link
+   * org.projectnessie.versioned.persist.adapter.KeyListEntity}s via {@link #getKeyListsIds()}.
    *
    * <p>This key-list checkpoint, if present, does <em>not</em> contain the key-changes in this
    * entry in {@link #getPuts()} and {@link #getDeletes()}.
    */
   @Nullable
-  EmbeddedKeyList getKeyList();
+  KeyList getKeyList();
 
+  /**
+   * IDs of for the linked {@link org.projectnessie.versioned.persist.adapter.KeyListEntity} that,
+   * together with {@link #getKeyList()} make the complete {@link org.projectnessie.versioned.Key}
+   * for this commit.
+   */
+  List<Hash> getKeyListsIds();
+
+  /** Number of commits since the last complete key-list. */
   int getKeyListDistance();
 
   static CommitLogEntry of(
@@ -73,7 +83,8 @@ public interface CommitLogEntry {
       List<Key> unchanged,
       List<Key> deletes,
       int keyListDistance,
-      EmbeddedKeyList keyList) {
+      KeyList keyList,
+      List<Hash> keyListIds) {
     return ImmutableCommitLogEntry.builder()
         .createdTime(createdTime)
         .hash(hash)
@@ -84,6 +95,7 @@ public interface CommitLogEntry {
         .deletes(deletes)
         .keyListDistance(keyListDistance)
         .keyList(keyList)
+        .addAllKeyListsIds(keyListIds)
         .build();
   }
 }

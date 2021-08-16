@@ -21,16 +21,12 @@ import java.util.List;
 import org.immutables.value.Value;
 
 /**
- * Contains/references the complete list of keys that are "visible" from a specific {@link
+ * Contains/references a list of keys that are "visible" from a specific {@link
  * org.projectnessie.versioned.persist.adapter.CommitLogEntry}.
  */
 @Value.Immutable(lazyhash = true)
-@JsonSerialize(as = ImmutableEmbeddedKeyList.class)
-@JsonDeserialize(as = ImmutableEmbeddedKeyList.class)
-public interface EmbeddedKeyList {
+@JsonSerialize(as = ImmutableKeyList.class)
+@JsonDeserialize(as = ImmutableKeyList.class)
+public interface KeyList {
   List<KeyWithType> getKeys();
-
-  // TODO add a List<Hash> here that points to a new KeyList-entity to support an arbitrary number
-  //  of keys
-  // List<Hash> getKeyListsIds();
 }
