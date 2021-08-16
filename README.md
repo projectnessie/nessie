@@ -6,7 +6,7 @@
 [![PyPI](https://img.shields.io/pypi/v/pynessie.svg)](https://pypi.python.org/pypi/pynessie)
 [![Docker](https://img.shields.io/docker/v/projectnessie/nessie/latest?label=docker)](https://hub.docker.com/r/projectnessie/nessie)
 
-Project Nessie is a system to provide Git like capability for Iceberg Tables, Delta Lake Tables, Hive Tables and Sql Views.
+Project Nessie is a system to provide Git like capability for Iceberg Tables, Delta Lake Tables and Sql Views.
 
 More information can be found at [projectnessie.org](https://projectnessie.org/).
 
@@ -31,7 +31,6 @@ pip install pynessie
 From there, you can use one of our technology integrations such those for 
 
 * [Spark](https://projectnessie.org/tools/spark/)
-* [Hive](https://projectnessie.org/tools/hive/)
 
 Have fun! We have a Google Group and a Slack channel we use for both developers and 
 users. Check them out [here](https://projectnessie.org/develop/).
