@@ -15,8 +15,6 @@
  */
 package org.projectnessie.versioned.persist.adapter;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.List;
 import org.immutables.value.Value;
 
@@ -25,8 +23,10 @@ import org.immutables.value.Value;
  * org.projectnessie.versioned.persist.adapter.CommitLogEntry}.
  */
 @Value.Immutable(lazyhash = true)
-@JsonSerialize(as = ImmutableKeyList.class)
-@JsonDeserialize(as = ImmutableKeyList.class)
 public interface KeyList {
   List<KeyWithType> getKeys();
+
+  static KeyList of(List<KeyWithType> keys) {
+    return ImmutableKeyList.builder().keys(keys).build();
+  }
 }

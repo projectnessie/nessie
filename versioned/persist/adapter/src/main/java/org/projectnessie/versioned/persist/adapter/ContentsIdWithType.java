@@ -15,8 +15,6 @@
  */
 package org.projectnessie.versioned.persist.adapter;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
 
 /**
@@ -24,8 +22,6 @@ import org.immutables.value.Value;
  * managed contents. Composite of contents-id and contents-type.
  */
 @Value.Immutable(lazyhash = true)
-@JsonSerialize(as = ImmutableContentsIdWithType.class)
-@JsonDeserialize(as = ImmutableContentsIdWithType.class)
 public interface ContentsIdWithType {
   ContentsId getContentsId();
 

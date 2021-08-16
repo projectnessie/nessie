@@ -15,8 +15,6 @@
  */
 package org.projectnessie.versioned.persist.adapter;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.protobuf.ByteString;
 import org.immutables.value.Value;
 
@@ -25,8 +23,6 @@ import org.immutables.value.Value;
  * managed contents. Composite of contents-id, contents-type and contents.
  */
 @Value.Immutable(lazyhash = true)
-@JsonSerialize(as = ImmutableContentsIdAndBytes.class)
-@JsonDeserialize(as = ImmutableContentsIdAndBytes.class)
 public interface ContentsIdAndBytes {
   ContentsId getContentsId();
 
