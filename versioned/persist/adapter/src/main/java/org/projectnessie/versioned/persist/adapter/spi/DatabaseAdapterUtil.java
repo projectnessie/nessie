@@ -17,11 +17,13 @@ package org.projectnessie.versioned.persist.adapter.spi;
 
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
+import com.google.protobuf.UnsafeByteOperations;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 import java.util.Spliterator;
 import java.util.Spliterators.AbstractSpliterator;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -42,6 +44,16 @@ public final class DatabaseAdapterUtil {
   @SuppressWarnings("UnstableApiUsage")
   public static Hasher newHasher() {
     return Hashing.sha256().newHasher();
+  }
+
+  @SuppressWarnings("UnstableApiUsage")
+  public static Hash randomHash() {
+    ThreadLocalRandom rand = ThreadLocalRandom.current();
+    Hasher hasher = newHasher();
+    for (int i = 0; i < 20; i++) {
+      hasher.putInt(rand.nextInt());
+    }
+    return Hash.of(UnsafeByteOperations.unsafeWrap(hasher.hash().asBytes()));
   }
 
   @SuppressWarnings("UnstableApiUsage")
