@@ -15,15 +15,11 @@
  */
 package org.projectnessie.versioned.persist.adapter;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.Key;
 
 /** Composite of key, contents-id, contents-type. */
 @Value.Immutable(lazyhash = true)
-@JsonSerialize(as = ImmutableKeyWithType.class)
-@JsonDeserialize(as = ImmutableKeyWithType.class)
 public interface KeyWithType {
   Key getKey();
 
