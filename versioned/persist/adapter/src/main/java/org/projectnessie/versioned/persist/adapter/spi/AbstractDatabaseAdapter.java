@@ -582,15 +582,15 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
         operationKeys.addAll(commitAttempt.getUnchanged());
         commitAttempt.getPuts().stream().map(KeyWithBytes::getKey).forEach(operationKeys::add);
 
-        boolean[] sinceSeen = new boolean[1];
-        checkConflictingKeysForCommit(
-            ctx, branchHead, expectedHead, operationKeys, sinceSeen, mismatches::add);
+        boolean sinceSeen =
+            checkConflictingKeysForCommit(
+                ctx, branchHead, expectedHead, operationKeys, mismatches::add);
 
         // If the expectedHead is the special value NO_ANCESTOR, which is not persisted,
         // ignore the fact that it has not been seen. Otherwise, raise a
         // ReferenceNotFoundException that the expected-hash does not exist on the target
         // branch.
-        if (!sinceSeen[0] && !expectedHead.equals(NO_ANCESTOR)) {
+        if (!sinceSeen && !expectedHead.equals(NO_ANCESTOR)) {
           throw hashNotFound(commitAttempt.getCommitToBranch(), expectedHead);
         }
       }
@@ -702,13 +702,14 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
    *
    * <p>Conflicts are reported via {@code mismatches}.
    */
-  protected void checkConflictingKeysForCommit(
+  protected boolean checkConflictingKeysForCommit(
       OP_CONTEXT ctx,
       Hash upToCommitIncluding,
       Hash sinceCommitExcluding,
       Set<Key> keys,
-      boolean[] sinceSeen,
       Consumer<String> mismatches) {
+    boolean[] sinceSeen = new boolean[1];
+
     Stream<CommitLogEntry> log = commitLogFetcher(ctx, upToCommitIncluding);
     log =
         takeUntilExcludeLast(
@@ -739,6 +740,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
                     }
                   });
         });
+
+    return sinceSeen[0];
   }
 
   /**
