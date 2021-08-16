@@ -33,6 +33,7 @@
     "react-dom": "^16.14.0",
     "react-router-dom": "^5.2.0",
     "react-scripts": "^4.0.3",
+    "replace-in-file": "^6.2.0",
     "rxjs": "^7.3.0",
     "typescript": "^4.3.5",
     "yup": "^0.32.9"
@@ -42,7 +43,8 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "generate-api": "openapi-generator-cli generate -g typescript-fetch -i target/openapi/META-INF/openapi/openapi.yaml -o ./src/utils/api --skip-validate-spec --additional-properties=supportsES6=true"
+    "generate-api": "openapi-generator-cli generate -g typescript-fetch -i target/openapi/META-INF/openapi/openapi.yaml -o ./src/generated/utils/api --skip-validate-spec --additional-properties=supportsES6=true",
+    "fix-generated-client": "node src/build-scripts/fix-generated-client.js"
   },
   "eslintConfig": {
     "extends": "react-app"

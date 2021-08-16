@@ -42,6 +42,7 @@ dependency-reduced-pom.xml
 
 # node
 node_modules/
+ui/src/generated/
 
 # Eclipse IDE
 .classpath

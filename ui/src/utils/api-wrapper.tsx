@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import {DefaultApi} from "./api/apis";
-import {Configuration} from "./api";
+import {DefaultApi} from "../generated/utils/api/apis";
+import {Configuration} from "../generated/utils/api";
 
 function api() {
   return new DefaultApi(new Configuration({"basePath": "/api/v1"}));
