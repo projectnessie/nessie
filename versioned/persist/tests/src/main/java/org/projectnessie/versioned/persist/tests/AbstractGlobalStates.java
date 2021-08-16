@@ -289,7 +289,8 @@ public abstract class AbstractGlobalStates {
                         .putExpectedStates(ContentsId.of("id-0"), Optional.empty())
                         .build()))
         .isInstanceOf(ReferenceConflictException.class)
-        .hasMessageContaining("Key 'my.table.num0' has put-operation.");
+        .hasMessageContaining(
+            "Key 'my.table.num0' has conflicting put-operation from another commit.");
 
     assertThatThrownBy(
             () ->
