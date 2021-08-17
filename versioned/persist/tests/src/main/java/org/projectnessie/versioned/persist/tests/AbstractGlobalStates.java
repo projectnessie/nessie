@@ -47,6 +47,11 @@ import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.KeyWithType;
 
+/**
+ * Verifies handling of global-states in the database-adapters using various combinations of number
+ * of keys/contents-ids, number of branches, commits per branch, and a commit-probability, which is
+ * necessary to keep the heap-pressure due to the tracked state within reasonable bounds.
+ */
 public abstract class AbstractGlobalStates {
 
   private final DatabaseAdapter databaseAdapter;

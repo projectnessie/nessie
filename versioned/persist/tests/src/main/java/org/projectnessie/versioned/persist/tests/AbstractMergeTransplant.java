@@ -34,6 +34,7 @@ import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 
+/** Check that merge and transplant operations work correctly. */
 public abstract class AbstractMergeTransplant {
 
   private final DatabaseAdapter databaseAdapter;

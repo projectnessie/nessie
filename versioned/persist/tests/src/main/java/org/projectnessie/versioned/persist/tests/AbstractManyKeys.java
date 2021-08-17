@@ -38,6 +38,12 @@ import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.KeyWithType;
 
+/**
+ * Verifies that a big-ish number of keys, split across multiple commits works and the correct
+ * results are returned for the commit-log, keys, global-states. This test is especially useful to
+ * verify that the embedded and nested key-lists (think: full-key-lists in a commit-log-entry) work
+ * correctly.
+ */
 public abstract class AbstractManyKeys {
 
   private final DatabaseAdapter databaseAdapter;

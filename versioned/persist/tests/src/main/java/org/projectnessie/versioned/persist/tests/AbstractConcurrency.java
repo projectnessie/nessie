@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -33,6 +34,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -47,6 +49,23 @@ import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 
+/**
+ * Performs concurrent commits with four different strategies, just verifying that either no
+ * exception or only {@link org.projectnessie.versioned.ReferenceConflictException}s are thrown.
+ *
+ * <p>Strategies are:
+ *
+ * <ul>
+ *   <li>Single branch, shared keys - contention on the branch and on the keys
+ *   <li>Single branch, distinct keys - contention on the branch
+ *   <li>Branch per thread, shared keys - contention on the contents-ids
+ *   <li>Branch per thread, distinct keys - no contention, except for implementations that use a
+ *       single "root state pointer", like the non-transactional database-adapters
+ * </ul>
+ *
+ * <p>The implementation allows using varying numbers of tables (= keys), but 3 turned out to be
+ * good enough.
+ */
 public abstract class AbstractConcurrency {
 
   private final DatabaseAdapter databaseAdapter;
@@ -104,7 +123,6 @@ public abstract class AbstractConcurrency {
     Map<Key, ContentsId> keyToContentsId = new HashMap<>();
     try {
       CountDownLatch startLatch = new CountDownLatch(1);
-      CountDownLatch stopLatch = new CountDownLatch(variation.threads);
       Map<BranchName, Set<Key>> keysPerBranch = new HashMap<>();
       for (int i = 0; i < variation.threads; i++) {
         BranchName branch =
@@ -134,7 +152,6 @@ public abstract class AbstractConcurrency {
 
                 for (int commit = 0; ; commit++) {
                   if (stopFlag.get()) {
-                    stopLatch.countDown();
                     break;
                   }
 
@@ -208,7 +225,13 @@ public abstract class AbstractConcurrency {
         databaseAdapter.commit(commitAttempt.build());
       }
 
-      tasks.forEach(executor::submit);
+      // Submit all 'Runnable's as 'CompletableFuture's and construct a combined 'CompletableFuture'
+      // that we can wait for.
+      CompletableFuture<Void> combinedFuture =
+          CompletableFuture.allOf(
+              tasks.stream()
+                  .map(r -> CompletableFuture.runAsync(r, executor))
+                  .toArray((IntFunction<CompletableFuture<?>[]>) CompletableFuture[]::new));
 
       startLatch.countDown();
       Thread.sleep(1_500);
@@ -216,7 +239,7 @@ public abstract class AbstractConcurrency {
 
       // 30 seconds is long, but necessary to let transactional databases detect deadlocks, which
       // cause Nessie-commit-retries.
-      assertThat(stopLatch.await(30, TimeUnit.SECONDS)).isTrue();
+      combinedFuture.get(30, TimeUnit.SECONDS);
 
     } finally {
       stopFlag.set(true);

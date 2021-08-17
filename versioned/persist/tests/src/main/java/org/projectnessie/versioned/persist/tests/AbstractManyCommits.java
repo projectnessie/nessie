@@ -37,6 +37,10 @@ import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.KeyWithType;
 
+/**
+ * Rather rudimentary test that verifies that multiple commits in a row work and the correct results
+ * are returned for the commit-log, keys, global-states.
+ */
 public abstract class AbstractManyCommits {
 
   private final DatabaseAdapter databaseAdapter;

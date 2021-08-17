@@ -52,6 +52,10 @@ import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 
+/**
+ * Tests that verify {@link DatabaseAdapter} implementations. A few tests have similar pendants via
+ * the tests against the {@code VersionStore}.
+ */
 public abstract class AbstractTieredCommitsTest<CONFIG extends DatabaseAdapterConfig> {
   protected static DatabaseAdapter databaseAdapter;
 
@@ -63,6 +67,7 @@ public abstract class AbstractTieredCommitsTest<CONFIG extends DatabaseAdapterCo
               .newBuilder()
               .configure(SystemPropertiesConfigurer::configureFromSystemProperties)
               // default to a quite small max-size for the CommitLogEntry.keyList + KeyListEntity
+              // This is necessary for AbstractManyKeys to work properly!!
               .configure(c -> c.withMaxKeyListSize(2048))
               .configure(this::configureDatabaseAdapter)
               .build();
