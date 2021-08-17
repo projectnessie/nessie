@@ -22,7 +22,6 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import io.quarkus.test.security.TestSecurity;
 import java.util.List;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -31,7 +30,6 @@ import org.projectnessie.api.ContentsApi;
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.params.EntriesParams;
-import org.projectnessie.client.NessieClient;
 import org.projectnessie.client.rest.NessieForbiddenException;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -49,25 +47,15 @@ import org.projectnessie.server.authz.NessieAuthorizationTestProfile;
 
 @QuarkusTest
 @TestProfile(value = NessieAuthorizationTestProfile.class)
-class TestAuthorizationRules {
+class TestAuthorizationRules extends BaseClientAuthTest {
 
-  private static NessieClient client;
-  private static TreeApi tree;
-  private static ContentsApi contents;
+  private TreeApi tree;
+  private ContentsApi contents;
 
   @BeforeEach
   void setupClient() {
-    client = NessieClient.builder().withUri("http://localhost:19121/api/v1").build();
-    tree = client.getTreeApi();
-    contents = client.getContentsApi();
-  }
-
-  @AfterEach
-  void closeClient() {
-    if (client != null) {
-      client.close();
-      client = null;
-    }
+    tree = client().getTreeApi();
+    contents = client().getContentsApi();
   }
 
   @ParameterizedTest
@@ -194,7 +182,7 @@ class TestAuthorizationRules {
     }
   }
 
-  private static void createBranch(Branch branch, String role, boolean shouldFail)
+  private void createBranch(Branch branch, String role, boolean shouldFail)
       throws NessieConflictException, NessieNotFoundException {
     if (shouldFail) {
       assertThatThrownBy(() -> tree.createReference(branch))
