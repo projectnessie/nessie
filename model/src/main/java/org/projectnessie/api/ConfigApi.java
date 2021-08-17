@@ -40,6 +40,7 @@ public interface ConfigApi {
             @Content(
                 mediaType = "application/json",
                 schema = @Schema(implementation = NessieConfiguration.class))),
+    @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
     @APIResponse(responseCode = "400", description = "Unknown Error")
   })
   NessieConfiguration getConfig();

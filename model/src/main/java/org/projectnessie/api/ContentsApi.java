@@ -61,6 +61,7 @@ public interface ContentsApi {
                 examples = {@ExampleObject(ref = "iceberg")},
                 schema = @Schema(implementation = Contents.class))),
     @APIResponse(responseCode = "400", description = "Invalid input, ref name not valid"),
+    @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
     @APIResponse(
         responseCode = "403",
         description = "Not allowed to view the given reference or read object content for a key"),
@@ -100,6 +101,7 @@ public interface ContentsApi {
                 mediaType = MediaType.APPLICATION_JSON,
                 schema = @Schema(implementation = MultiGetContentsResponse.class))),
     @APIResponse(responseCode = "400", description = "Invalid input, ref name not valid"),
+    @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
     @APIResponse(
         responseCode = "403",
         description = "Not allowed to view the given reference or read object content for a key"),
