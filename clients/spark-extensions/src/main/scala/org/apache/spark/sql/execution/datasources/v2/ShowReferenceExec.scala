@@ -36,11 +36,7 @@ case class ShowReferenceExec(
     // todo have to figure out if this is delta or iceberg and extract the ref accordingly
     Seq(
       InternalRow(
-        UTF8String
-          .fromString(
-            if (ref.isInstanceOf[Branch]) NessieUtils.BRANCH
-            else NessieUtils.TAG
-          ),
+        UTF8String.fromString(NessieUtils.getRefType(ref)),
         UTF8String.fromString(ref.getName),
         UTF8String.fromString(ref.getHash)
       )

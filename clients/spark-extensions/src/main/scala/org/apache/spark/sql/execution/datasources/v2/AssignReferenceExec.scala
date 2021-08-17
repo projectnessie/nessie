@@ -57,15 +57,9 @@ case class AssignReferenceExec(
 
     val ref = nessieClient.getTreeApi.getReferenceByName(branch)
 
-    val refType = ref match {
-      case _: ImmutableHash   => NessieUtils.HASH
-      case _: ImmutableBranch => NessieUtils.BRANCH
-      case _: ImmutableTag    => NessieUtils.TAG
-    }
-
     Seq(
       InternalRow(
-        UTF8String.fromString(refType),
+        UTF8String.fromString(NessieUtils.getRefType(ref)),
         UTF8String.fromString(ref.getName),
         UTF8String.fromString(ref.getHash)
       )

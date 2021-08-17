@@ -21,7 +21,15 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap
 import org.projectnessie.api.params.CommitLogParams
 import org.projectnessie.client.{NessieClient, StreamingUtil}
 import org.projectnessie.error.NessieNotFoundException
-import org.projectnessie.model.{Hash, Reference}
+import org.projectnessie.model.{
+  Branch,
+  Hash,
+  ImmutableBranch,
+  ImmutableHash,
+  ImmutableTag,
+  Reference,
+  Tag
+}
 
 import java.time.{LocalDateTime, ZoneOffset}
 import scala.collection.JavaConverters._
@@ -64,11 +72,22 @@ object NessieUtils {
           .orElse(null)
       ).map(x => Hash.of(x.getHash))
 
-      cm match {
+      val hash = cm match {
         case Some(value) => value
         case None =>
           throw new NessieNotFoundException(
             String.format("Cannot find a hash before %s.", timestamp)
+          )
+      }
+      val reference = nessieClient.getTreeApi.getReferenceByName(branch)
+
+      reference match {
+        case branch: ImmutableBranch => Branch.of(branch.getName, hash.getHash)
+        case hash: ImmutableHash     => hash
+        case tag: ImmutableTag       => Tag.of(tag.getName, hash.getHash)
+        case _ =>
+          throw new UnsupportedOperationException(
+            s"Unknown reference type $reference"
           )
       }
     }
@@ -119,4 +138,13 @@ object NessieUtils {
     nessieClient(currentCatalog, catalog).getTreeApi.getReferenceByName(refName)
   }
 
+  def getRefType(ref: Reference): String = {
+    ref match {
+      case branch: ImmutableBranch => NessieUtils.BRANCH
+      case hash: ImmutableHash     => NessieUtils.HASH
+      case tag: ImmutableTag       => NessieUtils.TAG
+      case _ =>
+        throw new UnsupportedOperationException(s"Unknown reference type $ref")
+    }
+  }
 }
