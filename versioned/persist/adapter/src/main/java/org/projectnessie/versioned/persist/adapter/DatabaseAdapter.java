@@ -58,6 +58,9 @@ public interface DatabaseAdapter extends AutoCloseable {
   /** Forces a repository to be re-initialized. */
   void reinitializeRepo(String defaultBranchName);
 
+  /** Get the {@link Hash} for "beginning of time". */
+  Hash noAncestorHash();
+
   /**
    * Verifies that the given {@code namedReference} exists and that {@code hashOnReference}, if
    * present, is reachable via that reference.
@@ -89,19 +92,20 @@ public interface DatabaseAdapter extends AutoCloseable {
    * @param keys keys to retrieve the values (reference-local and global) for
    * @param keyFilter predicate to optionally skip specific keys in the result and return those as
    *     {@link Optional#empty() "not present"}, for example to implement a security policy.
-   * @return Ordered stream, will be empty, if {@code commit} does not exist.
+   * @return Ordered stream
+   * @throws ReferenceNotFoundException if {@code commit} does not exist.
    */
   Stream<Optional<ContentsAndState<ByteString>>> values(
-      Hash commit, List<Key> keys, KeyFilterPredicate keyFilter);
+      Hash commit, List<Key> keys, KeyFilterPredicate keyFilter) throws ReferenceNotFoundException;
 
   /**
    * Retrieve the commit-log starting at the commit referenced by {@code offset}.
    *
    * @param offset hash to start at
-   * @return stream of {@link CommitLogEntry}s. If {@code offset} does not exists, the stream will
-   *     be empty.
+   * @return stream of {@link CommitLogEntry}s
+   * @throws ReferenceNotFoundException if {@code offset} does not exist.
    */
-  Stream<CommitLogEntry> commitLog(Hash offset);
+  Stream<CommitLogEntry> commitLog(Hash offset) throws ReferenceNotFoundException;
 
   /**
    * Retrieve the contents-keys that are "present" for the specified commit.
@@ -109,10 +113,11 @@ public interface DatabaseAdapter extends AutoCloseable {
    * @param commit commit to retrieve the values for.
    * @param keyFilter predicate to optionally skip specific keys in the result and return those as
    *     {@link Optional#empty() "not present"}, for example to implement a security policy.
-   * @return Ordered stream with content-keys, content-ids and content-types, will be empty, if
-   *     {@code commit} does not exist.
+   * @return Ordered stream with content-keys, content-ids and content-types
+   * @throws ReferenceNotFoundException if {@code commit} does not exist.
    */
-  Stream<KeyWithType> keys(Hash commit, KeyFilterPredicate keyFilter);
+  Stream<KeyWithType> keys(Hash commit, KeyFilterPredicate keyFilter)
+      throws ReferenceNotFoundException;
 
   /**
    * Commit operation, see {@link CommitAttempt} for a description of the parameters.
@@ -187,8 +192,10 @@ public interface DatabaseAdapter extends AutoCloseable {
    *     it has been dropped.
    * @return the current HEAD of the created branch or tag
    * @throws ReferenceAlreadyExistsException if the reference {@code ref} already exists.
+   * @throws ReferenceNotFoundException if {@code target} does not exist.
    */
-  Hash create(NamedRef ref, Hash target) throws ReferenceAlreadyExistsException;
+  Hash create(NamedRef ref, Hash target)
+      throws ReferenceAlreadyExistsException, ReferenceNotFoundException;
 
   /**
    * Delete the given reference.
@@ -228,8 +235,10 @@ public interface DatabaseAdapter extends AutoCloseable {
    *     those, for example to implement a security policy.
    * @return stream containing the difference of the contents, excluding both equal values and
    *     values that were excluded via {@code keyFilter}
+   * @throws ReferenceNotFoundException if {@code from} or {@code to} does not exist.
    */
-  Stream<Diff<ByteString>> diff(Hash from, Hash to, KeyFilterPredicate keyFilter);
+  Stream<Diff<ByteString>> diff(Hash from, Hash to, KeyFilterPredicate keyFilter)
+      throws ReferenceNotFoundException;
 
   // NOTE: the following is NOT a "proposed" API, just an idea of how the supporting functions
   // for Nessie-GC need to look like.
