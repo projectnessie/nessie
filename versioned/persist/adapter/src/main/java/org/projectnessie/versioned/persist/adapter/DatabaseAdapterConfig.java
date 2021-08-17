@@ -32,6 +32,7 @@ public interface DatabaseAdapterConfig {
 
   int DEFAULT_PARENTS_PER_COMMIT = 20;
   int DEFAULT_KEY_LIST_DISTANCE = 20;
+  int DEFAULT_MAX_KEY_LIST_SIZE = 250_000;
   int DEFAULT_COMMIT_TIMEOUT = 500;
   int DEFAULT_COMMIT_RETRIES = Integer.MAX_VALUE;
 
@@ -61,7 +62,7 @@ public interface DatabaseAdapterConfig {
   /**
    * Each {@code n}-th {@link org.projectnessie.versioned.persist.adapter.CommitLogEntry}, where
    * {@code n ==} value of this parameter, will contain a "full" {@link
-   * org.projectnessie.versioned.persist.adapter.EmbeddedKeyList}. Defaults to {@value
+   * org.projectnessie.versioned.persist.adapter.KeyList}. Defaults to {@value
    * #DEFAULT_KEY_LIST_DISTANCE}.
    */
   @Value.Default
@@ -70,6 +71,45 @@ public interface DatabaseAdapterConfig {
   }
 
   DatabaseAdapterConfig withKeyListDistance(int keyListDistance);
+
+  /**
+   * Maximum size of a database object/row.
+   *
+   * <p>This parameter is respected for {@link
+   * org.projectnessie.versioned.persist.adapter.CommitLogEntry} with an {@link
+   * org.projectnessie.versioned.persist.adapter.KeyList}.
+   *
+   * <p>Not all kinds of databases have hard limits on the maximum size of a database object/row.
+   *
+   * <p>This value must not be "on the edge" - means: it must leave enough room for a somewhat
+   * large-ish list via {@link
+   * org.projectnessie.versioned.persist.adapter.CommitLogEntry#getKeyListsIds()},
+   * database-serialization overhead and similar.
+   *
+   * <p>Values {@code <=0} are illegal, defaults to {@link #getDefaultMaxKeyListSize()}.
+   */
+  @Value.Default
+  default int getMaxKeyListSize() {
+    return getDefaultMaxKeyListSize();
+  }
+
+  DatabaseAdapterConfig withMaxKeyListSize(int maxKeyListSize);
+
+  /**
+   * Database adapter implementations that actually do have a hard technical or highly recommended
+   * limit on a maximum db-object / db-row size limitation should override this method and return a
+   * "good" value.
+   *
+   * <p>As for {@link #getMaxKeyListSize()}, this value must not be "on the edge" - means: it must
+   * leave enough room for a somewhat large-ish list via {@link
+   * org.projectnessie.versioned.persist.adapter.CommitLogEntry#getKeyListsIds()},
+   * database-serialization overhead * and similar.
+   *
+   * <p>Defaults to {@value #DEFAULT_MAX_KEY_LIST_SIZE}.
+   */
+  default int getDefaultMaxKeyListSize() {
+    return DEFAULT_MAX_KEY_LIST_SIZE;
+  }
 
   /**
    * Timeout for CAS-like operations in milliseconds. Default is {@value #DEFAULT_COMMIT_TIMEOUT}

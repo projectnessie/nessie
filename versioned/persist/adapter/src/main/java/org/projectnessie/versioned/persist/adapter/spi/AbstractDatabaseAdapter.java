@@ -18,6 +18,7 @@ package org.projectnessie.versioned.persist.adapter.spi;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.hashKey;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.hashNotFound;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.newHasher;
+import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.randomHash;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.takeUntilExcludeLast;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.takeUntilIncludeLast;
 
@@ -60,10 +61,11 @@ import org.projectnessie.versioned.persist.adapter.ContentsAndState;
 import org.projectnessie.versioned.persist.adapter.ContentsId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
-import org.projectnessie.versioned.persist.adapter.EmbeddedKeyList;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitLogEntry;
-import org.projectnessie.versioned.persist.adapter.ImmutableEmbeddedKeyList;
+import org.projectnessie.versioned.persist.adapter.ImmutableKeyList;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
+import org.projectnessie.versioned.persist.adapter.KeyList;
+import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.KeyWithType;
 
@@ -130,10 +132,15 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
    * @param ctx technical operation-context
    * @param commitAttempt commit parameters
    * @param branchHead current HEAD of {@code branch}
+   * @param newKeyLists consumer for optimistically written {@link KeyListEntity}s
    * @return optimistically written commit-log-entry
    */
   protected CommitLogEntry commitAttempt(
-      OP_CONTEXT ctx, long timeInMicros, Hash branchHead, CommitAttempt commitAttempt)
+      OP_CONTEXT ctx,
+      long timeInMicros,
+      Hash branchHead,
+      CommitAttempt commitAttempt,
+      Consumer<Hash> newKeyLists)
       throws ReferenceNotFoundException, ReferenceConflictException {
     List<String> mismatches = new ArrayList<>();
 
@@ -165,7 +172,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
             commitAttempt.getPuts(),
             commitAttempt.getUnchanged(),
             commitAttempt.getDeletes(),
-            currentBranchEntry != null ? currentBranchEntry.getKeyListDistance() : 0);
+            currentBranchEntry != null ? currentBranchEntry.getKeyListDistance() : 0,
+            newKeyLists);
     writeIndividualCommit(ctx, newBranchCommit);
     return newBranchCommit;
   }
@@ -178,7 +186,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
    * @param toBranch merge-into reference with expected hash of HEAD
    * @param expectedHead if present, {@code toBranch}'s current HEAD must be equal to this value
    * @param toHead current HEAD of {@code toBranch}
-   * @param individualCommits consumer for the individual commits to merge
+   * @param branchCommits consumer for the individual commits to merge
+   * @param newKeyLists consumer for optimistically written {@link KeyListEntity}s
    * @return hash of the last commit-log-entry written to {@code toBranch}
    */
   protected Hash mergeAttempt(
@@ -188,7 +197,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       BranchName toBranch,
       Optional<Hash> expectedHead,
       Hash toHead,
-      Consumer<Hash> individualCommits)
+      Consumer<Hash> branchCommits,
+      Consumer<Hash> newKeyLists)
       throws ReferenceNotFoundException, ReferenceConflictException {
 
     // 1. ensure 'expectedHash' is a parent of HEAD-of-'toBranch'
@@ -222,11 +232,11 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
 
     // (no need to verify the global states during a transplant)
     // 6. re-apply commits in 'sequenceToTransplant' onto 'targetBranch'
-    toHead = copyCommits(ctx, timeInMicros, toHead, commitsToMergeChronological);
+    toHead = copyCommits(ctx, timeInMicros, toHead, commitsToMergeChronological, newKeyLists);
 
     // 7. Write commits
 
-    commitsToMergeChronological.stream().map(CommitLogEntry::getHash).forEach(individualCommits);
+    commitsToMergeChronological.stream().map(CommitLogEntry::getHash).forEach(branchCommits);
     writeMultipleCommits(ctx, commitsToMergeChronological);
     return toHead;
   }
@@ -239,7 +249,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
    * @param expectedHead if present, {@code targetBranch}'s current HEAD must be equal to this value
    * @param targetHead current HEAD of {@code targetBranch}
    * @param sequenceToTransplant sequential list of commits to transplant from {@code source}
-   * @param individualCommits consumer for the individual commits to merge
+   * @param branchCommits consumer for the individual commits to merge
+   * @param newKeyLists consumer for optimistically written {@link KeyListEntity}s
    * @return hash of the last commit-log-entry written to {@code targetBranch}
    */
   protected Hash transplantAttempt(
@@ -249,7 +260,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       Optional<Hash> expectedHead,
       Hash targetHead,
       List<Hash> sequenceToTransplant,
-      Consumer<Hash> individualCommits)
+      Consumer<Hash> branchCommits,
+      Consumer<Hash> newKeyLists)
       throws ReferenceNotFoundException, ReferenceConflictException {
     if (sequenceToTransplant.isEmpty()) {
       throw new IllegalArgumentException("No hashes to transplant given.");
@@ -293,13 +305,12 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
 
     // (no need to verify the global states during a transplant)
     // 6. re-apply commits in 'sequenceToTransplant' onto 'targetBranch'
-    targetHead = copyCommits(ctx, timeInMicros, targetHead, commitsToTransplantChronological);
+    targetHead =
+        copyCommits(ctx, timeInMicros, targetHead, commitsToTransplantChronological, newKeyLists);
 
     // 7. Write commits
 
-    commitsToTransplantChronological.stream()
-        .map(CommitLogEntry::getHash)
-        .forEach(individualCommits);
+    commitsToTransplantChronological.stream().map(CommitLogEntry::getHash).forEach(branchCommits);
     writeMultipleCommits(ctx, commitsToTransplantChronological);
     return targetHead;
   }
@@ -491,8 +502,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
   }
 
   /**
-   * Builds a {@link CommitLogEntry} using the given values. This function also includes an {@link
-   * EmbeddedKeyList}, if triggered by the values of {@code currentKeyListDistance} and {@link
+   * Builds a {@link CommitLogEntry} using the given values. This function also includes a {@link
+   * KeyList}, if triggered by the values of {@code currentKeyListDistance} and {@link
    * DatabaseAdapterConfig#getKeyListDistance()}, so read operations may happen.
    */
   protected CommitLogEntry buildIndividualCommit(
@@ -503,7 +514,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       List<KeyWithBytes> puts,
       List<Key> unchanged,
       List<Key> deletes,
-      int currentKeyListDistance) {
+      int currentKeyListDistance,
+      Consumer<Hash> newKeyLists) {
     Hash commitHash = individualCommitHash(parentHashes, commitMeta, puts, unchanged, deletes);
 
     int keyListDistance = currentKeyListDistance + 1;
@@ -518,10 +530,11 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
             unchanged,
             deletes,
             keyListDistance,
-            null);
+            null,
+            Collections.emptyList());
 
     if (keyListDistance >= config.getKeyListDistance()) {
-      entry = buildKeyList(ctx, entry);
+      entry = buildKeyList(ctx, entry, newKeyLists);
     }
     return entry;
   }
@@ -549,20 +562,129 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     return Hash.of(UnsafeByteOperations.unsafeWrap(hasher.hash().asBytes()));
   }
 
-  /** Adds a complete key-list to the given {@link CommitLogEntry}, will read from the database. */
-  protected CommitLogEntry buildKeyList(OP_CONTEXT ctx, CommitLogEntry unwrittenEntry) {
+  /** Helper object for {@link #buildKeyList(Object, CommitLogEntry, Consumer)}. */
+  private static class KeyListBuildState {
+    final ImmutableCommitLogEntry.Builder newCommitEntry;
+    /** Builder for {@link CommitLogEntry#getKeyList()}. */
+    ImmutableKeyList.Builder embeddedBuilder = ImmutableKeyList.builder();
+    /** Builder for {@link KeyListEntity}. */
+    ImmutableKeyList.Builder currentKeyList;
+    /** Already built {@link KeyListEntity}s. */
+    List<KeyListEntity> newKeyListEntities = new ArrayList<>();
+
+    /** Flag whether {@link CommitLogEntry#getKeyList()} is being filled. */
+    boolean embedded = true;
+
+    /** Current size of either the {@link CommitLogEntry} or current {@link KeyListEntity}. */
+    int currentSize;
+
+    KeyListBuildState(int initialSize, ImmutableCommitLogEntry.Builder newCommitEntry) {
+      this.currentSize = initialSize;
+      this.newCommitEntry = newCommitEntry;
+    }
+
+    void finishKeyListEntity() {
+      Hash id = randomHash();
+      newKeyListEntities.add(KeyListEntity.of(id, currentKeyList.build()));
+      newCommitEntry.addKeyListsIds(id);
+    }
+
+    void newKeyListEntity() {
+      currentSize = 0;
+      currentKeyList = ImmutableKeyList.builder();
+    }
+
+    void addToKeyListEntity(KeyWithType keyWithType, int keyTypeSize) {
+      currentSize += keyTypeSize;
+      currentKeyList.addKeys(keyWithType);
+    }
+
+    void addToEmbedded(KeyWithType keyWithType, int keyTypeSize) {
+      currentSize += keyTypeSize;
+      embeddedBuilder.addKeys(keyWithType);
+    }
+  }
+
+  /**
+   * Adds a complete key-list to the given {@link CommitLogEntry}, will read from the database.
+   *
+   * <p>The implementation fills {@link CommitLogEntry#getKeyList()} with the most recently updated
+   * {@link Key}s.
+   *
+   * <p>If the calculated size of the database-object/row gets larger than {@link
+   * DatabaseAdapterConfig#getMaxKeyListSize()}, the next {@link Key}s will be added to new {@link
+   * KeyListEntity}s, each with a maximum size of {@link DatabaseAdapterConfig#getMaxKeyListSize()}.
+   *
+   * <p>The current implementation fetches all keys and "blindly" populated {@link
+   * CommitLogEntry#getKeyList()} and nested {@link KeyListEntity} via {@link
+   * CommitLogEntry#getKeyListsIds()}. So this implementation does not yet reuse previous {@link
+   * KeyListEntity}s. A follow-up improvement should check if already existing {@link
+   * KeyListEntity}s contain the same keys. This proposed optimization should be accompanied by an
+   * optimized read of the keys: for example, if the set of changed keys only affects {@link
+   * CommitLogEntry#getKeyList()} but not the keys via {@link KeyListEntity}, it is just unnecessary
+   * to both read and re-write those rows for {@link KeyListEntity}.
+   */
+  protected CommitLogEntry buildKeyList(
+      OP_CONTEXT ctx, CommitLogEntry unwrittenEntry, Consumer<Hash> newKeyLists) {
     // Read commit-log until the previous persisted key-list
 
     Hash startHash = unwrittenEntry.getParents().get(0);
-    ImmutableEmbeddedKeyList.Builder newKeyList = ImmutableEmbeddedKeyList.builder();
-    keysForCommitEntry(ctx, startHash, KeyFilterPredicate.ALLOW_ALL).forEach(newKeyList::addKeys);
 
-    return ImmutableCommitLogEntry.builder()
-        .from(unwrittenEntry)
-        .keyListDistance(0)
-        .keyList(newKeyList.build())
-        .build();
+    // Return the new commit-log-entry with the complete-key-list
+    ImmutableCommitLogEntry.Builder newCommitEntry =
+        ImmutableCommitLogEntry.builder().from(unwrittenEntry).keyListDistance(0);
+
+    KeyListBuildState buildState =
+        new KeyListBuildState(entitySize(unwrittenEntry), newCommitEntry);
+
+    keysForCommitEntry(ctx, startHash)
+        .forEach(
+            keyWithType -> {
+              int keyTypeSize = entitySize(keyWithType);
+              if (buildState.embedded) {
+                // filling the embedded key-list in CommitLogEntry
+
+                if (buildState.currentSize + keyTypeSize < config.getMaxKeyListSize()) {
+                  // CommitLogEntry.keyList still has room
+                  buildState.addToEmbedded(keyWithType, keyTypeSize);
+                } else {
+                  // CommitLogEntry.keyList is "full", switch to the first KeyListEntity
+                  buildState.embedded = false;
+                  buildState.newKeyListEntity();
+                  buildState.addToKeyListEntity(keyWithType, keyTypeSize);
+                }
+              } else {
+                // filling linked key-lists via CommitLogEntry.keyListIds
+
+                if (buildState.currentSize + keyTypeSize > config.getMaxKeyListSize()) {
+                  // current KeyListEntity is "full", switch to a new one
+                  buildState.finishKeyListEntity();
+                  buildState.newKeyListEntity();
+                }
+                buildState.addToKeyListEntity(keyWithType, keyTypeSize);
+              }
+            });
+
+    // If there's an "unfinished" KeyListEntity, build it.
+    if (buildState.currentKeyList != null) {
+      buildState.finishKeyListEntity();
+    }
+
+    // Inform the (CAS)-op-loop about the IDs of the KeyListEntities being optimistically written.
+    buildState.newKeyListEntities.stream().map(KeyListEntity::getId).forEach(newKeyLists);
+
+    // Write the new KeyListEntities
+    writeKeyListEntities(ctx, buildState.newKeyListEntities);
+
+    // Return the new commit-log-entry with the complete-key-list
+    return newCommitEntry.keyList(buildState.embeddedBuilder.build()).build();
   }
+
+  /** Calculate the expected size of the given {@link CommitLogEntry} in the database. */
+  protected abstract int entitySize(CommitLogEntry entry);
+
+  /** Calculate the expected size of the given {@link CommitLogEntry} in the database. */
+  protected abstract int entitySize(KeyWithType entry);
 
   /**
    * If the current HEAD of the target branch for a commit/transplant/merge is not equal to the
@@ -600,34 +722,53 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
   /** Retrieve the contents-keys and their types for the commit-log-entry with the given hash. */
   protected Stream<KeyWithType> keysForCommitEntry(
       OP_CONTEXT ctx, Hash hash, KeyFilterPredicate keyFilter) {
+    return keysForCommitEntry(ctx, hash)
+        .filter(kt -> keyFilter.check(kt.getKey(), kt.getContentsId(), kt.getType()));
+  }
+
+  /** Retrieve the contents-keys and their types for the commit-log-entry with the given hash. */
+  protected Stream<KeyWithType> keysForCommitEntry(OP_CONTEXT ctx, Hash hash) {
     // walk the commit-logs in reverse order - starting with the last persisted key-list
-    Set<KeyWithType> keys = new HashSet<>();
 
-    // Commit log is processed in
     Set<Key> seen = new HashSet<>();
-    Set<Key> removes = new HashSet<>();
-
     Stream<CommitLogEntry> log = commitLogFetcher(ctx, hash);
     log = takeUntilIncludeLast(log, e -> e.getKeyList() != null);
-    log.forEach(
+    return log.flatMap(
         e -> {
-          if (e.getKeyList() != null) {
-            e.getKeyList().getKeys().stream()
-                .filter(kt -> seen.add(kt.getKey()))
-                .filter(kt -> keyFilter.check(kt.getKey(), kt.getContentsId(), kt.getType()))
-                .forEach(keys::add);
-          }
-          e.getPuts().stream()
-              .filter(kt -> seen.add(kt.getKey()))
-              .filter(kt -> keyFilter.check(kt.getKey(), kt.getContentsId(), kt.getType()))
-              .map(KeyWithBytes::asKeyWithType)
-              .forEach(keys::add);
-          // Only have 'Key' in deletes, so map it to a 'KeyWithType' and it can be used to remove
-          // the entry from 'keys'.
-          e.getDeletes().stream().filter(seen::add).forEach(removes::add);
-        });
 
-    return keys.stream().filter(kt -> !removes.contains(kt.getKey()));
+          // Add CommitLogEntry.deletes to "seen" so these keys won't be returned
+          seen.addAll(e.getDeletes());
+
+          // Return from CommitLogEntry.puts first
+          Stream<KeyWithType> stream =
+              e.getPuts().stream()
+                  .filter(kt -> seen.add(kt.getKey()))
+                  .map(KeyWithBytes::asKeyWithType);
+
+          if (e.getKeyList() != null) {
+
+            // Return from CommitLogEntry.keyList after the keys in CommitLogEntry.puts
+            Stream<KeyWithType> embedded =
+                e.getKeyList().getKeys().stream().filter(kt -> seen.add(kt.getKey()));
+
+            stream = Stream.concat(stream, embedded);
+
+            if (!e.getKeyListsIds().isEmpty()) {
+              // If there are nested key-lists, retrieve those and add the keys from these
+              stream =
+                  Stream.concat(
+                      stream,
+                      // "lazily" fetch key-lists
+                      Stream.of(e.getKeyListsIds())
+                          .flatMap(ids -> fetchKeyLists(ctx, ids))
+                          .map(KeyListEntity::getKeys)
+                          .flatMap(k -> k.getKeys().stream())
+                          .filter(kt -> seen.add(kt.getKey())));
+            }
+          }
+
+          return stream;
+        });
   }
 
   /**
@@ -676,6 +817,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
   protected abstract Map<ContentsId, ByteString> fetchGlobalStates(
       OP_CONTEXT ctx, Set<ContentsId> contentIds);
 
+  protected abstract Stream<KeyListEntity> fetchKeyLists(OP_CONTEXT ctx, List<Hash> keyListsIds);
+
   /**
    * Write a new commit-entry, the given commit entry is to be persisted as is. All values of the
    * given {@link CommitLogEntry} can be considered valid and consistent.
@@ -695,6 +838,9 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
    */
   protected abstract void writeMultipleCommits(OP_CONTEXT ctx, List<CommitLogEntry> entries)
       throws ReferenceConflictException;
+
+  protected abstract void writeKeyListEntities(
+      OP_CONTEXT ctx, List<KeyListEntity> newKeyListEntities);
 
   /**
    * Check whether the commits in the range {@code sinceCommitExcluding] .. [upToCommitIncluding}
@@ -836,7 +982,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       OP_CONTEXT ctx,
       long timeInMicros,
       Hash targetHead,
-      List<CommitLogEntry> commitsChronological) {
+      List<CommitLogEntry> commitsChronological,
+      Consumer<Hash> newKeyLists) {
     int parentsPerCommit = config.getParentsPerCommit();
 
     List<Hash> parents = new ArrayList<>(parentsPerCommit);
@@ -869,7 +1016,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
               sourceCommit.getPuts(),
               sourceCommit.getUnchanged(),
               sourceCommit.getDeletes(),
-              keyListDistance);
+              keyListDistance,
+              newKeyLists);
       keyListDistance = newEntry.getKeyListDistance();
 
       if (!newEntry.getHash().equals(sourceCommit.getHash())) {
