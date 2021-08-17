@@ -31,7 +31,7 @@
   <name>Nessie - Versioned - GC for Spark - Iceberg</name>
 
   <properties>
-    <iceberg.nessie.version>0.4.0</iceberg.nessie.version>
+    <iceberg.nessie.version>${project.version}</iceberg.nessie.version>
   </properties>
 
   <dependencies>
@@ -54,7 +54,7 @@
     <dependency>
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-core_2.12</artifactId>
-      <version>3.0.3</version>
+      <version>${spark3.version}</version>
       <scope>provided</scope>
       <exclusions>
         <exclusion>

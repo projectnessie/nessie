@@ -20,6 +20,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -30,7 +33,6 @@ import org.apache.spark.sql.functions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.tests.AbstractSparkTest;
 import org.projectnessie.error.BaseNessieClientServerException;
@@ -149,7 +151,6 @@ public class ITNessieStatements extends AbstractSparkTest {
         .hasMessage("Unable to find reference [testBranch].");
   }
 
-  @Disabled("until release of 0.12.0 of iceberg")
   @Test
   void testCreateBranch() throws NessieNotFoundException {
     String catalog = spark.sessionState().catalogManager().currentCatalog().name();
@@ -166,7 +167,6 @@ public class ITNessieStatements extends AbstractSparkTest {
         .hasMessage("Unable to find reference [testBranch].");
   }
 
-  @Disabled("until release of 0.12.0 of iceberg")
   @Test
   void testCreateTag() throws NessieNotFoundException {
     String catalog = spark.sessionState().catalogManager().currentCatalog().name();
@@ -186,7 +186,6 @@ public class ITNessieStatements extends AbstractSparkTest {
         .hasMessage("Unable to find reference [testBranch].");
   }
 
-  @Disabled("until release of 0.12.0 of iceberg")
   @Test
   void useShowReferencesIn() throws NessieNotFoundException {
     List<Object[]> result = sql("CREATE BRANCH %s IN nessie AS main", refName);
@@ -206,15 +205,12 @@ public class ITNessieStatements extends AbstractSparkTest {
         .hasMessage("Unable to find reference [testBranch].");
   }
 
-  @Disabled("until release of 0.12.0 of iceberg")
   @Test
-  void useShowReferencesAt() throws NessieNotFoundException {
-    List<Object[]> result = sql("CREATE BRANCH %s IN nessie AS main", refName);
-    assertEquals("created branch", row("Branch", refName, hash), result);
-    assertThat(nessieClient.getTreeApi().getReferenceByName(refName))
-        .isEqualTo(Branch.of(refName, hash));
-
-    result = sql("USE REFERENCE %s AT %s IN nessie ", refName, "`2012-06-01T14:14:14`");
+  void useShowReferencesAt() throws NessieNotFoundException, NessieConflictException {
+    commitAndReturnLog(refName);
+    String time = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(LocalDateTime.now(ZoneOffset.UTC));
+    List<Object[]> result = sql("USE REFERENCE %s AT `%s` IN nessie ", refName, time);
+    hash = nessieClient.getTreeApi().getReferenceByName(refName).getHash();
     assertEquals("use branch", row("Branch", refName, hash), result);
     result = sql("SHOW REFERENCE IN nessie");
     assertEquals("show branch", row("Branch", refName, hash), result);
@@ -226,7 +222,6 @@ public class ITNessieStatements extends AbstractSparkTest {
         .hasMessage("Unable to find reference [testBranch].");
   }
 
-  @Disabled("until release of 0.12.0 of iceberg")
   @Test
   void useShowReferences() throws NessieNotFoundException {
     List<Object[]> result = sql("CREATE BRANCH %s IN nessie AS main", refName);
@@ -275,7 +270,6 @@ public class ITNessieStatements extends AbstractSparkTest {
         resultList);
   }
 
-  @Disabled("until release of 0.12.0 of iceberg")
   @Test
   void mergeReferences() throws NessieConflictException, NessieNotFoundException {
     String catalog = spark.sessionState().catalogManager().currentCatalog().name();
@@ -389,7 +383,6 @@ public class ITNessieStatements extends AbstractSparkTest {
     return resultList;
   }
 
-  @Disabled("until release of 0.12.0 of iceberg")
   @Test
   void showLog() throws NessieConflictException, NessieNotFoundException {
     String catalog = spark.sessionState().catalogManager().currentCatalog().name();

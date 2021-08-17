@@ -36,10 +36,10 @@ import org.apache.iceberg.CatalogUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
-import org.apache.iceberg.actions.GcTableCleanAction;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.nessie.NessieCatalog;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
+import org.apache.iceberg.spark.actions.GcTableCleanAction;
 import org.apache.iceberg.types.Types;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
@@ -88,7 +88,7 @@ class ITTestIdentifyUnreferencedAssetsActions {
                   required(2, "foe2", Types.StringType.get()))
               .fields());
 
-  private static final int NESSIE_PORT = Integer.getInteger("quarkus.http.test-port", 19120);
+  private static final int NESSIE_PORT = Integer.getInteger("quarkus.http.test-port", 19121);
   private static final String NESSIE_ENDPOINT =
       String.format("http://localhost:%d/api/v1", NESSIE_PORT);
 
