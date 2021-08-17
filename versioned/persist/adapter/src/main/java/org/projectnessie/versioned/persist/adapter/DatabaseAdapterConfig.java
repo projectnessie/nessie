@@ -32,7 +32,7 @@ public interface DatabaseAdapterConfig {
 
   int DEFAULT_PARENTS_PER_COMMIT = 20;
   int DEFAULT_KEY_LIST_DISTANCE = 20;
-  int DEFAULT_MAX_KEY_LIST_SIZE = Integer.MAX_VALUE;
+  int DEFAULT_MAX_KEY_LIST_SIZE = 250_000;
   int DEFAULT_COMMIT_TIMEOUT = 500;
   int DEFAULT_COMMIT_RETRIES = Integer.MAX_VALUE;
 
@@ -86,7 +86,7 @@ public interface DatabaseAdapterConfig {
    * org.projectnessie.versioned.persist.adapter.CommitLogEntry#getKeyListsIds()},
    * database-serialization overhead and similar.
    *
-   * <p>Values {@code <=0} are illegal, defaults to "unlimited".
+   * <p>Values {@code <=0} are illegal, defaults to {@link #getDefaultMaxKeyListSize()}.
    */
   @Value.Default
   default int getMaxKeyListSize() {
@@ -104,6 +104,8 @@ public interface DatabaseAdapterConfig {
    * leave enough room for a somewhat large-ish list via {@link
    * org.projectnessie.versioned.persist.adapter.CommitLogEntry#getKeyListsIds()},
    * database-serialization overhead * and similar.
+   *
+   * <p>Defaults to {@value #DEFAULT_MAX_KEY_LIST_SIZE}.
    */
   default int getDefaultMaxKeyListSize() {
     return DEFAULT_MAX_KEY_LIST_SIZE;
