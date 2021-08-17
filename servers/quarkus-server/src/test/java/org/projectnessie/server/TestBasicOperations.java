@@ -19,19 +19,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
-import java.io.IOException;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.projectnessie.api.ContentsApi;
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.client.NessieClient;
-import org.projectnessie.client.rest.NessieForbiddenException;
-import org.projectnessie.client.rest.NessieNotAuthorizedException;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -41,13 +37,12 @@ import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableBranch;
 import org.projectnessie.model.ImmutableDelete;
-import org.projectnessie.model.ImmutableIcebergTable;
 import org.projectnessie.model.ImmutableOperations;
 import org.projectnessie.model.ImmutablePut;
 import org.projectnessie.model.Reference;
 
 @QuarkusTest
-class TestAuth {
+class TestBasicOperations {
 
   private NessieClient client;
   private TreeApi tree;
@@ -74,20 +69,6 @@ class TestAuth {
     Assertions.assertDoesNotThrow(runnable);
   }
 
-  interface RunnableIO {
-    public abstract void run() throws IOException;
-  }
-
-  void tryEndpointFail(Executable runnable) {
-    Assertions.assertThrows(NessieForbiddenException.class, runnable);
-  }
-
-  @Disabled
-  @Test
-  void testLogin() {
-    Assertions.assertThrows(NessieNotAuthorizedException.class, () -> getCatalog("x"));
-  }
-
   @Test
   @TestSecurity(
       user = "admin_user",
@@ -108,8 +89,9 @@ class TestAuth {
                         ImmutablePut.builder().key(key).contents(IcebergTable.of("foo")).build())
                     .commitMeta(CommitMeta.fromMessage("empty message"))
                     .build()));
-    final IcebergTable table =
-        contents.getContents(key, "testx", null).unwrap(IcebergTable.class).get();
+
+    Assertions.assertTrue(
+        contents.getContents(key, "testx", null).unwrap(IcebergTable.class).isPresent());
 
     Branch master = (Branch) tree.getReferenceByName("testx");
     Branch test = ImmutableBranch.builder().hash(master.getHash()).name("testy").build();
@@ -144,9 +126,5 @@ class TestAuth {
     getCatalog(null);
     Reference r = client.getTreeApi().getReferenceByName("testx");
     client.getTreeApi().deleteBranch(r.getName(), r.getHash());
-  }
-
-  private IcebergTable createTable(String name, String location) {
-    return ImmutableIcebergTable.builder().metadataLocation("xxx").build();
   }
 }
