@@ -57,11 +57,6 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.apache.iceberg</groupId>
-      <artifactId>iceberg-spark3-runtime</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-core_2.12</artifactId>
       <version>${spark3.version}</version>
@@ -146,6 +141,11 @@
       <groupId>com.amazonaws</groupId>
       <artifactId>DynamoDBLocal</artifactId>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.iceberg</groupId>
+      <artifactId>iceberg-spark3-runtime</artifactId>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
 
