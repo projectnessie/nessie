@@ -77,6 +77,10 @@ public final class DatabaseAdapterUtil {
         String.format("Named reference '%s' not found", ref.getName()));
   }
 
+  public static ReferenceNotFoundException referenceNotFound(Hash hash) {
+    return new ReferenceNotFoundException(String.format("Commit '%s' not found", hash.asString()));
+  }
+
   public static ReferenceAlreadyExistsException referenceAlreadyExists(NamedRef ref) {
     return new ReferenceAlreadyExistsException(
         String.format("Named reference '%s' already exists.", ref.getName()));
