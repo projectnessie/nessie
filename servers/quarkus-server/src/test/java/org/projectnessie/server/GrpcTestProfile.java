@@ -15,20 +15,10 @@
  */
 package org.projectnessie.server;
 
-import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.TestProfile;
-import org.junit.jupiter.api.BeforeEach;
-import org.projectnessie.client.grpc.GrpcClientBuilder;
-import org.projectnessie.jaxrs.AbstractTestRest;
+import io.quarkus.test.junit.QuarkusTestProfile;
 
-@QuarkusTest
-@TestProfile(value = GrpcTestProfile.class)
-class TestGrpc extends AbstractTestRest {
-
-  @Override
-  @BeforeEach
-  public void setUp() throws Exception {
-    super.init(GrpcClientBuilder.builder().withEndpoint("localhost:9001").build(), null);
-    super.setUp();
-  }
-}
+/**
+ * The purpose of this is to force a restart of the Quarkus server, because {@link TestRest} and
+ * {@link TestGrpc} effectively create the same branches.
+ */
+public class GrpcTestProfile implements QuarkusTestProfile {}
