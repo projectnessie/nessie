@@ -15,8 +15,6 @@
  */
 package org.projectnessie.versioned.persist.adapter;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.protobuf.ByteString;
 import java.util.List;
 import javax.annotation.Nullable;
@@ -26,8 +24,6 @@ import org.projectnessie.versioned.Key;
 
 /** Represents a commit-log-entry stored in the database. */
 @Value.Immutable(lazyhash = true)
-@JsonSerialize(as = ImmutableCommitLogEntry.class)
-@JsonDeserialize(as = ImmutableCommitLogEntry.class)
 public interface CommitLogEntry {
   /** Creation timestamp in microseconds since epoch. */
   long getCreatedTime();

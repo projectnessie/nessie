@@ -25,20 +25,19 @@
     <version>0.9.1-SNAPSHOT</version>
   </parent>
 
-  <artifactId>nessie-versioned-persist-adapter</artifactId>
+  <artifactId>nessie-versioned-persist-serialize</artifactId>
 
-  <name>Nessie - Versioned - Persist - Adapter</name>
+  <name>Nessie - Versioned - Persist - Serialization</name>
 
   <dependencies>
     <dependency>
       <groupId>org.projectnessie</groupId>
-      <artifactId>nessie-versioned-spi</artifactId>
+      <artifactId>nessie-versioned-persist-adapter</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.immutables</groupId>
-      <artifactId>value</artifactId>
-      <scope>provided</scope>
+      <groupId>com.google.protobuf</groupId>
+      <artifactId>protobuf-java</artifactId>
     </dependency>
     <dependency>
       <groupId>org.assertj</groupId>
@@ -66,4 +65,21 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.xolstice.maven.plugins</groupId>
+        <artifactId>protobuf-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>protobuf-java</id>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 </project>

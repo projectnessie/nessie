@@ -15,8 +15,6 @@
  */
 package org.projectnessie.versioned.persist.adapter;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.Hash;
 
@@ -25,8 +23,6 @@ import org.projectnessie.versioned.Hash;
  * org.projectnessie.versioned.persist.adapter.CommitLogEntry#getKeyListsIds()}.
  */
 @Value.Immutable(lazyhash = true)
-@JsonSerialize(as = ImmutableKeyListEntity.class)
-@JsonDeserialize(as = ImmutableKeyListEntity.class)
 public interface KeyListEntity {
   Hash getId();
 
