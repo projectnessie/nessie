@@ -22,12 +22,9 @@ import java.util.stream.Collectors;
 import javax.enterprise.context.RequestScoped;
 import javax.enterprise.inject.Alternative;
 import javax.inject.Inject;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.SecurityContext;
-import org.projectnessie.api.ContentsApi;
+import org.projectnessie.api.HttpContentsApi;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
@@ -47,9 +44,7 @@ import org.projectnessie.versioned.WithHash;
 /** REST endpoint for contents. */
 @RequestScoped
 @Alternative
-@Consumes(value = MediaType.APPLICATION_JSON)
-@Path("contents")
-public class ContentsResource extends BaseResource implements ContentsApi {
+public class ContentsResource extends BaseResource implements HttpContentsApi {
 
   // Mandated by CDI 2.0
   public ContentsResource() {
