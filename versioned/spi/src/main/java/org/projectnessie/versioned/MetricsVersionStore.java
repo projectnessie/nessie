@@ -60,6 +60,19 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
   }
 
   @Override
+  public Hash hashOnReference(NamedRef namedReference, Optional<Hash> hashOnReference)
+      throws ReferenceNotFoundException {
+    return delegate1Ex(
+        "hashonreference", () -> delegate.hashOnReference(namedReference, hashOnReference));
+  }
+
+  @Nonnull
+  @Override
+  public Hash noAncestorHash() {
+    return delegate.noAncestorHash();
+  }
+
+  @Override
   @Nonnull
   public Hash toHash(@Nonnull NamedRef ref) throws ReferenceNotFoundException {
     return delegate1Ex("tohash", () -> delegate.toHash(ref));

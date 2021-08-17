@@ -139,6 +139,12 @@ public class TieredVersionStore<DATA, METADATA, DATA_TYPE extends Enum<DATA_TYPE
             .register(registry);
   }
 
+  @Nonnull
+  @Override
+  public Hash noAncestorHash() {
+    return Id.EMPTY.toHash();
+  }
+
   @Override
   public Hash create(NamedRef ref, Optional<Hash> targetHash)
       throws ReferenceNotFoundException, ReferenceAlreadyExistsException {

@@ -78,6 +78,18 @@ public abstract class AbstractTieredStoreFixture<S extends Store, C>
   }
 
   @Override
+  public Hash hashOnReference(NamedRef namedReference, Optional<Hash> hashOnReference)
+      throws ReferenceNotFoundException {
+    return versionStore.hashOnReference(namedReference, hashOnReference);
+  }
+
+  @Nonnull
+  @Override
+  public Hash noAncestorHash() {
+    return versionStore.noAncestorHash();
+  }
+
+  @Override
   @Nonnull
   public Hash toHash(@Nonnull NamedRef ref) throws ReferenceNotFoundException {
     return versionStore.toHash(ref);
