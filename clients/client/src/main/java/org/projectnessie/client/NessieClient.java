@@ -38,6 +38,7 @@ public interface NessieClient extends AutoCloseable {
   enum AuthType {
     AWS,
     BASIC,
+    BEARER,
     NONE
   }
 
@@ -214,6 +215,16 @@ public interface NessieClient extends AutoCloseable {
     public Builder withPassword(String password) {
       this.password = password;
       return this;
+    }
+
+    /**
+     * Set the token for {@link AuthType#BEARER} authentication.
+     *
+     * @param token bearer token
+     * @return {@code this}
+     */
+    public Builder withBearerToken(String token) {
+      return withPassword(token);
     }
 
     /**

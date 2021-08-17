@@ -40,6 +40,7 @@ import org.projectnessie.api.ContentsApi;
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.client.auth.AwsAuth;
 import org.projectnessie.client.auth.BasicAuthFilter;
+import org.projectnessie.client.auth.BearerAuthFilter;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpClientException;
 import org.projectnessie.client.http.RequestFilter;
@@ -173,6 +174,9 @@ class NessieHttpClient implements NessieClient {
         break;
       case BASIC:
         client.register(new BasicAuthFilter(username, password));
+        break;
+      case BEARER:
+        client.register(new BearerAuthFilter(password));
         break;
       case NONE:
         break;
