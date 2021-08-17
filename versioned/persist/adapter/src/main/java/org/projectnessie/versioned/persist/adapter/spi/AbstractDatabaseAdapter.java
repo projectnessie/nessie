@@ -762,7 +762,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
                       Stream.of(e.getKeyListsIds())
                           .flatMap(ids -> fetchKeyLists(ctx, ids))
                           .map(KeyListEntity::getKeys)
-                          .flatMap(k -> k.getKeys().stream()));
+                          .flatMap(k -> k.getKeys().stream())
+                          .filter(kt -> seen.add(kt.getKey())));
             }
           }
 
