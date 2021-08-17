@@ -194,25 +194,21 @@ public class TreeResource extends BaseResource implements TreeApi {
             params.maxRecords() != null ? params.maxRecords() : MAX_COMMIT_LOG_ENTRIES,
             MAX_COMMIT_LOG_ENTRIES);
 
-    Ref endRef;
-    if (null == params.pageToken()) {
-      // we should only allow named references when no paging is defined
-      endRef = namedRefWithHashOrThrow(namedRef, params.endHash()).getHash();
-    } else {
-      // TODO: this is atm an insecure design where users can put it any hashes and retrieve all the
-      // commits. Once authz + tvs2 is in place we should revisit this
-      endRef = getHashOrThrow(params.pageToken());
-    }
+    // we should only allow named references when no paging is defined
+    Ref endRef =
+        namedRefWithHashOrThrow(
+                namedRef, null == params.pageToken() ? params.endHash() : params.pageToken())
+            .getHash();
 
-    try (Stream<ImmutableCommitMeta> s =
-        StreamSupport.stream(
-            StreamUtil.takeUntilIncl(
-                getStore()
-                    .getCommits(endRef)
-                    .map(cwh -> cwh.getValue().toBuilder().hash(cwh.getHash().asString()).build())
-                    .spliterator(),
-                x -> x.getHash().equals(params.startHash())),
-            false)) {
+    try (Stream<WithHash<CommitMeta>> commits = getStore().getCommits(endRef)) {
+      Stream<ImmutableCommitMeta> s =
+          StreamSupport.stream(
+              StreamUtil.takeUntilIncl(
+                  commits
+                      .map(cwh -> cwh.getValue().toBuilder().hash(cwh.getHash().asString()).build())
+                      .spliterator(),
+                  x -> x.getHash().equals(params.startHash())),
+              false);
       List<CommitMeta> items =
           filterCommitLog(s, params.queryExpression()).limit(max + 1).collect(Collectors.toList());
       if (items.size() == max + 1) {
