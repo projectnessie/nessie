@@ -59,14 +59,14 @@ message ContentsId {
 }
 
 message ContentsIdWithType {
-  ContentsId contents_id = 2;
-  int32 type = 3;
+  ContentsId contents_id = 1;
+  int32 type = 2;
 }
 
 message ContentsIdWithBytes {
-  ContentsId contents_id = 2;
-  int32 type = 3;
-  bytes value = 4;
+  ContentsId contents_id = 1;
+  int32 type = 2;
+  bytes value = 3;
 }
 
 // Used by non-transactional database-adapters
