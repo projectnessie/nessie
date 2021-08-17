@@ -68,6 +68,23 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
   }
 
   @Override
+  public Hash hashOnReference(NamedRef namedReference, Optional<Hash> hashOnReference)
+      throws ReferenceNotFoundException {
+    return callWithOneException(
+        "HashOnReference",
+        b ->
+            b.withTag(TAG_REF, safeRefName(namedReference))
+                .withTag(TAG_HASH, safeToString(hashOnReference)),
+        () -> delegate.hashOnReference(namedReference, hashOnReference));
+  }
+
+  @Nonnull
+  @Override
+  public Hash noAncestorHash() {
+    return delegate.noAncestorHash();
+  }
+
+  @Override
   @Nonnull
   public Hash toHash(@Nonnull NamedRef ref) throws ReferenceNotFoundException {
     return callWithOneException(
