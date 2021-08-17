@@ -35,7 +35,50 @@ import javax.annotation.concurrent.ThreadSafe;
 public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>> {
 
   /**
+   * Verifies that the given {@code namedReference} exists and that {@code hashOnReference}, if
+   * present, is reachable via that reference.
+   *
+   * @return verified {@code hashOnReference} or, if {@code hashOnReference} is not present, the
+   *     current HEAD of {@code namedReference}
+   * @throws ReferenceNotFoundException if {@code namedReference} does not exist or {@code
+   *     hashOnReference}, if present, is not reachable from that reference
+   */
+  default Hash hashOnReference(NamedRef namedReference, Optional<Hash> hashOnReference)
+      throws ReferenceNotFoundException {
+    Hash head = toHash(namedReference);
+    if (!hashOnReference.isPresent()) {
+      return head;
+    }
+    if (!head.equals(noAncestorHash())
+        && getCommits(head).noneMatch(h -> h.getHash().equals(hashOnReference.get()))) {
+      throw new ReferenceNotFoundException(
+          String.format(
+              "Could not find commit '%s' on existing reference '%s'.",
+              hashOnReference.get().asString(), namedReference.getName()));
+    }
+    return hashOnReference.get();
+  }
+
+  /**
+   * Retrieve the hash for "no ancestor" (or "beginning of time"), which is a hash for which no
+   * commit exists. "no ancestor" or "beginning of time" are the initial hash of the default branch
+   * and branches that are created via {@link #create(NamedRef, Optional)} without specifying the
+   * {@code targetHash}.
+   *
+   * <p>This "no ancestor" value is readable for all users, and it is a valid hash for every named
+   * reference.
+   *
+   * <p>The result of this function must not change for any store instance, but it can be different
+   * for different backends and even for different instances of the same backend.
+   */
+  @Nonnull
+  Hash noAncestorHash();
+
+  /**
    * Provide the current hash for the given NamedRef.
+   *
+   * <p>This is a functionally equivalent to {@link #hashOnReference(NamedRef, Optional)
+   * hashOnReference(ref, Optional.empty())}.
    *
    * @param ref The Branch or Tag to lookup.
    * @return The current hash for that ref.

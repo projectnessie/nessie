@@ -125,6 +125,12 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>>
     return new Builder<>();
   }
 
+  @Nonnull
+  @Override
+  public Hash noAncestorHash() {
+    return NO_ANCESTOR;
+  }
+
   @Override
   @Nonnull
   public Hash toHash(@Nonnull NamedRef ref) throws ReferenceNotFoundException {
