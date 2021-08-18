@@ -15,9 +15,10 @@
  */
 package org.projectnessie.client.auth;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -28,7 +29,7 @@ class TestBearerAuthFilter {
 
   @Test
   void testNonNull() {
-    assertThrows(NullPointerException.class, () -> new BearerAuthFilter(null));
+    assertThatThrownBy(() -> new BearerAuthFilter(null)).isInstanceOf(NullPointerException.class);
   }
 
   @Test
@@ -38,6 +39,6 @@ class TestBearerAuthFilter {
     RequestContext context = new RequestContext(map, null, null, null);
     authFilter.filter(context);
 
-    assertEquals("Bearer test_token", map.get("Authorization").iterator().next());
+    assertThat(map.get("Authorization")).isEqualTo(Collections.singleton("Bearer test_token"));
   }
 }
