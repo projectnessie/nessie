@@ -49,6 +49,11 @@ class ITDeltaLogBranches extends AbstractSparkTest {
 
   @TempDir File tempPath;
 
+  @Override
+  protected void initNessieClient() {
+    nessieClient = NessieClient.builder().withUri(url).build();
+  }
+
   @BeforeAll
   protected static void createDelta() {
     conf.set("spark.delta.logStore.class", NessieLogStore.class.getCanonicalName())

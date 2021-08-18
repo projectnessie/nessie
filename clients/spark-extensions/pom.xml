@@ -33,7 +33,7 @@
     <dependency>
       <groupId>org.projectnessie</groupId>
       <artifactId>nessie-client</artifactId>
-      <version>${project.version}</version>
+      <version>${iceberg.nessie.version}</version>
     </dependency>
     <dependency>
       <groupId>org.projectnessie</groupId>

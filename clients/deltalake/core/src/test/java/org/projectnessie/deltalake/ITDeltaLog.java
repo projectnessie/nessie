@@ -34,6 +34,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.junit.jupiter.api.io.TempDir;
+import org.projectnessie.client.NessieClient;
 import org.projectnessie.client.tests.AbstractSparkTest;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.ImmutableMerge;
@@ -43,6 +44,11 @@ import scala.Tuple2;
 class ITDeltaLog extends AbstractSparkTest {
 
   @TempDir File tempPath;
+
+  @Override
+  protected void initNessieClient() {
+    nessieClient = NessieClient.builder().withUri(url).build();
+  }
 
   @BeforeAll
   protected static void createDelta() {

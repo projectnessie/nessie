@@ -49,6 +49,8 @@ public abstract class AbstractSparkTest {
 
   protected static NessieClient nessieClient;
 
+  protected abstract void initNessieClient();
+
   @BeforeEach
   protected void create() throws IOException {
     Map<String, String> nessieParams =
@@ -68,7 +70,7 @@ public abstract class AbstractSparkTest {
     spark = SparkSession.builder().master("local[2]").config(conf).getOrCreate();
     spark.sparkContext().setLogLevel("WARN");
 
-    nessieClient = NessieClient.builder().withUri(url).build();
+    initNessieClient();
   }
 
   @AfterAll
