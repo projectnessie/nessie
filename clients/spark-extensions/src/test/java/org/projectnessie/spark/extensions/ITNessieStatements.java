@@ -34,6 +34,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.projectnessie.client.NessieClient;
 import org.projectnessie.client.tests.AbstractSparkTest;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieConflictException;
@@ -52,6 +53,11 @@ public class ITNessieStatements extends AbstractSparkTest {
 
   private String hash;
   private final String refName = "testBranch";
+
+  @Override
+  protected void initNessieClient() {
+    nessieClient = NessieClient.builder().withUri(url).build();
+  }
 
   @BeforeAll
   protected static void createDelta() {

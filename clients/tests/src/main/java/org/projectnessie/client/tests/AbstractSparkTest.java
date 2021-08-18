@@ -33,7 +33,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
-import org.projectnessie.client.HttpClientBuilder;
 import org.projectnessie.client.NessieClient;
 
 public abstract class AbstractSparkTest {
@@ -48,6 +47,8 @@ public abstract class AbstractSparkTest {
   protected static String url = String.format("http://localhost:%d/api/v1", NESSIE_PORT);
 
   protected static NessieClient nessieClient;
+
+  protected abstract void initNessieClient();
 
   @BeforeEach
   protected void create() throws IOException {
@@ -68,7 +69,7 @@ public abstract class AbstractSparkTest {
     spark = SparkSession.builder().master("local[2]").config(conf).getOrCreate();
     spark.sparkContext().setLogLevel("WARN");
 
-    nessieClient = HttpClientBuilder.builder().withUri(url).build();
+    initNessieClient();
   }
 
   @AfterAll

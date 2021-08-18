@@ -32,11 +32,6 @@
   <dependencies>
     <dependency>
       <groupId>org.projectnessie</groupId>
-      <artifactId>nessie-client</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.projectnessie</groupId>
       <artifactId>nessie-spark-extensions-grammar</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -63,7 +58,6 @@
     <dependency>
       <groupId>org.apache.iceberg</groupId>
       <artifactId>iceberg-spark3-runtime</artifactId>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
