@@ -1409,7 +1409,8 @@ public abstract class AbstractTestRest {
                     branch.getName(), CommitLogParams.builder().endHash(invalidHash).build()))
         .isInstanceOf(NessieNotFoundException.class)
         .hasMessageContaining(
-            String.format("Hash %s on Ref %s could not be found", invalidHash, b.getName()));
+            String.format(
+                "Could not find commit '%s' in reference '%s'.", invalidHash, b.getName()));
 
     assertThatThrownBy(
             () ->
@@ -1417,7 +1418,8 @@ public abstract class AbstractTestRest {
                     branch.getName(), EntriesParams.builder().hashOnRef(invalidHash).build()))
         .isInstanceOf(NessieNotFoundException.class)
         .hasMessageContaining(
-            String.format("Hash %s on Ref %s could not be found", invalidHash, b.getName()));
+            String.format(
+                "Could not find commit '%s' in reference '%s'.", invalidHash, b.getName()));
 
     assertThatThrownBy(
             () ->
@@ -1429,13 +1431,15 @@ public abstract class AbstractTestRest {
                     .getContents())
         .isInstanceOf(NessieNotFoundException.class)
         .hasMessageContaining(
-            String.format("Hash %s on Ref %s could not be found", invalidHash, b.getName()));
+            String.format(
+                "Could not find commit '%s' in reference '%s'.", invalidHash, b.getName()));
 
     assertThatThrownBy(
             () -> contents.getContents(ContentsKey.of("table0"), branch.getName(), invalidHash))
         .isInstanceOf(NessieNotFoundException.class)
         .hasMessageContaining(
-            String.format("Hash %s on Ref %s could not be found", invalidHash, b.getName()));
+            String.format(
+                "Could not find commit '%s' in reference '%s'.", invalidHash, b.getName()));
   }
 
   void unwrap(Executable exec) throws Throwable {

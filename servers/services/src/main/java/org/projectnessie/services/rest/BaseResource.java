@@ -92,7 +92,8 @@ abstract class BaseResource {
               .findFirst()
               .orElseThrow(
                   () ->
-                      new NessieNotFoundException(String.format("Ref for %s not found", namedRef)));
+                      new NessieNotFoundException(
+                          String.format("Named reference '%s' not found.", namedRef)));
     }
 
     try {
@@ -105,13 +106,13 @@ abstract class BaseResource {
       try (Stream<WithHash<CommitMeta>> commits = store.getCommits(namedRefWithHash.getValue())) {
         if (commits.noneMatch(c -> c.getHash().equals(hash))) {
           throw new NessieNotFoundException(
-              String.format("Hash %s on Ref %s could not be found", hashOnRef, namedRef));
+              String.format("Could not find commit '%s' in reference '%s'.", hashOnRef, namedRef));
         }
       }
       return WithHash.of(hash, namedRefWithHash.getValue());
     } catch (ReferenceNotFoundException e) {
       throw new NessieNotFoundException(
-          String.format("Hash %s on Ref %s could not be found", hashOnRef, namedRef));
+          String.format("Could not find commit '%s' in reference '%s'.", hashOnRef, namedRef));
     }
   }
 
