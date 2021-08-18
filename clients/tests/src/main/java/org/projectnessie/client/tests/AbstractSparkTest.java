@@ -15,6 +15,8 @@
  */
 package org.projectnessie.client.tests;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import java.io.File;
@@ -30,7 +32,6 @@ import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.internal.SQLConf;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 import org.projectnessie.client.NessieClient;
@@ -96,21 +97,7 @@ public abstract class AbstractSparkTest {
 
   protected static void assertEquals(
       String context, List<Object[]> expectedRows, List<Object[]> actualRows) {
-    Assertions.assertEquals(
-        expectedRows.size(), actualRows.size(), context + ": number of results should match");
-    for (int row = 0; row < expectedRows.size(); row += 1) {
-      Object[] expected = expectedRows.get(row);
-      Object[] actual = actualRows.get(row);
-      Assertions.assertEquals(expected.length, actual.length, "Number of columns should match");
-      for (int col = 0; col < actualRows.get(row).length; col += 1) {
-        if (expected[col] != ANY) {
-          Assertions.assertEquals(
-              expected[col],
-              actual[col],
-              context + ": row " + row + " col " + col + " contents should match");
-        }
-      }
-    }
+    assertThat(actualRows).as("%s", context).containsExactlyElementsOf(expectedRows);
   }
 
   protected static List<Object[]> sql(String query, Object... args) {

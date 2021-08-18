@@ -159,6 +159,10 @@ public class ITNessieStatements extends AbstractSparkTest {
     assertEquals("created branch", row("Branch", refName, hash), result);
     assertThat(nessieClient.getTreeApi().getReferenceByName(refName))
         .isEqualTo(Branch.of(refName, hash));
+    result = sql("LIST REFERENCES");
+    // Result of LIST REFERENCES does not guarantee any order
+    assertThat(result)
+        .containsExactlyInAnyOrder(row("Branch", refName, hash), row("Branch", "main", hash));
     result = sql("DROP BRANCH %s", refName);
     assertEquals("deleted branch", row("OK"), result);
     spark.sessionState().catalogManager().setCurrentCatalog(catalog);
@@ -176,6 +180,7 @@ public class ITNessieStatements extends AbstractSparkTest {
     assertThat(nessieClient.getTreeApi().getReferenceByName(refName))
         .isEqualTo(Tag.of(refName, hash));
     result = sql("LIST REFERENCES");
+    // Result of LIST REFERENCES does not guarantee any order
     assertThat(result)
         .containsExactlyInAnyOrder(row("Tag", refName, hash), row("Branch", "main", hash));
     result = sql("DROP TAG %s", refName);
