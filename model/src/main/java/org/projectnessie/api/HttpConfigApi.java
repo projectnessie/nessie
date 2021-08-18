@@ -17,5 +17,9 @@ package org.projectnessie.api;
 
 import javax.ws.rs.Path;
 
+/**
+ * The purpose of this class is to only put the {@link Path} annotation onto it as otherwise other
+ * (non-http) implementors of {@link ConfigApi} could be used by CDI when a request comes in.
+ */
 @Path("config")
 public interface HttpConfigApi extends ConfigApi {}

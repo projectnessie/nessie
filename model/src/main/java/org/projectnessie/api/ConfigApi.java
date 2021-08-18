@@ -26,7 +26,6 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.projectnessie.model.NessieConfiguration;
 
 public interface ConfigApi {
-
   /** Get the server configuration. */
   @GET
   @Produces(MediaType.APPLICATION_JSON)

@@ -19,6 +19,10 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.MediaType;
 
+/**
+ * The purpose of this class is to only put the {@link Path} annotation onto it as otherwise other
+ * (non-http) implementors of {@link TreeApi} could be used by CDI when a request comes in.
+ */
 @Consumes(value = MediaType.APPLICATION_JSON)
 @Path("trees")
 public interface HttpTreeApi extends TreeApi {}
