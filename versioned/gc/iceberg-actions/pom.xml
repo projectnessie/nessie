@@ -36,6 +36,10 @@
 
   <dependencies>
     <dependency>
+      <groupId>org.apache.iceberg</groupId>
+      <artifactId>iceberg-spark3-runtime</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.projectnessie</groupId>
       <artifactId>nessie-versioned-gc-iceberg</artifactId>
       <version>${project.version}</version>
@@ -141,11 +145,6 @@
       <groupId>com.amazonaws</groupId>
       <artifactId>DynamoDBLocal</artifactId>
       <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.iceberg</groupId>
-      <artifactId>iceberg-spark3-runtime</artifactId>
-      <scope>provided</scope>
     </dependency>
   </dependencies>
 
