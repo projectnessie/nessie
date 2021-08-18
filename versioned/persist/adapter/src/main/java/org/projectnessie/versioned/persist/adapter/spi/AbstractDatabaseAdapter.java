@@ -217,11 +217,13 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
 
     // 3. Collect commit-log-entries
     List<CommitLogEntry> toEntriesReverseChronological =
-        takeUntilExcludeLast(readCommitLogStream(ctx, toHead), e -> e.getHash().equals(commonAncestor))
+        takeUntilExcludeLast(
+                readCommitLogStream(ctx, toHead), e -> e.getHash().equals(commonAncestor))
             .collect(Collectors.toList());
     Collections.reverse(toEntriesReverseChronological);
     List<CommitLogEntry> commitsToMergeChronological =
-        takeUntilExcludeLast(readCommitLogStream(ctx, from), e -> e.getHash().equals(commonAncestor))
+        takeUntilExcludeLast(
+                readCommitLogStream(ctx, from), e -> e.getHash().equals(commonAncestor))
             .collect(Collectors.toList());
 
     if (commitsToMergeChronological.isEmpty()) {
@@ -459,9 +461,9 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
   }
 
   /**
-   * Like {@link #readCommitLogStream(Object, Hash)}, but only returns the {@link Hash commit-log-entry
-   * hashes}, which can be taken from {@link CommitLogEntry#getParents()}, thus no need to perform a
-   * read-operation against every hash.
+   * Like {@link #readCommitLogStream(Object, Hash)}, but only returns the {@link Hash
+   * commit-log-entry hashes}, which can be taken from {@link CommitLogEntry#getParents()}, thus no
+   * need to perform a read-operation against every hash.
    */
   private Stream<Hash> readCommitLogHashesStream(OP_CONTEXT ctx, Hash initialHash) {
     return logFetcher(
@@ -935,8 +937,10 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     //  max number of "to"-commits to fetch, max number of "from"-commits to fetch,
     //  both impact the cost (CPU, memory, I/O) of a merge operation.
 
-    Iterator<Hash> toLog = Spliterators.iterator(readCommitLogHashesStream(ctx, toHead).spliterator());
-    Iterator<Hash> fromLog = Spliterators.iterator(readCommitLogHashesStream(ctx, from).spliterator());
+    Iterator<Hash> toLog =
+        Spliterators.iterator(readCommitLogHashesStream(ctx, toHead).spliterator());
+    Iterator<Hash> fromLog =
+        Spliterators.iterator(readCommitLogHashesStream(ctx, from).spliterator());
     Set<Hash> toCommitHashes = new HashSet<>();
     List<Hash> fromCommitHashes = new ArrayList<>();
     while (true) {
