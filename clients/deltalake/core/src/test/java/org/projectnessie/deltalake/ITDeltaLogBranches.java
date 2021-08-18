@@ -64,17 +64,19 @@ class ITDeltaLogBranches extends AbstractSparkTest {
 
   @AfterEach
   public void closeClient() throws NessieNotFoundException, NessieConflictException {
-    Reference ref = null;
-    try {
-      ref = client.getTreeApi().getReferenceByName("test");
-    } catch (NessieNotFoundException e) {
-      // pass ignore
+    if (null != client) {
+      Reference ref = null;
+      try {
+        ref = client.getTreeApi().getReferenceByName("test");
+      } catch (NessieNotFoundException e) {
+        // pass ignore
+      }
+      if (ref != null) {
+        client.getTreeApi().deleteBranch("test", ref.getHash());
+      }
+      client.close();
+      client = null;
     }
-    if (ref != null) {
-      client.getTreeApi().deleteBranch("test", ref.getHash());
-    }
-    client.close();
-    client = null;
   }
 
   @Test
