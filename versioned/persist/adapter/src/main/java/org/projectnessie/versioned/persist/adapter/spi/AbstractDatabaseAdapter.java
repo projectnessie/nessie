@@ -217,11 +217,11 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
 
     // 3. Collect commit-log-entries
     List<CommitLogEntry> toEntriesReverseChronological =
-        takeUntilExcludeLast(commitLogFetcher(ctx, toHead), e -> e.getHash().equals(commonAncestor))
+        takeUntilExcludeLast(readCommitLogStream(ctx, toHead), e -> e.getHash().equals(commonAncestor))
             .collect(Collectors.toList());
     Collections.reverse(toEntriesReverseChronological);
     List<CommitLogEntry> commitsToMergeChronological =
-        takeUntilExcludeLast(commitLogFetcher(ctx, from), e -> e.getHash().equals(commonAncestor))
+        takeUntilExcludeLast(readCommitLogStream(ctx, from), e -> e.getHash().equals(commonAncestor))
             .collect(Collectors.toList());
 
     if (commitsToMergeChronological.isEmpty()) {
@@ -295,7 +295,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     Hash lastHash = sequenceToTransplant.get(sequenceToTransplant.size() - 1);
     List<CommitLogEntry> commitsToTransplantChronological =
         takeUntilExcludeLast(
-                commitLogFetcher(ctx, lastHash),
+                readCommitLogStream(ctx, lastHash),
                 e -> {
                   int i = index[0]--;
                   if (i == -1) {
@@ -408,7 +408,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       // If the client requests 'NO_ANCESTOR' (== beginning of time), skip the existence-check.
       if (suspect.equals(NO_ANCESTOR)) {
         if (commitLogVisitor != null) {
-          commitLogFetcher(ctx, knownHead).forEach(commitLogVisitor);
+          readCommitLogStream(ctx, knownHead).forEach(commitLogVisitor);
         }
         return suspect;
       }
@@ -416,9 +416,9 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       Stream<Hash> hashes;
       if (commitLogVisitor != null) {
         hashes =
-            commitLogFetcher(ctx, knownHead).peek(commitLogVisitor).map(CommitLogEntry::getHash);
+            readCommitLogStream(ctx, knownHead).peek(commitLogVisitor).map(CommitLogEntry::getHash);
       } else {
-        hashes = commitLogHashFetcher(ctx, knownHead);
+        hashes = readCommitLogHashesStream(ctx, knownHead);
       }
       if (hashes.noneMatch(suspect::equals)) {
         throw hashNotFound(ref, suspect);
@@ -446,7 +446,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
   protected abstract List<CommitLogEntry> fetchPageFromCommitLog(OP_CONTEXT ctx, List<Hash> hashes);
 
   /** Reads from the commit-log starting at the given commit-log-hash. */
-  protected Stream<CommitLogEntry> commitLogFetcher(OP_CONTEXT ctx, Hash initialHash)
+  protected Stream<CommitLogEntry> readCommitLogStream(OP_CONTEXT ctx, Hash initialHash)
       throws ReferenceNotFoundException {
     if (NO_ANCESTOR.equals(initialHash)) {
       return Stream.empty();
@@ -459,11 +459,11 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
   }
 
   /**
-   * Like {@link #commitLogFetcher(Object, Hash)}, but only returns the {@link Hash commit-log-entry
+   * Like {@link #readCommitLogStream(Object, Hash)}, but only returns the {@link Hash commit-log-entry
    * hashes}, which can be taken from {@link CommitLogEntry#getParents()}, thus no need to perform a
    * read-operation against every hash.
    */
-  private Stream<Hash> commitLogHashFetcher(OP_CONTEXT ctx, Hash initialHash) {
+  private Stream<Hash> readCommitLogHashesStream(OP_CONTEXT ctx, Hash initialHash) {
     return logFetcher(
         ctx,
         initialHash,
@@ -479,7 +479,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
 
   /**
    * Constructs a {@link Stream} of entries for either the global-state-log or a commit-log. Use
-   * {@link #commitLogFetcher(Object, Hash)} or the similar implementation for the global-log for
+   * {@link #readCommitLogStream(Object, Hash)} or the similar implementation for the global-log for
    * non-transactional adapters.
    */
   protected <T> Stream<T> logFetcher(
@@ -757,7 +757,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     // walk the commit-logs in reverse order - starting with the last persisted key-list
 
     Set<Key> seen = new HashSet<>();
-    Stream<CommitLogEntry> log = commitLogFetcher(ctx, hash);
+    Stream<CommitLogEntry> log = readCommitLogStream(ctx, hash);
     log = takeUntilIncludeLast(log, e -> e.getKeyList() != null);
     return log.flatMap(
         e -> {
@@ -810,7 +810,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     Map<Key, ContentsId> keyToContentsIds = new HashMap<>();
     Set<ContentsId> contentsIds = new HashSet<>();
     try (Stream<CommitLogEntry> log =
-        takeUntilExcludeLast(commitLogFetcher(ctx, refHead), e -> remainingKeys.isEmpty())) {
+        takeUntilExcludeLast(readCommitLogStream(ctx, refHead), e -> remainingKeys.isEmpty())) {
       log.peek(entry -> entry.getDeletes().forEach(remainingKeys::remove))
           .flatMap(entry -> entry.getPuts().stream())
           .filter(put -> remainingKeys.remove(put.getKey()))
@@ -884,7 +884,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       throws ReferenceNotFoundException {
     boolean[] sinceSeen = new boolean[1];
 
-    Stream<CommitLogEntry> log = commitLogFetcher(ctx, upToCommitIncluding);
+    Stream<CommitLogEntry> log = readCommitLogStream(ctx, upToCommitIncluding);
     log =
         takeUntilExcludeLast(
             log,
@@ -935,8 +935,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     //  max number of "to"-commits to fetch, max number of "from"-commits to fetch,
     //  both impact the cost (CPU, memory, I/O) of a merge operation.
 
-    Iterator<Hash> toLog = Spliterators.iterator(commitLogHashFetcher(ctx, toHead).spliterator());
-    Iterator<Hash> fromLog = Spliterators.iterator(commitLogHashFetcher(ctx, from).spliterator());
+    Iterator<Hash> toLog = Spliterators.iterator(readCommitLogHashesStream(ctx, toHead).spliterator());
+    Iterator<Hash> fromLog = Spliterators.iterator(readCommitLogHashesStream(ctx, from).spliterator());
     Set<Hash> toCommitHashes = new HashSet<>();
     List<Hash> fromCommitHashes = new ArrayList<>();
     while (true) {
@@ -1109,7 +1109,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       Hash refHash) {
     Stream<CommitLogEntry> commits;
     try {
-      commits = commitLogFetcher(ctx, refHash);
+      commits = readCommitLogStream(ctx, refHash);
     } catch (ReferenceNotFoundException e) {
       // Re-throw as a runtime-exception - nothing that a user could actually do here.
       // If this happens, the underlying database is already broken (corrupted named-ref-to-hash
