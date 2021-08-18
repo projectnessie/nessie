@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import javax.ws.rs.core.SecurityContext;
 import org.projectnessie.error.NessieNotFoundException;
@@ -60,10 +61,6 @@ abstract class BaseResource {
     this.accessChecker = accessChecker;
   }
 
-  Optional<Hash> getHash(String ref) {
-    return getRefWithHash(ref).map(WithHash::getHash);
-  }
-
   Optional<WithHash<Ref>> getRefWithHash(String ref) {
     try {
       WithHash<Ref> whr = store.toRef(Optional.ofNullable(ref).orElse(config.getDefaultBranch()));
@@ -75,14 +72,16 @@ abstract class BaseResource {
 
   WithHash<NamedRef> namedRefWithHashOrThrow(String namedRef, @Nullable String hashOnRef)
       throws NessieNotFoundException {
-    List<WithHash<NamedRef>> collect =
-        store
-            .getNamedRefs()
-            .filter(
-                r ->
-                    r.getValue().getName().equals(namedRef)
-                        || r.getValue().getName().equals(config.getDefaultBranch()))
-            .collect(Collectors.toList());
+    List<WithHash<NamedRef>> collect;
+    try (Stream<WithHash<NamedRef>> refsStream = store.getNamedRefs()) {
+      collect =
+          refsStream
+              .filter(
+                  r ->
+                      r.getValue().getName().equals(namedRef)
+                          || r.getValue().getName().equals(config.getDefaultBranch()))
+              .collect(Collectors.toList());
+    }
     WithHash<NamedRef> namedRefWithHash;
     if (collect.size() == 1) {
       namedRefWithHash = collect.get(0);
@@ -103,20 +102,17 @@ abstract class BaseResource {
 
       // we need to make sure that the hash in fact exists on the named ref
       Hash hash = Hash.of(hashOnRef);
-      if (store.getCommits(namedRefWithHash.getValue()).noneMatch(c -> c.getHash().equals(hash))) {
-        throw new NessieNotFoundException(
-            String.format("Hash %s on Ref %s could not be found", hashOnRef, namedRef));
+      try (Stream<WithHash<CommitMeta>> commits = store.getCommits(namedRefWithHash.getValue())) {
+        if (commits.noneMatch(c -> c.getHash().equals(hash))) {
+          throw new NessieNotFoundException(
+              String.format("Hash %s on Ref %s could not be found", hashOnRef, namedRef));
+        }
       }
       return WithHash.of(hash, namedRefWithHash.getValue());
     } catch (ReferenceNotFoundException e) {
       throw new NessieNotFoundException(
           String.format("Hash %s on Ref %s could not be found", hashOnRef, namedRef));
     }
-  }
-
-  Hash getHashOrThrow(String ref) throws NessieNotFoundException {
-    return getHash(ref)
-        .orElseThrow(() -> new NessieNotFoundException(String.format("Ref for %s not found", ref)));
   }
 
   protected ServerConfig getConfig() {
