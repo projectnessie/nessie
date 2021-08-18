@@ -29,11 +29,15 @@ import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.functions;
 import org.apache.spark.util.Utils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.junit.jupiter.api.io.TempDir;
+import org.projectnessie.client.HttpClientBuilder;
+import org.projectnessie.client.NessieClient;
 import org.projectnessie.client.tests.AbstractSparkTest;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.ImmutableMerge;
@@ -43,6 +47,21 @@ import scala.Tuple2;
 class ITDeltaLog extends AbstractSparkTest {
 
   @TempDir File tempPath;
+
+  private NessieClient nessieClient;
+
+  @BeforeEach
+  public void createClient() {
+    nessieClient = HttpClientBuilder.builder().withUri(url).build();
+  }
+
+  @AfterEach
+  public void closeClient() {
+    if (null != nessieClient) {
+      nessieClient.close();
+      nessieClient = null;
+    }
+  }
 
   @BeforeAll
   protected static void createDelta() {

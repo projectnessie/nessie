@@ -48,7 +48,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.projectnessie.api.TreeApi;
-import org.projectnessie.client.HttpClientBuilder;
 import org.projectnessie.client.NessieClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -82,7 +81,7 @@ public class ITIcebergAssetKeyReader {
 
   @BeforeEach
   void init() throws NessieNotFoundException, NessieConflictException {
-    this.client = HttpClientBuilder.builder().withUri(NESSIE_ENDPOINT).build();
+    this.client = NessieClient.builder().withUri(NESSIE_ENDPOINT).build();
     tree = client.getTreeApi();
     TestUtils.resetData(tree);
     tree.createReference(Branch.of("ITIcebergAssetKeyReader", null));
