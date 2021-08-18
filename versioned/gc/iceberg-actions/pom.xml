@@ -30,11 +30,20 @@
 
   <name>Nessie - Versioned - GC for Spark - Iceberg - Actions</name>
 
-  <properties>
-    <iceberg.nessie.version>${project.version}</iceberg.nessie.version>
-  </properties>
-
   <dependencies>
+    <dependency>
+      <groupId>org.projectnessie</groupId>
+      <artifactId>nessie-client</artifactId>
+      <version>${iceberg.nessie.version}</version>
+      <scope>test</scope>
+      <!-- we need to exclude this here so that we run the code with the same model classes that ship with iceberg's nessie version -->
+      <exclusions>
+        <exclusion>
+          <groupId>org.projectnessie</groupId>
+          <artifactId>nessie-model</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
     <dependency>
       <groupId>org.projectnessie</groupId>
       <artifactId>nessie-versioned-gc-iceberg</artifactId>
