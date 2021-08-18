@@ -34,7 +34,6 @@ import org.apache.spark.sql.internal.SQLConf;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
-import org.projectnessie.client.NessieClient;
 
 public abstract class AbstractSparkTest {
   private static final Object ANY = new Object();
@@ -46,8 +45,6 @@ public abstract class AbstractSparkTest {
 
   protected static SparkSession spark;
   protected static String url = String.format("http://localhost:%d/api/v1", NESSIE_PORT);
-
-  protected static NessieClient nessieClient;
 
   @BeforeEach
   protected void create() throws IOException {
@@ -67,8 +64,6 @@ public abstract class AbstractSparkTest {
         .set("spark.sql.catalog.nessie", "org.apache.iceberg.spark.SparkCatalog");
     spark = SparkSession.builder().master("local[2]").config(conf).getOrCreate();
     spark.sparkContext().setLogLevel("WARN");
-
-    nessieClient = NessieClient.builder().withUri(url).build();
   }
 
   @AfterAll

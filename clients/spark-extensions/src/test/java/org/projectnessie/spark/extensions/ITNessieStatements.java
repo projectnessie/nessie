@@ -34,6 +34,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.projectnessie.client.NessieClient;
 import org.projectnessie.client.tests.AbstractSparkTest;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieConflictException;
@@ -52,6 +53,7 @@ public class ITNessieStatements extends AbstractSparkTest {
 
   private String hash;
   private final String refName = "testBranch";
+  private NessieClient nessieClient;
 
   @BeforeAll
   protected static void createDelta() {
@@ -60,22 +62,29 @@ public class ITNessieStatements extends AbstractSparkTest {
   }
 
   @BeforeEach
-  void getHash() throws NessieNotFoundException {
+  void createClientAndGetHash() throws NessieNotFoundException {
+    nessieClient = NessieClient.builder().withUri(url).build();
     hash = nessieClient.getTreeApi().getDefaultBranch().getHash();
   }
 
   @AfterEach
   void removeBranches() throws NessieConflictException, NessieNotFoundException {
-    for (String s : Arrays.asList(refName, "main")) {
-      try {
-        nessieClient
-            .getTreeApi()
-            .deleteBranch(s, nessieClient.getTreeApi().getReferenceByName(s).getHash());
-      } catch (BaseNessieClientServerException e) {
-        // pass
+    if (null != nessieClient) {
+
+      for (String s : Arrays.asList(refName, "main")) {
+        try {
+          nessieClient
+              .getTreeApi()
+              .deleteBranch(s, nessieClient.getTreeApi().getReferenceByName(s).getHash());
+        } catch (BaseNessieClientServerException e) {
+          // pass
+        }
       }
+      nessieClient.getTreeApi().createReference(Branch.of("main", null));
+
+      nessieClient.close();
+      nessieClient = null;
     }
-    nessieClient.getTreeApi().createReference(Branch.of("main", null));
   }
 
   @Test
