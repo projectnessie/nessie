@@ -70,7 +70,9 @@ public class ContentsService extends ContentsServiceGrpc.ContentsServiceImplBase
           contentsResource.getMultipleContents(
               request.getRef(),
               getHashOnRefFromProtoRequest(request.getHashOnRef()),
-              requestedKeys.isEmpty() ? null : MultiGetContentsRequest.of(requestedKeys));
+              requestedKeys.isEmpty()
+                  ? null // there are tests that check for nullability
+                  : MultiGetContentsRequest.of(requestedKeys));
       multipleContents.getContents().forEach(c -> builder.addContentsWithKey(toProto(c)));
       observer.onNext(builder.build());
       observer.onCompleted();

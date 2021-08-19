@@ -19,13 +19,13 @@ import static org.projectnessie.client.grpc.GrpcExceptionMapper.handle;
 import static org.projectnessie.client.grpc.GrpcExceptionMapper.handleNessieNotFoundEx;
 import static org.projectnessie.grpc.ProtoUtil.fromProto;
 import static org.projectnessie.grpc.ProtoUtil.refFromProto;
+import static org.projectnessie.grpc.ProtoUtil.toProto;
 
 import io.grpc.Channel;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.api.grpc.AssignReferenceRequest;
-import org.projectnessie.api.grpc.CommitLogResponse;
 import org.projectnessie.api.grpc.CommitRequest;
 import org.projectnessie.api.grpc.DeleteReferenceRequest;
 import org.projectnessie.api.grpc.Empty;
@@ -41,8 +41,6 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.grpc.ProtoUtil;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.EntriesResponse;
-import org.projectnessie.model.ImmutableEntriesResponse;
-import org.projectnessie.model.ImmutableLogResponse;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Merge;
 import org.projectnessie.model.Operations;
@@ -91,38 +89,13 @@ public class GrpcTreeApi implements TreeApi {
   @Override
   public EntriesResponse getEntries(String refName, EntriesParams params)
       throws NessieNotFoundException {
-    return handleNessieNotFoundEx(
-        () -> {
-          org.projectnessie.api.grpc.EntriesResponse entries =
-              stub.getEntries(ProtoUtil.toProto(refName, params));
-          ImmutableEntriesResponse.Builder builder =
-              EntriesResponse.builder()
-                  .entries(
-                      entries.getEntriesList().stream()
-                          .map(ProtoUtil::fromProto)
-                          .collect(Collectors.toList()))
-                  .hasMore(entries.getHasMore());
-          if (!"".equals(entries.getToken())) builder.token(entries.getToken());
-          return builder.build();
-        });
+    return handleNessieNotFoundEx(() -> fromProto(stub.getEntries(toProto(refName, params))));
   }
 
   @Override
   public LogResponse getCommitLog(String ref, CommitLogParams params)
       throws NessieNotFoundException {
-    return handleNessieNotFoundEx(
-        () -> {
-          CommitLogResponse commitLog = stub.getCommitLog(ProtoUtil.toProto(ref, params));
-          ImmutableLogResponse.Builder builder =
-              ImmutableLogResponse.builder()
-                  .addAllOperations(
-                      commitLog.getOperationsList().stream()
-                          .map(ProtoUtil::fromProto)
-                          .collect(Collectors.toList()))
-                  .hasMore(commitLog.getHasMore());
-          if (!"".equals(commitLog.getToken())) builder.token(commitLog.getToken());
-          return builder.build();
-        });
+    return handleNessieNotFoundEx(() -> fromProto(stub.getCommitLog(toProto(ref, params))));
   }
 
   @Override
@@ -208,12 +181,12 @@ public class GrpcTreeApi implements TreeApi {
       throws NessieNotFoundException, NessieConflictException {
     return handle(
         () ->
-            ProtoUtil.fromProto(
+            fromProto(
                 stub.commitMultipleOperations(
                     CommitRequest.newBuilder()
                         .setBranch(branchName)
                         .setHash(hash)
-                        .setCommitOperations(ProtoUtil.toProto(operations))
+                        .setCommitOperations(toProto(operations))
                         .build())));
   }
 }

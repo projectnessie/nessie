@@ -18,6 +18,7 @@ package org.projectnessie.server.grpc;
 import static org.projectnessie.grpc.ProtoUtil.fromProto;
 import static org.projectnessie.grpc.ProtoUtil.refFromProto;
 import static org.projectnessie.grpc.ProtoUtil.refToProto;
+import static org.projectnessie.grpc.ProtoUtil.toProto;
 
 import io.grpc.stub.StreamObserver;
 import io.quarkus.grpc.GrpcService;
@@ -26,7 +27,6 @@ import javax.inject.Inject;
 import org.projectnessie.api.grpc.AssignReferenceRequest;
 import org.projectnessie.api.grpc.CommitLogRequest;
 import org.projectnessie.api.grpc.CommitLogResponse;
-import org.projectnessie.api.grpc.CommitLogResponse.Builder;
 import org.projectnessie.api.grpc.CommitRequest;
 import org.projectnessie.api.grpc.DeleteReferenceRequest;
 import org.projectnessie.api.grpc.Empty;
@@ -43,7 +43,6 @@ import org.projectnessie.grpc.ProtoUtil;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.ImmutableMerge;
 import org.projectnessie.model.ImmutableTransplant;
-import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Tag;
 import org.projectnessie.services.rest.TreeResource;
 
@@ -158,12 +157,8 @@ public class TreeService extends TreeServiceGrpc.TreeServiceImplBase {
   @Override
   public void getCommitLog(CommitLogRequest request, StreamObserver<CommitLogResponse> observer) {
     try {
-      LogResponse commitLog =
-          treeResource.getCommitLog(request.getNamedRef(), ProtoUtil.fromProto(request));
-      Builder builder = CommitLogResponse.newBuilder().setHasMore(commitLog.hasMore());
-      commitLog.getOperations().forEach(c -> builder.addOperations(ProtoUtil.toProto(c)));
-      if (null != commitLog.getToken()) builder.setToken(commitLog.getToken());
-      observer.onNext(builder.build());
+      observer.onNext(
+          toProto(treeResource.getCommitLog(request.getNamedRef(), fromProto(request))));
       observer.onCompleted();
     } catch (Exception e) {
       observer.onError(GrpcExceptionMapper.toProto(e));
@@ -173,12 +168,7 @@ public class TreeService extends TreeServiceGrpc.TreeServiceImplBase {
   @Override
   public void getEntries(EntriesRequest request, StreamObserver<EntriesResponse> observer) {
     try {
-      org.projectnessie.model.EntriesResponse entries =
-          treeResource.getEntries(request.getNamedRef(), fromProto(request));
-      EntriesResponse.Builder builder = EntriesResponse.newBuilder().setHasMore(entries.hasMore());
-      entries.getEntries().forEach(e -> builder.addEntries(ProtoUtil.toProto(e)));
-      if (null != entries.getToken()) builder.setToken(entries.getToken());
-      observer.onNext(builder.build());
+      observer.onNext(toProto(treeResource.getEntries(request.getNamedRef(), fromProto(request))));
       observer.onCompleted();
     } catch (Exception e) {
       observer.onError(GrpcExceptionMapper.toProto(e));
@@ -210,7 +200,7 @@ public class TreeService extends TreeServiceGrpc.TreeServiceImplBase {
           request.getToBranch(),
           request.getExpectedHash(),
           "".equals(request.getFromHash())
-              ? null
+              ? null // there are some tests that check for nullability
               : ImmutableMerge.builder().fromHash(request.getFromHash()).build());
       observer.onNext(Empty.newBuilder().build());
       observer.onCompleted();
@@ -224,7 +214,7 @@ public class TreeService extends TreeServiceGrpc.TreeServiceImplBase {
       CommitRequest request, StreamObserver<org.projectnessie.api.grpc.Branch> observer) {
     try {
       observer.onNext(
-          ProtoUtil.toProto(
+          toProto(
               treeResource.commitMultipleOperations(
                   request.getBranch(),
                   request.getHash(),

@@ -20,6 +20,7 @@ import com.google.protobuf.Timestamp;
 import java.time.Instant;
 import java.util.stream.Collectors;
 import org.projectnessie.api.grpc.CommitLogRequest;
+import org.projectnessie.api.grpc.CommitLogResponse;
 import org.projectnessie.api.grpc.CommitOperation;
 import org.projectnessie.api.grpc.CommitOps;
 import org.projectnessie.api.grpc.Contents;
@@ -35,6 +36,7 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents.Type;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.DeltaLakeTable;
+import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.Hash;
 import org.projectnessie.model.HiveDatabase;
@@ -42,13 +44,16 @@ import org.projectnessie.model.HiveTable;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableDelete;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
+import org.projectnessie.model.ImmutableEntriesResponse;
 import org.projectnessie.model.ImmutableHiveDatabase;
 import org.projectnessie.model.ImmutableHiveTable;
 import org.projectnessie.model.ImmutableIcebergTable;
+import org.projectnessie.model.ImmutableLogResponse;
 import org.projectnessie.model.ImmutableOperations;
 import org.projectnessie.model.ImmutablePut;
 import org.projectnessie.model.ImmutableSqlView;
 import org.projectnessie.model.ImmutableUnchanged;
+import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.MultiGetContentsResponse.ContentsWithKey;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Operation.Delete;
@@ -423,6 +428,47 @@ public class ProtoUtil {
     if (null != params.maxRecords()) builder.setMaxRecords(params.maxRecords());
     if (null != params.pageToken()) builder.setPageToken(params.pageToken());
     if (null != params.queryExpression()) builder.setQueryExpression(params.queryExpression());
+    return builder.build();
+  }
+
+  public static LogResponse fromProto(CommitLogResponse commitLog) {
+    ImmutableLogResponse.Builder builder =
+        ImmutableLogResponse.builder()
+            .addAllOperations(
+                commitLog.getOperationsList().stream()
+                    .map(ProtoUtil::fromProto)
+                    .collect(Collectors.toList()))
+            .hasMore(commitLog.getHasMore());
+    if (!"".equals(commitLog.getToken())) builder.token(commitLog.getToken());
+    return builder.build();
+  }
+
+  public static CommitLogResponse toProto(LogResponse commitLog) {
+    CommitLogResponse.Builder builder =
+        CommitLogResponse.newBuilder().setHasMore(commitLog.hasMore());
+    commitLog.getOperations().forEach(c -> builder.addOperations(ProtoUtil.toProto(c)));
+    if (null != commitLog.getToken()) builder.setToken(commitLog.getToken());
+    return builder.build();
+  }
+
+  public static EntriesResponse fromProto(org.projectnessie.api.grpc.EntriesResponse entries) {
+    ImmutableEntriesResponse.Builder builder =
+        EntriesResponse.builder()
+            .entries(
+                entries.getEntriesList().stream()
+                    .map(ProtoUtil::fromProto)
+                    .collect(Collectors.toList()))
+            .hasMore(entries.getHasMore());
+    if (!"".equals(entries.getToken())) builder.token(entries.getToken());
+    return builder.build();
+  }
+
+  public static org.projectnessie.api.grpc.EntriesResponse toProto(
+      org.projectnessie.model.EntriesResponse entries) {
+    org.projectnessie.api.grpc.EntriesResponse.Builder builder =
+        org.projectnessie.api.grpc.EntriesResponse.newBuilder().setHasMore(entries.hasMore());
+    entries.getEntries().forEach(e -> builder.addEntries(toProto(e)));
+    if (null != entries.getToken()) builder.setToken(entries.getToken());
     return builder.build();
   }
 }
