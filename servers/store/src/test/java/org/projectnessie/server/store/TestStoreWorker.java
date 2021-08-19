@@ -20,10 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.ByteString;
 import java.time.Instant;
 import java.util.AbstractMap;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -33,8 +30,6 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
-import org.projectnessie.model.ImmutableHiveDatabase;
-import org.projectnessie.model.ImmutableHiveTable;
 import org.projectnessie.model.ImmutableIcebergTable;
 import org.projectnessie.model.ImmutableSqlView;
 import org.projectnessie.model.SqlView;
@@ -92,7 +87,7 @@ class TestStoreWorker {
   }
 
   private static Stream<Map.Entry<ByteString, Contents>> provideDeserialization() {
-    return Stream.of(getIceberg(), getHiveDb(), getHiveTable(), getDelta(), getView());
+    return Stream.of(getIceberg(), getDelta(), getView());
   }
 
   private static Map.Entry<ByteString, Contents> getIceberg() {
@@ -102,43 +97,6 @@ class TestStoreWorker {
         ObjectTypes.Contents.newBuilder()
             .setId(ID)
             .setIcebergTable(ObjectTypes.IcebergTable.newBuilder().setMetadataLocation(path))
-            .build()
-            .toByteString();
-    return new AbstractMap.SimpleImmutableEntry<>(bytes, contents);
-  }
-
-  private static Map.Entry<ByteString, Contents> getHiveDb() {
-    byte[] database = new byte[] {0, 1, 2, 3, 4, 5};
-    Contents contents = ImmutableHiveDatabase.builder().databaseDefinition(database).id(ID).build();
-    ByteString bytes =
-        ObjectTypes.Contents.newBuilder()
-            .setId(ID)
-            .setHiveDatabase(
-                ObjectTypes.HiveDatabase.newBuilder().setDatabase(ByteString.copyFrom(database)))
-            .build()
-            .toByteString();
-    return new AbstractMap.SimpleImmutableEntry<>(bytes, contents);
-  }
-
-  private static Map.Entry<ByteString, Contents> getHiveTable() {
-    byte[] table = new byte[] {0, 1, 2, 3, 4, 5};
-    byte[][] partitions =
-        new byte[][] {new byte[] {0, 1, 2, 3, 4, 5}, new byte[] {0, 1, 2, 3, 4, 5}};
-    List<ByteString> partitionsBytes =
-        Arrays.stream(partitions).map(ByteString::copyFrom).collect(Collectors.toList());
-    Contents contents =
-        ImmutableHiveTable.builder()
-            .tableDefinition(table)
-            .addPartitions(partitions)
-            .id(ID)
-            .build();
-    ByteString bytes =
-        ObjectTypes.Contents.newBuilder()
-            .setId(ID)
-            .setHiveTable(
-                ObjectTypes.HiveTable.newBuilder()
-                    .setTable(ByteString.copyFrom(table))
-                    .addAllPartition(partitionsBytes))
             .build()
             .toByteString();
     return new AbstractMap.SimpleImmutableEntry<>(bytes, contents);

@@ -33,34 +33,26 @@ import org.immutables.value.Value;
     oneOf = {
       IcebergTable.class,
       DeltaLakeTable.class,
-      SqlView.class,
-      HiveTable.class,
-      HiveDatabase.class
+      SqlView.class
     },
     discriminatorMapping = {
       @DiscriminatorMapping(value = "ICEBERG_TABLE", schema = IcebergTable.class),
       @DiscriminatorMapping(value = "DELTA_LAKE_TABLE", schema = DeltaLakeTable.class),
-      @DiscriminatorMapping(value = "VIEW", schema = SqlView.class),
-      @DiscriminatorMapping(value = "HIVE_TABLE", schema = HiveTable.class),
-      @DiscriminatorMapping(value = "HIVE_DATABASE", schema = HiveDatabase.class)
+      @DiscriminatorMapping(value = "VIEW", schema = SqlView.class)
     },
     discriminatorProperty = "type")
 @JsonSubTypes({
   @Type(IcebergTable.class),
   @Type(DeltaLakeTable.class),
-  @Type(SqlView.class),
-  @Type(HiveTable.class),
-  @Type(HiveDatabase.class)
+  @Type(SqlView.class)
 })
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 public abstract class Contents {
 
-  public static enum Type {
+  public enum Type {
     UNKNOWN,
     ICEBERG_TABLE,
     DELTA_LAKE_TABLE,
-    HIVE_TABLE,
-    HIVE_DATABASE,
     VIEW;
   }
 

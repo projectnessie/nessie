@@ -19,20 +19,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
-import com.google.protobuf.UnsafeByteOperations;
 import java.io.IOException;
-import java.util.stream.Collectors;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
 import org.projectnessie.model.DeltaLakeTable;
-import org.projectnessie.model.HiveDatabase;
-import org.projectnessie.model.HiveTable;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
 import org.projectnessie.model.ImmutableDeltaLakeTable.Builder;
-import org.projectnessie.model.ImmutableHiveDatabase;
-import org.projectnessie.model.ImmutableHiveTable;
 import org.projectnessie.model.ImmutableIcebergTable;
 import org.projectnessie.model.ImmutableSqlView;
 import org.projectnessie.model.SqlView;
@@ -83,23 +77,6 @@ public class TableCommitMetaStoreWorker
           table.setLastCheckpoint(lastCheckpoint);
         }
         builder.setDeltaLakeTable(table);
-
-      } else if (value instanceof HiveTable) {
-        HiveTable ht = (HiveTable) value;
-        builder.setHiveTable(
-            ObjectTypes.HiveTable.newBuilder()
-                .setTable(UnsafeByteOperations.unsafeWrap(ht.getTableDefinition()))
-                .addAllPartition(
-                    ht.getPartitions().stream()
-                        .map(UnsafeByteOperations::unsafeWrap)
-                        .collect(Collectors.toList())));
-
-      } else if (value instanceof HiveDatabase) {
-        builder.setHiveDatabase(
-            ObjectTypes.HiveDatabase.newBuilder()
-                .setDatabase(
-                    UnsafeByteOperations.unsafeWrap(
-                        ((HiveDatabase) value).getDatabaseDefinition())));
       } else if (value instanceof SqlView) {
         SqlView view = (SqlView) value;
         builder.setSqlView(
@@ -135,22 +112,6 @@ public class TableCommitMetaStoreWorker
           }
           return builder.build();
 
-        case HIVE_DATABASE:
-          return ImmutableHiveDatabase.builder()
-              .id(contents.getId())
-              .databaseDefinition(contents.getHiveDatabase().getDatabase().toByteArray())
-              .build();
-
-        case HIVE_TABLE:
-          return ImmutableHiveTable.builder()
-              .id(contents.getId())
-              .addAllPartitions(
-                  contents.getHiveTable().getPartitionList().stream()
-                      .map(ByteString::toByteArray)
-                      .collect(Collectors.toList()))
-              .tableDefinition(contents.getHiveTable().getTable().toByteArray())
-              .build();
-
         case ICEBERG_TABLE:
           return ImmutableIcebergTable.builder()
               .metadataLocation(contents.getIcebergTable().getMetadataLocation())
@@ -177,10 +138,6 @@ public class TableCommitMetaStoreWorker
         return (byte) Contents.Type.ICEBERG_TABLE.ordinal();
       } else if (value instanceof DeltaLakeTable) {
         return (byte) Contents.Type.DELTA_LAKE_TABLE.ordinal();
-      } else if (value instanceof HiveTable) {
-        return (byte) Contents.Type.HIVE_TABLE.ordinal();
-      } else if (value instanceof HiveDatabase) {
-        return (byte) Contents.Type.HIVE_DATABASE.ordinal();
       } else if (value instanceof SqlView) {
         return (byte) Contents.Type.VIEW.ordinal();
       } else {
