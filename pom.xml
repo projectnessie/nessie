@@ -742,6 +742,11 @@
           <version>${quarkus.version}</version>
         </plugin>
         <plugin>
+          <groupId>io.smallrye</groupId>
+          <artifactId>smallrye-open-api-maven-plugin</artifactId>
+          <version>2.1.9</version>
+        </plugin>
+        <plugin>
           <groupId>org.xolstice.maven.plugins</groupId>
           <artifactId>protobuf-maven-plugin</artifactId>
           <version>0.6.1</version>
