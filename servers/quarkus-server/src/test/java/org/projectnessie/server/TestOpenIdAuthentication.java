@@ -18,16 +18,23 @@ package org.projectnessie.server;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.projectnessie.client.NessieClient.AuthType.BEARER;
+import static org.projectnessie.client.NessieClient.AuthType.NONE;
 
+import com.google.common.collect.ImmutableMap;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.QuarkusTestProfile;
+import io.quarkus.test.junit.TestProfile;
 import io.quarkus.test.oidc.server.OidcWiremockTestResource;
 import io.smallrye.jwt.build.Jwt;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.rest.NessieNotAuthorizedException;
+import org.projectnessie.server.authn.AuthenticationEnabledProfile;
 
 @QuarkusTest
 @QuarkusTestResource(OidcWiremockTestResource.class)
+@TestProfile(value = TestOpenIdAuthentication.Profile.class)
 public class TestOpenIdAuthentication extends BaseClientAuthTest {
 
   private String getJwtToken() {
@@ -47,5 +54,24 @@ public class TestOpenIdAuthentication extends BaseClientAuthTest {
         .isInstanceOfSatisfying(
             NessieNotAuthorizedException.class,
             e -> assertThat(e.getError().getStatus()).isEqualTo(401));
+  }
+
+  @Test
+  void testAbsentToken() {
+    withClientCustomizer(b -> b.withAuthType(NONE));
+    assertThatThrownBy(() -> client().getTreeApi().getAllReferences())
+        .isInstanceOfSatisfying(
+            NessieNotAuthorizedException.class,
+            e -> assertThat(e.getError().getStatus()).isEqualTo(401));
+  }
+
+  public static class Profile implements QuarkusTestProfile {
+    @Override
+    public Map<String, String> getConfigOverrides() {
+      return ImmutableMap.<String, String>builder()
+          .putAll(AuthenticationEnabledProfile.CONFIG_OVERRIDES)
+          .put("quarkus.oidc.auth-server-url", "${keycloak.url}/realms/quarkus/")
+          .build();
+    }
   }
 }
