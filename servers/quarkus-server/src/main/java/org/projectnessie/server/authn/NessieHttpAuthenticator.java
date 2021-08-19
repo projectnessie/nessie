@@ -33,10 +33,13 @@ import javax.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
- * An override for {@link HttpAuthenticator} that performs the following main duties:
- * <li>Prevents the Quarkus OIDC authentication mechanism from attempting authentication when it is
- *     not configured.
- * <li>Completely disallows unauthenticated requests when authentication is enabled.
+ * A custom {@link HttpAuthenticator}. This authenticator that performs the following main duties:
+ *
+ * <ul>
+ *   <li>Prevents the Quarkus OIDC authentication mechanism from attempting authentication when it
+ *       is not configured.
+ *   <li>Completely disallows unauthenticated requests when authentication is enabled.
+ * </ul>
  */
 @Alternative // @Alternative + @Priority ensure the original HttpAuthenticator bean is not used
 @Priority(1)
