@@ -20,10 +20,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.projectnessie.client.NessieClient.AuthType.BASIC;
 
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.TestProfile;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.rest.NessieNotAuthorizedException;
+import org.projectnessie.server.authn.AuthenticationEnabledProfile;
 
 @QuarkusTest
+@TestProfile(value = AuthenticationEnabledProfile.class)
 class TestBasicAuthentication extends BaseClientAuthTest {
 
   @Test
