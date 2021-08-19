@@ -103,6 +103,7 @@
       <plugin>
         <groupId>io.smallrye</groupId>
         <artifactId>smallrye-open-api-maven-plugin</artifactId>
+        <version>2.1.9</version>
         <configuration>
           <scanPackages>org.projectnessie.api,org.projectnessie.model</scanPackages>
           <outputDirectory>${project.build.directory}/classes/META-INF/openapi</outputDirectory>
