@@ -100,6 +100,11 @@ public class TreeResourceWithAuthorizationChecks extends TreeResource {
   @Override
   public Reference createReference(@Nullable String sourceRefName, Reference reference)
       throws NessieNotFoundException, NessieConflictException {
+    // TODO remove after Iceberg > 0.12
+    if (sourceRefName == null) {
+      sourceRefName = getConfig().getDefaultBranch();
+    }
+
     if (reference instanceof Branch) {
       getAccessChecker()
           .canCreateReference(createAccessContext(), BranchName.of(reference.getName()));
