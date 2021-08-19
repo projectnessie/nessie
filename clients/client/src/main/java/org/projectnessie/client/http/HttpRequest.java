@@ -47,10 +47,11 @@ public class HttpRequest {
   private final List<RequestFilter> requestFilters;
   private final List<ResponseFilter> responseFilters;
   private SSLContext sslContext;
+  private String contentsType = "application/json";
+  private String accept = "application/json";
 
   HttpRequest(
       URI baseUri,
-      String accept,
       ObjectMapper mapper,
       List<RequestFilter> requestFilters,
       List<ResponseFilter> responseFilters,
@@ -61,7 +62,6 @@ public class HttpRequest {
     this.mapper = mapper;
     this.readTimeoutMillis = readTimeoutMillis;
     this.connectionTimeoutMillis = connectionTimeoutMillis;
-    putHeader("Accept", accept, headers);
     this.requestFilters = requestFilters;
     this.responseFilters = responseFilters;
     this.sslContext = context;
@@ -72,6 +72,16 @@ public class HttpRequest {
       headers.put(key, new HashSet<>());
     }
     headers.get(key).add(value);
+  }
+
+  public HttpRequest contentsType(String contentsType) {
+    this.contentsType = contentsType;
+    return this;
+  }
+
+  public HttpRequest accept(String contentsType) {
+    this.accept = contentsType;
+    return this;
   }
 
   public HttpRequest path(String path) {
@@ -102,6 +112,7 @@ public class HttpRequest {
       ResponseContext responseContext = new ResponseContextImpl(con);
       try {
         requestFilters.forEach(a -> a.filter(context));
+        putHeader("Accept", accept, headers);
         headers.entrySet().stream()
             .flatMap(e -> e.getValue().stream().map(x -> new SimpleImmutableEntry<>(e.getKey(), x)))
             .forEach(x -> con.setRequestProperty(x.getKey(), x.getValue()));
@@ -109,7 +120,7 @@ public class HttpRequest {
         if (method.equals(Method.PUT) || method.equals(Method.POST)) {
           // Need to set the Content-Type even if body==null, otherwise the server responds with
           // RESTEASY003065: Cannot consume content type
-          con.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+          con.setRequestProperty("Content-Type", contentsType + "; charset=utf-8");
           if (body != null) {
             con.setDoOutput(true);
             Class<?> bodyType = body.getClass();
