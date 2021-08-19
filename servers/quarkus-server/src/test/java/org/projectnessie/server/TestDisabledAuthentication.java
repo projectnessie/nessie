@@ -20,19 +20,17 @@ import static org.projectnessie.client.NessieClient.AuthType.BASIC;
 import static org.projectnessie.client.NessieClient.AuthType.BEARER;
 import static org.projectnessie.client.NessieClient.AuthType.NONE;
 
-import com.google.common.collect.ImmutableMap;
 import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
-import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.projectnessie.server.authn.AuthenticationDisabledProfile;
 
 /**
  * This test validates that setting `nessie.auth.enabled=false` allows all requests regardless of
  * their authentication type.
  */
 @QuarkusTest
-@TestProfile(value = TestDisabledAuthentication.Profile.class)
+@TestProfile(value = AuthenticationDisabledProfile.class)
 public class TestDisabledAuthentication extends BaseClientAuthTest {
 
   @Test
@@ -52,12 +50,5 @@ public class TestDisabledAuthentication extends BaseClientAuthTest {
   void testNone() {
     withClientCustomizer(c -> c.withAuthType(NONE));
     assertThat(client().getTreeApi().getAllReferences()).isNotEmpty();
-  }
-
-  public static class Profile implements QuarkusTestProfile {
-    @Override
-    public Map<String, String> getConfigOverrides() {
-      return ImmutableMap.of("nessie.auth.enabled", "false");
-    }
   }
 }
