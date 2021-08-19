@@ -30,22 +30,14 @@ import org.immutables.value.Value;
 @Schema(
     type = SchemaType.OBJECT,
     title = "Contents",
-    oneOf = {
-      IcebergTable.class,
-      DeltaLakeTable.class,
-      SqlView.class
-    },
+    oneOf = {IcebergTable.class, DeltaLakeTable.class, SqlView.class},
     discriminatorMapping = {
       @DiscriminatorMapping(value = "ICEBERG_TABLE", schema = IcebergTable.class),
       @DiscriminatorMapping(value = "DELTA_LAKE_TABLE", schema = DeltaLakeTable.class),
       @DiscriminatorMapping(value = "VIEW", schema = SqlView.class)
     },
     discriminatorProperty = "type")
-@JsonSubTypes({
-  @Type(IcebergTable.class),
-  @Type(DeltaLakeTable.class),
-  @Type(SqlView.class)
-})
+@JsonSubTypes({@Type(IcebergTable.class), @Type(DeltaLakeTable.class), @Type(SqlView.class)})
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 public abstract class Contents {
 
