@@ -59,7 +59,7 @@ Then configure the local Keycloak server:
 
 Run Nessie with authentication settings:
 ```
-docker run -p 19120:19120 -e QUARKUS_OIDC_AUTH_SERVER_URL=http://localhost:8080/auth/realms/quarkus -e NESSIE_AUTH_ENABLED=true --network host projectnessie/nessie
+docker run -p 19120:19120 -e QUARKUS_OIDC_CLIENT_ID=nessie -e QUARKUS_OIDC_AUTH_SERVER_URL=http://localhost:8080/auth/realms/quarkus -e NESSIE_AUTH_ENABLED=true --network host projectnessie/nessie
 ```
 
 Generate a token for the example user "alice":
