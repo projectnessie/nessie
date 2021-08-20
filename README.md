@@ -40,36 +40,20 @@ users. Check them out [here](https://projectnessie.org/develop/).
 By default, Nessie servers run with authentication disabled and all requests are processed under the "anonymous"
 user identity.
 
-In production, Nessie supports OpenID, which can be enabled by setting the following Quarkus properties:
+Nessie supports bearer tokens and uses [OpenID Connect](https://openid.net/connect/) for validating them.
+
+Authentication can be enabled by setting the following Quarkus properties:
 * `nessie.auth.enabled=true`
 * `quarkus.oidc.auth-server-url=<OpenID Server URL>`
+* `quarkus.oidc.client-id=<Client ID>`
 
-For example, to run Nessie with Keycloak in docker first start Keycloak:
+#### Experimenting with Nessie Authentication in Docker
+
+One can start the `projectnessie/nessie` docker image in authenticated mode by setting
+the properties mentioned above via docker environment variables. For example:
 
 ```
-docker run -p 8080:8080 -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=admin --name keycloak quay.io/keycloak/keycloak:15.0.1
-```
-
-Then configure the local Keycloak server:
-* Download [example Quarkus realm definition](https://raw.githubusercontent.com/quarkusio/quarkus-quickstarts/main/security-openid-connect-quickstart/config/quarkus-realm.json)
-* Login to Keycloak [Admin UI](http://localhost:8080/auth/admin/)
-* Go to "Master" > "Add realm"
-* Import the downloaded Quarkus realm definition
-* Note the realm name of "quarkus"
-
-Run Nessie with authentication settings:
-```
-docker run -p 19120:19120 -e QUARKUS_OIDC_CLIENT_ID=nessie -e QUARKUS_OIDC_AUTH_SERVER_URL=http://localhost:8080/auth/realms/quarkus -e NESSIE_AUTH_ENABLED=true --network host projectnessie/nessie
-```
-
-Generate a token for the example user "alice":
-```shell
-export NESSIE_TOKEN=$(curl -X POST http://localhost:8080/auth/realms/quarkus/protocol/openid-connect/token --user backend-service:secret -H 'content-type: application/x-www-form-urlencoded' -d 'username=alice&password=alice&grant_type=password' |jq -r .access_token)
-```
-
-Use the token to get a listing of Nessie branches:
-```
-curl 'http://localhost:19120/api/v1/trees' --oauth2-bearer "$NESSIE_TOKEN"
+docker run -p 19120:19120 -e QUARKUS_OIDC_CLIENT_ID=<Client ID> -e QUARKUS_OIDC_AUTH_SERVER_URL=<OpenID Server URL> -e NESSIE_AUTH_ENABLED=true --network host projectnessie/nessie
 ```
 
 ## Building and Developing Nessie
