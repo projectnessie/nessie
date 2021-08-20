@@ -413,7 +413,7 @@ def test_contents_listing() -> None:
     delta_lake_table = DeltaLakeTable(
         id="uuid2", metadata_location_history=["asd"], checkpoint_location_history=["def"], last_checkpoint="x"
     )
-    sql_view = SqlView(id="uuid3", sql_text="SELECT * FROM foo", dialect="HIVE")
+    sql_view = SqlView(id="uuid3", sql_text="SELECT * FROM foo", dialect="SPARK")
 
     refs = ReferenceSchema().loads(_run(runner, ["--json", "branch", "-l", branch]).output, many=True)
     _run(

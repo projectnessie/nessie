@@ -259,7 +259,7 @@ interactions:
       message: Not Found
 - request:
     body: '{"operations": [{"key": {"elements": ["this", "is", "sql", "baz"]}, "contents":
-      {"dialect": "HIVE", "id": "uuid3", "sqlText": "SELECT * FROM foo", "type": "VIEW"},
+      {"dialect": "SPARK", "id": "uuid3", "sqlText": "SELECT * FROM foo", "type": "VIEW"},
       "type": "PUT"}], "commitMeta": {"signedOffBy": null, "email": null, "properties":
       null, "message": "test_message3", "authorTime": null, "hash": null, "author":
       null, "commitTime": null, "committer": null}}'

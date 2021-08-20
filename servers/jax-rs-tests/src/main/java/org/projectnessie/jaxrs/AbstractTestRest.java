@@ -79,8 +79,6 @@ import org.projectnessie.model.Hash;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
 import org.projectnessie.model.ImmutableEntry;
-import org.projectnessie.model.ImmutableHiveDatabase;
-import org.projectnessie.model.ImmutableHiveTable;
 import org.projectnessie.model.ImmutableMerge;
 import org.projectnessie.model.ImmutableOperations;
 import org.projectnessie.model.ImmutablePut;
@@ -712,14 +710,6 @@ public abstract class AbstractTestRest {
         new ContentAndOperationType(
             Type.VIEW,
             Put.of(
-                ContentsKey.of("view_hive"),
-                ImmutableSqlView.builder()
-                    .dialect(Dialect.HIVE)
-                    .sqlText("SELECT foo FROM hive")
-                    .build())),
-        new ContentAndOperationType(
-            Type.VIEW,
-            Put.of(
                 ContentsKey.of("view_presto"),
                 ImmutableSqlView.builder()
                     .dialect(Dialect.PRESTO)
@@ -742,20 +732,6 @@ public abstract class AbstractTestRest {
                     .addMetadataLocationHistory("metadata")
                     .build())),
         new ContentAndOperationType(
-            Type.HIVE_DATABASE,
-            Put.of(
-                ContentsKey.of("hivedb"),
-                ImmutableHiveDatabase.builder()
-                    .databaseDefinition((byte) 1, (byte) 2, (byte) 3)
-                    .build())),
-        new ContentAndOperationType(
-            Type.HIVE_TABLE,
-            Put.of(
-                ContentsKey.of("hivetable"),
-                ImmutableHiveTable.builder()
-                    .tableDefinition((byte) 1, (byte) 2, (byte) 3)
-                    .build())),
-        new ContentAndOperationType(
             Type.ICEBERG_TABLE, Delete.of(ContentsKey.of("iceberg_delete"))),
         new ContentAndOperationType(
             Type.ICEBERG_TABLE, Unchanged.of(ContentsKey.of("iceberg_unchanged"))),
@@ -768,13 +744,7 @@ public abstract class AbstractTestRest {
         new ContentAndOperationType(
             Type.DELTA_LAKE_TABLE, Delete.of(ContentsKey.of("delta_delete"))),
         new ContentAndOperationType(
-            Type.DELTA_LAKE_TABLE, Unchanged.of(ContentsKey.of("delta_unchanged"))),
-        new ContentAndOperationType(Type.HIVE_DATABASE, Delete.of(ContentsKey.of("hivedb_delete"))),
-        new ContentAndOperationType(
-            Type.HIVE_DATABASE, Unchanged.of(ContentsKey.of("hivedb_unchanged"))),
-        new ContentAndOperationType(Type.HIVE_TABLE, Delete.of(ContentsKey.of("hivetable_delete"))),
-        new ContentAndOperationType(
-            Type.HIVE_TABLE, Unchanged.of(ContentsKey.of("hivetable_unchanged"))));
+            Type.DELTA_LAKE_TABLE, Unchanged.of(ContentsKey.of("delta_unchanged"))));
   }
 
   @Test

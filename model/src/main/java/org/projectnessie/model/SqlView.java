@@ -29,7 +29,6 @@ import org.immutables.value.Value;
 public abstract class SqlView extends Contents {
 
   public static enum Dialect {
-    HIVE,
     SPARK,
     DREMIO,
     PRESTO

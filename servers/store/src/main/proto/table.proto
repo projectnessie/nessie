@@ -23,25 +23,14 @@ option java_generate_equals_and_hash = true;
 message Contents {
   oneof object_type {
     IcebergTable iceberg_table = 1;
-    HiveTable hive_table = 2;
-    HiveDatabase hive_database = 3;
-    SqlView sql_view = 4;
-    DeltaLakeTable delta_lake_table = 5;
+    SqlView sql_view = 2;
+    DeltaLakeTable delta_lake_table = 3;
   }
   string id = 6;
 }
 
 message IcebergTable {
   string metadata_location = 1;
-}
-
-message HiveTable {
-  bytes table = 1;
-  repeated bytes partition = 2;
-}
-
-message HiveDatabase {
-  bytes database = 1;
 }
 
 message SqlView {
