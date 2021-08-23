@@ -13,22 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client;
+package org.projectnessie.client.http;
 
 import javax.validation.constraints.NotNull;
 import org.projectnessie.api.ContentsApi;
-import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Contents;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.MultiGetContentsRequest;
 import org.projectnessie.model.MultiGetContentsResponse;
 
-class ClientContentsApi implements ContentsApi {
+class HttpContentsClient implements ContentsApi {
 
   private final HttpClient client;
 
-  public ClientContentsApi(HttpClient client) {
+  public HttpContentsClient(HttpClient client) {
     this.client = client;
   }
 
