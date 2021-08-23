@@ -22,23 +22,34 @@ import java.util.concurrent.ThreadLocalRandom
 
 /** Parameters for the [[CommitToBranchSimulation]].
   *
-  * @param branch The Nessie branch name to use, the default include the current wall-clock in ms since epoch.
-  *               System property: `sim.branch`, defaults to `s"commits-${System.currentTimeMillis()}"`.
-  * @param mode The simulation mode, defined in the [[BranchMode]] enum.
-  *             System property: `sim.branchMode`, defaults to [[BranchMode.BRANCH_PER_USER_SINGLE_TABLE]].
-  * @param tablePrefix The table name to use, the default include the current wall-clock in ms since epoch.
-  *                    System property: `sim.tablePrefix`, defaults to `s"someTable${System.currentTimeMillis()}"`.
-  * @param numTables The number of simulated tables, each commit chooses a random table
-  *                  . System property: `sim.tables`, defaults to `250`.
-  * @param numberOfCommits The number of commits to perform per user.
-  *                        System property: `sim.commits`, defaults to `100`.
-  * @param durationSeconds The runtime duration (for commits) of the simulations in seconds.
-  *                        `0` means endless or until the specified number of commits
-  *                        ([[numberOfCommits]]) have been performed.
-  *                        System property: `sim.duration.seconds`, defaults to `0`.
-  * @param numUsers see [[BaseParams.numUsers]]
-  * @param opRate see [[BaseParams.opRate]]
-  * @param note see [[BaseParams.note]]
+  * @param branch
+  *   The Nessie branch name to use, the default include the current wall-clock
+  *   in ms since epoch. System property: `sim.branch`, defaults to
+  *   `s"commits-${System.currentTimeMillis()}"`.
+  * @param mode
+  *   The simulation mode, defined in the [[BranchMode]] enum. System property:
+  *   `sim.branchMode`, defaults to [[BranchMode.BRANCH_PER_USER_SINGLE_TABLE]].
+  * @param tablePrefix
+  *   The table name to use, the default include the current wall-clock in ms
+  *   since epoch. System property: `sim.tablePrefix`, defaults to
+  *   `s"someTable${System.currentTimeMillis()}"`.
+  * @param numTables
+  *   The number of simulated tables, each commit chooses a random table .
+  *   System property: `sim.tables`, defaults to `250`.
+  * @param numberOfCommits
+  *   The number of commits to perform per user. System property: `sim.commits`,
+  *   defaults to `100`.
+  * @param durationSeconds
+  *   The runtime duration (for commits) of the simulations in seconds. `0`
+  *   means endless or until the specified number of commits
+  *   ([[numberOfCommits]]) have been performed. System property:
+  *   `sim.duration.seconds`, defaults to `0`.
+  * @param numUsers
+  *   see [[BaseParams.numUsers]]
+  * @param opRate
+  *   see [[BaseParams.opRate]]
+  * @param note
+  *   see [[BaseParams.note]]
   */
 case class CommitToBranchParams(
     branch: String,
@@ -63,7 +74,9 @@ case class CommitToBranchParams(
     |""".stripMargin
   }
 
-  /** Generate the table name for the given session depending on [[mode]], [[tablePrefix]] and [[numTables]]. */
+  /** Generate the table name for the given session depending on [[mode]],
+    * [[tablePrefix]] and [[numTables]].
+    */
   def makeTableName(session: Session): String = {
     mode match {
       case BranchMode.BRANCH_PER_USER_RANDOM_TABLE =>
@@ -130,24 +143,26 @@ object BranchMode extends Enumeration {
   type BranchMode = Value
   val
 
-  /** Each simulated user "works" on its own branch and each Nessie-commit against a random (one
-    * out of [[CommitToBranchParams.numTables]]) [[IcebergTable]] name.
-    */
-  BRANCH_PER_USER_RANDOM_TABLE,
-      /** Each simulated user "works" on its own branch and all Nessie-commit against the same
+  /** Each simulated user "works" on its own branch and each Nessie-commit
+    * against a random (one out of [[CommitToBranchParams.numTables]])
     * [[IcebergTable]] name.
     */
+  BRANCH_PER_USER_RANDOM_TABLE,
+  /** Each simulated user "works" on its own branch and all Nessie-commit
+    * against the same [[IcebergTable]] name.
+    */
   BRANCH_PER_USER_SINGLE_TABLE,
-      /** All simulated user "work" on a single branch and each Nessie-commit against a random (one
-    * out of [[CommitToBranchParams.numTables]]) [[IcebergTable]] name.
+  /** All simulated user "work" on a single branch and each Nessie-commit
+    * against a random (one out of [[CommitToBranchParams.numTables]])
+    * [[IcebergTable]] name.
     */
   SINGLE_BRANCH_RANDOM_TABLE,
-      /** All simulated user "work" on a single branch and each Nessie-commit against an
-    * [[IcebergTable]] per user.
+  /** All simulated user "work" on a single branch and each Nessie-commit
+    * against an [[IcebergTable]] per user.
     */
   SINGLE_BRANCH_TABLE_PER_USER,
-      /** All simulated user "work" on a single branch and all Nessie-commits update a single
-    * [[IcebergTable]].
+  /** All simulated user "work" on a single branch and all Nessie-commits update
+    * a single [[IcebergTable]].
     */
   SINGLE_BRANCH_SINGLE_TABLE = Value
 }

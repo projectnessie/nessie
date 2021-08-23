@@ -24,16 +24,15 @@ import org.projectnessie.perftest.gatling.Predef.nessie
 
 import scala.concurrent.duration.{FiniteDuration, HOURS, NANOSECONDS}
 
-/** Gatling simulation to perform commits against Nessie.
-  * Has a bunch of configurables, see the `val`s defined at the top of this class.
+/** Gatling simulation to perform commits against Nessie. Has a bunch of
+  * configurables, see the `val`s defined at the top of this class.
   */
 class CreateManyBranchesSimulation extends Simulation {
 
   val params: CreateManyBranchesParams =
     CreateManyBranchesParams.fromSystemProperties()
 
-  /**
-    * Get the [[Branch]] object, create the branch in Nessie if needed.
+  /** Get the [[Branch]] object, create the branch in Nessie if needed.
     */
   private def getReference: ChainBuilder = {
     // If we don't have a reference for the branch yet, then try to create the branch and try to fetch the reference
@@ -67,7 +66,8 @@ class CreateManyBranchesSimulation extends Simulation {
     if (params.opRate > 0) {
       // "pace" the commits, if commit-rate is configured
       val oneHour = FiniteDuration(1, HOURS)
-      val nanosPerIteration = oneHour.toNanos / (params.opRate * oneHour.toSeconds)
+      val nanosPerIteration =
+        oneHour.toNanos / (params.opRate * oneHour.toSeconds)
       pace(FiniteDuration(nanosPerIteration.toLong, NANOSECONDS))
         .exitBlockOnFail(chain)
     } else {
@@ -86,7 +86,8 @@ class CreateManyBranchesSimulation extends Simulation {
     }
   }
 
-  /** Sets up the simulation. Implemented as a function to respect the optional maximum-duration.
+  /** Sets up the simulation. Implemented as a function to respect the optional
+    * maximum-duration.
     */
   private def doSetUp(): SetUp = {
     val nessieProtocol: NessieProtocol = nessie()
