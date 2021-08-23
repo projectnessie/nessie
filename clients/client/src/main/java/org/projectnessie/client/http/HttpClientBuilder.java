@@ -15,21 +15,19 @@
  */
 package org.projectnessie.client.http;
 
-import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_AUTH_TYPE;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OWNER;
-import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_PASSWORD;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_REPOSITORY;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_TRACING;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URI;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URL;
-import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_USERNAME;
 
 import java.net.URI;
 import java.util.function.Function;
 import org.projectnessie.client.NessieClient;
-import org.projectnessie.client.NessieClient.AuthType;
 import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.NessieConfigConstants;
+import org.projectnessie.client.auth.NessieAuthentication;
+import org.projectnessie.client.auth.NessieAuthenticationProvider;
 import org.projectnessie.model.Validation;
 
 /**
@@ -37,10 +35,8 @@ import org.projectnessie.model.Validation;
  */
 public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder> {
 
-  private AuthType authType = AuthType.NONE;
   private URI uri;
-  private String username;
-  private String password;
+  private NessieAuthentication authentication;
   private String owner;
   private String repo;
   private boolean tracing;
@@ -85,18 +81,9 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
     if (uri != null) {
       this.uri = URI.create(uri);
     }
-    String username = configuration.apply(CONF_NESSIE_USERNAME);
-    if (username != null) {
-      this.username = username;
-    }
-    String password = configuration.apply(CONF_NESSIE_PASSWORD);
-    if (password != null) {
-      this.password = password;
-    }
-    String authType = configuration.apply(CONF_NESSIE_AUTH_TYPE);
-    if (authType != null) {
-      this.authType = AuthType.valueOf(authType);
-    }
+
+    withAuthenticationFromConfig(configuration);
+
     String tracing = configuration.apply(CONF_NESSIE_TRACING);
     if (tracing != null) {
       this.tracing = Boolean.parseBoolean(tracing);
@@ -115,14 +102,17 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
   }
 
   /**
-   * Set the authentication type. Default is {@link AuthType#NONE}.
+   * Configure only authentication in this HttpClientBuilder instance using a configuration object
+   * and standard Nessie configuration keys defined by the constants defined in {@link
+   * NessieConfigConstants}.
    *
-   * @param authType new auth-type
+   * @param configuration The function that returns a configuration value for a configuration key.
    * @return {@code this}
+   * @see #fromConfig(Function)
    */
   @Override
-  public HttpClientBuilder withAuthType(AuthType authType) {
-    this.authType = authType;
+  public HttpClientBuilder withAuthenticationFromConfig(Function<String, String> configuration) {
+    this.authentication = NessieAuthenticationProvider.fromConfig(configuration);
     return this;
   }
 
@@ -149,6 +139,12 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
     return withUri(URI.create(uri));
   }
 
+  @Override
+  public HttpClientBuilder withAuthentication(NessieAuthentication authentication) {
+    this.authentication = authentication;
+    return this;
+  }
+
   /**
    * Set the repository owner + ID within the Nessie instance.
    *
@@ -163,30 +159,6 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
     Validation.validateOwner(owner);
     this.owner = owner;
     this.repo = repo;
-    return this;
-  }
-
-  /**
-   * Set the username for {@link AuthType#BASIC} authentication.
-   *
-   * @param username username
-   * @return {@code this}
-   */
-  @Override
-  public HttpClientBuilder withUsername(String username) {
-    this.username = username;
-    return this;
-  }
-
-  /**
-   * Set the password for {@link AuthType#BASIC} authentication.
-   *
-   * @param password password
-   * @return {@code this}
-   */
-  @Override
-  public HttpClientBuilder withPassword(String password) {
-    this.password = password;
     return this;
   }
 
@@ -234,14 +206,6 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
   @Override
   public NessieClient build() {
     return new NessieHttpClient(
-        owner,
-        repo,
-        authType,
-        uri,
-        username,
-        password,
-        tracing,
-        readTimeoutMillis,
-        connectionTimeoutMillis);
+        owner, repo, uri, authentication, tracing, readTimeoutMillis, connectionTimeoutMillis);
   }
 }

@@ -35,13 +35,18 @@ public final class NessieConfigConstants {
    * authentication.
    */
   public static final String CONF_NESSIE_PASSWORD = "nessie.password";
+  /**
+   * Config property name ({@value #CONF_NESSIE_AWS_REGION}) for the region used for AWS
+   * authentication.
+   */
+  public static final String CONF_NESSIE_AWS_REGION = "nessie.aws.region";
   /** Config property name ({@value #CONF_NESSIE_OWNER}) for the Nessie repository owner. */
   public static final String CONF_NESSIE_OWNER = "nessie.owner";
   /** Config property name ({@value #CONF_NESSIE_REPOSITORY}) for the Nessie repository ID. */
   public static final String CONF_NESSIE_REPOSITORY = "nessie.repository";
   /**
-   * Config property name ({@value #CONF_NESSIE_AUTH_TYPE}) for the authentication type, see {@link
-   * org.projectnessie.client.NessieClient.AuthType}.
+   * Config property name ({@value #CONF_NESSIE_AUTH_TYPE}) for the authentication provider ID.
+   * Valid values are {@code BASIC} and {@code AWS}.
    *
    * <p>If no {@value #CONF_NESSIE_AUTH_TYPE} option is specified, the implementation will default
    * to {@link org.projectnessie.client.NessieClient.AuthType#BASIC} if both {@value
