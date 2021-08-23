@@ -66,17 +66,16 @@ public class NessieHttpAuthenticator extends HttpAuthenticator {
 
     return super.attemptAuthentication(context)
         .onItem()
-        .transformToUni(
+        .transform(
             securityIdentity -> {
               if (securityIdentity == null) {
                 // Disallow unauthenticated requests when requested by configuration.
                 // Note: Quarkus by default permits unauthenticated requests unless there are
                 // specific authorization rules that validate the security identity.
-                return Uni.createFrom()
-                    .failure(new AuthenticationFailedException("Not authenticated"));
+                throw new AuthenticationFailedException("Not authenticated");
               }
 
-              return Uni.createFrom().item(securityIdentity);
+              return securityIdentity;
             });
   }
 
