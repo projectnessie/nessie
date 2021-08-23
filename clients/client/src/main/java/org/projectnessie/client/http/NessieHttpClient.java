@@ -38,8 +38,6 @@ import org.projectnessie.api.ConfigApi;
 import org.projectnessie.api.ContentsApi;
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.client.NessieClient;
-import org.projectnessie.client.auth.AwsAuth;
-import org.projectnessie.client.auth.BasicAuthFilter;
 import org.projectnessie.client.rest.NessieHttpResponseFilter;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -60,18 +58,14 @@ public class NessieHttpClient implements NessieClient {
    * Create new HTTP {@link NessieClient}. All REST api endpoints are mapped here. This client
    * should support any jaxrs implementation
    *
-   * @param authType authentication type (AWS, NONE, BASIC)
    * @param uri URL for the nessie client (eg http://localhost:19120/api/v1)
-   * @param username username (only for BASIC auth)
-   * @param password password (only for BASIC auth)
+   * @param authentication authenticator to use
    * @param readTimeout time in milliseconds to wait for a response from the server
    * @param connectionTimeoutMillis time in milliseconds to wait to connect to the server
    */
   NessieHttpClient(
-      AuthType authType,
       URI uri,
-      String username,
-      String password,
+      HttpAuthentication authentication,
       boolean enableTracing,
       int readTimeout,
       int connectionTimeoutMillis) {
@@ -85,7 +79,9 @@ public class NessieHttpClient implements NessieClient {
     if (enableTracing) {
       addTracing(client);
     }
-    authFilter(client, authType, username, password);
+    if (authentication != null) {
+      authentication.applyToHttpClient(client);
+    }
     client.register(new NessieHttpResponseFilter(mapper));
     contents = wrap(ContentsApi.class, new HttpContentsClient(client));
     tree = wrap(TreeApi.class, new HttpTreeClient(client));
@@ -134,23 +130,6 @@ public class NessieHttpClient implements NessieClient {
                   headerMap.forEach(context::putHeader);
                 }
               });
-    }
-  }
-
-  private void authFilter(HttpClient client, AuthType authType, String username, String password) {
-    switch (authType) {
-      case AWS:
-        client.register(new AwsAuth(mapper));
-        break;
-      case BASIC:
-        client.register(new BasicAuthFilter(username, password));
-        break;
-      case NONE:
-        break;
-      default:
-        throw new IllegalArgumentException(
-            String.format(
-                "Cannot instantiate auth filter for %s. Not a valid auth type", authType));
     }
   }
 

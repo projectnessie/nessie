@@ -20,10 +20,19 @@ import java.util.function.Function;
 import org.projectnessie.api.ConfigApi;
 import org.projectnessie.api.ContentsApi;
 import org.projectnessie.api.TreeApi;
+import org.projectnessie.client.auth.NessieAuthentication;
 import org.projectnessie.client.http.HttpClientBuilder;
 
 public interface NessieClient extends AutoCloseable {
 
+  /**
+   * Authentication types.
+   *
+   * @deprecated Replace with either direct usage of {@link
+   *     NessieClientBuilder#withAuthentication(NessieAuthentication)} or via properties via {@link
+   *     NessieClientBuilder#fromConfig(Function)}.
+   */
+  @Deprecated
   enum AuthType {
     AWS,
     BASIC,
@@ -64,6 +73,10 @@ public interface NessieClient extends AutoCloseable {
   @SuppressWarnings("DeprecatedIsStillUsed")
   @Deprecated // TODO (forRemoval = true) - remove once Iceberg uses a Nessie version > 0.9.0
   class Builder extends HttpClientBuilder {
+    private AuthType authType;
+    private String username;
+    private String password;
+
     @Override
     @Deprecated
     public Builder fromSystemProperties() {
@@ -76,10 +89,17 @@ public interface NessieClient extends AutoCloseable {
       return (Builder) super.fromConfig(configuration);
     }
 
-    @Override
+    /**
+     * Set the authentication type. Default is {@link AuthType#NONE}.
+     *
+     * @param authType new auth-type
+     * @return {@code this}
+     * @deprecated Use {@link NessieClientBuilder#withAuthentication(NessieAuthentication)} instead
+     */
     @Deprecated
     public Builder withAuthType(AuthType authType) {
-      return (Builder) super.withAuthType(authType);
+      this.authType = authType;
+      return this;
     }
 
     @Override
@@ -94,16 +114,30 @@ public interface NessieClient extends AutoCloseable {
       return (Builder) super.withUri(uri);
     }
 
-    @Override
+    /**
+     * Set the username for {@link AuthType#BASIC} authentication.
+     *
+     * @param username username
+     * @return {@code this}
+     * @deprecated Use {@link NessieClientBuilder#withAuthentication(NessieAuthentication)} instead
+     */
     @Deprecated
     public Builder withUsername(String username) {
-      return (Builder) super.withUsername(username);
+      this.username = username;
+      return this;
     }
 
-    @Override
+    /**
+     * Set the password for {@link AuthType#BASIC} authentication.
+     *
+     * @param password password
+     * @return {@code this}
+     * @deprecated Use {@link NessieClientBuilder#withAuthentication(NessieAuthentication)} instead
+     */
     @Deprecated
     public Builder withPassword(String password) {
-      return (Builder) super.withPassword(password);
+      this.password = password;
+      return this;
     }
 
     @Override
@@ -127,6 +161,28 @@ public interface NessieClient extends AutoCloseable {
     @Override
     @Deprecated
     public NessieClient build() {
+      AuthType auth =
+          authType != null
+              ? authType
+              : (username != null && password != null) ? AuthType.BASIC : null;
+      if (auth != null) {
+        withAuthenticationFromConfig(
+            s -> {
+              switch (s) {
+                case NessieConfigConstants.CONF_NESSIE_AUTH_TYPE:
+                  return auth.name();
+                case NessieConfigConstants.CONF_NESSIE_USERNAME:
+                  return username;
+                case NessieConfigConstants.CONF_NESSIE_PASSWORD:
+                  return password;
+                case NessieConfigConstants.CONF_NESSIE_AWS_REGION:
+                  return null;
+                default:
+                  throw new IllegalArgumentException("Unexpected parameter key " + s);
+              }
+            });
+      }
+
       return super.build();
     }
   }
