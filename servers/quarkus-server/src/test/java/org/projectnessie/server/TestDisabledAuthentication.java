@@ -26,8 +26,8 @@ import org.junit.jupiter.api.Test;
 import org.projectnessie.server.authn.AuthenticationDisabledProfile;
 
 /**
- * This test validates that setting `nessie.auth.enabled=false` allows all requests regardless of
- * their authentication type.
+ * This test validates that setting `nessie.authentication.enabled=false` allows all requests
+ * regardless of their authentication type.
  */
 @QuarkusTest
 @TestProfile(value = AuthenticationDisabledProfile.class)

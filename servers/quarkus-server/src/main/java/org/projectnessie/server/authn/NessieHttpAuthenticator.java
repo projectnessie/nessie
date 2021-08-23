@@ -15,6 +15,7 @@
  */
 package org.projectnessie.server.authn;
 
+import io.quarkus.runtime.Startup;
 import io.quarkus.security.AuthenticationFailedException;
 import io.quarkus.security.identity.IdentityProvider;
 import io.quarkus.security.identity.IdentityProviderManager;
@@ -29,7 +30,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Alternative;
 import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.projectnessie.server.config.QuarkusNessieAuthenticationConfig;
 
 /**
  * A custom {@link HttpAuthenticator}. This authenticator that performs the following main duties:
@@ -45,17 +46,20 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 @Alternative // @Alternative + @Priority ensure the original HttpAuthenticator bean is not used
 @Priority(1)
 @ApplicationScoped
+@Startup // Initialize and load config on the main thread rather than on event loop threads
 public class NessieHttpAuthenticator extends HttpAuthenticator {
 
   @Inject IdentityProviderManager identityProvider;
 
-  @ConfigProperty(name = "nessie.server.auth.enabled")
-  boolean authEnabled;
+  private final boolean authEnabled;
 
   @Inject
   public NessieHttpAuthenticator(
-      Instance<HttpAuthenticationMechanism> instance, Instance<IdentityProvider<?>> providers) {
+      QuarkusNessieAuthenticationConfig config,
+      Instance<HttpAuthenticationMechanism> instance,
+      Instance<IdentityProvider<?>> providers) {
     super(instance, providers);
+    authEnabled = config.enabled();
   }
 
   @Override
