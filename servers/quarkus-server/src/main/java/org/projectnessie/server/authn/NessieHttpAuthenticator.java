@@ -23,7 +23,6 @@ import io.quarkus.security.identity.request.AnonymousAuthenticationRequest;
 import io.quarkus.vertx.http.runtime.security.HttpAuthenticationMechanism;
 import io.quarkus.vertx.http.runtime.security.HttpAuthenticator;
 import io.smallrye.mutiny.Uni;
-import io.vertx.core.http.HttpHeaders;
 import io.vertx.ext.web.RoutingContext;
 import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
@@ -37,7 +36,9 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  *
  * <ul>
  *   <li>Prevents the Quarkus OIDC authentication mechanism from attempting authentication when it
- *       is not configured.
+ *       is not configured. Note that attempts to use the OIDC authentication mechanism when the
+ *       authentication server is not properly configured will result in 500 errors as opposed to
+ *       401 (not authorized).
  *   <li>Completely disallows unauthenticated requests when authentication is enabled.
  * </ul>
  */
@@ -48,7 +49,7 @@ public class NessieHttpAuthenticator extends HttpAuthenticator {
 
   @Inject IdentityProviderManager identityProvider;
 
-  @ConfigProperty(name = "nessie.auth.enabled")
+  @ConfigProperty(name = "nessie.server.auth.enabled")
   boolean authEnabled;
 
   @Inject
@@ -60,17 +61,7 @@ public class NessieHttpAuthenticator extends HttpAuthenticator {
   @Override
   public Uni<SecurityIdentity> attemptAuthentication(RoutingContext context) {
     if (!authEnabled) {
-      String authHeader = context.request().getHeader(HttpHeaders.AUTHORIZATION.toString());
-      if (authHeader != null) {
-        // Avoid attempting header-based authentication because the server might not have all the
-        // required configuration settings in this case.
-        // Note: The OIDC Quarkus extension has to be enabled at build time, but we cannot provide
-        // working configuration defaults at build time. Therefore, if OIDC were to attempt
-        // authenticating a client request with default config settings it would almost always
-        // produce a 500 error. Since authentication is not enabled in this case, we immediately
-        // return an anonymous SecurityIdentity here.
-        return anonymous();
-      }
+      return anonymous();
     }
 
     return super.attemptAuthentication(context)
@@ -78,21 +69,11 @@ public class NessieHttpAuthenticator extends HttpAuthenticator {
         .transformToUni(
             securityIdentity -> {
               if (securityIdentity == null) {
-                if (authEnabled) {
-                  // Disallow unauthenticated requests when auth is enabled.
-                  // Note: Quarkus by default permits unauthenticated requests unless there are
-                  // specific authorization rules that validate the security identity.
-                  return Uni.createFrom()
-                      .failure(new AuthenticationFailedException("Not authenticated"));
-                } else {
-                  // Note: we cannot allow null SecurityIdentity to be returned to the caller,
-                  // because Quarkus will attempt an AnonymousAuthenticationRequest in that
-                  // case anyway, but it will try to get the IdentityProviderManager from
-                  // this bean. Unfortunately, the getIdentityProviderManager() is not public
-                  // in the superclass, and calling it via bean proxies will result is a null
-                  // value leading to a subsequent NullPointerException.
-                  return anonymous();
-                }
+                // Disallow unauthenticated requests when requested by configuration.
+                // Note: Quarkus by default permits unauthenticated requests unless there are
+                // specific authorization rules that validate the security identity.
+                return Uni.createFrom()
+                    .failure(new AuthenticationFailedException("Not authenticated"));
               }
 
               return Uni.createFrom().item(securityIdentity);
