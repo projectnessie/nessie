@@ -18,17 +18,23 @@ package org.projectnessie.perftest.gatling
 /** Common parameters for Nessie Gatling simulations. */
 trait BaseParams {
 
-  /** The number of users to simulate. System property: `sim.users`, defaults to `1`. */
+  /** The number of users to simulate. System property: `sim.users`, defaults to
+    * `1`.
+    */
   def numUsers: Int
 
   /** The operation-rate in ops-per-second, `0` means "as fast as possible".
-    * Implemented with Gatling's [[io.gatling.core.structure.Pauses#pace(Duration)]]
-    * function, which acts like a "sleep()" after each commit.
-    * System property: `sim.rate`, defaults to `0`.
+    * Implemented with Gatling's
+    * [[io.gatling.core.structure.Pauses#pace(Duration)]] function, which acts
+    * like a "sleep()" after each commit. System property: `sim.rate`, defaults
+    * to `0`.
     */
   def opRate: Double
 
-  /** Arbitrary note added as a Prometheus tag, used to distinguish metrics from different runs in e.g. Grafana. System property: `sim.note`, defaults to `""`. */
+  /** Arbitrary note added as a Prometheus tag, used to distinguish metrics from
+    * different runs in e.g. Grafana. System property: `sim.note`, defaults to
+    * `""`.
+    */
   def note: String
 
   def asPrintableString(): String = {

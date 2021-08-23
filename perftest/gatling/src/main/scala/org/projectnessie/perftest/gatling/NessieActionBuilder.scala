@@ -25,15 +25,19 @@ import io.gatling.core.structure.ScenarioContext
 import io.gatling.core.util.NameGen
 import org.projectnessie.client.NessieClient
 
-/**
-  * Builder created via [[NessieDsl.nessie]] for Nessie-Gatling-Actions.
+/** Builder created via [[NessieDsl.nessie]] for Nessie-Gatling-Actions.
   *
   * Do not create an instance of this builder yourself.
   *
-  * @param tag                tag as shown in Gatling for the action being built
-  * @param nessieExec         the action to be executed, takes the NessieClient and Gatling Session
-  * @param ignoreExceptions   whether exceptions are ignored
-  * @param dontLogResponse    whether responses are not logged against Gatling and don't appear in the output
+  * @param tag
+  *   tag as shown in Gatling for the action being built
+  * @param nessieExec
+  *   the action to be executed, takes the NessieClient and Gatling Session
+  * @param ignoreExceptions
+  *   whether exceptions are ignored
+  * @param dontLogResponse
+  *   whether responses are not logged against Gatling and don't appear in the
+  *   output
   */
 case class NessieActionBuilder(
     tag: String,
@@ -45,8 +49,9 @@ case class NessieActionBuilder(
 ) extends ActionBuilder
     with NameGen {
 
-  /** Exceptions thrown from the [[nessieExec]] will not be propagated, but an exception handler
-    * should be added via [[onException()]]. */
+  /** Exceptions thrown from the [[nessieExec]] will not be propagated, but an
+    * exception handler should be added via [[onException()]].
+    */
   def ignoreException(): NessieActionBuilder =
     NessieActionBuilder(
       tag,
@@ -56,7 +61,9 @@ case class NessieActionBuilder(
       exceptionHandler
     )
 
-  /** Adds an exception handler to deal with exceptions ignored via [[ignoreException()]]. */
+  /** Adds an exception handler to deal with exceptions ignored via
+    * [[ignoreException()]].
+    */
   def onException(
       handler: (Exception, NessieClient, Session) => Session
   ): NessieActionBuilder =
@@ -68,7 +75,8 @@ case class NessieActionBuilder(
       handler
     )
 
-  /** Do not push the measurement for this action to Gatling nor to Prometheus. */
+  /** Do not push the measurement for this action to Gatling nor to Prometheus.
+    */
   def dontLog(): NessieActionBuilder =
     NessieActionBuilder(
       tag,
@@ -90,8 +98,9 @@ case class NessieActionBuilder(
       exceptionHandler
     )
 
-  /** Execute code with the current [[NessieClient]], this is a convenience implementation
-    * if you do not need the Gatling session in the action code. */
+  /** Execute code with the current [[NessieClient]], this is a convenience
+    * implementation if you do not need the Gatling session in the action code.
+    */
   def execute(nessieExec: NessieClient => Unit): NessieActionBuilder =
     execute((client, session) => {
       nessieExec.apply(client)

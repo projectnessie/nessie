@@ -15,12 +15,14 @@
  */
 package org.projectnessie.perftest.gatling
 
-/**
-  *
-  * @param numberOfBranches number of branches that each simulated user creates (defaults to 100)
-  * @param numUsers see [[BaseParams.numUsers]]
-  * @param opRate see [[BaseParams.opRate]]
-  * @param note see [[BaseParams.note]]
+/** @param numberOfBranches
+  *   number of branches that each simulated user creates (defaults to 100)
+  * @param numUsers
+  *   see [[BaseParams.numUsers]]
+  * @param opRate
+  *   see [[BaseParams.opRate]]
+  * @param note
+  *   see [[BaseParams.note]]
   */
 case class CreateManyBranchesParams(
     numberOfBranches: Int,

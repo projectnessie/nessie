@@ -15,17 +15,18 @@
  */
 package org.projectnessie.perftest.gatling
 
-/**
-  * All Nessie performance tests start from the `NessieDsl.nessie` [[NessieProtocolBuilder]].
+/** All Nessie performance tests start from the `NessieDsl.nessie`
+  * [[NessieProtocolBuilder]].
   */
 trait NessieDsl {
   val nessie: NessieProtocolBuilder.type = NessieProtocolBuilder
 
-  /**
-    * Start building a new action against Nessie.
+  /** Start building a new action against Nessie.
     *
-    * @param tag tag/name of the action
-    * @return action builder
+    * @param tag
+    *   tag/name of the action
+    * @return
+    *   action builder
     */
   def nessie(tag: String): NessieActionBuilder = NessieActionBuilder(tag)
 }

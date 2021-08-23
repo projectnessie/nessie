@@ -92,8 +92,7 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
       .toMap
   }
 
-  /**
-    * Keeps a mapping of reference name to current hash.
+  /** Keeps a mapping of reference name to current hash.
     */
   private val referenceMap: util.Map[String, Reference] = {
     val requestedRef =
@@ -337,7 +336,8 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
       throw new FileAlreadyExistsException(path.toString)
     }
     var streamClosed = false // This flag is to avoid double close
-    var commitDone = false // This flag is to save the delete operation in most of cases.
+    var commitDone =
+      false // This flag is to save the delete operation in most of cases.
     val stream = fs.create(path)
     try {
       actions.map(_ + "\n").map(_.getBytes(UTF_8)).foreach(stream.write)
@@ -456,9 +456,11 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
       maxFound.getOrElse(0L) == maxExpected.getOrElse(0L),
       s"maxFound(${maxFound.getOrElse(0L)}) != maxExpected(${maxExpected.getOrElse(0L)})"
     )
-    if (filteredFiles
-          .map(_.fileType)
-          .count(_ == DeltaFileType.CHECKPOINT) == filteredFiles.length) {
+    if (
+      filteredFiles
+        .map(_.fileType)
+        .count(_ == DeltaFileType.CHECKPOINT) == filteredFiles.length
+    ) {
       (filteredFiles ++ Seq(
         emptyCheckpoint(requestedVersion, filteredFiles.head)
       )).iterator

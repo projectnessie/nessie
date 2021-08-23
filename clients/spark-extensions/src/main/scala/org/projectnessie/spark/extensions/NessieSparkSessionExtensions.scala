@@ -23,8 +23,8 @@ class NessieSparkSessionExtensions extends (SparkSessionExtensions => Unit) {
 
   override def apply(extensions: SparkSessionExtensions): Unit = {
     // parser extensions
-    extensions.injectParser {
-      case (_, parser) => new NessieSparkSqlExtensionsParser(parser)
+    extensions.injectParser { case (_, parser) =>
+      new NessieSparkSqlExtensionsParser(parser)
     }
 
     // planner extensions

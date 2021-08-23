@@ -25,8 +25,10 @@ import org.projectnessie.client.NessieClient
 
 case class NessieProtocolBuilder() extends StrictLogging {
 
-  /** Inject the [[NessieClient]] for the simulation and returns an instance of [[NessieProtocol]],
-    * which is to be passed to [[Simulation.SetUp.protocols()]]. */
+  /** Inject the [[NessieClient]] for the simulation and returns an instance of
+    * [[NessieProtocol]], which is to be passed to
+    * [[Simulation.SetUp.protocols()]].
+    */
   def client(client: NessieClient): NessieProtocol =
     NessieProtocol(client)
 }

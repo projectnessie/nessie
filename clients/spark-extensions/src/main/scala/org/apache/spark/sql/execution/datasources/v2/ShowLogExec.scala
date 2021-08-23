@@ -47,18 +47,17 @@ case class ShowLogExec(
     )
 
     stream.iterator.asScala
-      .map(
-        cm =>
-          InternalRow(
-            convert(cm.getAuthor),
-            convert(cm.getCommitter),
-            convert(cm.getHash),
-            convert(cm.getMessage),
-            convert(cm.getSignedOffBy),
-            convert(cm.getAuthorTime),
-            convert(cm.getCommitTime),
-            convert(cm.getProperties)
-          )
+      .map(cm =>
+        InternalRow(
+          convert(cm.getAuthor),
+          convert(cm.getCommitter),
+          convert(cm.getHash),
+          convert(cm.getMessage),
+          convert(cm.getSignedOffBy),
+          convert(cm.getAuthorTime),
+          convert(cm.getCommitTime),
+          convert(cm.getProperties)
+        )
       )
       .toSeq
   }

@@ -56,57 +56,49 @@ class NessieSparkSqlExtensionsParser(delegate: ParserInterface)
 
   private lazy val astBuilder = new NessieSqlExtensionsAstBuilder(delegate)
 
-  /**
-    * Parse a string to a DataType.
+  /** Parse a string to a DataType.
     */
   override def parseDataType(sqlText: String): DataType = {
     delegate.parseDataType(sqlText)
   }
 
-  /**
-    * Parse a string to a raw DataType without CHAR/VARCHAR replacement.
+  /** Parse a string to a raw DataType without CHAR/VARCHAR replacement.
     */
   def parseRawDataType(sqlText: String): DataType =
     throw new UnsupportedOperationException()
 
-  /**
-    * Parse a string to an Expression.
+  /** Parse a string to an Expression.
     */
   override def parseExpression(sqlText: String): Expression = {
     delegate.parseExpression(sqlText)
   }
 
-  /**
-    * Parse a string to a TableIdentifier.
+  /** Parse a string to a TableIdentifier.
     */
   override def parseTableIdentifier(sqlText: String): TableIdentifier = {
     delegate.parseTableIdentifier(sqlText)
   }
 
-  /**
-    * Parse a string to a FunctionIdentifier.
+  /** Parse a string to a FunctionIdentifier.
     */
   override def parseFunctionIdentifier(sqlText: String): FunctionIdentifier = {
     delegate.parseFunctionIdentifier(sqlText)
   }
 
-  /**
-    * Parse a string to a multi-part identifier.
+  /** Parse a string to a multi-part identifier.
     */
   override def parseMultipartIdentifier(sqlText: String): Seq[String] = {
     delegate.parseMultipartIdentifier(sqlText)
   }
 
-  /**
-    * Creates StructType for a given SQL string, which is a comma separated list of field
-    * definitions which will preserve the correct Hive metadata.
+  /** Creates StructType for a given SQL string, which is a comma separated list
+    * of field definitions which will preserve the correct Hive metadata.
     */
   override def parseTableSchema(sqlText: String): StructType = {
     delegate.parseTableSchema(sqlText)
   }
 
-  /**
-    * Parse a string to a LogicalPlan.
+  /** Parse a string to a LogicalPlan.
     */
   override def parsePlan(sqlText: String): LogicalPlan = {
     val sqlTextAfterSubstitution = substitutor.substitute(sqlText)
@@ -128,7 +120,9 @@ class NessieSparkSqlExtensionsParser(delegate: ParserInterface)
     normalized.startsWith("use reference") || normalized.startsWith(
       "list reference"
     ) ||
-    normalized.startsWith("show reference") || normalized.startsWith("show log") ||
+    normalized.startsWith("show reference") || normalized.startsWith(
+      "show log"
+    ) ||
     normalized.startsWith("merge branch") || normalized.startsWith(
       "assign branch"
     ) ||
@@ -246,10 +240,10 @@ case object NessieParseErrorListener extends BaseErrorListener {
   }
 }
 
-/**
-  * Copied from Apache Spark
-  * A [[NessieParseException]] is an `AnalysisException` that is thrown during the parse process.
-  * It contains fields and an extended error message that make reporting and diagnosing errors easier.
+/** Copied from Apache Spark A [[NessieParseException]] is an
+  * `AnalysisException` that is thrown during the parse process. It contains
+  * fields and an extended error message that make reporting and diagnosing
+  * errors easier.
   */
 class NessieParseException(
     val command: Option[String],
