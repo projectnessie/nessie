@@ -31,7 +31,7 @@ import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.internal.SQLConf;
-import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -66,8 +66,8 @@ public abstract class AbstractSparkTest {
     spark.sparkContext().setLogLevel("WARN");
   }
 
-  @AfterAll
-  static void tearDown() throws Exception {
+  @AfterEach
+  protected void tearDown() {
     if (spark != null) {
       spark.stop();
       spark = null;
