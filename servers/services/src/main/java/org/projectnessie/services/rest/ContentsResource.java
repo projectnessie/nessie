@@ -24,7 +24,7 @@ import javax.enterprise.inject.Alternative;
 import javax.inject.Inject;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.SecurityContext;
-import org.projectnessie.api.ContentsApi;
+import org.projectnessie.api.http.HttpContentsApi;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
@@ -44,7 +44,7 @@ import org.projectnessie.versioned.WithHash;
 /** REST endpoint for contents. */
 @RequestScoped
 @Alternative
-public class ContentsResource extends BaseResource implements ContentsApi {
+public class ContentsResource extends BaseResource implements HttpContentsApi {
 
   // Mandated by CDI 2.0
   public ContentsResource() {
