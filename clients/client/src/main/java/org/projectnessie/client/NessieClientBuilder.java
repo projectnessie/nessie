@@ -71,6 +71,34 @@ public interface NessieClientBuilder<IMPL extends NessieClientBuilder<IMPL>> {
   IMPL withUri(String uri);
 
   /**
+   * Set the repository owner + ID within the Nessie instance.
+   *
+   * <p>{@link NessieClient#getContentsApi()} and {@link NessieClient#getTreeApi()} are scoped to
+   * the repository specified by this option.
+   *
+   * @param owner repository owner
+   * @param repo repository ID
+   * @return {@code this}
+   */
+  IMPL withRepoOwner(String owner, String repo);
+
+  /**
+   * Set the username for {@link AuthType#BASIC} authentication.
+   *
+   * @param username username
+   * @return {@code this}
+   */
+  IMPL withUsername(String username);
+
+  /**
+   * Set the password for {@link AuthType#BASIC} authentication.
+   *
+   * @param password password
+   * @return {@code this}
+   */
+  IMPL withPassword(String password);
+
+  /**
    * Builds a new {@link NessieClient}.
    *
    * @return A new {@link NessieClient}.

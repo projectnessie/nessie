@@ -159,6 +159,7 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
    * @param repo repository ID
    * @return {@code this}
    */
+  @Override
   public HttpClientBuilder withRepoOwner(String owner, String repo) {
     Validation.validateOwner(owner);
     this.owner = owner;
@@ -172,6 +173,7 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
    * @param username username
    * @return {@code this}
    */
+  @Override
   public HttpClientBuilder withUsername(String username) {
     this.username = username;
     return this;
@@ -183,6 +185,7 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
    * @param password password
    * @return {@code this}
    */
+  @Override
   public HttpClientBuilder withPassword(String password) {
     this.password = password;
     return this;
