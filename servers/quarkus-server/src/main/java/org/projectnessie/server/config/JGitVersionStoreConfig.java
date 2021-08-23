@@ -15,13 +15,14 @@
  */
 package org.projectnessie.server.config;
 
-import io.quarkus.arc.config.ConfigProperties;
 import io.quarkus.runtime.annotations.RegisterForReflection;
+import io.smallrye.config.ConfigMapping;
+import io.smallrye.config.WithDefault;
+import io.smallrye.config.WithName;
 import java.util.Optional;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /** JGit version store configuration. */
-@ConfigProperties(prefix = "nessie.version.store.jgit")
+@ConfigMapping(prefix = "nessie.version.store.jgit")
 public interface JGitVersionStoreConfig {
   @RegisterForReflection
   public enum JGitStoreType {
@@ -29,9 +30,10 @@ public interface JGitVersionStoreConfig {
     INMEMORY
   }
 
-  @ConfigProperty(name = "type", defaultValue = "INMEMORY")
+  @WithName("type")
+  @WithDefault("INMEMORY")
   JGitStoreType getJgitStoreType();
 
-  @ConfigProperty(name = "directory")
+  @WithName("directory")
   Optional<String> getJgitDirectory();
 }
