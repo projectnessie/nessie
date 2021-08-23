@@ -17,7 +17,7 @@ package org.projectnessie.client;
 
 import java.net.URI;
 import java.util.function.Function;
-import org.projectnessie.client.NessieClient.AuthType;
+import org.projectnessie.client.auth.NessieAuthentication;
 
 /**
  * {@link NessieClient} builder interface.
@@ -40,19 +40,27 @@ public interface NessieClientBuilder<IMPL extends NessieClientBuilder<IMPL>> {
    * Non-{@code null} values returned by the {@code configuration}-function will override previously
    * configured values.
    *
+   * <p>Calls {@link #withAuthenticationFromConfig(Function)}.
+   *
    * @param configuration The function that returns a configuration value for a configuration key.
    * @return {@code this}
    * @see #fromSystemProperties()
+   * @see #withAuthenticationFromConfig(Function)
    */
   IMPL fromConfig(Function<String, String> configuration);
 
   /**
-   * Set the authentication type. Default is {@link AuthType#NONE}.
+   * Configure only authentication in this HttpClientBuilder instance using a configuration object
+   * and standard Nessie configuration keys defined by the constants defined in {@link
+   * NessieConfigConstants}.
    *
-   * @param authType new auth-type
+   * @param configuration The function that returns a configuration value for a configuration key.
    * @return {@code this}
+   * @see #fromConfig(Function) called by {@link #fromConfig(Function)}
    */
-  IMPL withAuthType(AuthType authType);
+  IMPL withAuthenticationFromConfig(Function<String, String> configuration);
+
+  IMPL withAuthentication(NessieAuthentication authentication);
 
   /**
    * Set the Nessie server URI. A server URI must be configured.
@@ -69,34 +77,6 @@ public interface NessieClientBuilder<IMPL extends NessieClientBuilder<IMPL>> {
    * @return {@code this}
    */
   IMPL withUri(String uri);
-
-  /**
-   * Set the repository owner + ID within the Nessie instance.
-   *
-   * <p>{@link NessieClient#getContentsApi()} and {@link NessieClient#getTreeApi()} are scoped to
-   * the repository specified by this option.
-   *
-   * @param owner repository owner
-   * @param repo repository ID
-   * @return {@code this}
-   */
-  IMPL withRepoOwner(String owner, String repo);
-
-  /**
-   * Set the username for {@link AuthType#BASIC} authentication.
-   *
-   * @param username username
-   * @return {@code this}
-   */
-  IMPL withUsername(String username);
-
-  /**
-   * Set the password for {@link AuthType#BASIC} authentication.
-   *
-   * @param password password
-   * @return {@code this}
-   */
-  IMPL withPassword(String password);
 
   /**
    * Builds a new {@link NessieClient}.
