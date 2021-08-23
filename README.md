@@ -43,7 +43,7 @@ user identity.
 Nessie supports bearer tokens and uses [OpenID Connect](https://openid.net/connect/) for validating them.
 
 Authentication can be enabled by setting the following Quarkus properties:
-* `nessie.server.auth.enabled=true`
+* `nessie.server.authentication.enabled=true`
 * `quarkus.oidc.auth-server-url=<OpenID Server URL>`
 * `quarkus.oidc.client-id=<Client ID>`
 
@@ -53,7 +53,7 @@ One can start the `projectnessie/nessie` docker image in authenticated mode by s
 the properties mentioned above via docker environment variables. For example:
 
 ```
-docker run -p 19120:19120 -e QUARKUS_OIDC_CLIENT_ID=<Client ID> -e QUARKUS_OIDC_AUTH_SERVER_URL=<OpenID Server URL> -e NESSIE_SERVER_AUTH_ENABLED=true --network host projectnessie/nessie
+docker run -p 19120:19120 -e QUARKUS_OIDC_CLIENT_ID=<Client ID> -e QUARKUS_OIDC_AUTH_SERVER_URL=<OpenID Server URL> -e NESSIE_SERVER_AUTHENTICATION_ENABLED=true --network host projectnessie/nessie
 ```
 
 ## Building and Developing Nessie
