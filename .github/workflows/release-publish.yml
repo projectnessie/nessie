@@ -194,7 +194,7 @@ jobs:
         PROFILES="-Pnative -Pdocker"
         BUILD_ARGS="-DskipTests"
         if [[ -n ${ACT} ]] ; then
-          BUILD_ARGS="${BUILD_ARGS} -Dquarkus.native.remote-container-build=true -Dquarkus.native.container-build=false"
+          BUILD_ARGS="${BUILD_ARGS} -Dquarkus.native.remote-container-build=true -Dquarkus.native.container-build=false -Dquarkus.native.native-image-xmx=6g"
         fi
         ./mvnw -B install --file pom.xml ${PROFILES} ${BUILD_ARGS} -pl servers/quarkus-server
 

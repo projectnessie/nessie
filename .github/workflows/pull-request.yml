@@ -103,7 +103,7 @@ jobs:
       if: ${{ steps.ci_options.outputs.CI_WITH_NATIVE == 'true' }}
       run: |
         # No code-coverage here
-        ./mvnw -B install javadoc:javadoc-no-fork --file pom.xml -Pnative -Dtest.log.level=WARN -pl :nessie-quarkus -pl :nessie-lambda
+        ./mvnw -B install javadoc:javadoc-no-fork --file pom.xml -Pnative -Dtest.log.level=WARN -pl :nessie-quarkus -pl :nessie-lambda -Dquarkus.native.native-image-xmx=6g
     - name: Build with Gradle
       run: ./gradlew --rerun-tasks --no-daemon --info build
       working-directory: ./tools/apprunner-gradle-plugin
