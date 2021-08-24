@@ -159,7 +159,6 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
    * @param repo repository ID
    * @return {@code this}
    */
-  @Override
   public HttpClientBuilder withRepoOwner(String owner, String repo) {
     Validation.validateOwner(owner);
     this.owner = owner;
