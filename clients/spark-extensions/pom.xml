@@ -34,18 +34,7 @@
       <groupId>org.projectnessie</groupId>
       <artifactId>nessie-client</artifactId>
       <version>${client.nessie.version}</version>
-      <!-- we need to exclude this here so that we run the code with the same model classes that ship with iceberg's nessie version -->
-      <exclusions>
-        <exclusion>
-          <groupId>org.projectnessie</groupId>
-          <artifactId>nessie-model</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.projectnessie</groupId>
-      <artifactId>nessie-model</artifactId>
-      <version>${client.nessie.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.projectnessie</groupId>
