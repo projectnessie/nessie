@@ -37,16 +37,6 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.projectnessie</groupId>
-      <artifactId>nessie-model</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.projectnessie</groupId>
-      <artifactId>nessie-client</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-core_2.12</artifactId>
       <scope>provided</scope>
