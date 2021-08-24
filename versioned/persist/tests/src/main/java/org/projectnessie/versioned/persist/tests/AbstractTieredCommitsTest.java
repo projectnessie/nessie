@@ -20,9 +20,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 import com.google.protobuf.ByteString;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -31,8 +29,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.Hash;
@@ -43,7 +39,6 @@ import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.WithHash;
-import org.projectnessie.versioned.persist.adapter.ContentsAndState;
 import org.projectnessie.versioned.persist.adapter.ContentsId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
@@ -100,6 +95,13 @@ public abstract class AbstractTieredCommitsTest<CONFIG extends DatabaseAdapterCo
   }
 
   @Nested
+  public class CommitScenarios extends AbstractCommitScenarios {
+    CommitScenarios() {
+      super(databaseAdapter);
+    }
+  }
+
+  @Nested
   public class ManyCommits extends AbstractManyCommits {
     ManyCommits() {
       super(databaseAdapter);
@@ -117,68 +119,6 @@ public abstract class AbstractTieredCommitsTest<CONFIG extends DatabaseAdapterCo
   public class Concurrency extends AbstractConcurrency {
     Concurrency() {
       super(databaseAdapter);
-    }
-  }
-
-  @ParameterizedTest
-  @ValueSource(ints = {1, 3, 5})
-  void commit(int tablesPerCommit) throws Exception {
-    BranchName branch = BranchName.of("main");
-
-    ArrayList<Key> keys = new ArrayList<>(tablesPerCommit);
-    ImmutableCommitAttempt.Builder commit =
-        ImmutableCommitAttempt.builder()
-            .commitToBranch(branch)
-            .commitMetaSerialized(ByteString.copyFromUtf8("initial commit meta"));
-    for (int i = 0; i < tablesPerCommit; i++) {
-      Key key = Key.of("my", "table", "num" + i);
-      keys.add(key);
-
-      commit
-          .addPuts(
-              KeyWithBytes.of(
-                  key,
-                  ContentsId.of("id-" + i),
-                  (byte) 0,
-                  ByteString.copyFromUtf8("initial commit contents")))
-          .putGlobal(ContentsId.of("id-" + i), ByteString.copyFromUtf8("0"))
-          .putExpectedStates(ContentsId.of("id-" + i), Optional.empty());
-    }
-    Hash head = databaseAdapter.commit(commit.build());
-
-    for (int commitNum = 0; commitNum < 3; commitNum++) {
-      List<Optional<String>> contents;
-      try (Stream<Optional<ContentsAndState<ByteString>>> stream =
-          databaseAdapter.values(
-              databaseAdapter.toHash(branch), keys, KeyFilterPredicate.ALLOW_ALL)) {
-        contents =
-            stream
-                .map(o -> o.map(ContentsAndState::getGlobalState).map(ByteString::toStringUtf8))
-                .collect(Collectors.toList());
-      }
-      commit =
-          ImmutableCommitAttempt.builder()
-              .commitToBranch(branch)
-              .commitMetaSerialized(ByteString.copyFromUtf8("initial commit meta"));
-      for (int i = 0; i < tablesPerCommit; i++) {
-        String currentState = contents.get(i).orElseThrow(RuntimeException::new);
-        String newGlobalState = Integer.toString(Integer.parseInt(currentState) + 1);
-
-        commit
-            .addPuts(
-                KeyWithBytes.of(
-                    keys.get(i),
-                    ContentsId.of("id-" + i),
-                    (byte) 0,
-                    ByteString.copyFromUtf8("branch value")))
-            .putGlobal(ContentsId.of("id-" + i), ByteString.copyFromUtf8(newGlobalState))
-            .putExpectedStates(
-                ContentsId.of("id-" + i), Optional.of(ByteString.copyFromUtf8(currentState)));
-      }
-
-      Hash newHead = databaseAdapter.commit(commit.build());
-      assertThat(newHead).isNotEqualTo(head);
-      head = newHead;
     }
   }
 
