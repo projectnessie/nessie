@@ -47,7 +47,7 @@ public class AwsAuthenticationProvider implements NessieAuthenticationProvider {
 
   public static final String AUTH_TYPE_VALUE = "AWS";
 
-  public static NessieAuthentication of(Region region) {
+  public static HttpAuthentication create(Region region) {
     return new AwsAuthentication(region);
   }
 
@@ -57,7 +57,7 @@ public class AwsAuthenticationProvider implements NessieAuthenticationProvider {
   }
 
   @Override
-  public NessieAuthentication build(Function<String, String> parameters) {
+  public HttpAuthentication build(Function<String, String> parameters) {
     String regionName = parameters.apply(NessieConfigConstants.CONF_NESSIE_AWS_REGION);
     if (regionName == null) {
       regionName = Region.US_WEST_2.toString();
@@ -76,7 +76,7 @@ public class AwsAuthenticationProvider implements NessieAuthenticationProvider {
             () -> new IllegalArgumentException(String.format("Unknown region '%s'.", regionName)));
   }
 
-  private static class AwsAuthentication implements NessieAuthentication, HttpAuthentication {
+  private static class AwsAuthentication implements HttpAuthentication {
     private final Region region;
 
     @SuppressWarnings({"QsPrivateBeanMembersInspection", "CdiInjectionPointsInspection"})
@@ -85,35 +85,26 @@ public class AwsAuthenticationProvider implements NessieAuthenticationProvider {
     }
 
     @Override
-    public RequestFilter buildRequestFilter() {
-      ObjectMapper objectMapper =
-          new ObjectMapper()
-              .disable(SerializationFeature.INDENT_OUTPUT)
-              .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
-
-      AwsCredentialsProvider awsCredentialsProvider = DefaultCredentialsProvider.create();
-      Aws4Signer signer = Aws4Signer.create();
-
-      return new AwsHttpAuthentication(objectMapper, region, signer, awsCredentialsProvider);
+    public void applyToHttpClient(HttpClient client) {
+      client.register(new AwsHttpAuthenticationFilter(region));
     }
   }
 
-  private static class AwsHttpAuthentication implements RequestFilter {
+  private static class AwsHttpAuthenticationFilter implements RequestFilter {
     private final ObjectMapper objectMapper;
     private final Aws4Signer signer;
     private final AwsCredentialsProvider awsCredentialsProvider;
     private final Region region;
 
     @SuppressWarnings({"QsPrivateBeanMembersInspection", "CdiInjectionPointsInspection"})
-    private AwsHttpAuthentication(
-        ObjectMapper objectMapper,
-        Region region,
-        Aws4Signer signer,
-        AwsCredentialsProvider awsCredentialsProvider) {
-      this.objectMapper = objectMapper;
+    private AwsHttpAuthenticationFilter(Region region) {
+      this.objectMapper =
+          new ObjectMapper()
+              .disable(SerializationFeature.INDENT_OUTPUT)
+              .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
       this.region = region;
-      this.signer = signer;
-      this.awsCredentialsProvider = awsCredentialsProvider;
+      this.signer = Aws4Signer.create();
+      this.awsCredentialsProvider = DefaultCredentialsProvider.create();
     }
 
     private SdkHttpFullRequest prepareRequest(
@@ -122,9 +113,12 @@ public class AwsAuthenticationProvider implements NessieAuthenticationProvider {
         SdkHttpFullRequest.Builder builder =
             SdkHttpFullRequest.builder().uri(uri).method(SdkHttpMethod.fromValue(method.name()));
 
-        Arrays.stream(uri.getQuery().split("&"))
-            .map(s -> s.split("="))
-            .forEach(s -> builder.putRawQueryParameter(s[0], s[1]));
+        String query = uri.getQuery();
+        if (query != null) {
+          Arrays.stream(query.split("&"))
+              .map(s -> s.split("="))
+              .forEach(s -> builder.putRawQueryParameter(s[0], s[1]));
+        }
 
         if (entity.isPresent()) {
           try {

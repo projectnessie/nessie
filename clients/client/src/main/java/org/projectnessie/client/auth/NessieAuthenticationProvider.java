@@ -63,7 +63,7 @@ public interface NessieAuthenticationProvider {
    * The authentication type discriminator. If authentication is configured via properties, like
    * {@link org.projectnessie.client.NessieClientBuilder#fromConfig(Function)}/{@link
    * org.projectnessie.client.NessieClientBuilder#withAuthenticationFromConfig(Function)}, set the a
-   * [@link NessieAuthenticationProvider} instance is used, if {@link
+   * {@link NessieAuthenticationProvider} instance is used, if {@link
    * org.projectnessie.client.NessieConfigConstants#CONF_NESSIE_AUTH_TYPE} equals the value returned
    * by this method.
    */

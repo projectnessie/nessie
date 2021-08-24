@@ -36,7 +36,7 @@ import org.projectnessie.model.Validation;
 public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder> {
 
   private URI uri;
-  private NessieAuthentication authentication;
+  private HttpAuthentication authentication;
   private String owner;
   private String repo;
   private boolean tracing;
@@ -112,7 +112,7 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
    */
   @Override
   public HttpClientBuilder withAuthenticationFromConfig(Function<String, String> configuration) {
-    this.authentication = NessieAuthenticationProvider.fromConfig(configuration);
+    withAuthentication(NessieAuthenticationProvider.fromConfig(configuration));
     return this;
   }
 
@@ -141,7 +141,11 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
 
   @Override
   public HttpClientBuilder withAuthentication(NessieAuthentication authentication) {
-    this.authentication = authentication;
+    if (authentication != null && !(authentication instanceof HttpAuthentication)) {
+      throw new IllegalArgumentException(
+          "HttpClientBuilder only accepts instances of HttpAuthentication");
+    }
+    this.authentication = (HttpAuthentication) authentication;
     return this;
   }
 

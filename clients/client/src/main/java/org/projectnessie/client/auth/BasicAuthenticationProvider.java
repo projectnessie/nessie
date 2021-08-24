@@ -22,7 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.function.Function;
 import org.projectnessie.client.http.HttpAuthentication;
-import org.projectnessie.client.http.RequestContext;
+import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.RequestFilter;
 
 /**
@@ -35,7 +35,7 @@ public class BasicAuthenticationProvider implements NessieAuthenticationProvider
 
   public static final String AUTH_TYPE_VALUE = "BASIC";
 
-  public static NessieAuthentication of(String username, String password) {
+  public static HttpAuthentication create(String username, String password) {
     return new BasicAuthentication(username, password);
   }
 
@@ -45,46 +45,36 @@ public class BasicAuthenticationProvider implements NessieAuthenticationProvider
   }
 
   @Override
-  public NessieAuthentication build(Function<String, String> configSupplier) {
+  public HttpAuthentication build(Function<String, String> configSupplier) {
     String username = configSupplier.apply(CONF_NESSIE_USERNAME);
     String password = configSupplier.apply(CONF_NESSIE_PASSWORD);
-
-    if (username == null || password == null) {
-      throw new NullPointerException(
-          "username and password parameters must be present for auth type " + AUTH_TYPE_VALUE);
-    }
 
     return new BasicAuthentication(username, password);
   }
 
-  private static class BasicAuthentication implements NessieAuthentication, HttpAuthentication {
-    private final String authHeaderValue;
+  private static class BasicAuthentication implements HttpAuthentication {
+    private final String username;
+    private final String password;
 
     @SuppressWarnings("QsPrivateBeanMembersInspection")
     private BasicAuthentication(String username, String password) {
+      if (username == null || password == null) {
+        throw new NullPointerException(
+            "username and password parameters must be present for auth type " + AUTH_TYPE_VALUE);
+      }
+
+      this.username = username;
+      this.password = password;
+    }
+
+    @Override
+    public void applyToHttpClient(HttpClient client) {
       String userPass = username + ':' + password;
       byte[] encoded = Base64.getEncoder().encode(userPass.getBytes(StandardCharsets.UTF_8));
       String encodedString = new String(encoded, StandardCharsets.UTF_8);
-      authHeaderValue = "Basic " + encodedString;
-    }
+      String authHeaderValue = "Basic " + encodedString;
 
-    @Override
-    public RequestFilter buildRequestFilter() {
-      return new BasicHttpAuthentication(authHeaderValue);
-    }
-  }
-
-  private static class BasicHttpAuthentication implements RequestFilter {
-    private final String authHeaderValue;
-
-    @SuppressWarnings("QsPrivateBeanMembersInspection")
-    private BasicHttpAuthentication(String authHeaderValue) {
-      this.authHeaderValue = authHeaderValue;
-    }
-
-    @Override
-    public void filter(RequestContext context) {
-      context.putHeader("Authorization", authHeaderValue);
+      client.register((RequestFilter) ctx -> ctx.putHeader("Authorization", authHeaderValue));
     }
   }
 }

@@ -16,9 +16,8 @@
 package org.projectnessie.client.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_PASSWORD;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_USERNAME;
 
@@ -26,36 +25,48 @@ import com.google.common.collect.ImmutableMap;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.projectnessie.client.NessieConfigConstants;
 import org.projectnessie.client.http.HttpAuthentication;
+import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.RequestContext;
 import org.projectnessie.client.http.RequestFilter;
 
 class TestBasicAuthProvider {
+  @SuppressWarnings("ResultOfMethodCallIgnored")
   @Test
   void testNullParams() {
     assertAll(
         () ->
-            assertThrows(
-                NullPointerException.class,
-                () ->
-                    new BasicAuthenticationProvider()
-                        .build(ImmutableMap.of(CONF_NESSIE_PASSWORD, "pass")::get)),
+            assertThatThrownBy(
+                    () ->
+                        new BasicAuthenticationProvider()
+                            .build(ImmutableMap.of(CONF_NESSIE_PASSWORD, "pass")::get))
+                .isInstanceOf(NullPointerException.class),
         () ->
-            assertThrows(
-                NullPointerException.class,
-                () ->
-                    new BasicAuthenticationProvider()
-                        .build(ImmutableMap.of(CONF_NESSIE_USERNAME, "user")::get)),
+            assertThatThrownBy(
+                    () ->
+                        new BasicAuthenticationProvider()
+                            .build(ImmutableMap.of(CONF_NESSIE_USERNAME, "user")::get))
+                .isInstanceOf(NullPointerException.class),
         () ->
-            assertThrows(
-                NullPointerException.class,
-                () -> new BasicAuthenticationProvider().build(s -> null)));
+            assertThatThrownBy(() -> new BasicAuthenticationProvider().build(s -> null))
+                .isInstanceOf(NullPointerException.class),
+        () ->
+            assertThatThrownBy(() -> BasicAuthenticationProvider.create(null, "pass"))
+                .isInstanceOf(NullPointerException.class),
+        () ->
+            assertThatThrownBy(() -> BasicAuthenticationProvider.create("user", null))
+                .isInstanceOf(NullPointerException.class),
+        () ->
+            assertThatThrownBy(() -> BasicAuthenticationProvider.create(null, null))
+                .isInstanceOf(NullPointerException.class));
   }
 
   @Test
-  void testAuthEncoding() {
+  void testFromConfig() {
     Map<String, String> authCfg =
         ImmutableMap.of(
             NessieConfigConstants.CONF_NESSIE_AUTH_TYPE,
@@ -66,15 +77,45 @@ class TestBasicAuthProvider {
             "OpenSesame");
 
     NessieAuthentication authentication = NessieAuthenticationProvider.fromConfig(authCfg::get);
+    checkAuth(authentication);
+  }
 
+  @Test
+  void testStaticBuilder() {
+    checkAuth(BasicAuthenticationProvider.create("Aladdin", "OpenSesame"));
+  }
+
+  void checkAuth(NessieAuthentication authentication) {
     assertThat(authentication).isInstanceOf(HttpAuthentication.class);
     HttpAuthentication httpAuthentication = (HttpAuthentication) authentication;
 
-    RequestFilter authFilter = httpAuthentication.buildRequestFilter();
+    // Intercept the call to HttpClient.register(RequestFilter) and extract the RequestFilter for
+    // our test
+    RequestFilter[] authFilter = new RequestFilter[1];
+    HttpClient client = Mockito.mock(HttpClient.class);
+    Mockito.doAnswer(
+            invocationOnMock -> {
+              Object[] args = invocationOnMock.getArguments();
+              if (args.length == 1 && args[0] instanceof RequestFilter) {
+                authFilter[0] = (RequestFilter) args[0];
+              }
+              return null;
+            })
+        .when(client)
+        .register((RequestFilter) Mockito.any());
+    httpAuthentication.applyToHttpClient(client);
+
+    // Check that the registered RequestFilter works as expected (sets the right HTTP header)
+
+    assertThat(authFilter[0]).isInstanceOf(RequestFilter.class);
+
     Map<String, Set<String>> map = new HashMap<>();
     RequestContext context = new RequestContext(map, null, null, null);
-    authFilter.filter(context);
+    authFilter[0].filter(context);
 
-    assertEquals("Basic QWxhZGRpbjpPcGVuU2VzYW1l", map.get("Authorization").iterator().next());
+    assertThat(map)
+        .containsKey("Authorization")
+        .extracting("Authorization", InstanceOfAssertFactories.iterable(String.class))
+        .containsExactly("Basic QWxhZGRpbjpPcGVuU2VzYW1l");
   }
 }

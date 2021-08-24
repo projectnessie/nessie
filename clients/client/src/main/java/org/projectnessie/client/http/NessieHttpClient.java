@@ -39,7 +39,6 @@ import org.projectnessie.api.ConfigApi;
 import org.projectnessie.api.ContentsApi;
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.client.NessieClient;
-import org.projectnessie.client.auth.NessieAuthentication;
 import org.projectnessie.client.rest.NessieHttpResponseFilter;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -71,7 +70,7 @@ public class NessieHttpClient implements NessieClient {
       String owner,
       String repo,
       URI uri,
-      NessieAuthentication authentication,
+      HttpAuthentication authentication,
       boolean enableTracing,
       int readTimeout,
       int connectionTimeoutMillis) {
@@ -159,16 +158,9 @@ public class NessieHttpClient implements NessieClient {
     }
   }
 
-  private void authFilter(HttpClient client, NessieAuthentication authentication) {
+  private void authFilter(HttpClient client, HttpAuthentication authentication) {
     if (authentication != null) {
-      if (!(authentication instanceof HttpAuthentication)) {
-        throw new IllegalArgumentException(
-            String.format(
-                "Authenticator '%s' does not support HttpAuthentication",
-                authentication.getClass().getSimpleName()));
-      }
-      HttpAuthentication httpAuthentication = (HttpAuthentication) authentication;
-      client.register(httpAuthentication.buildRequestFilter());
+      authentication.applyToHttpClient(client);
     }
   }
 
