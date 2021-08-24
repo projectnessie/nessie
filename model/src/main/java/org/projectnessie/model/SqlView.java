@@ -28,7 +28,8 @@ import org.immutables.value.Value;
 @JsonTypeName("VIEW")
 public abstract class SqlView extends Contents {
 
-  public static enum Dialect {
+  public enum Dialect {
+    HIVE,
     SPARK,
     DREMIO,
     PRESTO
