@@ -130,6 +130,8 @@
     <awssdk.version>2.17.25</awssdk.version>
     <bouncycastle.version>1.66</bouncycastle.version>
     <cel.version>0.2.0</cel.version>
+    <!-- to fix circular dependencies with NessieClient, certain projects need to use the same Nessie version as Iceberg/Delta has -->
+    <client.nessie.version>0.9.0</client.nessie.version>
     <deltalake2.version>0.6.2-nessie</deltalake2.version>
     <deltalake3.version>0.8.0-nessie</deltalake3.version>
     <dynamodb.version>1.12.0</dynamodb.version>
@@ -139,8 +141,6 @@
     <guava.version>30.1.1-jre</guava.version>
     <hadoop.version>3.3.1</hadoop.version>
     <iceberg.version>0.12.0</iceberg.version>
-    <!-- to fix circular dependencies with NessieClient, certain projects need to use the same Nessie version as Iceberg has -->
-    <iceberg.nessie.version>0.9.0</iceberg.nessie.version>
     <immutables.version>2.8.9-ea-1</immutables.version>
     <jackson.version>2.12.4</jackson.version>
     <javax.version>4.0.1</javax.version>
