@@ -47,8 +47,8 @@ public class HttpRequest {
   private final List<RequestFilter> requestFilters;
   private final List<ResponseFilter> responseFilters;
   private SSLContext sslContext;
-  private String contentsType = "application/json";
-  private String accept = "application/json";
+  private String contentsType = "application/json; charset=utf-8";
+  private String accept = "application/json; charset=utf-8";
 
   HttpRequest(
       URI baseUri,
@@ -120,7 +120,7 @@ public class HttpRequest {
         if (method.equals(Method.PUT) || method.equals(Method.POST)) {
           // Need to set the Content-Type even if body==null, otherwise the server responds with
           // RESTEASY003065: Cannot consume content type
-          con.setRequestProperty("Content-Type", contentsType + "; charset=utf-8");
+          con.setRequestProperty("Content-Type", contentsType);
           if (body != null) {
             con.setDoOutput(true);
             Class<?> bodyType = body.getClass();
