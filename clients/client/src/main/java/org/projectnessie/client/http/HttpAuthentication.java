@@ -22,5 +22,11 @@ import org.projectnessie.client.auth.NessieAuthentication;
  * RequestFilter} instance to be used with {@link HttpClient}.
  */
 public interface HttpAuthentication extends NessieAuthentication {
+
+  /**
+   * Configure the given {@link HttpClient} to use this instance..
+   *
+   * @param client client to configure
+   */
   void applyToHttpClient(HttpClient client);
 }

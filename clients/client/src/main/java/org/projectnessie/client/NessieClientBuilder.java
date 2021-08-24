@@ -60,6 +60,12 @@ public interface NessieClientBuilder<IMPL extends NessieClientBuilder<IMPL>> {
    */
   IMPL withAuthenticationFromConfig(Function<String, String> configuration);
 
+  /**
+   * Sets the {@link NessieAuthentication} instance to be used.
+   *
+   * @param authentication authentication for this client
+   * @return {@code this}
+   */
   IMPL withAuthentication(NessieAuthentication authentication);
 
   /**

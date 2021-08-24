@@ -106,7 +106,9 @@ public class NessieHttpClient implements NessieClient {
     if (enableTracing) {
       addTracing(client);
     }
-    authFilter(client, authentication);
+    if (authentication != null) {
+      authentication.applyToHttpClient(client);
+    }
     client.register(new NessieHttpResponseFilter(mapper));
     contents = wrap(ContentsApi.class, new HttpContentsClient(client));
     tree = wrap(TreeApi.class, new HttpTreeClient(client));
@@ -155,12 +157,6 @@ public class NessieHttpClient implements NessieClient {
                   headerMap.forEach(context::putHeader);
                 }
               });
-    }
-  }
-
-  private void authFilter(HttpClient client, HttpAuthentication authentication) {
-    if (authentication != null) {
-      authentication.applyToHttpClient(client);
     }
   }
 
