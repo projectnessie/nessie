@@ -43,9 +43,7 @@ import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.KeyWithType;
 
-/**
- * Tests performing commits.
- */
+/** Tests performing commits. */
 public abstract class AbstractCommitScenarios {
 
   private final DatabaseAdapter databaseAdapter;
@@ -62,11 +60,11 @@ public abstract class AbstractCommitScenarios {
     final boolean globalState;
 
     RenameTable(
-      int setupCommits,
-      int afterInitialCommits,
-      int afterRenameCommits,
-      int afterDeleteCommits,
-      boolean globalState) {
+        int setupCommits,
+        int afterInitialCommits,
+        int afterRenameCommits,
+        int afterDeleteCommits,
+        boolean globalState) {
       this.setupCommits = setupCommits;
       this.afterInitialCommits = afterInitialCommits;
       this.afterRenameCommits = afterRenameCommits;
@@ -76,21 +74,21 @@ public abstract class AbstractCommitScenarios {
 
     RenameTable globalState() {
       return new RenameTable(
-        setupCommits, afterInitialCommits, afterRenameCommits, afterDeleteCommits, true);
+          setupCommits, afterInitialCommits, afterRenameCommits, afterDeleteCommits, true);
     }
 
     @Override
     public String toString() {
       return "setupCommits="
-        + setupCommits
-        + ", afterInitialCommits="
-        + afterInitialCommits
-        + ", afterRenameCommits="
-        + afterRenameCommits
-        + ", afterDeleteCommits="
-        + afterDeleteCommits
-        + ", globalState="
-        + globalState;
+          + setupCommits
+          + ", afterInitialCommits="
+          + afterInitialCommits
+          + ", afterRenameCommits="
+          + afterRenameCommits
+          + ", afterDeleteCommits="
+          + afterDeleteCommits
+          + ", globalState="
+          + globalState;
     }
   }
 
@@ -98,27 +96,27 @@ public abstract class AbstractCommitScenarios {
     Stream<RenameTable> zero = Stream.of(new RenameTable(0, 0, 0, 0, false));
 
     Stream<RenameTable> intervals =
-      IntStream.of(19, 20, 21)
-        .boxed()
-        .flatMap(
-          i ->
-            Stream.of(
-              new RenameTable(i, 0, 0, 0, false),
-              new RenameTable(0, i, 0, 0, false),
-              new RenameTable(0, 0, i, 0, false),
-              new RenameTable(0, 0, 0, i, false),
-              new RenameTable(i, i, 0, 0, false),
-              new RenameTable(i, 0, i, 0, false),
-              new RenameTable(i, 0, 0, i, false),
-              new RenameTable(0, i, 0, 0, false),
-              new RenameTable(0, i, i, 0, false),
-              new RenameTable(0, i, 0, i, false),
-              new RenameTable(i, 0, i, 0, false),
-              new RenameTable(0, i, i, 0, false),
-              new RenameTable(0, 0, i, i, false),
-              new RenameTable(i, 0, 0, i, false),
-              new RenameTable(0, i, 0, i, false),
-              new RenameTable(0, 0, i, i, false)));
+        IntStream.of(19, 20, 21)
+            .boxed()
+            .flatMap(
+                i ->
+                    Stream.of(
+                        new RenameTable(i, 0, 0, 0, false),
+                        new RenameTable(0, i, 0, 0, false),
+                        new RenameTable(0, 0, i, 0, false),
+                        new RenameTable(0, 0, 0, i, false),
+                        new RenameTable(i, i, 0, 0, false),
+                        new RenameTable(i, 0, i, 0, false),
+                        new RenameTable(i, 0, 0, i, false),
+                        new RenameTable(0, i, 0, 0, false),
+                        new RenameTable(0, i, i, 0, false),
+                        new RenameTable(0, i, 0, i, false),
+                        new RenameTable(i, 0, i, 0, false),
+                        new RenameTable(0, i, i, 0, false),
+                        new RenameTable(0, 0, i, i, false),
+                        new RenameTable(i, 0, 0, i, false),
+                        new RenameTable(0, i, 0, i, false),
+                        new RenameTable(0, 0, i, i, false)));
 
     // duplicate all params to use and not use global state
     return Stream.concat(zero, intervals).flatMap(p -> Stream.of(p, p.globalState()));
@@ -144,132 +142,132 @@ public abstract class AbstractCommitScenarios {
     ContentsId contentsId = ContentsId.of("id-42");
 
     IntFunction<Hash> performDummyCommit =
-      i -> {
-        try {
-          return databaseAdapter.commit(
-            ImmutableCommitAttempt.builder()
-              .commitToBranch(branch)
-              .commitMetaSerialized(ByteString.copyFromUtf8("dummy commit meta " + i))
-              .addUnchanged(dummyKey)
-              .build());
-        } catch (ReferenceNotFoundException | ReferenceConflictException e) {
-          throw new RuntimeException(e);
-        }
-      };
+        i -> {
+          try {
+            return databaseAdapter.commit(
+                ImmutableCommitAttempt.builder()
+                    .commitToBranch(branch)
+                    .commitMetaSerialized(ByteString.copyFromUtf8("dummy commit meta " + i))
+                    .addUnchanged(dummyKey)
+                    .build());
+          } catch (ReferenceNotFoundException | ReferenceConflictException e) {
+            throw new RuntimeException(e);
+          }
+        };
 
     List<Hash> beforeInitial =
-      IntStream.range(0, param.setupCommits)
-        .mapToObj(performDummyCommit)
-        .collect(Collectors.toList());
+        IntStream.range(0, param.setupCommits)
+            .mapToObj(performDummyCommit)
+            .collect(Collectors.toList());
 
     ImmutableCommitAttempt.Builder commit;
 
     commit =
-      ImmutableCommitAttempt.builder()
-        .commitToBranch(branch)
-        .commitMetaSerialized(ByteString.copyFromUtf8("initial commit meta"))
-        .addPuts(
-          KeyWithBytes.of(
-            oldKey,
-            contentsId,
-            (byte) 0,
-            ByteString.copyFromUtf8("initial commit contents")));
+        ImmutableCommitAttempt.builder()
+            .commitToBranch(branch)
+            .commitMetaSerialized(ByteString.copyFromUtf8("initial commit meta"))
+            .addPuts(
+                KeyWithBytes.of(
+                    oldKey,
+                    contentsId,
+                    (byte) 0,
+                    ByteString.copyFromUtf8("initial commit contents")));
     if (param.globalState) {
       commit
-        .putGlobal(contentsId, ByteString.copyFromUtf8("0"))
-        .putExpectedStates(contentsId, Optional.empty());
+          .putGlobal(contentsId, ByteString.copyFromUtf8("0"))
+          .putExpectedStates(contentsId, Optional.empty());
     }
     Hash hashInitial = databaseAdapter.commit(commit.build());
 
     List<Hash> beforeRename =
-      IntStream.range(0, param.afterInitialCommits)
-        .mapToObj(performDummyCommit)
-        .collect(Collectors.toList());
+        IntStream.range(0, param.afterInitialCommits)
+            .mapToObj(performDummyCommit)
+            .collect(Collectors.toList());
 
     commit =
-      ImmutableCommitAttempt.builder()
-        .commitToBranch(branch)
-        .commitMetaSerialized(ByteString.copyFromUtf8("rename table"))
-        .addDeletes(oldKey)
-        .addPuts(
-          KeyWithBytes.of(
-            newKey,
-            contentsId,
-            (byte) 0,
-            ByteString.copyFromUtf8("rename commit contents")));
+        ImmutableCommitAttempt.builder()
+            .commitToBranch(branch)
+            .commitMetaSerialized(ByteString.copyFromUtf8("rename table"))
+            .addDeletes(oldKey)
+            .addPuts(
+                KeyWithBytes.of(
+                    newKey,
+                    contentsId,
+                    (byte) 0,
+                    ByteString.copyFromUtf8("rename commit contents")));
     if (param.globalState) {
       commit
-        .putGlobal(contentsId, ByteString.copyFromUtf8("0"))
-        .putExpectedStates(contentsId, Optional.of(ByteString.copyFromUtf8("0")));
+          .putGlobal(contentsId, ByteString.copyFromUtf8("0"))
+          .putExpectedStates(contentsId, Optional.of(ByteString.copyFromUtf8("0")));
     }
     Hash hashRename = databaseAdapter.commit(commit.build());
 
     List<Hash> beforeDelete =
-      IntStream.range(0, param.afterRenameCommits)
-        .mapToObj(performDummyCommit)
-        .collect(Collectors.toList());
+        IntStream.range(0, param.afterRenameCommits)
+            .mapToObj(performDummyCommit)
+            .collect(Collectors.toList());
 
     commit =
-      ImmutableCommitAttempt.builder()
-        .commitToBranch(branch)
-        .commitMetaSerialized(ByteString.copyFromUtf8("delete table"))
-        .addDeletes(newKey);
+        ImmutableCommitAttempt.builder()
+            .commitToBranch(branch)
+            .commitMetaSerialized(ByteString.copyFromUtf8("delete table"))
+            .addDeletes(newKey);
     if (param.globalState) {
       commit
-        .putGlobal(contentsId, ByteString.copyFromUtf8("0"))
-        .putExpectedStates(contentsId, Optional.of(ByteString.copyFromUtf8("0")));
+          .putGlobal(contentsId, ByteString.copyFromUtf8("0"))
+          .putExpectedStates(contentsId, Optional.of(ByteString.copyFromUtf8("0")));
     }
     Hash hashDelete = databaseAdapter.commit(commit.build());
 
     List<Hash> afterDelete =
-      IntStream.range(0, param.afterDeleteCommits)
-        .mapToObj(performDummyCommit)
-        .collect(Collectors.toList());
+        IntStream.range(0, param.afterDeleteCommits)
+            .mapToObj(performDummyCommit)
+            .collect(Collectors.toList());
 
     int expectedCommitCount = 1;
 
     // Verify that the commits before the initial put return _no_ keys
     expectedCommitCount =
-      renameCommitVerify(
-        beforeInitial.stream(), expectedCommitCount, keys -> assertThat(keys).isEmpty());
+        renameCommitVerify(
+            beforeInitial.stream(), expectedCommitCount, keys -> assertThat(keys).isEmpty());
 
     // Verify that the commits since the initial put and before the rename-operation return the
     // _old_ key
     expectedCommitCount =
-      renameCommitVerify(
-        Stream.concat(Stream.of(hashInitial), beforeRename.stream()),
-        expectedCommitCount,
-        keys -> assertThat(keys).containsExactly(KeyWithType.of(oldKey, contentsId, (byte) 0)));
+        renameCommitVerify(
+            Stream.concat(Stream.of(hashInitial), beforeRename.stream()),
+            expectedCommitCount,
+            keys -> assertThat(keys).containsExactly(KeyWithType.of(oldKey, contentsId, (byte) 0)));
 
     // Verify that the commits since the rename-operation and before the delete-operation return the
     // _new_ key
     expectedCommitCount =
-      renameCommitVerify(
-        Stream.concat(Stream.of(hashRename), beforeDelete.stream()),
-        expectedCommitCount,
-        keys -> assertThat(keys).containsExactly(KeyWithType.of(newKey, contentsId, (byte) 0)));
+        renameCommitVerify(
+            Stream.concat(Stream.of(hashRename), beforeDelete.stream()),
+            expectedCommitCount,
+            keys -> assertThat(keys).containsExactly(KeyWithType.of(newKey, contentsId, (byte) 0)));
 
     // Verify that the commits since the delete-operation return _no_ keys
     expectedCommitCount =
-      renameCommitVerify(
-        Stream.concat(Stream.of(hashDelete), afterDelete.stream()),
-        expectedCommitCount,
-        keys -> assertThat(keys).isEmpty());
+        renameCommitVerify(
+            Stream.concat(Stream.of(hashDelete), afterDelete.stream()),
+            expectedCommitCount,
+            keys -> assertThat(keys).isEmpty());
 
     assertThat(expectedCommitCount - 1)
-      .isEqualTo(
-        param.setupCommits
-          + 1
-          + param.afterInitialCommits
-          + 1
-          + param.afterRenameCommits
-          + 1
-          + param.afterDeleteCommits);
+        .isEqualTo(
+            param.setupCommits
+                + 1
+                + param.afterInitialCommits
+                + 1
+                + param.afterRenameCommits
+                + 1
+                + param.afterDeleteCommits);
   }
 
   private int renameCommitVerify(
-    Stream<Hash> hashes, int expectedCommitCount, Consumer<Stream<KeyWithType>> keysStreamAssert)
-    throws Exception {
+      Stream<Hash> hashes, int expectedCommitCount, Consumer<Stream<KeyWithType>> keysStreamAssert)
+      throws Exception {
     for (Hash hash : hashes.collect(Collectors.toList())) {
       try (Stream<KeyWithType> keys = databaseAdapter.keys(hash, KeyFilterPredicate.ALLOW_ALL)) {
         keysStreamAssert.accept(keys);
@@ -288,53 +286,53 @@ public abstract class AbstractCommitScenarios {
 
     ArrayList<Key> keys = new ArrayList<>(tablesPerCommit);
     ImmutableCommitAttempt.Builder commit =
-      ImmutableCommitAttempt.builder()
-        .commitToBranch(branch)
-        .commitMetaSerialized(ByteString.copyFromUtf8("initial commit meta"));
+        ImmutableCommitAttempt.builder()
+            .commitToBranch(branch)
+            .commitMetaSerialized(ByteString.copyFromUtf8("initial commit meta"));
     for (int i = 0; i < tablesPerCommit; i++) {
       Key key = Key.of("my", "table", "num" + i);
       keys.add(key);
 
       commit
-        .addPuts(
-          KeyWithBytes.of(
-            key,
-            ContentsId.of("id-" + i),
-            (byte) 0,
-            ByteString.copyFromUtf8("initial commit contents")))
-        .putGlobal(ContentsId.of("id-" + i), ByteString.copyFromUtf8("0"))
-        .putExpectedStates(ContentsId.of("id-" + i), Optional.empty());
+          .addPuts(
+              KeyWithBytes.of(
+                  key,
+                  ContentsId.of("id-" + i),
+                  (byte) 0,
+                  ByteString.copyFromUtf8("initial commit contents")))
+          .putGlobal(ContentsId.of("id-" + i), ByteString.copyFromUtf8("0"))
+          .putExpectedStates(ContentsId.of("id-" + i), Optional.empty());
     }
     Hash head = databaseAdapter.commit(commit.build());
 
     for (int commitNum = 0; commitNum < 3; commitNum++) {
       List<Optional<String>> contents;
       try (Stream<Optional<ContentsAndState<ByteString>>> stream =
-        databaseAdapter.values(
-          databaseAdapter.toHash(branch), keys, KeyFilterPredicate.ALLOW_ALL)) {
+          databaseAdapter.values(
+              databaseAdapter.toHash(branch), keys, KeyFilterPredicate.ALLOW_ALL)) {
         contents =
-          stream
-            .map(o -> o.map(ContentsAndState::getGlobalState).map(ByteString::toStringUtf8))
-            .collect(Collectors.toList());
+            stream
+                .map(o -> o.map(ContentsAndState::getGlobalState).map(ByteString::toStringUtf8))
+                .collect(Collectors.toList());
       }
       commit =
-        ImmutableCommitAttempt.builder()
-          .commitToBranch(branch)
-          .commitMetaSerialized(ByteString.copyFromUtf8("initial commit meta"));
+          ImmutableCommitAttempt.builder()
+              .commitToBranch(branch)
+              .commitMetaSerialized(ByteString.copyFromUtf8("initial commit meta"));
       for (int i = 0; i < tablesPerCommit; i++) {
         String currentState = contents.get(i).orElseThrow(RuntimeException::new);
         String newGlobalState = Integer.toString(Integer.parseInt(currentState) + 1);
 
         commit
-          .addPuts(
-            KeyWithBytes.of(
-              keys.get(i),
-              ContentsId.of("id-" + i),
-              (byte) 0,
-              ByteString.copyFromUtf8("branch value")))
-          .putGlobal(ContentsId.of("id-" + i), ByteString.copyFromUtf8(newGlobalState))
-          .putExpectedStates(
-            ContentsId.of("id-" + i), Optional.of(ByteString.copyFromUtf8(currentState)));
+            .addPuts(
+                KeyWithBytes.of(
+                    keys.get(i),
+                    ContentsId.of("id-" + i),
+                    (byte) 0,
+                    ByteString.copyFromUtf8("branch value")))
+            .putGlobal(ContentsId.of("id-" + i), ByteString.copyFromUtf8(newGlobalState))
+            .putExpectedStates(
+                ContentsId.of("id-" + i), Optional.of(ByteString.copyFromUtf8(currentState)));
       }
 
       Hash newHead = databaseAdapter.commit(commit.build());
