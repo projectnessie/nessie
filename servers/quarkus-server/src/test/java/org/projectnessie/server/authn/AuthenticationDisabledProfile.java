@@ -23,7 +23,7 @@ import java.util.Map;
 public class AuthenticationDisabledProfile implements QuarkusTestProfile {
 
   public static final Map<String, String> CONFIG_OVERRIDES =
-      ImmutableMap.of("nessie.authentication.enabled", "false");
+      ImmutableMap.of("nessie.server.authentication.enabled", "false");
 
   @Override
   public Map<String, String> getConfigOverrides() {
