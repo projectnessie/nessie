@@ -32,7 +32,6 @@ import javax.net.ssl.SSLContext;
 public class HttpClient {
 
   private final URI baseUri;
-  private final String accept;
   private final ObjectMapper mapper;
   private final SSLContext sslContext;
   private final int readTimeoutMillis;
@@ -51,19 +50,16 @@ public class HttpClient {
    * Construct an HTTP client with a universal Accept header.
    *
    * @param baseUri uri base eg https://example.com
-   * @param accept Accept header eg "application/json"
    * @param readTimeoutMillis timeout to wait for response from server, in milliseconds
    * @param connectionTimeoutMillis timeout to wait to connecto to server, in milliseconds
    */
   private HttpClient(
       URI baseUri,
-      String accept,
       ObjectMapper mapper,
       SSLContext sslContext,
       int readTimeoutMillis,
       int connectionTimeoutMillis) {
     this.baseUri = Objects.requireNonNull(baseUri);
-    this.accept = HttpUtils.checkNonNullTrim(accept);
     this.mapper = mapper;
     this.sslContext = sslContext;
     this.readTimeoutMillis = readTimeoutMillis;
@@ -94,7 +90,6 @@ public class HttpClient {
   public HttpRequest newRequest() {
     return new HttpRequest(
         baseUri,
-        accept,
         mapper,
         requestFilters,
         responseFilters,
@@ -113,7 +108,6 @@ public class HttpClient {
 
   public static class HttpClientBuilder {
     private URI baseUri;
-    private String accept = "application/json";
     private ObjectMapper mapper;
     private SSLContext sslContext;
     private int readTimeoutMillis =
@@ -129,15 +123,6 @@ public class HttpClient {
 
     public HttpClientBuilder setBaseUri(URI baseUri) {
       this.baseUri = baseUri;
-      return this;
-    }
-
-    public String getAccept() {
-      return accept;
-    }
-
-    public HttpClientBuilder setAccept(String accept) {
-      this.accept = accept;
       return this;
     }
 
@@ -182,8 +167,6 @@ public class HttpClient {
       HttpUtils.checkArgument(
           baseUri != null, "Cannot construct Http client. Must have a non-null uri");
       HttpUtils.checkArgument(
-          accept != null, "Cannot construct Http client. Must have a non-null accept string");
-      HttpUtils.checkArgument(
           mapper != null, "Cannot construct Http client. Must have a non-null object mapper");
       if (sslContext == null) {
         try {
@@ -194,7 +177,7 @@ public class HttpClient {
         }
       }
       return new HttpClient(
-          baseUri, accept, mapper, sslContext, readTimeoutMillis, connectionTimeoutMillis);
+          baseUri, mapper, sslContext, readTimeoutMillis, connectionTimeoutMillis);
     }
   }
 }
