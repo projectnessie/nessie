@@ -226,7 +226,9 @@ class ITTestIdentifyUnreferencedAssetsIceberg {
 
     // create a new table on a different branch, commit then delete the branch.
     createTable(TABLE_IDENTIFIER2, catalogDeleteBranch);
+    SparkSession.setActiveSession(sparkDeleteBranch);
     addFile(sparkDeleteBranch, TABLE_IDENTIFIER2);
+    SparkSession.setActiveSession(spark);
     client
         .getTreeApi()
         .deleteBranch(

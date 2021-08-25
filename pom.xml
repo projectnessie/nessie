@@ -160,10 +160,8 @@
     <scala2.13.version>2.13.6</scala2.13.version>
     <serverless.version>1.5</serverless.version>
     <slf4j.version>1.7.32</slf4j.version>
-    <spark2.jackson.version>2.8.8</spark2.jackson.version>
-    <spark2.version>2.4.2</spark2.version>
     <spark3.jackson.version>2.10.2</spark3.jackson.version>
-    <spark3.version>3.0.3</spark3.version>
+    <spark3.version>3.1.1</spark3.version>
     <sqlite.version>1.0.392</sqlite.version>
     <surefire.version>3.0.0-M5</surefire.version>
     <weld.version>3.1.7.Final</weld.version>
@@ -484,6 +482,10 @@
           <exclusion>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-util</artifactId>
           </exclusion>
         </exclusions>
       </dependency>
