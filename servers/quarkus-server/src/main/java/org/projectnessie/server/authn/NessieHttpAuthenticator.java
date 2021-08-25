@@ -76,7 +76,7 @@ public class NessieHttpAuthenticator extends HttpAuthenticator {
                 // Disallow unauthenticated requests when requested by configuration.
                 // Note: Quarkus by default permits unauthenticated requests unless there are
                 // specific authorization rules that validate the security identity.
-                throw new AuthenticationFailedException("Not authenticated");
+                throw new AuthenticationFailedException("Missing or unrecognized credentials");
               }
 
               return securityIdentity;
