@@ -79,7 +79,9 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
   }
 
   private def catalogName(): String = {
-    CatalogNameUtil.catalogName()
+    val currentCatalog =
+      SparkSession.active.sessionState.catalogManager.currentCatalog
+    currentCatalog.name
   }
 
   private def prefix(): String = {
