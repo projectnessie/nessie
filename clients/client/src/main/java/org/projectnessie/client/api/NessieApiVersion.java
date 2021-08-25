@@ -13,13 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.api;
+package org.projectnessie.client.api;
 
-import org.projectnessie.model.NessieConfiguration;
+public enum NessieApiVersion {
+  @Deprecated
+  V_0_9,
 
-@Deprecated
-public interface ConfigApi {
-
-  /** Get the server configuration. */
-  NessieConfiguration getConfig();
+  V_1
 }

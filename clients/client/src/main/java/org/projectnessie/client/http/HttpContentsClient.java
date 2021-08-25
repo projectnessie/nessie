@@ -16,14 +16,14 @@
 package org.projectnessie.client.http;
 
 import javax.validation.constraints.NotNull;
-import org.projectnessie.api.ContentsApi;
+import org.projectnessie.api.http.HttpContentsApi;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Contents;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.MultiGetContentsRequest;
 import org.projectnessie.model.MultiGetContentsResponse;
 
-class HttpContentsClient implements ContentsApi {
+class HttpContentsClient implements HttpContentsApi {
 
   private final HttpClient client;
 

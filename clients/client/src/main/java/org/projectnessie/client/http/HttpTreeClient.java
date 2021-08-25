@@ -19,7 +19,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import org.projectnessie.api.TreeApi;
+import org.projectnessie.api.http.HttpTreeApi;
 import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.error.NessieConflictException;
@@ -33,7 +33,7 @@ import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
 import org.projectnessie.model.Transplant;
 
-class HttpTreeClient implements TreeApi {
+class HttpTreeClient implements HttpTreeApi {
 
   private static final TypeReference<List<Reference>> REFERENCE_LIST =
       new TypeReference<List<Reference>>() {};
