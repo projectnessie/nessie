@@ -17,8 +17,6 @@ package org.projectnessie.server;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.projectnessie.client.NessieClient.AuthType.BEARER;
-import static org.projectnessie.client.NessieClient.AuthType.NONE;
 
 import com.google.common.collect.ImmutableMap;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -29,6 +27,7 @@ import io.quarkus.test.oidc.server.OidcWiremockTestResource;
 import io.smallrye.jwt.build.Jwt;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.projectnessie.client.auth.BearerAuthenticationProvider;
 import org.projectnessie.client.rest.NessieNotAuthorizedException;
 import org.projectnessie.server.authn.AuthenticationEnabledProfile;
 
@@ -43,13 +42,15 @@ public class TestOpenIdAuthentication extends BaseClientAuthTest {
 
   @Test
   void testValidJwt() {
-    withClientCustomizer(b -> b.withAuthType(BEARER).withBearerToken(getJwtToken()));
+    withClientCustomizer(
+        b -> b.withAuthentication(BearerAuthenticationProvider.create(getJwtToken())));
     assertThat(client().getTreeApi().getAllReferences()).isNotEmpty();
   }
 
   @Test
   void testInvalidToken() {
-    withClientCustomizer(b -> b.withAuthType(BEARER).withBearerToken("invalid_token"));
+    withClientCustomizer(
+        b -> b.withAuthentication(BearerAuthenticationProvider.create("invalid_token")));
     assertThatThrownBy(() -> client().getTreeApi().getAllReferences())
         .isInstanceOfSatisfying(
             NessieNotAuthorizedException.class,
@@ -58,7 +59,6 @@ public class TestOpenIdAuthentication extends BaseClientAuthTest {
 
   @Test
   void testAbsentToken() {
-    withClientCustomizer(b -> b.withAuthType(NONE));
     assertThatThrownBy(() -> client().getTreeApi().getAllReferences())
         .isInstanceOfSatisfying(
             NessieNotAuthorizedException.class,

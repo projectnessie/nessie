@@ -16,13 +16,12 @@
 package org.projectnessie.server;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.projectnessie.client.NessieClient.AuthType.BASIC;
-import static org.projectnessie.client.NessieClient.AuthType.BEARER;
-import static org.projectnessie.client.NessieClient.AuthType.NONE;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import org.junit.jupiter.api.Test;
+import org.projectnessie.client.auth.BasicAuthenticationProvider;
+import org.projectnessie.client.auth.BearerAuthenticationProvider;
 import org.projectnessie.server.authn.AuthenticationDisabledProfile;
 
 /**
@@ -36,19 +35,19 @@ public class TestDisabledAuthentication extends BaseClientAuthTest {
   @Test
   void testBasic() {
     withClientCustomizer(
-        c -> c.withAuthType(BASIC).withUsername("any_user").withPassword("any_password"));
+        c -> c.withAuthentication(BasicAuthenticationProvider.create("any_user", "any_password")));
     assertThat(client().getTreeApi().getAllReferences()).isNotEmpty();
   }
 
   @Test
   void testBearer() {
-    withClientCustomizer(c -> c.withAuthType(BEARER).withBearerToken("any_token"));
+    withClientCustomizer(
+        c -> c.withAuthentication(BearerAuthenticationProvider.create("any_token")));
     assertThat(client().getTreeApi().getAllReferences()).isNotEmpty();
   }
 
   @Test
   void testNone() {
-    withClientCustomizer(c -> c.withAuthType(NONE));
     assertThat(client().getTreeApi().getAllReferences()).isNotEmpty();
   }
 }
