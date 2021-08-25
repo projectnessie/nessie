@@ -18,7 +18,8 @@ package org.projectnessie.perftest.gatling
 import io.gatling.core.Predef._
 import io.gatling.core.scenario.Simulation
 import io.gatling.core.structure.{ChainBuilder, ScenarioBuilder}
-import org.projectnessie.client.NessieClient
+import org.projectnessie.client.api.{NessieAPIv1, NessieApiVersion}
+import org.projectnessie.client.http.HttpClientBuilder
 import org.projectnessie.error.NessieConflictException
 import org.projectnessie.model.Operation.Put
 import org.projectnessie.model._
@@ -50,22 +51,19 @@ class CommitToBranchSimulation extends Simulation {
           val tableName = params.makeTableName(session)
 
           // Call the Nessie client operation to perform a commit
-          val updatedBranch = client.getTreeApi.commitMultipleOperations(
-            branch.getName,
-            branch.getHash,
-            ImmutableOperations
-              .builder()
-              .commitMeta(
-                CommitMeta.fromMessage(s"test-commit $userId $commitNum")
+          val updatedBranch = client
+            .commitMultipleOperations()
+            .branch(branch)
+            .commitMeta(
+              CommitMeta.fromMessage(s"test-commit $userId $commitNum")
+            )
+            .operation(
+              Put.of(
+                ContentsKey.of("name", "space", tableName),
+                IcebergTable.of(s"path_on_disk_${tableName}_$commitNum")
               )
-              .addOperations(
-                Put.of(
-                  ContentsKey.of("name", "space", tableName),
-                  IcebergTable.of(s"path_on_disk_${tableName}_$commitNum")
-                )
-              )
-              .build()
-          )
+            )
+            .submit()
 
           session.set("branch", updatedBranch)
         }
@@ -74,8 +72,10 @@ class CommitToBranchSimulation extends Simulation {
             val branch = session("branch").as[Branch]
             session.set(
               "branch",
-              client.getTreeApi
-                .getReferenceByName(branch.getName)
+              client
+                .getReference()
+                .refName(branch.getName)
+                .submit()
                 .asInstanceOf[Branch]
             )
           } else {
@@ -105,8 +105,10 @@ class CommitToBranchSimulation extends Simulation {
       nessie(s"Create branch $params.branch")
         .execute { (client, session) =>
           // create the branch (errors will be ignored)
-          val branch = client.getTreeApi
-            .createReference(Branch.of(params.makeBranchName(session), null))
+          val branch = client
+            .createReference()
+            .reference(Branch.of(params.makeBranchName(session), null))
+            .submit()
             .asInstanceOf[Branch]
           session.set("branch", branch)
         }
@@ -119,8 +121,10 @@ class CommitToBranchSimulation extends Simulation {
         nessie(s"Get reference $params.branch")
           .execute { (client, session) =>
             // retrieve the Nessie branch reference and store it in the Gatling session object
-            val branch = client.getTreeApi
-              .getReferenceByName(params.makeBranchName(session))
+            val branch = client
+              .getReference()
+              .refName(params.makeBranchName(session))
+              .submit()
               .asInstanceOf[Branch]
             session.set("branch", branch)
           }
@@ -153,11 +157,11 @@ class CommitToBranchSimulation extends Simulation {
   private def doSetUp(): SetUp = {
     val nessieProtocol: NessieProtocol = nessie()
       .client(
-        NessieClient
+        HttpClientBuilder
           .builder()
           .withUri("http://127.0.0.1:19120/api/v1")
           .fromSystemProperties()
-          .build()
+          .build(NessieApiVersion.V_1, classOf[NessieAPIv1])
       )
 
     System.out.println(params.asPrintableString())
