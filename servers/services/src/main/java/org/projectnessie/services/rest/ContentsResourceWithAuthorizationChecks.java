@@ -39,10 +39,9 @@ public class ContentsResourceWithAuthorizationChecks extends ContentsResource {
   @Inject
   public ContentsResourceWithAuthorizationChecks(
       ServerConfig config,
-      MultiTenant multiTenant,
       VersionStore<Contents, CommitMeta, Type> store,
       AccessChecker accessChecker) {
-    super(config, multiTenant, store, accessChecker);
+    super(config, store, accessChecker);
   }
 
   @Override

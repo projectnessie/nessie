@@ -48,7 +48,7 @@ public class ContentsResource extends BaseResource implements HttpContentsApi {
 
   // Mandated by CDI 2.0
   public ContentsResource() {
-    this(null, null, null, null);
+    this(null, null, null);
   }
 
   @Context SecurityContext securityContext;
@@ -56,10 +56,9 @@ public class ContentsResource extends BaseResource implements HttpContentsApi {
   @Inject
   public ContentsResource(
       ServerConfig config,
-      MultiTenant multiTenant,
       VersionStore<Contents, CommitMeta, Contents.Type> store,
       AccessChecker accessChecker) {
-    super(config, multiTenant, store, accessChecker);
+    super(config, store, accessChecker);
   }
 
   @Override

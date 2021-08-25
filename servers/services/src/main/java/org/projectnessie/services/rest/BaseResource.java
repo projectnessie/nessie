@@ -39,24 +39,20 @@ import org.projectnessie.versioned.WithHash;
 abstract class BaseResource {
   private final ServerConfig config;
 
-  private final MultiTenant multiTenant;
-
   private final VersionStore<Contents, CommitMeta, Contents.Type> store;
 
   private final AccessChecker accessChecker;
 
   // Mandated by CDI 2.0
   protected BaseResource() {
-    this(null, null, null, null);
+    this(null, null, null);
   }
 
   protected BaseResource(
       ServerConfig config,
-      MultiTenant multiTenant,
       VersionStore<Contents, CommitMeta, Contents.Type> store,
       AccessChecker accessChecker) {
     this.config = config;
-    this.multiTenant = multiTenant;
     this.store = store;
     this.accessChecker = accessChecker;
   }
@@ -128,10 +124,6 @@ abstract class BaseResource {
 
   protected Principal getPrincipal() {
     return null == getSecurityContext() ? null : getSecurityContext().getUserPrincipal();
-  }
-
-  public MultiTenant getMultiTenant() {
-    return multiTenant;
   }
 
   protected AccessChecker getAccessChecker() {

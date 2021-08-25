@@ -51,12 +51,7 @@ class NessieClient(object):
 
     def __init__(self: "NessieClient", config: confuse.Configuration) -> None:
         """Create a Nessie Client from known config."""
-        url = config["endpoint"].get()
-        repo = config["repo"].get() if "repo" in config else None
-        if repo:
-            sep = "" if url[-1:] == "/" else "/"
-            url = f"{url}{sep}{repo}"
-        self._base_url = url
+        self._base_url = config["endpoint"].get()
         self._ssl_verify = config["verify"].get(bool)
         self._commit_id: str = cast(str, None)
 

@@ -33,21 +33,12 @@ public interface NessieClient extends AutoCloseable {
   // Overridden to "remove 'throws Exception'"
   void close();
 
-  String getOwner();
-
-  String getRepo();
-
   URI getUri();
 
-  /**
-   * Tree-API scoped to the repository returned by {@link #getRepo()} for this {@link NessieClient}.
-   */
+  /** Tree-API for this {@link NessieClient}. */
   TreeApi getTreeApi();
 
-  /**
-   * Contents-API scoped to the repository returned by {@link #getRepo()} for this {@link
-   * NessieClient}.
-   */
+  /** Contents-API for this {@link NessieClient}. */
   ContentsApi getContentsApi();
 
   ConfigApi getConfigApi();
@@ -101,12 +92,6 @@ public interface NessieClient extends AutoCloseable {
     @Deprecated
     public Builder withUri(String uri) {
       return (Builder) super.withUri(uri);
-    }
-
-    @Override
-    @Deprecated
-    public Builder withRepoOwner(String owner, String repo) {
-      return (Builder) super.withRepoOwner(owner, repo);
     }
 
     @Override
