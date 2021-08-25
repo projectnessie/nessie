@@ -13,13 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.api;
+package org.projectnessie.client.api;
 
-import org.projectnessie.model.NessieConfiguration;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
+import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.model.Reference;
+import org.projectnessie.model.Validation;
 
-@Deprecated
-public interface ConfigApi {
+public interface GetReferenceBuilder {
+  GetReferenceBuilder refName(
+      @NotNull
+          @Pattern(
+              regexp = Validation.REF_NAME_OR_HASH_REGEX,
+              message = Validation.REF_NAME_OR_HASH_MESSAGE)
+          String refName);
 
-  /** Get the server configuration. */
-  NessieConfiguration getConfig();
+  Reference submit() throws NessieNotFoundException;
 }

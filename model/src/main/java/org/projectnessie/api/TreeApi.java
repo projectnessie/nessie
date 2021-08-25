@@ -33,6 +33,7 @@ import org.projectnessie.model.Tag;
 import org.projectnessie.model.Transplant;
 import org.projectnessie.model.Validation;
 
+@Deprecated
 public interface TreeApi {
   /** Get all references. */
   List<Reference> getAllReferences();

@@ -15,18 +15,26 @@
  */
 package org.projectnessie.client.http;
 
-import org.projectnessie.api.http.HttpConfigApi;
-import org.projectnessie.model.NessieConfiguration;
+import org.projectnessie.client.api.GetReferenceBuilder;
+import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.model.Reference;
 
-class HttpConfigClient implements HttpConfigApi {
-  private final HttpClient client;
+final class HttpGetReference extends BaseHttpRequest implements GetReferenceBuilder {
 
-  HttpConfigClient(HttpClient client) {
-    this.client = client;
+  private String refName;
+
+  HttpGetReference(NessieHttpClient client) {
+    super(client);
   }
 
   @Override
-  public NessieConfiguration getConfig() {
-    return client.newRequest().path("config").get().readEntity(NessieConfiguration.class);
+  public GetReferenceBuilder refName(String refName) {
+    this.refName = refName;
+    return this;
+  }
+
+  @Override
+  public Reference submit() throws NessieNotFoundException {
+    return client.getTreeApi().getReferenceByName(refName);
   }
 }

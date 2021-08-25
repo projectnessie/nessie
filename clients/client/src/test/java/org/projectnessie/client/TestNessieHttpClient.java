@@ -22,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.sun.net.httpserver.HttpHandler;
-import io.jaegertracing.internal.JaegerTracer;
 import io.opentracing.Scope;
 import io.opentracing.util.GlobalTracer;
 import java.io.OutputStream;
@@ -32,12 +31,13 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.NessieClient.AuthType;
+import org.projectnessie.client.util.JeagerTestTracer;
 import org.projectnessie.client.util.TestServer;
 
 class TestNessieHttpClient {
   @BeforeAll
   static void setupTracer() {
-    GlobalTracer.register(new JaegerTracer.Builder("TestNessieHttpClient").build());
+    JeagerTestTracer.register();
   }
 
   @Test
