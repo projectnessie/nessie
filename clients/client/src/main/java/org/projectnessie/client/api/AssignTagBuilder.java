@@ -19,7 +19,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
-import org.projectnessie.model.Tag;
+import org.projectnessie.model.Reference;
 
 /**
  * Request builder for "assign tag".
@@ -27,7 +27,7 @@ import org.projectnessie.model.Tag;
  * @since Nessie API {@link NessieApiVersion#V_1}
  */
 public interface AssignTagBuilder extends OnTagBuilder<AssignTagBuilder> {
-  AssignTagBuilder assignTo(@Valid @NotNull Tag assignTo);
+  AssignTagBuilder assignTo(@Valid @NotNull Reference assignTo);
 
   void submit() throws NessieNotFoundException, NessieConflictException;
 }
