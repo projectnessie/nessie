@@ -20,10 +20,18 @@ import java.util.function.Function;
 import org.projectnessie.api.ConfigApi;
 import org.projectnessie.api.ContentsApi;
 import org.projectnessie.api.TreeApi;
+import org.projectnessie.client.api.NessieAPI;
+import org.projectnessie.client.api.NessieApiVersion;
 import org.projectnessie.client.auth.NessieAuthentication;
 import org.projectnessie.client.http.HttpClientBuilder;
 
-public interface NessieClient extends AutoCloseable {
+@Deprecated
+public interface NessieClient extends NessieAPI {
+
+  @Override
+  default NessieApiVersion getApiVersion() {
+    return NessieApiVersion.V_0_9;
+  }
 
   /**
    * Authentication types.
@@ -45,11 +53,13 @@ public interface NessieClient extends AutoCloseable {
   URI getUri();
 
   /** Tree-API for this {@link NessieClient}. */
+  @Deprecated
   TreeApi getTreeApi();
 
-  /** Contents-API for this {@link NessieClient}. */
+  @Deprecated
   ContentsApi getContentsApi();
 
+  @Deprecated
   ConfigApi getConfigApi();
 
   /**
@@ -158,7 +168,6 @@ public interface NessieClient extends AutoCloseable {
       return (Builder) super.withConnectionTimeout(connectionTimeoutMillis);
     }
 
-    @Override
     @Deprecated
     public NessieClient build() {
       AuthType auth =
@@ -183,7 +192,7 @@ public interface NessieClient extends AutoCloseable {
             });
       }
 
-      return super.build();
+      return super.build(NessieApiVersion.V_0_9, NessieClient.class);
     }
   }
 }
