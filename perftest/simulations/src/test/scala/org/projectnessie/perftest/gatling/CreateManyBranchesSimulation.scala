@@ -18,7 +18,8 @@ package org.projectnessie.perftest.gatling
 import io.gatling.core.Predef._
 import io.gatling.core.scenario.Simulation
 import io.gatling.core.structure.{ChainBuilder, ScenarioBuilder}
-import org.projectnessie.client.NessieClient
+import org.projectnessie.client.api.{NessieAPIv1, NessieApiVersion}
+import org.projectnessie.client.http.HttpClientBuilder
 import org.projectnessie.model._
 import org.projectnessie.perftest.gatling.Predef.nessie
 
@@ -40,7 +41,7 @@ class CreateManyBranchesSimulation extends Simulation {
       nessie(s"Get main branch")
         .execute { (client, session) =>
           // create the branch (errors will be ignored)
-          val defaultBranch = client.getTreeApi.getDefaultBranch
+          val defaultBranch = client.getDefaultBranch
           session.set("defaultBranch", defaultBranch)
         }
         // don't measure/log this action
@@ -56,9 +57,10 @@ class CreateManyBranchesSimulation extends Simulation {
           val defaultBranch: Branch = session("defaultBranch").as[Branch]
           val branchNum: Int = session("branchNum").asOption[Int].get
           val branchName = s"branch-${session.userId}-$branchNum"
-          client.getTreeApi.createReference(
-            Branch.of(branchName, defaultBranch.getHash)
-          )
+          client
+            .createReference()
+            .reference(Branch.of(branchName, defaultBranch.getHash))
+            .submit()
           session
         }
     )
@@ -92,11 +94,11 @@ class CreateManyBranchesSimulation extends Simulation {
   private def doSetUp(): SetUp = {
     val nessieProtocol: NessieProtocol = nessie()
       .client(
-        NessieClient
+        HttpClientBuilder
           .builder()
           .withUri("http://127.0.0.1:19120/api/v1")
           .fromSystemProperties()
-          .build()
+          .build(NessieApiVersion.V_1, classOf[NessieAPIv1])
       )
 
     System.out.println(params.asPrintableString())
