@@ -13,36 +13,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.api;
+package org.projectnessie.client.api;
 
 import javax.annotation.Nullable;
-import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import org.projectnessie.error.NessieNotFoundException;
-import org.projectnessie.model.Contents;
-import org.projectnessie.model.ContentsKey;
-import org.projectnessie.model.MultiGetContentsRequest;
-import org.projectnessie.model.MultiGetContentsResponse;
+import org.projectnessie.model.LogResponse;
+import org.projectnessie.model.Reference;
 import org.projectnessie.model.Validation;
 
-@Deprecated
-public interface ContentsApi {
+public interface GetCommitLogBuilder {
 
-  /** Get the properties of an object. */
-  Contents getContents(
-      @Valid ContentsKey key,
-      @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-          String ref,
-      @Nullable @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
-          String hashOnRef)
-      throws NessieNotFoundException;
+  GetCommitLogBuilder refName(
+      @NotNull @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          String refName);
 
-  MultiGetContentsResponse getMultipleContents(
-      @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-          String ref,
+  GetCommitLogBuilder startHash(
       @Nullable @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
-          String hashOnRef,
-      @Valid @NotNull MultiGetContentsRequest request)
-      throws NessieNotFoundException;
+          String startHash);
+
+  /**
+   * Convenience for {@link #refName(String) refName(reference.getName())}{@code .}{@link
+   * #startHash(String) startHash(reference.getHash())}.
+   */
+  default GetCommitLogBuilder reference(Reference reference) {
+    return refName(reference.getName()).startHash(reference.getHash());
+  }
+
+  GetCommitLogBuilder endHash(
+      @Nullable @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          String endHash);
+
+  GetCommitLogBuilder maxRecords(int maxRecords);
+
+  GetCommitLogBuilder pageToken(String pageToken);
+
+  GetCommitLogBuilder queryExpression(String queryExpression);
+
+  LogResponse submit() throws NessieNotFoundException;
 }

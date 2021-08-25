@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.api;
+package org.projectnessie.client.api;
 
-import org.projectnessie.model.NessieConfiguration;
+public interface NessieAPI extends AutoCloseable {
 
-@Deprecated
-public interface ConfigApi {
+  NessieApiVersion getApiVersion();
 
-  /** Get the server configuration. */
-  NessieConfiguration getConfig();
+  // Overridden to "remove 'throws Exception'"
+  void close();
 }

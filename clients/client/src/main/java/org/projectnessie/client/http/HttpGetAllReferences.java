@@ -13,13 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.api;
+package org.projectnessie.client.http;
 
-import org.projectnessie.model.NessieConfiguration;
+import java.util.List;
+import org.projectnessie.client.api.GetAllReferencesBuilder;
+import org.projectnessie.model.Reference;
 
-@Deprecated
-public interface ConfigApi {
+final class HttpGetAllReferences extends BaseHttpRequest implements GetAllReferencesBuilder {
 
-  /** Get the server configuration. */
-  NessieConfiguration getConfig();
+  HttpGetAllReferences(NessieHttpClient client) {
+    super(client);
+  }
+
+  @Override
+  public List<Reference> submit() {
+    return client.getTreeApi().getAllReferences();
+  }
 }

@@ -13,36 +13,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.api;
+package org.projectnessie.client.api;
 
+import java.util.List;
+import java.util.Map;
 import javax.annotation.Nullable;
 import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Contents;
 import org.projectnessie.model.ContentsKey;
-import org.projectnessie.model.MultiGetContentsRequest;
-import org.projectnessie.model.MultiGetContentsResponse;
+import org.projectnessie.model.Reference;
 import org.projectnessie.model.Validation;
 
-@Deprecated
-public interface ContentsApi {
+public interface GetContentsBuilder {
+  GetContentsBuilder key(@Valid ContentsKey key);
 
-  /** Get the properties of an object. */
-  Contents getContents(
-      @Valid ContentsKey key,
-      @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-          String ref,
-      @Nullable @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
-          String hashOnRef)
-      throws NessieNotFoundException;
+  GetContentsBuilder keys(List<ContentsKey> keys);
 
-  MultiGetContentsResponse getMultipleContents(
+  GetContentsBuilder refName(
       @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-          String ref,
+          String refName);
+
+  GetContentsBuilder hashOnRef(
       @Nullable @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
-          String hashOnRef,
-      @Valid @NotNull MultiGetContentsRequest request)
-      throws NessieNotFoundException;
+          String hashOnRef);
+
+  /**
+   * Convenience for {@link #refName(String) refName(reference.getName())}{@code .}{@link
+   * #hashOnRef(String) hashOnRef(reference.getHash())}.
+   */
+  default GetContentsBuilder reference(Reference reference) {
+    return refName(reference.getName()).hashOnRef(reference.getHash());
+  }
+
+  Map<ContentsKey, Contents> submit() throws NessieNotFoundException;
 }

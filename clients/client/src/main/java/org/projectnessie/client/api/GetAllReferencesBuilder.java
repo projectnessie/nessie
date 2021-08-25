@@ -13,13 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.api;
+package org.projectnessie.client.api;
 
-import org.projectnessie.model.NessieConfiguration;
+import java.util.List;
+import org.projectnessie.model.Reference;
 
-@Deprecated
-public interface ConfigApi {
-
-  /** Get the server configuration. */
-  NessieConfiguration getConfig();
+public interface GetAllReferencesBuilder {
+  List<Reference> submit();
 }

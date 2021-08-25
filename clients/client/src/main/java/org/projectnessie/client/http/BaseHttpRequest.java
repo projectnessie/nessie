@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.api;
+package org.projectnessie.client.http;
 
-import org.projectnessie.model.NessieConfiguration;
+abstract class BaseHttpRequest {
 
-@Deprecated
-public interface ConfigApi {
+  protected final NessieHttpClient client;
 
-  /** Get the server configuration. */
-  NessieConfiguration getConfig();
+  BaseHttpRequest(NessieHttpClient client) {
+    this.client = client;
+  }
 }

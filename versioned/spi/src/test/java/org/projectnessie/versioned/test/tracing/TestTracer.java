@@ -50,7 +50,8 @@ public class TestTracer implements Tracer {
   public static void registerGlobal() {
     // GlobalTracer doesn't allow resetting or changing an already registered "global tracer",
     // so this code delegates to some Tracer-per-test
-    GlobalTracer.register(
+    assertFalse(GlobalTracer.isRegistered());
+    GlobalTracer.registerIfAbsent(
         (Tracer)
             Proxy.newProxyInstance(
                 Thread.currentThread().getContextClassLoader(),
