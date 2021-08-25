@@ -33,7 +33,8 @@
     <dependency>
       <groupId>org.projectnessie</groupId>
       <artifactId>nessie-client</artifactId>
-      <version>${project.version}</version>
+      <version>${client.nessie.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.projectnessie</groupId>
@@ -136,10 +137,10 @@
       <plugin>
         <groupId>org.projectnessie</groupId>
         <artifactId>nessie-apprunner-maven-plugin</artifactId>
-        <version>${project.version}</version>
+        <version>${client.nessie.version}</version>
         <configuration>
           <skip>${skipTests}</skip>
-          <appArtifactId>org.projectnessie:nessie-quarkus:${project.version}</appArtifactId>
+          <appArtifactId>org.projectnessie:nessie-quarkus:${client.nessie.version}</appArtifactId>
           <applicationProperties>
             <quarkus.http.test-port>0</quarkus.http.test-port>
           </applicationProperties>
@@ -151,7 +152,7 @@
           <dependency>
             <groupId>org.projectnessie</groupId>
             <artifactId>nessie-quarkus</artifactId>
-            <version>${project.version}</version>
+            <version>${client.nessie.version}</version>
           </dependency>
         </dependencies>
         <executions>
