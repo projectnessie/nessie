@@ -95,7 +95,7 @@ jobs:
         MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
         SPARK_LOCAL_IP: localhost
       if: ${{ env.MAVEN_USERNAME }}
-      run: ./mvnw -B deploy --file pom.xml -Pcode-coverage,native,release -DdeployAtEnd=true -Dtest.log.level=WARN
+      run: ./mvnw -B deploy --file pom.xml -Pcode-coverage,native,release -DdeployAtEnd=true -Dtest.log.level=WARN -Dquarkus.native.native-image-xmx=6g
     - name: Build with Maven (Fork)
       env:
         MAVEN_USERNAME: ${{ secrets.OSSRH_ACCESS_ID }}
