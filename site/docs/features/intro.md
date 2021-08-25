@@ -102,4 +102,4 @@ Nessie was originally conceived and built by engineers at [Dremio](http://dremio
 ## Getting Started
 
 * Read more about [Nessie transactions](transactions.md)
-* Get started with the Nessie [quickstart](../try).
+* Get started with the Nessie [quickstart](../../try).
