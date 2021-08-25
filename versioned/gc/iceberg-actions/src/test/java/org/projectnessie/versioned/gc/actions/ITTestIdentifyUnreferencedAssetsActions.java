@@ -237,7 +237,14 @@ class ITTestIdentifyUnreferencedAssetsActions {
 
     // create a new table on a different branch, commit then delete the branch.
     createTable(TABLE_IDENTIFIER2, catalogDeleteBranch);
-    addFile(sparkDeleteBranch, TABLE_IDENTIFIER2);
+
+    withContext(
+        sparkDeleteBranch,
+        spark -> {
+          addFile(spark, TABLE_IDENTIFIER2);
+          return 0;
+        });
+
     client
         .getTreeApi()
         .deleteBranch(
@@ -246,11 +253,14 @@ class ITTestIdentifyUnreferencedAssetsActions {
     // now confirm that the unreferenced assets are marked for deletion. These are found based
     // on the no-longer referenced commit as well as the old commits.
     GcActions actions =
-        new GcActions.Builder(sparkMain)
-            .setActionsConfig(actionsConfig())
-            .setGcOptions(gcOptions(Clock.systemUTC()))
-            .setTable(GcActions.DEFAULT_TABLE_IDENTIFIER)
-            .build();
+        withContext(
+            sparkMain,
+            spark ->
+                new GcActions.Builder(spark)
+                    .setActionsConfig(actionsConfig())
+                    .setGcOptions(gcOptions(Clock.systemUTC()))
+                    .setTable(GcActions.DEFAULT_TABLE_IDENTIFIER)
+                    .build());
     Dataset<Row> unreferencedAssets = actions.identifyUnreferencedAssets();
     actions.updateUnreferencedAssetTable(unreferencedAssets);
 
@@ -326,15 +336,28 @@ class ITTestIdentifyUnreferencedAssetsActions {
     // now collect and remove both tables.
     Table table = catalogMainBranch.loadTable(GcActions.DEFAULT_TABLE_IDENTIFIER);
     GcTableCleanAction.GcTableCleanResult result =
-        new GcTableCleanAction(table, sparkMain)
-            .dropGcTable(true)
-            .deleteCountThreshold(1)
-            .deleteOnPurge(false)
-            .execute();
+        withContext(
+            sparkMain,
+            spark ->
+                new GcTableCleanAction(table, spark)
+                    .dropGcTable(true)
+                    .deleteCountThreshold(1)
+                    .deleteOnPurge(false)
+                    .execute());
     assertThat(result.getDeletedAssetCount()).isEqualTo(14);
     assertThat(result.getFailedDeletes()).isEqualTo(0);
     assertThat(result.getDeletedAssetCount()).isEqualTo(paths.size());
     paths.forEach(p -> Assertions.assertFalse(new File(p).exists()));
+  }
+
+  private static <R> R withContext(SparkSession newSession, Function<SparkSession, R> consumer) {
+    SparkSession activeSession = SparkSession.getActiveSession().get();
+    try {
+      SparkSession.setActiveSession(newSession);
+      return consumer.apply(newSession);
+    } finally {
+      SparkSession.setActiveSession(activeSession);
+    }
   }
 
   private static GcActionsConfig actionsConfig() {

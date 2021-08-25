@@ -46,11 +46,8 @@ import org.apache.spark.sql.delta.util.FileNames.{
   deltaFile,
   getFileVersion
 }
-import org.apache.spark.sql.delta.{
-  CheckpointMetaData,
-  DeltaFileType,
-  LogFileMeta
-}
+import org.apache.spark.sql.delta.CheckpointMetaData
+import org.apache.spark.sql.delta.storage.{DeltaFileType, LogFileMeta}
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
 import org.projectnessie.model.Operation.Put

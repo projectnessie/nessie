@@ -17,7 +17,7 @@ package org.projectnessie.deltalake
 
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.delta.storage.LogStore
-import org.apache.spark.sql.delta.{LogFileMeta, LogFileMetaParser}
+import org.apache.spark.sql.delta.storage.{LogFileMeta, LogFileMetaParser}
 
 class NessieLogFileMetaParser(val logStore: LogStore)
     extends LogFileMetaParser(logStore = logStore) {
