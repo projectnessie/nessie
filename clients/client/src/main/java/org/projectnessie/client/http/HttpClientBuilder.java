@@ -16,9 +16,7 @@
 package org.projectnessie.client.http;
 
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_AUTH_TYPE;
-import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OWNER;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_PASSWORD;
-import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_REPOSITORY;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_TRACING;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URI;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URL;
@@ -30,7 +28,6 @@ import org.projectnessie.client.NessieClient;
 import org.projectnessie.client.NessieClient.AuthType;
 import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.NessieConfigConstants;
-import org.projectnessie.model.Validation;
 
 /**
  * A builder class that creates a {@link NessieHttpClient} via {@link HttpClientBuilder#builder()}.
@@ -41,8 +38,6 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
   private URI uri;
   private String username;
   private String password;
-  private String owner;
-  private String repo;
   private boolean tracing;
   private int readTimeoutMillis =
       Integer.parseInt(System.getProperty("sun.net.client.defaultReadTimeout", "25000"));
@@ -101,16 +96,6 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
     if (tracing != null) {
       this.tracing = Boolean.parseBoolean(tracing);
     }
-    String owner = configuration.apply(CONF_NESSIE_OWNER);
-    if (owner != null) {
-      Validation.validateOwner(owner);
-      this.owner = owner;
-    }
-    String repo = configuration.apply(CONF_NESSIE_REPOSITORY);
-    if (repo != null) {
-      Validation.validateRepo(repo);
-      this.repo = repo;
-    }
     return this;
   }
 
@@ -147,23 +132,6 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
   @Override
   public HttpClientBuilder withUri(String uri) {
     return withUri(URI.create(uri));
-  }
-
-  /**
-   * Set the repository owner + ID within the Nessie instance.
-   *
-   * <p>{@link NessieClient#getContentsApi()} and {@link NessieClient#getTreeApi()} are scoped to
-   * the repository specified by this option.
-   *
-   * @param owner repository owner
-   * @param repo repository ID
-   * @return {@code this}
-   */
-  public HttpClientBuilder withRepoOwner(String owner, String repo) {
-    Validation.validateOwner(owner);
-    this.owner = owner;
-    this.repo = repo;
-    return this;
   }
 
   /**
@@ -234,14 +202,6 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
   @Override
   public NessieClient build() {
     return new NessieHttpClient(
-        owner,
-        repo,
-        authType,
-        uri,
-        username,
-        password,
-        tracing,
-        readTimeoutMillis,
-        connectionTimeoutMillis);
+        authType, uri, username, password, tracing, readTimeoutMillis, connectionTimeoutMillis);
   }
 }

@@ -50,31 +50,6 @@ def test_command_line_interface() -> None:
     assert isinstance(references[0], Branch)
 
 
-@pytest.mark.vcr
-def test_owner_repo_config_cli() -> None:
-    """Ensure the CLI handles owner + repo specified in the config file + on the command line."""
-    runner = CliRunner()
-
-    # clean up config file
-    runner.invoke(cli.cli, ["config", "--unset", "repo"])
-
-    result = _run(runner, ["remote", "show"])
-    assert "Remote URL: http://localhost:19120/api/v1\n" in result.output
-    result = _run(runner, ["--repo", "robert/elani", "remote", "show"])
-    assert "Remote URL: http://localhost:19120/api/v1/robert/elani\n" in result.output
-
-    _run(runner, ["config", "--add", "repo", "robert/elani"])
-
-    result = _run(runner, ["remote", "show"])
-    assert "Remote URL: http://localhost:19120/api/v1/robert/elani\n" in result.output
-    result = _run(runner, ["--repo", "snazy/ursus", "remote", "show"])
-    assert "Remote URL: http://localhost:19120/api/v1/snazy/ursus\n" in result.output
-    result = _run(runner, ["remote", "show"])
-    assert "Remote URL: http://localhost:19120/api/v1/robert/elani\n" in result.output
-
-    _run(runner, ["config", "--unset", "repo"])
-
-
 def test_config_options() -> None:
     """Ensure config cli option is consistent."""
     runner = CliRunner()

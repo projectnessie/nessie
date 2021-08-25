@@ -88,7 +88,7 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
 
   // Mandated by CDI 2.0
   public TreeResource() {
-    this(null, null, null, null);
+    this(null, null, null);
   }
 
   @Context SecurityContext securityContext;
@@ -96,10 +96,9 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
   @Inject
   public TreeResource(
       ServerConfig config,
-      MultiTenant multiTenant,
       VersionStore<Contents, CommitMeta, Contents.Type> store,
       AccessChecker accessChecker) {
-    super(config, multiTenant, store, accessChecker);
+    super(config, store, accessChecker);
   }
 
   @Override

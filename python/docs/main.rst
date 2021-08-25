@@ -10,8 +10,6 @@
 	  --json           write output in json format.
 	  -v, --verbose    Verbose output.
 	  --endpoint TEXT  Optional endpoint, if different from config file.
-	  --repo TEXT      Optional repository owner + name, if different from config
-	                   file, separated by a slash.
 	  --version
 	  --help           Show this message and exit.
 	
