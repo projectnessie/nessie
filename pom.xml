@@ -132,8 +132,7 @@
     <cel.version>0.2.0</cel.version>
     <!-- to fix circular dependencies with NessieClient, certain projects need to use the same Nessie version as Iceberg/Delta has -->
     <client.nessie.version>0.9.0</client.nessie.version>
-    <deltalake2.version>0.6.2-nessie</deltalake2.version>
-    <deltalake3.version>0.8.0-nessie</deltalake3.version>
+    <deltalake.version>0.8.0-nessie</deltalake.version>
     <dynamodb.version>1.12.0</dynamodb.version>
     <flapdoodle.version>3.0.0</flapdoodle.version>
     <gatling.maven.version>3.1.2</gatling.maven.version>
