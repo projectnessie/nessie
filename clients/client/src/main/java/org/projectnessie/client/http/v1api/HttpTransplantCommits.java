@@ -39,6 +39,12 @@ final class HttpTransplantCommits extends BaseHttpOnBranchRequest<TransplantComm
   }
 
   @Override
+  public TransplantCommitsBuilder sourceRefName(String sourceRefName) {
+    transplant.sourceRefName(sourceRefName);
+    return this;
+  }
+
+  @Override
   public TransplantCommitsBuilder hashesToTransplant(List<String> hashesToTransplant) {
     transplant.addAllHashesToTransplant(hashesToTransplant);
     return this;

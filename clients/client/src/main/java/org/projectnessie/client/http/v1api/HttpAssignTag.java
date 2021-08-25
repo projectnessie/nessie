@@ -19,19 +19,19 @@ import org.projectnessie.client.api.AssignTagBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
-import org.projectnessie.model.Tag;
+import org.projectnessie.model.Reference;
 
 final class HttpAssignTag extends BaseHttpOnTagRequest<AssignTagBuilder>
     implements AssignTagBuilder {
 
-  private Tag assignTo;
+  private Reference assignTo;
 
   HttpAssignTag(NessieApiClient client) {
     super(client);
   }
 
   @Override
-  public AssignTagBuilder assignTo(Tag assignTo) {
+  public AssignTagBuilder assignTo(Reference assignTo) {
     this.assignTo = assignTo;
     return this;
   }

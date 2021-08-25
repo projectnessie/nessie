@@ -19,7 +19,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
-import org.projectnessie.model.Branch;
+import org.projectnessie.model.Reference;
 
 /**
  * Request builder for "assign branch".
@@ -27,7 +27,7 @@ import org.projectnessie.model.Branch;
  * @since Nessie API {@link NessieApiVersion#V_1}
  */
 public interface AssignBranchBuilder extends OnBranchBuilder<AssignBranchBuilder> {
-  AssignBranchBuilder assignTo(@Valid @NotNull Branch assignTo);
+  AssignBranchBuilder assignTo(@Valid @NotNull Reference assignTo);
 
   void submit() throws NessieNotFoundException, NessieConflictException;
 }
