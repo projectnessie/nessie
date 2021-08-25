@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client;
+package org.projectnessie.client.http;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import java.util.List;
@@ -22,8 +22,6 @@ import javax.validation.constraints.NotNull;
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.params.EntriesParams;
-import org.projectnessie.client.http.HttpClient;
-import org.projectnessie.client.http.HttpRequest;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -35,14 +33,14 @@ import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
 import org.projectnessie.model.Transplant;
 
-class ClientTreeApi implements TreeApi {
+class HttpTreeClient implements TreeApi {
 
   private static final TypeReference<List<Reference>> REFERENCE_LIST =
       new TypeReference<List<Reference>>() {};
 
   private final HttpClient client;
 
-  public ClientTreeApi(HttpClient client) {
+  public HttpTreeClient(HttpClient client) {
     this.client = client;
   }
 
