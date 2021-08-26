@@ -64,6 +64,11 @@
       <name>Eduard Tudenhoefner</name>
       <url>https://github.com/nastra</url>
     </developer>
+    <developer>
+      <id>dimas-b</id>
+      <name>Dmitri Bourlatchkov</name>
+      <url>https://github.com/dimas-b</url>
+    </developer>
   </developers>
   <contributors>
     <contributor>
