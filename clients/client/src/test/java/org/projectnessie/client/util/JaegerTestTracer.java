@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.jaegertracing.internal.JaegerTracer;
 import io.opentracing.util.GlobalTracer;
 
-public class JeagerTestTracer {
+public class JaegerTestTracer {
   public static void register() {
     if (GlobalTracer.isRegistered()) {
       // if already registered, check that it's the right tracer (and no other test accidentally
