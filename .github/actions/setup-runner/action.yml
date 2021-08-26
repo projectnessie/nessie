@@ -1,0 +1,38 @@
+name: 'Setup runner'
+runs:
+  using: "composite"
+  steps:
+    - name: Memory report
+      run: |
+        echo "Memory and swap:"
+        free
+        echo
+        swapon --show
+        echo
+        echo "Available storage:"
+        df -h
+        echo
+    - name: Add 8G more swap for native-image build
+      run: |
+        sudo dd if=/dev/zero of=/mnt/swapfile-2 bs=1MiB count=$((8*1024))
+        sudo mkswap /mnt/swapfile-2
+        sudo swapon /mnt/swapfile-2
+    - name: Update /etc/hosts
+      run: echo -e "$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)\t$(hostname -f) $(hostname -s)" | sudo tee -a /etc/hosts
+    - name: Set up Maven toolchains.xml
+      run: |
+        cat << 'EOT' > ${HOME}/.m2/toolchains.xml
+        <?xml version="1.0" encoding="UTF8"?>
+        <toolchains>
+          <toolchain>
+            <type>jdk</type>
+            <provides>
+              <version>11</version>
+              <vendor>zulu</vendor>
+            </provides>
+            <configuration>
+              <jdkHome>${env.JAVA_HOME}</jdkHome>
+            </configuration>
+          </toolchain>
+        </toolchains>
+        EOT
