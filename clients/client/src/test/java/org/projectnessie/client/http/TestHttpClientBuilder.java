@@ -41,13 +41,13 @@ import org.projectnessie.client.api.NessieAPIv1;
 import org.projectnessie.client.api.NessieApiVersion;
 import org.projectnessie.client.auth.BasicAuthenticationProvider;
 import org.projectnessie.client.auth.NessieAuthentication;
-import org.projectnessie.client.util.JeagerTestTracer;
+import org.projectnessie.client.util.JaegerTestTracer;
 import org.projectnessie.client.util.TestServer;
 
 public class TestHttpClientBuilder {
   @BeforeAll
   static void setupTracer() {
-    JeagerTestTracer.register();
+    JaegerTestTracer.register();
   }
 
   interface IncompatibleApiInterface extends NessieAPI {}
