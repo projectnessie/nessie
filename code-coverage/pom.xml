@@ -49,12 +49,7 @@
     </dependency>
     <dependency>
       <groupId>org.projectnessie</groupId>
-      <artifactId>nessie-deltalake-spark2</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.projectnessie</groupId>
-      <artifactId>nessie-deltalake-spark3</artifactId>
+      <artifactId>nessie-deltalake</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
