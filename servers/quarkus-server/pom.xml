@@ -231,6 +231,7 @@
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
+          <reuseForks>false</reuseForks>
           <systemPropertyVariables>
             <maven.home>${maven.home}</maven.home>
             <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
