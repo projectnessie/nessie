@@ -17,6 +17,7 @@ runs:
         restore-keys: |
           ${{ runner.os }}-pip-
     - name: Install dependencies
+      shell: bash
       run: |
         python -m pip install --upgrade pip
         pip install tox tox-gh-actions
