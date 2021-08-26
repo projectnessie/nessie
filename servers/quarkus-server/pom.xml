@@ -31,7 +31,6 @@
 
   <properties>
     <maven.compiler.release>11</maven.compiler.release>
-    <quarkus.jacoco.data-file>jacoco.exec</quarkus.jacoco.data-file>
     <quarkus.smallrye-openapi.store-schema-directory>${project.build.directory}/openapi</quarkus.smallrye-openapi.store-schema-directory>
     <test.log.level>INFO</test.log.level>
   </properties>
@@ -202,11 +201,6 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-jacoco</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>org.projectnessie</groupId>
       <artifactId>nessie-versioned-tests</artifactId>
       <version>${project.version}</version>
@@ -221,13 +215,6 @@
 
   <build>
     <plugins>
-      <plugin>
-        <groupId>org.jacoco</groupId>
-        <artifactId>jacoco-maven-plugin</artifactId>
-        <configuration>
-          <skip>true</skip>
-        </configuration>
-      </plugin>
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
