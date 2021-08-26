@@ -7,6 +7,8 @@
 * Drop Deltalake support for Spark 2
 * Remove Hive-Metastore bridge
 * Preparations for backwards-compatible Client-API
+* Spark SQL Extensions: Introduce `IF NOT EXISTS` for `CREATE BRANCH`/`CREATE TAG`
+* Spark SQL Extensions: Updates to work with Iceberg 0.12.0
 
 ## 0.9.0 Release (August 9, 2021)
 
