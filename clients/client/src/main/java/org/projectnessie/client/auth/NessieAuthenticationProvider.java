@@ -17,6 +17,7 @@ package org.projectnessie.client.auth;
 
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_AUTH_TYPE;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Locale;
 import java.util.ServiceLoader;
 import java.util.function.Function;
@@ -65,21 +66,26 @@ public interface NessieAuthenticationProvider {
               + authType.substring(1).toLowerCase(Locale.ROOT)
               + "AuthenticationProvider";
 
-      NessieAuthenticationProvider ap = null;
+      NessieAuthenticationProvider ap;
       try {
         @SuppressWarnings("unchecked")
         Class<NessieAuthenticationProvider> provider =
             (Class<NessieAuthenticationProvider>) Class.forName(reflectionClassName);
         ap = provider.getDeclaredConstructor().newInstance();
-      } catch (Exception ignore) {
-        // ignore
-      }
-      if (ap != null) {
-        return ap.build(configuration);
+      } catch (ClassNotFoundException e) {
+        throw new IllegalArgumentException(
+            String.format(
+                "No authentication provider for '%s' found using class name '%s'.",
+                authType, reflectionClassName));
+      } catch (InvocationTargetException
+          | InstantiationException
+          | IllegalAccessException
+          | NoSuchMethodException e) {
+        throw new IllegalArgumentException(
+            String.format("Could not initialize '%s': %s", reflectionClassName, e), e);
       }
 
-      throw new IllegalArgumentException(
-          String.format("No authentication provider for '%s' found.", authType));
+      return ap.build(configuration);
     }
     return null;
   }

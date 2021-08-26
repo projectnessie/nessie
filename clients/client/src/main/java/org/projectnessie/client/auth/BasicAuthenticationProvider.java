@@ -53,8 +53,7 @@ public class BasicAuthenticationProvider implements NessieAuthenticationProvider
   }
 
   private static class BasicAuthentication implements HttpAuthentication {
-    private final String username;
-    private final String password;
+    private final String authHeaderValue;
 
     @SuppressWarnings("QsPrivateBeanMembersInspection")
     private BasicAuthentication(String username, String password) {
@@ -63,17 +62,14 @@ public class BasicAuthenticationProvider implements NessieAuthenticationProvider
             "username and password parameters must be present for auth type " + AUTH_TYPE_VALUE);
       }
 
-      this.username = username;
-      this.password = password;
+      String userPass = username + ':' + password;
+      byte[] encoded = Base64.getEncoder().encode(userPass.getBytes(StandardCharsets.UTF_8));
+      String encodedString = new String(encoded, StandardCharsets.UTF_8);
+      this.authHeaderValue = "Basic " + encodedString;
     }
 
     @Override
     public void applyToHttpClient(HttpClient client) {
-      String userPass = username + ':' + password;
-      byte[] encoded = Base64.getEncoder().encode(userPass.getBytes(StandardCharsets.UTF_8));
-      String encodedString = new String(encoded, StandardCharsets.UTF_8);
-      String authHeaderValue = "Basic " + encodedString;
-
       client.register((RequestFilter) ctx -> ctx.putHeader("Authorization", authHeaderValue));
     }
   }
