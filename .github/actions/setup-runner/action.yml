@@ -17,11 +17,25 @@ runs:
       shell: bash
       run: |
         sudo dd if=/dev/zero of=/mnt/swapfile-2 bs=1MiB count=$((8*1024))
+        sudo chmod 600 /mnt/swapfile-2
         sudo mkswap /mnt/swapfile-2
         sudo swapon /mnt/swapfile-2
+    - name: Memory report
+      shell: bash
+      run: |
+        echo "Memory report after adding more swap:"
+        free
+        echo
+        swapon --show
+        echo
+        echo "Available storage:"
+        df -h
+        echo
+
     - name: Update /etc/hosts
       shell: bash
       run: echo -e "$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)\t$(hostname -f) $(hostname -s)" | sudo tee -a /etc/hosts
+
     - name: Set up Maven toolchains.xml
       shell: bash
       run: |
