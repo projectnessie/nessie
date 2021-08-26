@@ -1,6 +1,6 @@
 # Releases
 
-## 0.9.1 Release (August 26, 2021)
+## 0.9.2 Release (August 26, 2021)
 
 * Cleanup & fixes to OpenAPI examples, for Swagger UI
 * Update Deltalake client to use version 1.0.0
