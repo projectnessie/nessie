@@ -25,6 +25,8 @@ jobs:
       uses: ./.github/actions/setup-runner
     - name: Setup Java, Maven, Gradle
       uses: ./.github/actions/dev-tool-java
+      with:
+        gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
 
     - name: Build with Maven
       env:
