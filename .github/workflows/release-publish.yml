@@ -241,7 +241,7 @@ jobs:
         helm repo index . --merge index.yaml --url https://github.com/projectnessie/nessie/releases/download/nessie-${RELEASE_VERSION}
         echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token
         index_sha=$(gh api -X GET /repos/projectnessie/charts.projectnessie.org/contents/index.yaml --jq '.sha')
-        gh api -X PUT /repos/projectnessie/charts.projectnessie.org/contents/index.yaml -f message="Publishing Nessie Helm chart ${RELEASE_VERSION}" -f content=$(base64 -w0 index.yaml) -f sha=${index_sha}
+        gh api -X PUT /repos/projectnessie/charts.projectnessie.org/contents/index.yaml -f message="Publishing Nessie Helm chart ${RELEASE_VERSION}" -f content=$(base64 -w0 index.yaml) -f sha=${index_sha} || true
 
 
     # Deploys pynessie. Build and test steps were already ran in previous steps
