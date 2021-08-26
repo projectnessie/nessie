@@ -31,13 +31,13 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.NessieClient.AuthType;
-import org.projectnessie.client.util.JeagerTestTracer;
+import org.projectnessie.client.util.JaegerTestTracer;
 import org.projectnessie.client.util.TestServer;
 
 class TestNessieHttpClient {
   @BeforeAll
   static void setupTracer() {
-    JeagerTestTracer.register();
+    JaegerTestTracer.register();
   }
 
   @Test
