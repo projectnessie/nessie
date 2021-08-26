@@ -1,5 +1,13 @@
 # Releases
 
+## 0.9.1 Release (August 26, 2021)
+
+* Cleanup & fixes to OpenAPI examples, for Swagger UI
+* Update Deltalake client to use version 1.0.0
+* Drop Deltalake support for Spark 2
+* Remove Hive-Metastore bridge
+* Preparations for backwards-compatible Client-API
+
 ## 0.9.0 Release (August 9, 2021)
 
 * Support for the upcoming Iceberg `0.12.0` release for both Spark 3.0 + 3.1
