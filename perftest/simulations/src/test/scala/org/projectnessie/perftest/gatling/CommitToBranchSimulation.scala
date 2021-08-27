@@ -18,7 +18,7 @@ package org.projectnessie.perftest.gatling
 import io.gatling.core.Predef._
 import io.gatling.core.scenario.Simulation
 import io.gatling.core.structure.{ChainBuilder, ScenarioBuilder}
-import org.projectnessie.client.api.{NessieAPIv1, NessieApiVersion}
+import org.projectnessie.client.api.{NessieApiV1, NessieApiVersion}
 import org.projectnessie.client.http.HttpClientBuilder
 import org.projectnessie.error.NessieConflictException
 import org.projectnessie.model.Operation.Put
@@ -161,7 +161,7 @@ class CommitToBranchSimulation extends Simulation {
           .builder()
           .withUri("http://127.0.0.1:19120/api/v1")
           .fromSystemProperties()
-          .build(NessieApiVersion.V_1, classOf[NessieAPIv1])
+          .build(NessieApiVersion.V_1, classOf[NessieApiV1])
       )
 
     System.out.println(params.asPrintableString())
