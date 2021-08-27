@@ -9,20 +9,7 @@ from typing import Optional
 
 import confuse
 
-from ._endpoints import all_references
-from ._endpoints import assign_branch
-from ._endpoints import assign_tag
-from ._endpoints import cherry_pick
-from ._endpoints import commit
-from ._endpoints import create_reference
-from ._endpoints import delete_branch
-from ._endpoints import delete_tag
-from ._endpoints import get_default_branch
-from ._endpoints import get_reference
-from ._endpoints import get_table
-from ._endpoints import list_logs
-from ._endpoints import list_tables
-from ._endpoints import merge
+from ._endpoints import EndPoints
 from .model import Branch
 from .model import CommitMeta
 from .model import Contents
@@ -51,8 +38,7 @@ class NessieClient(object):
 
     def __init__(self: "NessieClient", config: confuse.Configuration) -> None:
         """Create a Nessie Client from known config."""
-        self._base_url = config["endpoint"].get()
-        self._ssl_verify = config["verify"].get(bool)
+        self._endpoints = EndPoints(config)
         self._commit_id: str = cast(str, None)
 
         try:
@@ -60,12 +46,16 @@ class NessieClient(object):
         except confuse.exceptions.NotFoundError:
             self._base_branch = None
 
+    def base_url(self: "NessieClient") -> str:
+        """Get the base Nessie Server URL."""
+        return self._endpoints._base_url
+
     def list_references(self: "NessieClient") -> List[Reference]:
         """Fetch all known references.
 
         :return: list of Nessie References
         """
-        references = all_references(self._base_url, self._ssl_verify)
+        references = self._endpoints.all_references()
         return [ReferenceSchema().load(ref) for ref in references]
 
     def get_reference(self: "NessieClient", name: Optional[str]) -> Reference:
@@ -74,7 +64,7 @@ class NessieClient(object):
         :param name: name of ref to fetch
         :return: Nessie reference
         """
-        ref_obj = get_reference(self._base_url, name, self._ssl_verify) if name else get_default_branch(self._base_url, self._ssl_verify)
+        ref_obj = self._endpoints.get_reference(name) if name else self._endpoints.get_default_branch()
         ref = ReferenceSchema().load(ref_obj)
         return ref
 
@@ -86,7 +76,7 @@ class NessieClient(object):
         :return: Nessie branch object
         """
         ref_json = ReferenceSchema().dump(Branch(branch, ref))
-        ref_obj = create_reference(self._base_url, ref_json, self._ssl_verify)
+        ref_obj = self._endpoints.create_reference(ref_json)
         return cast(Branch, ReferenceSchema().load(ref_obj))
 
     def delete_branch(self: "NessieClient", branch: str, hash_: str) -> None:
@@ -95,7 +85,7 @@ class NessieClient(object):
         :param branch: name of branch to delete
         :param hash_: hash of the branch
         """
-        delete_branch(self._base_url, branch, hash_, self._ssl_verify)
+        self._endpoints.delete_branch(branch, hash_)
 
     def create_tag(self: "NessieClient", tag: str, ref: str = None) -> Tag:
         """Create a tag.
@@ -105,7 +95,7 @@ class NessieClient(object):
         :return: Nessie tag object
         """
         ref_json = ReferenceSchema().dump(Tag(tag, ref))
-        ref_obj = create_reference(self._base_url, ref_json, self._ssl_verify)
+        ref_obj = self._endpoints.create_reference(ref_json)
         return cast(Tag, ReferenceSchema().load(ref_obj))
 
     def delete_tag(self: "NessieClient", tag: str, hash_: str) -> None:
@@ -114,7 +104,7 @@ class NessieClient(object):
         :param tag: name of tag to delete
         :param hash_: hash of the branch
         """
-        delete_tag(self._base_url, tag, hash_, self._ssl_verify)
+        self._endpoints.delete_tag(tag, hash_)
 
     def list_keys(
         self: "NessieClient",
@@ -130,7 +120,7 @@ class NessieClient(object):
         :param query_expression: A CEL expression that allows advanced filtering capabilities
         :return: list of Nessie table names
         """
-        return EntriesSchema().load(list_tables(self._base_url, ref, max_result_hint, page_token, query_expression, self._ssl_verify))
+        return EntriesSchema().load(self._endpoints.list_tables(ref, max_result_hint, page_token, query_expression))
 
     def get_values(self: "NessieClient", ref: str, *tables: str) -> Generator[Contents, Any, None]:
         """Fetch a table from a known ref.
@@ -139,7 +129,7 @@ class NessieClient(object):
         :param tables: tables to fetch
         :return: Nessie Table
         """
-        return (ContentsSchema().load(get_table(self._base_url, ref, _format_key(i), self._ssl_verify)) for i in tables)
+        return (ContentsSchema().load(self._endpoints.get_table(ref, _format_key(i))) for i in tables)
 
     def commit(
         self: "NessieClient", branch: str, old_hash: str, reason: Optional[str] = None, author: Optional[str] = None, *ops: Operation
@@ -148,7 +138,7 @@ class NessieClient(object):
         meta = CommitMeta(message=reason if reason else "")
         if author:
             meta.author = author
-        ref_obj = commit(self._base_url, branch, MultiContentsSchema().dumps(MultiContents(meta, list(ops))), old_hash)
+        ref_obj = self._endpoints.commit(branch, MultiContentsSchema().dumps(MultiContents(meta, list(ops))), old_hash)
         return cast(Branch, ReferenceSchema().load(ref_obj))
 
     def assign_branch(self: "NessieClient", branch: str, to_ref: str, old_hash: Optional[str] = None) -> None:
@@ -157,7 +147,7 @@ class NessieClient(object):
             old_hash = self.get_reference(branch).hash_
         assert old_hash is not None
         branch_json = ReferenceSchema().dumps(Branch(branch, self.get_reference(to_ref).hash_))
-        assign_branch(self._base_url, branch, branch_json, old_hash, self._ssl_verify)
+        self._endpoints.assign_branch(branch, branch_json, old_hash)
 
     def assign_tag(self: "NessieClient", tag: str, to_ref: str, old_hash: Optional[str] = None) -> None:
         """Assign a hash to a tag."""
@@ -165,7 +155,7 @@ class NessieClient(object):
             old_hash = self.get_reference(tag).hash_
         assert old_hash is not None
         tag_json = ReferenceSchema().dumps(Tag(tag, self.get_reference(to_ref).hash_))
-        assign_tag(self._base_url, tag, tag_json, old_hash, self._ssl_verify)
+        self._endpoints.assign_tag(tag, tag_json, old_hash)
 
     def merge(self: "NessieClient", from_branch: str, onto_branch: str, old_hash: Optional[str] = None) -> None:
         """Merge a branch into another branch."""
@@ -175,7 +165,7 @@ class NessieClient(object):
         from_hash = self.get_reference(from_branch).hash_
         assert from_hash is not None
         merge_json = MergeSchema().dump(Merge(from_hash))
-        merge(self._base_url, onto_branch, merge_json, old_hash, self._ssl_verify)
+        self._endpoints.merge(onto_branch, merge_json, old_hash)
 
     def cherry_pick(self: "NessieClient", branch: str, old_hash: Optional[str] = None, *hashes: str) -> None:
         """Cherry pick a list of hashes to a branch."""
@@ -183,7 +173,7 @@ class NessieClient(object):
             old_hash = self.get_reference(branch).hash_
         assert old_hash is not None
         transplant_json = TransplantSchema().dump(Transplant(list(hashes)))
-        cherry_pick(self._base_url, branch, transplant_json, old_hash, self._ssl_verify)
+        self._endpoints.cherry_pick(branch, transplant_json, old_hash)
 
     def get_log(self: "NessieClient", start_ref: str, **filtering_args: Any) -> Generator[CommitMeta, Any, None]:
         """Fetch all logs starting at start_ref.
@@ -200,7 +190,7 @@ class NessieClient(object):
             if token:
                 filtering_args["pageToken"] = token
 
-            fetched_logs = list_logs(base_url=self._base_url, ref=start_ref, ssl_verify=self._ssl_verify, **filtering_args)
+            fetched_logs = self._endpoints.list_logs(ref=start_ref, **filtering_args)
             log_schema = LogResponseSchema().load(fetched_logs)
             return log_schema
 
