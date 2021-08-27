@@ -13,51 +13,44 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.http;
+package org.projectnessie.client.http.v1api;
 
-import java.util.List;
-import org.projectnessie.client.api.TransplantCommitsBuilder;
+import org.projectnessie.client.api.AssignBranchBuilder;
+import org.projectnessie.client.http.NessieHttpClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
-import org.projectnessie.model.ImmutableTransplant;
+import org.projectnessie.model.Branch;
 
-final class HttpTransplantCommits extends BaseHttpRequest implements TransplantCommitsBuilder {
+final class HttpAssignBranch extends BaseHttpRequest implements AssignBranchBuilder {
 
-  private final ImmutableTransplant.Builder transplant = ImmutableTransplant.builder();
   private String branchName;
-  private String hash;
-  private String message;
+  private String oldHash;
+  private Branch assignTo;
 
-  HttpTransplantCommits(NessieHttpClient client) {
+  HttpAssignBranch(NessieHttpClient client) {
     super(client);
   }
 
   @Override
-  public TransplantCommitsBuilder branchName(String branchName) {
+  public AssignBranchBuilder branchName(String branchName) {
     this.branchName = branchName;
     return this;
   }
 
   @Override
-  public TransplantCommitsBuilder hash(String hash) {
-    this.hash = hash;
+  public AssignBranchBuilder oldHash(String oldHash) {
+    this.oldHash = oldHash;
     return this;
   }
 
   @Override
-  public TransplantCommitsBuilder message(String message) {
-    this.message = message;
-    return this;
-  }
-
-  @Override
-  public TransplantCommitsBuilder hashesToTransplant(List<String> hashesToTransplant) {
-    transplant.addAllHashesToTransplant(hashesToTransplant);
+  public AssignBranchBuilder assignTo(Branch assignTo) {
+    this.assignTo = assignTo;
     return this;
   }
 
   @Override
   public void submit() throws NessieNotFoundException, NessieConflictException {
-    client.getTreeApi().transplantCommitsIntoBranch(branchName, hash, message, transplant.build());
+    client.getTreeApi().assignBranch(branchName, oldHash, assignTo);
   }
 }

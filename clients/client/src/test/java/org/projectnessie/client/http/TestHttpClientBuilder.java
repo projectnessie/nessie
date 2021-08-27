@@ -63,7 +63,7 @@ public class TestHttpClientBuilder {
         .hasMessage(
             "API version V_1 not supported with incompatible interface "
                 + "'org.projectnessie.client.http.TestHttpClientBuilder$IncompatibleApiInterface' "
-                + "(not assignable from 'org.projectnessie.client.http.HttpAPIv1').");
+                + "(not assignable from 'org.projectnessie.client.http.v1api.HttpAPIv1').");
   }
 
   @Test

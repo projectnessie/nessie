@@ -13,35 +13,44 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.http;
+package org.projectnessie.client.http.v1api;
 
-import org.projectnessie.client.api.DeleteBranchBuilder;
+import org.projectnessie.client.api.AssignTagBuilder;
+import org.projectnessie.client.http.NessieHttpClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.model.Tag;
 
-final class HttpDeleteBranch extends BaseHttpRequest implements DeleteBranchBuilder {
+final class HttpAssignTag extends BaseHttpRequest implements AssignTagBuilder {
 
-  private String branchName;
-  private String hash;
+  private String tagName;
+  private String oldHash;
+  private Tag assignTo;
 
-  HttpDeleteBranch(NessieHttpClient client) {
+  HttpAssignTag(NessieHttpClient client) {
     super(client);
   }
 
   @Override
-  public DeleteBranchBuilder branchName(String branchName) {
-    this.branchName = branchName;
+  public AssignTagBuilder tagName(String tagName) {
+    this.tagName = tagName;
     return this;
   }
 
   @Override
-  public DeleteBranchBuilder hash(String hash) {
-    this.hash = hash;
+  public AssignTagBuilder oldHash(String oldHash) {
+    this.oldHash = oldHash;
     return this;
   }
 
   @Override
-  public void submit() throws NessieConflictException, NessieNotFoundException {
-    client.getTreeApi().deleteBranch(branchName, hash);
+  public AssignTagBuilder assignTo(Tag assignTo) {
+    this.assignTo = assignTo;
+    return this;
+  }
+
+  @Override
+  public void submit() throws NessieNotFoundException, NessieConflictException {
+    client.getTreeApi().assignTag(tagName, oldHash, assignTo);
   }
 }

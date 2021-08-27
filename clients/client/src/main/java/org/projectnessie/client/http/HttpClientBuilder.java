@@ -27,6 +27,7 @@ import org.projectnessie.client.api.NessieAPI;
 import org.projectnessie.client.api.NessieApiVersion;
 import org.projectnessie.client.auth.NessieAuthentication;
 import org.projectnessie.client.auth.NessieAuthenticationProvider;
+import org.projectnessie.client.http.v1api.HttpAPIv1;
 
 /**
  * A builder class that creates a {@link NessieHttpClient} via {@link HttpClientBuilder#builder()}.

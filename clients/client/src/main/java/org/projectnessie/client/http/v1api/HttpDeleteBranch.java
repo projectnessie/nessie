@@ -13,35 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.http;
+package org.projectnessie.client.http.v1api;
 
-import org.projectnessie.client.api.DeleteTagBuilder;
+import org.projectnessie.client.api.DeleteBranchBuilder;
+import org.projectnessie.client.http.NessieHttpClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 
-final class HttpDeleteTag extends BaseHttpRequest implements DeleteTagBuilder {
+final class HttpDeleteBranch extends BaseHttpRequest implements DeleteBranchBuilder {
 
-  private String tagName;
+  private String branchName;
   private String hash;
 
-  HttpDeleteTag(NessieHttpClient client) {
+  HttpDeleteBranch(NessieHttpClient client) {
     super(client);
   }
 
   @Override
-  public DeleteTagBuilder tagName(String tagName) {
-    this.tagName = tagName;
+  public DeleteBranchBuilder branchName(String branchName) {
+    this.branchName = branchName;
     return this;
   }
 
   @Override
-  public DeleteTagBuilder hash(String hash) {
+  public DeleteBranchBuilder hash(String hash) {
     this.hash = hash;
     return this;
   }
 
   @Override
   public void submit() throws NessieConflictException, NessieNotFoundException {
-    client.getTreeApi().deleteTag(tagName, hash);
+    client.getTreeApi().deleteBranch(branchName, hash);
   }
 }

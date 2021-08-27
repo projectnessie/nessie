@@ -13,13 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.http;
+package org.projectnessie.client.http.v1api;
 
-abstract class BaseHttpRequest {
+import java.util.List;
+import org.projectnessie.client.api.GetAllReferencesBuilder;
+import org.projectnessie.client.http.NessieHttpClient;
+import org.projectnessie.model.Reference;
 
-  protected final NessieHttpClient client;
+final class HttpGetAllReferences extends BaseHttpRequest implements GetAllReferencesBuilder {
 
-  BaseHttpRequest(NessieHttpClient client) {
-    this.client = client;
+  HttpGetAllReferences(NessieHttpClient client) {
+    super(client);
+  }
+
+  @Override
+  public List<Reference> submit() {
+    return client.getTreeApi().getAllReferences();
   }
 }
