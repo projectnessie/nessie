@@ -100,9 +100,10 @@ class DefaultHelp(click.Command):
 @click.option("--json", is_flag=True, help="write output in json format.")
 @click.option("-v", "--verbose", is_flag=True, help="Verbose output.")
 @click.option("--endpoint", help="Optional endpoint, if different from config file.")
+@click.option("--auth-token", help="Optional bearer auth token, if different from config file.")
 @click.option("--version", is_flag=True, callback=_print_version, expose_value=False, is_eager=True)
 @click.pass_context
-def cli(ctx: click.core.Context, json: bool, verbose: bool, endpoint: str) -> None:
+def cli(ctx: click.core.Context, json: bool, verbose: bool, endpoint: str, auth_token: str) -> None:
     """Nessie cli tool.
 
     Interact with Nessie branches and tables via the command line
@@ -111,6 +112,9 @@ def cli(ctx: click.core.Context, json: bool, verbose: bool, endpoint: str) -> No
         cfg_map = {}
         if endpoint:
             cfg_map["endpoint"] = endpoint
+        if auth_token:
+            cfg_map["auth.type"] = "bearer"
+            cfg_map["auth.token"] = auth_token
         config = build_config(cfg_map)
         nessie = NessieClient(config)
         ctx.obj = ContextObject(nessie, verbose, json)

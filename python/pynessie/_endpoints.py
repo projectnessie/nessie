@@ -11,6 +11,7 @@ import simplejson as jsonlib
 from confuse import Configuration
 from requests.exceptions import HTTPError
 
+from .auth.config import setup_auth
 from .error import NessieConflictException
 from .error import NessieException
 from .error import NessieNotFoundException
@@ -80,7 +81,7 @@ class EndPoints(object):
         """Create a Nessie Client from known config."""
         self._base_url = config["endpoint"].get()
         self._ssl_verify = config["verify"].get(bool)
-        self._auth = None
+        self._auth = setup_auth(config)
 
     def _get(self: "EndPoints", rel_url: str, details: str = "", params: dict = None) -> Union[str, dict, list]:
         r = requests.get(self._base_url + rel_url, headers=_get_headers(), verify=self._ssl_verify, params=params, auth=self._auth)
