@@ -74,8 +74,8 @@ class JdbcSelectSpliterator<T> extends AbstractSpliterator<T> {
   }
 
   private boolean done = false;
-  private final ConnectionWrapper conn;
-  private Connection ctx;
+  private final ConnectionWrapper connectionWrapper;
+  private Connection connection;
   private PreparedStatement ps;
   private ResultSet rs;
   private final String sql;
@@ -89,7 +89,7 @@ class JdbcSelectSpliterator<T> extends AbstractSpliterator<T> {
       PrepareStatement prepareStatement,
       ResultSetMapper<T> deserializer) {
     super(Long.MAX_VALUE, 0);
-    this.conn = conn;
+    this.connectionWrapper = conn;
     this.sql = sql;
     this.prepareStatement = prepareStatement;
     this.deserializer = deserializer;
@@ -101,8 +101,8 @@ class JdbcSelectSpliterator<T> extends AbstractSpliterator<T> {
       PrepareStatement prepareStatement,
       ResultSetMapper<T> deserializer) {
     super(Long.MAX_VALUE, 0);
-    this.conn = null;
-    this.ctx = conn;
+    this.connectionWrapper = null;
+    this.connection = conn;
     this.sql = sql;
     this.prepareStatement = prepareStatement;
     this.deserializer = deserializer;
@@ -141,12 +141,12 @@ class JdbcSelectSpliterator<T> extends AbstractSpliterator<T> {
     }
 
     try {
-      if (ctx == null) {
-        ctx = conn.acquire();
-        closeables.add(conn);
+      if (connection == null) {
+        connection = connectionWrapper.acquire();
+        closeables.add(connectionWrapper);
       }
       if (ps == null) {
-        ps = ctx.prepareStatement(sql);
+        ps = connection.prepareStatement(sql);
         closeables.add(ps);
         prepareStatement.accept(ps);
         rs = ps.executeQuery();

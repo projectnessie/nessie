@@ -82,129 +82,15 @@ import org.projectnessie.versioned.persist.tx.TxConnectionProvider.LocalConnecti
  * Transactional/relational {@link AbstractDatabaseAdapter} implementation using JDBC primitives.
  *
  * <p>Concrete implementations must at least provide the concrete column types and, if necessary,
- * provide the implementation to check for constraint-violations.l
+ * provide the implementation to check for constraint-violations.
  */
 public abstract class TxDatabaseAdapter
     extends AbstractDatabaseAdapter<Connection, TxDatabaseAdapterConfig> {
 
-  /** Value for {@link #TABLE_NAMED_REFERENCES}.{@code ref_type} for a branch. */
+  /** Value for {@link SqlStatements#TABLE_NAMED_REFERENCES}.{@code ref_type} for a branch. */
   protected static final String REF_TYPE_BRANCH = "b";
-  /** Value for {@link #TABLE_NAMED_REFERENCES}.{@code ref_type} for a tag. */
+  /** Value for {@link SqlStatements#TABLE_NAMED_REFERENCES}.{@code ref_type} for a tag. */
   protected static final String REF_TYPE_TAG = "t";
-
-  protected static final String TABLE_NAMED_REFERENCES = "named_refs";
-  protected static final String TABLE_GLOBAL_STATE = "global_state";
-  protected static final String TABLE_COMMIT_LOG = "commit_log";
-  protected static final String TABLE_KEY_LIST = "key_list";
-
-  // SQL / DDL statements
-
-  protected static final String CREATE_TABLE_NAMED_REFERENCES =
-      String.format(
-          "CREATE TABLE %s (\n"
-              + "  key_prefix {2},\n"
-              + "  ref {4},\n"
-              + "  ref_type {5},\n"
-              + "  hash {1},\n"
-              + "  PRIMARY KEY (key_prefix, ref)\n"
-              + ")",
-          TABLE_NAMED_REFERENCES);
-  protected static final String CREATE_TABLE_GLOBAL_STATE =
-      String.format(
-          "CREATE TABLE %s (\n"
-              + "  key_prefix {2},\n"
-              + "  cid {6},\n"
-              + "  chksum {1},\n"
-              + "  value {0},\n"
-              + "  created_at {7},\n"
-              + "  PRIMARY KEY (key_prefix, cid)\n"
-              + ")",
-          TABLE_GLOBAL_STATE);
-  protected static final String CREATE_TABLE_COMMIT_LOG =
-      String.format(
-          "CREATE TABLE %s (\n"
-              + "  key_prefix {2},\n"
-              + "  hash {1},\n"
-              + "  value {0},\n"
-              + "  PRIMARY KEY (key_prefix, hash)\n"
-              + ")",
-          TABLE_COMMIT_LOG);
-  protected static final String CREATE_TABLE_KEY_LIST =
-      String.format(
-          "CREATE TABLE %s (\n"
-              + "  key_prefix {2},\n"
-              + "  id {1},\n"
-              + "  value {0},\n"
-              + "  PRIMARY KEY (key_prefix, id)\n"
-              + ")",
-          TABLE_KEY_LIST);
-
-  // SQL / DML statements
-
-  protected static final String SELECT_NAMED_REFERENCE =
-      String.format(
-          "SELECT hash FROM %s WHERE key_prefix = ? AND ref = ? AND ref_type = ?",
-          TABLE_NAMED_REFERENCES);
-  protected static final String SELECT_NAMED_REFERENCE_NAME =
-      String.format("SELECT hash FROM %s WHERE key_prefix = ? AND ref = ?", TABLE_NAMED_REFERENCES);
-  protected static final String SELECT_NAMED_REFERENCES =
-      String.format(
-          "SELECT ref_type, ref, hash FROM %s WHERE key_prefix = ?", TABLE_NAMED_REFERENCES);
-  protected static final String DELETE_NAMED_REFERENCE =
-      String.format(
-          "DELETE FROM %s WHERE key_prefix = ? AND ref = ? AND hash = ?", TABLE_NAMED_REFERENCES);
-  protected static final String INSERT_NAMED_REFERENCE =
-      String.format(
-          "INSERT INTO %s (key_prefix, ref, ref_type, hash) VALUES (?, ?, ?, ?)",
-          TABLE_NAMED_REFERENCES);
-  protected static final String UPDATE_NAMED_REFERENCE =
-      String.format(
-          "UPDATE %s SET hash = ? WHERE key_prefix = ? AND ref = ? AND hash = ?",
-          TABLE_NAMED_REFERENCES);
-  protected static final String DELETE_NAMED_REFERENCE_ALL =
-      String.format("DELETE FROM %s WHERE key_prefix = ?", TABLE_NAMED_REFERENCES);
-
-  protected static final String SELECT_GLOBAL_STATE_MANY =
-      String.format(
-          "SELECT cid, value FROM %s WHERE key_prefix = ? AND cid IN (%%s)", TABLE_GLOBAL_STATE);
-  protected static final String SELECT_GLOBAL_STATE_ALL =
-      String.format("SELECT cid, value FROM %s WHERE key_prefix = ?", TABLE_GLOBAL_STATE);
-  protected static final String SELECT_GLOBAL_STATE_MANY_WITH_LOGS =
-      String.format(
-          "SELECT cid, value, created_at FROM %s WHERE key_prefix = ? AND cid IN (%%s)",
-          TABLE_GLOBAL_STATE);
-  protected static final String INSERT_GLOBAL_STATE =
-      String.format(
-          "INSERT INTO %s (key_prefix, cid, chksum, value, created_at) VALUES (?, ?, ?, ?, ?)",
-          TABLE_GLOBAL_STATE);
-  protected static final String UPDATE_GLOBAL_STATE =
-      String.format(
-          "UPDATE %s SET value = ?, chksum = ?, created_at = ? WHERE key_prefix = ? AND cid = ? AND chksum = ?",
-          TABLE_GLOBAL_STATE);
-  protected static final String UPDATE_GLOBAL_STATE_UNCOND =
-      String.format(
-          "UPDATE %s SET value = ?, chksum = ?, created_at = ? WHERE key_prefix = ? AND cid = ?",
-          TABLE_GLOBAL_STATE);
-  protected static final String DELETE_GLOBAL_STATE_ALL =
-      String.format("DELETE FROM %s WHERE key_prefix = ?", TABLE_GLOBAL_STATE);
-
-  protected static final String SELECT_COMMIT_LOG =
-      String.format("SELECT value FROM %s WHERE key_prefix = ? AND hash = ?", TABLE_COMMIT_LOG);
-  protected static final String SELECT_COMMIT_LOG_MANY =
-      String.format(
-          "SELECT value FROM %s WHERE key_prefix = ? AND hash IN (%%s)", TABLE_COMMIT_LOG);
-  protected static final String INSERT_COMMIT_LOG =
-      String.format("INSERT INTO %s (key_prefix, hash, value) VALUES (?, ?, ?)", TABLE_COMMIT_LOG);
-  protected static final String DELETE_COMMIT_LOG_ALL =
-      String.format("DELETE FROM %s WHERE key_prefix = ?", TABLE_COMMIT_LOG);
-
-  protected static final String INSERT_KEY_LIST =
-      String.format("INSERT INTO %s (key_prefix, id, value) VALUES (?, ?, ?)", TABLE_KEY_LIST);
-  protected static final String SELECT_KEY_LIST_MANY =
-      String.format(
-          "SELECT id, value FROM %s WHERE key_prefix = ? AND id IN (%%s)", TABLE_KEY_LIST);
-  protected static final String DELETE_KEY_LIST_ALL =
-      String.format("DELETE FROM %s WHERE key_prefix = ?", TABLE_KEY_LIST);
 
   private final TxConnectionProvider db;
 
@@ -234,38 +120,38 @@ public abstract class TxDatabaseAdapter
   @Override
   public Hash hashOnReference(NamedRef namedReference, Optional<Hash> hashOnReference)
       throws ReferenceNotFoundException {
-    Connection ctx = borrowConnection();
+    Connection conn = borrowConnection();
     try {
-      return hashOnRef(ctx, namedReference, hashOnReference);
+      return hashOnRef(conn, namedReference, hashOnReference);
     } finally {
-      releaseConnection(ctx);
+      releaseConnection(conn);
     }
   }
 
   @Override
   public Stream<Optional<ContentsAndState<ByteString>>> values(
       Hash commit, List<Key> keys, KeyFilterPredicate keyFilter) throws ReferenceNotFoundException {
-    Connection ctx = borrowConnection();
+    Connection conn = borrowConnection();
     try {
-      Map<Key, ContentsAndState<ByteString>> result = fetchValues(ctx, commit, keys, keyFilter);
+      Map<Key, ContentsAndState<ByteString>> result = fetchValues(conn, commit, keys, keyFilter);
       return keys.stream().map(result::get).map(Optional::ofNullable);
     } finally {
-      releaseConnection(ctx);
+      releaseConnection(conn);
     }
   }
 
   @Override
   public Stream<CommitLogEntry> commitLog(Hash offset) throws ReferenceNotFoundException {
-    Connection ctx = borrowConnection();
+    Connection conn = borrowConnection();
     boolean failed = true;
     try {
-      Stream<CommitLogEntry> intLog = readCommitLogStream(ctx, offset);
+      Stream<CommitLogEntry> intLog = readCommitLogStream(conn, offset);
 
       failed = false;
-      return intLog.onClose(() -> releaseConnection(ctx));
+      return intLog.onClose(() -> releaseConnection(conn));
     } finally {
       if (failed) {
-        releaseConnection(ctx);
+        releaseConnection(conn);
       }
     }
   }
@@ -278,15 +164,15 @@ public abstract class TxDatabaseAdapter
   @Override
   public Stream<KeyWithType> keys(Hash commit, KeyFilterPredicate keyFilter)
       throws ReferenceNotFoundException {
-    Connection ctx = borrowConnection();
+    Connection conn = borrowConnection();
     boolean failed = true;
     try {
-      Stream<KeyWithType> r = keysForCommitEntry(ctx, commit, keyFilter);
+      Stream<KeyWithType> r = keysForCommitEntry(conn, commit, keyFilter);
       failed = false;
-      return r.onClose(() -> releaseConnection(ctx));
+      return r.onClose(() -> releaseConnection(conn));
     } finally {
       if (failed) {
-        releaseConnection(ctx);
+        releaseConnection(conn);
       }
     }
   }
@@ -307,13 +193,20 @@ public abstract class TxDatabaseAdapter
       return opLoop(
           toBranch,
           false,
-          (ctx, currentHead) -> {
+          (conn, currentHead) -> {
             long timeInMicros = commitTimeInMicros();
 
             Hash toHead =
                 mergeAttempt(
-                    ctx, timeInMicros, from, toBranch, expectedHead, currentHead, h -> {}, h -> {});
-            return tryMoveNamedReference(ctx, toBranch, currentHead, toHead);
+                    conn,
+                    timeInMicros,
+                    from,
+                    toBranch,
+                    expectedHead,
+                    currentHead,
+                    h -> {},
+                    h -> {});
+            return tryMoveNamedReference(conn, toBranch, currentHead, toHead);
           },
           () -> mergeConflictMessage("Conflict", from, toBranch, expectedHead),
           () -> mergeConflictMessage("Retry-failure", from, toBranch, expectedHead));
@@ -332,12 +225,12 @@ public abstract class TxDatabaseAdapter
       return opLoop(
           targetBranch,
           false,
-          (ctx, currentHead) -> {
+          (conn, currentHead) -> {
             long timeInMicros = commitTimeInMicros();
 
             Hash targetHead =
                 transplantAttempt(
-                    ctx,
+                    conn,
                     timeInMicros,
                     targetBranch,
                     expectedHead,
@@ -346,7 +239,7 @@ public abstract class TxDatabaseAdapter
                     h -> {},
                     h -> {});
 
-            return tryMoveNamedReference(ctx, targetBranch, currentHead, targetHead);
+            return tryMoveNamedReference(conn, targetBranch, currentHead, targetHead);
           },
           () -> transplantConflictMessage("Conflict", targetBranch, expectedHead, commits),
           () -> transplantConflictMessage("Retry-failure", targetBranch, expectedHead, commits));
@@ -365,16 +258,16 @@ public abstract class TxDatabaseAdapter
       return opLoop(
           commitAttempt.getCommitToBranch(),
           false,
-          (ctx, branchHead) -> {
+          (conn, branchHead) -> {
             long timeInMicros = commitTimeInMicros();
 
             CommitLogEntry newBranchCommit =
-                commitAttempt(ctx, timeInMicros, branchHead, commitAttempt, h -> {});
+                commitAttempt(conn, timeInMicros, branchHead, commitAttempt, h -> {});
 
-            upsertGlobalStates(commitAttempt, ctx, newBranchCommit.getCreatedTime());
+            upsertGlobalStates(commitAttempt, conn, newBranchCommit.getCreatedTime());
 
             return tryMoveNamedReference(
-                ctx, commitAttempt.getCommitToBranch(), branchHead, newBranchCommit.getHash());
+                conn, commitAttempt.getCommitToBranch(), branchHead, newBranchCommit.getHash());
           },
           () ->
               commitConflictMessage(
@@ -399,8 +292,8 @@ public abstract class TxDatabaseAdapter
       return opLoop(
           ref,
           true,
-          (ctx, nullHead) -> {
-            if (checkNamedRefExistence(ctx, ref.getName())) {
+          (conn, nullHead) -> {
+            if (checkNamedRefExistence(conn, ref.getName())) {
               throw referenceAlreadyExists(ref);
             }
 
@@ -411,9 +304,9 @@ public abstract class TxDatabaseAdapter
               hash = NO_ANCESTOR;
             }
 
-            validateHashExists(ctx, hash);
+            validateHashExists(conn, hash);
 
-            insertNewReference(ctx, ref, hash);
+            insertNewReference(conn, ref, hash);
 
             return hash;
           },
@@ -433,10 +326,11 @@ public abstract class TxDatabaseAdapter
       opLoop(
           reference,
           false,
-          (ctx, pointer) -> {
+          (conn, pointer) -> {
             verifyExpectedHash(pointer, reference, expectedHead);
 
-            try (PreparedStatement ps = ctx.prepareStatement(DELETE_NAMED_REFERENCE)) {
+            try (PreparedStatement ps =
+                conn.prepareStatement(SqlStatements.DELETE_NAMED_REFERENCE)) {
               ps.setString(1, config.getKeyPrefix());
               ps.setString(2, reference.getName());
               ps.setString(3, pointer.asString());
@@ -462,16 +356,16 @@ public abstract class TxDatabaseAdapter
       opLoop(
           assignee,
           true,
-          (ctx, pointer) -> {
-            pointer = fetchNamedRefHead(ctx, assignee);
+          (conn, pointer) -> {
+            pointer = fetchNamedRefHead(conn, assignee);
 
             verifyExpectedHash(pointer, assignee, expectedHead);
 
-            if (!NO_ANCESTOR.equals(assignTo) && fetchFromCommitLog(ctx, assignTo) == null) {
+            if (!NO_ANCESTOR.equals(assignTo) && fetchFromCommitLog(conn, assignTo) == null) {
               throw referenceNotFound(assignTo);
             }
 
-            return tryMoveNamedReference(ctx, assignee, pointer, assignTo);
+            return tryMoveNamedReference(conn, assignee, pointer, assignTo);
           },
           () -> assignConflictMessage("Conflict", assignee, expectedHead, assignTo),
           () -> assignConflictMessage("Retry-Failure", assignee, expectedHead, assignTo));
@@ -485,56 +379,56 @@ public abstract class TxDatabaseAdapter
   @Override
   public Stream<Diff<ByteString>> diff(Hash from, Hash to, KeyFilterPredicate keyFilter)
       throws ReferenceNotFoundException {
-    Connection ctx = borrowConnection();
+    Connection conn = borrowConnection();
     try {
-      return buildDiff(ctx, from, to, keyFilter);
+      return buildDiff(conn, from, to, keyFilter);
     } finally {
-      releaseConnection(ctx);
+      releaseConnection(conn);
     }
   }
 
   @Override
   public void initializeRepo(String defaultBranchName) {
-    Connection ctx = borrowConnection();
+    Connection conn = borrowConnection();
     try {
-      if (!checkNamedRefExistence(ctx, BranchName.of(defaultBranchName))) {
-        insertNewReference(ctx, BranchName.of(defaultBranchName), NO_ANCESTOR);
+      if (!checkNamedRefExistence(conn, BranchName.of(defaultBranchName))) {
+        insertNewReference(conn, BranchName.of(defaultBranchName), NO_ANCESTOR);
 
-        txCommit(ctx);
+        txCommit(conn);
       }
     } catch (Exception e) {
       throw new RuntimeException(e);
     } finally {
-      releaseConnection(ctx);
+      releaseConnection(conn);
     }
   }
 
   @Override
   public void reinitializeRepo(String defaultBranchName) {
-    Connection ctx = borrowConnection();
+    Connection conn = borrowConnection();
     try {
-      try (PreparedStatement ps = ctx.prepareStatement(DELETE_NAMED_REFERENCE_ALL)) {
+      try (PreparedStatement ps = conn.prepareStatement(SqlStatements.DELETE_NAMED_REFERENCE_ALL)) {
         ps.setString(1, config.getKeyPrefix());
         ps.executeUpdate();
       }
-      try (PreparedStatement ps = ctx.prepareStatement(DELETE_GLOBAL_STATE_ALL)) {
+      try (PreparedStatement ps = conn.prepareStatement(SqlStatements.DELETE_GLOBAL_STATE_ALL)) {
         ps.setString(1, config.getKeyPrefix());
         ps.executeUpdate();
       }
-      try (PreparedStatement ps = ctx.prepareStatement(DELETE_COMMIT_LOG_ALL)) {
+      try (PreparedStatement ps = conn.prepareStatement(SqlStatements.DELETE_COMMIT_LOG_ALL)) {
         ps.setString(1, config.getKeyPrefix());
         ps.executeUpdate();
       }
-      try (PreparedStatement ps = ctx.prepareStatement(DELETE_KEY_LIST_ALL)) {
+      try (PreparedStatement ps = conn.prepareStatement(SqlStatements.DELETE_KEY_LIST_ALL)) {
         ps.setString(1, config.getKeyPrefix());
         ps.executeUpdate();
       }
 
-      txCommit(ctx);
+      txCommit(conn);
     } catch (Exception e) {
       throw new RuntimeException(e);
     } finally {
-      releaseConnection(ctx);
+      releaseConnection(conn);
     }
 
     initializeRepo(defaultBranchName);
@@ -542,14 +436,16 @@ public abstract class TxDatabaseAdapter
 
   @Override
   public void close() throws Exception {
-    db.close();
+    if (db != null) {
+      db.close();
+    }
   }
 
   @Override
   public Stream<ContentsIdWithType> globalKeys(ToIntFunction<ByteString> contentsTypeExtractor) {
     return JdbcSelectSpliterator.buildStream(
         borrowConnectionWrapper(),
-        SELECT_GLOBAL_STATE_ALL,
+        SqlStatements.SELECT_GLOBAL_STATE_ALL,
         ps -> ps.setString(1, config.getKeyPrefix()),
         (rs) -> {
           ContentsId contentsId = ContentsId.of(rs.getString(1));
@@ -573,7 +469,7 @@ public abstract class TxDatabaseAdapter
     // 1. Fetch the global states,
     return JdbcSelectSpliterator.buildStream(
         conn,
-        sqlForManyPlaceholders(SELECT_GLOBAL_STATE_MANY_WITH_LOGS, keys.size()),
+        sqlForManyPlaceholders(SqlStatements.SELECT_GLOBAL_STATE_MANY_WITH_LOGS, keys.size()),
         ps -> {
           ps.setString(1, config.getKeyPrefix());
           int i = 2;
@@ -637,20 +533,20 @@ public abstract class TxDatabaseAdapter
 
   /**
    * Convenience for {@link AbstractDatabaseAdapter#hashOnRef(Object, NamedRef, Optional, Hash)
-   * hashOnRef(ctx, ref, fetchNamedRefHead(ctx, ref.getReference()))}.
+   * hashOnRef(conn, ref, fetchNamedRefHead(conn, ref.getReference()))}.
    */
-  protected Hash hashOnRef(Connection ctx, NamedRef reference, Optional<Hash> hashOnRef)
+  protected Hash hashOnRef(Connection conn, NamedRef reference, Optional<Hash> hashOnRef)
       throws ReferenceNotFoundException {
-    return hashOnRef(ctx, reference, hashOnRef, fetchNamedRefHead(ctx, reference));
+    return hashOnRef(conn, reference, hashOnRef, fetchNamedRefHead(conn, reference));
   }
 
   /** Implementation notes: transactional implementations must rollback changes. */
-  private void releaseConnection(Connection ctx) {
+  private void releaseConnection(Connection conn) {
     try {
       try {
-        ctx.rollback();
+        conn.rollback();
       } finally {
-        ctx.close();
+        conn.close();
       }
     } catch (Exception e) {
       throw new RuntimeException(e);
@@ -679,17 +575,17 @@ public abstract class TxDatabaseAdapter
     }
   }
 
-  protected void txCommit(Connection ctx) {
+  protected void txCommit(Connection conn) {
     try {
-      ctx.commit();
+      conn.commit();
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
   }
 
-  protected void txRollback(Connection ctx) {
+  protected void txRollback(Connection conn) {
     try {
-      ctx.rollback();
+      conn.rollback();
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
@@ -701,7 +597,7 @@ public abstract class TxDatabaseAdapter
      * Applies an operation within a CAS-loop. The implementation gets the current global-state and
      * must return an updated global-state with a different global-id.
      *
-     * @param ctx current JDBC connection
+     * @param conn current JDBC connection
      * @param targetRefHead current named-reference's HEAD
      * @return if non-{@code * null}, the JDBC transaction is committed and the hash returned from
      *     {@link #opLoop(NamedRef, boolean, LoopOp, Supplier, Supplier)}. If {@code null}, the
@@ -714,7 +610,7 @@ public abstract class TxDatabaseAdapter
      * @throws VersionStoreException any other version-store exception
      * @see #opLoop(NamedRef, boolean, LoopOp, Supplier, Supplier)
      */
-    Hash apply(Connection ctx, Hash targetRefHead) throws VersionStoreException, SQLException;
+    Hash apply(Connection conn, Hash targetRefHead) throws VersionStoreException, SQLException;
   }
 
   /**
@@ -752,22 +648,22 @@ public abstract class TxDatabaseAdapter
       Supplier<String> conflictErrorMessage,
       Supplier<String> retryErrorMessage)
       throws VersionStoreException {
-    Connection ctx = borrowConnection();
+    Connection conn = borrowConnection();
 
     try (TryLoopState tryState = newTryLoopState(retryErrorMessage, config)) {
       while (true) {
-        Hash pointer = createRef ? null : fetchNamedRefHead(ctx, namedReference);
+        Hash pointer = createRef ? null : fetchNamedRefHead(conn, namedReference);
 
         Hash newHead;
         try {
-          newHead = loopOp.apply(ctx, pointer);
+          newHead = loopOp.apply(conn, pointer);
         } catch (RetryTransactionException e) {
-          txRollback(ctx);
+          txRollback(conn);
           tryState.retry();
           continue;
         } catch (SQLException e) {
           if (isRetryTransaction(e)) {
-            txRollback(ctx);
+            txRollback(conn);
             tryState.retry();
             continue;
           }
@@ -777,22 +673,22 @@ public abstract class TxDatabaseAdapter
 
         // The operation succeeded, if it returns a non-null hash value.
         if (newHead != null) {
-          txCommit(ctx);
+          txCommit(conn);
           return tryState.success(newHead);
         }
 
-        txRollback(ctx);
+        txRollback(conn);
         tryState.retry();
       }
     } finally {
-      releaseConnection(ctx);
+      releaseConnection(conn);
     }
   }
 
   protected Stream<WithHash<NamedRef>> fetchNamedRefs(ConnectionWrapper conn) {
     return JdbcSelectSpliterator.buildStream(
         conn,
-        SELECT_NAMED_REFERENCES,
+        SqlStatements.SELECT_NAMED_REFERENCES,
         ps -> ps.setString(1, config.getKeyPrefix()),
         (rs) -> {
           String type = rs.getString(1);
@@ -819,7 +715,7 @@ public abstract class TxDatabaseAdapter
 
   /** Similar to {@link #fetchNamedRefHead(Connection, NamedRef)}, but just checks for existence. */
   protected boolean checkNamedRefExistence(Connection c, String refName) {
-    try (PreparedStatement ps = c.prepareStatement(SELECT_NAMED_REFERENCE_NAME)) {
+    try (PreparedStatement ps = c.prepareStatement(SqlStatements.SELECT_NAMED_REFERENCE_NAME)) {
       ps.setString(1, config.getKeyPrefix());
       ps.setString(2, refName);
       try (ResultSet rs = ps.executeQuery()) {
@@ -835,7 +731,7 @@ public abstract class TxDatabaseAdapter
    * reference does not exist.
    */
   protected Hash fetchNamedRefHead(Connection c, NamedRef ref) throws ReferenceNotFoundException {
-    try (PreparedStatement ps = c.prepareStatement(SELECT_NAMED_REFERENCE)) {
+    try (PreparedStatement ps = c.prepareStatement(SqlStatements.SELECT_NAMED_REFERENCE)) {
       ps.setString(1, config.getKeyPrefix());
       ps.setString(2, ref.getName());
       ps.setString(3, referenceTypeDiscriminator(ref));
@@ -861,9 +757,9 @@ public abstract class TxDatabaseAdapter
     }
   }
 
-  protected void insertNewReference(Connection ctx, NamedRef ref, Hash hash)
+  protected void insertNewReference(Connection conn, NamedRef ref, Hash hash)
       throws ReferenceAlreadyExistsException, SQLException {
-    try (PreparedStatement ps = ctx.prepareStatement(INSERT_NAMED_REFERENCE)) {
+    try (PreparedStatement ps = conn.prepareStatement(SqlStatements.INSERT_NAMED_REFERENCE)) {
       ps.setString(1, config.getKeyPrefix());
       ps.setString(2, ref.getName());
       ps.setString(3, referenceTypeDiscriminator(ref));
@@ -898,19 +794,20 @@ public abstract class TxDatabaseAdapter
    * <p>The algorithm works like this:
    *
    * <ol>
-   *   <li>Try to update the existing {@code Key + Contents.id} rows in {@value #TABLE_GLOBAL_STATE}
+   *   <li>Try to update the existing {@code Key + Contents.id} rows in {@value
+   *       SqlStatements#TABLE_GLOBAL_STATE}
    *       <ol>
-   *         <li>Perform a {@code SELECT} on {@value #TABLE_GLOBAL_STATE} fetching all rows for the
-   *             requested keys.
+   *         <li>Perform a {@code SELECT} on {@value SqlStatements#TABLE_GLOBAL_STATE} fetching all
+   *             rows for the requested keys.
    *         <li>Filter those rows that match the contents-ids
-   *         <li>Perform the {@code UPDATE} on {@value #TABLE_GLOBAL_STATE}. If the user requested
-   *             to compare the current-global-state, perform a conditional update. Otherwise
-   *             blindly update it.
+   *         <li>Perform the {@code UPDATE} on {@value SqlStatements#TABLE_GLOBAL_STATE}. If the
+   *             user requested to compare the current-global-state, perform a conditional update.
+   *             Otherwise blindly update it.
    *       </ol>
-   *   <li>Insert the not updated (= new) rows into {@value #TABLE_GLOBAL_STATE}
+   *   <li>Insert the not updated (= new) rows into {@value SqlStatements#TABLE_GLOBAL_STATE}
    * </ol>
    */
-  protected void upsertGlobalStates(CommitAttempt commitAttempt, Connection ctx, long newCreatedAt)
+  protected void upsertGlobalStates(CommitAttempt commitAttempt, Connection conn, long newCreatedAt)
       throws SQLException {
     if (commitAttempt.getGlobal().isEmpty()) {
       return;
@@ -918,14 +815,14 @@ public abstract class TxDatabaseAdapter
 
     String sql =
         sqlForManyPlaceholders(
-            SELECT_GLOBAL_STATE_MANY_WITH_LOGS, commitAttempt.getGlobal().size());
+            SqlStatements.SELECT_GLOBAL_STATE_MANY_WITH_LOGS, commitAttempt.getGlobal().size());
 
     Set<ContentsId> newKeys = new HashSet<>(commitAttempt.getGlobal().keySet());
 
-    try (PreparedStatement psSelect = ctx.prepareStatement(sql);
-        PreparedStatement psUpdate = ctx.prepareStatement(UPDATE_GLOBAL_STATE);
+    try (PreparedStatement psSelect = conn.prepareStatement(sql);
+        PreparedStatement psUpdate = conn.prepareStatement(SqlStatements.UPDATE_GLOBAL_STATE);
         PreparedStatement psUpdateUnconditional =
-            ctx.prepareStatement(UPDATE_GLOBAL_STATE_UNCOND)) {
+            conn.prepareStatement(SqlStatements.UPDATE_GLOBAL_STATE_UNCOND)) {
 
       // 1.2. SELECT returns all already existing rows --> UPDATE
 
@@ -989,7 +886,8 @@ public abstract class TxDatabaseAdapter
 
       // 2. INSERT all global-state values for those keys that were not handled above.
       if (!newKeys.isEmpty()) {
-        try (PreparedStatement psInsert = ctx.prepareStatement(INSERT_GLOBAL_STATE)) {
+        try (PreparedStatement psInsert =
+            conn.prepareStatement(SqlStatements.INSERT_GLOBAL_STATE)) {
           for (ContentsId contentsId : newKeys) {
             ByteString newGlob = commitAttempt.getGlobal().get(contentsId);
             byte[] newGlobBytes = newGlob.toByteArray();
@@ -1022,14 +920,14 @@ public abstract class TxDatabaseAdapter
 
   @Override
   protected Map<ContentsId, ByteString> fetchGlobalStates(
-      Connection ctx, Set<ContentsId> contentIds) {
+      Connection conn, Set<ContentsId> contentIds) {
     if (contentIds.isEmpty()) {
       return Collections.emptyMap();
     }
 
-    String sql = sqlForManyPlaceholders(SELECT_GLOBAL_STATE_MANY, contentIds.size());
+    String sql = sqlForManyPlaceholders(SqlStatements.SELECT_GLOBAL_STATE_MANY, contentIds.size());
 
-    try (PreparedStatement ps = ctx.prepareStatement(sql)) {
+    try (PreparedStatement ps = conn.prepareStatement(sql)) {
       ps.setString(1, config.getKeyPrefix());
       int i = 2;
       for (ContentsId cid : contentIds) {
@@ -1055,7 +953,7 @@ public abstract class TxDatabaseAdapter
 
   @Override
   protected CommitLogEntry fetchFromCommitLog(Connection c, Hash hash) {
-    try (PreparedStatement ps = c.prepareStatement(TxDatabaseAdapter.SELECT_COMMIT_LOG)) {
+    try (PreparedStatement ps = c.prepareStatement(SqlStatements.SELECT_COMMIT_LOG)) {
       ps.setString(1, config.getKeyPrefix());
       ps.setString(2, hash.asString());
       try (ResultSet rs = ps.executeQuery()) {
@@ -1068,7 +966,7 @@ public abstract class TxDatabaseAdapter
 
   @Override
   protected List<CommitLogEntry> fetchPageFromCommitLog(Connection c, List<Hash> hashes) {
-    String sql = sqlForManyPlaceholders(SELECT_COMMIT_LOG_MANY, hashes.size());
+    String sql = sqlForManyPlaceholders(SqlStatements.SELECT_COMMIT_LOG_MANY, hashes.size());
 
     try (PreparedStatement ps = c.prepareStatement(sql)) {
       ps.setString(1, config.getKeyPrefix());
@@ -1092,7 +990,7 @@ public abstract class TxDatabaseAdapter
   @Override
   protected void writeIndividualCommit(Connection c, CommitLogEntry entry)
       throws ReferenceConflictException {
-    try (PreparedStatement ps = c.prepareStatement(INSERT_COMMIT_LOG)) {
+    try (PreparedStatement ps = c.prepareStatement(SqlStatements.INSERT_COMMIT_LOG)) {
       ps.setString(1, config.getKeyPrefix());
       ps.setString(2, entry.getHash().asString());
       ps.setBytes(3, toProto(entry).toByteArray());
@@ -1111,7 +1009,11 @@ public abstract class TxDatabaseAdapter
   protected void writeMultipleCommits(Connection c, List<CommitLogEntry> entries)
       throws ReferenceConflictException {
     writeMany(
-        c, INSERT_COMMIT_LOG, entries, e -> e.getHash().asString(), e -> toProto(e).toByteArray());
+        c,
+        SqlStatements.INSERT_COMMIT_LOG,
+        entries,
+        e -> e.getHash().asString(),
+        e -> toProto(e).toByteArray());
   }
 
   @Override
@@ -1119,7 +1021,7 @@ public abstract class TxDatabaseAdapter
     try {
       writeMany(
           c,
-          INSERT_KEY_LIST,
+          SqlStatements.INSERT_KEY_LIST,
           newKeyListEntities,
           e -> e.getId().asString(),
           e -> toProto(e.getKeys()).toByteArray());
@@ -1171,7 +1073,7 @@ public abstract class TxDatabaseAdapter
   protected Stream<KeyListEntity> fetchKeyLists(Connection c, List<Hash> keyListsIds) {
     return JdbcSelectSpliterator.buildStream(
         c,
-        sqlForManyPlaceholders(SELECT_KEY_LIST_MANY, keyListsIds.size()),
+        sqlForManyPlaceholders(SqlStatements.SELECT_KEY_LIST_MANY, keyListsIds.size()),
         ps -> {
           ps.setString(1, config.getKeyPrefix());
           int i = 2;
@@ -1250,8 +1152,8 @@ public abstract class TxDatabaseAdapter
    * {@code newHead}, if successful, and {@code null} if not.
    */
   protected Hash tryMoveNamedReference(
-      Connection ctx, NamedRef ref, Hash expectedHead, Hash newHead) {
-    try (PreparedStatement ps = ctx.prepareStatement(UPDATE_NAMED_REFERENCE)) {
+      Connection conn, NamedRef ref, Hash expectedHead, Hash newHead) {
+    try (PreparedStatement ps = conn.prepareStatement(SqlStatements.UPDATE_NAMED_REFERENCE)) {
       ps.setString(1, newHead.asString());
       ps.setString(2, config.getKeyPrefix());
       ps.setString(3, ref.getName());
@@ -1272,14 +1174,22 @@ public abstract class TxDatabaseAdapter
    * specific column types.
    *
    * <p>Names of the tables are defined by the constants defined in this class that start with
-   * {@code TABLE_}, for example {@link #TABLE_COMMIT_LOG}.
+   * {@code TABLE_}, for example {@link SqlStatements#TABLE_COMMIT_LOG}.
    */
   protected Map<String, List<String>> allCreateTableDDL() {
     return ImmutableMap.<String, List<String>>builder()
-        .put(TABLE_GLOBAL_STATE, Collections.singletonList(CREATE_TABLE_GLOBAL_STATE))
-        .put(TABLE_NAMED_REFERENCES, Collections.singletonList(CREATE_TABLE_NAMED_REFERENCES))
-        .put(TABLE_COMMIT_LOG, Collections.singletonList(CREATE_TABLE_COMMIT_LOG))
-        .put(TABLE_KEY_LIST, Collections.singletonList(CREATE_TABLE_KEY_LIST))
+        .put(
+            SqlStatements.TABLE_GLOBAL_STATE,
+            Collections.singletonList(SqlStatements.CREATE_TABLE_GLOBAL_STATE))
+        .put(
+            SqlStatements.TABLE_NAMED_REFERENCES,
+            Collections.singletonList(SqlStatements.CREATE_TABLE_NAMED_REFERENCES))
+        .put(
+            SqlStatements.TABLE_COMMIT_LOG,
+            Collections.singletonList(SqlStatements.CREATE_TABLE_COMMIT_LOG))
+        .put(
+            SqlStatements.TABLE_KEY_LIST,
+            Collections.singletonList(SqlStatements.CREATE_TABLE_KEY_LIST))
         .build();
   }
 
