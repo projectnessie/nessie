@@ -35,8 +35,13 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TxConnectionProvider implements AutoCloseable {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(TxConnectionProvider.class);
+
   public void configure(TxDatabaseAdapterConfig config) {}
 
   public void setupDatabase(
@@ -68,11 +73,13 @@ public class TxConnectionProvider implements AutoCloseable {
       String ddl = ddls.map(s -> s + ";").collect(Collectors.joining("\n\n"));
       if (!ddl.isEmpty()) {
         ddl = "BEGIN;\n" + ddl + "\nEND TRANSACTION;\n";
+        LOGGER.debug("Executing DDL batch\n{}", ddl);
         st.execute(ddl);
       }
     } else {
       List<String> ddlStatements = ddls.collect(Collectors.toList());
       for (String ddl : ddlStatements) {
+        LOGGER.debug("Executing DDL: {}", ddl);
         st.execute(ddl);
       }
     }
@@ -114,11 +121,12 @@ public class TxConnectionProvider implements AutoCloseable {
 
       // configure pool
       poolConfiguration
-          .initialSize(10)
-          .maxSize(10)
-          .minSize(10)
-          .maxLifetime(Duration.of(5, ChronoUnit.MINUTES))
-          .acquisitionTimeout(Duration.of(30, ChronoUnit.SECONDS));
+          .initialSize(config.getPoolInitialSize())
+          .maxSize(config.getPoolMaxSize())
+          .minSize(config.getPoolMinSize())
+          .maxLifetime(Duration.of(config.getPoolConnectionLifetimeMinutes(), ChronoUnit.MINUTES))
+          .acquisitionTimeout(
+              Duration.of(config.getPoolAcquisitionTimeoutSeconds(), ChronoUnit.SECONDS));
 
       // configure supplier
       connectionFactoryConfiguration.jdbcUrl(config.getJdbcUrl());
@@ -126,7 +134,8 @@ public class TxConnectionProvider implements AutoCloseable {
         connectionFactoryConfiguration.credential(new NamePrincipal(config.getJdbcUser()));
         connectionFactoryConfiguration.credential(new SimplePassword(config.getJdbcPass()));
       }
-      connectionFactoryConfiguration.jdbcTransactionIsolation(TransactionIsolation.READ_COMMITTED);
+      connectionFactoryConfiguration.jdbcTransactionIsolation(
+          TransactionIsolation.valueOf(config.getPoolTransactionIsolation()));
       connectionFactoryConfiguration.autoCommit(false);
 
       try {
