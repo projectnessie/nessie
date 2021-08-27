@@ -158,7 +158,8 @@ public abstract class TxDatabaseAdapter
 
   @Override
   public Stream<WithHash<NamedRef>> namedRefs() {
-    return fetchNamedRefs(borrowConnectionWrapper());
+    Connection conn = borrowConnection();
+    return fetchNamedRefs(conn).onClose(() -> releaseConnection(conn));
   }
 
   @Override
@@ -443,63 +444,63 @@ public abstract class TxDatabaseAdapter
 
   @Override
   public Stream<ContentsIdWithType> globalKeys(ToIntFunction<ByteString> contentsTypeExtractor) {
+    Connection conn = borrowConnection();
     return JdbcSelectSpliterator.buildStream(
-        borrowConnectionWrapper(),
-        SqlStatements.SELECT_GLOBAL_STATE_ALL,
-        ps -> ps.setString(1, config.getKeyPrefix()),
-        (rs) -> {
-          ContentsId contentsId = ContentsId.of(rs.getString(1));
-          byte[] value = rs.getBytes(2);
-          byte type =
-              (byte) contentsTypeExtractor.applyAsInt(UnsafeByteOperations.unsafeWrap(value));
+            conn,
+            SqlStatements.SELECT_GLOBAL_STATE_ALL,
+            ps -> ps.setString(1, config.getKeyPrefix()),
+            (rs) -> {
+              ContentsId contentsId = ContentsId.of(rs.getString(1));
+              byte[] value = rs.getBytes(2);
+              byte type =
+                  (byte) contentsTypeExtractor.applyAsInt(UnsafeByteOperations.unsafeWrap(value));
 
-          return ContentsIdWithType.of(contentsId, type);
-        });
+              return ContentsIdWithType.of(contentsId, type);
+            })
+        .onClose(() -> releaseConnection(conn));
   }
 
   @Override
   public Stream<ContentsIdAndBytes> globalLog(
       Set<ContentsIdWithType> keys, ToIntFunction<ByteString> contentsTypeExtractor) {
-    ConnectionWrapper conn = borrowConnectionWrapper();
-
     // 1. Fetch the global states,
     // 1.1. filter the requested keys + contents-ids
     // 1.2. extract the current state from the GLOBAL_STATE table
 
     // 1. Fetch the global states,
+    Connection conn = borrowConnection();
     return JdbcSelectSpliterator.buildStream(
-        conn,
-        sqlForManyPlaceholders(SqlStatements.SELECT_GLOBAL_STATE_MANY_WITH_LOGS, keys.size()),
-        ps -> {
-          ps.setString(1, config.getKeyPrefix());
-          int i = 2;
-          for (ContentsIdWithType key : keys) {
-            ps.setString(i++, key.getContentsId().getId());
-          }
-        },
-        (rs) -> {
-          ContentsId cid = ContentsId.of(rs.getString(1));
-          ByteString value = UnsafeByteOperations.unsafeWrap(rs.getBytes(2));
-          byte type = (byte) contentsTypeExtractor.applyAsInt(value);
-          ContentsIdWithType ktFromResult = ContentsIdWithType.of(cid, type);
-          if (!keys.contains(ktFromResult)) {
-            // 1.1. filter the requested keys + contents-ids
-            return null;
-          }
+            conn,
+            sqlForManyPlaceholders(SqlStatements.SELECT_GLOBAL_STATE_MANY_WITH_LOGS, keys.size()),
+            ps -> {
+              ps.setString(1, config.getKeyPrefix());
+              int i = 2;
+              for (ContentsIdWithType key : keys) {
+                ps.setString(i++, key.getContentsId().getId());
+              }
+            },
+            (rs) -> {
+              ContentsId cid = ContentsId.of(rs.getString(1));
+              ByteString value = UnsafeByteOperations.unsafeWrap(rs.getBytes(2));
+              byte type = (byte) contentsTypeExtractor.applyAsInt(value);
+              ContentsIdWithType ktFromResult = ContentsIdWithType.of(cid, type);
+              if (!keys.contains(ktFromResult)) {
+                // 1.1. filter the requested keys + contents-ids
+                return null;
+              }
 
-          // 1.2. extract the current state from the GLOBAL_STATE table
-          return ContentsIdAndBytes.of(cid, type, value);
-        });
+              // 1.2. extract the current state from the GLOBAL_STATE table
+              return ContentsIdAndBytes.of(cid, type, value);
+            })
+        .onClose(() -> releaseConnection(conn));
   }
 
   @Override
   public Stream<KeyWithBytes> allContents(
       BiFunction<NamedRef, CommitLogEntry, Boolean> continueOnRefPredicate) {
-    ConnectionWrapper conn = borrowConnectionWrapper();
+    Connection conn = borrowConnection();
     boolean failed = true;
     try {
-      Connection c = conn.acquire();
-
       List<WithHash<NamedRef>> allRefs;
       try (Stream<WithHash<NamedRef>> namedRefs = fetchNamedRefs(conn)) {
         allRefs = namedRefs.collect(Collectors.toList());
@@ -510,7 +511,7 @@ public abstract class TxDatabaseAdapter
               .flatMap(
                   ref -> {
                     try {
-                      return readCommitLogStream(c, ref.getHash());
+                      return readCommitLogStream(conn, ref.getHash());
                     } catch (ReferenceNotFoundException e) {
                       return Stream.empty();
                     }
@@ -519,10 +520,10 @@ public abstract class TxDatabaseAdapter
       Stream<KeyWithBytes> result = logs.flatMap(l -> l.getPuts().stream());
 
       failed = false;
-      return result.onClose(conn::closeSilent);
+      return result.onClose(() -> releaseConnection(conn));
     } finally {
       if (failed) {
-        conn.closeSilent();
+        releaseConnection(conn);
       }
     }
   }
@@ -561,10 +562,6 @@ public abstract class TxDatabaseAdapter
   @Override
   protected int entitySize(KeyWithType entry) {
     return toProto(entry).getSerializedSize();
-  }
-
-  protected ConnectionWrapper borrowConnectionWrapper() {
-    return new ConnectionWrapper(this::borrowConnection);
   }
 
   protected Connection borrowConnection() {
@@ -685,7 +682,7 @@ public abstract class TxDatabaseAdapter
     }
   }
 
-  protected Stream<WithHash<NamedRef>> fetchNamedRefs(ConnectionWrapper conn) {
+  protected Stream<WithHash<NamedRef>> fetchNamedRefs(Connection conn) {
     return JdbcSelectSpliterator.buildStream(
         conn,
         SqlStatements.SELECT_NAMED_REFERENCES,

@@ -57,14 +57,19 @@ class JdbcSelectSpliterator<T> extends AbstractSpliterator<T> {
     void accept(PreparedStatement ps) throws SQLException;
   }
 
-  static <T> Stream<T> buildStream(
-      ConnectionWrapper conn,
-      String sql,
-      PrepareStatement prepareStatement,
-      ResultSetMapper<T> deserializer) {
-    return new JdbcSelectSpliterator<T>(conn, sql, prepareStatement, deserializer).toStream();
-  }
-
+  /**
+   * Wraps a {@link Stream} around a JDBC {@link Connection} performing a SQL {@code SELECT}.
+   *
+   * <p>The {@link PreparedStatement} + {@link ResultSet} are created lazily and closed when the
+   * {@link Stream} is closed.
+   *
+   * @param conn the JDBC connection to use
+   * @param sql the SQL {@code SELECT}
+   * @param prepareStatement function to populate the bind-variables on a {@link PreparedStatement}
+   * @param deserializer maps the current row in a {@link ResultSet} to the type returned by the
+   *     {@link Stream}
+   * @return Java {@link Stream} wrapping a SQL query
+   */
   static <T> Stream<T> buildStream(
       Connection conn,
       String sql,
@@ -74,8 +79,7 @@ class JdbcSelectSpliterator<T> extends AbstractSpliterator<T> {
   }
 
   private boolean done = false;
-  private final ConnectionWrapper connectionWrapper;
-  private Connection connection;
+  private final Connection connection;
   private PreparedStatement ps;
   private ResultSet rs;
   private final String sql;
@@ -84,24 +88,11 @@ class JdbcSelectSpliterator<T> extends AbstractSpliterator<T> {
   private final List<AutoCloseable> closeables = new ArrayList<>();
 
   private JdbcSelectSpliterator(
-      ConnectionWrapper conn,
-      String sql,
-      PrepareStatement prepareStatement,
-      ResultSetMapper<T> deserializer) {
-    super(Long.MAX_VALUE, 0);
-    this.connectionWrapper = conn;
-    this.sql = sql;
-    this.prepareStatement = prepareStatement;
-    this.deserializer = deserializer;
-  }
-
-  private JdbcSelectSpliterator(
       Connection conn,
       String sql,
       PrepareStatement prepareStatement,
       ResultSetMapper<T> deserializer) {
     super(Long.MAX_VALUE, 0);
-    this.connectionWrapper = null;
     this.connection = conn;
     this.sql = sql;
     this.prepareStatement = prepareStatement;
@@ -141,10 +132,6 @@ class JdbcSelectSpliterator<T> extends AbstractSpliterator<T> {
     }
 
     try {
-      if (connection == null) {
-        connection = connectionWrapper.acquire();
-        closeables.add(connectionWrapper);
-      }
       if (ps == null) {
         ps = connection.prepareStatement(sql);
         closeables.add(ps);
