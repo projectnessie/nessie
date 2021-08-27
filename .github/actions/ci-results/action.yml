@@ -1,4 +1,4 @@
-name: 'Setup runner'
+name: 'Capture test results'
 runs:
   using: "composite"
   steps:

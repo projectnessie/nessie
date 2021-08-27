@@ -35,23 +35,3 @@ runs:
     - name: Update /etc/hosts
       shell: bash
       run: echo -e "$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)\t$(hostname -f) $(hostname -s)" | sudo tee -a /etc/hosts
-
-    - name: Set up Maven toolchains.xml
-      shell: bash
-      run: |
-        mkdir -p ${HOME}/.m2
-        cat << 'EOT' > ${HOME}/.m2/toolchains.xml
-        <?xml version="1.0" encoding="UTF8"?>
-        <toolchains>
-          <toolchain>
-            <type>jdk</type>
-            <provides>
-              <version>11</version>
-              <vendor>zulu</vendor>
-            </provides>
-            <configuration>
-              <jdkHome>${env.JAVA_HOME}</jdkHome>
-            </configuration>
-          </toolchain>
-        </toolchains>
-        EOT

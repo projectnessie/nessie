@@ -1,4 +1,4 @@
-name: 'Install Java'
+name: 'Setup Java/Maven/Gradle'
 inputs:
   java-version:
     required: false
@@ -43,3 +43,23 @@ runs:
           ~/.gradle/wrapper
         key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
         restore-keys: ${{ runner.os }}-gradle
+
+    - name: Set up Maven toolchains.xml
+      shell: bash
+      run: |
+        mkdir -p ${HOME}/.m2
+        cat << 'EOT' > ${HOME}/.m2/toolchains.xml
+        <?xml version="1.0" encoding="UTF8"?>
+        <toolchains>
+          <toolchain>
+            <type>jdk</type>
+            <provides>
+              <version>11</version>
+              <vendor>zulu</vendor>
+            </provides>
+            <configuration>
+              <jdkHome>${env.JAVA_HOME}</jdkHome>
+            </configuration>
+          </toolchain>
+        </toolchains>
+        EOT
