@@ -20,13 +20,13 @@ import java.util.function.Function;
 import org.projectnessie.api.ConfigApi;
 import org.projectnessie.api.ContentsApi;
 import org.projectnessie.api.TreeApi;
-import org.projectnessie.client.api.NessieAPI;
+import org.projectnessie.client.api.NessieApi;
 import org.projectnessie.client.api.NessieApiVersion;
 import org.projectnessie.client.auth.NessieAuthentication;
 import org.projectnessie.client.http.HttpClientBuilder;
 
 @Deprecated // This interface is part of the Nessie v0.9 API, which will be removed
-public interface NessieClient extends NessieAPI {
+public interface NessieClient extends NessieApi {
 
   @Override
   default NessieApiVersion getApiVersion() {

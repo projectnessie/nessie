@@ -16,40 +16,20 @@
 package org.projectnessie.client.api;
 
 import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.LogResponse;
-import org.projectnessie.model.Reference;
 import org.projectnessie.model.Validation;
 
-public interface GetCommitLogBuilder {
-
-  GetCommitLogBuilder refName(
-      @NotNull @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-          String refName);
-
-  GetCommitLogBuilder startHash(
+/**
+ * Request builder for "get commit log".
+ *
+ * @since Nessie API {@link NessieApiVersion#V_1}
+ */
+public interface GetCommitLogBuilder extends PagingBuilder<GetCommitLogBuilder> {
+  GetCommitLogBuilder untilHash(
       @Nullable @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
-          String startHash);
-
-  /**
-   * Convenience for {@link #refName(String) refName(reference.getName())}{@code .}{@link
-   * #startHash(String) startHash(reference.getHash())}.
-   */
-  default GetCommitLogBuilder reference(Reference reference) {
-    return refName(reference.getName()).startHash(reference.getHash());
-  }
-
-  GetCommitLogBuilder endHash(
-      @Nullable @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
-          String endHash);
-
-  GetCommitLogBuilder maxRecords(int maxRecords);
-
-  GetCommitLogBuilder pageToken(String pageToken);
-
-  GetCommitLogBuilder queryExpression(String queryExpression);
+          String untilHash);
 
   LogResponse submit() throws NessieNotFoundException;
 }

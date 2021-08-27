@@ -15,14 +15,19 @@
  */
 package org.projectnessie.client.api;
 
-import org.projectnessie.error.NessieConflictException;
-import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.model.EntriesResponse;
 
-/**
- * Request builder for "delete tag".
- *
- * @since Nessie API {@link NessieApiVersion#V_1}
- */
-public interface DeleteTagBuilder extends OnTagBuilder<DeleteTagBuilder> {
-  void submit() throws NessieConflictException, NessieNotFoundException;
+public interface PagingBuilder<R extends PagingBuilder<R>> extends OnReferenceBuilder<R> {
+
+  /** Recommended: specify the maximum number of records to return. */
+  R maxRecords(int maxRecords);
+
+  /**
+   * For paged requests: pass the {@link EntriesResponse#getToken()} from the previous request,
+   * otherwise don't call this method.
+   */
+  R pageToken(String pageToken);
+
+  /** Required: the <a href="https://github.com/projectnessie/cel-java">CEL</a> script. */
+  R queryExpression(String queryExpression);
 }

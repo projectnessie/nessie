@@ -21,25 +21,13 @@ import org.projectnessie.client.http.NessieHttpClient;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.EntriesResponse;
 
-final class HttpGetEntries extends BaseHttpRequest implements GetEntriesBuilder {
+final class HttpGetEntries extends BaseHttpOnReferenceRequest<GetEntriesBuilder>
+    implements GetEntriesBuilder {
 
   private final EntriesParams.Builder params = EntriesParams.builder();
-  private String refName;
 
   HttpGetEntries(NessieHttpClient client) {
     super(client);
-  }
-
-  @Override
-  public GetEntriesBuilder refName(String refName) {
-    this.refName = refName;
-    return this;
-  }
-
-  @Override
-  public GetEntriesBuilder hashOnRef(String hashOnRef) {
-    params.hashOnRef(hashOnRef);
-    return this;
   }
 
   @Override
@@ -62,6 +50,7 @@ final class HttpGetEntries extends BaseHttpRequest implements GetEntriesBuilder 
 
   @Override
   public EntriesResponse submit() throws NessieNotFoundException {
+    params.hashOnRef(hashOnRef);
     return client.getTreeApi().getEntries(refName, params.build());
   }
 }

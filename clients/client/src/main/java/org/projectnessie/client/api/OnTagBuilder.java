@@ -15,32 +15,26 @@
  */
 package org.projectnessie.client.api;
 
-import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
-import org.projectnessie.error.NessieConflictException;
-import org.projectnessie.error.NessieNotFoundException;
-import org.projectnessie.model.Branch;
+import org.projectnessie.model.Tag;
 import org.projectnessie.model.Validation;
 
-public interface MergeRefBuilder {
-  MergeRefBuilder branchName(
+/** Base interface for requests against a tag. */
+public interface OnTagBuilder<R extends OnTagBuilder<R>> {
+  R tagName(
       @NotNull @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           String branchName);
 
-  MergeRefBuilder hash(
+  R hash(
       @NotNull @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String hash);
 
   /**
-   * Convenience for {@link #branchName(String) branchName(branch.getName())}{@code .}{@link
-   * #hash(String) hash(branch.getHash())}.
+   * Convenience for {@link #tagName(String) tagName(tag.getName())}{@code .}{@link #hash(String)
+   * hash(tag.getHash())}.
    */
-  default MergeRefBuilder branch(Branch branch) {
-    return branchName(branch.getName()).hash(branch.getHash());
+  default R tag(Tag tag) {
+    return tagName(tag.getName()).hash(tag.getHash());
   }
-
-  MergeRefBuilder fromHash(@NotBlank String fromHash);
-
-  void submit() throws NessieNotFoundException, NessieConflictException;
 }

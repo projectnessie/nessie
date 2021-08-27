@@ -16,29 +16,19 @@
 package org.projectnessie.client.api;
 
 import java.util.List;
-import javax.validation.constraints.Pattern;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Operation;
-import org.projectnessie.model.Validation;
 
-public interface CommitMultipleOperationsBuilder {
-  CommitMultipleOperationsBuilder branchName(
-      @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-          String branchName);
-
-  CommitMultipleOperationsBuilder hash(
-      @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE) String hash);
-
-  /**
-   * Convenience for {@link #branchName(String) branchName(branch.getName())}{@code .}{@link
-   * #hash(String) hash(branch.getHash())}.
-   */
-  default CommitMultipleOperationsBuilder branch(Branch branch) {
-    return branchName(branch.getName()).hash(branch.getHash());
-  }
+/**
+ * Request builder for "commit multiple operations".
+ *
+ * @since Nessie API {@link NessieApiVersion#V_1}
+ */
+public interface CommitMultipleOperationsBuilder
+    extends OnBranchBuilder<CommitMultipleOperationsBuilder> {
 
   CommitMultipleOperationsBuilder commitMeta(CommitMeta commitMeta);
 

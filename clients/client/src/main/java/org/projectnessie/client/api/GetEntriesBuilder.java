@@ -15,36 +15,14 @@
  */
 package org.projectnessie.client.api;
 
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.EntriesResponse;
-import org.projectnessie.model.Reference;
-import org.projectnessie.model.Validation;
 
-public interface GetEntriesBuilder {
-  GetEntriesBuilder refName(
-      @NotNull @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-          String refName);
-
-  GetEntriesBuilder hashOnRef(
-      @Nullable @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
-          String hashOnRef);
-
-  /**
-   * Convenience for {@link #refName(String) refName(reference.getName())}{@code .}{@link
-   * #hashOnRef(String) hash(reference.getHash())}.
-   */
-  default GetEntriesBuilder reference(Reference reference) {
-    return refName(reference.getName()).hashOnRef(reference.getHash());
-  }
-
-  GetEntriesBuilder maxRecords(int maxRecords);
-
-  GetEntriesBuilder pageToken(String pageToken);
-
-  GetEntriesBuilder queryExpression(String queryExpression);
-
+/**
+ * Request builder for "get entries".
+ *
+ * @since Nessie API {@link NessieApiVersion#V_1}
+ */
+public interface GetEntriesBuilder extends PagingBuilder<GetEntriesBuilder> {
   EntriesResponse submit() throws NessieNotFoundException;
 }

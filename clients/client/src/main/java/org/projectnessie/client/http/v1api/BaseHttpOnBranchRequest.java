@@ -15,28 +15,27 @@
  */
 package org.projectnessie.client.http.v1api;
 
-import org.projectnessie.client.api.AssignBranchBuilder;
+import org.projectnessie.client.api.OnBranchBuilder;
 import org.projectnessie.client.http.NessieHttpClient;
-import org.projectnessie.error.NessieConflictException;
-import org.projectnessie.error.NessieNotFoundException;
-import org.projectnessie.model.Branch;
 
-final class HttpAssignBranch extends BaseHttpOnBranchRequest<AssignBranchBuilder>
-    implements AssignBranchBuilder {
-  private Branch assignTo;
+abstract class BaseHttpOnBranchRequest<R extends OnBranchBuilder<R>> extends BaseHttpRequest
+    implements OnBranchBuilder<R> {
+  protected String branchName;
+  protected String hash;
 
-  HttpAssignBranch(NessieHttpClient client) {
+  BaseHttpOnBranchRequest(NessieHttpClient client) {
     super(client);
   }
 
   @Override
-  public AssignBranchBuilder assignTo(Branch assignTo) {
-    this.assignTo = assignTo;
-    return this;
+  public R branchName(String branchName) {
+    this.branchName = branchName;
+    return (R) this;
   }
 
   @Override
-  public void submit() throws NessieNotFoundException, NessieConflictException {
-    client.getTreeApi().assignBranch(branchName, hash, assignTo);
+  public R hash(String hash) {
+    this.hash = hash;
+    return (R) this;
   }
 }

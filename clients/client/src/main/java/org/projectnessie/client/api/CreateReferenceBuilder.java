@@ -21,6 +21,11 @@ import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Reference;
 
+/**
+ * Request builder for "create reference".
+ *
+ * @since Nessie API {@link NessieApiVersion#V_1}
+ */
 public interface CreateReferenceBuilder {
   CreateReferenceBuilder reference(@Valid @NotNull Reference reference);
 

@@ -15,14 +15,11 @@
  */
 package org.projectnessie.client.api;
 
-import org.projectnessie.error.NessieConflictException;
-import org.projectnessie.error.NessieNotFoundException;
+/** Base interface for all Nessie-API versions. */
+public interface NessieApi extends AutoCloseable {
 
-/**
- * Request builder for "delete tag".
- *
- * @since Nessie API {@link NessieApiVersion#V_1}
- */
-public interface DeleteTagBuilder extends OnTagBuilder<DeleteTagBuilder> {
-  void submit() throws NessieConflictException, NessieNotFoundException;
+  NessieApiVersion getApiVersion();
+
+  // Overridden to "remove 'throws Exception'"
+  void close();
 }

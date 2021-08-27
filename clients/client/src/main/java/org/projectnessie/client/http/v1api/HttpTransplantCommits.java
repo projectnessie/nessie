@@ -22,27 +22,14 @@ import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.ImmutableTransplant;
 
-final class HttpTransplantCommits extends BaseHttpRequest implements TransplantCommitsBuilder {
+final class HttpTransplantCommits extends BaseHttpOnBranchRequest<TransplantCommitsBuilder>
+    implements TransplantCommitsBuilder {
 
   private final ImmutableTransplant.Builder transplant = ImmutableTransplant.builder();
-  private String branchName;
-  private String hash;
   private String message;
 
   HttpTransplantCommits(NessieHttpClient client) {
     super(client);
-  }
-
-  @Override
-  public TransplantCommitsBuilder branchName(String branchName) {
-    this.branchName = branchName;
-    return this;
-  }
-
-  @Override
-  public TransplantCommitsBuilder hash(String hash) {
-    this.hash = hash;
-    return this;
   }
 
   @Override

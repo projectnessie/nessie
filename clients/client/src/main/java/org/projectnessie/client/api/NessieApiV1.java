@@ -21,7 +21,8 @@ import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.NessieConfiguration;
 
-public interface NessieAPIv1 extends NessieAPI {
+/** Interface for the Nessie {@link NessieApiVersion#V_1} API implementation. */
+public interface NessieApiV1 extends NessieApi {
 
   /** Get the server configuration. */
   NessieConfiguration getConfig();
@@ -97,7 +98,7 @@ public interface NessieAPIv1 extends NessieAPI {
   TransplantCommitsBuilder transplantCommitsIntoBranch();
 
   /** merge mergeRef onto ref. */
-  MergeRefBuilder mergeRefIntoBranch();
+  MergeReferenceBuilder mergeRefIntoBranch();
 
   CommitMultipleOperationsBuilder commitMultipleOperations();
 }

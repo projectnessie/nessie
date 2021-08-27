@@ -27,7 +27,8 @@ import org.projectnessie.model.ImmutableMultiGetContentsRequest;
 import org.projectnessie.model.MultiGetContentsResponse;
 import org.projectnessie.model.MultiGetContentsResponse.ContentsWithKey;
 
-final class HttpGetContents extends BaseHttpRequest implements GetContentsBuilder {
+final class HttpGetContents extends BaseHttpOnReferenceRequest<GetContentsBuilder>
+    implements GetContentsBuilder {
 
   private final ImmutableMultiGetContentsRequest.Builder request =
       ImmutableMultiGetContentsRequest.builder();
@@ -47,18 +48,6 @@ final class HttpGetContents extends BaseHttpRequest implements GetContentsBuilde
   @Override
   public GetContentsBuilder keys(List<ContentsKey> keys) {
     request.addAllRequestedKeys(keys);
-    return this;
-  }
-
-  @Override
-  public GetContentsBuilder refName(String refName) {
-    this.refName = refName;
-    return this;
-  }
-
-  @Override
-  public GetContentsBuilder hashOnRef(String hashOnRef) {
-    this.hashOnRef = hashOnRef;
     return this;
   }
 

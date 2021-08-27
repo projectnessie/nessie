@@ -25,27 +25,14 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ImmutableOperations;
 import org.projectnessie.model.Operation;
 
-final class HttpCommitMultipleOperations extends BaseHttpRequest
+final class HttpCommitMultipleOperations
+    extends BaseHttpOnBranchRequest<CommitMultipleOperationsBuilder>
     implements CommitMultipleOperationsBuilder {
 
-  private ImmutableOperations.Builder operations = ImmutableOperations.builder();
-  private String branchName;
-  private String hash;
+  private final ImmutableOperations.Builder operations = ImmutableOperations.builder();
 
   HttpCommitMultipleOperations(NessieHttpClient client) {
     super(client);
-  }
-
-  @Override
-  public CommitMultipleOperationsBuilder branchName(String branchName) {
-    this.branchName = branchName;
-    return this;
-  }
-
-  @Override
-  public CommitMultipleOperationsBuilder hash(String hash) {
-    this.hash = hash;
-    return this;
   }
 
   @Override

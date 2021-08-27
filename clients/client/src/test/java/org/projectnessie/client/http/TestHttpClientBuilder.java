@@ -36,8 +36,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.client.NessieConfigConstants;
-import org.projectnessie.client.api.NessieAPI;
-import org.projectnessie.client.api.NessieAPIv1;
+import org.projectnessie.client.api.NessieApi;
+import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.api.NessieApiVersion;
 import org.projectnessie.client.auth.BasicAuthenticationProvider;
 import org.projectnessie.client.auth.NessieAuthentication;
@@ -50,7 +50,7 @@ public class TestHttpClientBuilder {
     JaegerTestTracer.register();
   }
 
-  interface IncompatibleApiInterface extends NessieAPI {}
+  interface IncompatibleApiInterface extends NessieApi {}
 
   @Test
   void testIncompatibleApiInterface() {
@@ -84,7 +84,7 @@ public class TestHttpClientBuilder {
             () ->
                 HttpClientBuilder.builder()
                     .withUri((URI) null)
-                    .build(NessieApiVersion.V_1, NessieAPIv1.class))
+                    .build(NessieApiVersion.V_1, NessieApiV1.class))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Cannot construct Http client. Must have a non-null uri");
   }
@@ -92,7 +92,7 @@ public class TestHttpClientBuilder {
   @Test
   void testNoUri() {
     assertThatThrownBy(
-            () -> HttpClientBuilder.builder().build(NessieApiVersion.V_1, NessieAPIv1.class))
+            () -> HttpClientBuilder.builder().build(NessieApiVersion.V_1, NessieApiV1.class))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Cannot construct Http client. Must have a non-null uri");
   }
@@ -103,7 +103,7 @@ public class TestHttpClientBuilder {
             () ->
                 HttpClientBuilder.builder()
                     .withUri(URI.create("file:///foo/bar/baz"))
-                    .build(NessieApiVersion.V_1, NessieAPIv1.class))
+                    .build(NessieApiVersion.V_1, NessieApiV1.class))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage(
             "Cannot start http client. file:///foo/bar/baz must be a valid http or https address");
@@ -136,10 +136,10 @@ public class TestHttpClientBuilder {
     AtomicReference<String> authHeader = new AtomicReference<>();
 
     try (TestServer server = new TestServer(handlerForHeaderTest("Authorization", authHeader))) {
-      NessieAPIv1 client =
+      NessieApiV1 client =
           config
               .apply(HttpClientBuilder.builder().withUri(server.getUri()))
-              .build(NessieApiVersion.V_1, NessieAPIv1.class);
+              .build(NessieApiVersion.V_1, NessieApiV1.class);
       client.getConfig();
     }
 
@@ -157,11 +157,11 @@ public class TestHttpClientBuilder {
     AtomicReference<String> traceId = new AtomicReference<>();
 
     try (TestServer server = new TestServer(handlerForHeaderTest("Uber-trace-id", traceId))) {
-      NessieAPIv1 client =
+      NessieApiV1 client =
           HttpClientBuilder.builder()
               .withUri(server.getUri())
               .withTracing(true)
-              .build(NessieApiVersion.V_1, NessieAPIv1.class);
+              .build(NessieApiVersion.V_1, NessieApiV1.class);
       try (Scope ignore =
           GlobalTracer.get()
               .activateSpan(GlobalTracer.get().buildSpan("testOpenTracing").start())) {
@@ -180,11 +180,11 @@ public class TestHttpClientBuilder {
     AtomicReference<String> traceId = new AtomicReference<>();
 
     try (TestServer server = new TestServer(handlerForHeaderTest("Uber-trace-id", traceId))) {
-      NessieAPIv1 client =
+      NessieApiV1 client =
           HttpClientBuilder.builder()
               .withUri(server.getUri())
               .withTracing(false)
-              .build(NessieApiVersion.V_1, NessieAPIv1.class);
+              .build(NessieApiVersion.V_1, NessieApiV1.class);
       try (Scope ignore =
           GlobalTracer.get()
               .activateSpan(GlobalTracer.get().buildSpan("testOpenTracing").start())) {
