@@ -21,20 +21,20 @@ import io.gatling.core.config.GatlingConfiguration
 import io.gatling.core.protocol.{Protocol, ProtocolComponents, ProtocolKey}
 import io.gatling.core.scenario.Simulation
 import io.gatling.core.session.Session
-import org.projectnessie.client.api.NessieAPIv1
+import org.projectnessie.client.api.NessieApiV1
 
 case class NessieProtocolBuilder() extends StrictLogging {
 
-  /** Inject the [[NessieAPIv1]] for the simulation and returns an instance of
+  /** Inject the [[NessieApiV1]] for the simulation and returns an instance of
     * [[NessieProtocol]], which is to be passed to
     * [[Simulation.SetUp.protocols()]].
     */
-  def client(client: NessieAPIv1): NessieProtocol =
+  def client(client: NessieApiV1): NessieProtocol =
     NessieProtocol(client)
 }
 
 case class NessieProtocol(
-    client: NessieAPIv1
+    client: NessieApiV1
 ) extends Protocol {
   type Components = NessieComponents
 }
