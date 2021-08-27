@@ -25,9 +25,9 @@
     <version>0.9.3-SNAPSHOT</version>
   </parent>
 
-  <artifactId>nessie-versioned-persist-tx</artifactId>
+  <artifactId>nessie-versioned-persist-transactional</artifactId>
 
-  <name>Nessie - Versioned - Persist - TX</name>
+  <name>Nessie - Versioned - Persist - Transactional</name>
 
   <dependencies>
     <dependency>
