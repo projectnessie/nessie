@@ -26,7 +26,7 @@ import org.projectnessie.model.MultiGetContentsRequest;
 import org.projectnessie.model.MultiGetContentsResponse;
 import org.projectnessie.model.Validation;
 
-@Deprecated
+@Deprecated // This interface is part of the Nessie v0.9 API, which will be removed
 public interface ContentsApi {
 
   /** Get the properties of an object. */

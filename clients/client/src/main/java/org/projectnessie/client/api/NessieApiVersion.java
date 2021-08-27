@@ -16,7 +16,7 @@
 package org.projectnessie.client.api;
 
 public enum NessieApiVersion {
-  @Deprecated
+  @Deprecated // This is part of the Nessie v0.9 API, which will be removed
   V_0_9,
 
   V_1

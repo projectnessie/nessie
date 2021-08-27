@@ -25,7 +25,7 @@ import org.projectnessie.client.api.NessieApiVersion;
 import org.projectnessie.client.auth.NessieAuthentication;
 import org.projectnessie.client.http.HttpClientBuilder;
 
-@Deprecated
+@Deprecated // This interface is part of the Nessie v0.9 API, which will be removed
 public interface NessieClient extends NessieAPI {
 
   @Override
