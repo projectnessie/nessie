@@ -17,7 +17,7 @@ package org.projectnessie.api;
 
 import org.projectnessie.model.NessieConfiguration;
 
-@Deprecated
+@Deprecated // This interface is part of the Nessie v0.9 API, which will be removed
 public interface ConfigApi {
 
   /** Get the server configuration. */
