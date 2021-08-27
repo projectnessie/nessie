@@ -97,7 +97,7 @@ public abstract class TxDatabaseAdapter
   public TxDatabaseAdapter(TxDatabaseAdapterConfig config) {
     super(config);
 
-    // get the externally configured RocksDbInstance
+    // get the externally configured TxConnectionProvider
     TxConnectionProvider db = config.getConnectionProvider();
 
     if (db == null) {
