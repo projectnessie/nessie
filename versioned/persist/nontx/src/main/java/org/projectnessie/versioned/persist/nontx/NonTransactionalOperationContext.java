@@ -15,10 +15,11 @@
  */
 package org.projectnessie.versioned.persist.nontx;
 
-public class NonTxOperationContext {
+public class NonTransactionalOperationContext {
 
   @SuppressWarnings("InstantiationOfUtilityClass")
-  public static final NonTxOperationContext DUMMY = new NonTxOperationContext();
+  public static final NonTransactionalOperationContext NON_TRANSACTIONAL_OPERATION_CONTEXT =
+      new NonTransactionalOperationContext();
 
-  private NonTxOperationContext() {}
+  private NonTransactionalOperationContext() {}
 }

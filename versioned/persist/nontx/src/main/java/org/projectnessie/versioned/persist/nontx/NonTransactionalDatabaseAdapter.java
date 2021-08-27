@@ -30,6 +30,7 @@ import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUti
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.transplantConflictMessage;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.verifyExpectedHash;
 import static org.projectnessie.versioned.persist.adapter.spi.TryLoopState.newTryLoopState;
+import static org.projectnessie.versioned.persist.nontx.NonTransactionalOperationContext.NON_TRANSACTIONAL_OPERATION_CONTEXT;
 
 import com.google.common.hash.Hasher;
 import com.google.protobuf.ByteString;
@@ -92,43 +93,36 @@ import org.projectnessie.versioned.persist.serialize.ProtoSerialization;
  *       content-keys, the commit-metadata and a (list of) its parents.
  * </ul>
  */
-public abstract class NonTxDatabaseAdapter<CONFIG extends DatabaseAdapterConfig>
-    extends AbstractDatabaseAdapter<NonTxOperationContext, CONFIG> {
+public abstract class NonTransactionalDatabaseAdapter<CONFIG extends DatabaseAdapterConfig>
+    extends AbstractDatabaseAdapter<NonTransactionalOperationContext, CONFIG> {
 
-  protected NonTxDatabaseAdapter(CONFIG config) {
+  protected NonTransactionalDatabaseAdapter(CONFIG config) {
     super(config);
   }
 
   @Override
   public Hash hashOnReference(NamedRef namedReference, Optional<Hash> hashOnReference)
       throws ReferenceNotFoundException {
-    NonTxOperationContext ctx = NonTxOperationContext.DUMMY;
-
-    return hashOnRef(ctx, namedReference, hashOnReference);
+    return hashOnRef(NON_TRANSACTIONAL_OPERATION_CONTEXT, namedReference, hashOnReference);
   }
 
   @Override
   public Stream<Optional<ContentsAndState<ByteString>>> values(
       Hash commit, List<Key> keys, KeyFilterPredicate keyFilter) throws ReferenceNotFoundException {
-    NonTxOperationContext ctx = NonTxOperationContext.DUMMY;
-
-    Map<Key, ContentsAndState<ByteString>> result = fetchValues(ctx, commit, keys, keyFilter);
+    Map<Key, ContentsAndState<ByteString>> result =
+        fetchValues(NON_TRANSACTIONAL_OPERATION_CONTEXT, commit, keys, keyFilter);
 
     return keys.stream().map(result::get).map(Optional::ofNullable);
   }
 
   @Override
   public Stream<CommitLogEntry> commitLog(Hash offset) throws ReferenceNotFoundException {
-    NonTxOperationContext ctx = NonTxOperationContext.DUMMY;
-
-    return readCommitLogStream(ctx, offset);
+    return readCommitLogStream(NON_TRANSACTIONAL_OPERATION_CONTEXT, offset);
   }
 
   @Override
   public Stream<WithHash<NamedRef>> namedRefs() {
-    NonTxOperationContext ctx = NonTxOperationContext.DUMMY;
-
-    GlobalStatePointer pointer = fetchGlobalPointer(ctx);
+    GlobalStatePointer pointer = fetchGlobalPointer(NON_TRANSACTIONAL_OPERATION_CONTEXT);
     return pointer.getNamedReferencesMap().entrySet().stream()
         .map(
             r ->
@@ -140,9 +134,7 @@ public abstract class NonTxDatabaseAdapter<CONFIG extends DatabaseAdapterConfig>
   @Override
   public Stream<KeyWithType> keys(Hash commit, KeyFilterPredicate keyFilter)
       throws ReferenceNotFoundException {
-    NonTxOperationContext ctx = NonTxOperationContext.DUMMY;
-
-    return keysForCommitEntry(ctx, commit, keyFilter);
+    return keysForCommitEntry(NON_TRANSACTIONAL_OPERATION_CONTEXT, commit, keyFilter);
   }
 
   @Override
@@ -363,14 +355,12 @@ public abstract class NonTxDatabaseAdapter<CONFIG extends DatabaseAdapterConfig>
   @Override
   public Stream<Diff<ByteString>> diff(Hash from, Hash to, KeyFilterPredicate keyFilter)
       throws ReferenceNotFoundException {
-    NonTxOperationContext ctx = NonTxOperationContext.DUMMY;
-
-    return buildDiff(ctx, from, to, keyFilter);
+    return buildDiff(NON_TRANSACTIONAL_OPERATION_CONTEXT, from, to, keyFilter);
   }
 
   @Override
   public void initializeRepo(String defaultBranchName) {
-    NonTxOperationContext ctx = NonTxOperationContext.DUMMY;
+    NonTransactionalOperationContext ctx = NON_TRANSACTIONAL_OPERATION_CONTEXT;
     if (fetchGlobalPointer(ctx) == null) {
       Hash globalHead;
       try {
@@ -396,7 +386,7 @@ public abstract class NonTxDatabaseAdapter<CONFIG extends DatabaseAdapterConfig>
 
   @Override
   public Stream<ContentsIdWithType> globalKeys(ToIntFunction<ByteString> contentsTypeExtractor) {
-    NonTxOperationContext ctx = NonTxOperationContext.DUMMY;
+    NonTransactionalOperationContext ctx = NON_TRANSACTIONAL_OPERATION_CONTEXT;
 
     GlobalStatePointer pointer = fetchGlobalPointer(ctx);
 
@@ -410,7 +400,7 @@ public abstract class NonTxDatabaseAdapter<CONFIG extends DatabaseAdapterConfig>
   @Override
   public Stream<ContentsIdAndBytes> globalLog(
       Set<ContentsIdWithType> keys, ToIntFunction<ByteString> contentsTypeExtractor) {
-    NonTxOperationContext ctx = NonTxOperationContext.DUMMY;
+    NonTransactionalOperationContext ctx = NON_TRANSACTIONAL_OPERATION_CONTEXT;
 
     GlobalStatePointer pointer = fetchGlobalPointer(ctx);
 
@@ -427,7 +417,7 @@ public abstract class NonTxDatabaseAdapter<CONFIG extends DatabaseAdapterConfig>
   @Override
   public Stream<KeyWithBytes> allContents(
       BiFunction<NamedRef, CommitLogEntry, Boolean> continueOnRefPredicate) {
-    NonTxOperationContext ctx = NonTxOperationContext.DUMMY;
+    NonTransactionalOperationContext ctx = NON_TRANSACTIONAL_OPERATION_CONTEXT;
 
     GlobalStatePointer pointer = fetchGlobalPointer(ctx);
 
@@ -501,7 +491,8 @@ public abstract class NonTxDatabaseAdapter<CONFIG extends DatabaseAdapterConfig>
    * Hash) hashOnRef(ctx, reference.getReference(), branchHead(fetchGlobalPointer(ctx), reference),
    * reference.getHashOnReference())}.
    */
-  protected Hash hashOnRef(NonTxOperationContext ctx, NamedRef reference, Optional<Hash> hashOnRef)
+  protected Hash hashOnRef(
+      NonTransactionalOperationContext ctx, NamedRef reference, Optional<Hash> hashOnRef)
       throws ReferenceNotFoundException {
     return hashOnRef(ctx, reference, hashOnRef, fetchGlobalPointer(ctx));
   }
@@ -512,7 +503,7 @@ public abstract class NonTxDatabaseAdapter<CONFIG extends DatabaseAdapterConfig>
    * reference.getHashOnReference())}.
    */
   protected Hash hashOnRef(
-      NonTxOperationContext ctx,
+      NonTransactionalOperationContext ctx,
       NamedRef reference,
       Optional<Hash> hashOnRef,
       GlobalStatePointer pointer)
@@ -524,8 +515,8 @@ public abstract class NonTxDatabaseAdapter<CONFIG extends DatabaseAdapterConfig>
    * "Body" of a Compare-And-Swap loop that returns the value to apply. {@link #casOpLoop(NamedRef,
    * CasOpVariant, CasOp, Supplier)} then tries to perform the Compare-And-Swap using the known
    * "current value", as passed via the {@code pointer} parameter to {@link
-   * #apply(NonTxOperationContext, GlobalStatePointer, Consumer, Consumer)}, and the "new value"
-   * from the return value.
+   * #apply(NonTransactionalOperationContext, GlobalStatePointer, Consumer, Consumer)}, and the "new
+   * value" from the return value.
    */
   @FunctionalInterface
   public interface CasOp {
@@ -543,7 +534,7 @@ public abstract class NonTxDatabaseAdapter<CONFIG extends DatabaseAdapterConfig>
      *     apply
      */
     GlobalStatePointer apply(
-        NonTxOperationContext ctx,
+        NonTransactionalOperationContext ctx,
         GlobalStatePointer pointer,
         Consumer<Hash> branchCommits,
         Consumer<Hash> newKeyLists)
@@ -572,8 +563,9 @@ public abstract class NonTxDatabaseAdapter<CONFIG extends DatabaseAdapterConfig>
     /**
      * Whether the hash returned by {@code casOp} will be a new commit and/or {@code * casOp}
      * produced more commits (think: merge+transplant) via the {@code individualCommits} * argument
-     * to {@link CasOp#apply(NonTxOperationContext, GlobalStatePointer, Consumer, Consumer)}. Those
-     * commits will be unconditionally deleted, if this {@code commitOp} flag is * {@code true}.
+     * to {@link CasOp#apply(NonTransactionalOperationContext, GlobalStatePointer, Consumer,
+     * Consumer)}. Those commits will be unconditionally deleted, if this {@code commitOp} flag is *
+     * {@code true}.
      */
     final boolean commitOp;
 
@@ -596,7 +588,7 @@ public abstract class NonTxDatabaseAdapter<CONFIG extends DatabaseAdapterConfig>
   protected Hash casOpLoop(
       NamedRef ref, CasOpVariant opVariant, CasOp casOp, Supplier<String> retryErrorMessage)
       throws VersionStoreException {
-    NonTxOperationContext ctx = NonTxOperationContext.DUMMY;
+    NonTransactionalOperationContext ctx = NON_TRANSACTIONAL_OPERATION_CONTEXT;
 
     try (TryLoopState tryState = newTryLoopState(retryErrorMessage, config)) {
       while (true) {
@@ -635,18 +627,19 @@ public abstract class NonTxDatabaseAdapter<CONFIG extends DatabaseAdapterConfig>
    * without any other consistency checks/guarantees. Some implementations however can enforce
    * strict consistency checks/guarantees.
    */
-  protected abstract void writeGlobalCommit(NonTxOperationContext ctx, GlobalStateLogEntry entry)
+  protected abstract void writeGlobalCommit(
+      NonTransactionalOperationContext ctx, GlobalStateLogEntry entry)
       throws ReferenceConflictException;
 
   /**
    * Unsafe operation to initialize a repository: unconditionally writes the global-state-pointer.
    */
   protected abstract void unsafeWriteGlobalPointer(
-      NonTxOperationContext ctx, GlobalStatePointer pointer);
+      NonTransactionalOperationContext ctx, GlobalStatePointer pointer);
 
   @SuppressWarnings("UnstableApiUsage")
   protected Hash writeGlobalCommit(
-      NonTxOperationContext ctx,
+      NonTransactionalOperationContext ctx,
       long timeInMicros,
       Hash parentHash,
       List<ContentsIdAndBytes> globals)
@@ -686,11 +679,13 @@ public abstract class NonTxDatabaseAdapter<CONFIG extends DatabaseAdapterConfig>
    * database is the given expected-global-head.
    */
   protected abstract boolean globalPointerCas(
-      NonTxOperationContext ctx, GlobalStatePointer expected, GlobalStatePointer newPointer);
+      NonTransactionalOperationContext ctx,
+      GlobalStatePointer expected,
+      GlobalStatePointer newPointer);
 
   /**
-   * If a {@link #globalPointerCas(NonTxOperationContext, GlobalStatePointer, GlobalStatePointer)}
-   * failed, {@link
+   * If a {@link #globalPointerCas(NonTransactionalOperationContext, GlobalStatePointer,
+   * GlobalStatePointer)} failed, {@link
    * org.projectnessie.versioned.persist.adapter.DatabaseAdapter#commit(CommitAttempt)} calls this
    * function to remove the optimistically written data.
    *
@@ -698,7 +693,10 @@ public abstract class NonTxDatabaseAdapter<CONFIG extends DatabaseAdapterConfig>
    * given keys, no-op for transactional implementations.
    */
   protected abstract void cleanUpCommitCas(
-      NonTxOperationContext ctx, Hash globalId, Set<Hash> branchCommits, Set<Hash> newKeyLists);
+      NonTransactionalOperationContext ctx,
+      Hash globalId,
+      Set<Hash> branchCommits,
+      Set<Hash> newKeyLists);
 
   /**
    * Writes a global-state-log-entry without any operations, just to move the global-pointer
@@ -706,7 +704,8 @@ public abstract class NonTxDatabaseAdapter<CONFIG extends DatabaseAdapterConfig>
    */
   // TODO maybe replace with a 2nd-ary value in global-state-pointer to prevent the empty
   //  global-log-entry
-  protected Hash noopGlobalLogEntry(NonTxOperationContext ctx, GlobalStatePointer pointer)
+  protected Hash noopGlobalLogEntry(
+      NonTransactionalOperationContext ctx, GlobalStatePointer pointer)
       throws ReferenceConflictException {
     // Need a new empty global-log entry to be able to CAS
     return writeGlobalCommit(
@@ -731,11 +730,11 @@ public abstract class NonTxDatabaseAdapter<CONFIG extends DatabaseAdapterConfig>
   }
 
   /** Load the current global-state-pointer. */
-  protected abstract GlobalStatePointer fetchGlobalPointer(NonTxOperationContext ctx);
+  protected abstract GlobalStatePointer fetchGlobalPointer(NonTransactionalOperationContext ctx);
 
   @Override
   protected Map<ContentsId, ByteString> fetchGlobalStates(
-      NonTxOperationContext ctx, Set<ContentsId> contentsIds) {
+      NonTransactionalOperationContext ctx, Set<ContentsId> contentsIds) {
     if (contentsIds.isEmpty()) {
       return Collections.emptyMap();
     }
@@ -754,7 +753,8 @@ public abstract class NonTxDatabaseAdapter<CONFIG extends DatabaseAdapterConfig>
   }
 
   /** Reads from the global-state-log starting at the given global-state-log-ID. */
-  private Stream<GlobalStateLogEntry> globalLogFetcher(NonTxOperationContext ctx, Hash initialId) {
+  private Stream<GlobalStateLogEntry> globalLogFetcher(
+      NonTransactionalOperationContext ctx, Hash initialId) {
     GlobalStateLogEntry initial = fetchFromGlobalLog(ctx, initialId);
     if (initial == null) {
       throw new RuntimeException(
@@ -769,8 +769,9 @@ public abstract class NonTxDatabaseAdapter<CONFIG extends DatabaseAdapterConfig>
   }
 
   /** Load the global-log entry with the given id. */
-  protected abstract GlobalStateLogEntry fetchFromGlobalLog(NonTxOperationContext ctx, Hash id);
+  protected abstract GlobalStateLogEntry fetchFromGlobalLog(
+      NonTransactionalOperationContext ctx, Hash id);
 
   protected abstract List<GlobalStateLogEntry> fetchPageFromGlobalLog(
-      NonTxOperationContext ctx, List<Hash> hashes);
+      NonTransactionalOperationContext ctx, List<Hash> hashes);
 }

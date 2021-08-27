@@ -216,7 +216,7 @@
       </dependency>
       <dependency>
         <groupId>org.projectnessie</groupId>
-        <artifactId>nessie-versioned-persist-nontx</artifactId>
+        <artifactId>nessie-versioned-persist-non-transactional</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
