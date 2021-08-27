@@ -390,7 +390,6 @@ class TestSerialization {
             KeyWithBytes.of(randomKey(), randomId(), (byte) 1, randomBytes(32)),
             KeyWithBytes.of(randomKey(), randomId(), (byte) 1, randomBytes(32))),
         Arrays.asList(randomKey(), randomKey(), randomKey(), randomKey(), randomKey()),
-        Arrays.asList(randomKey(), randomKey()),
         42,
         KeyList.of(
             IntStream.range(0, 20)

@@ -39,7 +39,6 @@ public class ProtoSerialization {
 
     entry.getParents().forEach(p -> proto.addParents(p.asBytes()));
     entry.getPuts().forEach(p -> proto.addPuts(toProto(p)));
-    entry.getUnchanged().forEach(p -> proto.addUnchanged(keyToProto(p)));
     entry.getDeletes().forEach(p -> proto.addDeletes(keyToProto(p)));
 
     if (entry.getKeyList() != null) {
@@ -66,7 +65,6 @@ public class ProtoSerialization {
 
       proto.getParentsList().forEach(p -> entry.addParents(Hash.of(p)));
       proto.getPutsList().forEach(p -> entry.addPuts(protoToKeyWithBytes(p)));
-      proto.getUnchangedList().forEach(p -> entry.addUnchanged(protoToKey(p)));
       proto.getDeletesList().forEach(p -> entry.addDeletes(protoToKey(p)));
       if (!proto.getKeyListList().isEmpty()) {
         ImmutableKeyList.Builder kl = ImmutableKeyList.builder();
