@@ -27,7 +27,7 @@
 
   <artifactId>nessie-model</artifactId>
 
-  <name>Nessie - API</name>
+  <name>Nessie - Model</name>
 
   <dependencies>
     <dependency>
