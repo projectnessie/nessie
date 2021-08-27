@@ -127,7 +127,9 @@ public interface TxDatabaseAdapterConfig extends DatabaseAdapterConfig {
 
   /**
    * For "unmanaged" connection-pools: the JDBC pool's transaction isolation, one of the enums from
-   * {@link TransactionIsolation}, defaults to {@link TransactionIsolation#READ_COMMITTED}.
+   * {@link io.agroal.api.configuration.AgroalConnectionFactoryConfiguration.TransactionIsolation},
+   * defaults to {@link
+   * io.agroal.api.configuration.AgroalConnectionFactoryConfiguration.TransactionIsolation#READ_COMMITTED}.
    */
   @Value.Default
   default String getPoolTransactionIsolation() {
