@@ -16,40 +16,38 @@
 package org.projectnessie.server;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.auth.BasicAuthenticationProvider;
-import org.projectnessie.client.rest.NessieNotAuthorizedException;
-import org.projectnessie.server.authn.AuthenticationEnabledProfile;
+import org.projectnessie.client.auth.BearerAuthenticationProvider;
+import org.projectnessie.server.authn.AuthenticationDisabledProfile;
 
+/**
+ * This test validates that setting `nessie.server.authentication.enabled=false` allows all requests
+ * regardless of their authentication type.
+ */
 @QuarkusTest
-@TestProfile(value = AuthenticationEnabledProfile.class)
-class TestBasicAuthentication extends BaseClientAuthTest {
+@TestProfile(value = AuthenticationDisabledProfile.class)
+public class TestDisabledAuthentication extends BaseClientAuthTest {
 
   @Test
-  void testValidCredentials() {
+  void testBasic() {
     withClientCustomizer(
-        c -> c.withAuthentication(BasicAuthenticationProvider.create("test_user", "test_user")));
+        c -> c.withAuthentication(BasicAuthenticationProvider.create("any_user", "any_password")));
     assertThat(client().getTreeApi().getAllReferences()).isNotEmpty();
   }
 
   @Test
-  void testValidAdminCredentials() {
+  void testBearer() {
     withClientCustomizer(
-        c -> c.withAuthentication(BasicAuthenticationProvider.create("admin_user", "test123")));
+        c -> c.withAuthentication(BearerAuthenticationProvider.create("any_token")));
     assertThat(client().getTreeApi().getAllReferences()).isNotEmpty();
   }
 
   @Test
-  void testInvalidCredentials() {
-    withClientCustomizer(
-        c -> c.withAuthentication(BasicAuthenticationProvider.create("test_user", "bad_password")));
-    assertThatThrownBy(() -> client().getTreeApi().getAllReferences())
-        .isInstanceOfSatisfying(
-            NessieNotAuthorizedException.class,
-            e -> assertThat(e.getError().getStatus()).isEqualTo(401));
+  void testNone() {
+    assertThat(client().getTreeApi().getAllReferences()).isNotEmpty();
   }
 }

@@ -36,6 +36,11 @@ public final class NessieConfigConstants {
    */
   public static final String CONF_NESSIE_PASSWORD = "nessie.password";
   /**
+   * Config property name ({@value #CONF_NESSIE_AUTH_TOKEN}) for the token used for (bearer)
+   * authentication.
+   */
+  public static final String CONF_NESSIE_AUTH_TOKEN = "nessie.authentication.token";
+  /**
    * Config property name ({@value #CONF_NESSIE_AWS_REGION}) for the region used for AWS
    * authentication.
    */

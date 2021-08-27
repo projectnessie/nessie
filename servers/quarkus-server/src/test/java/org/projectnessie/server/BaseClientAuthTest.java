@@ -18,12 +18,13 @@ package org.projectnessie.server;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.AfterEach;
 import org.projectnessie.client.NessieClient;
+import org.projectnessie.client.http.HttpClientBuilder;
 
 /** Base class for client-base authentication and authorization tests. */
 public abstract class BaseClientAuthTest {
 
   private NessieClient client;
-  private Consumer<NessieClient.Builder> customizer;
+  private Consumer<HttpClientBuilder> customizer;
 
   @AfterEach
   void closeClient() {
@@ -33,7 +34,7 @@ public abstract class BaseClientAuthTest {
     }
   }
 
-  protected void withClientCustomizer(Consumer<NessieClient.Builder> customizer) {
+  protected void withClientCustomizer(Consumer<HttpClientBuilder> customizer) {
     this.customizer = customizer;
   }
 
@@ -42,7 +43,8 @@ public abstract class BaseClientAuthTest {
       return client;
     }
 
-    NessieClient.Builder builder = NessieClient.builder().withUri("http://localhost:19121/api/v1");
+    HttpClientBuilder builder =
+        HttpClientBuilder.builder().withUri("http://localhost:19121/api/v1");
 
     if (customizer != null) {
       customizer.accept(builder);

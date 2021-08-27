@@ -13,25 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.server.authz;
+package org.projectnessie.server.authn;
 
 import com.google.common.collect.ImmutableMap;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import java.util.Map;
-import org.projectnessie.server.authn.AuthenticationEnabledProfile;
-import org.projectnessie.server.config.QuarkusNessieAuthorizationConfig;
 
-/**
- * A simple {@link QuarkusTestProfile} that enables the Nessie authorization flag, which is fetched
- * by {@link QuarkusNessieAuthorizationConfig#enabled()}.
- */
-public class NessieAuthorizationTestProfile implements QuarkusTestProfile {
+/** A simple {@link QuarkusTestProfile} that disabled Nessie authentication. */
+public class AuthenticationDisabledProfile implements QuarkusTestProfile {
+
+  public static final Map<String, String> CONFIG_OVERRIDES =
+      ImmutableMap.of("nessie.server.authentication.enabled", "false");
 
   @Override
   public Map<String, String> getConfigOverrides() {
-    return ImmutableMap.<String, String>builder()
-        .putAll(AuthenticationEnabledProfile.CONFIG_OVERRIDES)
-        .put("nessie.server.authorization.enabled", "true")
-        .build();
+    return CONFIG_OVERRIDES;
   }
 }

@@ -14,5 +14,6 @@
 # limitations under the License.
 #
 org.projectnessie.client.auth.BasicAuthenticationProvider
+org.projectnessie.client.auth.BearerAuthenticationProvider
 org.projectnessie.client.auth.AwsAuthenticationProvider
 org.projectnessie.client.auth.NoneAuthenticationProvider

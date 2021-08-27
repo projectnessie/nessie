@@ -35,6 +35,26 @@ From there, you can use one of our technology integrations such those for
 Have fun! We have a Google Group and a Slack channel we use for both developers and 
 users. Check them out [here](https://projectnessie.org/develop/).
 
+### Authentication
+
+By default, Nessie servers run with authentication disabled and all requests are processed under the "anonymous"
+user identity.
+
+Nessie supports bearer tokens and uses [OpenID Connect](https://openid.net/connect/) for validating them.
+
+Authentication can be enabled by setting the following Quarkus properties:
+* `nessie.server.authentication.enabled=true`
+* `quarkus.oidc.auth-server-url=<OpenID Server URL>`
+* `quarkus.oidc.client-id=<Client ID>`
+
+#### Experimenting with Nessie Authentication in Docker
+
+One can start the `projectnessie/nessie` docker image in authenticated mode by setting
+the properties mentioned above via docker environment variables. For example:
+
+```
+docker run -p 19120:19120 -e QUARKUS_OIDC_CLIENT_ID=<Client ID> -e QUARKUS_OIDC_AUTH_SERVER_URL=<OpenID Server URL> -e NESSIE_SERVER_AUTHENTICATION_ENABLED=true --network host projectnessie/nessie
+```
 
 ## Building and Developing Nessie
 
