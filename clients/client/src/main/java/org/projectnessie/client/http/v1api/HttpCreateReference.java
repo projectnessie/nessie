@@ -13,28 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.http;
+package org.projectnessie.client.http.v1api;
 
-import org.projectnessie.client.api.GetReferenceBuilder;
+import org.projectnessie.client.api.CreateReferenceBuilder;
+import org.projectnessie.client.http.NessieHttpClient;
+import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Reference;
 
-final class HttpGetReference extends BaseHttpRequest implements GetReferenceBuilder {
+final class HttpCreateReference extends BaseHttpRequest implements CreateReferenceBuilder {
 
-  private String refName;
+  private Reference reference;
 
-  HttpGetReference(NessieHttpClient client) {
+  HttpCreateReference(NessieHttpClient client) {
     super(client);
   }
 
   @Override
-  public GetReferenceBuilder refName(String refName) {
-    this.refName = refName;
+  public CreateReferenceBuilder reference(Reference reference) {
+    this.reference = reference;
     return this;
   }
 
   @Override
-  public Reference submit() throws NessieNotFoundException {
-    return client.getTreeApi().getReferenceByName(refName);
+  public Reference submit() throws NessieNotFoundException, NessieConflictException {
+    return client.getTreeApi().createReference(reference);
   }
 }

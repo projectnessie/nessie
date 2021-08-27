@@ -13,43 +13,52 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.http;
+package org.projectnessie.client.http.v1api;
 
-import org.projectnessie.client.api.MergeRefBuilder;
+import java.util.List;
+import org.projectnessie.client.api.TransplantCommitsBuilder;
+import org.projectnessie.client.http.NessieHttpClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
-import org.projectnessie.model.ImmutableMerge;
+import org.projectnessie.model.ImmutableTransplant;
 
-final class HttpMergeRef extends BaseHttpRequest implements MergeRefBuilder {
+final class HttpTransplantCommits extends BaseHttpRequest implements TransplantCommitsBuilder {
 
-  private final ImmutableMerge.Builder merge = ImmutableMerge.builder();
+  private final ImmutableTransplant.Builder transplant = ImmutableTransplant.builder();
   private String branchName;
   private String hash;
+  private String message;
 
-  HttpMergeRef(NessieHttpClient client) {
+  HttpTransplantCommits(NessieHttpClient client) {
     super(client);
   }
 
   @Override
-  public MergeRefBuilder branchName(String branchName) {
+  public TransplantCommitsBuilder branchName(String branchName) {
     this.branchName = branchName;
     return this;
   }
 
   @Override
-  public MergeRefBuilder hash(String hash) {
+  public TransplantCommitsBuilder hash(String hash) {
     this.hash = hash;
     return this;
   }
 
   @Override
-  public MergeRefBuilder fromHash(String fromHash) {
-    merge.fromHash(fromHash);
+  public TransplantCommitsBuilder message(String message) {
+    this.message = message;
+    return this;
+  }
+
+  @Override
+  public TransplantCommitsBuilder hashesToTransplant(List<String> hashesToTransplant) {
+    transplant.addAllHashesToTransplant(hashesToTransplant);
     return this;
   }
 
   @Override
   public void submit() throws NessieNotFoundException, NessieConflictException {
-    client.getTreeApi().mergeRefIntoBranch(branchName, hash, merge.build());
+    client.getTreeApi().transplantCommitsIntoBranch(branchName, hash, message, transplant.build());
   }
 }

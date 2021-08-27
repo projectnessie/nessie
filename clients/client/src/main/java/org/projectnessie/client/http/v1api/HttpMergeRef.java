@@ -13,43 +13,44 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.http;
+package org.projectnessie.client.http.v1api;
 
-import org.projectnessie.client.api.AssignTagBuilder;
+import org.projectnessie.client.api.MergeRefBuilder;
+import org.projectnessie.client.http.NessieHttpClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
-import org.projectnessie.model.Tag;
+import org.projectnessie.model.ImmutableMerge;
 
-final class HttpAssignTag extends BaseHttpRequest implements AssignTagBuilder {
+final class HttpMergeRef extends BaseHttpRequest implements MergeRefBuilder {
 
-  private String tagName;
-  private String oldHash;
-  private Tag assignTo;
+  private final ImmutableMerge.Builder merge = ImmutableMerge.builder();
+  private String branchName;
+  private String hash;
 
-  HttpAssignTag(NessieHttpClient client) {
+  HttpMergeRef(NessieHttpClient client) {
     super(client);
   }
 
   @Override
-  public AssignTagBuilder tagName(String tagName) {
-    this.tagName = tagName;
+  public MergeRefBuilder branchName(String branchName) {
+    this.branchName = branchName;
     return this;
   }
 
   @Override
-  public AssignTagBuilder oldHash(String oldHash) {
-    this.oldHash = oldHash;
+  public MergeRefBuilder hash(String hash) {
+    this.hash = hash;
     return this;
   }
 
   @Override
-  public AssignTagBuilder assignTo(Tag assignTo) {
-    this.assignTo = assignTo;
+  public MergeRefBuilder fromHash(String fromHash) {
+    merge.fromHash(fromHash);
     return this;
   }
 
   @Override
   public void submit() throws NessieNotFoundException, NessieConflictException {
-    client.getTreeApi().assignTag(tagName, oldHash, assignTo);
+    client.getTreeApi().mergeRefIntoBranch(branchName, hash, merge.build());
   }
 }

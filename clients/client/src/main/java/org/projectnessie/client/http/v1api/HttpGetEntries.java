@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.http;
+package org.projectnessie.client.http.v1api;
 
 import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.client.api.GetEntriesBuilder;
+import org.projectnessie.client.http.NessieHttpClient;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.EntriesResponse;
 

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.http;
+package org.projectnessie.client.http.v1api;
 
 import org.projectnessie.client.api.AssignBranchBuilder;
 import org.projectnessie.client.api.AssignTagBuilder;
@@ -30,15 +30,16 @@ import org.projectnessie.client.api.MergeRefBuilder;
 import org.projectnessie.client.api.NessieAPIv1;
 import org.projectnessie.client.api.NessieApiVersion;
 import org.projectnessie.client.api.TransplantCommitsBuilder;
+import org.projectnessie.client.http.NessieHttpClient;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.NessieConfiguration;
 
-final class HttpAPIv1 implements NessieAPIv1 {
+public final class HttpAPIv1 implements NessieAPIv1 {
 
   private final NessieHttpClient client;
 
-  HttpAPIv1(NessieHttpClient client) {
+  public HttpAPIv1(NessieHttpClient client) {
     this.client = client;
   }
 
