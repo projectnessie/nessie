@@ -14,12 +14,6 @@ def test_auth_type_none() -> None:
     assert_that(setup_auth(config)).is_none()
 
 
-def test_auth_type_bearer() -> None:
-    """Makes sure the auth type "none" resolves to a concrete authenticator object."""
-    config = build_config({"auth.type": "bearer"})
-    assert_that(setup_auth(config)).is_not_none()
-
-
 def test_bearer_token() -> None:
     """Makes sure the bearer auth token is added to HTTP request headers."""
     config = build_config({"auth.type": "bearer", "auth.token": "test_token_123"})
