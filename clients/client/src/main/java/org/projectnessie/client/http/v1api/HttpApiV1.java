@@ -26,8 +26,8 @@ import org.projectnessie.client.api.GetCommitLogBuilder;
 import org.projectnessie.client.api.GetContentsBuilder;
 import org.projectnessie.client.api.GetEntriesBuilder;
 import org.projectnessie.client.api.GetReferenceBuilder;
-import org.projectnessie.client.api.MergeRefBuilder;
-import org.projectnessie.client.api.NessieAPIv1;
+import org.projectnessie.client.api.MergeReferenceBuilder;
+import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.api.NessieApiVersion;
 import org.projectnessie.client.api.TransplantCommitsBuilder;
 import org.projectnessie.client.http.NessieHttpClient;
@@ -35,11 +35,11 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.NessieConfiguration;
 
-public final class HttpAPIv1 implements NessieAPIv1 {
+public final class HttpApiV1 implements NessieApiV1 {
 
   private final NessieHttpClient client;
 
-  public HttpAPIv1(NessieHttpClient client) {
+  public HttpApiV1(NessieHttpClient client) {
     this.client = client;
   }
 
@@ -119,8 +119,8 @@ public final class HttpAPIv1 implements NessieAPIv1 {
   }
 
   @Override
-  public MergeRefBuilder mergeRefIntoBranch() {
-    return new HttpMergeRef(client);
+  public MergeReferenceBuilder mergeRefIntoBranch() {
+    return new HttpMergeReference(client);
   }
 
   @Override

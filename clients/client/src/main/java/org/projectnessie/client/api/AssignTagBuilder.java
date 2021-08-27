@@ -17,29 +17,16 @@ package org.projectnessie.client.api;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Tag;
-import org.projectnessie.model.Validation;
 
-public interface AssignTagBuilder {
-  AssignTagBuilder tagName(
-      @NotNull @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-          String tagName);
-
-  AssignTagBuilder oldHash(
-      @NotNull @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
-          String oldHash);
-
-  /**
-   * Convenience for {@link #tagName(String) tagName(tag.getName())}{@code .}{@link #oldHash(String)
-   * oldHash(tag.getHash())}.
-   */
-  default AssignTagBuilder tag(Tag tag) {
-    return tagName(tag.getName()).oldHash(tag.getHash());
-  }
-
+/**
+ * Request builder for "assign tag".
+ *
+ * @since Nessie API {@link NessieApiVersion#V_1}
+ */
+public interface AssignTagBuilder extends OnTagBuilder<AssignTagBuilder> {
   AssignTagBuilder assignTo(@Valid @NotNull Tag assignTo);
 
   void submit() throws NessieNotFoundException, NessieConflictException;

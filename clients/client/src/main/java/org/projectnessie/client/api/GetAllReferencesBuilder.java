@@ -18,6 +18,11 @@ package org.projectnessie.client.api;
 import java.util.List;
 import org.projectnessie.model.Reference;
 
+/**
+ * Request builder for "get all references".
+ *
+ * @since Nessie API {@link NessieApiVersion#V_1}
+ */
 public interface GetAllReferencesBuilder {
   List<Reference> submit();
 }

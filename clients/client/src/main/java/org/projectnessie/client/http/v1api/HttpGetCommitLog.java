@@ -21,30 +21,18 @@ import org.projectnessie.client.http.NessieHttpClient;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.LogResponse;
 
-final class HttpGetCommitLog extends BaseHttpRequest implements GetCommitLogBuilder {
+final class HttpGetCommitLog extends BaseHttpOnReferenceRequest<GetCommitLogBuilder>
+    implements GetCommitLogBuilder {
 
   private final CommitLogParams.Builder params = CommitLogParams.builder();
-  private String refName;
 
   HttpGetCommitLog(NessieHttpClient client) {
     super(client);
   }
 
   @Override
-  public GetCommitLogBuilder refName(String refName) {
-    this.refName = refName;
-    return this;
-  }
-
-  @Override
-  public GetCommitLogBuilder startHash(String startHash) {
-    params.startHash(startHash);
-    return this;
-  }
-
-  @Override
-  public GetCommitLogBuilder endHash(String endHash) {
-    params.endHash(endHash);
+  public GetCommitLogBuilder untilHash(String untilHash) {
+    params.startHash(untilHash);
     return this;
   }
 
@@ -68,6 +56,7 @@ final class HttpGetCommitLog extends BaseHttpRequest implements GetCommitLogBuil
 
   @Override
   public LogResponse submit() throws NessieNotFoundException {
+    params.endHash(hashOnRef);
     return client.getTreeApi().getCommitLog(refName, params.build());
   }
 }

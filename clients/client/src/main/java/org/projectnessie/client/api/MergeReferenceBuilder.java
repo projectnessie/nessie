@@ -15,10 +15,17 @@
  */
 package org.projectnessie.client.api;
 
-public interface NessieAPI extends AutoCloseable {
+import javax.validation.constraints.NotBlank;
+import org.projectnessie.error.NessieConflictException;
+import org.projectnessie.error.NessieNotFoundException;
 
-  NessieApiVersion getApiVersion();
+/**
+ * Request builder for "merge reference".
+ *
+ * @since Nessie API {@link NessieApiVersion#V_1}
+ */
+public interface MergeReferenceBuilder extends OnBranchBuilder<MergeReferenceBuilder> {
+  MergeReferenceBuilder fromHash(@NotBlank String fromHash);
 
-  // Overridden to "remove 'throws Exception'"
-  void close();
+  void submit() throws NessieNotFoundException, NessieConflictException;
 }

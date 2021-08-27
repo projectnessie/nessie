@@ -17,22 +17,24 @@ package org.projectnessie.client.api;
 
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
-import org.projectnessie.error.NessieNotFoundException;
-import org.projectnessie.model.Reference;
+import org.projectnessie.model.Branch;
 import org.projectnessie.model.Validation;
 
-/**
- * Request builder for "get reference".
- *
- * @since Nessie API {@link NessieApiVersion#V_1}
- */
-public interface GetReferenceBuilder {
-  GetReferenceBuilder refName(
-      @NotNull
-          @Pattern(
-              regexp = Validation.REF_NAME_OR_HASH_REGEX,
-              message = Validation.REF_NAME_OR_HASH_MESSAGE)
-          String refName);
+/** Base interface for requests against a branch. */
+public interface OnBranchBuilder<R extends OnBranchBuilder<R>> {
+  R branchName(
+      @NotNull @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          String branchName);
 
-  Reference submit() throws NessieNotFoundException;
+  R hash(
+      @NotNull @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          String hash);
+
+  /**
+   * Convenience for {@link #branchName(String) branchName(branch.getName())}{@code .}{@link
+   * #hash(String) hash(branch.getHash())}.
+   */
+  default R branch(Branch branch) {
+    return branchName(branch.getName()).hash(branch.getHash());
+  }
 }

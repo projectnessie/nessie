@@ -15,36 +15,23 @@
  */
 package org.projectnessie.client.http.v1api;
 
-import org.projectnessie.client.api.MergeRefBuilder;
+import org.projectnessie.client.api.MergeReferenceBuilder;
 import org.projectnessie.client.http.NessieHttpClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.ImmutableMerge;
 
-final class HttpMergeRef extends BaseHttpRequest implements MergeRefBuilder {
+final class HttpMergeReference extends BaseHttpOnBranchRequest<MergeReferenceBuilder>
+    implements MergeReferenceBuilder {
 
   private final ImmutableMerge.Builder merge = ImmutableMerge.builder();
-  private String branchName;
-  private String hash;
 
-  HttpMergeRef(NessieHttpClient client) {
+  HttpMergeReference(NessieHttpClient client) {
     super(client);
   }
 
   @Override
-  public MergeRefBuilder branchName(String branchName) {
-    this.branchName = branchName;
-    return this;
-  }
-
-  @Override
-  public MergeRefBuilder hash(String hash) {
-    this.hash = hash;
-    return this;
-  }
-
-  @Override
-  public MergeRefBuilder fromHash(String fromHash) {
+  public MergeReferenceBuilder fromHash(String fromHash) {
     merge.fromHash(fromHash);
     return this;
   }

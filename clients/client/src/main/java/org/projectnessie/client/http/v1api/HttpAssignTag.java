@@ -21,26 +21,13 @@ import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Tag;
 
-final class HttpAssignTag extends BaseHttpRequest implements AssignTagBuilder {
+final class HttpAssignTag extends BaseHttpOnTagRequest<AssignTagBuilder>
+    implements AssignTagBuilder {
 
-  private String tagName;
-  private String oldHash;
   private Tag assignTo;
 
   HttpAssignTag(NessieHttpClient client) {
     super(client);
-  }
-
-  @Override
-  public AssignTagBuilder tagName(String tagName) {
-    this.tagName = tagName;
-    return this;
-  }
-
-  @Override
-  public AssignTagBuilder oldHash(String oldHash) {
-    this.oldHash = oldHash;
-    return this;
   }
 
   @Override
@@ -51,6 +38,6 @@ final class HttpAssignTag extends BaseHttpRequest implements AssignTagBuilder {
 
   @Override
   public void submit() throws NessieNotFoundException, NessieConflictException {
-    client.getTreeApi().assignTag(tagName, oldHash, assignTo);
+    client.getTreeApi().assignTag(tagName, hash, assignTo);
   }
 }

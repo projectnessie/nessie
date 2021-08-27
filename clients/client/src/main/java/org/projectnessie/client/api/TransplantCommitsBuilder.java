@@ -17,30 +17,16 @@ package org.projectnessie.client.api;
 
 import java.util.List;
 import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
-import org.projectnessie.model.Branch;
-import org.projectnessie.model.Validation;
 
-public interface TransplantCommitsBuilder {
-  TransplantCommitsBuilder branchName(
-      @NotNull @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-          String branchName);
-
-  TransplantCommitsBuilder hash(
-      @NotNull @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
-          String hash);
-
-  /**
-   * Convenience for {@link #branchName(String) branchName(branch.getName())}{@code .}{@link
-   * #hash(String) hash(branch.getHash())}.
-   */
-  default TransplantCommitsBuilder branch(Branch branch) {
-    return branchName(branch.getName()).hash(branch.getHash());
-  }
-
+/**
+ * Request builder for "transplant commits".
+ *
+ * @since Nessie API {@link NessieApiVersion#V_1}
+ */
+public interface TransplantCommitsBuilder extends OnBranchBuilder<TransplantCommitsBuilder> {
   TransplantCommitsBuilder message(String message);
 
   TransplantCommitsBuilder hashesToTransplant(

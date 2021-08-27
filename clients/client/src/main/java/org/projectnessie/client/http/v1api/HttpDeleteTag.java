@@ -20,25 +20,11 @@ import org.projectnessie.client.http.NessieHttpClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 
-final class HttpDeleteTag extends BaseHttpRequest implements DeleteTagBuilder {
-
-  private String tagName;
-  private String hash;
+final class HttpDeleteTag extends BaseHttpOnTagRequest<DeleteTagBuilder>
+    implements DeleteTagBuilder {
 
   HttpDeleteTag(NessieHttpClient client) {
     super(client);
-  }
-
-  @Override
-  public DeleteTagBuilder tagName(String tagName) {
-    this.tagName = tagName;
-    return this;
-  }
-
-  @Override
-  public DeleteTagBuilder hash(String hash) {
-    this.hash = hash;
-    return this;
   }
 
   @Override

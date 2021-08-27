@@ -23,11 +23,11 @@ import java.net.URI;
 import java.util.function.Function;
 import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.NessieConfigConstants;
-import org.projectnessie.client.api.NessieAPI;
+import org.projectnessie.client.api.NessieApi;
 import org.projectnessie.client.api.NessieApiVersion;
 import org.projectnessie.client.auth.NessieAuthentication;
 import org.projectnessie.client.auth.NessieAuthenticationProvider;
-import org.projectnessie.client.http.v1api.HttpAPIv1;
+import org.projectnessie.client.http.v1api.HttpApiV1;
 
 /**
  * A builder class that creates a {@link NessieHttpClient} via {@link HttpClientBuilder#builder()}.
@@ -173,7 +173,7 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
   }
 
   @Override
-  public <API extends NessieAPI> API build(NessieApiVersion apiVersion, Class<API> apiContract) {
+  public <API extends NessieApi> API build(NessieApiVersion apiVersion, Class<API> apiContract) {
     NessieHttpClient client =
         new NessieHttpClient(
             uri, authentication, tracing, readTimeoutMillis, connectionTimeoutMillis);
@@ -183,7 +183,7 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
         api = (API) client;
         break;
       case V_1:
-        api = (API) new HttpAPIv1(client);
+        api = (API) new HttpApiV1(client);
         break;
       default:
         throw new IllegalArgumentException(

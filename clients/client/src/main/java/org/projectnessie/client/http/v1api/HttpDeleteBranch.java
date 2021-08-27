@@ -20,25 +20,10 @@ import org.projectnessie.client.http.NessieHttpClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 
-final class HttpDeleteBranch extends BaseHttpRequest implements DeleteBranchBuilder {
-
-  private String branchName;
-  private String hash;
-
+final class HttpDeleteBranch extends BaseHttpOnBranchRequest<DeleteBranchBuilder>
+    implements DeleteBranchBuilder {
   HttpDeleteBranch(NessieHttpClient client) {
     super(client);
-  }
-
-  @Override
-  public DeleteBranchBuilder branchName(String branchName) {
-    this.branchName = branchName;
-    return this;
-  }
-
-  @Override
-  public DeleteBranchBuilder hash(String hash) {
-    this.hash = hash;
-    return this;
   }
 
   @Override

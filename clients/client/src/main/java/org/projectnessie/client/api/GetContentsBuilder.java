@@ -17,35 +17,20 @@ package org.projectnessie.client.api;
 
 import java.util.List;
 import java.util.Map;
-import javax.annotation.Nullable;
 import javax.validation.Valid;
-import javax.validation.constraints.Pattern;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Contents;
 import org.projectnessie.model.ContentsKey;
-import org.projectnessie.model.Reference;
-import org.projectnessie.model.Validation;
 
-public interface GetContentsBuilder {
+/**
+ * Request builder for "get contents".
+ *
+ * @since Nessie API {@link NessieApiVersion#V_1}
+ */
+public interface GetContentsBuilder extends OnReferenceBuilder<GetContentsBuilder> {
   GetContentsBuilder key(@Valid ContentsKey key);
 
   GetContentsBuilder keys(List<ContentsKey> keys);
-
-  GetContentsBuilder refName(
-      @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-          String refName);
-
-  GetContentsBuilder hashOnRef(
-      @Nullable @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
-          String hashOnRef);
-
-  /**
-   * Convenience for {@link #refName(String) refName(reference.getName())}{@code .}{@link
-   * #hashOnRef(String) hashOnRef(reference.getHash())}.
-   */
-  default GetContentsBuilder reference(Reference reference) {
-    return refName(reference.getName()).hashOnRef(reference.getHash());
-  }
 
   Map<ContentsKey, Contents> submit() throws NessieNotFoundException;
 }
