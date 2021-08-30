@@ -38,7 +38,7 @@ def test_aws_auth() -> None:
     """Makes sure the request is signed according to AWS auth requirements."""
     config = build_config({"auth.type": "aws", "auth.region": "us-west-2"})
     os.environ["AWS_ACCESS_KEY_ID"] = "test_key_id"
-    os.environ["AWS_SECRET_ACCESS_KEY"] = "test_secret_key"
+    os.environ["AWS_SECRET_ACCESS_KEY"] = "test_secret_key"  # noqa: S105
     auth = setup_auth(config)
     r = requests.Request(url="http://127.255.0.0:0/", method="GET", auth=auth)
     prepared = r.prepare()
