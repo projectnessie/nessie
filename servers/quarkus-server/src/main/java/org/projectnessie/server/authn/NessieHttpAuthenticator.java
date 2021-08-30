@@ -15,7 +15,6 @@
  */
 package org.projectnessie.server.authn;
 
-import io.quarkus.runtime.Startup;
 import io.quarkus.security.AuthenticationFailedException;
 import io.quarkus.security.identity.IdentityProvider;
 import io.quarkus.security.identity.IdentityProviderManager;
@@ -46,7 +45,6 @@ import org.projectnessie.server.config.QuarkusNessieAuthenticationConfig;
 @Alternative // @Alternative + @Priority ensure the original HttpAuthenticator bean is not used
 @Priority(1)
 @ApplicationScoped
-@Startup // Initialize and load config on the main thread rather than on event loop threads
 public class NessieHttpAuthenticator extends HttpAuthenticator {
 
   @Inject IdentityProviderManager identityProvider;
