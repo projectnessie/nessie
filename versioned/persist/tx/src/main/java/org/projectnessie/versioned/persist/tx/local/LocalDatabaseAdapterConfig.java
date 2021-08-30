@@ -110,7 +110,9 @@ public interface LocalDatabaseAdapterConfig extends TxDatabaseAdapterConfig {
 
   /**
    * For "unmanaged" connection-pools: the JDBC pool's transaction isolation, one of the enums from
-   * {@link TransactionIsolation}, defaults to {@link TransactionIsolation#READ_COMMITTED}.
+   * {@link io.agroal.api.configuration.AgroalConnectionFactoryConfiguration.TransactionIsolation},
+   * defaults to {@link
+   * io.agroal.api.configuration.AgroalConnectionFactoryConfiguration.TransactionIsolation#READ_COMMITTED}.
    *
    * <p>Technically we only need {@code READ_COMMITTED}. The extra bit that {@code SERIALIZABLE}
    * brings is not needed. Reason is that we "only" do CAS-ish operations on 'global_state' and
