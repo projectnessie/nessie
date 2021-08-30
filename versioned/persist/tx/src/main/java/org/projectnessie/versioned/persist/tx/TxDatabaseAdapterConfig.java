@@ -34,6 +34,10 @@ public interface TxDatabaseAdapterConfig extends DatabaseAdapterConfig {
 
   TxDatabaseAdapterConfig withConnectionProvider(TxConnectionProvider connectionProvider);
 
+  /**
+   * DML batch size, used when writing multiple commits to a branch during a transplant or merge
+   * operation or when writing "overflow full key-lists".
+   */
   @Value.Default
   default int getBatchSize() {
     return 20;
