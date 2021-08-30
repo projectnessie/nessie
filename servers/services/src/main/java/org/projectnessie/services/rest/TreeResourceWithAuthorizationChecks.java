@@ -201,7 +201,7 @@ public class TreeResourceWithAuthorizationChecks extends TreeResource {
       throw new IllegalArgumentException("No hashes given to transplant.");
     }
     checkHashOnRef(
-        transplant.getSourceRefName(),
+        transplant.getFromRefName(),
         transplant.getHashesToTransplant().get(transplant.getHashesToTransplant().size() - 1));
     getAccessChecker()
         .canCommitChangeAgainstReference(createAccessContext(), BranchName.of(branchName));

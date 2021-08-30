@@ -39,8 +39,8 @@ final class HttpTransplantCommits extends BaseHttpOnBranchRequest<TransplantComm
   }
 
   @Override
-  public TransplantCommitsBuilder sourceRefName(String sourceRefName) {
-    transplant.sourceRefName(sourceRefName);
+  public TransplantCommitsBuilder fromRefName(String fromRefName) {
+    transplant.fromRefName(fromRefName);
     return this;
   }
 

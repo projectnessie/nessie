@@ -258,7 +258,7 @@ public abstract class AbstractTestRest {
     tree.mergeRefIntoBranch(
         branchName2,
         branchHash2,
-        ImmutableMerge.builder().sourceRefName(branchName).fromHash(newHash).build());
+        ImmutableMerge.builder().fromRefName(branchName).fromHash(newHash).build());
 
     tree.deleteTag(tagName, newHash);
     tree.deleteBranch(branchName, newHash);

@@ -34,7 +34,7 @@ import org.immutables.value.Value;
     title = "Transplant",
     // Smallrye does neither support JsonFormat nor javax.validation.constraints.Pattern :(
     properties = {
-      @SchemaProperty(name = "sourceRefName", pattern = Validation.REF_NAME_REGEX),
+      @SchemaProperty(name = "fromRefName", pattern = Validation.REF_NAME_REGEX),
       @SchemaProperty(name = "hashesToTransplant", uniqueItems = true)
     })
 @Value.Immutable(prehash = true)
@@ -48,7 +48,7 @@ public interface Transplant {
 
   @NotBlank
   @JsonFormat(pattern = Validation.REF_NAME_REGEX)
-  String getSourceRefName();
+  String getFromRefName();
 
   /**
    * Validation rule using {@link org.projectnessie.model.Validation#validateHash(String)}

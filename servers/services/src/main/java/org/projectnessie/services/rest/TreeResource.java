@@ -289,7 +289,7 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
     try {
       getStore()
           .merge(
-              toHash(merge.getSourceRefName(), merge.getFromHash(), true).get(),
+              toHash(merge.getFromRefName(), merge.getFromHash(), true).get(),
               BranchName.of(branchName),
               toHash(hash, true));
     } catch (ReferenceNotFoundException e) {

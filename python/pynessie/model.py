@@ -285,7 +285,7 @@ LogResponseSchema = desert.schema_class(LogResponse)
 class Transplant:
     """Dataclass for Transplant operation."""
 
-    source_ref_name: str = attr.ib(metadata=desert.metadata(fields.Str(data_key="sourceRefName")))
+    from_ref_name: str = attr.ib(metadata=desert.metadata(fields.Str(data_key="fromRefName")))
     hashes_to_transplant: List[str] = attr.ib(metadata=desert.metadata(fields.List(fields.Str(), data_key="hashesToTransplant")))
 
 
@@ -296,7 +296,7 @@ TransplantSchema = desert.schema_class(Transplant)
 class Merge:
     """Dataclass for Merge operation."""
 
-    source_ref_name: str = attr.ib(metadata=desert.metadata(fields.Str(data_key="sourceRefName")))
+    from_ref_name: str = attr.ib(metadata=desert.metadata(fields.Str(data_key="fromRefName")))
     from_hash: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(data_key="fromHash")))
 
 

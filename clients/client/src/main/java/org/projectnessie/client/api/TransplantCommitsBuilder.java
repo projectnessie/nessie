@@ -31,9 +31,9 @@ import org.projectnessie.model.Validation;
 public interface TransplantCommitsBuilder extends OnBranchBuilder<TransplantCommitsBuilder> {
   TransplantCommitsBuilder message(String message);
 
-  TransplantCommitsBuilder sourceRefName(
+  TransplantCommitsBuilder fromRefName(
       @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-          String sourceRefName);
+          String fromRefName);
 
   TransplantCommitsBuilder hashesToTransplant(
       @NotNull @Size(min = 1) List<String> hashesToTransplant);
