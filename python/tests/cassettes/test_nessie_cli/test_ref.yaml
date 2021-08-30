@@ -17,7 +17,7 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
-        \"6bb3d05a95b9f091eabaddd4beeb849e1fc7ff81b82329bf664acdd5639dca56\"\n} ]"
+        \"8fc184b3829fe5499b474c4d4d05131ab229d9536fdfc4173f0e764925b5ef3c\"\n} ]"
     headers:
       Content-Length:
       - '125'
@@ -27,7 +27,7 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"hash": null, "name": "dev", "type": "BRANCH"}'
+    body: '{"name": "dev", "hash": null, "type": "BRANCH"}'
     headers:
       Accept:
       - '*/*'
@@ -74,7 +74,7 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
-        \"6bb3d05a95b9f091eabaddd4beeb849e1fc7ff81b82329bf664acdd5639dca56\"\n}, {\n
+        \"8fc184b3829fe5499b474c4d4d05131ab229d9536fdfc4173f0e764925b5ef3c\"\n}, {\n
         \ \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}
         ]"
     headers:
@@ -102,11 +102,11 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/etl
   response:
     body:
-      string: "{\n  \"message\" : \"Unable to find reference [etl].\",\n  \"status\"
-        : 404,\n  \"reason\" : \"Not Found\",\n  \"serverStackTrace\" : null\n}"
+      string: "{\n  \"message\" : \"Ref 'etl' does not exist\",\n  \"status\" : 404,\n
+        \ \"reason\" : \"Not Found\",\n  \"serverStackTrace\" : null\n}"
     headers:
       Content-Length:
-      - '124'
+      - '117'
       Content-Type:
       - application/json
     status:
@@ -129,7 +129,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/main
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"6bb3d05a95b9f091eabaddd4beeb849e1fc7ff81b82329bf664acdd5639dca56\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"8fc184b3829fe5499b474c4d4d05131ab229d9536fdfc4173f0e764925b5ef3c\"\n}"
     headers:
       Content-Length:
       - '121'
@@ -139,8 +139,8 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"hash": "6bb3d05a95b9f091eabaddd4beeb849e1fc7ff81b82329bf664acdd5639dca56",
-      "name": "etl", "type": "BRANCH"}'
+    body: '{"name": "etl", "hash": "8fc184b3829fe5499b474c4d4d05131ab229d9536fdfc4173f0e764925b5ef3c",
+      "type": "BRANCH"}'
     headers:
       Accept:
       - '*/*'
@@ -160,7 +160,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree?sourceRefName=main
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"etl\",\n  \"hash\" : \"6bb3d05a95b9f091eabaddd4beeb849e1fc7ff81b82329bf664acdd5639dca56\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"etl\",\n  \"hash\" : \"8fc184b3829fe5499b474c4d4d05131ab229d9536fdfc4173f0e764925b5ef3c\"\n}"
     headers:
       Content-Length:
       - '120'
@@ -187,8 +187,8 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"etl\",\n  \"hash\" :
-        \"6bb3d05a95b9f091eabaddd4beeb849e1fc7ff81b82329bf664acdd5639dca56\"\n}, {\n
-        \ \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"6bb3d05a95b9f091eabaddd4beeb849e1fc7ff81b82329bf664acdd5639dca56\"\n},
+        \"8fc184b3829fe5499b474c4d4d05131ab229d9536fdfc4173f0e764925b5ef3c\"\n}, {\n
+        \ \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"8fc184b3829fe5499b474c4d4d05131ab229d9536fdfc4173f0e764925b5ef3c\"\n},
         {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}
         ]"
     headers:
@@ -216,7 +216,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/etl
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"etl\",\n  \"hash\" : \"6bb3d05a95b9f091eabaddd4beeb849e1fc7ff81b82329bf664acdd5639dca56\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"etl\",\n  \"hash\" : \"8fc184b3829fe5499b474c4d4d05131ab229d9536fdfc4173f0e764925b5ef3c\"\n}"
     headers:
       Content-Length:
       - '120'
@@ -241,7 +241,7 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: DELETE
-    uri: http://localhost:19120/api/v1/trees/branch/etl?expectedHash=6bb3d05a95b9f091eabaddd4beeb849e1fc7ff81b82329bf664acdd5639dca56
+    uri: http://localhost:19120/api/v1/trees/branch/etl?expectedHash=8fc184b3829fe5499b474c4d4d05131ab229d9536fdfc4173f0e764925b5ef3c
   response:
     body:
       string: ''
@@ -317,7 +317,7 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
-        \"6bb3d05a95b9f091eabaddd4beeb849e1fc7ff81b82329bf664acdd5639dca56\"\n} ]"
+        \"8fc184b3829fe5499b474c4d4d05131ab229d9536fdfc4173f0e764925b5ef3c\"\n} ]"
     headers:
       Content-Length:
       - '125'
