@@ -35,6 +35,7 @@
     <module>serialize</module>
     <module>nontx</module>
     <module>inmem</module>
+    <module>rocks</module>
     <module>tests</module>
   </modules>
 </project>

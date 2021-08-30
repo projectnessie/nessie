@@ -161,6 +161,7 @@
     <protobuf.version>3.17.3</protobuf.version>
     <quarkus.version>2.2.0.Final</quarkus.version>
     <reactor.version>2020.0.10</reactor.version>
+    <rocksdb.version>6.22.1.1</rocksdb.version>
     <scala2.12.version>2.12.13</scala2.12.version>
     <scala2.13.version>2.13.6</scala2.13.version>
     <serverless.version>1.5</serverless.version>
@@ -227,6 +228,11 @@
             <artifactId>commons-logging</artifactId>
           </exclusion>
         </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.rocksdb</groupId>
+        <artifactId>rocksdbjni</artifactId>
+        <version>${rocksdb.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.hadoop</groupId>
