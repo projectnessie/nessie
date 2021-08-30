@@ -26,11 +26,10 @@ message CommitLogEntry {
   repeated bytes parents = 3;
   bytes metadata = 4;
   repeated KeyWithBytes puts = 5;
-  repeated Key unchanged = 6;
-  repeated Key deletes = 7;
-  int32 key_list_distance = 8;
-  repeated KeyWithType key_list = 9;
-  repeated bytes key_list_ids = 10;
+  repeated Key deletes = 6;
+  int32 key_list_distance = 7;
+  repeated KeyWithType key_list = 8;
+  repeated bytes key_list_ids = 9;
 }
 
 message Key {

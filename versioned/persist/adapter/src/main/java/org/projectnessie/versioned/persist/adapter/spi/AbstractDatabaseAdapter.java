@@ -176,7 +176,6 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
             newParents,
             commitAttempt.getCommitMetaSerialized(),
             commitAttempt.getPuts(),
-            commitAttempt.getUnchanged(),
             commitAttempt.getDeletes(),
             currentBranchEntry != null ? currentBranchEntry.getKeyListDistance() : 0,
             newKeyLists);
@@ -537,12 +536,11 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       List<Hash> parentHashes,
       ByteString commitMeta,
       List<KeyWithBytes> puts,
-      List<Key> unchanged,
       List<Key> deletes,
       int currentKeyListDistance,
       Consumer<Hash> newKeyLists)
       throws ReferenceNotFoundException {
-    Hash commitHash = individualCommitHash(parentHashes, commitMeta, puts, unchanged, deletes);
+    Hash commitHash = individualCommitHash(parentHashes, commitMeta, puts, deletes);
 
     int keyListDistance = currentKeyListDistance + 1;
 
@@ -553,7 +551,6 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
             parentHashes,
             commitMeta,
             puts,
-            unchanged,
             deletes,
             keyListDistance,
             null,
@@ -568,11 +565,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
   /** Calculate the hash for the contents of a {@link CommitLogEntry}. */
   @SuppressWarnings("UnstableApiUsage")
   protected Hash individualCommitHash(
-      List<Hash> parentHashes,
-      ByteString commitMeta,
-      List<KeyWithBytes> puts,
-      List<Key> unchanged,
-      List<Key> deletes) {
+      List<Hash> parentHashes, ByteString commitMeta, List<KeyWithBytes> puts, List<Key> deletes) {
     Hasher hasher = newHasher();
     hasher.putLong(COMMIT_LOG_HASH_SEED);
     parentHashes.forEach(h -> hasher.putBytes(h.asBytes().asReadOnlyByteBuffer()));
@@ -583,7 +576,6 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
           hasher.putString(e.getContentsId().getId(), StandardCharsets.UTF_8);
           hasher.putBytes(e.getValue().asReadOnlyByteBuffer());
         });
-    unchanged.forEach(e -> hashKey(hasher, e));
     deletes.forEach(e -> hashKey(hasher, e));
     return Hash.of(UnsafeByteOperations.unsafeWrap(hasher.hash().asBytes()));
   }
@@ -1052,7 +1044,6 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
               parents,
               sourceCommit.getMetadata(),
               sourceCommit.getPuts(),
-              sourceCommit.getUnchanged(),
               sourceCommit.getDeletes(),
               keyListDistance,
               newKeyLists);

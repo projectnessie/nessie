@@ -42,9 +42,6 @@ public interface CommitLogEntry {
    */
   List<KeyWithBytes> getPuts();
 
-  /** List of "unchanged" keys, from {@code Unchanged} commit operations. */
-  List<Key> getUnchanged();
-
   /** List of "unchanged" keys, from {@code Delete} commit operations. */
   List<Key> getDeletes();
 
@@ -76,7 +73,6 @@ public interface CommitLogEntry {
       List<Hash> parents,
       ByteString metadata,
       List<KeyWithBytes> puts,
-      List<Key> unchanged,
       List<Key> deletes,
       int keyListDistance,
       KeyList keyList,
@@ -87,7 +83,6 @@ public interface CommitLogEntry {
         .parents(parents)
         .metadata(metadata)
         .puts(puts)
-        .unchanged(unchanged)
         .deletes(deletes)
         .keyListDistance(keyListDistance)
         .keyList(keyList)
