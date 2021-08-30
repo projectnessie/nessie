@@ -13,20 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.http;
+package org.projectnessie.client.http.v1api;
 
-import org.projectnessie.api.http.HttpConfigApi;
-import org.projectnessie.model.NessieConfiguration;
+import org.projectnessie.client.http.NessieHttpClient;
 
-class HttpConfigClient implements HttpConfigApi {
-  private final HttpClient client;
+abstract class BaseHttpRequest {
 
-  HttpConfigClient(HttpClient client) {
+  protected final NessieHttpClient client;
+
+  BaseHttpRequest(NessieHttpClient client) {
     this.client = client;
-  }
-
-  @Override
-  public NessieConfiguration getConfig() {
-    return client.newRequest().path("config").get().readEntity(NessieConfiguration.class);
   }
 }

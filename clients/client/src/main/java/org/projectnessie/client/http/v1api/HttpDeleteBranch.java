@@ -13,20 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.http;
+package org.projectnessie.client.http.v1api;
 
-import org.projectnessie.api.http.HttpConfigApi;
-import org.projectnessie.model.NessieConfiguration;
+import org.projectnessie.client.api.DeleteBranchBuilder;
+import org.projectnessie.client.http.NessieHttpClient;
+import org.projectnessie.error.NessieConflictException;
+import org.projectnessie.error.NessieNotFoundException;
 
-class HttpConfigClient implements HttpConfigApi {
-  private final HttpClient client;
-
-  HttpConfigClient(HttpClient client) {
-    this.client = client;
+final class HttpDeleteBranch extends BaseHttpOnBranchRequest<DeleteBranchBuilder>
+    implements DeleteBranchBuilder {
+  HttpDeleteBranch(NessieHttpClient client) {
+    super(client);
   }
 
   @Override
-  public NessieConfiguration getConfig() {
-    return client.newRequest().path("config").get().readEntity(NessieConfiguration.class);
+  public void submit() throws NessieConflictException, NessieNotFoundException {
+    client.getTreeApi().deleteBranch(branchName, hash);
   }
 }

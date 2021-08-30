@@ -33,6 +33,7 @@ import org.projectnessie.model.Tag;
 import org.projectnessie.model.Transplant;
 import org.projectnessie.model.Validation;
 
+@Deprecated // This interface is part of the Nessie v0.9 API, which will be removed
 public interface TreeApi {
   /** Get all references. */
   List<Reference> getAllReferences();

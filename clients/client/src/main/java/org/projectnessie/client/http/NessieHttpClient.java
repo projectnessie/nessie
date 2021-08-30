@@ -34,9 +34,9 @@ import java.lang.reflect.Proxy;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
-import org.projectnessie.api.ConfigApi;
-import org.projectnessie.api.ContentsApi;
-import org.projectnessie.api.TreeApi;
+import org.projectnessie.api.http.HttpConfigApi;
+import org.projectnessie.api.http.HttpContentsApi;
+import org.projectnessie.api.http.HttpTreeApi;
 import org.projectnessie.client.NessieClient;
 import org.projectnessie.client.rest.NessieHttpResponseFilter;
 import org.projectnessie.error.NessieConflictException;
@@ -50,9 +50,9 @@ public class NessieHttpClient implements NessieClient {
           .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
 
   private final HttpClient client;
-  private final ConfigApi config;
-  private final TreeApi tree;
-  private final ContentsApi contents;
+  private final HttpConfigApi config;
+  private final HttpTreeApi tree;
+  private final HttpContentsApi contents;
 
   /**
    * Create new HTTP {@link NessieClient}. All REST api endpoints are mapped here. This client
@@ -83,9 +83,9 @@ public class NessieHttpClient implements NessieClient {
       authentication.applyToHttpClient(client);
     }
     client.register(new NessieHttpResponseFilter(mapper));
-    contents = wrap(ContentsApi.class, new HttpContentsClient(client));
-    tree = wrap(TreeApi.class, new HttpTreeClient(client));
-    config = wrap(ConfigApi.class, new HttpConfigClient(client));
+    contents = wrap(HttpContentsApi.class, new HttpContentsClient(client));
+    tree = wrap(HttpTreeApi.class, new HttpTreeClient(client));
+    config = wrap(HttpConfigApi.class, new HttpConfigClient(client));
   }
 
   private static void addTracing(HttpClient httpClient) {
@@ -184,17 +184,17 @@ public class NessieHttpClient implements NessieClient {
   }
 
   @Override
-  public TreeApi getTreeApi() {
+  public HttpTreeApi getTreeApi() {
     return tree;
   }
 
   @Override
-  public ContentsApi getContentsApi() {
+  public HttpContentsApi getContentsApi() {
     return contents;
   }
 
   @Override
-  public ConfigApi getConfigApi() {
+  public HttpConfigApi getConfigApi() {
     return config;
   }
 

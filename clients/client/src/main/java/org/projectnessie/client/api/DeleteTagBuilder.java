@@ -13,20 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.http;
+package org.projectnessie.client.api;
 
-import org.projectnessie.api.http.HttpConfigApi;
-import org.projectnessie.model.NessieConfiguration;
+import org.projectnessie.error.NessieConflictException;
+import org.projectnessie.error.NessieNotFoundException;
 
-class HttpConfigClient implements HttpConfigApi {
-  private final HttpClient client;
-
-  HttpConfigClient(HttpClient client) {
-    this.client = client;
-  }
-
-  @Override
-  public NessieConfiguration getConfig() {
-    return client.newRequest().path("config").get().readEntity(NessieConfiguration.class);
-  }
+/**
+ * Request builder for "delete tag".
+ *
+ * @since Nessie API {@link NessieApiVersion#V_1}
+ */
+public interface DeleteTagBuilder extends OnTagBuilder<DeleteTagBuilder> {
+  void submit() throws NessieConflictException, NessieNotFoundException;
 }

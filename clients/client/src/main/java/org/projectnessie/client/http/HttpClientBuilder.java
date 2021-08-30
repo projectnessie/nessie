@@ -21,11 +21,13 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URL;
 
 import java.net.URI;
 import java.util.function.Function;
-import org.projectnessie.client.NessieClient;
 import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.NessieConfigConstants;
+import org.projectnessie.client.api.NessieApi;
+import org.projectnessie.client.api.NessieApiVersion;
 import org.projectnessie.client.auth.NessieAuthentication;
 import org.projectnessie.client.auth.NessieAuthenticationProvider;
+import org.projectnessie.client.http.v1api.HttpApiV1;
 
 /**
  * A builder class that creates a {@link NessieHttpClient} via {@link HttpClientBuilder#builder()}.
@@ -170,14 +172,29 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
     return this;
   }
 
-  /**
-   * Builds a new {@link NessieHttpClient}.
-   *
-   * @return A new {@link NessieHttpClient}.
-   */
   @Override
-  public NessieClient build() {
-    return new NessieHttpClient(
-        uri, authentication, tracing, readTimeoutMillis, connectionTimeoutMillis);
+  public <API extends NessieApi> API build(NessieApiVersion apiVersion, Class<API> apiContract) {
+    NessieHttpClient client =
+        new NessieHttpClient(
+            uri, authentication, tracing, readTimeoutMillis, connectionTimeoutMillis);
+    API api;
+    switch (apiVersion) {
+      case V_0_9:
+        api = (API) client;
+        break;
+      case V_1:
+        api = (API) new HttpApiV1(client);
+        break;
+      default:
+        throw new IllegalArgumentException(
+            String.format("API version %s not supported.", apiVersion.name()));
+    }
+    if (!apiContract.isAssignableFrom(api.getClass())) {
+      throw new IllegalArgumentException(
+          String.format(
+              "API version %s not supported with incompatible interface '%s' (not assignable from '%s').",
+              apiVersion.name(), apiContract.getName(), api.getClass().getName()));
+    }
+    return api;
   }
 }

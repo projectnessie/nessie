@@ -13,20 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.http;
+package org.projectnessie.client.http.v1api;
 
-import org.projectnessie.api.http.HttpConfigApi;
-import org.projectnessie.model.NessieConfiguration;
+import org.projectnessie.client.api.OnTagBuilder;
+import org.projectnessie.client.http.NessieHttpClient;
 
-class HttpConfigClient implements HttpConfigApi {
-  private final HttpClient client;
+abstract class BaseHttpOnTagRequest<R extends OnTagBuilder<R>> extends BaseHttpRequest
+    implements OnTagBuilder<R> {
+  protected String tagName;
+  protected String hash;
 
-  HttpConfigClient(HttpClient client) {
-    this.client = client;
+  BaseHttpOnTagRequest(NessieHttpClient client) {
+    super(client);
   }
 
   @Override
-  public NessieConfiguration getConfig() {
-    return client.newRequest().path("config").get().readEntity(NessieConfiguration.class);
+  public R tagName(String tagName) {
+    this.tagName = tagName;
+    return (R) this;
+  }
+
+  @Override
+  public R hash(String hash) {
+    this.hash = hash;
+    return (R) this;
   }
 }

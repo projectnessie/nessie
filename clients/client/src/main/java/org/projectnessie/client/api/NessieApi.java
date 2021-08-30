@@ -13,20 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.http;
+package org.projectnessie.client.api;
 
-import org.projectnessie.api.http.HttpConfigApi;
-import org.projectnessie.model.NessieConfiguration;
+/** Base interface for all Nessie-API versions. */
+public interface NessieApi extends AutoCloseable {
 
-class HttpConfigClient implements HttpConfigApi {
-  private final HttpClient client;
+  NessieApiVersion getApiVersion();
 
-  HttpConfigClient(HttpClient client) {
-    this.client = client;
-  }
-
-  @Override
-  public NessieConfiguration getConfig() {
-    return client.newRequest().path("config").get().readEntity(NessieConfiguration.class);
-  }
+  // Overridden to "remove 'throws Exception'"
+  void close();
 }
