@@ -31,7 +31,7 @@ import org.immutables.value.Value;
     title = "Merge Operation",
     // Smallrye does neither support JsonFormat nor javax.validation.constraints.Pattern :(
     properties = {
-      @SchemaProperty(name = "sourceRefName", pattern = Validation.REF_NAME_REGEX),
+      @SchemaProperty(name = "fromRefName", pattern = Validation.REF_NAME_REGEX),
       @SchemaProperty(name = "fromHash", pattern = Validation.HASH_REGEX)
     })
 @Value.Immutable(prehash = true)
@@ -45,7 +45,7 @@ public interface Merge {
 
   @NotBlank
   @JsonFormat(pattern = Validation.REF_NAME_REGEX)
-  String getSourceRefName();
+  String getFromRefName();
 
   /**
    * Validation rule using {@link org.projectnessie.model.Validation#validateHash(String)}

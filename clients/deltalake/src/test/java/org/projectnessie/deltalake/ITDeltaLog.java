@@ -143,10 +143,7 @@ class ITDeltaLog extends AbstractSparkTest {
         .mergeRefIntoBranch(
             to.getName(),
             to.getHash(),
-            ImmutableMerge.builder()
-                .sourceRefName(from.getName())
-                .fromHash(from.getHash())
-                .build());
+            ImmutableMerge.builder().fromRefName(from.getName()).fromHash(from.getHash()).build());
 
     spark.sparkContext().conf().set("spark.sql.catalog.spark_catalog.ref", "main");
 
