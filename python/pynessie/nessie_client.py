@@ -191,7 +191,9 @@ class NessieClient(object):
         if not old_hash:
             old_hash = self.get_reference(onto_branch).hash_
         assert old_hash is not None
-        merge_json = MergeSchema().dump(Merge(from_branch, from_hash or self.get_reference(from_branch).hash_))
+        if not from_hash:
+            from_hash = self.get_reference(from_branch).hash_
+        merge_json = MergeSchema().dump(Merge(from_branch, str(from_hash)))
         merge(self._base_url, self._auth, onto_branch, merge_json, old_hash, self._ssl_verify)
 
     def cherry_pick(self: "NessieClient", branch: str, from_ref: str, old_hash: Optional[str] = None, *hashes: str) -> None:
