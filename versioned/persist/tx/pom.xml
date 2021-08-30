@@ -49,6 +49,7 @@
     <dependency>
       <groupId>io.agroal</groupId>
       <artifactId>agroal-pool</artifactId>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
