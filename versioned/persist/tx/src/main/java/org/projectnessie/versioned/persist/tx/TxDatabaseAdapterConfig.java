@@ -15,7 +15,6 @@
  */
 package org.projectnessie.versioned.persist.tx;
 
-import io.agroal.api.configuration.AgroalConnectionFactoryConfiguration.TransactionIsolation;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
@@ -51,96 +50,4 @@ public interface TxDatabaseAdapterConfig extends DatabaseAdapterConfig {
   String getSchema();
 
   TxDatabaseAdapterConfig withSchema(String schema);
-
-  /**
-   * JDBC URL, only used, if {@link #getConnectionProvider} returns {@code null}, only for
-   * non-production scenarios.
-   */
-  @Nullable
-  String getJdbcUrl();
-
-  TxDatabaseAdapterConfig withJdbcUrl(String jdbcUrl);
-
-  /**
-   * Database user, only used, if {@link #getConnectionProvider} returns {@code null}, only for
-   * non-production scenarios.
-   */
-  @Nullable
-  String getJdbcUser();
-
-  TxDatabaseAdapterConfig withJdbcUser(String jdbcUser);
-
-  /**
-   * Database password, only used, if {@link #getConnectionProvider} returns {@code null}, only for
-   * non-production scenarios.
-   */
-  @Nullable
-  String getJdbcPass();
-
-  TxDatabaseAdapterConfig withJdbcPass(String jdbcPass);
-
-  /** For "unmanaged" connection-pools: the JDBC pool's minimum size, defaults to {@code 1}. */
-  @Value.Default
-  default int getPoolMinSize() {
-    return 1;
-  }
-
-  TxDatabaseAdapterConfig withPoolMinSize(int poolMinSize);
-
-  /** For "unmanaged" connection-pools: the JDBC pool's maximum size, defaults to {@code 10}. */
-  @Value.Default
-  default int getPoolMaxSize() {
-    return 10;
-  }
-
-  TxDatabaseAdapterConfig withPoolMaxSize(int poolMaxSize);
-
-  /** For "unmanaged" connection-pools: the JDBC pool's initial size, defaults to {@code 1}. */
-  @Value.Default
-  default int getPoolInitialSize() {
-    return 1;
-  }
-
-  TxDatabaseAdapterConfig withPoolInitialSize(int poolInitialSize);
-
-  /**
-   * For "unmanaged" connection-pools: the JDBC pool's connection acquisition timeout in seconds,
-   * defaults to {@code 30}.
-   */
-  @Value.Default
-  default int getPoolAcquisitionTimeoutSeconds() {
-    return 30;
-  }
-
-  TxDatabaseAdapterConfig withPoolAcquisitionTimeoutSeconds(int poolAcquisitionTimeoutSeconds);
-
-  /**
-   * For "unmanaged" connection-pools: the JDBC pool's connection max lifetime in minutes, defaults
-   * to {@code 5}.
-   */
-  @Value.Default
-  default int getPoolConnectionLifetimeMinutes() {
-    return 5;
-  }
-
-  TxDatabaseAdapterConfig withPoolConnectionLifetimeMinutes(int poolConnectionLifetimeMinutes);
-
-  /**
-   * For "unmanaged" connection-pools: the JDBC pool's transaction isolation, one of the enums from
-   * {@link io.agroal.api.configuration.AgroalConnectionFactoryConfiguration.TransactionIsolation},
-   * defaults to {@link
-   * io.agroal.api.configuration.AgroalConnectionFactoryConfiguration.TransactionIsolation#READ_COMMITTED}.
-   *
-   * <p>Technically we only need {@code READ_COMMITTED}. The extra bit that {@code SERIALIZABLE}
-   * brings is not needed. Reason is that we "only" do CAS-ish operations on 'global_state' and
-   * 'named_refs' tables (think: {@code INSERT INTO resp. UPDATE value=? ... WHERE value=?}) - the
-   * other operations (on 'commit_log' and 'key_list') are {@code INSERT INTO} only. All "guarded"
-   * by a transaction - so either everything or nothing becomes visible atomically.
-   */
-  @Value.Default
-  default String getPoolTransactionIsolation() {
-    return TransactionIsolation.READ_COMMITTED.name();
-  }
-
-  TxDatabaseAdapterConfig withPoolTransactionIsolation(String poolTransactionIsolation);
 }
