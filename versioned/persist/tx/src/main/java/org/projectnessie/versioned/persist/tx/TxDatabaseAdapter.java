@@ -76,7 +76,6 @@ import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.KeyWithType;
 import org.projectnessie.versioned.persist.adapter.spi.AbstractDatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.spi.TryLoopState;
-import org.projectnessie.versioned.persist.tx.TxConnectionProvider.LocalConnectionProvider;
 
 /**
  * Transactional/relational {@link AbstractDatabaseAdapter} implementation using JDBC primitives.
@@ -99,20 +98,19 @@ public abstract class TxDatabaseAdapter
 
     // get the externally configured TxConnectionProvider
     TxConnectionProvider db = config.getConnectionProvider();
-
     if (db == null) {
-      // Create a ConnectionProvider, if none has been configured externally. This is mostly used
-      // for tests and benchmarks.
-      db = new LocalConnectionProvider();
-      db.configure(config);
-      db.setupDatabase(
-          allCreateTableDDL(),
-          databaseSqlFormatParameters(),
-          metadataUpperCase(),
-          batchDDL(),
-          config.getCatalog(),
-          config.getSchema());
+      throw new NullPointerException(
+          "TxDatabaseAdapter requires a non-null TxConnectionProvider via TxDatabaseAdapterConfig.getConnectionProvider()");
     }
+
+    db.configure(config);
+    db.setupDatabase(
+        allCreateTableDDL(),
+        databaseSqlFormatParameters(),
+        metadataUpperCase(),
+        batchDDL(),
+        config.getCatalog(),
+        config.getSchema());
 
     this.db = db;
   }

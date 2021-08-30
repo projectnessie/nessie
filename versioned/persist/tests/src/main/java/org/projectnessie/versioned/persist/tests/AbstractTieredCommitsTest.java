@@ -43,6 +43,7 @@ import org.projectnessie.versioned.persist.adapter.ContentsId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
+import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory.Builder;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
@@ -58,8 +59,7 @@ public abstract class AbstractTieredCommitsTest<CONFIG extends DatabaseAdapterCo
   void loadDatabaseAdapter() {
     if (databaseAdapter == null) {
       databaseAdapter =
-          DatabaseAdapterFactory.<CONFIG>loadFactoryByName(adapterName())
-              .newBuilder()
+          createAdapterBuilder()
               .configure(SystemPropertiesConfigurer::configureFromSystemProperties)
               // default to a quite small max-size for the CommitLogEntry.keyList + KeyListEntity
               // This is necessary for AbstractManyKeys to work properly!!
@@ -68,6 +68,10 @@ public abstract class AbstractTieredCommitsTest<CONFIG extends DatabaseAdapterCo
               .build();
     }
     databaseAdapter.reinitializeRepo("main");
+  }
+
+  protected Builder<CONFIG> createAdapterBuilder() {
+    return DatabaseAdapterFactory.<CONFIG>loadFactoryByName(adapterName()).newBuilder();
   }
 
   protected abstract String adapterName();
