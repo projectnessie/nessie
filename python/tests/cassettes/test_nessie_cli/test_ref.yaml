@@ -6,6 +6,8 @@ interactions:
       - application/json
       Accept-Encoding:
       - gzip, deflate
+      Authorization:
+      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       User-Agent:
@@ -15,7 +17,7 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
-        \"421f058e45c70919575da66b0d3620271c40dc1dcd90dc3050b5bf01ed616582\"\n} ]"
+        \"6bb3d05a95b9f091eabaddd4beeb849e1fc7ff81b82329bf664acdd5639dca56\"\n} ]"
     headers:
       Content-Length:
       - '125'
@@ -25,12 +27,14 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"name": "dev", "hash": null, "type": "BRANCH"}'
+    body: '{"hash": null, "name": "dev", "type": "BRANCH"}'
     headers:
       Accept:
       - '*/*'
       Accept-Encoding:
       - gzip, deflate
+      Authorization:
+      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       Content-Length:
@@ -59,6 +63,8 @@ interactions:
       - application/json
       Accept-Encoding:
       - gzip, deflate
+      Authorization:
+      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       User-Agent:
@@ -68,7 +74,7 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
-        \"421f058e45c70919575da66b0d3620271c40dc1dcd90dc3050b5bf01ed616582\"\n}, {\n
+        \"6bb3d05a95b9f091eabaddd4beeb849e1fc7ff81b82329bf664acdd5639dca56\"\n}, {\n
         \ \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}
         ]"
     headers:
@@ -86,6 +92,8 @@ interactions:
       - application/json
       Accept-Encoding:
       - gzip, deflate
+      Authorization:
+      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       User-Agent:
@@ -111,6 +119,8 @@ interactions:
       - application/json
       Accept-Encoding:
       - gzip, deflate
+      Authorization:
+      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       User-Agent:
@@ -119,7 +129,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/main
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"421f058e45c70919575da66b0d3620271c40dc1dcd90dc3050b5bf01ed616582\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"6bb3d05a95b9f091eabaddd4beeb849e1fc7ff81b82329bf664acdd5639dca56\"\n}"
     headers:
       Content-Length:
       - '121'
@@ -129,13 +139,15 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"name": "etl", "hash": "421f058e45c70919575da66b0d3620271c40dc1dcd90dc3050b5bf01ed616582",
-      "type": "BRANCH"}'
+    body: '{"hash": "6bb3d05a95b9f091eabaddd4beeb849e1fc7ff81b82329bf664acdd5639dca56",
+      "name": "etl", "type": "BRANCH"}'
     headers:
       Accept:
       - '*/*'
       Accept-Encoding:
       - gzip, deflate
+      Authorization:
+      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       Content-Length:
@@ -148,7 +160,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree?sourceRefName=main
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"etl\",\n  \"hash\" : \"421f058e45c70919575da66b0d3620271c40dc1dcd90dc3050b5bf01ed616582\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"etl\",\n  \"hash\" : \"6bb3d05a95b9f091eabaddd4beeb849e1fc7ff81b82329bf664acdd5639dca56\"\n}"
     headers:
       Content-Length:
       - '120'
@@ -164,6 +176,8 @@ interactions:
       - application/json
       Accept-Encoding:
       - gzip, deflate
+      Authorization:
+      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       User-Agent:
@@ -173,8 +187,8 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"etl\",\n  \"hash\" :
-        \"421f058e45c70919575da66b0d3620271c40dc1dcd90dc3050b5bf01ed616582\"\n}, {\n
-        \ \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"421f058e45c70919575da66b0d3620271c40dc1dcd90dc3050b5bf01ed616582\"\n},
+        \"6bb3d05a95b9f091eabaddd4beeb849e1fc7ff81b82329bf664acdd5639dca56\"\n}, {\n
+        \ \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"6bb3d05a95b9f091eabaddd4beeb849e1fc7ff81b82329bf664acdd5639dca56\"\n},
         {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}
         ]"
     headers:
@@ -192,6 +206,8 @@ interactions:
       - application/json
       Accept-Encoding:
       - gzip, deflate
+      Authorization:
+      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       User-Agent:
@@ -200,7 +216,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/etl
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"etl\",\n  \"hash\" : \"421f058e45c70919575da66b0d3620271c40dc1dcd90dc3050b5bf01ed616582\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"etl\",\n  \"hash\" : \"6bb3d05a95b9f091eabaddd4beeb849e1fc7ff81b82329bf664acdd5639dca56\"\n}"
     headers:
       Content-Length:
       - '120'
@@ -216,6 +232,8 @@ interactions:
       - application/json
       Accept-Encoding:
       - gzip, deflate
+      Authorization:
+      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       Content-Length:
@@ -223,7 +241,7 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: DELETE
-    uri: http://localhost:19120/api/v1/trees/branch/etl?expectedHash=421f058e45c70919575da66b0d3620271c40dc1dcd90dc3050b5bf01ed616582
+    uri: http://localhost:19120/api/v1/trees/branch/etl?expectedHash=6bb3d05a95b9f091eabaddd4beeb849e1fc7ff81b82329bf664acdd5639dca56
   response:
     body:
       string: ''
@@ -238,6 +256,8 @@ interactions:
       - application/json
       Accept-Encoding:
       - gzip, deflate
+      Authorization:
+      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       User-Agent:
@@ -262,6 +282,8 @@ interactions:
       - application/json
       Accept-Encoding:
       - gzip, deflate
+      Authorization:
+      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       Content-Length:
@@ -284,6 +306,8 @@ interactions:
       - application/json
       Accept-Encoding:
       - gzip, deflate
+      Authorization:
+      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       User-Agent:
@@ -293,7 +317,7 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
-        \"421f058e45c70919575da66b0d3620271c40dc1dcd90dc3050b5bf01ed616582\"\n} ]"
+        \"6bb3d05a95b9f091eabaddd4beeb849e1fc7ff81b82329bf664acdd5639dca56\"\n} ]"
     headers:
       Content-Length:
       - '125'
