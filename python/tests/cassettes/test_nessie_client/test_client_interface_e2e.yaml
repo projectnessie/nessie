@@ -6,6 +6,8 @@ interactions:
       - application/json
       Accept-Encoding:
       - gzip, deflate
+      Authorization:
+      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       User-Agent:
@@ -25,12 +27,14 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"name": "main", "hash": null, "type": "BRANCH"}'
+    body: '{"hash": null, "name": "main", "type": "BRANCH"}'
     headers:
       Accept:
       - '*/*'
       Accept-Encoding:
       - gzip, deflate
+      Authorization:
+      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       Content-Length:
@@ -55,13 +59,15 @@ interactions:
       code: 409
       message: Conflict
 - request:
-    body: '{"name": "test", "hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-      "type": "BRANCH"}'
+    body: '{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+      "name": "test", "type": "BRANCH"}'
     headers:
       Accept:
       - '*/*'
       Accept-Encoding:
       - gzip, deflate
+      Authorization:
+      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       Content-Length:
@@ -90,6 +96,8 @@ interactions:
       - application/json
       Accept-Encoding:
       - gzip, deflate
+      Authorization:
+      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       User-Agent:
@@ -117,6 +125,8 @@ interactions:
       - application/json
       Accept-Encoding:
       - gzip, deflate
+      Authorization:
+      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       User-Agent:
@@ -141,6 +151,8 @@ interactions:
       - application/json
       Accept-Encoding:
       - gzip, deflate
+      Authorization:
+      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       User-Agent:
@@ -165,6 +177,8 @@ interactions:
       - application/json
       Accept-Encoding:
       - gzip, deflate
+      Authorization:
+      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       Content-Length:
@@ -187,6 +201,8 @@ interactions:
       - application/json
       Accept-Encoding:
       - gzip, deflate
+      Authorization:
+      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       User-Agent:
