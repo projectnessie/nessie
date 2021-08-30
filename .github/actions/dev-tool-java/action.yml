@@ -1,0 +1,65 @@
+name: 'Setup Java/Maven/Gradle'
+inputs:
+  java-version:
+    required: false
+    default: '11'
+  gpg-private-key:
+    required: false
+    default: ''
+runs:
+  using: "composite"
+  steps:
+    - name: Set up JDK ${{ inputs.java-version }}
+      uses: actions/setup-java@v2
+      with:
+        distribution: 'zulu'
+        java-version: ${{ inputs.java-version }}
+        server-id: ossrh
+        server-username: MAVEN_USERNAME
+        server-password: MAVEN_OSSRH_TOKEN
+        gpg-private-key: ${{ inputs.gpg-private-key }}
+        gpg-passphrase: MAVEN_GPG_PASSPHRASE
+    - name: Cache local Maven repository
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.m2/repository
+          !~/.m2/repository/org/projectnessie
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-maven-
+    - name: Cache local NPM repository
+      uses: actions/cache@v2
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
+    - name: Cache Gradle packages
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
+        restore-keys: ${{ runner.os }}-gradle
+
+    - name: Set up Maven toolchains.xml
+      shell: bash
+      run: |
+        mkdir -p ${HOME}/.m2
+        cat << 'EOT' > ${HOME}/.m2/toolchains.xml
+        <?xml version="1.0" encoding="UTF8"?>
+        <toolchains>
+          <toolchain>
+            <type>jdk</type>
+            <provides>
+              <version>11</version>
+              <vendor>zulu</vendor>
+            </provides>
+            <configuration>
+              <jdkHome>${env.JAVA_HOME}</jdkHome>
+            </configuration>
+          </toolchain>
+        </toolchains>
+        EOT
