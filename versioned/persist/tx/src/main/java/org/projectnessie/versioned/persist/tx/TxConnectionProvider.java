@@ -103,8 +103,12 @@ public class TxConnectionProvider implements AutoCloseable {
   @Override
   public void close() throws Exception {}
 
+  /**
+   * Borrow a connection from the {@link TxConnectionProvider} implementation.
+   * @return borrowed {@link Connection}
+   */
   public Connection borrowConnection() throws SQLException {
-    throw new UnsupportedOperationException();
+    throw new UnsupportedOperationException("Must be implemented.");
   }
 
   public static class LocalConnectionProvider extends TxConnectionProvider {
