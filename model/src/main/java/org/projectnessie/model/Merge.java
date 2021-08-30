@@ -20,7 +20,7 @@ import static org.projectnessie.model.Validation.validateHash;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import javax.annotation.Nullable;
+import javax.validation.constraints.NotBlank;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.media.SchemaProperty;
@@ -39,11 +39,11 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ImmutableMerge.class)
 public interface Merge {
 
-  @Nullable
+  @NotBlank
   @JsonFormat(pattern = Validation.HASH_REGEX)
   String getFromHash();
 
-  @Nullable
+  @NotBlank
   @JsonFormat(pattern = Validation.REF_NAME_REGEX)
   String getSourceRefName();
 

@@ -21,7 +21,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.List;
-import javax.annotation.Nullable;
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -46,7 +46,7 @@ public interface Transplant {
   @Size(min = 1)
   List<String> getHashesToTransplant();
 
-  @Nullable
+  @NotBlank
   @JsonFormat(pattern = Validation.REF_NAME_REGEX)
   String getSourceRefName();
 
