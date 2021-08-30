@@ -130,6 +130,12 @@ public interface TxDatabaseAdapterConfig extends DatabaseAdapterConfig {
    * {@link io.agroal.api.configuration.AgroalConnectionFactoryConfiguration.TransactionIsolation},
    * defaults to {@link
    * io.agroal.api.configuration.AgroalConnectionFactoryConfiguration.TransactionIsolation#READ_COMMITTED}.
+   *
+   * <p>Technically we only need {@code READ_COMMITTED}. The extra bit that {@code SERIALIZABLE}
+   * brings is not needed. Reason is that we "only" do CAS-ish operations on 'global_state' and
+   * 'named_refs' tables (think: {@code INSERT INTO resp. UPDATE value=? ... WHERE value=?}) - the
+   * other operations (on 'commit_log' and 'key_list') are {@code INSERT INTO} only. All "guarded"
+   * by a transaction - so either everything or nothing becomes visible atomically.
    */
   @Value.Default
   default String getPoolTransactionIsolation() {
