@@ -22,7 +22,6 @@ import java.sql.Statement;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
@@ -32,26 +31,33 @@ public abstract class TxConnectionProvider implements AutoCloseable {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TxConnectionProvider.class);
 
+  private boolean setupDone;
+
   public void configure(TxDatabaseAdapterConfig config) {}
 
-  public void setupDatabase(
-      Map<String, List<String>> perTableDDLs,
-      List<String> formatParams,
-      boolean metadataUpperCase,
-      boolean batchDDL,
-      String catalog,
-      String schema) {
+  public synchronized void setupDatabase(
+      TxDatabaseAdapter adapter, TxDatabaseAdapterConfig config) {
+    if (setupDone) {
+      return;
+    }
+
     try (Connection c = this.borrowConnection()) {
       try (Statement st = c.createStatement()) {
-        Object[] formatParamsArray = formatParams.toArray();
+        boolean metadataUpperCase = adapter.metadataUpperCase();
+        String catalog = config.getCatalog();
+        String schema = config.getSchema();
+        Object[] formatParamsArray = adapter.databaseSqlFormatParameters().toArray();
+
         Stream<String> ddls =
-            perTableDDLs.entrySet().stream()
+            adapter.allCreateTableDDL().entrySet().stream()
                 .filter(e -> !tableExists(c, metadataUpperCase, catalog, schema, e.getKey()))
                 .flatMap(e -> e.getValue().stream())
                 .map(s -> MessageFormat.format(s, formatParamsArray));
 
-        executeDDLs(batchDDL, ddls, st);
+        executeDDLs(adapter.batchDDL(), ddls, st);
       }
+
+      setupDone = true;
     } catch (Exception e) {
       throw new RuntimeException(e);
     }

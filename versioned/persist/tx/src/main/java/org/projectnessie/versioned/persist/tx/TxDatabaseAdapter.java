@@ -104,13 +104,7 @@ public abstract class TxDatabaseAdapter
     }
 
     db.configure(config);
-    db.setupDatabase(
-        allCreateTableDDL(),
-        databaseSqlFormatParameters(),
-        metadataUpperCase(),
-        batchDDL(),
-        config.getCatalog(),
-        config.getSchema());
+    db.setupDatabase(this, config);
 
     this.db = db;
   }
