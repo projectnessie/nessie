@@ -79,10 +79,10 @@ These are set as follows in code (or through other methods as described [here](h
             "org.apache.iceberg:iceberg-spark3-runtime:{{ versions.iceberg}}")
         .set("spark.sql.catalog.nessie.url", url)
         .set("spark.sql.catalog.nessie.ref", ref)
-        .set("spark.sql.nessie.nessie.auth_type", authType)
-        .set("spark.sql.nessie.nessie.catalog-impl",
+        .set("spark.sql.catalog.nessie.auth-type", authType)
+        .set("spark.sql.catalog.nessie.catalog-impl",
             "org.apache.iceberg.nessie.NessieCatalog")
-        .set("spark.sql.nessie.nessie.warehouse", fullPathToWarehouse)
+        .set("spark.sql.catalog.nessie.warehouse", fullPathToWarehouse)
         .set("spark.sql.catalog.nessie", "org.apache.iceberg.spark.SparkCatalog");
     spark = SparkSession.builder()
                         .master("local[2]")
@@ -107,10 +107,10 @@ These are set as follows in code (or through other methods as described [here](h
                 "org.apache.iceberg:iceberg-spark3-runtime:{{ versions.iceberg}}") \
             .config("spark.sql.catalog.nessie.url", url) \
             .config("spark.sql.catalog.nessie.ref", ref) \
-            .config("spark.sql.nessie.nessie.auth-type", auth_type) \
-            .config("spark.sql.nessie.nessie.catalog-impl", 
+            .config("spark.sql.catalog.nessie.auth-type", auth_type) \
+            .config("spark.sql.catalog.nessie.catalog-impl", 
                 "org.apache.iceberg.nessie.NessieCatalog") \
-            .config("spark.sql.nessie.nessie.warehouse", full_path_to_warehouse) \
+            .config("spark.sql.catalog.nessie.warehouse", full_path_to_warehouse) \
             .config("spark.sql.catalog.nessie",
                 "org.apache.iceberg.spark.SparkCatalog") \
             .getOrCreate()
