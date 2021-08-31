@@ -43,6 +43,6 @@ def test_aws_auth() -> None:
     r = requests.Request(url="http://127.255.0.0:0/", method="GET", auth=auth)
     prepared = r.prepare()
     assert_that(prepared.headers.get("Authorization")).matches(
-        r"AWS4-HMAC-SHA256 Credential=test_key_id/20210830/us-west-2/execute-api/aws4_request, "
+        r"AWS4-HMAC-SHA256 Credential=test_key_id/[0-9]+/us-west-2/execute-api/aws4_request, "
         r"SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=.+"
     )
