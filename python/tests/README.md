@@ -10,6 +10,15 @@ can be run against a live Nessie engine.
    `./mvnw quarkus:dev -am -pl :nessie-quarkus` locally.
 1. Run `pytest --record-mode=all tests/` (in a venv with `requirements_dev.txt` installed)
    to add test data for newly added tests and updated tests data.
+   * Note: when running `test_nessie_auth.py` in recording more, the tests will most likely fail out-of-the box
+     because the server will not recognize the auth tokens those tests use. In order to record cassettes for the
+     authentication tests:
+     1. Configure the Nessie server in dev mode with a real authentication provider (e.g. Keycloak)
+     1. Generate real auth tokens
+     1. Put real tokens into test sources
+     1. Run tests in recording mode
+     1. Manually replace real tokens with test tokens in the recorded cassettes and test sources
+     1. Re-run the tests in validation mode (no recording) to make sure they work as expected
 1. Be nice and only add the cassettes' yaml files, that have really changed.
 
 Run the Quarkus server with `-Dnessie.server.send-stacktrace-to-client=false` (this is the default) to reduce
