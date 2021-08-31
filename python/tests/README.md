@@ -13,8 +13,8 @@ can be run against a live Nessie engine.
    * Note: when running `test_nessie_auth.py` in recording more, the tests will most likely fail out-of-the box
      because the server will not recognize the auth tokens those tests use. In order to record cassettes for the
      authentication tests:
-     1. Configure the Nessie server in dev mode with a real authentication provider (e.g. Keycloak)
-     1. Generate real auth tokens
+     1. Follow the instructions in the [Nessie Server README.md file](../../servers/quarkus-server/README.md) to start
+        the server in test mode with a real authentication provider and generate a real auth token.
      1. Put real tokens into test sources
      1. Run tests in recording mode
      1. Manually replace real tokens with test tokens in the recorded cassettes and test sources
