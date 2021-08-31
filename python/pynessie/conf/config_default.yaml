@@ -1,8 +1,5 @@
 auth:
-    type: basic
-    username: admin_user
-    password: test123
+    type: none
     timeout: 10
-    region: us-west-2
 endpoint: http://localhost:19120/api/v1
 verify: true

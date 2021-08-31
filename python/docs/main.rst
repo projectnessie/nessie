@@ -7,11 +7,12 @@
 	  Interact with Nessie branches and tables via the command line
 	
 	Options:
-	  --json           write output in json format.
-	  -v, --verbose    Verbose output.
-	  --endpoint TEXT  Optional endpoint, if different from config file.
+	  --json             write output in json format.
+	  -v, --verbose      Verbose output.
+	  --endpoint TEXT    Optional endpoint, if different from config file.
+	  --auth-token TEXT  Optional bearer auth token, if different from config file.
 	  --version
-	  --help           Show this message and exit.
+	  --help             Show this message and exit.
 	
 	Commands:
 	  branch       Branch operations.
