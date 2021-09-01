@@ -129,7 +129,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     Instant instant = config.getClock().instant();
     long time = instant.getEpochSecond();
     long nano = instant.getNano();
-    return TimeUnit.MILLISECONDS.toMicros(time) + TimeUnit.NANOSECONDS.toMicros(nano);
+    return TimeUnit.SECONDS.toMicros(time) + TimeUnit.NANOSECONDS.toMicros(nano);
   }
 
   /**
