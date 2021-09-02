@@ -38,11 +38,9 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.ToIntFunction;
@@ -68,7 +66,6 @@ import org.projectnessie.versioned.persist.adapter.ContentsIdWithType;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
-import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.KeyWithType;
 import org.projectnessie.versioned.persist.adapter.spi.AbstractDatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.spi.TryLoopState;
@@ -398,46 +395,20 @@ public abstract class NonTransactionalDatabaseAdapter<CONFIG extends DatabaseAda
   }
 
   @Override
-  public Stream<ContentsIdAndBytes> globalLog(
-      Set<ContentsIdWithType> keys, ToIntFunction<ByteString> contentsTypeExtractor) {
+  public Stream<ContentsIdAndBytes> globalContents(
+      Set<ContentsId> keys, ToIntFunction<ByteString> contentsTypeExtractor) {
     NonTransactionalOperationContext ctx = NON_TRANSACTIONAL_OPERATION_CONTEXT;
 
     GlobalStatePointer pointer = fetchGlobalPointer(ctx);
 
-    HashSet<ContentsIdWithType> remaining = new HashSet<>(keys);
+    HashSet<ContentsId> remaining = new HashSet<>(keys);
 
     Stream<GlobalStateLogEntry> stream = globalLogFetcher(ctx, Hash.of(pointer.getGlobalId()));
 
     return takeUntilIncludeLast(stream, x -> remaining.isEmpty())
         .flatMap(e -> e.getPutsList().stream())
         .map(ProtoSerialization::protoToContentsIdAndBytes)
-        .filter(kct -> remaining.remove(kct.asIdWithType()));
-  }
-
-  @Override
-  public Stream<KeyWithBytes> allContents(
-      BiFunction<NamedRef, CommitLogEntry, Boolean> continueOnRefPredicate) {
-    NonTransactionalOperationContext ctx = NON_TRANSACTIONAL_OPERATION_CONTEXT;
-
-    GlobalStatePointer pointer = fetchGlobalPointer(ctx);
-
-    Stream<KeyWithBytes> result = Stream.empty();
-
-    Set<Hash> visistedHashes = new HashSet<>();
-
-    for (Entry<String, RefPointer> e : pointer.getNamedReferencesMap().entrySet()) {
-      Stream<KeyWithBytes> perRef =
-          allContentsPerRefFetcher(
-              ctx,
-              continueOnRefPredicate,
-              visistedHashes,
-              toNamedRef(e.getValue().getType(), e.getKey()),
-              Hash.of(e.getValue().getHash()));
-
-      result = Stream.concat(result, perRef);
-    }
-
-    return result;
+        .filter(kct -> remaining.remove(kct.getContentsId()));
   }
 
   // /////////////////////////////////////////////////////////////////////////////////////////////
