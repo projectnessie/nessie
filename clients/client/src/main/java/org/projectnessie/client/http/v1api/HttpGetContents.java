@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.projectnessie.client.api.GetContentsBuilder;
-import org.projectnessie.client.http.NessieHttpClient;
+import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Contents;
 import org.projectnessie.model.ContentsKey;
@@ -32,10 +32,8 @@ final class HttpGetContents extends BaseHttpOnReferenceRequest<GetContentsBuilde
 
   private final ImmutableMultiGetContentsRequest.Builder request =
       ImmutableMultiGetContentsRequest.builder();
-  private String refName;
-  private String hashOnRef;
 
-  HttpGetContents(NessieHttpClient client) {
+  HttpGetContents(NessieApiClient client) {
     super(client);
   }
 

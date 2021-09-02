@@ -16,7 +16,7 @@
 package org.projectnessie.client.http.v1api;
 
 import org.projectnessie.client.api.GetReferenceBuilder;
-import org.projectnessie.client.http.NessieHttpClient;
+import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Reference;
 
@@ -24,7 +24,7 @@ final class HttpGetReference extends BaseHttpRequest implements GetReferenceBuil
 
   private String refName;
 
-  HttpGetReference(NessieHttpClient client) {
+  HttpGetReference(NessieApiClient client) {
     super(client);
   }
 

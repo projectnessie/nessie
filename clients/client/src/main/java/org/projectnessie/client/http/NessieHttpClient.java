@@ -42,17 +42,14 @@ import org.projectnessie.client.rest.NessieHttpResponseFilter;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 
-public class NessieHttpClient implements NessieClient {
+public class NessieHttpClient extends NessieApiClient implements NessieClient {
 
-  private final ObjectMapper mapper =
+  private static final ObjectMapper MAPPER =
       new ObjectMapper()
           .enable(SerializationFeature.INDENT_OUTPUT)
           .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
 
   private final HttpClient client;
-  private final HttpConfigApi config;
-  private final HttpTreeApi tree;
-  private final HttpContentsApi contents;
 
   /**
    * Create new HTTP {@link NessieClient}. All REST api endpoints are mapped here. This client
@@ -69,23 +66,28 @@ public class NessieHttpClient implements NessieClient {
       boolean enableTracing,
       int readTimeout,
       int connectionTimeoutMillis) {
-    this.client =
+    this(
         HttpClient.builder()
             .setBaseUri(uri)
-            .setObjectMapper(mapper)
+            .setObjectMapper(MAPPER)
             .setReadTimeoutMillis(readTimeout)
             .setConnectionTimeoutMillis(connectionTimeoutMillis)
-            .build();
+            .build());
     if (enableTracing) {
       addTracing(client);
     }
     if (authentication != null) {
       authentication.applyToHttpClient(client);
     }
-    client.register(new NessieHttpResponseFilter(mapper));
-    contents = wrap(HttpContentsApi.class, new HttpContentsClient(client));
-    tree = wrap(HttpTreeApi.class, new HttpTreeClient(client));
-    config = wrap(HttpConfigApi.class, new HttpConfigClient(client));
+    client.register(new NessieHttpResponseFilter(MAPPER));
+  }
+
+  private NessieHttpClient(HttpClient client) {
+    super(
+        wrap(HttpConfigApi.class, new HttpConfigClient(client)),
+        wrap(HttpTreeApi.class, new HttpTreeClient(client)),
+        wrap(HttpContentsApi.class, new HttpContentsClient(client)));
+    this.client = client;
   }
 
   private static void addTracing(HttpClient httpClient) {
@@ -134,7 +136,7 @@ public class NessieHttpClient implements NessieClient {
   }
 
   @SuppressWarnings("unchecked")
-  private <T> T wrap(Class<T> iface, T delegate) {
+  private static <T> T wrap(Class<T> iface, T delegate) {
     return (T)
         Proxy.newProxyInstance(
             delegate.getClass().getClassLoader(),
@@ -181,21 +183,6 @@ public class NessieHttpClient implements NessieClient {
   @Override
   public URI getUri() {
     return client.getBaseUri();
-  }
-
-  @Override
-  public HttpTreeApi getTreeApi() {
-    return tree;
-  }
-
-  @Override
-  public HttpContentsApi getContentsApi() {
-    return contents;
-  }
-
-  @Override
-  public HttpConfigApi getConfigApi() {
-    return config;
   }
 
   @Override

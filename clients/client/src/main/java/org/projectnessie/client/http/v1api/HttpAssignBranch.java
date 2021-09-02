@@ -16,7 +16,7 @@
 package org.projectnessie.client.http.v1api;
 
 import org.projectnessie.client.api.AssignBranchBuilder;
-import org.projectnessie.client.http.NessieHttpClient;
+import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -25,7 +25,7 @@ final class HttpAssignBranch extends BaseHttpOnBranchRequest<AssignBranchBuilder
     implements AssignBranchBuilder {
   private Branch assignTo;
 
-  HttpAssignBranch(NessieHttpClient client) {
+  HttpAssignBranch(NessieApiClient client) {
     super(client);
   }
 

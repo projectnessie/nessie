@@ -17,12 +17,12 @@ package org.projectnessie.client.http.v1api;
 
 import java.util.List;
 import org.projectnessie.client.api.GetAllReferencesBuilder;
-import org.projectnessie.client.http.NessieHttpClient;
+import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.model.Reference;
 
 final class HttpGetAllReferences extends BaseHttpRequest implements GetAllReferencesBuilder {
 
-  HttpGetAllReferences(NessieHttpClient client) {
+  HttpGetAllReferences(NessieApiClient client) {
     super(client);
   }
 

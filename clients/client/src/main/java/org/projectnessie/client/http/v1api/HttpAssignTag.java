@@ -16,7 +16,7 @@
 package org.projectnessie.client.http.v1api;
 
 import org.projectnessie.client.api.AssignTagBuilder;
-import org.projectnessie.client.http.NessieHttpClient;
+import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Tag;
@@ -26,7 +26,7 @@ final class HttpAssignTag extends BaseHttpOnTagRequest<AssignTagBuilder>
 
   private Tag assignTo;
 
-  HttpAssignTag(NessieHttpClient client) {
+  HttpAssignTag(NessieApiClient client) {
     super(client);
   }
 

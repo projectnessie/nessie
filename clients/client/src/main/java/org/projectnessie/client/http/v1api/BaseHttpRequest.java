@@ -15,13 +15,13 @@
  */
 package org.projectnessie.client.http.v1api;
 
-import org.projectnessie.client.http.NessieHttpClient;
+import org.projectnessie.client.http.NessieApiClient;
 
 abstract class BaseHttpRequest {
 
-  protected final NessieHttpClient client;
+  protected final NessieApiClient client;
 
-  BaseHttpRequest(NessieHttpClient client) {
+  BaseHttpRequest(NessieApiClient client) {
     this.client = client;
   }
 }
