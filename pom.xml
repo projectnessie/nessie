@@ -748,7 +748,7 @@
         <plugin>
           <groupId>org.jboss.jandex</groupId>
           <artifactId>jandex-maven-plugin</artifactId>
-          <version>1.1.1</version>
+          <version>1.2.0</version>
         </plugin>
         <plugin>
           <groupId>io.quarkus</groupId>
