@@ -201,6 +201,7 @@ def list_logs(
     hash_on_ref: Optional[str] = None,
     ssl_verify: bool = True,
     max_records: Optional[int] = None,
+    fetch_additional_info: bool = False,
     **filtering_args: Any
 ) -> dict:
     """Fetch a list of all logs from a known starting reference.
@@ -219,6 +220,8 @@ def list_logs(
         params["hashOnRef"] = hash_on_ref
     if max_records:
         params["max"] = max_records
+    if fetch_additional_info:
+        params["fetchAdditionalInfo"] = "true"
     return cast(dict, _get(base_url + "/trees/tree/{}/log".format(ref), auth, ssl_verify=ssl_verify, params=filtering_args))
 
 

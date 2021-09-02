@@ -37,6 +37,7 @@ import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableDelete;
 import org.projectnessie.model.ImmutableOperations;
+import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
@@ -252,12 +253,12 @@ class TestAuthorizationRules extends BaseClientAuthTest {
   private void getCommitLog(String branchName, String role, boolean shouldFail)
       throws NessieNotFoundException {
     if (shouldFail) {
-      assertThatThrownBy(() -> api().getCommitLog().refName(branchName).get().getOperations())
+      assertThatThrownBy(() -> api().getCommitLog().refName(branchName).get().getLogEntries())
           .isInstanceOf(NessieForbiddenException.class)
           .hasMessageContaining(
               String.format("'LIST_COMMIT_LOG' is not allowed for role '%s' on reference", role));
     } else {
-      List<CommitMeta> commits = api().getCommitLog().refName(branchName).get().getOperations();
+      List<LogEntry> commits = api().getCommitLog().refName(branchName).get().getLogEntries();
       assertThat(commits).isNotEmpty();
     }
   }

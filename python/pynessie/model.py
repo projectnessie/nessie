@@ -173,13 +173,22 @@ class Operation:
 
     key: ContentKey = desert.ib(fields.Nested(ContentKeySchema))
 
+    def pretty_print(self: "Operation") -> str:
+        """Print out for cli."""
+        pass
+
 
 @attr.dataclass
 class Put(Operation):
     """Single Commit Operation."""
 
     content: Content = desert.ib(fields.Nested(ContentSchema))
-    expectedContent: Optional[Content] = attr.ib(default=None, metadata=desert.metadata(fields.Nested(ContentSchema)))
+    expectedContent: Optional[Content] = attr.ib(default=None, metadata=desert.metadata(fields.Nested(ContentSchema, allow_none=True)))
+
+    def pretty_print(self: "Put") -> str:
+        """Print out for cli."""
+        # pylint: disable=E1101
+        return f"Put of {self.key.to_string()} : {self.content.pretty_print()}"
 
 
 PutOperationSchema = desert.schema_class(Put)
@@ -189,7 +198,10 @@ PutOperationSchema = desert.schema_class(Put)
 class Delete(Operation):
     """Delete single key."""
 
-    pass
+    def pretty_print(self: "Delete") -> str:
+        """Print out for cli."""
+        # pylint: disable=E1101
+        return f"Delete of {self.key.to_string()}"
 
 
 DeleteOperationSchema = desert.schema_class(Delete)
@@ -335,10 +347,22 @@ CommitMetaSchema = desert.schema_class(CommitMeta)
 
 
 @attr.dataclass
+class LogEntry:
+    """Dataclass for commit log entries."""
+
+    commit_meta: CommitMeta = desert.ib(fields.Nested(CommitMetaSchema, data_key="commitMeta"))
+    parent_commit_hash: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True, data_key="parentCommitHash")))
+    operations: List[Operation] = desert.ib(marshmallow_field=fields.List(fields.Nested(OperationsSchema()), allow_none=True), default=None)
+
+
+LogEntrySchema = desert.schema_class(LogEntry)
+
+
+@attr.dataclass
 class LogResponse:
     """Dataclass for Log Response."""
 
-    operations: List[CommitMeta] = desert.ib(fields.List(fields.Nested(CommitMetaSchema())))
+    log_entries: List[LogEntry] = desert.ib(fields.List(fields.Nested(LogEntrySchema()), data_key="logEntries"))
     has_more: bool = attr.ib(default=False, metadata=desert.metadata(fields.Bool(allow_none=True, data_key="hasMore")))
     token: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True)))
 

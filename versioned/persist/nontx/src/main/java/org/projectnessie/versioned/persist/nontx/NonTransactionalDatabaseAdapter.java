@@ -430,6 +430,29 @@ public abstract class NonTransactionalDatabaseAdapter<
   }
 
   @Override
+  public Optional<ContentIdAndBytes> globalContent(
+      ContentId contentId, ToIntFunction<ByteString> contentTypeExtractor) {
+    NonTransactionalOperationContext ctx = NON_TRANSACTIONAL_OPERATION_CONTEXT;
+
+    GlobalStatePointer pointer = fetchGlobalPointer(ctx);
+    if (pointer == null) {
+      return Optional.empty();
+    }
+
+    return globalLogFetcher(ctx, Hash.of(pointer.getGlobalId()))
+        .flatMap(e -> e.getPutsList().stream())
+        .map(ProtoSerialization::protoToContentIdAndBytes)
+        .filter(entry -> contentId.equals(entry.getContentId()))
+        .map(
+            cb ->
+                ContentIdAndBytes.of(
+                    cb.getContentId(),
+                    (byte) contentTypeExtractor.applyAsInt(cb.getValue()),
+                    cb.getValue()))
+        .findFirst();
+  }
+
+  @Override
   public Stream<ContentIdAndBytes> globalContent(
       Set<ContentId> keys, ToIntFunction<ByteString> contentTypeExtractor) {
     NonTransactionalOperationContext ctx = NON_TRANSACTIONAL_OPERATION_CONTEXT;

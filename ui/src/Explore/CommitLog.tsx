@@ -18,7 +18,7 @@ import { Button, Card, Nav } from "react-bootstrap";
 import moment from "moment";
 import React, { useEffect, useState, Fragment } from "react";
 import { useParams, useHistory, useLocation, Redirect } from "react-router-dom";
-import { api, CommitMeta, LogResponse } from "../utils";
+import { api, LogEntry, LogResponse } from "../utils";
 import { factory } from "../ConfigLog4j";
 import CodeIcon from "@material-ui/icons/Code";
 import "./CommitLog.css";
@@ -51,20 +51,22 @@ const CommitLog = (props: {
 }): React.ReactElement => {
   const { currentRef, path } = props;
   const { slug } = useParams<{ slug: string }>();
-  const [logList, setLogList] = useState<CommitMeta[]>([
+  const [logList, setLogList] = useState<LogEntry[]>([
     {
-      author: undefined,
-      authorTime: undefined,
-      commitTime: undefined,
-      committer: undefined,
-      hash: undefined,
-      message: "",
-      properties: {},
-      signedOffBy: undefined,
+      commitMeta: {
+        author: undefined,
+        authorTime: undefined,
+        commitTime: undefined,
+        committer: undefined,
+        hash: undefined,
+        message: "",
+        properties: {},
+        signedOffBy: undefined,
+      },
     },
   ]);
   const [showCommitDetails, setShowCommitDetails] = useState(false);
-  const [commitDetails, setCommitDetails] = useState<CommitMeta | undefined>();
+  const [commitDetails, setCommitDetails] = useState<LogEntry | undefined>();
   const [isRefNotFound, setRefNotFound] = useState(false);
   const [hasMoreLog, setHasMoreLog] = useState<LogResponse["hasMore"]>(false);
   const [paginationToken, setPaginationToken] =
@@ -80,11 +82,11 @@ const CommitLog = (props: {
     const fetchLogResults = await fetchLog(currentRef, rowsPerPage, pageToken);
     if (fetchLogResults) {
       const { hasMore, token } = fetchLogResults;
-      const operations =
-        fetchLogResults.operations && fetchLogResults.operations.length > 0
-          ? fetchLogResults.operations
+      const logEntries =
+        fetchLogResults.logEntries && fetchLogResults.logEntries.length > 0
+          ? fetchLogResults.logEntries
           : [];
-      const dataList = isResetData ? operations : logList.concat(operations);
+      const dataList = isResetData ? logEntries : logList.concat(logEntries);
       setLogList(dataList);
       setRefNotFound(false);
       setHasMoreLog(hasMore);
@@ -96,11 +98,11 @@ const CommitLog = (props: {
       const fetchLogResults = await fetchLog(currentRef, rowsPerPage);
       if (fetchLogResults) {
         const { hasMore, token } = fetchLogResults;
-        const operations =
-          fetchLogResults.operations && fetchLogResults.operations.length > 0
-            ? fetchLogResults.operations
+        const logEntries =
+          fetchLogResults.logEntries && fetchLogResults.logEntries.length > 0
+            ? fetchLogResults.logEntries
             : [];
-        setLogList(operations);
+        setLogList(logEntries);
         setRefNotFound(false);
         setHasMoreLog(hasMore);
         setPaginationToken(token);
@@ -122,7 +124,9 @@ const CommitLog = (props: {
     if (slug && !isRefNotFound) {
       const last = slug.substring(slug.lastIndexOf("/") + 1, slug.length);
       setShowCommitDetails(last !== routeSlugs.commits);
-      const logDetails = logList.find((logItem) => logItem.hash === last);
+      const logDetails = logList.find((logItem) => {
+        return logItem.commitMeta && logItem.commitMeta.hash === last;
+      });
       setCommitDetails(logDetails);
     }
   }, [slug, logList]);
@@ -131,15 +135,15 @@ const CommitLog = (props: {
     return <Redirect to="/notfound" />;
   }
 
-  if (!logList || logList.length === 0 || !logList[0].hash) {
+  if (!logList || logList.length === 0 || !logList[0].commitMeta.hash) {
     return <EmptyMessageView />;
   }
 
   const copyHash = async (hashCode: string) => {
     await navigator.clipboard.writeText(hashCode);
   };
-  const commitList = (currentLog: CommitMeta, index: number) => {
-    const { commitTime, author, message, hash } = currentLog;
+  const commitList = (currentLog: LogEntry, index: number) => {
+    const { commitTime, author, message, hash } = currentLog.commitMeta;
     const hoursDiff = moment().diff(moment(commitTime), "hours");
     const dateTimeAgo =
       hoursDiff > 24

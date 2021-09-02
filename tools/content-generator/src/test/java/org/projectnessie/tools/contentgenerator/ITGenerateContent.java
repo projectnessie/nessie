@@ -58,7 +58,7 @@ class ITGenerateContent {
                   }))
           .isEqualTo(0);
 
-      assertThat(api.getCommitLog().refName(testCaseBranch).get().getOperations())
+      assertThat(api.getCommitLog().refName(testCaseBranch).get().getLogEntries())
           .hasSize(numCommits);
     }
   }

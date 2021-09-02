@@ -182,6 +182,11 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
     return content instanceof IcebergTable;
   }
 
+  @Override
+  public boolean requiresGlobalState(Type type) {
+    return type == Type.ICEBERG_TABLE;
+  }
+
   private static ObjectTypes.Content parse(ByteString onReferenceValue) {
     try {
       return ObjectTypes.Content.parseFrom(onReferenceValue);

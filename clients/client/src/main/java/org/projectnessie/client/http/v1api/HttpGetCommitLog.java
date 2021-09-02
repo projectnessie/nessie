@@ -31,6 +31,12 @@ final class HttpGetCommitLog extends BaseHttpOnReferenceRequest<GetCommitLogBuil
   }
 
   @Override
+  public GetCommitLogBuilder fetchAdditionalInfo(boolean fetchAdditionalInfo) {
+    params.fetchAdditionalInfo(fetchAdditionalInfo);
+    return this;
+  }
+
+  @Override
   public GetCommitLogBuilder untilHash(String untilHash) {
     params.startHash(untilHash);
     return this;

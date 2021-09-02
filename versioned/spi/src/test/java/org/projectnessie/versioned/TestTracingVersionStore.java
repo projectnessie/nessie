@@ -161,11 +161,17 @@ class TestTracingVersionStore {
                         "GetCommits", refNotFoundThrows)
                     .tag("nessie.version-store.ref", "BranchName{name=mock-branch}")
                     .function(
-                        vs -> vs.getCommits(BranchName.of("mock-branch")),
+                        vs -> vs.getCommits(BranchName.of("mock-branch"), false),
                         () ->
                             Stream.of(
-                                WithHash.of(Hash.of("cafebabe"), "log#1"),
-                                WithHash.of(Hash.of("deadbeef"), "log#2"))),
+                                Commit.builder()
+                                    .hash(Hash.of("cafebabe"))
+                                    .commitMeta("log#1")
+                                    .build(),
+                                Commit.builder()
+                                    .hash(Hash.of("deadbeef"))
+                                    .commitMeta("log#2")
+                                    .build())),
                 new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>(
                         "GetKeys", refNotFoundThrows)
                     .tag("nessie.version-store.ref", "Hash cafe4242")

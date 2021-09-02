@@ -35,10 +35,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import java.net.URI;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -83,6 +85,7 @@ import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
 import org.projectnessie.model.ImmutableSqlView;
 import org.projectnessie.model.LogResponse;
+import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
@@ -329,7 +332,7 @@ public abstract class AbstractTestRest {
         .commitMeta(CommitMeta.fromMessage("One dummy op"))
         .commit();
     log = api.getCommitLog().refName(branchName).get();
-    String newHash = log.getOperations().get(0).getHash();
+    String newHash = log.getLogEntries().get(0).getCommitMeta().getHash();
 
     api.assignTag()
         .tagName(tagName)
@@ -364,7 +367,7 @@ public abstract class AbstractTestRest {
     createCommits(branch, numAuthors, commitsPerAuthor, currentHash);
     LogResponse log = api.getCommitLog().refName(branch.getName()).get();
     assertThat(log).isNotNull();
-    assertThat(log.getOperations()).hasSize(numAuthors * commitsPerAuthor);
+    assertThat(log.getLogEntries()).hasSize(numAuthors * commitsPerAuthor);
 
     log =
         api.getCommitLog()
@@ -372,8 +375,9 @@ public abstract class AbstractTestRest {
             .queryExpression("commit.author == 'author-3'")
             .get();
     assertThat(log).isNotNull();
-    assertThat(log.getOperations()).hasSize(commitsPerAuthor);
-    log.getOperations().forEach(commit -> assertThat(commit.getAuthor()).isEqualTo("author-3"));
+    assertThat(log.getLogEntries()).hasSize(commitsPerAuthor);
+    log.getLogEntries()
+        .forEach(commit -> assertThat(commit.getCommitMeta().getAuthor()).isEqualTo("author-3"));
 
     log =
         api.getCommitLog()
@@ -382,7 +386,7 @@ public abstract class AbstractTestRest {
                 "commit.author == 'author-3' && commit.committer == 'random-committer'")
             .get();
     assertThat(log).isNotNull();
-    assertThat(log.getOperations()).isEmpty();
+    assertThat(log.getLogEntries()).isEmpty();
 
     log =
         api.getCommitLog()
@@ -390,8 +394,9 @@ public abstract class AbstractTestRest {
             .queryExpression("commit.author == 'author-3' && commit.committer == ''")
             .get();
     assertThat(log).isNotNull();
-    assertThat(log.getOperations()).hasSize(commitsPerAuthor);
-    log.getOperations().forEach(commit -> assertThat(commit.getAuthor()).isEqualTo("author-3"));
+    assertThat(log.getLogEntries()).hasSize(commitsPerAuthor);
+    log.getLogEntries()
+        .forEach(commit -> assertThat(commit.getCommitMeta().getAuthor()).isEqualTo("author-3"));
 
     log =
         api.getCommitLog()
@@ -399,12 +404,12 @@ public abstract class AbstractTestRest {
             .queryExpression("commit.author in ['author-1', 'author-3', 'author-4']")
             .get();
     assertThat(log).isNotNull();
-    assertThat(log.getOperations()).hasSize(commitsPerAuthor * 3);
-    log.getOperations()
+    assertThat(log.getLogEntries()).hasSize(commitsPerAuthor * 3);
+    log.getLogEntries()
         .forEach(
             commit ->
                 assertThat(ImmutableList.of("author-1", "author-3", "author-4"))
-                    .contains(commit.getAuthor()));
+                    .contains(commit.getCommitMeta().getAuthor()));
 
     log =
         api.getCommitLog()
@@ -412,12 +417,12 @@ public abstract class AbstractTestRest {
             .queryExpression("!(commit.author in ['author-1', 'author-0'])")
             .get();
     assertThat(log).isNotNull();
-    assertThat(log.getOperations()).hasSize(commitsPerAuthor * 3);
-    log.getOperations()
+    assertThat(log.getLogEntries()).hasSize(commitsPerAuthor * 3);
+    log.getLogEntries()
         .forEach(
             commit ->
                 assertThat(ImmutableList.of("author-2", "author-3", "author-4"))
-                    .contains(commit.getAuthor()));
+                    .contains(commit.getCommitMeta().getAuthor()));
 
     log =
         api.getCommitLog()
@@ -425,11 +430,12 @@ public abstract class AbstractTestRest {
             .queryExpression("commit.author.matches('au.*-(2|4)')")
             .get();
     assertThat(log).isNotNull();
-    assertThat(log.getOperations()).hasSize(commitsPerAuthor * 2);
-    log.getOperations()
+    assertThat(log.getLogEntries()).hasSize(commitsPerAuthor * 2);
+    log.getLogEntries()
         .forEach(
             commit ->
-                assertThat(ImmutableList.of("author-2", "author-4")).contains(commit.getAuthor()));
+                assertThat(ImmutableList.of("author-2", "author-4"))
+                    .contains(commit.getCommitMeta().getAuthor()));
   }
 
   @Test
@@ -444,12 +450,12 @@ public abstract class AbstractTestRest {
     createCommits(branch, numAuthors, commitsPerAuthor, currentHash);
     LogResponse log = api.getCommitLog().refName(branch.getName()).get();
     assertThat(log).isNotNull();
-    assertThat(log.getOperations()).hasSize(expectedTotalSize);
+    assertThat(log.getLogEntries()).hasSize(expectedTotalSize);
 
     Instant initialCommitTime =
-        log.getOperations().get(log.getOperations().size() - 1).getCommitTime();
+        log.getLogEntries().get(log.getLogEntries().size() - 1).getCommitMeta().getCommitTime();
     assertThat(initialCommitTime).isNotNull();
-    Instant lastCommitTime = log.getOperations().get(0).getCommitTime();
+    Instant lastCommitTime = log.getLogEntries().get(0).getCommitMeta().getCommitTime();
     assertThat(lastCommitTime).isNotNull();
     Instant fiveMinLater = initialCommitTime.plus(5, ChronoUnit.MINUTES);
 
@@ -460,9 +466,11 @@ public abstract class AbstractTestRest {
                 String.format("timestamp(commit.commitTime) > timestamp('%s')", initialCommitTime))
             .get();
     assertThat(log).isNotNull();
-    assertThat(log.getOperations()).hasSize(expectedTotalSize - 1);
-    log.getOperations()
-        .forEach(commit -> assertThat(commit.getCommitTime()).isAfter(initialCommitTime));
+    assertThat(log.getLogEntries()).hasSize(expectedTotalSize - 1);
+    log.getLogEntries()
+        .forEach(
+            commit ->
+                assertThat(commit.getCommitMeta().getCommitTime()).isAfter(initialCommitTime));
 
     log =
         api.getCommitLog()
@@ -471,9 +479,10 @@ public abstract class AbstractTestRest {
                 String.format("timestamp(commit.commitTime) < timestamp('%s')", fiveMinLater))
             .get();
     assertThat(log).isNotNull();
-    assertThat(log.getOperations()).hasSize(expectedTotalSize);
-    log.getOperations()
-        .forEach(commit -> assertThat(commit.getCommitTime()).isBefore(fiveMinLater));
+    assertThat(log.getLogEntries()).hasSize(expectedTotalSize);
+    log.getLogEntries()
+        .forEach(
+            commit -> assertThat(commit.getCommitMeta().getCommitTime()).isBefore(fiveMinLater));
 
     log =
         api.getCommitLog()
@@ -484,11 +493,11 @@ public abstract class AbstractTestRest {
                     initialCommitTime, lastCommitTime))
             .get();
     assertThat(log).isNotNull();
-    assertThat(log.getOperations()).hasSize(expectedTotalSize - 2);
-    log.getOperations()
+    assertThat(log.getLogEntries()).hasSize(expectedTotalSize - 2);
+    log.getLogEntries()
         .forEach(
             commit ->
-                assertThat(commit.getCommitTime())
+                assertThat(commit.getCommitMeta().getCommitTime())
                     .isAfter(initialCommitTime)
                     .isBefore(lastCommitTime));
 
@@ -499,7 +508,7 @@ public abstract class AbstractTestRest {
                 String.format("timestamp(commit.commitTime) > timestamp('%s')", fiveMinLater))
             .get();
     assertThat(log).isNotNull();
-    assertThat(log.getOperations()).isEmpty();
+    assertThat(log.getLogEntries()).isEmpty();
   }
 
   @Test
@@ -513,7 +522,7 @@ public abstract class AbstractTestRest {
     createCommits(branch, numAuthors, commitsPerAuthor, currentHash);
     LogResponse log = api.getCommitLog().refName(branch.getName()).get();
     assertThat(log).isNotNull();
-    assertThat(log.getOperations()).hasSize(numAuthors * commitsPerAuthor);
+    assertThat(log.getLogEntries()).hasSize(numAuthors * commitsPerAuthor);
 
     log =
         api.getCommitLog()
@@ -521,9 +530,11 @@ public abstract class AbstractTestRest {
             .queryExpression("commit.properties['prop1'] == 'val1'")
             .get();
     assertThat(log).isNotNull();
-    assertThat(log.getOperations()).hasSize(numAuthors * commitsPerAuthor);
-    log.getOperations()
-        .forEach(commit -> assertThat(commit.getProperties().get("prop1")).isEqualTo("val1"));
+    assertThat(log.getLogEntries()).hasSize(numAuthors * commitsPerAuthor);
+    log.getLogEntries()
+        .forEach(
+            commit ->
+                assertThat(commit.getCommitMeta().getProperties().get("prop1")).isEqualTo("val1"));
 
     log =
         api.getCommitLog()
@@ -531,7 +542,7 @@ public abstract class AbstractTestRest {
             .queryExpression("commit.properties['prop1'] == 'val3'")
             .get();
     assertThat(log).isNotNull();
-    assertThat(log.getOperations()).isEmpty();
+    assertThat(log.getLogEntries()).isEmpty();
   }
 
   @Test
@@ -544,19 +555,19 @@ public abstract class AbstractTestRest {
     createCommits(branch, 1, numCommits, currentHash);
     LogResponse entireLog = api.getCommitLog().refName(branch.getName()).get();
     assertThat(entireLog).isNotNull();
-    assertThat(entireLog.getOperations()).hasSize(numCommits);
+    assertThat(entireLog.getLogEntries()).hasSize(numCommits);
 
     // if startHash > endHash, then we return all commits starting from startHash
-    String startHash = entireLog.getOperations().get(numCommits / 2).getHash();
-    String endHash = entireLog.getOperations().get(0).getHash();
+    String startHash = entireLog.getLogEntries().get(numCommits / 2).getCommitMeta().getHash();
+    String endHash = entireLog.getLogEntries().get(0).getCommitMeta().getHash();
     LogResponse log =
         api.getCommitLog().refName(branch.getName()).hashOnRef(endHash).untilHash(startHash).get();
     assertThat(log).isNotNull();
-    assertThat(log.getOperations()).hasSize(numCommits / 2 + 1);
+    assertThat(log.getLogEntries()).hasSize(numCommits / 2 + 1);
 
     for (int i = 0, j = numCommits - 1; i < j; i++, j--) {
-      startHash = entireLog.getOperations().get(j).getHash();
-      endHash = entireLog.getOperations().get(i).getHash();
+      startHash = entireLog.getLogEntries().get(j).getCommitMeta().getHash();
+      endHash = entireLog.getLogEntries().get(i).getCommitMeta().getHash();
       log =
           api.getCommitLog()
               .refName(branch.getName())
@@ -564,9 +575,9 @@ public abstract class AbstractTestRest {
               .untilHash(startHash)
               .get();
       assertThat(log).isNotNull();
-      assertThat(log.getOperations()).hasSize(numCommits - (i * 2));
-      assertThat(ImmutableList.copyOf(entireLog.getOperations()).subList(i, j + 1))
-          .containsExactlyElementsOf(log.getOperations());
+      assertThat(log.getLogEntries()).hasSize(numCommits - (i * 2));
+      assertThat(ImmutableList.copyOf(entireLog.getLogEntries()).subList(i, j + 1))
+          .containsExactlyElementsOf(log.getLogEntries());
     }
   }
 
@@ -609,21 +620,26 @@ public abstract class AbstractTestRest {
     createCommits(branch, numAuthors, commits, branch.getHash());
     LogResponse log = api.getCommitLog().refName(branch.getName()).get();
     assertThat(log).isNotNull();
-    assertThat(log.getOperations()).hasSize(expectedTotalSize);
+    assertThat(log.getLogEntries()).hasSize(expectedTotalSize);
 
     String author = "author-1";
     List<String> messagesOfAuthorOne =
-        log.getOperations().stream()
+        log.getLogEntries().stream()
+            .map(LogEntry::getCommitMeta)
             .filter(c -> author.equals(c.getAuthor()))
             .map(CommitMeta::getMessage)
             .collect(Collectors.toList());
     verifyPaging(branch.getName(), commits, pageSizeHint, messagesOfAuthorOne, author);
 
     List<String> allMessages =
-        log.getOperations().stream().map(CommitMeta::getMessage).collect(Collectors.toList());
+        log.getLogEntries().stream()
+            .map(LogEntry::getCommitMeta)
+            .map(CommitMeta::getMessage)
+            .collect(Collectors.toList());
     List<CommitMeta> completeLog =
         StreamingUtil.getCommitLogStream(
                 api, branch.getName(), null, null, null, OptionalInt.of(pageSizeHint))
+            .map(LogEntry::getCommitMeta)
             .collect(Collectors.toList());
     assertThat(completeLog.stream().map(CommitMeta::getMessage))
         .containsExactlyElementsOf(allMessages);
@@ -660,6 +676,7 @@ public abstract class AbstractTestRest {
     List<CommitMeta> completeLog =
         StreamingUtil.getCommitLogStream(
                 api, branch.getName(), null, null, null, OptionalInt.of(pageSizeHint))
+            .map(LogEntry::getCommitMeta)
             .collect(Collectors.toList());
     assertEquals(
         completeLog.stream().map(CommitMeta::getMessage).collect(Collectors.toList()), allMessages);
@@ -713,7 +730,8 @@ public abstract class AbstractTestRest {
         .transplant();
 
     LogResponse log = api.getCommitLog().refName(base.getName()).untilHash(base.getHash()).get();
-    assertThat(log.getOperations().stream().map(CommitMeta::getMessage))
+    assertThat(
+            log.getLogEntries().stream().map(LogEntry::getCommitMeta).map(CommitMeta::getMessage))
         .containsExactly(
             "test-transplant-branch2", "test-transplant-branch1", "test-transplant-main");
 
@@ -759,7 +777,8 @@ public abstract class AbstractTestRest {
     api.mergeRefIntoBranch().branch(base).fromRef(committed2).merge();
 
     LogResponse log = api.getCommitLog().refName(base.getName()).untilHash(base.getHash()).get();
-    assertThat(log.getOperations().stream().map(CommitMeta::getMessage))
+    assertThat(
+            log.getLogEntries().stream().map(LogEntry::getCommitMeta).map(CommitMeta::getMessage))
         .containsExactly("test-merge-branch2", "test-merge-branch1", "test-merge-main");
 
     assertThat(
@@ -793,7 +812,8 @@ public abstract class AbstractTestRest {
         assertNotNull(response.getToken());
         assertEquals(
             commitMessages.subList(pos, pos + pageSizeHint),
-            response.getOperations().stream()
+            response.getLogEntries().stream()
+                .map(LogEntry::getCommitMeta)
                 .map(CommitMeta::getMessage)
                 .collect(Collectors.toList()));
         pageToken = response.getToken();
@@ -802,7 +822,8 @@ public abstract class AbstractTestRest {
         assertNull(response.getToken());
         assertEquals(
             commitMessages.subList(pos, commitMessages.size()),
-            response.getOperations().stream()
+            response.getLogEntries().stream()
+                .map(LogEntry::getCommitMeta)
                 .map(CommitMeta::getMessage)
                 .collect(Collectors.toList()));
         break;
@@ -1681,7 +1702,7 @@ public abstract class AbstractTestRest {
     createCommits(branch, 1, commits, currentHash);
     LogResponse entireLog = api.getCommitLog().refName(branch.getName()).get();
     assertThat(entireLog).isNotNull();
-    assertThat(entireLog.getOperations()).hasSize(commits);
+    assertThat(entireLog.getLogEntries()).hasSize(commits);
 
     EntriesResponse allEntries = api.getEntries().refName(branch.getName()).get();
     assertThat(allEntries).isNotNull();
@@ -1695,12 +1716,12 @@ public abstract class AbstractTestRest {
         api.getContent().keys(keys).refName(branch.getName()).get();
 
     for (int i = 0; i < commits; i++) {
-      String hash = entireLog.getOperations().get(i).getHash();
+      String hash = entireLog.getLogEntries().get(i).getCommitMeta().getHash();
       LogResponse log = api.getCommitLog().refName(branch.getName()).hashOnRef(hash).get();
       assertThat(log).isNotNull();
-      assertThat(log.getOperations()).hasSize(commits - i);
-      assertThat(ImmutableList.copyOf(entireLog.getOperations()).subList(i, commits))
-          .containsExactlyElementsOf(log.getOperations());
+      assertThat(log.getLogEntries()).hasSize(commits - i);
+      assertThat(ImmutableList.copyOf(entireLog.getLogEntries()).subList(i, commits))
+          .containsExactlyElementsOf(log.getLogEntries());
 
       EntriesResponse entries = api.getEntries().refName(branch.getName()).hashOnRef(hash).get();
       assertThat(entries).isNotNull();
@@ -1768,7 +1789,7 @@ public abstract class AbstractTestRest {
     Reference main = api.getReference().refName("main").get();
     // make sure main doesn't have any commits
     LogResponse log = api.getCommitLog().refName(main.getName()).get();
-    assertThat(log.getOperations()).isEmpty();
+    assertThat(log.getLogEntries()).isEmpty();
 
     Branch testBranch = createBranch("testBranch");
     api.assignBranch().branch(testBranch).assignTo(main).assign();
@@ -1872,10 +1893,10 @@ public abstract class AbstractTestRest {
   private void verifyMetadataProperties(
       int expectedCommitsAhead, int expectedCommitsBehind, Branch branch, Reference reference)
       throws NessieNotFoundException {
-    List<CommitMeta> commits =
-        api.getCommitLog().refName(branch.getName()).maxRecords(1).get().getOperations();
+    List<LogEntry> commits =
+        api.getCommitLog().refName(branch.getName()).maxRecords(1).get().getLogEntries();
     assertThat(commits).hasSize(1);
-    CommitMeta commitMeta = commits.get(0);
+    CommitMeta commitMeta = commits.get(0).getCommitMeta();
 
     ReferenceMetadata referenceMetadata = branch.metadata();
     assertThat(referenceMetadata).isNotNull();
@@ -1886,10 +1907,10 @@ public abstract class AbstractTestRest {
   }
 
   private void verifyMetadataProperties(Tag tag) throws NessieNotFoundException {
-    List<CommitMeta> commits =
-        api.getCommitLog().refName(tag.getName()).maxRecords(1).get().getOperations();
+    List<LogEntry> commits =
+        api.getCommitLog().refName(tag.getName()).maxRecords(1).get().getLogEntries();
     assertThat(commits).hasSize(1);
-    CommitMeta commitMeta = commits.get(0);
+    CommitMeta commitMeta = commits.get(0).getCommitMeta();
 
     ReferenceMetadata referenceMetadata = tag.metadata();
     assertThat(referenceMetadata).isNotNull();
@@ -1897,6 +1918,92 @@ public abstract class AbstractTestRest {
     assertThat(referenceMetadata.numCommitsBehind()).isNull();
     assertThat(referenceMetadata.commitMetaOfHEAD()).isEqualTo(commitMeta);
     assertThat(referenceMetadata.commonAncestorHash()).isNull();
+  }
+
+  @Test
+  public void commitLogExtended() throws Exception {
+    String branch = "commitLogExtended";
+    String firstParent =
+        api.createReference()
+            .sourceRefName("main")
+            .reference(Branch.of(branch, null))
+            .create()
+            .getHash();
+
+    int numCommits = 10;
+
+    List<String> hashes =
+        IntStream.rangeClosed(1, numCommits)
+            .mapToObj(
+                i -> {
+                  try {
+                    String head = api.getReference().refName(branch).get().getHash();
+                    return api.commitMultipleOperations()
+                        .operation(
+                            Put.of(
+                                ContentKey.of("k" + i),
+                                IcebergTable.of("m" + i, i, i, i, i, "c" + i)))
+                        .operation(
+                            Put.of(
+                                ContentKey.of("key" + i),
+                                IcebergTable.of("meta" + i, i, i, i, i, "cid" + i)))
+                        .operation(Delete.of(ContentKey.of("delete" + i)))
+                        .commitMeta(CommitMeta.fromMessage("Commit #" + i))
+                        .branchName(branch)
+                        .hash(head)
+                        .commit()
+                        .getHash();
+                  } catch (Exception e) {
+                    throw new RuntimeException(e);
+                  }
+                })
+            .collect(Collectors.toList());
+    List<String> parentHashes =
+        Stream.concat(Stream.of(firstParent), hashes.subList(0, 9).stream())
+            .collect(Collectors.toList());
+
+    assertThat(
+            Lists.reverse(
+                api.getCommitLog().untilHash(firstParent).refName(branch).get().getLogEntries()))
+        .allSatisfy(
+            c -> {
+              assertThat(c.getOperations()).isNull();
+              assertThat(c.getParentCommitHash()).isNull();
+            })
+        .extracting(e -> e.getCommitMeta().getHash())
+        .containsExactlyElementsOf(hashes);
+
+    List<LogEntry> commits =
+        Lists.reverse(
+            api.getCommitLog()
+                .fetchAdditionalInfo(true)
+                .untilHash(firstParent)
+                .refName(branch)
+                .get()
+                .getLogEntries());
+    assertThat(IntStream.rangeClosed(1, numCommits))
+        .allSatisfy(
+            i -> {
+              LogEntry c = commits.get(i - 1);
+              assertThat(c)
+                  .extracting(
+                      e -> e.getCommitMeta().getMessage(),
+                      e -> e.getCommitMeta().getHash(),
+                      LogEntry::getParentCommitHash,
+                      LogEntry::getOperations)
+                  .containsExactly(
+                      "Commit #" + i,
+                      hashes.get(i - 1),
+                      parentHashes.get(i - 1),
+                      Arrays.asList(
+                          Delete.of(ContentKey.of("delete" + i)),
+                          Put.of(
+                              ContentKey.of("k" + i),
+                              IcebergTable.of("m" + i, i, i, i, i, "c" + i)),
+                          Put.of(
+                              ContentKey.of("key" + i),
+                              IcebergTable.of("meta" + i, i, i, i, i, "cid" + i))));
+            });
   }
 
   protected void unwrap(Executable exec) throws Throwable {

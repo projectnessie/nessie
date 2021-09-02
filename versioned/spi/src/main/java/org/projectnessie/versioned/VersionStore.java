@@ -227,10 +227,12 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * Get a stream of all ancestor commits to a provided ref.
    *
    * @param ref the stream to get commits for.
+   * @param fetchAdditionalInfo include additional information like operations and parent hash
    * @return A stream of commits.
    * @throws ReferenceNotFoundException if {@code ref} is not present in the store
    */
-  Stream<WithHash<METADATA>> getCommits(Ref ref) throws ReferenceNotFoundException;
+  Stream<Commit<METADATA, VALUE>> getCommits(Ref ref, boolean fetchAdditionalInfo)
+      throws ReferenceNotFoundException;
 
   /**
    * Get a stream of all available keys for the given ref.

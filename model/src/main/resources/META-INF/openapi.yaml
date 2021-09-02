@@ -159,21 +159,54 @@ components:
               uuid: "b874b5d5-f926-4eed-9be7-b2380d9810c0"
               metadataLocation: "/path/to/metadata/"
 
-    logResponse:
+    logResponseAdditionalInfo:
       value:
         token: "xxx"
-        operations:
-          - author: "authorName <authorName@example.com>"
-            authorTime: "2021-04-07T14:42:25.534748Z"
-            commitTime: "2021-04-07T14:42:25.534748Z"
-            committer: "committerName <committerName@example.com>"
-            hash: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
-            message: "Example Commit Message"
-            properties:
-              additionalProp1: "xxx"
-              additionalProp2: "yyy"
-              additionalProp3: "zzz"
-            signedOffBy: "signedOffByName <signedOffBy@example.com>"
+        logEntries:
+          - commitMeta:
+              author: "authorName <authorName@example.com>"
+              authorTime: "2021-04-07T14:42:25.534748Z"
+              commitTime: "2021-04-07T14:42:25.534748Z"
+              committer: "committerName <committerName@example.com>"
+              hash: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
+              message: "Example Commit Message"
+              properties:
+                additionalProp1: "xxx"
+                additionalProp2: "yyy"
+                additionalProp3: "zzz"
+              signedOffBy: "signedOffByName <signedOffBy@example.com>"
+            parentCommitHash: "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d"
+            operations:
+              - type: DELETE
+                key:
+                  elements:
+                    - deleted
+                    - table
+              - type: PUT
+                key:
+                  elements:
+                    - example
+                    - key
+                content:
+                  type: ICEBERG_TABLE
+                  uuid: "b874b5d5-f926-4eed-9be7-b2380d9810c0"
+                  metadataLocation: "/path/to/metadata/"
+    logResponseSimple:
+      value:
+        token: "xxx"
+        logEntries:
+          - commitMeta:
+              author: "authorName <authorName@example.com>"
+              authorTime: "2021-04-07T14:42:25.534748Z"
+              commitTime: "2021-04-07T14:42:25.534748Z"
+              committer: "committerName <committerName@example.com>"
+              hash: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
+              message: "Example Commit Message"
+              properties:
+                additionalProp1: "xxx"
+                additionalProp2: "yyy"
+                additionalProp3: "zzz"
+              signedOffBy: "signedOffByName <signedOffBy@example.com>"
 
     referencesResponse:
       value:

@@ -27,6 +27,7 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.model.Content.Type;
+import org.projectnessie.model.LogResponse.LogEntry;
 
 /**
  * This test merely checks the JSON serialization/deserialization of the model classes, with an
@@ -98,33 +99,39 @@ public class TestModelObjectsSerialization {
                 .addNoQuotes("hasMore", true)),
         new Case(
             ImmutableLogResponse.builder()
-                .addOperations()
                 .token(HASH)
-                .addOperations(
-                    ImmutableCommitMeta.builder()
-                        .commitTime(now)
-                        .author("author@example.com")
-                        .committer("committer@example.com")
-                        .authorTime(now)
-                        .hash(HASH)
-                        .message("test commit")
-                        .putProperties("prop1", "val1")
-                        .signedOffBy("signer@example.com")
+                .addLogEntries(
+                    LogEntry.builder()
+                        .commitMeta(
+                            ImmutableCommitMeta.builder()
+                                .commitTime(now)
+                                .author("author@example.com")
+                                .committer("committer@example.com")
+                                .authorTime(now)
+                                .hash(HASH)
+                                .message("test commit")
+                                .putProperties("prop1", "val1")
+                                .signedOffBy("signer@example.com")
+                                .build())
                         .build())
                 .isHasMore(true)
                 .build(),
             LogResponse.class,
             Json.from("token", HASH)
                 .addArrNoQuotes(
-                    "operations",
-                    Json.from("hash", HASH)
-                        .add("committer", "committer@example.com")
-                        .add("author", "author@example.com")
-                        .add("signedOffBy", "signer@example.com")
-                        .add("message", "test commit")
-                        .add("commitTime", now.toString())
-                        .add("authorTime", now.toString())
-                        .addNoQuotes("properties", Json.from("prop1", "val1")))
+                    "logEntries",
+                    Json.noQuotes(
+                            "commitMeta",
+                            Json.from("hash", HASH)
+                                .add("committer", "committer@example.com")
+                                .add("author", "author@example.com")
+                                .add("signedOffBy", "signer@example.com")
+                                .add("message", "test commit")
+                                .add("commitTime", now.toString())
+                                .add("authorTime", now.toString())
+                                .addNoQuotes("properties", Json.from("prop1", "val1")))
+                        .addNoQuotes("parentCommitHash", null)
+                        .addNoQuotes("operations", null))
                 .addNoQuotes("hasMore", true)),
         new Case(
             ImmutableMerge.builder().fromHash(HASH).fromRefName(branchName).build(),
@@ -222,7 +229,8 @@ public class TestModelObjectsSerialization {
     }
 
     public Json addNoQuotes(String key, Object val) {
-      this.currentContent = String.format(NO_QUOTES_KV_FORMAT, currentContent, key, val.toString());
+      String v = val != null ? val.toString() : "null";
+      this.currentContent = String.format(NO_QUOTES_KV_FORMAT, currentContent, key, v);
       return this;
     }
 

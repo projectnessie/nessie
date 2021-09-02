@@ -180,9 +180,12 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
   }
 
   @Override
-  public Stream<WithHash<METADATA>> getCommits(Ref ref) throws ReferenceNotFoundException {
+  public Stream<Commit<METADATA, VALUE>> getCommits(Ref ref, boolean fetchAdditionalInfo)
+      throws ReferenceNotFoundException {
     return callStreamWithOneException(
-        "GetCommits", b -> b.withTag(TAG_REF, safeToString(ref)), () -> delegate.getCommits(ref));
+        "GetCommits",
+        b -> b.withTag(TAG_REF, safeToString(ref)),
+        () -> delegate.getCommits(ref, fetchAdditionalInfo));
   }
 
   @Override

@@ -106,6 +106,11 @@ public final class StringStoreWorker implements StoreWorker<String, String, Test
   }
 
   @Override
+  public boolean requiresGlobalState(TestEnum testEnum) {
+    return true;
+  }
+
+  @Override
   public Serializer<String> getMetadataSerializer() {
     return METADATA;
   }

@@ -63,6 +63,16 @@ public class CommitLogParams extends AbstractParams {
   @QueryParam("query_expression")
   private String queryExpression;
 
+  @Parameter(
+      description =
+          "If set to true, will fetch additional metadata, parent commit hash and operations in a commit, for each commit.")
+  @QueryParam("fetchAdditionalInfo")
+  private boolean fetchAdditionalInfo;
+
+  public boolean isFetchAdditionalInfo() {
+    return fetchAdditionalInfo;
+  }
+
   public CommitLogParams() {}
 
   private CommitLogParams(
@@ -70,11 +80,13 @@ public class CommitLogParams extends AbstractParams {
       String endHash,
       Integer maxRecords,
       String pageToken,
-      String queryExpression) {
+      String queryExpression,
+      boolean fetchAdditionalInfo) {
     super(maxRecords, pageToken);
     this.startHash = startHash;
     this.endHash = endHash;
     this.queryExpression = queryExpression;
+    this.fetchAdditionalInfo = fetchAdditionalInfo;
   }
 
   private CommitLogParams(Builder builder) {
@@ -83,7 +95,8 @@ public class CommitLogParams extends AbstractParams {
         builder.endHash,
         builder.maxRecords,
         builder.pageToken,
-        builder.queryExpression);
+        builder.queryExpression,
+        builder.fetchAdditionalInfo);
   }
 
   @Nullable
@@ -116,6 +129,7 @@ public class CommitLogParams extends AbstractParams {
         .add("maxRecords=" + maxRecords())
         .add("pageToken='" + pageToken() + "'")
         .add("queryExpression='" + queryExpression + "'")
+        .add("fetchAdditionalInfo='" + fetchAdditionalInfo + "'")
         .toString();
   }
 
@@ -132,12 +146,14 @@ public class CommitLogParams extends AbstractParams {
         && Objects.equals(endHash, that.endHash)
         && Objects.equals(maxRecords(), that.maxRecords())
         && Objects.equals(pageToken(), that.pageToken())
-        && Objects.equals(queryExpression, that.queryExpression);
+        && Objects.equals(queryExpression, that.queryExpression)
+        && Objects.equals(fetchAdditionalInfo, that.fetchAdditionalInfo);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(startHash, endHash, maxRecords(), pageToken(), queryExpression);
+    return Objects.hash(
+        startHash, endHash, maxRecords(), pageToken(), queryExpression, fetchAdditionalInfo);
   }
 
   public static class Builder extends AbstractParams.Builder<Builder> {
@@ -145,6 +161,7 @@ public class CommitLogParams extends AbstractParams {
     private String startHash;
     private String endHash;
     private String queryExpression;
+    private boolean fetchAdditionalInfo;
 
     private Builder() {}
 
@@ -163,12 +180,18 @@ public class CommitLogParams extends AbstractParams {
       return this;
     }
 
+    public Builder fetchAdditionalInfo(boolean fetchAdditionalInfo) {
+      this.fetchAdditionalInfo = fetchAdditionalInfo;
+      return this;
+    }
+
     public Builder from(CommitLogParams params) {
       return startHash(params.startHash)
           .endHash(params.endHash)
           .maxRecords(params.maxRecords())
           .pageToken(params.pageToken())
-          .expression(params.queryExpression);
+          .expression(params.queryExpression)
+          .fetchAdditionalInfo(params.fetchAdditionalInfo);
     }
 
     private void validate() {}
