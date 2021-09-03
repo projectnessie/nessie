@@ -1354,7 +1354,7 @@ limitations under the License.
               </formats>
               <java>
                 <google-java-format>
-                  <version>1.10.0</version>
+                  <version>1.11.0</version>
                 </google-java-format>
                 <licenseHeader>
                   <file>${maven.multiModuleProjectDirectory}/codestyle/copyright-header-java.txt</file>
