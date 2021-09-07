@@ -42,6 +42,10 @@ public class TestTieredCommitsRocks extends AbstractTieredCommitsTest<RocksDatab
 
   @AfterAll
   static void closeRocks() {
-    instance.close();
+    try {
+      instance.close();
+    } finally {
+      instance = null;
+    }
   }
 }
