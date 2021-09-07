@@ -45,7 +45,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.ToIntFunction;
@@ -72,7 +71,6 @@ import org.projectnessie.versioned.persist.adapter.ContentsIdAndBytes;
 import org.projectnessie.versioned.persist.adapter.ContentsIdWithType;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
-import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.KeyWithType;
 import org.projectnessie.versioned.persist.adapter.spi.AbstractDatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.spi.TryLoopState;
@@ -453,8 +451,8 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
-  public Stream<ContentsIdAndBytes> globalLog(
-      Set<ContentsIdWithType> keys, ToIntFunction<ByteString> contentsTypeExtractor) {
+  public Stream<ContentsIdAndBytes> globalContents(
+      Set<ContentsId> keys, ToIntFunction<ByteString> contentsTypeExtractor) {
     // 1. Fetch the global states,
     // 1.1. filter the requested keys + contents-ids
     // 1.2. extract the current state from the GLOBAL_STATE table
@@ -467,16 +465,15 @@ public abstract class TxDatabaseAdapter
             ps -> {
               ps.setString(1, config.getKeyPrefix());
               int i = 2;
-              for (ContentsIdWithType key : keys) {
-                ps.setString(i++, key.getContentsId().getId());
+              for (ContentsId key : keys) {
+                ps.setString(i++, key.getId());
               }
             },
             (rs) -> {
               ContentsId cid = ContentsId.of(rs.getString(1));
               ByteString value = UnsafeByteOperations.unsafeWrap(rs.getBytes(2));
               byte type = (byte) contentsTypeExtractor.applyAsInt(value);
-              ContentsIdWithType ktFromResult = ContentsIdWithType.of(cid, type);
-              if (!keys.contains(ktFromResult)) {
+              if (!keys.contains(cid)) {
                 // 1.1. filter the requested keys + contents-ids
                 return null;
               }
@@ -485,39 +482,6 @@ public abstract class TxDatabaseAdapter
               return ContentsIdAndBytes.of(cid, type, value);
             })
         .onClose(() -> releaseConnection(conn));
-  }
-
-  @Override
-  public Stream<KeyWithBytes> allContents(
-      BiFunction<NamedRef, CommitLogEntry, Boolean> continueOnRefPredicate) {
-    Connection conn = borrowConnection();
-    boolean failed = true;
-    try {
-      List<WithHash<NamedRef>> allRefs;
-      try (Stream<WithHash<NamedRef>> namedRefs = fetchNamedRefs(conn)) {
-        allRefs = namedRefs.collect(Collectors.toList());
-      }
-
-      Stream<CommitLogEntry> logs =
-          allRefs.stream()
-              .flatMap(
-                  ref -> {
-                    try {
-                      return readCommitLogStream(conn, ref.getHash());
-                    } catch (ReferenceNotFoundException e) {
-                      return Stream.empty();
-                    }
-                  });
-
-      Stream<KeyWithBytes> result = logs.flatMap(l -> l.getPuts().stream());
-
-      failed = false;
-      return result.onClose(() -> releaseConnection(conn));
-    } finally {
-      if (failed) {
-        releaseConnection(conn);
-      }
-    }
   }
 
   // /////////////////////////////////////////////////////////////////////////////////////////////
