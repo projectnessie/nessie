@@ -16,14 +16,14 @@
 package org.projectnessie.client.http.v1api;
 
 import org.projectnessie.client.api.OnTagBuilder;
-import org.projectnessie.client.http.NessieHttpClient;
+import org.projectnessie.client.http.NessieApiClient;
 
 abstract class BaseHttpOnTagRequest<R extends OnTagBuilder<R>> extends BaseHttpRequest
     implements OnTagBuilder<R> {
   protected String tagName;
   protected String hash;
 
-  BaseHttpOnTagRequest(NessieHttpClient client) {
+  BaseHttpOnTagRequest(NessieApiClient client) {
     super(client);
   }
 

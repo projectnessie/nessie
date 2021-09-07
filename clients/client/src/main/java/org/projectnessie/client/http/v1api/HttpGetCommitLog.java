@@ -17,7 +17,7 @@ package org.projectnessie.client.http.v1api;
 
 import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.client.api.GetCommitLogBuilder;
-import org.projectnessie.client.http.NessieHttpClient;
+import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.LogResponse;
 
@@ -26,7 +26,7 @@ final class HttpGetCommitLog extends BaseHttpOnReferenceRequest<GetCommitLogBuil
 
   private final CommitLogParams.Builder params = CommitLogParams.builder();
 
-  HttpGetCommitLog(NessieHttpClient client) {
+  HttpGetCommitLog(NessieApiClient client) {
     super(client);
   }
 

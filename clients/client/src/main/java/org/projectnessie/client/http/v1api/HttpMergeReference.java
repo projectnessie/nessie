@@ -16,7 +16,7 @@
 package org.projectnessie.client.http.v1api;
 
 import org.projectnessie.client.api.MergeReferenceBuilder;
-import org.projectnessie.client.http.NessieHttpClient;
+import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.ImmutableMerge;
@@ -26,7 +26,7 @@ final class HttpMergeReference extends BaseHttpOnBranchRequest<MergeReferenceBui
 
   private final ImmutableMerge.Builder merge = ImmutableMerge.builder();
 
-  HttpMergeReference(NessieHttpClient client) {
+  HttpMergeReference(NessieApiClient client) {
     super(client);
   }
 

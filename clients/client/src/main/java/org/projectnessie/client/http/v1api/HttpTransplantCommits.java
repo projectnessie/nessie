@@ -17,7 +17,7 @@ package org.projectnessie.client.http.v1api;
 
 import java.util.List;
 import org.projectnessie.client.api.TransplantCommitsBuilder;
-import org.projectnessie.client.http.NessieHttpClient;
+import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.ImmutableTransplant;
@@ -28,7 +28,7 @@ final class HttpTransplantCommits extends BaseHttpOnBranchRequest<TransplantComm
   private final ImmutableTransplant.Builder transplant = ImmutableTransplant.builder();
   private String message;
 
-  HttpTransplantCommits(NessieHttpClient client) {
+  HttpTransplantCommits(NessieApiClient client) {
     super(client);
   }
 

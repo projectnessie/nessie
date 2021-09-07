@@ -30,16 +30,16 @@ import org.projectnessie.client.api.MergeReferenceBuilder;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.api.NessieApiVersion;
 import org.projectnessie.client.api.TransplantCommitsBuilder;
-import org.projectnessie.client.http.NessieHttpClient;
+import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.NessieConfiguration;
 
 public final class HttpApiV1 implements NessieApiV1 {
 
-  private final NessieHttpClient client;
+  private final NessieApiClient client;
 
-  public HttpApiV1(NessieHttpClient client) {
+  public HttpApiV1(NessieApiClient client) {
     this.client = client;
   }
 

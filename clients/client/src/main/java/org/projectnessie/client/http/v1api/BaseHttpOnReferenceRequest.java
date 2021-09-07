@@ -16,14 +16,14 @@
 package org.projectnessie.client.http.v1api;
 
 import org.projectnessie.client.api.OnReferenceBuilder;
-import org.projectnessie.client.http.NessieHttpClient;
+import org.projectnessie.client.http.NessieApiClient;
 
 abstract class BaseHttpOnReferenceRequest<R extends OnReferenceBuilder<R>> extends BaseHttpRequest
     implements OnReferenceBuilder<R> {
   protected String refName;
   protected String hashOnRef;
 
-  BaseHttpOnReferenceRequest(NessieHttpClient client) {
+  BaseHttpOnReferenceRequest(NessieApiClient client) {
     super(client);
   }
 

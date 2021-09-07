@@ -16,14 +16,14 @@
 package org.projectnessie.client.http.v1api;
 
 import org.projectnessie.client.api.OnBranchBuilder;
-import org.projectnessie.client.http.NessieHttpClient;
+import org.projectnessie.client.http.NessieApiClient;
 
 abstract class BaseHttpOnBranchRequest<R extends OnBranchBuilder<R>> extends BaseHttpRequest
     implements OnBranchBuilder<R> {
   protected String branchName;
   protected String hash;
 
-  BaseHttpOnBranchRequest(NessieHttpClient client) {
+  BaseHttpOnBranchRequest(NessieApiClient client) {
     super(client);
   }
 

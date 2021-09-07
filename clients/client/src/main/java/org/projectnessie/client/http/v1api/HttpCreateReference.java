@@ -16,7 +16,7 @@
 package org.projectnessie.client.http.v1api;
 
 import org.projectnessie.client.api.CreateReferenceBuilder;
-import org.projectnessie.client.http.NessieHttpClient;
+import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Reference;
@@ -25,7 +25,7 @@ final class HttpCreateReference extends BaseHttpRequest implements CreateReferen
 
   private Reference reference;
 
-  HttpCreateReference(NessieHttpClient client) {
+  HttpCreateReference(NessieApiClient client) {
     super(client);
   }
 

@@ -17,7 +17,7 @@ package org.projectnessie.client.http.v1api;
 
 import java.util.List;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
-import org.projectnessie.client.http.NessieHttpClient;
+import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -31,7 +31,7 @@ final class HttpCommitMultipleOperations
 
   private final ImmutableOperations.Builder operations = ImmutableOperations.builder();
 
-  HttpCommitMultipleOperations(NessieHttpClient client) {
+  HttpCommitMultipleOperations(NessieApiClient client) {
     super(client);
   }
 
