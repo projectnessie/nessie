@@ -30,7 +30,6 @@ import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentsAndState;
 import org.projectnessie.versioned.persist.adapter.ContentsId;
 import org.projectnessie.versioned.persist.adapter.ContentsIdAndBytes;
-import org.projectnessie.versioned.persist.adapter.ContentsIdWithType;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
@@ -82,8 +81,7 @@ public abstract class AbstractManyCommits {
       commits[i] = hash;
 
       try (Stream<ContentsIdAndBytes> globals =
-          databaseAdapter.globalLog(
-              Collections.singleton(ContentsIdWithType.of(fixed, (byte) 0)), bs -> (byte) 0)) {
+          databaseAdapter.globalContents(Collections.singleton(fixed), bs -> (byte) 0)) {
         assertThat(globals)
             .containsExactly(
                 ContentsIdAndBytes.of(

@@ -175,7 +175,7 @@ public abstract class AbstractGlobalStates {
             .collect(Collectors.toSet());
     Set<ContentsId> usedContentIds = new HashSet<>();
 
-    Map<ContentsIdWithType, ByteString> expectedGlobalStates = new HashMap<>();
+    Map<ContentsId, ByteString> expectedGlobalStates = new HashMap<>();
     Map<KeyWithType, List<ByteString>> expectedContents = new HashMap<>();
 
     for (int commit = 0; commit < param.commitsPerBranch; commit++) {
@@ -202,7 +202,7 @@ public abstract class AbstractGlobalStates {
                 .putGlobal(contentsId, global)
                 .addPuts(KeyWithBytes.of(key, contentsId, (byte) 0, put));
 
-            expectedGlobalStates.put(ContentsIdWithType.of(contentsId, (byte) 0), global);
+            expectedGlobalStates.put(contentsId, global);
 
             expectedContents
                 .computeIfAbsent(KeyWithType.of(key, contentsId, (byte) 0), k -> new ArrayList<>())
@@ -222,11 +222,12 @@ public abstract class AbstractGlobalStates {
 
     // verify that all global-state keys (== Key + contents-id) are returned (in any order)
     try (Stream<ContentsIdWithType> globalKeys = databaseAdapter.globalKeys(x -> 0)) {
-      assertThat(globalKeys).containsExactlyInAnyOrderElementsOf(expectedGlobalStates.keySet());
+      assertThat(globalKeys.map(ContentsIdWithType::getContentsId))
+          .containsExactlyInAnyOrderElementsOf(expectedGlobalStates.keySet());
     }
 
     try (Stream<ContentsIdAndBytes> allStates =
-        databaseAdapter.globalLog(expectedGlobalStates.keySet(), s -> 0)) {
+        databaseAdapter.globalContents(expectedGlobalStates.keySet(), s -> 0)) {
       List<ContentsIdAndBytes> all = allStates.collect(Collectors.toList());
 
       // verify that the global-state-log returns all keys (in any order)
@@ -241,19 +242,6 @@ public abstract class AbstractGlobalStates {
 
       // verify that the global-state-log returns all state-values
       assertThat(all.stream().map(ContentsIdAndBytes::getValue))
-          .containsExactlyInAnyOrderElementsOf(allExpected);
-    }
-
-    try (Stream<KeyWithBytes> contents = databaseAdapter.allContents((ref, entry) -> true)) {
-      List<KeyWithBytes> all = contents.collect(Collectors.toList());
-
-      List<ByteString> allExpected =
-          expectedContents.values().stream()
-              .flatMap(Collection::stream)
-              .collect(Collectors.toList());
-
-      // verify that the all contents are returned
-      assertThat(all.stream().map(KeyWithBytes::getValue))
           .containsExactlyInAnyOrderElementsOf(allExpected);
     }
   }

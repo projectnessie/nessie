@@ -19,7 +19,6 @@ import com.google.protobuf.ByteString;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiFunction;
 import java.util.function.ToIntFunction;
 import java.util.stream.Stream;
 import org.projectnessie.versioned.BranchName;
@@ -257,16 +256,6 @@ public interface DatabaseAdapter extends AutoCloseable {
    *
    * <p>This operation is primarily used by Nessie-GC and must not be exposed via a public API.
    */
-  Stream<ContentsIdAndBytes> globalLog(
-      Set<ContentsIdWithType> keys, ToIntFunction<ByteString> contentsTypeExtractor);
-
-  /**
-   * Retrieve all distinct contents from all named references for the given key. This operation is
-   * used to collect the "reachable" contents during Nessie-GC. For Iceberg, this operation is used
-   * to find the "reachable" snapshot-IDs.
-   *
-   * <p>This operation is primarily used by Nessie-GC and must not be exposed via a public API.
-   */
-  Stream<KeyWithBytes> allContents(
-      BiFunction<NamedRef, CommitLogEntry, Boolean> continueOnRefPredicate);
+  Stream<ContentsIdAndBytes> globalContents(
+      Set<ContentsId> keys, ToIntFunction<ByteString> contentsTypeExtractor);
 }

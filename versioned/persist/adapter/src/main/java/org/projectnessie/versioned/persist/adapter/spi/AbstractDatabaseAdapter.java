@@ -1094,32 +1094,4 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       }
     }
   }
-
-  /** Supporting functionality for {@link #allContents(BiFunction)}. */
-  protected Stream<KeyWithBytes> allContentsPerRefFetcher(
-      OP_CONTEXT ctx,
-      BiFunction<NamedRef, CommitLogEntry, Boolean> continueOnRefPredicate,
-      Set<Hash> visistedHashes,
-      NamedRef ref,
-      Hash refHash) {
-    Stream<CommitLogEntry> commits;
-    try {
-      commits = readCommitLogStream(ctx, refHash);
-    } catch (ReferenceNotFoundException e) {
-      // Re-throw as a runtime-exception - nothing that a user could actually do here.
-      // If this happens, the underlying database is already broken (corrupted named-ref-to-hash
-      // mapping).
-      throw new RuntimeException(e);
-    }
-    return takeUntilExcludeLast(
-            commits,
-            // Take until ...
-            e ->
-                // ... we reach an already seen commit-hash, op ...
-                !visistedHashes.add(e.getHash())
-                    // ... the 'continueOnRefPredicate' tells us to stop visiting commits on
-                    // this named-reference
-                    && continueOnRefPredicate.apply(ref, e))
-        .flatMap(e -> e.getPuts().stream());
-  }
 }
