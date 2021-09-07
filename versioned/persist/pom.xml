@@ -36,6 +36,7 @@
     <module>nontx</module>
     <module>inmem</module>
     <module>rocks</module>
+    <module>tx</module>
     <module>tests</module>
   </modules>
 </project>
