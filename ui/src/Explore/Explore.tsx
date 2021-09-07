@@ -18,8 +18,8 @@ import {Card, Container} from "react-bootstrap";
 import {useParams} from "react-router-dom";
 import TableHead from "./TableHead";
 import TableListing from "./TableListing";
-import CommitLog from "./CommitHeader";
-import {api, Branch, Tag} from "../utils";
+import CommitHeader from "./CommitHeader";
+import {api, Branch, CommitMeta, Tag} from "../utils";
 
 
 function fetchDefaultBranch(setDefaultBranch: (prev: string) => void) {
@@ -110,6 +110,15 @@ function updateRef(
   setPath(path);
 }
 
+function fetchLog(currentRef: string, setLog: (v: CommitMeta) => void) {
+  return api().getCommitLog({'ref': currentRef})
+    .then((data) => {
+      if(data.operations && data.operations.length > 0) {
+        setLog(data.operations[0]);
+      }
+    }).catch(t => console.log(t));
+}
+
 function Explore(props: {}) {
 
   let { slug } = useParams<{slug: string}>();
@@ -118,6 +127,22 @@ function Explore(props: {}) {
   const [tags, setTags] = useState<Array<Tag>>([]);
   const [path, setPath] = useState<Array<string>>([]);
   const [currentRef, setCurrentRef] = useState<string>();
+  const [currentLog, setLog] = useState<CommitMeta>({
+    author: undefined,
+    authorTime: undefined,
+    commitTime: undefined,
+    committer: undefined,
+    hash: undefined,
+    message: "",
+    properties: {},
+    signedOffBy: undefined
+  });
+
+  useEffect(() => {
+    if (currentRef) {
+      fetchLog(currentRef, setLog);
+    }
+  }, [currentRef])
 
   useEffect(() => {
     fetchDefaultBranch(setDefaultBranch);
@@ -139,7 +164,8 @@ function Explore(props: {}) {
             defaultBranch={defaultBranch}
             path={path}
           />
-          <CommitLog currentRef={currentRef} />
+          <CommitHeader committer={currentLog.committer} properties={currentLog.properties}
+                        message={currentLog.message} commitTime={currentLog.commitTime} author={currentLog.author} hash={currentLog.hash} />
           <TableListing currentRef={currentRef} path={path} />
         </Card>
       </Container>

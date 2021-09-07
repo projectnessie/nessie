@@ -71,6 +71,7 @@
             <exclude>.nyc_output/**</exclude>
             <exclude>**/*.pattern</exclude>
             <exclude>src/utils/api/**</exclude>
+            <exclude>**/__snapshots__/*</exclude>
           </excludes>
           <mapping>
             <!-- full file names -->
@@ -155,6 +156,16 @@
             </goals>
             <configuration>
               <arguments>run build</arguments>
+            </configuration>
+          </execution>
+          <execution>
+            <id>typescript tests</id>
+            <goals>
+              <goal>npm</goal>
+            </goals>
+            <phase>test</phase>
+            <configuration>
+              <arguments>test -- --coverage</arguments>
             </configuration>
           </execution>
         </executions>
