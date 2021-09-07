@@ -164,7 +164,7 @@ class Reference:
     """Dataclass for Nessie Reference."""
 
     name: str = desert.ib(fields.Str())
-    hash_: Optional[str] = desert.ib(fields.Str(data_key="hash"))
+    hash_: Optional[str] = attr.ib(default=None, metadata=desert.metadata(fields.Str(data_key="hash", allow_none=True)))
 
 
 @attr.dataclass
@@ -285,6 +285,7 @@ LogResponseSchema = desert.schema_class(LogResponse)
 class Transplant:
     """Dataclass for Transplant operation."""
 
+    from_ref_name: str = attr.ib(metadata=desert.metadata(fields.Str(data_key="fromRefName")))
     hashes_to_transplant: List[str] = attr.ib(metadata=desert.metadata(fields.List(fields.Str(), data_key="hashesToTransplant")))
 
 
@@ -295,6 +296,7 @@ TransplantSchema = desert.schema_class(Transplant)
 class Merge:
     """Dataclass for Merge operation."""
 
+    from_ref_name: str = attr.ib(metadata=desert.metadata(fields.Str(data_key="fromRefName")))
     from_hash: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(data_key="fromHash")))
 
 

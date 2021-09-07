@@ -123,6 +123,12 @@ public class JGitVersionStore<TABLE, METADATA, TABLE_TYPE extends Enum<TABLE_TYP
 
   @Nonnull
   @Override
+  public Hash noAncestorHash() {
+    return Hash.of(emptyObject.name());
+  }
+
+  @Nonnull
+  @Override
   public Hash toHash(@Nonnull NamedRef ref) throws ReferenceNotFoundException {
     repository.getRefDatabase().refresh();
     final org.eclipse.jgit.lib.Ref jgitRef;

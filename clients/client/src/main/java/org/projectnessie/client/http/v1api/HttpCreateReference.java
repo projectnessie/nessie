@@ -24,9 +24,16 @@ import org.projectnessie.model.Reference;
 final class HttpCreateReference extends BaseHttpRequest implements CreateReferenceBuilder {
 
   private Reference reference;
+  private String sourceRefName;
 
   HttpCreateReference(NessieApiClient client) {
     super(client);
+  }
+
+  @Override
+  public CreateReferenceBuilder sourceRefName(String sourceRefName) {
+    this.sourceRefName = sourceRefName;
+    return this;
   }
 
   @Override
@@ -37,6 +44,6 @@ final class HttpCreateReference extends BaseHttpRequest implements CreateReferen
 
   @Override
   public Reference submit() throws NessieNotFoundException, NessieConflictException {
-    return client.getTreeApi().createReference(reference);
+    return client.getTreeApi().createReference(sourceRefName, reference);
   }
 }

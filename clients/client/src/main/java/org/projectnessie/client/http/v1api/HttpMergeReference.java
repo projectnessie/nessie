@@ -31,6 +31,12 @@ final class HttpMergeReference extends BaseHttpOnBranchRequest<MergeReferenceBui
   }
 
   @Override
+  public MergeReferenceBuilder fromRefName(String fromRefName) {
+    merge.fromRefName(fromRefName);
+    return this;
+  }
+
+  @Override
   public MergeReferenceBuilder fromHash(String fromHash) {
     merge.fromHash(fromHash);
     return this;

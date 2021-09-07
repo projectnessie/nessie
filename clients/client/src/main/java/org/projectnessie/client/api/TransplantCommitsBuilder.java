@@ -17,9 +17,11 @@ package org.projectnessie.client.api;
 
 import java.util.List;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.model.Validation;
 
 /**
  * Request builder for "transplant commits".
@@ -28,6 +30,10 @@ import org.projectnessie.error.NessieNotFoundException;
  */
 public interface TransplantCommitsBuilder extends OnBranchBuilder<TransplantCommitsBuilder> {
   TransplantCommitsBuilder message(String message);
+
+  TransplantCommitsBuilder fromRefName(
+      @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          String fromRefName);
 
   TransplantCommitsBuilder hashesToTransplant(
       @NotNull @Size(min = 1) List<String> hashesToTransplant);

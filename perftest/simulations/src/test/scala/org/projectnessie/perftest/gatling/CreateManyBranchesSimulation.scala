@@ -59,6 +59,7 @@ class CreateManyBranchesSimulation extends Simulation {
           val branchName = s"branch-${session.userId}-$branchNum"
           client
             .createReference()
+            .sourceRefName(defaultBranch.getName)
             .reference(Branch.of(branchName, defaultBranch.getHash))
             .submit()
           session
