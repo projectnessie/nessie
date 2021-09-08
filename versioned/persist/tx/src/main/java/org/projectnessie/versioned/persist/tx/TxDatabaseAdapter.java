@@ -1146,21 +1146,27 @@ public abstract class TxDatabaseAdapter
         .build();
   }
 
-  /**
-   * Get database-specific 'strings' like column definitions for 'BLOB' column types.
-   *
-   * <ul>
-   *   <li>Index #0: column-type string for a 'BLOB' column.
-   *   <li>Index #1: column-type string for the string representation of a {@link Hash}
-   *   <li>Index #2: column-type string for key-prefix
-   *   <li>Index #3: column-type string for the string representation of a {@link Key}
-   *   <li>Index #4: column-type string for the string representation of a {@link NamedRef}
-   *   <li>Index #5: column-type string for the named-reference-type (single char)
-   *   <li>Index #6: column-type string for the contents-id
-   *   <li>Index #7: column-type string for an integer
-   * </ul>
-   */
-  protected abstract List<String> databaseSqlFormatParameters();
+  /** Get database-specific 'strings' like column definitions for 'BLOB' column types. */
+  protected abstract Map<SqlDataType, String> databaseSqlFormatParameters();
+
+  protected enum SqlDataType {
+    /** Column-type string for a 'BLOB' column. */
+    BLOB,
+    /** Column-type string for the string representation of a {@link Hash}. */
+    HASH,
+    /** Column-type string for key-prefix. */
+    KEY_PREFIX,
+    /** Column-type string for the string representation of a {@link Key}. */
+    KEY,
+    /** Column-type string for the string representation of a {@link NamedRef}. */
+    NAMED_REF,
+    /** Column-type string for the named-reference-type (single char). */
+    NAMED_REF_TYPE,
+    /** Column-type string for the contents-id. */
+    CONTENTS_ID,
+    /** Column-type string for an integer. */
+    INTEGER
+  }
 
   /** Whether the database/JDBC-driver require schema-metadata-queries require upper-case names. */
   protected boolean metadataUpperCase() {

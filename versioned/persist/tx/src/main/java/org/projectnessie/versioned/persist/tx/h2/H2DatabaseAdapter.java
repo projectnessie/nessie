@@ -15,8 +15,8 @@
  */
 package org.projectnessie.versioned.persist.tx.h2;
 
-import java.util.Arrays;
-import java.util.List;
+import com.google.common.collect.ImmutableMap;
+import java.util.Map;
 import org.projectnessie.versioned.persist.tx.TxDatabaseAdapter;
 import org.projectnessie.versioned.persist.tx.TxDatabaseAdapterConfig;
 
@@ -27,23 +27,16 @@ public class H2DatabaseAdapter extends TxDatabaseAdapter {
   }
 
   @Override
-  protected List<String> databaseSqlFormatParameters() {
-    return Arrays.asList(
-        // BLOB column
-        "VARBINARY(390000)",
-        // Hash
-        "VARCHAR",
-        // key-prefix
-        "VARCHAR",
-        // Key
-        "VARCHAR",
-        // NamedRef
-        "VARCHAR",
-        // named-reference type
-        "VARCHAR",
-        // contents-id
-        "VARCHAR",
-        // integer
-        "BIGINT");
+  protected Map<SqlDataType, String> databaseSqlFormatParameters() {
+    return ImmutableMap.<SqlDataType, String>builder()
+        .put(SqlDataType.BLOB, "VARBINARY(390000)")
+        .put(SqlDataType.HASH, "VARCHAR")
+        .put(SqlDataType.KEY_PREFIX, "VARCHAR")
+        .put(SqlDataType.KEY, "VARCHAR")
+        .put(SqlDataType.NAMED_REF, "VARCHAR")
+        .put(SqlDataType.NAMED_REF_TYPE, "VARCHAR")
+        .put(SqlDataType.CONTENTS_ID, "VARCHAR")
+        .put(SqlDataType.INTEGER, "BIGINT")
+        .build();
   }
 }

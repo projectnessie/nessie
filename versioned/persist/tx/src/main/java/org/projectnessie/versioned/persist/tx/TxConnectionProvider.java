@@ -20,10 +20,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.MessageFormat;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.projectnessie.versioned.persist.tx.TxDatabaseAdapter.SqlDataType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,7 +49,9 @@ public abstract class TxConnectionProvider implements AutoCloseable {
         boolean metadataUpperCase = adapter.metadataUpperCase();
         String catalog = config.getCatalog();
         String schema = config.getSchema();
-        Object[] formatParamsArray = adapter.databaseSqlFormatParameters().toArray();
+        Map<SqlDataType, String> dataTypes = adapter.databaseSqlFormatParameters();
+        Object[] formatParamsArray =
+            Arrays.stream(SqlDataType.values()).map(dataTypes::get).toArray();
 
         Stream<String> ddls =
             adapter.allCreateTableDDL().entrySet().stream()
