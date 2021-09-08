@@ -24,6 +24,8 @@ import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.projectnessie.server.config.DynamoVersionStoreConfig;
+import org.projectnessie.services.config.ServerConfig;
+import org.projectnessie.versioned.BackwardsCompatibleVersionStore;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.dynamodb.DynamoStore;
@@ -57,11 +59,15 @@ public class DynamoVersionStoreFactory implements VersionStoreFactory {
   @Override
   public <VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>>
       VersionStore<VALUE, METADATA, VALUE_TYPE> newStore(
-          StoreWorker<VALUE, METADATA, VALUE_TYPE> worker) {
-    return new TieredVersionStore<>(
-        worker,
-        newDynamoConnection(),
-        ImmutableTieredVersionStoreConfig.builder().enableTracing(config.enableTracing()).build());
+          StoreWorker<VALUE, METADATA, VALUE_TYPE> worker, ServerConfig serverConfig) {
+    return new BackwardsCompatibleVersionStore<>(
+        new TieredVersionStore<>(
+            worker,
+            newDynamoConnection(),
+            ImmutableTieredVersionStoreConfig.builder()
+                .enableTracing(config.enableTracing())
+                .build()),
+        worker.getValueSerializer());
   }
 
   /** create a dynamo store based on config. */

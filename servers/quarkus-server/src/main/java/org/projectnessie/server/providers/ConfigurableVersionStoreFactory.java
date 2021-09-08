@@ -113,7 +113,7 @@ public class ConfigurableVersionStoreFactory {
       LOGGER.info("Using {} Version store", versionStoreType);
       VersionStore<Contents, CommitMeta, Contents.Type> versionStore;
       try {
-        versionStore = factory.newStore(new TableCommitMetaStoreWorker());
+        versionStore = factory.newStore(new TableCommitMetaStoreWorker(), serverConfig);
       } catch (IOException e) {
         throw new IOError(e);
       }

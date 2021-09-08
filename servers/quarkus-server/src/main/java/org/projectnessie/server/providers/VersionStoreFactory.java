@@ -16,6 +16,7 @@
 package org.projectnessie.server.providers;
 
 import java.io.IOException;
+import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.VersionStore;
 
@@ -34,5 +35,6 @@ public interface VersionStoreFactory {
    */
   <VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>>
       VersionStore<VALUE, METADATA, VALUE_TYPE> newStore(
-          StoreWorker<VALUE, METADATA, VALUE_TYPE> worker) throws IOException;
+          StoreWorker<VALUE, METADATA, VALUE_TYPE> worker, ServerConfig serverConfig)
+          throws IOException;
 }
