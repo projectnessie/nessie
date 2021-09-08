@@ -65,7 +65,7 @@ public final class HttpApiV1 implements NessieApiV1 {
 
   @Override
   public GetContentsBuilder getContents() {
-    return new HttpGetContents(client);
+    return new HttpGetContents(client, getApiVersion());
   }
 
   @Override
@@ -125,6 +125,6 @@ public final class HttpApiV1 implements NessieApiV1 {
 
   @Override
   public CommitMultipleOperationsBuilder commitMultipleOperations() {
-    return new HttpCommitMultipleOperations(client);
+    return new HttpCommitMultipleOperations(client, getApiVersion());
   }
 }

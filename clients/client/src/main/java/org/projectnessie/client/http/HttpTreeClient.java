@@ -178,6 +178,13 @@ class HttpTreeClient implements HttpTreeApi {
   }
 
   @Override
+  public Branch commitMultipleOperationsWithGlobalState(
+      String branch, @NotNull String expectedHash, @NotNull Operations operations)
+      throws NessieNotFoundException, NessieConflictException {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
   public Branch commitMultipleOperations(
       String branch, @NotNull String expectedHash, @NotNull Operations operations)
       throws NessieNotFoundException, NessieConflictException {

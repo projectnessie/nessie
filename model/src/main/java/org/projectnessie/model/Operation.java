@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.DiscriminatorMapping;
@@ -30,24 +31,39 @@ import org.immutables.value.Value;
 @Schema(
     type = SchemaType.OBJECT,
     title = "Operation",
-    oneOf = {Operation.Put.class, Operation.Unchanged.class, Operation.Delete.class},
+    oneOf = {
+      Operation.Put.class,
+      Operation.PutGlobal.class,
+      Operation.Unchanged.class,
+      Operation.Delete.class
+    },
     discriminatorMapping = {
       @DiscriminatorMapping(value = "PUT", schema = Operation.Put.class),
+      @DiscriminatorMapping(value = "PUT_GLOBAL", schema = Operation.PutGlobal.class),
       @DiscriminatorMapping(value = "UNCHANGED", schema = Operation.Unchanged.class),
       @DiscriminatorMapping(value = "DELETE", schema = Operation.Delete.class)
     },
     discriminatorProperty = "type")
 @JsonSubTypes({
   @Type(Operation.Put.class),
+  @Type(Operation.PutGlobal.class),
   @Type(Operation.Delete.class),
   @Type(Operation.Unchanged.class)
 })
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public interface Operation {
 
   @NotNull
   ContentsKey getKey();
 
+  @Schema(
+      type = SchemaType.OBJECT,
+      title = "Put-'Contents'-operation for a 'ContentsKey'.",
+      description =
+          "Add or replace (put) a 'Contents' object for a 'ContentsKey'. "
+              + "If the actual table type tracks the 'global state' of individual tables (Iceberg "
+              + "as of today), every 'Put' must be accompanied by a 'PutGlobal' to update the global "
+              + "state.")
   @Value.Immutable(prehash = true)
   @JsonSerialize(as = ImmutablePut.class)
   @JsonDeserialize(as = ImmutablePut.class)
@@ -56,8 +72,41 @@ public interface Operation {
     @NotNull
     Contents getContents();
 
-    public static Put of(ContentsKey key, Contents contents) {
+    static Put of(ContentsKey key, Contents contents) {
       return ImmutablePut.builder().key(key).contents(contents).build();
+    }
+  }
+
+  @Schema(
+      type = SchemaType.OBJECT,
+      title = "PutGlobal-'Contents'-operation for a 'ContentsKey'.",
+      description =
+          "Add or replace (put) a the global state for a 'ContentsKey' for table types that "
+              + "track global state (Iceberg as of today). For those table table, both a 'Put' and "
+              + "'PutGlobal' operation are required, using the same values for 'ContentsKey' and "
+              + "'Contents.id'.")
+  @Value.Immutable(prehash = true)
+  @JsonSerialize(as = ImmutablePutGlobal.class)
+  @JsonDeserialize(as = ImmutablePutGlobal.class)
+  @JsonTypeName("PUT_GLOBAL")
+  interface PutGlobal extends Operation {
+    @NotNull
+    Contents getContents();
+
+    /**
+     * When present, this {@code Put} operation will be a CAS (compare-and-swap) operation based on
+     * the expected global state. Only useful if {@link #getContents()} represents a {@link
+     * OnReferenceState}.
+     */
+    @Nullable
+    Contents getExpectedState();
+
+    static PutGlobal of(ContentsKey key, Contents contents, Contents expectedState) {
+      return ImmutablePutGlobal.builder()
+          .key(key)
+          .contents(contents)
+          .expectedState(expectedState)
+          .build();
     }
   }
 
@@ -67,7 +116,7 @@ public interface Operation {
   @JsonTypeName("DELETE")
   interface Delete extends Operation {
 
-    public static Delete of(ContentsKey key) {
+    static Delete of(ContentsKey key) {
       return ImmutableDelete.builder().key(key).build();
     }
   }
@@ -78,7 +127,7 @@ public interface Operation {
   @JsonTypeName("UNCHANGED")
   interface Unchanged extends Operation {
 
-    public static Unchanged of(ContentsKey key) {
+    static Unchanged of(ContentsKey key) {
       return ImmutableUnchanged.builder().key(key).build();
     }
   }

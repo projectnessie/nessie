@@ -32,6 +32,12 @@ class HttpContentsClient implements HttpContentsApi {
   }
 
   @Override
+  public Contents getContentsWithGlobalState(@NotNull ContentsKey key, String ref, String hashOnRef)
+      throws NessieNotFoundException {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
   public Contents getContents(@NotNull ContentsKey key, String ref, String hashOnRef)
       throws NessieNotFoundException {
     return client
@@ -42,6 +48,13 @@ class HttpContentsClient implements HttpContentsApi {
         .queryParam("hashOnRef", hashOnRef)
         .get()
         .readEntity(Contents.class);
+  }
+
+  @Override
+  public MultiGetContentsResponse getMultipleContentsWithGlobalState(
+      @NotNull String ref, String hashOnRef, @NotNull MultiGetContentsRequest request)
+      throws NessieNotFoundException {
+    throw new UnsupportedOperationException();
   }
 
   @Override

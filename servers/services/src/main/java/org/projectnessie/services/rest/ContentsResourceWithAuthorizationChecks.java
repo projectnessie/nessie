@@ -15,6 +15,7 @@
  */
 package org.projectnessie.services.rest;
 
+import javax.annotation.Nullable;
 import javax.enterprise.context.RequestScoped;
 import javax.enterprise.inject.Default;
 import javax.inject.Inject;
@@ -53,8 +54,31 @@ public class ContentsResourceWithAuthorizationChecks extends ContentsResource {
   }
 
   @Override
+  public Contents getContentsWithGlobalState(ContentsKey key, String namedRef, String hashOnRef)
+      throws NessieNotFoundException {
+    NamedRef ref = namedRefWithHashOrThrow(namedRef, hashOnRef).getValue();
+    getAccessChecker().canReadEntityValue(createAccessContext(), ref, key, null);
+    return super.getContentsWithGlobalState(key, namedRef, hashOnRef);
+  }
+
+  @Override
   public MultiGetContentsResponse getMultipleContents(
       String namedRef, String hashOnRef, MultiGetContentsRequest request)
+      throws NessieNotFoundException {
+    getMultipleContentsCheck(namedRef, hashOnRef, request);
+    return super.getMultipleContents(namedRef, hashOnRef, request);
+  }
+
+  @Override
+  public MultiGetContentsResponse getMultipleContentsWithGlobalState(
+      String namedRef, @Nullable String hashOnRef, MultiGetContentsRequest request)
+      throws NessieNotFoundException {
+    getMultipleContentsCheck(namedRef, hashOnRef, request);
+    return super.getMultipleContentsWithGlobalState(namedRef, hashOnRef, request);
+  }
+
+  private void getMultipleContentsCheck(
+      String namedRef, @Nullable String hashOnRef, MultiGetContentsRequest request)
       throws NessieNotFoundException {
     WithHash<NamedRef> ref = namedRefWithHashOrThrow(namedRef, hashOnRef);
     request
@@ -63,6 +87,5 @@ public class ContentsResourceWithAuthorizationChecks extends ContentsResource {
             k ->
                 getAccessChecker()
                     .canReadEntityValue(createAccessContext(), ref.getValue(), k, null));
-    return super.getMultipleContents(namedRef, hashOnRef, request);
   }
 }

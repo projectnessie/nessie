@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.projectnessie.client.api.GetContentsBuilder;
+import org.projectnessie.client.api.NessieApiVersion;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Contents;
@@ -30,11 +31,13 @@ import org.projectnessie.model.MultiGetContentsResponse.ContentsWithKey;
 final class HttpGetContents extends BaseHttpOnReferenceRequest<GetContentsBuilder>
     implements GetContentsBuilder {
 
+  private final NessieApiVersion apiVersion;
   private final ImmutableMultiGetContentsRequest.Builder request =
       ImmutableMultiGetContentsRequest.builder();
 
-  HttpGetContents(NessieApiClient client) {
+  HttpGetContents(NessieApiClient client, NessieApiVersion apiVersion) {
     super(client);
+    this.apiVersion = apiVersion;
   }
 
   @Override

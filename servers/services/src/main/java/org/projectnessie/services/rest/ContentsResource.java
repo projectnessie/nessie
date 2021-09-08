@@ -67,6 +67,12 @@ public class ContentsResource extends BaseResource implements HttpContentsApi {
   }
 
   @Override
+  public Contents getContentsWithGlobalState(ContentsKey key, String namedRef, String hashOnRef)
+      throws NessieNotFoundException {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
   public Contents getContents(ContentsKey key, String namedRef, String hashOnRef)
       throws NessieNotFoundException {
     WithHash<NamedRef> ref = namedRefWithHashOrThrow(namedRef, hashOnRef);
@@ -80,6 +86,13 @@ public class ContentsResource extends BaseResource implements HttpContentsApi {
       throw new NessieNotFoundException(
           String.format("Provided reference [%s] does not exist.", namedRef), e);
     }
+  }
+
+  @Override
+  public MultiGetContentsResponse getMultipleContentsWithGlobalState(
+      String namedRef, String hashOnRef, MultiGetContentsRequest request)
+      throws NessieNotFoundException {
+    throw new UnsupportedOperationException();
   }
 
   @Override

@@ -100,7 +100,6 @@ public class TreeResourceWithAuthorizationChecks extends TreeResource {
   @Override
   public Reference createReference(@Nullable String sourceRefName, Reference reference)
       throws NessieNotFoundException, NessieConflictException {
-    // TODO remove after Iceberg > 0.12
     if (sourceRefName == null) {
       sourceRefName = getConfig().getDefaultBranch();
     }
@@ -219,6 +218,19 @@ public class TreeResourceWithAuthorizationChecks extends TreeResource {
   @Override
   public Branch commitMultipleOperations(String branch, String hash, Operations operations)
       throws NessieNotFoundException, NessieConflictException {
+    commitMultipleOpsCheck(branch, operations);
+    return super.commitMultipleOperations(branch, hash, operations);
+  }
+
+  @Override
+  public Branch commitMultipleOperationsWithGlobalState(
+      String branch, String hash, Operations operations)
+      throws NessieNotFoundException, NessieConflictException {
+    commitMultipleOpsCheck(branch, operations);
+    return super.commitMultipleOperationsWithGlobalState(branch, hash, operations);
+  }
+
+  private void commitMultipleOpsCheck(String branch, Operations operations) {
     BranchName branchName = BranchName.of(branch);
     ServerAccessContext accessContext = createAccessContext();
     getAccessChecker().canCommitChangeAgainstReference(accessContext, branchName);
@@ -232,6 +244,5 @@ public class TreeResourceWithAuthorizationChecks extends TreeResource {
                 getAccessChecker().canUpdateEntity(accessContext, branchName, op.getKey(), null);
               }
             });
-    return super.commitMultipleOperations(branch, hash, operations);
   }
 }

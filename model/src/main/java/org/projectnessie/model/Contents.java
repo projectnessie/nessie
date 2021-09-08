@@ -30,22 +30,52 @@ import org.immutables.value.Value;
 @Schema(
     type = SchemaType.OBJECT,
     title = "Contents",
-    oneOf = {IcebergTable.class, DeltaLakeTable.class, SqlView.class},
+    oneOf = {
+      IcebergTable.class,
+      IcebergSnapshot.class,
+      IcebergTableState.class,
+      DeltaLakeTable.class,
+      SqlView.class
+    },
     discriminatorMapping = {
       @DiscriminatorMapping(value = "ICEBERG_TABLE", schema = IcebergTable.class),
+      @DiscriminatorMapping(value = "ICEBERG_SNAPSHOT", schema = IcebergSnapshot.class),
+      @DiscriminatorMapping(value = "ICEBERG_TABLE_STATE", schema = IcebergTableState.class),
       @DiscriminatorMapping(value = "DELTA_LAKE_TABLE", schema = DeltaLakeTable.class),
       @DiscriminatorMapping(value = "VIEW", schema = SqlView.class)
     },
     discriminatorProperty = "type")
-@JsonSubTypes({@Type(IcebergTable.class), @Type(DeltaLakeTable.class), @Type(SqlView.class)})
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+@JsonSubTypes({
+  @Type(IcebergSnapshot.class),
+  @Type(IcebergTable.class),
+  @Type(IcebergTableState.class),
+  @Type(DeltaLakeTable.class),
+  @Type(SqlView.class)
+})
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public abstract class Contents {
 
   public enum Type {
     UNKNOWN,
     ICEBERG_TABLE,
     DELTA_LAKE_TABLE,
-    VIEW;
+    VIEW,
+    ICEBERG_TABLE_STATE,
+    ICEBERG_SNAPSHOT(ICEBERG_TABLE_STATE);
+
+    private final Type clientType;
+
+    Type(Type clientType) {
+      this.clientType = clientType;
+    }
+
+    Type() {
+      this.clientType = this;
+    }
+
+    public Type getClientType() {
+      return clientType;
+    }
   }
 
   /**

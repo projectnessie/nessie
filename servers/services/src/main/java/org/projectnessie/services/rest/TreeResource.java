@@ -382,6 +382,13 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
   }
 
   @Override
+  public Branch commitMultipleOperationsWithGlobalState(
+      String branch, String hash, Operations operations)
+      throws NessieNotFoundException, NessieConflictException {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
   public Branch commitMultipleOperations(String branch, String hash, Operations operations)
       throws NessieNotFoundException, NessieConflictException {
     List<org.projectnessie.versioned.Operation<Contents>> ops =

@@ -40,6 +40,7 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.projectnessie.api.ApiVersions;
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.params.EntriesParams;
@@ -571,6 +572,85 @@ public interface HttpTreeApi extends TreeApi {
           Merge merge)
       throws NessieNotFoundException, NessieConflictException;
 
+  /**
+   * Commit multiple operations against the given branch expecting that branch to have the given
+   * hash as its latest commit. The hash in the successful response contains the hash of the commit
+   * that contains the operations of the invocation.
+   *
+   * @param branchName Branch to change, defaults to default branch.
+   * @param hash Expected hash of branch.
+   * @param operations {@link Operations} to apply
+   * @return updated {@link Branch} objects with the hash of the new HEAD
+   * @throws NessieNotFoundException if {@code branchName} could not be found
+   * @throws NessieConflictException if the operations could not be applied to some conflict, which
+   *     is either caused by a conflicting commit or concurrent commits.
+   */
+  @POST
+  @Path("branch/{branchName}/commit")
+  @Consumes(ApiVersions.APPLICATION_NESSIE_GLOBAL_STATE)
+  @Produces(ApiVersions.APPLICATION_NESSIE_GLOBAL_STATE)
+  @Operation(
+      summary =
+          "Commit multiple operations against the given branch expecting that branch to have "
+              + "the given hash as its latest commit. The hash in the successful response contains the hash of the "
+              + "commit that contains the operations of the invocation.")
+  @APIResponses({
+    @APIResponse(
+        responseCode = "200",
+        description = "Updated successfully.",
+        content = {
+          @Content(
+              mediaType = ApiVersions.APPLICATION_NESSIE_GLOBAL_STATE,
+              examples = {@ExampleObject(ref = "refObj")},
+              schema = @Schema(implementation = Branch.class))
+        }),
+    @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
+    @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
+    @APIResponse(
+        responseCode = "403",
+        description = "Not allowed to view the given reference or perform commits"),
+    @APIResponse(responseCode = "404", description = "Provided ref doesn't exists"),
+    @APIResponse(responseCode = "409", description = "Update conflict")
+  })
+  Branch commitMultipleOperationsWithGlobalState(
+      @NotNull
+          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          @Parameter(
+              description = "Branch to change, defaults to default branch.",
+              examples = {@ExampleObject(ref = "ref")})
+          @PathParam("branchName")
+          String branchName,
+      @NotNull
+          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          @Parameter(
+              description = "Expected hash of branch.",
+              examples = {@ExampleObject(ref = "hash")})
+          @QueryParam("expectedHash")
+          String hash,
+      @Valid
+          @NotNull
+          @RequestBody(
+              description = "Operations",
+              content =
+                  @Content(
+                      mediaType = ApiVersions.APPLICATION_NESSIE_GLOBAL_STATE,
+                      examples = {@ExampleObject(ref = "operations")}))
+          Operations operations)
+      throws NessieNotFoundException, NessieConflictException;
+
+  /**
+   * Commit multiple operations against the given branch expecting that branch to have the given
+   * hash as its latest commit. The hash in the successful response contains the hash of the commit
+   * that contains the operations of the invocation.
+   *
+   * @param branchName Branch to change, defaults to default branch.
+   * @param hash Expected hash of branch.
+   * @param operations {@link Operations} to apply
+   * @return updated {@link Branch} objects with the hash of the new HEAD
+   * @throws NessieNotFoundException if {@code branchName} could not be found
+   * @throws NessieConflictException if the operations could not be applied to some conflict, which
+   *     is either caused by a conflicting commit or concurrent commits.
+   */
   @POST
   @Path("branch/{branchName}/commit")
   @Consumes(MediaType.APPLICATION_JSON)
