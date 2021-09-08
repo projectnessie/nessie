@@ -626,6 +626,7 @@
           <version>${surefire.version}</version>
           <configuration>
             <argLine>@{argLine} -Dfile.encoding=UTF-8</argLine>
+            <trimStackTrace>false</trimStackTrace>
             <systemProperties>
               <user.language>en</user.language>
               <user.country>US</user.country>
@@ -639,6 +640,7 @@
           <version>${surefire.version}</version>
           <configuration>
             <argLine>@{argLine} -Dfile.encoding=UTF-8</argLine>
+            <trimStackTrace>false</trimStackTrace>
             <systemProperties>
               <user.language>en</user.language>
               <user.country>US</user.country>
