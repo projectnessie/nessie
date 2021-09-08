@@ -16,43 +16,24 @@
 
 import {Card} from "react-bootstrap";
 import prettyMilliseconds from "pretty-ms";
-import React, {useEffect, useState} from "react";
-import {api, CommitMeta} from "../utils";
+import React from "react";
+import {CommitMeta} from "../utils";
 
-function fetchLog(currentRef: string, setLog: (v: CommitMeta) => void) {
-  return api().getCommitLog({'ref': currentRef})
-    .then((data) => {
-      if(data.operations && data.operations.length > 0) {
-        setLog(data.operations[0]);
-      }
-    }).catch(t => console.log(t));
-}
+function CommitHeader({committer, author, hash, message, properties, commitTime}: CommitMeta) {
 
-function CommitHeader(props: {currentRef: string}) {
-
-  const [currentLog, setLog] = useState<CommitMeta>();
-
-  useEffect(() => {
-    fetchLog(props.currentRef, setLog);
-  }, [props.currentRef])
-
-  if (!currentLog) {
+  if (!hash) {
     return (<Card.Header/>)
   }
   return (<Card.Header>
     <span className={"float-left"}>
-      <span className="font-weight-bold">{currentLog.committer}</span>
-      <span>{currentLog.message}</span>
+      <span className="font-weight-bold">{committer ?? author}</span>
+      <span>{message}</span>
     </span>
     <span className={"float-right"}>
-      <span className="font-italic">{currentLog.hash?.slice(0,8)}</span>
-      <span className={"pl-3"}>{prettyMilliseconds(new Date().getTime() - (currentLog.commitTime ?? new Date(0)).getTime(), {compact: true})}</span>
+      <span className="font-italic">{hash?.slice(0,8)}</span>
+      <span className={"pl-3"}>{prettyMilliseconds(new Date().getTime() - (commitTime ?? new Date(0)).getTime(), {compact: true})}</span>
     </span>
   </Card.Header>)
-}
-
-CommitHeader.defaultProps = {
-  currentRef: "main"
 }
 
 export default CommitHeader;

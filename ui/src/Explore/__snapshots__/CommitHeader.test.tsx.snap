@@ -1,0 +1,36 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`CommitHeader renders 1`] = `
+<DocumentFragment>
+  <div
+    class="card-header"
+  >
+    <span
+      class="float-left"
+    >
+      <span
+        class="font-weight-bold"
+      >
+        sally
+      </span>
+      <span>
+        commitMessage
+      </span>
+    </span>
+    <span
+      class="float-right"
+    >
+      <span
+        class="font-italic"
+      >
+        deadbeef
+      </span>
+      <span
+        class="pl-3"
+      >
+        1d
+      </span>
+    </span>
+  </div>
+</DocumentFragment>
+`;
