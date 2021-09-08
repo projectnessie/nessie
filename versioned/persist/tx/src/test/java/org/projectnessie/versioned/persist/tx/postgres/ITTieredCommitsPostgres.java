@@ -40,7 +40,7 @@ public class ITTieredCommitsPostgres extends AbstractTieredCommitsTest<LocalData
 
   @Override
   protected String adapterName() {
-    return "Postgres";
+    return "PostgreSQL";
   }
 
   @Override

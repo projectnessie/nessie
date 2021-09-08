@@ -25,7 +25,7 @@ public class PostgresDatabaseAdapterFactory
 
   @Override
   public String getName() {
-    return "Postgres";
+    return "PostgreSQL";
   }
 
   @Override

@@ -41,7 +41,7 @@ public class ITTieredCommitsCockroach
 
   @Override
   protected String adapterName() {
-    return "Postgres";
+    return "PostgreSQL";
   }
 
   @Override
