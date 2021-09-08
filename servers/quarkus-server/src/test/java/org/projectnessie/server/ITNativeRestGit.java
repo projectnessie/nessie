@@ -16,6 +16,7 @@
 package org.projectnessie.server;
 
 import io.quarkus.test.junit.NativeImageTest;
+import org.projectnessie.jaxrs.AbstractResteasyTest;
 
 @NativeImageTest
-public class ITNativeRestGit extends RestGitTest {}
+public class ITNativeRestGit extends AbstractResteasyTest {}
