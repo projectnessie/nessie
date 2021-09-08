@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-import {DefaultApi} from "../generated/utils/api/apis";
-import {Configuration} from "../generated/utils/api";
+import { DefaultApi } from "../generated/utils/api/apis";
+import { Configuration } from "../generated/utils/api";
 
-function api() {
-  return new DefaultApi(new Configuration({"basePath": "/api/v1"}));
-}
+const api = (): DefaultApi => {
+  return new DefaultApi(new Configuration({ basePath: "/api/v1" }));
+};
 
-export {api};
+export { api };

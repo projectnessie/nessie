@@ -14,7 +14,7 @@ exports[`CommitHeader renders 1`] = `
         sally
       </span>
       <span>
-        commitMessage
+        commitMessage a=b; c=d
       </span>
     </span>
     <span

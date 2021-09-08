@@ -14,26 +14,43 @@
  * limitations under the License.
  */
 
-import {Card} from "react-bootstrap";
+import { Card } from "react-bootstrap";
 import prettyMilliseconds from "pretty-ms";
 import React from "react";
-import {CommitMeta} from "../utils";
+import { CommitMeta } from "../utils";
 
-function CommitHeader({committer, author, hash, message, properties, commitTime}: CommitMeta) {
-
+const CommitHeader: React.FunctionComponent<CommitMeta> = ({
+  committer,
+  author,
+  hash,
+  message,
+  properties,
+  commitTime,
+}: CommitMeta) => {
   if (!hash) {
-    return (<Card.Header/>)
+    return <Card.Header />;
   }
-  return (<Card.Header>
-    <span className={"float-left"}>
-      <span className="font-weight-bold">{committer ?? author}</span>
-      <span>{message}</span>
-    </span>
-    <span className={"float-right"}>
-      <span className="font-italic">{hash?.slice(0,8)}</span>
-      <span className={"pl-3"}>{prettyMilliseconds(new Date().getTime() - (commitTime ?? new Date(0)).getTime(), {compact: true})}</span>
-    </span>
-  </Card.Header>)
-}
+  const props = Object.keys(properties)
+    .map((data) => [data, properties[data]])
+    .map(([k, v]) => `${k}=${v}`)
+    .join("; ");
+  return (
+    <Card.Header>
+      <span className={"float-left"}>
+        <span className="font-weight-bold">{committer ?? author}</span>
+        <span>{message + " " + props}</span>
+      </span>
+      <span className={"float-right"}>
+        <span className="font-italic">{hash?.slice(0, 8)}</span>
+        <span className={"pl-3"}>
+          {prettyMilliseconds(
+            new Date().getTime() - (commitTime ?? new Date(0)).getTime(),
+            { compact: true }
+          )}
+        </span>
+      </span>
+    </Card.Header>
+  );
+};
 
 export default CommitHeader;

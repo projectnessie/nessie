@@ -14,23 +14,31 @@
  * limitations under the License.
  */
 
-import React from 'react';
-import { render, screen } from '@testing-library/react';
-import CommitHeader from './CommitHeader';
+import React from "react";
+import { render, screen } from "@testing-library/react";
+import CommitHeader from "./CommitHeader";
 
 it("CommitHeader renders", () => {
-  let now = new Date()
-  now.setDate(now.getDate() - 1)
+  const now = new Date();
+  now.setDate(now.getDate() - 1);
   const commitMeta = {
-    'hash': 'deadbeef',
-    'author': 'bob',
-    'commitTime': now,
-    'committer': 'sally',
-    'message': 'commitMessage',
-    'properties': {a: 'b', c: 'd'}
-  }
-  const {getByText, asFragment} = render(<CommitHeader committer={commitMeta.committer} properties={commitMeta.properties}
-  message={commitMeta.message} commitTime={commitMeta.commitTime} author={commitMeta.author} hash={commitMeta.hash}/>);
+    hash: "deadbeef",
+    author: "bob",
+    commitTime: now,
+    committer: "sally",
+    message: "commitMessage",
+    properties: { a: "b", c: "d" },
+  };
+  const { asFragment } = render(
+    <CommitHeader
+      committer={commitMeta.committer}
+      properties={commitMeta.properties}
+      message={commitMeta.message}
+      commitTime={commitMeta.commitTime}
+      author={commitMeta.author}
+      hash={commitMeta.hash}
+    />
+  );
   expect(asFragment()).toMatchSnapshot();
-  expect(screen.getByText('deadbeef')).toBeInTheDocument();
-})
+  expect(screen.getByText("deadbeef")).toBeInTheDocument();
+});

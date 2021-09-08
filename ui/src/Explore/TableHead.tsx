@@ -13,84 +13,118 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import React, {Fragment} from 'react';
-import {Badge, Nav, NavDropdown} from "react-bootstrap";
+import React, { Fragment } from "react";
+import { Badge, Nav, NavDropdown } from "react-bootstrap";
 import DeviceHubIcon from "@material-ui/icons/DeviceHub";
 import LocalOfferIcon from "@material-ui/icons/LocalOffer";
 import ExploreLink from "./ExploreLink";
-import {Branch, Tag} from "../generated/utils/api/models";
+import { Branch, Tag } from "../generated/utils/api";
 
-function TableHead(props: {
-  branches: Array<Branch>,
-  tags: Array<Tag>,
-  currentRef: string,
-  defaultBranch: string,
-  path: Array<string>
-}) {
+const TableHead = (props: {
+  branches: Branch[];
+  tags: Tag[];
+  currentRef: string;
+  defaultBranch: string;
+  path: string[];
+}): React.ReactElement => {
   if (!props.currentRef) {
-    return (<div />);
+    return <div />;
   }
 
-  let additional;
-  if (props.path.length === 0) {
-    additional = (
+  const additional =
+    props.path.length === 0 ? (
       <Fragment key="icons">
-        <Nav.Item><Nav.Link><DeviceHubIcon/>{props.branches.length}</Nav.Link></Nav.Item>
-        <Nav.Item><Nav.Link><LocalOfferIcon/>{props.tags.length}</Nav.Link></Nav.Item>
+        <Nav.Item>
+          <Nav.Link>
+            <DeviceHubIcon />
+            {props.branches.length}
+          </Nav.Link>
+        </Nav.Item>
+        <Nav.Item>
+          <Nav.Link>
+            <LocalOfferIcon />
+            {props.tags.length}
+          </Nav.Link>
+        </Nav.Item>
       </Fragment>
-  );
-  } else {
-    additional = (
+    ) : (
       <Nav.Item className="nav-link">
         <ExploreLink toRef={props.currentRef}>nessie</ExploreLink>
-        {
-          props.path.map((p, index) => {
-            return (
-              <Fragment key={"path" + index}>
-                <span style={{"paddingLeft":"0.5em", "paddingRight":"0.5em"}}>/</span>
-                <ExploreLink key={index} toRef={props.currentRef} path={props.path.slice(0,index+1)}>{p}</ExploreLink>
-              </Fragment>);
-          })}
+        {props.path.map((p, index) => {
+          return (
+            <Fragment key={`path${index}`}>
+              <span style={{ paddingLeft: "0.5em", paddingRight: "0.5em" }}>
+                /
+              </span>
+              <ExploreLink
+                key={index}
+                toRef={props.currentRef}
+                path={props.path.slice(0, index + 1)}
+              >
+                {p}
+              </ExploreLink>
+            </Fragment>
+          );
+        })}
       </Nav.Item>
     );
-  }
 
   return (
     <Nav variant={"pills"} activeKey={1}>
-      <NavDropdown title={props.currentRef} id="nav-dropdown" style={{"paddingLeft":"1em"}}>
+      <NavDropdown
+        title={props.currentRef}
+        id="nav-dropdown"
+        style={{ paddingLeft: "1em" }}
+      >
+        <NavDropdown.Item disabled>Branches</NavDropdown.Item>
 
-        <NavDropdown.Item disabled={true}>Branches</NavDropdown.Item>
-
-        {props.branches.map(branch => {
+        {props.branches.map((branch) => {
           return (
-            <ExploreLink toRef={branch.name} path={props.path} type="CONTAINER" key={branch.name}>
+            <ExploreLink
+              toRef={branch.name}
+              path={props.path}
+              type="CONTAINER"
+              key={branch.name}
+            >
               <NavDropdown.Item as={"button"} key={branch.name}>
                 {branch.name}
                 <span>
-                  {(branch.name === props.defaultBranch) ? <Badge pill className="float-right" variant={"secondary"}>default</Badge> : ""}
+                  {branch.name === props.defaultBranch ? (
+                    <Badge pill className="float-right" variant={"secondary"}>
+                      default
+                    </Badge>
+                  ) : (
+                    ""
+                  )}
                 </span>
               </NavDropdown.Item>
             </ExploreLink>
-          )
+          );
         })}
-        <NavDropdown.Divider/>
-        <NavDropdown.Item disabled={true}>Tags</NavDropdown.Item>
-        {props.tags.map(tag => {
+        <NavDropdown.Divider />
+        <NavDropdown.Item disabled>Tags</NavDropdown.Item>
+        {props.tags.map((tag) => {
           return (
-            <ExploreLink toRef={tag.name} path={props.path} type="CONTAINER" key={tag.name}>
-              <NavDropdown.Item as={"button"} key={tag.name}>{tag.name}</NavDropdown.Item>
+            <ExploreLink
+              toRef={tag.name}
+              path={props.path}
+              type="CONTAINER"
+              key={tag.name}
+            >
+              <NavDropdown.Item as={"button"} key={tag.name}>
+                {tag.name}
+              </NavDropdown.Item>
             </ExploreLink>
-            )
+          );
         })}
       </NavDropdown>
       {additional}
     </Nav>
-  )
-}
+  );
+};
 
 TableHead.defaultProps = {
-  currentRef: "main"
-}
+  currentRef: "main",
+};
 
 export default TableHead;
-
