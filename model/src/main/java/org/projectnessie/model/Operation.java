@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.DiscriminatorMapping;
@@ -48,6 +49,14 @@ public interface Operation {
   @NotNull
   ContentsKey getKey();
 
+  @Schema(
+      type = SchemaType.OBJECT,
+      title = "Put-'Contents'-operation for a 'ContentsKey'.",
+      description =
+          "Add or replace (put) a 'Contents' object for a 'ContentsKey'. "
+              + "If the actual table type tracks the 'global state' of individual tables (Iceberg "
+              + "as of today), every 'Put' must be accompanied by a 'PutGlobal' to update the global "
+              + "state.")
   @Value.Immutable(prehash = true)
   @JsonSerialize(as = ImmutablePut.class)
   @JsonDeserialize(as = ImmutablePut.class)
@@ -56,8 +65,19 @@ public interface Operation {
     @NotNull
     Contents getContents();
 
+    @Nullable
+    Contents getExpectedContents();
+
     public static Put of(ContentsKey key, Contents contents) {
       return ImmutablePut.builder().key(key).contents(contents).build();
+    }
+
+    public static Put of(ContentsKey key, Contents contents, Contents expectedContents) {
+      return ImmutablePut.builder()
+          .key(key)
+          .contents(contents)
+          .expectedContents(expectedContents)
+          .build();
     }
   }
 

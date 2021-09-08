@@ -47,7 +47,21 @@ import org.projectnessie.model.Validation;
 @Path("contents")
 public interface HttpContentsApi extends ContentsApi {
 
-  /** Get the properties of an object. */
+  /**
+   * This operation returns the {@link Contents} for a {@link ContentsKey} in a named-reference (a
+   * {@link org.projectnessie.model.Branch} or {@link org.projectnessie.model.Tag}).
+   *
+   * <p>If the table-metadata is tracked globally (Iceberg), Nessie returns a {@link Contents}
+   * object, that contains the most up-to-date part for the globally tracked part (Iceberg:
+   * table-metadata) plus the per-Nessie-reference/hash specific part (Iceberg: snapshot-ID).
+   *
+   * @param key the {@link ContentsKey}s to retrieve
+   * @param ref named-reference to retrieve the contents for
+   * @param hashOnRef hash on {@code ref} to retrieve the contents for, translates to {@code HEAD},
+   *     if missing/{@code null}
+   * @return list of {@link org.projectnessie.model.MultiGetContentsResponse.ContentsWithKey}s
+   * @throws NessieNotFoundException if {@code ref} or {@code hashOnRef} does not exist
+   */
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   @Path("{key}")
@@ -99,6 +113,23 @@ public interface HttpContentsApi extends ContentsApi {
           String hashOnRef)
       throws NessieNotFoundException;
 
+  /**
+   * Similar to {@link #getContents(ContentsKey, String, String)}, but takes multiple {@link
+   * ContentsKey}s and returns the {@link Contents} for the one or more {@link ContentsKey}s in a
+   * named-reference (a {@link org.projectnessie.model.Branch} or {@link
+   * org.projectnessie.model.Tag}).
+   *
+   * <p>If the table-metadata is tracked globally (Iceberg), Nessie returns a {@link Contents}
+   * object, that contains the most up-to-date part for the globally tracked part (Iceberg:
+   * table-metadata) plus the per-Nessie-reference/hash specific part (Iceberg: snapshot-ID).
+   *
+   * @param ref named-reference to retrieve the contents for
+   * @param hashOnRef hash on {@code ref} to retrieve the contents for, translates to {@code HEAD},
+   *     if missing/{@code null}
+   * @param request the {@link ContentsKey}s to retrieve
+   * @return list of {@link org.projectnessie.model.MultiGetContentsResponse.ContentsWithKey}s
+   * @throws NessieNotFoundException if {@code ref} or {@code hashOnRef} does not exist
+   */
   @POST
   @Consumes(MediaType.APPLICATION_JSON)
   @Operation(
