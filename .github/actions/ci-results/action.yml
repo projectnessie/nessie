@@ -21,3 +21,9 @@ runs:
         flags: java
         files: |
           code-coverage/target/site/jacoco-aggregate-all/jacoco.xml
+    - uses: codecov/codecov-action@v1
+      with:
+        flags: javascript
+        files: |
+          ui/coverage/clover.xml
+          ui/coverage/lcov.info
