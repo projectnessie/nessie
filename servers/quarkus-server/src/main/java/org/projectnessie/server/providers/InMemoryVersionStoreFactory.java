@@ -19,6 +19,8 @@ import static org.projectnessie.server.config.VersionStoreConfig.VersionStoreTyp
 
 import java.io.IOException;
 import javax.enterprise.context.Dependent;
+import org.projectnessie.services.config.ServerConfig;
+import org.projectnessie.versioned.BackwardsCompatibleVersionStore;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.memory.InMemoryVersionStore;
@@ -30,10 +32,13 @@ public class InMemoryVersionStoreFactory implements VersionStoreFactory {
   @Override
   public <VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>>
       VersionStore<VALUE, METADATA, VALUE_TYPE> newStore(
-          StoreWorker<VALUE, METADATA, VALUE_TYPE> worker) throws IOException {
-    return InMemoryVersionStore.<VALUE, METADATA, VALUE_TYPE>builder()
-        .metadataSerializer(worker.getMetadataSerializer())
-        .valueSerializer(worker.getValueSerializer())
-        .build();
+          StoreWorker<VALUE, METADATA, VALUE_TYPE> worker, ServerConfig serverConfig)
+          throws IOException {
+    return new BackwardsCompatibleVersionStore<>(
+        InMemoryVersionStore.<VALUE, METADATA, VALUE_TYPE>builder()
+            .metadataSerializer(worker.getMetadataSerializer())
+            .valueSerializer(worker.getValueSerializer())
+            .build(),
+        worker.getValueSerializer());
   }
 }
