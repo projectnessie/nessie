@@ -72,6 +72,7 @@
             <exclude>**/*.pattern</exclude>
             <exclude>src/utils/api/**</exclude>
             <exclude>**/__snapshots__/*</exclude>
+            <exclude>.prettierignore</exclude>
           </excludes>
           <mapping>
             <!-- full file names -->
@@ -150,10 +151,10 @@
           </execution>
           <execution>
             <id>build minimized webpack bundle</id>
+            <phase>generate-resources</phase>
             <goals>
               <goal>npm</goal>
             </goals>
-            <phase>package</phase>
             <configuration>
               <arguments>run build</arguments>
             </configuration>
