@@ -27,16 +27,16 @@ public class H2DatabaseAdapter extends TxDatabaseAdapter {
   }
 
   @Override
-  protected Map<SqlDataType, String> databaseSqlFormatParameters() {
-    return ImmutableMap.<SqlDataType, String>builder()
-        .put(SqlDataType.BLOB, "VARBINARY(390000)")
-        .put(SqlDataType.HASH, "VARCHAR")
-        .put(SqlDataType.KEY_PREFIX, "VARCHAR")
-        .put(SqlDataType.KEY, "VARCHAR")
-        .put(SqlDataType.NAMED_REF, "VARCHAR")
-        .put(SqlDataType.NAMED_REF_TYPE, "VARCHAR")
-        .put(SqlDataType.CONTENTS_ID, "VARCHAR")
-        .put(SqlDataType.INTEGER, "BIGINT")
+  protected Map<NessieSqlDataType, String> databaseSqlFormatParameters() {
+    return ImmutableMap.<NessieSqlDataType, String>builder()
+        .put(NessieSqlDataType.BLOB, "VARBINARY(390000)")
+        .put(NessieSqlDataType.HASH, "VARCHAR")
+        .put(NessieSqlDataType.KEY_PREFIX, "VARCHAR")
+        .put(NessieSqlDataType.KEY, "VARCHAR")
+        .put(NessieSqlDataType.NAMED_REF, "VARCHAR")
+        .put(NessieSqlDataType.NAMED_REF_TYPE, "VARCHAR")
+        .put(NessieSqlDataType.CONTENTS_ID, "VARCHAR")
+        .put(NessieSqlDataType.INTEGER, "BIGINT")
         .build();
   }
 }

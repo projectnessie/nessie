@@ -1128,6 +1128,13 @@ public abstract class TxDatabaseAdapter
    *
    * <p>Names of the tables are defined by the constants defined in this class that start with
    * {@code TABLE_}, for example {@link SqlStatements#TABLE_COMMIT_LOG}.
+   *
+   * <p>The DDL statements in the returned map's value are formatted using {@link
+   * java.text.MessageFormat} using the enum map from {@link #databaseSqlFormatParameters()}, where
+   * the ordinal of the {@link NessieSqlDataType} enum is used as the index.
+   *
+   * @see NessieSqlDataType
+   * @see #databaseSqlFormatParameters() ()
    */
   protected Map<String, List<String>> allCreateTableDDL() {
     return ImmutableMap.<String, List<String>>builder()
@@ -1146,10 +1153,24 @@ public abstract class TxDatabaseAdapter
         .build();
   }
 
-  /** Get database-specific 'strings' like column definitions for 'BLOB' column types. */
-  protected abstract Map<SqlDataType, String> databaseSqlFormatParameters();
+  /**
+   * Get database-specific 'strings' like column definitions for 'BLOB' column types. Used as
+   * placeholders to format the DDL statements from {@link #allCreateTableDDL()}.
+   *
+   * @see NessieSqlDataType
+   * @see #allCreateTableDDL()
+   */
+  protected abstract Map<NessieSqlDataType, String> databaseSqlFormatParameters();
 
-  protected enum SqlDataType {
+  /**
+   * Defines the types of Nessie data types used to map to SQL datatypes via {@link
+   * #databaseSqlFormatParameters()}. For example, the SQL datatype used to store a {@link #BLOB}
+   * might be a {@code BLOB} in a specific database and {@code BYTEA} in another.
+   *
+   * @see #databaseSqlFormatParameters()
+   * @see #allCreateTableDDL()
+   */
+  protected enum NessieSqlDataType {
     /** Column-type string for a 'BLOB' column. */
     BLOB,
     /** Column-type string for the string representation of a {@link Hash}. */
