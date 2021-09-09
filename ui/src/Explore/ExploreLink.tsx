@@ -14,23 +14,31 @@
  * limitations under the License.
  */
 import React from "react";
-import {Link} from "react-router-dom";
+import { Link } from "react-router-dom";
 
-function ExploreLink(props: {path: Array<string>, toRef: string | undefined, type: "CONTAINER" | "OBJECT", className?: string,
-  children?: React.ReactChild | React.ReactChild[]}) {
+const ExploreLink = (props: {
+  path: string[];
+  toRef: string;
+  type: "CONTAINER" | "OBJECT";
+  className?: string;
+  children?: React.ReactChild | React.ReactChild[];
+}): React.ReactElement => {
   const path = props.path || [];
   const currentRef = props.toRef;
-  const prefix = props.type === "CONTAINER" ? "/tree/" : "/contents/"
+  const prefix = props.type === "CONTAINER" ? "/tree/" : "/contents/";
   return (
-    <Link to={ `${prefix}${currentRef}/${path.join("/")}` } className={props.className}>
+    <Link
+      to={`${prefix}${currentRef}/${path.join("/")}`}
+      className={props.className}
+    >
       {props.children}
     </Link>
   );
-}
+};
 
 ExploreLink.defaultProps = {
   type: "CONTAINER",
-  path: []
-}
+  path: [],
+};
 
 export default ExploreLink;

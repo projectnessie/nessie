@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 const config = {
-  'apiUrl': '/api/v1'
-}
+  apiUrl: "/api/v1",
+};
 
-export {config}
+export { config };

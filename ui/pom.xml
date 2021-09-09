@@ -72,6 +72,7 @@
             <exclude>**/*.pattern</exclude>
             <exclude>src/utils/api/**</exclude>
             <exclude>**/__snapshots__/*</exclude>
+            <exclude>.prettierignore</exclude>
           </excludes>
           <mapping>
             <!-- full file names -->
@@ -166,6 +167,16 @@
             <phase>test</phase>
             <configuration>
               <arguments>test -- --coverage</arguments>
+            </configuration>
+          </execution>
+          <execution>
+            <id>typescript lint</id>
+            <goals>
+              <goal>npm</goal>
+            </goals>
+            <phase>test</phase>
+            <configuration>
+              <arguments>run lint</arguments>
             </configuration>
           </execution>
         </executions>

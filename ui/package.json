@@ -35,12 +35,14 @@
     "replace-in-file": "^6.2.0",
     "rxjs": "^7.3.0",
     "typescript": "^4.4.2",
+    "typescript-logging": "^1.0.0",
     "yup": "^0.32.9"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
+    "lint": "eslint src/**/*.{ts,tsx} --fix",
     "eject": "react-scripts eject",
     "generate-api": "openapi-generator-cli generate -g typescript-fetch -i target/openapi/META-INF/openapi/openapi.yaml -o ./src/generated/utils/api --skip-validate-spec --additional-properties=supportsES6=true",
     "fix-generated-client": "node src/build-scripts/fix-generated-client.js"
@@ -48,9 +50,6 @@
   "eslintConfig": {
     "extends": "react-app"
   },
-  "eslintIgnore": [
-    "./utils/api.js"
-  ],
   "browserslist": {
     "production": [
       ">0.2%",
@@ -63,5 +62,21 @@
       "last 1 safari version"
     ]
   },
-  "proxy": "http://localhost:19120"
+  "proxy": "http://localhost:19120",
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^4.31.0",
+    "@typescript-eslint/eslint-plugin-tslint": "^4.31.0",
+    "@typescript-eslint/parser": "^4.31.0",
+    "eslint": "^7.32.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-import": "^2.24.2",
+    "eslint-plugin-jsdoc": "^36.1.0",
+    "eslint-plugin-prefer-arrow": "^1.2.3",
+    "eslint-plugin-prettier": "^4.0.0",
+    "eslint-plugin-react": "^7.25.1",
+    "eslint-plugin-unicorn": "^35.0.0",
+    "husky": "^7.0.2",
+    "lint-staged": "^11.1.2",
+    "prettier": "^2.3.2"
+  }
 }

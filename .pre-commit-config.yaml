@@ -15,50 +15,67 @@
 #
 
 repos:
--   repo: https://github.com/psf/black
+  - repo: https://github.com/psf/black
     rev: 21.6b0
     hooks:
-    - id: black
-      language_version: python3
--   repo: https://github.com/asottile/reorder_python_imports
+      - id: black
+        language_version: python3
+  - repo: https://github.com/asottile/reorder_python_imports
     rev: v2.5.0
     hooks:
-    - id: reorder-python-imports
-      args:
+      - id: reorder-python-imports
+        args:
           - --py3-plus
           - --application-directories=pynessie:tests:python/pynessie:python:tests
--   repo: https://github.com/pre-commit/pre-commit-hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.0.1
     hooks:
-    - id: trailing-whitespace
-    - id: check-added-large-files
-    - id: check-ast
-    - id: check-json
-    - id: debug-statements
-    - id: detect-aws-credentials
-    - id: detect-private-key
-    - id: fix-encoding-pragma
-    - id: requirements-txt-fixer
-    - id: mixed-line-ending
-    - id: check-yaml
-    - id: end-of-file-fixer
--   repo: local
+      - id: trailing-whitespace
+      - id: check-added-large-files
+      - id: check-ast
+      - id: check-json
+      - id: debug-statements
+      - id: detect-aws-credentials
+      - id: detect-private-key
+      - id: fix-encoding-pragma
+      - id: requirements-txt-fixer
+      - id: mixed-line-ending
+      - id: check-yaml
+      - id: end-of-file-fixer
+  - repo: local
     hooks:
-    - id: talisman-precommit
-      name: talisman
-      entry: bash -c 'if [ -n "${TALISMAN_HOME:-}" ]; then ${TALISMAN_HOME}/talisman_hook_script pre-commit; else echo "TALISMAN does not exist. Consider installing from https://github.com/thoughtworks/talisman . If you already have talisman installed, please ensure TALISMAN_HOME variable is set to where talisman_hook_script resides, for example, TALISMAN_HOME=${HOME}/.talisman/bin"; fi'
-      language: system
-      pass_filenames: false
-      types: [text]
-      verbose: true
--   repo: https://github.com/ejba/pre-commit-maven
+      - id: talisman-precommit
+        name: talisman
+        entry: bash -c 'if [ -n "${TALISMAN_HOME:-}" ]; then ${TALISMAN_HOME}/talisman_hook_script pre-commit; else echo "TALISMAN does not exist. Consider installing from https://github.com/thoughtworks/talisman . If you already have talisman installed, please ensure TALISMAN_HOME variable is set to where talisman_hook_script resides, for example, TALISMAN_HOME=${HOME}/.talisman/bin"; fi'
+        language: system
+        pass_filenames: false
+        types: [text]
+        verbose: true
+  - repo: https://github.com/ejba/pre-commit-maven
     rev: v0.3.0
     hooks:
-    - id: maven
-      args: ['tidy:pom', 'license:format']
-    - id: maven-checkstyle
-    - id: maven-spotless-apply
--   repo: https://github.com/kynan/nbstripout
+      - id: maven
+        args: ["tidy:pom", "license:format"]
+      - id: maven-checkstyle
+      - id: maven-spotless-apply
+  - repo: https://github.com/kynan/nbstripout
     rev: 0.4.0
     hooks:
-    - id: nbstripout
+      - id: nbstripout
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v2.3.2
+    hooks:
+      - id: prettier
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v7.32.0
+    hooks:
+      - id: eslint
+        files: \.tsx?$
+        types: [file]
+        additional_dependencies:
+          - eslint-plugin-import@2.24.2
+          - eslint-plugin-jsdoc@36.1.0
+          - eslint-plugin-prefer-arrow@1.2.3
+          - eslint-plugin-prettier@4.0.0
+          - eslint-plugin-react@7.25.1
+          - eslint-plugin-unicorn@35.0.0
