@@ -21,7 +21,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.List;
-import javax.validation.constraints.NotBlank;
+import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -46,7 +46,8 @@ public interface Transplant {
   @Size(min = 1)
   List<String> getHashesToTransplant();
 
-  @NotBlank
+  @Nullable
+  @Size(min = 1) // TODO migrate to @NotBlank once all Nessie-0.9-API clients are "gone"
   @JsonFormat(pattern = Validation.REF_NAME_REGEX)
   String getFromRefName();
 
