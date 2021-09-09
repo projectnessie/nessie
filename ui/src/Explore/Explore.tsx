@@ -19,22 +19,30 @@ import { useParams } from "react-router-dom";
 import TableHead from "./TableHead";
 import TableListing from "./TableListing";
 import CommitHeader from "./CommitHeader";
-import { api, Branch, CommitMeta, Tag } from "../utils";
+import { api, Branch, Reference, Tag } from "../utils";
 import { factory } from "../ConfigLog4j";
 
 const log = factory.getLogger("api.Explore");
 
-const fetchDefaultBranch = (
-  setDefaultBranch: (prev: string) => void
-): Promise<void> => {
+const fetchDefaultBranch = (): Promise<string | void> => {
   return api()
     .getDefaultBranch()
     .then((data) => {
       if (data.name) {
-        setDefaultBranch(data.name);
+        return data.name;
       }
     })
     .catch((t) => log.error("DefaultBranch", t));
+};
+
+const loadBranchesAndTags = (): Promise<Reference[] | void> => {
+  return api()
+    .getAllReferences()
+    .then((data) => {
+      data = data.sort(btCompare);
+      return data;
+    })
+    .catch((t) => log.error("AllReferences", t));
 };
 
 const btCompare = (a: Branch, b: Branch): number => {
@@ -52,21 +60,6 @@ const btCompare = (a: Branch, b: Branch): number => {
   }
 
   return 0;
-};
-
-const loadBranchesAndTags = (
-  setBranches: (val: Branch[]) => void,
-  setTags: (val: Tag[]) => void
-): Promise<void> => {
-  return api()
-    .getAllReferences()
-    .then((data) => {
-      data = data.sort(btCompare);
-      setBranches(
-        data.filter((x) => x.type === "BRANCH").map((b) => b as Branch)
-      );
-      setTags(data.filter((x) => x.type === "TAG").map((t) => t as Tag));
-    });
 };
 
 interface Slug {
@@ -117,87 +110,88 @@ const updateRef = (
   slug: string,
   defaultBranch: string,
   branches: Branch[],
-  tags: Tag[],
-  setPath: (v: string[]) => void,
-  setCurrentRef: (v: string) => void
-): void => {
+  tags: Tag[]
+): Slug | void => {
   if (!defaultBranch || !branches) {
     return;
   }
 
-  const { currentRef, path } = parseSlug(slug, defaultBranch, branches, tags);
-  setCurrentRef(currentRef);
-  setPath(path);
+  return parseSlug(slug, defaultBranch, branches, tags);
 };
 
-const fetchLog = (
-  currentRef: string,
-  setLog: (v: CommitMeta) => void
-): Promise<void> => {
-  return api()
-    .getCommitLog({ ref: currentRef })
-    .then((data) => {
-      if (data.operations && data.operations.length > 0) {
-        setLog(data.operations[0]);
-      }
-    })
-    .catch((t) => log.error("CommitLog", t));
-};
+interface IBranchState {
+  branches: Branch[];
+  tags: Tag[];
+}
 
 const Explore = (): React.ReactElement => {
   const { slug } = useParams<{ slug: string }>();
   const [defaultBranch, setDefaultBranch] = useState<string>("main");
-  const [branches, setBranches] = useState<Branch[]>([]);
-  const [tags, setTags] = useState<Tag[]>([]);
+  const [branches, setBranches] = useState<IBranchState>({
+    branches: [],
+    tags: [],
+  });
   const [path, setPath] = useState<string[]>([]);
   const [currentRef, setCurrentRef] = useState<string>();
-  const [currentLog, setLog] = useState<CommitMeta>({
-    author: undefined,
-    authorTime: undefined,
-    commitTime: undefined,
-    committer: undefined,
-    hash: undefined,
-    message: "",
-    properties: {},
-    signedOffBy: undefined,
-  });
 
   useEffect(() => {
-    if (currentRef) {
-      void fetchLog(currentRef, setLog);
-    }
-  }, [currentRef]);
-
-  useEffect(() => {
-    void fetchDefaultBranch(setDefaultBranch);
-    void loadBranchesAndTags(setBranches, setTags);
+    const references = async () => {
+      const results = await loadBranchesAndTags();
+      if (results) {
+        setBranches({
+          branches: results
+            .filter((x) => x.type === "BRANCH")
+            .map((b) => b as Branch),
+          tags: results.filter((x) => x.type === "TAG").map((t) => t as Tag),
+        });
+      }
+    };
+    const getDefaultBranch = async () => {
+      const results = await fetchDefaultBranch();
+      if (results) {
+        setDefaultBranch(results);
+      }
+    };
+    void references();
+    void getDefaultBranch();
   }, []);
 
   useEffect(() => {
-    updateRef(slug, defaultBranch, branches, tags, setPath, setCurrentRef);
-  }, [slug, defaultBranch, branches, tags]);
+    if (branches.branches.length === 0 && branches.tags.length === 0) {
+      return;
+    }
+    const newSlug = updateRef(
+      slug,
+      defaultBranch,
+      branches.branches,
+      branches.tags
+    );
+    if (newSlug) {
+      setCurrentRef(newSlug.currentRef);
+      setPath(newSlug.path);
+    }
+  }, [slug, defaultBranch, branches]);
 
-  return (
+  return currentRef ? (
     <div>
       <Container style={{ marginTop: "100px" }}>
         <Card>
           <TableHead
-            branches={branches}
-            tags={tags}
+            branches={branches.branches}
+            tags={branches.tags}
             currentRef={currentRef}
             defaultBranch={defaultBranch}
             path={path}
           />
-          <CommitHeader
-            committer={currentLog.committer}
-            properties={currentLog.properties}
-            message={currentLog.message}
-            commitTime={currentLog.commitTime}
-            author={currentLog.author}
-            hash={currentLog.hash}
-          />
+          <CommitHeader currentRef={currentRef} />
           <TableListing currentRef={currentRef} path={path} />
         </Card>
+      </Container>
+    </div>
+  ) : (
+    <div>
+      <Container style={{ marginTop: "100px" }}>
+        <Card />
       </Container>
     </div>
   );

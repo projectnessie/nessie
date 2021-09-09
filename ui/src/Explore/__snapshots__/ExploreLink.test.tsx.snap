@@ -1,0 +1,21 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ExploreLink renders with container 1`] = `
+<DocumentFragment>
+  <a
+    href="/tree/main/a/b/c"
+  >
+    xxx
+  </a>
+</DocumentFragment>
+`;
+
+exports[`ExploreLink renders with object 1`] = `
+<DocumentFragment>
+  <a
+    href="/contents/main/"
+  >
+    xxx
+  </a>
+</DocumentFragment>
+`;

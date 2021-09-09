@@ -15,10 +15,13 @@
  */
 
 import React from "react";
-import { render, screen } from "@testing-library/react";
-import CommitHeader from "./CommitHeader";
 
-it("CommitHeader renders", () => {
+import { render, screen, waitFor } from "@testing-library/react";
+import CommitHeader from "./CommitHeader";
+// tslint:disable-next-line:no-implicit-dependencies
+import nock from "nock";
+
+it("CommitHeader renders", async () => {
   const now = new Date();
   now.setDate(now.getDate() - 1);
   const commitMeta = {
@@ -29,16 +32,19 @@ it("CommitHeader renders", () => {
     message: "commitMessage",
     properties: { a: "b", c: "d" },
   };
-  const { asFragment } = render(
-    <CommitHeader
-      committer={commitMeta.committer}
-      properties={commitMeta.properties}
-      message={commitMeta.message}
-      commitTime={commitMeta.commitTime}
-      author={commitMeta.author}
-      hash={commitMeta.hash}
-    />
+  const scope = nock("http://localhost/api/v1")
+    .get("/trees/tree/main/log")
+    .reply(200, { token: "foo", operations: [commitMeta] });
+
+  const { getByText, asFragment } = render(
+    <React.StrictMode>
+      <CommitHeader currentRef={"main"} />
+    </React.StrictMode>
   );
+  expect(asFragment()).toMatchSnapshot();
+  await waitFor(() => getByText("deadbeef"));
+
+  scope.done();
   expect(asFragment()).toMatchSnapshot();
   expect(screen.getByText("deadbeef")).toBeInTheDocument();
 });

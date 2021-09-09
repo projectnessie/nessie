@@ -4,6 +4,14 @@ exports[`CommitHeader renders 1`] = `
 <DocumentFragment>
   <div
     class="card-header"
+  />
+</DocumentFragment>
+`;
+
+exports[`CommitHeader renders 2`] = `
+<DocumentFragment>
+  <div
+    class="card-header"
   >
     <span
       class="float-left"
