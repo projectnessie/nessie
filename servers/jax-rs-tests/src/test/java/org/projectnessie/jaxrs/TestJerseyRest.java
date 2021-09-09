@@ -15,14 +15,9 @@
  */
 package org.projectnessie.jaxrs;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import java.net.URI;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import org.projectnessie.client.NessieClient;
-import org.projectnessie.client.http.HttpClient;
-import org.projectnessie.client.rest.NessieHttpResponseFilter;
 
 public class TestJerseyRest extends AbstractTestRest {
   @RegisterExtension static NessieJaxRsExtension server = new NessieJaxRsExtension();
@@ -30,15 +25,7 @@ public class TestJerseyRest extends AbstractTestRest {
   @Override
   @BeforeEach
   public void setUp() throws Exception {
-    URI uri = URI.create(server.getURI().toString());
-
-    ObjectMapper mapper =
-        new ObjectMapper()
-            .enable(SerializationFeature.INDENT_OUTPUT)
-            .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
-    HttpClient httpClient = HttpClient.builder().setBaseUri(uri).setObjectMapper(mapper).build();
-    httpClient.register(new NessieHttpResponseFilter(mapper));
-    super.init(NessieClient.builder().withUri(uri).build(), httpClient);
+    super.init(URI.create(server.getURI().toString()));
     super.setUp();
   }
 }

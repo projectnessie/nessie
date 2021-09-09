@@ -36,18 +36,18 @@ public class TestDisabledAuthentication extends BaseClientAuthTest {
   void testBasic() {
     withClientCustomizer(
         c -> c.withAuthentication(BasicAuthenticationProvider.create("any_user", "any_password")));
-    assertThat(client().getTreeApi().getAllReferences()).isNotEmpty();
+    assertThat(api().getAllReferences().submit()).isNotEmpty();
   }
 
   @Test
   void testBearer() {
     withClientCustomizer(
         c -> c.withAuthentication(BearerAuthenticationProvider.create("any_token")));
-    assertThat(client().getTreeApi().getAllReferences()).isNotEmpty();
+    assertThat(api().getAllReferences().submit()).isNotEmpty();
   }
 
   @Test
   void testNone() {
-    assertThat(client().getTreeApi().getAllReferences()).isNotEmpty();
+    assertThat(api().getAllReferences().submit()).isNotEmpty();
   }
 }

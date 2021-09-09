@@ -33,21 +33,21 @@ class TestBasicAuthentication extends BaseClientAuthTest {
   void testValidCredentials() {
     withClientCustomizer(
         c -> c.withAuthentication(BasicAuthenticationProvider.create("test_user", "test_user")));
-    assertThat(client().getTreeApi().getAllReferences()).isNotEmpty();
+    assertThat(api().getAllReferences().submit()).isNotEmpty();
   }
 
   @Test
   void testValidAdminCredentials() {
     withClientCustomizer(
         c -> c.withAuthentication(BasicAuthenticationProvider.create("admin_user", "test123")));
-    assertThat(client().getTreeApi().getAllReferences()).isNotEmpty();
+    assertThat(api().getAllReferences().submit()).isNotEmpty();
   }
 
   @Test
   void testInvalidCredentials() {
     withClientCustomizer(
         c -> c.withAuthentication(BasicAuthenticationProvider.create("test_user", "bad_password")));
-    assertThatThrownBy(() -> client().getTreeApi().getAllReferences())
+    assertThatThrownBy(() -> api().getAllReferences().submit())
         .isInstanceOfSatisfying(
             NessieNotAuthorizedException.class,
             e -> assertThat(e.getError().getStatus()).isEqualTo(401));

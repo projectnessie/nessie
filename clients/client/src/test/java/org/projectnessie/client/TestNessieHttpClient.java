@@ -30,7 +30,10 @@ import java.util.Base64;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.projectnessie.client.NessieClient.AuthType;
+import org.projectnessie.client.api.NessieApiV1;
+import org.projectnessie.client.api.NessieApiVersion;
+import org.projectnessie.client.auth.BasicAuthenticationProvider;
+import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.client.util.JaegerTestTracer;
 import org.projectnessie.client.util.TestServer;
 
@@ -42,7 +45,11 @@ class TestNessieHttpClient {
 
   @Test
   void testNullUri() {
-    assertThatThrownBy(() -> NessieClient.builder().withUri((URI) null).build())
+    assertThatThrownBy(
+            () ->
+                HttpClientBuilder.builder()
+                    .withUri((URI) null)
+                    .build(NessieApiVersion.V_1, NessieApiV1.class))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Cannot construct Http client. Must have a non-null uri");
   }
@@ -52,14 +59,12 @@ class TestNessieHttpClient {
     AtomicReference<String> authHeader = new AtomicReference<>();
 
     try (TestServer server = new TestServer(handlerForHeaderTest("Authorization", authHeader))) {
-      NessieClient client =
-          NessieClient.builder()
+      NessieApiV1 api =
+          HttpClientBuilder.builder()
               .withUri(server.getUri())
-              .withAuthType(AuthType.BASIC)
-              .withUsername("my_username")
-              .withPassword("very_secret")
-              .build();
-      client.getConfigApi().getConfig();
+              .withAuthentication(BasicAuthenticationProvider.create("my_username", "very_secret"))
+              .build(NessieApiVersion.V_1, NessieApiV1.class);
+      api.getConfig();
     }
 
     assertThat(authHeader.get())
@@ -76,12 +81,15 @@ class TestNessieHttpClient {
     AtomicReference<String> traceId = new AtomicReference<>();
 
     try (TestServer server = new TestServer(handlerForHeaderTest("Uber-trace-id", traceId))) {
-      NessieClient client =
-          NessieClient.builder().withUri(server.getUri()).withTracing(true).build();
+      NessieApiV1 api =
+          HttpClientBuilder.builder()
+              .withUri(server.getUri())
+              .withTracing(true)
+              .build(NessieApiVersion.V_1, NessieApiV1.class);
       try (Scope ignore =
           GlobalTracer.get()
               .activateSpan(GlobalTracer.get().buildSpan("testOpenTracing").start())) {
-        client.getConfigApi().getConfig();
+        api.getConfig();
       }
     }
 
@@ -96,12 +104,15 @@ class TestNessieHttpClient {
     AtomicReference<String> traceId = new AtomicReference<>();
 
     try (TestServer server = new TestServer(handlerForHeaderTest("Uber-trace-id", traceId))) {
-      NessieClient client =
-          NessieClient.builder().withUri(server.getUri()).withTracing(false).build();
+      NessieApiV1 api =
+          HttpClientBuilder.builder()
+              .withUri(server.getUri())
+              .withTracing(false)
+              .build(NessieApiVersion.V_1, NessieApiV1.class);
       try (Scope ignore =
           GlobalTracer.get()
               .activateSpan(GlobalTracer.get().buildSpan("testOpenTracing").start())) {
-        client.getConfigApi().getConfig();
+        api.getConfig();
       }
     }
 

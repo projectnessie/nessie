@@ -168,6 +168,7 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
     return this;
   }
 
+  @SuppressWarnings({"SwitchStatementWithTooFewBranches", "unchecked"})
   @Override
   public <API extends NessieApi> API build(NessieApiVersion apiVersion, Class<API> apiContract) {
     NessieHttpClient client =
@@ -175,9 +176,6 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
             uri, authentication, tracing, readTimeoutMillis, connectionTimeoutMillis);
     API api;
     switch (apiVersion) {
-      case V_0_9:
-        api = (API) client;
-        break;
       case V_1:
         api = (API) new HttpApiV1(client);
         break;
