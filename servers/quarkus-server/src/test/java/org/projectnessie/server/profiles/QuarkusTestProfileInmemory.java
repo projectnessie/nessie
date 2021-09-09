@@ -13,23 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.server;
+package org.projectnessie.server.profiles;
 
-import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.TestProfile;
-import java.net.URI;
-import org.junit.jupiter.api.BeforeEach;
-import org.projectnessie.jaxrs.AbstractTestRest;
-import org.projectnessie.server.profiles.QuarkusTestProfileInmemory;
+import com.google.common.collect.ImmutableMap;
+import io.quarkus.test.junit.QuarkusTestProfile;
+import java.util.Map;
 
-@QuarkusTest
-@TestProfile(QuarkusTestProfileInmemory.class)
-class TestRest extends AbstractTestRest {
+public class QuarkusTestProfileInmemory implements QuarkusTestProfile {
 
   @Override
-  @BeforeEach
-  public void setUp() throws Exception {
-    super.init(URI.create("http://localhost:19121/api/v1"));
-    super.setUp();
+  public Map<String, String> getConfigOverrides() {
+    return ImmutableMap.of("nessie.version.store.type", "INMEMORY");
   }
 }
