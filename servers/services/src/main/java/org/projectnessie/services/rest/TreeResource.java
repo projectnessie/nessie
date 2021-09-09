@@ -32,6 +32,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import javax.annotation.Nullable;
 import javax.enterprise.context.RequestScoped;
 import javax.enterprise.inject.Alternative;
 import javax.inject.Inject;
@@ -335,6 +336,50 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
     }
   }
 
+  @Override
+  public EntriesResponse getNamespaceEntries(
+      String refName,
+      @Nullable String hashOnRef,
+      @Nullable String namespacePrefix,
+      @Nullable Integer depth)
+      throws NessieNotFoundException {
+    WithHash<NamedRef> refWithHash = namedRefWithHashOrThrow(refName, hashOnRef);
+    try {
+      List<EntriesResponse.Entry> entries;
+      try (Stream<EntriesResponse.Entry> s =
+          getStore()
+              .getKeys(refWithHash.getHash())
+              .map(
+                  key ->
+                      EntriesResponse.Entry.builder()
+                          .name(fromKey(key.getValue()))
+                          .type((Type) key.getType())
+                          .build())) {
+        entries =
+            filterEntries(
+                    s,
+                    (namespacePrefix == null || namespacePrefix.isEmpty())
+                        ? null
+                        : String.format("entry.namespace.startsWith('%s')", namespacePrefix))
+                .map(e -> truncate(e, depth))
+                .distinct()
+                .collect(ImmutableList.toImmutableList());
+      }
+      return EntriesResponse.builder().addAllEntries(entries).build();
+    } catch (ReferenceNotFoundException e) {
+      throw new NessieNotFoundException(
+          String.format("Unable to find the reference [%s].", refName), e);
+    }
+  }
+
+  EntriesResponse.Entry truncate(EntriesResponse.Entry entry, Integer depth) {
+    if (depth == null || depth < 1) {
+      return entry;
+    }
+    Type type = entry.getName().getElements().size() > depth ? Type.UNKNOWN : entry.getType();
+    ContentsKey key = ContentsKey.of(entry.getName().getElements().subList(0, depth));
+    return EntriesResponse.Entry.builder().type(type).name(key).build();
+  }
   /**
    * Applies different filters to the {@link Stream} of entries based on the query expression.
    *

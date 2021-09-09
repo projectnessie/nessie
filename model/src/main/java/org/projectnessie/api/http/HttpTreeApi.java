@@ -258,6 +258,79 @@ public interface HttpTreeApi extends TreeApi {
       throws NessieNotFoundException;
 
   /**
+   * Retrieve objects for a ref, potentially truncated by the backend.
+   *
+   * <p>Retrieves up to {@code maxRecords} objects for the given named reference (tag or branch) or
+   * the given {@link org.projectnessie.model.Hash}. The backend <em>may</em> respect the given
+   * {@code max} records hint, but return less or more entries. Backends may also cap the returned
+   * entries at a hard-coded limit, the default REST server implementation has such a hard-coded
+   * limit.
+   *
+   * <p>Invoking {@code getEntries()} does <em>not</em> guarantee to return all commit log entries
+   * of a given reference, because the result can be truncated by the backend.
+   *
+   * <p>To implement paging, check {@link EntriesResponse#hasMore() EntriesResponse.hasMore()} and,
+   * if {@code true}, pass the value of {@link EntriesResponse#getToken()
+   * EntriesResponse.getToken()} in the next invocation of {@code getEntries()} as the {@code
+   * pageToken} parameter.
+   *
+   * <p>See {@code org.projectnessie.client.StreamingUtil} in {@code nessie-client}.
+   */
+  @GET
+  @Produces(MediaType.APPLICATION_JSON)
+  @Path("tree/{ref}/namespaces")
+  @Operation(
+      summary = "Fetch all namespaces and objects for a given depth and prefix",
+      description =
+          "Retrieves objects for a ref, this won't be paged due to the requirement for uniqueness.\n")
+  @APIResponses({
+    @APIResponse(
+        description =
+            "all unique objects and namespaces for a reference at a certain depth and prefix",
+        content = {
+          @Content(
+              mediaType = MediaType.APPLICATION_JSON,
+              examples = {@ExampleObject(ref = "entriesResponse")},
+              schema = @Schema(implementation = EntriesResponse.class))
+        }),
+    @APIResponse(responseCode = "200", description = "Returned successfully."),
+    @APIResponse(responseCode = "400", description = "Invalid input, ref name not valid"),
+    @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
+    @APIResponse(
+        responseCode = "403",
+        description = "Not allowed to view the given reference or fetch entries for it"),
+    @APIResponse(responseCode = "404", description = "Ref not found")
+  })
+  EntriesResponse getNamespaceEntries(
+      @NotNull
+          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          @Parameter(
+              description = "name of ref to fetch from",
+              examples = {@ExampleObject(ref = "ref")})
+          @PathParam("ref")
+          String refName,
+      @Nullable
+          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          @Parameter(
+              description = "a particular hash on the given ref",
+              examples = {@ExampleObject(ref = "nullHash"), @ExampleObject(ref = "hash")})
+          @QueryParam("hashOnRef")
+          String hashOnRef,
+      @Nullable
+          @Parameter(
+              description = "prefix namespace to start at",
+              examples = {@ExampleObject(ref = "nullHash"), @ExampleObject(ref = "hash")})
+          @QueryParam("namespace")
+          String namespacePrefix,
+      @Nullable
+          @Parameter(
+              description = "total depth of namesapce to fetch",
+              examples = {@ExampleObject(ref = "nullHash"), @ExampleObject(ref = "hash")})
+          @QueryParam("namespaceDepth")
+          Integer depth)
+      throws NessieNotFoundException;
+
+  /**
    * Retrieve the commit log for a ref, potentially truncated by the backend.
    *
    * <p>Retrieves up to {@code maxRecords} commit-log-entries starting at the HEAD of the given

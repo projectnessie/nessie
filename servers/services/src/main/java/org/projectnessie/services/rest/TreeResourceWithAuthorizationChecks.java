@@ -234,4 +234,17 @@ public class TreeResourceWithAuthorizationChecks extends TreeResource {
             });
     return super.commitMultipleOperations(branch, hash, operations);
   }
+
+  @Override
+  public EntriesResponse getNamespaceEntries(
+      String namedRef,
+      @Nullable String hashOnRef,
+      @Nullable String namespacePrefix,
+      @Nullable Integer depth)
+      throws NessieNotFoundException {
+    getAccessChecker()
+        .canReadEntries(
+            createAccessContext(), namedRefWithHashOrThrow(namedRef, hashOnRef).getValue());
+    return super.getNamespaceEntries(namedRef, hashOnRef, namespacePrefix, depth);
+  }
 }

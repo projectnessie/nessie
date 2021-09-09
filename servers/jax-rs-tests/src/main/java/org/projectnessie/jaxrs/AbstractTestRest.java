@@ -941,6 +941,71 @@ public abstract class AbstractTestRest {
   }
 
   @Test
+  public void filterEntriesByNamespaceAndPrefixDepth()
+      throws NessieConflictException, NessieNotFoundException {
+    final String branch = "filterEntriesByNamespaceAndPrefixDepth";
+    Reference r = tree.createReference("main", Branch.of(branch, null));
+    ContentsKey first = ContentsKey.of("a", "b", "c", "firstTable");
+    ContentsKey second = ContentsKey.of("a", "b", "c", "secondTable");
+    ContentsKey third = ContentsKey.of("a", "thirdTable");
+    ContentsKey fourth = ContentsKey.of("a", "b", "fourthTable");
+    tree.commitMultipleOperations(
+        branch,
+        r.getHash(),
+        ImmutableOperations.builder()
+            .addOperations(
+                ImmutablePut.builder().key(first).contents(IcebergTable.of("path1")).build())
+            .commitMeta(CommitMeta.fromMessage("commit 1"))
+            .build());
+    tree.commitMultipleOperations(
+        branch,
+        r.getHash(),
+        ImmutableOperations.builder()
+            .addOperations(
+                ImmutablePut.builder().key(second).contents(IcebergTable.of("path2")).build())
+            .commitMeta(CommitMeta.fromMessage("commit 2"))
+            .build());
+    tree.commitMultipleOperations(
+        branch,
+        r.getHash(),
+        ImmutableOperations.builder()
+            .addOperations(
+                ImmutablePut.builder().key(third).contents(IcebergTable.of("path3")).build())
+            .commitMeta(CommitMeta.fromMessage("commit 3"))
+            .build());
+    tree.commitMultipleOperations(
+        branch,
+        r.getHash(),
+        ImmutableOperations.builder()
+            .addOperations(
+                ImmutablePut.builder().key(fourth).contents(IcebergTable.of("path4")).build())
+            .commitMeta(CommitMeta.fromMessage("commit 4"))
+            .build());
+
+    List<Entry> entries = tree.getNamespaceEntries(branch, null, null, 0).getEntries();
+    assertThat(entries).isNotNull().hasSize(4);
+
+    entries = tree.getNamespaceEntries(branch, null, "a", 0).getEntries();
+    assertThat(entries).isNotNull().hasSize(4);
+
+    entries = tree.getNamespaceEntries(branch, null, "a", 1).getEntries();
+    assertThat(entries).hasSize(1);
+    entries.forEach(e -> assertThat(e.getName().toPathString()).startsWith("a"));
+
+    entries = tree.getNamespaceEntries(branch, null, "a", 2).getEntries();
+    assertThat(entries).hasSize(2);
+    entries.forEach(e -> assertThat(e.getName().toPathString()).startsWith("a"));
+
+    entries = tree.getNamespaceEntries(branch, null, "a.b", 3).getEntries();
+    assertThat(entries).hasSize(2);
+
+    entries = tree.getNamespaceEntries(branch, null, "a.b.c", 4).getEntries();
+    assertThat(entries).hasSize(2);
+
+    tree.deleteBranch(branch, tree.getReferenceByName(branch).getHash());
+  }
+
+  @Test
   public void checkCelScriptFailureReporting() {
     assertThatThrownBy(
             () ->

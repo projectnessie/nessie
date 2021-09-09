@@ -95,6 +95,15 @@ public interface TreeApi {
       @NotNull @Valid EntriesParams params)
       throws NessieNotFoundException;
 
+  EntriesResponse getNamespaceEntries(
+      @NotNull @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          String refName,
+      @Nullable @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          String hashOnRef,
+      @Nullable String namespacePrefix,
+      @Nullable Integer depth)
+      throws NessieNotFoundException;
+
   /**
    * Retrieve the commit log for a ref, potentially truncated by the backend.
    *
