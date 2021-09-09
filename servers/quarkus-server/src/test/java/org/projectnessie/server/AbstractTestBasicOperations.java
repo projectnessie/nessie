@@ -15,7 +15,7 @@
  */
 package org.projectnessie.server;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import io.quarkus.test.security.TestSecurity;
 import java.util.List;
@@ -23,10 +23,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
-import org.projectnessie.api.ContentsApi;
-import org.projectnessie.api.TreeApi;
-import org.projectnessie.api.params.EntriesParams;
-import org.projectnessie.client.NessieClient;
+import org.projectnessie.client.api.NessieApiV1;
+import org.projectnessie.client.api.NessieApiVersion;
+import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -34,32 +33,28 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.IcebergTable;
-import org.projectnessie.model.ImmutableBranch;
-import org.projectnessie.model.ImmutableDelete;
-import org.projectnessie.model.ImmutableOperations;
-import org.projectnessie.model.ImmutablePut;
-import org.projectnessie.model.Reference;
+import org.projectnessie.model.Operation.Delete;
+import org.projectnessie.model.Operation.Put;
 
 class AbstractTestBasicOperations {
 
-  private NessieClient client;
-  private TreeApi tree;
-  private ContentsApi contents;
+  private NessieApiV1 api;
 
   @AfterEach
   void closeClient() {
-    if (client != null) {
-      client.close();
-      client = null;
+    if (api != null) {
+      api.close();
+      api = null;
     }
   }
 
   void getCatalog(String branch) throws NessieNotFoundException, NessieConflictException {
-    client = NessieClient.builder().withUri("http://localhost:19121/api/v1").build();
-    tree = client.getTreeApi();
-    contents = client.getContentsApi();
+    api =
+        HttpClientBuilder.builder()
+            .withUri("http://localhost:19121/api/v1")
+            .build(NessieApiVersion.V_1, NessieApiV1.class);
     if (branch != null) {
-      tree.createReference("main", Branch.of(branch, null));
+      api.createReference().reference(Branch.of(branch, null)).sourceRefName("main").submit();
     }
   }
 
@@ -73,57 +68,60 @@ class AbstractTestBasicOperations {
       roles = {"admin", "user"})
   void testAdmin() throws NessieNotFoundException, NessieConflictException {
     getCatalog("testx");
-    Branch branch = (Branch) tree.getReferenceByName("testx");
-    List<Entry> tables = tree.getEntries("testx", EntriesParams.empty()).getEntries();
+    Branch branch = (Branch) api.getReference().refName("testx").submit();
+    List<Entry> tables = api.getEntries().refName("testx").submit().getEntries();
     Assertions.assertTrue(tables.isEmpty());
     ContentsKey key = ContentsKey.of("x", "x");
     tryEndpointPass(
         () ->
-            tree.commitMultipleOperations(
-                branch.getName(),
-                branch.getHash(),
-                ImmutableOperations.builder()
-                    .addOperations(
-                        ImmutablePut.builder().key(key).contents(IcebergTable.of("foo")).build())
-                    .commitMeta(CommitMeta.fromMessage("empty message"))
-                    .build()));
+            api.commitMultipleOperations()
+                .branch(branch)
+                .operation(Put.of(key, IcebergTable.of("foo", 42L, "cid-foo")))
+                .commitMeta(CommitMeta.fromMessage("empty message"))
+                .submit());
 
     Assertions.assertTrue(
-        contents.getContents(key, "testx", null).unwrap(IcebergTable.class).isPresent());
+        api.getContents()
+            .refName("testx")
+            .key(key)
+            .submit()
+            .get(key)
+            .unwrap(IcebergTable.class)
+            .isPresent());
 
-    Branch master = (Branch) tree.getReferenceByName("testx");
-    Branch test = ImmutableBranch.builder().hash(master.getHash()).name("testy").build();
+    Branch master = (Branch) api.getReference().refName("testx").submit();
+    Branch test = Branch.of("testy", master.getHash());
     tryEndpointPass(
-        () -> tree.createReference(master.getName(), Branch.of(test.getName(), test.getHash())));
-    Branch test2 = (Branch) tree.getReferenceByName("testy");
-    tryEndpointPass(() -> tree.deleteBranch(test2.getName(), test2.getHash()));
-    tryEndpointPass(
-        () ->
-            tree.commitMultipleOperations(
-                master.getName(),
-                master.getHash(),
-                ImmutableOperations.builder()
-                    .addOperations(ImmutableDelete.builder().key(key).build())
-                    .commitMeta(CommitMeta.fromMessage(""))
-                    .build()));
-    assertThrows(NessieNotFoundException.class, () -> contents.getContents(key, "testx", null));
+        () -> api.createReference().sourceRefName(master.getName()).reference(test).submit());
+    Branch test2 = (Branch) api.getReference().refName("testy").submit();
+    tryEndpointPass(() -> api.deleteBranch().branch(test2).submit());
     tryEndpointPass(
         () ->
-            tree.commitMultipleOperations(
-                branch.getName(),
-                branch.getHash(),
-                ImmutableOperations.builder()
-                    .addOperations(
-                        ImmutablePut.builder().key(key).contents(IcebergTable.of("bar")).build())
-                    .commitMeta(CommitMeta.fromMessage(""))
-                    .build()));
+            api.commitMultipleOperations()
+                .branch(master)
+                .operation(Delete.of(key))
+                .commitMeta(CommitMeta.fromMessage(""))
+                .submit());
+    assertThat(api.getContents().refName("testx").key(key).submit()).isEmpty();
+    tryEndpointPass(
+        () -> {
+          Branch b = (Branch) api.getReference().refName(branch.getName()).submit();
+          // Note: the initial version-store implementations just committed this operation, but it
+          // should actually fail, because the operations of the 1st commit above and this commit
+          // have conflicts.
+          api.commitMultipleOperations()
+              .branch(b)
+              .operation(Put.of(key, IcebergTable.of("bar", 42L, "cid-bar")))
+              .commitMeta(CommitMeta.fromMessage(""))
+              .submit();
+        });
   }
 
   @Test
   @TestSecurity(authorizationEnabled = false)
   void testUserCleanup() throws NessieNotFoundException, NessieConflictException {
     getCatalog(null);
-    Reference r = client.getTreeApi().getReferenceByName("testx");
-    client.getTreeApi().deleteBranch(r.getName(), r.getHash());
+    Branch r = (Branch) api.getReference().refName("testx").submit();
+    api.deleteBranch().branch(r).submit();
   }
 }

@@ -25,8 +25,8 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.projectnessie.model.Validation;
 
 /**
- * The purpose of this class is to include optional parameters that can be passed to {@link
- * org.projectnessie.api.TreeApi#getEntries(String, EntriesParams)}.
+ * The purpose of this class is to include optional parameters that can be passed to {@code
+ * HttpTreeApi#getEntries(String, EntriesParams)}.
  *
  * <p>For easier usage of this class, there is {@link EntriesParams#builder()}, which allows
  * configuring/setting the different parameters.

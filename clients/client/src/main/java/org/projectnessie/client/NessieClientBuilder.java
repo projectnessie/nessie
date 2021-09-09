@@ -22,7 +22,7 @@ import org.projectnessie.client.api.NessieApiVersion;
 import org.projectnessie.client.auth.NessieAuthentication;
 
 /**
- * {@link NessieClient} builder interface.
+ * {@link NessieApi} builder interface.
  *
  * @param <IMPL> concrete nessie-client builder type
  */
@@ -87,9 +87,9 @@ public interface NessieClientBuilder<IMPL extends NessieClientBuilder<IMPL>> {
   IMPL withUri(String uri);
 
   /**
-   * Builds a new {@link NessieClient}.
+   * Builds a new {@link NessieApi}.
    *
-   * @return A new {@link NessieClient}.
+   * @return A new {@link NessieApi}.
    */
   <API extends NessieApi> API build(NessieApiVersion apiVersion, Class<API> apiContract);
 }

@@ -22,14 +22,11 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import io.quarkus.test.security.TestSecurity;
 import java.util.List;
-import org.junit.jupiter.api.BeforeEach;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.projectnessie.api.ContentsApi;
-import org.projectnessie.api.TreeApi;
-import org.projectnessie.api.params.CommitLogParams;
-import org.projectnessie.api.params.EntriesParams;
+import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.client.rest.NessieForbiddenException;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -40,23 +37,14 @@ import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableDelete;
 import org.projectnessie.model.ImmutableOperations;
-import org.projectnessie.model.ImmutablePut;
-import org.projectnessie.model.Operations;
+import org.projectnessie.model.Operation.Delete;
+import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
 import org.projectnessie.server.authz.NessieAuthorizationTestProfile;
 
 @QuarkusTest
 @TestProfile(value = NessieAuthorizationTestProfile.class)
 class TestAuthorizationRules extends BaseClientAuthTest {
-
-  private TreeApi tree;
-  private ContentsApi contents;
-
-  @BeforeEach
-  void setupClient() {
-    tree = client().getTreeApi();
-    contents = client().getContentsApi();
-  }
 
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
@@ -88,12 +76,8 @@ class TestAuthorizationRules extends BaseClientAuthTest {
 
     listAllReferences(branchName, shouldFail);
 
-    ImmutableOperations createOps =
-        ImmutableOperations.builder()
-            .addOperations(ImmutablePut.builder().key(key).contents(IcebergTable.of("foo")).build())
-            .commitMeta(CommitMeta.fromMessage("add stuff"))
-            .build();
-    addContent(branch, createOps, role, shouldFail);
+    String cid = "cid-foo-" + UUID.randomUUID();
+    addContent(branch, Put.of(key, IcebergTable.of("foo", 42L, cid)), role, shouldFail);
 
     if (!shouldFail) {
       // These requests cannot succeed, because "disallowedBranchForTestUser" could not be created
@@ -104,12 +88,7 @@ class TestAuthorizationRules extends BaseClientAuthTest {
 
     branch = shouldFail ? branchWithInvalidHash : retrieveBranch(branchName, role, shouldFail);
 
-    ImmutableOperations deleteOps =
-        ImmutableOperations.builder()
-            .addOperations(ImmutableDelete.builder().key(key).build())
-            .commitMeta(CommitMeta.fromMessage("delete stuff"))
-            .build();
-    deleteContent(branch, deleteOps, role, shouldFail);
+    deleteContent(branch, Delete.of(key), role, shouldFail);
 
     branch = shouldFail ? branchWithInvalidHash : retrieveBranch(branchName, role, shouldFail);
     deleteBranch(branch, role, shouldFail);
@@ -128,19 +107,20 @@ class TestAuthorizationRules extends BaseClientAuthTest {
     listAllReferences(branchName, false);
 
     final Branch branch = retrieveBranch(branchName, role, false);
-    ImmutableOperations createOps =
-        ImmutableOperations.builder()
-            .addOperations(ImmutablePut.builder().key(key).contents(IcebergTable.of("foo")).build())
-            .commitMeta(CommitMeta.fromMessage("add stuff"))
-            .build();
 
     assertThatThrownBy(
-            () -> tree.commitMultipleOperations(branch.getName(), branch.getHash(), createOps))
+            () ->
+                api()
+                    .commitMultipleOperations()
+                    .branch(branch)
+                    .commitMeta(CommitMeta.fromMessage("add stuff"))
+                    .operation(Put.of(key, IcebergTable.of("foo", 42L, "cid-foo")))
+                    .submit())
         .isInstanceOf(NessieForbiddenException.class)
         .hasMessageContaining(
             String.format(
                 "'UPDATE_ENTITY' is not allowed for role '%s' on content '%s'",
-                role, createOps.getOperations().get(0).getKey().toPathString()));
+                role, key.toPathString()));
 
     readContent(branchName, key, role, true);
 
@@ -152,28 +132,39 @@ class TestAuthorizationRules extends BaseClientAuthTest {
             .commitMeta(CommitMeta.fromMessage("delete stuff"))
             .build();
 
-    assertThatThrownBy(() -> tree.commitMultipleOperations(b.getName(), b.getHash(), deleteOps))
+    assertThatThrownBy(
+            () ->
+                api()
+                    .commitMultipleOperations()
+                    .branch(b)
+                    .commitMeta(CommitMeta.fromMessage("delete stuff"))
+                    .operation(Delete.of(key))
+                    .submit())
         .isInstanceOf(NessieForbiddenException.class)
         .hasMessageContaining(
             String.format(
                 "'DELETE_ENTITY' is not allowed for role '%s' on content '%s'",
-                role, deleteOps.getOperations().get(0).getKey().toPathString()));
+                role, key.toPathString()));
 
     deleteBranch(branch, role, false);
   }
 
   private void listAllReferences(String branchName, boolean filteredOut) {
     if (filteredOut) {
-      assertThat(tree.getAllReferences()).extracting(Reference::getName).doesNotContain(branchName);
+      assertThat(api().getAllReferences().submit())
+          .extracting(Reference::getName)
+          .doesNotContain(branchName);
     } else {
-      assertThat(tree.getAllReferences()).extracting(Reference::getName).contains(branchName);
+      assertThat(api().getAllReferences().submit())
+          .extracting(Reference::getName)
+          .contains(branchName);
     }
   }
 
   private Branch retrieveBranch(String branchName, String role, boolean shouldFail)
       throws NessieNotFoundException {
     if (shouldFail) {
-      assertThatThrownBy(() -> tree.getReferenceByName(branchName))
+      assertThatThrownBy(() -> api().getReference().refName(branchName).submit())
           .isInstanceOf(NessieForbiddenException.class)
           .hasMessageContaining(
               String.format(
@@ -181,35 +172,36 @@ class TestAuthorizationRules extends BaseClientAuthTest {
                   role, branchName));
       return null;
     } else {
-      return (Branch) tree.getReferenceByName(branchName);
+      return (Branch) api().getReference().refName(branchName).submit();
     }
   }
 
   private void createBranch(Branch branch, String role, boolean shouldFail)
       throws NessieConflictException, NessieNotFoundException {
     if (shouldFail) {
-      assertThatThrownBy(() -> tree.createReference("main", branch))
+      assertThatThrownBy(
+              () -> api().createReference().sourceRefName("main").reference(branch).submit())
           .isInstanceOf(NessieForbiddenException.class)
           .hasMessageContaining(
               String.format(
                   "'CREATE_REFERENCE' is not allowed for role '%s' on reference '%s'",
                   role, branch.getName()));
     } else {
-      tree.createReference("main", branch);
+      api().createReference().sourceRefName("main").reference(branch).submit();
     }
   }
 
   private void deleteBranch(Branch branch, String role, boolean shouldFail)
       throws NessieConflictException, NessieNotFoundException {
     if (shouldFail) {
-      assertThatThrownBy(() -> tree.deleteBranch(branch.getName(), branch.getHash()))
+      assertThatThrownBy(() -> api().deleteBranch().branch(branch).submit())
           .isInstanceOf(NessieForbiddenException.class)
           .hasMessageContaining(
               String.format(
                   "'DELETE_REFERENCE' is not allowed for role '%s' on reference '%s'",
                   role, branch.getName()));
     } else {
-      tree.deleteBranch(branch.getName(), branch.getHash());
+      api().deleteBranch().branch(branch).submit();
     }
   }
 
@@ -217,14 +209,30 @@ class TestAuthorizationRules extends BaseClientAuthTest {
       throws NessieNotFoundException {
     if (shouldFail) {
       assertThatThrownBy(
-              () -> contents.getContents(key, branchName, null).unwrap(IcebergTable.class).get())
+              () ->
+                  api()
+                      .getContents()
+                      .refName(branchName)
+                      .key(key)
+                      .submit()
+                      .get(key)
+                      .unwrap(IcebergTable.class)
+                      .get())
           .isInstanceOf(NessieForbiddenException.class)
           .hasMessageContaining(
               String.format(
                   "'READ_ENTITY_VALUE' is not allowed for role '%s' on content '%s'",
                   role, key.toPathString()));
     } else {
-      assertThat(contents.getContents(key, branchName, null).unwrap(IcebergTable.class).get())
+      assertThat(
+              api()
+                  .getContents()
+                  .refName(branchName)
+                  .key(key)
+                  .submit()
+                  .get(key)
+                  .unwrap(IcebergTable.class)
+                  .get())
           .isNotNull()
           .isInstanceOf(IcebergTable.class);
     }
@@ -233,12 +241,12 @@ class TestAuthorizationRules extends BaseClientAuthTest {
   private void getEntriesFor(String branchName, String role, boolean shouldFail)
       throws NessieNotFoundException {
     if (shouldFail) {
-      assertThatThrownBy(() -> tree.getEntries(branchName, EntriesParams.empty()).getEntries())
+      assertThatThrownBy(() -> api().getEntries().refName(branchName).submit().getEntries())
           .isInstanceOf(NessieForbiddenException.class)
           .hasMessageContaining(
               String.format("'READ_ENTRIES' is not allowed for role '%s' on reference", role));
     } else {
-      List<Entry> tables = tree.getEntries(branchName, EntriesParams.empty()).getEntries();
+      List<Entry> tables = api().getEntries().refName(branchName).submit().getEntries();
       assertThat(tables).isNotEmpty();
     }
   }
@@ -246,50 +254,61 @@ class TestAuthorizationRules extends BaseClientAuthTest {
   private void getCommitLog(String branchName, String role, boolean shouldFail)
       throws NessieNotFoundException {
     if (shouldFail) {
-      assertThatThrownBy(
-              () -> tree.getCommitLog(branchName, CommitLogParams.empty()).getOperations())
+      assertThatThrownBy(() -> api().getCommitLog().refName(branchName).submit().getOperations())
           .isInstanceOf(NessieForbiddenException.class)
           .hasMessageContaining(
               String.format("'LIST_COMMIT_LOG' is not allowed for role '%s' on reference", role));
     } else {
-      List<CommitMeta> commits =
-          tree.getCommitLog(branchName, CommitLogParams.empty()).getOperations();
+      List<CommitMeta> commits = api().getCommitLog().refName(branchName).submit().getOperations();
       assertThat(commits).isNotEmpty();
     }
   }
 
-  private void addContent(Branch branch, Operations operations, String role, boolean shouldFail)
+  private void addContent(Branch branch, Put put, String role, boolean shouldFail)
       throws NessieNotFoundException, NessieConflictException {
+
+    CommitMultipleOperationsBuilder commitOp =
+        api()
+            .commitMultipleOperations()
+            .branch(branch)
+            .operation(put)
+            .commitMeta(CommitMeta.fromMessage("add stuff"));
 
     if (shouldFail) {
       // adding content requires COMMIT_CHANGE_AGAINST_REFERENCE & UPDATE_ENTITY, but this is
       // difficult to test here, so we're testing this in a separate method
-      assertThatThrownBy(
-              () -> tree.commitMultipleOperations(branch.getName(), branch.getHash(), operations))
+      assertThatThrownBy(commitOp::submit)
           .isInstanceOf(NessieForbiddenException.class)
           .hasMessageContaining(
               String.format(
                   "'COMMIT_CHANGE_AGAINST_REFERENCE' is not allowed for role '%s' on reference '%s'",
                   role, branch.getName()));
     } else {
-      tree.commitMultipleOperations(branch.getName(), branch.getHash(), operations);
+      commitOp.submit();
     }
   }
 
-  private void deleteContent(Branch branch, Operations operations, String role, boolean shouldFail)
+  private void deleteContent(Branch branch, Delete delete, String role, boolean shouldFail)
       throws NessieConflictException, NessieNotFoundException {
+
+    CommitMultipleOperationsBuilder commitOp =
+        api()
+            .commitMultipleOperations()
+            .branch(branch)
+            .operation(delete)
+            .commitMeta(CommitMeta.fromMessage("delete stuff"));
+
     if (shouldFail) {
       // deleting content requires COMMIT_CHANGE_AGAINST_REFERENCE & DELETE_ENTITY, but this is
       // difficult to test here, so we're testing this in a separate method
-      assertThatThrownBy(
-              () -> tree.commitMultipleOperations(branch.getName(), branch.getHash(), operations))
+      assertThatThrownBy(commitOp::submit)
           .isInstanceOf(NessieForbiddenException.class)
           .hasMessageContaining(
               String.format(
                   "'COMMIT_CHANGE_AGAINST_REFERENCE' is not allowed for role '%s' on reference '%s'",
                   role, branch.getName()));
     } else {
-      tree.commitMultipleOperations(branch.getName(), branch.getHash(), operations);
+      commitOp.submit();
     }
   }
 }

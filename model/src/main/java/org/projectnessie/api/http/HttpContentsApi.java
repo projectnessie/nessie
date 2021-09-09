@@ -35,7 +35,6 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
-import org.projectnessie.api.ContentsApi;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Contents;
 import org.projectnessie.model.ContentsKey;
@@ -45,7 +44,7 @@ import org.projectnessie.model.Validation;
 
 @Consumes(value = MediaType.APPLICATION_JSON)
 @Path("contents")
-public interface HttpContentsApi extends ContentsApi {
+public interface HttpContentsApi {
 
   /**
    * This operation returns the {@link Contents} for a {@link ContentsKey} in a named-reference (a

@@ -40,7 +40,6 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
-import org.projectnessie.api.TreeApi;
 import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.error.NessieConflictException;
@@ -56,7 +55,7 @@ import org.projectnessie.model.Validation;
 
 @Consumes(value = MediaType.APPLICATION_JSON)
 @Path("trees")
-public interface HttpTreeApi extends TreeApi {
+public interface HttpTreeApi {
   /** Get all references. */
   @GET
   @Produces(MediaType.APPLICATION_JSON)
