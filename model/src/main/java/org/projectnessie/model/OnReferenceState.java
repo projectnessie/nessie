@@ -15,7 +15,12 @@
  */
 package org.projectnessie.model;
 
-/** Marker interface for object types that represent a table's per-reference state. */
+/**
+ * Marker interface for object types that represent a table's per-reference state.
+ *
+ * @param <C> the complete type that holds both the global-state and the on-reference-state
+ * @param <G> the corresponding global-state type
+ */
 public interface OnReferenceState<G extends Contents, C extends Contents> {
   C asCompleteState(G state);
 }

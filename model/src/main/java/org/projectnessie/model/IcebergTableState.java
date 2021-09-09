@@ -56,12 +56,12 @@ public abstract class IcebergTableState extends Contents
   public abstract String getMetadataLocation();
 
   @Override
-  public IcebergSnapshot extractRefState() {
+  public IcebergSnapshot asRefState() {
     return IcebergSnapshot.of(getCurrentSnapshotId(), getId());
   }
 
   @Override
-  public IcebergTable extractGlobalState() {
+  public IcebergTable asGlobalState() {
     return IcebergTable.of(getMetadataLocation(), getId());
   }
 

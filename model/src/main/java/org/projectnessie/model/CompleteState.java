@@ -16,16 +16,15 @@
 package org.projectnessie.model;
 
 /**
- * Marker interface for {@link Contents} objects that represent both the global and per-reference
- * states. {@link CompleteState} type objects are only returned via {@link
- * org.projectnessie.api.ContentsApi#getContents(ContentsKey, String, String)} and {@link
- * org.projectnessie.api.ContentsApi#getMultipleContents(String, String, MultiGetContentsRequest)}.
+ * Base interface for {@link Contents} objects that represent both the global and per-reference
+ * states. {@link CompleteState} type objects are only returned via the "get-contents" methods of
+ * the Nessie-API..
  *
  * @param <G> {@link GlobalState} object type
  * @param <R> {@link OnReferenceState} object type
  */
 public interface CompleteState<G extends Contents, R extends Contents> {
-  R extractRefState();
+  R asRefState();
 
-  G extractGlobalState();
+  G asGlobalState();
 }

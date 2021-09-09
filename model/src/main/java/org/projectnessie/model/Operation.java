@@ -90,18 +90,30 @@ public interface Operation {
   @JsonDeserialize(as = ImmutablePutGlobal.class)
   @JsonTypeName("PUT_GLOBAL")
   interface PutGlobal extends Operation {
+
+    /**
+     * The new global-state to apply. Must be an instance of {@link GlobalState}. The {@link
+     * Contents#getId() contents-id} and {@link #getKey()} contents-key} must match the contents-id
+     * and contents-key of a corresponding {@link Put} operation.
+     */
     @NotNull
     Contents getContents();
 
     /**
-     * When present, this {@code Put} operation will be a CAS (compare-and-swap) operation based on
-     * the expected global state. Only useful if {@link #getContents()} represents a {@link
-     * OnReferenceState}.
+     * When present, this {@code PutGlobal} operation will be a CAS (compare-and-swap) operation
+     * based on this expected global state. The {@link Contents#getId() contents-id} must match the
+     * contents-id of the global-state in {@link #getContents()}, if present.
      */
     @Nullable
     Contents getExpectedState();
 
     static PutGlobal of(ContentsKey key, Contents contents, Contents expectedState) {
+      if (!(contents instanceof GlobalState)) {
+        throw new IllegalArgumentException("'contents' must be an instance of 'GlobalState'");
+      }
+      if (expectedState != null && !(expectedState instanceof GlobalState)) {
+        throw new IllegalArgumentException("'expectedState' must be an instance of 'GlobalState'");
+      }
       return ImmutablePutGlobal.builder()
           .key(key)
           .contents(contents)
