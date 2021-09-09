@@ -40,6 +40,13 @@ public class TestOpenIdAuthentication extends BaseClientAuthTest {
     return Jwt.preferredUserName("test_user").issuer("https://server.example.com").sign();
   }
 
+  private String getExpiredJwtToken() {
+    return Jwt.preferredUserName("expired")
+        .issuer("https://server.example.com")
+        .expiresAt(0)
+        .sign();
+  }
+
   @Test
   void testValidJwt() {
     withClientCustomizer(
@@ -48,9 +55,9 @@ public class TestOpenIdAuthentication extends BaseClientAuthTest {
   }
 
   @Test
-  void testInvalidToken() {
+  void testExpiredToken() {
     withClientCustomizer(
-        b -> b.withAuthentication(BearerAuthenticationProvider.create("invalid_token")));
+        b -> b.withAuthentication(BearerAuthenticationProvider.create(getExpiredJwtToken())));
     assertThatThrownBy(() -> client().getTreeApi().getAllReferences())
         .isInstanceOfSatisfying(
             NessieNotAuthorizedException.class,
