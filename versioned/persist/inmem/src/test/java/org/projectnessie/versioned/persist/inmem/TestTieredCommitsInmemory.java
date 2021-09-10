@@ -15,12 +15,13 @@
  */
 package org.projectnessie.versioned.persist.inmem;
 
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
+import org.junit.jupiter.api.BeforeAll;
 import org.projectnessie.versioned.persist.tests.AbstractTieredCommitsTest;
 
-public class TestTieredCommitsInmemory extends AbstractTieredCommitsTest<DatabaseAdapterConfig> {
-  @Override
-  protected String adapterName() {
-    return "In-Memory";
+public class TestTieredCommitsInmemory extends AbstractTieredCommitsTest {
+
+  @BeforeAll
+  static void configureAdapter() {
+    createAdapter("In-Memory", c -> c);
   }
 }

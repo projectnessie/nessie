@@ -18,40 +18,29 @@ package org.projectnessie.versioned.persist.tx.postgres;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory.Builder;
+import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.tests.AbstractTieredCommitsTest;
 import org.projectnessie.versioned.persist.tx.local.ImmutableDefaultLocalDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.tx.local.LocalDatabaseAdapterConfig;
 
 @EnabledIfSystemProperty(named = "it.nessie.dbs", matches = ".*cockroach.*")
-public class ITTieredCommitsCockroach
-    extends AbstractTieredCommitsTest<LocalDatabaseAdapterConfig> {
+public class ITTieredCommitsCockroach extends AbstractTieredCommitsTest {
   static ContainerFixture container =
       new ContainerFixture("cockroachdb/cockroach", "v21.1.6", "it.nessie.container.cockroach.tag");
 
   @BeforeAll
   static void startContainer() {
     container.setup();
+
+    createAdapter(
+        DatabaseAdapterFactory.<LocalDatabaseAdapterConfig>loadFactoryByName("PostgreSQL")
+            .newBuilder()
+            .withConfig(ImmutableDefaultLocalDatabaseAdapterConfig.builder().build()),
+        config -> container.configureDatabaseAdapter(config));
   }
 
   @AfterAll
   static void stopContainer() {
     container.stop();
-  }
-
-  @Override
-  protected String adapterName() {
-    return "PostgreSQL";
-  }
-
-  @Override
-  protected Builder<LocalDatabaseAdapterConfig> createAdapterBuilder() {
-    return super.createAdapterBuilder()
-        .withConfig(ImmutableDefaultLocalDatabaseAdapterConfig.builder().build());
-  }
-
-  @Override
-  protected LocalDatabaseAdapterConfig configureDatabaseAdapter(LocalDatabaseAdapterConfig config) {
-    return container.configureDatabaseAdapter(config);
   }
 }
