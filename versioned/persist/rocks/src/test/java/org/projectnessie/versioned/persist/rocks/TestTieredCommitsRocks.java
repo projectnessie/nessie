@@ -17,27 +17,27 @@ package org.projectnessie.versioned.persist.rocks;
 
 import java.nio.file.Path;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.io.TempDir;
 import org.projectnessie.versioned.persist.tests.AbstractTieredCommitsTest;
 
-public class TestTieredCommitsRocks extends AbstractTieredCommitsTest<RocksDatabaseAdapterConfig> {
+public class TestTieredCommitsRocks extends AbstractTieredCommitsTest {
   @TempDir static Path rocksDir;
 
   static RocksDbInstance instance;
 
-  @Override
-  protected String adapterName() {
-    return "RocksDB";
-  }
+  @BeforeAll
+  static void configureDatabaseAdapter() {
+    instance = new RocksDbInstance();
+    instance.setDbPath(rocksDir.toString());
 
-  @Override
-  protected RocksDatabaseAdapterConfig configureDatabaseAdapter(RocksDatabaseAdapterConfig config) {
-    if (instance == null) {
-      instance = new RocksDbInstance();
-      instance.setDbPath(rocksDir.toString());
-    }
-
-    return ImmutableRocksDatabaseAdapterConfig.builder().from(config).dbInstance(instance).build();
+    createAdapter(
+        "RocksDB",
+        config ->
+            ImmutableRocksDatabaseAdapterConfig.builder()
+                .from(config)
+                .dbInstance(instance)
+                .build());
   }
 
   @AfterAll

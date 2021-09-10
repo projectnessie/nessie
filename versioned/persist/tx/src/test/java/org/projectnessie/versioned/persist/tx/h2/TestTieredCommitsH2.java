@@ -15,23 +15,23 @@
  */
 package org.projectnessie.versioned.persist.tx.h2;
 
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory.Builder;
+import org.junit.jupiter.api.BeforeAll;
+import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.tests.AbstractTieredCommitsTest;
 import org.projectnessie.versioned.persist.tx.local.ImmutableDefaultLocalDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.tx.local.LocalDatabaseAdapterConfig;
 
-public class TestTieredCommitsH2 extends AbstractTieredCommitsTest<LocalDatabaseAdapterConfig> {
-  @Override
-  protected String adapterName() {
-    return "H2";
-  }
+public class TestTieredCommitsH2 extends AbstractTieredCommitsTest {
 
-  @Override
-  protected Builder<LocalDatabaseAdapterConfig> createAdapterBuilder() {
-    return super.createAdapterBuilder()
-        .withConfig(
-            ImmutableDefaultLocalDatabaseAdapterConfig.builder()
-                .jdbcUrl("jdbc:h2:mem:nessie")
-                .build());
+  @BeforeAll
+  static void configureAdapter() {
+    createAdapter(
+        DatabaseAdapterFactory.<LocalDatabaseAdapterConfig>loadFactoryByName("H2")
+            .newBuilder()
+            .withConfig(
+                ImmutableDefaultLocalDatabaseAdapterConfig.builder()
+                    .jdbcUrl("jdbc:h2:mem:nessie")
+                    .build()),
+        c -> c);
   }
 }

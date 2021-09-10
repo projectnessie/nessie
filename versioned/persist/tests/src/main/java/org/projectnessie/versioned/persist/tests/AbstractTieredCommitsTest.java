@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import com.google.protobuf.ByteString;
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -52,32 +53,30 @@ import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
  * Tests that verify {@link DatabaseAdapter} implementations. A few tests have similar pendants via
  * the tests against the {@code VersionStore}.
  */
-public abstract class AbstractTieredCommitsTest<CONFIG extends DatabaseAdapterConfig> {
+public abstract class AbstractTieredCommitsTest {
   protected static DatabaseAdapter databaseAdapter;
 
+  protected static <C extends DatabaseAdapterConfig> void createAdapter(
+      String adapterName, Function<C, DatabaseAdapterConfig> configurer) {
+    createAdapter(
+        DatabaseAdapterFactory.<C>loadFactoryByName(adapterName).newBuilder(), configurer);
+  }
+
+  protected static <C extends DatabaseAdapterConfig> void createAdapter(
+      Builder<C> configBuilder, Function<C, DatabaseAdapterConfig> configurer) {
+    databaseAdapter =
+        configBuilder
+            .configure(SystemPropertiesConfigurer::configureFromSystemProperties)
+            // default to a quite small max-size for the CommitLogEntry.keyList + KeyListEntity
+            // This is necessary for AbstractManyKeys to work properly!!
+            .configure(c -> c.withMaxKeyListSize(2048))
+            .configure(configurer)
+            .build();
+  }
+
   @BeforeEach
-  void loadDatabaseAdapter() {
-    if (databaseAdapter == null) {
-      databaseAdapter =
-          createAdapterBuilder()
-              .configure(SystemPropertiesConfigurer::configureFromSystemProperties)
-              // default to a quite small max-size for the CommitLogEntry.keyList + KeyListEntity
-              // This is necessary for AbstractManyKeys to work properly!!
-              .configure(c -> c.withMaxKeyListSize(2048))
-              .configure(this::configureDatabaseAdapter)
-              .build();
-    }
+  void reinitializeRepo() {
     databaseAdapter.reinitializeRepo("main");
-  }
-
-  protected Builder<CONFIG> createAdapterBuilder() {
-    return DatabaseAdapterFactory.<CONFIG>loadFactoryByName(adapterName()).newBuilder();
-  }
-
-  protected abstract String adapterName();
-
-  protected CONFIG configureDatabaseAdapter(CONFIG config) {
-    return config;
   }
 
   @AfterAll
