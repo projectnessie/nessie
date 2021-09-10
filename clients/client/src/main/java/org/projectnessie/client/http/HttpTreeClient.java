@@ -26,6 +26,7 @@ import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
+import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Merge;
@@ -182,14 +183,16 @@ class HttpTreeClient implements HttpTreeApi {
   public EntriesResponse getNamespaceEntries(
       String refName,
       @Nullable String hashOnRef,
-      @Nullable String namespacePrefix,
+      @Nullable ContentsKey namespacePrefix,
       @Nullable Integer depth)
       throws NessieNotFoundException {
     HttpRequest builder =
         client.newRequest().path("trees/tree/{ref}/namespaces").resolveTemplate("ref", refName);
+    if (namespacePrefix != null) {
+      builder.queryParam("namespace", namespacePrefix.toPathString());
+    }
     return builder
         .queryParam("namespaceDepth", String.valueOf(depth))
-        .queryParam("namespace", namespacePrefix)
         .queryParam("hashOnRef", hashOnRef)
         .get()
         .readEntity(EntriesResponse.class);

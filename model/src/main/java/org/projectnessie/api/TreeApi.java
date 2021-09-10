@@ -25,6 +25,7 @@ import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
+import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Merge;
@@ -100,7 +101,7 @@ public interface TreeApi {
           String refName,
       @Nullable @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String hashOnRef,
-      @Nullable String namespacePrefix,
+      @Nullable ContentsKey namespacePrefix,
       @Nullable Integer depth)
       throws NessieNotFoundException;
 

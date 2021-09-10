@@ -949,6 +949,7 @@ public abstract class AbstractTestRest {
     ContentsKey second = ContentsKey.of("a", "b", "c", "secondTable");
     ContentsKey third = ContentsKey.of("a", "thirdTable");
     ContentsKey fourth = ContentsKey.of("a", "b", "fourthTable");
+    ContentsKey fifth = ContentsKey.of("a", "boo", "fifthTable");
     tree.commitMultipleOperations(
         branch,
         r.getHash(),
@@ -981,26 +982,45 @@ public abstract class AbstractTestRest {
                 ImmutablePut.builder().key(fourth).contents(IcebergTable.of("path4")).build())
             .commitMeta(CommitMeta.fromMessage("commit 4"))
             .build());
+    tree.commitMultipleOperations(
+        branch,
+        r.getHash(),
+        ImmutableOperations.builder()
+            .addOperations(
+                ImmutablePut.builder().key(fifth).contents(IcebergTable.of("path5")).build())
+            .commitMeta(CommitMeta.fromMessage("commit 5"))
+            .build());
 
     List<Entry> entries = tree.getNamespaceEntries(branch, null, null, 0).getEntries();
-    assertThat(entries).isNotNull().hasSize(4);
+    assertThat(entries).isNotNull().hasSize(5);
 
-    entries = tree.getNamespaceEntries(branch, null, "a", 0).getEntries();
-    assertThat(entries).isNotNull().hasSize(4);
+    entries =
+        tree.getNamespaceEntries(branch, null, ContentsKey.fromPathString("a"), 0).getEntries();
+    assertThat(entries).isNotNull().hasSize(5);
 
-    entries = tree.getNamespaceEntries(branch, null, "a", 1).getEntries();
+    entries =
+        tree.getNamespaceEntries(branch, null, ContentsKey.fromPathString("a"), 1).getEntries();
     assertThat(entries).hasSize(1);
-    entries.forEach(e -> assertThat(e.getName().toPathString()).startsWith("a"));
+    assertThat(entries.stream().map(e -> e.getName().toPathString()))
+        .containsExactlyInAnyOrder("a");
 
-    entries = tree.getNamespaceEntries(branch, null, "a", 2).getEntries();
-    assertThat(entries).hasSize(2);
-    entries.forEach(e -> assertThat(e.getName().toPathString()).startsWith("a"));
+    entries =
+        tree.getNamespaceEntries(branch, null, ContentsKey.fromPathString("a"), 2).getEntries();
+    assertThat(entries).hasSize(3);
+    assertThat(entries.stream().map(e -> e.getName().toPathString()))
+        .containsExactlyInAnyOrder("a.thirdTable", "a.b", "a.boo");
 
-    entries = tree.getNamespaceEntries(branch, null, "a.b", 3).getEntries();
+    entries =
+        tree.getNamespaceEntries(branch, null, ContentsKey.fromPathString("a.b"), 3).getEntries();
     assertThat(entries).hasSize(2);
+    assertThat(entries.stream().map(e -> e.getName().toPathString()))
+        .containsExactlyInAnyOrder("a.b.c", "a.b.fourthTable");
 
-    entries = tree.getNamespaceEntries(branch, null, "a.b.c", 4).getEntries();
+    entries =
+        tree.getNamespaceEntries(branch, null, ContentsKey.fromPathString("a.b.c"), 4).getEntries();
     assertThat(entries).hasSize(2);
+    assertThat(entries.stream().map(e -> e.getName().toPathString()))
+        .containsExactlyInAnyOrder("a.b.c.firstTable", "a.b.c.secondTable");
 
     tree.deleteBranch(branch, tree.getReferenceByName(branch).getHash());
   }

@@ -46,6 +46,7 @@ import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
+import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Merge;
@@ -258,23 +259,19 @@ public interface HttpTreeApi extends TreeApi {
       throws NessieNotFoundException;
 
   /**
-   * Retrieve objects for a ref, potentially truncated by the backend.
+   * Retrieve namespace and objects for a ref.
    *
-   * <p>Retrieves up to {@code maxRecords} objects for the given named reference (tag or branch) or
-   * the given {@link org.projectnessie.model.Hash}. The backend <em>may</em> respect the given
-   * {@code max} records hint, but return less or more entries. Backends may also cap the returned
-   * entries at a hard-coded limit, the default REST server implementation has such a hard-coded
-   * limit.
+   * <p>Retrieves objects and namespaces for the given named reference (tag or branch) or the given
+   * {@link org.projectnessie.model.Hash}.
    *
-   * <p>Invoking {@code getEntries()} does <em>not</em> guarantee to return all commit log entries
-   * of a given reference, because the result can be truncated by the backend.
+   * <p>This is used to primarily to display the elements at a given level of a namespace.
    *
-   * <p>To implement paging, check {@link EntriesResponse#hasMore() EntriesResponse.hasMore()} and,
-   * if {@code true}, pass the value of {@link EntriesResponse#getToken()
-   * EntriesResponse.getToken()} in the next invocation of {@code getEntries()} as the {@code
-   * pageToken} parameter.
+   * <p>This method does not page as it must guarantee uniqueness.
    *
-   * <p>See {@code org.projectnessie.client.StreamingUtil} in {@code nessie-client}.
+   * <p>Example with objects: a.b.c.table1 a.b.table2 a.table3
+   *
+   * <p>With depth 1 we return a only with depth 2 and namespacePrefix a we return a.b and a.table3
+   * with depth 3 and namespacePrefix a.b we return a.b.c and a.b.table2
    */
   @GET
   @Produces(MediaType.APPLICATION_JSON)
@@ -319,13 +316,11 @@ public interface HttpTreeApi extends TreeApi {
       @Nullable
           @Parameter(
               description = "prefix namespace to start at",
-              examples = {@ExampleObject(ref = "nullHash"), @ExampleObject(ref = "hash")})
+              examples = {@ExampleObject(ref = "namespace")})
           @QueryParam("namespace")
-          String namespacePrefix,
+          ContentsKey namespacePrefix,
       @Nullable
-          @Parameter(
-              description = "total depth of namesapce to fetch",
-              examples = {@ExampleObject(ref = "nullHash"), @ExampleObject(ref = "hash")})
+          @Parameter(description = "total depth of namesapce to fetch")
           @QueryParam("namespaceDepth")
           Integer depth)
       throws NessieNotFoundException;

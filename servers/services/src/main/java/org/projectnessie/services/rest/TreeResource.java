@@ -21,6 +21,7 @@ import static org.projectnessie.services.cel.CELUtil.CONTAINER;
 import static org.projectnessie.services.cel.CELUtil.ENTRIES_DECLARATIONS;
 import static org.projectnessie.services.cel.CELUtil.SCRIPT_HOST;
 
+import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -340,13 +341,13 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
   public EntriesResponse getNamespaceEntries(
       String refName,
       @Nullable String hashOnRef,
-      @Nullable String namespacePrefix,
+      @Nullable ContentsKey namespacePrefix,
       @Nullable Integer depth)
       throws NessieNotFoundException {
     WithHash<NamedRef> refWithHash = namedRefWithHashOrThrow(refName, hashOnRef);
     try {
       List<EntriesResponse.Entry> entries;
-      try (Stream<EntriesResponse.Entry> s =
+      try (Stream<EntriesResponse.Entry> keyStream =
           getStore()
               .getKeys(refWithHash.getHash())
               .map(
@@ -357,10 +358,10 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
                           .build())) {
         entries =
             filterEntries(
-                    s,
-                    (namespacePrefix == null || namespacePrefix.isEmpty())
+                    keyStream,
+                    (namespacePrefix == null || namespacePrefix.getElements().isEmpty())
                         ? null
-                        : String.format("entry.namespace.startsWith('%s')", namespacePrefix))
+                        : buildRegex(namespacePrefix))
                 .map(e -> truncate(e, depth))
                 .distinct()
                 .collect(ImmutableList.toImmutableList());
@@ -372,7 +373,13 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
     }
   }
 
-  EntriesResponse.Entry truncate(EntriesResponse.Entry entry, Integer depth) {
+  private String buildRegex(ContentsKey namespacePrefix) {
+    return String.format(
+        "entry.namespace.matches('%s(\\\\.|$)')",
+        Joiner.on("\\\\.").join(namespacePrefix.getElements()));
+  }
+
+  private EntriesResponse.Entry truncate(EntriesResponse.Entry entry, Integer depth) {
     if (depth == null || depth < 1) {
       return entry;
     }
