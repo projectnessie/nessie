@@ -27,7 +27,7 @@ public class SinglePageAppRoutingFilter {
 
   @RouteFilter(100)
   void rerouteUiPaths(RoutingContext rc) {
-    final String path = rc.normalisedPath();
+    final String path = rc.normalizedPath();
     for (String prefix : UI_ROUTES) {
       if (path.startsWith(prefix)) {
         rc.reroute("/");
