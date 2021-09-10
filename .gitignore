@@ -28,8 +28,8 @@ hs_err_pid*
 target/
 dependency-reduced-pom.xml
 *.patch
-*.DS_STORE
-.DS_STORE
+*.DS_Store
+.DS_Store
 
 #intellij
 *.iml
