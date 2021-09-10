@@ -21,7 +21,6 @@ import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUti
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.deleteConflictMessage;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.hashCollisionDetected;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.mergeConflictMessage;
-import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.newHasher;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.randomHash;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.referenceAlreadyExists;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.referenceNotFound;
@@ -32,7 +31,6 @@ import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUti
 import static org.projectnessie.versioned.persist.adapter.spi.TryLoopState.newTryLoopState;
 import static org.projectnessie.versioned.persist.nontx.NonTransactionalOperationContext.NON_TRANSACTIONAL_OPERATION_CONTEXT;
 
-import com.google.common.hash.Hasher;
 import com.google.protobuf.ByteString;
 import java.util.Collections;
 import java.util.HashSet;
@@ -40,7 +38,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.ToIntFunction;
@@ -615,13 +612,6 @@ public abstract class NonTransactionalDatabaseAdapter<CONFIG extends DatabaseAda
       Hash parentHash,
       List<ContentsIdAndBytes> globals)
       throws ReferenceConflictException {
-    Hasher hasher = newHasher();
-    hasher
-        .putLong(GLOBAL_LOG_HASH_SEED)
-        // add some randomness here to "avoid" hash-collisions for the global-state-log
-        .putLong(ThreadLocalRandom.current().nextLong())
-        .putBytes(parentHash.asBytes().asReadOnlyByteBuffer());
-
     GlobalStateLogEntry currentEntry = fetchFromGlobalLog(ctx, parentHash);
 
     Stream<Hash> newParents = Stream.of(parentHash);
@@ -700,7 +690,11 @@ public abstract class NonTransactionalDatabaseAdapter<CONFIG extends DatabaseAda
     return Hash.of(branchHead.getHash());
   }
 
-  /** Load the current global-state-pointer. */
+  /**
+   * Load the current global-state-pointer.
+   *
+   * @return the current global points if set, or {@code null} if not set.
+   */
   protected abstract GlobalStatePointer fetchGlobalPointer(NonTransactionalOperationContext ctx);
 
   @Override
@@ -739,7 +733,11 @@ public abstract class NonTransactionalDatabaseAdapter<CONFIG extends DatabaseAda
         e -> e.getParentsList().stream().map(Hash::of).collect(Collectors.toList()));
   }
 
-  /** Load the global-log entry with the given id. */
+  /**
+   * Load the global-log entry with the given id.
+   *
+   * @return the loaded entry if it is available, {@code null} if it does not exist.
+   */
   protected abstract GlobalStateLogEntry fetchFromGlobalLog(
       NonTransactionalOperationContext ctx, Hash id);
 
