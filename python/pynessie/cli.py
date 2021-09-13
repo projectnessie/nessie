@@ -119,7 +119,7 @@ def cli(ctx: click.core.Context, json: bool, verbose: bool, endpoint: str, auth_
         nessie = NessieClient(config)
         ctx.obj = ContextObject(nessie, verbose, json)
     except confuse.exceptions.ConfigTypeError as e:
-        raise click.ClickException(str(e))
+        raise click.ClickException(str(e)) from e
 
 
 @cli.group()
