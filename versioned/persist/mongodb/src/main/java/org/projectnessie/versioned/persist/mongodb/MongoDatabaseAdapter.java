@@ -18,7 +18,6 @@ package org.projectnessie.versioned.persist.mongodb;
 import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.protoToKeyList;
 import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.toProto;
 
-import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.mongodb.ConnectionString;
 import com.mongodb.ErrorCategory;
@@ -66,8 +65,8 @@ public class MongoDatabaseAdapter
   private static final String COMMIT_LOG = "commit_log";
   private static final String KEY_LIST = "key_list";
 
-  private final ByteString keyPrefix;
-  private final byte[] globalPointerKey;
+  private final String keyPrefix;
+  private final String globalPointerKey;
 
   private final MongoClient mongoClient;
   private final MongoCollection<Document> globalPointers;
@@ -78,8 +77,8 @@ public class MongoDatabaseAdapter
   protected MongoDatabaseAdapter(MongoDatabaseAdapterConfig config) {
     super(config);
 
-    keyPrefix = ByteString.copyFromUtf8(config.getKeyPrefix());
-    globalPointerKey = keyPrefix.toByteArray();
+    keyPrefix = config.getKeyPrefix();
+    globalPointerKey = keyPrefix;
 
     ConnectionString cs = new ConnectionString(config.getConnectionString());
     MongoClientSettings settings = MongoClientSettings.builder().applyConnectionString(cs).build();
@@ -107,11 +106,11 @@ public class MongoDatabaseAdapter
     mongoClient.close();
   }
 
-  private byte[] toId(Hash id) {
-    return keyPrefix.concat(id.asBytes()).toByteArray();
+  private String toId(Hash id) {
+    return keyPrefix + '#' + id.asString();
   }
 
-  private List<byte[]> toIds(Collection<Hash> ids) {
+  private List<String> toIds(Collection<Hash> ids) {
     return ids.stream().map(this::toId).collect(Collectors.toList());
   }
 
@@ -119,7 +118,7 @@ public class MongoDatabaseAdapter
     return toDoc(toId(id), data);
   }
 
-  private static Document toDoc(byte[] id, byte[] data) {
+  private static Document toDoc(String id, byte[] data) {
     Document doc = new Document();
     doc.put("_id", id);
     doc.put("data", data);
@@ -193,7 +192,7 @@ public class MongoDatabaseAdapter
     }
   }
 
-  private byte[] loadById(MongoCollection<Document> collection, byte[] id) {
+  private byte[] loadById(MongoCollection<Document> collection, String id) {
     Document doc = collection.find(Filters.eq(id)).first();
     if (doc == null) {
       return null;
@@ -211,7 +210,7 @@ public class MongoDatabaseAdapter
     return loadById(collection, toId(id), parser);
   }
 
-  private <T> T loadById(MongoCollection<Document> collection, byte[] id, Parser<T> parser) {
+  private <T> T loadById(MongoCollection<Document> collection, String id, Parser<T> parser) {
     byte[] data = loadById(collection, id);
     if (data == null) {
       return null;
@@ -231,7 +230,7 @@ public class MongoDatabaseAdapter
    */
   private <T> List<T> fetchMappedPage(
       MongoCollection<Document> collection, List<Hash> hashes, Function<Document, T> mapper) {
-    List<byte[]> ids = hashes.stream().map(this::toId).collect(Collectors.toList());
+    List<String> ids = hashes.stream().map(this::toId).collect(Collectors.toList());
     FindIterable<Document> docs = collection.find(Filters.in("_id", ids)).limit(hashes.size());
 
     HashMap<Hash, Document> loaded = new HashMap<>(hashes.size());
@@ -273,9 +272,10 @@ public class MongoDatabaseAdapter
     return loadById(commitLog, hash, ProtoSerialization::protoToCommitLogEntry);
   }
 
-  private static Hash idAsHash(Document doc) {
-    byte[] id = doc.get("_id", Binary.class).getData();
-    return Hash.of(ByteString.copyFrom(id));
+  private Hash idAsHash(Document doc) {
+    String id = doc.get("_id", String.class);
+    String hash = id.substring(keyPrefix.length() + 1); // + 1 for the separator char
+    return Hash.of(hash);
   }
 
   private static byte[] data(Document doc) {
@@ -344,7 +344,8 @@ public class MongoDatabaseAdapter
   @Override
   protected void writeGlobalCommit(NonTransactionalOperationContext ctx, GlobalStateLogEntry entry)
       throws ReferenceConflictException {
-    insert(globalLog, toDoc(entry.getId().toByteArray(), entry.toByteArray()));
+    String id = toId(Hash.of(entry.getId()));
+    insert(globalLog, toDoc(id, entry.toByteArray()));
   }
 
   @Override
