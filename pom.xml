@@ -151,7 +151,7 @@
     <javax.version>4.0.1</javax.version>
     <jersey.version>2.34</jersey.version>
     <jetty.version>9.4.31.v20200723</jetty.version>
-    <jgit.version>5.12.0.202106070339-r</jgit.version>
+    <jgit.version>5.13.0.202109080827-r</jgit.version>
     <jjwt.version>0.11.2</jjwt.version>
     <jsr305.version>3.0.2</jsr305.version>
     <junit.version>5.7.2</junit.version>
