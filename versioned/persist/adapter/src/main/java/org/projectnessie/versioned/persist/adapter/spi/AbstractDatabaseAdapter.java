@@ -62,6 +62,7 @@ import org.projectnessie.versioned.persist.adapter.ContentsAndState;
 import org.projectnessie.versioned.persist.adapter.ContentsId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
+import org.projectnessie.versioned.persist.adapter.Difference;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ImmutableKeyList;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
@@ -335,7 +336,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
    * @param keyFilter optional filter on key + contents-id + contents-type
    * @return computed difference
    */
-  protected Stream<Diff<ByteString>> buildDiff(
+  protected Stream<Difference> buildDiff(
       OP_CONTEXT ctx, Hash from, Hash to, KeyFilterPredicate keyFilter)
       throws ReferenceNotFoundException {
     // TODO this implementation works, but is definitely not the most efficient one.
@@ -365,9 +366,19 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
         .mapToObj(allKeysList::get)
         .map(
             k -> {
-              Optional<ByteString> f = valToContents.apply(fromValues.get(k));
-              Optional<ByteString> t = valToContents.apply(toValues.get(k));
-              return f.equals(t) ? null : Diff.of(k, f, t);
+              ContentsAndState<ByteString> fromVal = fromValues.get(k);
+              ContentsAndState<ByteString> toVal = toValues.get(k);
+              Optional<ByteString> f = valToContents.apply(fromVal);
+              Optional<ByteString> t = valToContents.apply(toVal);
+              if (f.equals(t)) {
+                return null;
+              }
+              Optional<ByteString> g =
+                  Optional.ofNullable(
+                      fromVal != null
+                          ? fromVal.getGlobalState()
+                          : (toVal != null ? toVal.getGlobalState() : null));
+              return Difference.of(k, g, f, t);
             })
         .filter(Objects::nonNull);
   }

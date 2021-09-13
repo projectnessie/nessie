@@ -52,7 +52,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.projectnessie.versioned.BranchName;
-import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.NamedRef;
@@ -69,6 +68,7 @@ import org.projectnessie.versioned.persist.adapter.ContentsAndState;
 import org.projectnessie.versioned.persist.adapter.ContentsId;
 import org.projectnessie.versioned.persist.adapter.ContentsIdAndBytes;
 import org.projectnessie.versioned.persist.adapter.ContentsIdWithType;
+import org.projectnessie.versioned.persist.adapter.Difference;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyWithType;
@@ -368,7 +368,7 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
-  public Stream<Diff<ByteString>> diff(Hash from, Hash to, KeyFilterPredicate keyFilter)
+  public Stream<Difference> diff(Hash from, Hash to, KeyFilterPredicate keyFilter)
       throws ReferenceNotFoundException {
     Connection conn = borrowConnection();
     try {
