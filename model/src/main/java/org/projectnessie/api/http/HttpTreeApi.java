@@ -46,7 +46,6 @@ import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
-import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Merge;
@@ -229,7 +228,11 @@ public interface HttpTreeApi extends TreeApi {
               + "will return all commit log entries.\n"
               + "\n"
               + "The 'query_expression' parameter allows for advanced filtering capabilities using the Common Expression Language (CEL).\n"
-              + "An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n")
+              + "An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n"
+              + "\n"
+              + "The 'namespaceDepth' parameter returns only the ContentsKey components up to the depth of 'namespaceDepth'.\n"
+              + "For example they key 'a.b.c.d' with a depth of 3 will return 'a.b.c'. The operation is guaranteed to not return \n"
+              + "duplicates and therefore will never page.")
   @APIResponses({
     @APIResponse(
         description = "all objects for a reference",
@@ -256,73 +259,6 @@ public interface HttpTreeApi extends TreeApi {
           @PathParam("ref")
           String refName,
       @NotNull @Valid @BeanParam EntriesParams params)
-      throws NessieNotFoundException;
-
-  /**
-   * Retrieve namespace and objects for a ref.
-   *
-   * <p>Retrieves objects and namespaces for the given named reference (tag or branch) or the given
-   * {@link org.projectnessie.model.Hash}.
-   *
-   * <p>This is used to primarily to display the elements at a given level of a namespace.
-   *
-   * <p>This method does not page as it must guarantee uniqueness.
-   *
-   * <p>Example with objects: a.b.c.table1 a.b.table2 a.table3
-   *
-   * <p>With depth 1 we return a only with depth 2 and namespacePrefix a we return a.b and a.table3
-   * with depth 3 and namespacePrefix a.b we return a.b.c and a.b.table2
-   */
-  @GET
-  @Produces(MediaType.APPLICATION_JSON)
-  @Path("tree/{ref}/namespaces")
-  @Operation(
-      summary = "Fetch all namespaces and objects for a given depth and prefix",
-      description =
-          "Retrieves objects for a ref, this won't be paged due to the requirement for uniqueness.\n")
-  @APIResponses({
-    @APIResponse(
-        description =
-            "all unique objects and namespaces for a reference at a certain depth and prefix",
-        content = {
-          @Content(
-              mediaType = MediaType.APPLICATION_JSON,
-              examples = {@ExampleObject(ref = "entriesResponse")},
-              schema = @Schema(implementation = EntriesResponse.class))
-        }),
-    @APIResponse(responseCode = "200", description = "Returned successfully."),
-    @APIResponse(responseCode = "400", description = "Invalid input, ref name not valid"),
-    @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
-    @APIResponse(
-        responseCode = "403",
-        description = "Not allowed to view the given reference or fetch entries for it"),
-    @APIResponse(responseCode = "404", description = "Ref not found")
-  })
-  EntriesResponse getNamespaceEntries(
-      @NotNull
-          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-          @Parameter(
-              description = "name of ref to fetch from",
-              examples = {@ExampleObject(ref = "ref")})
-          @PathParam("ref")
-          String refName,
-      @Nullable
-          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
-          @Parameter(
-              description = "a particular hash on the given ref",
-              examples = {@ExampleObject(ref = "nullHash"), @ExampleObject(ref = "hash")})
-          @QueryParam("hashOnRef")
-          String hashOnRef,
-      @Nullable
-          @Parameter(
-              description = "prefix namespace to start at",
-              examples = {@ExampleObject(ref = "namespace")})
-          @QueryParam("namespace")
-          ContentsKey namespacePrefix,
-      @Nullable
-          @Parameter(description = "total depth of namesapce to fetch")
-          @QueryParam("namespaceDepth")
-          Integer depth)
       throws NessieNotFoundException;
 
   /**

@@ -21,7 +21,6 @@ import static org.projectnessie.services.cel.CELUtil.CONTAINER;
 import static org.projectnessie.services.cel.CELUtil.ENTRIES_DECLARATIONS;
 import static org.projectnessie.services.cel.CELUtil.SCRIPT_HOST;
 
-import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -33,7 +32,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import javax.annotation.Nullable;
 import javax.enterprise.context.RequestScoped;
 import javax.enterprise.inject.Alternative;
 import javax.inject.Inject;
@@ -318,7 +316,7 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
     //  all existing VersionStore implementations have to read all keys anyways so we don't get much
     try {
       List<EntriesResponse.Entry> entries;
-      try (Stream<EntriesResponse.Entry> s =
+      try (Stream<EntriesResponse.Entry> entryStream =
           getStore()
               .getKeys(refWithHash.getHash())
               .map(
@@ -327,56 +325,23 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
                           .name(fromKey(key.getValue()))
                           .type((Type) key.getType())
                           .build())) {
-        entries =
-            filterEntries(s, params.queryExpression()).collect(ImmutableList.toImmutableList());
+        Stream<EntriesResponse.Entry> entriesStream =
+            filterEntries(entryStream, params.queryExpression());
+        if (params.namespaceDepth() != null && params.namespaceDepth() > 0) {
+          entries =
+              entriesStream
+                  .map(e -> truncate(e, params.namespaceDepth()))
+                  .distinct()
+                  .collect(ImmutableList.toImmutableList());
+        } else {
+          entries = entriesStream.collect(ImmutableList.toImmutableList());
+        }
       }
       return EntriesResponse.builder().addAllEntries(entries).build();
     } catch (ReferenceNotFoundException e) {
       throw new NessieNotFoundException(
           String.format("Unable to find the reference [%s].", namedRef), e);
     }
-  }
-
-  @Override
-  public EntriesResponse getNamespaceEntries(
-      String refName,
-      @Nullable String hashOnRef,
-      @Nullable ContentsKey namespacePrefix,
-      @Nullable Integer depth)
-      throws NessieNotFoundException {
-    WithHash<NamedRef> refWithHash = namedRefWithHashOrThrow(refName, hashOnRef);
-    try {
-      List<EntriesResponse.Entry> entries;
-      try (Stream<EntriesResponse.Entry> keyStream =
-          getStore()
-              .getKeys(refWithHash.getHash())
-              .map(
-                  key ->
-                      EntriesResponse.Entry.builder()
-                          .name(fromKey(key.getValue()))
-                          .type((Type) key.getType())
-                          .build())) {
-        entries =
-            filterEntries(
-                    keyStream,
-                    (namespacePrefix == null || namespacePrefix.getElements().isEmpty())
-                        ? null
-                        : buildRegex(namespacePrefix))
-                .map(e -> truncate(e, depth))
-                .distinct()
-                .collect(ImmutableList.toImmutableList());
-      }
-      return EntriesResponse.builder().addAllEntries(entries).build();
-    } catch (ReferenceNotFoundException e) {
-      throw new NessieNotFoundException(
-          String.format("Unable to find the reference [%s].", refName), e);
-    }
-  }
-
-  private String buildRegex(ContentsKey namespacePrefix) {
-    return String.format(
-        "entry.namespace.matches('%s(\\\\.|$)')",
-        Joiner.on("\\\\.").join(namespacePrefix.getElements()));
   }
 
   private EntriesResponse.Entry truncate(EntriesResponse.Entry entry, Integer depth) {

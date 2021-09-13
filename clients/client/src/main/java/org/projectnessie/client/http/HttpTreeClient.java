@@ -17,7 +17,6 @@ package org.projectnessie.client.http;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import java.util.List;
-import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import org.projectnessie.api.http.HttpTreeApi;
@@ -26,7 +25,6 @@ import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
-import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Merge;
@@ -175,25 +173,9 @@ class HttpTreeClient implements HttpTreeApi {
         .queryParam("pageToken", params.pageToken())
         .queryParam("query_expression", params.queryExpression())
         .queryParam("hashOnRef", params.hashOnRef())
-        .get()
-        .readEntity(EntriesResponse.class);
-  }
-
-  @Override
-  public EntriesResponse getNamespaceEntries(
-      String refName,
-      @Nullable String hashOnRef,
-      @Nullable ContentsKey namespacePrefix,
-      @Nullable Integer depth)
-      throws NessieNotFoundException {
-    HttpRequest builder =
-        client.newRequest().path("trees/tree/{ref}/namespaces").resolveTemplate("ref", refName);
-    if (namespacePrefix != null) {
-      builder.queryParam("namespace", namespacePrefix.toPathString());
-    }
-    return builder
-        .queryParam("namespaceDepth", String.valueOf(depth))
-        .queryParam("hashOnRef", hashOnRef)
+        .queryParam(
+            "namespaceDepth",
+            params.namespaceDepth() == null ? null : String.valueOf(params.namespaceDepth()))
         .get()
         .readEntity(EntriesResponse.class);
   }

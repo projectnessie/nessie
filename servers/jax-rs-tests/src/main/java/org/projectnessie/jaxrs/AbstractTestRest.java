@@ -991,33 +991,64 @@ public abstract class AbstractTestRest {
             .commitMeta(CommitMeta.fromMessage("commit 5"))
             .build());
 
-    List<Entry> entries = tree.getNamespaceEntries(branch, null, null, 0).getEntries();
+    List<Entry> entries =
+        tree.getEntries(branch, EntriesParams.builder().namespaceDepth(0).build()).getEntries();
     assertThat(entries).isNotNull().hasSize(5);
 
     entries =
-        tree.getNamespaceEntries(branch, null, ContentsKey.fromPathString("a"), 0).getEntries();
+        tree.getEntries(
+                branch,
+                EntriesParams.builder()
+                    .namespaceDepth(0)
+                    .expression("entry.namespace.matches('a(\\\\.|$)')")
+                    .build())
+            .getEntries();
     assertThat(entries).isNotNull().hasSize(5);
 
     entries =
-        tree.getNamespaceEntries(branch, null, ContentsKey.fromPathString("a"), 1).getEntries();
+        tree.getEntries(
+                branch,
+                EntriesParams.builder()
+                    .namespaceDepth(1)
+                    .expression("entry.namespace.matches('a(\\\\.|$)')")
+                    .build())
+            .getEntries();
     assertThat(entries).hasSize(1);
     assertThat(entries.stream().map(e -> e.getName().toPathString()))
         .containsExactlyInAnyOrder("a");
 
     entries =
-        tree.getNamespaceEntries(branch, null, ContentsKey.fromPathString("a"), 2).getEntries();
+        tree.getEntries(
+                branch,
+                EntriesParams.builder()
+                    .namespaceDepth(2)
+                    .expression("entry.namespace.matches('a(\\\\.|$)')")
+                    .build())
+            .getEntries();
     assertThat(entries).hasSize(3);
     assertThat(entries.stream().map(e -> e.getName().toPathString()))
         .containsExactlyInAnyOrder("a.thirdTable", "a.b", "a.boo");
 
     entries =
-        tree.getNamespaceEntries(branch, null, ContentsKey.fromPathString("a.b"), 3).getEntries();
+        tree.getEntries(
+                branch,
+                EntriesParams.builder()
+                    .namespaceDepth(3)
+                    .expression("entry.namespace.matches('a\\\\.b(\\\\.|$)')")
+                    .build())
+            .getEntries();
     assertThat(entries).hasSize(2);
     assertThat(entries.stream().map(e -> e.getName().toPathString()))
         .containsExactlyInAnyOrder("a.b.c", "a.b.fourthTable");
 
     entries =
-        tree.getNamespaceEntries(branch, null, ContentsKey.fromPathString("a.b.c"), 4).getEntries();
+        tree.getEntries(
+                branch,
+                EntriesParams.builder()
+                    .namespaceDepth(4)
+                    .expression("entry.namespace.matches('a\\\\.b\\\\.c(\\\\.|$)')")
+                    .build())
+            .getEntries();
     assertThat(entries).hasSize(2);
     assertThat(entries.stream().map(e -> e.getName().toPathString()))
         .containsExactlyInAnyOrder("a.b.c.firstTable", "a.b.c.secondTable");

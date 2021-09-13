@@ -52,6 +52,12 @@ public class EntriesParams {
 
   @Parameter(
       description =
+          "If set > 0 will filter the results to only return namespaces/tables to the depth of namespaceDepth. If not set or <=0 has no effect")
+  @QueryParam("namespaceDepth")
+  private Integer namespaceDepth;
+
+  @Parameter(
+      description =
           "A Common Expression Language (CEL) expression. An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n"
               + "Usable variables within the expression are 'entry.namespace' (string) & 'entry.contentType' (string)",
       examples = {
@@ -65,15 +71,25 @@ public class EntriesParams {
   public EntriesParams() {}
 
   private EntriesParams(
-      String hashOnRef, Integer maxRecords, String pageToken, String queryExpression) {
+      String hashOnRef,
+      Integer maxRecords,
+      String pageToken,
+      Integer namespaceDepth,
+      String queryExpression) {
     this.hashOnRef = hashOnRef;
     this.maxRecords = maxRecords;
     this.pageToken = pageToken;
+    this.namespaceDepth = namespaceDepth;
     this.queryExpression = queryExpression;
   }
 
   private EntriesParams(Builder builder) {
-    this(builder.hashOnRef, builder.maxRecords, builder.pageToken, builder.queryExpression);
+    this(
+        builder.hashOnRef,
+        builder.maxRecords,
+        builder.pageToken,
+        builder.namespaceDepth,
+        builder.queryExpression);
   }
 
   public static EntriesParams.Builder builder() {
@@ -101,6 +117,10 @@ public class EntriesParams {
     return queryExpression;
   }
 
+  public Integer namespaceDepth() {
+    return namespaceDepth;
+  }
+
   @Override
   public String toString() {
     return new StringJoiner(", ", EntriesParams.class.getSimpleName() + "[", "]")
@@ -108,6 +128,7 @@ public class EntriesParams {
         .add("maxRecords=" + maxRecords)
         .add("pageToken='" + pageToken + "'")
         .add("queryExpression='" + queryExpression + "'")
+        .add("namespaceDepth='" + namespaceDepth + "'")
         .toString();
   }
 
@@ -117,6 +138,7 @@ public class EntriesParams {
     private Integer maxRecords;
     private String pageToken;
     private String queryExpression;
+    private Integer namespaceDepth;
 
     private Builder() {}
 
@@ -140,10 +162,16 @@ public class EntriesParams {
       return this;
     }
 
+    public Builder namespaceDepth(Integer namespaceDepth) {
+      this.namespaceDepth = namespaceDepth;
+      return this;
+    }
+
     public EntriesParams.Builder from(EntriesParams params) {
       return hashOnRef(params.hashOnRef)
           .maxRecords(params.maxRecords)
           .pageToken(params.pageToken)
+          .namespaceDepth(params.namespaceDepth)
           .expression(params.queryExpression);
     }
 

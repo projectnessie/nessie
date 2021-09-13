@@ -34,7 +34,6 @@ import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
 import org.projectnessie.model.Contents.Type;
-import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Merge;
@@ -234,18 +233,5 @@ public class TreeResourceWithAuthorizationChecks extends TreeResource {
               }
             });
     return super.commitMultipleOperations(branch, hash, operations);
-  }
-
-  @Override
-  public EntriesResponse getNamespaceEntries(
-      String namedRef,
-      @Nullable String hashOnRef,
-      @Nullable ContentsKey namespacePrefix,
-      @Nullable Integer depth)
-      throws NessieNotFoundException {
-    getAccessChecker()
-        .canReadEntries(
-            createAccessContext(), namedRefWithHashOrThrow(namedRef, hashOnRef).getValue());
-    return super.getNamespaceEntries(namedRef, hashOnRef, namespacePrefix, depth);
   }
 }

@@ -24,5 +24,8 @@ import org.projectnessie.model.EntriesResponse;
  * @since Nessie API {@link NessieApiVersion#V_1}
  */
 public interface GetEntriesBuilder extends PagingBuilder<GetEntriesBuilder> {
+
+  GetEntriesBuilder queryExpression(Integer namespaceDepth);
+
   EntriesResponse submit() throws NessieNotFoundException;
 }

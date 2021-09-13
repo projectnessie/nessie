@@ -25,7 +25,6 @@ import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
-import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Merge;
@@ -94,15 +93,6 @@ public interface TreeApi {
       @NotNull @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           String refName,
       @NotNull @Valid EntriesParams params)
-      throws NessieNotFoundException;
-
-  EntriesResponse getNamespaceEntries(
-      @NotNull @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-          String refName,
-      @Nullable @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
-          String hashOnRef,
-      @Nullable ContentsKey namespacePrefix,
-      @Nullable Integer depth)
       throws NessieNotFoundException;
 
   /**
