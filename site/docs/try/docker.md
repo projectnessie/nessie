@@ -52,5 +52,5 @@ $ nessie branch my_branch
 From there, you can use one of the three main Nessie integrations of:
 
 * Take a look at your current empty repository in the [Web UI](../tools/ui.md)
-* NessieCatalog for Iceberg [within Spark](../tools/spark.md)
-* Nessie Log Handle for Delta Lake [within Spark](../tools/spark.md)
+* NessieCatalog for Iceberg [within Spark](../tools/iceberg_client.md)
+* Nessie Log Handle for Delta Lake [within Spark](../tools/deltalake_client.md)

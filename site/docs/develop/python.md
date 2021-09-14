@@ -27,7 +27,7 @@ All endpoint options are available from this client.
 ## Spark usage from Python
 
 A common way to interact with Nessie is via Spark. You can read more about working 
-with Nessie and Spark together on our [Spark](../tools/spark.md) docs page.
+with Nessie, Spark and Iceberg together on our [Iceberg Client](../tools/iceberg_client.md) docs page.
 
 ## API Documentation
 

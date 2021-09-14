@@ -4,7 +4,7 @@ Nessie is focused on working with the widest range of tools possible. If a tool 
 or reads data, Nessie seeks to work with it. Current Nessie integrations/tools include 
 the following:
 
-| |[Spark 2](spark.md)[^1]|[Spark 3](spark.md)[^2]|[Nessie CLI](cli.md)|
+| |Spark 2 [(Iceberg)](iceberg_client.md) [(Delta Lake)](deltalake_client.md)[^1]|Spark 3 [(Iceberg)](iceberg_client.md) [(Delta Lake)](deltalake_client.md)[^2]|[Nessie CLI](cli.md)|
 | --- | --- | --- | --- |
 |Read Default Branch|:material-check:| :material-check: | |
 |Read Any Branch/Tag/Hash|:material-check:| :material-check: | |
