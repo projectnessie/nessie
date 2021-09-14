@@ -19,15 +19,10 @@ import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.p
 import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.toProto;
 
 import com.google.protobuf.InvalidProtocolBufferException;
-import com.mongodb.ConnectionString;
 import com.mongodb.ErrorCategory;
-import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoWriteException;
 import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.result.DeleteResult;
@@ -60,50 +55,34 @@ import org.projectnessie.versioned.persist.serialize.ProtoSerialization;
 public class MongoDatabaseAdapter
     extends NonTransactionalDatabaseAdapter<MongoDatabaseAdapterConfig> {
 
-  private static final String GLOBAL_POINTER = "global_pointer";
-  private static final String GLOBAL_LOG = "global_log";
-  private static final String COMMIT_LOG = "commit_log";
-  private static final String KEY_LIST = "key_list";
-
   private final String keyPrefix;
   private final String globalPointerKey;
 
-  private final MongoClient mongoClient;
-  private final MongoCollection<Document> globalPointers;
-  private final MongoCollection<Document> globalLog;
-  private final MongoCollection<Document> commitLog;
-  private final MongoCollection<Document> keyLists;
+  private final MongoDatabaseClient client;
 
   protected MongoDatabaseAdapter(MongoDatabaseAdapterConfig config) {
     super(config);
 
+    client = config.getClient();
+    client.acquire();
+
     keyPrefix = config.getKeyPrefix();
     globalPointerKey = keyPrefix;
-
-    ConnectionString cs = new ConnectionString(config.getConnectionString());
-    MongoClientSettings settings = MongoClientSettings.builder().applyConnectionString(cs).build();
-
-    mongoClient = MongoClients.create(settings);
-    MongoDatabase database = mongoClient.getDatabase(config.getDatabaseName());
-    globalPointers = database.getCollection(GLOBAL_POINTER);
-    globalLog = database.getCollection(GLOBAL_LOG);
-    commitLog = database.getCollection(COMMIT_LOG);
-    keyLists = database.getCollection(KEY_LIST);
   }
 
   @Override
   public void reinitializeRepo(String defaultBranchName) {
-    globalPointers.deleteMany(Filters.empty()); // empty filter matches all
-    globalLog.deleteMany(Filters.empty());
-    commitLog.deleteMany(Filters.empty());
-    keyLists.deleteMany(Filters.empty());
+    client.getGlobalPointers().deleteMany(Filters.empty()); // empty filter matches all
+    client.getGlobalLog().deleteMany(Filters.empty());
+    client.getCommitLog().deleteMany(Filters.empty());
+    client.getKeyLists().deleteMany(Filters.empty());
 
     super.initializeRepo(defaultBranchName);
   }
 
   @Override
   public void close() {
-    mongoClient.close();
+    client.release();
   }
 
   private String toId(Hash id) {
@@ -269,7 +248,7 @@ public class MongoDatabaseAdapter
 
   @Override
   protected CommitLogEntry fetchFromCommitLog(NonTransactionalOperationContext ctx, Hash hash) {
-    return loadById(commitLog, hash, ProtoSerialization::protoToCommitLogEntry);
+    return loadById(client.getCommitLog(), hash, ProtoSerialization::protoToCommitLogEntry);
   }
 
   private Hash idAsHash(Document doc) {
@@ -285,7 +264,7 @@ public class MongoDatabaseAdapter
   @Override
   protected List<CommitLogEntry> fetchPageFromCommitLog(
       NonTransactionalOperationContext ctx, List<Hash> hashes) {
-    return fetchPage(commitLog, hashes, ProtoSerialization::protoToCommitLogEntry);
+    return fetchPage(client.getCommitLog(), hashes, ProtoSerialization::protoToCommitLogEntry);
   }
 
   @Override
@@ -302,7 +281,7 @@ public class MongoDatabaseAdapter
   protected Stream<KeyListEntity> fetchKeyLists(
       NonTransactionalOperationContext ctx, List<Hash> keyListsIds) {
     return fetchMappedPage(
-        keyLists,
+        client.getKeyLists(),
         keyListsIds,
         document -> {
           Hash hash = idAsHash(document);
@@ -315,7 +294,7 @@ public class MongoDatabaseAdapter
   @Override
   protected void writeIndividualCommit(NonTransactionalOperationContext ctx, CommitLogEntry entry)
       throws ReferenceConflictException {
-    insert(commitLog, entry.getHash(), toProto(entry).toByteArray());
+    insert(client.getCommitLog(), entry.getHash(), toProto(entry).toByteArray());
   }
 
   @Override
@@ -326,7 +305,7 @@ public class MongoDatabaseAdapter
         entries.stream()
             .map(e -> toDoc(e.getHash(), toProto(e).toByteArray()))
             .collect(Collectors.toList());
-    insert(commitLog, docs);
+    insert(client.getCommitLog(), docs);
   }
 
   @Override
@@ -334,7 +313,7 @@ public class MongoDatabaseAdapter
       NonTransactionalOperationContext ctx, List<KeyListEntity> newKeyListEntities) {
     for (KeyListEntity keyList : newKeyListEntities) {
       try {
-        insert(keyLists, keyList.getId(), toProto(keyList.getKeys()).toByteArray());
+        insert(client.getKeyLists(), keyList.getId(), toProto(keyList.getKeys()).toByteArray());
       } catch (ReferenceConflictException e) {
         throw new IllegalStateException(e);
       }
@@ -345,7 +324,7 @@ public class MongoDatabaseAdapter
   protected void writeGlobalCommit(NonTransactionalOperationContext ctx, GlobalStateLogEntry entry)
       throws ReferenceConflictException {
     String id = toId(Hash.of(entry.getId()));
-    insert(globalLog, toDoc(id, entry.toByteArray()));
+    insert(client.getGlobalLog(), toDoc(id, entry.toByteArray()));
   }
 
   @Override
@@ -354,13 +333,16 @@ public class MongoDatabaseAdapter
     Document doc = toDoc(pointer);
 
     UpdateResult result =
-        globalPointers.updateOne(
-            Filters.eq((Object) globalPointerKey),
-            new Document("$set", doc),
-            new UpdateOptions().upsert(true));
+        client
+            .getGlobalPointers()
+            .updateOne(
+                Filters.eq((Object) globalPointerKey),
+                new Document("$set", doc),
+                new UpdateOptions().upsert(true));
 
     if (!result.wasAcknowledged()) {
-      throw new IllegalStateException("Unacknowledged write to " + globalPointers.getNamespace());
+      throw new IllegalStateException(
+          "Unacknowledged write to " + client.getGlobalPointers().getNamespace());
     }
   }
 
@@ -373,9 +355,11 @@ public class MongoDatabaseAdapter
     byte[] expectedGlobalId = expected.getGlobalId().toByteArray();
 
     UpdateResult result =
-        globalPointers.updateOne(
-            Filters.and(Filters.eq(globalPointerKey), Filters.eq("globalId", expectedGlobalId)),
-            new Document("$set", doc));
+        client
+            .getGlobalPointers()
+            .updateOne(
+                Filters.and(Filters.eq(globalPointerKey), Filters.eq("globalId", expectedGlobalId)),
+                new Document("$set", doc));
 
     return result.wasAcknowledged()
         && result.getMatchedCount() == 1
@@ -388,26 +372,26 @@ public class MongoDatabaseAdapter
       Hash globalId,
       Set<Hash> branchCommits,
       Set<Hash> newKeyLists) {
-    globalLog.deleteOne(Filters.eq(toId(globalId)));
+    client.getGlobalLog().deleteOne(Filters.eq(toId(globalId)));
 
-    delete(commitLog, branchCommits);
-    delete(keyLists, newKeyLists);
+    delete(client.getCommitLog(), branchCommits);
+    delete(client.getKeyLists(), newKeyLists);
   }
 
   @Override
   protected GlobalStatePointer fetchGlobalPointer(NonTransactionalOperationContext ctx) {
-    return loadById(globalPointers, globalPointerKey, GlobalStatePointer::parseFrom);
+    return loadById(client.getGlobalPointers(), globalPointerKey, GlobalStatePointer::parseFrom);
   }
 
   @Override
   protected GlobalStateLogEntry fetchFromGlobalLog(NonTransactionalOperationContext ctx, Hash id) {
-    return loadById(globalLog, id, GlobalStateLogEntry::parseFrom);
+    return loadById(client.getGlobalLog(), id, GlobalStateLogEntry::parseFrom);
   }
 
   @Override
   protected List<GlobalStateLogEntry> fetchPageFromGlobalLog(
       NonTransactionalOperationContext ctx, List<Hash> hashes) {
-    return fetchPage(globalLog, hashes, GlobalStateLogEntry::parseFrom);
+    return fetchPage(client.getGlobalLog(), hashes, GlobalStateLogEntry::parseFrom);
   }
 
   @FunctionalInterface
