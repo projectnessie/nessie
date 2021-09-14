@@ -77,7 +77,7 @@ public class AbstractResteasyTest {
         newReference,
         rest().get("trees/tree/test").then().statusCode(200).extract().as(Branch.class));
 
-    IcebergTable table = IcebergTable.of("/the/directory/over/there");
+    IcebergTable table = IcebergTable.of("/the/directory/over/there", -1L);
 
     Branch commitResponse =
         rest()
@@ -105,8 +105,8 @@ public class AbstractResteasyTest {
               .key(ContentsKey.of("item", Integer.toString(i)))
               .contents(
                   ImmutableIcebergTable.builder()
-                      .from(table)
                       .metadataLocation("/the/directory/over/there/" + i)
+                      .snapshotId(-1L)
                       .build())
               .build();
     }
@@ -115,8 +115,8 @@ public class AbstractResteasyTest {
             .key(ContentsKey.of("xxx", "test"))
             .contents(
                 ImmutableIcebergTable.builder()
-                    .from(table)
                     .metadataLocation("/the/directory/over/there/has/been/moved")
+                    .snapshotId(-1L)
                     .build())
             .build();
 
@@ -142,10 +142,12 @@ public class AbstractResteasyTest {
         rest().queryParam("ref", "test").get("contents/xxx.test").then().extract().response();
     Assertions.assertEquals(updates[10].getContents(), res.body().as(Contents.class));
 
+    IcebergTable currentTable = table;
     table =
         ImmutableIcebergTable.builder()
             .from(table)
             .metadataLocation("/the/directory/over/there/has/been/moved/again")
+            .snapshotId(-1L)
             .build();
 
     Branch b2 = rest().get("trees/tree/test").as(Branch.class);
@@ -156,6 +158,7 @@ public class AbstractResteasyTest {
                     ImmutablePut.builder()
                         .key(ContentsKey.of("xxx", "test"))
                         .contents(table)
+                        .expectedContents(currentTable)
                         .build())
                 .commitMeta(CommitMeta.fromMessage(""))
                 .build())
@@ -231,14 +234,27 @@ public class AbstractResteasyTest {
     return given().when().basePath(basePath).contentType(ContentType.JSON);
   }
 
-  private Branch commit(Branch branch, String contentsKey, String metadataUrl) {
-    return commit(branch, contentsKey, metadataUrl, "nessieAuthor");
+  private Branch commit(String contentsId, Branch branch, String contentsKey, String metadataUrl) {
+    return commit(contentsId, branch, contentsKey, metadataUrl, "nessieAuthor", null);
   }
 
-  private Branch commit(Branch branch, String contentsKey, String metadataUrl, String author) {
+  private Branch commit(
+      String contentsId,
+      Branch branch,
+      String contentsKey,
+      String metadataUrl,
+      String author,
+      String expectedMetadataUrl) {
     Operations contents =
         ImmutableOperations.builder()
-            .addOperations(Put.of(ContentsKey.of(contentsKey), IcebergTable.of(metadataUrl)))
+            .addOperations(
+                (expectedMetadataUrl != null)
+                    ? Put.of(
+                        ContentsKey.of(contentsKey),
+                        IcebergTable.of(metadataUrl, -1L, contentsId),
+                        IcebergTable.of(expectedMetadataUrl, -1L, contentsId))
+                    : Put.of(
+                        ContentsKey.of(contentsKey), IcebergTable.of(metadataUrl, -1L, contentsId)))
             .commitMeta(CommitMeta.builder().author(author).message("").build())
             .build();
     return rest()
@@ -265,15 +281,32 @@ public class AbstractResteasyTest {
   public void testOptimisticLocking() {
     makeBranch("test3");
     Branch b1 = getBranch("test3");
-    String newHash = commit(b1, "xxx.test", "/the/directory/over/there").getHash();
+    String contentsId = "cid-test-opt-lock";
+    String newHash = commit(contentsId, b1, "xxx.test", "/the/directory/over/there").getHash();
     Assertions.assertNotEquals(b1.getHash(), newHash);
 
     Branch b2 = getBranch("test3");
-    newHash = commit(b2, "xxx.test", "/the/directory/over/there/has/been/moved").getHash();
+    newHash =
+        commit(
+                contentsId,
+                b2,
+                "xxx.test",
+                "/the/directory/over/there/has/been/moved",
+                "i",
+                "/the/directory/over/there")
+            .getHash();
     Assertions.assertNotEquals(b2.getHash(), newHash);
 
     Branch b3 = getBranch("test3");
-    newHash = commit(b3, "xxx.test", "/the/directory/over/there/has/been/moved/again").getHash();
+    newHash =
+        commit(
+                contentsId,
+                b3,
+                "xxx.test",
+                "/the/directory/over/there/has/been/moved/again",
+                "me",
+                "/the/directory/over/there/has/been/moved")
+            .getHash();
     Assertions.assertNotEquals(b3.getHash(), newHash);
   }
 
@@ -283,9 +316,17 @@ public class AbstractResteasyTest {
     makeBranch(branchName);
     Branch branch = getBranch(branchName);
     int numCommits = 3;
+    String contentsId = "cid-test-log-filtering";
     for (int i = 0; i < numCommits; i++) {
       String newHash =
-          commit(branch, "xxx.test", "/the/directory/over/there", "author-" + i).getHash();
+          commit(
+                  contentsId,
+                  branch,
+                  "xxx.test",
+                  "/the/directory/over/there",
+                  "author-" + i,
+                  i > 0 ? "/the/directory/over/there" : null)
+              .getHash();
       assertThat(newHash).isNotEqualTo(branch.getHash());
       branch = getBranch(branchName);
     }

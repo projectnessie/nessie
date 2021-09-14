@@ -37,7 +37,7 @@ import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.SerializerWithPayload;
-import org.projectnessie.versioned.StringSerializer;
+import org.projectnessie.versioned.StringStoreWorker;
 import org.projectnessie.versioned.Unchanged;
 
 class TestTreeBuilder {
@@ -57,8 +57,8 @@ class TestTreeBuilder {
     } catch (IOException e) {
       throw new RuntimeException();
     }
-    SerializerWithPayload<String, StringSerializer.TestEnum> serializer =
-        new SerializerWithPayload<String, StringSerializer.TestEnum>() {
+    SerializerWithPayload<String, StringStoreWorker.TestEnum> serializer =
+        new SerializerWithPayload<String, StringStoreWorker.TestEnum>() {
           @Override
           public ByteString toBytes(String value) {
             return ByteString.copyFrom(value.getBytes());
@@ -75,8 +75,8 @@ class TestTreeBuilder {
           }
 
           @Override
-          public StringSerializer.TestEnum getType(Byte payload) {
-            return StringSerializer.TestEnum.NO;
+          public StringStoreWorker.TestEnum getType(Byte payload) {
+            return StringStoreWorker.TestEnum.NO;
           }
         };
 

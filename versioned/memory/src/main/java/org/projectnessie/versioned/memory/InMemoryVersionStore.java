@@ -468,7 +468,7 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>>
       throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
     Preconditions.checkArgument(
         ref instanceof BranchName || targetHash.isPresent(),
-        "Cannot create an unassigned tag reference");
+        "Tag-creation requires a target named-reference and hash.");
 
     return compute(
         namedReferences,

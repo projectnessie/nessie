@@ -31,22 +31,19 @@ import org.projectnessie.versioned.Ref;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
-import org.projectnessie.versioned.StoreWorker;
-import org.projectnessie.versioned.StringSerializer;
+import org.projectnessie.versioned.StringStoreWorker;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
 import org.projectnessie.versioned.WithType;
 import org.projectnessie.versioned.store.Store;
 
 public abstract class AbstractTieredStoreFixture<S extends Store, C>
-    implements VersionStore<String, String, StringSerializer.TestEnum>, AutoCloseable {
-  protected static final StoreWorker<String, String, StringSerializer.TestEnum> WORKER =
-      StoreWorker.of(StringSerializer.getInstance(), StringSerializer.getInstance());
+    implements VersionStore<String, String, StringStoreWorker.TestEnum>, AutoCloseable {
 
   private final C config;
 
   private final S store;
-  private final VersionStore<String, String, StringSerializer.TestEnum> versionStore;
+  private final VersionStore<String, String, StringStoreWorker.TestEnum> versionStore;
 
   /** Create a new fixture. */
   protected AbstractTieredStoreFixture(C config) {
@@ -56,9 +53,9 @@ public abstract class AbstractTieredStoreFixture<S extends Store, C>
 
     store = spy(storeImpl);
 
-    VersionStore<String, String, StringSerializer.TestEnum> versionStoreImpl =
+    VersionStore<String, String, StringStoreWorker.TestEnum> versionStoreImpl =
         new TieredVersionStore<>(
-            WORKER,
+            StringStoreWorker.INSTANCE,
             store,
             ImmutableTieredVersionStoreConfig.builder()
                 .enableTracing(true)
@@ -147,7 +144,7 @@ public abstract class AbstractTieredStoreFixture<S extends Store, C>
   }
 
   @Override
-  public Stream<WithType<Key, StringSerializer.TestEnum>> getKeys(Ref ref)
+  public Stream<WithType<Key, StringStoreWorker.TestEnum>> getKeys(Ref ref)
       throws ReferenceNotFoundException {
     return versionStore.getKeys(ref);
   }

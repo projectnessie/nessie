@@ -19,6 +19,7 @@ import java.io.IOException;
 import org.eclipse.jgit.internal.storage.dfs.DfsRepositoryDescription;
 import org.eclipse.jgit.internal.storage.dfs.InMemoryRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.projectnessie.versioned.StringStoreWorker;
 
 public class ITJGitInMemoryVersionStore extends AbstractITJGitVersionStore {
 
@@ -28,6 +29,6 @@ public class ITJGitInMemoryVersionStore extends AbstractITJGitVersionStore {
         new InMemoryRepository.Builder()
             .setRepositoryDescription(new DfsRepositoryDescription())
             .build();
-    store = new JGitVersionStore<>(repository, WORKER);
+    store = new JGitVersionStore<>(repository, StringStoreWorker.INSTANCE);
   }
 }

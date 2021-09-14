@@ -145,7 +145,7 @@ public class ITNessieStatements extends AbstractSparkTest {
     List<Object[]> listResult = new ArrayList<>();
     listResult.add(row("Branch", "main", hash));
     listResult.add(row("Tag", refName, hash));
-    assertEquals("created branch", listResult, result);
+    assertThat(result).as("created branch").containsExactlyInAnyOrderElementsOf(listResult);
     result = sql("DROP TAG %s IN nessie", refName);
     assertEquals("deleted tag", row("OK"), result);
     assertThatThrownBy(() -> nessieClient.getTreeApi().getReferenceByName(refName))

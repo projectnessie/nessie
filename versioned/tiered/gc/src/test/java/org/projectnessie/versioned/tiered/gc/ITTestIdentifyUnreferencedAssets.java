@@ -46,6 +46,7 @@ import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.SerializerWithPayload;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.StringSerializer;
+import org.projectnessie.versioned.StringStoreWorker;
 import org.projectnessie.versioned.dynamodb.LocalDynamoDB;
 import org.projectnessie.versioned.gc.AssetKeyConverter;
 import org.projectnessie.versioned.gc.CategorizedValue;
@@ -72,9 +73,9 @@ public class ITTestIdentifyUnreferencedAssets {
 
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
-  private StoreWorker<DummyValue, String, StringSerializer.TestEnum> helper;
+  private StoreWorker<DummyValue, String, StringStoreWorker.TestEnum> helper;
   private DtAdjustingStore store;
-  private TieredVersionStore<DummyValue, String, StringSerializer.TestEnum> versionStore;
+  private TieredVersionStore<DummyValue, String, StringStoreWorker.TestEnum> versionStore;
 
   @Test
   public void run() throws Exception {
@@ -216,14 +217,14 @@ public class ITTestIdentifyUnreferencedAssets {
     versionStore = null;
   }
 
-  private CommitBuilder<DummyValue, String, StringSerializer.TestEnum> commit() {
-    return new CommitBuilder<DummyValue, String, StringSerializer.TestEnum>(versionStore);
+  private CommitBuilder<DummyValue, String, StringStoreWorker.TestEnum> commit() {
+    return new CommitBuilder<>(versionStore);
   }
 
   private static class StoreW
-      implements StoreWorker<DummyValue, String, StringSerializer.TestEnum> {
+      implements StoreWorker<DummyValue, String, StringStoreWorker.TestEnum> {
     @Override
-    public SerializerWithPayload<DummyValue, StringSerializer.TestEnum> getValueSerializer() {
+    public SerializerWithPayload<DummyValue, StringStoreWorker.TestEnum> getValueSerializer() {
       return new DummyValueSerializer();
     }
 
@@ -231,10 +232,46 @@ public class ITTestIdentifyUnreferencedAssets {
     public Serializer<String> getMetadataSerializer() {
       return StringSerializer.getInstance();
     }
+
+    @Override
+    public DummyValue valueFromStore(
+        ByteString onReferenceValue, Optional<ByteString> globalState) {
+      return getValueSerializer().fromBytes(onReferenceValue);
+    }
+
+    @Override
+    public ByteString toStoreOnReferenceState(DummyValue contents) {
+      return getValueSerializer().toBytes(contents);
+    }
+
+    @Override
+    public ByteString toStoreGlobalState(DummyValue contents) {
+      return getValueSerializer().toBytes(contents);
+    }
+
+    @Override
+    public Byte getPayload(DummyValue contents) {
+      return 0;
+    }
+
+    @Override
+    public StringStoreWorker.TestEnum getType(Byte payload) {
+      return StringStoreWorker.TestEnum.NO;
+    }
+
+    @Override
+    public boolean requiresState(DummyValue contents) {
+      return false;
+    }
+
+    @Override
+    public String getId(DummyValue contents) {
+      return contents.getId().toHash().asString();
+    }
   }
 
   private static class DummyValueSerializer extends GcTestUtils.JsonSerializer<DummyValue>
-      implements Serializable, SerializerWithPayload<DummyValue, StringSerializer.TestEnum> {
+      implements Serializable, SerializerWithPayload<DummyValue, StringStoreWorker.TestEnum> {
 
     public DummyValueSerializer() {
       super(DummyValue.class);
@@ -246,8 +283,8 @@ public class ITTestIdentifyUnreferencedAssets {
     }
 
     @Override
-    public StringSerializer.TestEnum getType(Byte payload) {
-      return StringSerializer.TestEnum.NO;
+    public StringStoreWorker.TestEnum getType(Byte payload) {
+      return StringStoreWorker.TestEnum.NO;
     }
   }
 

@@ -50,6 +50,7 @@ import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.StringSerializer;
+import org.projectnessie.versioned.StringStoreWorker;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
@@ -60,7 +61,7 @@ import org.projectnessie.versioned.WithType;
 /** Base class used for integration tests against version store implementations. */
 public abstract class AbstractITVersionStore {
 
-  protected abstract VersionStore<String, String, StringSerializer.TestEnum> store();
+  protected abstract VersionStore<String, String, StringStoreWorker.TestEnum> store();
 
   /** Use case simulation: single branch, multiple users, each user updating a separate table. */
   @Test
@@ -1221,7 +1222,7 @@ public abstract class AbstractITVersionStore {
     store().create(branch, Optional.empty());
 
     // have to do this here as tiered store stores payload at commit time
-    Mockito.doReturn(StringSerializer.TestEnum.NO)
+    Mockito.doReturn(StringStoreWorker.TestEnum.NO)
         .when(StringSerializer.getInstance())
         .getType("world");
     store()
@@ -1234,24 +1235,24 @@ public abstract class AbstractITVersionStore {
     assertTrue(values.get(0).isPresent());
 
     // have to do this here as non-tiered store reads payload when getKeys is called
-    Mockito.doReturn(StringSerializer.TestEnum.NO)
+    Mockito.doReturn(StringStoreWorker.TestEnum.NO)
         .when(StringSerializer.getInstance())
         .getType("world");
-    List<WithType<Key, StringSerializer.TestEnum>> keys;
-    try (Stream<WithType<Key, StringSerializer.TestEnum>> k = store().getKeys(branch)) {
+    List<WithType<Key, StringStoreWorker.TestEnum>> keys;
+    try (Stream<WithType<Key, StringStoreWorker.TestEnum>> k = store().getKeys(branch)) {
       keys = k.collect(Collectors.toList());
     }
 
     assertEquals(1, keys.size());
     assertEquals(Key.of("hi"), keys.get(0).getValue());
-    assertEquals(StringSerializer.TestEnum.NO, keys.get(0).getType());
+    assertEquals(StringStoreWorker.TestEnum.NO, keys.get(0).getType());
   }
 
-  protected CommitBuilder<String, String, StringSerializer.TestEnum> forceCommit(String message) {
+  protected CommitBuilder<String, String, StringStoreWorker.TestEnum> forceCommit(String message) {
     return new CommitBuilder<>(store()).withMetadata(message);
   }
 
-  protected CommitBuilder<String, String, StringSerializer.TestEnum> commit(String message) {
+  protected CommitBuilder<String, String, StringStoreWorker.TestEnum> commit(String message) {
     return new CommitBuilder<>(store()).withMetadata(message).fromLatest();
   }
 

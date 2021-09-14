@@ -118,15 +118,14 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
     try {
       return makeRef(getStore().toRef(refName));
     } catch (ReferenceNotFoundException e) {
-      throw new NessieNotFoundException(
-          String.format("Unable to find reference [%s].", refName), e);
+      throw new NessieNotFoundException(e.getMessage(), e);
     }
   }
 
   @Override
   public Reference createReference(String sourceRefName, Reference reference)
       throws NessieNotFoundException, NessieConflictException {
-    final NamedRef namedReference;
+    NamedRef namedReference;
     if (reference instanceof Branch) {
       namedReference = BranchName.of(reference.getName());
       Hash hash = createReference(namedReference, reference.getHash());
@@ -136,7 +135,7 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
       Hash hash = createReference(namedReference, reference.getHash());
       return Tag.of(reference.getName(), hash.asString());
     } else {
-      throw new IllegalArgumentException("Only tag and branch references can be created");
+      throw new IllegalArgumentException("Only tag and branch references can be created.");
     }
   }
 
@@ -147,8 +146,7 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
     } catch (ReferenceNotFoundException e) {
       throw new NessieNotFoundException("Failure while searching for provided targeted hash.", e);
     } catch (ReferenceAlreadyExistsException e) {
-      throw new NessieConflictException(
-          String.format("A reference of name [%s] already exists.", reference.getName()), e);
+      throw new NessieConflictException(e.getMessage(), e);
     }
   }
 
@@ -270,16 +268,9 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
       }
       getStore().transplant(BranchName.of(branchName), toHash(hash, true), transplants);
     } catch (ReferenceNotFoundException e) {
-      throw new NessieNotFoundException(
-          String.format(
-              "Unable to find the requested branch we're transplanting to of [%s].", branchName),
-          e);
+      throw new NessieNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
-      throw new NessieConflictException(
-          String.format(
-              "The hash provided %s does not match the current status of the branch %s.",
-              hash, branchName),
-          e);
+      throw new NessieConflictException(e.getMessage(), e);
     }
   }
 
@@ -293,12 +284,9 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
               BranchName.of(branchName),
               toHash(hash, true));
     } catch (ReferenceNotFoundException e) {
-      throw new NessieNotFoundException(
-          String.format("At least one of the references provided does not exist."), e);
+      throw new NessieNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
-      throw new NessieConflictException(
-          String.format("The branch [%s] does not have the expected hash [%s].", branchName, hash),
-          e);
+      throw new NessieConflictException(e.getMessage(), e);
     }
   }
 
@@ -418,12 +406,10 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
               Optional.ofNullable(hash).map(Hash::of),
               meta(getPrincipal(), commitMeta),
               operations);
-    } catch (IllegalArgumentException e) {
-      throw new NessieNotFoundException("Invalid hash provided. " + e.getMessage(), e);
+    } catch (IllegalArgumentException | ReferenceNotFoundException e) {
+      throw new NessieNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
-      throw new NessieConflictException("Failed to commit data. " + e.getMessage(), e);
-    } catch (ReferenceNotFoundException e) {
-      throw new NessieNotFoundException("Failed to commit data. " + e.getMessage(), e);
+      throw new NessieConflictException(e.getMessage(), e);
     }
   }
 
@@ -468,14 +454,9 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
     try {
       getStore().delete(ref, toHash(hash, true));
     } catch (ReferenceNotFoundException e) {
-      throw new NessieNotFoundException(
-          String.format("Unable to find reference [%s] to delete.", ref.getName()), e);
+      throw new NessieNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
-      throw new NessieConflictException(
-          String.format(
-              "The hash provided %s does not match the current status of the reference %s.",
-              hash, ref.getName()),
-          e);
+      throw new NessieConflictException(e.getMessage(), e);
     }
   }
 
@@ -498,13 +479,9 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
         throw new IllegalArgumentException("Can only assign branch and tag types.");
       }
     } catch (ReferenceNotFoundException e) {
-      throw new NessieNotFoundException("Unable to find a ref or hash provided.", e);
+      throw new NessieNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
-      throw new NessieConflictException(
-          String.format(
-              "The hash provided %s does not match the current status of the reference %s.",
-              oldHash, ref),
-          e);
+      throw new NessieConflictException(e.getMessage(), e);
     }
   }
 
@@ -543,7 +520,10 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
     if (o instanceof Operation.Delete) {
       return Delete.of(key);
     } else if (o instanceof Operation.Put) {
-      return Put.of(key, ((Operation.Put) o).getContents());
+      Operation.Put put = (Operation.Put) o;
+      return put.getExpectedContents() != null
+          ? Put.of(key, put.getContents(), put.getExpectedContents())
+          : Put.of(key, put.getContents());
     } else if (o instanceof Operation.Unchanged) {
       return Unchanged.of(key);
     } else {

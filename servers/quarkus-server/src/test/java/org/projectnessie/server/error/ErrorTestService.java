@@ -35,8 +35,7 @@ import javax.ws.rs.core.MediaType;
 import org.mockito.Mockito;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.versioned.BackendLimitExceededException;
-import org.projectnessie.versioned.StoreWorker;
-import org.projectnessie.versioned.StringSerializer;
+import org.projectnessie.versioned.StringStoreWorker;
 import org.projectnessie.versioned.impl.ImmutableTieredVersionStoreConfig;
 import org.projectnessie.versioned.impl.TieredVersionStore;
 import org.projectnessie.versioned.store.Store;
@@ -136,9 +135,9 @@ public class ErrorTestService {
     Store store = Mockito.mock(Store.class);
     Mockito.when(store.getValues(ValueType.REF)).thenThrow(ex);
 
-    TieredVersionStore<String, String, StringSerializer.TestEnum> tvs =
+    TieredVersionStore<String, String, StringStoreWorker.TestEnum> tvs =
         new TieredVersionStore<>(
-            StoreWorker.of(StringSerializer.getInstance(), StringSerializer.getInstance()),
+            StringStoreWorker.INSTANCE,
             store,
             ImmutableTieredVersionStoreConfig.builder().waitOnCollapse(true).build());
     tvs.getNamedRefs().forEach(ref -> {});

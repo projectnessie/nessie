@@ -16,6 +16,7 @@
 package org.projectnessie.versioned;
 
 /** Extension of Serializable that includes a single byte payload. */
+@Deprecated // TODO this interface is going to be removed
 public interface SerializerWithPayload<V, T extends Enum<T>> extends Serializer<V> {
 
   Byte getPayload(V value);
