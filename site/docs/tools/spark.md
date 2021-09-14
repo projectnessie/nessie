@@ -79,7 +79,7 @@ These are set as follows in code (or through other methods as described [here](h
             "org.apache.iceberg:iceberg-spark3-runtime:{{ versions.iceberg}}")
         .set("spark.sql.catalog.nessie.url", url)
         .set("spark.sql.catalog.nessie.ref", ref)
-        .set("spark.sql.catalog.nessie.auth-type", authType)
+        .set("spark.sql.catalog.nessie.authentication.type", authType)
         .set("spark.sql.catalog.nessie.catalog-impl",
             "org.apache.iceberg.nessie.NessieCatalog")
         .set("spark.sql.catalog.nessie.warehouse", fullPathToWarehouse)
@@ -107,7 +107,7 @@ These are set as follows in code (or through other methods as described [here](h
                 "org.apache.iceberg:iceberg-spark3-runtime:{{ versions.iceberg}}") \
             .config("spark.sql.catalog.nessie.url", url) \
             .config("spark.sql.catalog.nessie.ref", ref) \
-            .config("spark.sql.catalog.nessie.auth-type", auth_type) \
+            .config("spark.sql.catalog.nessie.authentication.type", auth_type) \
             .config("spark.sql.catalog.nessie.catalog-impl", 
                 "org.apache.iceberg.nessie.NessieCatalog") \
             .config("spark.sql.catalog.nessie.warehouse", full_path_to_warehouse) \
@@ -374,11 +374,15 @@ SparkSession.builder
 
 The Nessie LogStore needs the following parameters set in the Spark/Hadoop config.
 
+Note: "BASIC" authentication is not supported by Nessie servers in "production" mode.
+
 ```
 nessie.url = full url to nessie
-nessie.username = username if using basic auth, omitted otherwise
-nessie.password = password if using basic auth, omitted otherwise
-nessie.auth.type = authentication type (BASIC, NONE or AWS)
+nessie.authentication.type = authentication type (NONE, BASIC, BEARER or AWS)
+nessie.authentication.token = OpenId token if using "bearer" auth, omitted otherwise
+nessie.authentication.aws.region = AWS region if using AWS auth, omitted otherwise
+nessie.authentication.username = username if using basic auth, omitted otherwise
+nessie.authentication.password = password if using basic auth, omitted otherwise
 spark.delta.logFileHandler.class=org.projectnessie.deltalake.NessieLogFileMetaParser
 spark.delta.logStore.class=org.projectnessie.deltalake.NessieLogStore
 ```
