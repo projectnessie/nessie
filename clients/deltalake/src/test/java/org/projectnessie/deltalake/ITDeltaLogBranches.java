@@ -32,7 +32,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.projectnessie.client.NessieClient;
+import org.projectnessie.client.api.NessieApiV1;
+import org.projectnessie.client.api.NessieApiVersion;
+import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.client.tests.AbstractSparkTest;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -45,7 +47,7 @@ import scala.Tuple2;
 
 class ITDeltaLogBranches extends AbstractSparkTest {
 
-  private NessieClient client;
+  static NessieApiV1 api;
 
   @TempDir File tempPath;
 
@@ -58,23 +60,23 @@ class ITDeltaLogBranches extends AbstractSparkTest {
   }
 
   @BeforeEach
-  public void createClient() {
-    client = NessieClient.builder().withUri(url).build();
+  void createClient() {
+    api = HttpClientBuilder.builder().withUri(url).build(NessieApiVersion.V_1, NessieApiV1.class);
   }
 
   @AfterEach
-  public void closeClient() throws NessieNotFoundException, NessieConflictException {
+  void closeClient() throws NessieNotFoundException, NessieConflictException {
     Reference ref = null;
     try {
-      ref = client.getTreeApi().getReferenceByName("test");
+      ref = api.getReference().refName("test").submit();
     } catch (NessieNotFoundException e) {
       // pass ignore
     }
     if (ref != null) {
-      client.getTreeApi().deleteBranch("test", ref.getHash());
+      api.deleteBranch().branch((Branch) ref).submit();
     }
-    client.close();
-    client = null;
+    api.close();
+    api = null;
   }
 
   @Test
@@ -87,10 +89,11 @@ class ITDeltaLogBranches extends AbstractSparkTest {
     // write some data to table
     targetTable.write().format("delta").save(tempPath.getAbsolutePath());
     // create test at the point where there is only 1 commit
-    Branch sourceRef = client.getTreeApi().getDefaultBranch();
-    client
-        .getTreeApi()
-        .createReference(sourceRef.getName(), Branch.of("test", sourceRef.getHash()));
+    Branch sourceRef = api.getDefaultBranch();
+    api.createReference()
+        .sourceRefName(sourceRef.getName())
+        .reference(Branch.of("test", sourceRef.getHash()))
+        .submit();
     // add some more data to main
     targetTable.write().format("delta").mode("append").save(tempPath.getAbsolutePath());
 
@@ -133,8 +136,8 @@ class ITDeltaLogBranches extends AbstractSparkTest {
     Assertions.assertEquals(64, expectedSize);
 
     String tableName = tempPath.getAbsolutePath() + "/_delta_log";
-    Contents contents =
-        client.getContentsApi().getContents(ContentsKey.of(tableName.split("/")), "main", null);
+    ContentsKey key = ContentsKey.of(tableName.split("/"));
+    Contents contents = api.getContents().key(key).refName("main").submit().get(key);
     Optional<DeltaLakeTable> table = contents.unwrap(DeltaLakeTable.class);
     Assertions.assertTrue(table.isPresent());
     Assertions.assertEquals(1, table.get().getCheckpointLocationHistory().size());
