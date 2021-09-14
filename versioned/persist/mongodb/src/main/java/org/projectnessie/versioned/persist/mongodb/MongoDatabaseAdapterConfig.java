@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.persist.mongodb;
 
+import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 
@@ -25,8 +26,9 @@ public interface MongoDatabaseAdapterConfig extends DatabaseAdapterConfig {
 
   String getDatabaseName();
 
-  @Value.Derived
-  default MongoDatabaseClient getClient() {
-    return new MongoDatabaseClient(this);
-  }
+  @Value.Auxiliary
+  @Nullable
+  MongoDatabaseClient getClient();
+
+  MongoDatabaseAdapterConfig withClient(MongoDatabaseClient client);
 }
