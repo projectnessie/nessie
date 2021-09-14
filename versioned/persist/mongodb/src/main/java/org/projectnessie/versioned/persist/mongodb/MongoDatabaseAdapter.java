@@ -55,6 +55,8 @@ import org.projectnessie.versioned.persist.serialize.ProtoSerialization;
 public class MongoDatabaseAdapter
     extends NonTransactionalDatabaseAdapter<MongoDatabaseAdapterConfig> {
 
+  public static final char PREFIX_SEPARATOR = '#';
+
   private final String keyPrefix;
   private final String globalPointerKey;
 
@@ -67,6 +69,10 @@ public class MongoDatabaseAdapter
     client.acquire();
 
     keyPrefix = config.getKeyPrefix();
+    if (keyPrefix.indexOf(PREFIX_SEPARATOR) >= 0) {
+      throw new IllegalArgumentException("Invalid key prefix: " + keyPrefix);
+    }
+
     globalPointerKey = keyPrefix;
   }
 
@@ -253,6 +259,14 @@ public class MongoDatabaseAdapter
 
   private Hash idAsHash(Document doc) {
     String id = doc.get("_id", String.class);
+
+    if (!id.startsWith(keyPrefix)
+        || id.length() <= keyPrefix.length()
+        || id.charAt(keyPrefix.length()) != PREFIX_SEPARATOR) {
+      throw new IllegalStateException(
+          String.format("Key prefix mismatch for id '%s' (expected prefix: '%s')", id, keyPrefix));
+    }
+
     String hash = id.substring(keyPrefix.length() + 1); // + 1 for the separator char
     return Hash.of(hash);
   }
