@@ -36,7 +36,5 @@ public interface QuarkusNessieAuthorizationConfig {
    * @return The authorization rules where the key represents the rule id and the value the CEL
    *     expression.
    */
-  // TODO Quarkus/microprofile config API do not allow maps. Using a workaround here until
-  //  https://github.com/quarkusio/quarkus/issues/19990 is fixed.
   // Map<String, String> rules();
 }

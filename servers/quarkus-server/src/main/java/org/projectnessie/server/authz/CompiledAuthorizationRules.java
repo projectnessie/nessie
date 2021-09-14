@@ -57,8 +57,6 @@ public class CompiledAuthorizationRules {
    * @return A map of compiled authorization rules
    */
   private Map<String, Script> compileAuthorizationRules() {
-
-    // Map<String, String> rules = new HashMap<>(config.rules());
     Map<String, String> rules = new HashMap<>(rulesFromConfig());
     // by default we allow viewing all references until there's a user-defined VIEW_REFERENCE rule
     if (rules.entrySet().stream().noneMatch(r -> r.getValue().contains(VIEW_REFERENCE.name()))) {
@@ -87,8 +85,8 @@ public class CompiledAuthorizationRules {
     return ImmutableMap.copyOf(scripts);
   }
 
-  // TODO Quarkus/microprofile config API do not allow maps. Using this workaround here until
-  //  https://github.com/quarkusio/quarkus/issues/19990 is fixed.
+  // Quarkus/microprofile config API do not allow maps.
+  // Cannot use @ConfigMapping until https://github.com/quarkusio/quarkus/issues/19990 is fixed.
   private static Map<String, String> rulesFromConfig() {
     String prefix = "nessie.server.authorization.rules";
     Config config = ConfigProvider.getConfig();
