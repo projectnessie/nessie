@@ -188,7 +188,8 @@ public class ITIcebergAssetKeyReader {
       IcebergAssetKeyConverter akr, Table table, ImmutableMap<String, Long> expected) {
     Set<AssetKey> fileList =
         akr.apply(
-                IcebergTable.of(((BaseTable) table).operations().current().metadataFileLocation()))
+                IcebergTable.of(
+                    ((BaseTable) table).operations().current().metadataFileLocation(), -1L))
             .collect(Collectors.toSet());
 
     Multimap<String, AssetKey> unreferencedItems =

@@ -20,20 +20,16 @@ import static org.mockito.Mockito.spy;
 
 import com.google.protobuf.ByteString;
 import javax.annotation.Nonnull;
+import org.projectnessie.versioned.StringStoreWorker.TestEnum;
 
 /**
  * ValueWorker implementation for {@code String class}. Can also be used as simple {@link
  * Serializer}.
  */
-public class StringSerializer implements SerializerWithPayload<String, StringSerializer.TestEnum> {
+@Deprecated // TODO this class is going to be removed
+public class StringSerializer implements SerializerWithPayload<String, TestEnum> {
   private static final SerializerWithPayload<String, TestEnum> INSTANCE =
       spy(new StringSerializer());
-
-  public enum TestEnum {
-    YES,
-    NO,
-    NULL;
-  }
 
   private StringSerializer() {}
 
@@ -65,8 +61,8 @@ public class StringSerializer implements SerializerWithPayload<String, StringSer
   @Override
   public TestEnum getType(Byte payload) {
     if (payload == null) {
-      return TestEnum.NULL;
+      return StringStoreWorker.TestEnum.NULL;
     }
-    return payload > 60 ? TestEnum.YES : TestEnum.NO;
+    return payload > 60 ? StringStoreWorker.TestEnum.YES : StringStoreWorker.TestEnum.NO;
   }
 }

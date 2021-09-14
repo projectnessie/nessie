@@ -21,6 +21,7 @@ import com.google.protobuf.ByteString;
 import java.time.Instant;
 import java.util.AbstractMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -28,12 +29,14 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
+import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
-import org.projectnessie.model.ImmutableIcebergTable;
 import org.projectnessie.model.ImmutableSqlView;
 import org.projectnessie.model.SqlView;
 import org.projectnessie.store.ObjectTypes;
+import org.projectnessie.store.ObjectTypes.IcebergSnapshot;
+import org.projectnessie.store.ObjectTypes.IcebergTableMetadata;
 
 class TestStoreWorker {
   private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -45,12 +48,18 @@ class TestStoreWorker {
   void testDeserialization(Map.Entry<ByteString, Contents> entry) {
     Contents actual = worker.getValueSerializer().fromBytes(entry.getKey());
     Assertions.assertEquals(entry.getValue(), actual);
+
+    actual = worker.valueFromStore(entry.getKey(), Optional.empty());
+    Assertions.assertEquals(entry.getValue(), actual);
   }
 
   @ParameterizedTest
   @MethodSource("provideDeserialization")
   void testSerialization(Map.Entry<ByteString, Contents> entry) {
     ByteString actual = worker.getValueSerializer().toBytes(entry.getValue());
+    Assertions.assertEquals(entry.getKey(), actual);
+
+    actual = worker.toStoreOnReferenceState(entry.getValue());
     Assertions.assertEquals(entry.getKey(), actual);
   }
 
@@ -61,6 +70,38 @@ class TestStoreWorker {
     Assertions.assertEquals(entry.getValue(), worker.getValueSerializer().fromBytes(actualBytes));
     Contents actualContents = worker.getValueSerializer().fromBytes(entry.getKey());
     Assertions.assertEquals(entry.getKey(), worker.getValueSerializer().toBytes(actualContents));
+
+    actualBytes = worker.toStoreOnReferenceState(entry.getValue());
+    Assertions.assertEquals(entry.getValue(), worker.valueFromStore(actualBytes, Optional.empty()));
+    actualContents = worker.valueFromStore(entry.getKey(), Optional.empty());
+    Assertions.assertEquals(entry.getKey(), worker.toStoreOnReferenceState(actualContents));
+  }
+
+  @Test
+  void testSerdeIceberg() {
+    String path = "foo/bar";
+    IcebergTable table = IcebergTable.of(path, 42L, ID);
+
+    ObjectTypes.Contents protoTableGlobal =
+        ObjectTypes.Contents.newBuilder()
+            .setId(ID)
+            .setIcebergTableMetadata(
+                IcebergTableMetadata.newBuilder().setMetadataLocation(path).build())
+            .build();
+    ObjectTypes.Contents protoSnapshot =
+        ObjectTypes.Contents.newBuilder()
+            .setId(ID)
+            .setIcebergSnapshot(IcebergSnapshot.newBuilder().setSnapshotId(42L).build())
+            .build();
+
+    ByteString tableGlobalBytes = worker.toStoreGlobalState(table);
+    ByteString snapshotBytes = worker.toStoreOnReferenceState(table);
+
+    Assertions.assertEquals(protoTableGlobal.toByteString(), tableGlobalBytes);
+    Assertions.assertEquals(protoSnapshot.toByteString(), snapshotBytes);
+
+    Contents deserialized = worker.valueFromStore(snapshotBytes, Optional.of(tableGlobalBytes));
+    Assertions.assertEquals(table, deserialized);
   }
 
   @Test
@@ -87,19 +128,7 @@ class TestStoreWorker {
   }
 
   private static Stream<Map.Entry<ByteString, Contents>> provideDeserialization() {
-    return Stream.of(getIceberg(), getDelta(), getView());
-  }
-
-  private static Map.Entry<ByteString, Contents> getIceberg() {
-    String path = "foo/bar";
-    Contents contents = ImmutableIcebergTable.builder().metadataLocation(path).id(ID).build();
-    ByteString bytes =
-        ObjectTypes.Contents.newBuilder()
-            .setId(ID)
-            .setIcebergTable(ObjectTypes.IcebergTable.newBuilder().setMetadataLocation(path))
-            .build()
-            .toByteString();
-    return new AbstractMap.SimpleImmutableEntry<>(bytes, contents);
+    return Stream.of(getDelta(), getView());
   }
 
   private static Map.Entry<ByteString, Contents> getDelta() {

@@ -63,6 +63,7 @@ import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.SerializerWithPayload;
 import org.projectnessie.versioned.StringSerializer;
+import org.projectnessie.versioned.StringStoreWorker;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
@@ -87,7 +88,7 @@ public abstract class AbstractITTieredVersionStore {
     fixture.close();
   }
 
-  public VersionStore<String, String, StringSerializer.TestEnum> versionStore() {
+  public VersionStore<String, String, StringStoreWorker.TestEnum> versionStore() {
     return fixture;
   }
 
@@ -113,11 +114,11 @@ public abstract class AbstractITTieredVersionStore {
     assertEquals(1, values.size());
     assertTrue(values.get(0).isPresent());
 
-    List<WithType<Key, StringSerializer.TestEnum>> keys =
+    List<WithType<Key, StringStoreWorker.TestEnum>> keys =
         versionStore().getKeys(branch).collect(Collectors.toList());
     assertEquals(1, keys.size());
     assertEquals(Key.of("hi"), keys.get(0).getValue());
-    assertEquals(StringSerializer.TestEnum.NO, keys.get(0).getType());
+    assertEquals(StringStoreWorker.TestEnum.NO, keys.get(0).getType());
   }
 
   @Test
@@ -133,7 +134,7 @@ public abstract class AbstractITTieredVersionStore {
     versionStore()
         .commit(branch, Optional.empty(), "metadata", ImmutableList.of(Delete.of(Key.of("hi"))));
 
-    List<WithType<Key, StringSerializer.TestEnum>> keys =
+    List<WithType<Key, StringStoreWorker.TestEnum>> keys =
         versionStore().getKeys(branch).collect(Collectors.toList());
     assertTrue(keys.isEmpty());
   }
@@ -148,11 +149,11 @@ public abstract class AbstractITTieredVersionStore {
         .commit(
             branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "world")));
 
-    List<WithType<Key, StringSerializer.TestEnum>> keys =
+    List<WithType<Key, StringStoreWorker.TestEnum>> keys =
         versionStore().getKeys(branch).collect(Collectors.toList());
     assertEquals(1, keys.size());
     assertEquals(Key.of("hi"), keys.get(0).getValue());
-    assertEquals(StringSerializer.TestEnum.NO, keys.get(0).getType());
+    assertEquals(StringStoreWorker.TestEnum.NO, keys.get(0).getType());
 
     doReturn((byte) 80).when(StringSerializer.getInstance()).getPayload("world-weary");
     versionStore()
@@ -165,7 +166,7 @@ public abstract class AbstractITTieredVersionStore {
     keys = versionStore().getKeys(branch).collect(Collectors.toList());
     assertEquals(1, keys.size());
     assertEquals(Key.of("hi"), keys.get(0).getValue());
-    assertEquals(StringSerializer.TestEnum.YES, keys.get(0).getType());
+    assertEquals(StringStoreWorker.TestEnum.YES, keys.get(0).getType());
   }
 
   @Test
@@ -587,12 +588,11 @@ public abstract class AbstractITTieredVersionStore {
     List<InternalKey> keys =
         ops.stream().map(op -> new InternalKey(op.getKey())).collect(Collectors.toList());
 
-    SerializerWithPayload<String, StringSerializer.TestEnum> serializer =
-        AbstractTieredStoreFixture.WORKER.getValueSerializer();
-    Serializer<String> metadataSerializer =
-        AbstractTieredStoreFixture.WORKER.getMetadataSerializer();
+    SerializerWithPayload<String, StringStoreWorker.TestEnum> serializer =
+        StringStoreWorker.INSTANCE.getValueSerializer();
+    Serializer<String> metadataSerializer = StringStoreWorker.INSTANCE.getMetadataSerializer();
 
-    PartialTree<String, StringSerializer.TestEnum> current = PartialTree.of(serializer, ref, keys);
+    PartialTree<String, StringStoreWorker.TestEnum> current = PartialTree.of(serializer, ref, keys);
 
     String incomingCommit = "metadata";
     InternalCommitMetadata metadata =

@@ -15,34 +15,40 @@
  */
 package org.projectnessie.versioned;
 
+import com.google.protobuf.ByteString;
+import java.util.Optional;
+
 /**
  * A set of helpers that users of a VersionStore must implement.
  *
- * @param <VALUE> The value type saved in the VersionStore.
+ * @param <CONTENTS> The value type saved in the VersionStore.
  * @param <COMMIT_METADATA> The commit metadata type saved in the VersionStore.
  */
-public interface StoreWorker<VALUE, COMMIT_METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>> {
+public interface StoreWorker<CONTENTS, COMMIT_METADATA, CONTENTS_TYPE extends Enum<CONTENTS_TYPE>> {
 
-  SerializerWithPayload<VALUE, VALUE_TYPE> getValueSerializer();
+  /**
+   * Returns the serialized representation of the on-reference part of the given contents-object.
+   */
+  ByteString toStoreOnReferenceState(CONTENTS contents);
+
+  ByteString toStoreGlobalState(CONTENTS contents);
+
+  CONTENTS valueFromStore(ByteString onReferenceValue, Optional<ByteString> globalState);
+
+  String getId(CONTENTS contents);
+
+  Byte getPayload(CONTENTS contents);
+
+  boolean requiresState(CONTENTS contents);
+
+  CONTENTS_TYPE getType(Byte payload);
+
+  default CONTENTS_TYPE getType(CONTENTS contents) {
+    return getType(getPayload(contents));
+  }
+
+  @Deprecated // TODO this method is going to be removed
+  SerializerWithPayload<CONTENTS, CONTENTS_TYPE> getValueSerializer();
 
   Serializer<COMMIT_METADATA> getMetadataSerializer();
-
-  /** Create StoreWorker for provided helpers. */
-  static <VALUE, COMMIT_METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>>
-      StoreWorker<VALUE, COMMIT_METADATA, VALUE_TYPE> of(
-          SerializerWithPayload<VALUE, VALUE_TYPE> valueSerializer,
-          Serializer<COMMIT_METADATA> commitSerializer) {
-    return new StoreWorker<VALUE, COMMIT_METADATA, VALUE_TYPE>() {
-
-      @Override
-      public SerializerWithPayload<VALUE, VALUE_TYPE> getValueSerializer() {
-        return valueSerializer;
-      }
-
-      @Override
-      public Serializer<COMMIT_METADATA> getMetadataSerializer() {
-        return commitSerializer;
-      }
-    };
-  }
 }

@@ -77,7 +77,6 @@ import org.projectnessie.model.ImmutableDeltaLakeTable;
 import org.projectnessie.model.ImmutableEntry;
 import org.projectnessie.model.ImmutableMerge;
 import org.projectnessie.model.ImmutableOperations;
-import org.projectnessie.model.ImmutablePut;
 import org.projectnessie.model.ImmutableSqlView;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.MultiGetContentsRequest;
@@ -141,7 +140,7 @@ public abstract class AbstractTestRest {
             assertThatThrownBy(() -> tree.createReference("main", Tag.of(tagName1, null)))
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining("Cannot create an unassigned tag reference"),
+                .hasMessageContaining("Tag-creation requires a target named-reference and hash."),
         // legit Tag with name + hash
         () -> {
           Reference refTag1 = tree.createReference("main", Tag.of(tagName2, mainHash));
@@ -228,14 +227,9 @@ public abstract class AbstractTestRest {
 
     // Need to have at least one op, otherwise all following operations (assignTag/Branch, merge,
     // delete) will fail
-    ImmutablePut op =
-        ImmutablePut.builder()
-            .key(ContentsKey.of("some-key"))
-            .contents(IcebergTable.of("foo"))
-            .build();
     Operations ops =
         ImmutableOperations.builder()
-            .addOperations(op)
+            .addOperations(Put.of(ContentsKey.of("some-key"), IcebergTable.of("foo", -1L)))
             .commitMeta(CommitMeta.fromMessage("One dummy op"))
             .build();
     tree.commitMultipleOperations(branchName, branchHash, ops);
@@ -507,7 +501,9 @@ public abstract class AbstractTestRest {
                                 .properties(ImmutableMap.of("prop1", "val1", "prop2", "val2"))
                                 .build())
                         .addOperations(
-                            Put.of(ContentsKey.of("table" + i), IcebergTable.of("some-file-" + i)))
+                            Put.of(
+                                ContentsKey.of("table" + i),
+                                IcebergTable.of("some-file-" + i, -1L)))
                         .build())
                 .getHash();
         assertThat(currentHash).isNotEqualTo(nextHash);
@@ -574,7 +570,7 @@ public abstract class AbstractTestRest {
                   ImmutableOperations.builder()
                       .commitMeta(CommitMeta.fromMessage(msg))
                       .addOperations(
-                          Put.of(ContentsKey.of("table"), IcebergTable.of("some-file-" + i)))
+                          Put.of(ContentsKey.of("table"), IcebergTable.of("some-file-" + i, -1L)))
                       .build())
               .getHash();
       assertNotEquals(currentHash, nextHash);
@@ -641,20 +637,20 @@ public abstract class AbstractTestRest {
     Reference r = tree.createReference("main", Branch.of(branch, null));
     ContentsKey a = ContentsKey.of("a");
     ContentsKey b = ContentsKey.of("b");
-    IcebergTable ta = IcebergTable.of("path1");
-    IcebergTable tb = IcebergTable.of("path2");
+    IcebergTable ta = IcebergTable.of("path1", -1L);
+    IcebergTable tb = IcebergTable.of("path2", -1L);
     tree.commitMultipleOperations(
         branch,
         r.getHash(),
         ImmutableOperations.builder()
-            .addOperations(ImmutablePut.builder().key(a).contents(ta).build())
+            .addOperations(Put.of(a, ta))
             .commitMeta(CommitMeta.fromMessage("commit 1"))
             .build());
     tree.commitMultipleOperations(
         branch,
         r.getHash(),
         ImmutableOperations.builder()
-            .addOperations(ImmutablePut.builder().key(b).contents(tb).build())
+            .addOperations(Put.of(b, tb))
             .commitMeta(CommitMeta.fromMessage("commit 2"))
             .build());
     List<ContentsWithKey> keys =
@@ -692,7 +688,7 @@ public abstract class AbstractTestRest {
     return Stream.of(
         new ContentAndOperationType(
             Type.ICEBERG_TABLE,
-            Put.of(ContentsKey.of("iceberg"), IcebergTable.of("/iceberg/table"))),
+            Put.of(ContentsKey.of("iceberg"), IcebergTable.of("/iceberg/table", -1L))),
         new ContentAndOperationType(
             Type.VIEW,
             Put.of(
@@ -797,21 +793,21 @@ public abstract class AbstractTestRest {
     Reference r = tree.createReference("main", Branch.of(branch, null));
     ContentsKey a = ContentsKey.of("a");
     ContentsKey b = ContentsKey.of("b");
-    IcebergTable ta = IcebergTable.of("path1");
+    IcebergTable ta = IcebergTable.of("path1", -1L);
     SqlView tb =
         ImmutableSqlView.builder().sqlText("select * from table").dialect(Dialect.DREMIO).build();
     tree.commitMultipleOperations(
         branch,
         r.getHash(),
         ImmutableOperations.builder()
-            .addOperations(ImmutablePut.builder().key(a).contents(ta).build())
+            .addOperations(Put.of(a, ta))
             .commitMeta(CommitMeta.fromMessage("commit 1"))
             .build());
     tree.commitMultipleOperations(
         branch,
         r.getHash(),
         ImmutableOperations.builder()
-            .addOperations(ImmutablePut.builder().key(b).contents(tb).build())
+            .addOperations(Put.of(b, tb))
             .commitMeta(CommitMeta.fromMessage("commit 2"))
             .build());
     List<Entry> entries = tree.getEntries(branch, EntriesParams.empty()).getEntries();
@@ -858,32 +854,28 @@ public abstract class AbstractTestRest {
         branch,
         r.getHash(),
         ImmutableOperations.builder()
-            .addOperations(
-                ImmutablePut.builder().key(first).contents(IcebergTable.of("path1")).build())
+            .addOperations(Put.of(first, IcebergTable.of("path1", -1L)))
             .commitMeta(CommitMeta.fromMessage("commit 1"))
             .build());
     tree.commitMultipleOperations(
         branch,
         r.getHash(),
         ImmutableOperations.builder()
-            .addOperations(
-                ImmutablePut.builder().key(second).contents(IcebergTable.of("path2")).build())
+            .addOperations(Put.of(second, IcebergTable.of("path2", -1L)))
             .commitMeta(CommitMeta.fromMessage("commit 2"))
             .build());
     tree.commitMultipleOperations(
         branch,
         r.getHash(),
         ImmutableOperations.builder()
-            .addOperations(
-                ImmutablePut.builder().key(third).contents(IcebergTable.of("path3")).build())
+            .addOperations(Put.of(third, IcebergTable.of("path3", -1L)))
             .commitMeta(CommitMeta.fromMessage("commit 3"))
             .build());
     tree.commitMultipleOperations(
         branch,
         r.getHash(),
         ImmutableOperations.builder()
-            .addOperations(
-                ImmutablePut.builder().key(fourth).contents(IcebergTable.of("path4")).build())
+            .addOperations(Put.of(fourth, IcebergTable.of("path4", -1L)))
             .commitMeta(CommitMeta.fromMessage("commit 4"))
             .build());
 
@@ -953,12 +945,12 @@ public abstract class AbstractTestRest {
     Reference r = tree.createReference("main", Branch.of(branch, null));
     // ContentsKey k = ContentsKey.of("/%国","国.国");
     ContentsKey k = ContentsKey.of("a.b", "c.txt");
-    IcebergTable ta = IcebergTable.of("path1");
+    IcebergTable ta = IcebergTable.of("path1", -1L);
     tree.commitMultipleOperations(
         branch,
         r.getHash(),
         ImmutableOperations.builder()
-            .addOperations(ImmutablePut.builder().key(k).contents(ta).build())
+            .addOperations(Put.of(k, ta))
             .commitMeta(CommitMeta.fromMessage("commit 1"))
             .build());
     assertEquals(

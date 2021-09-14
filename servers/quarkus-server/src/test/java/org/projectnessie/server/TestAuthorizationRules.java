@@ -40,7 +40,7 @@ import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableDelete;
 import org.projectnessie.model.ImmutableOperations;
-import org.projectnessie.model.ImmutablePut;
+import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.server.authz.NessieAuthorizationTestProfile;
@@ -90,7 +90,7 @@ class TestAuthorizationRules extends BaseClientAuthTest {
 
     ImmutableOperations createOps =
         ImmutableOperations.builder()
-            .addOperations(ImmutablePut.builder().key(key).contents(IcebergTable.of("foo")).build())
+            .addOperations(Put.of(key, IcebergTable.of("foo", 42L)))
             .commitMeta(CommitMeta.fromMessage("add stuff"))
             .build();
     addContent(branch, createOps, role, shouldFail);
@@ -130,7 +130,7 @@ class TestAuthorizationRules extends BaseClientAuthTest {
     final Branch branch = retrieveBranch(branchName, role, false);
     ImmutableOperations createOps =
         ImmutableOperations.builder()
-            .addOperations(ImmutablePut.builder().key(key).contents(IcebergTable.of("foo")).build())
+            .addOperations(Put.of(key, IcebergTable.of("foo", 42L)))
             .commitMeta(CommitMeta.fromMessage("add stuff"))
             .build();
 

@@ -37,7 +37,7 @@ import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableBranch;
 import org.projectnessie.model.ImmutableDelete;
 import org.projectnessie.model.ImmutableOperations;
-import org.projectnessie.model.ImmutablePut;
+import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
 
 class AbstractTestBasicOperations {
@@ -83,8 +83,7 @@ class AbstractTestBasicOperations {
                 branch.getName(),
                 branch.getHash(),
                 ImmutableOperations.builder()
-                    .addOperations(
-                        ImmutablePut.builder().key(key).contents(IcebergTable.of("foo")).build())
+                    .addOperations(Put.of(key, IcebergTable.of("foo", -1L)))
                     .commitMeta(CommitMeta.fromMessage("empty message"))
                     .build()));
 
@@ -108,15 +107,19 @@ class AbstractTestBasicOperations {
                     .build()));
     assertThrows(NessieNotFoundException.class, () -> contents.getContents(key, "testx", null));
     tryEndpointPass(
-        () ->
-            tree.commitMultipleOperations(
-                branch.getName(),
-                branch.getHash(),
-                ImmutableOperations.builder()
-                    .addOperations(
-                        ImmutablePut.builder().key(key).contents(IcebergTable.of("bar")).build())
-                    .commitMeta(CommitMeta.fromMessage(""))
-                    .build()));
+        () -> {
+          Reference b = tree.getReferenceByName(branch.getName());
+          // Note: the initial version-store implementations just committed this operation, but it
+          // should actually fail, because the operations of the 1st commit above and this commit
+          // have conflicts.
+          tree.commitMultipleOperations(
+              b.getName(),
+              b.getHash(),
+              ImmutableOperations.builder()
+                  .addOperations(Put.of(key, IcebergTable.of("bar", -1L)))
+                  .commitMeta(CommitMeta.fromMessage(""))
+                  .build());
+        });
   }
 
   @Test
