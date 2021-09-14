@@ -24,4 +24,9 @@ public interface MongoDatabaseAdapterConfig extends DatabaseAdapterConfig {
   String getConnectionString();
 
   String getDatabaseName();
+
+  @Value.Derived
+  default MongoDatabaseClient getClient() {
+    return new MongoDatabaseClient(this);
+  }
 }
