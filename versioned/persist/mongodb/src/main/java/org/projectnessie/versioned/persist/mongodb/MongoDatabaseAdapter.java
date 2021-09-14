@@ -218,7 +218,7 @@ public class MongoDatabaseAdapter
     List<String> ids = hashes.stream().map(this::toId).collect(Collectors.toList());
     FindIterable<Document> docs = collection.find(Filters.in("_id", ids)).limit(hashes.size());
 
-    HashMap<Hash, Document> loaded = new HashMap<>(hashes.size());
+    HashMap<Hash, Document> loaded = new HashMap<>(hashes.size() * 4 / 3 + 1, 0.75f);
     for (Document doc : docs) {
       loaded.put(idAsHash(doc), doc);
     }
