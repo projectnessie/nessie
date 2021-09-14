@@ -4,7 +4,21 @@ Nessie is focused on working with the widest range of tools possible. If a tool 
 or reads data, Nessie seeks to work with it. Current Nessie integrations/tools include 
 the following:
 
-| |[Spark 2](spark.md)[^1]|[Spark 3](spark.md)[^2]|[Nessie CLI](cli.md)|
+- [Iceberg Integration](iceberg/index.md).
+    - [Spark](iceberg/spark.md).
+
+- [Delta Lake Integration](deltalake/index.md).
+    - [Spark](deltalake/spark.md).
+
+- [Nessie CLI](cli.md).
+- [Nessie Web UI](ui.md).        
+
+
+
+
+## Feature Matrix
+
+| |Spark 2 [^1]|Spark 3[^2]|[Nessie CLI](cli.md)|
 | --- | --- | --- | --- |
 |Read Default Branch|:material-check:| :material-check: | |
 |Read Any Branch/Tag/Hash|:material-check:| :material-check: | |
@@ -20,3 +34,7 @@ catalog support.
 [^2]: Spark 3 supports both SQL and dataframe access. Consumption can be done via existing 
 Iceberg and Delta Lake catalogs with Nessie extensions or through the Nessie Catalog, 
 which currently exposes both of these formats.
+
+## Demos
+
+In [Nessie Demos](https://github.com/projectnessie/nessie-demos) github repository, we have set of demos to help the users to see how Nessie works.
