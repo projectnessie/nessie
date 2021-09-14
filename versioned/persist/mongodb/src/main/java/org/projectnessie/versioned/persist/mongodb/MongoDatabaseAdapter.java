@@ -51,6 +51,7 @@ import org.projectnessie.versioned.persist.nontx.NonTransactionalOperationContex
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
 import org.projectnessie.versioned.persist.serialize.ProtoSerialization;
+import org.projectnessie.versioned.persist.serialize.ProtoSerialization.Parser;
 
 public class MongoDatabaseAdapter
     extends NonTransactionalDatabaseAdapter<MongoDatabaseAdapterConfig> {
@@ -406,10 +407,5 @@ public class MongoDatabaseAdapter
   protected List<GlobalStateLogEntry> fetchPageFromGlobalLog(
       NonTransactionalOperationContext ctx, List<Hash> hashes) {
     return fetchPage(client.getGlobalLog(), hashes, GlobalStateLogEntry::parseFrom);
-  }
-
-  @FunctionalInterface
-  private interface Parser<T> {
-    T parse(byte[] data) throws InvalidProtocolBufferException;
   }
 }
