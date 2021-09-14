@@ -15,16 +15,14 @@
  */
 package org.projectnessie.server.config;
 
-import io.smallrye.config.ConfigMapping;
-import io.smallrye.config.WithDefault;
-import io.smallrye.config.WithName;
+import io.quarkus.arc.config.ConfigProperties;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /** Configuration for Nessie authentication settings. */
-@ConfigMapping(prefix = "nessie.server.authentication")
+@ConfigProperties(prefix = "nessie.server.authentication")
 public interface QuarkusNessieAuthenticationConfig {
 
   /** Returns {@code true} if Nessie authentication is enabled. */
-  @WithName("enabled")
-  @WithDefault("false")
+  @ConfigProperty(name = "enabled", defaultValue = "false")
   boolean enabled();
 }

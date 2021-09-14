@@ -15,24 +15,20 @@
  */
 package org.projectnessie.server.config;
 
-import io.smallrye.config.ConfigMapping;
-import io.smallrye.config.WithDefault;
-import io.smallrye.config.WithName;
+import io.quarkus.arc.config.ConfigProperties;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.projectnessie.versioned.dynamodb.DynamoStoreConfig;
 
 /** DynamoDB version store configuration. */
-@ConfigMapping(prefix = "nessie.version.store.dynamo")
+@ConfigProperties(prefix = "nessie.version.store.dynamo")
 public interface DynamoVersionStoreConfig {
 
-  @WithName("initialize")
-  @WithDefault("false")
+  @ConfigProperty(name = "initialize", defaultValue = "false")
   boolean isDynamoInitialize();
 
-  @WithName("table-prefix")
-  @WithDefault(DynamoStoreConfig.TABLE_PREFIX)
+  @ConfigProperty(defaultValue = DynamoStoreConfig.TABLE_PREFIX)
   String getTablePrefix();
 
-  @WithName("tracing")
-  @WithDefault("true")
+  @ConfigProperty(name = "tracing", defaultValue = "true")
   boolean enableTracing();
 }

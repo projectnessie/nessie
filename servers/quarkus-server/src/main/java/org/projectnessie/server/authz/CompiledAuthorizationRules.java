@@ -21,8 +21,12 @@ import com.google.common.collect.ImmutableMap;
 import io.quarkus.runtime.Startup;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.projectnessie.cel.tools.Script;
 import org.projectnessie.cel.tools.ScriptException;
 import org.projectnessie.server.config.QuarkusNessieAuthorizationConfig;
@@ -53,7 +57,9 @@ public class CompiledAuthorizationRules {
    * @return A map of compiled authorization rules
    */
   private Map<String, Script> compileAuthorizationRules() {
-    Map<String, String> rules = new HashMap<>(config.rules());
+
+    // Map<String, String> rules = new HashMap<>(config.rules());
+    Map<String, String> rules = new HashMap<>(rulesFromConfig());
     // by default we allow viewing all references until there's a user-defined VIEW_REFERENCE rule
     if (rules.entrySet().stream().noneMatch(r -> r.getValue().contains(VIEW_REFERENCE.name()))) {
       rules.put(ALLOW_VIEWING_ALL_REFS_ID, ALLOW_VIEWING_ALL_REFS);
@@ -79,6 +85,26 @@ public class CompiledAuthorizationRules {
                   }
                 }));
     return ImmutableMap.copyOf(scripts);
+  }
+
+  // TODO Quarkus/microprofile config API do not allow maps. Using this workaround here until
+  //  https://github.com/quarkusio/quarkus/issues/19990 is fixed.
+  private static Map<String, String> rulesFromConfig() {
+    String prefix = "nessie.server.authorization.rules";
+    Config config = ConfigProvider.getConfig();
+    return StreamSupport.stream(config.getPropertyNames().spliterator(), false)
+        .filter(name -> name.startsWith(prefix) && !name.equalsIgnoreCase(prefix))
+        .collect(
+            Collectors.toMap(
+                prop -> cleanPropertyName(prop.substring(prefix.length() + 1)),
+                prop -> config.getOptionalValue(prop, String.class).orElse("")));
+  }
+
+  private static String cleanPropertyName(String name) {
+    if (name.startsWith("\"") && name.endsWith("\"")) {
+      return name.substring(1, name.length() - 1);
+    }
+    return name;
   }
 
   /**

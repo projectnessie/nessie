@@ -15,13 +15,11 @@
  */
 package org.projectnessie.server.config;
 
-import io.smallrye.config.ConfigMapping;
-import io.smallrye.config.WithDefault;
-import io.smallrye.config.WithName;
-import java.util.Map;
+import io.quarkus.arc.config.ConfigProperties;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /** Configuration for Nessie authorization settings. */
-@ConfigMapping(prefix = "nessie.server.authorization")
+@ConfigProperties(prefix = "nessie.server.authorization")
 public interface QuarkusNessieAuthorizationConfig {
 
   /**
@@ -29,15 +27,16 @@ public interface QuarkusNessieAuthorizationConfig {
    *
    * @return {@code true} if Nessie authorization is enabled.
    */
-  @WithName("enabled")
-  @WithDefault("false")
+  @ConfigProperty(name = "enabled", defaultValue = "false")
   boolean enabled();
 
-  /**
+  /*
    * The authorization rules where the key represents the rule id and the value the CEL expression.
    *
    * @return The authorization rules where the key represents the rule id and the value the CEL
    *     expression.
    */
-  Map<String, String> rules();
+  // TODO Quarkus/microprofile config API do not allow maps. Using a workaround here until
+  //  https://github.com/quarkusio/quarkus/issues/19990 is fixed.
+  // Map<String, String> rules();
 }

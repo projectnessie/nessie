@@ -15,13 +15,12 @@
  */
 package org.projectnessie.server.config;
 
+import io.quarkus.arc.config.ConfigProperties;
 import io.quarkus.runtime.annotations.RegisterForReflection;
-import io.smallrye.config.ConfigMapping;
-import io.smallrye.config.WithDefault;
-import io.smallrye.config.WithName;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /** Version store configuration. */
-@ConfigMapping(prefix = "nessie.version.store")
+@ConfigProperties(prefix = "nessie.version.store")
 public interface VersionStoreConfig {
 
   @RegisterForReflection
@@ -31,20 +30,17 @@ public interface VersionStoreConfig {
     JGIT
   }
 
-  @WithName("type")
-  @WithDefault("INMEMORY")
+  @ConfigProperty(name = "type", defaultValue = "INMEMORY")
   VersionStoreType getVersionStoreType();
 
   /**
    * Whether calls against the version-store are traced with OpenTracing/OpenTelemetry (Jaeger),
    * enabled by default.
    */
-  @WithName("trace.enable")
-  @WithDefault("true")
+  @ConfigProperty(name = "trace.enable", defaultValue = "true")
   boolean isTracingEnabled();
 
   /** Whether metrics for the version-store are enabled (enabled by default). */
-  @WithName("metrics.enable")
-  @WithDefault("true")
+  @ConfigProperty(name = "metrics.enable", defaultValue = "true")
   boolean isMetricsEnabled();
 }
