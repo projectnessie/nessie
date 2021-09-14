@@ -47,12 +47,16 @@ public class TestMongoDatabaseAdapter extends AbstractTieredCommitsTest {
 
     createAdapter(
         "MongoDB",
-        config ->
-            ImmutableMongoDatabaseAdapterConfig.builder()
-                .from(config)
-                .connectionString(String.format("mongodb://localhost:%d", port))
-                .databaseName("test")
-                .build());
+        config -> {
+          MongoDatabaseAdapterConfig testConfig =
+              ImmutableMongoDatabaseAdapterConfig.builder()
+                  .from(config)
+                  .connectionString(String.format("mongodb://localhost:%d", port))
+                  .databaseName("test")
+                  .build();
+
+          return testConfig.withClient(new MongoDatabaseClient(testConfig));
+        });
   }
 
   @AfterAll
