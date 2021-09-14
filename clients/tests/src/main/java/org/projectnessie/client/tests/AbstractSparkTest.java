@@ -20,7 +20,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import java.io.File;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -34,11 +33,8 @@ import org.apache.spark.sql.internal.SQLConf;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
-import org.projectnessie.client.NessieClient;
 
 public abstract class AbstractSparkTest {
-  private static final Object ANY = new Object();
-
   @TempDir File tempFile;
 
   private static final int NESSIE_PORT = Integer.getInteger("quarkus.http.test-port", 19121);
@@ -47,10 +43,8 @@ public abstract class AbstractSparkTest {
   protected static SparkSession spark;
   protected static String url = String.format("http://localhost:%d/api/v1", NESSIE_PORT);
 
-  protected static NessieClient nessieClient;
-
   @BeforeEach
-  protected void create() throws IOException {
+  protected void create() {
     Map<String, String> nessieParams =
         ImmutableMap.of("ref", "main", "uri", url, "warehouse", tempFile.toURI().toString());
 
@@ -67,8 +61,6 @@ public abstract class AbstractSparkTest {
         .set("spark.sql.catalog.nessie", "org.apache.iceberg.spark.SparkCatalog");
     spark = SparkSession.builder().master("local[2]").config(conf).getOrCreate();
     spark.sparkContext().setLogLevel("WARN");
-
-    nessieClient = NessieClient.builder().withUri(url).build();
   }
 
   @AfterAll

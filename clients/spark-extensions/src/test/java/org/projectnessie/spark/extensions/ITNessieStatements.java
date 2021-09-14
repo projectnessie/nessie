@@ -33,6 +33,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.projectnessie.client.NessieClient;
 import org.projectnessie.client.tests.AbstractSparkTest;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -51,6 +52,7 @@ public class ITNessieStatements extends AbstractSparkTest {
 
   private String hash;
   private final String refName = "testBranch";
+  protected NessieClient nessieClient;
 
   @BeforeAll
   protected static void createDelta() {
@@ -60,6 +62,7 @@ public class ITNessieStatements extends AbstractSparkTest {
 
   @BeforeEach
   void getHash() throws NessieNotFoundException {
+    nessieClient = NessieClient.builder().withUri(url).build();
     hash = nessieClient.getTreeApi().getDefaultBranch().getHash();
   }
 

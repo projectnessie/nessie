@@ -29,18 +29,24 @@ import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.functions;
 import org.apache.spark.util.Utils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.junit.jupiter.api.io.TempDir;
+import org.projectnessie.client.api.NessieApiV1;
+import org.projectnessie.client.api.NessieApiVersion;
+import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.client.tests.AbstractSparkTest;
 import org.projectnessie.model.Branch;
-import org.projectnessie.model.ImmutableMerge;
 import org.projectnessie.model.Reference;
 import scala.Tuple2;
 
 class ITDeltaLog extends AbstractSparkTest {
+
+  NessieApiV1 api;
 
   @TempDir File tempPath;
 
@@ -50,6 +56,17 @@ class ITDeltaLog extends AbstractSparkTest {
         .set("spark.delta.logFileHandler.class", NessieLogFileMetaParser.class.getCanonicalName())
         .set("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
         .set("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog");
+  }
+
+  @BeforeEach
+  void createClient() {
+    api = HttpClientBuilder.builder().withUri(url).build(NessieApiVersion.V_1, NessieApiV1.class);
+  }
+
+  @AfterEach
+  void closeClient() {
+    api.close();
+    api = null;
   }
 
   @Test
@@ -73,13 +90,13 @@ class ITDeltaLog extends AbstractSparkTest {
     Dataset<Row> count1 = spark.sql("SELECT COUNT(*) FROM test_multiple_branches");
     Assertions.assertEquals(15L, count1.collectAsList().get(0).getLong(0));
 
-    Reference mainBranch = nessieClient.getTreeApi().getReferenceByName("main");
+    Reference mainBranch = api.getReference().refName("main").submit();
 
     Reference devBranch =
-        nessieClient
-            .getTreeApi()
-            .createReference(
-                mainBranch.getName(), Branch.of("testMultipleBranches", mainBranch.getHash()));
+        api.createReference()
+            .sourceRefName(mainBranch.getName())
+            .reference(Branch.of("testMultipleBranches", mainBranch.getHash()))
+            .submit();
 
     spark.sparkContext().conf().set("spark.sql.catalog.spark_catalog.ref", devBranch.getName());
 
@@ -119,13 +136,13 @@ class ITDeltaLog extends AbstractSparkTest {
     Dataset<Row> count1 = spark.sql("SELECT COUNT(*) FROM test_commit_retry");
     Assertions.assertEquals(15L, count1.collectAsList().get(0).getLong(0));
 
-    Reference mainBranch = nessieClient.getTreeApi().getReferenceByName("main");
+    Reference mainBranch = api.getReference().refName("main").submit();
 
     Reference devBranch =
-        nessieClient
-            .getTreeApi()
-            .createReference(
-                mainBranch.getName(), Branch.of("testCommitRetry", mainBranch.getHash()));
+        api.createReference()
+            .sourceRefName(mainBranch.getName())
+            .reference(Branch.of("testCommitRetry", mainBranch.getHash()))
+            .submit();
 
     spark.sparkContext().conf().set("spark.sql.catalog.spark_catalog.ref", devBranch.getName());
 
@@ -135,15 +152,10 @@ class ITDeltaLog extends AbstractSparkTest {
     Dataset<Row> count2 = spark.sql("SELECT COUNT(*) FROM test_commit_retry");
     Assertions.assertEquals(30L, count2.collectAsList().get(0).getLong(0));
 
-    Reference to = nessieClient.getTreeApi().getReferenceByName("main");
-    Reference from = nessieClient.getTreeApi().getReferenceByName("testCommitRetry");
+    Reference to = api.getReference().refName("main").submit();
+    Reference from = api.getReference().refName("testCommitRetry").submit();
 
-    nessieClient
-        .getTreeApi()
-        .mergeRefIntoBranch(
-            to.getName(),
-            to.getHash(),
-            ImmutableMerge.builder().fromRefName(from.getName()).fromHash(from.getHash()).build());
+    api.mergeRefIntoBranch().branch((Branch) to).fromRef(from).submit();
 
     spark.sparkContext().conf().set("spark.sql.catalog.spark_catalog.ref", "main");
 
