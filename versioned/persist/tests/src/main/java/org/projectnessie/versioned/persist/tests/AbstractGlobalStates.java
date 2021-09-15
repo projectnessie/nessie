@@ -103,7 +103,12 @@ public abstract class AbstractGlobalStates {
 
     @Override
     public String toString() {
-      return "branches-" + branches + "-commitsPerBranch=" + commitsPerBranch + "-tables-" + tables;
+      return "branches="
+          + branches
+          + ", commitsPerBranch="
+          + commitsPerBranch
+          + ", tables="
+          + tables;
     }
   }
 
