@@ -22,8 +22,10 @@ import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 @Value.Immutable(lazyhash = true)
 public interface MongoDatabaseAdapterConfig extends DatabaseAdapterConfig {
 
+  @Nullable
   String getConnectionString();
 
+  @Nullable
   String getDatabaseName();
 
   @Value.Auxiliary

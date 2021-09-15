@@ -21,6 +21,7 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import java.util.Objects;
 import org.bson.Document;
 
 public class MongoDatabaseClient {
@@ -47,11 +48,15 @@ public class MongoDatabaseClient {
       return;
     }
 
-    ConnectionString cs = new ConnectionString(config.getConnectionString());
+    ConnectionString cs =
+        new ConnectionString(
+            Objects.requireNonNull(config.getConnectionString(), "Connection string must be set"));
     MongoClientSettings settings = MongoClientSettings.builder().applyConnectionString(cs).build();
 
     mongoClient = MongoClients.create(settings);
-    MongoDatabase database = mongoClient.getDatabase(config.getDatabaseName());
+    MongoDatabase database =
+        mongoClient.getDatabase(
+            Objects.requireNonNull(config.getDatabaseName(), "Database name must be set"));
     globalPointers = database.getCollection(GLOBAL_POINTER);
     globalLog = database.getCollection(GLOBAL_LOG);
     commitLog = database.getCollection(COMMIT_LOG);
