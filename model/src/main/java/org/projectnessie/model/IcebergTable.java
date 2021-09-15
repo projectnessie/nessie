@@ -51,12 +51,11 @@ import org.immutables.value.Value;
             + "identified via its unique 'Contents.id'.\n"
             + "\n"
             + "A Nessie commit-operation, performed via 'TreeApi.commitMultipleOperations', for Iceberg "
-            + "for Iceberg consists of a 'Operation.Put' with an 'IcebergTable' and an "
-            + "'IcebergTableGlobal' as the expected-global-state via 'Operation.PutGlobal' using the "
-            + "same 'ContentsKey' and 'Contents.id'.\n"
+            + "for Iceberg consists of a 'Operation.Put' with an 'IcebergTable' as in the 'contents' "
+            + "field and the previous value of 'IcebergTable' in the 'expectedContetns' field.\n"
             + "\n"
             + "During a commit-operation, Nessie checks whether the known global state of the "
-            + "Iceberg table is compatible (think: equal) to 'Operation.PutGlobal.expectedContents'.")
+            + "Iceberg table is compatible (think: equal) to 'Operation.Put.expectedContents'.")
 @Value.Immutable(prehash = true)
 @JsonSerialize(as = ImmutableIcebergTable.class)
 @JsonDeserialize(as = ImmutableIcebergTable.class)

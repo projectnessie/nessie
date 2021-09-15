@@ -55,8 +55,7 @@ public interface Operation {
       description =
           "Add or replace (put) a 'Contents' object for a 'ContentsKey'. "
               + "If the actual table type tracks the 'global state' of individual tables (Iceberg "
-              + "as of today), every 'Put' must be accompanied by a 'PutGlobal' to update the global "
-              + "state.")
+              + "as of today), every 'Put'-operation must contain a non-null value for 'expectedContents'.")
   @Value.Immutable(prehash = true)
   @JsonSerialize(as = ImmutablePut.class)
   @JsonDeserialize(as = ImmutablePut.class)
