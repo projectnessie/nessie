@@ -571,6 +571,19 @@ public interface HttpTreeApi extends TreeApi {
           Merge merge)
       throws NessieNotFoundException, NessieConflictException;
 
+  /**
+   * Commit multiple operations against the given branch expecting that branch to have the given
+   * hash as its latest commit. The hash in the successful response contains the hash of the commit
+   * that contains the operations of the invocation.
+   *
+   * @param branchName Branch to change, defaults to default branch.
+   * @param hash Expected hash of branch.
+   * @param operations {@link Operations} to apply
+   * @return updated {@link Branch} objects with the hash of the new HEAD
+   * @throws NessieNotFoundException if {@code branchName} could not be found
+   * @throws NessieConflictException if the operations could not be applied to some conflict, which
+   *     is either caused by a conflicting commit or concurrent commits.
+   */
   @POST
   @Path("branch/{branchName}/commit")
   @Consumes(MediaType.APPLICATION_JSON)
