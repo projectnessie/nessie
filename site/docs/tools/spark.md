@@ -344,7 +344,7 @@ features of Nessie over the Iceberg features as Nessie history is consistent acr
 
 !!! note
     You can follow along interactively in a Jupyter notebook by following the instructions
-    [here](https://github.com/projectnessie/nessie/tree/main/python/demo).
+    [here](https://mybinder.org/v2/gh/projectnessie/nessie-demos/main?filepath=notebooks/nessie-delta-demo-nba.ipynb).
 
 Delta Lake support in Nessie requires some minor modifications to the core Delta libraries. This patch is still ongoing,
 in the meantime Nessie will not work on Databricks and must be used with the open source Delta. Nessie is able to interact with Delta Lake by implementing a
