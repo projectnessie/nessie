@@ -376,9 +376,9 @@ public class MongoDatabaseAdapter
     UpdateResult result =
         client
             .getGlobalPointers()
-            .updateOne(
+            .replaceOne(
                 Filters.and(Filters.eq(globalPointerKey), Filters.eq("globalId", expectedGlobalId)),
-                new Document("$set", doc));
+                doc);
 
     return result.wasAcknowledged()
         && result.getMatchedCount() == 1
