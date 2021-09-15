@@ -54,11 +54,13 @@ public class RocksDatabaseAdapter
   private final RocksDbInstance dbInstance;
 
   private final ByteString keyPrefix;
+  private final byte[] globalPointerKey;
 
   public RocksDatabaseAdapter(RocksDatabaseAdapterConfig config) {
     super(config);
 
     this.keyPrefix = ByteString.copyFromUtf8(config.getKeyPrefix() + ':');
+    this.globalPointerKey = ByteString.copyFromUtf8(config.getKeyPrefix()).toByteArray();
 
     // get the externally configured RocksDbInstance
     RocksDbInstance dbInstance = config.getDbInstance();
@@ -92,8 +94,7 @@ public class RocksDatabaseAdapter
   }
 
   private byte[] globalPointerKey() {
-    // TODO this should be a "final field"
-    return dbKey(ByteString.EMPTY);
+    return globalPointerKey;
   }
 
   @Override
