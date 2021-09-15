@@ -236,7 +236,7 @@ public interface DatabaseAdapter extends AutoCloseable {
    *     values that were excluded via {@code keyFilter}
    * @throws ReferenceNotFoundException if {@code from} or {@code to} does not exist.
    */
-  Stream<Diff<ByteString>> diff(Hash from, Hash to, KeyFilterPredicate keyFilter)
+  Stream<Difference> diff(Hash from, Hash to, KeyFilterPredicate keyFilter)
       throws ReferenceNotFoundException;
 
   // NOTE: the following is NOT a "proposed" API, just an idea of how the supporting functions

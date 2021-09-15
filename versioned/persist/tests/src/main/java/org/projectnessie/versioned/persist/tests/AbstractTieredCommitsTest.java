@@ -31,7 +31,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.versioned.BranchName;
-import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.NamedRef;
@@ -45,6 +44,7 @@ import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory.Builder;
+import org.projectnessie.versioned.persist.adapter.Difference;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
@@ -316,7 +316,7 @@ public abstract class AbstractTieredCommitsTest {
       commits[i] = databaseAdapter.commit(commit.build());
     }
 
-    try (Stream<Diff<ByteString>> diff =
+    try (Stream<Difference> diff =
         databaseAdapter.diff(
             databaseAdapter.toHash(main),
             databaseAdapter.hashOnReference(branch, Optional.of(initialHash)),
@@ -325,7 +325,7 @@ public abstract class AbstractTieredCommitsTest {
     }
 
     for (int i = 0; i < commits.length; i++) {
-      try (Stream<Diff<ByteString>> diff =
+      try (Stream<Difference> diff =
           databaseAdapter.diff(
               databaseAdapter.toHash(main),
               databaseAdapter.hashOnReference(branch, Optional.of(commits[i])),
@@ -336,8 +336,9 @@ public abstract class AbstractTieredCommitsTest {
                 IntStream.range(0, 3)
                     .mapToObj(
                         k ->
-                            Diff.of(
+                            Difference.of(
                                 Key.of("key", Integer.toString(k)),
+                                Optional.empty(),
                                 Optional.empty(),
                                 Optional.of(ByteString.copyFromUtf8("value " + c + " for " + k))))
                     .collect(Collectors.toList()));
@@ -345,7 +346,7 @@ public abstract class AbstractTieredCommitsTest {
     }
 
     for (int i = 0; i < commits.length; i++) {
-      try (Stream<Diff<ByteString>> diff =
+      try (Stream<Difference> diff =
           databaseAdapter.diff(
               databaseAdapter.hashOnReference(branch, Optional.of(commits[i])),
               databaseAdapter.toHash(main),
@@ -356,8 +357,9 @@ public abstract class AbstractTieredCommitsTest {
                 IntStream.range(0, 3)
                     .mapToObj(
                         k ->
-                            Diff.of(
+                            Difference.of(
                                 Key.of("key", Integer.toString(k)),
+                                Optional.empty(),
                                 Optional.of(ByteString.copyFromUtf8("value " + c + " for " + k)),
                                 Optional.empty()))
                     .collect(Collectors.toList()));
@@ -365,7 +367,7 @@ public abstract class AbstractTieredCommitsTest {
     }
 
     for (int i = 1; i < commits.length; i++) {
-      try (Stream<Diff<ByteString>> diff =
+      try (Stream<Difference> diff =
           databaseAdapter.diff(
               databaseAdapter.hashOnReference(branch, Optional.of(commits[i - 1])),
               databaseAdapter.hashOnReference(branch, Optional.of(commits[i])),
@@ -376,8 +378,9 @@ public abstract class AbstractTieredCommitsTest {
                 IntStream.range(0, 3)
                     .mapToObj(
                         k ->
-                            Diff.of(
+                            Difference.of(
                                 Key.of("key", Integer.toString(k)),
+                                Optional.empty(),
                                 Optional.of(
                                     ByteString.copyFromUtf8("value " + (c - 1) + " for " + k)),
                                 Optional.of(ByteString.copyFromUtf8("value " + c + " for " + k))))
