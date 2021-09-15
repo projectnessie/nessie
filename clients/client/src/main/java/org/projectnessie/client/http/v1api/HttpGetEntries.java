@@ -49,7 +49,7 @@ final class HttpGetEntries extends BaseHttpOnReferenceRequest<GetEntriesBuilder>
   }
 
   @Override
-  public GetEntriesBuilder queryExpression(Integer namespaceDepth) {
+  public GetEntriesBuilder namespaceDepth(Integer namespaceDepth) {
     params.namespaceDepth(namespaceDepth);
     return this;
   }
