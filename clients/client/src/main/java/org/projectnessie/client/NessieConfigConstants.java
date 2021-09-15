@@ -29,14 +29,16 @@ public final class NessieConfigConstants {
    * Config property name ({@value #CONF_NESSIE_USERNAME}) for the user name used for (basic)
    * authentication.
    *
-   * @deprecated "basic" HTTP authentication is not considered secure.
+   * @deprecated "basic" HTTP authentication is not considered secure. Use {@link
+   *     #CONF_NESSIE_AUTH_TOKEN} instead.
    */
   @Deprecated public static final String CONF_NESSIE_USERNAME = "nessie.authentication.username";
   /**
    * Config property name ({@value #CONF_NESSIE_PASSWORD}) for the password used for (basic)
    * authentication.
    *
-   * @deprecated "basic" HTTP authentication is not considered secure.
+   * @deprecated "basic" HTTP authentication is not considered secure. Use {@link
+   *     #CONF_NESSIE_AUTH_TOKEN} instead.
    */
   @Deprecated public static final String CONF_NESSIE_PASSWORD = "nessie.authentication.password";
   /**
@@ -53,7 +55,7 @@ public final class NessieConfigConstants {
    * Config property name ({@value #CONF_NESSIE_AUTH_TYPE}) for the authentication provider ID.
    * Valid values are {@code BASIC}, {@code BEARER} and {@code AWS}.
    *
-   * <p>Note that "basic" HTTP authentication is not considered secure.
+   * <p>Note that "basic" HTTP authentication is not considered secure, use {@code BEARER} instead.
    */
   public static final String CONF_NESSIE_AUTH_TYPE = "nessie.authentication.type";
   /** Config property name ({@value #CONF_NESSIE_REF}) for the nessie reference used by clients. */
