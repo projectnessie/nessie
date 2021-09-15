@@ -630,7 +630,6 @@ public abstract class NonTransactionalDatabaseAdapter<CONFIG extends DatabaseAda
           Stream.concat(
               newParents,
               currentEntry.getParentsList().stream()
-                  .skip(1)
                   .limit(config.getParentsPerCommit() - 1)
                   .map(Hash::of));
     }
