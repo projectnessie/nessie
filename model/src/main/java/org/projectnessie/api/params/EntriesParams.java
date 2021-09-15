@@ -52,7 +52,8 @@ public class EntriesParams {
 
   @Parameter(
       description =
-          "If set > 0 will filter the results to only return namespaces/tables to the depth of namespaceDepth. If not set or <=0 has no effect")
+          "If set > 0 will filter the results to only return namespaces/tables to the depth of namespaceDepth. If not set or <=0 has no effect\n"
+              + "Setting this paramter > 0 will turn off paging.")
   @QueryParam("namespaceDepth")
   private Integer namespaceDepth;
 

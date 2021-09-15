@@ -328,14 +328,9 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
         Stream<EntriesResponse.Entry> entriesStream =
             filterEntries(entryStream, params.queryExpression());
         if (params.namespaceDepth() != null && params.namespaceDepth() > 0) {
-          entries =
-              entriesStream
-                  .map(e -> truncate(e, params.namespaceDepth()))
-                  .distinct()
-                  .collect(ImmutableList.toImmutableList());
-        } else {
-          entries = entriesStream.collect(ImmutableList.toImmutableList());
+          entriesStream = entriesStream.map(e -> truncate(e, params.namespaceDepth())).distinct();
         }
+        entries = entriesStream.collect(ImmutableList.toImmutableList());
       }
       return EntriesResponse.builder().addAllEntries(entries).build();
     } catch (ReferenceNotFoundException e) {
@@ -352,6 +347,7 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
     ContentsKey key = ContentsKey.of(entry.getName().getElements().subList(0, depth));
     return EntriesResponse.Entry.builder().type(type).name(key).build();
   }
+
   /**
    * Applies different filters to the {@link Stream} of entries based on the query expression.
    *

@@ -950,46 +950,20 @@ public abstract class AbstractTestRest {
     ContentsKey third = ContentsKey.of("a", "thirdTable");
     ContentsKey fourth = ContentsKey.of("a", "b", "fourthTable");
     ContentsKey fifth = ContentsKey.of("a", "boo", "fifthTable");
-    tree.commitMultipleOperations(
-        branch,
-        r.getHash(),
-        ImmutableOperations.builder()
-            .addOperations(
-                ImmutablePut.builder().key(first).contents(IcebergTable.of("path1")).build())
-            .commitMeta(CommitMeta.fromMessage("commit 1"))
-            .build());
-    tree.commitMultipleOperations(
-        branch,
-        r.getHash(),
-        ImmutableOperations.builder()
-            .addOperations(
-                ImmutablePut.builder().key(second).contents(IcebergTable.of("path2")).build())
-            .commitMeta(CommitMeta.fromMessage("commit 2"))
-            .build());
-    tree.commitMultipleOperations(
-        branch,
-        r.getHash(),
-        ImmutableOperations.builder()
-            .addOperations(
-                ImmutablePut.builder().key(third).contents(IcebergTable.of("path3")).build())
-            .commitMeta(CommitMeta.fromMessage("commit 3"))
-            .build());
-    tree.commitMultipleOperations(
-        branch,
-        r.getHash(),
-        ImmutableOperations.builder()
-            .addOperations(
-                ImmutablePut.builder().key(fourth).contents(IcebergTable.of("path4")).build())
-            .commitMeta(CommitMeta.fromMessage("commit 4"))
-            .build());
-    tree.commitMultipleOperations(
-        branch,
-        r.getHash(),
-        ImmutableOperations.builder()
-            .addOperations(
-                ImmutablePut.builder().key(fifth).contents(IcebergTable.of("path5")).build())
-            .commitMeta(CommitMeta.fromMessage("commit 5"))
-            .build());
+    List<ContentsKey> keys = ImmutableList.of(first, second, third, fourth, fifth);
+    for (int i = 0; i < 5; i++) {
+      tree.commitMultipleOperations(
+          branch,
+          r.getHash(),
+          ImmutableOperations.builder()
+              .addOperations(
+                  ImmutablePut.builder()
+                      .key(keys.get(i))
+                      .contents(IcebergTable.of("path" + i))
+                      .build())
+              .commitMeta(CommitMeta.fromMessage("commit " + i))
+              .build());
+    }
 
     List<Entry> entries =
         tree.getEntries(branch, EntriesParams.builder().namespaceDepth(0).build()).getEntries();
