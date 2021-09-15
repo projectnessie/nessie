@@ -30,10 +30,7 @@ public class MongoDatabaseAdapterFactory
     return new Builder<MongoDatabaseAdapterConfig>() {
       @Override
       protected MongoDatabaseAdapterConfig getDefaultConfig() {
-        return ImmutableMongoDatabaseAdapterConfig.builder()
-            .connectionString("unknown")
-            .databaseName("unknown")
-            .build();
+        return ImmutableMongoDatabaseAdapterConfig.builder().build();
       }
 
       @Override
