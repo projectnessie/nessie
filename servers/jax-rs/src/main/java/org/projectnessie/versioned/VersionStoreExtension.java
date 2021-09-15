@@ -37,12 +37,10 @@ public class VersionStoreExtension implements Extension {
   public void afterBeanDiscovery(@Observes AfterBeanDiscovery abd, BeanManager bm) {
     final TableCommitMetaStoreWorker storeWorker = new TableCommitMetaStoreWorker();
     final VersionStore<Contents, CommitMeta, Type> store =
-        new BackwardsCompatibleVersionStore<>(
-            InMemoryVersionStore.<Contents, CommitMeta, Type>builder()
-                .valueSerializer(storeWorker.getValueSerializer())
-                .metadataSerializer(storeWorker.getMetadataSerializer())
-                .build(),
-            storeWorker.getValueSerializer());
+        InMemoryVersionStore.<Contents, CommitMeta, Type>builder()
+            .valueSerializer(storeWorker.getValueSerializer())
+            .metadataSerializer(storeWorker.getMetadataSerializer())
+            .build();
 
     try {
       store.create(BranchName.of(SERVER_CONFIG.getDefaultBranch()), Optional.empty());
