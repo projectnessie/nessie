@@ -97,7 +97,8 @@ public class TestModelObjectsSerialization {
 
   @Test
   public void testTransplantSerDe() throws JsonProcessingException {
-    Transplant transplant = ImmutableTransplant.builder().addHashesToTransplant(TEST_HASH).build();
+    Transplant transplant = ImmutableTransplant.builder().addHashesToTransplant(TEST_HASH)
+        .fromRefName("testref").build();
     String transplantJson = MAPPER.writeValueAsString(transplant);
     Transplant transplantDeserialized = MAPPER.readValue(transplantJson, Transplant.class);
     assertEquals(transplant, transplantDeserialized);
