@@ -26,7 +26,15 @@ class NessieException(Exception):
             parsed_response = response.json()
 
         except:  # NOQA
-            parsed_response = dict()
+            # If we did not get a JSON response for a 500 error, use a generic message.
+            # In this case the HTML response contents are likely not user-friendly anyway.
+            if 500 <= response.status_code <= 599:
+                parsed_response = {
+                    "message": "Internal Server Error",
+                    "status": response.status_code,
+                }
+            else:
+                parsed_response = dict()
 
         self.status_code = response.status_code
         self.server_message = parsed_response.get("message", response.text)

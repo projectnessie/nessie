@@ -1,0 +1,28 @@
+interactions:
+    - request:
+          body: null
+          headers:
+              Accept:
+                  - application/json
+              Accept-Encoding:
+                  - gzip, deflate
+              Connection:
+                  - keep-alive
+              User-Agent:
+                  - python-requests/2.26.0
+          method: GET
+          uri: http://localhost:19120/api/v1/trees/tree
+      response:
+          body:
+              string: "{\n  \"message\" : \"java.lang.IllegalStateException: Default branch
+        isn't a branch\",\n  \"status\" : 500,\n  \"reason\" : \"Internal Server Error\",\n
+        \ \"serverStackTrace\" : null\n}"
+          headers:
+              Content-Length:
+                  - '167'
+              Content-Type:
+                  - application/json
+          status:
+              code: 500
+              message: Internal Server Error
+version: 1
