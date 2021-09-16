@@ -93,6 +93,10 @@ public class MongoDatabaseAdapter
     client.release();
   }
 
+  MongoDatabaseAdapterConfig getConfig() {
+    return config;
+  }
+
   private String toId(Hash id) {
     return keyPrefix + '#' + id.asString();
   }

@@ -22,12 +22,9 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import com.google.protobuf.ByteString;
 import java.util.Arrays;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.versioned.BranchName;
@@ -41,9 +38,6 @@ import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.WithHash;
 import org.projectnessie.versioned.persist.adapter.ContentsId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory.Builder;
 import org.projectnessie.versioned.persist.adapter.Difference;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
@@ -54,41 +48,7 @@ import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
  * the tests against the {@code VersionStore}.
  */
 public abstract class AbstractTieredCommitsTest {
-  protected static DatabaseAdapter databaseAdapter;
-
-  protected static <C extends DatabaseAdapterConfig> void createAdapter(
-      String adapterName, Function<C, DatabaseAdapterConfig> configurer) {
-    createAdapter(
-        DatabaseAdapterFactory.<C>loadFactoryByName(adapterName).newBuilder(), configurer);
-  }
-
-  protected static <C extends DatabaseAdapterConfig> void createAdapter(
-      Builder<C> configBuilder, Function<C, DatabaseAdapterConfig> configurer) {
-    databaseAdapter =
-        configBuilder
-            .configure(SystemPropertiesConfigurer::configureFromSystemProperties)
-            // default to a quite small max-size for the CommitLogEntry.keyList + KeyListEntity
-            // This is necessary for AbstractManyKeys to work properly!!
-            .configure(c -> c.withMaxKeyListSize(2048))
-            .configure(configurer)
-            .build();
-  }
-
-  @BeforeEach
-  void reinitializeRepo() {
-    databaseAdapter.reinitializeRepo("main");
-  }
-
-  @AfterAll
-  static void closeDatabaseAdapter() throws Exception {
-    try {
-      if (databaseAdapter != null) {
-        databaseAdapter.close();
-      }
-    } finally {
-      databaseAdapter = null;
-    }
-  }
+  @DatabaseAdapterExtension.Adapter protected static DatabaseAdapter databaseAdapter;
 
   @Nested
   public class GlobalStates extends AbstractGlobalStates {

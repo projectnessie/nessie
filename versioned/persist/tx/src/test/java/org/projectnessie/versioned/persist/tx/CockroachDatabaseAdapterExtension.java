@@ -13,11 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.persist.tx.h2;
+package org.projectnessie.versioned.persist.tx;
 
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.projectnessie.versioned.persist.tests.AbstractTieredCommitsTest;
-import org.projectnessie.versioned.persist.tx.H2DatabaseAdapterExtension;
+import org.testcontainers.containers.CockroachContainer;
+import org.testcontainers.containers.JdbcDatabaseContainer;
 
-@ExtendWith(H2DatabaseAdapterExtension.class)
-class TestTieredCommitsH2 extends AbstractTieredCommitsTest {}
+public class CockroachDatabaseAdapterExtension extends ContainerDatabaseAdapterExtension {
+  public CockroachDatabaseAdapterExtension() {
+    super("PostgreSQL");
+  }
+
+  @Override
+  protected JdbcDatabaseContainer<?> createContainer() {
+    String version = System.getProperty("it.nessie.container.cockroach.tag", "v21.1.6");
+    return new CockroachContainer("cockroachdb/cockroach:" + version);
+  }
+}

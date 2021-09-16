@@ -13,11 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.persist.tx.h2;
+package org.projectnessie.versioned.persist.inmem;
 
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.projectnessie.versioned.persist.tests.AbstractTieredCommitsTest;
-import org.projectnessie.versioned.persist.tx.H2DatabaseAdapterExtension;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
+import org.projectnessie.versioned.persist.tests.DatabaseAdapterExtension;
 
-@ExtendWith(H2DatabaseAdapterExtension.class)
-class TestTieredCommitsH2 extends AbstractTieredCommitsTest {}
+public class InmemoryDatabaseAdapterExtension extends DatabaseAdapterExtension {
+  public InmemoryDatabaseAdapterExtension() {}
+
+  @Override
+  protected DatabaseAdapter createAdapter(ExtensionContext context, TestConfigurer testConfigurer) {
+    return createAdapter("In-Memory", testConfigurer, c -> c);
+  }
+}

@@ -17,100 +17,17 @@ package org.projectnessie.versioned.persist.mongodb;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import de.flapdoodle.embed.mongo.Command;
-import de.flapdoodle.embed.mongo.MongodExecutable;
-import de.flapdoodle.embed.mongo.MongodStarter;
-import de.flapdoodle.embed.mongo.config.Defaults;
-import de.flapdoodle.embed.mongo.config.MongodConfig;
-import de.flapdoodle.embed.mongo.config.MongodProcessOutputConfig;
-import de.flapdoodle.embed.mongo.config.Net;
-import de.flapdoodle.embed.mongo.distribution.Version;
-import de.flapdoodle.embed.process.config.io.ProcessOutput;
-import de.flapdoodle.embed.process.io.StreamProcessor;
-import de.flapdoodle.embed.process.runtime.Network;
-import java.io.IOException;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.versioned.persist.tests.AbstractTieredCommitsTest;
 
+@ExtendWith(MongoDatabaseAdapterExtension.class)
 public class TestMongoDatabaseAdapter extends AbstractTieredCommitsTest {
-  private static final Pattern LISTEN_ON_PORT_PATTERN =
-      Pattern.compile(
-          ".*NETWORK ([^\\n]*) waiting for connections on port ([0-9]+)\\n.*",
-          Pattern.MULTILINE | Pattern.DOTALL);
-
-  private static final AtomicInteger port = new AtomicInteger();
-  private static MongodExecutable mongo;
-
-  @BeforeAll
-  static void startMongo() throws IOException {
-    ProcessOutput defaultOutput = MongodProcessOutputConfig.getDefaultInstance(Command.MongoD);
-    StreamProcessor capturedStdout =
-        new StreamProcessor() {
-          private final StringBuilder buffer = new StringBuilder();
-
-          @Override
-          public void process(String block) {
-            if (port.get() == 0) {
-              buffer.append(block);
-              Matcher matcher = LISTEN_ON_PORT_PATTERN.matcher(buffer);
-              if (matcher.matches()) {
-                String portString = matcher.group(2);
-                port.set(Integer.parseInt(portString));
-              }
-            }
-            defaultOutput.getOutput().process(block);
-          }
-
-          @Override
-          public void onProcessed() {
-            defaultOutput.getOutput().onProcessed();
-          }
-        };
-
-    MongodStarter starter =
-        MongodStarter.getInstance(
-            Defaults.runtimeConfigFor(Command.MongoD)
-                .processOutput(
-                    new ProcessOutput(
-                        capturedStdout, defaultOutput.getError(), defaultOutput.getCommands()))
-                .build());
-
-    MongodConfig mongodConfig =
-        MongodConfig.builder()
-            .version(Version.Main.PRODUCTION)
-            .net(new Net(0, Network.localhostIsIPv6()))
-            .build();
-
-    mongo = starter.prepare(mongodConfig);
-    mongo.start();
-
-    assertThat(port).hasPositiveValue();
-
-    createAdapter("MongoDB", TestMongoDatabaseAdapter::configureConnection);
-  }
-
-  private static MongoDatabaseAdapterConfig configureConnection(MongoDatabaseAdapterConfig config) {
-    return config
-        .withConnectionString(String.format("mongodb://localhost:%d", port.get()))
-        .withDatabaseName("test");
-  }
-
-  @AfterAll
-  static void closeMongoDb() {
-    if (mongo != null) {
-      mongo.stop();
-    }
-  }
 
   @Test
   void testClientFromConfig() {
-    MongoDatabaseAdapterConfig config =
-        configureConnection(ImmutableMongoDatabaseAdapterConfig.builder().build());
+    MongoDatabaseAdapterConfig config = ((MongoDatabaseAdapter) databaseAdapter).getConfig();
+
     MongoDatabaseClient client = new MongoDatabaseClient(config);
     assertThat(client.acquired()).isEqualTo(0);
 

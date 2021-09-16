@@ -13,11 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.persist.tx.h2;
+package org.projectnessie.versioned.persist.tx;
 
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.projectnessie.versioned.persist.tests.AbstractTieredCommitsTest;
-import org.projectnessie.versioned.persist.tx.H2DatabaseAdapterExtension;
+import org.testcontainers.containers.JdbcDatabaseContainer;
+import org.testcontainers.containers.PostgreSQLContainer;
 
-@ExtendWith(H2DatabaseAdapterExtension.class)
-class TestTieredCommitsH2 extends AbstractTieredCommitsTest {}
+public class PostgresDatabaseAdapterExtension extends ContainerDatabaseAdapterExtension {
+  public PostgresDatabaseAdapterExtension() {
+    super("PostgreSQL");
+  }
+
+  @SuppressWarnings("rawtypes")
+  @Override
+  protected JdbcDatabaseContainer<?> createContainer() {
+    String version = System.getProperty("it.nessie.container.postgres.tag", "9.6.22");
+    return new PostgreSQLContainer("postgres:" + version);
+  }
+}

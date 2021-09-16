@@ -15,13 +15,8 @@
  */
 package org.projectnessie.versioned.persist.inmem;
 
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.versioned.persist.tests.AbstractTieredCommitsTest;
 
-public class TestTieredCommitsInmemory extends AbstractTieredCommitsTest {
-
-  @BeforeAll
-  static void configureAdapter() {
-    createAdapter("In-Memory", c -> c);
-  }
-}
+@ExtendWith(InmemoryDatabaseAdapterExtension.class)
+class TestTieredCommitsInmemory extends AbstractTieredCommitsTest {}
