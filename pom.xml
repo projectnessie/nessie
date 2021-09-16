@@ -150,7 +150,7 @@
     <jackson.version>2.12.5</jackson.version>
     <javax.version>4.0.1</javax.version>
     <javax.ws.rs.version>2.1.1</javax.ws.rs.version>
-    <jersey.version>2.34</jersey.version>
+    <jersey.version>2.35</jersey.version>
     <jetty.version>9.4.31.v20200723</jetty.version>
     <jgit.version>5.13.0.202109080827-r</jgit.version>
     <jjwt.version>0.11.2</jjwt.version>
@@ -173,7 +173,7 @@
     <sqlite.version>1.0.392</sqlite.version>
     <surefire.version>3.0.0-M5</surefire.version>
     <testcontainers.version>1.16.0</testcontainers.version>
-    <weld.version>3.1.7.Final</weld.version>
+    <weld.version>3.1.8.Final</weld.version>
   </properties>
 
   <dependencyManagement>
