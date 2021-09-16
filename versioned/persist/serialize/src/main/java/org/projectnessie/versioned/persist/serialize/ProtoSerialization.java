@@ -166,4 +166,10 @@ public class ProtoSerialization {
   public static Key protoToKey(AdapterTypes.Key key) {
     return Key.of(key.getElementList().toArray(new String[0]));
   }
+
+  /** Functional interface for the various {@code protoToABC()} methods above. */
+  @FunctionalInterface
+  public interface Parser<T> {
+    T parse(byte[] data) throws InvalidProtocolBufferException;
+  }
 }
