@@ -121,7 +121,7 @@ class ITTestIdentifyUnreferencedAssetsIceberg {
   @BeforeAll
   static void create() throws Exception {
     SparkConf conf = new SparkConf();
-    conf.set("spark.sql.catalog.nessie.url", NESSIE_ENDPOINT)
+    conf.set("spark.sql.catalog.nessie.uri", NESSIE_ENDPOINT)
         .set("spark.sql.catalog.nessie.ref", BRANCH)
         .set("spark.sql.catalog.nessie.warehouse", LOCAL_DIR.toURI().toString())
         .set("spark.sql.catalog.nessie.catalog-impl", NessieCatalog.class.getName())
