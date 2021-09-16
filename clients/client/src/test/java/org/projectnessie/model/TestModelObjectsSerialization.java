@@ -15,14 +15,17 @@
  */
 package org.projectnessie.model;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
-import org.junit.jupiter.api.Test;
+import java.util.Arrays;
+import java.util.List;
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.model.Contents.Type;
-import org.projectnessie.model.EntriesResponse.Entry;
 
 /**
  * This test merely checks the JSON serialization/deserialization of the model classes, with an
@@ -31,87 +34,145 @@ import org.projectnessie.model.EntriesResponse.Entry;
 public class TestModelObjectsSerialization {
 
   private static final ObjectMapper MAPPER = new ObjectMapper();
-  private static final Instant NOW = Instant.now();
-  private static final String TEST_HASH =
-      "3e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10e";
 
-  @Test
-  public void testBranchSerDe() throws JsonProcessingException {
-    String name = "testbranch";
-    Branch branchWithNameAndHash = ImmutableBranch.builder().hash(TEST_HASH).name(name).build();
-    Branch branchWithNameOnly = ImmutableBranch.builder().name(name).build();
-
-    assertBranchSerDe(branchWithNameAndHash);
-    assertBranchSerDe(branchWithNameOnly);
+  @ParameterizedTest
+  @MethodSource("goodCases")
+  void testGoodSerDeCases(Case goodCase) throws JsonProcessingException {
+    String json = MAPPER.writeValueAsString(goodCase.obj);
+    Assertions.assertThat(json).isEqualTo(goodCase.deserializedJson);
+    Object deserialized = MAPPER.readValue(json, goodCase.deserializeAs);
+    Assertions.assertThat(deserialized).isEqualTo(goodCase.obj);
   }
 
-  private void assertBranchSerDe(Branch branch) throws JsonProcessingException {
-    String serializedJson = MAPPER.writeValueAsString(branch);
-    Branch branchDeSerialized = MAPPER.readValue(serializedJson, Branch.class);
-    assertEquals(branch, branchDeSerialized);
-    Reference refDeSerialized = MAPPER.readValue(serializedJson, Reference.class);
-    assertEquals(branch, refDeSerialized);
+  @ParameterizedTest
+  @MethodSource("negativeCases")
+  void testNegativeSerDeCases(Case invalidCase) {
+    assertThrows(
+        JsonProcessingException.class,
+        () -> MAPPER.readValue(invalidCase.deserializedJson, invalidCase.deserializeAs));
   }
 
-  @Test
-  public void testEntriesResponseSerDe() throws JsonProcessingException {
-    Entry entry =
-        ImmutableEntry.builder()
-            .type(Type.ICEBERG_TABLE)
-            .name(ContentsKey.fromPathString("/tmp/testpath"))
-            .build();
-    EntriesResponse entriesResponse =
-        ImmutableEntriesResponse.builder().addEntries(entry).token(TEST_HASH).hasMore(true).build();
+  static List<Case> goodCases() {
+    final Instant now = Instant.now();
+    final String hash = "3e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10e";
+    final String branchName = "testBranch";
 
-    String entriesResponseJson = MAPPER.writeValueAsString(entriesResponse);
-    EntriesResponse entriesResponseDeserialized =
-        MAPPER.readValue(entriesResponseJson, EntriesResponse.class);
-    assertEquals(entriesResponse, entriesResponseDeserialized);
+    return Arrays.asList(
+        new Case(
+            ImmutableBranch.builder().hash(hash).name(branchName).build(),
+            Branch.class,
+            "{\"type\":\"BRANCH\",\"name\":\"testBranch\","
+                + "\"hash\":\"3e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10e\"}"),
+        new Case(
+            ImmutableBranch.builder().name(branchName).build(),
+            Branch.class,
+            "{\"type\":\"BRANCH\",\"name\":\"testBranch\",\"hash\":null}"),
+        new Case(
+            ImmutableTransplant.builder()
+                .addHashesToTransplant(hash)
+                .fromRefName(branchName)
+                .build(),
+            Transplant.class,
+            "{\"hashesToTransplant\":"
+                + "[\"3e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10e\"],"
+                + "\"fromRefName\":\"testBranch\"}"),
+        new Case(
+            ImmutableEntriesResponse.builder()
+                .addEntries(
+                    ImmutableEntry.builder()
+                        .type(Type.ICEBERG_TABLE)
+                        .name(ContentsKey.fromPathString("/tmp/testpath"))
+                        .build())
+                .token(hash)
+                .hasMore(true)
+                .build(),
+            EntriesResponse.class,
+            "{\"hasMore\":true,"
+                + "\"token\":\"3e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10e\","
+                + "\"entries\":[{\"type\":\"ICEBERG_TABLE\","
+                + "\"name\":{\"elements\":[\"/tmp/testpath\"]}}]}"),
+        new Case(
+            ImmutableLogResponse.builder()
+                .addOperations()
+                .token(hash)
+                .addOperations(
+                    ImmutableCommitMeta.builder()
+                        .commitTime(now)
+                        .author("author@testnessie.com")
+                        .committer("committer@testnessie.com")
+                        .authorTime(now)
+                        .hash(hash)
+                        .message("test commit")
+                        .putProperties("prop1", "val1")
+                        .signedOffBy("signer@testnessie.com")
+                        .build())
+                .hasMore(true)
+                .build(),
+            LogResponse.class,
+            "{\"hasMore\":true,"
+                + "\"token\":\"3e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10e\","
+                + "\"operations\":["
+                + "{\"hash\":\"3e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10e\","
+                + "\"committer\":\"committer@testnessie.com\",\"author\":\"author@testnessie.com\","
+                + "\"signedOffBy\":\"signer@testnessie.com\",\"message\":\"test commit\","
+                + "\"commitTime\":\""
+                + now
+                + "\","
+                + "\"authorTime\":\""
+                + now
+                + "\","
+                + "\"properties\":{\"prop1\":\"val1\"}}]}"),
+        new Case(
+            ImmutableMerge.builder().fromHash(hash).fromRefName(branchName).build(),
+            Merge.class,
+            "{\"fromHash\":\"3e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10e\","
+                + "\"fromRefName\":\"testBranch\"}"));
   }
 
-  @Test
-  public void testLogResponseSerDe() throws JsonProcessingException {
-    CommitMeta testCommit =
-        ImmutableCommitMeta.builder()
-            .commitTime(NOW)
-            .author("author@testnessie.com")
-            .committer("committer@testnessie.com")
-            .authorTime(NOW)
-            .hash(TEST_HASH)
-            .message("test commit")
-            .putProperties("prop1", "val1")
-            .signedOffBy("signer@testnessie.com")
-            .build();
+  static List<Case> negativeCases() {
+    final Instant now = Instant.now();
+    final String hash = "3e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10e";
 
-    LogResponse logResponse =
-        ImmutableLogResponse.builder()
-            .addOperations()
-            .token(TEST_HASH)
-            .addOperations(testCommit)
-            .hasMore(true)
-            .build();
-    String logResponseJson = MAPPER.writeValueAsString(logResponse);
-    LogResponse logResponseDeserialized = MAPPER.readValue(logResponseJson, LogResponse.class);
-    assertEquals(logResponse, logResponseDeserialized);
+    return Arrays.asList(
+        // Special chars in the branch name make it invalid
+        new Case(
+            Branch.class,
+            "{\"type\":\"BRANCH\",\"name\":\"$p@c!@L\"," + "\"hash\":\"" + hash + "\"}"),
+
+        // Invalid hash
+        new Case(
+            Branch.class,
+            "{\"type\":\"BRANCH\",\"name\":\"testBranch\"," + "\"hash\":\"invalidhash\"}"),
+
+        // No name
+        new Case(
+            Branch.class, "{\"type\":\"BRANCH\",\"name\":null," + "\"hash\":\"" + hash + "\"}"),
+
+        // Invalid hash
+        new Case(
+            Transplant.class,
+            "{\"hashesToTransplant\":" + "[\"invalidhash\"]," + "\"fromRefName\":\"testBranch\"}"));
   }
 
-  @Test
-  public void testMergeSerDe() throws JsonProcessingException {
-    Merge merge = ImmutableMerge.builder().fromHash(TEST_HASH).fromRefName("ref1").build();
-    String mergeJson = MAPPER.writeValueAsString(merge);
-    Merge mergeDeserialized = MAPPER.readValue(mergeJson, Merge.class);
-    assertEquals(merge, mergeDeserialized);
-  }
+  static class Case {
 
-  @Test
-  public void testTransplantSerDe() throws JsonProcessingException {
-    Transplant transplant =
-        ImmutableTransplant.builder()
-            .addHashesToTransplant(TEST_HASH)
-            .fromRefName("testref")
-            .build();
-    String transplantJson = MAPPER.writeValueAsString(transplant);
-    Transplant transplantDeserialized = MAPPER.readValue(transplantJson, Transplant.class);
-    assertEquals(transplant, transplantDeserialized);
+    final Object obj;
+    final Class<?> deserializeAs;
+    final String deserializedJson;
+
+    public Case(Class<?> deserializeAs, String deserializedJson) {
+      this(null, deserializeAs, deserializedJson);
+    }
+
+    public Case(Object obj, Class<?> deserializeAs, String deserializedJson) {
+      this.obj = obj;
+      this.deserializeAs = deserializeAs;
+      this.deserializedJson = deserializedJson;
+    }
+
+    @Override
+    public String toString() {
+      return deserializeAs.getName() + " : " + obj;
+    }
   }
 }
