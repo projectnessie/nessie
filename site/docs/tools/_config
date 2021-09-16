@@ -1,1 +1,7 @@
 title: Tools & Integrations
+arrange:
+  - index.md
+  - iceberg
+  - deltalake
+  - cli.md
+  - ui.md
