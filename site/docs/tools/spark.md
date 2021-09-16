@@ -77,7 +77,7 @@ These are set as follows in code (or through other methods as described [here](h
     //for a local spark instance
     conf.set("spark.jars.packages",
             "org.apache.iceberg:iceberg-spark3-runtime:{{ versions.iceberg}}")
-        .set("spark.sql.catalog.nessie.url", url)
+        .set("spark.sql.catalog.nessie.uri", url)
         .set("spark.sql.catalog.nessie.ref", ref)
         .set("spark.sql.catalog.nessie.authentication.type", authType)
         .set("spark.sql.catalog.nessie.catalog-impl",
@@ -105,7 +105,7 @@ These are set as follows in code (or through other methods as described [here](h
     spark = SparkSession.builder \
             .config("spark.jars.packages",
                 "org.apache.iceberg:iceberg-spark3-runtime:{{ versions.iceberg}}") \
-            .config("spark.sql.catalog.nessie.url", url) \
+            .config("spark.sql.catalog.nessie.uri", url) \
             .config("spark.sql.catalog.nessie.ref", ref) \
             .config("spark.sql.catalog.nessie.authentication.type", auth_type) \
             .config("spark.sql.catalog.nessie.catalog-impl", 
@@ -377,7 +377,7 @@ The Nessie LogStore needs the following parameters set in the Spark/Hadoop confi
 Note: "BASIC" authentication is not supported by Nessie servers in "production" mode.
 
 ```
-nessie.url = full url to nessie
+nessie.uri = full uri to nessie
 nessie.authentication.type = authentication type (NONE, BASIC, BEARER or AWS)
 nessie.authentication.token = OpenId token if using "bearer" auth, omitted otherwise
 nessie.authentication.aws.region = AWS region if using AWS auth, omitted otherwise
@@ -394,7 +394,7 @@ These are set as follows in code (or through other methods as described [here](h
     //for a local spark instance
     conf.set("spark.jars.packages",
             "org.projectnessie:nessie-deltalake-spark3:{{ versions.java}}")
-        .set("spark.hadoop.nessie.url", url)
+        .set("spark.hadoop.nessie.uri", url)
         .set("spark.hadoop.nessie.ref", branch)
         .set("spark.hadoop.nessie.auth-type", authType)
         .set("spark.sql.catalog.spark_catalog",
@@ -416,7 +416,7 @@ These are set as follows in code (or through other methods as described [here](h
     spark = SparkSession.builder \
             .config("spark.jars.packages",
                 "org.projectnessie:nessie-deltalake-spark3:{{ versions.java}}") \
-            .config("spark.hadoop.nessie.url",
+            .config("spark.hadoop.nessie.uri",
                 "http://localhost:19120/api/v1") \
             .config("spark.hadoop.nessie.ref", "main") \
             .config("spark.sql.catalog.spark_catalog",

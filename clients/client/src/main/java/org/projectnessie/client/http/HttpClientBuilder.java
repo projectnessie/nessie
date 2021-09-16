@@ -17,7 +17,6 @@ package org.projectnessie.client.http;
 
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_TRACING;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URI;
-import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URL;
 
 import java.net.URI;
 import java.util.function.Function;
@@ -72,9 +71,6 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
   @Override
   public HttpClientBuilder fromConfig(Function<String, String> configuration) {
     String uri = configuration.apply(CONF_NESSIE_URI);
-    if (uri == null) {
-      uri = configuration.apply(CONF_NESSIE_URL);
-    }
     if (uri != null) {
       this.uri = URI.create(uri);
     }
