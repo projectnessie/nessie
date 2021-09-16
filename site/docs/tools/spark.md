@@ -377,7 +377,7 @@ The Nessie LogStore needs the following parameters set in the Spark/Hadoop confi
 Note: "BASIC" authentication is not supported by Nessie servers in "production" mode.
 
 ```
-nessie.uri = full url to nessie
+nessie.uri = full uri to nessie
 nessie.authentication.type = authentication type (NONE, BASIC, BEARER or AWS)
 nessie.authentication.token = OpenId token if using "bearer" auth, omitted otherwise
 nessie.authentication.aws.region = AWS region if using AWS auth, omitted otherwise
