@@ -71,6 +71,10 @@ public class MongoDatabaseClient {
     mongoClient.close();
   }
 
+  synchronized int acquired() {
+    return acquired;
+  }
+
   public MongoCollection<Document> getGlobalPointers() {
     return globalPointers;
   }

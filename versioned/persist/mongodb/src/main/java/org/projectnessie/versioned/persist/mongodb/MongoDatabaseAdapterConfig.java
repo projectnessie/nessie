@@ -25,8 +25,12 @@ public interface MongoDatabaseAdapterConfig extends DatabaseAdapterConfig {
   @Nullable
   String getConnectionString();
 
+  MongoDatabaseAdapterConfig withConnectionString(String connectionString);
+
   @Nullable
   String getDatabaseName();
+
+  MongoDatabaseAdapterConfig withDatabaseName(String databaseName);
 
   @Value.Auxiliary
   @Nullable

@@ -34,6 +34,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.projectnessie.versioned.persist.tests.AbstractTieredCommitsTest;
 
 public class TestMongoDatabaseAdapter extends AbstractTieredCommitsTest {
@@ -42,12 +43,11 @@ public class TestMongoDatabaseAdapter extends AbstractTieredCommitsTest {
           ".*NETWORK ([^\\n]*) waiting for connections on port ([0-9]+)\\n.*",
           Pattern.MULTILINE | Pattern.DOTALL);
 
+  private static final AtomicInteger port = new AtomicInteger();
   private static MongodExecutable mongo;
 
   @BeforeAll
   static void startMongo() throws IOException {
-    AtomicInteger port = new AtomicInteger();
-
     ProcessOutput defaultOutput = MongodProcessOutputConfig.getDefaultInstance(Command.MongoD);
     StreamProcessor capturedStdout =
         new StreamProcessor() {
@@ -91,18 +91,13 @@ public class TestMongoDatabaseAdapter extends AbstractTieredCommitsTest {
 
     assertThat(port).hasPositiveValue();
 
-    createAdapter(
-        "MongoDB",
-        config -> {
-          MongoDatabaseAdapterConfig testConfig =
-              ImmutableMongoDatabaseAdapterConfig.builder()
-                  .from(config)
-                  .connectionString(String.format("mongodb://localhost:%d", port.get()))
-                  .databaseName("test")
-                  .build();
+    createAdapter("MongoDB", TestMongoDatabaseAdapter::configureConnection);
+  }
 
-          return testConfig.withClient(new MongoDatabaseClient(testConfig));
-        });
+  private static MongoDatabaseAdapterConfig configureConnection(MongoDatabaseAdapterConfig config) {
+    return config
+        .withConnectionString(String.format("mongodb://localhost:%d", port.get()))
+        .withDatabaseName("test");
   }
 
   @AfterAll
@@ -110,5 +105,19 @@ public class TestMongoDatabaseAdapter extends AbstractTieredCommitsTest {
     if (mongo != null) {
       mongo.stop();
     }
+  }
+
+  @Test
+  void testClientFromConfig() {
+    MongoDatabaseAdapterConfig config =
+        configureConnection(ImmutableMongoDatabaseAdapterConfig.builder().build());
+    MongoDatabaseClient client = new MongoDatabaseClient(config);
+    assertThat(client.acquired()).isEqualTo(0);
+
+    MongoDatabaseAdapter adapter = new MongoDatabaseAdapter(config.withClient(client));
+    assertThat(client.acquired()).isEqualTo(1);
+
+    adapter.close();
+    assertThat(client.acquired()).isEqualTo(0);
   }
 }

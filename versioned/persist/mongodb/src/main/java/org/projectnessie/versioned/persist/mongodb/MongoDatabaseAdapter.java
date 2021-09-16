@@ -66,11 +66,8 @@ public class MongoDatabaseAdapter
   protected MongoDatabaseAdapter(MongoDatabaseAdapterConfig config) {
     super(config);
 
-    client = config.getClient();
-    if (client == null) {
-      throw new IllegalArgumentException("Missing client object");
-    }
-
+    // Create our own dedicated client is none is pre-configured
+    client = config.getClient() == null ? new MongoDatabaseClient(config) : config.getClient();
     client.acquire();
 
     keyPrefix = config.getKeyPrefix();
