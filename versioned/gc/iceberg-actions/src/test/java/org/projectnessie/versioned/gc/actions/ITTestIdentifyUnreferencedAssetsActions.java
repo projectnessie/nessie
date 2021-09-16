@@ -117,7 +117,7 @@ class ITTestIdentifyUnreferencedAssetsActions {
         .set("spark.sql.catalog.spark_catalog.warehouse", LOCAL_DIR.toURI().toString())
         .set("spark.sql.catalog.spark_catalog.catalog-impl", NessieCatalog.class.getName())
         .set("spark.sql.catalog.spark_catalog", "org.apache.iceberg.spark.SparkSessionCatalog")
-        .set("spark.sql.catalog.nessie.url", NESSIE_ENDPOINT)
+        .set("spark.sql.catalog.nessie.uri", NESSIE_ENDPOINT)
         .set("spark.sql.catalog.nessie.ref", "main")
         .set("spark.sql.catalog.nessie.warehouse", LOCAL_DIR.toURI().toString())
         .set("spark.sql.catalog.nessie.catalog-impl", NessieCatalog.class.getName())

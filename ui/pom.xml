@@ -53,6 +53,10 @@
               <directory>node_modules</directory>
               <followSymlinks>false</followSymlinks>
             </fileset>
+            <fileset>
+              <directory>src/generated</directory>
+              <followSymlinks>false</followSymlinks>
+            </fileset>
           </filesets>
         </configuration>
       </plugin>

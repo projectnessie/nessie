@@ -48,6 +48,10 @@ public interface NessieAuthenticationProvider {
    */
   static NessieAuthentication fromConfig(Function<String, String> configuration) {
     String authType = configuration.apply(CONF_NESSIE_AUTH_TYPE);
+    if (authType == null) {
+      authType = configuration.apply("nessie.auth-type"); // legacy property name
+    }
+
     if (authType != null) {
       for (NessieAuthenticationProvider ap :
           ServiceLoader.load(NessieAuthenticationProvider.class)) {

@@ -28,7 +28,6 @@ import org.eclipse.jgit.internal.storage.dfs.InMemoryRepository;
 import org.eclipse.jgit.lib.Repository;
 import org.projectnessie.server.config.JGitVersionStoreConfig;
 import org.projectnessie.services.config.ServerConfig;
-import org.projectnessie.versioned.BackwardsCompatibleVersionStore;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.jgit.JGitVersionStore;
@@ -54,8 +53,7 @@ public class JGitVersionStoreFactory implements VersionStoreFactory {
           StoreWorker<VALUE, METADATA, VALUE_TYPE> worker, ServerConfig serverConfig)
           throws IOException {
     final Repository repository = newRepository();
-    return new BackwardsCompatibleVersionStore<>(
-        new JGitVersionStore<>(repository, worker), worker.getValueSerializer());
+    return new JGitVersionStore<>(repository, worker);
   }
 
   private Repository newRepository() throws IOException {

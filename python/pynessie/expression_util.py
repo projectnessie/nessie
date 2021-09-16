@@ -106,4 +106,4 @@ def parse_to_iso8601(date_str: str) -> str:
     try:
         return parser.parse(date_str).astimezone(tz=timezone.utc).isoformat(sep="T")
     except Exception as e:
-        raise ValueError("Unable to parse '{}' to an ISO 8601-compliant string. Reason: {}".format(date_str, e), e)
+        raise ValueError("Unable to parse '{}' to an ISO 8601-compliant string. Reason: {}".format(date_str, e), e) from e

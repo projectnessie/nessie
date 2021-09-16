@@ -20,21 +20,21 @@ public final class NessieConfigConstants {
   /** Config property name ({@value #CONF_NESSIE_URI}) for the Nessie service URL. */
   public static final String CONF_NESSIE_URI = "nessie.uri";
   /**
-   * Deprecated, old configuration key for {@link #CONF_NESSIE_URI}, do not use.
-   *
-   * <p>Only present for backwards-compatibility. Will be removed in a future version.
-   */
-  @Deprecated public static final String CONF_NESSIE_URL = "nessie.url";
-  /**
    * Config property name ({@value #CONF_NESSIE_USERNAME}) for the user name used for (basic)
    * authentication.
+   *
+   * @deprecated "basic" HTTP authentication is not considered secure. Use {@link
+   *     #CONF_NESSIE_AUTH_TOKEN} instead.
    */
-  public static final String CONF_NESSIE_USERNAME = "nessie.username";
+  @Deprecated public static final String CONF_NESSIE_USERNAME = "nessie.authentication.username";
   /**
    * Config property name ({@value #CONF_NESSIE_PASSWORD}) for the password used for (basic)
    * authentication.
+   *
+   * @deprecated "basic" HTTP authentication is not considered secure. Use {@link
+   *     #CONF_NESSIE_AUTH_TOKEN} instead.
    */
-  public static final String CONF_NESSIE_PASSWORD = "nessie.password";
+  @Deprecated public static final String CONF_NESSIE_PASSWORD = "nessie.authentication.password";
   /**
    * Config property name ({@value #CONF_NESSIE_AUTH_TOKEN}) for the token used for (bearer)
    * authentication.
@@ -47,15 +47,11 @@ public final class NessieConfigConstants {
   public static final String CONF_NESSIE_AWS_REGION = "nessie.authentication.aws.region";
   /**
    * Config property name ({@value #CONF_NESSIE_AUTH_TYPE}) for the authentication provider ID.
-   * Valid values are {@code BASIC} and {@code AWS}.
+   * Valid values are {@code BASIC}, {@code BEARER} and {@code AWS}.
    *
-   * <p>If no {@value #CONF_NESSIE_AUTH_TYPE} option is specified, the implementation will default
-   * to {@link org.projectnessie.client.NessieClient.AuthType#BASIC} if both {@value
-   * #CONF_NESSIE_USERNAME} and {@value #CONF_NESSIE_PASSWORD} are specified, otherwise the default
-   * will be {@link org.projectnessie.client.NessieClient.AuthType#NONE}. Note that "basic" HTTP
-   * authentication is not considered secure.
+   * <p>Note that "basic" HTTP authentication is not considered secure, use {@code BEARER} instead.
    */
-  public static final String CONF_NESSIE_AUTH_TYPE = "nessie.auth-type";
+  public static final String CONF_NESSIE_AUTH_TYPE = "nessie.authentication.type";
   /** Config property name ({@value #CONF_NESSIE_REF}) for the nessie reference used by clients. */
   public static final String CONF_NESSIE_REF = "nessie.ref";
   /**

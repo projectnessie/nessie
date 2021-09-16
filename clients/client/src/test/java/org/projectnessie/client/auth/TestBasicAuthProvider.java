@@ -35,7 +35,6 @@ import org.projectnessie.client.http.RequestContext;
 import org.projectnessie.client.http.RequestFilter;
 
 class TestBasicAuthProvider {
-  @SuppressWarnings("ResultOfMethodCallIgnored")
   @Test
   void testNullParams() {
     assertAll(
@@ -74,6 +73,21 @@ class TestBasicAuthProvider {
             CONF_NESSIE_USERNAME,
             "Aladdin",
             CONF_NESSIE_PASSWORD,
+            "OpenSesame");
+
+    NessieAuthentication authentication = NessieAuthenticationProvider.fromConfig(authCfg::get);
+    checkAuth(authentication);
+  }
+
+  @Test
+  void testFromConfigLegacy() {
+    Map<String, String> authCfg =
+        ImmutableMap.of(
+            "nessie.auth-type",
+            BasicAuthenticationProvider.AUTH_TYPE_VALUE,
+            "nessie.username",
+            "Aladdin",
+            "nessie.password",
             "OpenSesame");
 
     NessieAuthentication authentication = NessieAuthenticationProvider.fromConfig(authCfg::get);

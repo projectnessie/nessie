@@ -27,6 +27,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -40,12 +41,17 @@ import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.ReferenceConflictException;
+import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.ReferenceRetryFailureException;
+import org.projectnessie.versioned.persist.adapter.CommitAttempt;
 import org.projectnessie.versioned.persist.adapter.ContentsAndState;
 import org.projectnessie.versioned.persist.adapter.ContentsId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt;
+import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt.Builder;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 
@@ -121,6 +127,8 @@ public abstract class AbstractConcurrency {
     AtomicBoolean stopFlag = new AtomicBoolean();
     List<Runnable> tasks = new ArrayList<>(variation.threads);
     Map<Key, ContentsId> keyToContentsId = new HashMap<>();
+    Map<ContentsId, ByteString> globalStates = new ConcurrentHashMap<>();
+    Map<BranchName, Map<Key, ByteString>> onRefStates = new ConcurrentHashMap<>();
     try {
       CountDownLatch startLatch = new CountDownLatch(1);
       Map<BranchName, Set<Key>> keysPerBranch = new HashMap<>();
@@ -196,7 +204,7 @@ public abstract class AbstractConcurrency {
                                     + branch.getName()
                                     + " something "
                                     + ThreadLocalRandom.current().nextLong()));
-                    databaseAdapter.commit(commitAttempt.build());
+                    commitAndRecord(globalStates, onRefStates, branch, commitAttempt);
                     commitsOK.incrementAndGet();
                   } catch (ReferenceRetryFailureException retry) {
                     retryFailures.incrementAndGet();
@@ -222,7 +230,7 @@ public abstract class AbstractConcurrency {
           commitAttempt.addPuts(KeyWithBytes.of(k, contentsId, (byte) 0, ByteString.EMPTY));
           commitAttempt.putGlobal(contentsId, ByteString.copyFromUtf8("0"));
         }
-        databaseAdapter.commit(commitAttempt.build());
+        commitAndRecord(globalStates, onRefStates, branch, commitAttempt);
       }
 
       // Submit all 'Runnable's as 'CompletableFuture's and construct a combined 'CompletableFuture'
@@ -241,6 +249,26 @@ public abstract class AbstractConcurrency {
       // cause Nessie-commit-retries.
       combinedFuture.get(30, TimeUnit.SECONDS);
 
+      for (Entry<BranchName, Set<Key>> branchKeys : keysPerBranch.entrySet()) {
+        BranchName branch = branchKeys.getKey();
+        Hash hash = databaseAdapter.toHash(branch);
+        Map<Key, ByteString> onRef = onRefStates.get(branch);
+        ArrayList<Key> keys = new ArrayList<>(branchKeys.getValue());
+        try (Stream<Optional<ContentsAndState<ByteString>>> values =
+            databaseAdapter.values(hash, keys, KeyFilterPredicate.ALLOW_ALL)) {
+          List<ContentsAndState<ByteString>> csList =
+              values.map(o -> o.orElse(null)).collect(Collectors.toList());
+          List<ContentsAndState<ByteString>> csExpected = new ArrayList<>();
+          for (int i = 0; i < keys.size(); i++) {
+            Key key = keys.get(i);
+            ContentsAndState<ByteString> cs = csList.get(i);
+            ContentsId contentsId = keyToContentsId.get(key);
+            csExpected.add(ContentsAndState.of(onRef.get(key), globalStates.get(contentsId)));
+          }
+          assertThat(csList).describedAs("For branch %s", branch).isEqualTo(csExpected);
+        }
+      }
+
     } finally {
       stopFlag.set(true);
 
@@ -254,5 +282,19 @@ public abstract class AbstractConcurrency {
       // cause Nessie-commit-retries.
       assertThat(executor.awaitTermination(30, TimeUnit.SECONDS)).isTrue();
     }
+  }
+
+  private void commitAndRecord(
+      Map<ContentsId, ByteString> globalStates,
+      Map<BranchName, Map<Key, ByteString>> onRefStates,
+      BranchName branch,
+      Builder commitAttempt)
+      throws ReferenceConflictException, ReferenceNotFoundException {
+    CommitAttempt c = commitAttempt.build();
+    databaseAdapter.commit(c);
+    globalStates.putAll(c.getGlobal());
+    Map<Key, ByteString> onRef =
+        onRefStates.computeIfAbsent(branch, b -> new ConcurrentHashMap<>());
+    c.getPuts().forEach(kwb -> onRef.put(kwb.getKey(), kwb.getValue()));
   }
 }
