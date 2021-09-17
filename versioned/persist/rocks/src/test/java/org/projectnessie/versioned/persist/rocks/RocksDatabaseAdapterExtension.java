@@ -27,25 +27,28 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
+import org.junit.jupiter.api.extension.ExtensionContext.Store.CloseableResource;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.tests.DatabaseAdapterExtension;
 
 public class RocksDatabaseAdapterExtension extends DatabaseAdapterExtension {
-  private Path rocksDir;
-
-  private RocksDbInstance instance;
+  private static final Namespace NAMESPACE = Namespace.create(RocksDatabaseAdapterExtension.class);
 
   public RocksDatabaseAdapterExtension() {}
 
   @Override
   protected DatabaseAdapter createAdapter(ExtensionContext context, TestConfigurer testConfigurer) {
+    Path rocksDir;
     try {
       rocksDir = Files.createTempDirectory("junit-rocks");
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
 
-    instance = new RocksDbInstance();
+    RocksDbInstance instance = new RocksDbInstance();
+    context.getStore(NAMESPACE).put("mongod", new RocksResource(rocksDir, instance));
+
     instance.setDbPath(rocksDir.toString());
 
     return createAdapter(
@@ -58,26 +61,32 @@ public class RocksDatabaseAdapterExtension extends DatabaseAdapterExtension {
                 .build());
   }
 
-  @Override
-  protected void afterCloseAdapter() throws IOException {
-    try {
-      if (instance != null) {
-        instance.close();
-      }
-    } finally {
-      instance = null;
+  static class RocksResource implements CloseableResource {
+    private final Path rocksDir;
+    private final RocksDbInstance instance;
+
+    RocksResource(Path rocksDir, RocksDbInstance instance) {
+      this.rocksDir = rocksDir;
+      this.instance = instance;
     }
 
-    try {
-      if (rocksDir != null) {
-        deleteTempDir(rocksDir);
+    @Override
+    public void close() throws IOException {
+
+      try {
+        if (instance != null) {
+          instance.close();
+        }
+      } finally {
+
+        if (rocksDir != null) {
+          deleteTempDir(rocksDir);
+        }
       }
-    } finally {
-      rocksDir = null;
     }
   }
 
-  private void deleteTempDir(Path dir) throws IOException {
+  private static void deleteTempDir(Path dir) throws IOException {
     if (Files.notExists(dir)) {
       return;
     }

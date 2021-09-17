@@ -33,23 +33,23 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
+import org.junit.jupiter.api.extension.ExtensionContext.Store.CloseableResource;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.tests.DatabaseAdapterExtension;
 
 public class MongoDatabaseAdapterExtension extends DatabaseAdapterExtension {
-
+  private static final Namespace NAMESPACE = Namespace.create(MongoDatabaseAdapterExtension.class);
   private static final Pattern LISTEN_ON_PORT_PATTERN =
       Pattern.compile(
           ".*NETWORK ([^\\n]*) waiting for connections on port ([0-9]+)\\n.*",
           Pattern.MULTILINE | Pattern.DOTALL);
 
-  private static final AtomicInteger port = new AtomicInteger();
-  private static MongodExecutable mongo;
-
   public MongoDatabaseAdapterExtension() {}
 
   @Override
   protected DatabaseAdapter createAdapter(ExtensionContext context, TestConfigurer testConfigurer) {
+    AtomicInteger port = new AtomicInteger();
     ProcessOutput defaultOutput = MongodProcessOutputConfig.getDefaultInstance(Command.MongoD);
     StreamProcessor capturedStdout =
         new StreamProcessor() {
@@ -89,7 +89,8 @@ public class MongoDatabaseAdapterExtension extends DatabaseAdapterExtension {
               .net(new Net(0, Network.localhostIsIPv6()))
               .build();
 
-      mongo = starter.prepare(mongodConfig);
+      MongodExecutable mongo = starter.prepare(mongodConfig);
+      context.getStore(NAMESPACE).put("mongod", new MongodResource(mongo));
       mongo.start();
 
       assertThat(port).hasPositiveValue();
@@ -108,14 +109,16 @@ public class MongoDatabaseAdapterExtension extends DatabaseAdapterExtension {
     }
   }
 
-  @Override
-  protected void afterCloseAdapter() {
-    try {
-      if (mongo != null) {
-        mongo.stop();
-      }
-    } finally {
-      mongo = null;
+  static class MongodResource implements CloseableResource {
+    private final MongodExecutable mongo;
+
+    MongodResource(MongodExecutable mongo) {
+      this.mongo = mongo;
+    }
+
+    @Override
+    public void close() {
+      mongo.stop();
     }
   }
 }

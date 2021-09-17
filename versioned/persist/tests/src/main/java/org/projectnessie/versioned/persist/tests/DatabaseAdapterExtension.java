@@ -63,8 +63,6 @@ public abstract class DatabaseAdapterExtension implements BeforeAllCallback, Bef
   protected abstract DatabaseAdapter createAdapter(
       ExtensionContext context, TestConfigurer testConfigurer);
 
-  protected void afterCloseAdapter() throws Exception {}
-
   @Target(ElementType.FIELD)
   @Retention(RetentionPolicy.RUNTIME)
   public @interface Adapter {
@@ -113,7 +111,7 @@ public abstract class DatabaseAdapterExtension implements BeforeAllCallback, Bef
     return adapterBuilder.build();
   }
 
-  class AdapterResource implements CloseableResource {
+  static class AdapterResource implements CloseableResource {
     private final DatabaseAdapter databaseAdapter;
 
     AdapterResource(DatabaseAdapter databaseAdapter) {
@@ -123,8 +121,6 @@ public abstract class DatabaseAdapterExtension implements BeforeAllCallback, Bef
     @Override
     public void close() throws Throwable {
       databaseAdapter.close();
-
-      afterCloseAdapter();
     }
   }
 
