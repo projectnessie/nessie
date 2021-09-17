@@ -4,16 +4,14 @@ Nessie is focused on working with the widest range of tools possible. If a tool 
 or reads data, Nessie seeks to work with it. Current Nessie integrations/tools include 
 the following:
 
-- [Iceberg Integration](iceberg/index.md).
-    - [Spark](iceberg/spark.md).
+- [Iceberg Integration](iceberg/index.md)
+    - [Spark via Iceberg](iceberg/spark.md)
 
-- [Delta Lake Integration](deltalake/index.md).
-    - [Spark](deltalake/spark.md).
+- [Delta Lake Integration](deltalake/index.md)
+    - [Spark via Delta Lake](deltalake/spark.md)
 
-- [Nessie CLI](cli.md).
-- [Nessie Web UI](ui.md).        
-
-
+- [Nessie CLI](cli.md)
+- [Nessie Web UI](ui.md)     
 
 
 ## Feature Matrix
@@ -37,4 +35,4 @@ which currently exposes both of these formats.
 
 ## Demos
 
-In [Nessie Demos](https://github.com/projectnessie/nessie-demos) github repository, we have set of demos to help the users to see how Nessie works.
+The [Nessie Demos](https://github.com/projectnessie/nessie-demos) GitHub repository contains a set of demos that help users understanding how Nessie works.

@@ -88,4 +88,4 @@ Metrics are published using prometheus and can be collected via standard methods
 
 ### Swagger
 The Swagger UI allows for testing the REST API and reading the API docs. It is available 
-via [localhost:19120/swagger-ui](http://localhost:19120/swagger-ui)
+via [localhost:19120/q/swagger-ui](http://localhost:19120/q/swagger-ui/)
