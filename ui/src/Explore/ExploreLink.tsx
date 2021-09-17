@@ -16,22 +16,26 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
-const ExploreLink = (props: {
+interface IExploreLink {
   path: string[];
   toRef: string;
   type: "CONTAINER" | "OBJECT";
   className?: string;
   children?: React.ReactChild | React.ReactChild[];
-}): React.ReactElement => {
-  const path = props.path || [];
-  const currentRef = props.toRef;
-  const prefix = props.type === "CONTAINER" ? "/tree/" : "/contents/";
+}
+const ExploreLink = ({
+  path,
+  toRef,
+  type,
+  className,
+  children,
+}: IExploreLink): React.ReactElement => {
+  path = path || [];
+  const currentRef = toRef;
+  const prefix = type === "CONTAINER" ? "/tree/" : "/contents/";
   return (
-    <Link
-      to={`${prefix}${currentRef}/${path.join("/")}`}
-      className={props.className}
-    >
-      {props.children}
+    <Link to={`${prefix}${currentRef}/${path.join("/")}`} className={className}>
+      {children}
     </Link>
   );
 };

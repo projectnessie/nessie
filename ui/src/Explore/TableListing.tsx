@@ -23,7 +23,11 @@ import { factory } from "../ConfigLog4j";
 
 const log = factory.getLogger("api.TableListing");
 
-const groupItem = (key: Key, ref: string, path: string[]) => {
+const groupItem = (
+  key: Key,
+  ref: string,
+  path: string[]
+): React.ReactElement => {
   const icon =
     key.type === "CONTAINER" ? <FolderIcon /> : <InsertDriveFileOutlinedIcon />;
   return (
@@ -42,16 +46,27 @@ const groupItem = (key: Key, ref: string, path: string[]) => {
 
 const fetchKeys = (
   ref: string,
-  path: string[],
-  setKeys: (v: Key[]) => void
-) => {
+  path: string[]
+): Promise<void | Key[] | undefined> => {
   return api()
-    .getEntries({ ref })
+    .getEntries({
+      ref,
+      namespaceDepth: path.length + 1,
+      queryExpression: `entry.namespace.matches('${path.join(
+        "\\\\."
+      )}(\\\\.|$)')`,
+    })
     .then((data) => {
-      const keys = filterKeys(path, data.entries ?? []);
-      setKeys(keys);
+      return data.entries?.map((e) => entryToKey(e));
     })
     .catch((e) => log.error("Entries", e));
+};
+
+const entryToKey = (entry: Entry): Key => {
+  return {
+    name: entry.name.elements[entry.name.elements.length - 1],
+    type: entry.type === "UNKNOWN" ? "CONTAINER" : "TABLE",
+  };
 };
 
 interface Key {
@@ -59,54 +74,31 @@ interface Key {
   type: "CONTAINER" | "TABLE";
 }
 
-// TODO: move this to server-side. Filter to keys relevant for this view.
-const filterKeys = (path: string[], keys: Entry[]): Key[] => {
-  const containers = new Set();
-  const filteredKeys = keys
-    .map((key) => key.name?.elements)
-    .filter((name) => {
-      if (!name || name.length <= path.length) {
-        return false;
-      }
-
-      // make sure all key values match the current path.
-      return name
-        .slice(0, path.length)
-        .every((v, i) => v.toLowerCase() === path[i].toLowerCase());
-    })
-    .map((s) => s)
-    .map((name) => {
-      const ele = name[path.length];
-      if (name.length > path.length + 1) {
-        containers.add(ele);
-      }
-      return ele;
-    });
-
-  const distinctKeys = new Set(filteredKeys);
-  const distinctObjs = Array.from(distinctKeys).map((key) => {
-    return {
-      name: key,
-      type: containers.has(key) ? "CONTAINER" : "TABLE",
-    } as any as Key;
-  });
-  return distinctObjs;
-};
-
-const TableListing = (props: {
+interface ITableListing {
   currentRef: string;
   path: string[];
-}): React.ReactElement => {
+}
+
+const TableListing = ({
+  currentRef,
+  path,
+}: ITableListing): React.ReactElement => {
   const [keys, setKeys] = useState<Key[]>([]);
   useEffect(() => {
-    void fetchKeys(props.currentRef, props.path, setKeys);
-  }, [props.currentRef, props.path]);
+    const keysFn = async () => {
+      const fetched = await fetchKeys(currentRef, path);
+      if (fetched) {
+        setKeys(fetched);
+      }
+    };
+    void keysFn();
+  }, [currentRef, path]);
 
   return (
     <Card>
       <ListGroup variant={"flush"}>
         {keys.map((key) => {
-          return groupItem(key, props.currentRef, props.path);
+          return groupItem(key, currentRef, path);
         })}
       </ListGroup>
     </Card>

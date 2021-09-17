@@ -20,37 +20,46 @@ import LocalOfferIcon from "@material-ui/icons/LocalOffer";
 import ExploreLink from "./ExploreLink";
 import { Branch, Tag } from "../generated/utils/api";
 
-const TableHead = (props: {
+interface ITableHeadProps {
   branches: Branch[];
   tags: Tag[];
-  currentRef: string;
+  currentRef?: string;
   defaultBranch: string;
-  path: string[];
-}): React.ReactElement => {
-  if (!props.currentRef) {
+  path?: string[];
+}
+
+const TableHead = ({
+  branches,
+  tags,
+  currentRef,
+  defaultBranch,
+  path,
+}: ITableHeadProps): React.ReactElement => {
+  if (!currentRef) {
     return <div />;
   }
+  path = path || [];
 
   const additional =
-    props.path.length === 0 ? (
+    path.length === 0 ? (
       <Fragment key="icons">
         <Nav.Item>
           <Nav.Link>
             <DeviceHubIcon />
-            {props.branches.length}
+            {branches.length}
           </Nav.Link>
         </Nav.Item>
         <Nav.Item>
           <Nav.Link>
             <LocalOfferIcon />
-            {props.tags.length}
+            {tags.length}
           </Nav.Link>
         </Nav.Item>
       </Fragment>
     ) : (
       <Nav.Item className="nav-link">
-        <ExploreLink toRef={props.currentRef}>nessie</ExploreLink>
-        {props.path.map((p, index) => {
+        <ExploreLink toRef={currentRef}>nessie</ExploreLink>
+        {path.map((p, index) => {
           return (
             <Fragment key={`path${index}`}>
               <span style={{ paddingLeft: "0.5em", paddingRight: "0.5em" }}>
@@ -58,8 +67,8 @@ const TableHead = (props: {
               </span>
               <ExploreLink
                 key={index}
-                toRef={props.currentRef}
-                path={props.path.slice(0, index + 1)}
+                toRef={currentRef}
+                path={(path || []).slice(0, index + 1)}
               >
                 {p}
               </ExploreLink>
@@ -72,24 +81,24 @@ const TableHead = (props: {
   return (
     <Nav variant={"pills"} activeKey={1}>
       <NavDropdown
-        title={props.currentRef}
+        title={currentRef}
         id="nav-dropdown"
         style={{ paddingLeft: "1em" }}
       >
         <NavDropdown.Item disabled>Branches</NavDropdown.Item>
 
-        {props.branches.map((branch) => {
+        {branches.map((branch) => {
           return (
             <ExploreLink
               toRef={branch.name}
-              path={props.path}
+              path={path}
               type="CONTAINER"
               key={branch.name}
             >
               <NavDropdown.Item as={"button"} key={branch.name}>
                 {branch.name}
                 <span>
-                  {branch.name === props.defaultBranch ? (
+                  {branch.name === defaultBranch ? (
                     <Badge pill className="float-right" variant={"secondary"}>
                       default
                     </Badge>
@@ -103,11 +112,11 @@ const TableHead = (props: {
         })}
         <NavDropdown.Divider />
         <NavDropdown.Item disabled>Tags</NavDropdown.Item>
-        {props.tags.map((tag) => {
+        {tags.map((tag) => {
           return (
             <ExploreLink
               toRef={tag.name}
-              path={props.path}
+              path={path}
               type="CONTAINER"
               key={tag.name}
             >
@@ -121,10 +130,6 @@ const TableHead = (props: {
       {additional}
     </Nav>
   );
-};
-
-TableHead.defaultProps = {
-  currentRef: "main",
 };
 
 export default TableHead;

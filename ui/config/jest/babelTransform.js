@@ -13,17 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import React from "react";
-import ReactDOM from "react-dom";
-import "./index.css";
-import { BrowserRouter as Router } from "react-router-dom";
-import { App } from "./App";
+"use strict";
 
-ReactDOM.render(
-  <React.StrictMode>
-    <Router>
-      <App />
-    </Router>
-  </React.StrictMode>,
-  document.getElementById("root")
-);
+const babelJest = require("babel-jest");
+
+const hasJsxRuntime = (() => {
+  if (process.env.DISABLE_NEW_JSX_TRANSFORM === "true") {
+    return false;
+  }
+
+  try {
+    require.resolve("react/jsx-runtime");
+    return true;
+  } catch (e) {
+    return false;
+  }
+})();
+
+module.exports = babelJest.createTransformer({
+  presets: [
+    [
+      require.resolve("babel-preset-react-app"),
+      {
+        runtime: hasJsxRuntime ? "automatic" : "classic",
+      },
+    ],
+  ],
+  babelrc: false,
+  configFile: false,
+});
