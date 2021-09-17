@@ -41,6 +41,11 @@ public class PostgresDatabaseAdapter extends TxDatabaseAdapter {
   }
 
   @Override
+  protected boolean metadataUpperCase() {
+    return false;
+  }
+
+  @Override
   protected boolean batchDDL() {
     // Postgres + Cockroach can perform DDL-batches, but that doesn't always work :(
     return false;

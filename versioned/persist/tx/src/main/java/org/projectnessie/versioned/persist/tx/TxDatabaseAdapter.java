@@ -1091,6 +1091,9 @@ public abstract class TxDatabaseAdapter
    * Transaction Retry Error Reference</a>, and Postgres may return a "deadlock" error.
    */
   protected boolean isRetryTransaction(SQLException e) {
+    if (e.getSQLState() == null) {
+      return false;
+    }
     switch (e.getSQLState()) {
       case DEADLOCK_SQL_STATE_POSTGRES:
       case RETRY_SQL_STATE_COCKROACH:
