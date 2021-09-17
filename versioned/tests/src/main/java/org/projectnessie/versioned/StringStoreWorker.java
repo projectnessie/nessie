@@ -98,7 +98,7 @@ public final class StringStoreWorker implements StoreWorker<String, String, Test
   }
 
   @Override
-  public boolean requiresState(String contents) {
+  public boolean requiresGlobalState(String contents) {
     return contents.indexOf('|') != -1 || contents.indexOf('@') != -1;
   }
 

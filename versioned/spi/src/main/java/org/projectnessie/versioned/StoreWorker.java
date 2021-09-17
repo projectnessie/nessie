@@ -39,7 +39,7 @@ public interface StoreWorker<CONTENTS, COMMIT_METADATA, CONTENTS_TYPE extends En
 
   Byte getPayload(CONTENTS contents);
 
-  boolean requiresState(CONTENTS contents);
+  boolean requiresGlobalState(CONTENTS contents);
 
   CONTENTS_TYPE getType(Byte payload);
 

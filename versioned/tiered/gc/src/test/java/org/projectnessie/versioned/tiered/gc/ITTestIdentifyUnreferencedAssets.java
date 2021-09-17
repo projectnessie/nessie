@@ -260,7 +260,7 @@ public class ITTestIdentifyUnreferencedAssets {
     }
 
     @Override
-    public boolean requiresState(DummyValue contents) {
+    public boolean requiresGlobalState(DummyValue contents) {
       return false;
     }
 

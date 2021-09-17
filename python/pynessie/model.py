@@ -30,7 +30,7 @@ class IcebergTable(Contents):
 
     def pretty_print(self: "IcebergTable") -> str:
         """Print out for cli."""
-        return "Iceberg table:\n\t{}\n\tsnapshot-id:{}".format(self.metadata_location, self.snapshot_id)
+        return "Iceberg table:\n\tmetadata-location:{}\n\tsnapshot-id:{}".format(self.metadata_location, self.snapshot_id)
 
 
 IcebergTableSchema = desert.schema_class(IcebergTable)

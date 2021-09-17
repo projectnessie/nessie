@@ -169,7 +169,7 @@ public class TableCommitMetaStoreWorker
   }
 
   @Override
-  public boolean requiresState(Contents contents) {
+  public boolean requiresGlobalState(Contents contents) {
     return contents instanceof IcebergTable;
   }
 
