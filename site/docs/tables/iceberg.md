@@ -1,6 +1,6 @@
 # Apache Iceberg
 
-[Apache Iceberg](https://iceberg.apache.org/) is a Apache Software Foundation project that provides a rich, relatively new
+[Apache Iceberg](https://iceberg.apache.org/) is an Apache Software Foundation project that provides a rich, relatively new
 table format. It provides:
 
 * Single table ACID transactions
@@ -29,24 +29,3 @@ be versioned along the rest of Iceberg metadata within the Nessie commit model.
 We are exploring the [creation of a tool](https://github.com/projectnessie/nessie/issues/126) where a
 user can import table snapshots across multiple Iceberg tables into a single Nessie
 repository to capture historical data snapshots (interleaved across time).
-
-## Hive Compatibility
-
-
-### SerDe Compatibility
-
-There is currently work [in progress](https://github.com/projectnessie/nessie/issues/124) that
-provides updates to the existing HiveCatalog so that it can recognize a Nessie Catalog
-pointer and reroute the metadata lookup to a Nessie server. This allows existing workflows
-to continue to work while also moving versioning responsibilities to Nessie.
-
-### Hive Table Cloning
-
-In Nessie, we plan to add a capability to [automatically update](https://github.com/projectnessie/nessie/issues/125) one or more Hive Metastore
-servers (including AWS Glue) every time a Iceberg table is updated in Nessie so that
-legacy systems can still be exposed to Nessie updates.
-
-### HMS Bridge Compatibility
-
-There is a plan to expose Nessie native tables automatically to Hive users when they
-are interacting through the HMS bridge.

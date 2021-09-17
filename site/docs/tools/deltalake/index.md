@@ -9,4 +9,4 @@ that Delta would normally have are removed, any number of readers and writers ca
 managed Delta Lake table. Current Nessie Delta Lake integration include 
 the following:
 
-- [Spark via Delta Lake](spark.md). 
+- [Spark via Delta Lake](spark.md)
