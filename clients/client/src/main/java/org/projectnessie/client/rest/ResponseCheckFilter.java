@@ -15,6 +15,8 @@
  */
 package org.projectnessie.client.rest;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import java.io.IOException;
@@ -47,7 +49,7 @@ public class ResponseCheckFilter {
     // this could IOException, in which case the error will be passed up to the client as an
     // HttpClientException
     try (InputStream is = con.getErrorStream()) {
-      error = decodeErrorObject(status, is, mapper.readerFor(NessieError.class));
+      error = decodeErrorObject(status, is, mapper.reader());
     }
 
     switch (status) {
@@ -82,7 +84,16 @@ public class ResponseCheckFilter {
               new RuntimeException("Could not parse error object in response."));
     } else {
       try {
-        error = reader.readValue(inputStream);
+        JsonNode errorData = reader.readTree(inputStream);
+        try {
+          error = reader.treeToValue(errorData, NessieError.class);
+        } catch (JsonProcessingException e) {
+          // If the error payload is valid JSON, but does not represent a NessieError, it is likely
+          // produced by Quarkus and contains the server-side logged error ID. Report the raw JSON
+          // text to the caller for trouble-shooting.
+          error =
+              new NessieError(errorData.toString(), status.getCode(), status.getReason(), null, e);
+        }
       } catch (IOException e) {
         error = new NessieError(status.getCode(), status.getReason(), null, e);
       }

@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.InputStream;
@@ -97,6 +98,39 @@ public class TestResponseFilter {
       assertThat(Status.UNAUTHORIZED.getCode()).isEqualTo(e.getError().getStatus());
       assertThat(e.getError().getClientProcessingException()).isInstanceOf(IOException.class);
       assertThat(e.getError().getServerStackTrace()).isNull();
+    }
+  }
+
+  @Test
+  void testUnexpectedError() throws IOException {
+    try {
+      ResponseCheckFilter.checkResponse(
+          new ResponseContext() {
+            @Override
+            public Status getResponseCode() {
+              return Status.NOT_IMPLEMENTED;
+            }
+
+            @Override
+            public InputStream getInputStream() {
+              Assertions.fail();
+              return null;
+            }
+
+            @Override
+            public InputStream getErrorStream() {
+              // Quarkus may sometimes produce JSON error responses like this
+              return new StringInputStream(
+                  "{\"details\":\"Error id ee7f7293-67ad-42bd-8973-179801e7120e-1\",\"stack\":\"\"}");
+            }
+          },
+          MAPPER);
+    } catch (NessieServiceException e) {
+      assertThat(Status.NOT_IMPLEMENTED.getCode()).isEqualTo(e.getError().getStatus());
+      assertThat(e.getError().getClientProcessingException())
+          .isInstanceOf(JsonProcessingException.class);
+      assertThat(e.getError().getServerStackTrace()).isNull();
+      assertThat(e.getError().getMessage()).contains("ee7f7293-67ad-42bd-8973-179801e7120e-1");
     }
   }
 
