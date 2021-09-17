@@ -259,7 +259,6 @@ class CommitMeta:
     commitTime: datetime = desert.ib(fields.DateTime(), default=None)
     authorTime: datetime = desert.ib(fields.DateTime(), default=None)
     committer: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True)))
-    email: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True)))
     author: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True)))
     signedOffBy: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True)))
     message: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True)))
