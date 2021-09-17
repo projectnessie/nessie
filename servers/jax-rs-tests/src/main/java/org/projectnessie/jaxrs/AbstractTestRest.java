@@ -931,6 +931,96 @@ public abstract class AbstractTestRest {
   }
 
   @Test
+  public void filterEntriesByNamespaceAndPrefixDepth()
+      throws NessieConflictException, NessieNotFoundException {
+    final String branch = "filterEntriesByNamespaceAndPrefixDepth";
+    Reference r = tree.createReference("main", Branch.of(branch, null));
+    ContentsKey first = ContentsKey.of("a", "b", "c", "firstTable");
+    ContentsKey second = ContentsKey.of("a", "b", "c", "secondTable");
+    ContentsKey third = ContentsKey.of("a", "thirdTable");
+    ContentsKey fourth = ContentsKey.of("a", "b", "fourthTable");
+    ContentsKey fifth = ContentsKey.of("a", "boo", "fifthTable");
+    List<ContentsKey> keys = ImmutableList.of(first, second, third, fourth, fifth);
+    for (int i = 0; i < 5; i++) {
+      tree.commitMultipleOperations(
+          branch,
+          r.getHash(),
+          ImmutableOperations.builder()
+              .addOperations(
+                  ImmutablePut.builder()
+                      .key(keys.get(i))
+                      .contents(IcebergTable.of("path" + i))
+                      .build())
+              .commitMeta(CommitMeta.fromMessage("commit " + i))
+              .build());
+    }
+
+    List<Entry> entries =
+        tree.getEntries(branch, EntriesParams.builder().namespaceDepth(0).build()).getEntries();
+    assertThat(entries).isNotNull().hasSize(5);
+
+    entries =
+        tree.getEntries(
+                branch,
+                EntriesParams.builder()
+                    .namespaceDepth(0)
+                    .expression("entry.namespace.matches('a(\\\\.|$)')")
+                    .build())
+            .getEntries();
+    assertThat(entries).isNotNull().hasSize(5);
+
+    entries =
+        tree.getEntries(
+                branch,
+                EntriesParams.builder()
+                    .namespaceDepth(1)
+                    .expression("entry.namespace.matches('a(\\\\.|$)')")
+                    .build())
+            .getEntries();
+    assertThat(entries).hasSize(1);
+    assertThat(entries.stream().map(e -> e.getName().toPathString()))
+        .containsExactlyInAnyOrder("a");
+
+    entries =
+        tree.getEntries(
+                branch,
+                EntriesParams.builder()
+                    .namespaceDepth(2)
+                    .expression("entry.namespace.matches('a(\\\\.|$)')")
+                    .build())
+            .getEntries();
+    assertThat(entries).hasSize(3);
+    assertThat(entries.stream().map(e -> e.getName().toPathString()))
+        .containsExactlyInAnyOrder("a.thirdTable", "a.b", "a.boo");
+
+    entries =
+        tree.getEntries(
+                branch,
+                EntriesParams.builder()
+                    .namespaceDepth(3)
+                    .expression("entry.namespace.matches('a\\\\.b(\\\\.|$)')")
+                    .build())
+            .getEntries();
+    assertThat(entries).hasSize(2);
+    assertThat(entries.stream().map(e -> e.getName().toPathString()))
+        .containsExactlyInAnyOrder("a.b.c", "a.b.fourthTable");
+
+    entries =
+        tree.getEntries(
+                branch,
+                EntriesParams.builder()
+                    .namespaceDepth(4)
+                    .expression("entry.namespace.matches('a\\\\.b\\\\.c(\\\\.|$)')")
+                    .build())
+            .getEntries();
+    assertThat(entries).hasSize(2);
+    assertThat(entries.stream().map(e -> e.getName().toPathString()))
+        .containsExactlyInAnyOrder("a.b.c.firstTable", "a.b.c.secondTable");
+
+    tree.deleteBranch(branch, tree.getReferenceByName(branch).getHash());
+  }
+
+  @Test
   public void checkCelScriptFailureReporting() {
     assertThatThrownBy(
             () ->

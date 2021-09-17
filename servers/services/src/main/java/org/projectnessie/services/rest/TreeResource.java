@@ -316,7 +316,7 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
     //  all existing VersionStore implementations have to read all keys anyways so we don't get much
     try {
       List<EntriesResponse.Entry> entries;
-      try (Stream<EntriesResponse.Entry> s =
+      try (Stream<EntriesResponse.Entry> entryStream =
           getStore()
               .getKeys(refWithHash.getHash())
               .map(
@@ -325,14 +325,27 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
                           .name(fromKey(key.getValue()))
                           .type((Type) key.getType())
                           .build())) {
-        entries =
-            filterEntries(s, params.queryExpression()).collect(ImmutableList.toImmutableList());
+        Stream<EntriesResponse.Entry> entriesStream =
+            filterEntries(entryStream, params.queryExpression());
+        if (params.namespaceDepth() != null && params.namespaceDepth() > 0) {
+          entriesStream = entriesStream.map(e -> truncate(e, params.namespaceDepth())).distinct();
+        }
+        entries = entriesStream.collect(ImmutableList.toImmutableList());
       }
       return EntriesResponse.builder().addAllEntries(entries).build();
     } catch (ReferenceNotFoundException e) {
       throw new NessieNotFoundException(
           String.format("Unable to find the reference [%s].", namedRef), e);
     }
+  }
+
+  private EntriesResponse.Entry truncate(EntriesResponse.Entry entry, Integer depth) {
+    if (depth == null || depth < 1) {
+      return entry;
+    }
+    Type type = entry.getName().getElements().size() > depth ? Type.UNKNOWN : entry.getType();
+    ContentsKey key = ContentsKey.of(entry.getName().getElements().subList(0, depth));
+    return EntriesResponse.Entry.builder().type(type).name(key).build();
   }
 
   /**

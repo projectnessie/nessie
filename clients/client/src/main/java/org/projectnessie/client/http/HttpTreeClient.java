@@ -173,6 +173,9 @@ class HttpTreeClient implements HttpTreeApi {
         .queryParam("pageToken", params.pageToken())
         .queryParam("query_expression", params.queryExpression())
         .queryParam("hashOnRef", params.hashOnRef())
+        .queryParam(
+            "namespaceDepth",
+            params.namespaceDepth() == null ? null : String.valueOf(params.namespaceDepth()))
         .get()
         .readEntity(EntriesResponse.class);
   }

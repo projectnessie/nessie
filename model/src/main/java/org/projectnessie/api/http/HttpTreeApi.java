@@ -228,7 +228,11 @@ public interface HttpTreeApi extends TreeApi {
               + "will return all commit log entries.\n"
               + "\n"
               + "The 'query_expression' parameter allows for advanced filtering capabilities using the Common Expression Language (CEL).\n"
-              + "An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n")
+              + "An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n"
+              + "\n"
+              + "The 'namespaceDepth' parameter returns only the ContentsKey components up to the depth of 'namespaceDepth'.\n"
+              + "For example they key 'a.b.c.d' with a depth of 3 will return 'a.b.c'. The operation is guaranteed to not return \n"
+              + "duplicates and therefore will never page.")
   @APIResponses({
     @APIResponse(
         description = "all objects for a reference",
