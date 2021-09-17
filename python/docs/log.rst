@@ -15,8 +15,10 @@
 	  -r, --ref TEXT                  branch to list from. If not supplied the
 	                                  default branch from config is used
 	  -n, --number INTEGER            number of log entries to return
-	  --since, --after TEXT           Only include commits newer than specific date
-	  --until, --before TEXT          Only include commits older than specific date
+	  --since, --after TEXT           Only include commits newer than specific date,
+	                                  such as '2001-01-01T00:00:00+00:00'
+	  --until, --before TEXT          Only include commits older than specific date,
+	                                  such as '2999-12-30T23:00:00+00:00'
 	  --author TEXT                   Limit commits to a specific author (this is
 	                                  the original committer). Supports specifying
 	                                  multiple authors to filter by.

@@ -10,13 +10,13 @@
 	
 	  Examples:
 	
+	      nessie branch -> list all branches
+	
 	      nessie branch -l -> list all branches
 	
 	      nessie branch -l main -> list only main
 	
 	      nessie branch -d main -> delete main
-	
-	      nessie branch -> list all branches
 	
 	      nessie branch new_branch -> create new branch named 'new_branch' at
 	      current HEAD of the default branch
