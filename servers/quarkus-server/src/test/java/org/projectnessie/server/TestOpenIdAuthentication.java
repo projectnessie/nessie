@@ -51,14 +51,14 @@ public class TestOpenIdAuthentication extends BaseClientAuthTest {
   void testValidJwt() {
     withClientCustomizer(
         b -> b.withAuthentication(BearerAuthenticationProvider.create(getJwtToken())));
-    assertThat(client().getTreeApi().getAllReferences()).isNotEmpty();
+    assertThat(api().getAllReferences().submit()).isNotEmpty();
   }
 
   @Test
   void testExpiredToken() {
     withClientCustomizer(
         b -> b.withAuthentication(BearerAuthenticationProvider.create(getExpiredJwtToken())));
-    assertThatThrownBy(() -> client().getTreeApi().getAllReferences())
+    assertThatThrownBy(() -> api().getAllReferences().submit())
         .isInstanceOfSatisfying(
             NessieNotAuthorizedException.class,
             e -> assertThat(e.getError().getStatus()).isEqualTo(401));
@@ -66,7 +66,7 @@ public class TestOpenIdAuthentication extends BaseClientAuthTest {
 
   @Test
   void testAbsentToken() {
-    assertThatThrownBy(() -> client().getTreeApi().getAllReferences())
+    assertThatThrownBy(() -> api().getAllReferences().submit())
         .isInstanceOfSatisfying(
             NessieNotAuthorizedException.class,
             e -> assertThat(e.getError().getStatus()).isEqualTo(401));

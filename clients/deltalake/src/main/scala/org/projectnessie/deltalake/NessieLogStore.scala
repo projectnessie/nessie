@@ -20,7 +20,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.FileAlreadyExistsException
 import java.util.UUID
 import java.util.regex.Pattern
-import org.projectnessie.client.{NessieClient, NessieConfigConstants}
+import org.projectnessie.client.NessieConfigConstants
 import org.projectnessie.error.{
   NessieConflictException,
   NessieNotFoundException
@@ -30,7 +30,6 @@ import org.projectnessie.model.{
   ContentsKey,
   DeltaLakeTable,
   ImmutableDeltaLakeTable,
-  ImmutableOperations,
   Reference
 }
 import org.apache.commons.io.IOUtils
@@ -50,6 +49,8 @@ import org.apache.spark.sql.delta.CheckpointMetaData
 import org.apache.spark.sql.delta.storage.{DeltaFileType, LogFileMeta}
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
+import org.projectnessie.client.api.{NessieApiV1, NessieApiVersion}
+import org.projectnessie.client.http.HttpClientBuilder
 import org.projectnessie.model.Operation.Put
 
 import java.util
@@ -67,12 +68,12 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
 
   var lastSnapshotUuid: Option[String] = None
 
-  private val client: NessieClient = {
+  private val api: NessieApiV1 = {
     val removePrefix = (x: String) => x.replace("nessie.", "")
-    NessieClient
+    HttpClientBuilder
       .builder()
       .fromConfig(c => catalogConf.getOrElse(removePrefix(c), null))
-      .build()
+      .build(NessieApiVersion.V_1, classOf[NessieApiV1])
   }
 
   private def catalogName(): String = {
@@ -99,8 +100,8 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
 
     try {
       val ref = Option(requestedRef)
-        .map(client.getTreeApi.getReferenceByName(_))
-        .getOrElse(client.getTreeApi.getDefaultBranch)
+        .map(api.getReference.refName(_).submit())
+        .getOrElse(api.getDefaultBranch)
       val map: util.Map[String, Reference] = new util.HashMap[String, Reference]
       map.put(requestedRef, ref)
       map
@@ -129,7 +130,7 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
   private def referenceByName(refName: String): Reference = {
     var ref = referenceMap.get(refName)
     if (ref == null) {
-      ref = client.getTreeApi.getReferenceByName(refName)
+      ref = api.getReference.refName(refName).submit()
       referenceMap.put(refName, ref)
     }
     ref
@@ -292,17 +293,17 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
         .putProperties("spark.app.id", sparkConf.get("spark.app.id"))
         .putProperties("application.type", "delta")
         .build()
-      val op = ImmutableOperations
-        .builder()
-        .addOperations(put)
-        .commitMeta(meta)
-        .build()
       try {
         val updated: Reference =
-          client.getTreeApi.commitMultipleOperations(targetRef, targetHash, op)
+          api.commitMultipleOperations
+            .branchName(targetRef)
+            .hash(targetHash)
+            .operation(put)
+            .commitMeta(meta)
+            .submit()
         updateReference(
           if (updated != null) updated
-          else client.getTreeApi.getReferenceByName(targetRef)
+          else api.getReference.refName(targetRef).submit()
         )
         return true
       } catch {
@@ -485,7 +486,8 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
   }
 
   private def getTable(path: Path, branch: String): Option[DeltaLakeTable] = {
-    Try(client.getContentsApi.getContents(pathToKey(path), branch, null))
+    val key = pathToKey(path)
+    Try(api.getContents.key(key).refName(branch).submit().get(key))
       .filter(x => x != null && x.isInstanceOf[DeltaLakeTable])
       .map(_.asInstanceOf[DeltaLakeTable])
       .toOption

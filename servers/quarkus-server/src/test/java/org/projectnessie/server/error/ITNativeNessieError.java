@@ -19,17 +19,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.quarkus.test.junit.NativeImageTest;
-import java.net.URI;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.projectnessie.api.TreeApi;
-import org.projectnessie.client.NessieClient;
+import org.projectnessie.client.api.NessieApiV1;
+import org.projectnessie.client.api.NessieApiVersion;
+import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.client.rest.NessieBadRequestException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.IcebergTable;
-import org.projectnessie.model.ImmutableOperations;
-import org.projectnessie.model.ImmutablePut;
+import org.projectnessie.model.Operation.Put;
 
 /**
  * Rudimentary version of {@link TestNessieError}, because we cannot dynamically add beans and
@@ -39,13 +38,14 @@ import org.projectnessie.model.ImmutablePut;
 @NativeImageTest
 public class ITNativeNessieError {
 
-  private TreeApi tree;
+  private NessieApiV1 api;
 
   @BeforeEach
   void init() {
-    URI uri = URI.create("http://localhost:19121/api/v1");
-    NessieClient client = NessieClient.builder().withUri(uri).build();
-    tree = client.getTreeApi();
+    api =
+        HttpClientBuilder.builder()
+            .withUri("http://localhost:19121/api/v1")
+            .build(NessieApiVersion.V_1, NessieApiV1.class);
   }
 
   @Test
@@ -57,13 +57,11 @@ public class ITNativeNessieError {
         assertThrows(
                 NessieBadRequestException.class,
                 () ->
-                    tree.commitMultipleOperations(
-                        "branchName",
-                        null,
-                        ImmutableOperations.builder()
-                            .addOperations(ImmutablePut.builder().key(k).contents(t).build())
-                            .commitMeta(CommitMeta.fromMessage("message"))
-                            .build()))
+                    api.commitMultipleOperations()
+                        .branchName("branchName")
+                        .operation(Put.of(k, t))
+                        .commitMeta(CommitMeta.fromMessage("message"))
+                        .submit())
             .getMessage());
   }
 }

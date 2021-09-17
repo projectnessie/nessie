@@ -37,12 +37,11 @@ import java.util.Map;
 import org.projectnessie.api.http.HttpConfigApi;
 import org.projectnessie.api.http.HttpContentsApi;
 import org.projectnessie.api.http.HttpTreeApi;
-import org.projectnessie.client.NessieClient;
 import org.projectnessie.client.rest.NessieHttpResponseFilter;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 
-public class NessieHttpClient extends NessieApiClient implements NessieClient {
+public class NessieHttpClient extends NessieApiClient {
 
   private static final ObjectMapper MAPPER =
       new ObjectMapper()
@@ -52,8 +51,8 @@ public class NessieHttpClient extends NessieApiClient implements NessieClient {
   private final HttpClient client;
 
   /**
-   * Create new HTTP {@link NessieClient}. All REST api endpoints are mapped here. This client
-   * should support any jaxrs implementation
+   * Create new HTTP Nessie client. All REST api endpoints are mapped here. This client should
+   * support any jaxrs implementation
    *
    * @param uri URL for the nessie client (eg http://localhost:19120/api/v1)
    * @param authentication authenticator to use
@@ -180,7 +179,6 @@ public class NessieHttpClient extends NessieApiClient implements NessieClient {
     }
   }
 
-  @Override
   public URI getUri() {
     return client.getBaseUri();
   }
