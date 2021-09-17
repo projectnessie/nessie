@@ -47,7 +47,7 @@ import scala.Tuple2;
 
 class ITDeltaLogBranches extends AbstractSparkTest {
 
-  static NessieApiV1 api;
+  NessieApiV1 api;
 
   @TempDir File tempPath;
 
@@ -75,8 +75,11 @@ class ITDeltaLogBranches extends AbstractSparkTest {
     if (ref != null) {
       api.deleteBranch().branch((Branch) ref).submit();
     }
-    api.close();
-    api = null;
+    try {
+      api.close();
+    } finally {
+      api = null;
+    }
   }
 
   @Test

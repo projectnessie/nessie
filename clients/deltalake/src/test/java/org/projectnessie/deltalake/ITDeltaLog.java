@@ -65,8 +65,13 @@ class ITDeltaLog extends AbstractSparkTest {
 
   @AfterEach
   void closeClient() {
-    api.close();
-    api = null;
+    try {
+      if (api != null) {
+        api.close();
+      }
+    } finally {
+      api = null;
+    }
   }
 
   @Test
