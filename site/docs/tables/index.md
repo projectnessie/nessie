@@ -38,8 +38,10 @@ semantic-layering system. See more in our documentation on [SQL Views](views.md)
 
 There has been discussion about adding additional types of objects to Nessie for the 
 purpose of creating a consistent repository between input assets (jobs, models, etc) 
-and output assets. This is something that will evaluated based on demand. There are 
-currently three options being considered: more structured object types (such as spark 
-job), blob types and support for git sub-modules (where Nessie offers a new object type that 
-refers to a particular commit within a git repository). If you have more thoughts on 
-this, please provide feedback on the [mailing list](https://groups.google.com/g/projectnessie/).
+and output assets. This is something that will be evaluated based on demand. There are 
+currently three options being considered: 
+- more structured object types (such as spark job)
+- blob types
+- support for git sub-modules (where Nessie offers a new object type that refers to a particular commit within a git repository)
+
+If you have more thoughts on this, please provide feedback on the [mailing list](https://groups.google.com/g/projectnessie/).
