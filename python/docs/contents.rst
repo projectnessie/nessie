@@ -12,7 +12,8 @@
 	  -d, --delete                    delete a table
 	  -s, --set                       modify a table
 	  -c, --condition TEXT            Conditional Hash. Only perform the action if
-	                                  branch currently points to condition.
+	                                  the branch currently points to the hash
+	                                  specified by this option.
 	  -r, --ref TEXT                  branch to list from. If not supplied the
 	                                  default branch from config is used
 	  -m, --message TEXT              commit message
