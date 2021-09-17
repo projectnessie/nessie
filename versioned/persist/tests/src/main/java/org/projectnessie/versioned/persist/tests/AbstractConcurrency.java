@@ -37,6 +37,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntFunction;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -115,7 +116,13 @@ public abstract class AbstractConcurrency {
                     .flatMap(
                         sharedKeys ->
                             Stream.of(3)
-                                .map(tables -> new Variation(singleBranch, sharedKeys, tables))));
+                                .flatMap(
+                                    tables ->
+                                        IntStream.range(0, 100)
+                                            .mapToObj(
+                                                x ->
+                                                    new Variation(
+                                                        singleBranch, sharedKeys, tables)))));
   }
 
   @ParameterizedTest
