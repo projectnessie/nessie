@@ -3,9 +3,7 @@
 !!! note
     Detailed steps on how to set up Pyspark + Delta Lake + Nessie with Python is available on [Binder](https://mybinder.org/v2/gh/projectnessie/nessie-demos/main?filepath=notebooks/nessie-delta-demo-nba.ipynb).
 
-To access Nessie from a spark cluster make sure the `spark.jars` spark option is set to include
-the [Spark 2](https://repo.maven.apache.org/maven2/org/projectnessie/nessie-deltalake-spark2/{{ versions.java}}/nessie-deltalake-spark2-{{ versions.java}}.jar)
-or [Spark 3](https://repo.maven.apache.org/maven2/org/projectnessie/nessie-deltalake-spark3/{{ versions.java}}/nessie-deltalake-spark3-{{ versions.java}}.jar)
+To access Nessie from a spark cluster make sure the `spark.jars` spark option is set to include the [Spark 3](https://repo.maven.apache.org/maven2/org/projectnessie/nessie-deltalake/{{ versions.java}}/nessie-deltalake-{{ versions.java}}.jar)
 jar. These jars contain all Nessie **and** Delta Lake libraries required for operation.
 
 !!! note
@@ -16,7 +14,7 @@ In pyspark this would look like
 ``` python
 SparkSession.builder
     .config('spark.jars.packages',
-            'org.projectnessie:nessie-deltalake-spark3:{{ versions.java}}')
+            'org.projectnessie:nessie-deltalake:{{ versions.java}}')
     ... rest of spark config
     .getOrCreate()
 ```
@@ -42,7 +40,7 @@ These are set as follows in code (or through other methods as described [here](h
     ``` java
     //for a local spark instance
     conf.set("spark.jars.packages",
-            "org.projectnessie:nessie-deltalake-spark3:{{ versions.java}}")
+            "org.projectnessie:nessie-deltalake:{{ versions.java}}")
         .set("spark.hadoop.nessie.url", url)
         .set("spark.hadoop.nessie.ref", branch)
         .set("spark.hadoop.nessie.auth-type", authType)
@@ -64,7 +62,7 @@ These are set as follows in code (or through other methods as described [here](h
     # here we are assuming NONE authorisation
     spark = SparkSession.builder \
             .config("spark.jars.packages",
-                "org.projectnessie:nessie-deltalake-spark3:{{ versions.java}}") \
+                "org.projectnessie:nessie-deltalake:{{ versions.java}}") \
             .config("spark.hadoop.nessie.url",
                 "http://localhost:19120/api/v1") \
             .config("spark.hadoop.nessie.ref", "main") \
