@@ -31,21 +31,22 @@ import org.projectnessie.versioned.ImmutablePut;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.StringSerializer;
+import org.projectnessie.versioned.StringStoreWorker;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStoreException;
 import org.projectnessie.versioned.tests.AbstractITVersionStore;
 
 public class ITInMemoryVersionStore extends AbstractITVersionStore {
-  private static final InMemoryVersionStore.Builder<String, String, StringSerializer.TestEnum>
+  private static final InMemoryVersionStore.Builder<String, String, StringStoreWorker.TestEnum>
       BUILDER =
-          InMemoryVersionStore.<String, String, StringSerializer.TestEnum>builder()
+          InMemoryVersionStore.<String, String, StringStoreWorker.TestEnum>builder()
               .valueSerializer(StringSerializer.getInstance())
               .metadataSerializer(StringSerializer.getInstance());
 
-  private VersionStore<String, String, StringSerializer.TestEnum> store;
+  private VersionStore<String, String, StringStoreWorker.TestEnum> store;
 
   @Override
-  protected VersionStore<String, String, StringSerializer.TestEnum> store() {
+  protected VersionStore<String, String, StringStoreWorker.TestEnum> store() {
     return store;
   }
 
@@ -57,8 +58,8 @@ public class ITInMemoryVersionStore extends AbstractITVersionStore {
 
   @Test
   void clearUnsafe() throws Exception {
-    InMemoryVersionStore<String, String, StringSerializer.TestEnum> inMemoryVersionStore =
-        (InMemoryVersionStore<String, String, StringSerializer.TestEnum>) store;
+    InMemoryVersionStore<String, String, StringStoreWorker.TestEnum> inMemoryVersionStore =
+        (InMemoryVersionStore<String, String, StringStoreWorker.TestEnum>) store;
 
     BranchName fooBranch = BranchName.of("foo");
 

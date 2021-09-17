@@ -26,10 +26,11 @@ class IcebergTable(Contents):
     """Dataclass for Nessie Contents."""
 
     metadata_location: str = desert.ib(fields.Str(data_key="metadataLocation"))
+    snapshot_id: int = desert.ib(fields.Int(data_key="snapshotId"))
 
     def pretty_print(self: "IcebergTable") -> str:
         """Print out for cli."""
-        return "Iceberg table:\n\t{}".format(self.metadata_location)
+        return "Iceberg table:\n\tmetadata-location:{}\n\tsnapshot-id:{}".format(self.metadata_location, self.snapshot_id)
 
 
 IcebergTableSchema = desert.schema_class(IcebergTable)

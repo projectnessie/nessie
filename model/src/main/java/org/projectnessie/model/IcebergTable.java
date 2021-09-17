@@ -18,7 +18,6 @@ package org.projectnessie.model;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import javax.annotation.Nullable;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -71,13 +70,7 @@ public abstract class IcebergTable extends Contents {
   public abstract String getMetadataLocation();
 
   /** ID of the current Iceberg snapshot. This value is not present, if there is no snapshot. */
-  @Nullable // TODO to be removed with PR#1923
-  public abstract Long getSnapshotId();
-
-  // TODO to be removed with PR#1923
-  public static IcebergTable of(String metadataLocation) {
-    return ImmutableIcebergTable.builder().metadataLocation(metadataLocation).build();
-  }
+  public abstract long getSnapshotId();
 
   public static IcebergTable of(String metadataLocation, long snapshotId) {
     return ImmutableIcebergTable.builder()

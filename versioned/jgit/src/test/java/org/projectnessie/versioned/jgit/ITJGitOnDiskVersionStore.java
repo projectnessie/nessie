@@ -21,6 +21,7 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
+import org.projectnessie.versioned.StringStoreWorker;
 
 public class ITJGitOnDiskVersionStore extends AbstractITJGitVersionStore {
 
@@ -33,6 +34,6 @@ public class ITJGitOnDiskVersionStore extends AbstractITJGitVersionStore {
     } catch (GitAPIException e) {
       throw new IOException(e);
     }
-    store = new JGitVersionStore<>(repository, WORKER);
+    store = new JGitVersionStore<>(repository, StringStoreWorker.INSTANCE);
   }
 }

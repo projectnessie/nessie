@@ -17,7 +17,7 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
-        \"6bb3d05a95b9f091eabaddd4beeb849e1fc7ff81b82329bf664acdd5639dca56\"\n} ]"
+        \"8fc184b3829fe5499b474c4d4d05131ab229d9536fdfc4173f0e764925b5ef3c\"\n} ]"
     headers:
       Content-Length:
       - '125'
@@ -43,11 +43,11 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/dev-tag
   response:
     body:
-      string: "{\n  \"message\" : \"Unable to find reference [dev-tag].\",\n  \"status\"
+      string: "{\n  \"message\" : \"Ref 'dev-tag' does not exist\",\n  \"status\"
         : 404,\n  \"reason\" : \"Not Found\",\n  \"serverStackTrace\" : null\n}"
     headers:
       Content-Length:
-      - '128'
+      - '121'
       Content-Type:
       - application/json
     status:
@@ -70,7 +70,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/main
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"6bb3d05a95b9f091eabaddd4beeb849e1fc7ff81b82329bf664acdd5639dca56\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"8fc184b3829fe5499b474c4d4d05131ab229d9536fdfc4173f0e764925b5ef3c\"\n}"
     headers:
       Content-Length:
       - '121'
@@ -80,8 +80,8 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"hash": "6bb3d05a95b9f091eabaddd4beeb849e1fc7ff81b82329bf664acdd5639dca56",
-      "name": "dev-tag", "type": "TAG"}'
+    body: '{"name": "dev-tag", "hash": "8fc184b3829fe5499b474c4d4d05131ab229d9536fdfc4173f0e764925b5ef3c",
+      "type": "TAG"}'
     headers:
       Accept:
       - '*/*'
@@ -101,7 +101,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree?sourceRefName=main
   response:
     body:
-      string: "{\n  \"type\" : \"TAG\",\n  \"name\" : \"dev-tag\",\n  \"hash\" : \"6bb3d05a95b9f091eabaddd4beeb849e1fc7ff81b82329bf664acdd5639dca56\"\n}"
+      string: "{\n  \"type\" : \"TAG\",\n  \"name\" : \"dev-tag\",\n  \"hash\" : \"8fc184b3829fe5499b474c4d4d05131ab229d9536fdfc4173f0e764925b5ef3c\"\n}"
     headers:
       Content-Length:
       - '121'
@@ -128,8 +128,8 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"TAG\",\n  \"name\" : \"dev-tag\",\n  \"hash\" :
-        \"6bb3d05a95b9f091eabaddd4beeb849e1fc7ff81b82329bf664acdd5639dca56\"\n}, {\n
-        \ \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"6bb3d05a95b9f091eabaddd4beeb849e1fc7ff81b82329bf664acdd5639dca56\"\n}
+        \"8fc184b3829fe5499b474c4d4d05131ab229d9536fdfc4173f0e764925b5ef3c\"\n}, {\n
+        \ \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"8fc184b3829fe5499b474c4d4d05131ab229d9536fdfc4173f0e764925b5ef3c\"\n}
         ]"
     headers:
       Content-Length:
@@ -156,11 +156,11 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/etl-tag
   response:
     body:
-      string: "{\n  \"message\" : \"Unable to find reference [etl-tag].\",\n  \"status\"
+      string: "{\n  \"message\" : \"Ref 'etl-tag' does not exist\",\n  \"status\"
         : 404,\n  \"reason\" : \"Not Found\",\n  \"serverStackTrace\" : null\n}"
     headers:
       Content-Length:
-      - '128'
+      - '121'
       Content-Type:
       - application/json
     status:
@@ -183,7 +183,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/main
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"6bb3d05a95b9f091eabaddd4beeb849e1fc7ff81b82329bf664acdd5639dca56\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"8fc184b3829fe5499b474c4d4d05131ab229d9536fdfc4173f0e764925b5ef3c\"\n}"
     headers:
       Content-Length:
       - '121'
@@ -193,8 +193,8 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"hash": "6bb3d05a95b9f091eabaddd4beeb849e1fc7ff81b82329bf664acdd5639dca56",
-      "name": "etl-tag", "type": "TAG"}'
+    body: '{"name": "etl-tag", "hash": "8fc184b3829fe5499b474c4d4d05131ab229d9536fdfc4173f0e764925b5ef3c",
+      "type": "TAG"}'
     headers:
       Accept:
       - '*/*'
@@ -214,7 +214,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree?sourceRefName=main
   response:
     body:
-      string: "{\n  \"type\" : \"TAG\",\n  \"name\" : \"etl-tag\",\n  \"hash\" : \"6bb3d05a95b9f091eabaddd4beeb849e1fc7ff81b82329bf664acdd5639dca56\"\n}"
+      string: "{\n  \"type\" : \"TAG\",\n  \"name\" : \"etl-tag\",\n  \"hash\" : \"8fc184b3829fe5499b474c4d4d05131ab229d9536fdfc4173f0e764925b5ef3c\"\n}"
     headers:
       Content-Length:
       - '121'
@@ -241,9 +241,9 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"TAG\",\n  \"name\" : \"dev-tag\",\n  \"hash\" :
-        \"6bb3d05a95b9f091eabaddd4beeb849e1fc7ff81b82329bf664acdd5639dca56\"\n}, {\n
-        \ \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"6bb3d05a95b9f091eabaddd4beeb849e1fc7ff81b82329bf664acdd5639dca56\"\n},
-        {\n  \"type\" : \"TAG\",\n  \"name\" : \"etl-tag\",\n  \"hash\" : \"6bb3d05a95b9f091eabaddd4beeb849e1fc7ff81b82329bf664acdd5639dca56\"\n}
+        \"8fc184b3829fe5499b474c4d4d05131ab229d9536fdfc4173f0e764925b5ef3c\"\n}, {\n
+        \ \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"8fc184b3829fe5499b474c4d4d05131ab229d9536fdfc4173f0e764925b5ef3c\"\n},
+        {\n  \"type\" : \"TAG\",\n  \"name\" : \"etl-tag\",\n  \"hash\" : \"8fc184b3829fe5499b474c4d4d05131ab229d9536fdfc4173f0e764925b5ef3c\"\n}
         ]"
     headers:
       Content-Length:
@@ -270,7 +270,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/etl-tag
   response:
     body:
-      string: "{\n  \"type\" : \"TAG\",\n  \"name\" : \"etl-tag\",\n  \"hash\" : \"6bb3d05a95b9f091eabaddd4beeb849e1fc7ff81b82329bf664acdd5639dca56\"\n}"
+      string: "{\n  \"type\" : \"TAG\",\n  \"name\" : \"etl-tag\",\n  \"hash\" : \"8fc184b3829fe5499b474c4d4d05131ab229d9536fdfc4173f0e764925b5ef3c\"\n}"
     headers:
       Content-Length:
       - '121'
@@ -295,7 +295,7 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: DELETE
-    uri: http://localhost:19120/api/v1/trees/tag/etl-tag?expectedHash=6bb3d05a95b9f091eabaddd4beeb849e1fc7ff81b82329bf664acdd5639dca56
+    uri: http://localhost:19120/api/v1/trees/tag/etl-tag?expectedHash=8fc184b3829fe5499b474c4d4d05131ab229d9536fdfc4173f0e764925b5ef3c
   response:
     body:
       string: ''
@@ -320,7 +320,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/dev-tag
   response:
     body:
-      string: "{\n  \"type\" : \"TAG\",\n  \"name\" : \"dev-tag\",\n  \"hash\" : \"6bb3d05a95b9f091eabaddd4beeb849e1fc7ff81b82329bf664acdd5639dca56\"\n}"
+      string: "{\n  \"type\" : \"TAG\",\n  \"name\" : \"dev-tag\",\n  \"hash\" : \"8fc184b3829fe5499b474c4d4d05131ab229d9536fdfc4173f0e764925b5ef3c\"\n}"
     headers:
       Content-Length:
       - '121'
@@ -345,7 +345,7 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: DELETE
-    uri: http://localhost:19120/api/v1/trees/tag/dev-tag?expectedHash=6bb3d05a95b9f091eabaddd4beeb849e1fc7ff81b82329bf664acdd5639dca56
+    uri: http://localhost:19120/api/v1/trees/tag/dev-tag?expectedHash=8fc184b3829fe5499b474c4d4d05131ab229d9536fdfc4173f0e764925b5ef3c
   response:
     body:
       string: ''
@@ -371,7 +371,7 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
-        \"6bb3d05a95b9f091eabaddd4beeb849e1fc7ff81b82329bf664acdd5639dca56\"\n} ]"
+        \"8fc184b3829fe5499b474c4d4d05131ab229d9536fdfc4173f0e764925b5ef3c\"\n} ]"
     headers:
       Content-Length:
       - '125'

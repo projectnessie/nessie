@@ -152,7 +152,7 @@ public abstract class AbstractTestRest {
                             .submit())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining("Cannot create an unassigned tag reference"),
+                .hasMessageContaining("Tag-creation requires a target named-reference and hash."),
         // legit Tag with name + hash
         () -> {
           Reference refTag1 =

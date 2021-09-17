@@ -172,11 +172,8 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>
         <configuration>
-          <systemPropertyVariables>
-            <aws.accessKeyId>xxx</aws.accessKeyId>
-            <aws.secretAccessKey>xxx</aws.secretAccessKey>
-            <sqlite4java.library.path>${project.build.directory}/native-libraries</sqlite4java.library.path>
-          </systemPropertyVariables>
+          <!-- Nessie PR https://github.com/projectnessie/nessie/pull/1922 introduces breaking changes as a clear cut to Nessie before 1.0 -->
+          <skip>true</skip>
         </configuration>
         <executions>
           <execution>
@@ -187,71 +184,6 @@
           </execution>
         </executions>
       </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-dependency-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>copy-native-libraries</id>
-            <phase>process-test-resources</phase>
-            <goals>
-              <goal>copy-dependencies</goal>
-            </goals>
-            <configuration>
-              <outputDirectory>${project.build.directory}/native-libraries</outputDirectory>
-              <overWriteReleases>false</overWriteReleases>
-              <overWriteSnapshots>false</overWriteSnapshots>
-              <overWriteIfNewer>true</overWriteIfNewer>
-              <includeTypes>dll,so,dylib</includeTypes>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
     </plugins>
   </build>
-
-  <profiles>
-    <profile>
-      <activation>
-        <os><family>unix</family></os>
-      </activation>
-      <id>linux</id>
-      <dependencies>
-        <dependency>
-          <groupId>com.almworks.sqlite4java</groupId>
-          <artifactId>libsqlite4java-linux-amd64</artifactId>
-          <type>so</type>
-          <scope>test</scope>
-        </dependency>
-      </dependencies>
-    </profile>
-    <profile>
-      <activation>
-        <os><family>mac</family></os>
-      </activation>
-      <id>mac</id>
-      <dependencies>
-        <dependency>
-          <groupId>com.almworks.sqlite4java</groupId>
-          <artifactId>libsqlite4java-osx</artifactId>
-          <type>dylib</type>
-          <scope>test</scope>
-        </dependency>
-      </dependencies>
-    </profile>
-    <profile>
-      <activation>
-        <os><family>windows</family></os>
-      </activation>
-      <id>windows</id>
-      <dependencies>
-        <dependency>
-          <groupId>com.almworks.sqlite4java</groupId>
-          <artifactId>sqlite4java-win32-x64</artifactId>
-          <type>dll</type>
-          <scope>test</scope>
-        </dependency>
-      </dependencies>
-    </profile>
-  </profiles>
 </project>
