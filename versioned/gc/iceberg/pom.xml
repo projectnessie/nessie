@@ -46,6 +46,12 @@
     </dependency>
     <dependency>
       <groupId>org.projectnessie</groupId>
+      <artifactId>nessie-model</artifactId>
+      <version>${client.nessie.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.projectnessie</groupId>
       <artifactId>nessie-versioned-gc</artifactId>
       <version>${project.version}</version>
     </dependency>
