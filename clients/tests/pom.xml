@@ -48,12 +48,6 @@
       <version>${spark3.version}</version>
       <scope>provided</scope>
     </dependency>
-    <dependency>
-      <groupId>org.projectnessie</groupId>
-      <artifactId>nessie-client</artifactId>
-      <version>${client.nessie.version}</version>
-      <scope>provided</scope>
-    </dependency>
 
     <dependency>
       <groupId>org.junit.jupiter</groupId>
