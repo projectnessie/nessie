@@ -270,7 +270,7 @@ def log(  # noqa: C901
 
 def _format_log_result(x: CommitMeta) -> str:
     result = click.style("commit {}\n".format(x.hash_), fg="yellow")
-    result += click.style("Author: {} <{}>\n".format(x.committer, x.email))
+    result += click.style("Author: {}\n".format(x.committer))
     result += click.style("Date: {}\n".format(_format_time(x.commitTime)))
     result += click.style("\n\t{}\n\n".format(x.message))
     return result
@@ -317,13 +317,13 @@ def branch_(
 
     Examples:
 
+        nessie branch -> list all branches
+
         nessie branch -l -> list all branches
 
         nessie branch -l main -> list only main
 
         nessie branch -d main -> delete main
-
-        nessie branch -> list all branches
 
         nessie branch new_branch -> create new branch named 'new_branch' at current HEAD of the default branch
 
@@ -375,13 +375,13 @@ def tag(ctx: ContextObject, list: bool, force: bool, hash_on_ref: str, delete: b
 
     Examples:
 
+        nessie tag -> list all tags
+
         nessie tag -l -> list all tags
 
         nessie tag -l main -> list only main
 
         nessie tag -d main -> delete main
-
-        nessie tag -> list all tags
 
         nessie tag new_tag -> create new tag named 'new_tag' at current HEAD of the default branch
 
@@ -421,7 +421,7 @@ def tag(ctx: ContextObject, list: bool, force: bool, hash_on_ref: str, delete: b
     "--condition",
     cls=MutuallyExclusiveOption,
     mutually_exclusive=["force"],
-    help="Conditional Hash. Only perform the action if branch currently points to condition.",
+    help="Conditional Hash. Only perform the action if the branch currently points to the hash specified by this option.",
 )
 @click.option("-o", "--hash-on-ref", help="Hash on merge-from-reference")
 @pass_client
@@ -452,7 +452,7 @@ def merge(ctx: ContextObject, onto_branch: str, force: bool, condition: str, has
     "--condition",
     cls=MutuallyExclusiveOption,
     mutually_exclusive=["force"],
-    help="Conditional Hash. Only perform the action if branch currently points to condition.",
+    help="Conditional Hash. Only perform the action if the branch currently points to the hash specified by this option.",
 )
 @click.option("-s", "--source-ref", required=True, help="Name of the reference used to read the hashes from.")
 @click.argument("hashes", nargs=-1, required=False)
@@ -497,7 +497,7 @@ def cherry_pick(ctx: ContextObject, branch: str, force: bool, condition: str, so
 @click.option(
     "-c",
     "--condition",
-    help="Conditional Hash. Only perform the action if branch currently points to condition.",
+    help="Conditional Hash. Only perform the action if the branch currently points to the hash specified by this option.",
 )
 @click.option("-r", "--ref", help="branch to list from. If not supplied the default branch from config is used")
 @click.option("-m", "--message", help="commit message")

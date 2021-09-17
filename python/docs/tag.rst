@@ -10,13 +10,13 @@
 	
 	  Examples:
 	
+	      nessie tag -> list all tags
+	
 	      nessie tag -l -> list all tags
 	
 	      nessie tag -l main -> list only main
 	
 	      nessie tag -d main -> delete main
-	
-	      nessie tag -> list all tags
 	
 	      nessie tag new_tag -> create new tag named 'new_tag' at current HEAD of
 	      the default branch

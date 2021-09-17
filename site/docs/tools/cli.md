@@ -1,7 +1,8 @@
 # Nessie CLI
 
 The Nessie CLI is an easy way to get started with Nessie. It supports multiple branch 
-and tag management capabilities. This is installed as `pynessie` by `pip`.
+and tag management capabilities. This is installed as `pynessie` via `pip install pynessie`.
+Additional information about `pynessie` and release notes can be found at the [PyPI](https://pypi.org/project/pynessie/) site. 
 
 ## Installation
 
@@ -25,11 +26,13 @@ Usage: nessie [OPTIONS] COMMAND [ARGS]...
   Interact with Nessie branches and tables via the command line
 
 Options:
-  --json           write output in json format.
-  -v, --verbose    Verbose output.
-  --endpoint TEXT  Optional endpoint, if different from config file.
+  --json             write output in json format.
+  -v, --verbose      Verbose output.
+  --endpoint TEXT    Optional endpoint, if different from config file.
+  --auth-token TEXT  Optional bearer auth token, if different from config
+                     file.
   --version
-  --help           Show this message and exit.
+  --help             Show this message and exit.
 
 Commands:
   branch       Branch operations.
@@ -37,7 +40,7 @@ Commands:
   config       Set and view config.
   contents     Contents operations.
   log          Show commit log.
-  merge        Merge BRANCH into current branch.
+  merge        Merge FROM_BRANCH into current branch.
   remote       Set and view remote endpoint.
   tag          Tag operations.
 ```
@@ -57,28 +60,40 @@ Usage: nessie branch [OPTIONS] [BRANCH] [NEW_BRANCH]
 
   Examples:
 
+      nessie branch -> list all branches
+
       nessie branch -l -> list all branches
 
       nessie branch -l main -> list only main
 
       nessie branch -d main -> delete main
 
-      nessie branch -> list all branches
+      nessie branch new_branch -> create new branch named 'new_branch' at
+      current HEAD of the default branch
 
-      nessie branch main -> create branch main at current head
+      nessie branch new_branch test -> create new branch named 'new_branch' at
+      head of reference named 'test'
 
-      nessie branch main test -> create branch main at head of test
+      nessie branch -o 12345678abcdef new_branch test -> create new branch
+      named 'new_branch' at hash 12345678abcdef on reference named 'test'
 
-      nessie branch -f main test -> assign main to head of test
+      nessie branch -f existing_branch test -> assign branch named
+      'existing_branch' to head of reference named 'test'
+
+      nessie branch -o 12345678abcdef -f existing_branch test -> assign branch
+      named 'existing_branch' to hash 12345678abcdef on reference named 'test'
 
 Options:
-  -l, --list            list branches
-  -d, --delete          delete a branch
-  -f, --force           force branch assignment
-  -c, --condition TEXT  Conditional Hash. Only perform the action if branch
-                        currently points to condition.
-
-  --help                Show this message and exit.
+  -l, --list              list branches
+  -d, --delete            delete a branch
+  -f, --force             force branch assignment
+  -o, --hash-on-ref TEXT  Hash on source-reference for 'create' and 'assign'
+                          operations, if the branch shall not point to the
+                          HEAD of the given source-reference.
+  -c, --condition TEXT    Conditional Hash. Only perform the action if the
+                          branch currently points to the hash specified by
+                          this option.
+  --help                  Show this message and exit.
 ```
 
 ``` bash
@@ -91,14 +106,15 @@ Usage: nessie cherry-pick [OPTIONS] [HASHES]...
   Transplant HASHES onto current branch.
 
 Options:
-  -b, --branch TEXT     branch to cherry-pick onto. If not supplied the
-                        default branch from config is used
-
-  -f, --force           force branch assignment
-  -c, --condition TEXT  Conditional Hash. Only perform the action if branch
-                        currently points to condition.
-
-  --help                Show this message and exit.
+  -b, --branch TEXT      branch to cherry-pick onto. If not supplied the
+                         default branch from config is used
+  -f, --force            force branch assignment
+  -c, --condition TEXT   Conditional Hash. Only perform the action if the
+                         branch currently points to the hash specified by this
+                         option.
+  -s, --source-ref TEXT  Name of the reference used to read the hashes from.
+                         [required]
+  --help                 Show this message and exit.
 ```
 
 ``` bash
@@ -106,19 +122,18 @@ $ nessie config --help
 ``` 
 
 ``` bash
-Usage: nessie cherry-pick [OPTIONS] [HASHES]...
+Usage: nessie config [OPTIONS] [KEY]
 
-  Transplant HASHES onto current branch.
+  Set and view config.
 
 Options:
-  -b, --branch TEXT     branch to cherry-pick onto. If not supplied the
-                        default branch from config is used
-
-  -f, --force           force branch assignment
-  -c, --condition TEXT  Conditional Hash. Only perform the action if branch
-                        currently points to condition.
-
-  --help                Show this message and exit.
+  --get TEXT    get config parameter
+  --add TEXT    set config parameter
+  -l, --list    list config parameters
+  --unset TEXT  unset config parameter
+  --type TEXT   type to interpret config value to set or get. Allowed options:
+                bool, int
+  -h, --help    Show this message and exit.
 ```
 
 ``` bash
@@ -134,19 +149,33 @@ Usage: nessie contents [OPTIONS] [KEY]...
   namespace what is included.
 
 Options:
-  -l, --list            list tables
-  -d, --delete          delete a table
-  -s, --set             modify a table
-  -c, --condition TEXT  Conditional Hash. Only perform the action if branch
-                        currently points to condition.
-
-  -r, --ref TEXT        branch to list from. If not supplied the default
-                        branch from config is used
-
-  -m, --message TEXT    commit message
-  --help                Show this message and exit.
-!!! caution
-    Please note that we're actively redefining the cli to better match Git syntax. You should expect that this syntax will change shortly.
+  -l, --list                      list tables
+  -d, --delete                    delete a table
+  -s, --set                       modify a table
+  -c, --condition TEXT            Conditional Hash. Only perform the action if
+                                  the branch currently points to the hash
+                                  specified by this option.
+  -r, --ref TEXT                  branch to list from. If not supplied the
+                                  default branch from config is used
+  -m, --message TEXT              commit message
+  -t, --type TEXT                 entity types to filter on, if no entity
+                                  types are passed then all types are returned
+  --query, --query-expression TEXT
+                                  Allows advanced filtering using the Common
+                                  Expression Language (CEL). An intro to CEL
+                                  can be found at
+                                  https://github.com/google/cel-
+                                  spec/blob/master/doc/intro.md. Some examples
+                                  with usable variables 'entry.namespace'
+                                  (string) & 'entry.contentType' (string) are:
+                                  entry.namespace.startsWith('a.b.c')
+                                  entry.contentType in
+                                  ['ICEBERG_TABLE','DELTA_LAKE_TABLE'] entry.n
+                                  amespace.startsWith('some.name.space') &&
+                                  entry.contentType in
+                                  ['ICEBERG_TABLE','DELTA_LAKE_TABLE']
+  --author TEXT                   The author to use for the commit
+  --help                          Show this message and exit.
 ```
 
 ``` bash
@@ -158,18 +187,44 @@ Usage: nessie log [OPTIONS] [REVISION_RANGE] [PATHS]...
 
   Show commit log.
 
-  REVISION_RANGE optional branch, tag or hash to start viewing log from. If
-  of the form <hash>..<hash> only show log for given range
+  REVISION_RANGE optional hash to start viewing log from. If of the form
+  <start_hash>..<end_hash> only show log for given range on the particular ref
+  that was provided
 
-  PATHS optional list of paths. If given, only show commits which affected
-  the given paths
+  PATHS optional list of paths. If given, only show commits which affected the
+  given paths
 
 Options:
-  -n, --number INTEGER    number of log entries to return
-  --since, --after TEXT   Commits more recent than specific date
-  --until, --before TEXT  Commits older than specific date
-  --author, --committer   limit commits to specific committer
-  --help                  Show this message and exit.
+  -r, --ref TEXT                  branch to list from. If not supplied the
+                                  default branch from config is used
+  -n, --number INTEGER            number of log entries to return
+  --since, --after TEXT           Only include commits newer than specific
+                                  date
+  --until, --before TEXT          Only include commits older than specific
+                                  date
+  --author TEXT                   Limit commits to a specific author (this is
+                                  the original committer). Supports specifying
+                                  multiple authors to filter by.
+  --committer TEXT                Limit commits to a specific committer (this
+                                  is the logged in user/account who performed
+                                  the commit). Supports specifying multiple
+                                  committers to filter by.
+  --query, --query-expression TEXT
+                                  Allows advanced filtering using the Common
+                                  Expression Language (CEL). An intro to CEL
+                                  can be found at
+                                  https://github.com/google/cel-
+                                  spec/blob/master/doc/intro.md. Some examples
+                                  with usable variables 'commit.author'
+                                  (string) / 'commit.committer' (string) /
+                                  'commit.commitTime' (timestamp) /
+                                  'commit.hash' (string) / 'commit.message'
+                                  (string) / 'commit.properties' (map) are:
+                                  commit.author=='nessie_author'
+                                  commit.committer=='nessie_committer'
+                                  timestamp(commit.commitTime) >
+                                  timestamp('2021-06-21T10:39:17.977922Z')
+  --help                          Show this message and exit.
 ```
 
 ``` bash
@@ -177,19 +232,19 @@ $ nessie merge --help
 ``` 
 
 ``` bash
-Usage: nessie merge [OPTIONS] [MERGE_BRANCH]
+Usage: nessie merge [OPTIONS] [FROM_BRANCH]
 
-  Merge BRANCH into current branch. BRANCH can be a hash or branch.
+  Merge FROM_BRANCH into current branch. FROM_BRANCH can be a hash or branch.
 
 Options:
-  -b, --branch TEXT     branch to cherry-pick onto. If not supplied the
-                        default branch from config is used
-
-  -f, --force           force branch assignment
-  -c, --condition TEXT  Conditional Hash. Only perform the action if branch
-                        currently points to condition.
-
-  --help                Show this message and exit.
+  -b, --branch TEXT       branch to merge onto. If not supplied the default
+                          branch from config is used
+  -f, --force             force branch assignment
+  -c, --condition TEXT    Conditional Hash. Only perform the action if the
+                          branch currently points to the hash specified by
+                          this option.
+  -o, --hash-on-ref TEXT  Hash on merge-from-reference
+  --help                  Show this message and exit.
 ```
 
 ``` bash
@@ -225,28 +280,40 @@ Usage: nessie tag [OPTIONS] [TAG_NAME] [NEW_TAG]
 
   Examples:
 
+      nessie tag -> list all tags
+
       nessie tag -l -> list all tags
 
       nessie tag -l main -> list only main
 
       nessie tag -d main -> delete main
 
-      nessie tag -> list all tags
+      nessie tag new_tag -> create new tag named 'new_tag' at current HEAD of
+      the default branch
 
-      nessie tag main -> create tag xxx at current head
+      nessie tag new_tag test -> create new tag named 'new_tag' at head of
+      reference named 'test'
 
-      nessie tag main test -> create tag xxx at head of test
+      nessie tag -o 12345678abcdef new_tag test -> create new tag named
+      'new_tag' at hash 12345678abcdef on reference named 'test'
 
-      nessie tag -f main test -> assign xxx to head of test
+      nessie tag -f existing_tag test -> assign tag named 'existing_tag' to
+      head of reference named 'test'
+
+      nessie tag -o 12345678abcdef -f existing_tag test -> assign tag named
+      'existing_tag' to hash 12345678abcdef on reference named 'test'
 
 Options:
-  -l, --list            list branches
-  -d, --delete          delete a branches
-  -f, --force           force branch assignment
-  -c, --condition TEXT  Conditional Hash. Only perform the action if branch
-                        currently points to condition.
-
-  --help                Show this message and exit.
+  -l, --list              list branches
+  -d, --delete            delete a branches
+  -f, --force             force branch assignment
+  -o, --hash-on-ref TEXT  Hash on source-reference for 'create' and 'assign'
+                          operations, if the tag shall not point to the HEAD
+                          of the given source-reference.
+  -c, --condition TEXT    Conditional Hash. Only perform the action if the tag
+                          currently points to the hash specified by this
+                          option.
+  --help                  Show this message and exit.
 ```
 
 ## Configuration
