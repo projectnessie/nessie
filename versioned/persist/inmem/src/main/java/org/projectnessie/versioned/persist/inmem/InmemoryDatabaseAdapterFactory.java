@@ -16,12 +16,10 @@
 package org.projectnessie.versioned.persist.inmem;
 
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
-import org.projectnessie.versioned.persist.adapter.spi.ImmutableDefaultDatabaseAdapterConfig;
 
 public class InmemoryDatabaseAdapterFactory
-    implements DatabaseAdapterFactory<DatabaseAdapterConfig> {
+    implements DatabaseAdapterFactory<InmemoryDatabaseAdapterConfig> {
 
   @Override
   public String getName() {
@@ -29,11 +27,11 @@ public class InmemoryDatabaseAdapterFactory
   }
 
   @Override
-  public Builder<DatabaseAdapterConfig> newBuilder() {
-    return new Builder<DatabaseAdapterConfig>() {
+  public Builder<InmemoryDatabaseAdapterConfig> newBuilder() {
+    return new Builder<InmemoryDatabaseAdapterConfig>() {
       @Override
-      protected DatabaseAdapterConfig getDefaultConfig() {
-        return ImmutableDefaultDatabaseAdapterConfig.builder().build();
+      protected InmemoryDatabaseAdapterConfig getDefaultConfig() {
+        return ImmutableInmemoryDatabaseAdapterConfig.builder().build();
       }
 
       @Override
