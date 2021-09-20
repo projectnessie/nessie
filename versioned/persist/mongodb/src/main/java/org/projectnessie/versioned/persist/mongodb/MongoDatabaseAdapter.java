@@ -70,20 +70,21 @@ public class MongoDatabaseAdapter
     client = config.getClient() == null ? new MongoDatabaseClient(config) : config.getClient();
     client.acquire();
 
-    keyPrefix = config.getKeyPrefix();
+    String keyPrefix = config.getKeyPrefix();
     if (keyPrefix.indexOf(PREFIX_SEPARATOR) >= 0) {
       throw new IllegalArgumentException("Invalid key prefix: " + keyPrefix);
     }
+    this.keyPrefix = keyPrefix + PREFIX_SEPARATOR;
 
     globalPointerKey = keyPrefix;
   }
 
   @Override
   public void reinitializeRepo(String defaultBranchName) {
-    client.getGlobalPointers().deleteMany(Filters.empty()); // empty filter matches all
-    client.getGlobalLog().deleteMany(Filters.empty());
-    client.getCommitLog().deleteMany(Filters.empty());
-    client.getKeyLists().deleteMany(Filters.empty());
+    client.getGlobalPointers().deleteMany(Filters.eq(globalPointerKey)); // empty filter matches all
+    client.getGlobalLog().deleteMany(Filters.regex("_id", keyPrefix + ".*"));
+    client.getCommitLog().deleteMany(Filters.regex("_id", keyPrefix + ".*"));
+    client.getKeyLists().deleteMany(Filters.regex("_id", keyPrefix + ".*"));
 
     super.initializeRepo(defaultBranchName);
   }
@@ -94,7 +95,7 @@ public class MongoDatabaseAdapter
   }
 
   private String toId(Hash id) {
-    return keyPrefix + '#' + id.asString();
+    return keyPrefix + id.asString();
   }
 
   private List<String> toIds(Collection<Hash> ids) {
@@ -262,14 +263,12 @@ public class MongoDatabaseAdapter
   private Hash idAsHash(Document doc) {
     String id = doc.get("_id", String.class);
 
-    if (!id.startsWith(keyPrefix)
-        || id.length() <= keyPrefix.length()
-        || id.charAt(keyPrefix.length()) != PREFIX_SEPARATOR) {
+    if (!id.startsWith(keyPrefix)) {
       throw new IllegalStateException(
           String.format("Key prefix mismatch for id '%s' (expected prefix: '%s')", id, keyPrefix));
     }
 
-    String hash = id.substring(keyPrefix.length() + 1); // + 1 for the separator char
+    String hash = id.substring(keyPrefix.length());
     return Hash.of(hash);
   }
 
