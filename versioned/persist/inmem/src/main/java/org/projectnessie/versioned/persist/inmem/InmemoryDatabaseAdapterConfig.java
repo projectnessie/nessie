@@ -15,15 +15,8 @@
  */
 package org.projectnessie.versioned.persist.inmem;
 
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 
 @Value.Immutable(lazyhash = true)
-public interface InmemoryDatabaseAdapterConfig extends DatabaseAdapterConfig {
-
-  @Nullable
-  InmemoryStore getConnectionProvider();
-
-  InmemoryDatabaseAdapterConfig withConnectionProvider(InmemoryStore dbInstance);
-}
+public interface InmemoryDatabaseAdapterConfig extends DatabaseAdapterConfig<InmemoryStore> {}

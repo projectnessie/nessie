@@ -15,8 +15,27 @@
  */
 package org.projectnessie.versioned.persist.inmem;
 
-import org.projectnessie.versioned.persist.tests.AbstractTieredCommitsTest;
-import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
+import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
+import org.projectnessie.versioned.persist.tests.extension.TestConnectionProviderSource;
 
-@NessieExternalDatabase(InmemoryTestConnectionProviderSource.class)
-class TestTieredCommitsInmemory extends AbstractTieredCommitsTest {}
+public class InmemoryTestConnectionProviderSource
+    implements TestConnectionProviderSource<InmemoryStore> {
+
+  private InmemoryStore store;
+
+  @Override
+  public DatabaseAdapterConfig<InmemoryStore> updateConfig(
+      DatabaseAdapterConfig<InmemoryStore> config) {
+    return config.withConnectionProvider(store);
+  }
+
+  @Override
+  public void start() {
+    store = new InmemoryStore();
+  }
+
+  @Override
+  public void stop() {
+    store = null;
+  }
+}

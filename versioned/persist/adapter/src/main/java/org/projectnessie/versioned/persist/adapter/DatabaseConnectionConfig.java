@@ -13,14 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.persist.tx.local;
+package org.projectnessie.versioned.persist.adapter;
 
-import org.immutables.value.Value;
-
-/**
- * Default "implementation" of {@link LocalDatabaseAdapterConfig}. This is a separate
- * immutable-annotated interface, to prevent incoherences in generated types if the
- * immutable-annotation would be present on {@link LocalDatabaseAdapterConfig}.
- */
-@Value.Immutable(lazyhash = true)
-public interface DefaultLocalDatabaseAdapterConfig extends LocalDatabaseAdapterConfig {}
+/** Base database-connection-provider configuration type. */
+public interface DatabaseConnectionConfig {}

@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.StampedLock;
 import java.util.stream.Collectors;
+import org.projectnessie.versioned.persist.adapter.DatabaseConnectionProvider;
 import org.rocksdb.ColumnFamilyDescriptor;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.ColumnFamilyOptions;
@@ -39,7 +40,7 @@ import org.rocksdb.TransactionDBOptions;
  * Provides the {@link RocksDB} instance for potentially multiple {@link RocksDatabaseAdapter}
  * instances.
  */
-public class RocksDbInstance implements AutoCloseable {
+public class RocksDbInstance implements DatabaseConnectionProvider<RocksDbConfig> {
 
   private TransactionDB db;
 
@@ -60,17 +61,28 @@ public class RocksDbInstance implements AutoCloseable {
 
   private final ReadWriteLock lock = new StampedLock().asReadWriteLock();
 
-  private int starts;
-
   public RocksDbInstance() {
     RocksDB.loadLibrary();
   }
 
-  public void setDbPath(String dbPath) {
-    this.dbPath = dbPath;
+  @Override
+  public void configure(RocksDbConfig config) {
+    this.dbPath = config.getDbPath();
   }
 
-  public synchronized TransactionDB start() throws RocksDBException {
+  @Override
+  public synchronized void close() {
+    if (db != null) {
+      try {
+        db.close();
+      } finally {
+        db = null;
+      }
+    }
+  }
+
+  @Override
+  public synchronized void initialize() {
     if (db == null) {
       if (dbPath == null || dbPath.trim().isEmpty()) {
         throw new IllegalStateException("RocksDB instance missing dbPath option.");
@@ -114,18 +126,6 @@ public class RocksDbInstance implements AutoCloseable {
         throw new RuntimeException("RocksDB failed to start", e);
       }
     }
-    starts++;
-    return db;
-  }
-
-  @Override
-  public synchronized void close() {
-    if (db != null) {
-      starts--;
-      if (starts == 0) {
-        db.close();
-      }
-    }
   }
 
   public ColumnFamilyHandle getCfGlobalPointer() {
@@ -146,5 +146,9 @@ public class RocksDbInstance implements AutoCloseable {
 
   public ReadWriteLock getLock() {
     return lock;
+  }
+
+  public TransactionDB getDb() {
+    return db;
   }
 }

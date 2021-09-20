@@ -28,53 +28,52 @@ import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import javax.sql.DataSource;
 import org.projectnessie.versioned.persist.tx.TxConnectionProvider;
-import org.projectnessie.versioned.persist.tx.TxDatabaseAdapterConfig;
 
-public class LocalConnectionProvider extends TxConnectionProvider {
+public class LocalConnectionProvider extends TxConnectionProvider<LocalTxConnectionConfig> {
 
   private DataSource dataSource;
 
   @Override
-  public void configure(TxDatabaseAdapterConfig cfg) {
-    LocalDatabaseAdapterConfig config = (LocalDatabaseAdapterConfig) cfg;
+  public void initialize() throws SQLException {
+    if (dataSource == null) {
+      AgroalDataSourceConfigurationSupplier dataSourceConfiguration =
+          new AgroalDataSourceConfigurationSupplier();
+      AgroalConnectionPoolConfigurationSupplier poolConfiguration =
+          dataSourceConfiguration.connectionPoolConfiguration();
+      AgroalConnectionFactoryConfigurationSupplier connectionFactoryConfiguration =
+          poolConfiguration.connectionFactoryConfiguration();
 
-    AgroalDataSourceConfigurationSupplier dataSourceConfiguration =
-        new AgroalDataSourceConfigurationSupplier();
-    AgroalConnectionPoolConfigurationSupplier poolConfiguration =
-        dataSourceConfiguration.connectionPoolConfiguration();
-    AgroalConnectionFactoryConfigurationSupplier connectionFactoryConfiguration =
-        poolConfiguration.connectionFactoryConfiguration();
+      // configure pool
+      poolConfiguration
+          .initialSize(config.getPoolInitialSize())
+          .maxSize(config.getPoolMaxSize())
+          .minSize(config.getPoolMinSize())
+          .maxLifetime(Duration.of(config.getPoolConnectionLifetimeMinutes(), ChronoUnit.MINUTES))
+          .acquisitionTimeout(
+              Duration.of(config.getPoolAcquisitionTimeoutSeconds(), ChronoUnit.SECONDS));
 
-    // configure pool
-    poolConfiguration
-        .initialSize(config.getPoolInitialSize())
-        .maxSize(config.getPoolMaxSize())
-        .minSize(config.getPoolMinSize())
-        .maxLifetime(Duration.of(config.getPoolConnectionLifetimeMinutes(), ChronoUnit.MINUTES))
-        .acquisitionTimeout(
-            Duration.of(config.getPoolAcquisitionTimeoutSeconds(), ChronoUnit.SECONDS));
+      // configure supplier
+      connectionFactoryConfiguration.jdbcUrl(config.getJdbcUrl());
+      if (config.getJdbcUser() != null) {
+        connectionFactoryConfiguration.credential(new NamePrincipal(config.getJdbcUser()));
+        connectionFactoryConfiguration.credential(new SimplePassword(config.getJdbcPass()));
+      }
+      connectionFactoryConfiguration.jdbcTransactionIsolation(
+          TransactionIsolation.valueOf(config.getPoolTransactionIsolation()));
+      connectionFactoryConfiguration.autoCommit(false);
 
-    // configure supplier
-    connectionFactoryConfiguration.jdbcUrl(config.getJdbcUrl());
-    if (config.getJdbcUser() != null) {
-      connectionFactoryConfiguration.credential(new NamePrincipal(config.getJdbcUser()));
-      connectionFactoryConfiguration.credential(new SimplePassword(config.getJdbcPass()));
-    }
-    connectionFactoryConfiguration.jdbcTransactionIsolation(
-        TransactionIsolation.valueOf(config.getPoolTransactionIsolation()));
-    connectionFactoryConfiguration.autoCommit(false);
-
-    try {
       dataSource = AgroalDataSource.from(dataSourceConfiguration.get());
-    } catch (SQLException e) {
-      throw new RuntimeException(e);
     }
   }
 
   @Override
   public void close() throws Exception {
     if (dataSource instanceof AutoCloseable) {
-      ((AutoCloseable) dataSource).close();
+      try {
+        ((AutoCloseable) dataSource).close();
+      } finally {
+        dataSource = null;
+      }
     }
   }
 

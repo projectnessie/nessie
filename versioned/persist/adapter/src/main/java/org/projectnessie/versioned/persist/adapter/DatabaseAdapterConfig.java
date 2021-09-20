@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.persist.adapter;
 
 import java.time.Clock;
+import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
 /**
@@ -28,7 +29,7 @@ import org.immutables.value.Value;
  * more configuration options must extend this interface, have the {@link Value.Immutable}
  * annotation and declare the {@code with...} methods implemented by "immutables".
  */
-public interface DatabaseAdapterConfig {
+public interface DatabaseAdapterConfig<T extends DatabaseConnectionProvider<?>> {
 
   int DEFAULT_PARENTS_PER_COMMIT = 20;
   int DEFAULT_KEY_LIST_DISTANCE = 20;
@@ -45,7 +46,7 @@ public interface DatabaseAdapterConfig {
     return "";
   }
 
-  DatabaseAdapterConfig withKeyPrefix(String keyPrefix);
+  DatabaseAdapterConfig<T> withKeyPrefix(String keyPrefix);
 
   /**
    * The number of parent-commit-hashes stored in {@link
@@ -57,7 +58,7 @@ public interface DatabaseAdapterConfig {
     return DEFAULT_PARENTS_PER_COMMIT;
   }
 
-  DatabaseAdapterConfig withParentsPerCommit(int parentsPerCommit);
+  DatabaseAdapterConfig<T> withParentsPerCommit(int parentsPerCommit);
 
   /**
    * Each {@code n}-th {@link org.projectnessie.versioned.persist.adapter.CommitLogEntry}, where
@@ -70,7 +71,7 @@ public interface DatabaseAdapterConfig {
     return DEFAULT_KEY_LIST_DISTANCE;
   }
 
-  DatabaseAdapterConfig withKeyListDistance(int keyListDistance);
+  DatabaseAdapterConfig<T> withKeyListDistance(int keyListDistance);
 
   /**
    * Maximum size of a database object/row.
@@ -93,7 +94,7 @@ public interface DatabaseAdapterConfig {
     return getDefaultMaxKeyListSize();
   }
 
-  DatabaseAdapterConfig withMaxKeyListSize(int maxKeyListSize);
+  DatabaseAdapterConfig<T> withMaxKeyListSize(int maxKeyListSize);
 
   /**
    * Database adapter implementations that actually do have a hard technical or highly recommended
@@ -120,7 +121,7 @@ public interface DatabaseAdapterConfig {
     return DEFAULT_COMMIT_TIMEOUT;
   }
 
-  DatabaseAdapterConfig withCommitTimeout(long commitTimeout);
+  DatabaseAdapterConfig<T> withCommitTimeout(long commitTimeout);
 
   /** Maximum retries for CAS-like operations. Default is unlimited. */
   @Value.Default
@@ -128,7 +129,7 @@ public interface DatabaseAdapterConfig {
     return DEFAULT_COMMIT_RETRIES;
   }
 
-  DatabaseAdapterConfig withCommitRetries(int commitRetries);
+  DatabaseAdapterConfig<T> withCommitRetries(int commitRetries);
 
   /** The {@link Clock} to use. */
   @Value.Default
@@ -136,5 +137,10 @@ public interface DatabaseAdapterConfig {
     return Clock.systemUTC();
   }
 
-  DatabaseAdapterConfig withClock(Clock clock);
+  DatabaseAdapterConfig<T> withClock(Clock clock);
+
+  @Nullable
+  T getConnectionProvider();
+
+  DatabaseAdapterConfig<T> withConnectionProvider(T connectionProvider);
 }

@@ -51,10 +51,9 @@ public class InmemoryDatabaseAdapter
     this.keyPrefix = ByteString.copyFromUtf8(config.getKeyPrefix() + ':');
 
     InmemoryStore store = config.getConnectionProvider();
-    if (store == null) {
-      store = new InmemoryStore();
-      store.configure(config);
-    }
+
+    Objects.requireNonNull(
+        store, "Requires a non-null InmemoryStore from InmemoryDatabaseAdapterConfig");
 
     this.store = store;
   }
@@ -203,7 +202,4 @@ public class InmemoryDatabaseAdapter
   protected int entitySize(KeyWithType entry) {
     return toProto(entry).getSerializedSize();
   }
-
-  @Override
-  public void close() {}
 }

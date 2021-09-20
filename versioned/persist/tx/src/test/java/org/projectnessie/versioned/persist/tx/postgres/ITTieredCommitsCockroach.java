@@ -15,32 +15,12 @@
  */
 package org.projectnessie.versioned.persist.tx.postgres;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.tests.AbstractTieredCommitsTest;
-import org.projectnessie.versioned.persist.tx.local.ImmutableDefaultLocalDatabaseAdapterConfig;
-import org.projectnessie.versioned.persist.tx.local.LocalDatabaseAdapterConfig;
+import org.projectnessie.versioned.persist.tests.extension.NessieAdapterName;
+import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
 @EnabledIfSystemProperty(named = "it.nessie.dbs", matches = ".*cockroach.*")
-public class ITTieredCommitsCockroach extends AbstractTieredCommitsTest {
-  static ContainerFixture container =
-      new ContainerFixture("cockroachdb/cockroach", "v21.1.6", "it.nessie.container.cockroach.tag");
-
-  @BeforeAll
-  static void startContainer() {
-    container.setup();
-
-    createAdapter(
-        DatabaseAdapterFactory.<LocalDatabaseAdapterConfig>loadFactoryByName("PostgreSQL")
-            .newBuilder()
-            .withConfig(ImmutableDefaultLocalDatabaseAdapterConfig.builder().build()),
-        config -> container.configureDatabaseAdapter(config));
-  }
-
-  @AfterAll
-  static void stopContainer() {
-    container.stop();
-  }
-}
+@NessieAdapterName("PostgreSQL")
+@NessieExternalDatabase(CockroachTestConnectionProviderSource.class)
+class ITTieredCommitsCockroach extends AbstractTieredCommitsTest {}
