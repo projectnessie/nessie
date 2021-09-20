@@ -40,9 +40,26 @@ for more information. Small changes don't require an issue. However, it is good 
 larger changes. If you are unsure of where to start ask on the slack channel or look at [existing issues](https://github.com/projectnessie/nessie/issues).
 The [good first issue](https://github.com/projectnessie/nessie/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) label marks issues that are particularly good for people new to the codebase.
 
+For the tests to run, you need to update your `~/.m2/toolchains.xml` to contain a reference to Java 11. 
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<toolchains>
+  <toolchain>
+    <type>jdk</type>
+    <provides>
+      <version>11</version>
+      <vendor>sun</vendor>
+    </provides>
+    <configuration>
+      <jdkHome>PATH_TO_YOUR_JAVA_11_HOME</jdkHome>
+    </configuration>
+  </toolchain>
+</toolchains>
+```
+
 #### Building with Java 17 (and 16)
 
-Due to [JEP 296](https://openjdk.java.net/jeps/396), introduced in Java 16, a couple JVM options are required for
+Due to [JEP 396](https://openjdk.java.net/jeps/396), introduced in Java 16, a couple JVM options are required for
 [google-java-format](https://github.com/google/google-java-format#jdk-16) and [errorprone](https://errorprone.info/docs/installation)
 to work. These options are harmless when using Java 11.
 
