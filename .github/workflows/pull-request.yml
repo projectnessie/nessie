@@ -20,6 +20,7 @@ jobs:
   java:
     name: Java/Maven
     runs-on: ubuntu-latest
+    if: (github.event.action != 'labeled' && github.event.action != 'unlabeled') || startsWith(github.event.label.name, 'pr-')
     outputs:
       CI_WITH_JACKSON: ${{ steps.ci_options.outputs.CI_WITH_JACKSON }}
 
@@ -82,6 +83,7 @@ jobs:
   python:
     name: Python
     runs-on: ubuntu-latest
+    if: (github.event.action != 'labeled' && github.event.action != 'unlabeled') || startsWith(github.event.label.name, 'pr-')
     env:
       working-directory: ./python
     strategy:
@@ -105,6 +107,7 @@ jobs:
   site:
     name: Build Website
     runs-on: ubuntu-latest
+    if: (github.event.action != 'labeled' && github.event.action != 'unlabeled') || startsWith(github.event.label.name, 'pr-')
     steps:
       - uses: actions/checkout@v2
       - name: Setup Python
@@ -120,6 +123,7 @@ jobs:
   lint-helm:
     name: Lint Helm chart
     runs-on: ubuntu-latest
+    if: (github.event.action != 'labeled' && github.event.action != 'unlabeled') || startsWith(github.event.label.name, 'pr-')
     steps:
       - uses: actions/checkout@v1
       - name: Lint Helm
