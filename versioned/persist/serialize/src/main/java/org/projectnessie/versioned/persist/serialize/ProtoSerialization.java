@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.persist.serialize;
 
+import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
@@ -49,6 +50,19 @@ public class ProtoSerialization {
     return proto.build();
   }
 
+  public static CommitLogEntry protoToCommitLogEntry(ByteString serialized) {
+    try {
+      if (serialized == null) {
+        return null;
+      }
+
+      AdapterTypes.CommitLogEntry proto = AdapterTypes.CommitLogEntry.parseFrom(serialized);
+      return protoToCommitLogEntry(proto);
+    } catch (InvalidProtocolBufferException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   public static CommitLogEntry protoToCommitLogEntry(byte[] bytes) {
     try {
       if (bytes == null) {
@@ -56,27 +70,31 @@ public class ProtoSerialization {
       }
 
       AdapterTypes.CommitLogEntry proto = AdapterTypes.CommitLogEntry.parseFrom(bytes);
-      ImmutableCommitLogEntry.Builder entry =
-          ImmutableCommitLogEntry.builder()
-              .createdTime(proto.getCreatedTime())
-              .hash(Hash.of(proto.getHash()))
-              .metadata(proto.getMetadata())
-              .keyListDistance(proto.getKeyListDistance());
-
-      proto.getParentsList().forEach(p -> entry.addParents(Hash.of(p)));
-      proto.getPutsList().forEach(p -> entry.addPuts(protoToKeyWithBytes(p)));
-      proto.getDeletesList().forEach(p -> entry.addDeletes(protoToKey(p)));
-      if (!proto.getKeyListList().isEmpty()) {
-        ImmutableKeyList.Builder kl = ImmutableKeyList.builder();
-        proto.getKeyListList().forEach(kle -> kl.addKeys(protoToKeyWithType(kle)));
-        entry.keyList(kl.build());
-      }
-      proto.getKeyListIdsList().forEach(p -> entry.addKeyListsIds(Hash.of(p)));
-
-      return entry.build();
+      return protoToCommitLogEntry(proto);
     } catch (InvalidProtocolBufferException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  private static CommitLogEntry protoToCommitLogEntry(AdapterTypes.CommitLogEntry proto) {
+    ImmutableCommitLogEntry.Builder entry =
+        ImmutableCommitLogEntry.builder()
+            .createdTime(proto.getCreatedTime())
+            .hash(Hash.of(proto.getHash()))
+            .metadata(proto.getMetadata())
+            .keyListDistance(proto.getKeyListDistance());
+
+    proto.getParentsList().forEach(p -> entry.addParents(Hash.of(p)));
+    proto.getPutsList().forEach(p -> entry.addPuts(protoToKeyWithBytes(p)));
+    proto.getDeletesList().forEach(p -> entry.addDeletes(protoToKey(p)));
+    if (!proto.getKeyListList().isEmpty()) {
+      ImmutableKeyList.Builder kl = ImmutableKeyList.builder();
+      proto.getKeyListList().forEach(kle -> kl.addKeys(protoToKeyWithType(kle)));
+      entry.keyList(kl.build());
+    }
+    proto.getKeyListIdsList().forEach(p -> entry.addKeyListsIds(Hash.of(p)));
+
+    return entry.build();
   }
 
   public static AdapterTypes.ContentsIdWithBytes toProto(ContentsIdAndBytes x) {
@@ -112,6 +130,19 @@ public class ProtoSerialization {
       keyList.addKeys(toProto(key));
     }
     return keyList.build();
+  }
+
+  public static KeyList protoToKeyList(ByteString serialized) {
+    try {
+      AdapterTypes.KeyList proto = AdapterTypes.KeyList.parseFrom(serialized);
+      ImmutableKeyList.Builder keyList = ImmutableKeyList.builder();
+      for (AdapterTypes.KeyWithType key : proto.getKeysList()) {
+        keyList.addKeys(protoToKeyWithType(key));
+      }
+      return keyList.build();
+    } catch (InvalidProtocolBufferException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   public static KeyList protoToKeyList(byte[] bytes) {
