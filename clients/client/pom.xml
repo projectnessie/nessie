@@ -162,6 +162,7 @@
                 <include>TestHttpClient.java</include>
                 <include>TestHttpsClient.java</include>
                 <include>TestResponseFilter.java</include>
+                <include>TestModelObjectsSerialization.java</include>
               </includes>
             </configuration>
             <executions>
