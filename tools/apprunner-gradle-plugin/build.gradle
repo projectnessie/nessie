@@ -5,20 +5,20 @@ plugins {
   id "com.diffplug.spotless" version "5.12.5"
 }
 
-def readVersion(expr) {
-  def buffer = new ByteArrayOutputStream()
+def mavenPropertiesFile = file('../../target/project.properties')
+if (!mavenPropertiesFile.exists() || mavenPropertiesFile.lastModified() < file("../../pom.xml").lastModified()) {
   exec {
-    commandLine = ['../../mvnw', 'help:evaluate', "-Dexpression=$expr", '-q', '-DforceStdout', '-f', '../../pom.xml']
-    standardOutput = buffer
+    commandLine = ['../../mvnw', 'properties:write-project-properties', '-Pall-properties', '-q', '-f', '../../pom.xml']
     environment('JAVA_HOME', System.properties['java.home'])
   }.assertNormalExitValue()
-  return buffer.toString()
 }
+def mavenProperties = new Properties()
+mavenProperties.load(new StringReader(mavenPropertiesFile.text))
 
-def quarkusVersion = readVersion('quarkus.version')
-def junitVersion = readVersion('junit.version')
-def jacksonVersion = readVersion('jackson.version')
-version = readVersion('project.version')
+def quarkusVersion = mavenProperties.get('quarkus.version')
+def jacksonVersion = mavenProperties.get('jackson.version')
+def junitVersion = mavenProperties.get('junit.version')
+version = mavenProperties.get('nessie.version')
 
 allprojects {
   group = "org.projectnessie"
