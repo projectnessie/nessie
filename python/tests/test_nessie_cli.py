@@ -148,9 +148,11 @@ def test_log() -> None:
     result = _run(runner, ["--json", "log", "--author", "nessie_user1"])
     logs = simplejson.loads(result.output)
     assert len(logs) == 1
+    assert_that(logs[0]["author"]).is_equal_to("nessie_user1")
     result = _run(runner, ["--json", "log", "--author", "nessie_user2"])
     logs = simplejson.loads(result.output)
     assert len(logs) == 1
+    assert_that(logs[0]["author"]).is_equal_to("nessie_user2")
     result = _run(runner, ["--json", "log", "--author", "nessie_user2", "--author", "nessie_user1"])
     logs = simplejson.loads(result.output)
     assert len(logs) == 2
@@ -393,21 +395,45 @@ def test_contents_listing() -> None:
     refs = ReferenceSchema().loads(_run(runner, ["--json", "branch", "-l", branch]).output, many=True)
     _run(
         runner,
-        ["contents", "--set", "this.is.iceberg.foo", "--ref", branch, "-m", "test_message1", "-c", refs[0].hash_],
+        [
+            "contents",
+            "--set",
+            "this.is.iceberg.foo",
+            "--ref",
+            branch,
+            "-m",
+            "test_message1",
+            "-c",
+            refs[0].hash_,
+            "--author",
+            "nessie-author1",
+        ],
         input=ContentsSchema().dumps(iceberg_table),
     )
 
     refs = ReferenceSchema().loads(_run(runner, ["--json", "branch", "-l", branch]).output, many=True)
     _run(
         runner,
-        ["contents", "--set", "this.is.delta.bar", "--ref", branch, "-m", "test_message2", "-c", refs[0].hash_],
+        [
+            "contents",
+            "--set",
+            "this.is.delta.bar",
+            "--ref",
+            branch,
+            "-m",
+            "test_message2",
+            "-c",
+            refs[0].hash_,
+            "--author",
+            "nessie-author2",
+        ],
         input=ContentsSchema().dumps(delta_lake_table),
     )
 
     refs = ReferenceSchema().loads(_run(runner, ["--json", "branch", "-l", branch]).output, many=True)
     _run(
         runner,
-        ["contents", "--set", "this.is.sql.baz", "--ref", branch, "-m", "test_message3", "-c", refs[0].hash_],
+        ["contents", "--set", "this.is.sql.baz", "--ref", branch, "-m", "test_message3", "-c", refs[0].hash_, "--author", "nessie-author3"],
         input=ContentsSchema().dumps(sql_view),
     )
 
