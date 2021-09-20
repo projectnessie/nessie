@@ -15,8 +15,6 @@
  */
 package org.projectnessie.model;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -52,9 +50,9 @@ public class TestModelObjectsSerialization {
   @ParameterizedTest
   @MethodSource("negativeCases")
   void testNegativeSerDeCases(Case invalidCase) {
-    assertThrows(
-        JsonProcessingException.class,
-        () -> MAPPER.readValue(invalidCase.deserializedJson, invalidCase.deserializeAs));
+    Assertions.assertThatThrownBy(
+            () -> MAPPER.readValue(invalidCase.deserializedJson, invalidCase.deserializeAs))
+        .isInstanceOf(JsonProcessingException.class);
   }
 
   static List<Case> goodCases() {
