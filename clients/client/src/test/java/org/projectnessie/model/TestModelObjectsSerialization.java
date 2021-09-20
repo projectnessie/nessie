@@ -23,8 +23,9 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.model.Contents.Type;
@@ -62,28 +63,28 @@ public class TestModelObjectsSerialization {
 
     return Arrays.asList(
         new Case(
-            ImmutableBranch.builder().hash(HASH).name(branchName).build(),
+            Branch.of(branchName, HASH),
             Branch.class,
-            "{\"type\":\"BRANCH\",\"name\":\"testBranch\"," + "\"hash\":\"" + HASH + "\"}"),
+            Json.from("type", "BRANCH").add("name", "testBranch").add("hash", HASH)),
         new Case(
-            ImmutableBranch.builder().name(branchName).build(),
+            Branch.of(branchName, null),
             Branch.class,
-            "{\"type\":\"BRANCH\",\"name\":\"testBranch\",\"hash\":null}"),
+            Json.from("type", "BRANCH").add("name", "testBranch").addNoQuotes("hash", "null")),
         new Case(
-            ImmutableTag.builder().hash(HASH).name("tagname").build(),
+            Tag.of("tagname", HASH),
             Tag.class,
-            "{\"type\":\"TAG\",\"name\":\"tagname\",\"hash\":\"" + HASH + "\"}"),
+            Json.from("type", "TAG").add("name", "tagname").add("hash", HASH)),
         new Case(
-            ImmutableHash.builder().name(HASH).build(),
+            Hash.of(HASH),
             Hash.class,
-            "{\"type\":\"HASH\",\"name\":\"" + HASH + "\",\"hash\":\"" + HASH + "\"}"),
+            Json.from("type", "HASH").add("name", HASH).add("hash", HASH)),
         new Case(
             ImmutableTransplant.builder()
                 .addHashesToTransplant(HASH)
                 .fromRefName(branchName)
                 .build(),
             Transplant.class,
-            "{\"hashesToTransplant\":" + "[\"" + HASH + "\"]," + "\"fromRefName\":\"testBranch\"}"),
+            Json.arr("hashesToTransplant", HASH).add("fromRefName", "testBranch")),
         new Case(
             ImmutableEntriesResponse.builder()
                 .addEntries(
@@ -95,12 +96,12 @@ public class TestModelObjectsSerialization {
                 .hasMore(true)
                 .build(),
             EntriesResponse.class,
-            "{\"hasMore\":true,"
-                + "\"token\":\""
-                + HASH
-                + "\","
-                + "\"entries\":[{\"type\":\"ICEBERG_TABLE\","
-                + "\"name\":{\"elements\":[\"/tmp/testpath\"]}}]}"),
+            Json.noQuotes("hasMore", true)
+                .add("token", HASH)
+                .addArrNoQuotes(
+                    "entries",
+                    Json.from("type", "ICEBERG_TABLE")
+                        .addNoQuotes("name", Json.arr("elements", "/tmp/testpath")))),
         new Case(
             ImmutableLogResponse.builder()
                 .addOperations()
@@ -108,66 +109,63 @@ public class TestModelObjectsSerialization {
                 .addOperations(
                     ImmutableCommitMeta.builder()
                         .commitTime(now)
-                        .author("author@testnessie.com")
-                        .committer("committer@testnessie.com")
+                        .author("author@example.com")
+                        .committer("committer@example.com")
                         .authorTime(now)
                         .hash(HASH)
                         .message("test commit")
                         .putProperties("prop1", "val1")
-                        .signedOffBy("signer@testnessie.com")
+                        .signedOffBy("signer@example.com")
                         .build())
                 .hasMore(true)
                 .build(),
             LogResponse.class,
-            "{\"hasMore\":true,"
-                + "\"token\":\""
-                + HASH
-                + "\","
-                + "\"operations\":["
-                + "{\"hash\":\""
-                + HASH
-                + "\","
-                + "\"committer\":\"committer@testnessie.com\",\"author\":\"author@testnessie.com\","
-                + "\"signedOffBy\":\"signer@testnessie.com\",\"message\":\"test commit\","
-                + "\"commitTime\":\""
-                + now
-                + "\","
-                + "\"authorTime\":\""
-                + now
-                + "\","
-                + "\"properties\":{\"prop1\":\"val1\"}}]}"),
+            Json.noQuotes("hasMore", true)
+                .add("token", HASH)
+                .addArrNoQuotes(
+                    "operations",
+                    Json.from("hash", HASH)
+                        .add("committer", "committer@example.com")
+                        .add("author", "author@example.com")
+                        .add("signedOffBy", "signer@example.com")
+                        .add("message", "test commit")
+                        .add("commitTime", now.toString())
+                        .add("authorTime", now.toString())
+                        .addNoQuotes("properties", Json.from("prop1", "val1")))),
         new Case(
             ImmutableMerge.builder().fromHash(HASH).fromRefName(branchName).build(),
             Merge.class,
-            "{\"fromHash\":\"" + HASH + "\"," + "\"fromRefName\":\"testBranch\"}"));
+            Json.from("fromHash", HASH).add("fromRefName", "testBranch")));
   }
 
   static List<Case> negativeCases() {
     return Arrays.asList(
         // Special chars in the branch name make it invalid
         new Case(
-            Branch.class,
-            "{\"type\":\"BRANCH\",\"name\":\"$p@c!@L\"," + "\"hash\":\"" + HASH + "\"}"),
+            Branch.class, Json.from("type", "BRANCH").add("name", "$p@c!@L").add("hash", HASH)),
 
         // Invalid hash
         new Case(
             Branch.class,
-            "{\"type\":\"BRANCH\",\"name\":\"testBranch\"," + "\"hash\":\"invalidhash\"}"),
+            Json.from("type", "BRANCH").add("name", "testBranch").add("hash", "invalidhash")),
 
         // No name
         new Case(
-            Branch.class, "{\"type\":\"BRANCH\",\"name\":null," + "\"hash\":\"" + HASH + "\"}"),
+            Branch.class,
+            Json.from("type", "BRANCH").addNoQuotes("name", "null").add("hash", HASH)),
         new Case(
             Transplant.class,
-            "{\"hashesToTransplant\":" + "[\"invalidhash\"]," + "\"fromRefName\":null}"),
+            Json.arr("hashesToTransplant", "invalidhash").addNoQuotes("fromRefName", "null")),
 
         // Invalid hash
         new Case(
             Transplant.class,
-            "{\"hashesToTransplant\":" + "[\"invalidhash\"]," + "\"fromRefName\":\"testBranch\"}"),
-        new Case(Tag.class, "{\"type\":\"TAG\",\"name\":\"tagname\",\"hash\":\"invalidhash\"}"),
+            Json.arr("hashesToTransplant", "invalidhash").add("fromRefName", "testBranch")),
         new Case(
-            Hash.class, "{\"type\":\"HASH\",\"name\":\"invalidhash\",\"hash\":\"invalidhash\"}"));
+            Tag.class, Json.from("type", "TAG").add("name", "tagname").add("hash", "invalidhash")),
+        new Case(
+            Hash.class,
+            Json.from("type", "HASH").add("name", "invalidhash").add("hash", "invalidhash")));
   }
 
   static class Case {
@@ -176,14 +174,14 @@ public class TestModelObjectsSerialization {
     final Class<?> deserializeAs;
     final String deserializedJson;
 
-    public Case(Class<?> deserializeAs, String deserializedJson) {
+    public Case(Class<?> deserializeAs, Json deserializedJson) {
       this(null, deserializeAs, deserializedJson);
     }
 
-    public Case(Object obj, Class<?> deserializeAs, String deserializedJson) {
+    public Case(Object obj, Class<?> deserializeAs, Json deserializedJson) {
       this.obj = obj;
       this.deserializeAs = deserializeAs;
-      this.deserializedJson = deserializedJson;
+      this.deserializedJson = deserializedJson.toString();
     }
 
     @Override
@@ -192,11 +190,54 @@ public class TestModelObjectsSerialization {
     }
   }
 
-  @Test
-  public void testN() throws IOException {
-    Tag t = ImmutableTag.builder().hash(HASH).name("tagname").build();
-    System.out.println(MAPPER.writeValueAsString(t));
-    Hash h = ImmutableHash.builder().name(HASH).build();
-    System.out.println(MAPPER.writeValueAsString(h));
+  static class Json { // Helps in building json strings, which can be used for verification.
+
+    private static final String STR_KV_FORMAT = "%s,\"%s\":\"%s\"";
+    private static final String NO_QUOTES_KV_FORMAT = "%s,\"%s\":%s";
+
+    String currentContent;
+
+    private Json(String currentContent) {
+      this.currentContent = currentContent;
+    }
+
+    static Json from(String key, String val) {
+      return new Json(String.format("\"%s\":\"%s\"", key, val));
+    }
+
+    static Json noQuotes(String key, Object val) {
+      return new Json(String.format("\"%s\":%s", key, val));
+    }
+
+    static Json arr(String key, String... val) {
+      String currentContent =
+          Stream.of(val)
+              .collect(Collectors.joining("\",\"", String.format("\"%s\":[\"", key), "\"]"));
+      return new Json(currentContent);
+    }
+
+    public Json add(String key, String val) {
+      this.currentContent = String.format(STR_KV_FORMAT, currentContent, key, val);
+      return this;
+    }
+
+    public Json addArrNoQuotes(String key, Object... val) {
+      String keyContent =
+          Stream.of(val)
+              .map(Object::toString)
+              .collect(Collectors.joining(",", String.format("\"%s\":[", key), "]"));
+      this.currentContent = String.format("%s,%s", currentContent, keyContent);
+      return this;
+    }
+
+    public Json addNoQuotes(String key, Object val) {
+      this.currentContent = String.format(NO_QUOTES_KV_FORMAT, currentContent, key, val.toString());
+      return this;
+    }
+
+    @Override
+    public String toString() {
+      return String.format("{%s}", currentContent);
+    }
   }
 }
