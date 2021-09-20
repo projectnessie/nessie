@@ -18,10 +18,11 @@ package org.projectnessie.quarkus.gradle;
 import java.util.HashMap;
 import java.util.Map;
 import org.gradle.api.DefaultTask;
+import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.TaskAction;
 
 public class StopTask extends DefaultTask {
-  private AutoCloseable application;
+  @Internal private AutoCloseable application;
 
   final Map<String, String> restoreSystemProps = new HashMap<>();
 
