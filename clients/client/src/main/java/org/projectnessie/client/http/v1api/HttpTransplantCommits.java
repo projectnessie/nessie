@@ -51,7 +51,7 @@ final class HttpTransplantCommits extends BaseHttpOnBranchRequest<TransplantComm
   }
 
   @Override
-  public void submit() throws NessieNotFoundException, NessieConflictException {
+  public void transplant() throws NessieNotFoundException, NessieConflictException {
     client.getTreeApi().transplantCommitsIntoBranch(branchName, hash, message, transplant.build());
   }
 }

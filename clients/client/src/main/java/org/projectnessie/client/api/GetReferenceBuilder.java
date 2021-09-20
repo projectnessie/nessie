@@ -34,5 +34,5 @@ public interface GetReferenceBuilder {
               message = Validation.REF_NAME_OR_HASH_MESSAGE)
           String refName);
 
-  Reference submit() throws NessieNotFoundException;
+  Reference get() throws NessieNotFoundException;
 }

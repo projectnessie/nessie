@@ -35,5 +35,5 @@ public interface CreateReferenceBuilder {
 
   CreateReferenceBuilder reference(@Valid @NotNull Reference reference);
 
-  Reference submit() throws NessieNotFoundException, NessieConflictException;
+  Reference create() throws NessieNotFoundException, NessieConflictException;
 }

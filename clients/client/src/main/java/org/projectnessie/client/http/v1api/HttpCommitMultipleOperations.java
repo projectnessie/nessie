@@ -54,7 +54,7 @@ final class HttpCommitMultipleOperations
   }
 
   @Override
-  public Branch submit() throws NessieNotFoundException, NessieConflictException {
+  public Branch commit() throws NessieNotFoundException, NessieConflictException {
     return client.getTreeApi().commitMultipleOperations(branchName, hash, operations.build());
   }
 }

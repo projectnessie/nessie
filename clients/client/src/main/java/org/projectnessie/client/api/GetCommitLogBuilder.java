@@ -31,5 +31,5 @@ public interface GetCommitLogBuilder extends PagingBuilder<GetCommitLogBuilder> 
       @Nullable @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String untilHash);
 
-  LogResponse submit() throws NessieNotFoundException;
+  LogResponse get() throws NessieNotFoundException;
 }

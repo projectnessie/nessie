@@ -29,5 +29,5 @@ import org.projectnessie.model.Reference;
 public interface AssignTagBuilder extends OnTagBuilder<AssignTagBuilder> {
   AssignTagBuilder assignTo(@Valid @NotNull Reference assignTo);
 
-  void submit() throws NessieNotFoundException, NessieConflictException;
+  void assign() throws NessieNotFoundException, NessieConflictException;
 }

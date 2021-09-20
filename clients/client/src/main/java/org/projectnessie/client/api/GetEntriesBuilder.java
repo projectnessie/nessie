@@ -27,5 +27,5 @@ public interface GetEntriesBuilder extends PagingBuilder<GetEntriesBuilder> {
 
   GetEntriesBuilder namespaceDepth(Integer namespaceDepth);
 
-  EntriesResponse submit() throws NessieNotFoundException;
+  EntriesResponse get() throws NessieNotFoundException;
 }

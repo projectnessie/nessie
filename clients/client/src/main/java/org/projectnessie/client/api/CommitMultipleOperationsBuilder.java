@@ -36,5 +36,5 @@ public interface CommitMultipleOperationsBuilder
 
   CommitMultipleOperationsBuilder operation(Operation operation);
 
-  Branch submit() throws NessieNotFoundException, NessieConflictException;
+  Branch commit() throws NessieNotFoundException, NessieConflictException;
 }

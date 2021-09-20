@@ -68,12 +68,12 @@ class ITDeltaLogBranches extends AbstractSparkTest {
   void closeClient() throws NessieNotFoundException, NessieConflictException {
     Reference ref = null;
     try {
-      ref = api.getReference().refName("test").submit();
+      ref = api.getReference().refName("test").get();
     } catch (NessieNotFoundException e) {
       // pass ignore
     }
     if (ref != null) {
-      api.deleteBranch().branch((Branch) ref).submit();
+      api.deleteBranch().branch((Branch) ref).delete();
     }
     try {
       api.close();
@@ -96,7 +96,7 @@ class ITDeltaLogBranches extends AbstractSparkTest {
     api.createReference()
         .sourceRefName(sourceRef.getName())
         .reference(Branch.of("test", sourceRef.getHash()))
-        .submit();
+        .create();
     // add some more data to main
     targetTable.write().format("delta").mode("append").save(tempPath.getAbsolutePath());
 
@@ -140,7 +140,7 @@ class ITDeltaLogBranches extends AbstractSparkTest {
 
     String tableName = tempPath.getAbsolutePath() + "/_delta_log";
     ContentsKey key = ContentsKey.of(tableName.split("/"));
-    Contents contents = api.getContents().key(key).refName("main").submit().get(key);
+    Contents contents = api.getContents().key(key).refName("main").get().get(key);
     Optional<DeltaLakeTable> table = contents.unwrap(DeltaLakeTable.class);
     Assertions.assertTrue(table.isPresent());
     Assertions.assertEquals(1, table.get().getCheckpointLocationHistory().size());

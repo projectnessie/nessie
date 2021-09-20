@@ -43,7 +43,7 @@ final class HttpCreateReference extends BaseHttpRequest implements CreateReferen
   }
 
   @Override
-  public Reference submit() throws NessieNotFoundException, NessieConflictException {
+  public Reference create() throws NessieNotFoundException, NessieConflictException {
     return client.getTreeApi().createReference(sourceRefName, reference);
   }
 }

@@ -54,7 +54,7 @@ class AbstractTestBasicOperations {
             .withUri("http://localhost:19121/api/v1")
             .build(NessieApiVersion.V_1, NessieApiV1.class);
     if (branch != null) {
-      api.createReference().reference(Branch.of(branch, null)).sourceRefName("main").submit();
+      api.createReference().reference(Branch.of(branch, null)).sourceRefName("main").create();
     }
   }
 
@@ -68,8 +68,8 @@ class AbstractTestBasicOperations {
       roles = {"admin", "user"})
   void testAdmin() throws NessieNotFoundException, NessieConflictException {
     getCatalog("testx");
-    Branch branch = (Branch) api.getReference().refName("testx").submit();
-    List<Entry> tables = api.getEntries().refName("testx").submit().getEntries();
+    Branch branch = (Branch) api.getReference().refName("testx").get();
+    List<Entry> tables = api.getEntries().refName("testx").get().getEntries();
     Assertions.assertTrue(tables.isEmpty());
     ContentsKey key = ContentsKey.of("x", "x");
     tryEndpointPass(
@@ -78,34 +78,34 @@ class AbstractTestBasicOperations {
                 .branch(branch)
                 .operation(Put.of(key, IcebergTable.of("foo", 42L, "cid-foo")))
                 .commitMeta(CommitMeta.fromMessage("empty message"))
-                .submit());
+                .commit());
 
     Assertions.assertTrue(
         api.getContents()
             .refName("testx")
             .key(key)
-            .submit()
+            .get()
             .get(key)
             .unwrap(IcebergTable.class)
             .isPresent());
 
-    Branch master = (Branch) api.getReference().refName("testx").submit();
+    Branch master = (Branch) api.getReference().refName("testx").get();
     Branch test = Branch.of("testy", master.getHash());
     tryEndpointPass(
-        () -> api.createReference().sourceRefName(master.getName()).reference(test).submit());
-    Branch test2 = (Branch) api.getReference().refName("testy").submit();
-    tryEndpointPass(() -> api.deleteBranch().branch(test2).submit());
+        () -> api.createReference().sourceRefName(master.getName()).reference(test).create());
+    Branch test2 = (Branch) api.getReference().refName("testy").get();
+    tryEndpointPass(() -> api.deleteBranch().branch(test2).delete());
     tryEndpointPass(
         () ->
             api.commitMultipleOperations()
                 .branch(master)
                 .operation(Delete.of(key))
                 .commitMeta(CommitMeta.fromMessage(""))
-                .submit());
-    assertThat(api.getContents().refName("testx").key(key).submit()).isEmpty();
+                .commit());
+    assertThat(api.getContents().refName("testx").key(key).get()).isEmpty();
     tryEndpointPass(
         () -> {
-          Branch b = (Branch) api.getReference().refName(branch.getName()).submit();
+          Branch b = (Branch) api.getReference().refName(branch.getName()).get();
           // Note: the initial version-store implementations just committed this operation, but it
           // should actually fail, because the operations of the 1st commit above and this commit
           // have conflicts.
@@ -113,7 +113,7 @@ class AbstractTestBasicOperations {
               .branch(b)
               .operation(Put.of(key, IcebergTable.of("bar", 42L, "cid-bar")))
               .commitMeta(CommitMeta.fromMessage(""))
-              .submit();
+              .commit();
         });
   }
 
@@ -121,7 +121,7 @@ class AbstractTestBasicOperations {
   @TestSecurity(authorizationEnabled = false)
   void testUserCleanup() throws NessieNotFoundException, NessieConflictException {
     getCatalog(null);
-    Branch r = (Branch) api.getReference().refName("testx").submit();
-    api.deleteBranch().branch(r).submit();
+    Branch r = (Branch) api.getReference().refName("testx").get();
+    api.deleteBranch().branch(r).delete();
   }
 }

@@ -55,7 +55,7 @@ final class HttpGetCommitLog extends BaseHttpOnReferenceRequest<GetCommitLogBuil
   }
 
   @Override
-  public LogResponse submit() throws NessieNotFoundException {
+  public LogResponse get() throws NessieNotFoundException {
     params.endHash(hashOnRef);
     return client.getTreeApi().getCommitLog(refName, params.build());
   }

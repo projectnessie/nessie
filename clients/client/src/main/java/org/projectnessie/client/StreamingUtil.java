@@ -57,7 +57,7 @@ public final class StreamingUtil {
             (ref1, pageSize, token) ->
                 builderWithPagedQuery(
                         api.getEntries(), ref1, hashOnRef, pageSize, token, queryExpression)
-                    .submit())
+                    .get())
         .generateStream(ref, maxRecords);
   }
 
@@ -86,7 +86,7 @@ public final class StreamingUtil {
                 builderWithPagedQuery(
                         api.getCommitLog(), reference, hashOnRef, pageSize, token, queryExpression)
                     .untilHash(untilHash)
-                    .submit())
+                    .get())
         .generateStream(ref, maxRecords);
   }
 

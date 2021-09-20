@@ -50,7 +50,7 @@ final class HttpGetContents extends BaseHttpOnReferenceRequest<GetContentsBuilde
   }
 
   @Override
-  public Map<ContentsKey, Contents> submit() throws NessieNotFoundException {
+  public Map<ContentsKey, Contents> get() throws NessieNotFoundException {
     MultiGetContentsResponse resp =
         client.getContentsApi().getMultipleContents(refName, hashOnRef, request.build());
     return resp.getContents().stream()

@@ -38,5 +38,5 @@ public interface TransplantCommitsBuilder extends OnBranchBuilder<TransplantComm
   TransplantCommitsBuilder hashesToTransplant(
       @NotNull @Size(min = 1) List<String> hashesToTransplant);
 
-  void submit() throws NessieNotFoundException, NessieConflictException;
+  void transplant() throws NessieNotFoundException, NessieConflictException;
 }
