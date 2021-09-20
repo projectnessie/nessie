@@ -91,7 +91,7 @@
     "url-loader": "4.1.1",
     "webpack": "4.46.0",
     "webpack-dev-server": "4.2.1",
-    "webpack-manifest-plugin": "2.2.0",
+    "webpack-manifest-plugin": "4.0.2",
     "workbox-webpack-plugin": "6.3.0",
     "yup": "^0.32.9"
   },
