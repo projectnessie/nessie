@@ -179,6 +179,9 @@
             ${project.build.directory}/test-sources
           </additionalClasspathElements>
           <failIfNoTests>true</failIfNoTests>
+          <jdkToolchain>
+            <version>11</version>
+          </jdkToolchain>
         </configuration>
         <executions>
           <execution>
