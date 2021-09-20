@@ -13,10 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.persist.inmem;
+package org.projectnessie.versioned.persist.tx;
 
-import org.projectnessie.versioned.persist.tests.AbstractTieredCommitsTest;
-import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
+import javax.annotation.Nullable;
+import org.projectnessie.versioned.persist.adapter.DatabaseConnectionConfig;
 
-@NessieExternalDatabase(InmemoryTestConnectionProviderSource.class)
-class TestTieredCommitsInmemory extends AbstractTieredCommitsTest {}
+public interface TxConnectionConfig extends DatabaseConnectionConfig {
+
+  @Nullable
+  String getCatalog();
+
+  TxConnectionConfig withCatalog(String catalog);
+
+  @Nullable
+  String getSchema();
+
+  TxConnectionConfig withSchema(String schema);
+}

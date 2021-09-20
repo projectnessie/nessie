@@ -23,56 +23,59 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import java.util.Objects;
 import org.bson.Document;
+import org.projectnessie.versioned.persist.adapter.DatabaseConnectionProvider;
 
-public class MongoDatabaseClient {
+public class MongoDatabaseClient implements DatabaseConnectionProvider<MongoClientConfig> {
 
   private static final String GLOBAL_POINTER = "global_pointer";
   private static final String GLOBAL_LOG = "global_log";
   private static final String COMMIT_LOG = "commit_log";
   private static final String KEY_LIST = "key_list";
 
-  private final MongoDatabaseAdapterConfig config;
+  private MongoClientConfig config;
   private MongoClient mongoClient;
   private MongoCollection<Document> globalPointers;
   private MongoCollection<Document> globalLog;
   private MongoCollection<Document> commitLog;
   private MongoCollection<Document> keyLists;
-  private int acquired;
 
-  protected MongoDatabaseClient(MongoDatabaseAdapterConfig config) {
+  protected MongoDatabaseClient() {}
+
+  @Override
+  public void configure(MongoClientConfig config) {
     this.config = config;
   }
 
-  synchronized void acquire() {
-    if (acquired++ > 0) {
-      return;
+  @Override
+  public void close() {
+    if (mongoClient != null) {
+      try {
+        mongoClient.close();
+      } finally {
+        mongoClient = null;
+      }
     }
-
-    ConnectionString cs =
-        new ConnectionString(
-            Objects.requireNonNull(config.getConnectionString(), "Connection string must be set"));
-    MongoClientSettings settings = MongoClientSettings.builder().applyConnectionString(cs).build();
-
-    mongoClient = MongoClients.create(settings);
-    MongoDatabase database =
-        mongoClient.getDatabase(
-            Objects.requireNonNull(config.getDatabaseName(), "Database name must be set"));
-    globalPointers = database.getCollection(GLOBAL_POINTER);
-    globalLog = database.getCollection(GLOBAL_LOG);
-    commitLog = database.getCollection(COMMIT_LOG);
-    keyLists = database.getCollection(KEY_LIST);
   }
 
-  synchronized void release() {
-    if (--acquired > 0) {
-      return;
+  @Override
+  public void initialize() {
+    if (mongoClient == null) {
+      ConnectionString cs =
+          new ConnectionString(
+              Objects.requireNonNull(
+                  config.getConnectionString(), "Connection string must be set"));
+      MongoClientSettings settings =
+          MongoClientSettings.builder().applyConnectionString(cs).build();
+
+      mongoClient = MongoClients.create(settings);
+      MongoDatabase database =
+          mongoClient.getDatabase(
+              Objects.requireNonNull(config.getDatabaseName(), "Database name must be set"));
+      globalPointers = database.getCollection(GLOBAL_POINTER);
+      globalLog = database.getCollection(GLOBAL_LOG);
+      commitLog = database.getCollection(COMMIT_LOG);
+      keyLists = database.getCollection(KEY_LIST);
     }
-
-    mongoClient.close();
-  }
-
-  synchronized int acquired() {
-    return acquired;
   }
 
   public MongoCollection<Document> getGlobalPointers() {

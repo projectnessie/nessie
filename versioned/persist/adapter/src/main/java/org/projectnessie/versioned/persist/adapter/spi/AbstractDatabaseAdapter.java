@@ -91,7 +91,7 @@ import org.projectnessie.versioned.persist.adapter.KeyWithType;
  *     For example, used to have one "borrowed" database connection per database-adapter operation.
  * @param <CONFIG> configuration interface type for the concrete implementation
  */
-public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends DatabaseAdapterConfig>
+public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends DatabaseAdapterConfig<?>>
     implements DatabaseAdapter {
 
   protected final CONFIG config;

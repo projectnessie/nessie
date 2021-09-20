@@ -18,49 +18,26 @@ package org.projectnessie.versioned.persist.tx.local;
 import io.agroal.api.configuration.AgroalConnectionFactoryConfiguration.TransactionIsolation;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
-import org.projectnessie.versioned.persist.tx.DefaultTxDatabaseAdapterConfig;
-import org.projectnessie.versioned.persist.tx.TxConnectionProvider;
-import org.projectnessie.versioned.persist.tx.TxDatabaseAdapterConfig;
+import org.projectnessie.versioned.persist.tx.TxConnectionConfig;
 
-/**
- * TX-database-adapter config interface.
- *
- * <p>See {@link DefaultTxDatabaseAdapterConfig} for the default, immutable-annotated type.
- */
-public interface LocalDatabaseAdapterConfig extends TxDatabaseAdapterConfig {
+/** TX-database-adapter config interface. */
+@Value.Immutable(lazyhash = true)
+public interface LocalTxConnectionConfig extends TxConnectionConfig {
 
-  @Override
-  @Value.Default
-  default TxConnectionProvider getConnectionProvider() {
-    return new LocalConnectionProvider();
-  }
-
-  /**
-   * JDBC URL, only used, if {@link #getConnectionProvider} returns {@code null}, only for
-   * non-production scenarios.
-   */
   @Nullable
   String getJdbcUrl();
 
-  LocalDatabaseAdapterConfig withJdbcUrl(String jdbcUrl);
+  LocalTxConnectionConfig withJdbcUrl(String jdbcUrl);
 
-  /**
-   * Database user, only used, if {@link #getConnectionProvider} returns {@code null}, only for
-   * non-production scenarios.
-   */
   @Nullable
   String getJdbcUser();
 
-  LocalDatabaseAdapterConfig withJdbcUser(String jdbcUser);
+  LocalTxConnectionConfig withJdbcUser(String jdbcUser);
 
-  /**
-   * Database password, only used, if {@link #getConnectionProvider} returns {@code null}, only for
-   * non-production scenarios.
-   */
   @Nullable
   String getJdbcPass();
 
-  LocalDatabaseAdapterConfig withJdbcPass(String jdbcPass);
+  LocalTxConnectionConfig withJdbcPass(String jdbcPass);
 
   /** For "unmanaged" connection-pools: the JDBC pool's minimum size, defaults to {@code 1}. */
   @Value.Default
@@ -68,7 +45,7 @@ public interface LocalDatabaseAdapterConfig extends TxDatabaseAdapterConfig {
     return 1;
   }
 
-  LocalDatabaseAdapterConfig withPoolMinSize(int poolMinSize);
+  LocalTxConnectionConfig withPoolMinSize(int poolMinSize);
 
   /** For "unmanaged" connection-pools: the JDBC pool's maximum size, defaults to {@code 10}. */
   @Value.Default
@@ -76,7 +53,7 @@ public interface LocalDatabaseAdapterConfig extends TxDatabaseAdapterConfig {
     return 10;
   }
 
-  LocalDatabaseAdapterConfig withPoolMaxSize(int poolMaxSize);
+  LocalTxConnectionConfig withPoolMaxSize(int poolMaxSize);
 
   /** For "unmanaged" connection-pools: the JDBC pool's initial size, defaults to {@code 1}. */
   @Value.Default
@@ -84,7 +61,7 @@ public interface LocalDatabaseAdapterConfig extends TxDatabaseAdapterConfig {
     return 1;
   }
 
-  LocalDatabaseAdapterConfig withPoolInitialSize(int poolInitialSize);
+  LocalTxConnectionConfig withPoolInitialSize(int poolInitialSize);
 
   /**
    * For "unmanaged" connection-pools: the JDBC pool's connection acquisition timeout in seconds,
@@ -95,7 +72,7 @@ public interface LocalDatabaseAdapterConfig extends TxDatabaseAdapterConfig {
     return 30;
   }
 
-  LocalDatabaseAdapterConfig withPoolAcquisitionTimeoutSeconds(int poolAcquisitionTimeoutSeconds);
+  LocalTxConnectionConfig withPoolAcquisitionTimeoutSeconds(int poolAcquisitionTimeoutSeconds);
 
   /**
    * For "unmanaged" connection-pools: the JDBC pool's connection max lifetime in minutes, defaults
@@ -106,7 +83,7 @@ public interface LocalDatabaseAdapterConfig extends TxDatabaseAdapterConfig {
     return 5;
   }
 
-  LocalDatabaseAdapterConfig withPoolConnectionLifetimeMinutes(int poolConnectionLifetimeMinutes);
+  LocalTxConnectionConfig withPoolConnectionLifetimeMinutes(int poolConnectionLifetimeMinutes);
 
   /**
    * For "unmanaged" connection-pools: the JDBC pool's transaction isolation, one of the enums from
@@ -125,5 +102,5 @@ public interface LocalDatabaseAdapterConfig extends TxDatabaseAdapterConfig {
     return TransactionIsolation.READ_COMMITTED.name();
   }
 
-  LocalDatabaseAdapterConfig withPoolTransactionIsolation(String poolTransactionIsolation);
+  LocalTxConnectionConfig withPoolTransactionIsolation(String poolTransactionIsolation);
 }

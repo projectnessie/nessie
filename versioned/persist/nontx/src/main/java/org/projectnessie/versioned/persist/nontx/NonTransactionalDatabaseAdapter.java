@@ -87,7 +87,7 @@ import org.projectnessie.versioned.persist.serialize.ProtoSerialization;
  *       content-keys, the commit-metadata and a (list of) its parents.
  * </ul>
  */
-public abstract class NonTransactionalDatabaseAdapter<CONFIG extends DatabaseAdapterConfig>
+public abstract class NonTransactionalDatabaseAdapter<CONFIG extends DatabaseAdapterConfig<?>>
     extends AbstractDatabaseAdapter<NonTransactionalOperationContext, CONFIG> {
 
   protected NonTransactionalDatabaseAdapter(CONFIG config) {
@@ -605,7 +605,6 @@ public abstract class NonTransactionalDatabaseAdapter<CONFIG extends DatabaseAda
   protected abstract void unsafeWriteGlobalPointer(
       NonTransactionalOperationContext ctx, GlobalStatePointer pointer);
 
-  @SuppressWarnings("UnstableApiUsage")
   protected Hash writeGlobalCommit(
       NonTransactionalOperationContext ctx,
       long timeInMicros,

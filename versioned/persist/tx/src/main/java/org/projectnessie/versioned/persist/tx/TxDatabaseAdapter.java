@@ -43,6 +43,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -89,22 +90,21 @@ public abstract class TxDatabaseAdapter
   /** Value for {@link SqlStatements#TABLE_NAMED_REFERENCES}.{@code ref_type} for a tag. */
   protected static final String REF_TYPE_TAG = "t";
 
-  private final TxConnectionProvider db;
+  private final TxConnectionProvider<?> db;
 
   public TxDatabaseAdapter(TxDatabaseAdapterConfig config) {
     super(config);
 
     // get the externally configured TxConnectionProvider
-    TxConnectionProvider db = config.getConnectionProvider();
-    if (db == null) {
-      throw new NullPointerException(
-          "TxDatabaseAdapter requires a non-null TxConnectionProvider via TxDatabaseAdapterConfig.getConnectionProvider()");
-    }
+    TxConnectionProvider<?> db = config.getConnectionProvider();
 
-    db.configure(config);
-    db.setupDatabase(this, config);
+    Objects.requireNonNull(
+        db,
+        "TxDatabaseAdapter requires a non-null TxConnectionProvider via TxDatabaseAdapterConfig.getConnectionProvider()");
 
     this.db = db;
+
+    db.setupDatabase(this);
   }
 
   @Override
@@ -423,13 +423,6 @@ public abstract class TxDatabaseAdapter
     }
 
     initializeRepo(defaultBranchName);
-  }
-
-  @Override
-  public void close() throws Exception {
-    if (db != null) {
-      db.close();
-    }
   }
 
   @Override

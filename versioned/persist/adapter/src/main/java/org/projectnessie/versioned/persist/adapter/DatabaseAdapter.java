@@ -49,7 +49,7 @@ import org.projectnessie.versioned.WithHash;
  *
  * <p>All returned {@link Stream}s must be closed.
  */
-public interface DatabaseAdapter extends AutoCloseable {
+public interface DatabaseAdapter {
 
   /** Ensures that mandatory data is present in the repository, does not change an existing repo. */
   void initializeRepo(String defaultBranchName);

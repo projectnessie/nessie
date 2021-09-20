@@ -15,8 +15,8 @@
  */
 package org.projectnessie.versioned.persist.inmem;
 
-import org.projectnessie.versioned.persist.tests.AbstractTieredCommitsTest;
-import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
+import org.immutables.value.Value;
+import org.projectnessie.versioned.persist.adapter.DatabaseConnectionConfig;
 
-@NessieExternalDatabase(InmemoryTestConnectionProviderSource.class)
-class TestTieredCommitsInmemory extends AbstractTieredCommitsTest {}
+@Value.Immutable(lazyhash = true)
+public interface InmemoryConfig extends DatabaseConnectionConfig {}

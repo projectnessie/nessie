@@ -15,28 +15,8 @@
  */
 package org.projectnessie.versioned.persist.rocks;
 
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 
 @Value.Immutable(lazyhash = true)
-public interface RocksDatabaseAdapterConfig extends DatabaseAdapterConfig {
-
-  /**
-   * Provides the {@link org.rocksdb.RocksDB} instance to {@link RocksDatabaseAdapter}, must be used
-   * in production scenarios.
-   */
-  @Nullable
-  RocksDbInstance getDbInstance();
-
-  RocksDatabaseAdapterConfig withDbInstance(RocksDbInstance dbInstance);
-
-  /**
-   * Database path for Rocks-DB, only used, if {@link #getDbInstance} returns {@code null}, only for
-   * non-production scenarios.
-   */
-  @Nullable
-  String getDbPath();
-
-  RocksDatabaseAdapterConfig withDbPath(String dbPath);
-}
+public interface RocksDatabaseAdapterConfig extends DatabaseAdapterConfig<RocksDbInstance> {}

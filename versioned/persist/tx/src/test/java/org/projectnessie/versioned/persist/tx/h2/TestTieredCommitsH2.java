@@ -15,23 +15,10 @@
  */
 package org.projectnessie.versioned.persist.tx.h2;
 
-import org.junit.jupiter.api.BeforeAll;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.tests.AbstractTieredCommitsTest;
-import org.projectnessie.versioned.persist.tx.local.ImmutableDefaultLocalDatabaseAdapterConfig;
-import org.projectnessie.versioned.persist.tx.local.LocalDatabaseAdapterConfig;
+import org.projectnessie.versioned.persist.tests.extension.NessieAdapterName;
+import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
-public class TestTieredCommitsH2 extends AbstractTieredCommitsTest {
-
-  @BeforeAll
-  static void configureAdapter() {
-    createAdapter(
-        DatabaseAdapterFactory.<LocalDatabaseAdapterConfig>loadFactoryByName("H2")
-            .newBuilder()
-            .withConfig(
-                ImmutableDefaultLocalDatabaseAdapterConfig.builder()
-                    .jdbcUrl("jdbc:h2:mem:nessie")
-                    .build()),
-        c -> c);
-  }
-}
+@NessieAdapterName("H2")
+@NessieExternalDatabase(H2TestConnectionProviderSource.class)
+class TestTieredCommitsH2 extends AbstractTieredCommitsTest {}

@@ -24,6 +24,7 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.function.Function;
@@ -63,26 +64,13 @@ public class RocksDatabaseAdapter
     this.globalPointerKey = ByteString.copyFromUtf8(config.getKeyPrefix()).toByteArray();
 
     // get the externally configured RocksDbInstance
-    RocksDbInstance dbInstance = config.getDbInstance();
+    RocksDbInstance dbInstance = config.getConnectionProvider();
 
-    if (dbInstance == null) {
-      // Create a RocksDbInstance, if none has been configured externally. This is mostly used
-      // for tests and benchmarks.
-      dbInstance = new RocksDbInstance();
-      dbInstance.setDbPath(config.getDbPath());
-    }
+    Objects.requireNonNull(
+        dbInstance, "Requires a non-null RocksDbInstance from RocksDatabaseAdapterConfig");
 
     this.dbInstance = dbInstance;
-    try {
-      db = dbInstance.start();
-    } catch (RocksDBException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  @Override
-  public void close() {
-    dbInstance.close();
+    this.db = dbInstance.getDb();
   }
 
   private byte[] dbKey(Hash hash) {

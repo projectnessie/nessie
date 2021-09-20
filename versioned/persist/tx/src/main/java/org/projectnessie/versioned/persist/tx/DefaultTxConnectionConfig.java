@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.persist.inmem;
+package org.projectnessie.versioned.persist.tx;
 
-import org.projectnessie.versioned.persist.tests.AbstractTieredCommitsTest;
-import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
+import org.immutables.value.Value;
 
-@NessieExternalDatabase(InmemoryTestConnectionProviderSource.class)
-class TestTieredCommitsInmemory extends AbstractTieredCommitsTest {}
+@Value.Immutable(lazyhash = true)
+public interface DefaultTxConnectionConfig extends TxConnectionConfig {}

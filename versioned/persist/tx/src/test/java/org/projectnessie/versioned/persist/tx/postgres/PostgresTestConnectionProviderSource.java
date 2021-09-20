@@ -13,10 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.persist.inmem;
+package org.projectnessie.versioned.persist.tx.postgres;
 
-import org.projectnessie.versioned.persist.tests.AbstractTieredCommitsTest;
-import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
+import org.testcontainers.containers.CockroachContainer;
+import org.testcontainers.containers.JdbcDatabaseContainer;
 
-@NessieExternalDatabase(InmemoryTestConnectionProviderSource.class)
-class TestTieredCommitsInmemory extends AbstractTieredCommitsTest {}
+public class PostgresTestConnectionProviderSource extends ContainerTestConnectionProviderSource {
+
+  @Override
+  protected JdbcDatabaseContainer<?> createContainer() {
+    String version = System.getProperty("it.nessie.container.cockroach.tag", "v21.1.6");
+    return new CockroachContainer("cockroachdb/cockroach:" + version);
+  }
+}
