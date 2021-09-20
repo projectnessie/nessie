@@ -3,7 +3,7 @@
 !!! note
     Detailed steps on how to set up Pyspark + Delta Lake + Nessie with Python is available on [Binder](https://mybinder.org/v2/gh/projectnessie/nessie-demos/main?filepath=notebooks/nessie-delta-demo-nba.ipynb).
 
-To access Nessie from a spark cluster make sure the `spark.jars` spark option is set to include the [Spark 3](https://repo.maven.apache.org/maven2/org/projectnessie/nessie-deltalake/{{ versions.java}}/nessie-deltalake-{{ versions.java}}.jar)
+To access Nessie from a spark cluster make sure the `spark.jars` spark option is set to include the [Nessie Deltalake Client for Spark 3](https://repo.maven.apache.org/maven2/org/projectnessie/nessie-deltalake/{{ versions.java}}/nessie-deltalake-{{ versions.java}}.jar)
 jar. These jars contain all Nessie **and** Delta Lake libraries required for operation.
 
 !!! note
@@ -91,12 +91,7 @@ Finally, note we have explicitly enabled Delta's SQL extensions which enable Del
 
 ### Writing
 
-Spark support is constantly evolving and the differences in Spark3 vs Spark2.4 is considerable. See the
-[delta](https://docs.delta.io/latest/delta-batch.html) docs for an up to date support table.
-
-#### Spark2
-
-Spark2.4 supports reads, appends, overwrites in Delta via data frames. Spark 3 additionally supports SQL syntax.
+Spark 3 supports reads, appends, overwrites in Delta via data frames as well as SQL syntax.
 Nessie tables in delta can be written via the Nessi enabled Delta client. The Delta writer allows for either `overwrite`
 or `append` mode in a standard `spark.write`.
 
@@ -158,7 +153,7 @@ to write to a specific branch without changing context the following should be u
 
 We have to manually change the `hadoopConfiguration` for the `SparkContext` for a Delta table to be initialised with the
 correct reference. This will change in the near future when it will be possible to use the same `branch@ref` syntax as
-[Iceberg](/tools/spark/#writing) inside of delta. Currently it isn't possible to change the ref from SQL directly. This
+[Iceberg](/tools/iceberg/spark/#writing) inside of delta. Currently it isn't possible to change the ref from SQL directly. This
 should be fixed in an upcomming release.
 
 !!! note
@@ -168,8 +163,7 @@ should be fixed in an upcomming release.
 
 ### Reading
 
-Reading is similar between Spark2 and Spark3. We will look at both versions together in this section. To
-read a Nessie table in Delta Lake simply:
+To read a Nessie table in Delta Lake simply:
 
 === "Java"
     ``` java
