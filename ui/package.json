@@ -78,7 +78,7 @@
     "react-refresh": "^0.10.0",
     "react-router-dom": "^5.3.0",
     "replace-in-file": "^6.2.0",
-    "resolve": "1.18.1",
+    "resolve": "1.20.0",
     "resolve-url-loader": "^3.1.2",
     "rxjs": "^7.3.0",
     "sass-loader": "^10.0.5",
