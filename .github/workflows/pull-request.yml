@@ -1,8 +1,25 @@
+# Copyright (C) 2020 Dremio
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+# Projectnessie GitHub Pull-Request / Default CI
+
 name: PR Build Check
 
 on:
   pull_request:
-    types: [labeled, unlabeled, opened, synchronize, reopened]
+    types: [opened, synchronize, reopened]
 # NOTE: using paths-ignore here doesn't play well with "Require status checks to pass before merging"
 # due to https://github.community/t/feature-request-conditional-required-checks/16761
 #    paths-ignore:
@@ -20,8 +37,6 @@ jobs:
   java:
     name: Java/Maven
     runs-on: ubuntu-latest
-    outputs:
-      CI_WITH_JACKSON: ${{ steps.ci_options.outputs.CI_WITH_JACKSON }}
 
     steps:
     - uses: actions/checkout@v2
@@ -30,22 +45,11 @@ jobs:
     - name: Setup Java, Maven, Gradle
       uses: ./.github/actions/dev-tool-java
 
-    - name: Build/test options
-      id: ci_options
-      run: |
-        echo ::set-output name=CI_WITH_NATIVE::$(jq 'any(.pull_request.labels[]; .name == "pr-native")' < $GITHUB_EVENT_PATH)
-        echo ::set-output name=CI_WITH_JACKSON::$(jq 'any(.pull_request.labels[]; .name == "pr-jackson")' < $GITHUB_EVENT_PATH)
-
     - name: Build with Maven
       env:
         SPARK_LOCAL_IP: localhost
       run: |
         ./mvnw -B install javadoc:javadoc-no-fork --file pom.xml -Pcode-coverage -Dtest.log.level=WARN
-    - name: Build with Maven / Native tests
-      if: ${{ steps.ci_options.outputs.CI_WITH_NATIVE == 'true' }}
-      run: |
-        # No code-coverage here
-        ./mvnw -B install javadoc:javadoc-no-fork --file pom.xml -Pnative -Dtest.log.level=WARN -pl :nessie-quarkus -pl :nessie-lambda -Dquarkus.native.native-image-xmx=6g
 
     - name: Build with Gradle
       run: ./gradlew --rerun-tasks --no-daemon --info build
@@ -53,31 +57,6 @@ jobs:
 
     - name: Capture Results
       uses: ./.github/actions/ci-results
-
-  jackson-tests:
-    name: Jackson Integration Tests
-    needs: java
-    if: ${{ needs.java.outputs.CI_WITH_JACKSON == 'true' }}
-    runs-on: ubuntu-latest
-    strategy:
-      max-parallel: 4
-      # note the big include entry in matrix is used to ensure we get human readable names for the jobs
-      matrix:
-        include:
-          - jackson-version: 2.6.7
-            target-library: Spark 2.4.4
-            java-version: 11
-          - jackson-version: 2.10.0
-            target-library: Spark 3.0.1
-            java-version: 11
-    steps:
-      - uses: actions/checkout@v2
-      - name: Setup Java, Maven, Gradle
-        uses: ./.github/actions/dev-tool-java
-        with:
-          java-version: ${{ matrix.java-version }}
-      - name: Jackson Integration Tests ${{ matrix.target-library }}
-        run: mvn verify -pl :nessie-client -am -Pjackson-tests -Djackson.test.version=${{ matrix.jackson-version }} -Dtest.log.level=WARN
 
   python:
     name: Python
