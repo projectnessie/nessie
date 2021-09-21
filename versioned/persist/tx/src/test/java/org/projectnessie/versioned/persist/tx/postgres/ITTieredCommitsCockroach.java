@@ -21,6 +21,7 @@ import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterName;
 import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
 @EnabledIfSystemProperty(named = "it.nessie.dbs", matches = ".*cockroach.*")
-@NessieDbAdapterName("PostgreSQL")
+// Cockroach is PostgreSQL-compatible
+@NessieDbAdapterName(PostgresDatabaseAdapterFactory.NAME)
 @NessieExternalDatabase(CockroachTestConnectionProviderSource.class)
 class ITTieredCommitsCockroach extends AbstractTieredCommitsTest {}

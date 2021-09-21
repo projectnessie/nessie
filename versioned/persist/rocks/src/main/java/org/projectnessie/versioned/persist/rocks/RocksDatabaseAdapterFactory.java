@@ -21,9 +21,11 @@ import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
 public class RocksDatabaseAdapterFactory
     implements DatabaseAdapterFactory<RocksDatabaseAdapterConfig> {
 
+  public static final String NAME = "RocksDB";
+
   @Override
   public String getName() {
-    return "RocksDB";
+    return NAME;
   }
 
   @Override

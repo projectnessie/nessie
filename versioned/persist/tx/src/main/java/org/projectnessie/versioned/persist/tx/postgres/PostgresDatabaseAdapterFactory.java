@@ -23,9 +23,11 @@ import org.projectnessie.versioned.persist.tx.TxDatabaseAdapterConfig;
 public class PostgresDatabaseAdapterFactory
     implements DatabaseAdapterFactory<TxDatabaseAdapterConfig> {
 
+  public static final String NAME = "PostgreSQL";
+
   @Override
   public String getName() {
-    return "PostgreSQL";
+    return NAME;
   }
 
   @Override

@@ -21,9 +21,11 @@ import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
 public class InmemoryDatabaseAdapterFactory
     implements DatabaseAdapterFactory<InmemoryDatabaseAdapterConfig> {
 
+  public static final String NAME = "In-Memory";
+
   @Override
   public String getName() {
-    return "In-Memory";
+    return NAME;
   }
 
   @Override
