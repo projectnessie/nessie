@@ -20,6 +20,7 @@ import static org.projectnessie.model.Operation.Put;
 
 import java.security.AccessControlException;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
@@ -100,24 +101,21 @@ public class TreeResourceWithAuthorizationChecks extends TreeResource {
   @Override
   public Reference createReference(@Nullable String sourceRefName, Reference reference)
       throws NessieNotFoundException, NessieConflictException {
-    if (sourceRefName == null) {
-      sourceRefName = getConfig().getDefaultBranch();
-    }
-
     if (reference instanceof Branch) {
       getAccessChecker()
           .canCreateReference(createAccessContext(), BranchName.of(reference.getName()));
     } else if (reference instanceof Tag) {
       getAccessChecker().canCreateReference(createAccessContext(), TagName.of(reference.getName()));
-    } else {
-      throw new IllegalArgumentException("Only tag and branch references can be created.");
     }
 
-    checkHashOnRef(sourceRefName, reference.getHash());
+    namedRefWithHashOrThrow(sourceRefName, reference.getHash());
     return super.createReference(sourceRefName, reference);
   }
 
-  protected void checkHashOnRef(String refName, String hash) throws NessieNotFoundException {
+  protected void checkHashOnRef(@Nullable String refName, @Nullable String hash)
+      throws NessieNotFoundException {
+    System.out.println("refName = " + refName);
+    System.out.println("hash = " + hash);
     if (refName == null) {
       refName = getConfig().getDefaultBranch();
     }
@@ -135,8 +133,12 @@ public class TreeResourceWithAuthorizationChecks extends TreeResource {
         // Special case, mostly for tests:
         // When the default branch is deleted, we cannot verify whether the branch already exists
         // (it does not, so the check would fail).
-        if (refName.equals(getConfig().getDefaultBranch()) && hash == null
-            || hash.equals(getStore().noAncestorHash().asString())) {
+        System.out.println("EX refName = " + refName);
+        System.out.println("EX hash = " + hash);
+        System.out.println("getStore().noAncestorHash() = " + getStore().noAncestorHash());
+
+        if (Objects.equals(getConfig().getDefaultBranch(), refName) && hash == null
+            || Objects.equals(getStore().noAncestorHash().asString(), hash)) {
           // prevent the "hash-on-ref" check, but still do the "can-view" check
           hash = null;
           return;
@@ -156,7 +158,7 @@ public class TreeResourceWithAuthorizationChecks extends TreeResource {
   @Override
   protected void assignReference(NamedRef ref, String oldHash, Reference assignTo)
       throws NessieNotFoundException, NessieConflictException {
-    checkHashOnRef(assignTo.getName(), assignTo.getHash());
+    namedRefWithHashOrThrow(assignTo.getName(), assignTo.getHash());
 
     getAccessChecker().canAssignRefToHash(createAccessContext(), ref);
     super.assignReference(ref, oldHash, assignTo);
@@ -199,7 +201,8 @@ public class TreeResourceWithAuthorizationChecks extends TreeResource {
     if (transplant.getHashesToTransplant().isEmpty()) {
       throw new IllegalArgumentException("No hashes given to transplant.");
     }
-    checkHashOnRef(
+
+    namedRefWithHashOrThrow(
         transplant.getFromRefName(),
         transplant.getHashesToTransplant().get(transplant.getHashesToTransplant().size() - 1));
     getAccessChecker()
