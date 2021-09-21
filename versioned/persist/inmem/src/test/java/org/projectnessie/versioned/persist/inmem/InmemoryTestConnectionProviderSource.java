@@ -36,6 +36,12 @@ public class InmemoryTestConnectionProviderSource
 
   @Override
   public void stop() {
-    store = null;
+    try {
+      if (store != null) {
+        store.close();
+      }
+    } finally {
+      store = null;
+    }
   }
 }

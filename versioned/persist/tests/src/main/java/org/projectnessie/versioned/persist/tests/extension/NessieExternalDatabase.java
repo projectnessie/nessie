@@ -23,5 +23,5 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE, ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface NessieExternalDatabase {
-  Class<? extends TestConnectionProviderSource> value();
+  Class<? extends TestConnectionProviderSource<?>> value();
 }

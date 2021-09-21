@@ -45,17 +45,17 @@ import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.tests.extension.DatabaseAdapterExtension;
-import org.projectnessie.versioned.persist.tests.extension.NessieAdapter;
-import org.projectnessie.versioned.persist.tests.extension.NessieAdapterConfigItem;
+import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapter;
+import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterConfigItem;
 
 /**
  * Tests that verify {@link DatabaseAdapter} implementations. A few tests have similar pendants via
  * the tests against the {@code VersionStore}.
  */
 @ExtendWith(DatabaseAdapterExtension.class)
-@NessieAdapterConfigItem(name = "max.key.list.size", value = "2048")
+@NessieDbAdapterConfigItem(name = "max.key.list.size", value = "2048")
 public abstract class AbstractTieredCommitsTest {
-  @NessieAdapter protected static DatabaseAdapter databaseAdapter;
+  @NessieDbAdapter protected static DatabaseAdapter databaseAdapter;
 
   @Nested
   public class GlobalStates extends AbstractGlobalStates {
@@ -378,18 +378,22 @@ public abstract class AbstractTieredCommitsTest {
 
   @Test
   void keyPrefixBasic(
-      @NessieAdapter @NessieAdapterConfigItem(name = "key.prefix", value = "foo")
+      @NessieDbAdapter @NessieDbAdapterConfigItem(name = "key.prefix", value = "foo")
           DatabaseAdapter foo,
-      @NessieAdapter @NessieAdapterConfigItem(name = "key.prefix", value = "bar")
+      @NessieDbAdapter @NessieDbAdapterConfigItem(name = "key.prefix", value = "bar")
           DatabaseAdapter bar)
       throws Exception {
 
     BranchName main = BranchName.of("main");
+    BranchName fooBranchName = BranchName.of("foo-branch");
+    BranchName barBranchName = BranchName.of("bar-branch");
+    ByteString fooCommitMeta = ByteString.copyFromUtf8("meta-foo");
+    ByteString barCommitMeta = ByteString.copyFromUtf8("meta-bar");
 
     foo.commit(
         ImmutableCommitAttempt.builder()
             .commitToBranch(main)
-            .commitMetaSerialized(ByteString.copyFromUtf8("meta-foo"))
+            .commitMetaSerialized(fooCommitMeta)
             .addPuts(
                 KeyWithBytes.of(
                     Key.of("foo"), ContentsId.of("foo"), (byte) 0, ByteString.copyFromUtf8("foo")))
@@ -397,7 +401,7 @@ public abstract class AbstractTieredCommitsTest {
     bar.commit(
         ImmutableCommitAttempt.builder()
             .commitToBranch(main)
-            .commitMetaSerialized(ByteString.copyFromUtf8("meta-bar"))
+            .commitMetaSerialized(barCommitMeta)
             .addPuts(
                 KeyWithBytes.of(
                     Key.of("bar"), ContentsId.of("bar"), (byte) 0, ByteString.copyFromUtf8("bar")))
@@ -406,8 +410,8 @@ public abstract class AbstractTieredCommitsTest {
     Hash fooMain = foo.toHash(main);
     Hash barMain = bar.toHash(main);
 
-    Hash fooBranch = foo.create(BranchName.of("foo-branch"), fooMain);
-    Hash barBranch = bar.create(BranchName.of("bar-branch"), barMain);
+    Hash fooBranch = foo.create(fooBranchName, fooMain);
+    Hash barBranch = bar.create(barBranchName, barMain);
 
     assertThat(fooMain).isNotEqualTo(barMain).isEqualTo(fooBranch);
     assertThat(barMain).isNotEqualTo(fooMain).isEqualTo(barBranch);
@@ -415,10 +419,10 @@ public abstract class AbstractTieredCommitsTest {
     // Verify that key-prefix "foo" only sees "its" main-branch and foo-branch
     assertThat(foo.namedRefs())
         .containsExactlyInAnyOrder(
-            WithHash.of(fooMain, main), WithHash.of(fooBranch, BranchName.of("foo-branch")));
+            WithHash.of(fooMain, main), WithHash.of(fooBranch, fooBranchName));
     assertThat(bar.namedRefs())
         .containsExactlyInAnyOrder(
-            WithHash.of(barMain, main), WithHash.of(barBranch, BranchName.of("bar-branch")));
+            WithHash.of(barMain, main), WithHash.of(barBranch, barBranchName));
 
     assertThatThrownBy(() -> foo.commitLog(barBranch))
         .isInstanceOf(ReferenceNotFoundException.class);
@@ -428,12 +432,12 @@ public abstract class AbstractTieredCommitsTest {
     try (Stream<CommitLogEntry> log = foo.commitLog(fooBranch)) {
       assertThat(log.collect(Collectors.toList()))
           .extracting(CommitLogEntry::getMetadata)
-          .containsExactlyInAnyOrder(ByteString.copyFromUtf8("meta-foo"));
+          .containsExactlyInAnyOrder(fooCommitMeta);
     }
     try (Stream<CommitLogEntry> log = bar.commitLog(barBranch)) {
       assertThat(log.collect(Collectors.toList()))
           .extracting(CommitLogEntry::getMetadata)
-          .containsExactlyInAnyOrder(ByteString.copyFromUtf8("meta-bar"));
+          .containsExactlyInAnyOrder(barCommitMeta);
     }
   }
 }

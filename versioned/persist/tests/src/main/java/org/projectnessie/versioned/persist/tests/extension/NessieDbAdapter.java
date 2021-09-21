@@ -20,15 +20,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/**
- * The name of the database-adapter to use in the annotated test class.
- *
- * <p>Can be omitted, if there is only one {@link
- * org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory} implementation on the
- * classpath.
- */
-@Target({ElementType.TYPE, ElementType.FIELD, ElementType.PARAMETER})
+@Target({ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface NessieAdapterName {
-  String value();
-}
+public @interface NessieDbAdapter {}

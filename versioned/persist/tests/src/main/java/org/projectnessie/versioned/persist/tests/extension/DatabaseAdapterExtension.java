@@ -19,6 +19,7 @@ import static org.junit.platform.commons.util.AnnotationUtils.findAnnotatedField
 import static org.junit.platform.commons.util.AnnotationUtils.findRepeatableAnnotations;
 import static org.junit.platform.commons.util.ReflectionUtils.isPrivate;
 import static org.junit.platform.commons.util.ReflectionUtils.makeAccessible;
+import static org.projectnessie.versioned.persist.tests.SystemPropertiesConfigurer.CONFIG_NAME_PREFIX;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
@@ -57,11 +58,11 @@ public class DatabaseAdapterExtension
   private static final Namespace NAMESPACE = Namespace.create(DatabaseAdapterExtension.class);
   private static final String KEY_STATICS = "static-adapters";
 
-  private static class StaticAdapters implements CloseableResource {
+  private static class ClassDbAdapters implements CloseableResource {
     final List<DatabaseAdapter> adapters = new ArrayList<>();
     TestConnectionProviderSource<?> connectionProvider;
 
-    StaticAdapters(Class<?> testClass) {
+    ClassDbAdapters(Class<?> testClass) {
       NessieExternalDatabase external = testClass.getAnnotation(NessieExternalDatabase.class);
       TestConnectionProviderSource<?> connectionProvider = null;
       if (external != null) {
@@ -99,21 +100,21 @@ public class DatabaseAdapterExtension
   public void beforeAll(ExtensionContext context) {
     Class<?> testClass = context.getRequiredTestClass();
 
-    StaticAdapters staticAdapters =
+    ClassDbAdapters classDbAdapters =
         context
             .getStore(NAMESPACE)
             .getOrComputeIfAbsent(
-                KEY_STATICS, k -> new StaticAdapters(testClass), StaticAdapters.class);
+                KEY_STATICS, k -> new ClassDbAdapters(testClass), ClassDbAdapters.class);
 
-    findAnnotatedFields(testClass, NessieAdapter.class, ReflectionUtils::isStatic)
-        .forEach(field -> injectField(context, field, staticAdapters::newDatabaseAdapter));
+    findAnnotatedFields(testClass, NessieDbAdapter.class, ReflectionUtils::isStatic)
+        .forEach(field -> injectField(context, field, classDbAdapters::newDatabaseAdapter));
   }
 
   @Override
   public void beforeEach(ExtensionContext context) {
     context
         .getStore(NAMESPACE)
-        .get(KEY_STATICS, StaticAdapters.class)
+        .get(KEY_STATICS, ClassDbAdapters.class)
         .adapters
         .forEach(DatabaseAdapterExtension::reinit);
     context
@@ -122,7 +123,7 @@ public class DatabaseAdapterExtension
         .forEach(
             instance ->
                 findAnnotatedFields(
-                        instance.getClass(), NessieAdapter.class, ReflectionUtils::isNotStatic)
+                        instance.getClass(), NessieDbAdapter.class, ReflectionUtils::isNotStatic)
                     .forEach(
                         field -> injectField(context, field, DatabaseAdapterExtension::reinit)));
   }
@@ -151,7 +152,7 @@ public class DatabaseAdapterExtension
   public boolean supportsParameter(
       ParameterContext parameterContext, ExtensionContext extensionContext)
       throws ParameterResolutionException {
-    return parameterContext.isAnnotated(NessieAdapter.class);
+    return parameterContext.isAnnotated(NessieDbAdapter.class);
   }
 
   @Override
@@ -192,8 +193,8 @@ public class DatabaseAdapterExtension
   static DatabaseAdapter createAdapterResource(
       ExtensionContext context, ParameterContext parameterContext) {
     DatabaseAdapterFactory<?> factory =
-        findAnnotation(context, parameterContext, NessieAdapterName.class)
-            .map(NessieAdapterName::value)
+        findAnnotation(context, parameterContext, NessieDbAdapterName.class)
+            .map(NessieDbAdapterName::value)
             .map(DatabaseAdapterFactory::loadFactoryByName)
             .orElseGet(() -> DatabaseAdapterFactory.loadFactory(x -> true));
 
@@ -204,16 +205,16 @@ public class DatabaseAdapterExtension
                 SystemPropertiesConfigurer.configureFromProperties(
                     c,
                     property -> {
-                      List<NessieAdapterConfigItem> configs = new ArrayList<>();
+                      List<NessieDbAdapterConfigItem> configs = new ArrayList<>();
                       if (parameterContext != null) {
                         configs.addAll(
                             parameterContext.findRepeatableAnnotations(
-                                NessieAdapterConfigItem.class));
+                                NessieDbAdapterConfigItem.class));
                       }
                       Consumer<AnnotatedElement> collector =
                           m ->
                               configs.addAll(
-                                  findRepeatableAnnotations(m, NessieAdapterConfigItem.class));
+                                  findRepeatableAnnotations(m, NessieDbAdapterConfigItem.class));
                       context.getTestMethod().ifPresent(collector);
                       context
                           .getTestClass()
@@ -225,9 +226,9 @@ public class DatabaseAdapterExtension
                               });
 
                       return configs.stream()
-                          .filter(n -> ("nessie.store." + n.name()).equals(property))
+                          .filter(n -> (CONFIG_NAME_PREFIX + n.name()).equals(property))
                           .findFirst()
-                          .map(NessieAdapterConfigItem::value)
+                          .map(NessieDbAdapterConfigItem::value)
                           .orElse(null);
                     }))
         .configure(c -> applyConnectionProviderConfig(context, c));
@@ -239,7 +240,7 @@ public class DatabaseAdapterExtension
   private static DatabaseAdapterConfig applyConnectionProviderConfig(
       ExtensionContext context, DatabaseAdapterConfig c) {
     TestConnectionProviderSource connectionProvider =
-        context.getStore(NAMESPACE).get(KEY_STATICS, StaticAdapters.class).connectionProvider;
+        context.getStore(NAMESPACE).get(KEY_STATICS, ClassDbAdapters.class).connectionProvider;
     return connectionProvider.updateConfig(c);
   }
 

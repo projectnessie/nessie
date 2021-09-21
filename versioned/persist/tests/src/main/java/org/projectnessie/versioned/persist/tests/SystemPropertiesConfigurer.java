@@ -33,14 +33,18 @@ import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
  * with dots.
  */
 public class SystemPropertiesConfigurer {
-  public static <T extends DatabaseAdapterConfig>
-      DatabaseAdapterConfig configureFromSystemProperties(T config) {
+
+  public static final String CONFIG_NAME_PREFIX = "nessie.store.";
+
+  public static <T extends DatabaseAdapterConfig<?>>
+      DatabaseAdapterConfig<?> configureFromSystemProperties(T config) {
     return configureFromProperties(config, System::getProperty);
   }
 
   @SuppressWarnings("unchecked")
-  public static <T extends DatabaseAdapterConfig> DatabaseAdapterConfig configureFromProperties(
-      T config, Function<String, String> property) {
+  public static <T extends DatabaseAdapterConfig<?>>
+      DatabaseAdapterConfig<?> configureFromProperties(
+          T config, Function<String, String> property) {
     List<Method> l =
         Arrays.stream(config.getClass().getMethods())
             .filter(m -> m.getName().startsWith("with"))
@@ -74,6 +78,6 @@ public class SystemPropertiesConfigurer {
 
   /** Converts from camel-case to dotted-name. */
   private static String toPropertyName(String name) {
-    return "nessie.store." + name.replaceAll("([a-z])([A-Z]+)", "$1.$2").toLowerCase();
+    return CONFIG_NAME_PREFIX + name.replaceAll("([a-z])([A-Z]+)", "$1.$2").toLowerCase();
   }
 }

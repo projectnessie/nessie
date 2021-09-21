@@ -17,10 +17,10 @@ package org.projectnessie.versioned.persist.tx.postgres;
 
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.projectnessie.versioned.persist.tests.AbstractTieredCommitsTest;
-import org.projectnessie.versioned.persist.tests.extension.NessieAdapterName;
+import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterName;
 import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
 @EnabledIfSystemProperty(named = "it.nessie.dbs", matches = ".*postgres.*")
-@NessieAdapterName("PostgreSQL")
+@NessieDbAdapterName("PostgreSQL")
 @NessieExternalDatabase(PostgresTestConnectionProviderSource.class)
 class ITTieredCommitsPostgres extends AbstractTieredCommitsTest {}

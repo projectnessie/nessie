@@ -23,8 +23,8 @@ import java.lang.annotation.Target;
 
 @Target({ElementType.TYPE, ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
-@Repeatable(NessieAdapterConfigItems.class)
-public @interface NessieAdapterConfigItem {
+@Repeatable(NessieDbAdapterConfigItems.class)
+public @interface NessieDbAdapterConfigItem {
   String name();
 
   String value();

@@ -15,14 +15,14 @@
  */
 package org.projectnessie.versioned.persist.tx.postgres;
 
-import org.testcontainers.containers.CockroachContainer;
 import org.testcontainers.containers.JdbcDatabaseContainer;
+import org.testcontainers.containers.PostgreSQLContainer;
 
 public class PostgresTestConnectionProviderSource extends ContainerTestConnectionProviderSource {
 
   @Override
   protected JdbcDatabaseContainer<?> createContainer() {
-    String version = System.getProperty("it.nessie.container.cockroach.tag", "v21.1.6");
-    return new CockroachContainer("cockroachdb/cockroach:" + version);
+    String version = System.getProperty("it.nessie.container.postgres.tag", "9.6.22");
+    return new PostgreSQLContainer<>("postgres:" + version);
   }
 }

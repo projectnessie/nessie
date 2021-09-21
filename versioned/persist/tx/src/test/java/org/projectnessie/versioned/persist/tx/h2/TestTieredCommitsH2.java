@@ -16,9 +16,9 @@
 package org.projectnessie.versioned.persist.tx.h2;
 
 import org.projectnessie.versioned.persist.tests.AbstractTieredCommitsTest;
-import org.projectnessie.versioned.persist.tests.extension.NessieAdapterName;
+import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterName;
 import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
-@NessieAdapterName("H2")
+@NessieDbAdapterName("H2")
 @NessieExternalDatabase(H2TestConnectionProviderSource.class)
 class TestTieredCommitsH2 extends AbstractTieredCommitsTest {}
