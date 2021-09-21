@@ -13,14 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.persist.tx;
+package org.projectnessie.versioned.persist.tests.extension;
 
-import org.immutables.value.Value;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-/**
- * Default "implementation" of {@link TxDatabaseAdapterConfig}. This is a separate
- * immutable-annotated interface, to prevent incoherences in generated types if the
- * immutable-annotation would be present on {@link TxDatabaseAdapterConfig}.
- */
-@Value.Immutable(lazyhash = true)
-public interface DefaultTxDatabaseAdapterConfig extends TxDatabaseAdapterConfig {}
+@Target({ElementType.TYPE, ElementType.FIELD, ElementType.PARAMETER})
+@Retention(RetentionPolicy.RUNTIME)
+public @interface NessieDbAdapterConfigItems {
+  NessieDbAdapterConfigItem[] value();
+}

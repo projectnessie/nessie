@@ -13,10 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.persist.inmem;
+package org.projectnessie.versioned.persist.tests.extension;
 
-import org.projectnessie.versioned.persist.tests.AbstractTieredCommitsTest;
-import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Repeatable;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-@NessieExternalDatabase(InmemoryTestConnectionProviderSource.class)
-class TestTieredCommitsInmemory extends AbstractTieredCommitsTest {}
+@Target({ElementType.TYPE, ElementType.FIELD, ElementType.PARAMETER})
+@Retention(RetentionPolicy.RUNTIME)
+@Repeatable(NessieDbAdapterConfigItems.class)
+public @interface NessieDbAdapterConfigItem {
+  String name();
+
+  String value();
+}

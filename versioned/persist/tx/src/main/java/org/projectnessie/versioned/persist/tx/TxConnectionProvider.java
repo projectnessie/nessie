@@ -26,20 +26,28 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.projectnessie.versioned.persist.adapter.DatabaseConnectionProvider;
 import org.projectnessie.versioned.persist.tx.TxDatabaseAdapter.NessieSqlDataType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class TxConnectionProvider implements AutoCloseable {
+public abstract class TxConnectionProvider<C extends TxConnectionConfig>
+    implements DatabaseConnectionProvider<C> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TxConnectionProvider.class);
 
   private boolean setupDone;
+  protected C config;
 
-  public void configure(TxDatabaseAdapterConfig config) {}
+  @Override
+  public void configure(C config) {
+    this.config = config;
+  }
 
-  public synchronized void setupDatabase(
-      TxDatabaseAdapter adapter, TxDatabaseAdapterConfig config) {
+  @Override
+  public void initialize() throws SQLException {}
+
+  public synchronized void setupDatabase(TxDatabaseAdapter adapter) {
     if (setupDone) {
       return;
     }
@@ -100,9 +108,6 @@ public abstract class TxConnectionProvider implements AutoCloseable {
       throw new RuntimeException(e);
     }
   }
-
-  @Override
-  public void close() throws Exception {}
 
   /**
    * Borrow a connection from the {@link TxConnectionProvider} implementation.

@@ -15,26 +15,8 @@
  */
 package org.projectnessie.versioned.persist.mongodb;
 
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 
 @Value.Immutable(lazyhash = true)
-public interface MongoDatabaseAdapterConfig extends DatabaseAdapterConfig {
-
-  @Nullable
-  String getConnectionString();
-
-  MongoDatabaseAdapterConfig withConnectionString(String connectionString);
-
-  @Nullable
-  String getDatabaseName();
-
-  MongoDatabaseAdapterConfig withDatabaseName(String databaseName);
-
-  @Value.Auxiliary
-  @Nullable
-  MongoDatabaseClient getClient();
-
-  MongoDatabaseAdapterConfig withClient(MongoDatabaseClient client);
-}
+public interface MongoDatabaseAdapterConfig extends DatabaseAdapterConfig<MongoDatabaseClient> {}

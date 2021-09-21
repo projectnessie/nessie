@@ -15,8 +15,33 @@
  */
 package org.projectnessie.versioned.persist.inmem;
 
-import org.immutables.value.Value;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
+import org.projectnessie.versioned.persist.tests.extension.TestConnectionProviderSource;
 
-@Value.Immutable(lazyhash = true)
-public interface InmemoryDatabaseAdapterConfig extends DatabaseAdapterConfig<InmemoryStore> {}
+public class InmemoryTestConnectionProviderSource
+    implements TestConnectionProviderSource<InmemoryStore> {
+
+  private InmemoryStore store;
+
+  @Override
+  public DatabaseAdapterConfig<InmemoryStore> updateConfig(
+      DatabaseAdapterConfig<InmemoryStore> config) {
+    return config.withConnectionProvider(store);
+  }
+
+  @Override
+  public void start() {
+    store = new InmemoryStore();
+  }
+
+  @Override
+  public void stop() {
+    try {
+      if (store != null) {
+        store.close();
+      }
+    } finally {
+      store = null;
+    }
+  }
+}

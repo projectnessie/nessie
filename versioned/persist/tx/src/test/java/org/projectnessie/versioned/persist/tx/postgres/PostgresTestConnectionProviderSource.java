@@ -13,14 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.persist.tx.local;
+package org.projectnessie.versioned.persist.tx.postgres;
 
-import org.immutables.value.Value;
+import org.testcontainers.containers.JdbcDatabaseContainer;
+import org.testcontainers.containers.PostgreSQLContainer;
 
-/**
- * Default "implementation" of {@link LocalDatabaseAdapterConfig}. This is a separate
- * immutable-annotated interface, to prevent incoherences in generated types if the
- * immutable-annotation would be present on {@link LocalDatabaseAdapterConfig}.
- */
-@Value.Immutable(lazyhash = true)
-public interface DefaultLocalDatabaseAdapterConfig extends LocalDatabaseAdapterConfig {}
+public class PostgresTestConnectionProviderSource extends ContainerTestConnectionProviderSource {
+
+  @Override
+  protected JdbcDatabaseContainer<?> createContainer() {
+    String version = System.getProperty("it.nessie.container.postgres.tag", "9.6.22");
+    return new PostgreSQLContainer<>("postgres:" + version);
+  }
+}

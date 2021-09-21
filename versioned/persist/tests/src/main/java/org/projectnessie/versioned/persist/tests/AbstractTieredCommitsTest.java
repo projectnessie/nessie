@@ -22,14 +22,12 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import com.google.protobuf.ByteString;
 import java.util.Arrays;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
@@ -39,56 +37,25 @@ import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.WithHash;
+import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentsId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory.Builder;
 import org.projectnessie.versioned.persist.adapter.Difference;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
+import org.projectnessie.versioned.persist.tests.extension.DatabaseAdapterExtension;
+import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapter;
+import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterConfigItem;
 
 /**
  * Tests that verify {@link DatabaseAdapter} implementations. A few tests have similar pendants via
  * the tests against the {@code VersionStore}.
  */
+@ExtendWith(DatabaseAdapterExtension.class)
+@NessieDbAdapterConfigItem(name = "max.key.list.size", value = "2048")
 public abstract class AbstractTieredCommitsTest {
-  protected static DatabaseAdapter databaseAdapter;
-
-  protected static <C extends DatabaseAdapterConfig> void createAdapter(
-      String adapterName, Function<C, DatabaseAdapterConfig> configurer) {
-    createAdapter(
-        DatabaseAdapterFactory.<C>loadFactoryByName(adapterName).newBuilder(), configurer);
-  }
-
-  protected static <C extends DatabaseAdapterConfig> void createAdapter(
-      Builder<C> configBuilder, Function<C, DatabaseAdapterConfig> configurer) {
-    databaseAdapter =
-        configBuilder
-            .configure(SystemPropertiesConfigurer::configureFromSystemProperties)
-            // default to a quite small max-size for the CommitLogEntry.keyList + KeyListEntity
-            // This is necessary for AbstractManyKeys to work properly!!
-            .configure(c -> c.withMaxKeyListSize(2048))
-            .configure(configurer)
-            .build();
-  }
-
-  @BeforeEach
-  void reinitializeRepo() {
-    databaseAdapter.reinitializeRepo("main");
-  }
-
-  @AfterAll
-  static void closeDatabaseAdapter() throws Exception {
-    try {
-      if (databaseAdapter != null) {
-        databaseAdapter.close();
-      }
-    } finally {
-      databaseAdapter = null;
-    }
-  }
+  @NessieDbAdapter protected static DatabaseAdapter databaseAdapter;
 
   @Nested
   public class GlobalStates extends AbstractGlobalStates {
@@ -406,6 +373,71 @@ public abstract class AbstractTieredCommitsTest {
   public class MergeTransplant extends AbstractMergeTransplant {
     MergeTransplant() {
       super(databaseAdapter);
+    }
+  }
+
+  @Test
+  void keyPrefixBasic(
+      @NessieDbAdapter @NessieDbAdapterConfigItem(name = "key.prefix", value = "foo")
+          DatabaseAdapter foo,
+      @NessieDbAdapter @NessieDbAdapterConfigItem(name = "key.prefix", value = "bar")
+          DatabaseAdapter bar)
+      throws Exception {
+
+    BranchName main = BranchName.of("main");
+    BranchName fooBranchName = BranchName.of("foo-branch");
+    BranchName barBranchName = BranchName.of("bar-branch");
+    ByteString fooCommitMeta = ByteString.copyFromUtf8("meta-foo");
+    ByteString barCommitMeta = ByteString.copyFromUtf8("meta-bar");
+
+    foo.commit(
+        ImmutableCommitAttempt.builder()
+            .commitToBranch(main)
+            .commitMetaSerialized(fooCommitMeta)
+            .addPuts(
+                KeyWithBytes.of(
+                    Key.of("foo"), ContentsId.of("foo"), (byte) 0, ByteString.copyFromUtf8("foo")))
+            .build());
+    bar.commit(
+        ImmutableCommitAttempt.builder()
+            .commitToBranch(main)
+            .commitMetaSerialized(barCommitMeta)
+            .addPuts(
+                KeyWithBytes.of(
+                    Key.of("bar"), ContentsId.of("bar"), (byte) 0, ByteString.copyFromUtf8("bar")))
+            .build());
+
+    Hash fooMain = foo.toHash(main);
+    Hash barMain = bar.toHash(main);
+
+    Hash fooBranch = foo.create(fooBranchName, fooMain);
+    Hash barBranch = bar.create(barBranchName, barMain);
+
+    assertThat(fooMain).isNotEqualTo(barMain).isEqualTo(fooBranch);
+    assertThat(barMain).isNotEqualTo(fooMain).isEqualTo(barBranch);
+
+    // Verify that key-prefix "foo" only sees "its" main-branch and foo-branch
+    assertThat(foo.namedRefs())
+        .containsExactlyInAnyOrder(
+            WithHash.of(fooMain, main), WithHash.of(fooBranch, fooBranchName));
+    assertThat(bar.namedRefs())
+        .containsExactlyInAnyOrder(
+            WithHash.of(barMain, main), WithHash.of(barBranch, barBranchName));
+
+    assertThatThrownBy(() -> foo.commitLog(barBranch))
+        .isInstanceOf(ReferenceNotFoundException.class);
+    assertThatThrownBy(() -> bar.commitLog(fooBranch))
+        .isInstanceOf(ReferenceNotFoundException.class);
+
+    try (Stream<CommitLogEntry> log = foo.commitLog(fooBranch)) {
+      assertThat(log.collect(Collectors.toList()))
+          .extracting(CommitLogEntry::getMetadata)
+          .containsExactlyInAnyOrder(fooCommitMeta);
+    }
+    try (Stream<CommitLogEntry> log = bar.commitLog(barBranch)) {
+      assertThat(log.collect(Collectors.toList()))
+          .extracting(CommitLogEntry::getMetadata)
+          .containsExactlyInAnyOrder(barCommitMeta);
     }
   }
 }

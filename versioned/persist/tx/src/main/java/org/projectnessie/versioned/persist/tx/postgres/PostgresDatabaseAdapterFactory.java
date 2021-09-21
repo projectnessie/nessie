@@ -17,7 +17,7 @@ package org.projectnessie.versioned.persist.tx.postgres;
 
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
-import org.projectnessie.versioned.persist.tx.ImmutableDefaultTxDatabaseAdapterConfig;
+import org.projectnessie.versioned.persist.tx.ImmutableTxDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.tx.TxDatabaseAdapterConfig;
 
 public class PostgresDatabaseAdapterFactory
@@ -33,7 +33,7 @@ public class PostgresDatabaseAdapterFactory
     return new Builder<TxDatabaseAdapterConfig>() {
       @Override
       protected TxDatabaseAdapterConfig getDefaultConfig() {
-        return ImmutableDefaultTxDatabaseAdapterConfig.builder().build();
+        return ImmutableTxDatabaseAdapterConfig.builder().build();
       }
 
       @Override

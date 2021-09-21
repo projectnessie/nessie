@@ -33,12 +33,12 @@ import java.util.function.Predicate;
  * @param <CONFIG> the configuration-options type used to configure database-adapters produced by
  *     this factory.
  */
-public interface DatabaseAdapterFactory<CONFIG extends DatabaseAdapterConfig> {
+public interface DatabaseAdapterFactory<CONFIG extends DatabaseAdapterConfig<?>> {
   Builder<CONFIG> newBuilder();
 
   String getName();
 
-  abstract class Builder<CONFIG extends DatabaseAdapterConfig> {
+  abstract class Builder<CONFIG extends DatabaseAdapterConfig<?>> {
     private CONFIG config;
 
     public Builder<CONFIG> withConfig(CONFIG config) {
@@ -58,18 +58,18 @@ public interface DatabaseAdapterFactory<CONFIG extends DatabaseAdapterConfig> {
     public abstract DatabaseAdapter build();
 
     @SuppressWarnings("unchecked")
-    public Builder<CONFIG> configure(Function<CONFIG, DatabaseAdapterConfig> configurator) {
+    public Builder<CONFIG> configure(Function<CONFIG, DatabaseAdapterConfig<?>> configurator) {
       this.config = (CONFIG) configurator.apply(getConfig());
       return this;
     }
   }
 
-  static <CONFIG extends DatabaseAdapterConfig> DatabaseAdapterFactory<CONFIG> loadFactoryByName(
+  static <CONFIG extends DatabaseAdapterConfig<?>> DatabaseAdapterFactory<CONFIG> loadFactoryByName(
       String name) {
     return loadFactory(f -> f.getName().equals(name));
   }
 
-  static <CONFIG extends DatabaseAdapterConfig> DatabaseAdapterFactory<CONFIG> loadFactory(
+  static <CONFIG extends DatabaseAdapterConfig<?>> DatabaseAdapterFactory<CONFIG> loadFactory(
       Predicate<DatabaseAdapterFactory<?>> check) {
     @SuppressWarnings("rawtypes")
     Iterator<DatabaseAdapterFactory> iter =

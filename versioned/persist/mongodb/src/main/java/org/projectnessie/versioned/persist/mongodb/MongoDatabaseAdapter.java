@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -67,8 +68,12 @@ public class MongoDatabaseAdapter
     super(config);
 
     // Create our own dedicated client is none is pre-configured
-    client = config.getClient() == null ? new MongoDatabaseClient(config) : config.getClient();
-    client.acquire();
+    MongoDatabaseClient c = config.getConnectionProvider();
+
+    Objects.requireNonNull(
+        c, "Requires a non-null MongoDatabaseClient from MongoDatabaseAdapterConfig");
+
+    client = c;
 
     String keyPrefix = config.getKeyPrefix();
     if (keyPrefix.indexOf(PREFIX_SEPARATOR) >= 0) {
@@ -87,11 +92,6 @@ public class MongoDatabaseAdapter
     client.getKeyLists().deleteMany(Filters.regex("_id", keyPrefix + ".*"));
 
     super.initializeRepo(defaultBranchName);
-  }
-
-  @Override
-  public void close() {
-    client.release();
   }
 
   private String toId(Hash id) {

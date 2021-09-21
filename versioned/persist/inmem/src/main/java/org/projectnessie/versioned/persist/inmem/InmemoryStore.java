@@ -20,9 +20,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
+import org.projectnessie.versioned.persist.adapter.DatabaseConnectionProvider;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
 
-public class InmemoryStore {
+public class InmemoryStore implements DatabaseConnectionProvider<InmemoryConfig> {
 
   final ConcurrentMap<ByteString, AtomicReference<GlobalStatePointer>> globalStatePointer =
       new ConcurrentHashMap<>();
@@ -32,7 +33,14 @@ public class InmemoryStore {
 
   public InmemoryStore() {}
 
-  public void configure(InmemoryDatabaseAdapterConfig config) {}
+  @Override
+  public void configure(InmemoryConfig config) {}
+
+  @Override
+  public void initialize() {}
+
+  @Override
+  public void close() {}
 
   void reinitializeRepo(ByteString keyPrefix) {
     Stream.of(globalStatePointer, globalStateLog, commitLog, keyLists)
