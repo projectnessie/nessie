@@ -22,9 +22,11 @@ import org.projectnessie.versioned.persist.tx.TxDatabaseAdapterConfig;
 
 public class H2DatabaseAdapterFactory implements DatabaseAdapterFactory<TxDatabaseAdapterConfig> {
 
+  public static final String NAME = "H2";
+
   @Override
   public String getName() {
-    return "H2";
+    return NAME;
   }
 
   @Override

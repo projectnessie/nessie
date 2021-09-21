@@ -21,6 +21,6 @@ import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterName;
 import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
 @EnabledIfSystemProperty(named = "it.nessie.dbs", matches = ".*postgres.*")
-@NessieDbAdapterName("PostgreSQL")
+@NessieDbAdapterName(PostgresDatabaseAdapterFactory.NAME)
 @NessieExternalDatabase(PostgresTestConnectionProviderSource.class)
 class ITTieredCommitsPostgres extends AbstractTieredCommitsTest {}

@@ -20,9 +20,12 @@ import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
 
 public class MongoDatabaseAdapterFactory
     implements DatabaseAdapterFactory<MongoDatabaseAdapterConfig> {
+
+  public static final String NAME = "MongoDB";
+
   @Override
   public String getName() {
-    return "MongoDB";
+    return NAME;
   }
 
   @Override
