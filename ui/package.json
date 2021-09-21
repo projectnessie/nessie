@@ -122,7 +122,7 @@
   "proxy": "http://localhost:19120",
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^4.31.1",
-    "@typescript-eslint/eslint-plugin-tslint": "^4.31.1",
+    "@typescript-eslint/eslint-plugin-tslint": "^4.31.2",
     "@typescript-eslint/parser": "^4.31.1",
     "eslint": "^7.32.0",
     "eslint-config-prettier": "^8.3.0",
