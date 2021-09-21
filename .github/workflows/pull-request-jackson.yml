@@ -1,0 +1,51 @@
+# Copyright (C) 2020 Dremio
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+# Projectnessie GitHub Pull-Request / Jackson integration tests
+
+name: PR Build Check Jackson
+
+on:
+  pull_request:
+    types: [labeled, opened, synchronize, reopened]
+
+jobs:
+  jackson-tests:
+    name: ITs
+    runs-on: ubuntu-latest
+    if: contains(github.event.pull_request.labels.*.name, 'pr-jackson')
+    strategy:
+      max-parallel: 4
+      # note the big include entry in matrix is used to ensure we get human readable names for the jobs
+      matrix:
+        include:
+          - jackson-version: 2.6.7
+            target-library: Spark 2.4.4
+            java-version: 11
+          - jackson-version: 2.10.0
+            target-library: Spark 3.0.1
+            java-version: 11
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Java, Maven, Gradle
+        uses: ./.github/actions/dev-tool-java
+        with:
+          java-version: ${{ matrix.java-version }}
+      - name: Build with Maven ${{ matrix.target-library }}
+        run: |
+          ./mvnw -B install -DskipTests -am -pl :nessie-quarkus -pl :nessie-lambda
+      - name: Jackson Integration Tests ${{ matrix.target-library }}
+        run: |
+          ./mvnw verify -pl :nessie-client -am -Pjackson-tests -Djackson.test.version=${{ matrix.jackson-version }} -Dtest.log.level=WARN
