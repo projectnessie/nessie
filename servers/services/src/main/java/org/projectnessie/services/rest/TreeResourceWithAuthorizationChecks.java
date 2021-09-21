@@ -20,8 +20,6 @@ import static org.projectnessie.model.Operation.Put;
 
 import java.security.AccessControlException;
 import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.enterprise.context.RequestScoped;
@@ -46,10 +44,7 @@ import org.projectnessie.services.authz.AccessChecker;
 import org.projectnessie.services.authz.ServerAccessContext;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.BranchName;
-import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.NamedRef;
-import org.projectnessie.versioned.Ref;
-import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.VersionStore;
 
@@ -101,64 +96,24 @@ public class TreeResourceWithAuthorizationChecks extends TreeResource {
   @Override
   public Reference createReference(@Nullable String sourceRefName, Reference reference)
       throws NessieNotFoundException, NessieConflictException {
-    if (sourceRefName == null) {
-      sourceRefName = getConfig().getDefaultBranch();
-    }
-
     if (reference instanceof Branch) {
       getAccessChecker()
           .canCreateReference(createAccessContext(), BranchName.of(reference.getName()));
     } else if (reference instanceof Tag) {
       getAccessChecker().canCreateReference(createAccessContext(), TagName.of(reference.getName()));
-    } else {
-      throw new IllegalArgumentException("Only tag and branch references can be created.");
     }
 
-    checkHashOnRef(sourceRefName, reference.getHash());
+    getAccessChecker()
+        .canViewReference(
+            createAccessContext(),
+            namedRefWithHashOrThrow(sourceRefName, reference.getHash()).getValue());
     return super.createReference(sourceRefName, reference);
-  }
-
-  protected void checkHashOnRef(String refName, String hash) throws NessieNotFoundException {
-    if (refName == null) {
-      refName = getConfig().getDefaultBranch();
-    }
-
-    try {
-      NamedRef sourceRef;
-      try {
-        Ref ref = getStore().toRef(refName).getValue();
-        if (!(ref instanceof NamedRef)) {
-          throw new ReferenceNotFoundException(
-              String.format("Named reference '%s' not found", refName));
-        }
-        sourceRef = (NamedRef) ref;
-      } catch (ReferenceNotFoundException e) {
-        // Special case, mostly for tests:
-        // When the default branch is deleted, we cannot verify whether the branch already exists
-        // (it does not, so the check would fail).
-
-        if (Objects.equals(refName, getConfig().getDefaultBranch()) && hash == null
-            || Objects.equals(hash, getStore().noAncestorHash().asString())) {
-          // prevent the "hash-on-ref" check, but still do the "can-view" check
-          hash = null;
-          return;
-        } else {
-          throw e;
-        }
-      }
-      getAccessChecker().canViewReference(createAccessContext(), sourceRef);
-      if (hash != null) {
-        getStore().hashOnReference(sourceRef, Optional.of(Hash.of(hash)));
-      }
-    } catch (ReferenceNotFoundException e) {
-      throw new NessieNotFoundException(e.getMessage());
-    }
   }
 
   @Override
   protected void assignReference(NamedRef ref, String oldHash, Reference assignTo)
       throws NessieNotFoundException, NessieConflictException {
-    checkHashOnRef(assignTo.getName(), assignTo.getHash());
+    namedRefWithHashOrThrow(assignTo.getName(), assignTo.getHash());
 
     getAccessChecker().canAssignRefToHash(createAccessContext(), ref);
     super.assignReference(ref, oldHash, assignTo);
@@ -201,7 +156,8 @@ public class TreeResourceWithAuthorizationChecks extends TreeResource {
     if (transplant.getHashesToTransplant().isEmpty()) {
       throw new IllegalArgumentException("No hashes given to transplant.");
     }
-    checkHashOnRef(
+
+    namedRefWithHashOrThrow(
         transplant.getFromRefName(),
         transplant.getHashesToTransplant().get(transplant.getHashesToTransplant().size() - 1));
     getAccessChecker()

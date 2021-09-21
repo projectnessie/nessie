@@ -141,6 +141,7 @@ public abstract class AbstractTestRest {
     String tagName2 = "createReferences_tag2";
     String branchName1 = "createReferences_branch1";
     String branchName2 = "createReferences_branch2";
+
     assertAll(
         // invalid source ref & null hash
         () ->
@@ -152,6 +153,13 @@ public abstract class AbstractTestRest {
                             .create())
                 .isInstanceOf(NessieNotFoundException.class)
                 .hasMessage("Ref 'unknownSource' does not exist"),
+        // Tag without sourceRefName
+        () ->
+            assertThatThrownBy(
+                    () -> api.createReference().reference(Tag.of(tagName1, null)).create())
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining("Tag-creation requires a target named-reference and hash."),
         // Tag without hash
         () ->
             assertThatThrownBy(
@@ -1608,14 +1616,16 @@ public abstract class AbstractTestRest {
         .isInstanceOf(NessieNotFoundException.class)
         .hasMessageContaining(
             String.format(
-                "Could not find commit '%s' in reference '%s'.", invalidHash, b.getName()));
+                "Could not find commit '%s' on existing reference '%s'.",
+                invalidHash, b.getName()));
 
     assertThatThrownBy(
             () -> api.getEntries().refName(branch.getName()).hashOnRef(invalidHash).get())
         .isInstanceOf(NessieNotFoundException.class)
         .hasMessageContaining(
             String.format(
-                "Could not find commit '%s' in reference '%s'.", invalidHash, b.getName()));
+                "Could not find commit '%s' on existing reference '%s'.",
+                invalidHash, b.getName()));
 
     assertThatThrownBy(
             () ->
@@ -1627,7 +1637,8 @@ public abstract class AbstractTestRest {
         .isInstanceOf(NessieNotFoundException.class)
         .hasMessageContaining(
             String.format(
-                "Could not find commit '%s' in reference '%s'.", invalidHash, b.getName()));
+                "Could not find commit '%s' on existing reference '%s'.",
+                invalidHash, b.getName()));
 
     assertThatThrownBy(
             () ->
@@ -1639,7 +1650,8 @@ public abstract class AbstractTestRest {
         .isInstanceOf(NessieNotFoundException.class)
         .hasMessageContaining(
             String.format(
-                "Could not find commit '%s' in reference '%s'.", invalidHash, b.getName()));
+                "Could not find commit '%s' on existing reference '%s'.",
+                invalidHash, b.getName()));
   }
 
   void unwrap(Executable exec) throws Throwable {
