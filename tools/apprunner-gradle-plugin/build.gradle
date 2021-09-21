@@ -71,13 +71,13 @@ test {
 dependencies {
   implementation platform("io.quarkus:quarkus-bom:${quarkusVersion}")
 
-  compile "io.quarkus:quarkus-bootstrap-core"
-  compile "org.projectnessie:nessie-apprunner-maven-plugin:$version"
-  compile "org.eclipse.microprofile.config:microprofile-config-api"
+  implementation "io.quarkus:quarkus-bootstrap-core"
+  implementation "org.projectnessie:nessie-apprunner-maven-plugin:$version"
+  implementation "org.eclipse.microprofile.config:microprofile-config-api"
 
-  testCompile gradleTestKit()
-  testCompile("org.junit.jupiter:junit-jupiter-api:${junitVersion}")
-  testCompile("org.junit.jupiter:junit-jupiter-engine:${junitVersion}")
+  testImplementation gradleTestKit()
+  testImplementation("org.junit.jupiter:junit-jupiter-api:${junitVersion}")
+  testImplementation("org.junit.jupiter:junit-jupiter-engine:${junitVersion}")
 }
 
 pluginBundle {
