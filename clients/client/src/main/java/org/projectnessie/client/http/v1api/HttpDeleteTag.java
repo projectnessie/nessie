@@ -28,7 +28,7 @@ final class HttpDeleteTag extends BaseHttpOnTagRequest<DeleteTagBuilder>
   }
 
   @Override
-  public void submit() throws NessieConflictException, NessieNotFoundException {
+  public void delete() throws NessieConflictException, NessieNotFoundException {
     client.getTreeApi().deleteTag(tagName, hash);
   }
 }

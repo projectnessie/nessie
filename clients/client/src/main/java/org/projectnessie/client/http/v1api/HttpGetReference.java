@@ -35,7 +35,7 @@ final class HttpGetReference extends BaseHttpRequest implements GetReferenceBuil
   }
 
   @Override
-  public Reference submit() throws NessieNotFoundException {
+  public Reference get() throws NessieNotFoundException {
     return client.getTreeApi().getReferenceByName(refName);
   }
 }

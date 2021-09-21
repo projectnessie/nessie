@@ -27,7 +27,7 @@ final class HttpGetAllReferences extends BaseHttpRequest implements GetAllRefere
   }
 
   @Override
-  public List<Reference> submit() {
+  public List<Reference> get() {
     return client.getTreeApi().getAllReferences();
   }
 }

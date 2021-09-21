@@ -32,5 +32,5 @@ public interface GetContentsBuilder extends OnReferenceBuilder<GetContentsBuilde
 
   GetContentsBuilder keys(List<ContentsKey> keys);
 
-  Map<ContentsKey, Contents> submit() throws NessieNotFoundException;
+  Map<ContentsKey, Contents> get() throws NessieNotFoundException;
 }

@@ -43,7 +43,7 @@ final class HttpMergeReference extends BaseHttpOnBranchRequest<MergeReferenceBui
   }
 
   @Override
-  public void submit() throws NessieNotFoundException, NessieConflictException {
+  public void merge() throws NessieNotFoundException, NessieConflictException {
     client.getTreeApi().mergeRefIntoBranch(branchName, hash, merge.build());
   }
 }

@@ -42,5 +42,5 @@ public interface MergeReferenceBuilder extends OnBranchBuilder<MergeReferenceBui
     return fromRefName(fromRef.getName()).fromHash(fromRef.getHash());
   }
 
-  void submit() throws NessieNotFoundException, NessieConflictException;
+  void merge() throws NessieNotFoundException, NessieConflictException;
 }

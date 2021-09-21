@@ -61,7 +61,7 @@ class CreateManyBranchesSimulation extends Simulation {
             .createReference()
             .sourceRefName(defaultBranch.getName)
             .reference(Branch.of(branchName, defaultBranch.getHash))
-            .submit()
+            .create()
           session
         }
     )

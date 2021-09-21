@@ -100,7 +100,7 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
 
     try {
       val ref = Option(requestedRef)
-        .map(api.getReference.refName(_).submit())
+        .map(api.getReference.refName(_).get())
         .getOrElse(api.getDefaultBranch)
       val map: util.Map[String, Reference] = new util.HashMap[String, Reference]
       map.put(requestedRef, ref)
@@ -130,7 +130,7 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
   private def referenceByName(refName: String): Reference = {
     var ref = referenceMap.get(refName)
     if (ref == null) {
-      ref = api.getReference.refName(refName).submit()
+      ref = api.getReference.refName(refName).get()
       referenceMap.put(refName, ref)
     }
     ref
@@ -300,10 +300,10 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
             .hash(targetHash)
             .operation(put)
             .commitMeta(meta)
-            .submit()
+            .commit()
         updateReference(
           if (updated != null) updated
-          else api.getReference.refName(targetRef).submit()
+          else api.getReference.refName(targetRef).get()
         )
         return true
       } catch {
@@ -487,7 +487,7 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
 
   private def getTable(path: Path, branch: String): Option[DeltaLakeTable] = {
     val key = pathToKey(path)
-    Try(api.getContents.key(key).refName(branch).submit().get(key))
+    Try(api.getContents.key(key).refName(branch).get().get(key))
       .filter(x => x != null && x.isInstanceOf[DeltaLakeTable])
       .map(_.asInstanceOf[DeltaLakeTable])
       .toOption

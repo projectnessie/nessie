@@ -79,7 +79,7 @@ class CommitToBranchSimulation extends Simulation {
             )
             .operation(op)
 
-          updatedBranch.submit()
+          updatedBranch.commit()
 
           session.set("branch", updatedBranch)
         }
@@ -91,7 +91,7 @@ class CommitToBranchSimulation extends Simulation {
               client
                 .getReference()
                 .refName(branch.getName)
-                .submit()
+                .get()
                 .asInstanceOf[Branch]
             )
           } else {
@@ -124,7 +124,7 @@ class CommitToBranchSimulation extends Simulation {
           val branch = client
             .createReference()
             .reference(Branch.of(params.makeBranchName(session), null))
-            .submit()
+            .create()
             .asInstanceOf[Branch]
           session.set("branch", branch)
         }
@@ -140,7 +140,7 @@ class CommitToBranchSimulation extends Simulation {
             val branch = client
               .getReference()
               .refName(params.makeBranchName(session))
-              .submit()
+              .get()
               .asInstanceOf[Branch]
             session.set("branch", branch)
           }

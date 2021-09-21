@@ -27,7 +27,7 @@ final class HttpDeleteBranch extends BaseHttpOnBranchRequest<DeleteBranchBuilder
   }
 
   @Override
-  public void submit() throws NessieConflictException, NessieNotFoundException {
+  public void delete() throws NessieConflictException, NessieNotFoundException {
     client.getTreeApi().deleteBranch(branchName, hash);
   }
 }

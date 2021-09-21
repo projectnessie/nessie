@@ -115,7 +115,7 @@ class TestAuthorizationRules extends BaseClientAuthTest {
                     .branch(branch)
                     .commitMeta(CommitMeta.fromMessage("add stuff"))
                     .operation(Put.of(key, IcebergTable.of("foo", 42L, "cid-foo")))
-                    .submit())
+                    .commit())
         .isInstanceOf(NessieForbiddenException.class)
         .hasMessageContaining(
             String.format(
@@ -139,7 +139,7 @@ class TestAuthorizationRules extends BaseClientAuthTest {
                     .branch(b)
                     .commitMeta(CommitMeta.fromMessage("delete stuff"))
                     .operation(Delete.of(key))
-                    .submit())
+                    .commit())
         .isInstanceOf(NessieForbiddenException.class)
         .hasMessageContaining(
             String.format(
@@ -151,11 +151,11 @@ class TestAuthorizationRules extends BaseClientAuthTest {
 
   private void listAllReferences(String branchName, boolean filteredOut) {
     if (filteredOut) {
-      assertThat(api().getAllReferences().submit())
+      assertThat(api().getAllReferences().get())
           .extracting(Reference::getName)
           .doesNotContain(branchName);
     } else {
-      assertThat(api().getAllReferences().submit())
+      assertThat(api().getAllReferences().get())
           .extracting(Reference::getName)
           .contains(branchName);
     }
@@ -164,7 +164,7 @@ class TestAuthorizationRules extends BaseClientAuthTest {
   private Branch retrieveBranch(String branchName, String role, boolean shouldFail)
       throws NessieNotFoundException {
     if (shouldFail) {
-      assertThatThrownBy(() -> api().getReference().refName(branchName).submit())
+      assertThatThrownBy(() -> api().getReference().refName(branchName).get())
           .isInstanceOf(NessieForbiddenException.class)
           .hasMessageContaining(
               String.format(
@@ -172,7 +172,7 @@ class TestAuthorizationRules extends BaseClientAuthTest {
                   role, branchName));
       return null;
     } else {
-      return (Branch) api().getReference().refName(branchName).submit();
+      return (Branch) api().getReference().refName(branchName).get();
     }
   }
 
@@ -180,28 +180,28 @@ class TestAuthorizationRules extends BaseClientAuthTest {
       throws NessieConflictException, NessieNotFoundException {
     if (shouldFail) {
       assertThatThrownBy(
-              () -> api().createReference().sourceRefName("main").reference(branch).submit())
+              () -> api().createReference().sourceRefName("main").reference(branch).create())
           .isInstanceOf(NessieForbiddenException.class)
           .hasMessageContaining(
               String.format(
                   "'CREATE_REFERENCE' is not allowed for role '%s' on reference '%s'",
                   role, branch.getName()));
     } else {
-      api().createReference().sourceRefName("main").reference(branch).submit();
+      api().createReference().sourceRefName("main").reference(branch).create();
     }
   }
 
   private void deleteBranch(Branch branch, String role, boolean shouldFail)
       throws NessieConflictException, NessieNotFoundException {
     if (shouldFail) {
-      assertThatThrownBy(() -> api().deleteBranch().branch(branch).submit())
+      assertThatThrownBy(() -> api().deleteBranch().branch(branch).delete())
           .isInstanceOf(NessieForbiddenException.class)
           .hasMessageContaining(
               String.format(
                   "'DELETE_REFERENCE' is not allowed for role '%s' on reference '%s'",
                   role, branch.getName()));
     } else {
-      api().deleteBranch().branch(branch).submit();
+      api().deleteBranch().branch(branch).delete();
     }
   }
 
@@ -214,7 +214,7 @@ class TestAuthorizationRules extends BaseClientAuthTest {
                       .getContents()
                       .refName(branchName)
                       .key(key)
-                      .submit()
+                      .get()
                       .get(key)
                       .unwrap(IcebergTable.class)
                       .get())
@@ -229,7 +229,7 @@ class TestAuthorizationRules extends BaseClientAuthTest {
                   .getContents()
                   .refName(branchName)
                   .key(key)
-                  .submit()
+                  .get()
                   .get(key)
                   .unwrap(IcebergTable.class)
                   .get())
@@ -241,12 +241,12 @@ class TestAuthorizationRules extends BaseClientAuthTest {
   private void getEntriesFor(String branchName, String role, boolean shouldFail)
       throws NessieNotFoundException {
     if (shouldFail) {
-      assertThatThrownBy(() -> api().getEntries().refName(branchName).submit().getEntries())
+      assertThatThrownBy(() -> api().getEntries().refName(branchName).get().getEntries())
           .isInstanceOf(NessieForbiddenException.class)
           .hasMessageContaining(
               String.format("'READ_ENTRIES' is not allowed for role '%s' on reference", role));
     } else {
-      List<Entry> tables = api().getEntries().refName(branchName).submit().getEntries();
+      List<Entry> tables = api().getEntries().refName(branchName).get().getEntries();
       assertThat(tables).isNotEmpty();
     }
   }
@@ -254,12 +254,12 @@ class TestAuthorizationRules extends BaseClientAuthTest {
   private void getCommitLog(String branchName, String role, boolean shouldFail)
       throws NessieNotFoundException {
     if (shouldFail) {
-      assertThatThrownBy(() -> api().getCommitLog().refName(branchName).submit().getOperations())
+      assertThatThrownBy(() -> api().getCommitLog().refName(branchName).get().getOperations())
           .isInstanceOf(NessieForbiddenException.class)
           .hasMessageContaining(
               String.format("'LIST_COMMIT_LOG' is not allowed for role '%s' on reference", role));
     } else {
-      List<CommitMeta> commits = api().getCommitLog().refName(branchName).submit().getOperations();
+      List<CommitMeta> commits = api().getCommitLog().refName(branchName).get().getOperations();
       assertThat(commits).isNotEmpty();
     }
   }
@@ -277,14 +277,14 @@ class TestAuthorizationRules extends BaseClientAuthTest {
     if (shouldFail) {
       // adding content requires COMMIT_CHANGE_AGAINST_REFERENCE & UPDATE_ENTITY, but this is
       // difficult to test here, so we're testing this in a separate method
-      assertThatThrownBy(commitOp::submit)
+      assertThatThrownBy(commitOp::commit)
           .isInstanceOf(NessieForbiddenException.class)
           .hasMessageContaining(
               String.format(
                   "'COMMIT_CHANGE_AGAINST_REFERENCE' is not allowed for role '%s' on reference '%s'",
                   role, branch.getName()));
     } else {
-      commitOp.submit();
+      commitOp.commit();
     }
   }
 
@@ -301,14 +301,14 @@ class TestAuthorizationRules extends BaseClientAuthTest {
     if (shouldFail) {
       // deleting content requires COMMIT_CHANGE_AGAINST_REFERENCE & DELETE_ENTITY, but this is
       // difficult to test here, so we're testing this in a separate method
-      assertThatThrownBy(commitOp::submit)
+      assertThatThrownBy(commitOp::commit)
           .isInstanceOf(NessieForbiddenException.class)
           .hasMessageContaining(
               String.format(
                   "'COMMIT_CHANGE_AGAINST_REFERENCE' is not allowed for role '%s' on reference '%s'",
                   role, branch.getName()));
     } else {
-      commitOp.submit();
+      commitOp.commit();
     }
   }
 }

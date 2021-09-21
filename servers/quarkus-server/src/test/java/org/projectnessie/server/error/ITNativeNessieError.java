@@ -61,7 +61,7 @@ public class ITNativeNessieError {
                         .branchName("branchName")
                         .operation(Put.of(k, t))
                         .commitMeta(CommitMeta.fromMessage("message"))
-                        .submit())
+                        .commit())
             .getMessage());
   }
 }

@@ -135,7 +135,7 @@ public abstract class AbstractTestRest {
 
   @Test
   void createReferences() throws NessieNotFoundException {
-    String mainHash = api.getReference().refName("main").submit().getHash();
+    String mainHash = api.getReference().refName("main").get().getHash();
 
     String tagName1 = "createReferences_tag1";
     String tagName2 = "createReferences_tag2";
@@ -149,7 +149,7 @@ public abstract class AbstractTestRest {
                         api.createReference()
                             .sourceRefName("main")
                             .reference(Tag.of(tagName1, null))
-                            .submit())
+                            .create())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining("Tag-creation requires a target named-reference and hash."),
@@ -159,7 +159,7 @@ public abstract class AbstractTestRest {
               api.createReference()
                   .sourceRefName("main")
                   .reference(Tag.of(tagName2, mainHash))
-                  .submit();
+                  .create();
           assertEquals(Tag.of(tagName2, mainHash), refTag1);
         },
         // Branch without hash
@@ -168,7 +168,7 @@ public abstract class AbstractTestRest {
               api.createReference()
                   .sourceRefName("main")
                   .reference(Branch.of(branchName1, null))
-                  .submit();
+                  .create();
           assertEquals(Branch.of(branchName1, mainHash), refBranch1);
         },
         // Branch with name + hash
@@ -177,7 +177,7 @@ public abstract class AbstractTestRest {
               api.createReference()
                   .sourceRefName("main")
                   .reference(Branch.of(branchName2, mainHash))
-                  .submit();
+                  .create();
           assertEquals(Branch.of(branchName2, mainHash), refBranch2);
         });
   }
@@ -191,7 +191,7 @@ public abstract class AbstractTestRest {
 
     String root = "ref_name_" + refNamePart.replaceAll("[^a-z]", "");
     Reference main =
-        api.createReference().sourceRefName("main").reference(Branch.of(root, null)).submit();
+        api.createReference().sourceRefName("main").reference(Branch.of(root, null)).create();
 
     IcebergTable meta = IcebergTable.of("meep", -1L);
     main =
@@ -204,30 +204,30 @@ public abstract class AbstractTestRest {
                     .properties(ImmutableMap.of("prop1", "val1", "prop2", "val2"))
                     .build())
             .operation(Operation.Put.of(ContentsKey.of("meep"), meta))
-            .submit();
+            .commit();
     String someHash = main.getHash();
 
     Reference createdTag =
         api.createReference()
             .sourceRefName(main.getName())
             .reference(Tag.of(tagName, someHash))
-            .submit();
+            .create();
     assertEquals(Tag.of(tagName, someHash), createdTag);
     Reference createdBranch1 =
         api.createReference()
             .sourceRefName(main.getName())
             .reference(Branch.of(branchName, someHash))
-            .submit();
+            .create();
     assertEquals(Branch.of(branchName, someHash), createdBranch1);
     Reference createdBranch2 =
         api.createReference()
             .sourceRefName(main.getName())
             .reference(Branch.of(branchName2, someHash))
-            .submit();
+            .create();
     assertEquals(Branch.of(branchName2, someHash), createdBranch2);
 
     Map<String, Reference> references =
-        api.getAllReferences().submit().stream()
+        api.getAllReferences().get().stream()
             .filter(r -> root.equals(r.getName()) || r.getName().endsWith(refNamePart))
             .collect(Collectors.toMap(Reference::getName, Function.identity()));
 
@@ -255,17 +255,17 @@ public abstract class AbstractTestRest {
     String branchHash = branchRef.getHash();
     String branchHash2 = branchRef2.getHash();
 
-    assertThat(api.getReference().refName(tagName).submit()).isEqualTo(tagRef);
-    assertThat(api.getReference().refName(branchName).submit()).isEqualTo(branchRef);
+    assertThat(api.getReference().refName(tagName).get()).isEqualTo(tagRef);
+    assertThat(api.getReference().refName(branchName).get()).isEqualTo(branchRef);
 
-    EntriesResponse entries = api.getEntries().refName(tagName).submit();
+    EntriesResponse entries = api.getEntries().refName(tagName).get();
     assertThat(entries).isNotNull();
-    entries = api.getEntries().refName(branchName).submit();
+    entries = api.getEntries().refName(branchName).get();
     assertThat(entries).isNotNull();
 
-    LogResponse log = api.getCommitLog().refName(tagName).submit();
+    LogResponse log = api.getCommitLog().refName(tagName).get();
     assertThat(log).isNotNull();
-    log = api.getCommitLog().refName(branchName).submit();
+    log = api.getCommitLog().refName(branchName).get();
     assertThat(log).isNotNull();
 
     // Need to have at least one op, otherwise all following operations (assignTag/Branch, merge,
@@ -276,41 +276,41 @@ public abstract class AbstractTestRest {
         .hash(branchHash)
         .operation(Put.of(ContentsKey.of("some-key"), meta))
         .commitMeta(CommitMeta.fromMessage("One dummy op"))
-        .submit();
-    log = api.getCommitLog().refName(branchName).submit();
+        .commit();
+    log = api.getCommitLog().refName(branchName).get();
     String newHash = log.getOperations().get(0).getHash();
 
     api.assignTag()
         .tagName(tagName)
         .hash(tagHash)
         .assignTo(Branch.of(branchName, newHash))
-        .submit();
+        .assign();
     api.assignBranch()
         .branchName(branchName)
         .hash(newHash)
         .assignTo(Branch.of(branchName, newHash))
-        .submit();
+        .assign();
 
     api.mergeRefIntoBranch()
         .branchName(branchName2)
         .hash(branchHash2)
         .fromRefName(branchName)
         .fromHash(newHash)
-        .submit();
+        .merge();
 
-    api.deleteTag().tagName(tagName).hash(newHash).submit();
-    api.deleteBranch().branchName(branchName).hash(newHash).submit();
+    api.deleteTag().tagName(tagName).hash(newHash).delete();
+    api.deleteBranch().branchName(branchName).hash(newHash).delete();
   }
 
   @Test
   public void filterCommitLogByAuthor() throws NessieNotFoundException, NessieConflictException {
-    Reference main = api.getReference().refName("main").submit();
+    Reference main = api.getReference().refName("main").get();
     Branch filterCommitLogByAuthor = Branch.of("filterCommitLogByAuthor", main.getHash());
     Reference branch =
         api.createReference()
             .sourceRefName(main.getName())
             .reference(filterCommitLogByAuthor)
-            .submit();
+            .create();
     assertThat(branch).isEqualTo(filterCommitLogByAuthor);
 
     int numAuthors = 5;
@@ -318,7 +318,7 @@ public abstract class AbstractTestRest {
 
     String currentHash = main.getHash();
     createCommits(branch, numAuthors, commitsPerAuthor, currentHash);
-    LogResponse log = api.getCommitLog().refName(branch.getName()).submit();
+    LogResponse log = api.getCommitLog().refName(branch.getName()).get();
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(numAuthors * commitsPerAuthor);
 
@@ -326,7 +326,7 @@ public abstract class AbstractTestRest {
         api.getCommitLog()
             .refName(branch.getName())
             .queryExpression("commit.author == 'author-3'")
-            .submit();
+            .get();
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(commitsPerAuthor);
     log.getOperations().forEach(commit -> assertThat(commit.getAuthor()).isEqualTo("author-3"));
@@ -336,7 +336,7 @@ public abstract class AbstractTestRest {
             .refName(branch.getName())
             .queryExpression(
                 "commit.author == 'author-3' && commit.committer == 'random-committer'")
-            .submit();
+            .get();
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).isEmpty();
 
@@ -344,7 +344,7 @@ public abstract class AbstractTestRest {
         api.getCommitLog()
             .refName(branch.getName())
             .queryExpression("commit.author == 'author-3' && commit.committer == ''")
-            .submit();
+            .get();
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(commitsPerAuthor);
     log.getOperations().forEach(commit -> assertThat(commit.getAuthor()).isEqualTo("author-3"));
@@ -353,7 +353,7 @@ public abstract class AbstractTestRest {
         api.getCommitLog()
             .refName(branch.getName())
             .queryExpression("commit.author in ['author-1', 'author-3', 'author-4']")
-            .submit();
+            .get();
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(commitsPerAuthor * 3);
     log.getOperations()
@@ -366,7 +366,7 @@ public abstract class AbstractTestRest {
         api.getCommitLog()
             .refName(branch.getName())
             .queryExpression("!(commit.author in ['author-1', 'author-0'])")
-            .submit();
+            .get();
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(commitsPerAuthor * 3);
     log.getOperations()
@@ -379,7 +379,7 @@ public abstract class AbstractTestRest {
         api.getCommitLog()
             .refName(branch.getName())
             .queryExpression("commit.author.matches('au.*-(2|4)')")
-            .submit();
+            .get();
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(commitsPerAuthor * 2);
     log.getOperations()
@@ -390,13 +390,13 @@ public abstract class AbstractTestRest {
 
   @Test
   public void filterCommitLogByTimeRange() throws NessieNotFoundException, NessieConflictException {
-    Reference main = api.getReference().refName("main").submit();
+    Reference main = api.getReference().refName("main").get();
     Branch filterCommitLogByAuthor = Branch.of("filterCommitLogByTimeRange", main.getHash());
     Reference branch =
         api.createReference()
             .sourceRefName(main.getName())
             .reference(filterCommitLogByAuthor)
-            .submit();
+            .create();
     assertThat(branch).isEqualTo(filterCommitLogByAuthor);
 
     int numAuthors = 5;
@@ -405,7 +405,7 @@ public abstract class AbstractTestRest {
 
     String currentHash = main.getHash();
     createCommits(branch, numAuthors, commitsPerAuthor, currentHash);
-    LogResponse log = api.getCommitLog().refName(branch.getName()).submit();
+    LogResponse log = api.getCommitLog().refName(branch.getName()).get();
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(expectedTotalSize);
 
@@ -421,7 +421,7 @@ public abstract class AbstractTestRest {
             .refName(branch.getName())
             .queryExpression(
                 String.format("timestamp(commit.commitTime) > timestamp('%s')", initialCommitTime))
-            .submit();
+            .get();
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(expectedTotalSize - 1);
     log.getOperations()
@@ -432,7 +432,7 @@ public abstract class AbstractTestRest {
             .refName(branch.getName())
             .queryExpression(
                 String.format("timestamp(commit.commitTime) < timestamp('%s')", fiveMinLater))
-            .submit();
+            .get();
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(expectedTotalSize);
     log.getOperations()
@@ -445,7 +445,7 @@ public abstract class AbstractTestRest {
                 String.format(
                     "timestamp(commit.commitTime) > timestamp('%s') && timestamp(commit.commitTime) < timestamp('%s')",
                     initialCommitTime, lastCommitTime))
-            .submit();
+            .get();
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(expectedTotalSize - 2);
     log.getOperations()
@@ -460,7 +460,7 @@ public abstract class AbstractTestRest {
             .refName(branch.getName())
             .queryExpression(
                 String.format("timestamp(commit.commitTime) > timestamp('%s')", fiveMinLater))
-            .submit();
+            .get();
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).isEmpty();
   }
@@ -468,13 +468,13 @@ public abstract class AbstractTestRest {
   @Test
   public void filterCommitLogByProperties()
       throws NessieNotFoundException, NessieConflictException {
-    Reference main = api.getReference().refName("main").submit();
+    Reference main = api.getReference().refName("main").get();
     Branch filterCommitLogByAuthor = Branch.of("filterCommitLogByProperties", main.getHash());
     Reference branch =
         api.createReference()
             .sourceRefName(main.getName())
             .reference(filterCommitLogByAuthor)
-            .submit();
+            .create();
     assertThat(branch).isEqualTo(filterCommitLogByAuthor);
 
     int numAuthors = 5;
@@ -482,7 +482,7 @@ public abstract class AbstractTestRest {
 
     String currentHash = main.getHash();
     createCommits(branch, numAuthors, commitsPerAuthor, currentHash);
-    LogResponse log = api.getCommitLog().refName(branch.getName()).submit();
+    LogResponse log = api.getCommitLog().refName(branch.getName()).get();
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(numAuthors * commitsPerAuthor);
 
@@ -490,7 +490,7 @@ public abstract class AbstractTestRest {
         api.getCommitLog()
             .refName(branch.getName())
             .queryExpression("commit.properties['prop1'] == 'val1'")
-            .submit();
+            .get();
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(numAuthors * commitsPerAuthor);
     log.getOperations()
@@ -500,7 +500,7 @@ public abstract class AbstractTestRest {
         api.getCommitLog()
             .refName(branch.getName())
             .queryExpression("commit.properties['prop1'] == 'val3'")
-            .submit();
+            .get();
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).isEmpty();
   }
@@ -508,16 +508,16 @@ public abstract class AbstractTestRest {
   @Test
   public void filterCommitLogByCommitRange()
       throws NessieNotFoundException, NessieConflictException {
-    Reference main = api.getReference().refName("main").submit();
+    Reference main = api.getReference().refName("main").get();
     Branch b = Branch.of("filterCommitLogByCommitRange", main.getHash());
-    Reference branch = api.createReference().sourceRefName(main.getName()).reference(b).submit();
+    Reference branch = api.createReference().sourceRefName(main.getName()).reference(b).create();
     assertThat(branch).isEqualTo(b);
 
     int numCommits = 10;
 
     String currentHash = main.getHash();
     createCommits(branch, 1, numCommits, currentHash);
-    LogResponse entireLog = api.getCommitLog().refName(branch.getName()).submit();
+    LogResponse entireLog = api.getCommitLog().refName(branch.getName()).get();
     assertThat(entireLog).isNotNull();
     assertThat(entireLog.getOperations()).hasSize(numCommits);
 
@@ -525,11 +525,7 @@ public abstract class AbstractTestRest {
     String startHash = entireLog.getOperations().get(numCommits / 2).getHash();
     String endHash = entireLog.getOperations().get(0).getHash();
     LogResponse log =
-        api.getCommitLog()
-            .refName(branch.getName())
-            .hashOnRef(endHash)
-            .untilHash(startHash)
-            .submit();
+        api.getCommitLog().refName(branch.getName()).hashOnRef(endHash).untilHash(startHash).get();
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(numCommits / 2 + 1);
 
@@ -541,7 +537,7 @@ public abstract class AbstractTestRest {
               .refName(branch.getName())
               .hashOnRef(endHash)
               .untilHash(startHash)
-              .submit();
+              .get();
       assertThat(log).isNotNull();
       assertThat(log.getOperations()).hasSize(numCommits - (i * 2));
       assertThat(ImmutableList.copyOf(entireLog.getOperations()).subList(i, j + 1))
@@ -567,7 +563,7 @@ public abstract class AbstractTestRest {
                         .properties(ImmutableMap.of("prop1", "val1", "prop2", "val2"))
                         .build())
                 .operation(Put.of(ContentsKey.of("table" + i), meta))
-                .submit()
+                .commit()
                 .getHash();
         assertThat(currentHash).isNotEqualTo(nextHash);
         currentHash = nextHash;
@@ -578,10 +574,10 @@ public abstract class AbstractTestRest {
   @Test
   void commitLogPagingAndFilteringByAuthor()
       throws NessieNotFoundException, NessieConflictException {
-    String someHash = api.getReference().refName("main").submit().getHash();
+    String someHash = api.getReference().refName("main").get().getHash();
     String branchName = "commitLogPagingAndFiltering";
     Branch branch = Branch.of(branchName, someHash);
-    api.createReference().sourceRefName("main").reference(branch).submit();
+    api.createReference().sourceRefName("main").reference(branch).create();
 
     int numAuthors = 3;
     int commits = 45;
@@ -589,7 +585,7 @@ public abstract class AbstractTestRest {
     int expectedTotalSize = numAuthors * commits;
 
     createCommits(branch, numAuthors, commits, someHash);
-    LogResponse log = api.getCommitLog().refName(branch.getName()).submit();
+    LogResponse log = api.getCommitLog().refName(branch.getName()).get();
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(expectedTotalSize);
 
@@ -613,10 +609,10 @@ public abstract class AbstractTestRest {
 
   @Test
   void commitLogPaging() throws NessieNotFoundException, NessieConflictException {
-    String someHash = api.getReference().refName("main").submit().getHash();
+    String someHash = api.getReference().refName("main").get().getHash();
     String branchName = "commitLogPaging";
     Branch branch = Branch.of(branchName, someHash);
-    api.createReference().sourceRefName("main").reference(branch).submit();
+    api.createReference().sourceRefName("main").reference(branch).create();
 
     int commits = 95;
     int pageSizeHint = 10;
@@ -633,7 +629,7 @@ public abstract class AbstractTestRest {
               .hash(currentHash)
               .commitMeta(CommitMeta.fromMessage(msg))
               .operation(Put.of(ContentsKey.of("table"), tableMeta))
-              .submit()
+              .commit()
               .getHash();
       assertNotEquals(currentHash, nextHash);
       currentHash = nextHash;
@@ -669,7 +665,7 @@ public abstract class AbstractTestRest {
               .maxRecords(pageSizeHint)
               .pageToken(pageToken)
               .queryExpression(queryExpression)
-              .submit();
+              .get();
       if (pos + pageSizeHint <= commits) {
         assertTrue(response.hasMore());
         assertNotNull(response.getToken());
@@ -696,7 +692,7 @@ public abstract class AbstractTestRest {
   void multiget() throws NessieNotFoundException, NessieConflictException {
     final String branch = "foo";
     Reference r =
-        api.createReference().sourceRefName("main").reference(Branch.of(branch, null)).submit();
+        api.createReference().sourceRefName("main").reference(Branch.of(branch, null)).create();
     ContentsKey a = ContentsKey.of("a");
     ContentsKey b = ContentsKey.of("b");
     IcebergTable ta = IcebergTable.of("path1", -1L);
@@ -706,23 +702,23 @@ public abstract class AbstractTestRest {
         .hash(r.getHash())
         .operation(Put.of(a, ta))
         .commitMeta(CommitMeta.fromMessage("commit 1"))
-        .submit();
+        .commit();
     api.commitMultipleOperations()
         .branchName(branch)
         .hash(r.getHash())
         .operation(Put.of(b, tb))
         .commitMeta(CommitMeta.fromMessage("commit 2"))
-        .submit();
+        .commit();
     Map<ContentsKey, Contents> response =
-        api.getContents().key(a).key(b).key(ContentsKey.of("noexist")).refName("foo").submit();
+        api.getContents().key(a).key(b).key(ContentsKey.of("noexist")).refName("foo").get();
     assertThat(response)
         .containsEntry(a, ta)
         .containsEntry(b, tb)
         .doesNotContainKey(ContentsKey.of("noexist"));
     api.deleteBranch()
         .branchName(branch)
-        .hash(api.getReference().refName(branch).submit().getHash())
-        .submit();
+        .hash(api.getReference().refName(branch).get().getHash())
+        .delete();
   }
 
   private static final class ContentAndOperationType {
@@ -815,7 +811,7 @@ public abstract class AbstractTestRest {
   void verifyAllContentAndOperationTypes() throws NessieNotFoundException, NessieConflictException {
     String branchName = "contentAndOperationAll";
     Reference r =
-        api.createReference().sourceRefName("main").reference(Branch.of(branchName, null)).submit();
+        api.createReference().sourceRefName("main").reference(Branch.of(branchName, null)).create();
 
     CommitMultipleOperationsBuilder commit =
         api.commitMultipleOperations()
@@ -829,9 +825,9 @@ public abstract class AbstractTestRest {
                     ? Stream.of(c.operation)
                     : Stream.of(c.operation, c.globalOperation))
         .forEach(commit::operation);
-    commit.submit();
+    commit.commit();
 
-    List<Entry> entries = api.getEntries().refName(branchName).submit().getEntries();
+    List<Entry> entries = api.getEntries().refName(branchName).get().getEntries();
     List<Entry> expect =
         contentAndOperationTypes()
             .filter(c -> c.operation instanceof Put)
@@ -846,7 +842,7 @@ public abstract class AbstractTestRest {
       throws NessieNotFoundException, NessieConflictException {
     String branchName = "contentAndOperation_" + contentAndOperationType;
     Reference r =
-        api.createReference().sourceRefName("main").reference(Branch.of(branchName, null)).submit();
+        api.createReference().sourceRefName("main").reference(Branch.of(branchName, null)).create();
     CommitMultipleOperationsBuilder commit =
         api.commitMultipleOperations()
             .branchName(branchName)
@@ -856,8 +852,8 @@ public abstract class AbstractTestRest {
     if (contentAndOperationType.globalOperation != null) {
       commit.operation(contentAndOperationType.globalOperation);
     }
-    commit.submit();
-    List<Entry> entries = api.getEntries().refName(branchName).submit().getEntries();
+    commit.commit();
+    List<Entry> entries = api.getEntries().refName(branchName).get().getEntries();
     // Oh, yea - this is weird. The property ContentAndOperationType.operation.key.namespace is null
     // (!!!)
     // here, because somehow JUnit @MethodSource implementation re-constructs the objects returned
@@ -877,7 +873,7 @@ public abstract class AbstractTestRest {
   void filterEntriesByType() throws NessieNotFoundException, NessieConflictException {
     final String branch = "filterTypes";
     Reference r =
-        api.createReference().sourceRefName("main").reference(Branch.of(branch, null)).submit();
+        api.createReference().sourceRefName("main").reference(Branch.of(branch, null)).create();
     ContentsKey a = ContentsKey.of("a");
     ContentsKey b = ContentsKey.of("b");
     IcebergTable tam = IcebergTable.of("path1", -1L);
@@ -888,14 +884,14 @@ public abstract class AbstractTestRest {
         .hash(r.getHash())
         .operation(Put.of(a, tam))
         .commitMeta(CommitMeta.fromMessage("commit 1"))
-        .submit();
+        .commit();
     api.commitMultipleOperations()
         .branchName(branch)
         .hash(r.getHash())
         .operation(Put.of(b, tb))
         .commitMeta(CommitMeta.fromMessage("commit 2"))
-        .submit();
-    List<Entry> entries = api.getEntries().refName(branch).submit().getEntries();
+        .commit();
+    List<Entry> entries = api.getEntries().refName(branch).get().getEntries();
     List<Entry> expected =
         asList(
             Entry.builder().name(a).type(Type.ICEBERG_TABLE).build(),
@@ -906,7 +902,7 @@ public abstract class AbstractTestRest {
         api.getEntries()
             .refName(branch)
             .queryExpression("entry.contentType=='ICEBERG_TABLE'")
-            .submit()
+            .get()
             .getEntries();
     assertEquals(singletonList(expected.get(0)), entries);
 
@@ -914,7 +910,7 @@ public abstract class AbstractTestRest {
         api.getEntries()
             .refName(branch)
             .queryExpression("entry.contentType=='VIEW'")
-            .submit()
+            .get()
             .getEntries();
     assertEquals(singletonList(expected.get(1)), entries);
 
@@ -922,21 +918,21 @@ public abstract class AbstractTestRest {
         api.getEntries()
             .refName(branch)
             .queryExpression("entry.contentType in ['ICEBERG_TABLE', 'VIEW']")
-            .submit()
+            .get()
             .getEntries();
     assertThat(entries).containsExactlyInAnyOrderElementsOf(expected);
 
     api.deleteBranch()
         .branchName(branch)
-        .hash(api.getReference().refName(branch).submit().getHash())
-        .submit();
+        .hash(api.getReference().refName(branch).get().getHash())
+        .delete();
   }
 
   @Test
   public void filterEntriesByNamespace() throws NessieConflictException, NessieNotFoundException {
     final String branch = "filterEntriesByNamespace";
     Reference r =
-        api.createReference().sourceRefName("main").reference(Branch.of(branch, null)).submit();
+        api.createReference().sourceRefName("main").reference(Branch.of(branch, null)).create();
     ContentsKey first = ContentsKey.of("a", "b", "c", "firstTable");
     ContentsKey second = ContentsKey.of("a", "b", "c", "secondTable");
     ContentsKey third = ContentsKey.of("a", "thirdTable");
@@ -946,37 +942,37 @@ public abstract class AbstractTestRest {
         .hash(r.getHash())
         .operation(Put.of(first, IcebergTable.of("path1", -1L)))
         .commitMeta(CommitMeta.fromMessage("commit 1"))
-        .submit();
+        .commit();
     api.commitMultipleOperations()
         .branchName(branch)
         .hash(r.getHash())
         .operation(Put.of(second, IcebergTable.of("path2", -1L)))
         .commitMeta(CommitMeta.fromMessage("commit 2"))
-        .submit();
+        .commit();
     api.commitMultipleOperations()
         .branchName(branch)
         .hash(r.getHash())
         .operation(Put.of(third, IcebergTable.of("path3", -1L)))
         .commitMeta(CommitMeta.fromMessage("commit 3"))
-        .submit();
+        .commit();
     api.commitMultipleOperations()
         .branchName(branch)
         .hash(r.getHash())
         .operation(Put.of(fourth, IcebergTable.of("path4", -1L)))
         .commitMeta(CommitMeta.fromMessage("commit 4"))
-        .submit();
+        .commit();
 
-    List<Entry> entries = api.getEntries().refName(branch).submit().getEntries();
+    List<Entry> entries = api.getEntries().refName(branch).get().getEntries();
     assertThat(entries).isNotNull().hasSize(4);
 
-    entries = api.getEntries().refName(branch).submit().getEntries();
+    entries = api.getEntries().refName(branch).get().getEntries();
     assertThat(entries).isNotNull().hasSize(4);
 
     entries =
         api.getEntries()
             .refName(branch)
             .queryExpression("entry.namespace.startsWith('a.b')")
-            .submit()
+            .get()
             .getEntries();
     assertThat(entries).hasSize(2);
     entries.forEach(e -> assertThat(e.getName().getNamespace().name()).startsWith("a.b"));
@@ -985,7 +981,7 @@ public abstract class AbstractTestRest {
         api.getEntries()
             .refName(branch)
             .queryExpression("entry.namespace.startsWith('a')")
-            .submit()
+            .get()
             .getEntries();
     assertThat(entries).hasSize(4);
     entries.forEach(e -> assertThat(e.getName().getNamespace().name()).startsWith("a"));
@@ -994,7 +990,7 @@ public abstract class AbstractTestRest {
         api.getEntries()
             .refName(branch)
             .queryExpression("entry.namespace.startsWith('a.b.c.firstTable')")
-            .submit()
+            .get()
             .getEntries();
     assertThat(entries).isEmpty();
 
@@ -1002,14 +998,14 @@ public abstract class AbstractTestRest {
         api.getEntries()
             .refName(branch)
             .queryExpression("entry.namespace.startsWith('a.fourthTable')")
-            .submit()
+            .get()
             .getEntries();
     assertThat(entries).isEmpty();
 
     api.deleteBranch()
         .branchName(branch)
-        .hash(api.getReference().refName(branch).submit().getHash())
-        .submit();
+        .hash(api.getReference().refName(branch).get().getHash())
+        .delete();
   }
 
   @Test
@@ -1017,7 +1013,7 @@ public abstract class AbstractTestRest {
       throws NessieConflictException, NessieNotFoundException {
     final String branch = "filterEntriesByNamespaceAndPrefixDepth";
     Reference r =
-        api.createReference().sourceRefName("main").reference(Branch.of(branch, null)).submit();
+        api.createReference().sourceRefName("main").reference(Branch.of(branch, null)).create();
     ContentsKey first = ContentsKey.of("a", "b", "c", "firstTable");
     ContentsKey second = ContentsKey.of("a", "b", "c", "secondTable");
     ContentsKey third = ContentsKey.of("a", "thirdTable");
@@ -1030,10 +1026,10 @@ public abstract class AbstractTestRest {
           .hash(r.getHash())
           .operation(Put.of(keys.get(i), IcebergTable.of("path" + i, -1L)))
           .commitMeta(CommitMeta.fromMessage("commit " + i))
-          .submit();
+          .commit();
     }
 
-    List<Entry> entries = api.getEntries().refName(branch).namespaceDepth(0).submit().getEntries();
+    List<Entry> entries = api.getEntries().refName(branch).namespaceDepth(0).get().getEntries();
     assertThat(entries).isNotNull().hasSize(5);
 
     entries =
@@ -1041,7 +1037,7 @@ public abstract class AbstractTestRest {
             .refName(branch)
             .namespaceDepth(0)
             .queryExpression("entry.namespace.matches('a(\\\\.|$)')")
-            .submit()
+            .get()
             .getEntries();
     assertThat(entries).isNotNull().hasSize(5);
 
@@ -1050,7 +1046,7 @@ public abstract class AbstractTestRest {
             .refName(branch)
             .namespaceDepth(1)
             .queryExpression("entry.namespace.matches('a(\\\\.|$)')")
-            .submit()
+            .get()
             .getEntries();
     assertThat(entries).hasSize(1);
     assertThat(entries.stream().map(e -> e.getName().toPathString()))
@@ -1061,7 +1057,7 @@ public abstract class AbstractTestRest {
             .refName(branch)
             .namespaceDepth(2)
             .queryExpression("entry.namespace.matches('a(\\\\.|$)')")
-            .submit()
+            .get()
             .getEntries();
     assertThat(entries).hasSize(3);
     assertThat(entries.stream().map(e -> e.getName().toPathString()))
@@ -1072,7 +1068,7 @@ public abstract class AbstractTestRest {
             .refName(branch)
             .namespaceDepth(3)
             .queryExpression("entry.namespace.matches('a\\\\.b(\\\\.|$)')")
-            .submit()
+            .get()
             .getEntries();
     assertThat(entries).hasSize(2);
     assertThat(entries.stream().map(e -> e.getName().toPathString()))
@@ -1083,7 +1079,7 @@ public abstract class AbstractTestRest {
             .refName(branch)
             .namespaceDepth(4)
             .queryExpression("entry.namespace.matches('a\\\\.b\\\\.c(\\\\.|$)')")
-            .submit()
+            .get()
             .getEntries();
     assertThat(entries).hasSize(2);
     assertThat(entries.stream().map(e -> e.getName().toPathString()))
@@ -1091,19 +1087,19 @@ public abstract class AbstractTestRest {
 
     api.deleteBranch()
         .branchName(branch)
-        .hash(api.getReference().refName(branch).submit().getHash())
-        .submit();
+        .hash(api.getReference().refName(branch).get().getHash())
+        .delete();
   }
 
   @Test
   public void checkCelScriptFailureReporting() {
     assertThatThrownBy(
-            () -> api.getEntries().refName("main").queryExpression("invalid_script").submit())
+            () -> api.getEntries().refName("main").queryExpression("invalid_script").get())
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessageContaining("undeclared reference to 'invalid_script'");
 
     assertThatThrownBy(
-            () -> api.getCommitLog().refName("main").queryExpression("invalid_script").submit())
+            () -> api.getCommitLog().refName("main").queryExpression("invalid_script").get())
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessageContaining("undeclared reference to 'invalid_script'");
   }
@@ -1112,7 +1108,7 @@ public abstract class AbstractTestRest {
   void checkSpecialCharacterRoundTrip() throws NessieNotFoundException, NessieConflictException {
     final String branch = "specialchar";
     Reference r =
-        api.createReference().sourceRefName("main").reference(Branch.of(branch, null)).submit();
+        api.createReference().sourceRefName("main").reference(Branch.of(branch, null)).create();
     // ContentsKey k = ContentsKey.of("/%国","国.国");
     ContentsKey k = ContentsKey.of("a.b", "c.txt");
     IcebergTable ta = IcebergTable.of("path1", -1L);
@@ -1121,26 +1117,26 @@ public abstract class AbstractTestRest {
         .hash(r.getHash())
         .operation(Put.of(k, ta))
         .commitMeta(CommitMeta.fromMessage("commit 1"))
-        .submit();
+        .commit();
 
-    assertThat(api.getContents().key(k).refName(branch).submit()).containsEntry(k, ta);
-    assertEquals(ta, api.getContents().key(k).refName(branch).submit().get(k));
+    assertThat(api.getContents().key(k).refName(branch).get()).containsEntry(k, ta);
+    assertEquals(ta, api.getContents().key(k).refName(branch).get().get(k));
     api.deleteBranch()
         .branchName(branch)
-        .hash(api.getReference().refName(branch).submit().getHash())
-        .submit();
+        .hash(api.getReference().refName(branch).get().getHash())
+        .delete();
   }
 
   @Test
   void checkServerErrorPropagation() throws NessieNotFoundException, NessieConflictException {
     final String branch = "bar";
-    api.createReference().sourceRefName("main").reference(Branch.of(branch, null)).submit();
+    api.createReference().sourceRefName("main").reference(Branch.of(branch, null)).create();
     assertThatThrownBy(
             () ->
                 api.createReference()
                     .sourceRefName("main")
                     .reference(Branch.of(branch, null))
-                    .submit())
+                    .create())
         .isInstanceOf(NessieConflictException.class)
         .hasMessageContaining("already exists");
   }
@@ -1168,32 +1164,31 @@ public abstract class AbstractTestRest {
                             .branchName(invalidBranchName)
                             .hash(validHash)
                             .commitMeta(CommitMeta.fromMessage(""))
-                            .submit())
+                            .commit())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining(".branchName: " + REF_NAME_MESSAGE)
                 .hasMessageContaining(opsCountMsg),
         () ->
             assertThatThrownBy(
-                    () -> api.deleteBranch().branchName(invalidBranchName).hash(validHash).submit())
+                    () -> api.deleteBranch().branchName(invalidBranchName).hash(validHash).delete())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining("deleteBranch.branchName: " + REF_NAME_MESSAGE),
         () ->
             assertThatThrownBy(
-                    () ->
-                        api.getCommitLog().refName(invalidBranchName).untilHash(validHash).submit())
+                    () -> api.getCommitLog().refName(invalidBranchName).untilHash(validHash).get())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining("getCommitLog.ref: " + REF_NAME_MESSAGE),
         () ->
             assertThatThrownBy(
-                    () -> api.getEntries().refName(invalidBranchName).hashOnRef(validHash).submit())
+                    () -> api.getEntries().refName(invalidBranchName).hashOnRef(validHash).get())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining("getEntries.refName: " + REF_NAME_MESSAGE),
         () ->
-            assertThatThrownBy(() -> api.getReference().refName(invalidBranchName).submit())
+            assertThatThrownBy(() -> api.getReference().refName(invalidBranchName).get())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining("getReferenceByName.refName: " + REF_NAME_OR_HASH_MESSAGE),
@@ -1204,7 +1199,7 @@ public abstract class AbstractTestRest {
                             .tagName(invalidBranchName)
                             .hash(validHash)
                             .assignTo(tag)
-                            .submit())
+                            .assign())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining("assignTag.tagName: " + REF_NAME_MESSAGE),
@@ -1228,13 +1223,13 @@ public abstract class AbstractTestRest {
                             .branchName(invalidBranchName)
                             .hash(validHash)
                             .fromRef(api.getDefaultBranch())
-                            .submit())
+                            .merge())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining("mergeRefIntoBranch.branchName: " + REF_NAME_MESSAGE),
         () ->
             assertThatThrownBy(
-                    () -> api.deleteTag().tagName(invalidBranchName).hash(validHash).submit())
+                    () -> api.deleteTag().tagName(invalidBranchName).hash(validHash).delete())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining("deleteTag.tagName: " + REF_NAME_MESSAGE),
@@ -1246,9 +1241,8 @@ public abstract class AbstractTestRest {
                             .hash(validHash)
                             .fromRefName("main")
                             .hashesToTransplant(
-                                singletonList(
-                                    api.getReference().refName("main").submit().getHash()))
-                            .submit())
+                                singletonList(api.getReference().refName("main").get().getHash()))
+                            .transplant())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining(
@@ -1260,7 +1254,7 @@ public abstract class AbstractTestRest {
                             .key(key)
                             .refName(invalidBranchName)
                             .hashOnRef(validHash)
-                            .submit())
+                            .get())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining(".ref: " + REF_NAME_MESSAGE),
@@ -1271,7 +1265,7 @@ public abstract class AbstractTestRest {
                             .key(key)
                             .refName(invalidBranchName)
                             .hashOnRef(validHash)
-                            .submit())
+                            .get())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining(".ref: " + REF_NAME_MESSAGE));
@@ -1303,14 +1297,14 @@ public abstract class AbstractTestRest {
                             .branchName(validBranchName)
                             .hash(invalidHash)
                             .commitMeta(CommitMeta.fromMessage(""))
-                            .submit())
+                            .commit())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining(".hash: " + HASH_MESSAGE)
                 .hasMessageContaining(opsCountMsg),
         () ->
             assertThatThrownBy(
-                    () -> api.deleteBranch().branchName(validBranchName).hash(invalidHash).submit())
+                    () -> api.deleteBranch().branchName(validBranchName).hash(invalidHash).delete())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining("deleteBranch.hash: " + HASH_MESSAGE),
@@ -1321,7 +1315,7 @@ public abstract class AbstractTestRest {
                             .tagName(validBranchName)
                             .hash(invalidHash)
                             .assignTo(tag)
-                            .submit())
+                            .assign())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining("assignTag.oldHash: " + HASH_MESSAGE),
@@ -1345,13 +1339,13 @@ public abstract class AbstractTestRest {
                             .branchName(validBranchName)
                             .hash(invalidHash)
                             .fromRef(api.getDefaultBranch())
-                            .submit())
+                            .merge())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining("mergeRefIntoBranch.hash: " + HASH_MESSAGE),
         () ->
             assertThatThrownBy(
-                    () -> api.deleteTag().tagName(validBranchName).hash(invalidHash).submit())
+                    () -> api.deleteTag().tagName(validBranchName).hash(invalidHash).delete())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining("deleteTag.hash: " + HASH_MESSAGE),
@@ -1363,14 +1357,13 @@ public abstract class AbstractTestRest {
                             .hash(invalidHash)
                             .fromRefName("main")
                             .hashesToTransplant(
-                                singletonList(
-                                    api.getReference().refName("main").submit().getHash()))
-                            .submit())
+                                singletonList(api.getReference().refName("main").get().getHash()))
+                            .transplant())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining("transplantCommitsIntoBranch.hash: " + HASH_MESSAGE),
         () ->
-            assertThatThrownBy(() -> api.getContents().refName(invalidHash).submit())
+            assertThatThrownBy(() -> api.getContents().refName(invalidHash).get())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining(
@@ -1378,8 +1371,7 @@ public abstract class AbstractTestRest {
                 .hasMessageContaining(".ref: " + REF_NAME_MESSAGE),
         () ->
             assertThatThrownBy(
-                    () ->
-                        api.getContents().refName(validBranchName).hashOnRef(invalidHash).submit())
+                    () -> api.getContents().refName(validBranchName).hashOnRef(invalidHash).get())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining(
@@ -1392,27 +1384,25 @@ public abstract class AbstractTestRest {
                             .key(key)
                             .refName(validBranchName)
                             .hashOnRef(invalidHash)
-                            .submit())
+                            .get())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining(".hashOnRef: " + HASH_MESSAGE),
         () ->
             assertThatThrownBy(
-                    () ->
-                        api.getCommitLog().refName(validBranchName).untilHash(invalidHash).submit())
+                    () -> api.getCommitLog().refName(validBranchName).untilHash(invalidHash).get())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining("getCommitLog.params.startHash: " + HASH_MESSAGE),
         () ->
             assertThatThrownBy(
-                    () ->
-                        api.getCommitLog().refName(validBranchName).hashOnRef(invalidHash).submit())
+                    () -> api.getCommitLog().refName(validBranchName).hashOnRef(invalidHash).get())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining("getCommitLog.params.endHash: " + HASH_MESSAGE),
         () ->
             assertThatThrownBy(
-                    () -> api.getEntries().refName(validBranchName).hashOnRef(invalidHash).submit())
+                    () -> api.getEntries().refName(validBranchName).hashOnRef(invalidHash).get())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining("getEntries.params.hashOnRef: " + HASH_MESSAGE));
@@ -1522,22 +1512,22 @@ public abstract class AbstractTestRest {
     ContentsKey key = ContentsKey.of("x");
     String invalidRef = "1234567890123456";
 
-    assertThatThrownBy(() -> api.getCommitLog().refName(invalidRef).submit())
+    assertThatThrownBy(() -> api.getCommitLog().refName(invalidRef).get())
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessageContaining("Bad Request (HTTP/400):")
         .hasMessageContaining("getCommitLog.ref: " + REF_NAME_MESSAGE);
 
-    assertThatThrownBy(() -> api.getEntries().refName(invalidRef).submit())
+    assertThatThrownBy(() -> api.getEntries().refName(invalidRef).get())
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessageContaining("Bad Request (HTTP/400):")
         .hasMessageContaining("getEntries.refName: " + REF_NAME_MESSAGE);
 
-    assertThatThrownBy(() -> api.getContents().key(key).refName(invalidRef).submit())
+    assertThatThrownBy(() -> api.getContents().key(key).refName(invalidRef).get())
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessageContaining("Bad Request (HTTP/400):")
         .hasMessageContaining(".ref: " + REF_NAME_MESSAGE);
 
-    assertThatThrownBy(() -> api.getContents().refName(invalidRef).key(key).submit())
+    assertThatThrownBy(() -> api.getContents().refName(invalidRef).key(key).get())
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessageContaining("Bad Request (HTTP/400):")
         .hasMessageContaining(".ref: " + REF_NAME_MESSAGE);
@@ -1546,20 +1536,20 @@ public abstract class AbstractTestRest {
   @Test
   public void testValidHashesOnValidNamedRefs()
       throws NessieNotFoundException, NessieConflictException {
-    Reference main = api.getReference().refName("main").submit();
+    Reference main = api.getReference().refName("main").get();
     Branch b = Branch.of("testValidHashesOnValidNamedRefs", main.getHash());
-    Reference branch = api.createReference().sourceRefName(main.getName()).reference(b).submit();
+    Reference branch = api.createReference().sourceRefName(main.getName()).reference(b).create();
     assertThat(branch).isEqualTo(b);
 
     int commits = 10;
 
     String currentHash = main.getHash();
     createCommits(branch, 1, commits, currentHash);
-    LogResponse entireLog = api.getCommitLog().refName(branch.getName()).submit();
+    LogResponse entireLog = api.getCommitLog().refName(branch.getName()).get();
     assertThat(entireLog).isNotNull();
     assertThat(entireLog.getOperations()).hasSize(commits);
 
-    EntriesResponse allEntries = api.getEntries().refName(branch.getName()).submit();
+    EntriesResponse allEntries = api.getEntries().refName(branch.getName()).get();
     assertThat(allEntries).isNotNull();
     assertThat(allEntries.getEntries()).hasSize(commits);
 
@@ -1568,24 +1558,24 @@ public abstract class AbstractTestRest {
 
     // TODO: check where hashOnRef is set
     Map<ContentsKey, Contents> allContents =
-        api.getContents().keys(keys).refName(branch.getName()).submit();
+        api.getContents().keys(keys).refName(branch.getName()).get();
 
     for (int i = 0; i < commits; i++) {
       String hash = entireLog.getOperations().get(i).getHash();
-      LogResponse log = api.getCommitLog().refName(branch.getName()).hashOnRef(hash).submit();
+      LogResponse log = api.getCommitLog().refName(branch.getName()).hashOnRef(hash).get();
       assertThat(log).isNotNull();
       assertThat(log.getOperations()).hasSize(commits - i);
       assertThat(ImmutableList.copyOf(entireLog.getOperations()).subList(i, commits))
           .containsExactlyElementsOf(log.getOperations());
 
-      EntriesResponse entries = api.getEntries().refName(branch.getName()).hashOnRef(hash).submit();
+      EntriesResponse entries = api.getEntries().refName(branch.getName()).hashOnRef(hash).get();
       assertThat(entries).isNotNull();
       assertThat(entries.getEntries()).hasSize(commits - i);
 
       int idx = commits - 1 - i;
       ContentsKey key = ContentsKey.of("table" + idx);
       Contents c =
-          api.getContents().key(key).refName(branch.getName()).hashOnRef(hash).submit().get(key);
+          api.getContents().key(key).refName(branch.getName()).hashOnRef(hash).get().get(key);
       assertThat(c).isNotNull().isEqualTo(allContents.get(key));
     }
   }
@@ -1593,9 +1583,9 @@ public abstract class AbstractTestRest {
   @Test
   public void testUnknownHashesOnValidNamedRefs()
       throws NessieNotFoundException, NessieConflictException {
-    Reference main = api.getReference().refName("main").submit();
+    Reference main = api.getReference().refName("main").get();
     Branch b = Branch.of("testUnknownHashesOnValidNamedRefs", main.getHash());
-    Reference branch = api.createReference().sourceRefName(main.getName()).reference(b).submit();
+    Reference branch = api.createReference().sourceRefName(main.getName()).reference(b).create();
     assertThat(branch).isEqualTo(b);
     String invalidHash = "1234567890123456";
 
@@ -1604,26 +1594,14 @@ public abstract class AbstractTestRest {
     String currentHash = main.getHash();
     createCommits(branch, 1, commits, currentHash);
     assertThatThrownBy(
-            () -> api.getCommitLog().refName(branch.getName()).hashOnRef(invalidHash).submit())
+            () -> api.getCommitLog().refName(branch.getName()).hashOnRef(invalidHash).get())
         .isInstanceOf(NessieNotFoundException.class)
         .hasMessageContaining(
             String.format(
                 "Could not find commit '%s' in reference '%s'.", invalidHash, b.getName()));
 
     assertThatThrownBy(
-            () -> api.getEntries().refName(branch.getName()).hashOnRef(invalidHash).submit())
-        .isInstanceOf(NessieNotFoundException.class)
-        .hasMessageContaining(
-            String.format(
-                "Could not find commit '%s' in reference '%s'.", invalidHash, b.getName()));
-
-    assertThatThrownBy(
-            () ->
-                api.getContents()
-                    .key(ContentsKey.of("table0"))
-                    .refName(branch.getName())
-                    .hashOnRef(invalidHash)
-                    .submit())
+            () -> api.getEntries().refName(branch.getName()).hashOnRef(invalidHash).get())
         .isInstanceOf(NessieNotFoundException.class)
         .hasMessageContaining(
             String.format(
@@ -1635,7 +1613,19 @@ public abstract class AbstractTestRest {
                     .key(ContentsKey.of("table0"))
                     .refName(branch.getName())
                     .hashOnRef(invalidHash)
-                    .submit())
+                    .get())
+        .isInstanceOf(NessieNotFoundException.class)
+        .hasMessageContaining(
+            String.format(
+                "Could not find commit '%s' in reference '%s'.", invalidHash, b.getName()));
+
+    assertThatThrownBy(
+            () ->
+                api.getContents()
+                    .key(ContentsKey.of("table0"))
+                    .refName(branch.getName())
+                    .hashOnRef(invalidHash)
+                    .get())
         .isInstanceOf(NessieNotFoundException.class)
         .hasMessageContaining(
             String.format(
