@@ -35,13 +35,14 @@ jobs:
         MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
         SPARK_LOCAL_IP: localhost
       if: ${{ env.MAVEN_USERNAME }}
-      run: ./mvnw -B deploy --file pom.xml -Pcode-coverage,native,release -DdeployAtEnd=true -Dtest.log.level=WARN -Dquarkus.native.native-image-xmx=6g
+      run: ./mvnw -B deploy --file pom.xml -Pcode-coverage,native,release,docker -DdeployAtEnd=true -Dtest.log.level=WARN -Dquarkus.native.native-image-xmx=6g
+
     - name: Build with Maven (Fork)
       env:
         MAVEN_USERNAME: ${{ secrets.OSSRH_ACCESS_ID }}
         SPARK_LOCAL_IP: localhost
       if: ${{ ! env.MAVEN_USERNAME }}
-      run: ./mvnw -B install --file pom.xml -Pcode-coverage,native,release -DskipGpg -Dtest.log.level=WARN
+      run: ./mvnw -B install --file pom.xml -Pcode-coverage,native,release,docker -DskipGpg -Dtest.log.level=WARN
 
     - name: Build with Gradle
       run: ./gradlew --rerun-tasks --no-daemon --info build
