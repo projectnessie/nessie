@@ -34,13 +34,8 @@ jobs:
       uses: ./.github/actions/dev-tool-java
 
     - name: Build with Maven
-      run: |
-        ./mvnw -B install -DskipTests -am -pl :nessie-quarkus -pl :nessie-lambda
+      run: ./mvnw -B install -DskipTests -am -pl :nessie-quarkus -pl :nessie-lambda
 
-    - name: Native tests
+    - name: Test native with Maven
       run: |
-        # No code-coverage here
-        ./mvnw -B install --file pom.xml -Pnative -Dtest.log.level=WARN -pl :nessie-quarkus -pl :nessie-lambda -Dquarkus.native.native-image-xmx=6g
-
-    - name: Capture Results
-      uses: ./.github/actions/ci-results
+        ./mvnw -B install -Pnative,docker -Dtest.log.level=WARN -Dquarkus.native.native-image-xmx=6g -pl :nessie-quarkus -pl :nessie-lambda
