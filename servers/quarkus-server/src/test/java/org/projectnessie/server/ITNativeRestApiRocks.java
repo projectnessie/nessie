@@ -16,11 +16,14 @@
 package org.projectnessie.server;
 
 import io.quarkus.test.junit.NativeImageTest;
+import io.quarkus.test.junit.TestProfile;
 import java.net.URI;
 import org.junit.jupiter.api.BeforeEach;
 import org.projectnessie.jaxrs.AbstractTestRest;
+import org.projectnessie.server.profiles.QuarkusNativeProfileRocks;
 
 @NativeImageTest
+@TestProfile(QuarkusNativeProfileRocks.class)
 public class ITNativeRestApiRocks extends AbstractTestRest {
 
   @Override
