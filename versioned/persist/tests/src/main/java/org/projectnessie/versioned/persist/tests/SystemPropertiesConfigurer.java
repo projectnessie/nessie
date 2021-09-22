@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
+import org.projectnessie.versioned.persist.adapter.DatabaseConnectionConfig;
 
 /**
  * Helper class to configure instances of {@link DatabaseAdapterConfig} via system properties for
@@ -36,21 +37,35 @@ public class SystemPropertiesConfigurer {
 
   public static final String CONFIG_NAME_PREFIX = "nessie.store.";
 
-  public static <T extends DatabaseAdapterConfig<?>>
-      DatabaseAdapterConfig<?> configureFromSystemProperties(T config) {
-    return configureFromProperties(config, System::getProperty);
+  public static <T extends DatabaseAdapterConfig<?>> T configureAdapterFromSystemProperties(
+      T config) {
+    return configureAdapterFromProperties(config, System::getProperty);
+  }
+
+  public static <T extends DatabaseConnectionConfig> T configureConnectionFromSystemProperties(
+      T config) {
+    return configureConnectionFromProperties(config, System::getProperty);
+  }
+
+  public static <T extends DatabaseAdapterConfig<?>> T configureAdapterFromProperties(
+      T config, Function<String, String> property) {
+    return configureFromPropertiesGeneric(config, DatabaseAdapterConfig.class, property);
+  }
+
+  public static <T extends DatabaseConnectionConfig> T configureConnectionFromProperties(
+      T config, Function<String, String> property) {
+    return configureFromPropertiesGeneric(config, DatabaseConnectionConfig.class, property);
   }
 
   @SuppressWarnings("unchecked")
-  public static <T extends DatabaseAdapterConfig<?>>
-      DatabaseAdapterConfig<?> configureFromProperties(
-          T config, Function<String, String> property) {
+  public static <T> T configureFromPropertiesGeneric(
+      T config, Class<?> configType, Function<String, String> property) {
     List<Method> l =
         Arrays.stream(config.getClass().getMethods())
             .filter(m -> m.getName().startsWith("with"))
             .filter(m -> m.getName().length() >= 5)
             .filter(m -> Modifier.isPublic(m.getModifiers()))
-            .filter(m -> DatabaseAdapterConfig.class.isAssignableFrom(m.getReturnType()))
+            .filter(m -> configType.isAssignableFrom(m.getReturnType()))
             .filter(m -> m.getParameterTypes().length == 1)
             .filter(m -> property.apply(toPropertyName(m)) != null)
             .collect(Collectors.toList());

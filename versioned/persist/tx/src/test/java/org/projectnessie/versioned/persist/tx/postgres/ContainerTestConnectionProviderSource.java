@@ -15,48 +15,41 @@
  */
 package org.projectnessie.versioned.persist.tx.postgres;
 
-import java.sql.SQLException;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
-import org.projectnessie.versioned.persist.tests.extension.TestConnectionProviderSource;
-import org.projectnessie.versioned.persist.tx.TxConnectionProvider;
-import org.projectnessie.versioned.persist.tx.local.ImmutableLocalTxConnectionConfig;
-import org.projectnessie.versioned.persist.tx.local.LocalConnectionProvider;
+import org.projectnessie.versioned.persist.tx.local.GenericJdbcTestConnectionProviderSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 
 abstract class ContainerTestConnectionProviderSource
-    implements TestConnectionProviderSource<TxConnectionProvider<?>> {
+    extends GenericJdbcTestConnectionProviderSource {
   private static final Logger LOGGER =
       LoggerFactory.getLogger(ContainerTestConnectionProviderSource.class);
 
   private JdbcDatabaseContainer<?> container;
-  private LocalConnectionProvider connectionProvider;
 
   @Override
-  public void start() throws SQLException {
+  public void start() throws Exception {
+    if (container != null) {
+      throw new IllegalStateException("Already started");
+    }
+
     container = createContainer().withLogConsumer(new Slf4jLogConsumer(LOGGER));
     container.start();
 
-    connectionProvider = new LocalConnectionProvider();
-    connectionProvider.configure(
-        ImmutableLocalTxConnectionConfig.builder()
-            .jdbcUrl(container.getJdbcUrl())
-            .jdbcUser(container.getUsername())
-            .jdbcPass(container.getPassword())
-            .build());
-    connectionProvider.initialize();
+    configureConnectionProviderConfigFromDefaults(
+        c ->
+            c.withJdbcUrl(container.getJdbcUrl())
+                .withJdbcUser(container.getUsername())
+                .withJdbcPass(container.getPassword()));
+    super.start();
   }
 
   @Override
   public void stop() throws Exception {
     try {
-      if (connectionProvider != null) {
-        connectionProvider.close();
-      }
+      super.stop();
     } finally {
-      connectionProvider = null;
       try {
         if (container != null) {
           container.stop();
@@ -65,12 +58,6 @@ abstract class ContainerTestConnectionProviderSource
         container = null;
       }
     }
-  }
-
-  @Override
-  public DatabaseAdapterConfig<TxConnectionProvider<?>> updateConfig(
-      DatabaseAdapterConfig<TxConnectionProvider<?>> config) {
-    return config.withConnectionProvider(connectionProvider);
   }
 
   protected abstract JdbcDatabaseContainer<?> createContainer();

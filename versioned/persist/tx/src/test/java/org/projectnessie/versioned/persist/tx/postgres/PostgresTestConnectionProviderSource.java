@@ -15,10 +15,21 @@
  */
 package org.projectnessie.versioned.persist.tx.postgres;
 
+import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
+import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
+import org.projectnessie.versioned.persist.tx.TxDatabaseAdapterConfig;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 
+/** PostgreSQL test connection-provider source using a Docker container running PostgreSQL. */
 public class PostgresTestConnectionProviderSource extends ContainerTestConnectionProviderSource {
+
+  @Override
+  public boolean isCompatibleWith(
+      DatabaseAdapterConfig<?> adapterConfig, DatabaseAdapterFactory<?> databaseAdapterFactory) {
+    return adapterConfig instanceof TxDatabaseAdapterConfig
+        && databaseAdapterFactory instanceof PostgresDatabaseAdapterFactory;
+  }
 
   @Override
   protected JdbcDatabaseContainer<?> createContainer() {

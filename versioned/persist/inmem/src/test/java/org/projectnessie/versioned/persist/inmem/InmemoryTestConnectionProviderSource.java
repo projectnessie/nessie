@@ -16,32 +16,25 @@
 package org.projectnessie.versioned.persist.inmem;
 
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
-import org.projectnessie.versioned.persist.tests.extension.TestConnectionProviderSource;
+import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
+import org.projectnessie.versioned.persist.tests.extension.AbstractTestConnectionProviderSource;
 
 public class InmemoryTestConnectionProviderSource
-    implements TestConnectionProviderSource<InmemoryStore> {
-
-  private InmemoryStore store;
+    extends AbstractTestConnectionProviderSource<InmemoryConfig> {
 
   @Override
-  public DatabaseAdapterConfig<InmemoryStore> updateConfig(
-      DatabaseAdapterConfig<InmemoryStore> config) {
-    return config.withConnectionProvider(store);
+  public boolean isCompatibleWith(
+      DatabaseAdapterConfig<?> adapterConfig, DatabaseAdapterFactory<?> databaseAdapterFactory) {
+    return adapterConfig instanceof InmemoryDatabaseAdapterConfig;
   }
 
   @Override
-  public void start() {
-    store = new InmemoryStore();
+  public InmemoryConfig createDefaultConnectionProviderConfig() {
+    return ImmutableInmemoryConfig.builder().build();
   }
 
   @Override
-  public void stop() {
-    try {
-      if (store != null) {
-        store.close();
-      }
-    } finally {
-      store = null;
-    }
+  public InmemoryStore createConnectionProvider() {
+    return new InmemoryStore();
   }
 }

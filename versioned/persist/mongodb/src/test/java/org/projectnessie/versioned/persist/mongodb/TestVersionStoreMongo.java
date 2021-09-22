@@ -18,5 +18,5 @@ package org.projectnessie.versioned.persist.mongodb;
 import org.projectnessie.versioned.persist.tests.AbstractVersionStoreTest;
 import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
-@NessieExternalDatabase(MongoTestConnectionProviderSource.class)
+@NessieExternalDatabase(FlapdoodleMongoTestConnectionProviderSource.class)
 class TestVersionStoreMongo extends AbstractVersionStoreTest {}

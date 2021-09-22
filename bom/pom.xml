@@ -246,6 +246,11 @@
       </dependency>
       <dependency>
         <groupId>org.projectnessie</groupId>
+        <artifactId>nessie-versioned-persist-bench</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.projectnessie</groupId>
         <artifactId>nessie-perf-test</artifactId>
         <version>${project.version}</version>
       </dependency>

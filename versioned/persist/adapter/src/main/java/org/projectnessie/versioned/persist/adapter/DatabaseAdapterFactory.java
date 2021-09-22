@@ -66,7 +66,7 @@ public interface DatabaseAdapterFactory<CONFIG extends DatabaseAdapterConfig<?>>
 
   static <CONFIG extends DatabaseAdapterConfig<?>> DatabaseAdapterFactory<CONFIG> loadFactoryByName(
       String name) {
-    return loadFactory(f -> f.getName().equals(name));
+    return loadFactory(f -> f.getName().equalsIgnoreCase(name));
   }
 
   static <CONFIG extends DatabaseAdapterConfig<?>> DatabaseAdapterFactory<CONFIG> loadFactory(

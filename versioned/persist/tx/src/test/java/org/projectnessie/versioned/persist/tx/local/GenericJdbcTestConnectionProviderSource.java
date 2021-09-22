@@ -13,33 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.persist.mongodb;
+package org.projectnessie.versioned.persist.tx.local;
 
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.tests.extension.AbstractTestConnectionProviderSource;
+import org.projectnessie.versioned.persist.tx.TxDatabaseAdapterConfig;
 
 /**
- * MongoDB test connection-provider source using an external MongoDB instance/cluster.
+ * Generic JDBC test connection-provider source.
  *
- * <p>See {@link MongoClientConfig} for configuration options.
+ * <p>See {@link LocalTxConnectionConfig} for configuration options.
  */
-public class MongoTestConnectionProviderSource
-    extends AbstractTestConnectionProviderSource<MongoClientConfig> {
+public class GenericJdbcTestConnectionProviderSource
+    extends AbstractTestConnectionProviderSource<LocalTxConnectionConfig> {
+
+  @Override
+  public LocalTxConnectionConfig createDefaultConnectionProviderConfig() {
+    return ImmutableLocalTxConnectionConfig.builder().build();
+  }
+
+  @Override
+  public LocalConnectionProvider createConnectionProvider() {
+    return new LocalConnectionProvider();
+  }
 
   @Override
   public boolean isCompatibleWith(
       DatabaseAdapterConfig<?> adapterConfig, DatabaseAdapterFactory<?> databaseAdapterFactory) {
-    return adapterConfig instanceof MongoDatabaseAdapterConfig;
-  }
-
-  @Override
-  public MongoClientConfig createDefaultConnectionProviderConfig() {
-    return ImmutableMongoClientConfig.builder().build();
-  }
-
-  @Override
-  public MongoDatabaseClient createConnectionProvider() {
-    return new MongoDatabaseClient();
+    return adapterConfig instanceof TxDatabaseAdapterConfig;
   }
 }

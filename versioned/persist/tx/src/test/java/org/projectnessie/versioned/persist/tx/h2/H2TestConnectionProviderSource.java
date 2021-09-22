@@ -15,39 +15,38 @@
  */
 package org.projectnessie.versioned.persist.tx.h2;
 
-import java.sql.SQLException;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
-import org.projectnessie.versioned.persist.tests.extension.TestConnectionProviderSource;
-import org.projectnessie.versioned.persist.tx.TxConnectionProvider;
+import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
+import org.projectnessie.versioned.persist.tests.extension.AbstractTestConnectionProviderSource;
+import org.projectnessie.versioned.persist.tx.TxDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.tx.local.ImmutableLocalTxConnectionConfig;
 import org.projectnessie.versioned.persist.tx.local.LocalConnectionProvider;
+import org.projectnessie.versioned.persist.tx.local.LocalTxConnectionConfig;
 
+/** Test connection-provider source for unit/integration tests using H2 in-memory. */
 public class H2TestConnectionProviderSource
-    implements TestConnectionProviderSource<TxConnectionProvider<?>> {
-  private LocalConnectionProvider connectionProvider;
+    extends AbstractTestConnectionProviderSource<LocalTxConnectionConfig> {
 
   @Override
-  public void start() throws SQLException {
-    connectionProvider = new LocalConnectionProvider();
-    connectionProvider.configure(
-        ImmutableLocalTxConnectionConfig.builder().jdbcUrl("jdbc:h2:mem:nessie").build());
-    connectionProvider.initialize();
+  public boolean isCompatibleWith(
+      DatabaseAdapterConfig<?> adapterConfig, DatabaseAdapterFactory<?> databaseAdapterFactory) {
+    return adapterConfig instanceof TxDatabaseAdapterConfig
+        && databaseAdapterFactory instanceof H2DatabaseAdapterFactory;
   }
 
   @Override
-  public void stop() throws Exception {
-    try {
-      if (connectionProvider != null) {
-        connectionProvider.close();
-      }
-    } finally {
-      connectionProvider = null;
-    }
+  public LocalTxConnectionConfig createDefaultConnectionProviderConfig() {
+    return ImmutableLocalTxConnectionConfig.builder().build();
   }
 
   @Override
-  public DatabaseAdapterConfig<TxConnectionProvider<?>> updateConfig(
-      DatabaseAdapterConfig<TxConnectionProvider<?>> config) {
-    return config.withConnectionProvider(connectionProvider);
+  public LocalConnectionProvider createConnectionProvider() {
+    return new LocalConnectionProvider();
+  }
+
+  @Override
+  public void start() throws Exception {
+    configureConnectionProviderConfigFromDefaults(c -> c.withJdbcUrl("jdbc:h2:mem:nessie"));
+    super.start();
   }
 }

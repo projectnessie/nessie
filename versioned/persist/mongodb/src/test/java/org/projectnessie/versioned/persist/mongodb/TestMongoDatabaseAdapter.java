@@ -18,5 +18,5 @@ package org.projectnessie.versioned.persist.mongodb;
 import org.projectnessie.versioned.persist.tests.AbstractTieredCommitsTest;
 import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
-@NessieExternalDatabase(MongoTestConnectionProviderSource.class)
+@NessieExternalDatabase(FlapdoodleMongoTestConnectionProviderSource.class)
 public class TestMongoDatabaseAdapter extends AbstractTieredCommitsTest {}

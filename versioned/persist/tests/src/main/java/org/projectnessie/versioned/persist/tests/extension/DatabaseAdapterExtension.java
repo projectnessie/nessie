@@ -208,7 +208,7 @@ public class DatabaseAdapterExtension
     builder
         .configure(
             c ->
-                SystemPropertiesConfigurer.configureFromProperties(
+                SystemPropertiesConfigurer.configureAdapterFromProperties(
                     c,
                     property -> {
                       List<NessieDbAdapterConfigItem> configs = new ArrayList<>();
