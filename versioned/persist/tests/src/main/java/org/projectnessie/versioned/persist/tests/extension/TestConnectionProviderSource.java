@@ -37,7 +37,8 @@ import org.projectnessie.versioned.persist.adapter.DatabaseConnectionProvider;
  *       NessieExternalDatabase} annotation.
  *   <li>Via {@link #findCompatibleProviderSource(DatabaseAdapterConfig, DatabaseAdapterFactory,
  *       String)}, usually from within a {@link DatabaseAdapterFactory.Builder#configure(Function)}
- *       function using a code snippet like this: <code><pre> .configure(c -> {
+ *       function using a code snippet like this:
+ *       <pre><code> .configure(c -&gt; {
  *   String providerSpec =
  *       adapter.indexOf(':') == -1
  *           ? null
@@ -58,7 +59,7 @@ import org.projectnessie.versioned.persist.adapter.DatabaseConnectionProvider;
  *   c = providerSource.updateConfig(c);
  *   connectionProvider = c.getConnectionProvider();
  *   return c;
- * })</pre></code>
+ * })</code></pre>
  * </ol>
  */
 public interface TestConnectionProviderSource<CONN_CONFIG extends DatabaseConnectionConfig> {
