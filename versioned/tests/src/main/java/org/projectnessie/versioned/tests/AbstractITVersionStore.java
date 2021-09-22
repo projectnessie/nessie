@@ -23,7 +23,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -37,7 +36,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Diff;
@@ -49,7 +47,6 @@ import org.projectnessie.versioned.Ref;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
-import org.projectnessie.versioned.StringSerializer;
 import org.projectnessie.versioned.StringStoreWorker;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.Unchanged;
@@ -62,10 +59,6 @@ import org.projectnessie.versioned.WithType;
 public abstract class AbstractITVersionStore {
 
   protected abstract VersionStore<String, String, StringStoreWorker.TestEnum> store();
-
-  protected boolean isLegacyStore() {
-    return true;
-  }
 
   /** Use case simulation: single branch, multiple users, each user updating a separate table. */
   @Test
@@ -1102,16 +1095,8 @@ public abstract class AbstractITVersionStore {
     protected void mergeWithConflictingKeys() throws VersionStoreException {
       final BranchName foo = BranchName.of("foofoo");
       final BranchName bar = BranchName.of("barbar");
-      if (isLegacyStore()) {
-        // Old version-store implementations have a bug: those do only check for conflicting keys,
-        // if no common-ancestor is found, so for this test (and to not change existing code) keep
-        // this test just passing for old version-stores.
-        store().create(foo, Optional.empty());
-        store().create(bar, Optional.empty());
-      } else {
-        store().create(foo, Optional.of(this.initialHash));
-        store().create(bar, Optional.of(this.initialHash));
-      }
+      store().create(foo, Optional.of(this.initialHash));
+      store().create(bar, Optional.of(this.initialHash));
 
       // we're essentially modifying the same key on both branches and then merging one branch into
       // the other and expect a conflict
@@ -1235,38 +1220,6 @@ public abstract class AbstractITVersionStore {
     List<Diff<String>> firstToFirst =
         store().getDiffs(firstCommit, firstCommit).collect(Collectors.toList());
     assertTrue(firstToFirst.isEmpty());
-  }
-
-  @Test
-  void checkValueEntityType() throws Exception {
-    BranchName branch = BranchName.of("entity-types");
-    store().create(branch, Optional.empty());
-
-    // have to do this here as tiered store stores payload at commit time
-    Mockito.doReturn(StringStoreWorker.TestEnum.NO)
-        .when(StringSerializer.getInstance())
-        .getType("world");
-    store()
-        .commit(
-            branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "world")));
-
-    assertEquals("world", store().getValue(branch, Key.of("hi")));
-    List<Optional<String>> values = store().getValues(branch, Lists.newArrayList(Key.of("hi")));
-    assertEquals(1, values.size());
-    assertTrue(values.get(0).isPresent());
-
-    // have to do this here as non-tiered store reads payload when getKeys is called
-    Mockito.doReturn(StringStoreWorker.TestEnum.NO)
-        .when(StringSerializer.getInstance())
-        .getType("world");
-    List<WithType<Key, StringStoreWorker.TestEnum>> keys;
-    try (Stream<WithType<Key, StringStoreWorker.TestEnum>> k = store().getKeys(branch)) {
-      keys = k.collect(Collectors.toList());
-    }
-
-    assertEquals(1, keys.size());
-    assertEquals(Key.of("hi"), keys.get(0).getValue());
-    assertEquals(StringStoreWorker.TestEnum.NO, keys.get(0).getType());
   }
 
   protected CommitBuilder<String, String, StringStoreWorker.TestEnum> forceCommit(String message) {

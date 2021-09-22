@@ -67,11 +67,6 @@ public abstract class AbstractVersionStoreTest extends AbstractITVersionStore {
   }
 
   @Override
-  protected boolean isLegacyStore() {
-    return false;
-  }
-
-  @Override
   @Disabled("To be removed")
   protected void singleBranchManyUsersDistinctTables() {}
 

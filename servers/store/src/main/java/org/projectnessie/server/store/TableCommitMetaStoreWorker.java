@@ -35,15 +35,12 @@ import org.projectnessie.model.SqlView.Dialect;
 import org.projectnessie.store.ObjectTypes;
 import org.projectnessie.store.ObjectTypes.IcebergTableMetadata;
 import org.projectnessie.versioned.Serializer;
-import org.projectnessie.versioned.SerializerWithPayload;
 import org.projectnessie.versioned.StoreWorker;
 
 public class TableCommitMetaStoreWorker
     implements StoreWorker<Contents, CommitMeta, Contents.Type> {
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
-  private final SerializerWithPayload<Contents, Contents.Type> tableSerializer =
-      new TableValueSerializer();
   private final Serializer<CommitMeta> metaSerializer = new MetadataSerializer();
 
   @Override
@@ -182,108 +179,8 @@ public class TableCommitMetaStoreWorker
   }
 
   @Override
-  public SerializerWithPayload<Contents, Type> getValueSerializer() {
-    return tableSerializer;
-  }
-
-  @Override
   public Serializer<CommitMeta> getMetadataSerializer() {
     return metaSerializer;
-  }
-
-  @Deprecated // TODO this class is going to be removed
-  private static class TableValueSerializer
-      implements SerializerWithPayload<Contents, Contents.Type> {
-    @Override
-    public ByteString toBytes(Contents value) {
-      ObjectTypes.Contents.Builder builder = ObjectTypes.Contents.newBuilder().setId(value.getId());
-      if (value instanceof IcebergTable) {
-        builder.setIcebergTableMetadata(
-            ObjectTypes.IcebergTableMetadata.newBuilder()
-                .setMetadataLocation(((IcebergTable) value).getMetadataLocation()));
-
-      } else if (value instanceof DeltaLakeTable) {
-
-        ObjectTypes.DeltaLakeTable.Builder table =
-            ObjectTypes.DeltaLakeTable.newBuilder()
-                .addAllMetadataLocationHistory(
-                    ((DeltaLakeTable) value).getMetadataLocationHistory())
-                .addAllCheckpointLocationHistory(
-                    ((DeltaLakeTable) value).getCheckpointLocationHistory());
-        String lastCheckpoint = ((DeltaLakeTable) value).getLastCheckpoint();
-        if (lastCheckpoint != null) {
-          table.setLastCheckpoint(lastCheckpoint);
-        }
-        builder.setDeltaLakeTable(table);
-      } else if (value instanceof SqlView) {
-        SqlView view = (SqlView) value;
-        builder.setSqlView(
-            ObjectTypes.SqlView.newBuilder()
-                .setDialect(view.getDialect().name())
-                .setSqlText(view.getSqlText()));
-      } else {
-        throw new IllegalArgumentException("Unknown type " + value);
-      }
-
-      return builder.build().toByteString();
-    }
-
-    @Override
-    public Contents fromBytes(ByteString bytes) {
-      ObjectTypes.Contents contents = parse(bytes);
-      switch (contents.getObjectTypeCase()) {
-        case DELTA_LAKE_TABLE:
-          Builder builder =
-              ImmutableDeltaLakeTable.builder()
-                  .id(contents.getId())
-                  .addAllMetadataLocationHistory(
-                      contents.getDeltaLakeTable().getMetadataLocationHistoryList())
-                  .addAllCheckpointLocationHistory(
-                      contents.getDeltaLakeTable().getCheckpointLocationHistoryList());
-          if (contents.getDeltaLakeTable().getLastCheckpoint() != null) {
-            builder.lastCheckpoint(contents.getDeltaLakeTable().getLastCheckpoint());
-          }
-          return builder.build();
-
-        case ICEBERG_TABLE_METADATA:
-          return IcebergTable.of(
-              contents.getIcebergTableMetadata().getMetadataLocation(), -1L, contents.getId());
-
-        case SQL_VIEW:
-          ObjectTypes.SqlView view = contents.getSqlView();
-          return ImmutableSqlView.builder()
-              .dialect(Dialect.valueOf(view.getDialect()))
-              .sqlText(view.getSqlText())
-              .id(contents.getId())
-              .build();
-
-        case OBJECTTYPE_NOT_SET:
-        default:
-          throw new IllegalArgumentException("Unknown type " + contents.getObjectTypeCase());
-      }
-    }
-
-    @Override
-    public Byte getPayload(Contents value) {
-      if (value instanceof IcebergTable) {
-        return (byte) Contents.Type.ICEBERG_TABLE.ordinal();
-      } else if (value instanceof DeltaLakeTable) {
-        return (byte) Contents.Type.DELTA_LAKE_TABLE.ordinal();
-      } else if (value instanceof SqlView) {
-        return (byte) Contents.Type.VIEW.ordinal();
-      } else {
-        throw new IllegalArgumentException("Unknown type " + value);
-      }
-    }
-
-    @Override
-    public Contents.Type getType(Byte payload) {
-      if (payload == null || payload > Contents.Type.values().length || payload < 0) {
-        throw new IllegalArgumentException(
-            String.format("Cannot create type from payload. Payload %d does not exist", payload));
-      }
-      return Contents.Type.values()[payload];
-    }
   }
 
   private static class MetadataSerializer implements Serializer<CommitMeta> {

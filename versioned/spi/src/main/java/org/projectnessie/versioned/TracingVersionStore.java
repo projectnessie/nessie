@@ -213,11 +213,6 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
         () -> delegate.getDiffs(from, to));
   }
 
-  @Override
-  public Collector collectGarbage() {
-    return call("CollectGarbage", b -> {}, delegate::collectGarbage);
-  }
-
   private Span createSpan(String name, Consumer<SpanBuilder> spanBuilder) {
     Tracer tracer = GlobalTracer.get();
     String spanName = makeSpanName(name);

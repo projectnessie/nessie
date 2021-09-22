@@ -161,11 +161,6 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
     return delegateStream1Ex("getdiffs", () -> delegate.getDiffs(from, to));
   }
 
-  @Override
-  public Collector collectGarbage() {
-    return delegate("collectgarbage", delegate::collectGarbage);
-  }
-
   private void measure(String requestName, Sample sample, Exception failure) {
     Timer timer =
         Timer.builder("nessie.versionstore.request")
