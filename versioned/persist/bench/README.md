@@ -19,7 +19,7 @@ JMH code parameter defaults:
 Benchmark defaults:
 
 * exercised database adapters via `adapter`: H2, In-Memory, RocksDB
-* tables per commit via `tablesPerCommi`: 1, 3, 5
+* tables per commit via `tablesPerCommit`: 1, 3, 5
 
 Benchmarks:
 
