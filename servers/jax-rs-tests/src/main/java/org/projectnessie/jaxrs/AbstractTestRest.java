@@ -18,6 +18,7 @@ package org.projectnessie.jaxrs;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.anyOf;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -49,6 +50,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.assertj.core.api.Assumptions;
+import org.assertj.core.api.Condition;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -151,7 +153,7 @@ public abstract class AbstractTestRest {
                             .reference(Tag.of(tagName2, null))
                             .create())
                 .isInstanceOf(NessieNotFoundException.class)
-                .hasMessage("Named reference 'unknownSource' not found"),
+                .hasMessageContainingAll("'unknownSource'", "not"),
         // Tag without hash
         () ->
             assertThatThrownBy(
