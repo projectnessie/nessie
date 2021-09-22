@@ -59,7 +59,7 @@ jobs:
         if [[ ${RELEASE_VERSION} =~ ^[0-9]+[.][0-9.]*[0-9](-[a-zA-Z0-9]+)?$ ]]; then
           echo "Parameter check OK"
         else
-          echo "Tag must start with nessie- followed by a valid version (got tag ${V}, ref is ${GITHUB_REF} )"
+          echo "RELEASE_VERSION is not a valid release version ref is ${GITHUB_REF}."
           exit 1
         fi
 
@@ -90,10 +90,17 @@ jobs:
     ### END runner setup
 
     # Two steps that verify that the HISTORY.rst and releases.md files contain information about the release
-    - name: Check HISTORY.rst file
-      run: cat python/HISTORY.rst | grep -q "^${RELEASE_VERSION} [(][0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9][)]$"
-    - name: Check releases.md file
-      run: cat site/docs/try/releases.md | grep -q "^## ${RELEASE_VERSION} Release [(][A-Z][a-z]* [0-9][0-9]*, [0-9][0-9][0-9][0-9][)]$"
+    - name: Check release version number in text files
+      run: |
+        FAILS=""
+        VERSION_PATTERH="$(echo ${RELEASE_VERSION} | sed 's/\./\\./g' )"
+        grep -q "^${VERSION_PATTERH} [(][0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9][)]$" < python/HISTORY.rst || FAILS="${FAILS} python/HISTORY.rst"
+        grep -q "^## ${VERSION_PATTERH} Release [(][A-Z][a-z]* [0-9][0-9]*, [0-9][0-9][0-9][0-9][)]$" < site/docs/try/releases.md || FAILS="${FAILS} site/docs/try/releases.md"
+        grep -q "^| ${VERSION_PATTERH} .*check_mark.*$" < SECURITY.md || FAILS="${FAILS} SECURITY.md"
+        if [[ -n ${FAILS} ]] ; then
+          echo ${FAILS} "do not contain the release version ${RELEASE_VERSION}."
+          exit 1
+        fi
 
     - name: Bump Python release version ${{ github.event.inputs.releaseVersion }}
       working-directory: ./python
