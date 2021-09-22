@@ -16,11 +16,12 @@
 package org.projectnessie.versioned.persist.tx.postgres;
 
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
-import org.projectnessie.versioned.persist.tests.AbstractTieredCommitsTest;
+import org.projectnessie.versioned.persist.tests.AbstractDatabaseAdapterTest;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterName;
 import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
-@EnabledIfSystemProperty(named = "it.nessie.dbs", matches = ".*postgres.*")
+@EnabledIfSystemProperty(named = "it.nessie.dbs", matches = ".*cockroach.*")
+// Cockroach is PostgreSQL-compatible
 @NessieDbAdapterName(PostgresDatabaseAdapterFactory.NAME)
-@NessieExternalDatabase(PostgresTestConnectionProviderSource.class)
-class ITTieredCommitsPostgres extends AbstractTieredCommitsTest {}
+@NessieExternalDatabase(CockroachTestConnectionProviderSource.class)
+class ITDatabaseAdapterCockroach extends AbstractDatabaseAdapterTest {}

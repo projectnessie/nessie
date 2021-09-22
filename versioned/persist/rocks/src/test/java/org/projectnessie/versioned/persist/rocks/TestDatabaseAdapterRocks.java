@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.persist.inmem;
+package org.projectnessie.versioned.persist.rocks;
 
-import org.projectnessie.versioned.persist.tests.AbstractTieredCommitsTest;
+import org.projectnessie.versioned.persist.tests.AbstractDatabaseAdapterTest;
 import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
-@NessieExternalDatabase(InmemoryTestConnectionProviderSource.class)
-class TestTieredCommitsInmemory extends AbstractTieredCommitsTest {}
+@NessieExternalDatabase(RocksTestConnectionProviderSource.class)
+class TestDatabaseAdapterRocks extends AbstractDatabaseAdapterTest {}

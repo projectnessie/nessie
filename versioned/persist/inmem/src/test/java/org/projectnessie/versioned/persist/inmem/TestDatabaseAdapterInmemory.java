@@ -13,15 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.persist.tx.postgres;
+package org.projectnessie.versioned.persist.inmem;
 
-import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
-import org.projectnessie.versioned.persist.tests.AbstractTieredCommitsTest;
-import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterName;
+import org.projectnessie.versioned.persist.tests.AbstractDatabaseAdapterTest;
 import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
-@EnabledIfSystemProperty(named = "it.nessie.dbs", matches = ".*cockroach.*")
-// Cockroach is PostgreSQL-compatible
-@NessieDbAdapterName(PostgresDatabaseAdapterFactory.NAME)
-@NessieExternalDatabase(CockroachTestConnectionProviderSource.class)
-class ITTieredCommitsCockroach extends AbstractTieredCommitsTest {}
+@NessieExternalDatabase(InmemoryTestConnectionProviderSource.class)
+class TestDatabaseAdapterInmemory extends AbstractDatabaseAdapterTest {}

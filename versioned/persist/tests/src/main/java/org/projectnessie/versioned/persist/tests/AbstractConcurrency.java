@@ -277,7 +277,7 @@ public abstract class AbstractConcurrency {
       stopFlag.set(true);
 
       System.out.printf(
-          "AbstractTieredCommitsTest.concurrency - %s : Commits OK: %s  Retry-Failures: %s%n",
+          "AbstractDatabaseAdapterTest.concurrency - %s : Commits OK: %s  Retry-Failures: %s%n",
           variation, commitsOK, retryFailures);
 
       executor.shutdownNow();
