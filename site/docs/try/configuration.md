@@ -15,20 +15,11 @@ docker run -p 8080:8080 projectnessie/nessie \
 ## Core Nessie Configuration Settings
 
 ```properties
-# which type of version store to use: JGIT, INMEMORY, DYNAMO. JGIT is for local testing, DYNAMO preferred for production
-nessie.version.store.type=DYNAMO
+# which type of version store to use: ROCKSDB, INMEMORY.
+nessie.version.store.type=ROCKSDB
 
-# path if using JGIT
-nessie.version.store.jgit.directory=/tmp/jgit
-
-## Dynamo version store specific configuration
-# should Nessie create its own dynamo tables
-nessie.version.store.dynamo.initialize=false
-
-## Dynamo Configuration
-quarkus.dynamodb.aws.region=us-west-2
-quarkus.dynamodb.aws.credentials.type=DEFAULT
-# quarkus.dynamodb.endpoint-override=http://localhost:8000
+# path if using RocksDB
+nessie.version.store.rocks.directory=/tmp/rocks-nessie
 ```
 
 ## General Server Settings

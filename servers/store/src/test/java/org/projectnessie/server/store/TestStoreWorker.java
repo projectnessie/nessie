@@ -46,34 +46,23 @@ class TestStoreWorker {
   @ParameterizedTest
   @MethodSource("provideDeserialization")
   void testDeserialization(Map.Entry<ByteString, Contents> entry) {
-    Contents actual = worker.getValueSerializer().fromBytes(entry.getKey());
-    Assertions.assertEquals(entry.getValue(), actual);
-
-    actual = worker.valueFromStore(entry.getKey(), Optional.empty());
+    Contents actual = worker.valueFromStore(entry.getKey(), Optional.empty());
     Assertions.assertEquals(entry.getValue(), actual);
   }
 
   @ParameterizedTest
   @MethodSource("provideDeserialization")
   void testSerialization(Map.Entry<ByteString, Contents> entry) {
-    ByteString actual = worker.getValueSerializer().toBytes(entry.getValue());
-    Assertions.assertEquals(entry.getKey(), actual);
-
-    actual = worker.toStoreOnReferenceState(entry.getValue());
+    ByteString actual = worker.toStoreOnReferenceState(entry.getValue());
     Assertions.assertEquals(entry.getKey(), actual);
   }
 
   @ParameterizedTest
   @MethodSource("provideDeserialization")
   void testSerde(Map.Entry<ByteString, Contents> entry) {
-    ByteString actualBytes = worker.getValueSerializer().toBytes(entry.getValue());
-    Assertions.assertEquals(entry.getValue(), worker.getValueSerializer().fromBytes(actualBytes));
-    Contents actualContents = worker.getValueSerializer().fromBytes(entry.getKey());
-    Assertions.assertEquals(entry.getKey(), worker.getValueSerializer().toBytes(actualContents));
-
-    actualBytes = worker.toStoreOnReferenceState(entry.getValue());
+    ByteString actualBytes = worker.toStoreOnReferenceState(entry.getValue());
     Assertions.assertEquals(entry.getValue(), worker.valueFromStore(actualBytes, Optional.empty()));
-    actualContents = worker.valueFromStore(entry.getKey(), Optional.empty());
+    Contents actualContents = worker.valueFromStore(entry.getKey(), Optional.empty());
     Assertions.assertEquals(entry.getKey(), worker.toStoreOnReferenceState(actualContents));
   }
 

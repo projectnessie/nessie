@@ -15,7 +15,6 @@
  */
 package org.projectnessie.versioned;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -43,21 +42,8 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @throws ReferenceNotFoundException if {@code namedReference} does not exist or {@code
    *     hashOnReference}, if present, is not reachable from that reference
    */
-  default Hash hashOnReference(NamedRef namedReference, Optional<Hash> hashOnReference)
-      throws ReferenceNotFoundException {
-    Hash head = toHash(namedReference);
-    if (!hashOnReference.isPresent()) {
-      return head;
-    }
-    if (!head.equals(noAncestorHash())
-        && getCommits(head).noneMatch(h -> h.getHash().equals(hashOnReference.get()))) {
-      throw new ReferenceNotFoundException(
-          String.format(
-              "Could not find commit '%s' on existing reference '%s'.",
-              hashOnReference.get().asString(), namedReference.getName()));
-    }
-    return hashOnReference.get();
-  }
+  Hash hashOnReference(NamedRef namedReference, Optional<Hash> hashOnReference)
+      throws ReferenceNotFoundException;
 
   /**
    * Retrieve the hash for "no ancestor" (or "beginning of time"), which is a hash for which no
@@ -275,18 +261,4 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @return A stream of values that are different.
    */
   Stream<Diff<VALUE>> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException;
-
-  /**
-   * Collect some garbage. Each time this is called, it collects some garbage and reports the
-   * progress of what has been collected
-   *
-   * @return A collector object that must be closed if not depleted.
-   */
-  Collector collectGarbage();
-
-  /** A garbage collector that can be used to collect metadata. */
-  public interface Collector extends AutoCloseable, Iterator<CollectionProgress> {}
-
-  /** The current progress of collection. */
-  public interface CollectionProgress {}
 }

@@ -250,9 +250,4 @@ public class PersistVersionStore<CONTENTS, METADATA, CONTENTS_TYPE extends Enum<
                     d.getFromValue().map(v -> storeWorker.valueFromStore(v, d.getGlobal())),
                     d.getToValue().map(v -> storeWorker.valueFromStore(v, d.getGlobal()))));
   }
-
-  @Override
-  public Collector collectGarbage() {
-    throw new UnsupportedOperationException();
-  }
 }
