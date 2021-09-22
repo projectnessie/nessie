@@ -20,6 +20,7 @@ import static org.projectnessie.model.Operation.Put;
 
 import java.security.AccessControlException;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
@@ -135,8 +136,9 @@ public class TreeResourceWithAuthorizationChecks extends TreeResource {
         // Special case, mostly for tests:
         // When the default branch is deleted, we cannot verify whether the branch already exists
         // (it does not, so the check would fail).
-        if (refName.equals(getConfig().getDefaultBranch()) && hash == null
-            || hash.equals(getStore().noAncestorHash().asString())) {
+
+        if (Objects.equals(refName, getConfig().getDefaultBranch()) && hash == null
+            || Objects.equals(hash, getStore().noAncestorHash().asString())) {
           // prevent the "hash-on-ref" check, but still do the "can-view" check
           hash = null;
           return;
