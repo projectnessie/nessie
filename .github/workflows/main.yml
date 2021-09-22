@@ -60,6 +60,7 @@ jobs:
         name: owasp-report
         path: |
           target/dependency-check-report.html
+
   native:
     name: Java/Maven/Native
     runs-on: ubuntu-latest
