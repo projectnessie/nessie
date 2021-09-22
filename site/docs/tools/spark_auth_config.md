@@ -27,8 +27,6 @@ or [Delta Lake](./deltalake/index.md)) the Nessie authentication settings are co
 The `spark.sql.catalog.nessie` prefix identifies properties for the Nessie catalog. The `nessie` part is just
 the name of the catalog in this case (not to be confused with the Nessie project name).
 
-Property names without the `spark.sql.catalog.nessie` prefix essentially match regular Nessie Client property names.
-
 # Authentication Settings
 
 The value of the `authentication.type` property (with the appropriate prefix) can be one of the following:
@@ -55,5 +53,3 @@ For the "AWS" Authentication Type the `authentication.aws.region` property (with
 should be set to the AWS region where the Nessie Server endpoint is located.
 
 Additional AWS authentication configuration should be provided via standard AWS configuration files. 
-
-
