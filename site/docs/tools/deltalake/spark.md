@@ -23,15 +23,9 @@ SparkSession.builder
 
 The Nessie LogStore needs the following parameters set in the Spark/Hadoop config.
 
-Note: "BASIC" authentication is not supported by Nessie servers in "production" mode.
-
 ```
 nessie.url = full url to nessie
-nessie.authentication.type = authentication type (NONE, BASIC, BEARER or AWS)
-nessie.authentication.token = OpenId token if using "bearer" auth, omitted otherwise
-nessie.authentication.aws.region = AWS region if using AWS auth, omitted otherwise
-nessie.authentication.username = username if using basic auth, omitted otherwise
-nessie.authentication.password = password if using basic auth, omitted otherwise
+nessie.authentication.type = authentication type 
 spark.delta.logFileHandler.class=org.projectnessie.deltalake.NessieLogFileMetaParser
 spark.delta.logStore.class=org.projectnessie.deltalake.NessieLogStore
 ```
@@ -45,7 +39,7 @@ These are set as follows in code (or through other methods as described [here](h
             "org.projectnessie:nessie-deltalake-spark3:{{ versions.java}}")
         .set("spark.hadoop.nessie.url", url)
         .set("spark.hadoop.nessie.ref", branch)
-        .set("spark.hadoop.nessie.auth-type", authType)
+        .set("spark.hadoop.nessie.authentication.type", authType)
         .set("spark.sql.catalog.spark_catalog",
             "org.apache.spark.sql.delta.catalog.DeltaCatalog")
         .set("spark.sql.extensions",
@@ -78,6 +72,9 @@ These are set as follows in code (or through other methods as described [here](h
                 "org.projectnessie.deltalake.NessieLogStore") \
             .getOrCreate()
     ```
+
+Additional authentication settings are documented in the [Athentication in Spark](../spark_auth_config.md) section.
+
 Note above we specified the option `spark.hadoop.nessie.ref`. This value sets the default branch that the delta
 catalog will use. This can be changed by changing the `hadoopConfiguration` however best practice would be to use a
 single write context (branch) for the duration of the spark session.

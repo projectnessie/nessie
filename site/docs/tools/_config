@@ -3,5 +3,6 @@ arrange:
   - index.md
   - iceberg
   - deltalake
+  - spark_auth_config.md
   - cli.md
   - ui.md
