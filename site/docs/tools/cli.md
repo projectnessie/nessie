@@ -34,12 +34,12 @@ The default config file is as follows:
 
 ``` yaml
 auth:
-    # Type can be either basic or aws
-    type: basic
-
-    # Username and password required if using basic auth
-    username: <username>
-    password: <password>
+    # Authentication type can be: none, bearer or aws
+    type: none
+    
+    # OpenID token for the "bearer" authentication type
+    # token: <OpenID token>
+    
     timeout: 10
 
 # Nessie endpoint
@@ -48,6 +48,11 @@ endpoint: http://localhost/api/v1
 # whether to skip SSL cert verification
 verify: true 
 ```
+
+When configuring authentication type `bearer`, the authentication token parameter should be set to a valid
+[OpenID token](https://openid.net/specs/openid-connect-core-1_0.html). The token can be set in the Nessie
+configuration file, as an environment variable (details below), or by the `--auth-token <TOKEN>` command
+line option (for each command).
 
 When configuring authentication type `aws`, the client delegates to the [Boto](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html) 
 library. You can configure credentials using any of the standard [Boto AWS methods](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html#configuring-credentials).
