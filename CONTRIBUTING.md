@@ -40,7 +40,7 @@ for more information. Small changes don't require an issue. However, it is good 
 larger changes. If you are unsure of where to start ask on the slack channel or look at [existing issues](https://github.com/projectnessie/nessie/issues).
 The [good first issue](https://github.com/projectnessie/nessie/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) label marks issues that are particularly good for people new to the codebase.
 
-For the tests to run, you need to update your `~/.m2/toolchains.xml` to contain a reference to Java 11. 
+For the Spark tests to run with Java 16 or newer, you need to update your `~/.m2/toolchains.xml` to contain a reference to Java 11. 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <toolchains>

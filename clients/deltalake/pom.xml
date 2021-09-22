@@ -240,9 +240,6 @@
           <systemPropertyVariables>
             <quarkus.http.test-port>${quarkus.http.test-port}</quarkus.http.test-port>
           </systemPropertyVariables>
-          <jdkToolchain>
-            <version>11</version>
-          </jdkToolchain>
         </configuration>
         <executions>
           <execution>
@@ -257,6 +254,25 @@
   </build>
 
   <profiles>
+    <profile>
+      <id>spark-test-java</id>
+      <activation>
+        <jdk>[16,20)</jdk>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <configuration>
+              <jdkToolchain>
+                <version>11</version>
+              </jdkToolchain>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
     <profile>
       <id>release</id>
       <build>

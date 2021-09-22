@@ -179,9 +179,6 @@
             ${project.build.directory}/test-sources
           </additionalClasspathElements>
           <failIfNoTests>true</failIfNoTests>
-          <jdkToolchain>
-            <version>11</version>
-          </jdkToolchain>
         </configuration>
         <executions>
           <execution>
@@ -193,49 +190,68 @@
         </executions>
       </plugin>
       <plugin>
-      <groupId>org.apache.maven.plugins</groupId>
-      <artifactId>maven-shade-plugin</artifactId>
-      <configuration>
-        <filters>
-          <!-- filter to address "Invalid signature file" issue - see https://stackoverflow.com/a/6743609/589215 -->
-          <filter>
-            <artifact>*:*</artifact>
-            <excludes>
-              <exclude>META-INF/*.SF</exclude>
-              <exclude>META-INF/*.DSA</exclude>
-              <exclude>META-INF/*.RSA</exclude>
-              <exclude>META-INF/jandex.idx</exclude>
-              <exclude>META-INF/LICENSE</exclude>
-              <exclude>LICENSE</exclude>
-              <exclude>META-INF/LICENSE.md</exclude>
-              <exclude>META-INF/LICENSE.txt</exclude>
-              <exclude>META-INF/NOTIC*</exclude>
-              <exclude>META-INF/DEPENDENCIES</exclude>
-            </excludes>
-          </filter>
-        </filters>
-        <transformers>
-          <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
-        </transformers>
-        <artifactSet>
-          <includes>
-            <include>org.projectnessie</include>
-          </includes>
-        </artifactSet>
-      </configuration>
-      <executions>
-        <execution>
-          <phase>package</phase>
-          <goals>
-            <goal>shade</goal>
-          </goals>
-        </execution>
-      </executions>
-    </plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <configuration>
+          <filters>
+            <!-- filter to address "Invalid signature file" issue - see https://stackoverflow.com/a/6743609/589215 -->
+            <filter>
+              <artifact>*:*</artifact>
+              <excludes>
+                <exclude>META-INF/*.SF</exclude>
+                <exclude>META-INF/*.DSA</exclude>
+                <exclude>META-INF/*.RSA</exclude>
+                <exclude>META-INF/jandex.idx</exclude>
+                <exclude>META-INF/LICENSE</exclude>
+                <exclude>LICENSE</exclude>
+                <exclude>META-INF/LICENSE.md</exclude>
+                <exclude>META-INF/LICENSE.txt</exclude>
+                <exclude>META-INF/NOTIC*</exclude>
+                <exclude>META-INF/DEPENDENCIES</exclude>
+              </excludes>
+            </filter>
+          </filters>
+          <transformers>
+            <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
+          </transformers>
+          <artifactSet>
+            <includes>
+              <include>org.projectnessie</include>
+            </includes>
+          </artifactSet>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 
   <profiles>
+    <profile>
+      <id>spark-test-java</id>
+      <activation>
+        <jdk>[16,20)</jdk>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <configuration>
+              <jdkToolchain>
+                <version>11</version>
+              </jdkToolchain>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
     <profile>
       <id>release</id>
       <build>
