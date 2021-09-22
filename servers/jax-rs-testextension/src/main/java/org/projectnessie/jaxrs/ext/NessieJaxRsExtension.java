@@ -56,7 +56,6 @@ public class NessieJaxRsExtension implements BeforeAllCallback, AfterAllCallback
   private final Supplier<DatabaseAdapter> databaseAdapterSupplier;
   private Weld weld;
   private JerseyTest jerseyTest;
-  private Path tempDir;
 
   public NessieJaxRsExtension() {
     throw new UnsupportedOperationException();
@@ -68,8 +67,6 @@ public class NessieJaxRsExtension implements BeforeAllCallback, AfterAllCallback
 
   @Override
   public void beforeAll(ExtensionContext extensionContext) throws Exception {
-    tempDir = Files.createTempDirectory("nessie-jaxrs-ext");
-
     weld = new Weld();
     // Let Weld scan all the resources to discover injection points and dependencies
     weld.addPackages(true, TreeResource.class);
@@ -108,65 +105,11 @@ public class NessieJaxRsExtension implements BeforeAllCallback, AfterAllCallback
 
   @Override
   public void afterAll(ExtensionContext extensionContext) throws Exception {
-    if (null != jerseyTest) jerseyTest.tearDown();
-    if (null != weld) weld.shutdown();
-    if (null != tempDir && Files.exists(tempDir)) {
-      Files.walkFileTree(
-          tempDir,
-          new SimpleFileVisitor<Path>() {
-
-            @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attributes) {
-              return deleteAndContinue(file);
-            }
-
-            @Override
-            public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
-              return deleteAndContinue(dir);
-            }
-
-            private FileVisitResult deleteAndContinue(Path path) {
-              try {
-                Files.delete(path);
-              } catch (NoSuchFileException ignore) {
-                // ignore
-              } catch (DirectoryNotEmptyException exception) {
-                exception.printStackTrace();
-              } catch (IOException exception) {
-                makeWritableAndTryToDeleteAgain(path, exception);
-              }
-              return CONTINUE;
-            }
-
-            private void makeWritableAndTryToDeleteAgain(Path path, IOException exception) {
-              try {
-                tryToMakeParentDirsWritable(path);
-                makeWritable(path);
-                Files.delete(path);
-              } catch (Exception suppressed) {
-                exception.addSuppressed(suppressed);
-              }
-            }
-
-            private void tryToMakeParentDirsWritable(Path path) {
-              Path relativePath = tempDir.relativize(path);
-              Path parent = tempDir;
-              for (int i = 0; i < relativePath.getNameCount(); i++) {
-                boolean writable = parent.toFile().setWritable(true);
-                if (!writable) {
-                  break;
-                }
-                parent = parent.resolve(relativePath.getName(i));
-              }
-            }
-
-            private void makeWritable(Path path) {
-              boolean writable = path.toFile().setWritable(true);
-              if (!writable) {
-                throw new RuntimeException("Attempt to make file '" + path + "' writable failed");
-              }
-            }
-          });
+    if (null != jerseyTest) {
+      jerseyTest.tearDown();
+    }
+    if (null != weld) {
+      weld.shutdown();
     }
   }
 
