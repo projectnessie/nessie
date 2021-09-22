@@ -63,8 +63,6 @@ jobs:
   native:
     name: Java/Maven/Native
     runs-on: ubuntu-latest
-    env:
-      MAVEN_PROJECTS: -pl :nessie-quarkus -pl :nessie-lambda
 
     steps:
       - uses: actions/checkout@v2
@@ -73,12 +71,8 @@ jobs:
       - name: Setup Java, Maven, Gradle
         uses: ./.github/actions/dev-tool-java
 
-      - name: Build with Maven
-        run: ./mvnw -B install --file pom.xml -DskipTests -am ${MAVEN_PROJECTS}
-
-      - name: Test native with Maven
-        run: |
-          ./mvnw -B install --file pom.xml -Pnative,docker -Dtest.log.level=WARN -Dquarkus.native.native-image-xmx=6g ${MAVEN_PROJECTS}
+      - name: Native tests
+        uses: ./.github/actions/ci-maven-native
 
       - name: Push Docker images
         env:
