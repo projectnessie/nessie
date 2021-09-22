@@ -141,6 +141,11 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
 
   private Hash createReference(NamedRef reference, String hash)
       throws NessieNotFoundException, NessieConflictException {
+    if (reference instanceof TagName && hash == null) {
+      throw new IllegalArgumentException(
+          "Tag-creation requires a target named-reference and hash.");
+    }
+
     try {
       return getStore().create(reference, toHash(hash, false));
     } catch (ReferenceNotFoundException e) {

@@ -172,6 +172,7 @@ public class RocksDatabaseAdapter
     }
   }
 
+  @Override
   protected boolean globalPointerCas(
       NonTransactionalOperationContext ctx,
       GlobalStatePointer expected,
