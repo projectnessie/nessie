@@ -2,12 +2,15 @@
 
 ## Supported Versions
 
-Currently supported versions are listed below. Note these are all alpha releases and APIs will change.
+Currently supported versions are listed below.
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 0.6.0   | :white_check_mark: |
-| < 0.6.0 | :x:                |
+| 0.9.2   | :white_check_mark: |
+| < 0.9.2 | :x:                |
+
+All Nessie 0.x.x versions are considered beta or even alpha releases and not supported after
+release of Nessie 1.0.0.
 
 ## Reporting a Vulnerability
 
