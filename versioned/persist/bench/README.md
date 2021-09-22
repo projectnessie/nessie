@@ -25,9 +25,9 @@ Benchmarks:
 
 * `CommitBench.singleBranchSharedKeys`: threads use a single branch and shared content-keys,
   contention on the branch, contention on the content-keys
-* `CommitBench.branchPerThreadSharedKeys`: threads use their own branch and own content-keys, no
+* `CommitBench.branchPerThreadSharedKeys`: threads use their own branch and shared content-keys, no
   contention on the branch, contention on the content-keys
-* `CommitBench.singleBranchUnsharedKeys`: threads use a single branch and shared content-keys,
+* `CommitBench.singleBranchUnsharedKeys`: threads use a single branch and own content-keys,
   contention on the branch, no contention on the content-keys
 * `CommitBench.branchPerThreadUnsharedKeys`: threads use their own branch and own content-keys, no
   contention on the branch, no contention on the content-keys
