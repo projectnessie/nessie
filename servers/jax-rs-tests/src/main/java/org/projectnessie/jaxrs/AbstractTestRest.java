@@ -142,6 +142,16 @@ public abstract class AbstractTestRest {
     String branchName1 = "createReferences_branch1";
     String branchName2 = "createReferences_branch2";
     assertAll(
+        // invalid source ref & null hash
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        api.createReference()
+                            .sourceRefName("unknownSource")
+                            .reference(Tag.of(tagName2, null))
+                            .create())
+                .isInstanceOf(NessieNotFoundException.class)
+                .hasMessage("Ref 'unknownSource' does not exist"),
         // Tag without hash
         () ->
             assertThatThrownBy(
