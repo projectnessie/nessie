@@ -140,8 +140,6 @@ public class PersistVersionStore<CONTENTS, METADATA, CONTENTS_TYPE extends Enum<
           commitAttempt.putGlobal(contentsId, newState);
         } else {
           if (op.getExpectedValue() != null) {
-            // TODO shall we throw this exception? shall we validate the value somehow?
-            //  or just document the behavior?
             throw new IllegalArgumentException(
                 String.format(
                     "Contents-type '%s' for put-operation for key '%s' does not support global state, expected-value not supported for this contents-type.",
@@ -184,11 +182,6 @@ public class PersistVersionStore<CONTENTS, METADATA, CONTENTS_TYPE extends Enum<
   @Override
   public Hash create(NamedRef ref, Optional<Hash> targetHash)
       throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
-    if (ref instanceof TagName && !targetHash.isPresent()) {
-      throw new IllegalArgumentException(
-          "Tag-creation requires a target named-reference and hash.");
-    }
-
     return databaseAdapter.create(ref, targetHash.orElseGet(databaseAdapter::noAncestorHash));
   }
 

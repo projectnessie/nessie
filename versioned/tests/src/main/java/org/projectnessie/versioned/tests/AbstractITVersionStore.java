@@ -154,8 +154,7 @@ public abstract class AbstractITVersionStore {
     assertEquals(commitHash, otherCreateHash);
 
     List<WithHash<NamedRef>> namedRefs;
-    try (Stream<WithHash<NamedRef>> str =
-        store().getNamedRefs().filter(r -> !r.getValue().getName().equals("main"))) {
+    try (Stream<WithHash<NamedRef>> str = store().getNamedRefs().filter(this::filterMainBranch)) {
       namedRefs = str.collect(Collectors.toList());
     }
     assertThat(namedRefs)
@@ -177,11 +176,15 @@ public abstract class AbstractITVersionStore {
 
     store().delete(branch, Optional.of(hash));
     assertThrows(ReferenceNotFoundException.class, () -> store().toHash(branch));
-    try (Stream<WithHash<NamedRef>> str =
-        store().getNamedRefs().filter(r -> !r.getValue().getName().equals("main"))) {
+    try (Stream<WithHash<NamedRef>> str = store().getNamedRefs().filter(this::filterMainBranch)) {
       assertThat(str).hasSize(2); // bar + baz
     }
     assertThrows(ReferenceNotFoundException.class, () -> store().delete(branch, Optional.of(hash)));
+  }
+
+  /** Exclude {@code main} branch in tests. */
+  private boolean filterMainBranch(WithHash<NamedRef> r) {
+    return !r.getValue().getName().equals("main");
   }
 
   @Test
@@ -267,14 +270,12 @@ public abstract class AbstractITVersionStore {
 
     assertThrows(
         ReferenceAlreadyExistsException.class, () -> store().create(tag, Optional.of(initialHash)));
-    assertThrows(IllegalArgumentException.class, () -> store().create(tag, Optional.empty()));
 
     assertThat(store().toHash(tag)).isEqualTo(initialHash);
     assertThat(store().toHash(anotherTag)).isEqualTo(commitHash);
 
     List<WithHash<NamedRef>> namedRefs;
-    try (Stream<WithHash<NamedRef>> str =
-        store().getNamedRefs().filter(r -> !r.getValue().getName().equals("main"))) {
+    try (Stream<WithHash<NamedRef>> str = store().getNamedRefs().filter(this::filterMainBranch)) {
       namedRefs = str.collect(Collectors.toList());
     }
     assertThat(namedRefs)
@@ -291,8 +292,7 @@ public abstract class AbstractITVersionStore {
 
     store().delete(tag, Optional.of(initialHash));
     assertThrows(ReferenceNotFoundException.class, () -> store().toHash(tag));
-    try (Stream<WithHash<NamedRef>> str =
-        store().getNamedRefs().filter(r -> !r.getValue().getName().equals("main"))) {
+    try (Stream<WithHash<NamedRef>> str = store().getNamedRefs().filter(this::filterMainBranch)) {
       assertThat(str).hasSize(2); // foo + another-tag
     }
     assertThrows(
@@ -334,8 +334,7 @@ public abstract class AbstractITVersionStore {
         ReferenceConflictException.class, () -> store().delete(branch, Optional.of(initialHash)));
     store().delete(branch, Optional.of(anotherCommitHash));
     assertThrows(ReferenceNotFoundException.class, () -> store().toHash(branch));
-    try (Stream<WithHash<NamedRef>> str =
-        store().getNamedRefs().filter(r -> !r.getValue().getName().equals("main"))) {
+    try (Stream<WithHash<NamedRef>> str = store().getNamedRefs().filter(this::filterMainBranch)) {
       assertThat(str).isEmpty();
     }
     assertThrows(
