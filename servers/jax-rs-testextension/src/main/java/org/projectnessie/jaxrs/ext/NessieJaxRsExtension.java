@@ -15,18 +15,9 @@
  */
 package org.projectnessie.jaxrs.ext;
 
-import static java.nio.file.FileVisitResult.CONTINUE;
 import static org.projectnessie.services.config.ServerConfigExtension.SERVER_CONFIG;
 
-import java.io.IOException;
 import java.net.URI;
-import java.nio.file.DirectoryNotEmptyException;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
-import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.function.Supplier;
 import javax.ws.rs.core.Application;
 import org.glassfish.jersey.server.ResourceConfig;
