@@ -19,6 +19,6 @@ import org.projectnessie.versioned.persist.tests.AbstractVersionStoreTest;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterName;
 import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
-@NessieDbAdapterName("H2")
+@NessieDbAdapterName(H2DatabaseAdapterFactory.NAME)
 @NessieExternalDatabase(H2TestConnectionProviderSource.class)
 class TestVersionStoreH2 extends AbstractVersionStoreTest {}

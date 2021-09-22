@@ -21,6 +21,6 @@ import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterName;
 import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
 @EnabledIfSystemProperty(named = "it.nessie.dbs", matches = ".*cockroach.*")
-@NessieDbAdapterName("PostgreSQL")
+@NessieDbAdapterName(PostgresDatabaseAdapterFactory.NAME)
 @NessieExternalDatabase(CockroachTestConnectionProviderSource.class)
 class ITVersionStoreCockroach extends AbstractVersionStoreTest {}
