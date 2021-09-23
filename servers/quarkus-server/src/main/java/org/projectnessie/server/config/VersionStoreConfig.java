@@ -31,6 +31,7 @@ public interface VersionStoreConfig {
     @Deprecated
     JGIT,
     DYNAMO,
+    DYNAMO_OLD,
     INMEMORY,
     ROCKS
   }

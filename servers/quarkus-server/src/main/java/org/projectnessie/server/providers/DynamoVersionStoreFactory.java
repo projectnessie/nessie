@@ -17,40 +17,31 @@ package org.projectnessie.server.providers;
 
 import static org.projectnessie.server.config.VersionStoreConfig.VersionStoreType.DYNAMO;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.Optional;
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.projectnessie.server.config.DynamoVersionStoreConfig;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.VersionStore;
-import org.projectnessie.versioned.dynamodb.DynamoStore;
-import org.projectnessie.versioned.dynamodb.DynamoStoreConfig;
-import org.projectnessie.versioned.impl.ImmutableTieredVersionStoreConfig;
-import org.projectnessie.versioned.impl.TieredVersionStore;
-import org.projectnessie.versioned.store.Store;
-import org.projectnessie.versioned.store.TracingStore;
-import software.amazon.awssdk.regions.Region;
+import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
+import org.projectnessie.versioned.persist.dynamodb.DynamoDatabaseAdapterFactory;
+import org.projectnessie.versioned.persist.dynamodb.DynamoDatabaseClient;
+import org.projectnessie.versioned.persist.dynamodb.ImmutableDynamoClientConfig;
+import org.projectnessie.versioned.persist.store.PersistVersionStore;
 
 /** DynamoDB version store factory. */
 @StoreType(DYNAMO)
 @Dependent
 public class DynamoVersionStoreFactory implements VersionStoreFactory {
-  private final DynamoVersionStoreConfig config;
-
   private final String region;
   private final Optional<String> endpoint;
 
   /** Creates a factory for dynamodb version stores. */
   @Inject
   public DynamoVersionStoreFactory(
-      DynamoVersionStoreConfig config,
       @ConfigProperty(name = "quarkus.dynamodb.aws.region") String region,
       @ConfigProperty(name = "quarkus.dynamodb.endpoint-override") Optional<String> endpoint) {
-    this.config = config;
     this.region = region;
     this.endpoint = endpoint;
   }
@@ -59,37 +50,24 @@ public class DynamoVersionStoreFactory implements VersionStoreFactory {
   public <VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>>
       VersionStore<VALUE, METADATA, VALUE_TYPE> newStore(
           StoreWorker<VALUE, METADATA, VALUE_TYPE> worker, ServerConfig serverConfig) {
-    return new TieredVersionStore<>(
-        worker,
-        newDynamoConnection(),
-        ImmutableTieredVersionStoreConfig.builder().enableTracing(config.enableTracing()).build());
-  }
 
-  /** create a dynamo store based on config. */
-  private Store newDynamoConnection() {
-    Store store =
-        new DynamoStore(
-            DynamoStoreConfig.builder()
-                .endpoint(
-                    endpoint.map(
-                        e -> {
-                          try {
-                            return new URI(e);
-                          } catch (URISyntaxException uriSyntaxException) {
-                            throw new RuntimeException(uriSyntaxException);
-                          }
-                        }))
-                .region(Region.of(region))
-                .initializeDatabase(config.isDynamoInitialize())
-                .tablePrefix(config.getTablePrefix())
-                .enableTracing(config.enableTracing())
-                .build());
+    DatabaseAdapter databaseAdapter =
+        new DynamoDatabaseAdapterFactory()
+            .newBuilder()
+            .configure(
+                c -> {
+                  DynamoDatabaseClient client = new DynamoDatabaseClient();
+                  ImmutableDynamoClientConfig.Builder config =
+                      ImmutableDynamoClientConfig.builder().region(region);
+                  endpoint.ifPresent(config::endpointURI);
+                  client.configure(config.build());
+                  client.initialize();
+                  return c.withConnectionProvider(client);
+                })
+            .build();
 
-    if (config.enableTracing()) {
-      store = new TracingStore(store);
-    }
+    databaseAdapter.initializeRepo(serverConfig.getDefaultBranch());
 
-    store.start();
-    return store;
+    return new PersistVersionStore<>(databaseAdapter, worker);
   }
 }

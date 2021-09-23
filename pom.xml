@@ -201,11 +201,6 @@
         <version>${protobuf.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.eclipse.jgit</groupId>
-        <artifactId>org.eclipse.jgit</artifactId>
-        <version>${jgit.version}</version>
-      </dependency>
-      <dependency>
         <groupId>software.amazon.awssdk</groupId>
         <artifactId>bom</artifactId>
         <version>${awssdk.version}</version>
