@@ -20,15 +20,10 @@ import io.quarkus.test.junit.QuarkusTestProfile;
 import java.util.Map;
 import org.projectnessie.server.config.VersionStoreConfig.VersionStoreType;
 
-public class QuarkusNativeProfileInmemory implements QuarkusTestProfile {
+public class QuarkusTestProfileRocks implements QuarkusTestProfile {
 
   @Override
   public Map<String, String> getConfigOverrides() {
-    return ImmutableMap.of("nessie.version.store.type", VersionStoreType.INMEMORY.name());
-  }
-
-  @Override
-  public String getConfigProfile() {
-    return "prod";
+    return ImmutableMap.of("nessie.version.store.type", VersionStoreType.ROCKS.name());
   }
 }

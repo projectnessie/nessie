@@ -36,10 +36,8 @@ import org.mockito.Mockito;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.versioned.BackendLimitExceededException;
 import org.projectnessie.versioned.StringStoreWorker;
-import org.projectnessie.versioned.impl.ImmutableTieredVersionStoreConfig;
-import org.projectnessie.versioned.impl.TieredVersionStore;
-import org.projectnessie.versioned.store.Store;
-import org.projectnessie.versioned.store.ValueType;
+import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
+import org.projectnessie.versioned.persist.store.PersistVersionStore;
 
 /** REST service used to generate a bunch of violations for {@link TestNessieError}. */
 @RequestScoped
@@ -110,7 +108,7 @@ public class ErrorTestService {
   }
 
   /**
-   * Throws an exception depending on the parameter via {@link Store#getValues(ValueType)}.
+   * Throws an exception depending on the parameter.
    *
    * @return nothing
    * @see TestNessieError#unhandledRuntimeExceptionInStore()
@@ -132,14 +130,11 @@ public class ErrorTestService {
         throw new IllegalArgumentException("test code error");
     }
 
-    Store store = Mockito.mock(Store.class);
-    Mockito.when(store.getValues(ValueType.REF)).thenThrow(ex);
+    DatabaseAdapter databaseAdapter = Mockito.mock(DatabaseAdapter.class);
+    Mockito.when(databaseAdapter.namedRefs()).thenThrow(ex);
 
-    TieredVersionStore<String, String, StringStoreWorker.TestEnum> tvs =
-        new TieredVersionStore<>(
-            StringStoreWorker.INSTANCE,
-            store,
-            ImmutableTieredVersionStoreConfig.builder().waitOnCollapse(true).build());
+    PersistVersionStore<String, String, StringStoreWorker.TestEnum> tvs =
+        new PersistVersionStore<>(databaseAdapter, StringStoreWorker.INSTANCE);
     tvs.getNamedRefs().forEach(ref -> {});
     return "we should not get here";
   }

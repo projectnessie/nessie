@@ -1,5 +1,14 @@
 [
   {
+    "name" : "org.projectnessie.error.NessieError",
+    "allDeclaredConstructors" : true,
+    "allPublicConstructors" : true,
+    "allDeclaredMethods" : true,
+    "allPublicMethods" : true,
+    "allDeclaredFields" : true,
+    "allPublicFields" : true
+  },
+  {
     "name" : "org.eclipse.jgit.gitrepo.internal.RepoText",
     "allDeclaredConstructors" : true,
     "allPublicConstructors" : true,

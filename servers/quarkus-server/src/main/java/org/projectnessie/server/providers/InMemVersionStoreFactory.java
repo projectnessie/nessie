@@ -15,27 +15,33 @@
  */
 package org.projectnessie.server.providers;
 
-import static org.projectnessie.server.config.VersionStoreConfig.VersionStoreType.IN_MEMORY;
+import static org.projectnessie.server.config.VersionStoreConfig.VersionStoreType.INMEMORY;
 
-import java.io.IOException;
 import javax.enterprise.context.Dependent;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.VersionStore;
-import org.projectnessie.versioned.memory.InMemoryVersionStore;
+import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
+import org.projectnessie.versioned.persist.inmem.InmemoryDatabaseAdapterFactory;
+import org.projectnessie.versioned.persist.inmem.InmemoryStore;
+import org.projectnessie.versioned.persist.store.PersistVersionStore;
 
 /** In-memory version store factory. */
-@StoreType(IN_MEMORY)
+@StoreType(INMEMORY)
 @Dependent
-public class InMemoryVersionStoreFactory implements VersionStoreFactory {
+public class InMemVersionStoreFactory implements VersionStoreFactory {
   @Override
   public <VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>>
       VersionStore<VALUE, METADATA, VALUE_TYPE> newStore(
-          StoreWorker<VALUE, METADATA, VALUE_TYPE> worker, ServerConfig serverConfig)
-          throws IOException {
-    return InMemoryVersionStore.<VALUE, METADATA, VALUE_TYPE>builder()
-        .metadataSerializer(worker.getMetadataSerializer())
-        .valueSerializer(worker.getValueSerializer())
-        .build();
+          StoreWorker<VALUE, METADATA, VALUE_TYPE> worker, ServerConfig serverConfig) {
+    DatabaseAdapter databaseAdapter =
+        new InmemoryDatabaseAdapterFactory()
+            .newBuilder()
+            .configure(c -> c.withConnectionProvider(new InmemoryStore()))
+            .build();
+
+    databaseAdapter.initializeRepo(serverConfig.getDefaultBranch());
+
+    return new PersistVersionStore<>(databaseAdapter, worker);
   }
 }
