@@ -72,7 +72,7 @@ import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.KeyWithType;
 
 /**
- * Tiered-Version-Store database-adapter implementing all the required logic.
+ * Contains all the database-independent logic for a Database-adapter.
  *
  * <p>This class does not implement everything from {@link
  * org.projectnessie.versioned.persist.adapter.DatabaseAdapter}.

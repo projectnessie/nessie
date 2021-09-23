@@ -54,7 +54,7 @@ import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterConfig
  */
 @ExtendWith(DatabaseAdapterExtension.class)
 @NessieDbAdapterConfigItem(name = "max.key.list.size", value = "2048")
-public abstract class AbstractTieredCommitsTest {
+public abstract class AbstractDatabaseAdapterTest {
   @NessieDbAdapter protected static DatabaseAdapter databaseAdapter;
 
   @Nested

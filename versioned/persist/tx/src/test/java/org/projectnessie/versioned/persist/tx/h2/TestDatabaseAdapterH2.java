@@ -13,10 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.persist.mongodb;
+package org.projectnessie.versioned.persist.tx.h2;
 
-import org.projectnessie.versioned.persist.tests.AbstractTieredCommitsTest;
+import org.projectnessie.versioned.persist.tests.AbstractDatabaseAdapterTest;
+import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterName;
 import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
-@NessieExternalDatabase(FlapdoodleMongoTestConnectionProviderSource.class)
-public class TestMongoDatabaseAdapter extends AbstractTieredCommitsTest {}
+@NessieDbAdapterName(H2DatabaseAdapterFactory.NAME)
+@NessieExternalDatabase(H2TestConnectionProviderSource.class)
+class TestDatabaseAdapterH2 extends AbstractDatabaseAdapterTest {}

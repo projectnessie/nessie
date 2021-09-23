@@ -13,10 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.persist.rocks;
+package org.projectnessie.versioned.persist.tx.postgres;
 
-import org.projectnessie.versioned.persist.tests.AbstractTieredCommitsTest;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.projectnessie.versioned.persist.tests.AbstractDatabaseAdapterTest;
+import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterName;
 import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
-@NessieExternalDatabase(RocksTestConnectionProviderSource.class)
-class TestTieredCommitsRocks extends AbstractTieredCommitsTest {}
+@EnabledIfSystemProperty(named = "it.nessie.dbs", matches = ".*postgres.*")
+@NessieDbAdapterName(PostgresDatabaseAdapterFactory.NAME)
+@NessieExternalDatabase(PostgresTestConnectionProviderSource.class)
+class ITDatabaseAdapterPostgres extends AbstractDatabaseAdapterTest {}

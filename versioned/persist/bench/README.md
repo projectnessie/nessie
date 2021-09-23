@@ -1,4 +1,4 @@
-# Nessie Tiered Version Store Microbenchmarks
+# Nessie Persist Version Store Microbenchmarks
 
 **DISCLAIMER** THIS IS NOT A BENCHMARK TOOL FOR PRODUCTION WORKLOADS!!!
 
