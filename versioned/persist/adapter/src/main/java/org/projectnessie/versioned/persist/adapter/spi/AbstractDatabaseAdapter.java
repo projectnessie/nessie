@@ -102,8 +102,6 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
           UnsafeByteOperations.unsafeWrap(
               newHasher().putString("empty", StandardCharsets.UTF_8).hash().asBytes()));
 
-  protected static long GLOBAL_LOG_HASH_SEED = -3031091797576167804L;
-
   protected static long COMMIT_LOG_HASH_SEED = 946928273206945677L;
 
   protected AbstractDatabaseAdapter(CONFIG config) {
