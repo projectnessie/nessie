@@ -128,12 +128,14 @@
     <!-- Version properties -->
     <antlr.version>4.8</antlr.version>
     <assertj.version>3.21.0</assertj.version>
+    <awssdk.version>2.17.45</awssdk.version>
     <bouncycastle.version>1.66</bouncycastle.version>
     <cel.version>0.2.0</cel.version>
     <!-- to fix circular dependencies with NessieClient, certain projects need to use the same Nessie version as Iceberg/Delta has -->
     <client.nessie.version>0.9.2</client.nessie.version>
     <deltalake.version>1.0.0-nessie</deltalake.version>
     <dockerjava.version>3.2.12</dockerjava.version>
+    <dynamodb.version>1.12.0</dynamodb.version>
     <flapdoodle.version>3.0.0</flapdoodle.version>
     <gatling.maven.version>3.1.2</gatling.maven.version>
     <gatling.version>3.6.1</gatling.version>
@@ -192,6 +194,13 @@
         <groupId>com.google.protobuf</groupId>
         <artifactId>protobuf-java</artifactId>
         <version>${protobuf.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>software.amazon.awssdk</groupId>
+        <artifactId>bom</artifactId>
+        <version>${awssdk.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
       </dependency>
       <dependency>
         <groupId>org.rocksdb</groupId>

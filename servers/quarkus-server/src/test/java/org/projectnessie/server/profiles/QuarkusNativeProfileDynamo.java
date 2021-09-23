@@ -15,7 +15,7 @@
  */
 package org.projectnessie.server.profiles;
 
-public class QuarkusNativeProfileInmemory extends QuarkusTestProfileInmemory {
+public class QuarkusNativeProfileDynamo extends QuarkusTestProfileDynamo {
 
   @Override
   public String getConfigProfile() {
