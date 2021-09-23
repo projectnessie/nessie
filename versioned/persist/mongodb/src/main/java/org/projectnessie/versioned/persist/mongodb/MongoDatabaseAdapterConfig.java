@@ -16,7 +16,8 @@
 package org.projectnessie.versioned.persist.mongodb;
 
 import org.immutables.value.Value;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
+import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 
 @Value.Immutable(lazyhash = true)
-public interface MongoDatabaseAdapterConfig extends DatabaseAdapterConfig<MongoDatabaseClient> {}
+public interface MongoDatabaseAdapterConfig
+    extends NonTransactionalDatabaseAdapterConfig<MongoDatabaseClient> {}

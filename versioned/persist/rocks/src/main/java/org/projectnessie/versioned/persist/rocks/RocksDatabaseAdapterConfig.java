@@ -16,7 +16,8 @@
 package org.projectnessie.versioned.persist.rocks;
 
 import org.immutables.value.Value;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
+import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 
 @Value.Immutable(lazyhash = true)
-public interface RocksDatabaseAdapterConfig extends DatabaseAdapterConfig<RocksDbInstance> {}
+public interface RocksDatabaseAdapterConfig
+    extends NonTransactionalDatabaseAdapterConfig<RocksDbInstance> {}
