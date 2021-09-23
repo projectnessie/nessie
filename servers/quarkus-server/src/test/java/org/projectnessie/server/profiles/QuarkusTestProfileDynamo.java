@@ -15,10 +15,22 @@
  */
 package org.projectnessie.server.profiles;
 
-public class QuarkusNativeProfileInmemory extends QuarkusTestProfileInmemory {
+import com.google.common.collect.ImmutableMap;
+import io.quarkus.test.junit.QuarkusTestProfile;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import org.projectnessie.server.config.VersionStoreConfig.VersionStoreType;
+
+public class QuarkusTestProfileDynamo implements QuarkusTestProfile {
 
   @Override
-  public String getConfigProfile() {
-    return "prod";
+  public Map<String, String> getConfigOverrides() {
+    return ImmutableMap.of("nessie.version.store.type", VersionStoreType.DYNAMO.name());
+  }
+
+  @Override
+  public List<TestResourceEntry> testResources() {
+    return Collections.singletonList(new TestResourceEntry(DynamoTestResourceLifecycleManager.class));
   }
 }

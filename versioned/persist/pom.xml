@@ -37,6 +37,7 @@
     <module>inmem</module>
     <module>rocks</module>
     <module>mongodb</module>
+    <module>dynamodb</module>
     <module>tx</module>
     <module>store</module>
     <module>tests</module>

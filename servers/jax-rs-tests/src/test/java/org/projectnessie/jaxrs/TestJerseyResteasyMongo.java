@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.server.profiles;
+package org.projectnessie.jaxrs;
 
-public class QuarkusNativeProfileInmemory extends QuarkusTestProfileInmemory {
+import org.projectnessie.versioned.persist.mongodb.FlapdoodleMongoTestConnectionProviderSource;
+import org.projectnessie.versioned.persist.mongodb.MongoDatabaseAdapterFactory;
+import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterName;
+import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
-  @Override
-  public String getConfigProfile() {
-    return "prod";
-  }
-}
+@NessieDbAdapterName(MongoDatabaseAdapterFactory.NAME)
+@NessieExternalDatabase(FlapdoodleMongoTestConnectionProviderSource.class)
+class TestJerseyResteasyMongo extends AbstractTestJerseyResteasy {}

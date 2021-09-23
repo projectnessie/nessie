@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.server.profiles;
+package org.projectnessie.server;
 
-public class QuarkusNativeProfileInmemory extends QuarkusTestProfileInmemory {
+import io.quarkus.test.junit.NativeImageTest;
+import io.quarkus.test.junit.TestProfile;
+import org.projectnessie.jaxrs.AbstractResteasyTest;
+import org.projectnessie.server.profiles.QuarkusNativeProfileDynamo;
 
-  @Override
-  public String getConfigProfile() {
-    return "prod";
-  }
-}
+@NativeImageTest
+@TestProfile(QuarkusNativeProfileDynamo.class)
+public class ITNativeResteasyDynamo extends AbstractResteasyTest {}
