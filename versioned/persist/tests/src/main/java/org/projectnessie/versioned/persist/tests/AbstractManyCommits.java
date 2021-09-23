@@ -20,12 +20,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.google.protobuf.ByteString;
 import java.util.Collections;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.function.IntFunction;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentsAndState;
 import org.projectnessie.versioned.persist.adapter.ContentsId;
@@ -95,38 +101,50 @@ public abstract class AbstractManyCommits {
       assertThat(log.count()).isEqualTo(numCommits);
     }
 
-    for (int i = 0; i < numCommits; i++) {
-      Key key = Key.of("many", "commits", Integer.toString(numCommits));
+    ExecutorService executor =
+        Executors.newFixedThreadPool(Math.max(4, Runtime.getRuntime().availableProcessors()));
+    try {
+      CompletableFuture<Void> combinedFuture =
+          CompletableFuture.allOf(
+              IntStream.range(0, numCommits)
+                  .mapToObj(i -> (Runnable) () -> verify(i, numCommits, branch, commits[i]))
+                  .map(r -> CompletableFuture.runAsync(r, executor))
+                  .toArray((IntFunction<CompletableFuture<?>[]>) CompletableFuture[]::new));
 
-      try (Stream<Optional<ContentsAndState<ByteString>>> x =
-          databaseAdapter.values(
-              databaseAdapter.hashOnReference(branch, Optional.of(commits[i])),
-              Collections.singletonList(key),
-              KeyFilterPredicate.ALLOW_ALL)) {
-        ByteString expect = ByteString.copyFromUtf8("value for #" + i + " of " + numCommits);
-        assertThat(x.map(o -> o.map(ContentsAndState::getRefState)))
-            .containsExactly(Optional.of(expect));
-      }
+      combinedFuture.get();
 
-      try (Stream<Optional<ContentsAndState<ByteString>>> x =
-          databaseAdapter.values(
-              databaseAdapter.hashOnReference(branch, Optional.of(commits[i])),
-              Collections.singletonList(key),
-              KeyFilterPredicate.ALLOW_ALL)) {
-        ByteString expect =
-            ByteString.copyFromUtf8("state for #" + (numCommits - 1) + " of " + numCommits);
-        assertThat(x.map(o -> o.map(ContentsAndState::getGlobalState)))
-            .containsExactly(Optional.of(expect));
-      }
-
-      try (Stream<KeyWithType> keys =
-          databaseAdapter.keys(
-              databaseAdapter.hashOnReference(branch, Optional.of(commits[i])),
-              KeyFilterPredicate.ALLOW_ALL)) {
-        assertThat(keys.map(KeyWithType::getKey)).containsExactly(key);
-      }
+    } finally {
+      executor.shutdown();
     }
 
     databaseAdapter.delete(branch, Optional.empty());
+  }
+
+  private void verify(int i, int numCommits, BranchName branch, Hash commit) {
+    Key key = Key.of("many", "commits", Integer.toString(numCommits));
+
+    try {
+      commit = databaseAdapter.hashOnReference(branch, Optional.of(commit));
+    } catch (ReferenceNotFoundException e) {
+      throw new RuntimeException(e);
+    }
+
+    try (Stream<Optional<ContentsAndState<ByteString>>> x =
+        databaseAdapter.values(
+            commit, Collections.singletonList(key), KeyFilterPredicate.ALLOW_ALL)) {
+      ByteString expectValue = ByteString.copyFromUtf8("value for #" + i + " of " + numCommits);
+      ByteString expectState =
+          ByteString.copyFromUtf8("state for #" + (numCommits - 1) + " of " + numCommits);
+      ContentsAndState<ByteString> expect = ContentsAndState.of(expectValue, expectState);
+      assertThat(x).containsExactly(Optional.of(expect));
+    } catch (ReferenceNotFoundException e) {
+      throw new RuntimeException(e);
+    }
+
+    try (Stream<KeyWithType> keys = databaseAdapter.keys(commit, KeyFilterPredicate.ALLOW_ALL)) {
+      assertThat(keys.map(KeyWithType::getKey)).containsExactly(key);
+    } catch (ReferenceNotFoundException e) {
+      throw new RuntimeException(e);
+    }
   }
 }
