@@ -73,7 +73,7 @@ These are set as follows in code (or through other methods as described [here](h
             .getOrCreate()
     ```
 
-Additional authentication settings are documented in the [Athentication in Spark](../spark_auth_config.md) section.
+Additional authentication settings are documented in the [Authentication in Tools](../auth_config.md) section.
 
 Note above we specified the option `spark.hadoop.nessie.ref`. This value sets the default branch that the delta
 catalog will use. This can be changed by changing the `hadoopConfiguration` however best practice would be to use a

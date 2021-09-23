@@ -106,7 +106,7 @@ option to set the catalog `nessie` to be managed by Nessie's Catalog implementat
 exists below this `spark.sql.catalog.nessie` configuration namespace. The catalog name is not important, it is important that the
 required options are all given below the catalog name.
 
-Additional authentication settings are documented in the [Athentication in Spark](../spark_auth_config.md) section.
+Additional authentication settings are documented in the [Authentication in Tools](../auth_config.md) section.
 
 ## Writing
 
