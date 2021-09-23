@@ -146,12 +146,13 @@ public class EntriesParams {
     return Objects.equals(hashOnRef, that.hashOnRef)
         && Objects.equals(maxRecords, that.maxRecords)
         && Objects.equals(pageToken, that.pageToken)
+        && Objects.equals(namespaceDepth, that.namespaceDepth)
         && Objects.equals(queryExpression, that.queryExpression);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(hashOnRef, maxRecords, pageToken, queryExpression);
+    return Objects.hash(hashOnRef, maxRecords, pageToken, namespaceDepth, queryExpression);
   }
 
   public static class Builder {

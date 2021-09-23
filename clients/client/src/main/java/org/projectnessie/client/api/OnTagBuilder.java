@@ -24,7 +24,7 @@ import org.projectnessie.model.Validation;
 public interface OnTagBuilder<R extends OnTagBuilder<R>> {
   R tagName(
       @NotNull @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-          String branchName);
+          String tagName);
 
   R hash(
       @NotNull @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
