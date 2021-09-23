@@ -108,7 +108,9 @@ public abstract class AbstractGlobalStates {
           + ", commitsPerBranch="
           + commitsPerBranch
           + ", tables="
-          + tables;
+          + tables
+          + ", tableCommitProbability="
+          + tableCommitProbability;
     }
   }
 
