@@ -702,7 +702,9 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     buildState.newKeyListEntities.stream().map(KeyListEntity::getId).forEach(newKeyLists);
 
     // Write the new KeyListEntities
-    writeKeyListEntities(ctx, buildState.newKeyListEntities);
+    if (!buildState.newKeyListEntities.isEmpty()) {
+      writeKeyListEntities(ctx, buildState.newKeyListEntities);
+    }
 
     // Return the new commit-log-entry with the complete-key-list
     return newCommitEntry.keyList(buildState.embeddedBuilder.build()).build();
