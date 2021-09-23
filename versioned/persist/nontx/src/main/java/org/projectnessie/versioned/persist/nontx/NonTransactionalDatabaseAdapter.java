@@ -59,7 +59,6 @@ import org.projectnessie.versioned.persist.adapter.ContentsAndState;
 import org.projectnessie.versioned.persist.adapter.ContentsId;
 import org.projectnessie.versioned.persist.adapter.ContentsIdAndBytes;
 import org.projectnessie.versioned.persist.adapter.ContentsIdWithType;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.Difference;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
@@ -87,7 +86,8 @@ import org.projectnessie.versioned.persist.serialize.ProtoSerialization;
  *       content-keys, the commit-metadata and a (list of) its parents.
  * </ul>
  */
-public abstract class NonTransactionalDatabaseAdapter<CONFIG extends DatabaseAdapterConfig<?>>
+public abstract class NonTransactionalDatabaseAdapter<
+        CONFIG extends NonTransactionalDatabaseAdapterConfig<?>>
     extends AbstractDatabaseAdapter<NonTransactionalOperationContext, CONFIG> {
 
   protected NonTransactionalDatabaseAdapter(CONFIG config) {
@@ -619,7 +619,7 @@ public abstract class NonTransactionalDatabaseAdapter<CONFIG extends DatabaseAda
           Stream.concat(
               newParents,
               currentEntry.getParentsList().stream()
-                  .limit(config.getParentsPerCommit() - 1)
+                  .limit(config.getParentsPerGlobalCommit() - 1)
                   .map(Hash::of));
     }
 

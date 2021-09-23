@@ -16,7 +16,8 @@
 package org.projectnessie.versioned.persist.inmem;
 
 import org.immutables.value.Value;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
+import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 
 @Value.Immutable(lazyhash = true)
-public interface InmemoryDatabaseAdapterConfig extends DatabaseAdapterConfig<InmemoryStore> {}
+public interface InmemoryDatabaseAdapterConfig
+    extends NonTransactionalDatabaseAdapterConfig<InmemoryStore> {}
