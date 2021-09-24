@@ -39,7 +39,12 @@ set of configuration properties and its own property name prefix.
 
 # Authentication Settings
 
-The value of the `authentication.type` property (with the appropriate prefix) can be one of the following:
+The sections below discuss specific authentication settings. The property names are shown without
+environment-specific prefixes for brevity. Nonetheless, in practice the property names should be
+given appropriate prefixes (as in the example above) for them to be recognized by the tools and Nessie
+code.
+
+The value of the `authentication.type` property can be one of the following:
 
 * `NONE` (default)
 * `BEARER`
@@ -48,27 +53,26 @@ The value of the `authentication.type` property (with the appropriate prefix) ca
 
 ## Authentication Type `NONE`
 
-For the Authentication Type `NONE` only the `authentication.type` property needs to be set
-(with the appropriate prefix).
+For the Authentication Type `NONE` only the `authentication.type` property needs to be set.
 
 This is also the default authentication type if nothing else is configured.
 
 ## Authentication Type `BEARER`
 
-For the `BEARER` Authentication Type the `authentication.token` property (with the appropriate prefix)
-should be set to a valid [OpenID token](https://openid.net/specs/openid-connect-core-1_0.html).
+For the `BEARER` Authentication Type the `authentication.token` property should be set to a valid
+[OpenID token](https://openid.net/specs/openid-connect-core-1_0.html).
 
 ## Authentication Type `AWS`
 
-For the `AWS` Authentication Type the `authentication.aws.region` property (with the appropriate prefix)
-should be set to the AWS region where the Nessie Server endpoint is located.
+For the `AWS` Authentication Type the `authentication.aws.region` property should be set to the
+AWS region where the Nessie Server endpoint is located.
 
 Additional AWS authentication configuration should be provided via standard AWS configuration files. 
 
 ## Authentication Type `BASIC`
 
 For the `BASIC` Authentication Type the `authentication.username` and `authentication.password` properties
-(with the appropriate prefix) should be set.
+should be set.
 
 Note: the `BASIC` authentication type is considered insecure and Nessie Servers do not support it in production
 mode. This authentication type is can only be used when the Nessie Server runs in test or "development" mode.
