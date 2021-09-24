@@ -18,20 +18,24 @@ package org.projectnessie.versioned.tests;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -49,6 +53,7 @@ import org.projectnessie.versioned.Ref;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.StringSerializer;
 import org.projectnessie.versioned.StringStoreWorker;
 import org.projectnessie.versioned.TagName;
@@ -60,11 +65,24 @@ import org.projectnessie.versioned.WithType;
 
 /** Base class used for integration tests against version store implementations. */
 public abstract class AbstractITVersionStore {
+  protected static BiFunction<Serializer<String>, ByteString, ByteString> NOOP_META = (s, b) -> b;
 
   protected abstract VersionStore<String, String, StringStoreWorker.TestEnum> store();
 
   protected boolean isLegacyStore() {
     return true;
+  }
+
+  // Puts the metadata through a transformation, that appends a suffix
+  protected BiFunction<Serializer<String>, ByteString, ByteString> transformMeta =
+      (s, b) -> s.toBytes(s.fromBytes(b) + "_suffix");
+
+  protected void assertMetaIsReset(String meta) {
+    assertTrue(meta.endsWith("_suffix"));
+  }
+
+  protected void assertMetaUnchanged(String meta) {
+    assertFalse(meta.endsWith("_suffix"));
   }
 
   /** Use case simulation: single branch, multiple users, each user updating a separate table. */
@@ -785,12 +803,12 @@ public abstract class AbstractITVersionStore {
     protected void checkTransplantOnEmptyBranch() throws VersionStoreException {
       final BranchName newBranch = BranchName.of("bar_1");
       store().create(newBranch, Optional.empty());
-
       store()
           .transplant(
               newBranch,
               Optional.of(initialHash),
-              Arrays.asList(firstCommit, secondCommit, thirdCommit));
+              Arrays.asList(firstCommit, secondCommit, thirdCommit),
+              transformMeta);
       assertThat(
               store()
                   .getValues(
@@ -798,6 +816,11 @@ public abstract class AbstractITVersionStore {
                       Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"))))
           .contains(
               Optional.of("v1_2"), Optional.of("v2_2"), Optional.empty(), Optional.of("v4_1"));
+
+      store()
+          .getCommits(newBranch)
+          .map(w -> w.getValue())
+          .forEach(m -> assertTrue(m.endsWith("suffix")));
     }
 
     @Test
@@ -810,7 +833,8 @@ public abstract class AbstractITVersionStore {
           .transplant(
               newBranch,
               Optional.of(initialHash),
-              Arrays.asList(firstCommit, secondCommit, thirdCommit));
+              Arrays.asList(firstCommit, secondCommit, thirdCommit),
+              transformMeta);
       assertThat(
               store()
                   .getValues(
@@ -823,6 +847,16 @@ public abstract class AbstractITVersionStore {
               Optional.empty(),
               Optional.of("v4_1"),
               Optional.of("v5_1"));
+      store()
+          .getCommits(newBranch)
+          .map(w -> w.getValue())
+          .filter(m -> !m.equals("Unrelated commit"))
+          .forEach(m -> assertTrue(m.endsWith("suffix")));
+      store()
+          .getCommits(newBranch)
+          .map(w -> w.getValue())
+          .filter(m -> m.equals("Unrelated commit"))
+          .forEach(m -> assertFalse(m.endsWith("suffix")));
     }
 
     @Test
@@ -838,7 +872,18 @@ public abstract class AbstractITVersionStore {
                   .transplant(
                       newBranch,
                       Optional.of(initialHash),
-                      Arrays.asList(firstCommit, secondCommit, thirdCommit)));
+                      Arrays.asList(firstCommit, secondCommit, thirdCommit),
+                      transformMeta));
+      store()
+          .getCommits(newBranch)
+          .map(w -> w.getValue())
+          .filter(m -> !m.equals("Another commit"))
+          .forEach(m -> assertTrue(m.endsWith("suffix")));
+      store()
+          .getCommits(newBranch)
+          .map(w -> w.getValue())
+          .filter(m -> m.equals("Another commit"))
+          .forEach(m -> assertFalse(m.endsWith("suffix")));
     }
 
     @Test
@@ -852,7 +897,8 @@ public abstract class AbstractITVersionStore {
           .transplant(
               newBranch,
               Optional.of(initialHash),
-              Arrays.asList(firstCommit, secondCommit, thirdCommit));
+              Arrays.asList(firstCommit, secondCommit, thirdCommit),
+              transformMeta);
       assertThat(
               store()
                   .getValues(
@@ -860,6 +906,16 @@ public abstract class AbstractITVersionStore {
                       Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"))))
           .contains(
               Optional.of("v1_2"), Optional.of("v2_2"), Optional.empty(), Optional.of("v4_1"));
+      store()
+          .getCommits(newBranch)
+          .map(w -> w.getValue())
+          .filter(m -> !m.equals("Another commit"))
+          .forEach(m -> assertTrue(m.endsWith("suffix")));
+      store()
+          .getCommits(newBranch)
+          .map(w -> w.getValue())
+          .filter(m -> m.equals("Another commit"))
+          .forEach(m -> assertFalse(m.endsWith("suffix")));
     }
 
     @Test
@@ -872,7 +928,8 @@ public abstract class AbstractITVersionStore {
                   .transplant(
                       newBranch,
                       Optional.of(initialHash),
-                      Arrays.asList(firstCommit, secondCommit, thirdCommit)));
+                      Arrays.asList(firstCommit, secondCommit, thirdCommit),
+                      NOOP_META));
     }
 
     @Test
@@ -886,7 +943,8 @@ public abstract class AbstractITVersionStore {
                   .transplant(
                       newBranch,
                       Optional.of(initialHash),
-                      Collections.singletonList(Hash.of("1234567890abcdef"))));
+                      Collections.singletonList(Hash.of("1234567890abcdef")),
+                      NOOP_META));
     }
 
     @Test
@@ -898,7 +956,10 @@ public abstract class AbstractITVersionStore {
 
       store()
           .transplant(
-              newBranch, Optional.empty(), Arrays.asList(firstCommit, secondCommit, thirdCommit));
+              newBranch,
+              Optional.empty(),
+              Arrays.asList(firstCommit, secondCommit, thirdCommit),
+              transformMeta);
       assertThat(
               store()
                   .getValues(
@@ -911,6 +972,18 @@ public abstract class AbstractITVersionStore {
               Optional.empty(),
               Optional.of("v4_1"),
               Optional.of("v5_1"));
+      List<WithHash<String>> commits = commitsList(newBranch);
+      store()
+          .getCommits(newBranch)
+          .map(w -> w.getValue())
+          .filter(m -> !m.equals("Another commit"))
+          .forEach(m -> assertMetaIsReset(m));
+
+      store()
+          .getCommits(newBranch)
+          .map(w -> w.getValue())
+          .filter(m -> m.equals("Another commit"))
+          .forEach(m -> assertMetaUnchanged(m));
     }
 
     @Test
@@ -925,7 +998,8 @@ public abstract class AbstractITVersionStore {
                   .transplant(
                       newBranch,
                       Optional.empty(),
-                      Arrays.asList(secondCommit, firstCommit, thirdCommit)));
+                      Arrays.asList(secondCommit, firstCommit, thirdCommit),
+                      NOOP_META));
     }
 
     @Test
@@ -949,7 +1023,8 @@ public abstract class AbstractITVersionStore {
                   .transplant(
                       newBranch,
                       Optional.of(unrelatedCommit),
-                      Arrays.asList(firstCommit, secondCommit, thirdCommit)));
+                      Arrays.asList(firstCommit, secondCommit, thirdCommit),
+                      NOOP_META));
     }
 
     @Test
@@ -960,10 +1035,23 @@ public abstract class AbstractITVersionStore {
 
       store()
           .transplant(
-              newBranch, Optional.of(initialHash), Arrays.asList(firstCommit, secondCommit));
+              newBranch,
+              Optional.of(initialHash),
+              Arrays.asList(firstCommit, secondCommit),
+              transformMeta);
       assertThat(
               store().getValues(newBranch, Arrays.asList(Key.of("t1"), Key.of("t4"), Key.of("t5"))))
           .contains(Optional.of("v1_2"), Optional.of("v4_1"), Optional.of("v5_1"));
+      store()
+          .getCommits(newBranch)
+          .map(w -> w.getValue())
+          .filter(m -> !m.equals("Unrelated commit"))
+          .forEach(m -> assertMetaIsReset(m));
+      store()
+          .getCommits(newBranch)
+          .map(w -> w.getValue())
+          .filter(m -> m.equals("Unrelated commit"))
+          .forEach(m -> assertMetaUnchanged(m));
     }
   }
 
@@ -1009,7 +1097,7 @@ public abstract class AbstractITVersionStore {
       final BranchName newBranch = BranchName.of("bar_1");
       store().create(newBranch, Optional.of(initialHash));
 
-      store().merge(thirdCommit, newBranch, Optional.of(initialHash));
+      store().merge(thirdCommit, newBranch, Optional.of(initialHash), transformMeta);
       assertThat(
               store()
                   .getValues(
@@ -1018,7 +1106,13 @@ public abstract class AbstractITVersionStore {
           .contains(
               Optional.of("v1_2"), Optional.of("v2_2"), Optional.empty(), Optional.of("v4_1"));
 
-      assertThat(store().toHash(newBranch)).isEqualTo(thirdCommit);
+      List<WithHash<String>> allCommits = commitsList(newBranch);
+      assertThat(allCommits.get(0).getValue()).startsWith("Third Commit");
+
+      allCommits.stream()
+          .map(WithHash::getValue)
+          .filter(m -> !m.equals("Default common ancestor"))
+          .forEach(m -> assertMetaIsReset(m));
     }
 
     @Test
@@ -1027,7 +1121,7 @@ public abstract class AbstractITVersionStore {
       store().create(newBranch, Optional.of(initialHash));
       final Hash newCommit = commit("Unrelated commit").put("t5", "v5_1").toBranch(newBranch);
 
-      store().merge(thirdCommit, newBranch, Optional.empty());
+      store().merge(thirdCommit, newBranch, Optional.empty(), transformMeta);
       assertThat(
               store()
                   .getValues(
@@ -1045,9 +1139,12 @@ public abstract class AbstractITVersionStore {
       assertThat(commits).hasSize(5);
       assertThat(commits.get(4).getHash()).isEqualTo(initialHash);
       assertThat(commits.get(3).getHash()).isEqualTo(newCommit);
-      assertThat(commits.get(2).getValue()).isEqualTo("First Commit");
-      assertThat(commits.get(1).getValue()).isEqualTo("Second Commit");
-      assertThat(commits.get(0).getValue()).isEqualTo("Third Commit");
+      assertThat(commits.get(2).getValue()).startsWith("First Commit");
+      assertThat(commits.get(1).getValue()).startsWith("Second Commit");
+      assertThat(commits.get(0).getValue()).startsWith("Third Commit");
+      IntStream.range(0, 3)
+          .mapToObj(i -> commits.get(i).getValue())
+          .forEach(v -> assertMetaIsReset(v));
     }
 
     @Test
@@ -1060,12 +1157,19 @@ public abstract class AbstractITVersionStore {
       store()
           .commit(
               etl, Optional.empty(), "commit 1", Collections.singletonList(Put.of(key, "value1")));
-      store().merge(store().toHash(etl), review, Optional.empty());
+      store().merge(store().toHash(etl), review, Optional.empty(), transformMeta);
       store()
           .commit(
               etl, Optional.empty(), "commit 2", Collections.singletonList(Put.of(key, "value2")));
-      store().merge(store().toHash(etl), review, Optional.empty());
+      store().merge(store().toHash(etl), review, Optional.empty(), transformMeta);
       assertEquals(store().getValue(review, key), "value2");
+
+      List<WithHash<String>> commits = commitsList(review);
+      store()
+          .getCommits(review)
+          .map(w -> w.getValue())
+          .filter(m -> m.startsWith("commit ")) // inserted commits are commit 1 and commit 2
+          .forEach(m -> assertMetaIsReset(m));
     }
 
     @Test
@@ -1075,7 +1179,7 @@ public abstract class AbstractITVersionStore {
 
       final Hash newCommit = commit("Unrelated commit").put("t5", "v5_1").toBranch(newBranch);
 
-      store().merge(thirdCommit, newBranch, Optional.empty());
+      store().merge(thirdCommit, newBranch, Optional.empty(), transformMeta);
       assertThat(
               store()
                   .getValues(
@@ -1094,8 +1198,11 @@ public abstract class AbstractITVersionStore {
       assertThat(commits.get(4).getHash()).isEqualTo(initialHash);
       assertThat(commits.get(3).getHash()).isEqualTo(firstCommit);
       assertThat(commits.get(2).getHash()).isEqualTo(newCommit);
-      assertThat(commits.get(1).getValue()).isEqualTo("Second Commit");
-      assertThat(commits.get(0).getValue()).isEqualTo("Third Commit");
+      assertThat(commits.get(1).getValue()).startsWith("Second Commit");
+      assertThat(commits.get(0).getValue()).startsWith("Third Commit");
+      IntStream.range(0, 2)
+          .mapToObj(i -> commits.get(i).getValue())
+          .forEach(v -> assertMetaIsReset(v));
     }
 
     @Test
@@ -1135,7 +1242,7 @@ public abstract class AbstractITVersionStore {
                   "commit 4",
                   Collections.singletonList(Put.of(key2, "value4")));
 
-      assertThatThrownBy(() -> store().merge(barHash, foo, Optional.empty()))
+      assertThatThrownBy(() -> store().merge(barHash, foo, Optional.empty(), NOOP_META))
           .isInstanceOf(ReferenceConflictException.class)
           .hasMessageContaining("The following keys have been changed in conflict:")
           .hasMessageContaining(key1.toString())
@@ -1150,7 +1257,7 @@ public abstract class AbstractITVersionStore {
 
       assertThrows(
           ReferenceConflictException.class,
-          () -> store().merge(thirdCommit, newBranch, Optional.of(initialHash)));
+          () -> store().merge(thirdCommit, newBranch, Optional.of(initialHash), NOOP_META));
     }
 
     @Test
@@ -1158,7 +1265,7 @@ public abstract class AbstractITVersionStore {
       final BranchName newBranch = BranchName.of("bar_5");
       assertThrows(
           ReferenceNotFoundException.class,
-          () -> store().merge(thirdCommit, newBranch, Optional.of(initialHash)));
+          () -> store().merge(thirdCommit, newBranch, Optional.of(initialHash), NOOP_META));
     }
 
     @Test
@@ -1167,11 +1274,13 @@ public abstract class AbstractITVersionStore {
       store().create(newBranch, Optional.of(initialHash));
       assertThrows(
           ReferenceNotFoundException.class,
-          () -> store().merge(Hash.of("1234567890abcdef"), newBranch, Optional.of(initialHash)));
+          () ->
+              store()
+                  .merge(
+                      Hash.of("1234567890abcdef"), newBranch, Optional.of(initialHash), NOOP_META));
     }
   }
 
-  @Test
   void toRef() throws VersionStoreException {
     final BranchName branch = BranchName.of("toRef");
     store().create(branch, Optional.empty());

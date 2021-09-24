@@ -15,14 +15,16 @@
  */
 package org.projectnessie.versioned.jgit;
 
+import com.google.protobuf.ByteString;
 import java.io.IOException;
+import java.util.function.BiFunction;
 import org.eclipse.jgit.internal.storage.dfs.DfsRepositoryDescription;
 import org.eclipse.jgit.internal.storage.dfs.InMemoryRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.StringStoreWorker;
 
 public class ITJGitInMemoryVersionStore extends AbstractITJGitVersionStore {
-
   @BeforeEach
   void setUp() throws IOException {
     repository =
@@ -30,5 +32,18 @@ public class ITJGitInMemoryVersionStore extends AbstractITJGitVersionStore {
             .setRepositoryDescription(new DfsRepositoryDescription())
             .build();
     store = new JGitVersionStore<>(repository, StringStoreWorker.INSTANCE);
+  }
+
+  // Puts the metadata through a transformation, that appends a suffix
+  protected BiFunction<Serializer<String>, ByteString, ByteString> suffixMeta = NOOP_META;
+
+  @Override
+  protected void assertMetaIsReset(String meta) {
+    // Do nothing, functionality not supported.
+  }
+
+  @Override
+  protected void assertMetaUnchanged(String meta) {
+    // Do nothing, functionality not supported
   }
 }

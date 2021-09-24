@@ -20,6 +20,7 @@ import static org.projectnessie.versioned.TracingUtil.safeToString;
 import static org.projectnessie.versioned.TracingUtil.traceError;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.protobuf.ByteString;
 import io.opentracing.Scope;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
@@ -27,6 +28,7 @@ import io.opentracing.Tracer.SpanBuilder;
 import io.opentracing.util.GlobalTracer;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
@@ -115,7 +117,10 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
 
   @Override
   public void transplant(
-      BranchName targetBranch, Optional<Hash> referenceHash, List<Hash> sequenceToTransplant)
+      BranchName targetBranch,
+      Optional<Hash> referenceHash,
+      List<Hash> sequenceToTransplant,
+      BiFunction<Serializer<METADATA>, ByteString, ByteString> resetMergeProps)
       throws ReferenceNotFoundException, ReferenceConflictException {
     this.<ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
         "Transplant",
@@ -123,11 +128,17 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
             b.withTag(TAG_TARGET_BRANCH, safeRefName(targetBranch))
                 .withTag(TAG_HASH, safeToString(referenceHash))
                 .withTag(TAG_TRANSPLANTS, safeSize(sequenceToTransplant)),
-        () -> delegate.transplant(targetBranch, referenceHash, sequenceToTransplant));
+        () ->
+            delegate.transplant(
+                targetBranch, referenceHash, sequenceToTransplant, resetMergeProps));
   }
 
   @Override
-  public void merge(Hash fromHash, BranchName toBranch, Optional<Hash> expectedHash)
+  public void merge(
+      Hash fromHash,
+      BranchName toBranch,
+      Optional<Hash> expectedHash,
+      BiFunction<Serializer<METADATA>, ByteString, ByteString> resetMergeProps)
       throws ReferenceNotFoundException, ReferenceConflictException {
     this.<ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
         "Merge",
@@ -135,7 +146,7 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
             b.withTag(TAG_FROM_HASH, safeToString(fromHash))
                 .withTag(TAG_TO_BRANCH, safeRefName(toBranch))
                 .withTag(TAG_EXPECTED_HASH, safeToString(expectedHash)),
-        () -> delegate.merge(fromHash, toBranch, expectedHash));
+        () -> delegate.merge(fromHash, toBranch, expectedHash, resetMergeProps));
   }
 
   @Override

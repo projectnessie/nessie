@@ -22,6 +22,7 @@ import com.google.protobuf.ByteString;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.versioned.BranchName;
@@ -47,13 +48,15 @@ public abstract class AbstractMergeTransplant {
   void merge() throws Exception {
     mergeTransplant(
         (target, expectedHead, branch, commitHashes, i) ->
-            databaseAdapter.merge(commitHashes[i], target, expectedHead));
+            databaseAdapter.merge(commitHashes[i], target, expectedHead, Function.identity()));
 
     BranchName branch = BranchName.of("branch");
     BranchName branch2 = BranchName.of("branch2");
     databaseAdapter.create(branch2, databaseAdapter.toHash(branch));
     assertThatThrownBy(
-            () -> databaseAdapter.merge(databaseAdapter.toHash(branch), branch2, Optional.empty()))
+            () ->
+                databaseAdapter.merge(
+                    databaseAdapter.toHash(branch), branch2, Optional.empty(), Function.identity()))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageStartingWith("No hashes to merge from '");
   }
@@ -64,20 +67,27 @@ public abstract class AbstractMergeTransplant {
         mergeTransplant(
             (target, expectedHead, branch, commitHashes, i) ->
                 databaseAdapter.transplant(
-                    target, expectedHead, Arrays.asList(commitHashes).subList(0, i + 1)));
+                    target,
+                    expectedHead,
+                    Arrays.asList(commitHashes).subList(0, i + 1),
+                    Function.identity()));
 
     BranchName conflict = BranchName.of("conflict");
 
     // no conflict, when transplanting the commits from against the current HEAD of the
     // conflict-branch
     Hash noConflictHead = databaseAdapter.toHash(conflict);
-    databaseAdapter.transplant(conflict, Optional.of(noConflictHead), Arrays.asList(commits));
+    databaseAdapter.transplant(
+        conflict, Optional.of(noConflictHead), Arrays.asList(commits), Function.identity());
 
     // again, no conflict (same as above, just again)
-    databaseAdapter.transplant(conflict, Optional.empty(), Arrays.asList(commits));
+    databaseAdapter.transplant(
+        conflict, Optional.empty(), Arrays.asList(commits), Function.identity());
 
     assertThatThrownBy(
-            () -> databaseAdapter.transplant(conflict, Optional.empty(), Collections.emptyList()))
+            () ->
+                databaseAdapter.transplant(
+                    conflict, Optional.empty(), Collections.emptyList(), Function.identity()))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("No hashes to transplant given.");
   }

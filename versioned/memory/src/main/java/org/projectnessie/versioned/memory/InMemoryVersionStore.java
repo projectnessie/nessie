@@ -26,6 +26,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.MoreCollectors;
 import com.google.common.collect.Streams;
+import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -36,6 +37,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -233,7 +235,10 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>>
 
   @Override
   public void transplant(
-      BranchName targetBranch, Optional<Hash> referenceHash, List<Hash> sequenceToTransplant)
+      BranchName targetBranch,
+      Optional<Hash> referenceHash,
+      List<Hash> sequenceToTransplant,
+      BiFunction<Serializer<MetadataT>, ByteString, ByteString> resetMergeProps)
       throws ReferenceNotFoundException, ReferenceConflictException {
     requireNonNull(targetBranch);
     requireNonNull(sequenceToTransplant);
@@ -263,14 +268,9 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>>
       }
 
       commit.getOperations().forEach(op -> keys.add(op.getKey()));
-
+      MetadataT meta = applyMergeProps(commit.getMetadata(), resetMergeProps);
       Commit<ValueT, MetadataT> newCommit =
-          Commit.of(
-              valueSerializer,
-              metadataSerializer,
-              newAncestor,
-              commit.getMetadata(),
-              commit.getOperations());
+          Commit.of(valueSerializer, metadataSerializer, newAncestor, meta, commit.getOperations());
       toStore.add(newCommit);
 
       ancestor = commit.getHash();
@@ -328,7 +328,11 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>>
   }
 
   @Override
-  public void merge(Hash fromHash, BranchName toBranch, Optional<Hash> expectedBranchHash)
+  public void merge(
+      Hash fromHash,
+      BranchName toBranch,
+      Optional<Hash> expectedBranchHash,
+      BiFunction<Serializer<MetadataT>, ByteString, ByteString> resetMergeProps)
       throws ReferenceNotFoundException, ReferenceConflictException {
     requireNonNull(fromHash);
     requireNonNull(toBranch);
@@ -370,13 +374,9 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>>
     final List<Commit<ValueT, MetadataT>> toStore = new ArrayList<>(toMerge.size());
     Hash newAncestor = currentHash;
     for (final Commit<ValueT, MetadataT> commit : Lists.reverse(toMerge)) {
+      final MetadataT meta = applyMergeProps(commit.getMetadata(), resetMergeProps);
       final Commit<ValueT, MetadataT> newCommit =
-          Commit.of(
-              valueSerializer,
-              metadataSerializer,
-              newAncestor,
-              commit.getMetadata(),
-              commit.getOperations());
+          Commit.of(valueSerializer, metadataSerializer, newAncestor, meta, commit.getOperations());
       toStore.add(newCommit);
       newAncestor = newCommit.getHash();
     }
@@ -397,6 +397,14 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>>
           final Commit<ValueT, MetadataT> lastCommit = Iterables.getLast(toStore);
           return lastCommit.getHash();
         });
+  }
+
+  private MetadataT applyMergeProps(
+      MetadataT rawMeta,
+      BiFunction<Serializer<MetadataT>, ByteString, ByteString> resetMergeProps) {
+    final ByteString rawMetaBytes = metadataSerializer.toBytes(rawMeta);
+    final ByteString appliedMetaBytes = resetMergeProps.apply(metadataSerializer, rawMetaBytes);
+    return metadataSerializer.fromBytes(appliedMetaBytes);
   }
 
   private void checkIfSameKeysHaveBeenModified(Hash fromHash, Hash referenceHash)

@@ -40,6 +40,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -296,7 +297,10 @@ public class JGitVersionStore<TABLE, METADATA, TABLE_TYPE extends Enum<TABLE_TYP
 
   @Override
   public void transplant(
-      BranchName targetBranch, Optional<Hash> expectedHash, List<Hash> sequenceToTransplant)
+      BranchName targetBranch,
+      Optional<Hash> expectedHash,
+      List<Hash> sequenceToTransplant,
+      BiFunction<Serializer<METADATA>, ByteString, ByteString> resetMergeProps)
       throws ReferenceNotFoundException, ReferenceConflictException {
     testLinearTransplantList(sequenceToTransplant);
     try {
@@ -328,11 +332,13 @@ public class JGitVersionStore<TABLE, METADATA, TABLE_TYPE extends Enum<TABLE_TYP
       for (Hash hash : sequenceToTransplant) {
         ObjectId transplantTree =
             TreeBuilder.merge(currentTreeId, TreeBuilder.transplant(hash, repository), repository);
+        METADATA meta = getCommit(hash);
+        meta = applyMergeProps(meta, resetMergeProps);
         commitTree(
             targetBranch,
             transplantTree,
             Optional.of(currentCommitId).map(ObjectId::name).map(Hash::of),
-            getCommit(hash),
+            meta,
             false,
             false);
         currentCommitId = repository.resolve(targetBranch.getName() + "^{commit}");
@@ -344,7 +350,11 @@ public class JGitVersionStore<TABLE, METADATA, TABLE_TYPE extends Enum<TABLE_TYP
   }
 
   @Override
-  public void merge(Hash fromHash, BranchName toBranch, Optional<Hash> expectedHash)
+  public void merge(
+      Hash fromHash,
+      BranchName toBranch,
+      Optional<Hash> expectedHash,
+      BiFunction<Serializer<METADATA>, ByteString, ByteString> resetMergeProps)
       throws ReferenceNotFoundException, ReferenceConflictException {
     try {
       org.eclipse.jgit.lib.Ref ref = repository.findRef(Constants.R_HEADS + toBranch.getName());
@@ -358,6 +368,8 @@ public class JGitVersionStore<TABLE, METADATA, TABLE_TYPE extends Enum<TABLE_TYP
       }
       RevCommit newCommit =
           RevCommit.parse(repository.getObjectDatabase().open(newCommitId).getBytes());
+      // WARN: resetMergeProps isn't applied on the commit meta, as it changes the commit definition
+      // and causes lookup mismatch.
       try (RevWalk walk = new RevWalk(repository)) {
         ObjectId headId = ref.getObjectId();
         String headName = ref.getName();
@@ -389,7 +401,8 @@ public class JGitVersionStore<TABLE, METADATA, TABLE_TYPE extends Enum<TABLE_TYP
         transplant(
             toBranch,
             expectedHash,
-            pickList.stream().map(RevCommit::name).map(Hash::of).collect(Collectors.toList()));
+            pickList.stream().map(RevCommit::name).map(Hash::of).collect(Collectors.toList()),
+            (a, b) -> b);
       }
     } catch (IOException e) {
       throw new RuntimeException("Unknown error", e);
@@ -865,5 +878,13 @@ public class JGitVersionStore<TABLE, METADATA, TABLE_TYPE extends Enum<TABLE_TYP
   @Override
   public Stream<Diff<TABLE>> getDiffs(Ref from, Ref to) {
     throw new UnsupportedOperationException("Not yet implemented.");
+  }
+
+  private METADATA applyMergeProps(
+      METADATA rawMeta, BiFunction<Serializer<METADATA>, ByteString, ByteString> resetMergeProps) {
+    Serializer<METADATA> metadataSerializer = storeWorker.getMetadataSerializer();
+    final ByteString rawMetaBytes = metadataSerializer.toBytes(rawMeta);
+    final ByteString appliedMetaBytes = resetMergeProps.apply(metadataSerializer, rawMetaBytes);
+    return metadataSerializer.fromBytes(appliedMetaBytes);
   }
 }
