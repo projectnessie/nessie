@@ -25,7 +25,7 @@ the following:
 |Create Branch| :material-check: | :material-check: | :material-check:|
 |Create Tag| :material-check: | :material-check: |:material-check:|
 |Iceberg Tables|:material-check:|:material-check:| |
-|Delta Lake Tables|:material-check:|:material-check:| |
+|Delta Lake Tables||:material-check:| |
 
 [^1]: Spark 2 currently only supports access via the Dataframe API due to weak generic 
 catalog support.
