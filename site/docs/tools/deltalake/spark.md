@@ -88,15 +88,15 @@ enabled the Delta core library will delegate transaction handling to Nessie.
 Finally, note we have explicitly enabled Delta's SQL extensions which enable Delta specific SQL in Spark3.
 
 !!! warning
-    Currently Delta metadata operations like `VACUUM` are descructive to Nessie managed Delta tables. **Do not** run
+    Currently Delta metadata operations like `VACUUM` are destructive to Nessie managed Delta tables. **Do not** run
     these operations. Future versions of Nessie will disable these commands when Nessie is activated.
 
-### Writing
+## Writing
 
 Spark support is constantly evolving and the differences in Spark3 vs Spark2.4 is considerable. See the
-[delta](https://docs.delta.io/latest/delta-batch.html) docs for an up to date support table.
+[delta](https://docs.delta.io/latest/delta-batch.html) docs for an up-to-date support table.
 
-#### Spark2
+### Spark2
 
 Spark2.4 supports reads, appends, overwrites in Delta via data frames. Spark 3 additionally supports SQL syntax.
 Nessie tables in delta can be written via the Nessi enabled Delta client. The Delta writer allows for either `overwrite`
@@ -160,7 +160,7 @@ to write to a specific branch without changing context the following should be u
 
 We have to manually change the `hadoopConfiguration` for the `SparkContext` for a Delta table to be initialised with the
 correct reference. This will change in the near future when it will be possible to use the same `branch@ref` syntax as
-[Iceberg](/tools/spark/#writing) inside of delta. Currently it isn't possible to change the ref from SQL directly. This
+[Iceberg](/tools/spark/#writing) inside of delta. Currently, it isn't possible to change the ref from SQL directly. This
 should be fixed in an upcomming release.
 
 !!! note
@@ -168,7 +168,7 @@ should be fixed in an upcomming release.
     cache first should be cleared. `DeltaLog.clearCache()`.
 
 
-### Reading
+## Reading
 
 Reading is similar between Spark2 and Spark3. We will look at both versions together in this section. To
 read a Nessie table in Delta Lake simply:
@@ -189,7 +189,7 @@ read a Nessie table in Delta Lake simply:
     ```
 
 The examples above all use the default branch defined on initialisation. Future versions will add the ability to specify
-a branch and timestamp similar to Iceberg. Currently to switch branches a similar technique as writing is required
+a branch and timestamp similar to Iceberg. Currently, to switch branches a similar technique as writing is required
 (manually changing the hadoopConfiguration). History can be viewed on the command line or via the python client and a specific
 hash based on commit time can be extracted for use in the spark config. It is recommended to use the time-travel
 features of Nessie over the Delta features as Nessie history is consistent across the entire database.

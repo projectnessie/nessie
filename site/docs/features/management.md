@@ -42,6 +42,7 @@ into the destructive GC operation described below.
 #### Configuration and running
 GcActionsConfig actionsConfig, GcOptions gcConfig, TableIdentifier table
 The relevant configuration items are:
+
 | parameter | default value | description |
 |---|---|---|
 | table | `null` | The Iceberg `TableIdentifier` to which the unreferenced assets should be written |
@@ -54,14 +55,14 @@ The relevant configuration items are:
 
 Running the action can be done simply by:
 ```java
-    GcActionsConfig actionsConfig = GcActionsConfig.builder().build(); //use all defaults
-    GcOptions gcOptions = GcOptions.builder().build(); //use all defaults
-    GcActions actions = new GcActions.Builder(spark)
-                                     .setActionsConfig(actionsConfig)
-                                     .setGcOptions(gcOptions)
-                                     .setTable(TABLE_IDENTIFIER).build(); // (1)
-    Dataset<Row> unreferencedAssets = actions.identifyUnreferencedAssets(); // (2)
-    actions.updateUnreferencedAssetTable(unreferencedAssets); // (3)
+GcActionsConfig actionsConfig = GcActionsConfig.builder().build(); //use all defaults
+GcOptions gcOptions = GcOptions.builder().build(); //use all defaults
+GcActions actions = new GcActions.Builder(spark)
+                                 .setActionsConfig(actionsConfig)
+                                 .setGcOptions(gcOptions)
+                                 .setTable(TABLE_IDENTIFIER).build(); // (1)
+Dataset<Row> unreferencedAssets = actions.identifyUnreferencedAssets(); // (2)
+actions.updateUnreferencedAssetTable(unreferencedAssets); // (3)
 ```
 The first step above builds the action with known configs. Step 2 generates a DataFrame of unreferenced assets and
 Step 3 writes it as an iceberg table.
@@ -80,6 +81,7 @@ deleted object is returned to the user and either the records are removed from t
 #### Configuration and running
 
 The relevant configuration items are:
+
 | parameter | default value | description |
 |---|---|---|
 | seenCount | 10 | How many times an asset has been seen as unreferenced in order to be considered for deletion |
@@ -90,8 +92,8 @@ The relevant configuration items are:
 Running the action can be done simply by:
 
 ```java
-    Table table = catalog.loadTable(TABLE_IDENTIFIER);
-    GcTableCleanAction.GcTableCleanResult result = new GcTableCleanAction(table, spark).dropGcTable(true).deleteCountThreshold(2).deleteOnPurge(true).execute();
+Table table = catalog.loadTable(TABLE_IDENTIFIER);
+GcTableCleanAction.GcTableCleanResult result = new GcTableCleanAction(table, spark).dropGcTable(true).deleteCountThreshold(2).deleteOnPurge(true).execute();
 ```
 The above snippet assumes a `TABLE_IDENTIFIER` which points to the unreferenced assets table. It also requires an active
 spark session and a nessie owned `Catalog`. The `result` object above returns the number of files the action tried to delete and the number that failed.
@@ -106,7 +108,7 @@ spark session and a nessie owned `Catalog`. The `result` object above returns th
 
 ### Internal Garbage collection
 
-Currently the only garbage collection algorithm available is on the values and assets in a Nessie database only. The
+Currently, the only garbage collection algorithm available is on the values and assets in a Nessie database only. The
 internal records of the Nessie Database are currently not cleaned up. Unreferenced objects stored in Nessie's internal
 database will be persisted forever currently. A future release will also clean up internal Nessie records if they are unreferenced.
 
@@ -153,7 +155,7 @@ around partitions. This extends on the ideas in the Iceberg [`RewriteManifestsAc
 Key configuration parameters:
 
 |Name|Default|Meaning|
-|-|-|-|
+|---|---|---|
 |effort|medium|How much rewriting is allowed to achieve the goals|
 |target manifest size|8mb|What is the target|
 |partition priority|medium|How important achieving partition-oriented manifests.|
@@ -168,7 +170,7 @@ to generate many small files. These small files will slow consumption. As such, 
 can automatically run jobs to compact tables to ensure a consistent level of performance.
 
 |Name|Default|Meaning|
-|-|-|-|
+|---|---|---|
 |Maximum Small Files|10.0|Maximum number of small files as a ratio to large files|
 |Maximum Delete Files|10.0|Maximum number of delete tombstones as a ratio to other files before merging the tombstones into a consolidated file|
 |Small File Size|100mb|Size of file before it is considered small|

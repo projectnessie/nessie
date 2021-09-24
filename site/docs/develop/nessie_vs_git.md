@@ -8,7 +8,7 @@ copies. This allows several other dimensions to be substantially more powerful.
 ## Key differences
 
 |Dimension|Git|Nessie|Rationale|
-|-|-|-|-|
+|---|---|---|---|
 |Clones|Allowed|Not Allowed|This is the biggest difference between Nessie and Git. Git is a distributed version control system, Nessie is not. This is appropriate in the context of Nessie's role as an [RPS](../tables/index.md#root-pointer-store). When talking about Cloud Data ops, everyone doesn’t get their own copy of data--the datasets are typically large and centralized. Because Nessie is layered on top of those shared datasets, it clones make less sense. In the Nessie world, using personal branches provides a similar mechanism while keeping a shared world view of what can be managed for GC policies, etc.|
 |Speed (commits/second))|<1|>2000|When we started working on Nessie, we actually tried to use Git. We evaluated Git directly, implemented a version that used JGit (used by tools like Gerrit and Eclipse) as well as explored the capabilities of GitHub, Azure Git and AWS Git. What we saw was a fairly expensive operation. Typically, a single commit operation took on the order of a few seconds.|
 |Scale|100s MB|Unconstrained|While there are multiple examples of larger or higher performance Git implementations [[1](https://docs.microsoft.com/en-us/azure/devops/learn/git/technical-scale-challenges), [2](https://medium.com/palantir/stemma-distributed-git-server-70afbca0fc29)] , in general Git repositories are fairly small in size. Things like Git LFS were created to help accommodate this but given the nature of clones, large repositories are frowned upon. Because Nessie provides a centralized repository, typical repository constraints do not apply.

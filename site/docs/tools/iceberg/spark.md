@@ -106,12 +106,12 @@ option to set the catalog `nessie` to be managed by Nessie's Catalog implementat
 exists below this `spark.sql.catalog.nessie` configuration namespace. The catalog name is not important, it is important that the
 required options are all given below the catalog name.
 
-### Writing
+## Writing
 
 Spark support is constantly evolving and the differences in Spark3 vs Spark2.4 are considerable. See the
 [iceberg](https://iceberg.apache.org/spark/#spark) docs for an up to date support table.
 
-#### Spark2
+### Spark2
 
 Spark2.4 supports reads, appends, overwrites in Iceberg. Nessie tables in iceberg can be written via the Nessie Iceberg
 Catalog instantiated above. Iceberg in Spark2.4 has no ability to create tables so before a table can be appended to or
@@ -236,7 +236,7 @@ to write to a specific branch you would have to create a new Spark Conf.
 Note the extra `option` clause in the write command. This will ensure the commit happens on the `dev` branch rather than
 the default branch.
 
-#### Spark3
+### Spark3
 
 The write path for Spark3 is slightly different and easier to work with. These changes haven't made it to pyspark yet so
 writing dataframes looks much the same there, including having to create the table. Spark3 table creation/insertion is as
@@ -272,7 +272,7 @@ follows:
 The full list of operations can be found [here](https://iceberg.apache.org/spark/#create-table). Everything that Iceberg
 supports the Nessie Iceberg Catalog also supports.
 
-### Reading
+## Reading
 
 Reading is more straightforward between spark 2 and spark 3. We will look at both versions together in this section. To
 read a Nessie table in iceberg simply:

@@ -90,14 +90,14 @@ the [About Git](https://git-scm.com/about) pages as a quick start.
 
 ## Terms summary
 
-| Term | Meaning in Nessie
-| --- | ---
-| Commit | An atomic change to a set of data files.
-| Hash | Nessie-commits are identified by a SHA-hash.[^3]
-| (Multi-table) transaction | Since a Nessie commit can group data data files from many tables, you can think of a Nessie commit as a (multi-table) transaction.
-| Branch | Named reference to a commit. A new commit to a branch updates the branch to the new commit.
-| Tag | Named reference to a commit. Not automatically changed.
-| Merge | Combination of two commits. Usually applies the changes of one source-branch onto another target-branch.
+| Term | Meaning in Nessie |
+| --- | --- |
+| Commit | An atomic change to a set of data files. |
+| Hash | Nessie-commits are identified by a SHA-hash.[^3] |
+| (Multi-table) transaction | Since a Nessie commit can group data data files from many tables, you can think of a Nessie commit as a (multi-table) transaction. |
+| Branch | Named reference to a commit. A new commit to a branch updates the branch to the new commit. |
+| Tag | Named reference to a commit. Not automatically changed. |
+| Merge | Combination of two commits. Usually applies the changes of one source-branch onto another target-branch. |
 
 ## Working with data in Nessie
 
