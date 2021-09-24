@@ -17,7 +17,7 @@ Maven. The coordinates are:
 ```
 
 For ease of integration with tools that carry many dependencies, the Nessie client's 
-dependencies are declared optionally. It is designed to work with 
+dependencies are declared as `optional`. It is designed to work with 
 any recent version of JAX-RS client (Jersey and Resteasy are both tested inside Nessie's 
 tests) + Jackson's DataBinding and JAX-RS modules (any version from the last ~3+ years).
 
@@ -30,9 +30,15 @@ is `NessieApiV1`, which can be instantiated as shown below:
 
 ```java
 
+import java.net.URI;
+import java.util.List;
+import org.projectnessie.client.api.NessieApiV1;
+import org.projectnessie.client.http.HttpClientBuilder;
+import org.projectnessie.model.Reference;
+
 NessieApiV1 api = HttpClientBuilder.builder()
   .withUri(URI.create("http://localhost:19121/api/v1"))
-  .build(NessieApiVersion.V_1, NessieApiV1.class);
+  .build(NessieApiV1.class);
 
 List<Reference> references = api.getAllReferences().get();
 references.stream()
@@ -122,15 +128,17 @@ config.getVersion();
 
 ### Committing
 
-Creates a new commit by adding metadata for an `IcebergTable` under the specified `ContentsKey`
+Creates a new commit by adding metadata for an `IcebergTable` under the specified `ContentsKey` instance represented by `key` and deletes content represented by `key2`
 
 ```java
 ContentsKey key = ContentsKey.of("table.name.space", "name");
+ContentsKey key2 = ContentsKey.of("other.name.space", "name2");
 IcebergTable icebergTable = IcebergTable.of("path1", 42L);
 api.commitMultipleOperations()
     .branchName(branch)
     .hash(main.getHash())
     .operation(Put.of(key, icebergTable))
+    .operation(Delete.of(key2))
     .commitMeta(CommitMeta.fromMessage("commit 1"))
     .commit();
 ```
@@ -143,7 +151,7 @@ ContentsKey key = ContentsKey.of("table.name.space", "name");
 Map<ContentsKey, Contents> map = api.getContents().key(key).refName("dev").get();
 ```
 
-Fetches the contents for multiple `ContentsKey`s
+Fetches the contents for multiple `ContentsKey` instances
 ```java
 List<ContentsKey> keys =
   Arrays.asList(
@@ -200,12 +208,13 @@ Nessie has multiple `NessieAuthenticationProvider` implementations that allow di
 The documentation for how to configure Nessie server authentication can be found [here](../try/authentication.md).
 
 The `BasicAuthenticationProvider` allows connecting to a Nessie server that has `BASIC` authentication enabled.
+Note that `BASIC` is not supported in production and should only be used for development/testing.
 ```java
 NessieApiV1 api =
   HttpClientBuilder.builder()
   .withUri(URI.create("http://localhost:19121/api/v1"))
   .withAuthentication(BasicAuthenticationProvider.create("my_username", "very_secret"))
-  .build(NessieApiVersion.V_1, NessieApiV1.class);
+  .build(NessieApiV1.class);
 ```
 
 The `BearerAuthenticationProvider` allows connecting to a Nessie server that has `BEARER` authentication enabled.
@@ -214,5 +223,5 @@ NessieApiV1 api =
   HttpClientBuilder.builder()
   .withUri(URI.create("http://localhost:19121/api/v1"))
   .withAuthentication(BearerAuthenticationProvider.create("bearerToken"))
-  .build(NessieApiVersion.V_1, NessieApiV1.class);
+  .build(NessieApiV1.class);
 ```
