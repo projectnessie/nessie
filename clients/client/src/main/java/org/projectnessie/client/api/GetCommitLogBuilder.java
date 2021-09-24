@@ -24,7 +24,7 @@ import org.projectnessie.model.Validation;
 /**
  * Request builder for "get commit log".
  *
- * @since Nessie API {@link NessieApiVersion#V_1}
+ * @since {@link NessieApiV1}
  */
 public interface GetCommitLogBuilder extends PagingBuilder<GetCommitLogBuilder> {
   GetCommitLogBuilder untilHash(

@@ -24,7 +24,7 @@ import java.util.function.Function;
 import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.NessieConfigConstants;
 import org.projectnessie.client.api.NessieApi;
-import org.projectnessie.client.api.NessieApiVersion;
+import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.auth.NessieAuthentication;
 import org.projectnessie.client.auth.NessieAuthenticationProvider;
 import org.projectnessie.client.http.v1api.HttpApiV1;
@@ -169,29 +169,19 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
     return this;
   }
 
-  @SuppressWarnings({"SwitchStatementWithTooFewBranches", "unchecked"})
+  @SuppressWarnings({"unchecked"})
   @Override
-  public <API extends NessieApi> API build(Class<API> apiContract) {
-    Objects.requireNonNull(apiContract, "API contract class must be non-null");
+  public <API extends NessieApi> API build(Class<API> apiVersion) {
+    Objects.requireNonNull(apiVersion, "API version class must be non-null");
     NessieHttpClient client =
         new NessieHttpClient(
             uri, authentication, tracing, readTimeoutMillis, connectionTimeoutMillis);
-    NessieApiVersion apiVersion;
-    try {
-      apiVersion = (NessieApiVersion) apiContract.getField("NESSIE_API_VERSION").get(null);
-    } catch (Exception e) {
-      throw new IllegalArgumentException(
-          String.format(
-              "API contract class '%s' must have a NESSIE_API_VERSION field",
-              apiContract.getName()));
+
+    if (apiVersion.isAssignableFrom(NessieApiV1.class)) {
+      return (API) new HttpApiV1(client);
     }
 
-    switch (apiVersion) {
-      case V_1:
-        return (API) new HttpApiV1(client);
-      default:
-        throw new IllegalArgumentException(
-            String.format("API version %s not supported.", apiVersion.name()));
-    }
+    throw new IllegalArgumentException(
+        String.format("API version %s not supported.", apiVersion.getName()));
   }
 }

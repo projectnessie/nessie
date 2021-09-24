@@ -52,7 +52,7 @@ public class TestHttpClientBuilder {
   interface IncompatibleApiInterface extends NessieApi {}
 
   @Test
-  void testIncompatibleApiInterfaceWithoutApiVersionField() {
+  void testIncompatibleApiInterface() {
     assertThatThrownBy(
             () ->
                 HttpClientBuilder.builder()
@@ -60,11 +60,11 @@ public class TestHttpClientBuilder {
                     .build(IncompatibleApiInterface.class))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage(
-            "API contract class 'org.projectnessie.client.http.TestHttpClientBuilder$IncompatibleApiInterface' must have a NESSIE_API_VERSION field");
+            "API version org.projectnessie.client.http.TestHttpClientBuilder$IncompatibleApiInterface not supported.");
   }
 
   @Test
-  void testIncompatibledAuthProvider() {
+  void testIncompatibleAuthProvider() {
     assertThatThrownBy(
             () ->
                 HttpClientBuilder.builder()

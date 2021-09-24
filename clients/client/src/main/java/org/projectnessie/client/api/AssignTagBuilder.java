@@ -24,7 +24,7 @@ import org.projectnessie.model.Reference;
 /**
  * Request builder for "assign tag".
  *
- * @since Nessie API {@link NessieApiVersion#V_1}
+ * @since {@link NessieApiV1}
  */
 public interface AssignTagBuilder extends OnTagBuilder<AssignTagBuilder> {
   AssignTagBuilder assignTo(@Valid @NotNull Reference assignTo);

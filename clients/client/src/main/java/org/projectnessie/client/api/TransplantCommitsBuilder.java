@@ -26,7 +26,7 @@ import org.projectnessie.model.Validation;
 /**
  * Request builder for "transplant commits".
  *
- * @since Nessie API {@link NessieApiVersion#V_1}
+ * @since {@link NessieApiV1}
  */
 public interface TransplantCommitsBuilder extends OnBranchBuilder<TransplantCommitsBuilder> {
   TransplantCommitsBuilder message(String message);

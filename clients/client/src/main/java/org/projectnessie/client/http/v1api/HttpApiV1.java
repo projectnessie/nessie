@@ -28,7 +28,6 @@ import org.projectnessie.client.api.GetEntriesBuilder;
 import org.projectnessie.client.api.GetReferenceBuilder;
 import org.projectnessie.client.api.MergeReferenceBuilder;
 import org.projectnessie.client.api.NessieApiV1;
-import org.projectnessie.client.api.NessieApiVersion;
 import org.projectnessie.client.api.TransplantCommitsBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieNotFoundException;
@@ -46,11 +45,6 @@ public final class HttpApiV1 implements NessieApiV1 {
   @Override
   public void close() {
     client.close();
-  }
-
-  @Override
-  public NessieApiVersion getApiVersion() {
-    return NESSIE_API_VERSION;
   }
 
   @Override

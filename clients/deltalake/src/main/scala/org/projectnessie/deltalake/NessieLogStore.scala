@@ -49,7 +49,7 @@ import org.apache.spark.sql.delta.CheckpointMetaData
 import org.apache.spark.sql.delta.storage.{DeltaFileType, LogFileMeta}
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
-import org.projectnessie.client.api.{NessieApiV1, NessieApiVersion}
+import org.projectnessie.client.api.NessieApiV1
 import org.projectnessie.client.http.HttpClientBuilder
 import org.projectnessie.model.Operation.Put
 

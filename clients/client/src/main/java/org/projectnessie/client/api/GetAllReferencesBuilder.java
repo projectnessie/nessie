@@ -21,7 +21,7 @@ import org.projectnessie.model.Reference;
 /**
  * Request builder for "get all references".
  *
- * @since Nessie API {@link NessieApiVersion#V_1}
+ * @since {@link NessieApiV1}
  */
 public interface GetAllReferencesBuilder {
   List<Reference> get();
