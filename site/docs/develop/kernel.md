@@ -6,6 +6,132 @@ transactional/relational databases. The commit kernel is the heart of Nessie's o
 enables it to provide lightweight creation of new tags and branches, merges, rebases all with a very
 high concurrent commit rate.
 
+## High level abstract
+
+Nessie 1.0 comes with a version-store (aka commit-kernel) implementation that is different from both
+Git and older Nessie-version-store implementations in Nessie versions before 1.0 and is abstracted
+as illustrated below. Nessie generally supports both non-transactional key-value databases and
+transactional databases (relational).
+
+The goal of all implementation is to spread the keys as much as possible, so data can be
+properly distributed, and to keep the number of operations against a database low to reduce
+operation-time.
+
+Contention by itself is not avoidable, because operations against Nessie are guaranteed to be
+atomic and consistent.
+
+### Nessie Content-Types
+
+The state of so called `Contents` objects like `IcebergTable` or `DeltaLakeTable` represent the
+current state of a table in a data-lake. Whenever a table has changed via for example Iceberg,
+a so-called commit operation instructs Nessie to record the new state in a Nessie-commit, which
+carries the `Contents` object(s).
+
+`IcebergTable` contains the _current_ and _global_ pointer to Iceberg's table-metadata plus the
+ID of the snapshot defined in the table-metadata. Since Iceberg's table-metadata manages information
+that must be consistent across all branches in Nessie, it is stored as so-called "global state".
+The value of the snapshot-ID is stored per Nessie named-reference (branch or tag).
+
+Updating _global-state_ and _on-reference-state_ are technically operations against two different
+entities in Nessie's backend database. Classic, relational databases (usually) come with a
+transaction manager, which ensures that changes to different tables appear atomically to other
+users. Much more scalable key-value stores do not have a transaction-manager, but usually only
+provide so-called "Compare-and-Swap" (CAS) operations, which conditionally update a single key-value
+pair. This means, that the data-model has to be fundamentally different for non-transactional
+key-value stores and transactional databases. Support for non-transactional databases, the
+data-model, is designed in a way that only requires a single CAS-operation to ensure atomicity and
+consistency even when committing two logical entities, namely the _global-state_ and the
+_on-reference-state_, respectively the update to the "HEAD" of the updated branch. Some more details
+are outlined below.
+
+### Version-Store and Database-Adapters
+
+* REST-API
+  * `VersionStore` interface defining the contract for the REST-API, deals with concrete contents
+    objects like `IcebergTable` or `DeltaLakeTable`.
+    * `PersistVersionStore` translates between the content-type objects like `IcebergTable` or
+      `DeltaLakeTable` and the "binary" (thinK: "BLOB") representation in the database-adapters.
+      * `DatabaseAdapter` interface defining the content-type independent mechanisms to perform
+        Nessie operations like commit, transplants and merges as well as retrieving data.
+        * `AbstractDatabaseAdapter` implements the commit-logic, commit-conflict-detection and
+          operations to retrieve information.
+          * `NonTransactionalDatabaseAdapter` is used as a base for key-value stores.
+            * Implementation for DynamoDB
+            * Implementation for MongoDB
+            * Implementation for RocksDB
+            * Implementation for In-Memory
+          * `TransactionalDatabaseAdapter` JDBC based implementation relying on relational database
+            transactions for conflict resolution (rollback).
+            * SQL/DDL/type-definitions for Postgres, Cockroach, H2
+
+### Non-transactional key-value databases
+
+The data-model for non-transactional key-value databases relies on a single _global-state-pointer_,
+which is technically a table with a single row pointing to the _current_ entry in the _global-log_
+and the "HEAD"s of all named-references (branches and tags).
+
+The _global-log_ contains the changes of the _global-state_, like the location of Iceberg's
+table-metadata.
+
+The _commit-log_ contains the individual Nessie commits.
+
+All commit, transplant and merge operations as well as other write operations like creating,
+re-assigning or deleting a named-reference work inside a so-called "CAS-loop", which technically
+works like the following pseudo-code. A CAS operation can be imagined as an SQL like
+`UPDATE global_pointer SET value = :new_value WHERE primary_key = 1 AND value = :expected_value`.
+
+```java 
+// Pseudo-definition of a Nessie write operation like a commit, merge, transplant, createReference,
+// assignReference, deleteReference.
+FunctionResult nessieWriteOperation(parameters...) {
+  while (true) {
+    globalPointer = loadGlobalPointer();
+
+    // Try the actual operation.
+    //
+    // Return the keys of the optimistically written rows in the commit-log and global-log,
+    // the changes to the global pointer and the result to be returned to the caller.
+    optimisticallyWrittenRows, updatesToGlobalPointer, functionResult
+      = performNessieWriteOperation(globalPointer, parameters);
+
+    // Try the CAS-operation on the global-pointer.
+    success = tryUpdateGlobalPointer(globalPointer, updatesToGlobalPointer);
+    
+    if (success) {
+      // If the CAS-oepration was successfully applied, return the function's result to the user.
+      return functionResult;
+    }
+
+    // CAS was not successful
+    deleteOptimisticallyWrittenRows(optimisticallyWrittenRows);
+    if (!retryPolicy.allowsRetry()) {
+      throw new RetryFailureException();
+    }
+  }
+}
+```
+
+### Transactional databases
+
+The data-model for transactional databases defines tables for
+* the _global-state_, where the primary key is the globally unique _contents-id_ and the
+  value of the _global-state_,
+* the _named-references_, which define the commit-hash/id of the "HEAD" of each named reference,
+* the _commit-log_, which contains all commits
+
+All commit, transplant and merge operations as well as other write operations like creating,
+re-assigning or deleting a named-reference work inside a so-called "operation-loop", which is
+rather somewhat similar to the "CAS-loop" for non-transactional databases, but does not need to
+keep track of optimistically written data and can directly use conditional SQL DML statements like
+`UPDATE table SET col = :value WHERE key = :key AND col = :expected_value` resp. `INSERT INTO...`.
+The database then comes back with either an update-count > 0 to indicate success or an update-count
+= 0 to indicate failure or a integrity-constraint-violation error.
+
+### Tracing & Metrics
+
+Two delegating implementations of the `VersionStore` interface exist to provide metrics and
+tracing using Micrometer and OpenTracing.
+
 ## Implemented database adapters
 
 All current implementations are based on the abstractions in the Maven modules
@@ -24,7 +150,7 @@ databases).
 
 Note: not all database adapters are available via Nessie running via Quarkus!
 
-## Nessie logic vs database-adapters
+## Nessie logic vs database specific adapters
 
 The whole logic around commits, merges, transplants, fetching keys and values resides in
 [AbstractDatabaseAdapter](https://github.com/projectnessie/nessie/blob/main/versioned/persist/adapter/src/main/java/org/projectnessie/versioned/persist/adapter/spi/AbstractDatabaseAdapter.java)
