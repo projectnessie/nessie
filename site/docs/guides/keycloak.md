@@ -18,7 +18,7 @@ docker run -p 8080:8080 -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=admin \
 Note the `admin` username and password. Those values will be required to log into the Keycloak Administration Console
 that should now be available at http://localhost:8080/auth/admin/
 
-The default realm is called `Master`. On the left-hand pane find the `Manage > User` page and click `Add User` on the
+The default realm is called `Master`. On the left-hand pane find the `Manage > Users` page and click `Add User` on the
 right side of the (initially empty) users table.
 
 Enter the username "nessie" and click `Save`. Now, under the `Credentials` tab of the `nessie` user page set password
@@ -27,18 +27,29 @@ to `nessie` and turn off the `Temporary` flag. Click `Set Password`.
 For the sake of convenience let's increase the default token expiration time.
 Goto `Clients` > `admin-cli` > `Advanced Settings`. Set `Access Token Lifespan` to 1 day and click `Save`.
 
-Now we are ready to generate an OpenID access token to the `nessie` user:
+Now we are ready to generate an `access_token` for the `nessie` user. Use the following command
+to obtain a token. Then, store it in the `NESSIE_AUTH_TOKEN` environment variable.
+It will be required to access Nessie APIs later.
 
-```shell
-curl -X POST \
-  http://localhost:8080/auth/realms/master/protocol/openid-connect/token \
-  --user admin-cli:none \
-  -d 'username=nessie' \
-  -d 'password=nessie' \
-  -d 'grant_type=password' |jq -r .access_token
-```
-
-Store this token in the `NESSIE_AUTH_TOKEN` environment variable. It will be required to access Nessie APIs later.
+=== "Plain Command"
+    ```shell
+    curl -X POST \
+      http://localhost:8080/auth/realms/master/protocol/openid-connect/token \
+      --user admin-cli:none \
+      -d 'username=nessie' \
+      -d 'password=nessie' \
+      -d 'grant_type=password'
+    ```
+=== "Bash"
+    ```bash
+    export NESSIE_AUTH_TOKEN=$(curl -X POST \
+      http://localhost:8080/auth/realms/master/protocol/openid-connect/token \
+      --user admin-cli:none \
+      -d 'username=nessie' \
+      -d 'password=nessie' \
+      -d 'grant_type=password' |jq -r .access_token
+      )
+    ```
 
 ## Setting up Nessie Server
 
@@ -50,8 +61,11 @@ docker run -p 19120:19120 \
   -e QUARKUS_OIDC_AUTH_SERVER_URL=http://localhost:8080/auth/realms/master \
   -e QUARKUS_OIDC_CLIENT_ID=projectnessie \
   -e NESSIE_SERVER_AUTHENTICATION_ENABLED=true \
-  --network host projectnessie/nessie
+  --network host projectnessie/nessie-unstable:0.9.3-SNAPSHOT
 ```
+
+Note: this example uses a snapshot build. When Nessie 1.0 is released, the `latest` stable image will be usable
+with the instructions from this guide.
 
 ## Using Nessie CLI
 
