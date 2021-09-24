@@ -49,13 +49,25 @@ endpoint: http://localhost/api/v1
 verify: true 
 ```
 
-When configuring authentication type `bearer`, the authentication token parameter should be set to a valid
+Possible values for the `auth.type` property are:
+
+* `none` (default)
+* `bearer`
+* `aws`
+* `basic` (deprecated)
+
+When configuring authentication type `bearer`, the `auth.token` parameter should be set to a valid
 [OpenID token](https://openid.net/specs/openid-connect-core-1_0.html). The token can be set in the Nessie
 configuration file, as an environment variable (details below), or by the `--auth-token <TOKEN>` command
 line option (for each command).
 
 When configuring authentication type `aws`, the client delegates to the [Boto](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html) 
 library. You can configure credentials using any of the standard [Boto AWS methods](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html#configuring-credentials).
+Additionally, the Nessie `auth.region` parameter should be set to the relevant AWS region.
+
+When configuring authentication type `basic`, both `auth.username` and `auth.password` parameters should be set.
+Note: the `basic` authentication type is considered insecure and Nessie Servers do not support it in production
+mode. This authentication type is can only be used when the Nessie Server runs in test or "development" mode.
 
 The command line interface can be configured with most of the above parameters via flags or by setting
 a config directory. The relevant configs can also be set via environment variables. These take precedence. The
