@@ -18,7 +18,6 @@ package org.projectnessie.client;
 import java.net.URI;
 import java.util.function.Function;
 import org.projectnessie.client.api.NessieApi;
-import org.projectnessie.client.api.NessieApiVersion;
 import org.projectnessie.client.auth.NessieAuthentication;
 
 /**
@@ -91,5 +90,5 @@ public interface NessieClientBuilder<IMPL extends NessieClientBuilder<IMPL>> {
    *
    * @return A new {@link NessieApi}.
    */
-  <API extends NessieApi> API build(NessieApiVersion apiVersion, Class<API> apiContract);
+  <API extends NessieApi> API build(Class<API> apiContract);
 }

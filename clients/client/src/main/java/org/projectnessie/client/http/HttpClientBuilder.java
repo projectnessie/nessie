@@ -19,6 +19,7 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_TRACING
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URI;
 
 import java.net.URI;
+import java.util.Objects;
 import java.util.function.Function;
 import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.NessieConfigConstants;
@@ -170,25 +171,27 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
 
   @SuppressWarnings({"SwitchStatementWithTooFewBranches", "unchecked"})
   @Override
-  public <API extends NessieApi> API build(NessieApiVersion apiVersion, Class<API> apiContract) {
+  public <API extends NessieApi> API build(Class<API> apiContract) {
+    Objects.requireNonNull(apiContract, "API contract class must be non-null");
     NessieHttpClient client =
         new NessieHttpClient(
             uri, authentication, tracing, readTimeoutMillis, connectionTimeoutMillis);
-    API api;
+    NessieApiVersion apiVersion;
+    try {
+      apiVersion = (NessieApiVersion) apiContract.getField("NESSIE_API_VERSION").get(null);
+    } catch (Exception e) {
+      throw new IllegalArgumentException(
+          String.format(
+              "API contract class '%s' must have a NESSIE_API_VERSION field",
+              apiContract.getName()));
+    }
+
     switch (apiVersion) {
       case V_1:
-        api = (API) new HttpApiV1(client);
-        break;
+        return (API) new HttpApiV1(client);
       default:
         throw new IllegalArgumentException(
             String.format("API version %s not supported.", apiVersion.name()));
     }
-    if (!apiContract.isAssignableFrom(api.getClass())) {
-      throw new IllegalArgumentException(
-          String.format(
-              "API version %s not supported with incompatible interface '%s' (not assignable from '%s').",
-              apiVersion.name(), apiContract.getName(), api.getClass().getName()));
-    }
-    return api;
   }
 }

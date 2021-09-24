@@ -24,6 +24,8 @@ import org.projectnessie.model.NessieConfiguration;
 /** Interface for the Nessie {@link NessieApiVersion#V_1} API implementation. */
 public interface NessieApiV1 extends NessieApi {
 
+  NessieApiVersion NESSIE_API_VERSION = NessieApiVersion.V_1;
+
   /** Get the server configuration. */
   NessieConfiguration getConfig();
 

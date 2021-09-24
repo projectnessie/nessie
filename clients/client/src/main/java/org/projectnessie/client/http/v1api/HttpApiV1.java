@@ -50,7 +50,7 @@ public final class HttpApiV1 implements NessieApiV1 {
 
   @Override
   public NessieApiVersion getApiVersion() {
-    return NessieApiVersion.V_1;
+    return NESSIE_API_VERSION;
   }
 
   @Override

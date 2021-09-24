@@ -18,7 +18,6 @@ package org.projectnessie.server;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.AfterEach;
 import org.projectnessie.client.api.NessieApiV1;
-import org.projectnessie.client.api.NessieApiVersion;
 import org.projectnessie.client.http.HttpClientBuilder;
 
 /** Base class for client-base authentication and authorization tests. */
@@ -51,7 +50,7 @@ public abstract class BaseClientAuthTest {
       customizer.accept(builder);
     }
 
-    api = builder.build(NessieApiVersion.V_1, NessieApiV1.class);
+    api = builder.build(NessieApiV1.class);
 
     return api;
   }

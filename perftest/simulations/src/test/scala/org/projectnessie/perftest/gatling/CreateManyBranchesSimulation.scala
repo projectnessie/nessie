@@ -99,7 +99,7 @@ class CreateManyBranchesSimulation extends Simulation {
           .builder()
           .withUri("http://127.0.0.1:19120/api/v1")
           .fromSystemProperties()
-          .build(NessieApiVersion.V_1, classOf[NessieApiV1])
+          .build(classOf[NessieApiV1])
       )
 
     System.out.println(params.asPrintableString())

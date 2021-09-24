@@ -61,7 +61,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.client.StreamingUtil;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.client.api.NessieApiV1;
-import org.projectnessie.client.api.NessieApiVersion;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.client.http.HttpClientException;
@@ -108,8 +107,7 @@ public abstract class AbstractTestRest {
   }
 
   protected void init(URI uri) {
-    NessieApiV1 api =
-        HttpClientBuilder.builder().withUri(uri).build(NessieApiVersion.V_1, NessieApiV1.class);
+    NessieApiV1 api = HttpClientBuilder.builder().withUri(uri).build(NessieApiV1.class);
 
     ObjectMapper mapper =
         new ObjectMapper()

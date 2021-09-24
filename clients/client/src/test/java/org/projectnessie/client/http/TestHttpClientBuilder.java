@@ -38,7 +38,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.client.NessieConfigConstants;
 import org.projectnessie.client.api.NessieApi;
 import org.projectnessie.client.api.NessieApiV1;
-import org.projectnessie.client.api.NessieApiVersion;
 import org.projectnessie.client.auth.BasicAuthenticationProvider;
 import org.projectnessie.client.auth.NessieAuthentication;
 import org.projectnessie.client.util.JaegerTestTracer;
@@ -53,17 +52,15 @@ public class TestHttpClientBuilder {
   interface IncompatibleApiInterface extends NessieApi {}
 
   @Test
-  void testIncompatibleApiInterface() {
+  void testIncompatibleApiInterfaceWithoutApiVersionField() {
     assertThatThrownBy(
             () ->
                 HttpClientBuilder.builder()
                     .withUri(URI.create("http://localhost"))
-                    .build(NessieApiVersion.V_1, IncompatibleApiInterface.class))
+                    .build(IncompatibleApiInterface.class))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage(
-            "API version V_1 not supported with incompatible interface "
-                + "'org.projectnessie.client.http.TestHttpClientBuilder$IncompatibleApiInterface' "
-                + "(not assignable from 'org.projectnessie.client.http.v1api.HttpApiV1').");
+            "API contract class 'org.projectnessie.client.http.TestHttpClientBuilder$IncompatibleApiInterface' must have a NESSIE_API_VERSION field");
   }
 
   @Test
@@ -73,7 +70,7 @@ public class TestHttpClientBuilder {
                 HttpClientBuilder.builder()
                     .withUri(URI.create("http://localhost"))
                     .withAuthentication(new NessieAuthentication() {})
-                    .build(NessieApiVersion.V_1, IncompatibleApiInterface.class))
+                    .build(IncompatibleApiInterface.class))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("HttpClientBuilder only accepts instances of HttpAuthentication");
   }
@@ -81,18 +78,14 @@ public class TestHttpClientBuilder {
   @Test
   void testNullUri() {
     assertThatThrownBy(
-            () ->
-                HttpClientBuilder.builder()
-                    .withUri((URI) null)
-                    .build(NessieApiVersion.V_1, NessieApiV1.class))
+            () -> HttpClientBuilder.builder().withUri((URI) null).build(NessieApiV1.class))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Cannot construct Http client. Must have a non-null uri");
   }
 
   @Test
   void testNoUri() {
-    assertThatThrownBy(
-            () -> HttpClientBuilder.builder().build(NessieApiVersion.V_1, NessieApiV1.class))
+    assertThatThrownBy(() -> HttpClientBuilder.builder().build(NessieApiV1.class))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Cannot construct Http client. Must have a non-null uri");
   }
@@ -103,7 +96,7 @@ public class TestHttpClientBuilder {
             () ->
                 HttpClientBuilder.builder()
                     .withUri(URI.create("file:///foo/bar/baz"))
-                    .build(NessieApiVersion.V_1, NessieApiV1.class))
+                    .build(NessieApiV1.class))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage(
             "Cannot start http client. file:///foo/bar/baz must be a valid http or https address");
@@ -139,7 +132,7 @@ public class TestHttpClientBuilder {
       NessieApiV1 client =
           config
               .apply(HttpClientBuilder.builder().withUri(server.getUri()))
-              .build(NessieApiVersion.V_1, NessieApiV1.class);
+              .build(NessieApiV1.class);
       client.getConfig();
     }
 
@@ -161,7 +154,7 @@ public class TestHttpClientBuilder {
           HttpClientBuilder.builder()
               .withUri(server.getUri())
               .withTracing(true)
-              .build(NessieApiVersion.V_1, NessieApiV1.class);
+              .build(NessieApiV1.class);
       try (Scope ignore =
           GlobalTracer.get()
               .activateSpan(GlobalTracer.get().buildSpan("testOpenTracing").start())) {
@@ -184,7 +177,7 @@ public class TestHttpClientBuilder {
           HttpClientBuilder.builder()
               .withUri(server.getUri())
               .withTracing(false)
-              .build(NessieApiVersion.V_1, NessieApiV1.class);
+              .build(NessieApiV1.class);
       try (Scope ignore =
           GlobalTracer.get()
               .activateSpan(GlobalTracer.get().buildSpan("testOpenTracing").start())) {

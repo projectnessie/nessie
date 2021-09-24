@@ -73,7 +73,7 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
     HttpClientBuilder
       .builder()
       .fromConfig(c => catalogConf.getOrElse(removePrefix(c), null))
-      .build(NessieApiVersion.V_1, classOf[NessieApiV1])
+      .build(classOf[NessieApiV1])
   }
 
   private def catalogName(): String = {
