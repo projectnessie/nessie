@@ -44,7 +44,7 @@ to OLAP systems and data warehouses[^1].
 ### Read Committed (Optimistic)
 
 |||
-|-|-|
+|---|---|
 |Read|Each time metadata for a table is retrieved, the latest version of that ref for the that current branch is exposed.|
 |Ownership|A transaction only needs to be created on the client. There is not concept of a long-lived transaction.|
 |Write|Safe writes are allowed.|
@@ -53,8 +53,8 @@ to OLAP systems and data warehouses[^1].
 
 ### Repeated Read (Optimistic)
 
-|           |                                                              |
-| :-------- | :----------------------------------------------------------- |
+|||
+| --- | --- |
 | Read      | When a transaction is started, a ref is turned into a specific commit id. All metadata retrieved is locked to this hash or later, as long as future hashes have not changed any table already read. |
 | Ownership | A transaction only needs to be created on the client. There is no concept of a long-lived transaction on the server. |
 | Write     | Safe writes are allowed. Unsafe writes fail.                 |
@@ -65,7 +65,7 @@ Note: this is stricter than the formal definition of repeatable read since that 
 ### Serializable (Optimistic)
 
 |||
-|-|-|
+|---|---|
 |Read|When a transaction is started, a ref is turned into a specific commit id. During the transaction, a recording of all **read** tables is recorded.|
 |Ownership|A transaction only needs to be created on the client. There is no concept of a long-lived transaction on the server.|
 |Write|All tables touched as part of the read operations must be in the same state when the commit operation is attempted. If they are not, the write operation is rejected. This is done internally via the Unchanged operation.|
