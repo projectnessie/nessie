@@ -202,7 +202,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       Optional<Hash> expectedHead,
       Hash toHead,
       Consumer<Hash> branchCommits,
-      Consumer<Hash> newKeyLists)
+      Consumer<Hash> newKeyLists,
+      Function<ByteString, ByteString> resetWithMergeProps)
       throws ReferenceNotFoundException, ReferenceConflictException {
 
     validateHashExists(ctx, from);
@@ -240,7 +241,14 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
 
     // (no need to verify the global states during a transplant)
     // 6. re-apply commits in 'sequenceToTransplant' onto 'targetBranch'
-    toHead = copyCommits(ctx, timeInMicros, toHead, commitsToMergeChronological, newKeyLists);
+    toHead =
+        copyCommits(
+            ctx,
+            timeInMicros,
+            toHead,
+            commitsToMergeChronological,
+            newKeyLists,
+            resetWithMergeProps);
 
     // 7. Write commits
 
@@ -269,7 +277,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       Hash targetHead,
       List<Hash> sequenceToTransplant,
       Consumer<Hash> branchCommits,
-      Consumer<Hash> newKeyLists)
+      Consumer<Hash> newKeyLists,
+      Function<ByteString, ByteString> resetWithMergeProps)
       throws ReferenceNotFoundException, ReferenceConflictException {
     if (sequenceToTransplant.isEmpty()) {
       throw new IllegalArgumentException("No hashes to transplant given.");
@@ -314,7 +323,13 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     // (no need to verify the global states during a transplant)
     // 6. re-apply commits in 'sequenceToTransplant' onto 'targetBranch'
     targetHead =
-        copyCommits(ctx, timeInMicros, targetHead, commitsToTransplantChronological, newKeyLists);
+        copyCommits(
+            ctx,
+            timeInMicros,
+            targetHead,
+            commitsToTransplantChronological,
+            newKeyLists,
+            resetWithMergeProps);
 
     // 7. Write commits
 
@@ -1023,7 +1038,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       long timeInMicros,
       Hash targetHead,
       List<CommitLogEntry> commitsChronological,
-      Consumer<Hash> newKeyLists)
+      Consumer<Hash> newKeyLists,
+      Function<ByteString, ByteString> resetWithMergeProps)
       throws ReferenceNotFoundException {
     int parentsPerCommit = config.getParentsPerCommit();
 
@@ -1047,13 +1063,13 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       } else {
         parents.add(0, targetHead);
       }
-
+      ByteString commitMetadata = resetWithMergeProps.apply(sourceCommit.getMetadata());
       CommitLogEntry newEntry =
           buildIndividualCommit(
               ctx,
               timeInMicros,
               parents,
-              sourceCommit.getMetadata(),
+              commitMetadata,
               sourceCommit.getPuts(),
               sourceCommit.getDeletes(),
               keyListDistance,

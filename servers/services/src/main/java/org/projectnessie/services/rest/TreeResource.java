@@ -24,11 +24,13 @@ import static org.projectnessie.services.cel.CELUtil.SCRIPT_HOST;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.protobuf.ByteString;
 import java.security.Principal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -73,17 +75,25 @@ import org.projectnessie.versioned.Ref;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** REST endpoint for trees. */
 @RequestScoped
 @Alternative
 public class TreeResource extends BaseResource implements HttpTreeApi {
-
+  private static final Logger LOGGER = LoggerFactory.getLogger(TreeResource.class);
   private static final int MAX_COMMIT_LOG_ENTRIES = 250;
+
+  private enum MergeOp {
+    MERGE,
+    TRANSPLANT
+  };
 
   // Mandated by CDI 2.0
   public TreeResource() {
@@ -270,7 +280,12 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
       try (Stream<Hash> s = transplant.getHashesToTransplant().stream().map(Hash::of)) {
         transplants = s.collect(Collectors.toList());
       }
-      getStore().transplant(BranchName.of(branchName), toHash(hash, true), transplants);
+      getStore()
+          .transplant(
+              BranchName.of(branchName),
+              toHash(hash, true),
+              transplants,
+              getResetMergePropsFunc(MergeOp.TRANSPLANT, transplant.getFromRefName()));
     } catch (ReferenceNotFoundException e) {
       throw new NessieNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
@@ -286,12 +301,38 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
           .merge(
               toHash(merge.getFromRefName(), merge.getFromHash(), true).get(),
               BranchName.of(branchName),
-              toHash(hash, true));
+              toHash(hash, true),
+              getResetMergePropsFunc(MergeOp.MERGE, merge.getFromRefName()));
     } catch (ReferenceNotFoundException e) {
       throw new NessieNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
       throw new NessieConflictException(e.getMessage(), e);
     }
+  }
+
+  private BiFunction<Serializer<CommitMeta>, ByteString, ByteString> getResetMergePropsFunc(
+      MergeOp mergeOp, String fromRefName) {
+    return (ser, in) -> {
+      try {
+        CommitMeta commitMeta = ser.fromBytes(in);
+        String currUser =
+            Optional.ofNullable(getSecurityContext().getUserPrincipal())
+                .map(Principal::getName)
+                .orElse("");
+        String mergeProp = String.format("%s_ref", mergeOp.name().toLowerCase());
+        CommitMeta mergeReadyMeta =
+            CommitMeta.builder()
+                .from(commitMeta)
+                .committer(currUser)
+                .commitTime(Instant.now())
+                .putProperties(mergeProp, fromRefName)
+                .build();
+        return ser.toBytes(mergeReadyMeta);
+      } catch (RuntimeException e) { // error in serialization
+        LOGGER.warn("Error while deserializing metadata", e);
+        return in;
+      }
+    };
   }
 
   @Override

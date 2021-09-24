@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned;
 
+import com.google.protobuf.ByteString;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
@@ -24,6 +25,7 @@ import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.Timer.Sample;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
@@ -96,17 +98,27 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
 
   @Override
   public void transplant(
-      BranchName targetBranch, Optional<Hash> referenceHash, List<Hash> sequenceToTransplant)
+      BranchName targetBranch,
+      Optional<Hash> referenceHash,
+      List<Hash> sequenceToTransplant,
+      BiFunction<Serializer<METADATA>, ByteString, ByteString> resetMergeProps)
       throws ReferenceNotFoundException, ReferenceConflictException {
     this.<ReferenceNotFoundException, ReferenceConflictException>delegate2Ex(
-        "transplant", () -> delegate.transplant(targetBranch, referenceHash, sequenceToTransplant));
+        "transplant",
+        () ->
+            delegate.transplant(
+                targetBranch, referenceHash, sequenceToTransplant, resetMergeProps));
   }
 
   @Override
-  public void merge(Hash fromHash, BranchName toBranch, Optional<Hash> expectedHash)
-      throws ReferenceNotFoundException, ReferenceConflictException {
+  public void merge(
+      Hash fromHash,
+      BranchName toBranch,
+      Optional<Hash> expectedHash,
+      BiFunction<Serializer<METADATA>, ByteString, ByteString> resetMergeProps)
+      throws ReferenceConflictException, ReferenceNotFoundException {
     this.<ReferenceNotFoundException, ReferenceConflictException>delegate2Ex(
-        "merge", () -> delegate.merge(fromHash, toBranch, expectedHash));
+        "merge", () -> delegate.merge(fromHash, toBranch, expectedHash, resetMergeProps));
   }
 
   @Override

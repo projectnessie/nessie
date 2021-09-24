@@ -39,6 +39,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
@@ -132,7 +133,11 @@ public abstract class NonTransactionalDatabaseAdapter<
   }
 
   @Override
-  public Hash merge(Hash from, BranchName toBranch, Optional<Hash> expectedHead)
+  public Hash merge(
+      Hash from,
+      BranchName toBranch,
+      Optional<Hash> expectedHead,
+      Function<ByteString, ByteString> resetWithMergeProps)
       throws ReferenceNotFoundException, ReferenceConflictException {
     // The spec for 'VersionStore.merge' mentions "(...) until we arrive at a common ancestor",
     // but old implementations allowed a merge even if the "merge-from" and "merge-to" have no
@@ -161,7 +166,8 @@ public abstract class NonTransactionalDatabaseAdapter<
                     expectedHead,
                     toHead,
                     branchCommits,
-                    newKeyLists);
+                    newKeyLists,
+                    resetWithMergeProps);
 
             Hash newGlobalHead =
                 writeGlobalCommit(
@@ -181,7 +187,10 @@ public abstract class NonTransactionalDatabaseAdapter<
   @SuppressWarnings("RedundantThrows")
   @Override
   public Hash transplant(
-      BranchName targetBranch, Optional<Hash> expectedHead, List<Hash> sequenceToTransplant)
+      BranchName targetBranch,
+      Optional<Hash> expectedHead,
+      List<Hash> sequenceToTransplant,
+      Function<ByteString, ByteString> resetWithMergeProps)
       throws ReferenceNotFoundException, ReferenceConflictException {
     try {
       return casOpLoop(
@@ -201,7 +210,8 @@ public abstract class NonTransactionalDatabaseAdapter<
                     targetHead,
                     sequenceToTransplant,
                     branchCommits,
-                    newKeyLists);
+                    newKeyLists,
+                    resetWithMergeProps);
 
             Hash newGlobalHead =
                 writeGlobalCommit(

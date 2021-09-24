@@ -167,7 +167,11 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
-  public Hash merge(Hash from, BranchName toBranch, Optional<Hash> expectedHead)
+  public Hash merge(
+      Hash from,
+      BranchName toBranch,
+      Optional<Hash> expectedHead,
+      Function<ByteString, ByteString> resetWithMergeProps)
       throws ReferenceNotFoundException, ReferenceConflictException {
     // The spec for 'VersionStore.merge' mentions "(...) until we arrive at a common ancestor",
     // but old implementations allowed a merge even if the "merge-from" and "merge-to" have no
@@ -194,7 +198,8 @@ public abstract class TxDatabaseAdapter
                     expectedHead,
                     currentHead,
                     h -> {},
-                    h -> {});
+                    h -> {},
+                    resetWithMergeProps);
             return tryMoveNamedReference(conn, toBranch, currentHead, toHead);
           },
           () -> mergeConflictMessage("Conflict", from, toBranch, expectedHead),
@@ -208,7 +213,11 @@ public abstract class TxDatabaseAdapter
 
   @SuppressWarnings("RedundantThrows")
   @Override
-  public Hash transplant(BranchName targetBranch, Optional<Hash> expectedHead, List<Hash> commits)
+  public Hash transplant(
+      BranchName targetBranch,
+      Optional<Hash> expectedHead,
+      List<Hash> commits,
+      Function<ByteString, ByteString> resetWithMergeProps)
       throws ReferenceNotFoundException, ReferenceConflictException {
     try {
       return opLoop(
@@ -226,7 +235,8 @@ public abstract class TxDatabaseAdapter
                     currentHead,
                     commits,
                     h -> {},
-                    h -> {});
+                    h -> {},
+                    resetWithMergeProps);
 
             return tryMoveNamedReference(conn, targetBranch, currentHead, targetHead);
           },

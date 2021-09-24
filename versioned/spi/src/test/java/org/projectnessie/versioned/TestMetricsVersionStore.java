@@ -121,11 +121,19 @@ class TestMetricsVersionStore {
                 "transplant",
                 vs ->
                     vs.transplant(
-                        BranchName.of("mock-branch"), Optional.empty(), Collections.emptyList()),
+                        BranchName.of("mock-branch"),
+                        Optional.empty(),
+                        Collections.emptyList(),
+                        (a, b) -> b),
                 refNotFoundAndRefConflictThrows),
             new VersionStoreInvocation<>(
                 "merge",
-                vs -> vs.merge(Hash.of("42424242"), BranchName.of("mock-branch"), Optional.empty()),
+                vs ->
+                    vs.merge(
+                        Hash.of("42424242"),
+                        BranchName.of("mock-branch"),
+                        Optional.empty(),
+                        (a, b) -> b),
                 refNotFoundAndRefConflictThrows),
             new VersionStoreInvocation<>(
                 "assign",

@@ -19,6 +19,7 @@ import com.google.protobuf.ByteString;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -35,6 +36,7 @@ import org.projectnessie.versioned.Ref;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.Unchanged;
@@ -162,15 +164,30 @@ public class PersistVersionStore<CONTENTS, METADATA, CONTENTS_TYPE extends Enum<
 
   @Override
   public void transplant(
-      BranchName targetBranch, Optional<Hash> referenceHash, List<Hash> sequenceToTransplant)
+      BranchName targetBranch,
+      Optional<Hash> referenceHash,
+      List<Hash> sequenceToTransplant,
+      BiFunction<Serializer<METADATA>, ByteString, ByteString> resetMergeProps)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    databaseAdapter.transplant(targetBranch, referenceHash, sequenceToTransplant);
+    databaseAdapter.transplant(
+        targetBranch,
+        referenceHash,
+        sequenceToTransplant,
+        a -> resetMergeProps.apply(storeWorker.getMetadataSerializer(), a));
   }
 
   @Override
-  public void merge(Hash fromHash, BranchName toBranch, Optional<Hash> expectedHash)
-      throws ReferenceNotFoundException, ReferenceConflictException {
-    databaseAdapter.merge(fromHash, toBranch, expectedHash);
+  public void merge(
+      Hash fromHash,
+      BranchName toBranch,
+      Optional<Hash> expectedHash,
+      BiFunction<Serializer<METADATA>, ByteString, ByteString> resetMergeProps)
+      throws ReferenceConflictException, ReferenceNotFoundException {
+    databaseAdapter.merge(
+        fromHash,
+        toBranch,
+        expectedHash,
+        a -> resetMergeProps.apply(storeWorker.getMetadataSerializer(), a));
   }
 
   @Override
