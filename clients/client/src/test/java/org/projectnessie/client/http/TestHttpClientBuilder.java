@@ -60,7 +60,7 @@ public class TestHttpClientBuilder {
                     .build(IncompatibleApiInterface.class))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage(
-            "API version org.projectnessie.client.http.TestHttpClientBuilder$IncompatibleApiInterface not supported.");
+            "API version org.projectnessie.client.http.TestHttpClientBuilder$IncompatibleApiInterface is not supported.");
   }
 
   @Test

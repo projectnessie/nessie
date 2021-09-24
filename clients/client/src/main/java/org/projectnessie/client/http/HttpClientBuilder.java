@@ -182,6 +182,6 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
     }
 
     throw new IllegalArgumentException(
-        String.format("API version %s not supported.", apiVersion.getName()));
+        String.format("API version %s is not supported.", apiVersion.getName()));
   }
 }
