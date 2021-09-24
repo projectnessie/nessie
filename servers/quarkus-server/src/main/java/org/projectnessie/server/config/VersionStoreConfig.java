@@ -26,11 +26,6 @@ public interface VersionStoreConfig {
 
   @RegisterForReflection
   enum VersionStoreType {
-    @Deprecated
-    IN_MEMORY,
-    @Deprecated
-    JGIT,
-    DYNAMO,
     INMEMORY,
     ROCKS
   }

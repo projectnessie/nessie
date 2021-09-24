@@ -89,22 +89,20 @@ public final class StringStoreWorker implements StoreWorker<String, String, Test
 
   @Override
   public Byte getPayload(String contents) {
-    return getValueSerializer().getPayload(contents);
+    return 0;
   }
 
   @Override
   public TestEnum getType(Byte payload) {
-    return getValueSerializer().getType(payload);
+    if (payload == null) {
+      return StringStoreWorker.TestEnum.NULL;
+    }
+    return payload > 60 ? StringStoreWorker.TestEnum.YES : StringStoreWorker.TestEnum.NO;
   }
 
   @Override
   public boolean requiresGlobalState(String contents) {
     return contents.indexOf('|') != -1 || contents.indexOf('@') != -1;
-  }
-
-  @Override
-  public SerializerWithPayload<String, TestEnum> getValueSerializer() {
-    return StringSerializer.getInstance();
   }
 
   @Override

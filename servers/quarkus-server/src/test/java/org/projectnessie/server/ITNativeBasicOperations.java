@@ -17,8 +17,8 @@ package org.projectnessie.server;
 
 import io.quarkus.test.junit.NativeImageTest;
 import io.quarkus.test.junit.TestProfile;
-import org.projectnessie.server.profiles.QuarkusNativeProfileInmemoryOld;
+import org.projectnessie.server.profiles.QuarkusNativeProfileInmemory;
 
 @NativeImageTest
-@TestProfile(QuarkusNativeProfileInmemoryOld.class)
+@TestProfile(QuarkusNativeProfileInmemory.class)
 public class ITNativeBasicOperations extends AbstractTestBasicOperations {}

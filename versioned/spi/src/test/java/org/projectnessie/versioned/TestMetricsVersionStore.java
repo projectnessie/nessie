@@ -61,7 +61,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.stubbing.Stubber;
-import org.projectnessie.versioned.VersionStore.Collector;
 
 class TestMetricsVersionStore {
 
@@ -180,12 +179,7 @@ class TestMetricsVersionStore {
                 "getdiffs",
                 vs -> vs.getDiffs(BranchName.of("mock-branch"), BranchName.of("foo-branch")),
                 Stream::empty,
-                refNotFoundThrows),
-            new VersionStoreInvocation<>(
-                "collectgarbage",
-                VersionStore::collectGarbage,
-                () -> mock(Collector.class),
-                runtimeThrows));
+                refNotFoundThrows));
 
     // flatten all "normal executions" + "throws XYZ"
     return versionStoreFunctions.flatMap(

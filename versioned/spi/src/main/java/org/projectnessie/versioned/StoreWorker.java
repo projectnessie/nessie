@@ -47,8 +47,5 @@ public interface StoreWorker<CONTENTS, COMMIT_METADATA, CONTENTS_TYPE extends En
     return getType(getPayload(contents));
   }
 
-  @Deprecated // TODO this method is going to be removed
-  SerializerWithPayload<CONTENTS, CONTENTS_TYPE> getValueSerializer();
-
   Serializer<COMMIT_METADATA> getMetadataSerializer();
 }

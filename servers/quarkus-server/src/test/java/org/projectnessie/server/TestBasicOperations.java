@@ -17,8 +17,8 @@ package org.projectnessie.server;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
-import org.projectnessie.server.profiles.QuarkusTestProfileInmemoryOld;
+import org.projectnessie.server.profiles.QuarkusTestProfileInmemory;
 
 @QuarkusTest
-@TestProfile(QuarkusTestProfileInmemoryOld.class)
+@TestProfile(QuarkusTestProfileInmemory.class)
 class TestBasicOperations extends AbstractTestBasicOperations {}

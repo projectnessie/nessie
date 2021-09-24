@@ -42,7 +42,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.stubbing.Stubber;
-import org.projectnessie.versioned.VersionStore.Collector;
 import org.projectnessie.versioned.test.tracing.TestTracer;
 import org.projectnessie.versioned.test.tracing.TestedTraceingStoreInvocation;
 
@@ -204,10 +203,7 @@ class TestTracingVersionStore {
                     .function(
                         vs ->
                             vs.getDiffs(BranchName.of("mock-branch"), BranchName.of("foo-branch")),
-                        Stream::empty),
-                new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>(
-                        "CollectGarbage", runtimeThrows)
-                    .function(VersionStore::collectGarbage, () -> mock(Collector.class)));
+                        Stream::empty));
 
     return TestedTraceingStoreInvocation.toArguments(versionStoreFunctions);
   }
