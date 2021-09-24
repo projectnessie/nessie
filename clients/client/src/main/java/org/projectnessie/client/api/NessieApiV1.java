@@ -21,7 +21,7 @@ import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.NessieConfiguration;
 
-/** Interface for the Nessie {@link NessieApiVersion#V_1} API implementation. */
+/** Interface for the Nessie V1 API implementation. */
 public interface NessieApiV1 extends NessieApi {
 
   /** Get the server configuration. */

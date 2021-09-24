@@ -22,7 +22,6 @@ import io.quarkus.test.junit.NativeImageTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.api.NessieApiV1;
-import org.projectnessie.client.api.NessieApiVersion;
 import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.client.rest.NessieBadRequestException;
 import org.projectnessie.model.CommitMeta;
@@ -45,7 +44,7 @@ public class ITNativeNessieError {
     api =
         HttpClientBuilder.builder()
             .withUri("http://localhost:19121/api/v1")
-            .build(NessieApiVersion.V_1, NessieApiV1.class);
+            .build(NessieApiV1.class);
   }
 
   @Test

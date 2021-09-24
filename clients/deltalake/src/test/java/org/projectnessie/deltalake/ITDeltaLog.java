@@ -37,7 +37,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.junit.jupiter.api.io.TempDir;
 import org.projectnessie.client.api.NessieApiV1;
-import org.projectnessie.client.api.NessieApiVersion;
 import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.client.tests.AbstractSparkTest;
 import org.projectnessie.model.Branch;
@@ -60,7 +59,7 @@ class ITDeltaLog extends AbstractSparkTest {
 
   @BeforeEach
   void createClient() {
-    api = HttpClientBuilder.builder().withUri(url).build(NessieApiVersion.V_1, NessieApiV1.class);
+    api = HttpClientBuilder.builder().withUri(url).build(NessieApiV1.class);
   }
 
   @AfterEach

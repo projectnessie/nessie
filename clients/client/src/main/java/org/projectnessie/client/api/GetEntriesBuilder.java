@@ -21,7 +21,7 @@ import org.projectnessie.model.EntriesResponse;
 /**
  * Request builder for "get entries".
  *
- * @since Nessie API {@link NessieApiVersion#V_1}
+ * @since {@link NessieApiV1}
  */
 public interface GetEntriesBuilder extends PagingBuilder<GetEntriesBuilder> {
 

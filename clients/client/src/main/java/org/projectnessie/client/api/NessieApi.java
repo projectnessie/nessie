@@ -18,8 +18,6 @@ package org.projectnessie.client.api;
 /** Base interface for all Nessie-API versions. */
 public interface NessieApi extends AutoCloseable {
 
-  NessieApiVersion getApiVersion();
-
   // Overridden to "remove 'throws Exception'"
   void close();
 }

@@ -25,7 +25,7 @@ import org.projectnessie.model.ContentsKey;
 /**
  * Request builder for "get contents".
  *
- * @since Nessie API {@link NessieApiVersion#V_1}
+ * @since {@link NessieApiV1}
  */
 public interface GetContentsBuilder extends OnReferenceBuilder<GetContentsBuilder> {
   GetContentsBuilder key(@Valid ContentsKey key);
