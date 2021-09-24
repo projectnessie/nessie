@@ -31,7 +31,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.api.NessieApiV1;
-import org.projectnessie.client.api.NessieApiVersion;
 import org.projectnessie.client.auth.BasicAuthenticationProvider;
 import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.client.util.JaegerTestTracer;
@@ -46,10 +45,7 @@ class TestNessieHttpClient {
   @Test
   void testNullUri() {
     assertThatThrownBy(
-            () ->
-                HttpClientBuilder.builder()
-                    .withUri((URI) null)
-                    .build(NessieApiVersion.V_1, NessieApiV1.class))
+            () -> HttpClientBuilder.builder().withUri((URI) null).build(NessieApiV1.class))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Cannot construct Http client. Must have a non-null uri");
   }
@@ -63,7 +59,7 @@ class TestNessieHttpClient {
           HttpClientBuilder.builder()
               .withUri(server.getUri())
               .withAuthentication(BasicAuthenticationProvider.create("my_username", "very_secret"))
-              .build(NessieApiVersion.V_1, NessieApiV1.class);
+              .build(NessieApiV1.class);
       api.getConfig();
     }
 
@@ -85,7 +81,7 @@ class TestNessieHttpClient {
           HttpClientBuilder.builder()
               .withUri(server.getUri())
               .withTracing(true)
-              .build(NessieApiVersion.V_1, NessieApiV1.class);
+              .build(NessieApiV1.class);
       try (Scope ignore =
           GlobalTracer.get()
               .activateSpan(GlobalTracer.get().buildSpan("testOpenTracing").start())) {
@@ -108,7 +104,7 @@ class TestNessieHttpClient {
           HttpClientBuilder.builder()
               .withUri(server.getUri())
               .withTracing(false)
-              .build(NessieApiVersion.V_1, NessieApiV1.class);
+              .build(NessieApiV1.class);
       try (Scope ignore =
           GlobalTracer.get()
               .activateSpan(GlobalTracer.get().buildSpan("testOpenTracing").start())) {

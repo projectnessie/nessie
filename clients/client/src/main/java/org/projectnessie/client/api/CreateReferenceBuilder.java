@@ -26,7 +26,7 @@ import org.projectnessie.model.Validation;
 /**
  * Request builder for "create reference".
  *
- * @since Nessie API {@link NessieApiVersion#V_1}
+ * @since {@link NessieApiV1}
  */
 public interface CreateReferenceBuilder {
   CreateReferenceBuilder sourceRefName(

@@ -19,11 +19,11 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_TRACING
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URI;
 
 import java.net.URI;
+import java.util.Objects;
 import java.util.function.Function;
 import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.NessieConfigConstants;
 import org.projectnessie.client.api.NessieApi;
-import org.projectnessie.client.api.NessieApiVersion;
 import org.projectnessie.client.auth.NessieAuthentication;
 import org.projectnessie.client.auth.NessieAuthenticationProvider;
 import org.projectnessie.client.http.v1api.HttpApiV1;
@@ -168,27 +168,19 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
     return this;
   }
 
-  @SuppressWarnings({"SwitchStatementWithTooFewBranches", "unchecked"})
+  @SuppressWarnings({"unchecked"})
   @Override
-  public <API extends NessieApi> API build(NessieApiVersion apiVersion, Class<API> apiContract) {
+  public <API extends NessieApi> API build(Class<API> apiVersion) {
+    Objects.requireNonNull(apiVersion, "API version class must be non-null");
     NessieHttpClient client =
         new NessieHttpClient(
             uri, authentication, tracing, readTimeoutMillis, connectionTimeoutMillis);
-    API api;
-    switch (apiVersion) {
-      case V_1:
-        api = (API) new HttpApiV1(client);
-        break;
-      default:
-        throw new IllegalArgumentException(
-            String.format("API version %s not supported.", apiVersion.name()));
+
+    if (apiVersion.isAssignableFrom(HttpApiV1.class)) {
+      return (API) new HttpApiV1(client);
     }
-    if (!apiContract.isAssignableFrom(api.getClass())) {
-      throw new IllegalArgumentException(
-          String.format(
-              "API version %s not supported with incompatible interface '%s' (not assignable from '%s').",
-              apiVersion.name(), apiContract.getName(), api.getClass().getName()));
-    }
-    return api;
+
+    throw new IllegalArgumentException(
+        String.format("API version %s is not supported.", apiVersion.getName()));
   }
 }

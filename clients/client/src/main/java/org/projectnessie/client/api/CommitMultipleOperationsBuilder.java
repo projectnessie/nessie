@@ -25,7 +25,7 @@ import org.projectnessie.model.Operation;
 /**
  * Request builder for "commit multiple operations".
  *
- * @since Nessie API {@link NessieApiVersion#V_1}
+ * @since {@link NessieApiV1}
  */
 public interface CommitMultipleOperationsBuilder
     extends OnBranchBuilder<CommitMultipleOperationsBuilder> {
