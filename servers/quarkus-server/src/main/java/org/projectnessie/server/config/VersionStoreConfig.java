@@ -27,7 +27,8 @@ public interface VersionStoreConfig {
   @RegisterForReflection
   enum VersionStoreType {
     INMEMORY,
-    ROCKS
+    ROCKS,
+    MONGO,
   }
 
   @WithName("type")
@@ -51,5 +52,14 @@ public interface VersionStoreConfig {
   interface RocksVersionStoreConfig {
     @WithName("db-path")
     String getDbPath();
+  }
+
+  @ConfigMapping(prefix = "nessie.version.store.mongo")
+  interface MongoVersionStoreConfig {
+    @WithName("connect-to")
+    String getConnectionString();
+
+    @WithName("db-name")
+    String getDatabaseName();
   }
 }

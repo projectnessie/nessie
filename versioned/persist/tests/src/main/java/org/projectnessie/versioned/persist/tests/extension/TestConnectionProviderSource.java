@@ -77,6 +77,9 @@ public interface TestConnectionProviderSource<CONN_CONFIG extends DatabaseConnec
    */
   void configureConnectionProviderConfigFromDefaults(Function<CONN_CONFIG, CONN_CONFIG> configurer);
 
+  /** Get the configuration for the {@link DatabaseConnectionProvider}. */
+  CONN_CONFIG getConnectionProviderConfig();
+
   /**
    * Set the configuration for the {@link DatabaseConnectionProvider} to create via {@link
    * #createConnectionProvider()}.

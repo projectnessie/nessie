@@ -39,8 +39,6 @@ public class MongoDatabaseClient implements DatabaseConnectionProvider<MongoClie
   private MongoCollection<Document> commitLog;
   private MongoCollection<Document> keyLists;
 
-  protected MongoDatabaseClient() {}
-
   @Override
   public void configure(MongoClientConfig config) {
     this.config = config;
