@@ -34,8 +34,7 @@ abstract class AbstractTestJerseyRest extends AbstractTestRest {
 
   @Override
   @BeforeEach
-  public void setUp() throws Exception {
+  public void setUp() {
     init(server.getURI());
-    super.setUp();
   }
 }

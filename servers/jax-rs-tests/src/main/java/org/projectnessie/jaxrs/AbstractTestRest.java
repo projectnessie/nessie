@@ -125,7 +125,9 @@ public abstract class AbstractTestRest {
   }
 
   @BeforeEach
-  public void setUp() throws Exception {}
+  public void setUp() throws Exception {
+    init(URI.create("http://localhost:19121/api/v1"));
+  }
 
   @AfterEach
   public void tearDown() {
