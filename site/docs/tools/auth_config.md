@@ -6,13 +6,13 @@ a way specific to the tool used.
 ## Spark
 
 When Nessie is used in Spark-based environments (either with [Iceberg](./iceberg/index.md) 
-or [Delta Lake](./deltalake/index.md)) the Nessie authentication settings are configured via Spark session properties.
+or [Delta Lake](./deltalake/index.md)) the Nessie authentication settings are configured via Spark session properties (Replace `<catalog_name>` with the name of your catalog).
 
 === "Java"
     ``` java
     // local spark instance, assuming NONE authentication
-    conf.set("spark.sql.catalog.nessie", "org.apache.iceberg.spark.SparkCatalog")
-        .set("spark.sql.catalog.nessie.authentication.type", "NONE")
+    conf.set("spark.sql.catalog.<catalog_name>", "org.apache.iceberg.spark.SparkCatalog")
+        .set("spark.sql.catalog.<catalog_name>.authentication.type", "NONE")
         .set(...);
     spark = SparkSession.builder()
                         .master("local[2]")
@@ -23,15 +23,15 @@ or [Delta Lake](./deltalake/index.md)) the Nessie authentication settings are co
     ``` python
     # local spark instance, assuming NONE authentication
     spark = SparkSession.builder \
-            .config("spark.sql.catalog.nessie", "org.apache.iceberg.spark.SparkCatalog") \
-            .config("spark.sql.catalog.nessie.authentication.type", "NONE") \
+            .config("spark.sql.catalog.<catalog_name>", "org.apache.iceberg.spark.SparkCatalog") \
+            .config("spark.sql.catalog.<catalog_name>.authentication.type", "NONE") \
             .config(...) 
             .getOrCreate()
     ```
 
 ## Hive
 
-When Nessie is used in Hive with [Iceberg](./iceberg/index.md), the Nessie authentication settings are configured through Hive Shell:
+When Nessie is used in Hive with [Iceberg](./iceberg/index.md), the Nessie authentication settings are configured through Hive Shell (Replace `<catalog_name>` with the name of your catalog):
 
 ```
 SET iceberg.catalog.<catalog_name>.catalog-impl=org.apache.iceberg.nessie.NessieCatalog
@@ -40,7 +40,7 @@ SET iceberg.catalog.<catalog_name>.authentication.type=NONE
 
 ### Property Prefixes
 
-The `spark.sql.catalog.nessie` prefix identifies properties for the Nessie catalog. The `nessie` part is just
+The `spark.sql.catalog.<catalog_name>` prefix identifies properties for the Nessie catalog. The `nessie` part is just
 the name of the catalog in this case (not to be confused with the Nessie project name).
 
 Multiple Nessie catalogs can be configured in the same Spark environment, each with its own
