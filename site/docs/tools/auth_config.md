@@ -40,7 +40,7 @@ SET iceberg.catalog.<catalog_name>.authentication.type=NONE
 
 ### Property Prefixes
 
-The `spark.sql.catalog.<catalog_name>` prefix identifies properties for the Nessie catalog. The `nessie` part is just
+The `spark.sql.catalog.<catalog_name>` prefix identifies properties for the Nessie catalog. The `<catalog_name>` part is just
 the name of the catalog in this case (not to be confused with the Nessie project name).
 
 Multiple Nessie catalogs can be configured in the same Spark environment, each with its own
