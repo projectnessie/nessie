@@ -3,13 +3,13 @@
 !!! note    
     Detailed steps on how to set up Pyspark + Iceberg + Hive + Nessie with Python is available on [Binder](https://mybinder.org/v2/gh/projectnessie/nessie-demos/main?filepath=notebooks/nessie-iceberg-hive-demo-nba.ipynb)
 
-To access Hive from a cluser via Iceberg, you will need to make sure `iceberg-hive-runtime` is added to Hive. This can be done either by adding the JAR file to `auxlib` folder in Hive home directory, by adding the JAR file to `hive-site.xml` file or via Hive shell, e.g: `add jar /path/to/iceberg-hive-runtime.jar;`. Nessie's module is already included with `iceberg-hive-runtime` JAR distribution.
+To access Hive via Iceberg, you will need to make sure `iceberg-hive-runtime` is added to Hive. This can be done either by adding the JAR file to `auxlib` folder in Hive home directory, by adding the JAR file to `hive-site.xml` file or via Hive shell, e.g: `add jar /path/to/iceberg-hive-runtime.jar;`. Nessie's Iceberg module is already included with `iceberg-hive-runtime` JAR distribution.
 
 For more general information about Hive and Iceberg, refer to [Iceberg and Hive documentation](https://iceberg.apache.org/hive/).
 
 ## Configuration 
 
-To configure a Nessie Catalog in Hive, first it needs to be [registered in Hive](https://iceberg.apache.org/hive/#custom-iceberg-catalogs), this can be done by configuring the following properties in Hive:
+To configure a Nessie Catalog in Hive, first it needs to be [registered in Hive](https://iceberg.apache.org/hive/#custom-iceberg-catalogs), this can be done by configuring the following properties in Hive (Replace `<catalog_name>` with the name of your catalog):
 
 ```
 SET iceberg.catalog.<catalog_name>.catalog-impl=org.apache.iceberg.nessie.NessieCatalog
