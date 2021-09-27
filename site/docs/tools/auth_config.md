@@ -29,6 +29,15 @@ or [Delta Lake](./deltalake/index.md)) the Nessie authentication settings are co
             .getOrCreate()
     ```
 
+## Hive
+
+When Nessie is used in Hive with [Iceberg](./iceberg/index.md), the Nessie authentication settings are configured through Hive Shell:
+
+```
+SET iceberg.catalog.<catalog_name>.catalog-impl=org.apache.iceberg.nessie.NessieCatalog
+SET iceberg.catalog.<catalog_name>.authentication.type=NONE
+```
+
 ### Property Prefixes
 
 The `spark.sql.catalog.nessie` prefix identifies properties for the Nessie catalog. The `nessie` part is just

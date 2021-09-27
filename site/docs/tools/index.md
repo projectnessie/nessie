@@ -6,6 +6,7 @@ the following:
 
 - [Iceberg Integration](iceberg/index.md)
     - [Spark via Iceberg](iceberg/spark.md)
+    - [Hive via Iceberg](iceberg/hive.md)
 
 - [Delta Lake Integration](deltalake/index.md)
     - [Spark via Delta Lake](deltalake/spark.md)
