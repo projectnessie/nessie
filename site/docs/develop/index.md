@@ -31,6 +31,6 @@ The Nessie service is a lightweight Java based REST API server. It uses a standa
 to ensure atomic transactions. This relies on every operation carrying an expected
 hash state for the store and allows for a very light weight and
 scalable implementation. The implementation uses configurable authentication (eg IAM on AWS, JWT elsewhere) and a
-configurable backend (currently supporting RocksDB for single-note and MongoDB) and uses the optimistic locking features of cloud based
+configurable backend (currently supporting RocksDB for single-node, and DynamoDB or MongoDB) and uses the optimistic locking features of cloud based
 key value stores to ensure scalability across servers. This architecture allows for Nessie to run in a docker container,
 as a Lambda function or in a number of other configurations.

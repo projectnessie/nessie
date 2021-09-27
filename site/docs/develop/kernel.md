@@ -22,7 +22,7 @@ atomic and consistent.
 
 ### Nessie Content-Types
 
-The state of so called `Contents` objects like `IcebergTable` or `DeltaLakeTable` represent the
+The state of so called `Contents` objects like `IcebergTable` or `DeltaLakeTable` represents the
 current state of a table in a data lake. Whenever a table has changed via for example Iceberg,
 a so-called commit operation instructs Nessie to record the new state in a Nessie-commit, which
 carries the `Contents` object(s).
