@@ -96,6 +96,17 @@
     </dependency>
     <dependency>
       <groupId>org.projectnessie</groupId>
+      <artifactId>nessie-versioned-persist-mongodb</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.projectnessie</groupId>
+      <artifactId>nessie-versioned-persist-mongodb</artifactId>
+      <version>${project.version}</version>
+      <type>test-jar</type>
+    </dependency>
+    <dependency>
+      <groupId>org.projectnessie</groupId>
       <artifactId>nessie-versioned-persist-transactional</artifactId>
       <version>${project.version}</version>
     </dependency>

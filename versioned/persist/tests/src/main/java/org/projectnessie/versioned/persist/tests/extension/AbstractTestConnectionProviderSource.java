@@ -35,11 +35,6 @@ public abstract class AbstractTestConnectionProviderSource<
   }
 
   @Override
-  public CONN_CONFIG getConnectionProviderConfig() {
-    return config;
-  }
-
-  @Override
   public void setConnectionProviderConfig(CONN_CONFIG connectionProviderConfig) {
     this.config = connectionProviderConfig;
   }
