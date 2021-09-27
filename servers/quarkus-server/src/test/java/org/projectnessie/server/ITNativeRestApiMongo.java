@@ -17,19 +17,9 @@ package org.projectnessie.server;
 
 import io.quarkus.test.junit.NativeImageTest;
 import io.quarkus.test.junit.TestProfile;
-import java.net.URI;
-import org.junit.jupiter.api.BeforeEach;
 import org.projectnessie.jaxrs.AbstractTestRest;
 import org.projectnessie.server.profiles.QuarkusNativeProfileMongo;
 
 @NativeImageTest
 @TestProfile(QuarkusNativeProfileMongo.class)
-public class ITNativeRestApiMongo extends AbstractTestRest {
-
-  @Override
-  @BeforeEach
-  public void setUp() throws Exception {
-    super.init(URI.create("http://localhost:19121/api/v1"));
-    super.setUp();
-  }
-}
+public class ITNativeRestApiMongo extends AbstractTestRest {}
