@@ -1,7 +1,7 @@
 # Commit Kernel
 
 Nessie's production commit kernel is optimized to provide high commit throughput against a
-distributed key value store that provides record level CAS (compare and swap) capability or
+distributed key value store that provides record level CAS (compare-and-swap) capability or
 transactional/relational databases. The commit kernel is the heart of Nessie's operations and
 enables it to provide lightweight creation of new tags/branches, merges, and rebases, all with very
 high concurrent commit rate.
@@ -177,10 +177,10 @@ Implementations of `DatabaseAdapter` are free to implement their own optimizatio
 Implementations are based
 on [NonTransactionalDatabaseAdapter](https://github.com/projectnessie/nessie/blob/main/versioned/persist/nontx/src/main/java/org/projectnessie/versioned/persist/nontx/NonTransactionalDatabaseAdapter.java)
 and only implement the database specific "primitives" to unconditionally read and write records and
-perform the mandatory CAS (compare and swap) operation.
+perform the mandatory CAS (compare-and-swap) operation.
 
 Key-value stores are all non-transactional as those are built for scale-out. Most key-value stores
-support atomic CAS (compare and swap) operations against a single row/record, but atomic and
+support atomic CAS (compare-and-swap) operations against a single row/record, but atomic and
 conditional updates to multiple rows/records is either not supported at all or extremely slow.
 
 Nessie differentiates between content types that do require so called _global-state_ and those
