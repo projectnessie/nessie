@@ -13,12 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.server.profiles;
+package org.projectnessie.server;
 
-public class QuarkusNativeProfileInmemory extends QuarkusTestProfileInmemory {
+import io.quarkus.test.junit.NativeImageTest;
+import io.quarkus.test.junit.TestProfile;
+import java.net.URI;
+import org.junit.jupiter.api.BeforeEach;
+import org.projectnessie.jaxrs.AbstractTestRest;
+import org.projectnessie.server.profiles.QuarkusNativeProfileDynamo;
+
+@NativeImageTest
+@TestProfile(QuarkusNativeProfileDynamo.class)
+public class ITNativeRestApiDynamo extends AbstractTestRest {
 
   @Override
-  public String getConfigProfile() {
-    return "prod";
+  @BeforeEach
+  public void setUp() throws Exception {
+    super.init(URI.create("http://localhost:19121/api/v1"));
+    super.setUp();
   }
 }

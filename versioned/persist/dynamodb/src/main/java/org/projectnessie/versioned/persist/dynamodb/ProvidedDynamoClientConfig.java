@@ -13,12 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.server.profiles;
+package org.projectnessie.versioned.persist.dynamodb;
 
-public class QuarkusNativeProfileInmemory extends QuarkusTestProfileInmemory {
+import org.immutables.value.Value;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
-  @Override
-  public String getConfigProfile() {
-    return "prod";
-  }
+@Value.Immutable(lazyhash = true)
+public interface ProvidedDynamoClientConfig extends DynamoClientConfig {
+
+  DynamoDbClient getDynamoDbClient();
+
+  ProvidedDynamoClientConfig withDynamoDbClient(DynamoDbClient dynamoDbClient);
 }

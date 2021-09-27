@@ -46,6 +46,11 @@ public abstract class AbstractTestConnectionProviderSource<
   }
 
   @Override
+  public CONN_CONFIG getConnectionProviderConfig() {
+    return config;
+  }
+
+  @Override
   public void start() throws Exception {
     if (connectionProvider != null) {
       throw new IllegalStateException("Already started");

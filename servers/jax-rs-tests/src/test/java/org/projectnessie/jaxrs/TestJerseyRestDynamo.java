@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.server.profiles;
+package org.projectnessie.jaxrs;
 
-public class QuarkusNativeProfileInmemory extends QuarkusTestProfileInmemory {
+import org.projectnessie.versioned.persist.dynamodb.DynamoDatabaseAdapterFactory;
+import org.projectnessie.versioned.persist.dynamodb.LocalDynamoTestConnectionProviderSource;
+import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterName;
+import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
-  @Override
-  public String getConfigProfile() {
-    return "prod";
-  }
-}
+@NessieDbAdapterName(DynamoDatabaseAdapterFactory.NAME)
+@NessieExternalDatabase(LocalDynamoTestConnectionProviderSource.class)
+class TestJerseyRestDynamo extends AbstractTestJerseyRest {}

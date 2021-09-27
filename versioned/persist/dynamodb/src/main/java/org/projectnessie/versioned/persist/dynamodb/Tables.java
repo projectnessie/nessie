@@ -13,12 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.server.profiles;
+package org.projectnessie.versioned.persist.dynamodb;
 
-public class QuarkusNativeProfileInmemory extends QuarkusTestProfileInmemory {
+final class Tables {
 
-  @Override
-  public String getConfigProfile() {
-    return "prod";
-  }
+  static final String TABLE_GLOBAL_POINTER = "global_pointer";
+  static final String TABLE_GLOBAL_LOG = "global_log";
+  static final String TABLE_COMMIT_LOG = "commit_log";
+  static final String TABLE_KEY_LISTS = "key_lists";
+
+  static final String KEY_NAME = "key";
+  static final String VALUE_NAME = "val";
+
+  private Tables() {}
 }

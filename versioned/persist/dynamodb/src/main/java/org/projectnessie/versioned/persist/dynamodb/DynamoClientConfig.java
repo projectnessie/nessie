@@ -13,12 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.server.profiles;
+package org.projectnessie.versioned.persist.dynamodb;
 
-public class QuarkusNativeProfileInmemory extends QuarkusTestProfileInmemory {
+import org.projectnessie.versioned.persist.adapter.DatabaseConnectionConfig;
 
-  @Override
-  public String getConfigProfile() {
-    return "prod";
-  }
-}
+public interface DynamoClientConfig extends DatabaseConnectionConfig {}

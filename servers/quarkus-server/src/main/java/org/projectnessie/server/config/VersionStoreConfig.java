@@ -26,6 +26,7 @@ public interface VersionStoreConfig {
 
   @RegisterForReflection
   enum VersionStoreType {
+    DYNAMO,
     INMEMORY,
     ROCKS
   }
