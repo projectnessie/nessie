@@ -44,6 +44,9 @@ jobs:
     - name: Check commit status
       run: |
         echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token
+        # Print checks and status
+        gh api repos/projectnessie/nessie/commits/${SHA}/check-runs --jq '[.check_runs[] | select(.name | endswith(" release") or startswith("codecov/") or startswith("Report ") | not ) | {conclusion: .conclusion, name: .name}]' | jq
+        # Actual check
         gh api repos/projectnessie/nessie/commits/${SHA}/check-runs --jq 'if (([.check_runs[] | select(.name | endswith(" release") or startswith("codecov/") or startswith("Report ") | not ) | select(.conclusion != "skipped") | .conclusion // "pending" ]) + ["success"] | unique == ["success"]) then "OK" else error("Commit checks are not OK") end'
 
     - name: Set up JDK 11
