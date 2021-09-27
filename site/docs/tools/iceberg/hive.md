@@ -13,10 +13,8 @@ To configure a Nessie Catalog in Hive, first it needs to be [registered in Hive]
 
 ```
 SET iceberg.catalog.<catalog_name>.catalog-impl=org.apache.iceberg.nessie.NessieCatalog
-SET iceberg.catalog.<catalog_name>.<nessie_config_key>=<config>
-
+SET iceberg.catalog.<catalog_name>.<nessie_config_property>=<config>
 ``` 
-
 
 To use Nessie Catalog in Hive via Iceberg, the following properties are **required** within Hive:
 
@@ -26,13 +24,13 @@ To use Nessie Catalog in Hive via Iceberg, the following properties are **requir
 
 - `iceberg.catalog.<catalog_name>.uri`: The location of the Nessie server.
 
-For example, the following properties work for catalog named `nessie`:
+For example:
 
 ```
-SET iceberg.catalog.nessie.warehouse=/home/user/notebooks/nessie_warehouse;
-SET iceberg.catalog.nessie.ref=dev;
-SET iceberg.catalog.nessie.catalog-impl=org.apache.iceberg.nessie.NessieCatalog;
-SET iceberg.catalog.nessie.uri=http://localhost:19120/api/v1;
+SET iceberg.catalog.<catalog_name>.warehouse=/home/user/notebooks/nessie_warehouse;
+SET iceberg.catalog.<catalog_name>.ref=dev;
+SET iceberg.catalog.<catalog_name>.catalog-impl=org.apache.iceberg.nessie.NessieCatalog;
+SET iceberg.catalog.<catalog_name>.uri=http://localhost:19120/api/v1;
 ```
 
 ## Create tables
@@ -64,7 +62,7 @@ To read and write into tables that are managed by Iceberg and Nessie, typical Hi
 
 **Note**: Hive doesn't support the notation of `table@branch`, therefore everytime you want to execute against a specific branch, you will need to set this property to point to the working branch, e.g: `SET iceberg.catalog.<catalog_name>.ref=main`. E.g:
 ```
-SET iceberg.catalog.dev_catalog.ref=dev
+SET iceberg.catalog.<catalog_name>.ref=dev
 
 SELECT * FROM database_a.table_a;
 ```
