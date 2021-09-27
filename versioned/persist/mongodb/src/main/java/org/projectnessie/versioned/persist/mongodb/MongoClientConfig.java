@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.persist.mongodb;
 
+import com.mongodb.client.MongoClient;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.persist.adapter.DatabaseConnectionConfig;
@@ -31,4 +32,9 @@ public interface MongoClientConfig extends DatabaseConnectionConfig {
   String getDatabaseName();
 
   MongoClientConfig withDatabaseName(String databaseName);
+
+  @Nullable
+  MongoClient getClient();
+
+  MongoClientConfig withClient(MongoClient client);
 }

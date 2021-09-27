@@ -26,7 +26,10 @@ public class QuarkusTestProfileMongo implements QuarkusTestProfile {
 
   @Override
   public Map<String, String> getConfigOverrides() {
-    return ImmutableMap.of("nessie.version.store.type", VersionStoreType.MONGO.name());
+    return ImmutableMap.<String, String>builder()
+        .put("nessie.version.store.type", VersionStoreType.MONGO.name())
+        .put("quarkus.mongodb.write-concern.journal", "false")
+        .build();
   }
 
   @Override

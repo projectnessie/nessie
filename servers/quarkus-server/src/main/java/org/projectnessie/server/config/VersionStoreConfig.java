@@ -54,13 +54,4 @@ public interface VersionStoreConfig {
     @WithName("db-path")
     String getDbPath();
   }
-
-  @ConfigMapping(prefix = "nessie.version.store.mongo")
-  interface MongoVersionStoreConfig {
-    @WithName("connect-to")
-    String getConnectionString();
-
-    @WithName("db-name")
-    String getDatabaseName();
-  }
 }

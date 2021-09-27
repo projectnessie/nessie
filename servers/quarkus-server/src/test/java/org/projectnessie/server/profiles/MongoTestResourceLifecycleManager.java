@@ -37,9 +37,8 @@ public class MongoTestResourceLifecycleManager implements QuarkusTestResourceLif
     MongoClientConfig config = mongo.getConnectionProviderConfig();
 
     return ImmutableMap.of(
-        "nessie.version.store.mongo.connect-to",
-            Objects.requireNonNull(config.getConnectionString()),
-        "nessie.version.store.mongo.db-name", Objects.requireNonNull(config.getDatabaseName()));
+        "quarkus.mongodb.connection-string", Objects.requireNonNull(config.getConnectionString()),
+        "quarkus.mongodb.database", Objects.requireNonNull(config.getDatabaseName()));
   }
 
   @Override
