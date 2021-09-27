@@ -1,5 +1,9 @@
 # Releases
 
+## 0.10.0 Release (August xx, 2021)
+
+* New tiered-version-store implementation
+
 ## 0.9.2 Release (August 26, 2021)
 
 * Cleanup & fixes to OpenAPI examples, for Swagger UI

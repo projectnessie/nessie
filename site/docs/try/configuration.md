@@ -15,8 +15,8 @@ docker run -p 8080:8080 projectnessie/nessie \
 ## Core Nessie Configuration Settings
 
 ```properties
-# which type of version store to use: ROCKSDB, INMEMORY.
-nessie.version.store.type=ROCKSDB
+# which type of version store to use: ROCKS, INMEMORY, DYNAMO, MONGO.
+nessie.version.store.type=ROCKS
 
 # path if using RocksDB
 nessie.version.store.rocks.directory=/tmp/rocks-nessie
