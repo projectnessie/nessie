@@ -16,21 +16,34 @@
 package org.projectnessie.server.profiles;
 
 import com.google.common.collect.ImmutableMap;
+import io.quarkus.amazon.common.runtime.AwsCredentialsProviderType;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.projectnessie.server.config.VersionStoreConfig.VersionStoreType;
+import software.amazon.awssdk.regions.Region;
 
 public class QuarkusTestProfileDynamo implements QuarkusTestProfile {
 
   @Override
   public Map<String, String> getConfigOverrides() {
-    return ImmutableMap.of("nessie.version.store.type", VersionStoreType.DYNAMO.name());
+    return ImmutableMap.of(
+        "nessie.version.store.type",
+        VersionStoreType.DYNAMO.name(),
+        "quarkus.dynamodb.aws.region",
+        Region.US_WEST_2.id(),
+        "quarkus.dynamodb.aws.credentials.type",
+        AwsCredentialsProviderType.STATIC.name(),
+        "quarkus.dynamodb.aws.credentials.static-provider.access-key-id",
+        "xxx",
+        "quarkus.dynamodb.aws.credentials.static-provider.secret-access-key",
+        "xxx");
   }
 
   @Override
   public List<TestResourceEntry> testResources() {
-    return Collections.singletonList(new TestResourceEntry(DynamoTestResourceLifecycleManager.class));
+    return Collections.singletonList(
+        new TestResourceEntry(DynamoTestResourceLifecycleManager.class));
   }
 }

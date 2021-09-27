@@ -29,14 +29,14 @@ public class DynamoTestResourceLifecycleManager implements QuarkusTestResourceLi
     dynamo = new LocalDynamoTestConnectionProviderSource();
 
     try {
-      dynamo.start();
+      // Only start the Docker container (local Dynamo-compatible). The DynamoDatabaseClient will
+      // be configured via Quarkus -> Quarkus-Dynamo / DynamoVersionStoreFactory.
+      dynamo.startDynamo();
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
 
-    String endpoint = dynamo.getConnectionProviderConfig().getEndpointURI();
-
-    return Collections.singletonMap("quarkus.dynamodb.endpoint-override", endpoint);
+    return Collections.singletonMap("quarkus.dynamodb.endpoint-override", dynamo.getEndpointURI());
   }
 
   @Override

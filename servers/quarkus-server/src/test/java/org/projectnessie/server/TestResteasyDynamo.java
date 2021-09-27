@@ -19,7 +19,6 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import org.projectnessie.jaxrs.AbstractResteasyTest;
 import org.projectnessie.server.profiles.QuarkusTestProfileDynamo;
-import org.projectnessie.server.profiles.QuarkusTestProfileInmemory;
 
 @QuarkusTest
 @TestProfile(QuarkusTestProfileDynamo.class)

@@ -21,7 +21,6 @@ import java.net.URI;
 import org.junit.jupiter.api.BeforeEach;
 import org.projectnessie.jaxrs.AbstractTestRest;
 import org.projectnessie.server.profiles.QuarkusNativeProfileDynamo;
-import org.projectnessie.server.profiles.QuarkusNativeProfileRocks;
 
 @NativeImageTest
 @TestProfile(QuarkusNativeProfileDynamo.class)

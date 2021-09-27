@@ -21,6 +21,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 
 /** DynamoDB test connection-provider source using a local DynamoDB instance via testcontainers. */
 public class LocalDynamoTestConnectionProviderSource extends DynamoTestConnectionProviderSource {
@@ -28,6 +30,7 @@ public class LocalDynamoTestConnectionProviderSource extends DynamoTestConnectio
       LoggerFactory.getLogger(LocalDynamoTestConnectionProviderSource.class);
 
   private GenericContainer<?> container;
+  private String endpointURI;
 
   @Override
   public boolean isCompatibleWith(
@@ -37,7 +40,7 @@ public class LocalDynamoTestConnectionProviderSource extends DynamoTestConnectio
 
   @Override
   public DynamoClientConfig createDefaultConnectionProviderConfig() {
-    return ImmutableDynamoClientConfig.builder().build();
+    return ImmutableDefaultDynamoClientConfig.builder().build();
   }
 
   @Override
@@ -47,6 +50,25 @@ public class LocalDynamoTestConnectionProviderSource extends DynamoTestConnectio
 
   @Override
   public void start() throws Exception {
+    startDynamo();
+
+    configureConnectionProviderConfigFromDefaults(
+        c ->
+            ImmutableDefaultDynamoClientConfig.builder()
+                .endpointURI(endpointURI)
+                .region("US_WEST_2")
+                .credentialsProvider(
+                    StaticCredentialsProvider.create(AwsBasicCredentials.create("xxx", "xxx")))
+                .build());
+
+    super.start();
+  }
+
+  public String getEndpointURI() {
+    return endpointURI;
+  }
+
+  public void startDynamo() {
     if (container != null) {
       throw new IllegalStateException("Already started");
     }
@@ -57,13 +79,6 @@ public class LocalDynamoTestConnectionProviderSource extends DynamoTestConnectio
     String version = System.getProperty("it.nessie.container.dynalite.tag", "latest");
     String imageName = "dimaqq/dynalite:" + version;
 
-    if (System.getProperty("aws.accessKeyId") == null) {
-      System.setProperty("aws.accessKeyId", "xxx");
-    }
-    if (System.getProperty("aws.secretAccessKey") == null) {
-      System.setProperty("aws.secretAccessKey", "xxx");
-    }
-
     container =
         new GenericContainer<>(imageName)
             .withLogConsumer(new Slf4jLogConsumer(LOGGER))
@@ -72,12 +87,7 @@ public class LocalDynamoTestConnectionProviderSource extends DynamoTestConnectio
 
     Integer port = container.getFirstMappedPort();
 
-    String endpointURI = String.format("http://localhost:%d", port);
-
-    configureConnectionProviderConfigFromDefaults(
-        c -> c.withEndpointURI(endpointURI).withRegion("US_WEST_2"));
-
-    super.start();
+    endpointURI = String.format("http://localhost:%d", port);
   }
 
   @Override

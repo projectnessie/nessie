@@ -78,10 +78,6 @@
       <artifactId>quarkus-hibernate-validator</artifactId>
     </dependency>
     <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-jgit</artifactId>
-    </dependency>
-    <dependency>
       <groupId>jakarta.validation</groupId>
       <artifactId>jakarta.validation-api</artifactId>
     </dependency>
@@ -217,18 +213,6 @@
       <artifactId>nessie-versioned-persist-dynamodb</artifactId>
       <version>${project.version}</version>
       <type>test-jar</type>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.projectnessie</groupId>
-      <artifactId>nessie-versioned-persist-mongodb</artifactId>
-      <version>${project.version}</version>
-      <type>test-jar</type>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>de.flapdoodle.embed</groupId>
-      <artifactId>de.flapdoodle.embed.mongo</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>

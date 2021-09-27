@@ -21,18 +21,16 @@ import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_GLOBAL_L
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_GLOBAL_POINTER;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_KEY_LISTS;
 
-import io.opentracing.util.GlobalTracer;
 import java.net.URI;
 import java.util.List;
 import java.util.stream.Stream;
 import org.projectnessie.versioned.persist.adapter.DatabaseConnectionProvider;
-import org.projectnessie.versioned.persist.dynamodb.metrics.DynamoMetricsPublisher;
-import org.projectnessie.versioned.persist.dynamodb.metrics.TracingExecutionInterceptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClientBuilder;
 import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
 import software.amazon.awssdk.services.dynamodb.model.BillingMode;
 import software.amazon.awssdk.services.dynamodb.model.CreateTableRequest;
@@ -48,6 +46,8 @@ public class DynamoDatabaseClient implements DatabaseConnectionProvider<DynamoCl
   private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDatabaseClient.class);
 
   DynamoDbClient client;
+  private boolean externallyProvidedClient;
+
   private DynamoClientConfig config;
 
   @Override
@@ -57,27 +57,34 @@ public class DynamoDatabaseClient implements DatabaseConnectionProvider<DynamoCl
 
   @Override
   public void initialize() {
+    if (this.client != null) {
+      throw new IllegalStateException("Already initialized.");
+    }
 
-    DynamoMetricsPublisher publisher = new DynamoMetricsPublisher();
-    TracingExecutionInterceptor tracing = new TracingExecutionInterceptor(GlobalTracer.get());
+    if (config instanceof DefaultDynamoClientConfig) {
+      DefaultDynamoClientConfig cfg = (DefaultDynamoClientConfig) config;
+      DynamoDbClientBuilder clientBuilder =
+          DynamoDbClient.builder()
+              .httpClient(UrlConnectionHttpClient.create())
+              .region(Region.of(cfg.getRegion()));
 
-    client =
-        DynamoDbClient.builder()
-            .httpClient(UrlConnectionHttpClient.create())
-            .endpointOverride(URI.create(config.getEndpointURI()))
-            .region(Region.of(config.getRegion()))
-            .overrideConfiguration(
-                x -> {
-                  if (config.isMetricsEnabled()) {
-                    x =
-                        x.addExecutionInterceptor(publisher.interceptor())
-                            .addMetricPublisher(publisher);
-                  }
-                  if (config.isTracingEnabled()) {
-                    x = x.addExecutionInterceptor(tracing);
-                  }
-                })
-            .build();
+      if (cfg.getCredentialsProvider() != null) {
+        clientBuilder = clientBuilder.credentialsProvider(cfg.getCredentialsProvider());
+      }
+      if (cfg.getEndpointURI() != null) {
+        clientBuilder = clientBuilder.endpointOverride(URI.create(cfg.getEndpointURI()));
+      }
+
+      this.externallyProvidedClient = false;
+      client = clientBuilder.build();
+    } else if (config instanceof ProvidedDynamoClientConfig) {
+      ProvidedDynamoClientConfig cfg = (ProvidedDynamoClientConfig) config;
+      this.externallyProvidedClient = true;
+      this.client = cfg.getDynamoDbClient();
+    } else {
+      throw new IllegalArgumentException(
+          "Must provide a Dynamo-client-configuration of type DefaultDynamoClientConfig or ProvidedDynamoClientConfig.");
+    }
 
     Stream.of(TABLE_GLOBAL_POINTER, TABLE_GLOBAL_LOG, TABLE_COMMIT_LOG, TABLE_KEY_LISTS)
         .forEach(this::createIfMissing);
@@ -87,7 +94,9 @@ public class DynamoDatabaseClient implements DatabaseConnectionProvider<DynamoCl
   public void close() {
     if (client != null) {
       try {
-        client.close();
+        if (!externallyProvidedClient) {
+          client.close();
+        }
       } finally {
         client = null;
       }

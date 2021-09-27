@@ -13,13 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.jaxrs;
+package org.projectnessie.versioned.persist.dynamodb;
 
-import org.projectnessie.versioned.persist.mongodb.FlapdoodleMongoTestConnectionProviderSource;
-import org.projectnessie.versioned.persist.mongodb.MongoDatabaseAdapterFactory;
-import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterName;
-import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
+import org.immutables.value.Value;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
-@NessieDbAdapterName(MongoDatabaseAdapterFactory.NAME)
-@NessieExternalDatabase(FlapdoodleMongoTestConnectionProviderSource.class)
-class TestJerseyRestMongo extends AbstractTestJerseyRest {}
+@Value.Immutable(lazyhash = true)
+public interface ProvidedDynamoClientConfig extends DynamoClientConfig {
+
+  DynamoDbClient getDynamoDbClient();
+
+  ProvidedDynamoClientConfig withDynamoDbClient(DynamoDbClient dynamoDbClient);
+}

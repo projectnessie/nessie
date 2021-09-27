@@ -35,7 +35,7 @@ public class DynamoTestConnectionProviderSource
 
   @Override
   public DynamoClientConfig createDefaultConnectionProviderConfig() {
-    return ImmutableDynamoClientConfig.builder().build();
+    return ImmutableDefaultDynamoClientConfig.builder().build();
   }
 
   @Override

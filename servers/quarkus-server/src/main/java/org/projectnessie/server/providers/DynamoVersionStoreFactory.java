@@ -17,33 +17,28 @@ package org.projectnessie.server.providers;
 
 import static org.projectnessie.server.config.VersionStoreConfig.VersionStoreType.DYNAMO;
 
-import java.util.Optional;
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.dynamodb.DynamoDatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.dynamodb.DynamoDatabaseClient;
-import org.projectnessie.versioned.persist.dynamodb.ImmutableDynamoClientConfig;
+import org.projectnessie.versioned.persist.dynamodb.ImmutableProvidedDynamoClientConfig;
 import org.projectnessie.versioned.persist.store.PersistVersionStore;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 /** DynamoDB version store factory. */
 @StoreType(DYNAMO)
 @Dependent
 public class DynamoVersionStoreFactory implements VersionStoreFactory {
-  private final String region;
-  private final Optional<String> endpoint;
+  private final DynamoDbClient dynamoDbClient;
 
   /** Creates a factory for dynamodb version stores. */
   @Inject
-  public DynamoVersionStoreFactory(
-      @ConfigProperty(name = "quarkus.dynamodb.aws.region") String region,
-      @ConfigProperty(name = "quarkus.dynamodb.endpoint-override") Optional<String> endpoint) {
-    this.region = region;
-    this.endpoint = endpoint;
+  public DynamoVersionStoreFactory(DynamoDbClient dynamoDbClient) {
+    this.dynamoDbClient = dynamoDbClient;
   }
 
   @Override
@@ -57,10 +52,10 @@ public class DynamoVersionStoreFactory implements VersionStoreFactory {
             .configure(
                 c -> {
                   DynamoDatabaseClient client = new DynamoDatabaseClient();
-                  ImmutableDynamoClientConfig.Builder config =
-                      ImmutableDynamoClientConfig.builder().region(region);
-                  endpoint.ifPresent(config::endpointURI);
-                  client.configure(config.build());
+                  client.configure(
+                      ImmutableProvidedDynamoClientConfig.builder()
+                          .dynamoDbClient(dynamoDbClient)
+                          .build());
                   client.initialize();
                   return c.withConnectionProvider(client);
                 })

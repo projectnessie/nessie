@@ -15,34 +15,6 @@
  */
 package org.projectnessie.versioned.persist.dynamodb;
 
-import javax.annotation.Nullable;
-import org.immutables.value.Value;
 import org.projectnessie.versioned.persist.adapter.DatabaseConnectionConfig;
 
-@Value.Immutable(lazyhash = true)
-public interface DynamoClientConfig extends DatabaseConnectionConfig {
-
-  @Nullable
-  String getEndpointURI();
-
-  DynamoClientConfig withEndpointURI(String endpointURI);
-
-  @Nullable
-  String getRegion();
-
-  DynamoClientConfig withRegion(String region);
-
-  @Value.Default
-  default boolean isTracingEnabled() {
-    return true;
-  }
-
-  DynamoClientConfig withIsTracingEnabled(boolean tracing);
-
-  @Value.Default
-  default boolean isMetricsEnabled() {
-    return true;
-  }
-
-  DynamoClientConfig withIsMetricsEnabled(boolean metrics);
-}
+public interface DynamoClientConfig extends DatabaseConnectionConfig {}
