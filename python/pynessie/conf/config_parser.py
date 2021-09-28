@@ -19,9 +19,9 @@ def _get_env_args() -> dict:
 def build_config(args: dict = None) -> confuse.Configuration:
     """Build configuration object from input params, env variables and yaml file."""
     config = confuse.Configuration("nessie", __name__)
-    if args:
-        config.set_args(args, dots=True)
     env_args = _get_env_args()
     config.set_args(env_args, dots=True)
+    if args:
+        config.set_args(args, dots=True)
     config["auth"]["password"].redact = True
     return config
