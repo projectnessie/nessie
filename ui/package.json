@@ -12,7 +12,7 @@
     "@pmmmwh/react-refresh-webpack-plugin": "0.5.1",
     "@svgr/webpack": "5.5.0",
     "@testing-library/jest-dom": "^5.14.1",
-    "@testing-library/react": "^12.1.0",
+    "@testing-library/react": "^12.1.1",
     "@testing-library/user-event": "^13.2.1",
     "@types/bootstrap": "^5.1.6",
     "@types/history": "^4.7.9",
