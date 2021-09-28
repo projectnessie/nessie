@@ -33,13 +33,11 @@ public class MongoDatabaseClient implements DatabaseConnectionProvider<MongoClie
   private static final String KEY_LIST = "key_list";
 
   private MongoClientConfig config;
-  private MongoClient mongoClient;
+  private MongoClient managedClient;
   private MongoCollection<Document> globalPointers;
   private MongoCollection<Document> globalLog;
   private MongoCollection<Document> commitLog;
   private MongoCollection<Document> keyLists;
-
-  protected MongoDatabaseClient() {}
 
   @Override
   public void configure(MongoClientConfig config) {
@@ -48,17 +46,18 @@ public class MongoDatabaseClient implements DatabaseConnectionProvider<MongoClie
 
   @Override
   public void close() {
-    if (mongoClient != null) {
+    if (managedClient != null) {
       try {
-        mongoClient.close();
+        managedClient.close();
       } finally {
-        mongoClient = null;
+        managedClient = null;
       }
     }
   }
 
   @Override
   public void initialize() {
+    MongoClient mongoClient = config.getClient();
     if (mongoClient == null) {
       ConnectionString cs =
           new ConnectionString(
@@ -67,15 +66,17 @@ public class MongoDatabaseClient implements DatabaseConnectionProvider<MongoClie
       MongoClientSettings settings =
           MongoClientSettings.builder().applyConnectionString(cs).build();
 
-      mongoClient = MongoClients.create(settings);
-      MongoDatabase database =
-          mongoClient.getDatabase(
-              Objects.requireNonNull(config.getDatabaseName(), "Database name must be set"));
-      globalPointers = database.getCollection(GLOBAL_POINTER);
-      globalLog = database.getCollection(GLOBAL_LOG);
-      commitLog = database.getCollection(COMMIT_LOG);
-      keyLists = database.getCollection(KEY_LIST);
+      managedClient = MongoClients.create(settings);
+      mongoClient = managedClient;
     }
+
+    MongoDatabase database =
+        mongoClient.getDatabase(
+            Objects.requireNonNull(config.getDatabaseName(), "Database name must be set"));
+    globalPointers = database.getCollection(GLOBAL_POINTER);
+    globalLog = database.getCollection(GLOBAL_LOG);
+    commitLog = database.getCollection(COMMIT_LOG);
+    keyLists = database.getCollection(KEY_LIST);
   }
 
   public MongoCollection<Document> getGlobalPointers() {

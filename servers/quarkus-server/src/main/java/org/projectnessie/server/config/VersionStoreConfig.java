@@ -28,7 +28,8 @@ public interface VersionStoreConfig {
   enum VersionStoreType {
     DYNAMO,
     INMEMORY,
-    ROCKS
+    ROCKS,
+    MONGO,
   }
 
   @WithName("type")
