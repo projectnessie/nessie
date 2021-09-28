@@ -22,7 +22,7 @@ docker run -p 19120:19120 projectnessie/nessie
 
 A local [Web UI](https://projectnessie.org/tools/ui/) will be available at this point.
 
-Then install the Nessie CLI tool
+Then install the Nessie CLI tool (to learn more about CLI tool and how to use it, check [Nessie CLI Documentation](https://projectnessie.org/tools/cli/)
 
 ```
 pip install pynessie
@@ -30,10 +30,14 @@ pip install pynessie
 
 From there, you can use one of our technology integrations such those for 
 
-* [Spark](https://projectnessie.org/tools/spark/)
+* [Spark via Iceberg](https://projectnessie.org/tools/iceberg/spark/)
+* [Hive via Iceberg](https://projectnessie.org/tools/iceberg/hive/)
+* [Spark via Delta Lake](https://projectnessie.org/tools/deltalake/spark/)
+
+To learn more about all supported integrations and tools, check [here](https://projectnessie.org/tools/) 
 
 Have fun! We have a Google Group and a Slack channel we use for both developers and 
-users. Check them out [here](https://projectnessie.org/develop/).
+users. Check them out [here](https://projectnessie.org/community/).
 
 ### Authentication
 

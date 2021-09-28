@@ -39,7 +39,7 @@ The only change is that a Nessie catalog should be instantiated
 
 !!! note
     Iceberg's python libraries are still under active development. Actions against catalogs in pyspark
-    still have to go through the jvm objects. See the [demo](https://colab.research.google.com/github/projectnessie/nessie-demos/blob/main/colab/nessie-iceberg-spark-setup.ipynb)
+    still have to go through the jvm objects. See the [demo](https://mybinder.org/v2/gh/projectnessie/nessie-demos/main?filepath=notebooks/nessie-iceberg-demo-nba.ipynb)
     directory for details.
 
 The Nessie Catalog needs the following parameters set in the Spark/Hadoop config.
@@ -113,7 +113,7 @@ Additional authentication settings are documented in the [Authentication in Tool
 ### Writing
 
 Spark support is constantly evolving and the differences in Spark3 vs Spark2.4 are considerable. See the
-[iceberg](https://iceberg.apache.org/spark/#spark) docs for an up to date support table.
+[iceberg](https://iceberg.apache.org/spark-writes/) docs for an up to date support table.
 
 ### Spark2
 
@@ -273,7 +273,7 @@ follows:
     INSERT INTO nessie.testing.city VALUES (1, 'a', 1, 'comment')
     ```
 
-The full list of operations can be found [here](https://iceberg.apache.org/spark/#create-table). Everything that Iceberg
+The full list of operations can be found [here](https://iceberg.apache.org/spark-writes/). Everything that Iceberg
 supports the Nessie Iceberg Catalog also supports.
 
 ## Reading

@@ -99,13 +99,8 @@ The above snippet assumes a `TABLE_IDENTIFIER` which points to the unreferenced 
 spark session and a nessie owned `Catalog`. The `result` object above returns the number of files the action tried to delete and the number that failed.
 
 !!! note
-    You can follow along an interactive demo in a [Jupyter Notebook via Google Colab](https://colab.research.google.com/github/projectnessie/nessie-demos/blob/main/colab/nessie-iceberg-demo-nba.ipynb)
-    or in a [Jupyter Notebook via Binder](https://mybinder.org/v2/gh/projectnessie/nessie-demos/main?filepath=colab%2Fnessie-iceberg-demo-nba.ipynb).
+    You can follow along an interactive demo in a [Jupyter Notebook via Binder](https://mybinder.org/v2/gh/projectnessie/nessie-demos/main?filepath=notebooks/nessie-iceberg-demo-nba.ipynb).
     
-    Detailed steps on how to set up Pyspark + Iceberg + Nessie with Python is available on
-    [Colab](https://colab.research.google.com/github/projectnessie/nessie-demos/blob/main/colab/nessie-iceberg-spark-setup.ipynb)
-    and [Binder](https://mybinder.org/v2/gh/projectnessie/nessie-demos/main?filepath=colab%2Fnessie-iceberg-spark-setup.ipynb)
-
 ### Internal Garbage collection
 
 Currently, the only garbage collection algorithm available is on the values and assets in a Nessie database only. The
@@ -115,7 +110,7 @@ database will be persisted forever currently. A future release will also clean u
 ## Time-based AutoTagging
 
 !!! info
-  This service is currently in progress and is not yet included in a released version of Nessie.
+    This service is currently in progress and is not yet included in a released version of Nessie.
 
 Nessie works against data based on a commit timeline. In many situations, it is useful
 to capture historical versions of data for analysis or comparison purposes. As such,
@@ -144,7 +139,7 @@ AutoTagging is currently done based on the UTC roll-over of each item.
 ## Manifest Reorganization
 
 !!! info
-This service is currently in progress and is not yet included in a released version of Nessie.
+    This service is currently in progress and is not yet included in a released version of Nessie.
 
 Rewrites the manifests associated with a table so that manifest files are organized
 around partitions. This extends on the ideas in the Iceberg [`RewriteManifestsAction`](http://iceberg.apache.org/javadoc/0.11.0/org/apache/iceberg/actions/RewriteManifestsAction.html).
@@ -163,7 +158,7 @@ Key configuration parameters:
 ## Compaction
 
 !!! info
-This service is currently in progress and is not yet included in a released version of Nessie.
+    This service is currently in progress and is not yet included in a released version of Nessie.
 
 Because operations against table formats are done at the file level, a table can start
 to generate many small files. These small files will slow consumption. As such, Nessie
