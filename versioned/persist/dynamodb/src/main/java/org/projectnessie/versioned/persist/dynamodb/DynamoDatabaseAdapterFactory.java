@@ -17,9 +17,11 @@ package org.projectnessie.versioned.persist.dynamodb;
 
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
+import org.projectnessie.versioned.persist.nontx.ImmutableNonTransactionalDatabaseAdapterConfig;
+import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 
 public class DynamoDatabaseAdapterFactory
-    implements DatabaseAdapterFactory<DynamoDatabaseAdapterConfig> {
+    implements DatabaseAdapterFactory<NonTransactionalDatabaseAdapterConfig, DynamoDatabaseClient> {
 
   public static final String NAME = "DynamoDB";
 
@@ -29,16 +31,16 @@ public class DynamoDatabaseAdapterFactory
   }
 
   @Override
-  public Builder<DynamoDatabaseAdapterConfig> newBuilder() {
-    return new Builder<DynamoDatabaseAdapterConfig>() {
+  public Builder<NonTransactionalDatabaseAdapterConfig, DynamoDatabaseClient> newBuilder() {
+    return new Builder<NonTransactionalDatabaseAdapterConfig, DynamoDatabaseClient>() {
       @Override
-      protected DynamoDatabaseAdapterConfig getDefaultConfig() {
-        return ImmutableDynamoDatabaseAdapterConfig.builder().build();
+      protected NonTransactionalDatabaseAdapterConfig getDefaultConfig() {
+        return ImmutableNonTransactionalDatabaseAdapterConfig.builder().build();
       }
 
       @Override
       public DatabaseAdapter build() {
-        return new DynamoDatabaseAdapter(getConfig());
+        return new DynamoDatabaseAdapter(getConfig(), getConnector());
       }
     };
   }

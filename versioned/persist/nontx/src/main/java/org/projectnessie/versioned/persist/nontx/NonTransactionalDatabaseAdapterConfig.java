@@ -17,11 +17,10 @@ package org.projectnessie.versioned.persist.nontx;
 
 import org.immutables.value.Value;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
-import org.projectnessie.versioned.persist.adapter.DatabaseConnectionProvider;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
 
-public interface NonTransactionalDatabaseAdapterConfig<T extends DatabaseConnectionProvider<?>>
-    extends DatabaseAdapterConfig<T> {
+@Value.Immutable(lazyhash = true)
+public interface NonTransactionalDatabaseAdapterConfig extends DatabaseAdapterConfig {
   int DEFAULT_PARENTS_PER_GLOBAL_COMMIT = 50;
 
   /**
@@ -32,6 +31,4 @@ public interface NonTransactionalDatabaseAdapterConfig<T extends DatabaseConnect
   default int getParentsPerGlobalCommit() {
     return DEFAULT_PARENTS_PER_GLOBAL_COMMIT;
   }
-
-  NonTransactionalDatabaseAdapterConfig<T> withParentsPerGlobalCommit(int parentsPerGlobalCommit);
 }

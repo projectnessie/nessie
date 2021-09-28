@@ -65,7 +65,7 @@ import org.projectnessie.versioned.persist.adapter.DatabaseConnectionProvider;
 public interface TestConnectionProviderSource<CONN_CONFIG extends DatabaseConnectionConfig> {
 
   boolean isCompatibleWith(
-      DatabaseAdapterConfig<?> adapterConfig, DatabaseAdapterFactory<?> databaseAdapterFactory);
+      DatabaseAdapterConfig adapterConfig, DatabaseAdapterFactory<?, ?> databaseAdapterFactory);
 
   /** Creates the default {@link DatabaseConnectionConfig}. */
   CONN_CONFIG createDefaultConnectionProviderConfig();
@@ -91,15 +91,7 @@ public interface TestConnectionProviderSource<CONN_CONFIG extends DatabaseConnec
    */
   DatabaseConnectionProvider<CONN_CONFIG> createConnectionProvider();
 
-  /**
-   * Updates the given {@code config} with the {@link DatabaseConnectionProvider} via {@link
-   * DatabaseAdapterConfig#withConnectionProvider(DatabaseConnectionProvider)}.
-   *
-   * @param config the current configuration
-   * @return {@code config} with a valid {@link DatabaseConnectionProvider} instance.
-   */
-  DatabaseAdapterConfig<DatabaseConnectionProvider<CONN_CONFIG>> updateConfig(
-      DatabaseAdapterConfig<DatabaseConnectionProvider<CONN_CONFIG>> config);
+  DatabaseConnectionProvider<CONN_CONFIG> getConnectionProvider();
 
   /**
    * Initialize/start the connection provider.
@@ -135,8 +127,8 @@ public interface TestConnectionProviderSource<CONN_CONFIG extends DatabaseConnec
   @SuppressWarnings({"rawtypes", "unchecked"})
   static <CONN_CONFIG extends DatabaseConnectionConfig>
       TestConnectionProviderSource<CONN_CONFIG> findCompatibleProviderSource(
-          DatabaseAdapterConfig<?> databaseAdapterConfig,
-          DatabaseAdapterFactory<?> databaseAdapterFactory,
+          DatabaseAdapterConfig databaseAdapterConfig,
+          DatabaseAdapterFactory<?, ?> databaseAdapterFactory,
           String providerSpec) {
     List<TestConnectionProviderSource> providerSources = new ArrayList<>();
     for (TestConnectionProviderSource ps : ServiceLoader.load(TestConnectionProviderSource.class)) {

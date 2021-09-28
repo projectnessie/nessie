@@ -17,9 +17,11 @@ package org.projectnessie.versioned.persist.rocks;
 
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
+import org.projectnessie.versioned.persist.nontx.ImmutableNonTransactionalDatabaseAdapterConfig;
+import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 
 public class RocksDatabaseAdapterFactory
-    implements DatabaseAdapterFactory<RocksDatabaseAdapterConfig> {
+    implements DatabaseAdapterFactory<NonTransactionalDatabaseAdapterConfig, RocksDbInstance> {
 
   public static final String NAME = "RocksDB";
 
@@ -29,16 +31,16 @@ public class RocksDatabaseAdapterFactory
   }
 
   @Override
-  public Builder<RocksDatabaseAdapterConfig> newBuilder() {
-    return new Builder<RocksDatabaseAdapterConfig>() {
+  public Builder<NonTransactionalDatabaseAdapterConfig, RocksDbInstance> newBuilder() {
+    return new Builder<NonTransactionalDatabaseAdapterConfig, RocksDbInstance>() {
       @Override
-      protected RocksDatabaseAdapterConfig getDefaultConfig() {
-        return ImmutableRocksDatabaseAdapterConfig.builder().build();
+      protected NonTransactionalDatabaseAdapterConfig getDefaultConfig() {
+        return ImmutableNonTransactionalDatabaseAdapterConfig.builder().build();
       }
 
       @Override
       public DatabaseAdapter build() {
-        return new RocksDatabaseAdapter(getConfig());
+        return new RocksDatabaseAdapter(getConfig(), getConnector());
       }
     };
   }

@@ -21,6 +21,7 @@ import com.mongodb.client.MongoClient;
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.projectnessie.server.config.QuarkusDatabaseAdapterConfig;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.VersionStore;
@@ -39,28 +40,27 @@ public class MongoVersionStoreFactory implements VersionStoreFactory {
   String databaseName;
 
   @Inject MongoClient mongoClient;
+  @Inject QuarkusDatabaseAdapterConfig config;
 
   @Override
   public <VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>>
       VersionStore<VALUE, METADATA, VALUE_TYPE> newStore(
           StoreWorker<VALUE, METADATA, VALUE_TYPE> worker, ServerConfig serverConfig) {
 
+    MongoDatabaseClient client = new MongoDatabaseClient();
+    client.configure(
+        ImmutableMongoClientConfig.builder()
+            .client(mongoClient)
+            .databaseName(databaseName)
+            .build());
+
+    client.initialize();
+
     DatabaseAdapter adapter =
         new MongoDatabaseAdapterFactory()
             .newBuilder()
-            .configure(
-                c -> {
-                  MongoDatabaseClient client = new MongoDatabaseClient();
-                  client.configure(
-                      ImmutableMongoClientConfig.builder()
-                          .client(mongoClient)
-                          .databaseName(databaseName)
-                          .build());
-
-                  client.initialize();
-
-                  return c.withConnectionProvider(client);
-                })
+            .withConfig(config)
+            .withConnector(client)
             .build();
 
     adapter.reinitializeRepo(serverConfig.getDefaultBranch());

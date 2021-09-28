@@ -43,6 +43,7 @@ import org.projectnessie.versioned.persist.adapter.KeyList;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyWithType;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapter;
+import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalOperationContext;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
@@ -63,7 +64,7 @@ import software.amazon.awssdk.services.dynamodb.model.RequestLimitExceededExcept
 import software.amazon.awssdk.services.dynamodb.model.WriteRequest;
 
 public class DynamoDatabaseAdapter
-    extends NonTransactionalDatabaseAdapter<DynamoDatabaseAdapterConfig> {
+    extends NonTransactionalDatabaseAdapter<NonTransactionalDatabaseAdapterConfig> {
 
   // DynamoDB limit
   private static final int DYNAMO_BATCH_WRITE_MAX_REQUESTS = 25;
@@ -74,10 +75,9 @@ public class DynamoDatabaseAdapter
   private final String keyPrefix;
   private final Map<String, AttributeValue> globalPointerKeyMap;
 
-  public DynamoDatabaseAdapter(DynamoDatabaseAdapterConfig config) {
+  public DynamoDatabaseAdapter(
+      NonTransactionalDatabaseAdapterConfig config, DynamoDatabaseClient c) {
     super(config);
-
-    DynamoDatabaseClient c = config.getConnectionProvider();
 
     Objects.requireNonNull(
         c, "Requires a non-null DynamoDatabaseClient from DynamoDatabaseAdapterConfig");

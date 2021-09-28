@@ -18,6 +18,8 @@ package org.projectnessie.server.providers;
 import static org.projectnessie.server.config.VersionStoreConfig.VersionStoreType.INMEMORY;
 
 import javax.enterprise.context.Dependent;
+import javax.inject.Inject;
+import org.projectnessie.server.config.QuarkusDatabaseAdapterConfig;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.VersionStore;
@@ -30,6 +32,8 @@ import org.projectnessie.versioned.persist.store.PersistVersionStore;
 @StoreType(INMEMORY)
 @Dependent
 public class InMemVersionStoreFactory implements VersionStoreFactory {
+  @Inject QuarkusDatabaseAdapterConfig config;
+
   @Override
   public <VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>>
       VersionStore<VALUE, METADATA, VALUE_TYPE> newStore(
@@ -37,7 +41,8 @@ public class InMemVersionStoreFactory implements VersionStoreFactory {
     DatabaseAdapter databaseAdapter =
         new InmemoryDatabaseAdapterFactory()
             .newBuilder()
-            .configure(c -> c.withConnectionProvider(new InmemoryStore()))
+            .withConfig(config)
+            .withConnector(new InmemoryStore())
             .build();
 
     databaseAdapter.initializeRepo(serverConfig.getDefaultBranch());

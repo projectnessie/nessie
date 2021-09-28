@@ -15,23 +15,12 @@
  */
 package org.projectnessie.versioned.persist.tx;
 
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 
 /** TX-database-adapter config interface. */
 @Value.Immutable(lazyhash = true)
-public interface TxDatabaseAdapterConfig extends DatabaseAdapterConfig<TxConnectionProvider<?>> {
-
-  /**
-   * Provides JDBC connections to {@link TxDatabaseAdapter}, must be used in production scenarios.
-   */
-  @Nullable
-  @Override
-  TxConnectionProvider<?> getConnectionProvider();
-
-  @Override
-  TxDatabaseAdapterConfig withConnectionProvider(TxConnectionProvider<?> connectionProvider);
+public interface TxDatabaseAdapterConfig extends DatabaseAdapterConfig {
 
   /**
    * DML batch size, used when writing multiple commits to a branch during a transplant or merge

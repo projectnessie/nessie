@@ -87,7 +87,7 @@ import org.projectnessie.versioned.persist.serialize.ProtoSerialization;
  * </ul>
  */
 public abstract class NonTransactionalDatabaseAdapter<
-        CONFIG extends NonTransactionalDatabaseAdapterConfig<?>>
+        CONFIG extends NonTransactionalDatabaseAdapterConfig>
     extends AbstractDatabaseAdapter<NonTransactionalOperationContext, CONFIG> {
 
   protected NonTransactionalDatabaseAdapter(CONFIG config) {

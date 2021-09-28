@@ -19,6 +19,7 @@ import static org.projectnessie.server.config.VersionStoreConfig.VersionStoreTyp
 
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
+import org.projectnessie.server.config.QuarkusDatabaseAdapterConfig;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.VersionStore;
@@ -34,11 +35,14 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 @Dependent
 public class DynamoVersionStoreFactory implements VersionStoreFactory {
   private final DynamoDbClient dynamoDbClient;
+  private final QuarkusDatabaseAdapterConfig config;
 
   /** Creates a factory for dynamodb version stores. */
   @Inject
-  public DynamoVersionStoreFactory(DynamoDbClient dynamoDbClient) {
+  public DynamoVersionStoreFactory(
+      DynamoDbClient dynamoDbClient, QuarkusDatabaseAdapterConfig config) {
     this.dynamoDbClient = dynamoDbClient;
+    this.config = config;
   }
 
   @Override
@@ -46,19 +50,16 @@ public class DynamoVersionStoreFactory implements VersionStoreFactory {
       VersionStore<VALUE, METADATA, VALUE_TYPE> newStore(
           StoreWorker<VALUE, METADATA, VALUE_TYPE> worker, ServerConfig serverConfig) {
 
+    DynamoDatabaseClient client = new DynamoDatabaseClient();
+    client.configure(
+        ImmutableProvidedDynamoClientConfig.builder().dynamoDbClient(dynamoDbClient).build());
+    client.initialize();
+
     DatabaseAdapter databaseAdapter =
         new DynamoDatabaseAdapterFactory()
             .newBuilder()
-            .configure(
-                c -> {
-                  DynamoDatabaseClient client = new DynamoDatabaseClient();
-                  client.configure(
-                      ImmutableProvidedDynamoClientConfig.builder()
-                          .dynamoDbClient(dynamoDbClient)
-                          .build());
-                  client.initialize();
-                  return c.withConnectionProvider(client);
-                })
+            .withConfig(config)
+            .withConnector(client)
             .build();
 
     databaseAdapter.initializeRepo(serverConfig.getDefaultBranch());

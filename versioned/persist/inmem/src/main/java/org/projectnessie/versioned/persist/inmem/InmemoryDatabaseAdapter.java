@@ -34,23 +34,23 @@ import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyWithType;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapter;
+import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalOperationContext;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
 import org.projectnessie.versioned.persist.serialize.ProtoSerialization;
 
 public class InmemoryDatabaseAdapter
-    extends NonTransactionalDatabaseAdapter<InmemoryDatabaseAdapterConfig> {
+    extends NonTransactionalDatabaseAdapter<NonTransactionalDatabaseAdapterConfig> {
 
   private final InmemoryStore store;
   private final ByteString keyPrefix;
 
-  public InmemoryDatabaseAdapter(InmemoryDatabaseAdapterConfig config) {
+  public InmemoryDatabaseAdapter(
+      NonTransactionalDatabaseAdapterConfig config, InmemoryStore store) {
     super(config);
 
     this.keyPrefix = ByteString.copyFromUtf8(config.getKeyPrefix() + ':');
-
-    InmemoryStore store = config.getConnectionProvider();
 
     Objects.requireNonNull(
         store, "Requires a non-null InmemoryStore from InmemoryDatabaseAdapterConfig");

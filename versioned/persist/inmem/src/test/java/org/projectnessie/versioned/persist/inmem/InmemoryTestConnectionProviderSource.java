@@ -17,6 +17,7 @@ package org.projectnessie.versioned.persist.inmem;
 
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
+import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.tests.extension.AbstractTestConnectionProviderSource;
 
 public class InmemoryTestConnectionProviderSource
@@ -24,8 +25,8 @@ public class InmemoryTestConnectionProviderSource
 
   @Override
   public boolean isCompatibleWith(
-      DatabaseAdapterConfig<?> adapterConfig, DatabaseAdapterFactory<?> databaseAdapterFactory) {
-    return adapterConfig instanceof InmemoryDatabaseAdapterConfig;
+      DatabaseAdapterConfig adapterConfig, DatabaseAdapterFactory<?, ?> databaseAdapterFactory) {
+    return adapterConfig instanceof NonTransactionalDatabaseAdapterConfig;
   }
 
   @Override
