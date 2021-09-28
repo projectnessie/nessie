@@ -47,6 +47,7 @@ CREATE TABLE database_a.table_a (
   TBLPROPERTIES ('iceberg.catalog'='<catalog_name>', 'write.format.default'='parquet');
 ```
 Whereby the above properties are explained as below:
+
 - `STORED BY 'org.apache.iceberg.mr.hive.HiveIcebergStorageHandler'` : Since Hive doesn't use a custom global catalog, we tell Hive here that individual table will be managed by Iceberg's catalog through `org.apache.iceberg.mr.hive.HiveIcebergStorageHandler`.
 
 - `LOCATION '/path_nessie_warehouse/database_a/salaries` : As mentioned before, Hive will create Iceberg tables as external tables and thus, location of the data files needs to be provided. This location is the same location that is provided in `iceberg.catalog.<catalog_name>.warehouse` in addition to the database and table names.
