@@ -142,6 +142,7 @@ public abstract class AbstractTestRest {
     String tagName2 = "createReferences_tag2";
     String branchName1 = "createReferences_branch1";
     String branchName2 = "createReferences_branch2";
+
     assertAll(
         // invalid source ref & null hash
         () ->
@@ -153,6 +154,13 @@ public abstract class AbstractTestRest {
                             .create())
                 .isInstanceOf(NessieNotFoundException.class)
                 .hasMessageContainingAll("'unknownSource'", "not"),
+        // Tag without sourceRefName & null hash
+        () ->
+            assertThatThrownBy(
+                    () -> api.createReference().reference(Tag.of(tagName1, null)).create())
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining("Tag-creation requires a target named-reference and hash."),
         // Tag without hash
         () ->
             assertThatThrownBy(

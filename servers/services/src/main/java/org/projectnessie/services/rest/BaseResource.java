@@ -16,10 +16,8 @@
 package org.projectnessie.services.rest;
 
 import java.security.Principal;
-import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import javax.ws.rs.core.SecurityContext;
 import org.projectnessie.error.NessieNotFoundException;
@@ -30,6 +28,7 @@ import org.projectnessie.services.authz.ServerAccessContext;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.NamedRef;
+import org.projectnessie.versioned.Ref;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
@@ -55,30 +54,22 @@ abstract class BaseResource {
     this.accessChecker = accessChecker;
   }
 
-  WithHash<NamedRef> namedRefWithHashOrThrow(String namedRef, @Nullable String hashOnRef)
+  WithHash<NamedRef> namedRefWithHashOrThrow(@Nullable String namedRef, @Nullable String hashOnRef)
       throws NessieNotFoundException {
-    List<WithHash<NamedRef>> collect;
-    try (Stream<WithHash<NamedRef>> refsStream = store.getNamedRefs()) {
-      collect =
-          refsStream
-              .filter(
-                  r ->
-                      r.getValue().getName().equals(namedRef)
-                          || r.getValue().getName().equals(config.getDefaultBranch()))
-              .collect(Collectors.toList());
+    if (null == namedRef) {
+      namedRef = config.getDefaultBranch();
     }
     WithHash<NamedRef> namedRefWithHash;
-    if (collect.size() == 1) {
-      namedRefWithHash = collect.get(0);
-    } else {
-      namedRefWithHash =
-          collect.stream()
-              .filter(r -> r.getValue().getName().equals(namedRef))
-              .findFirst()
-              .orElseThrow(
-                  () ->
-                      new NessieNotFoundException(
-                          String.format("Named reference '%s' not found.", namedRef)));
+    try {
+      WithHash<Ref> refWithHash = getStore().toRef(namedRef);
+      Ref ref = refWithHash.getValue();
+      if (!(ref instanceof NamedRef)) {
+        throw new ReferenceNotFoundException(
+            String.format("Named reference '%s' not found", namedRef));
+      }
+      namedRefWithHash = WithHash.of(refWithHash.getHash(), (NamedRef) ref);
+    } catch (ReferenceNotFoundException e) {
+      throw new NessieNotFoundException(e.getMessage());
     }
 
     try {
@@ -86,18 +77,18 @@ abstract class BaseResource {
         return namedRefWithHash;
       }
 
-      // we need to make sure that the hash in fact exists on the named ref
-      Hash hash = Hash.of(hashOnRef);
-      try (Stream<WithHash<CommitMeta>> commits = store.getCommits(namedRefWithHash.getValue())) {
-        if (commits.noneMatch(c -> c.getHash().equals(hash))) {
-          throw new NessieNotFoundException(
-              String.format("Could not find commit '%s' in reference '%s'.", hashOnRef, namedRef));
-        }
+      // the version store already gave us the hash on namedRef, so we can skip checking whether the
+      // hash actually exists on the named reference and return early here
+      if (namedRefWithHash.getHash().asString().equals(hashOnRef)) {
+        return namedRefWithHash;
       }
-      return WithHash.of(hash, namedRefWithHash.getValue());
+
+      // we need to make sure that the hash in fact exists on the named ref
+      return WithHash.of(
+          getStore().hashOnReference(namedRefWithHash.getValue(), Optional.of(Hash.of(hashOnRef))),
+          namedRefWithHash.getValue());
     } catch (ReferenceNotFoundException e) {
-      throw new NessieNotFoundException(
-          String.format("Could not find commit '%s' in reference '%s'.", hashOnRef, namedRef));
+      throw new NessieNotFoundException(e.getMessage());
     }
   }
 
