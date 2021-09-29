@@ -29,6 +29,8 @@ public interface QuarkusDatabaseAdapterConfig extends NonTransactionalDatabaseAd
 
   @WithName("key-prefix")
   @WithDefault(DEFAULT_KEY_PREFIX)
+  // Use TrimmedStringConverter for the "key-prefix" property because it can be an empty string,
+  // but the default converter will turn empty strings into `null`.
   @WithConverter(TrimmedStringConverter.class)
   @Override
   String getKeyPrefix();
