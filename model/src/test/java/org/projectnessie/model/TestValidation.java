@@ -71,7 +71,6 @@ class TestValidation {
   void nullParam() {
     assertAll(
         () -> assertThrows(NullPointerException.class, () -> validateReferenceName(null)),
-        () -> assertThrows(NullPointerException.class, () -> Hash.of(null)),
         () -> assertThrows(NullPointerException.class, () -> Branch.of(null, null)),
         () -> assertThrows(NullPointerException.class, () -> Tag.of(null, null)));
   }
@@ -87,7 +86,6 @@ class TestValidation {
   void validHashes(String hash) {
     validateHash(hash);
     validateReferenceNameOrHash(hash);
-    Hash.of(hash);
   }
 
   @ParameterizedTest
@@ -100,10 +98,6 @@ class TestValidation {
                 Validation.HASH_MESSAGE + " - but was: " + hash,
                 assertThrows(IllegalArgumentException.class, () -> validateHash(hash))
                     .getMessage()),
-        () ->
-            assertEquals(
-                Validation.HASH_MESSAGE + " - but was: " + hash,
-                assertThrows(IllegalArgumentException.class, () -> Hash.of(hash)).getMessage()),
         () ->
             assertEquals(
                 Validation.HASH_MESSAGE + " - but was: " + hash,

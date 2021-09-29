@@ -44,11 +44,10 @@ public interface NessieApiV1 extends NessieApi {
   /**
    * Retrieve objects for a ref, potentially truncated by the backend.
    *
-   * <p>Retrieves up to {@code maxRecords} objects for the given named reference (tag or branch) or
-   * the given {@link org.projectnessie.model.Hash}. The backend <em>may</em> respect the given
-   * {@code max} records hint, but return less or more entries. Backends may also cap the returned
-   * entries at a hard-coded limit, the default REST server implementation has such a hard-coded
-   * limit.
+   * <p>Retrieves up to {@code maxRecords} objects for the given named reference (tag or branch).
+   * The backend <em>may</em> respect the given {@code max} records hint, but return less or more
+   * entries. Backends may also cap the returned entries at a hard-coded limit, the default REST
+   * server implementation has such a hard-coded limit.
    *
    * <p>Invoking {@code getEntries()} does <em>not</em> guarantee to return all commit log entries
    * of a given reference, because the result can be truncated by the backend.
@@ -66,10 +65,9 @@ public interface NessieApiV1 extends NessieApi {
    * Retrieve the commit log for a ref, potentially truncated by the backend.
    *
    * <p>Retrieves up to {@code maxRecords} commit-log-entries starting at the HEAD of the given
-   * named reference (tag or branch) or the given {@link org.projectnessie.model.Hash}. The backend
-   * <em>may</em> respect the given {@code max} records hint, but return less or more entries.
-   * Backends may also cap the returned entries at a hard-coded limit, the default REST server
-   * implementation has such a hard-coded limit.
+   * named reference (tag or branch). The backend <em>may</em> respect the given {@code max} records
+   * hint, but return less or more entries. Backends may also cap the returned entries at a
+   * hard-coded limit, the default REST server implementation has such a hard-coded limit.
    *
    * <p>Invoking {@code getCommitLog()} does <em>not</em> guarantee to return all commit log entries
    * of a given reference, because the result can be truncated by the backend.
