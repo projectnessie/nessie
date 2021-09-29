@@ -73,10 +73,6 @@ public class TestModelObjectsSerialization {
             Tag.class,
             Json.from("type", "TAG").add("name", "tagname").add("hash", HASH)),
         new Case(
-            Hash.of(HASH),
-            Hash.class,
-            Json.from("type", "HASH").add("name", HASH).add("hash", HASH)),
-        new Case(
             ImmutableTransplant.builder()
                 .addHashesToTransplant(HASH)
                 .fromRefName(branchName)
@@ -160,10 +156,7 @@ public class TestModelObjectsSerialization {
             Transplant.class,
             Json.arr("hashesToTransplant", "invalidhash").add("fromRefName", "testBranch")),
         new Case(
-            Tag.class, Json.from("type", "TAG").add("name", "tagname").add("hash", "invalidhash")),
-        new Case(
-            Hash.class,
-            Json.from("type", "HASH").add("name", "invalidhash").add("hash", "invalidhash")));
+            Tag.class, Json.from("type", "TAG").add("name", "tagname").add("hash", "invalidhash")));
   }
 
   static class Case {

@@ -52,7 +52,6 @@ import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.ImmutableBranch;
 import org.projectnessie.model.ImmutableCommitMeta;
-import org.projectnessie.model.ImmutableHash;
 import org.projectnessie.model.ImmutableLogResponse;
 import org.projectnessie.model.ImmutableTag;
 import org.projectnessie.model.LogResponse;
@@ -500,8 +499,6 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
 
   private static Reference makeRef(WithHash<? extends Ref> refWithHash) {
     Ref ref = refWithHash.getValue();
-    // todo do we want to send back Hash object or the string. I don't want internal API escaping so
-    // maybe an external representation of hash
     if (ref instanceof TagName) {
       return ImmutableTag.builder()
           .name(((NamedRef) ref).getName())
@@ -512,9 +509,6 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
           .name(((NamedRef) ref).getName())
           .hash(refWithHash.getHash().asString())
           .build();
-    } else if (ref instanceof Hash) {
-      String hash = refWithHash.getHash().asString();
-      return ImmutableHash.builder().name(hash).build();
     } else {
       throw new UnsupportedOperationException("only converting tags or branches"); // todo
     }

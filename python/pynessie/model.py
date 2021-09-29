@@ -188,23 +188,12 @@ class Tag(Reference):
 TagSchema = desert.schema_class(Tag)
 
 
-@attr.dataclass
-class Hash(Reference):
-    """Dataclass for Nessie Hash."""
-
-    pass
-
-
-HashSchema = desert.schema_class(Hash)
-
-
 class ReferenceSchema(OneOfSchema):
     """Schema for Nessie Reference."""
 
     type_schemas = {
         "BRANCH": BranchSchema,
         "TAG": TagSchema,
-        "HASH": HashSchema,
     }
 
     def get_obj_type(self: "ReferenceSchema", obj: Reference) -> str:
@@ -213,8 +202,6 @@ class ReferenceSchema(OneOfSchema):
             return "BRANCH"
         elif isinstance(obj, Tag):
             return "TAG"
-        elif isinstance(obj, Hash):
-            return "HASH"
         else:
             raise Exception("Unknown object type: {}".format(obj.__class__.__name__))
 
