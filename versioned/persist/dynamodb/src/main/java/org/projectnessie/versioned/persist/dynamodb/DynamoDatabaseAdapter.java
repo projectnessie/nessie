@@ -215,6 +215,12 @@ public class DynamoDatabaseAdapter
   }
 
   @Override
+  protected void overrideCommitEntry(NonTransactionalOperationContext ctx, CommitLogEntry entry) {
+    // Put operation underneath, which does an insert or update
+    insert(TABLE_COMMIT_LOG, entry.getHash().asString(), toProto(entry).toByteArray());
+  }
+
+  @Override
   protected void unsafeWriteGlobalPointer(
       NonTransactionalOperationContext ctx, GlobalStatePointer pointer) {
     insert(TABLE_GLOBAL_POINTER, "", pointer.toByteArray());

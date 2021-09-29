@@ -960,6 +960,25 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
+  protected void overrideCommitEntry(Connection c, CommitLogEntry entry)
+      throws ReferenceNotFoundException {
+    try (PreparedStatement ps = c.prepareStatement(SqlStatements.UPDATE_COMMIT_LOG)) {
+      ps.setBytes(1, toProto(entry).toByteArray());
+      ps.setString(2, config.getKeyPrefix());
+      ps.setString(3, entry.getHash().asString());
+      int noOfRowsUpdated = ps.executeUpdate();
+      if (noOfRowsUpdated == 0) {
+        throw new ReferenceNotFoundException("CommitLogEntry not present - " + entry.getHash());
+      }
+    } catch (SQLException e) {
+      if (isRetryTransaction(e)) {
+        throw new RetryTransactionException();
+      }
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
   protected void writeMultipleCommits(Connection c, List<CommitLogEntry> entries)
       throws ReferenceConflictException {
     writeMany(

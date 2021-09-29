@@ -33,6 +33,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ReferenceConflictException;
+import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyWithType;
@@ -102,6 +103,20 @@ public class RocksDatabaseAdapter
       return serialized != null ? GlobalStatePointer.parseFrom(serialized) : null;
     } catch (InvalidProtocolBufferException | RocksDBException e) {
       throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  protected void overrideCommitEntry(NonTransactionalOperationContext ctx, CommitLogEntry entry) {
+    Lock lock = dbInstance.getLock().writeLock();
+    lock.lock();
+    try {
+      byte[] key = dbKey(entry.getHash());
+      db.put(dbInstance.getCfCommitLog(), key, toProto(entry).toByteArray());
+    } catch (RocksDBException e) {
+      throw new RuntimeException(e);
+    } finally {
+      lock.unlock();
     }
   }
 

@@ -25,8 +25,9 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
-import java.security.Principal;
 import java.time.Instant;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -313,25 +314,11 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
   private BiFunction<Serializer<CommitMeta>, ByteString, ByteString> getResetMergePropsFunc(
       MergeOp mergeOp, String fromRefName) {
     return (ser, in) -> {
-      try {
-        CommitMeta commitMeta = ser.fromBytes(in);
-        String currUser =
-            Optional.ofNullable(getSecurityContext().getUserPrincipal())
-                .map(Principal::getName)
-                .orElse("");
-        String mergeProp = String.format("%s_ref", mergeOp.name().toLowerCase());
-        CommitMeta mergeReadyMeta =
-            CommitMeta.builder()
-                .from(commitMeta)
-                .committer(currUser)
-                .commitTime(Instant.now())
-                .putProperties(mergeProp, fromRefName)
-                .build();
-        return ser.toBytes(mergeReadyMeta);
-      } catch (RuntimeException e) { // error in serialization
-        LOGGER.warn("Error while deserializing metadata", e);
-        return in;
-      }
+      final CommitMeta commitMeta = ser.fromBytes(in);
+      final String mergeProp = String.format("%s_ref", mergeOp.name().toLowerCase());
+      final Map<String, String> props = new HashMap<>(1);
+      props.put(mergeProp, fromRefName);
+      return ser.toBytes(meta(commitMeta, props));
     };
   }
 
@@ -445,11 +432,15 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
       List<org.projectnessie.versioned.Operation<Contents>> operations)
       throws NessieConflictException, NessieNotFoundException {
     try {
+      if (commitMeta.getCommitter() != null) {
+        throw new NessieConflictException(
+            "Cannot set the committer on the client side. It is set by the server.");
+      }
       return getStore()
           .commit(
               BranchName.of(Optional.ofNullable(branch).orElse(getConfig().getDefaultBranch())),
               Optional.ofNullable(hash).map(Hash::of),
-              meta(getPrincipal(), commitMeta),
+              meta(commitMeta, Collections.EMPTY_MAP),
               operations);
     } catch (IllegalArgumentException | ReferenceNotFoundException e) {
       throw new NessieNotFoundException(e.getMessage(), e);
@@ -458,19 +449,15 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
     }
   }
 
-  private static CommitMeta meta(Principal principal, CommitMeta commitMeta)
-      throws NessieConflictException {
-    if (commitMeta.getCommitter() != null) {
-      throw new NessieConflictException(
-          "Cannot set the committer on the client side. It is set by the server.");
-    }
-    String committer = principal == null ? "" : principal.getName();
-    Instant now = Instant.now();
-    return commitMeta.toBuilder()
+  private CommitMeta meta(final CommitMeta referredCommit, Map<String, String> additionalProps) {
+    final String committer = Optional.ofNullable(getPrincipal()).map(p -> p.getName()).orElse("");
+    final Instant now = Instant.now();
+    return referredCommit.toBuilder()
         .committer(committer)
         .commitTime(now)
-        .author(commitMeta.getAuthor() == null ? committer : commitMeta.getAuthor())
-        .authorTime(commitMeta.getAuthorTime() == null ? now : commitMeta.getAuthorTime())
+        .author(referredCommit.getAuthor() == null ? committer : referredCommit.getAuthor())
+        .authorTime(referredCommit.getAuthorTime() == null ? now : referredCommit.getAuthorTime())
+        .putAllProperties(additionalProps)
         .build();
   }
 

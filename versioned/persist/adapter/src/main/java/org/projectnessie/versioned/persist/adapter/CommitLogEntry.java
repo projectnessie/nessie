@@ -89,4 +89,8 @@ public interface CommitLogEntry {
         .addAllKeyListsIds(keyListIds)
         .build();
   }
+
+  static CommitLogEntry withNewMeta(CommitLogEntry sourceCommit, ByteString metadata) {
+    return ImmutableCommitLogEntry.builder().from(sourceCommit).metadata(metadata).build();
+  }
 }

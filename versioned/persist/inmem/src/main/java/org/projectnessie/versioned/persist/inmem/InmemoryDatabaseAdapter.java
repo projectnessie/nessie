@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ReferenceConflictException;
+import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyWithType;
@@ -83,6 +84,16 @@ public class InmemoryDatabaseAdapter
     if (store.commitLog.putIfAbsent(dbKey(entry.getHash()), toProto(entry).toByteString())
         != null) {
       throw hashCollisionDetected();
+    }
+  }
+
+  @Override
+  protected void overrideCommitEntry(NonTransactionalOperationContext ctx, CommitLogEntry entry)
+      throws ReferenceNotFoundException{
+    if (store.commitLog
+        .computeIfPresent(dbKey(entry.getHash()), (key, orgValue) -> toProto(entry).toByteString())
+        == null) {
+      throw new ReferenceNotFoundException("CommitLogEntry not present - " + entry.getHash());
     }
   }
 

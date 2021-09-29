@@ -530,7 +530,7 @@ public abstract class AbstractVersionStoreTest extends AbstractITVersionStore {
                         BranchName.of("this-one-should-not-exist"),
                         Optional.empty(),
                         singletonList(s.toHash(BranchName.of("main"))),
-                        (a, b) -> b)),
+                        NOOP)),
         new ReferenceNotFoundFunction("transplant/hash/empty")
             .msg(
                 "Could not find commit '12341234123412341234123412341234123412341234' in reference 'main'.")
@@ -540,7 +540,7 @@ public abstract class AbstractVersionStoreTest extends AbstractITVersionStore {
                         BranchName.of("main"),
                         Optional.of(Hash.of("12341234123412341234123412341234123412341234")),
                         singletonList(Hash.of("12341234123412341234123412341234123412341234")),
-                        (a, b) -> b)),
+                        NOOP)),
         new ReferenceNotFoundFunction("transplant/empty/hash")
             .msg("Commit '12341234123412341234123412341234123412341234' not found")
             .function(
@@ -549,7 +549,7 @@ public abstract class AbstractVersionStoreTest extends AbstractITVersionStore {
                         BranchName.of("main"),
                         Optional.empty(),
                         singletonList(Hash.of("12341234123412341234123412341234123412341234")),
-                        (a, b) -> b)),
+                        NOOP)),
         // merge()
         new ReferenceNotFoundFunction("merge/hash/empty")
             .msg("Commit '12341234123412341234123412341234123412341234' not found")
@@ -559,7 +559,7 @@ public abstract class AbstractVersionStoreTest extends AbstractITVersionStore {
                         Hash.of("12341234123412341234123412341234123412341234"),
                         BranchName.of("main"),
                         Optional.empty(),
-                        (a, b) -> b)),
+                        NOOP)),
         new ReferenceNotFoundFunction("merge/empty/hash")
             .msg(
                 "Could not find commit '12341234123412341234123412341234123412341234' in reference 'main'.")
@@ -569,9 +569,7 @@ public abstract class AbstractVersionStoreTest extends AbstractITVersionStore {
                         s.noAncestorHash(),
                         BranchName.of("main"),
                         Optional.of(Hash.of("12341234123412341234123412341234123412341234")),
-                        (a, b) -> b))
-        //
-        );
+                        NOOP)));
   }
 
   @ParameterizedTest

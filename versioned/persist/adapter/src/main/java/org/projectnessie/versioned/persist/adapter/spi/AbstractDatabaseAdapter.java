@@ -877,6 +877,18 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       throws ReferenceConflictException;
 
   /**
+   * Updates the commit log entry, against the commit log hash. All values of the given {@link
+   * CommitLogEntry} can be considered valid and consistent. Since, it is an override operation,
+   * the last update will be final version of the entry.
+   *
+   * @param ctx
+   * @param entry
+   * @throws ReferenceNotFoundException
+   */
+  protected abstract void overrideCommitEntry(OP_CONTEXT ctx, CommitLogEntry entry)
+      throws ReferenceNotFoundException;
+
+  /**
    * Write multiple new commit-entries, the given commit entries are to be persisted as is. All
    * values of the * given {@link CommitLogEntry} can be considered valid and consistent.
    *
@@ -1064,27 +1076,33 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
         parents.add(0, targetHead);
       }
       ByteString commitMetadata = resetWithMergeProps.apply(sourceCommit.getMetadata());
+      sourceCommit = CommitLogEntry.withNewMeta(sourceCommit, commitMetadata);
+      overrideCommitEntry(ctx, sourceCommit);
+      final Hash sourceCommitValueHash = individualCommitHash(sourceCommit.getParents(),
+          commitMetadata, sourceCommit.getPuts(), sourceCommit.getDeletes());
+
       CommitLogEntry newEntry =
           buildIndividualCommit(
               ctx,
               timeInMicros,
               parents,
-              commitMetadata,
+              sourceCommit.getMetadata(),
               sourceCommit.getPuts(),
               sourceCommit.getDeletes(),
               keyListDistance,
               newKeyLists);
       keyListDistance = newEntry.getKeyListDistance();
 
-      if (!newEntry.getHash().equals(sourceCommit.getHash())) {
+
+      if (!newEntry.getHash().equals(sourceCommitValueHash)) {
         commitsChronological.set(i, newEntry);
+        targetHead = newEntry.getHash();
       } else {
         // Newly built CommitLogEntry is equal to the CommitLogEntry to transplant.
         // This can happen, if the commit to transplant has NO_ANCESTOR as its parent.
         commitsChronological.remove(i);
+        targetHead = sourceCommit.getHash();
       }
-
-      targetHead = newEntry.getHash();
     }
     return targetHead;
   }
