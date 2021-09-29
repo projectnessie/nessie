@@ -27,6 +27,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -34,6 +35,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -46,6 +48,9 @@ import org.projectnessie.versioned.test.tracing.TestTracer;
 import org.projectnessie.versioned.test.tracing.TestedTraceingStoreInvocation;
 
 class TestTracingVersionStore {
+
+  protected static BiFunction<Serializer<String>, ByteString, ByteString> NOOP =
+      (ser, inBytes) -> inBytes;
 
   // This test implementation shall exercise all functions on VersionStore and cover all exception
   // variants, which are all declared exceptions plus IllegalArgumentException (parameter error)
@@ -117,7 +122,7 @@ class TestTracingVersionStore {
                                 BranchName.of("mock-branch"),
                                 Optional.empty(),
                                 Collections.emptyList(),
-                                (a, b) -> b)),
+                                NOOP)),
                 new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>(
                         "Merge", refNotFoundAndRefConflictThrows)
                     .tag("nessie.version-store.to-branch", "mock-branch")
@@ -129,7 +134,7 @@ class TestTracingVersionStore {
                                 Hash.of("42424242"),
                                 BranchName.of("mock-branch"),
                                 Optional.empty(),
-                                (a, b) -> b)),
+                                NOOP)),
                 new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>(
                         "Assign", refNotFoundAndRefConflictThrows)
                     .tag("nessie.version-store.ref", "BranchName{name=mock-branch}")

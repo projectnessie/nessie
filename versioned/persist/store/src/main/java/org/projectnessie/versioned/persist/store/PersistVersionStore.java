@@ -173,7 +173,7 @@ public class PersistVersionStore<CONTENTS, METADATA, CONTENTS_TYPE extends Enum<
         targetBranch,
         referenceHash,
         sequenceToTransplant,
-        a -> resetMergeProps.apply(storeWorker.getMetadataSerializer(), a));
+        metaBytes -> resetMergeProps.apply(storeWorker.getMetadataSerializer(), metaBytes));
   }
 
   @Override
@@ -187,7 +187,7 @@ public class PersistVersionStore<CONTENTS, METADATA, CONTENTS_TYPE extends Enum<
         fromHash,
         toBranch,
         expectedHash,
-        a -> resetMergeProps.apply(storeWorker.getMetadataSerializer(), a));
+        metaBytes -> resetMergeProps.apply(storeWorker.getMetadataSerializer(), metaBytes));
   }
 
   @Override

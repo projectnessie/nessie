@@ -26,6 +26,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 
+import com.google.protobuf.ByteString;
 import io.micrometer.core.instrument.AbstractTimer;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.Counter;
@@ -52,6 +53,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 import java.util.function.ToLongFunction;
@@ -63,6 +65,9 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.stubbing.Stubber;
 
 class TestMetricsVersionStore {
+
+  protected static BiFunction<Serializer<String>, ByteString, ByteString> NOOP =
+      (ser, inBytes) -> inBytes;
 
   // This test implementation shall exercise all functions on VersionStore and cover all exception
   // variants, which are all declared exceptions plus IllegalArgumentException (parameter error)
@@ -124,16 +129,13 @@ class TestMetricsVersionStore {
                         BranchName.of("mock-branch"),
                         Optional.empty(),
                         Collections.emptyList(),
-                        (a, b) -> b),
+                        NOOP),
                 refNotFoundAndRefConflictThrows),
             new VersionStoreInvocation<>(
                 "merge",
                 vs ->
                     vs.merge(
-                        Hash.of("42424242"),
-                        BranchName.of("mock-branch"),
-                        Optional.empty(),
-                        (a, b) -> b),
+                        Hash.of("42424242"), BranchName.of("mock-branch"), Optional.empty(), NOOP),
                 refNotFoundAndRefConflictThrows),
             new VersionStoreInvocation<>(
                 "assign",
