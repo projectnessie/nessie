@@ -172,7 +172,7 @@ public class MongoDatabaseAdapter
 
   private void update(MongoCollection<Document> collection, Hash id, byte[] data)
       throws ReferenceNotFoundException {
-    UpdateResult result = collection.updateOne(Filters.eq(toId(id)), toDoc(id, data));
+    UpdateResult result = collection.replaceOne(Filters.eq(toId(id)), toDoc(id, data));
     if (!result.wasAcknowledged()) {
       throw new IllegalStateException("Unacknowledged write to " + collection.getNamespace());
     }
