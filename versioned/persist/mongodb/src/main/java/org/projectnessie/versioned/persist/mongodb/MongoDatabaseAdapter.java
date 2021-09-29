@@ -177,7 +177,7 @@ public class MongoDatabaseAdapter
       throw new IllegalStateException("Unacknowledged write to " + collection.getNamespace());
     }
 
-    if (result.getModifiedCount() == 0) {
+    if (result.getMatchedCount() == 0) {
       throw new ReferenceNotFoundException("CommitLogEntry not present - " + id);
     }
   }
