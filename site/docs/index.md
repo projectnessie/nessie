@@ -1,6 +1,6 @@
 ---
 template: "home.html"
-#title: "Project Nessie: A Git-like experience for your Data Lake"
+#title: "Project Nessie: Transactional Catalog for Data Lakes with Git-like semantics"
 ---
 
 

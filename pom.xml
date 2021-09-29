@@ -25,7 +25,7 @@
   <packaging>pom</packaging>
 
   <name>Nessie</name>
-  <description>Data Ops for Data Lakes</description>
+  <description>Transactional Catalog for Data Lakes</description>
   <url>https://projectnessie.org</url>
   <organization>
     <name>Project Nessie</name>
