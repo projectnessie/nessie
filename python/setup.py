@@ -44,7 +44,7 @@ setup(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
     ],
-    description="Project Nessie: A Git-like Experience for your Data Lake",
+    description="Project Nessie: Transactional Catalog for Data Lakes with Git-like semantics",
     entry_points={
         "console_scripts": [
             "nessie=pynessie.cli:cli",
