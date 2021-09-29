@@ -17,7 +17,6 @@ package org.projectnessie.versioned.persist.nontx;
 
 import org.immutables.value.Value;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
-import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
 
 @Value.Immutable(lazyhash = true)
 public interface NonTransactionalDatabaseAdapterConfig extends DatabaseAdapterConfig {
@@ -25,7 +24,8 @@ public interface NonTransactionalDatabaseAdapterConfig extends DatabaseAdapterCo
 
   /**
    * The number of parent-global-commit-hashes stored in {@link
-   * GlobalStateLogEntry#getParentsList()}. Defaults to {@value #DEFAULT_PARENTS_PER_GLOBAL_COMMIT}.
+   * org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry#getParentsList()}.
+   * Defaults to {@value #DEFAULT_PARENTS_PER_GLOBAL_COMMIT}.
    */
   @Value.Default
   default int getParentsPerGlobalCommit() {
