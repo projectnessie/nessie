@@ -878,8 +878,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
 
   /**
    * Updates the commit log entry, against the commit log hash. All values of the given {@link
-   * CommitLogEntry} can be considered valid and consistent. Since, it is an override operation,
-   * the last update will be final version of the entry.
+   * CommitLogEntry} can be considered valid and consistent. Since, it is an override operation, the
+   * last update will be final version of the entry.
    *
    * @param ctx
    * @param entry
@@ -1078,8 +1078,12 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       ByteString commitMetadata = resetWithMergeProps.apply(sourceCommit.getMetadata());
       sourceCommit = CommitLogEntry.withNewMeta(sourceCommit, commitMetadata);
       overrideCommitEntry(ctx, sourceCommit);
-      final Hash sourceCommitValueHash = individualCommitHash(sourceCommit.getParents(),
-          commitMetadata, sourceCommit.getPuts(), sourceCommit.getDeletes());
+      final Hash sourceCommitValueHash =
+          individualCommitHash(
+              sourceCommit.getParents(),
+              commitMetadata,
+              sourceCommit.getPuts(),
+              sourceCommit.getDeletes());
 
       CommitLogEntry newEntry =
           buildIndividualCommit(
@@ -1092,7 +1096,6 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
               keyListDistance,
               newKeyLists);
       keyListDistance = newEntry.getKeyListDistance();
-
 
       if (!newEntry.getHash().equals(sourceCommitValueHash)) {
         commitsChronological.set(i, newEntry);

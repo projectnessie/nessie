@@ -114,31 +114,36 @@ public abstract class AbstractMergeTransplant {
      */
 
     // With metadata properties reset
-    List<Hash> branchCommitsWithPropReset = IntStream.range(0, 3)
-        .mapToObj(i -> commit(branch, i)).collect(Collectors.toList());
-    Hash lastBranchCommit = branchCommitsWithPropReset
-        .get(branchCommitsWithPropReset.size() - 1);
+    List<Hash> branchCommitsWithPropReset =
+        IntStream.range(0, 3).mapToObj(i -> commit(branch, i)).collect(Collectors.toList());
+    Hash lastBranchCommit = branchCommitsWithPropReset.get(branchCommitsWithPropReset.size() - 1);
     databaseAdapter.merge(lastBranchCommit, main, Optional.empty(), transformMeta);
-    Assertions.assertThat(databaseAdapter.commitLog(databaseAdapter.toHash(main))
-        .map(c -> c.getMetadata().toStringUtf8()).allMatch(isTransformed))
+    Assertions.assertThat(
+            databaseAdapter
+                .commitLog(databaseAdapter.toHash(main))
+                .map(c -> c.getMetadata().toStringUtf8())
+                .allMatch(isTransformed))
         .isTrue();
 
     // Without metadata properties reset
-    List<Hash> branchCommitsWithoutPropReset = IntStream.range(3, 6)
-        .mapToObj(i -> commit(branch, i)).collect(Collectors.toList());
-    lastBranchCommit = branchCommitsWithoutPropReset
-        .get(branchCommitsWithoutPropReset.size() - 1);
+    List<Hash> branchCommitsWithoutPropReset =
+        IntStream.range(3, 6).mapToObj(i -> commit(branch, i)).collect(Collectors.toList());
+    lastBranchCommit = branchCommitsWithoutPropReset.get(branchCommitsWithoutPropReset.size() - 1);
     Optional<Hash> expectedHashMain = Optional.of(databaseAdapter.toHash(main));
     databaseAdapter.merge(lastBranchCommit, main, expectedHashMain, Function.identity());
-    List<String> allCommitMeta = databaseAdapter.commitLog(databaseAdapter.toHash(main))
-        .map(c -> c.getMetadata().toStringUtf8()).collect(Collectors.toList());
-    Assertions
-        .assertThat(IntStream.range(3, allCommitMeta.size()).mapToObj(i -> allCommitMeta.get(i))
-            .allMatch(isTransformed)).isTrue();
+    List<String> allCommitMeta =
+        databaseAdapter
+            .commitLog(databaseAdapter.toHash(main))
+            .map(c -> c.getMetadata().toStringUtf8())
+            .collect(Collectors.toList());
+    Assertions.assertThat(
+            IntStream.range(3, allCommitMeta.size())
+                .mapToObj(i -> allCommitMeta.get(i))
+                .allMatch(isTransformed))
+        .isTrue();
 
     // Validate that the transformed commits are untouched
-    Assertions
-        .assertThat(
+    Assertions.assertThat(
             IntStream.range(0, 3).mapToObj(i -> allCommitMeta.get(i)).noneMatch(isTransformed))
         .isTrue();
   }
@@ -150,22 +155,27 @@ public abstract class AbstractMergeTransplant {
     databaseAdapter.create(branch, databaseAdapter.toHash(main));
 
     // With metadata properties reset
-    List<Hash> branchCommitsWithPropReset = IntStream.range(0, 3)
-        .mapToObj(i -> commit(branch, i)).collect(Collectors.toList());
+    List<Hash> branchCommitsWithPropReset =
+        IntStream.range(0, 3).mapToObj(i -> commit(branch, i)).collect(Collectors.toList());
     Collections.reverse(branchCommitsWithPropReset);
-    databaseAdapter
-        .transplant(main, Optional.empty(), branchCommitsWithPropReset, transformMeta);
-    Assertions.assertThat(databaseAdapter.commitLog(databaseAdapter.toHash(main))
-        .map(c -> c.getMetadata().toStringUtf8()).allMatch(isTransformed))
+    databaseAdapter.transplant(main, Optional.empty(), branchCommitsWithPropReset, transformMeta);
+    Assertions.assertThat(
+            databaseAdapter
+                .commitLog(databaseAdapter.toHash(main))
+                .map(c -> c.getMetadata().toStringUtf8())
+                .allMatch(isTransformed))
         .isTrue();
 
     // Without metadata properties reset
     List<Hash> branchCommitsWithoutPropReset = Collections.singletonList(commit(branch, 3));
     Optional<Hash> expectedHashMain = Optional.of(databaseAdapter.toHash(main));
-    databaseAdapter
-        .transplant(main, expectedHashMain, branchCommitsWithoutPropReset, Function.identity());
-    List<String> allCommitMeta = databaseAdapter.commitLog(databaseAdapter.toHash(main))
-        .map(c -> c.getMetadata().toStringUtf8()).collect(Collectors.toList());
+    databaseAdapter.transplant(
+        main, expectedHashMain, branchCommitsWithoutPropReset, Function.identity());
+    List<String> allCommitMeta =
+        databaseAdapter
+            .commitLog(databaseAdapter.toHash(main))
+            .map(c -> c.getMetadata().toStringUtf8())
+            .collect(Collectors.toList());
     // Expecting 2 commits, top one without reset - commit 3, next one with reset - commit 0_suffix
     Assertions.assertThat(isTransformed.test(allCommitMeta.get(0))).isFalse();
     Assertions.assertThat(isTransformed.test(allCommitMeta.get(1))).isTrue();

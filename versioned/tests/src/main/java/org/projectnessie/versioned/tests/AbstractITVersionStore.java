@@ -71,21 +71,21 @@ public abstract class AbstractITVersionStore {
   protected BiFunction<Serializer<String>, ByteString, ByteString> transformMeta =
       (ser, inBytes) -> ser.toBytes(ser.fromBytes(inBytes) + "_suffix");
 
-  protected void assertMetaIsReset(List<WithHash<String>> commits, int startInclusive,
-      int endExclusive) {
+  protected void assertMetaIsReset(
+      List<WithHash<String>> commits, int startInclusive, int endExclusive) {
     Assertions.assertThat(
-        IntStream.range(startInclusive, endExclusive)
-            .mapToObj(commits::get)
-            .allMatch(c -> c.getValue().endsWith("_suffix")))
+            IntStream.range(startInclusive, endExclusive)
+                .mapToObj(commits::get)
+                .allMatch(c -> c.getValue().endsWith("_suffix")))
         .isTrue();
   }
 
-  protected void assertMetaUnchanged(List<WithHash<String>> commits, int startInclusive,
-      int endExclusive) {
+  protected void assertMetaUnchanged(
+      List<WithHash<String>> commits, int startInclusive, int endExclusive) {
     Assertions.assertThat(
-        IntStream.range(startInclusive, endExclusive)
-            .mapToObj(commits::get)
-            .noneMatch(c -> c.getValue().endsWith("_suffix")))
+            IntStream.range(startInclusive, endExclusive)
+                .mapToObj(commits::get)
+                .noneMatch(c -> c.getValue().endsWith("_suffix")))
         .isTrue();
   }
 

@@ -89,9 +89,9 @@ public class InmemoryDatabaseAdapter
 
   @Override
   protected void overrideCommitEntry(NonTransactionalOperationContext ctx, CommitLogEntry entry)
-      throws ReferenceNotFoundException{
-    if (store.commitLog
-        .computeIfPresent(dbKey(entry.getHash()), (key, orgValue) -> toProto(entry).toByteString())
+      throws ReferenceNotFoundException {
+    if (store.commitLog.computeIfPresent(
+            dbKey(entry.getHash()), (key, orgValue) -> toProto(entry).toByteString())
         == null) {
       throw new ReferenceNotFoundException("CommitLogEntry not present - " + entry.getHash());
     }
