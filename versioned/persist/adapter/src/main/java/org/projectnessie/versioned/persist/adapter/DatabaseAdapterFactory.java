@@ -33,7 +33,8 @@ import java.util.function.Predicate;
  * @param <CONFIG> the configuration-options type used to configure database-adapters produced by
  *     this factory.
  */
-public interface DatabaseAdapterFactory<CONFIG, CONNECTOR> {
+public interface DatabaseAdapterFactory<
+    CONFIG extends DatabaseAdapterConfig, CONNECTOR extends DatabaseConnectionProvider<?>> {
   Builder<CONFIG, CONNECTOR> newBuilder();
 
   String getName();
@@ -73,13 +74,14 @@ public interface DatabaseAdapterFactory<CONFIG, CONNECTOR> {
     }
   }
 
-  static <CONFIG, CONNECTOR> DatabaseAdapterFactory<CONFIG, CONNECTOR> loadFactoryByName(
-      String name) {
+  static <CONFIG extends DatabaseAdapterConfig, CONNECTOR extends DatabaseConnectionProvider<?>>
+      DatabaseAdapterFactory<CONFIG, CONNECTOR> loadFactoryByName(String name) {
     return loadFactory(f -> f.getName().equalsIgnoreCase(name));
   }
 
-  static <CONFIG, CONNECTOR> DatabaseAdapterFactory<CONFIG, CONNECTOR> loadFactory(
-      Predicate<DatabaseAdapterFactory<?, ?>> check) {
+  static <CONFIG extends DatabaseAdapterConfig, CONNECTOR extends DatabaseConnectionProvider<?>>
+      DatabaseAdapterFactory<CONFIG, CONNECTOR> loadFactory(
+          Predicate<DatabaseAdapterFactory<?, ?>> check) {
     @SuppressWarnings("rawtypes")
     Iterator<DatabaseAdapterFactory> iter =
         ServiceLoader.load(DatabaseAdapterFactory.class).iterator();
