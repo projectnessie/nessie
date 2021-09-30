@@ -23,6 +23,10 @@ import org.projectnessie.versioned.persist.adapter.DatabaseConnectionConfig;
 @Value.Immutable(lazyhash = true)
 public interface MongoClientConfig extends DatabaseConnectionConfig {
 
+  static MongoClientConfig of(MongoClient client) {
+    return ImmutableMongoClientConfig.builder().client(client).build();
+  }
+
   @Nullable
   String getConnectionString();
 

@@ -26,22 +26,20 @@ import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.dynamodb.DynamoDatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.dynamodb.DynamoDatabaseClient;
-import org.projectnessie.versioned.persist.dynamodb.ImmutableProvidedDynamoClientConfig;
 import org.projectnessie.versioned.persist.store.PersistVersionStore;
-import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 /** DynamoDB version store factory. */
 @StoreType(DYNAMO)
 @Dependent
 public class DynamoVersionStoreFactory implements VersionStoreFactory {
-  private final DynamoDbClient dynamoDbClient;
+  private final DynamoDatabaseClient client;
   private final QuarkusDatabaseAdapterConfig config;
 
   /** Creates a factory for dynamodb version stores. */
   @Inject
   public DynamoVersionStoreFactory(
-      DynamoDbClient dynamoDbClient, QuarkusDatabaseAdapterConfig config) {
-    this.dynamoDbClient = dynamoDbClient;
+      DynamoDatabaseClient client, QuarkusDatabaseAdapterConfig config) {
+    this.client = client;
     this.config = config;
   }
 
@@ -49,11 +47,6 @@ public class DynamoVersionStoreFactory implements VersionStoreFactory {
   public <VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>>
       VersionStore<VALUE, METADATA, VALUE_TYPE> newStore(
           StoreWorker<VALUE, METADATA, VALUE_TYPE> worker, ServerConfig serverConfig) {
-
-    DynamoDatabaseClient client = new DynamoDatabaseClient();
-    client.configure(
-        ImmutableProvidedDynamoClientConfig.builder().dynamoDbClient(dynamoDbClient).build());
-    client.initialize();
 
     DatabaseAdapter databaseAdapter =
         new DynamoDatabaseAdapterFactory()

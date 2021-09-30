@@ -17,7 +17,6 @@ package org.projectnessie.server.providers;
 
 import static org.projectnessie.server.config.VersionStoreConfig.VersionStoreType.MONGO;
 
-import com.mongodb.client.MongoClient;
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -26,7 +25,6 @@ import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
-import org.projectnessie.versioned.persist.mongodb.ImmutableMongoClientConfig;
 import org.projectnessie.versioned.persist.mongodb.MongoDatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.mongodb.MongoDatabaseClient;
 import org.projectnessie.versioned.persist.store.PersistVersionStore;
@@ -39,22 +37,13 @@ public class MongoVersionStoreFactory implements VersionStoreFactory {
   @ConfigProperty(name = "quarkus.mongodb.database")
   String databaseName;
 
-  @Inject MongoClient mongoClient;
+  @Inject MongoDatabaseClient client;
   @Inject QuarkusDatabaseAdapterConfig config;
 
   @Override
   public <VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>>
       VersionStore<VALUE, METADATA, VALUE_TYPE> newStore(
           StoreWorker<VALUE, METADATA, VALUE_TYPE> worker, ServerConfig serverConfig) {
-
-    MongoDatabaseClient client = new MongoDatabaseClient();
-    client.configure(
-        ImmutableMongoClientConfig.builder()
-            .client(mongoClient)
-            .databaseName(databaseName)
-            .build());
-
-    client.initialize();
 
     DatabaseAdapter adapter =
         new MongoDatabaseAdapterFactory()

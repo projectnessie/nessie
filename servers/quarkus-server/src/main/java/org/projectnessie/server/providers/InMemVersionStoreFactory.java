@@ -32,6 +32,7 @@ import org.projectnessie.versioned.persist.store.PersistVersionStore;
 @StoreType(INMEMORY)
 @Dependent
 public class InMemVersionStoreFactory implements VersionStoreFactory {
+  @Inject InmemoryStore store;
   @Inject QuarkusDatabaseAdapterConfig config;
 
   @Override
@@ -42,7 +43,7 @@ public class InMemVersionStoreFactory implements VersionStoreFactory {
         new InmemoryDatabaseAdapterFactory()
             .newBuilder()
             .withConfig(config)
-            .withConnector(new InmemoryStore())
+            .withConnector(store)
             .build();
 
     databaseAdapter.initializeRepo(serverConfig.getDefaultBranch());

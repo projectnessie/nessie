@@ -13,19 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.persist.dynamodb;
+package org.projectnessie.server.providers;
 
-import org.immutables.value.Value;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import org.projectnessie.versioned.persist.dynamodb.DynamoDatabaseClient;
+import org.projectnessie.versioned.persist.dynamodb.ProvidedDynamoClientConfig;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
-@Value.Immutable(lazyhash = true)
-public interface ProvidedDynamoClientConfig extends DynamoClientConfig {
+/** CDI bean for {@link DynamoDatabaseClient}. */
+@Singleton
+public class QuarkusDynamoDatabaseClient extends DynamoDatabaseClient {
 
-  static ProvidedDynamoClientConfig of(DynamoDbClient db) {
-    return ImmutableProvidedDynamoClientConfig.builder().dynamoDbClient(db).build();
+  @Inject
+  public QuarkusDynamoDatabaseClient(DynamoDbClient db) {
+    configure(ProvidedDynamoClientConfig.of(db));
+    initialize();
   }
-
-  DynamoDbClient getDynamoDbClient();
-
-  ProvidedDynamoClientConfig withDynamoDbClient(DynamoDbClient dynamoDbClient);
 }

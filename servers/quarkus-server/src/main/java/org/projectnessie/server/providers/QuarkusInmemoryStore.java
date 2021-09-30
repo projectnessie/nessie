@@ -13,19 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.persist.dynamodb;
+package org.projectnessie.server.providers;
 
-import org.immutables.value.Value;
-import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import javax.inject.Singleton;
+import org.projectnessie.versioned.persist.inmem.InmemoryStore;
 
-@Value.Immutable(lazyhash = true)
-public interface ProvidedDynamoClientConfig extends DynamoClientConfig {
-
-  static ProvidedDynamoClientConfig of(DynamoDbClient db) {
-    return ImmutableProvidedDynamoClientConfig.builder().dynamoDbClient(db).build();
-  }
-
-  DynamoDbClient getDynamoDbClient();
-
-  ProvidedDynamoClientConfig withDynamoDbClient(DynamoDbClient dynamoDbClient);
-}
+/** CDI bean for {@link InmemoryStore}. */
+@Singleton
+public class QuarkusInmemoryStore extends InmemoryStore {}

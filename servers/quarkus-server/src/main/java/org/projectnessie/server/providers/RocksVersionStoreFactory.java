@@ -20,12 +20,10 @@ import static org.projectnessie.server.config.VersionStoreConfig.VersionStoreTyp
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 import org.projectnessie.server.config.QuarkusDatabaseAdapterConfig;
-import org.projectnessie.server.config.VersionStoreConfig;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
-import org.projectnessie.versioned.persist.rocks.ImmutableRocksDbConfig;
 import org.projectnessie.versioned.persist.rocks.RocksDatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.rocks.RocksDbInstance;
 import org.projectnessie.versioned.persist.store.PersistVersionStore;
@@ -35,18 +33,13 @@ import org.projectnessie.versioned.persist.store.PersistVersionStore;
 @Dependent
 public class RocksVersionStoreFactory implements VersionStoreFactory {
 
-  @Inject VersionStoreConfig.RocksVersionStoreConfig rocksConfig;
+  @Inject RocksDbInstance rocksDbInstance;
   @Inject QuarkusDatabaseAdapterConfig config;
 
   @Override
   public <VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>>
       VersionStore<VALUE, METADATA, VALUE_TYPE> newStore(
           StoreWorker<VALUE, METADATA, VALUE_TYPE> worker, ServerConfig serverConfig) {
-
-    RocksDbInstance rocksDbInstance = new RocksDbInstance();
-    rocksDbInstance.configure(
-        ImmutableRocksDbConfig.builder().dbPath(rocksConfig.getDbPath()).build());
-    rocksDbInstance.initialize();
 
     DatabaseAdapter databaseAdapter =
         new RocksDatabaseAdapterFactory()
