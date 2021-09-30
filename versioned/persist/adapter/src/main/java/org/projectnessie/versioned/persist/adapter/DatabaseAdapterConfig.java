@@ -21,9 +21,6 @@ import org.immutables.value.Value;
 /**
  * Base database-adapter configuration type.
  *
- * <p>See {@link org.projectnessie.versioned.persist.adapter.spi.DefaultDatabaseAdapterConfig} for
- * the default, immutable-annotated type.
- *
  * <p>{@link org.projectnessie.versioned.persist.adapter.DatabaseAdapter} implementations that need
  * more configuration options must extend this interface, have the {@link Value.Immutable}
  * annotation and declare the {@code with...} methods implemented by "immutables".
