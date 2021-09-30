@@ -22,14 +22,14 @@ import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 @Value.Immutable(lazyhash = true)
 public interface TxDatabaseAdapterConfig extends DatabaseAdapterConfig {
 
+  int DEFAULT_BATCH_SIZE = 20;
+
   /**
    * DML batch size, used when writing multiple commits to a branch during a transplant or merge
    * operation or when writing "overflow full key-lists".
    */
   @Value.Default
   default int getBatchSize() {
-    return 20;
+    return DEFAULT_BATCH_SIZE;
   }
-
-  TxDatabaseAdapterConfig withBatchSize(int batchSize);
 }

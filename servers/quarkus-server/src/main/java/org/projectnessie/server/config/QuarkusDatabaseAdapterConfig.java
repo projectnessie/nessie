@@ -22,10 +22,22 @@ import io.smallrye.config.WithConverter;
 import io.smallrye.config.WithDefault;
 import io.smallrye.config.WithName;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
+import org.projectnessie.versioned.persist.tx.TxDatabaseAdapterConfig;
 
+/**
+ * This is a superset of all database adapter configuration interfaces to be implemented by Quarkus.
+ *
+ * <p>All adapter configuration properties are assumed to be optional or have default values.
+ * Therefore, combining all of them in one Quarkus configuration object should not cause any errors
+ * even when only a sub-set of the values is defined in runtime.
+ *
+ * <p>This interface overrides all getters to assign explicit Quarkus configuration names and
+ * default values to them.
+ */
 @ConfigMapping(prefix = "nessie.adapter")
 @RegisterForReflection(targets = TrimmedStringConverter.class)
-public interface QuarkusDatabaseAdapterConfig extends NonTransactionalDatabaseAdapterConfig {
+public interface QuarkusDatabaseAdapterConfig
+    extends NonTransactionalDatabaseAdapterConfig, TxDatabaseAdapterConfig {
 
   @WithName("key-prefix")
   @WithDefault(DEFAULT_KEY_PREFIX)
@@ -34,11 +46,6 @@ public interface QuarkusDatabaseAdapterConfig extends NonTransactionalDatabaseAd
   @WithConverter(TrimmedStringConverter.class)
   @Override
   String getKeyPrefix();
-
-  @WithName("parents-per-global-commit")
-  @WithDefault("" + DEFAULT_PARENTS_PER_GLOBAL_COMMIT)
-  @Override
-  int getParentsPerGlobalCommit();
 
   @WithName("parent-per-commit")
   @WithDefault("" + DEFAULT_PARENTS_PER_COMMIT)
@@ -69,4 +76,14 @@ public interface QuarkusDatabaseAdapterConfig extends NonTransactionalDatabaseAd
   @WithDefault("" + DEFAULT_COMMIT_RETRIES)
   @Override
   int getCommitRetries();
+
+  @WithName("nontx.parents-per-global-commit")
+  @WithDefault("" + DEFAULT_PARENTS_PER_GLOBAL_COMMIT)
+  @Override
+  int getParentsPerGlobalCommit();
+
+  @WithName("tx.batch-size")
+  @WithDefault("" + DEFAULT_BATCH_SIZE)
+  @Override
+  int getBatchSize();
 }
