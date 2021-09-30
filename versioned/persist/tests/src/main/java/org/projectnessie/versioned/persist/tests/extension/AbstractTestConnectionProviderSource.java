@@ -48,6 +48,9 @@ public abstract class AbstractTestConnectionProviderSource<
     return config;
   }
 
+  /** Creates an empty {@link DatabaseConnectionProvider} of a suitable sub-type. */
+  protected abstract DatabaseConnectionProvider<CONN_CONFIG> createConnectionProvider();
+
   @Override
   public void start() throws Exception {
     if (connectionProvider != null) {
