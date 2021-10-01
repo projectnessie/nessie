@@ -203,7 +203,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       Hash toHead,
       Consumer<Hash> branchCommits,
       Consumer<Hash> newKeyLists,
-      Function<ByteString, ByteString> resetWithMergeProps)
+      Function<ByteString, ByteString> updateCommitMetadata)
       throws ReferenceNotFoundException, ReferenceConflictException {
 
     validateHashExists(ctx, from);
@@ -248,7 +248,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
             toHead,
             commitsToMergeChronological,
             newKeyLists,
-            resetWithMergeProps);
+            updateCommitMetadata);
 
     // 7. Write commits
 
@@ -278,7 +278,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       List<Hash> sequenceToTransplant,
       Consumer<Hash> branchCommits,
       Consumer<Hash> newKeyLists,
-      Function<ByteString, ByteString> resetWithMergeProps)
+      Function<ByteString, ByteString> updateCommitMetadata)
       throws ReferenceNotFoundException, ReferenceConflictException {
     if (sequenceToTransplant.isEmpty()) {
       throw new IllegalArgumentException("No hashes to transplant given.");
@@ -329,7 +329,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
             targetHead,
             commitsToTransplantChronological,
             newKeyLists,
-            resetWithMergeProps);
+            updateCommitMetadata);
 
     // 7. Write commits
 
@@ -1039,7 +1039,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       Hash targetHead,
       List<CommitLogEntry> commitsChronological,
       Consumer<Hash> newKeyLists,
-      Function<ByteString, ByteString> resetWithMergeProps)
+      Function<ByteString, ByteString> updateCommitMetadata)
       throws ReferenceNotFoundException {
     int parentsPerCommit = config.getParentsPerCommit();
 
@@ -1063,7 +1063,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       } else {
         parents.add(0, targetHead);
       }
-      ByteString commitMetadata = resetWithMergeProps.apply(sourceCommit.getMetadata());
+      ByteString commitMetadata = updateCommitMetadata.apply(sourceCommit.getMetadata());
       sourceCommit = sourceCommit.withMetadata(commitMetadata);
       final Hash sourceCommitValueHash =
           individualCommitHash(

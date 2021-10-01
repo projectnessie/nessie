@@ -80,14 +80,11 @@ import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** REST endpoint for trees. */
 @RequestScoped
 @Alternative
 public class TreeResource extends BaseResource implements HttpTreeApi {
-  private static final Logger LOGGER = LoggerFactory.getLogger(TreeResource.class);
   private static final int MAX_COMMIT_LOG_ENTRIES = 250;
 
   private enum MergeOp {
