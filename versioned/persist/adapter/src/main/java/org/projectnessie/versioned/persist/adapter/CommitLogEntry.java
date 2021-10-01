@@ -36,6 +36,8 @@ public interface CommitLogEntry {
   /** Serialized commit-metadata. */
   ByteString getMetadata();
 
+  CommitLogEntry withMetadata(ByteString metadata);
+
   /**
    * List of all {@code Put} operations, with their keys, content-types and serialized {@code
    * Contents}.
@@ -88,9 +90,5 @@ public interface CommitLogEntry {
         .keyList(keyList)
         .addAllKeyListsIds(keyListIds)
         .build();
-  }
-
-  static CommitLogEntry withNewMeta(CommitLogEntry sourceCommit, ByteString metadata) {
-    return ImmutableCommitLogEntry.builder().from(sourceCommit).metadata(metadata).build();
   }
 }

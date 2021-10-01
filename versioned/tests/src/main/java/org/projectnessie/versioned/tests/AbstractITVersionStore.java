@@ -18,7 +18,6 @@ package org.projectnessie.versioned.tests;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -821,10 +820,9 @@ public abstract class AbstractITVersionStore {
           .contains(
               Optional.of("v1_2"), Optional.of("v2_2"), Optional.empty(), Optional.of("v4_1"));
 
-      store()
-          .getCommits(newBranch)
-          .map(w -> w.getValue())
-          .forEach(m -> assertTrue(m.endsWith("suffix")));
+      // The merges didn't create new commits because both the branches are running identical.
+      List<WithHash<String>> commits = commitsList(newBranch);
+      assertMetaUnchanged(commits, 0, commits.size());
     }
 
     @Test
@@ -851,16 +849,10 @@ public abstract class AbstractITVersionStore {
               Optional.empty(),
               Optional.of("v4_1"),
               Optional.of("v5_1"));
-      store()
-          .getCommits(newBranch)
-          .map(w -> w.getValue())
-          .filter(m -> !m.equals("Unrelated commit"))
-          .forEach(m -> assertTrue(m.endsWith("suffix")));
-      store()
-          .getCommits(newBranch)
-          .map(w -> w.getValue())
-          .filter(m -> m.equals("Unrelated commit"))
-          .forEach(m -> assertFalse(m.endsWith("suffix")));
+
+      List<WithHash<String>> commits = commitsList(newBranch);
+      assertMetaIsReset(commits, 0, 3);
+      assertMetaUnchanged(commits, 3, commits.size());
     }
 
     @Test
@@ -878,16 +870,6 @@ public abstract class AbstractITVersionStore {
                       Optional.of(initialHash),
                       Arrays.asList(firstCommit, secondCommit, thirdCommit),
                       transformMeta));
-      store()
-          .getCommits(newBranch)
-          .map(w -> w.getValue())
-          .filter(m -> !m.equals("Another commit"))
-          .forEach(m -> assertTrue(m.endsWith("suffix")));
-      store()
-          .getCommits(newBranch)
-          .map(w -> w.getValue())
-          .filter(m -> m.equals("Another commit"))
-          .forEach(m -> assertFalse(m.endsWith("suffix")));
     }
 
     @Test
@@ -910,16 +892,10 @@ public abstract class AbstractITVersionStore {
                       Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"))))
           .contains(
               Optional.of("v1_2"), Optional.of("v2_2"), Optional.empty(), Optional.of("v4_1"));
-      store()
-          .getCommits(newBranch)
-          .map(w -> w.getValue())
-          .filter(m -> !m.equals("Another commit"))
-          .forEach(m -> assertTrue(m.endsWith("suffix")));
-      store()
-          .getCommits(newBranch)
-          .map(w -> w.getValue())
-          .filter(m -> m.equals("Another commit"))
-          .forEach(m -> assertFalse(m.endsWith("suffix")));
+
+      List<WithHash<String>> commits = commitsList(newBranch);
+      assertMetaIsReset(commits, 0, 3);
+      assertMetaUnchanged(commits, 3, commits.size());
     }
 
     @Test
@@ -1100,8 +1076,9 @@ public abstract class AbstractITVersionStore {
       List<WithHash<String>> allCommits = commitsList(newBranch);
       assertThat(allCommits.get(0).getValue()).startsWith("Third Commit");
 
-      // All commits but the first (Default common ancestor) will be updated.
-      assertMetaIsReset(allCommits, 0, allCommits.size() - 1);
+      // The merges didn't create new commits because both the branches are running identical.
+      List<WithHash<String>> commits = commitsList(newBranch);
+      assertMetaUnchanged(commits, 0, commits.size());
     }
 
     @Test
@@ -1151,8 +1128,9 @@ public abstract class AbstractITVersionStore {
       store().merge(store().toHash(etl), review, Optional.empty(), transformMeta);
       assertEquals(store().getValue(review, key), "value2");
 
+      // The merges didn't create new commits because both the branches are running identical.
       List<WithHash<String>> commits = commitsList(review);
-      assertMetaIsReset(commits, 0, 2);
+      assertMetaUnchanged(commits, 0, commits.size());
     }
 
     @Test

@@ -167,13 +167,13 @@ public class PersistVersionStore<CONTENTS, METADATA, CONTENTS_TYPE extends Enum<
       BranchName targetBranch,
       Optional<Hash> referenceHash,
       List<Hash> sequenceToTransplant,
-      BiFunction<Serializer<METADATA>, ByteString, ByteString> resetMergeProps)
+      BiFunction<Serializer<METADATA>, ByteString, ByteString> updateCommitMetadata)
       throws ReferenceNotFoundException, ReferenceConflictException {
     databaseAdapter.transplant(
         targetBranch,
         referenceHash,
         sequenceToTransplant,
-        metaBytes -> resetMergeProps.apply(storeWorker.getMetadataSerializer(), metaBytes));
+        metaBytes -> updateCommitMetadata.apply(storeWorker.getMetadataSerializer(), metaBytes));
   }
 
   @Override
@@ -181,13 +181,13 @@ public class PersistVersionStore<CONTENTS, METADATA, CONTENTS_TYPE extends Enum<
       Hash fromHash,
       BranchName toBranch,
       Optional<Hash> expectedHash,
-      BiFunction<Serializer<METADATA>, ByteString, ByteString> resetMergeProps)
+      BiFunction<Serializer<METADATA>, ByteString, ByteString> updateCommitMetadata)
       throws ReferenceConflictException, ReferenceNotFoundException {
     databaseAdapter.merge(
         fromHash,
         toBranch,
         expectedHash,
-        metaBytes -> resetMergeProps.apply(storeWorker.getMetadataSerializer(), metaBytes));
+        metaBytes -> updateCommitMetadata.apply(storeWorker.getMetadataSerializer(), metaBytes));
   }
 
   @Override

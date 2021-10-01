@@ -171,7 +171,7 @@ public abstract class TxDatabaseAdapter
       Hash from,
       BranchName toBranch,
       Optional<Hash> expectedHead,
-      Function<ByteString, ByteString> resetWithMergeProps)
+      Function<ByteString, ByteString> updateCommitMetadata)
       throws ReferenceNotFoundException, ReferenceConflictException {
     // The spec for 'VersionStore.merge' mentions "(...) until we arrive at a common ancestor",
     // but old implementations allowed a merge even if the "merge-from" and "merge-to" have no
@@ -199,7 +199,7 @@ public abstract class TxDatabaseAdapter
                     currentHead,
                     h -> {},
                     h -> {},
-                    resetWithMergeProps);
+                    updateCommitMetadata);
             return tryMoveNamedReference(conn, toBranch, currentHead, toHead);
           },
           () -> mergeConflictMessage("Conflict", from, toBranch, expectedHead),
@@ -217,7 +217,7 @@ public abstract class TxDatabaseAdapter
       BranchName targetBranch,
       Optional<Hash> expectedHead,
       List<Hash> commits,
-      Function<ByteString, ByteString> resetWithMergeProps)
+      Function<ByteString, ByteString> updateCommitMetadata)
       throws ReferenceNotFoundException, ReferenceConflictException {
     try {
       return opLoop(
@@ -236,7 +236,7 @@ public abstract class TxDatabaseAdapter
                     commits,
                     h -> {},
                     h -> {},
-                    resetWithMergeProps);
+                    updateCommitMetadata);
 
             return tryMoveNamedReference(conn, targetBranch, currentHead, targetHead);
           },
@@ -955,25 +955,6 @@ public abstract class TxDatabaseAdapter
       }
       throwIfReferenceConflictException(
           e, () -> String.format("Hash collision for '%s' in commit-log", entry.getHash()));
-      throw new RuntimeException(e);
-    }
-  }
-
-  @Override
-  protected void overrideCommitEntry(Connection c, CommitLogEntry entry)
-      throws ReferenceNotFoundException {
-    try (PreparedStatement ps = c.prepareStatement(SqlStatements.UPDATE_COMMIT_LOG)) {
-      ps.setBytes(1, toProto(entry).toByteArray());
-      ps.setString(2, config.getKeyPrefix());
-      ps.setString(3, entry.getHash().asString());
-      int noOfRowsUpdated = ps.executeUpdate();
-      if (noOfRowsUpdated == 0) {
-        throw new ReferenceNotFoundException("CommitLogEntry not present - " + entry.getHash());
-      }
-    } catch (SQLException e) {
-      if (isRetryTransaction(e)) {
-        throw new RetryTransactionException();
-      }
       throw new RuntimeException(e);
     }
   }

@@ -142,7 +142,7 @@ public interface DatabaseAdapter {
    *     defaults to the named reference's HEAD.
    * @param expectedHead if present, {@code target}'s current HEAD must be equal to this value
    * @param sequenceToTransplant commits in {@code source} to cherry-pick onto {@code targetBranch}
-   * @param resetWithMergeProps Function to allow resetting properties application due to merge.
+   * @param updateCommitMetadata Function to allow resetting properties application due to merge.
    * @return the hash of the last cherry-picked commit, in other words the new HEAD of the target
    *     branch
    * @throws ReferenceNotFoundException if either the named reference in {@code commitOnReference}
@@ -155,7 +155,7 @@ public interface DatabaseAdapter {
       BranchName targetBranch,
       Optional<Hash> expectedHead,
       List<Hash> sequenceToTransplant,
-      Function<ByteString, ByteString> resetWithMergeProps)
+      Function<ByteString, ByteString> updateCommitMetadata)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**
@@ -168,7 +168,7 @@ public interface DatabaseAdapter {
    * @param from commit-hash to start reading commits from.
    * @param toBranch target branch to commit to
    * @param expectedHead if present, {@code toBranch}'s current HEAD must be equal to this value
-   * @param resetWithMergeProps Function to allow resetting properties application due to merge.
+   * @param updateCommitMetadata Function to allow resetting properties application due to merge.
    * @return the hash of the last cherry-picked commit, in other words the new HEAD of the target
    *     branch
    * @throws ReferenceNotFoundException if either the named reference in {@code toBranch} or the
@@ -181,7 +181,7 @@ public interface DatabaseAdapter {
       Hash from,
       BranchName toBranch,
       Optional<Hash> expectedHead,
-      Function<ByteString, ByteString> resetWithMergeProps)
+      Function<ByteString, ByteString> updateCommitMetadata)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**

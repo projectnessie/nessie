@@ -27,7 +27,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
 import java.time.Instant;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -286,7 +285,7 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
               BranchName.of(branchName),
               toHash(hash, true),
               transplants,
-              getResetMergePropsFunc(MergeOp.TRANSPLANT, transplant.getFromRefName()));
+              updateMetaWithMergePropsFunc(MergeOp.TRANSPLANT, transplant.getFromRefName()));
     } catch (ReferenceNotFoundException e) {
       throw new NessieNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
@@ -303,7 +302,7 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
               toHash(merge.getFromRefName(), merge.getFromHash(), true).get(),
               BranchName.of(branchName),
               toHash(hash, true),
-              getResetMergePropsFunc(MergeOp.MERGE, merge.getFromRefName()));
+              updateMetaWithMergePropsFunc(MergeOp.MERGE, merge.getFromRefName()));
     } catch (ReferenceNotFoundException e) {
       throw new NessieNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
@@ -311,13 +310,12 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
     }
   }
 
-  private BiFunction<Serializer<CommitMeta>, ByteString, ByteString> getResetMergePropsFunc(
+  private BiFunction<Serializer<CommitMeta>, ByteString, ByteString> updateMetaWithMergePropsFunc(
       MergeOp mergeOp, String fromRefName) {
     return (ser, in) -> {
-      final CommitMeta commitMeta = ser.fromBytes(in);
-      final String mergeProp = String.format("%s_ref", mergeOp.name().toLowerCase());
-      final Map<String, String> props = new HashMap<>(1);
-      props.put(mergeProp, fromRefName);
+      CommitMeta commitMeta = ser.fromBytes(in);
+      String mergeProp = String.format("%s_ref", mergeOp.name().toLowerCase());
+      Map<String, String> props = ImmutableMap.of(mergeProp, fromRefName);
       return ser.toBytes(meta(commitMeta, props));
     };
   }
@@ -449,14 +447,14 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
     }
   }
 
-  private CommitMeta meta(final CommitMeta referredCommit, Map<String, String> additionalProps) {
-    final String committer = Optional.ofNullable(getPrincipal()).map(p -> p.getName()).orElse("");
-    final Instant now = Instant.now();
-    return referredCommit.toBuilder()
+  private CommitMeta meta(CommitMeta commitMeta, Map<String, String> additionalProps) {
+    String committer = Optional.ofNullable(getPrincipal()).map(p -> p.getName()).orElse("");
+    Instant now = Instant.now();
+    return commitMeta.toBuilder()
         .committer(committer)
         .commitTime(now)
-        .author(referredCommit.getAuthor() == null ? committer : referredCommit.getAuthor())
-        .authorTime(referredCommit.getAuthorTime() == null ? now : referredCommit.getAuthorTime())
+        .author(commitMeta.getAuthor() == null ? committer : commitMeta.getAuthor())
+        .authorTime(commitMeta.getAuthorTime() == null ? now : commitMeta.getAuthorTime())
         .putAllProperties(additionalProps)
         .build();
   }

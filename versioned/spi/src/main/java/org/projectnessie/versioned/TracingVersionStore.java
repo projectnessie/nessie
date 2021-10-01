@@ -120,7 +120,7 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
       BranchName targetBranch,
       Optional<Hash> referenceHash,
       List<Hash> sequenceToTransplant,
-      BiFunction<Serializer<METADATA>, ByteString, ByteString> resetMergeProps)
+      BiFunction<Serializer<METADATA>, ByteString, ByteString> updateCommitMetadata)
       throws ReferenceNotFoundException, ReferenceConflictException {
     this.<ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
         "Transplant",
@@ -130,7 +130,7 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
                 .withTag(TAG_TRANSPLANTS, safeSize(sequenceToTransplant)),
         () ->
             delegate.transplant(
-                targetBranch, referenceHash, sequenceToTransplant, resetMergeProps));
+                targetBranch, referenceHash, sequenceToTransplant, updateCommitMetadata));
   }
 
   @Override
@@ -138,7 +138,7 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
       Hash fromHash,
       BranchName toBranch,
       Optional<Hash> expectedHash,
-      BiFunction<Serializer<METADATA>, ByteString, ByteString> resetMergeProps)
+      BiFunction<Serializer<METADATA>, ByteString, ByteString> updateCommitMetadata)
       throws ReferenceNotFoundException, ReferenceConflictException {
     this.<ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
         "Merge",
@@ -146,7 +146,7 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
             b.withTag(TAG_FROM_HASH, safeToString(fromHash))
                 .withTag(TAG_TO_BRANCH, safeRefName(toBranch))
                 .withTag(TAG_EXPECTED_HASH, safeToString(expectedHash)),
-        () -> delegate.merge(fromHash, toBranch, expectedHash, resetMergeProps));
+        () -> delegate.merge(fromHash, toBranch, expectedHash, updateCommitMetadata));
   }
 
   @Override

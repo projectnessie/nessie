@@ -42,7 +42,6 @@ import org.bson.Document;
 import org.bson.types.Binary;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ReferenceConflictException;
-import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.KeyList;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
@@ -167,18 +166,6 @@ public class MongoDatabaseAdapter
 
     if (!result.wasAcknowledged()) {
       throw new IllegalStateException("Unacknowledged write to " + collection.getNamespace());
-    }
-  }
-
-  private void update(MongoCollection<Document> collection, Hash id, byte[] data)
-      throws ReferenceNotFoundException {
-    UpdateResult result = collection.replaceOne(Filters.eq(toId(id)), toDoc(id, data));
-    if (!result.wasAcknowledged()) {
-      throw new IllegalStateException("Unacknowledged write to " + collection.getNamespace());
-    }
-
-    if (result.getMatchedCount() == 0) {
-      throw new ReferenceNotFoundException("CommitLogEntry not present - " + id);
     }
   }
 
@@ -320,12 +307,6 @@ public class MongoDatabaseAdapter
   protected void writeIndividualCommit(NonTransactionalOperationContext ctx, CommitLogEntry entry)
       throws ReferenceConflictException {
     insert(client.getCommitLog(), entry.getHash(), toProto(entry).toByteArray());
-  }
-
-  @Override
-  protected void overrideCommitEntry(NonTransactionalOperationContext ctx, CommitLogEntry entry)
-      throws ReferenceNotFoundException {
-    update(client.getCommitLog(), entry.getHash(), toProto(entry).toByteArray());
   }
 
   @Override

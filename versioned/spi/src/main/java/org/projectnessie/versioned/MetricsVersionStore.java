@@ -101,13 +101,13 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
       BranchName targetBranch,
       Optional<Hash> referenceHash,
       List<Hash> sequenceToTransplant,
-      BiFunction<Serializer<METADATA>, ByteString, ByteString> resetMergeProps)
+      BiFunction<Serializer<METADATA>, ByteString, ByteString> updateCommitMetadata)
       throws ReferenceNotFoundException, ReferenceConflictException {
     this.<ReferenceNotFoundException, ReferenceConflictException>delegate2Ex(
         "transplant",
         () ->
             delegate.transplant(
-                targetBranch, referenceHash, sequenceToTransplant, resetMergeProps));
+                targetBranch, referenceHash, sequenceToTransplant, updateCommitMetadata));
   }
 
   @Override
@@ -115,10 +115,10 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
       Hash fromHash,
       BranchName toBranch,
       Optional<Hash> expectedHash,
-      BiFunction<Serializer<METADATA>, ByteString, ByteString> resetMergeProps)
+      BiFunction<Serializer<METADATA>, ByteString, ByteString> updateCommitMetadata)
       throws ReferenceConflictException, ReferenceNotFoundException {
     this.<ReferenceNotFoundException, ReferenceConflictException>delegate2Ex(
-        "merge", () -> delegate.merge(fromHash, toBranch, expectedHash, resetMergeProps));
+        "merge", () -> delegate.merge(fromHash, toBranch, expectedHash, updateCommitMetadata));
   }
 
   @Override

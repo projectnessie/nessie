@@ -106,20 +106,6 @@ public class RocksDatabaseAdapter
   }
 
   @Override
-  protected void overrideCommitEntry(NonTransactionalOperationContext ctx, CommitLogEntry entry) {
-    Lock lock = dbInstance.getLock().writeLock();
-    lock.lock();
-    try {
-      byte[] key = dbKey(entry.getHash());
-      db.put(dbInstance.getCfCommitLog(), key, toProto(entry).toByteArray());
-    } catch (RocksDBException e) {
-      throw new RuntimeException(e);
-    } finally {
-      lock.unlock();
-    }
-  }
-
-  @Override
   protected void writeIndividualCommit(NonTransactionalOperationContext ctx, CommitLogEntry entry)
       throws ReferenceConflictException {
     Lock lock = dbInstance.getLock().writeLock();

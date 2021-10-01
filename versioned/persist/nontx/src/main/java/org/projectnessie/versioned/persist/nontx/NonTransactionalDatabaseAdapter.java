@@ -137,7 +137,7 @@ public abstract class NonTransactionalDatabaseAdapter<
       Hash from,
       BranchName toBranch,
       Optional<Hash> expectedHead,
-      Function<ByteString, ByteString> resetWithMergeProps)
+      Function<ByteString, ByteString> updateCommitMetadata)
       throws ReferenceNotFoundException, ReferenceConflictException {
     // The spec for 'VersionStore.merge' mentions "(...) until we arrive at a common ancestor",
     // but old implementations allowed a merge even if the "merge-from" and "merge-to" have no
@@ -167,7 +167,7 @@ public abstract class NonTransactionalDatabaseAdapter<
                     toHead,
                     branchCommits,
                     newKeyLists,
-                    resetWithMergeProps);
+                    updateCommitMetadata);
 
             Hash newGlobalHead =
                 writeGlobalCommit(
@@ -190,7 +190,7 @@ public abstract class NonTransactionalDatabaseAdapter<
       BranchName targetBranch,
       Optional<Hash> expectedHead,
       List<Hash> sequenceToTransplant,
-      Function<ByteString, ByteString> resetWithMergeProps)
+      Function<ByteString, ByteString> updateCommitMetadata)
       throws ReferenceNotFoundException, ReferenceConflictException {
     try {
       return casOpLoop(
@@ -211,7 +211,7 @@ public abstract class NonTransactionalDatabaseAdapter<
                     sequenceToTransplant,
                     branchCommits,
                     newKeyLists,
-                    resetWithMergeProps);
+                    updateCommitMetadata);
 
             Hash newGlobalHead =
                 writeGlobalCommit(

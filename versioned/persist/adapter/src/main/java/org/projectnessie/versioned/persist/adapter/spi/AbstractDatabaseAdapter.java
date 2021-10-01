@@ -877,18 +877,6 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       throws ReferenceConflictException;
 
   /**
-   * Updates the commit log entry, against the commit log hash. All values of the given {@link
-   * CommitLogEntry} can be considered valid and consistent. Since, it is an override operation, the
-   * last update will be final version of the entry.
-   *
-   * @param ctx
-   * @param entry
-   * @throws ReferenceNotFoundException
-   */
-  protected abstract void overrideCommitEntry(OP_CONTEXT ctx, CommitLogEntry entry)
-      throws ReferenceNotFoundException;
-
-  /**
    * Write multiple new commit-entries, the given commit entries are to be persisted as is. All
    * values of the * given {@link CommitLogEntry} can be considered valid and consistent.
    *
@@ -1076,8 +1064,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
         parents.add(0, targetHead);
       }
       ByteString commitMetadata = resetWithMergeProps.apply(sourceCommit.getMetadata());
-      sourceCommit = CommitLogEntry.withNewMeta(sourceCommit, commitMetadata);
-      overrideCommitEntry(ctx, sourceCommit);
+      sourceCommit = sourceCommit.withMetadata(commitMetadata);
       final Hash sourceCommitValueHash =
           individualCommitHash(
               sourceCommit.getParents(),
