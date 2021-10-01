@@ -28,6 +28,7 @@ def setup_auth(config: Configuration) -> AuthBase:
         return BearerTokenAuth(token)
     elif auth_type == "aws":
         region = config["auth"]["region"].get()
-        return setup_aws_auth(region)
+        profile = config["auth"]["profile"].get()
+        return setup_aws_auth(region=region, profile=profile)
 
     raise NotImplementedError("Unsupported authentication type: " + auth_type)
