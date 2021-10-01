@@ -84,7 +84,7 @@ is possible in large part due to the separation of transaction management (Nessi
 table metadata management (Iceberg and Delta Lake).
 
 ## Technology 
-Nessie can be [deployed in multiple ways](../try) and is composed primarily of the Nessie service, 
+Nessie can be [deployed in multiple ways](../../try) and is composed primarily of the Nessie service, 
 which exposes a set of [REST APIs](../develop/rest.md) and a simple browser UI. This service works with multiple
 libraries to expose Nessie's version control capabilities to common data management technologies.
 

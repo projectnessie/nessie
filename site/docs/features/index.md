@@ -82,7 +82,7 @@ first *commit* until the current state.
 Git is used by humans, i.e. developers.
 
 Many of the concepts of Git for source code are implemented by Nessie for all
-the data your data lake. It would be rather confusing to explain all Git
+the data in your data lake. It would be rather confusing to explain all Git
 concepts here and then outline the differences in the next chapter. If you want
 to learn more about Git, we recommend looking this
 [Git book](https://git-scm.com/book/en/v2) (available in many languages) or
