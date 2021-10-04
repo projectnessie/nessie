@@ -81,7 +81,7 @@
     "replace-in-file": "^6.2.0",
     "resolve": "1.20.0",
     "resolve-url-loader": "^4.0.0",
-    "rxjs": "^7.3.0",
+    "rxjs": "^7.3.1",
     "sass-loader": "^10.0.5",
     "semver": "7.3.5",
     "style-loader": "2.0.0",
