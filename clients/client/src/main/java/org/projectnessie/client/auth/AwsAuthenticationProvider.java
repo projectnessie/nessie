@@ -48,7 +48,11 @@ public class AwsAuthenticationProvider implements NessieAuthenticationProvider {
   public static final String AUTH_TYPE_VALUE = "AWS";
 
   public static HttpAuthentication create(Region region) {
-    return new AwsAuthentication(region);
+    return create(region, null);
+  }
+
+  public static HttpAuthentication create(Region region, String profile) {
+    return new AwsAuthentication(region, profile);
   }
 
   @Override
@@ -65,7 +69,9 @@ public class AwsAuthenticationProvider implements NessieAuthenticationProvider {
 
     Region region = awsRegion(regionName);
 
-    return new AwsAuthentication(region);
+    String profile = parameters.apply(NessieConfigConstants.CONF_NESSIE_AWS_PROFILE);
+
+    return create(region, profile);
   }
 
   private static Region awsRegion(String regionName) {
@@ -78,15 +84,18 @@ public class AwsAuthenticationProvider implements NessieAuthenticationProvider {
 
   private static class AwsAuthentication implements HttpAuthentication {
     private final Region region;
+    private final AwsCredentialsProvider awsCredentialsProvider;
 
     @SuppressWarnings({"QsPrivateBeanMembersInspection", "CdiInjectionPointsInspection"})
-    private AwsAuthentication(Region region) {
+    private AwsAuthentication(Region region, String profile) {
       this.region = region;
+      this.awsCredentialsProvider =
+          DefaultCredentialsProvider.builder().profileName(profile).build();
     }
 
     @Override
     public void applyToHttpClient(HttpClient client) {
-      client.register(new AwsHttpAuthenticationFilter(region));
+      client.register(new AwsHttpAuthenticationFilter(region, awsCredentialsProvider));
     }
   }
 
@@ -97,14 +106,14 @@ public class AwsAuthenticationProvider implements NessieAuthenticationProvider {
     private final Region region;
 
     @SuppressWarnings({"QsPrivateBeanMembersInspection", "CdiInjectionPointsInspection"})
-    private AwsHttpAuthenticationFilter(Region region) {
+    private AwsHttpAuthenticationFilter(Region region, AwsCredentialsProvider credentialsProvider) {
+      this.awsCredentialsProvider = credentialsProvider;
       this.objectMapper =
           new ObjectMapper()
               .disable(SerializationFeature.INDENT_OUTPUT)
               .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
       this.region = region;
       this.signer = Aws4Signer.create();
-      this.awsCredentialsProvider = DefaultCredentialsProvider.create();
     }
 
     private SdkHttpFullRequest prepareRequest(
