@@ -261,17 +261,4 @@ public abstract class AbstractMergeTransplant {
       throw new RuntimeException(e);
     }
   }
-
-  static class Case {
-    MergeOrTransplant mergeOrTransplant;
-    boolean isMetaUpdateExpected;
-
-    public MergeOrTransplant getMergeOrTransplant() {
-      return mergeOrTransplant;
-    }
-
-    public boolean isMetaUpdateExpected() {
-      return isMetaUpdateExpected;
-    }
-  }
 }
