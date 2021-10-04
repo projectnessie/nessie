@@ -33,7 +33,7 @@ name or a view name used in SQL statements, to a Content object.
 
 When a table or view is renamed using for example an SQL `ALTER TABLE RENAME` operation, Nessie
 will record this operation using a _remove_ operation plus a _put_ operation
-([see below](#operations)).
+([see below](#operations-in-a-nessie-commit)).
 
 ### On Reference State vs Global State
 
