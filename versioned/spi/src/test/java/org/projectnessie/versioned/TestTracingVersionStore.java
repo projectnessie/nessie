@@ -27,7 +27,6 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -35,7 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -49,8 +48,7 @@ import org.projectnessie.versioned.test.tracing.TestedTraceingStoreInvocation;
 
 class TestTracingVersionStore {
 
-  protected static BiFunction<Serializer<String>, ByteString, ByteString> NOOP =
-      (ser, inBytes) -> inBytes;
+  protected static Function<String, String> NOOP = Function.identity();
 
   // This test implementation shall exercise all functions on VersionStore and cover all exception
   // variants, which are all declared exceptions plus IllegalArgumentException (parameter error)

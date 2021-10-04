@@ -19,7 +19,6 @@ import com.google.protobuf.ByteString;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -167,13 +166,14 @@ public class PersistVersionStore<CONTENTS, METADATA, CONTENTS_TYPE extends Enum<
       BranchName targetBranch,
       Optional<Hash> referenceHash,
       List<Hash> sequenceToTransplant,
-      BiFunction<Serializer<METADATA>, ByteString, ByteString> updateCommitMetadata)
+      Function<METADATA, METADATA> updateCommitMetadata)
       throws ReferenceNotFoundException, ReferenceConflictException {
+    Serializer<METADATA> ser = storeWorker.getMetadataSerializer();
     databaseAdapter.transplant(
         targetBranch,
         referenceHash,
         sequenceToTransplant,
-        metaBytes -> updateCommitMetadata.apply(storeWorker.getMetadataSerializer(), metaBytes));
+        metaBytes -> ser.toBytes(updateCommitMetadata.apply(ser.fromBytes(metaBytes))));
   }
 
   @Override
@@ -181,13 +181,14 @@ public class PersistVersionStore<CONTENTS, METADATA, CONTENTS_TYPE extends Enum<
       Hash fromHash,
       BranchName toBranch,
       Optional<Hash> expectedHash,
-      BiFunction<Serializer<METADATA>, ByteString, ByteString> updateCommitMetadata)
+      Function<METADATA, METADATA> updateCommitMetadata)
       throws ReferenceConflictException, ReferenceNotFoundException {
+    Serializer<METADATA> ser = storeWorker.getMetadataSerializer();
     databaseAdapter.merge(
         fromHash,
         toBranch,
         expectedHash,
-        metaBytes -> updateCommitMetadata.apply(storeWorker.getMetadataSerializer(), metaBytes));
+        metaBytes -> ser.toBytes(updateCommitMetadata.apply(ser.fromBytes(metaBytes))));
   }
 
   @Override

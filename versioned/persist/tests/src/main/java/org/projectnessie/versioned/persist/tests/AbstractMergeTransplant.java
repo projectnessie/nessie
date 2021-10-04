@@ -31,6 +31,8 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
@@ -51,15 +53,25 @@ public abstract class AbstractMergeTransplant {
   private final Random random = new Random(System.currentTimeMillis());
   private final DatabaseAdapter databaseAdapter;
 
+  private static final MergeOrTransplant transplantFunc =
+      (databaseAdapter, target, expectedHead, branch, commitHashes, commitUpdateFunc, i) ->
+          databaseAdapter.transplant(
+              target,
+              expectedHead,
+              Arrays.asList(commitHashes).subList(0, i + 1),
+              commitUpdateFunc);
+
+  private static final MergeOrTransplant mergeFunc =
+      (databaseAdapter, target, expectedHead, branch, commitHashes, commitUpdateFunc, i) ->
+          databaseAdapter.merge(commitHashes[i], target, expectedHead, commitUpdateFunc);
+
   protected AbstractMergeTransplant(DatabaseAdapter databaseAdapter) {
     this.databaseAdapter = databaseAdapter;
   }
 
   @Test
   void merge() throws Exception {
-    mergeTransplant(
-        (target, expectedHead, branch, commitHashes, i) ->
-            databaseAdapter.merge(commitHashes[i], target, expectedHead, Function.identity()));
+    mergeTransplant(mergeFunc);
 
     BranchName branch = BranchName.of("branch");
     BranchName branch2 = BranchName.of("branch2");
@@ -74,14 +86,7 @@ public abstract class AbstractMergeTransplant {
 
   @Test
   void transplant() throws Exception {
-    Hash[] commits =
-        mergeTransplant(
-            (target, expectedHead, branch, commitHashes, i) ->
-                databaseAdapter.transplant(
-                    target,
-                    expectedHead,
-                    Arrays.asList(commitHashes).subList(0, i + 1),
-                    Function.identity()));
+    Hash[] commits = mergeTransplant(transplantFunc);
 
     BranchName conflict = BranchName.of("conflict");
 
@@ -103,8 +108,9 @@ public abstract class AbstractMergeTransplant {
         .hasMessage("No hashes to transplant given.");
   }
 
-  @Test
-  void testPropResetOnMerge() throws Exception {
+  @ParameterizedTest
+  @MethodSource("updateActions")
+  void testCommitMetaUpdates(MergeOrTransplant mergeOrTransplant) throws Exception {
     BranchName main = BranchName.of("main");
     BranchName branch = BranchName.of("branch");
     databaseAdapter.create(branch, databaseAdapter.toHash(main));
@@ -115,13 +121,16 @@ public abstract class AbstractMergeTransplant {
      * Commits are done on the "branch" and merged into "main"
      */
 
-    // With metadata properties reset
-    List<Hash> branchCommitsWithPropReset =
-        IntStream.range(0, 3)
-            .mapToObj(i -> commit(branch, i, k -> random.nextInt()))
-            .collect(Collectors.toList());
-    Hash lastBranchCommit = branchCommitsWithPropReset.get(branchCommitsWithPropReset.size() - 1);
-    databaseAdapter.merge(lastBranchCommit, main, Optional.of(independentCommit), transformMeta);
+    // With metadata properties updated
+    Hash branch1Commit = commit(branch, 1, k -> random.nextInt());
+    mergeOrTransplant.apply(
+        databaseAdapter,
+        main,
+        Optional.of(independentCommit),
+        branch,
+        new Hash[] {branch1Commit},
+        transformMeta,
+        0);
     Assertions.assertThat(
             databaseAdapter
                 .commitLog(databaseAdapter.toHash(main))
@@ -130,74 +139,45 @@ public abstract class AbstractMergeTransplant {
                 .allMatch(isTransformed))
         .isTrue();
 
-    // Without metadata properties reset
+    // Without metadata properties updated
     BranchName branch2 = BranchName.of("branch2");
     databaseAdapter.create(branch2, databaseAdapter.toHash(main));
-    List<Hash> branchCommitsWithoutPropReset =
-        IntStream.range(3, 6).mapToObj(i -> commit(branch2, i)).collect(Collectors.toList());
-    lastBranchCommit = branchCommitsWithoutPropReset.get(branchCommitsWithoutPropReset.size() - 1);
-    Optional<Hash> expectedHashMain = Optional.of(databaseAdapter.toHash(main));
-    databaseAdapter.merge(lastBranchCommit, main, expectedHashMain, Function.identity());
+    Hash branch2Commit = commit(branch2, 2);
+    mergeOrTransplant.apply(
+        databaseAdapter,
+        main,
+        Optional.of(databaseAdapter.toHash(main)),
+        branch2,
+        new Hash[] {branch2Commit},
+        Function.identity(),
+        0);
     List<String> allCommitMeta =
         databaseAdapter
             .commitLog(databaseAdapter.toHash(main))
             .map(c -> c.getMetadata().toStringUtf8())
             .collect(Collectors.toList());
-    Assertions.assertThat(
-            IntStream.range(4, allCommitMeta.size() - 1)
-                .mapToObj(i -> allCommitMeta.get(i))
-                .allMatch(isTransformed))
-        .isTrue();
+
+    Assertions.assertThat(isTransformed.test(allCommitMeta.get(1))).isTrue();
 
     // Validate that the transformed commits are untouched
     Assertions.assertThat(
-            IntStream.of(0, 1, 2, 6).mapToObj(i -> allCommitMeta.get(i)).noneMatch(isTransformed))
+            IntStream.of(0, 2).mapToObj(i -> allCommitMeta.get(i)).noneMatch(isTransformed))
         .isTrue();
   }
 
-  @Test
-  void testPropResetOnTransplant() throws Exception {
-    BranchName main = BranchName.of("main");
-    BranchName branch = BranchName.of("branch");
-    databaseAdapter.create(branch, databaseAdapter.toHash(main));
-    Hash independentCommit = commit(main, 99);
-
-    // With metadata properties reset
-    List<Hash> branchCommitsWithPropReset =
-        IntStream.range(0, 3).mapToObj(i -> commit(branch, i)).collect(Collectors.toList());
-    Collections.reverse(branchCommitsWithPropReset);
-    databaseAdapter.transplant(
-        main, Optional.of(independentCommit), branchCommitsWithPropReset, transformMeta);
-    Assertions.assertThat(
-            databaseAdapter
-                .commitLog(databaseAdapter.toHash(main))
-                .map(c -> c.getMetadata().toStringUtf8())
-                .filter(meta -> !meta.equals("commit 99"))
-                .allMatch(isTransformed))
-        .isTrue();
-
-    // Without metadata properties reset
-    List<Hash> branchCommitsWithoutPropReset = Collections.singletonList(commit(branch, 3));
-    Optional<Hash> expectedHashMain = Optional.of(databaseAdapter.toHash(main));
-    databaseAdapter.transplant(
-        main, expectedHashMain, branchCommitsWithoutPropReset, Function.identity());
-    List<String> allCommitMeta =
-        databaseAdapter
-            .commitLog(databaseAdapter.toHash(main))
-            .map(c -> c.getMetadata().toStringUtf8())
-            .collect(Collectors.toList());
-    // Expecting 2 commits, top one without reset - commit 3, next one with reset - commit 0_suffix
-    Assertions.assertThat(isTransformed.test(allCommitMeta.get(0))).isFalse();
-    Assertions.assertThat(isTransformed.test(allCommitMeta.get(1))).isTrue();
+  static List<MergeOrTransplant> updateActions() {
+    return Arrays.asList(mergeFunc, transplantFunc);
   }
 
   @FunctionalInterface
   interface MergeOrTransplant {
     void apply(
+        DatabaseAdapter databaseAdapter,
         BranchName target,
         Optional<Hash> expectedHead,
         BranchName branch,
         Hash[] commitHashes,
+        Function<ByteString, ByteString> updateCommitMetadata,
         int i)
         throws Exception;
   }
@@ -216,7 +196,8 @@ public abstract class AbstractMergeTransplant {
       BranchName target = BranchName.of("transplant-" + i);
       databaseAdapter.create(target, databaseAdapter.toHash(main));
 
-      mergeOrTransplant.apply(target, Optional.empty(), branch, commits, i);
+      mergeOrTransplant.apply(
+          databaseAdapter, target, Optional.empty(), branch, commits, Function.identity(), i);
 
       try (Stream<CommitLogEntry> targetLog =
           databaseAdapter.commitLog(databaseAdapter.toHash(target))) {
@@ -242,7 +223,15 @@ public abstract class AbstractMergeTransplant {
     databaseAdapter.commit(commit.build());
 
     assertThatThrownBy(
-            () -> mergeOrTransplant.apply(conflict, Optional.of(conflictBase), branch, commits, 2))
+            () ->
+                mergeOrTransplant.apply(
+                    databaseAdapter,
+                    conflict,
+                    Optional.of(conflictBase),
+                    branch,
+                    commits,
+                    Function.identity(),
+                    2))
         .isInstanceOf(ReferenceConflictException.class)
         .hasMessage("The following keys have been changed in conflict: 'key.0', 'key.1'");
 
@@ -270,6 +259,19 @@ public abstract class AbstractMergeTransplant {
       return databaseAdapter.commit(commit.build());
     } catch (ReferenceConflictException | ReferenceNotFoundException e) {
       throw new RuntimeException(e);
+    }
+  }
+
+  static class Case {
+    MergeOrTransplant mergeOrTransplant;
+    boolean isMetaUpdateExpected;
+
+    public MergeOrTransplant getMergeOrTransplant() {
+      return mergeOrTransplant;
+    }
+
+    public boolean isMetaUpdateExpected() {
+      return isMetaUpdateExpected;
     }
   }
 }

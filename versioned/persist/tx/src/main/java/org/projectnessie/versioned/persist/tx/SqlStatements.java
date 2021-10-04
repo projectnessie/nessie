@@ -92,8 +92,6 @@ public final class SqlStatements {
       String.format("DELETE FROM %s WHERE key_prefix = ?", TABLE_COMMIT_LOG);
   public static final String INSERT_COMMIT_LOG =
       String.format("INSERT INTO %s (key_prefix, hash, value) VALUES (?, ?, ?)", TABLE_COMMIT_LOG);
-  public static final String UPDATE_COMMIT_LOG =
-      String.format("UPDATE %s SET value = ? WHERE key_prefix = ? AND hash = ?", TABLE_COMMIT_LOG);
   public static final String SELECT_COMMIT_LOG_MANY =
       String.format(
           "SELECT value FROM %s WHERE key_prefix = ? AND hash IN (%%s)", TABLE_COMMIT_LOG);

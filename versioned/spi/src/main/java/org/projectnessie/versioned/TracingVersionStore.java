@@ -20,7 +20,6 @@ import static org.projectnessie.versioned.TracingUtil.safeToString;
 import static org.projectnessie.versioned.TracingUtil.traceError;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.protobuf.ByteString;
 import io.opentracing.Scope;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
@@ -28,8 +27,8 @@ import io.opentracing.Tracer.SpanBuilder;
 import io.opentracing.util.GlobalTracer;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
@@ -120,7 +119,7 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
       BranchName targetBranch,
       Optional<Hash> referenceHash,
       List<Hash> sequenceToTransplant,
-      BiFunction<Serializer<METADATA>, ByteString, ByteString> updateCommitMetadata)
+      Function<METADATA, METADATA> updateCommitMetadata)
       throws ReferenceNotFoundException, ReferenceConflictException {
     this.<ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
         "Transplant",
@@ -138,7 +137,7 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
       Hash fromHash,
       BranchName toBranch,
       Optional<Hash> expectedHash,
-      BiFunction<Serializer<METADATA>, ByteString, ByteString> updateCommitMetadata)
+      Function<METADATA, METADATA> updateCommitMetadata)
       throws ReferenceNotFoundException, ReferenceConflictException {
     this.<ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
         "Merge",

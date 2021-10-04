@@ -24,13 +24,11 @@ import static org.projectnessie.services.cel.CELUtil.SCRIPT_HOST;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.protobuf.ByteString;
+import java.security.Principal;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -75,7 +73,6 @@ import org.projectnessie.versioned.Ref;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
-import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
@@ -86,11 +83,6 @@ import org.projectnessie.versioned.WithHash;
 @Alternative
 public class TreeResource extends BaseResource implements HttpTreeApi {
   private static final int MAX_COMMIT_LOG_ENTRIES = 250;
-
-  private enum MergeOp {
-    MERGE,
-    TRANSPLANT
-  };
 
   // Mandated by CDI 2.0
   public TreeResource() {
@@ -277,12 +269,7 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
       try (Stream<Hash> s = transplant.getHashesToTransplant().stream().map(Hash::of)) {
         transplants = s.collect(Collectors.toList());
       }
-      getStore()
-          .transplant(
-              BranchName.of(branchName),
-              toHash(hash, true),
-              transplants,
-              updateMetaWithMergePropsFunc(MergeOp.TRANSPLANT, transplant.getFromRefName()));
+      getStore().transplant(BranchName.of(branchName), toHash(hash, true), transplants, this::meta);
     } catch (ReferenceNotFoundException e) {
       throw new NessieNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
@@ -299,22 +286,12 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
               toHash(merge.getFromRefName(), merge.getFromHash(), true).get(),
               BranchName.of(branchName),
               toHash(hash, true),
-              updateMetaWithMergePropsFunc(MergeOp.MERGE, merge.getFromRefName()));
+              this::meta);
     } catch (ReferenceNotFoundException e) {
       throw new NessieNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
       throw new NessieConflictException(e.getMessage(), e);
     }
-  }
-
-  private BiFunction<Serializer<CommitMeta>, ByteString, ByteString> updateMetaWithMergePropsFunc(
-      MergeOp mergeOp, String fromRefName) {
-    return (ser, in) -> {
-      CommitMeta commitMeta = ser.fromBytes(in);
-      String mergeProp = String.format("%s_ref", mergeOp.name().toLowerCase());
-      Map<String, String> props = ImmutableMap.of(mergeProp, fromRefName);
-      return ser.toBytes(meta(commitMeta, props));
-    };
   }
 
   @Override
@@ -435,7 +412,7 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
           .commit(
               BranchName.of(Optional.ofNullable(branch).orElse(getConfig().getDefaultBranch())),
               Optional.ofNullable(hash).map(Hash::of),
-              meta(commitMeta, Collections.EMPTY_MAP),
+              meta(commitMeta),
               operations);
     } catch (IllegalArgumentException | ReferenceNotFoundException e) {
       throw new NessieNotFoundException(e.getMessage(), e);
@@ -444,15 +421,15 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
     }
   }
 
-  private CommitMeta meta(CommitMeta commitMeta, Map<String, String> additionalProps) {
-    String committer = Optional.ofNullable(getPrincipal()).map(p -> p.getName()).orElse("");
+  private CommitMeta meta(CommitMeta commitMeta) {
+    Principal principal = getPrincipal();
+    String committer = principal == null ? "" : principal.getName();
     Instant now = Instant.now();
     return commitMeta.toBuilder()
         .committer(committer)
         .commitTime(now)
         .author(commitMeta.getAuthor() == null ? committer : commitMeta.getAuthor())
         .authorTime(commitMeta.getAuthorTime() == null ? now : commitMeta.getAuthorTime())
-        .putAllProperties(additionalProps)
         .build();
   }
 
