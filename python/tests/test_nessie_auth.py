@@ -2,6 +2,7 @@
 """Tests for `pynessie.auth` package."""
 
 import os
+from pathlib import Path
 
 import requests
 from assertpy import assert_that
@@ -45,4 +46,26 @@ def test_aws_auth() -> None:
     assert_that(prepared.headers.get("Authorization")).matches(
         r"AWS4-HMAC-SHA256 Credential=test_key_id/[0-9]+/us-west-2/execute-api/aws4_request, "
         r"SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=.+"
+    )
+
+
+def test_aws_auth_profile(tmp_path: Path) -> None:
+    """Makes sure the request is signed according to AWS auth requirements."""
+    aws_credentials = tmp_path / "aws.config"
+    aws_credentials.write_text(
+        """
+[test1]
+aws_access_key_id=test1_key
+aws_secret_access_key=test1_secret
+aws_session_token=test1_session
+    """
+    )
+    config = build_config({"auth.type": "aws", "auth.region": "us-west-2", "auth.profile": "test1"})
+    os.environ["AWS_SHARED_CREDENTIALS_FILE"] = str(aws_credentials)
+    auth = setup_auth(config)
+    r = requests.Request(url="http://127.255.0.0:0/", method="GET", auth=auth)
+    prepared = r.prepare()
+    assert_that(prepared.headers.get("Authorization")).matches(
+        r"AWS4-HMAC-SHA256 Credential=test1_key/[0-9]+/us-west-2/execute-api/aws4_request, "
+        r"SignedHeaders=host;x-amz-content-sha256;x-amz-date;x-amz-security-token, Signature=.+"
     )
