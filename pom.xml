@@ -384,36 +384,6 @@
         <version>${jsr305.version}</version>
       </dependency>
       <dependency>
-        <groupId>com.almworks.sqlite4java</groupId>
-        <artifactId>libsqlite4java-linux-i386</artifactId>
-        <version>${sqlite.version}</version>
-        <type>so</type>
-      </dependency>
-      <dependency>
-        <groupId>com.almworks.sqlite4java</groupId>
-        <artifactId>libsqlite4java-linux-amd64</artifactId>
-        <version>${sqlite.version}</version>
-        <type>so</type>
-      </dependency>
-      <dependency>
-        <groupId>com.almworks.sqlite4java</groupId>
-        <artifactId>sqlite4java-win32-x64</artifactId>
-        <version>${sqlite.version}</version>
-        <type>dll</type>
-      </dependency>
-      <dependency>
-        <groupId>com.almworks.sqlite4java</groupId>
-        <artifactId>sqlite4java-win32-x86</artifactId>
-        <version>${sqlite.version}</version>
-        <type>dll</type>
-      </dependency>
-      <dependency>
-        <groupId>com.almworks.sqlite4java</groupId>
-        <artifactId>libsqlite4java-osx</artifactId>
-        <version>${sqlite.version}</version>
-        <type>dylib</type>
-      </dependency>
-      <dependency>
         <groupId>org.junit</groupId>
         <artifactId>junit-bom</artifactId>
         <version>${junit.version}</version>
