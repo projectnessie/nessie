@@ -10,7 +10,7 @@ This page documents the complete Nessie specification. This includes:
 The Nessie API is used by Nessie integrations within for example Apache Iceberg or Delta Lake and
 user facing applications like Web UIs.
 
-Nessie defines a [REST API](rest.md) (OpenAPI) and reference implementations for [Java](java.md)
+Nessie defines a [REST API](rest.md) (OpenAPI) and implementations for [Java](java.md)
 and [Python](python.md).
 
 ## Contents in Nessie
@@ -22,9 +22,9 @@ Nessie currently provides types for Iceberg tables, Delta Lake tables and SQL vi
 two identifiers for a single Content object:
 
 1. The [Content Id](#content-id) is used to identify a content object across all branches even
-   if the content object is been referred to using different table or view names.
+   if the content object is being referred to using different table or view names.
 2. The [Content Key](#content-key) is used to look up a content object by name, like a table name
-   or view name. The Content Key changes when the referred table or view is renamed.
+   or view name. The Content Key changes when the associated table or view is renamed.
 
 #### Content Key
 
@@ -32,14 +32,14 @@ The Content Key consists of multiple strings and is used to resolve a symbolic n
 name or a view name used in SQL statements, to a Content object.
 
 When a table or view is renamed using for example an SQL `ALTER TABLE RENAME` operation, Nessie
-will record this operation using a _remove_ operation plus a _put_ operation
-([see below](#operations-in-a-nessie-commit)).
+will record this operation using a _remove_ operation on the old key plus a _put_ operation on the
+new key ([see below](#operations-in-a-nessie-commit)).
 
 ### On Reference State vs Global State
 
 Nessie is designed to support multiple table formats like Apache Iceberg or Delta Lake or generic
 SQL views. Since different Nessie commits, think: on different branches in Nessie, can refer to the
-physically same table but with different state of the data and potentially different schema, some
+same physical table but with different state of the data and potentially different schema, some
 table formats like Apache Iceberg require Nessie to refer to a single _Global State_, in case of
 Iceberg the _table metadata_. This _Global State_ is not versioned in Nessie, because it has to
 contain enough information to resolve all information in all Nessie commits.
@@ -70,8 +70,11 @@ local cache and using `id` to look up that auxiliary data.
     (e.g. schema, partitions etc.) might be cached locally by services using Nessie.
 
     For content types that do **not** track [Global State](#on-reference-state-vs-global-state),
-    the hash over the of the contents object does uniquely reference an object in the Nessie
+    the hash of the contents object does uniquely reference an object in the Nessie
     history and is a suitable key to identify an object at a particular point in its history.
+
+    Evolution of the _Global State_ is performed in a way that keeps old contents resp. contents
+    on different branches (and tags) available. This is the case for Apache Iceberg.
 
     Content types that do track [Global State](#on-reference-state-vs-global-state),
     the Content Id must be included in the cache key.
@@ -135,7 +138,7 @@ recorded within the [_Put Operation_](#put-operation) of a Nessie commit.
 
 ## Operations in a Nessie commit
 
-Each Nessie commit carries one or more operations. Each operation contains the Content Key plus and
+Each Nessie commit carries one or more operations. Each operation contains the Content Key and
 comes in one of the following variations.
 
 ### Put operation
@@ -143,12 +146,19 @@ comes in one of the following variations.
 A _Put operation_ modifies the state of the included Content object. It must contain the Content
 object and, if the Content type tracks [_Global State_](#on-reference-state-vs-global-state), also
 the _expected contents_. The _expected contents_ attribute can be omitted, if the Content object
-refers to a new Content Id, e.g. a newly created table or view.
+refers to a new Content Id, e.g. a newly created table or view. See also
+[Conflict Resolution](#conflict-resolution).
+
+A Nessie _Put operation_ is created for everything that modifies a table or a view, either its
+definition (think: SQL DDL) or data (think: SQL DML).
 
 ### Delete operation
 
 A _Delete operation_ does not carry any Content object and is used to indicate that a Content
 object is no longer referenced using the Content Key of the _Delete operation_.
+
+Example for a Nessie _Delete operation_ is an SQL `DROP TABLE`. An `ALTER TABLE RENAME` is mapped
+to a _Delete operation_ plus a _Put operation_.
 
 ### Unmodified operation
 
@@ -165,15 +175,15 @@ See [Commit Kernel](kernel.md) for details.
 
 The API passes an `expectedHash` parameter with a Nessie commit operation. This is the commit that
 the client thinks is the most up to date (its HEAD). The Nessie backend will check to see if the
-key has been modified since that `expectedHash` and if, it will reject the requested modification
+key has been modified since that `expectedHash` and if so, it will reject the requested modification
 with a `NessieConflictException`. This is basically an optimistic lock that accounts for the fact
 that the commit hash is global and nessie branch could have moved on from `expectedHash` without
 modifying the key in question.
 
 For content tables that require Global State, a Nessie [_Put operation_](#put-operation) should
-pass the so called _expected state_, which will be used to compare the recorded Global State of a
-content object with the Global State in the _expected state_ in the _Put operation_. If both values
-differ, Nessie will reject the operation with a `NessieConflictException`.
+pass the so called _expected state_, which will be used to compare the latest recorded Global State
+of a content object with the Global State in the _expected state_ in the _Put operation_. If both
+values differ, Nessie will reject the operation with a `NessieConflictException`.
 
 The reason for these conditions is to behave like a ‘real’ database. You shouldn’t have to update
 your reference before transacting on table `A` because it just happened to update table `B` whilst
