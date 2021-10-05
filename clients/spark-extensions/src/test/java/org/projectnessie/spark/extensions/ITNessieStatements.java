@@ -78,31 +78,34 @@ public class ITNessieStatements extends AbstractSparkTest {
         nessieClient.getTreeApi().deleteTag(ref.getName(), ref.getHash());
       }
     }
-    // TODO !! nessieClient.getTreeApi().createReference(null, Branch.of("main", null));
     nessieClient.getTreeApi().createReference(Branch.of("main", null));
   }
 
   @Test
   void testCreateBranchInExists() throws NessieNotFoundException {
-    List<Object[]> result = sql("CREATE BRANCH %s IN nessie", refName);
-    assertEquals("created branch", row("Branch", refName, hash), result);
+    assertThat(sql("CREATE BRANCH %s IN nessie", refName))
+        .containsExactly(row("Branch", refName, hash));
+
     assertThat(nessieClient.getTreeApi().getReferenceByName(refName))
         .isEqualTo(Branch.of(refName, hash));
-    result = sql("CREATE BRANCH IF NOT EXISTS %s IN nessie", refName);
-    assertEquals("created branch", row("Branch", refName, hash), result);
+
+    assertThat(sql("CREATE BRANCH IF NOT EXISTS %s IN nessie", refName))
+        .containsExactly(row("Branch", refName, hash));
+
     assertThat(nessieClient.getTreeApi().getReferenceByName(refName))
         .isEqualTo(Branch.of(refName, hash));
+
     assertThatThrownBy(() -> sql("CREATE BRANCH %s IN nessie", refName))
         .isInstanceOf(NessieConflictException.class)
         .hasMessage("A reference of name [testBranch] already exists.");
-    result = sql("DROP BRANCH %s IN nessie", refName);
-    assertEquals("deleted branch", row("OK"), result);
+
+    assertThat(sql("DROP BRANCH %s IN nessie", refName)).containsExactly(row("OK"));
   }
 
   @Test
   public void testRefreshAfterMergeWithIcebergTableCaching() {
-    List<Object[]> result = sql("CREATE BRANCH %s IN nessie", refName);
-    assertEquals("created branch", row("Branch", refName, hash), result);
+    assertThat(sql("CREATE BRANCH %s IN nessie", refName))
+        .containsExactly(row("Branch", refName, hash));
     assertThat(sql("USE REFERENCE %s IN nessie", refName))
         .hasSize(1)
         .containsExactly(row("Branch", refName, hash));
@@ -143,22 +146,20 @@ public class ITNessieStatements extends AbstractSparkTest {
 
   @Test
   void testCreateBranchIn() throws NessieNotFoundException {
-    List<Object[]> result = sql("CREATE BRANCH %s IN nessie", refName);
-    assertEquals("created branch", row("Branch", refName, hash), result);
+    assertThat(sql("CREATE BRANCH %s IN nessie", refName))
+        .containsExactly(row("Branch", refName, hash));
+
     assertThat(nessieClient.getTreeApi().getReferenceByName(refName))
         .isEqualTo(Branch.of(refName, hash));
-    result = sql("DROP BRANCH %s IN nessie", refName);
-    assertEquals("deleted branch", row("OK"), result);
+    assertThat(sql("DROP BRANCH %s IN nessie", refName)).containsExactly(row("OK"));
   }
 
   @Test
   void testCreateTagIn() throws NessieNotFoundException {
-    List<Object[]> result = sql("CREATE TAG %s IN nessie", refName);
-    assertEquals("created tag", row("Tag", refName, hash), result);
+    assertThat(sql("CREATE TAG %s IN nessie", refName)).containsExactly(row("Tag", refName, hash));
     assertThat(nessieClient.getTreeApi().getReferenceByName(refName))
         .isEqualTo(Tag.of(refName, hash));
-    result = sql("DROP TAG %s IN nessie", refName);
-    assertEquals("deleted tag", row("OK"), result);
+    assertThat(sql("DROP TAG %s IN nessie", refName)).containsExactly(row("OK"));
     assertThatThrownBy(() -> nessieClient.getTreeApi().getReferenceByName(refName))
         .isInstanceOf(NessieNotFoundException.class)
         .hasMessage("Unable to find reference [testBranch].");
@@ -166,12 +167,11 @@ public class ITNessieStatements extends AbstractSparkTest {
 
   @Test
   void testCreateBranchInAs() throws NessieNotFoundException {
-    List<Object[]> result = sql("CREATE BRANCH %s IN nessie AS main", refName);
-    assertEquals("created branch", row("Branch", refName, hash), result);
+    assertThat(sql("CREATE BRANCH %s IN nessie", refName))
+        .containsExactly(row("Branch", refName, hash));
     assertThat(nessieClient.getTreeApi().getReferenceByName(refName))
         .isEqualTo(Branch.of(refName, hash));
-    result = sql("DROP BRANCH %s IN nessie", refName);
-    assertEquals("deleted branch", row("OK"), result);
+    assertThat(sql("DROP BRANCH %s IN nessie", refName)).containsExactly(row("OK"));
     assertThatThrownBy(() -> nessieClient.getTreeApi().getReferenceByName(refName))
         .isInstanceOf(NessieNotFoundException.class)
         .hasMessage("Unable to find reference [testBranch].");
@@ -179,17 +179,14 @@ public class ITNessieStatements extends AbstractSparkTest {
 
   @Test
   void testCreateTagInAs() throws NessieNotFoundException {
-    List<Object[]> result = sql("CREATE TAG %s IN nessie AS main", refName);
-    assertEquals("created tag", row("Tag", refName, hash), result);
+    assertThat(sql("CREATE TAG %s IN nessie AS main", refName))
+        .containsExactly(row("Tag", refName, hash));
     assertThat(nessieClient.getTreeApi().getReferenceByName(refName))
         .isEqualTo(Tag.of(refName, hash));
-    result = sql("LIST REFERENCES IN nessie");
-    List<Object[]> listResult = new ArrayList<>();
-    listResult.add(row("Branch", "main", hash));
-    listResult.add(row("Tag", refName, hash));
-    assertThat(result).as("created branch").containsExactlyInAnyOrderElementsOf(listResult);
-    result = sql("DROP TAG %s IN nessie", refName);
-    assertEquals("deleted tag", row("OK"), result);
+    // Result of LIST REFERENCES does not guarantee any order
+    assertThat(sql("LIST REFERENCES IN nessie"))
+        .containsExactlyInAnyOrder(row("Branch", "main", hash), row("Tag", refName, hash));
+    assertThat(sql("DROP TAG %s IN nessie", refName)).containsExactly(row("OK"));
     assertThatThrownBy(() -> nessieClient.getTreeApi().getReferenceByName(refName))
         .isInstanceOf(NessieNotFoundException.class)
         .hasMessage("Unable to find reference [testBranch].");
@@ -199,16 +196,13 @@ public class ITNessieStatements extends AbstractSparkTest {
   void testCreateBranch() throws NessieNotFoundException {
     String catalog = spark.sessionState().catalogManager().currentCatalog().name();
     spark.sessionState().catalogManager().setCurrentCatalog("nessie");
-    List<Object[]> result = sql("CREATE BRANCH %s", refName);
-    assertEquals("created branch", row("Branch", refName, hash), result);
+    assertThat(sql("CREATE BRANCH %s", refName)).containsExactly(row("Branch", refName, hash));
     assertThat(nessieClient.getTreeApi().getReferenceByName(refName))
         .isEqualTo(Branch.of(refName, hash));
-    result = sql("LIST REFERENCES");
     // Result of LIST REFERENCES does not guarantee any order
-    assertThat(result)
+    assertThat(sql("LIST REFERENCES"))
         .containsExactlyInAnyOrder(row("Branch", refName, hash), row("Branch", "main", hash));
-    result = sql("DROP BRANCH %s", refName);
-    assertEquals("deleted branch", row("OK"), result);
+    assertThat(sql("DROP BRANCH %s", refName)).containsExactly(row("OK"));
     spark.sessionState().catalogManager().setCurrentCatalog(catalog);
     assertThatThrownBy(() -> nessieClient.getTreeApi().getReferenceByName(refName))
         .isInstanceOf(NessieNotFoundException.class)
@@ -219,16 +213,13 @@ public class ITNessieStatements extends AbstractSparkTest {
   void testCreateTag() throws NessieNotFoundException {
     String catalog = spark.sessionState().catalogManager().currentCatalog().name();
     spark.sessionState().catalogManager().setCurrentCatalog("nessie");
-    List<Object[]> result = sql("CREATE TAG %s", refName);
-    assertEquals("created branch", row("Tag", refName, hash), result);
+    assertThat(sql("CREATE TAG %s", refName)).containsExactly(row("Tag", refName, hash));
     assertThat(nessieClient.getTreeApi().getReferenceByName(refName))
         .isEqualTo(Tag.of(refName, hash));
-    result = sql("LIST REFERENCES");
     // Result of LIST REFERENCES does not guarantee any order
-    assertThat(result)
+    assertThat(sql("LIST REFERENCES"))
         .containsExactlyInAnyOrder(row("Tag", refName, hash), row("Branch", "main", hash));
-    result = sql("DROP TAG %s", refName);
-    assertEquals("deleted branch", row("OK"), result);
+    assertThat(sql("DROP TAG %s", refName)).containsExactly(row("OK"));
     spark.sessionState().catalogManager().setCurrentCatalog(catalog);
     assertThatThrownBy(() -> nessieClient.getTreeApi().getReferenceByName(refName))
         .isInstanceOf(NessieNotFoundException.class)
@@ -237,18 +228,16 @@ public class ITNessieStatements extends AbstractSparkTest {
 
   @Test
   void useShowReferencesIn() throws NessieNotFoundException {
-    List<Object[]> result = sql("CREATE BRANCH %s IN nessie AS main", refName);
-    assertEquals("created branch", row("Branch", refName, hash), result);
+    assertThat(sql("CREATE BRANCH %s IN nessie", refName))
+        .containsExactly(row("Branch", refName, hash));
     assertThat(nessieClient.getTreeApi().getReferenceByName(refName))
         .isEqualTo(Branch.of(refName, hash));
 
-    result = sql("USE REFERENCE %s IN nessie", refName);
-    assertEquals("use branch", row("Branch", refName, hash), result);
-    result = sql("SHOW REFERENCE IN nessie");
-    assertEquals("show branch", row("Branch", refName, hash), result);
+    assertThat(sql("USE REFERENCE %s IN nessie", refName))
+        .containsExactly(row("Branch", refName, hash));
+    assertThat(sql("SHOW REFERENCE IN nessie")).containsExactly(row("Branch", refName, hash));
 
-    result = sql("DROP BRANCH %s IN nessie", refName);
-    assertEquals("deleted branch", row("OK"), result);
+    assertThat(sql("DROP BRANCH %s IN nessie", refName)).containsExactly(row("OK"));
     assertThatThrownBy(() -> nessieClient.getTreeApi().getReferenceByName(refName))
         .isInstanceOf(NessieNotFoundException.class)
         .hasMessage("Unable to find reference [testBranch].");
@@ -258,14 +247,12 @@ public class ITNessieStatements extends AbstractSparkTest {
   void useShowReferencesAt() throws NessieNotFoundException, NessieConflictException {
     commitAndReturnLog(refName);
     String time = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(LocalDateTime.now(ZoneOffset.UTC));
-    List<Object[]> result = sql("USE REFERENCE %s AT `%s` IN nessie ", refName, time);
     hash = nessieClient.getTreeApi().getReferenceByName(refName).getHash();
-    assertEquals("use branch", row("Branch", refName, hash), result);
-    result = sql("SHOW REFERENCE IN nessie");
-    assertEquals("show branch", row("Branch", refName, hash), result);
+    assertThat(sql("USE REFERENCE %s AT `%s` IN nessie ", refName, time))
+        .containsExactly(row("Branch", refName, hash));
+    assertThat(sql("SHOW REFERENCE IN nessie")).containsExactly(row("Branch", refName, hash));
 
-    result = sql("DROP BRANCH %s IN nessie", refName);
-    assertEquals("deleted branch", row("OK"), result);
+    assertThat(sql("DROP BRANCH %s IN nessie", refName)).containsExactly(row("OK"));
     assertThatThrownBy(() -> nessieClient.getTreeApi().getReferenceByName(refName))
         .isInstanceOf(NessieNotFoundException.class)
         .hasMessage("Unable to find reference [testBranch].");
@@ -273,20 +260,18 @@ public class ITNessieStatements extends AbstractSparkTest {
 
   @Test
   void useShowReferences() throws NessieNotFoundException {
-    List<Object[]> result = sql("CREATE BRANCH %s IN nessie AS main", refName);
-    assertEquals("created branch", row("Branch", refName, hash), result);
+    assertThat(sql("CREATE BRANCH %s IN nessie", refName))
+        .containsExactly(row("Branch", refName, hash));
     assertThat(nessieClient.getTreeApi().getReferenceByName(refName))
         .isEqualTo(Branch.of(refName, hash));
 
     String catalog = spark.sessionState().catalogManager().currentCatalog().name();
     spark.sessionState().catalogManager().setCurrentCatalog("nessie");
-    result = sql("USE REFERENCE %s", refName);
-    assertEquals("use branch", row("Branch", refName, hash), result);
-    result = sql("SHOW REFERENCE");
-    assertEquals("show branch", row("Branch", refName, hash), result);
+    assertThat(sql("USE REFERENCE %s IN nessie", refName))
+        .containsExactly(row("Branch", refName, hash));
+    assertThat(sql("SHOW REFERENCE IN nessie")).containsExactly(row("Branch", refName, hash));
 
-    result = sql("DROP BRANCH %s IN nessie", refName);
-    assertEquals("deleted branch", row("OK"), result);
+    assertThat(sql("DROP BRANCH %s IN nessie", refName)).containsExactly(row("OK"));
     assertThatThrownBy(() -> nessieClient.getTreeApi().getReferenceByName(refName))
         .isInstanceOf(NessieNotFoundException.class)
         .hasMessage("Unable to find reference [testBranch].");
@@ -298,12 +283,12 @@ public class ITNessieStatements extends AbstractSparkTest {
     List<Object[]> resultList = commitAndReturnLog(refName);
 
     sql("MERGE BRANCH %s INTO main IN nessie", refName);
-    List<Object[]> result = sql("SHOW LOG main IN nessie", refName);
     // here we are skipping commit time as its variable
-    assertEquals(
-        "log",
-        result.stream().map(ITNessieStatements::convert).collect(Collectors.toList()),
-        resultList);
+    assertThat(
+            sql("SHOW LOG main IN nessie", refName).stream()
+                .map(ITNessieStatements::convert)
+                .collect(Collectors.toList()))
+        .containsExactlyElementsOf(resultList);
   }
 
   @Test
@@ -311,12 +296,12 @@ public class ITNessieStatements extends AbstractSparkTest {
     List<Object[]> resultList = commitAndReturnLog(refName);
 
     sql("MERGE BRANCH %s IN nessie", refName);
-    List<Object[]> result = sql("SHOW LOG main IN nessie", refName);
     // here we are skipping commit time as its variable
-    assertEquals(
-        "log",
-        result.stream().map(ITNessieStatements::convert).collect(Collectors.toList()),
-        resultList);
+    assertThat(
+            sql("SHOW LOG main IN nessie", refName).stream()
+                .map(ITNessieStatements::convert)
+                .collect(Collectors.toList()))
+        .containsExactlyElementsOf(resultList);
   }
 
   @Test
@@ -326,56 +311,56 @@ public class ITNessieStatements extends AbstractSparkTest {
     List<Object[]> resultList = commitAndReturnLog(refName);
     sql("USE REFERENCE %s", refName);
     sql("MERGE BRANCH");
-    List<Object[]> result = sql("SHOW LOG %s", refName);
-    assertEquals(
-        "log",
-        result.stream().map(ITNessieStatements::convert).collect(Collectors.toList()),
-        resultList);
+    // here we are skipping commit time as its variable
+    assertThat(
+            sql("SHOW LOG %s", refName).stream()
+                .map(ITNessieStatements::convert)
+                .collect(Collectors.toList()))
+        .containsExactlyElementsOf(resultList);
     spark.sessionState().catalogManager().setCurrentCatalog(catalog);
   }
 
   @Test
   void showLogIn() throws NessieConflictException, NessieNotFoundException, AnalysisException {
     List<Object[]> resultList = commitAndReturnLog(refName);
-    List<Object[]> result = sql("SHOW LOG %s IN nessie", refName);
     // here we are skipping commit time as its variable
-    assertEquals(
-        "log",
-        result.stream().map(ITNessieStatements::convert).collect(Collectors.toList()),
-        resultList);
+    assertThat(
+            sql("SHOW LOG %s IN nessie", refName).stream()
+                .map(ITNessieStatements::convert)
+                .collect(Collectors.toList()))
+        .containsExactlyElementsOf(resultList);
 
     // test to ensure property map is correctly encoded by Spark
     spark.sql(String.format("SHOW LOG %s IN nessie", refName)).createTempView("nessie_log");
-    result =
-        spark
-            .sql(
-                "SELECT author, committer, hash, message, signedOffBy, authorTime, committerTime, EXPLODE(properties) from nessie_log")
-            .groupBy(
-                "author",
-                "committer",
-                "hash",
-                "message",
-                "signedOffBy",
-                "authorTime",
-                "committerTime")
-            .pivot("key")
-            .agg(functions.first("value"))
-            .orderBy(functions.desc("committerTime"))
-            .collectAsList()
-            .stream()
-            .map(AbstractSparkTest::toJava)
-            .collect(Collectors.toList());
 
-    assertEquals(
-        "log",
-        result.stream().map(ITNessieStatements::convert).collect(Collectors.toList()),
-        resultList.stream()
-            .map(
-                x -> {
-                  x[6] = ((Map<String, String>) x[6]).get("test");
-                  return x;
-                })
-            .collect(Collectors.toList()));
+    assertThat(
+            spark
+                .sql(
+                    "SELECT author, committer, hash, message, signedOffBy, authorTime, committerTime, EXPLODE(properties) from nessie_log")
+                .groupBy(
+                    "author",
+                    "committer",
+                    "hash",
+                    "message",
+                    "signedOffBy",
+                    "authorTime",
+                    "committerTime")
+                .pivot("key")
+                .agg(functions.first("value"))
+                .orderBy(functions.desc("committerTime"))
+                .collectAsList()
+                .stream()
+                .map(AbstractSparkTest::toJava)
+                .map(ITNessieStatements::convert)
+                .collect(Collectors.toList()))
+        .containsExactlyElementsOf(
+            resultList.stream()
+                .map(
+                    x -> {
+                      x[6] = ((Map<String, String>) x[6]).get("test");
+                      return x;
+                    })
+                .collect(Collectors.toList()));
   }
 
   private List<Object[]> commitAndReturnLog(String branch)
@@ -437,13 +422,13 @@ public class ITNessieStatements extends AbstractSparkTest {
     String catalog = spark.sessionState().catalogManager().currentCatalog().name();
     spark.sessionState().catalogManager().setCurrentCatalog("nessie");
     List<Object[]> resultList = commitAndReturnLog(refName);
-    List<Object[]> result = sql("SHOW LOG %s", refName);
 
     // here we are skipping commit time as its variable
-    assertEquals(
-        "log",
-        result.stream().map(ITNessieStatements::convert).collect(Collectors.toList()),
-        resultList);
+    assertThat(
+            sql("SHOW LOG %s", refName).stream()
+                .map(ITNessieStatements::convert)
+                .collect(Collectors.toList()))
+        .containsExactlyElementsOf(resultList);
     spark.sessionState().catalogManager().setCurrentCatalog(catalog);
   }
 
