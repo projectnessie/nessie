@@ -103,10 +103,22 @@ public class TreeResourceWithAuthorizationChecks extends TreeResource {
       getAccessChecker().canCreateReference(createAccessContext(), TagName.of(reference.getName()));
     }
 
-    getAccessChecker()
-        .canViewReference(
-            createAccessContext(),
-            namedRefWithHashOrThrow(sourceRefName, reference.getHash()).getValue());
+    try {
+      getAccessChecker()
+          .canViewReference(
+              createAccessContext(),
+              namedRefWithHashOrThrow(sourceRefName, reference.getHash()).getValue());
+    } catch (NessieNotFoundException e) {
+      // If the default-branch does not exist and hashOnRef points to the "beginning of time",
+      // then do not throw a NessieNotFoundException, but re-create the default branch. In all
+      // cases, re-throw the exception.
+      if (!(reference instanceof Branch
+          && reference.getName().equals(getConfig().getDefaultBranch())
+          && (null == reference.getHash()
+              || getStore().noAncestorHash().asString().equals(reference.getHash())))) {
+        throw e;
+      }
+    }
     return super.createReference(sourceRefName, reference);
   }
 

@@ -125,13 +125,21 @@ public abstract class AbstractTestRest {
   }
 
   @BeforeEach
-  public void setUp() throws Exception {
+  public void setUp() {
     init(URI.create("http://localhost:19121/api/v1"));
   }
 
   @AfterEach
   public void tearDown() {
     api.close();
+  }
+
+  @Test
+  void createRecreateDefaultBranch() throws NessieConflictException, NessieNotFoundException {
+    api.deleteBranch().branch(api.getDefaultBranch()).delete();
+
+    api.createReference().reference(Branch.of("main", null)).create();
+    api.getReference().refName("main").get();
   }
 
   @Test
