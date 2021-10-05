@@ -28,6 +28,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.spark.sql.AnalysisException;
+import org.apache.spark.sql.Row;
+import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.functions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -82,7 +84,6 @@ public class ITNessieStatements extends AbstractSparkTest {
 
   @Test
   void testCreateBranchInExists() throws NessieNotFoundException {
-
     List<Object[]> result = sql("CREATE BRANCH %s IN nessie", refName);
     assertEquals("created branch", row("Branch", refName, hash), result);
     assertThat(nessieClient.getTreeApi().getReferenceByName(refName))
@@ -99,8 +100,49 @@ public class ITNessieStatements extends AbstractSparkTest {
   }
 
   @Test
-  void testCreateBranchIn() throws NessieNotFoundException {
+  public void testRefreshAfterMergeWithIcebergTableCaching() {
+    List<Object[]> result = sql("CREATE BRANCH %s IN nessie", refName);
+    assertEquals("created branch", row("Branch", refName, hash), result);
+    assertThat(sql("USE REFERENCE %s IN nessie", refName))
+        .hasSize(1)
+        .containsExactly(row("Branch", refName, hash));
 
+    sql("CREATE TABLE nessie.tbl (id int, name string)");
+    sql("INSERT INTO nessie.tbl select 23, \"test\"");
+    assertThat(sql("SELECT * FROM nessie.tbl")).hasSize(1).containsExactly(row(23, "test"));
+
+    sql(String.format("MERGE BRANCH %s INTO main in nessie", refName));
+    assertThat(sql("SELECT * FROM nessie.`tbl@main`")).hasSize(1).containsExactly(row(23, "test"));
+    assertThat(sql("SELECT * FROM nessie.`tbl@%s`", refName))
+        .hasSize(1)
+        .containsExactly(row(23, "test"));
+    sql("INSERT INTO nessie.tbl select 24, \"test24\"");
+    assertThat(sql("SELECT * FROM nessie.`tbl@main`")).hasSize(1).containsExactly(row(23, "test"));
+    assertThat(sql("SELECT * FROM nessie.tbl"))
+        .hasSize(2)
+        .containsExactlyInAnyOrder(row(23, "test"), row(24, "test24"));
+
+    // this still sees old data because tbl@testBranch is being cached in Iceberg
+    // due to "spark.sql.catalog.nessie.cache-enabled=true" by default
+    assertThat(sql("SELECT * FROM nessie.`tbl@%s`", refName))
+        .hasSize(1)
+        .containsExactly(row(23, "test"));
+
+    // using a fresh session with an empty cache sees the data correctly
+    assertThat(sqlWithEmptyCache("SELECT * FROM nessie.`tbl@%s`", refName))
+        .hasSize(2)
+        .containsExactlyInAnyOrder(row(23, "test"), row(24, "test24"));
+  }
+
+  private static List<Object[]> sqlWithEmptyCache(String query, Object... args) {
+    try (SparkSession sparkWithEmptyCache = spark.cloneSession()) {
+      List<Row> rows = sparkWithEmptyCache.sql(String.format(query, args)).collectAsList();
+      return rows.stream().map(AbstractSparkTest::toJava).collect(Collectors.toList());
+    }
+  }
+
+  @Test
+  void testCreateBranchIn() throws NessieNotFoundException {
     List<Object[]> result = sql("CREATE BRANCH %s IN nessie", refName);
     assertEquals("created branch", row("Branch", refName, hash), result);
     assertThat(nessieClient.getTreeApi().getReferenceByName(refName))
