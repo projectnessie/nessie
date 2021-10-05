@@ -22,4 +22,33 @@ import java.lang.annotation.Target;
 
 @Target({ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface NessieDbAdapter {}
+public @interface NessieDbAdapter {
+
+  /**
+   * Optional: name of method to update the {@link
+   * org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig configuration} for the {@link
+   * org.projectnessie.versioned.persist.adapter.DatabaseAdapter}.
+   *
+   * <p>The method must be
+   *
+   * <ul>
+   *   <li>static
+   *   <li>not private
+   *   <li>have a single parameter {@code
+   *       org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig}
+   *   <li>return {@code org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig}
+   * </ul>
+   *
+   * <p>Example:
+   *
+   * <pre><code>
+   *   &#64;NessieDbAdapter(configMethod = "applyTestClock")
+   *   protected static DatabaseAdapter databaseAdapter;
+   *
+   *   static DatabaseAdapterConfig applyTestClock(DatabaseAdapterConfig config) {
+   *     return config.withClock(TEST_CLOCK);
+   *   }
+   * </code></pre>
+   */
+  String configMethod() default "";
+}

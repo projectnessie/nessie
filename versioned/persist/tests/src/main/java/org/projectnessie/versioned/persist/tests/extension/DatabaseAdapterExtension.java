@@ -17,6 +17,7 @@ package org.projectnessie.versioned.persist.tests.extension;
 
 import static org.junit.platform.commons.util.AnnotationUtils.findAnnotatedFields;
 import static org.junit.platform.commons.util.AnnotationUtils.findRepeatableAnnotations;
+import static org.junit.platform.commons.util.ReflectionUtils.findMethod;
 import static org.junit.platform.commons.util.ReflectionUtils.isPrivate;
 import static org.junit.platform.commons.util.ReflectionUtils.makeAccessible;
 import static org.projectnessie.versioned.persist.tests.SystemPropertiesConfigurer.CONFIG_NAME_PREFIX;
@@ -24,11 +25,15 @@ import static org.projectnessie.versioned.persist.tests.SystemPropertiesConfigur
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionConfigurationException;
@@ -136,7 +141,8 @@ public class DatabaseAdapterExtension
       ExtensionContext context, Field field, Consumer<DatabaseAdapter> newAdapter) {
     assertValidFieldCandidate(field);
     try {
-      DatabaseAdapter databaseAdapter = createAdapterResource(context, null);
+      DatabaseAdapter databaseAdapter =
+          createAdapterResource(field.getAnnotation(NessieDbAdapter.class), context, null);
 
       Object assign;
       if (field.getType().isAssignableFrom(DatabaseAdapter.class)) {
@@ -166,7 +172,13 @@ public class DatabaseAdapterExtension
       throws ParameterResolutionException {
     Parameter parameter = parameterContext.getParameter();
 
-    DatabaseAdapter databaseAdapter = createAdapterResource(context, parameterContext);
+    DatabaseAdapter databaseAdapter =
+        createAdapterResource(
+            parameterContext
+                .findAnnotation(NessieDbAdapter.class)
+                .orElseThrow(IllegalStateException::new),
+            context,
+            parameterContext);
 
     reinit(databaseAdapter);
 
@@ -199,7 +211,9 @@ public class DatabaseAdapterExtension
   }
 
   static DatabaseAdapter createAdapterResource(
-      ExtensionContext context, ParameterContext parameterContext) {
+      NessieDbAdapter adapterAnnotation,
+      ExtensionContext context,
+      ParameterContext parameterContext) {
     DatabaseAdapterFactory<
             DatabaseAdapterConfig, AdjustableDatabaseAdapterConfig, DatabaseConnectionProvider<?>>
         factory =
@@ -210,6 +224,9 @@ public class DatabaseAdapterExtension
                         ::<DatabaseAdapterConfig, AdjustableDatabaseAdapterConfig,
                             DatabaseConnectionProvider<?>>loadFactoryByName)
                 .orElseGet(() -> DatabaseAdapterFactory.loadFactory(x -> true));
+
+    Function<AdjustableDatabaseAdapterConfig, DatabaseAdapterConfig> applyCustomConfig =
+        extractCustomConfiguration(adapterAnnotation, context);
 
     DatabaseAdapterFactory.Builder<
             DatabaseAdapterConfig, AdjustableDatabaseAdapterConfig, DatabaseConnectionProvider<?>>
@@ -246,9 +263,53 @@ public class DatabaseAdapterExtension
                           .map(NessieDbAdapterConfigItem::value)
                           .orElse(null);
                     }))
+        .configure(applyCustomConfig)
         .withConnector(getConnectionProvider(context));
 
     return builder.build();
+  }
+
+  private static Function<AdjustableDatabaseAdapterConfig, DatabaseAdapterConfig>
+      extractCustomConfiguration(NessieDbAdapter adapterAnnotation, ExtensionContext context) {
+    Function<AdjustableDatabaseAdapterConfig, DatabaseAdapterConfig> applyCustomConfig = c -> c;
+    if (!adapterAnnotation.configMethod().isEmpty()) {
+      Method configMethod =
+          findMethod(
+                  context.getRequiredTestClass(),
+                  adapterAnnotation.configMethod(),
+                  AdjustableDatabaseAdapterConfig.class)
+              .orElseThrow(
+                  () ->
+                      new IllegalArgumentException(
+                          String.format(
+                              "NessieDbAdapter.configMethod='%s' does not exist in %s",
+                              adapterAnnotation.configMethod(),
+                              context.getRequiredTestClass().getName())));
+
+      makeAccessible(configMethod);
+
+      if (!Modifier.isStatic(configMethod.getModifiers())
+          || Modifier.isPrivate(configMethod.getModifiers())
+          || !DatabaseAdapterConfig.class.isAssignableFrom(configMethod.getReturnType())) {
+        throw new IllegalArgumentException(
+            String.format(
+                "NessieDbAdapter.configMethod='%s' must have the signature "
+                    + "'static DatabaseAdapterConfig %s(AdjustableDatabaseAdapterConfig)' in %s",
+                adapterAnnotation.configMethod(),
+                adapterAnnotation.configMethod(),
+                context.getRequiredTestClass().getName()));
+      }
+      applyCustomConfig =
+          c -> {
+            try {
+              DatabaseAdapterConfig r = (DatabaseAdapterConfig) configMethod.invoke(null, c);
+              return (DatabaseAdapterConfig) r;
+            } catch (InvocationTargetException | IllegalAccessException e) {
+              throw new RuntimeException(e);
+            }
+          };
+    }
+    return applyCustomConfig;
   }
 
   @SuppressWarnings("unchecked")
