@@ -24,6 +24,8 @@ To use Nessie Catalog in Hive via Iceberg, the following properties are **requir
 
 - `iceberg.catalog.<catalog_name>.uri`: The location of the Nessie server.
 
+- `iceberg.catalog.<catalog_name>.authentication.type`: The authentication type to be used, please refer to the [authentication docs](../auth_config.md) for more info.
+
 For example:
 
 ```
