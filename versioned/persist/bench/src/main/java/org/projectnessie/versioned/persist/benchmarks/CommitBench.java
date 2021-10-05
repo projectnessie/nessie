@@ -108,37 +108,34 @@ public class CommitBench {
           initialOperations(this, keys, contentsIds));
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private DatabaseAdapter adapterByName() {
+    private <CONFIG extends DatabaseAdapterConfig> DatabaseAdapter adapterByName() {
       String adapterName =
           (adapter.indexOf(':') <= 0) ? adapter : adapter.substring(0, adapter.indexOf(':'));
-      DatabaseAdapterFactory<DatabaseAdapterConfig<DatabaseConnectionProvider<?>>> factory =
+      DatabaseAdapterFactory<CONFIG, DatabaseConnectionProvider<DatabaseConnectionConfig>> factory =
           DatabaseAdapterFactory.loadFactory(f -> f.getName().equalsIgnoreCase(adapterName));
 
-      return factory
-          .newBuilder()
-          .configure(SystemPropertiesConfigurer::configureAdapterFromSystemProperties)
-          .configure(
-              c -> {
-                String providerSpec =
-                    adapter.indexOf(':') == -1
-                        ? null
-                        : adapter.substring(adapter.indexOf(':') + 1).toLowerCase(Locale.ROOT);
-                TestConnectionProviderSource<DatabaseConnectionConfig> providerSource =
-                    TestConnectionProviderSource.findCompatibleProviderSource(
-                        c, factory, providerSpec);
-                providerSource.configureConnectionProviderConfigFromDefaults(
-                    SystemPropertiesConfigurer::configureConnectionFromSystemProperties);
-                try {
-                  providerSource.start();
-                } catch (Exception e) {
-                  throw new RuntimeException(e);
-                }
-                c = providerSource.updateConfig((DatabaseAdapterConfig) c);
-                connectionProvider = c.getConnectionProvider();
-                return c;
-              })
-          .build();
+      DatabaseAdapterFactory.Builder<CONFIG, DatabaseConnectionProvider<DatabaseConnectionConfig>>
+          builder =
+              factory
+                  .newBuilder()
+                  .configure(SystemPropertiesConfigurer::configureAdapterFromSystemProperties);
+
+      String providerSpec =
+          adapter.indexOf(':') == -1
+              ? null
+              : adapter.substring(adapter.indexOf(':') + 1).toLowerCase(Locale.ROOT);
+      TestConnectionProviderSource<DatabaseConnectionConfig> providerSource =
+          TestConnectionProviderSource.findCompatibleProviderSource(
+              builder.getConfig(), factory, providerSpec);
+      providerSource.configureConnectionProviderConfigFromDefaults(
+          SystemPropertiesConfigurer::configureConnectionFromSystemProperties);
+      try {
+        providerSource.start();
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+
+      return builder.withConnector(providerSource.getConnectionProvider()).build();
     }
 
     @TearDown

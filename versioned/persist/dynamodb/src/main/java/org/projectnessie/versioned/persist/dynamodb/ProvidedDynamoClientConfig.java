@@ -21,6 +21,10 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 @Value.Immutable(lazyhash = true)
 public interface ProvidedDynamoClientConfig extends DynamoClientConfig {
 
+  static ProvidedDynamoClientConfig of(DynamoDbClient db) {
+    return ImmutableProvidedDynamoClientConfig.builder().dynamoDbClient(db).build();
+  }
+
   DynamoDbClient getDynamoDbClient();
 
   ProvidedDynamoClientConfig withDynamoDbClient(DynamoDbClient dynamoDbClient);

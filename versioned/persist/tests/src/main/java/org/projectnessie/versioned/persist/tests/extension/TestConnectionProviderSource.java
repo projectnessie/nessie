@@ -36,9 +36,9 @@ import org.projectnessie.versioned.persist.adapter.DatabaseConnectionProvider;
  *   <li>In JUnit tests, reference the implementation class directly using the {@link
  *       NessieExternalDatabase} annotation.
  *   <li>Via {@link #findCompatibleProviderSource(DatabaseAdapterConfig, DatabaseAdapterFactory,
- *       String)}, usually from within a {@link DatabaseAdapterFactory.Builder#configure(Function)}
- *       function using a code snippet like this:
- *       <pre><code> .configure(c -&gt; {
+ *       String)} using a code snippet like this:
+ *       <pre><code>
+ *   DatabaseAdapterConfig config = ...;
  *   String providerSpec =
  *       adapter.indexOf(':') == -1
  *           ? null
@@ -46,7 +46,7 @@ import org.projectnessie.versioned.persist.adapter.DatabaseConnectionProvider;
  *               .toLowerCase(Locale.ROOT);
  *   TestConnectionProviderSource&lt;DatabaseConnectionConfig&gt; providerSource =
  *       findCompatibleProviderSource(
- *           c, factory, providerSpec);
+ *           config, factory, providerSpec);
  *   providerSource
  *       .configureConnectionProviderConfigFromDefaults(
  *           SystemPropertiesConfigurer
@@ -56,16 +56,14 @@ import org.projectnessie.versioned.persist.adapter.DatabaseConnectionProvider;
  *   } catch (Exception e) {
  *     throw new RuntimeException(e);
  *   }
- *   c = providerSource.updateConfig(c);
- *   connectionProvider = c.getConnectionProvider();
- *   return c;
- * })</code></pre>
+ *   connectionProvider = providerSource.getConnectionProvider();
+ * </code></pre>
  * </ol>
  */
 public interface TestConnectionProviderSource<CONN_CONFIG extends DatabaseConnectionConfig> {
 
   boolean isCompatibleWith(
-      DatabaseAdapterConfig<?> adapterConfig, DatabaseAdapterFactory<?> databaseAdapterFactory);
+      DatabaseAdapterConfig adapterConfig, DatabaseAdapterFactory<?, ?> databaseAdapterFactory);
 
   /** Creates the default {@link DatabaseConnectionConfig}. */
   CONN_CONFIG createDefaultConnectionProviderConfig();
@@ -78,28 +76,19 @@ public interface TestConnectionProviderSource<CONN_CONFIG extends DatabaseConnec
   void configureConnectionProviderConfigFromDefaults(Function<CONN_CONFIG, CONN_CONFIG> configurer);
 
   /**
-   * Set the configuration for the {@link DatabaseConnectionProvider} to create via {@link
-   * #createConnectionProvider()}.
+   * Set the configuration for the {@link DatabaseConnectionProvider} created when {@link #start()}
+   * is invoked.
    */
   void setConnectionProviderConfig(CONN_CONFIG connectionProviderConfig);
 
   CONN_CONFIG getConnectionProviderConfig();
 
   /**
-   * Creates the {@link DatabaseConnectionProvider} using the configuration set earlier via {@link
-   * #setConnectionProviderConfig(DatabaseConnectionConfig)}.
-   */
-  DatabaseConnectionProvider<CONN_CONFIG> createConnectionProvider();
-
-  /**
-   * Updates the given {@code config} with the {@link DatabaseConnectionProvider} via {@link
-   * DatabaseAdapterConfig#withConnectionProvider(DatabaseConnectionProvider)}.
+   * Returns the preconfigured connection provider.
    *
-   * @param config the current configuration
-   * @return {@code config} with a valid {@link DatabaseConnectionProvider} instance.
+   * <p>This method should be called after {@link #start()}.
    */
-  DatabaseAdapterConfig<DatabaseConnectionProvider<CONN_CONFIG>> updateConfig(
-      DatabaseAdapterConfig<DatabaseConnectionProvider<CONN_CONFIG>> config);
+  DatabaseConnectionProvider<CONN_CONFIG> getConnectionProvider();
 
   /**
    * Initialize/start the connection provider.
@@ -135,8 +124,8 @@ public interface TestConnectionProviderSource<CONN_CONFIG extends DatabaseConnec
   @SuppressWarnings({"rawtypes", "unchecked"})
   static <CONN_CONFIG extends DatabaseConnectionConfig>
       TestConnectionProviderSource<CONN_CONFIG> findCompatibleProviderSource(
-          DatabaseAdapterConfig<?> databaseAdapterConfig,
-          DatabaseAdapterFactory<?> databaseAdapterFactory,
+          DatabaseAdapterConfig databaseAdapterConfig,
+          DatabaseAdapterFactory<?, ?> databaseAdapterFactory,
           String providerSpec) {
     List<TestConnectionProviderSource> providerSources = new ArrayList<>();
     for (TestConnectionProviderSource ps : ServiceLoader.load(TestConnectionProviderSource.class)) {

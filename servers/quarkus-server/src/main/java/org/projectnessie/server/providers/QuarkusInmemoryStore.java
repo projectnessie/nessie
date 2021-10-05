@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.persist.mongodb;
+package org.projectnessie.server.providers;
 
-import org.immutables.value.Value;
-import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
+import javax.inject.Singleton;
+import org.projectnessie.versioned.persist.inmem.InmemoryStore;
 
-@Value.Immutable(lazyhash = true)
-public interface MongoDatabaseAdapterConfig
-    extends NonTransactionalDatabaseAdapterConfig<MongoDatabaseClient> {}
+/** CDI bean for {@link InmemoryStore}. */
+@Singleton
+public class QuarkusInmemoryStore extends InmemoryStore {}

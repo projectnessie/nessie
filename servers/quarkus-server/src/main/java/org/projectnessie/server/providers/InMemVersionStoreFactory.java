@@ -18,18 +18,23 @@ package org.projectnessie.server.providers;
 import static org.projectnessie.server.config.VersionStoreConfig.VersionStoreType.INMEMORY;
 
 import javax.enterprise.context.Dependent;
+import javax.inject.Inject;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.inmem.InmemoryDatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.inmem.InmemoryStore;
+import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.store.PersistVersionStore;
 
 /** In-memory version store factory. */
 @StoreType(INMEMORY)
 @Dependent
 public class InMemVersionStoreFactory implements VersionStoreFactory {
+  @Inject InmemoryStore store;
+  @Inject NonTransactionalDatabaseAdapterConfig config;
+
   @Override
   public <VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>>
       VersionStore<VALUE, METADATA, VALUE_TYPE> newStore(
@@ -37,7 +42,8 @@ public class InMemVersionStoreFactory implements VersionStoreFactory {
     DatabaseAdapter databaseAdapter =
         new InmemoryDatabaseAdapterFactory()
             .newBuilder()
-            .configure(c -> c.withConnectionProvider(new InmemoryStore()))
+            .withConfig(config)
+            .withConnector(store)
             .build();
 
     databaseAdapter.initializeRepo(serverConfig.getDefaultBranch());

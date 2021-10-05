@@ -17,7 +17,6 @@ package org.projectnessie.server.providers;
 
 import static org.projectnessie.server.config.VersionStoreConfig.VersionStoreType.MONGO;
 
-import com.mongodb.client.MongoClient;
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -25,9 +24,9 @@ import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
-import org.projectnessie.versioned.persist.mongodb.ImmutableMongoClientConfig;
 import org.projectnessie.versioned.persist.mongodb.MongoDatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.mongodb.MongoDatabaseClient;
+import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.store.PersistVersionStore;
 
 /** Version store factory for the MongoDB Database Adapter. */
@@ -38,7 +37,8 @@ public class MongoVersionStoreFactory implements VersionStoreFactory {
   @ConfigProperty(name = "quarkus.mongodb.database")
   String databaseName;
 
-  @Inject MongoClient mongoClient;
+  @Inject MongoDatabaseClient client;
+  @Inject NonTransactionalDatabaseAdapterConfig config;
 
   @Override
   public <VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>>
@@ -48,19 +48,8 @@ public class MongoVersionStoreFactory implements VersionStoreFactory {
     DatabaseAdapter adapter =
         new MongoDatabaseAdapterFactory()
             .newBuilder()
-            .configure(
-                c -> {
-                  MongoDatabaseClient client = new MongoDatabaseClient();
-                  client.configure(
-                      ImmutableMongoClientConfig.builder()
-                          .client(mongoClient)
-                          .databaseName(databaseName)
-                          .build());
-
-                  client.initialize();
-
-                  return c.withConnectionProvider(client);
-                })
+            .withConfig(config)
+            .withConnector(client)
             .build();
 
     adapter.reinitializeRepo(serverConfig.getDefaultBranch());

@@ -17,9 +17,11 @@ package org.projectnessie.versioned.persist.inmem;
 
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
+import org.projectnessie.versioned.persist.nontx.ImmutableNonTransactionalDatabaseAdapterConfig;
+import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 
 public class InmemoryDatabaseAdapterFactory
-    implements DatabaseAdapterFactory<InmemoryDatabaseAdapterConfig> {
+    implements DatabaseAdapterFactory<NonTransactionalDatabaseAdapterConfig, InmemoryStore> {
 
   public static final String NAME = "In-Memory";
 
@@ -29,16 +31,16 @@ public class InmemoryDatabaseAdapterFactory
   }
 
   @Override
-  public Builder<InmemoryDatabaseAdapterConfig> newBuilder() {
-    return new Builder<InmemoryDatabaseAdapterConfig>() {
+  public Builder<NonTransactionalDatabaseAdapterConfig, InmemoryStore> newBuilder() {
+    return new Builder<NonTransactionalDatabaseAdapterConfig, InmemoryStore>() {
       @Override
-      protected InmemoryDatabaseAdapterConfig getDefaultConfig() {
-        return ImmutableInmemoryDatabaseAdapterConfig.builder().build();
+      protected NonTransactionalDatabaseAdapterConfig getDefaultConfig() {
+        return ImmutableNonTransactionalDatabaseAdapterConfig.builder().build();
       }
 
       @Override
       public DatabaseAdapter build() {
-        return new InmemoryDatabaseAdapter(getConfig());
+        return new InmemoryDatabaseAdapter(getConfig(), getConnector());
       }
     };
   }

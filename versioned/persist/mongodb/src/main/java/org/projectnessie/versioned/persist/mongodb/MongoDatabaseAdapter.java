@@ -48,6 +48,7 @@ import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyWithType;
 import org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapter;
+import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalOperationContext;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
@@ -55,7 +56,7 @@ import org.projectnessie.versioned.persist.serialize.ProtoSerialization;
 import org.projectnessie.versioned.persist.serialize.ProtoSerialization.Parser;
 
 public class MongoDatabaseAdapter
-    extends NonTransactionalDatabaseAdapter<MongoDatabaseAdapterConfig> {
+    extends NonTransactionalDatabaseAdapter<NonTransactionalDatabaseAdapterConfig> {
 
   public static final char PREFIX_SEPARATOR = '#';
 
@@ -64,16 +65,12 @@ public class MongoDatabaseAdapter
 
   private final MongoDatabaseClient client;
 
-  protected MongoDatabaseAdapter(MongoDatabaseAdapterConfig config) {
+  protected MongoDatabaseAdapter(
+      NonTransactionalDatabaseAdapterConfig config, MongoDatabaseClient client) {
     super(config);
 
-    // Create our own dedicated client is none is pre-configured
-    MongoDatabaseClient c = config.getConnectionProvider();
-
-    Objects.requireNonNull(
-        c, "Requires a non-null MongoDatabaseClient from MongoDatabaseAdapterConfig");
-
-    client = c;
+    Objects.requireNonNull(client, "MongoDatabaseClient cannot be null");
+    this.client = client;
 
     String keyPrefix = config.getKeyPrefix();
     if (keyPrefix.indexOf(PREFIX_SEPARATOR) >= 0) {

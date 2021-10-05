@@ -37,8 +37,7 @@ public class SystemPropertiesConfigurer {
 
   public static final String CONFIG_NAME_PREFIX = "nessie.store.";
 
-  public static <T extends DatabaseAdapterConfig<?>> T configureAdapterFromSystemProperties(
-      T config) {
+  public static <T extends DatabaseAdapterConfig> T configureAdapterFromSystemProperties(T config) {
     return configureAdapterFromProperties(config, System::getProperty);
   }
 
@@ -47,7 +46,7 @@ public class SystemPropertiesConfigurer {
     return configureConnectionFromProperties(config, System::getProperty);
   }
 
-  public static <T extends DatabaseAdapterConfig<?>> T configureAdapterFromProperties(
+  public static <T extends DatabaseAdapterConfig> T configureAdapterFromProperties(
       T config, Function<String, String> property) {
     return configureFromPropertiesGeneric(config, DatabaseAdapterConfig.class, property);
   }
@@ -59,7 +58,7 @@ public class SystemPropertiesConfigurer {
 
   @SuppressWarnings("unchecked")
   public static <T> T configureFromPropertiesGeneric(
-      T config, Class<?> configType, Function<String, String> property) {
+      T config, Class<? super T> configType, Function<String, String> property) {
     List<Method> l =
         Arrays.stream(config.getClass().getMethods())
             .filter(m -> m.getName().startsWith("with"))

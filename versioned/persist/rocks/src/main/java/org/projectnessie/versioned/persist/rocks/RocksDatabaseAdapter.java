@@ -37,6 +37,7 @@ import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyWithType;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapter;
+import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalOperationContext;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
@@ -49,7 +50,7 @@ import org.rocksdb.WriteBatch;
 import org.rocksdb.WriteOptions;
 
 public class RocksDatabaseAdapter
-    extends NonTransactionalDatabaseAdapter<RocksDatabaseAdapterConfig> {
+    extends NonTransactionalDatabaseAdapter<NonTransactionalDatabaseAdapterConfig> {
 
   private final TransactionDB db;
   private final RocksDbInstance dbInstance;
@@ -57,15 +58,14 @@ public class RocksDatabaseAdapter
   private final ByteString keyPrefix;
   private final byte[] globalPointerKey;
 
-  public RocksDatabaseAdapter(RocksDatabaseAdapterConfig config) {
+  public RocksDatabaseAdapter(
+      NonTransactionalDatabaseAdapterConfig config, RocksDbInstance dbInstance) {
     super(config);
 
     this.keyPrefix = ByteString.copyFromUtf8(config.getKeyPrefix() + ':');
     this.globalPointerKey = ByteString.copyFromUtf8(config.getKeyPrefix()).toByteArray();
 
     // get the externally configured RocksDbInstance
-    RocksDbInstance dbInstance = config.getConnectionProvider();
-
     Objects.requireNonNull(
         dbInstance, "Requires a non-null RocksDbInstance from RocksDatabaseAdapterConfig");
 

@@ -17,6 +17,7 @@ package org.projectnessie.versioned.persist.dynamodb;
 
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
+import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.tests.extension.AbstractTestConnectionProviderSource;
 
 /**
@@ -29,8 +30,8 @@ public class DynamoTestConnectionProviderSource
 
   @Override
   public boolean isCompatibleWith(
-      DatabaseAdapterConfig<?> adapterConfig, DatabaseAdapterFactory<?> databaseAdapterFactory) {
-    return adapterConfig instanceof DynamoDatabaseAdapterConfig;
+      DatabaseAdapterConfig adapterConfig, DatabaseAdapterFactory<?, ?> databaseAdapterFactory) {
+    return adapterConfig instanceof NonTransactionalDatabaseAdapterConfig;
   }
 
   @Override

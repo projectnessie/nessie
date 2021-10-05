@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
+import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.tests.extension.AbstractTestConnectionProviderSource;
 
 /**
@@ -42,8 +43,8 @@ public class RocksTestConnectionProviderSource
 
   @Override
   public boolean isCompatibleWith(
-      DatabaseAdapterConfig<?> adapterConfig, DatabaseAdapterFactory<?> databaseAdapterFactory) {
-    return adapterConfig instanceof RocksDatabaseAdapterConfig;
+      DatabaseAdapterConfig adapterConfig, DatabaseAdapterFactory<?, ?> databaseAdapterFactory) {
+    return adapterConfig instanceof NonTransactionalDatabaseAdapterConfig;
   }
 
   @Override

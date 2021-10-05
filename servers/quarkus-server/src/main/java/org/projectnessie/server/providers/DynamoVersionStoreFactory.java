@@ -25,20 +25,22 @@ import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.dynamodb.DynamoDatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.dynamodb.DynamoDatabaseClient;
-import org.projectnessie.versioned.persist.dynamodb.ImmutableProvidedDynamoClientConfig;
+import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.store.PersistVersionStore;
-import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 /** DynamoDB version store factory. */
 @StoreType(DYNAMO)
 @Dependent
 public class DynamoVersionStoreFactory implements VersionStoreFactory {
-  private final DynamoDbClient dynamoDbClient;
+  private final DynamoDatabaseClient client;
+  private final NonTransactionalDatabaseAdapterConfig config;
 
   /** Creates a factory for dynamodb version stores. */
   @Inject
-  public DynamoVersionStoreFactory(DynamoDbClient dynamoDbClient) {
-    this.dynamoDbClient = dynamoDbClient;
+  public DynamoVersionStoreFactory(
+      DynamoDatabaseClient client, NonTransactionalDatabaseAdapterConfig config) {
+    this.client = client;
+    this.config = config;
   }
 
   @Override
@@ -49,16 +51,8 @@ public class DynamoVersionStoreFactory implements VersionStoreFactory {
     DatabaseAdapter databaseAdapter =
         new DynamoDatabaseAdapterFactory()
             .newBuilder()
-            .configure(
-                c -> {
-                  DynamoDatabaseClient client = new DynamoDatabaseClient();
-                  client.configure(
-                      ImmutableProvidedDynamoClientConfig.builder()
-                          .dynamoDbClient(dynamoDbClient)
-                          .build());
-                  client.initialize();
-                  return c.withConnectionProvider(client);
-                })
+            .withConfig(config)
+            .withConnector(client)
             .build();
 
     databaseAdapter.initializeRepo(serverConfig.getDefaultBranch());

@@ -92,12 +92,10 @@ public abstract class TxDatabaseAdapter
 
   private final TxConnectionProvider<?> db;
 
-  public TxDatabaseAdapter(TxDatabaseAdapterConfig config) {
+  public TxDatabaseAdapter(TxDatabaseAdapterConfig config, TxConnectionProvider<?> db) {
     super(config);
 
     // get the externally configured TxConnectionProvider
-    TxConnectionProvider<?> db = config.getConnectionProvider();
-
     Objects.requireNonNull(
         db,
         "TxDatabaseAdapter requires a non-null TxConnectionProvider via TxDatabaseAdapterConfig.getConnectionProvider()");

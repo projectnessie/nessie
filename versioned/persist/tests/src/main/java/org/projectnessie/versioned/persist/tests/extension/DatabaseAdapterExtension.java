@@ -45,6 +45,7 @@ import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
+import org.projectnessie.versioned.persist.adapter.DatabaseConnectionProvider;
 import org.projectnessie.versioned.persist.store.PersistVersionStore;
 import org.projectnessie.versioned.persist.tests.SystemPropertiesConfigurer;
 
@@ -196,15 +197,16 @@ public class DatabaseAdapterExtension
     return opt;
   }
 
-  static DatabaseAdapter createAdapterResource(
-      ExtensionContext context, ParameterContext parameterContext) {
-    DatabaseAdapterFactory<?> factory =
+  static <CONFIG extends DatabaseAdapterConfig, CONNECTOR extends DatabaseConnectionProvider<?>>
+      DatabaseAdapter createAdapterResource(
+          ExtensionContext context, ParameterContext parameterContext) {
+    DatabaseAdapterFactory<CONFIG, CONNECTOR> factory =
         findAnnotation(context, parameterContext, NessieDbAdapterName.class)
             .map(NessieDbAdapterName::value)
-            .map(DatabaseAdapterFactory::loadFactoryByName)
+            .map(DatabaseAdapterFactory::<CONFIG, CONNECTOR>loadFactoryByName)
             .orElseGet(() -> DatabaseAdapterFactory.loadFactory(x -> true));
 
-    DatabaseAdapterFactory.Builder<?> builder = factory.newBuilder();
+    DatabaseAdapterFactory.Builder<CONFIG, CONNECTOR> builder = factory.newBuilder();
     builder
         .configure(
             c ->
@@ -237,17 +239,17 @@ public class DatabaseAdapterExtension
                           .map(NessieDbAdapterConfigItem::value)
                           .orElse(null);
                     }))
-        .configure(c -> applyConnectionProviderConfig(context, c));
+        .withConnector(getConnectionProvider(context));
 
     return builder.build();
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  private static DatabaseAdapterConfig applyConnectionProviderConfig(
-      ExtensionContext context, DatabaseAdapterConfig c) {
-    TestConnectionProviderSource connectionProvider =
+  @SuppressWarnings("unchecked")
+  private static <CONNECTOR extends DatabaseConnectionProvider<?>> CONNECTOR getConnectionProvider(
+      ExtensionContext context) {
+    TestConnectionProviderSource<?> connectionProvider =
         context.getStore(NAMESPACE).get(KEY_STATICS, ClassDbAdapters.class).connectionProvider;
-    return connectionProvider.updateConfig(c);
+    return (CONNECTOR) connectionProvider.getConnectionProvider();
   }
 
   private static VersionStore<String, String, StringStoreWorker.TestEnum> createStore(

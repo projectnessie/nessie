@@ -16,21 +16,18 @@
 package org.projectnessie.versioned.persist.adapter;
 
 import java.time.Clock;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
 /**
  * Base database-adapter configuration type.
  *
- * <p>See {@link org.projectnessie.versioned.persist.adapter.spi.DefaultDatabaseAdapterConfig} for
- * the default, immutable-annotated type.
- *
  * <p>{@link org.projectnessie.versioned.persist.adapter.DatabaseAdapter} implementations that need
  * more configuration options must extend this interface, have the {@link Value.Immutable}
  * annotation and declare the {@code with...} methods implemented by "immutables".
  */
-public interface DatabaseAdapterConfig<T extends DatabaseConnectionProvider<?>> {
+public interface DatabaseAdapterConfig {
 
+  String DEFAULT_KEY_PREFIX = "";
   int DEFAULT_PARENTS_PER_COMMIT = 20;
   int DEFAULT_KEY_LIST_DISTANCE = 20;
   int DEFAULT_MAX_KEY_LIST_SIZE = 250_000;
@@ -43,10 +40,8 @@ public interface DatabaseAdapterConfig<T extends DatabaseConnectionProvider<?>> 
    */
   @Value.Default
   default String getKeyPrefix() {
-    return "";
+    return DEFAULT_KEY_PREFIX;
   }
-
-  DatabaseAdapterConfig<T> withKeyPrefix(String keyPrefix);
 
   /**
    * The number of parent-commit-hashes stored in {@link
@@ -58,8 +53,6 @@ public interface DatabaseAdapterConfig<T extends DatabaseConnectionProvider<?>> 
     return DEFAULT_PARENTS_PER_COMMIT;
   }
 
-  DatabaseAdapterConfig<T> withParentsPerCommit(int parentsPerCommit);
-
   /**
    * Each {@code n}-th {@link org.projectnessie.versioned.persist.adapter.CommitLogEntry}, where
    * {@code n ==} value of this parameter, will contain a "full" {@link
@@ -70,8 +63,6 @@ public interface DatabaseAdapterConfig<T extends DatabaseConnectionProvider<?>> 
   default int getKeyListDistance() {
     return DEFAULT_KEY_LIST_DISTANCE;
   }
-
-  DatabaseAdapterConfig<T> withKeyListDistance(int keyListDistance);
 
   /**
    * Maximum size of a database object/row.
@@ -93,8 +84,6 @@ public interface DatabaseAdapterConfig<T extends DatabaseConnectionProvider<?>> 
   default int getMaxKeyListSize() {
     return getDefaultMaxKeyListSize();
   }
-
-  DatabaseAdapterConfig<T> withMaxKeyListSize(int maxKeyListSize);
 
   /**
    * Database adapter implementations that actually do have a hard technical or highly recommended
@@ -121,26 +110,15 @@ public interface DatabaseAdapterConfig<T extends DatabaseConnectionProvider<?>> 
     return DEFAULT_COMMIT_TIMEOUT;
   }
 
-  DatabaseAdapterConfig<T> withCommitTimeout(long commitTimeout);
-
   /** Maximum retries for CAS-like operations. Default is unlimited. */
   @Value.Default
   default int getCommitRetries() {
     return DEFAULT_COMMIT_RETRIES;
   }
 
-  DatabaseAdapterConfig<T> withCommitRetries(int commitRetries);
-
   /** The {@link Clock} to use. */
   @Value.Default
   default Clock getClock() {
     return Clock.systemUTC();
   }
-
-  DatabaseAdapterConfig<T> withClock(Clock clock);
-
-  @Nullable
-  T getConnectionProvider();
-
-  DatabaseAdapterConfig<T> withConnectionProvider(T connectionProvider);
 }

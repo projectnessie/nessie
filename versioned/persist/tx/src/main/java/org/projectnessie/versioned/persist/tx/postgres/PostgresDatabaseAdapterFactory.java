@@ -18,10 +18,13 @@ package org.projectnessie.versioned.persist.tx.postgres;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.tx.ImmutableTxDatabaseAdapterConfig;
+import org.projectnessie.versioned.persist.tx.TxConnectionConfig;
+import org.projectnessie.versioned.persist.tx.TxConnectionProvider;
 import org.projectnessie.versioned.persist.tx.TxDatabaseAdapterConfig;
 
 public class PostgresDatabaseAdapterFactory
-    implements DatabaseAdapterFactory<TxDatabaseAdapterConfig> {
+    implements DatabaseAdapterFactory<
+        TxDatabaseAdapterConfig, TxConnectionProvider<TxConnectionConfig>> {
 
   public static final String NAME = "PostgreSQL";
 
@@ -31,8 +34,8 @@ public class PostgresDatabaseAdapterFactory
   }
 
   @Override
-  public Builder<TxDatabaseAdapterConfig> newBuilder() {
-    return new Builder<TxDatabaseAdapterConfig>() {
+  public Builder<TxDatabaseAdapterConfig, TxConnectionProvider<TxConnectionConfig>> newBuilder() {
+    return new Builder<TxDatabaseAdapterConfig, TxConnectionProvider<TxConnectionConfig>>() {
       @Override
       protected TxDatabaseAdapterConfig getDefaultConfig() {
         return ImmutableTxDatabaseAdapterConfig.builder().build();
@@ -40,7 +43,7 @@ public class PostgresDatabaseAdapterFactory
 
       @Override
       public DatabaseAdapter build() {
-        return new PostgresDatabaseAdapter(getConfig());
+        return new PostgresDatabaseAdapter(getConfig(), getConnector());
       }
     };
   }

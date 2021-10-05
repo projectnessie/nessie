@@ -16,7 +16,6 @@
 package org.projectnessie.versioned.persist.tests.extension;
 
 import java.util.function.Function;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseConnectionConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseConnectionProvider;
 
@@ -40,15 +39,17 @@ public abstract class AbstractTestConnectionProviderSource<
   }
 
   @Override
-  public DatabaseAdapterConfig<DatabaseConnectionProvider<CONN_CONFIG>> updateConfig(
-      DatabaseAdapterConfig<DatabaseConnectionProvider<CONN_CONFIG>> config) {
-    return config.withConnectionProvider(connectionProvider);
+  public DatabaseConnectionProvider<CONN_CONFIG> getConnectionProvider() {
+    return connectionProvider;
   }
 
   @Override
   public CONN_CONFIG getConnectionProviderConfig() {
     return config;
   }
+
+  /** Creates an empty {@link DatabaseConnectionProvider} of a suitable sub-type. */
+  protected abstract DatabaseConnectionProvider<CONN_CONFIG> createConnectionProvider();
 
   @Override
   public void start() throws Exception {

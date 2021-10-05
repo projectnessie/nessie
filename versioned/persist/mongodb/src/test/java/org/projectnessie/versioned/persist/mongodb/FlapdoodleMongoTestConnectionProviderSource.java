@@ -33,6 +33,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
+import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 
 /**
  * MongoDB test connection-provider source using a locally spawned MongoDB instance via
@@ -49,18 +50,8 @@ public class FlapdoodleMongoTestConnectionProviderSource extends MongoTestConnec
 
   @Override
   public boolean isCompatibleWith(
-      DatabaseAdapterConfig<?> adapterConfig, DatabaseAdapterFactory<?> databaseAdapterFactory) {
-    return adapterConfig instanceof MongoDatabaseAdapterConfig;
-  }
-
-  @Override
-  public MongoClientConfig createDefaultConnectionProviderConfig() {
-    return ImmutableMongoClientConfig.builder().build();
-  }
-
-  @Override
-  public MongoDatabaseClient createConnectionProvider() {
-    return new MongoDatabaseClient();
+      DatabaseAdapterConfig adapterConfig, DatabaseAdapterFactory<?, ?> databaseAdapterFactory) {
+    return adapterConfig instanceof NonTransactionalDatabaseAdapterConfig;
   }
 
   @Override

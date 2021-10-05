@@ -33,44 +33,55 @@ import java.util.function.Predicate;
  * @param <CONFIG> the configuration-options type used to configure database-adapters produced by
  *     this factory.
  */
-public interface DatabaseAdapterFactory<CONFIG extends DatabaseAdapterConfig<?>> {
-  Builder<CONFIG> newBuilder();
+public interface DatabaseAdapterFactory<
+    CONFIG extends DatabaseAdapterConfig, CONNECTOR extends DatabaseConnectionProvider<?>> {
+  Builder<CONFIG, CONNECTOR> newBuilder();
 
   String getName();
 
-  abstract class Builder<CONFIG extends DatabaseAdapterConfig<?>> {
+  abstract class Builder<CONFIG, CONNECTOR> {
     private CONFIG config;
+    private CONNECTOR connector;
 
-    public Builder<CONFIG> withConfig(CONFIG config) {
+    public Builder<CONFIG, CONNECTOR> withConfig(CONFIG config) {
       this.config = config;
+      return this;
+    }
+
+    public Builder<CONFIG, CONNECTOR> withConnector(CONNECTOR connector) {
+      this.connector = connector;
       return this;
     }
 
     protected abstract CONFIG getDefaultConfig();
 
-    protected CONFIG getConfig() {
+    public CONFIG getConfig() {
       if (config == null) {
         config = getDefaultConfig();
       }
       return config;
     }
 
+    public CONNECTOR getConnector() {
+      return connector;
+    }
+
     public abstract DatabaseAdapter build();
 
-    @SuppressWarnings("unchecked")
-    public Builder<CONFIG> configure(Function<CONFIG, DatabaseAdapterConfig<?>> configurator) {
-      this.config = (CONFIG) configurator.apply(getConfig());
+    public Builder<CONFIG, CONNECTOR> configure(Function<CONFIG, CONFIG> configurator) {
+      this.config = configurator.apply(getConfig());
       return this;
     }
   }
 
-  static <CONFIG extends DatabaseAdapterConfig<?>> DatabaseAdapterFactory<CONFIG> loadFactoryByName(
-      String name) {
+  static <CONFIG extends DatabaseAdapterConfig, CONNECTOR extends DatabaseConnectionProvider<?>>
+      DatabaseAdapterFactory<CONFIG, CONNECTOR> loadFactoryByName(String name) {
     return loadFactory(f -> f.getName().equalsIgnoreCase(name));
   }
 
-  static <CONFIG extends DatabaseAdapterConfig<?>> DatabaseAdapterFactory<CONFIG> loadFactory(
-      Predicate<DatabaseAdapterFactory<?>> check) {
+  static <CONFIG extends DatabaseAdapterConfig, CONNECTOR extends DatabaseConnectionProvider<?>>
+      DatabaseAdapterFactory<CONFIG, CONNECTOR> loadFactory(
+          Predicate<DatabaseAdapterFactory<?, ?>> check) {
     @SuppressWarnings("rawtypes")
     Iterator<DatabaseAdapterFactory> iter =
         ServiceLoader.load(DatabaseAdapterFactory.class).iterator();
@@ -80,7 +91,7 @@ public interface DatabaseAdapterFactory<CONFIG extends DatabaseAdapterConfig<?>>
 
     while (iter.hasNext()) {
       @SuppressWarnings("unchecked")
-      DatabaseAdapterFactory<CONFIG> candidate = iter.next();
+      DatabaseAdapterFactory<CONFIG, CONNECTOR> candidate = iter.next();
       if (check.test(candidate)) {
         return candidate;
       }

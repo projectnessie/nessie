@@ -13,23 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.persist.tx;
+package org.projectnessie.server.providers;
 
-import org.immutables.value.Value;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import org.projectnessie.versioned.persist.dynamodb.DynamoDatabaseClient;
+import org.projectnessie.versioned.persist.dynamodb.ProvidedDynamoClientConfig;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
-/** TX-database-adapter config interface. */
-@Value.Immutable(lazyhash = true)
-public interface TxDatabaseAdapterConfig extends DatabaseAdapterConfig {
+/** CDI bean for {@link DynamoDatabaseClient}. */
+@Singleton
+public class QuarkusDynamoDatabaseClient extends DynamoDatabaseClient {
 
-  int DEFAULT_BATCH_SIZE = 20;
-
-  /**
-   * DML batch size, used when writing multiple commits to a branch during a transplant or merge
-   * operation or when writing "overflow full key-lists".
-   */
-  @Value.Default
-  default int getBatchSize() {
-    return DEFAULT_BATCH_SIZE;
+  @Inject
+  public QuarkusDynamoDatabaseClient(DynamoDbClient db) {
+    configure(ProvidedDynamoClientConfig.of(db));
+    initialize();
   }
 }
