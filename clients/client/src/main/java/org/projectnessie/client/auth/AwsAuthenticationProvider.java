@@ -89,8 +89,13 @@ public class AwsAuthenticationProvider implements NessieAuthenticationProvider {
     @SuppressWarnings({"QsPrivateBeanMembersInspection", "CdiInjectionPointsInspection"})
     private AwsAuthentication(Region region, String profile) {
       this.region = region;
-      this.awsCredentialsProvider =
-          DefaultCredentialsProvider.builder().profileName(profile).build();
+
+      DefaultCredentialsProvider.Builder provider = DefaultCredentialsProvider.builder();
+      if (profile != null) {
+        provider.profileName(profile);
+      }
+
+      this.awsCredentialsProvider = provider.build();
     }
 
     @Override
