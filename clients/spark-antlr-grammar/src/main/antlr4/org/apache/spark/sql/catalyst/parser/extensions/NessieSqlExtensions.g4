@@ -60,14 +60,14 @@ singleStatement
     ;
 
 statement
-    : CREATE (BRANCH|TAG) (IF NOT EXISTS)? identifier (IN catalog=identifier)? (AS reference=identifier)?    #nessieCreateRef
+    : CREATE (BRANCH|TAG) (IF NOT EXISTS)? identifier (IN catalog=identifier)? (FROM reference=identifier)?    #nessieCreateRef
     | DROP (BRANCH|TAG) identifier (IN catalog=identifier)?                                 #nessieDropRef
     | USE REFERENCE identifier (AT ts=identifier)?  (IN catalog=identifier)?                #nessieUseRef
     | LIST REFERENCES (IN catalog=identifier)?                                              #nessieListRef
     | SHOW REFERENCE (IN catalog=identifier)?                                               #nessieShowRef
     | MERGE BRANCH (identifier)? (INTO toRef=identifier)?  (IN catalog=identifier)?         #nessieMergeRef
     | SHOW LOG (identifier)? (IN catalog=identifier)?                                       #nessieShowLog
-    | ASSIGN (BRANCH|TAG) (identifier)? (AS toRef=identifier)? (IN catalog=identifier)?     #nessieAssignRef
+    | ASSIGN (BRANCH|TAG) (identifier)? (TO toRef=identifier)? (IN catalog=identifier)?     #nessieAssignRef
     // add collect gc action
     // add purge gc action
     ;
@@ -83,7 +83,7 @@ quotedIdentifier
     ;
 
 nonReserved
-    : AS | ASSIGN | AT | BRANCH | CREATE| DROP | IN | TAG | LOG | USE | REFERENCE | REFERENCES
+    : ASSIGN | AT | BRANCH | CREATE| DROP | FROM | IN | TAG | TO | LOG | USE | REFERENCE | REFERENCES
     | SHOW | LIST | MERGE | INTO | IF | NOT | EXISTS
     ;
 
@@ -97,7 +97,8 @@ REFERENCES: 'REFERENCES';
 SHOW: 'SHOW';
 LIST: 'LIST';
 MERGE: 'MERGE';
-AS: 'AS';
+FROM: 'FROM';
+TO: 'TO';
 AT: 'AT';
 BRANCH: 'BRANCH';
 CREATE: 'CREATE';

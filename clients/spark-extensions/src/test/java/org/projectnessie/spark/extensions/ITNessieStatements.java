@@ -166,8 +166,8 @@ public class ITNessieStatements extends AbstractSparkTest {
   }
 
   @Test
-  void testCreateBranchInAs() throws NessieNotFoundException {
-    assertThat(sql("CREATE BRANCH %s IN nessie", refName))
+  void testCreateBranchInFrom() throws NessieNotFoundException {
+    assertThat(sql("CREATE BRANCH %s IN nessie FROM main", refName))
         .containsExactly(row("Branch", refName, hash));
     assertThat(nessieClient.getTreeApi().getReferenceByName(refName))
         .isEqualTo(Branch.of(refName, hash));
@@ -178,8 +178,8 @@ public class ITNessieStatements extends AbstractSparkTest {
   }
 
   @Test
-  void testCreateTagInAs() throws NessieNotFoundException {
-    assertThat(sql("CREATE TAG %s IN nessie AS main", refName))
+  void testCreateTagInFrom() throws NessieNotFoundException {
+    assertThat(sql("CREATE TAG %s IN nessie FROM main", refName))
         .containsExactly(row("Tag", refName, hash));
     assertThat(nessieClient.getTreeApi().getReferenceByName(refName))
         .isEqualTo(Tag.of(refName, hash));
@@ -190,6 +190,64 @@ public class ITNessieStatements extends AbstractSparkTest {
     assertThatThrownBy(() -> nessieClient.getTreeApi().getReferenceByName(refName))
         .isInstanceOf(NessieNotFoundException.class)
         .hasMessage("Unable to find reference [testBranch].");
+  }
+
+  @Test
+  void testAssignBranch() throws NessieConflictException, NessieNotFoundException {
+    String random = "randomBranch";
+    assertThat(sql("CREATE BRANCH %s IN nessie", random))
+        .containsExactly(row("Branch", random, hash));
+
+    commitAndReturnLog(refName);
+    sql("USE REFERENCE %s", refName);
+    sql("MERGE BRANCH %s INTO main IN nessie", refName);
+    Reference main = nessieClient.getTreeApi().getReferenceByName("main");
+
+    assertThat(sql("ASSIGN BRANCH %s IN nessie", random))
+        .containsExactly(row("Branch", random, main.getHash()));
+  }
+
+  @Test
+  void testAssignTag() throws NessieConflictException, NessieNotFoundException {
+    String random = "randomTag";
+    assertThat(sql("CREATE TAG %s IN nessie", random)).containsExactly(row("Tag", random, hash));
+
+    commitAndReturnLog(refName);
+    sql("USE REFERENCE %s", refName);
+    sql("MERGE BRANCH %s INTO main IN nessie", refName);
+    Reference main = nessieClient.getTreeApi().getReferenceByName("main");
+
+    assertThat(sql("ASSIGN TAG %s IN nessie", random))
+        .containsExactly(row("Tag", random, main.getHash()));
+  }
+
+  @Test
+  void testAssignBranchTo() throws NessieConflictException, NessieNotFoundException {
+    String random = "randomBranch";
+    assertThat(sql("CREATE BRANCH %s IN nessie", random))
+        .containsExactly(row("Branch", random, hash));
+
+    commitAndReturnLog(refName);
+    sql("USE REFERENCE %s", refName);
+    sql("MERGE BRANCH %s INTO main IN nessie", refName);
+    Reference main = nessieClient.getTreeApi().getReferenceByName("main");
+
+    assertThat(sql("ASSIGN BRANCH %s TO main IN nessie", random))
+        .containsExactly(row("Branch", random, main.getHash()));
+  }
+
+  @Test
+  void testAssignTagTo() throws NessieConflictException, NessieNotFoundException {
+    String random = "randomTag";
+    assertThat(sql("CREATE TAG %s IN nessie", random)).containsExactly(row("Tag", random, hash));
+
+    commitAndReturnLog(refName);
+    sql("USE REFERENCE %s", refName);
+    sql("MERGE BRANCH %s INTO main IN nessie", refName);
+    Reference main = nessieClient.getTreeApi().getReferenceByName("main");
+
+    assertThat(sql("ASSIGN TAG %s TO main IN nessie", random))
+        .containsExactly(row("Tag", random, main.getHash()));
   }
 
   @Test
@@ -365,7 +423,8 @@ public class ITNessieStatements extends AbstractSparkTest {
 
   private List<Object[]> commitAndReturnLog(String branch)
       throws NessieConflictException, NessieNotFoundException {
-    sql("CREATE BRANCH %s IN nessie", branch);
+    assertThat(sql("CREATE BRANCH %s IN nessie", branch))
+        .containsExactly(row("Branch", branch, hash));
     ContentsKey key = ContentsKey.of("table", "name");
     CommitMeta cm1 =
         ImmutableCommitMeta.builder()
