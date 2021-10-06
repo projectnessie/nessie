@@ -31,9 +31,6 @@ import de.flapdoodle.embed.process.runtime.Network;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
-import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 
 /**
  * MongoDB test connection-provider source using a locally spawned MongoDB instance via
@@ -47,12 +44,6 @@ public class FlapdoodleMongoTestConnectionProviderSource extends MongoTestConnec
 
   private final AtomicInteger port = new AtomicInteger();
   private MongodExecutable mongo;
-
-  @Override
-  public boolean isCompatibleWith(
-      DatabaseAdapterConfig adapterConfig, DatabaseAdapterFactory<?, ?, ?> databaseAdapterFactory) {
-    return adapterConfig instanceof NonTransactionalDatabaseAdapterConfig;
-  }
 
   @Override
   public void start() throws Exception {

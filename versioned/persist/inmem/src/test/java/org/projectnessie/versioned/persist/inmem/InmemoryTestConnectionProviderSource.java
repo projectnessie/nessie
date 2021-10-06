@@ -26,7 +26,8 @@ public class InmemoryTestConnectionProviderSource
   @Override
   public boolean isCompatibleWith(
       DatabaseAdapterConfig adapterConfig, DatabaseAdapterFactory<?, ?, ?> databaseAdapterFactory) {
-    return adapterConfig instanceof NonTransactionalDatabaseAdapterConfig;
+    return adapterConfig instanceof NonTransactionalDatabaseAdapterConfig
+        && databaseAdapterFactory instanceof InmemoryDatabaseAdapterFactory;
   }
 
   @Override

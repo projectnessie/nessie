@@ -31,7 +31,8 @@ public class MongoTestConnectionProviderSource
   @Override
   public boolean isCompatibleWith(
       DatabaseAdapterConfig adapterConfig, DatabaseAdapterFactory<?, ?, ?> databaseAdapterFactory) {
-    return adapterConfig instanceof NonTransactionalDatabaseAdapterConfig;
+    return adapterConfig instanceof NonTransactionalDatabaseAdapterConfig
+        && databaseAdapterFactory instanceof MongoDatabaseAdapterFactory;
   }
 
   @Override
