@@ -46,6 +46,11 @@ public final class NessieConfigConstants {
    */
   public static final String CONF_NESSIE_AWS_REGION = "nessie.authentication.aws.region";
   /**
+   * Config property name ({@value #CONF_NESSIE_AWS_PROFILE}) for the profile name used for AWS
+   * authentication (optional).
+   */
+  public static final String CONF_NESSIE_AWS_PROFILE = "nessie.authentication.aws.profile";
+  /**
    * Config property name ({@value #CONF_NESSIE_AUTH_TYPE}) for the authentication provider ID.
    * Valid values are {@code BASIC}, {@code BEARER} and {@code AWS}.
    *
