@@ -7,4 +7,5 @@ for more info. Current Nessie Iceberg integration includes
 the following:
 
 - [Spark via Iceberg](spark.md) 
+- [Flink via Iceberg](flink.md)
 - [Hive via Iceberg](hive.md)

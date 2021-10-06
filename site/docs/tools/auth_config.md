@@ -29,6 +29,18 @@ or [Delta Lake](./deltalake/index.md)) the Nessie authentication settings are co
             .getOrCreate()
     ```
 
+## Flink
+
+When Nessie is used in Flink with [Iceberg](./iceberg/index.md), the Nessie authentication settings are configured when creating the Nessie catalog in Flink (Replace `<catalog_name>` with the name of your catalog):
+
+```python
+table_env.execute_sql(
+        """CREATE CATALOG <catalog_name> WITH (
+        'type'='iceberg',
+        'catalog-impl'='org.apache.iceberg.nessie.NessieCatalog',
+        'authentication.type'='NONE')""")
+```
+
 ## Hive
 
 When Nessie is used in Hive with [Iceberg](./iceberg/index.md), the Nessie authentication settings are configured through Hive Shell (Replace `<catalog_name>` with the name of your catalog):
