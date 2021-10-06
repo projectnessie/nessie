@@ -13,7 +13,9 @@ the following:
     - [Spark via Delta Lake](deltalake/spark.md)
 
 - [Nessie CLI](cli.md)
-- [Nessie Web UI](ui.md)     
+- [Nessie Web UI](ui.md)
+- [Authentication in Tools](auth_config.md)
+- [Nessie Spark SQL Extensions](sql.md)
 
 
 ## Feature Matrix

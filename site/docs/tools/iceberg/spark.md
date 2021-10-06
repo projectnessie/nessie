@@ -61,7 +61,9 @@ These are set as follows in code (or through other methods as described [here](h
 
     //for a local spark instance
     conf.set("spark.jars.packages",
-            "org.apache.iceberg:iceberg-spark3-runtime:{{ versions.iceberg}}")
+            "org.apache.iceberg:iceberg-spark3-runtime:{{ versions.iceberg }},org.projectnessie:nessie-spark-extensions:{{ versions.java }}")
+        .set("spark.sql.extensions", 
+            "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions,org.projectnessie.spark.extensions.NessieSparkSessionExtensions")
         .set("spark.sql.catalog.nessie.uri", url)
         .set("spark.sql.catalog.nessie.ref", ref)
         .set("spark.sql.catalog.nessie.authentication.type", authType)
@@ -89,7 +91,9 @@ These are set as follows in code (or through other methods as described [here](h
     # here we are assuming NONE authorisation
     spark = SparkSession.builder \
             .config("spark.jars.packages",
-                "org.apache.iceberg:iceberg-spark3-runtime:{{ versions.iceberg}}") \
+                "org.apache.iceberg:iceberg-spark3-runtime:{{ versions.iceberg }},org.projectnessie:nessie-spark-extensions:{{ versions.java }}") \
+            .config("spark.sql.extensions", 
+                "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions,org.projectnessie.spark.extensions.NessieSparkSessionExtensions") \
             .config("spark.sql.catalog.nessie.uri", url) \
             .config("spark.sql.catalog.nessie.ref", ref) \
             .config("spark.sql.catalog.nessie.authentication.type", auth_type) \
