@@ -43,7 +43,7 @@ public class RocksTestConnectionProviderSource
 
   @Override
   public boolean isCompatibleWith(
-      DatabaseAdapterConfig adapterConfig, DatabaseAdapterFactory<?, ?> databaseAdapterFactory) {
+      DatabaseAdapterConfig adapterConfig, DatabaseAdapterFactory<?, ?, ?> databaseAdapterFactory) {
     return adapterConfig instanceof NonTransactionalDatabaseAdapterConfig;
   }
 

@@ -30,7 +30,7 @@ public class DynamoTestConnectionProviderSource
 
   @Override
   public boolean isCompatibleWith(
-      DatabaseAdapterConfig adapterConfig, DatabaseAdapterFactory<?, ?> databaseAdapterFactory) {
+      DatabaseAdapterConfig adapterConfig, DatabaseAdapterFactory<?, ?, ?> databaseAdapterFactory) {
     return adapterConfig instanceof NonTransactionalDatabaseAdapterConfig;
   }
 

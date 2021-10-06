@@ -30,58 +30,70 @@ import java.util.function.Predicate;
  * <p>Concrete database-adapter factory implementations can then be easily filtered and loaded via
  * {@link #loadFactory(Predicate)} or {@link #loadFactoryByName(String)}.
  *
- * @param <CONFIG> the configuration-options type used to configure database-adapters produced by
+ * @param <Config> the configuration-options type used to configure database-adapters produced by
  *     this factory.
  */
 public interface DatabaseAdapterFactory<
-    CONFIG extends DatabaseAdapterConfig, CONNECTOR extends DatabaseConnectionProvider<?>> {
-  Builder<CONFIG, CONNECTOR> newBuilder();
+    Config extends DatabaseAdapterConfig,
+    AdjustableConfig extends Config,
+    Connector extends DatabaseConnectionProvider<?>> {
+
+  Builder<Config, AdjustableConfig, Connector> newBuilder();
 
   String getName();
 
-  abstract class Builder<CONFIG, CONNECTOR> {
-    private CONFIG config;
-    private CONNECTOR connector;
+  abstract class Builder<Config, AdjustableConfig, Connector> {
+    private Config config;
+    private Connector connector;
 
-    public Builder<CONFIG, CONNECTOR> withConfig(CONFIG config) {
+    public Builder<Config, AdjustableConfig, Connector> withConfig(Config config) {
       this.config = config;
       return this;
     }
 
-    public Builder<CONFIG, CONNECTOR> withConnector(CONNECTOR connector) {
+    public Builder<Config, AdjustableConfig, Connector> withConnector(Connector connector) {
       this.connector = connector;
       return this;
     }
 
-    protected abstract CONFIG getDefaultConfig();
+    protected abstract Config getDefaultConfig();
 
-    public CONFIG getConfig() {
+    protected abstract AdjustableConfig adjustableConfig(Config config);
+
+    public Config getConfig() {
       if (config == null) {
         config = getDefaultConfig();
       }
       return config;
     }
 
-    public CONNECTOR getConnector() {
+    public Connector getConnector() {
       return connector;
     }
 
     public abstract DatabaseAdapter build();
 
-    public Builder<CONFIG, CONNECTOR> configure(Function<CONFIG, CONFIG> configurator) {
-      this.config = configurator.apply(getConfig());
+    public Builder<Config, AdjustableConfig, Connector> configure(
+        Function<AdjustableConfig, Config> configurator) {
+      this.config = configurator.apply(adjustableConfig(getConfig()));
       return this;
     }
   }
 
-  static <CONFIG extends DatabaseAdapterConfig, CONNECTOR extends DatabaseConnectionProvider<?>>
-      DatabaseAdapterFactory<CONFIG, CONNECTOR> loadFactoryByName(String name) {
+  static <
+          Config extends DatabaseAdapterConfig,
+          AdjustableConfig extends Config,
+          Connector extends DatabaseConnectionProvider<?>>
+      DatabaseAdapterFactory<Config, AdjustableConfig, Connector> loadFactoryByName(String name) {
     return loadFactory(f -> f.getName().equalsIgnoreCase(name));
   }
 
-  static <CONFIG extends DatabaseAdapterConfig, CONNECTOR extends DatabaseConnectionProvider<?>>
-      DatabaseAdapterFactory<CONFIG, CONNECTOR> loadFactory(
-          Predicate<DatabaseAdapterFactory<?, ?>> check) {
+  static <
+          Config extends DatabaseAdapterConfig,
+          AdjustableConfig extends Config,
+          Connector extends DatabaseConnectionProvider<?>>
+      DatabaseAdapterFactory<Config, AdjustableConfig, Connector> loadFactory(
+          Predicate<DatabaseAdapterFactory<?, ?, ?>> check) {
     @SuppressWarnings("rawtypes")
     Iterator<DatabaseAdapterFactory> iter =
         ServiceLoader.load(DatabaseAdapterFactory.class).iterator();
@@ -91,7 +103,7 @@ public interface DatabaseAdapterFactory<
 
     while (iter.hasNext()) {
       @SuppressWarnings("unchecked")
-      DatabaseAdapterFactory<CONFIG, CONNECTOR> candidate = iter.next();
+      DatabaseAdapterFactory<Config, AdjustableConfig, Connector> candidate = iter.next();
       if (check.test(candidate)) {
         return candidate;
       }

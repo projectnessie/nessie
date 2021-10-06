@@ -63,7 +63,7 @@ import org.projectnessie.versioned.persist.adapter.DatabaseConnectionProvider;
 public interface TestConnectionProviderSource<CONN_CONFIG extends DatabaseConnectionConfig> {
 
   boolean isCompatibleWith(
-      DatabaseAdapterConfig adapterConfig, DatabaseAdapterFactory<?, ?> databaseAdapterFactory);
+      DatabaseAdapterConfig adapterConfig, DatabaseAdapterFactory<?, ?, ?> databaseAdapterFactory);
 
   /** Creates the default {@link DatabaseConnectionConfig}. */
   CONN_CONFIG createDefaultConnectionProviderConfig();
@@ -125,7 +125,7 @@ public interface TestConnectionProviderSource<CONN_CONFIG extends DatabaseConnec
   static <CONN_CONFIG extends DatabaseConnectionConfig>
       TestConnectionProviderSource<CONN_CONFIG> findCompatibleProviderSource(
           DatabaseAdapterConfig databaseAdapterConfig,
-          DatabaseAdapterFactory<?, ?> databaseAdapterFactory,
+          DatabaseAdapterFactory<?, ?, ?> databaseAdapterFactory,
           String providerSpec) {
     List<TestConnectionProviderSource> providerSources = new ArrayList<>();
     for (TestConnectionProviderSource ps : ServiceLoader.load(TestConnectionProviderSource.class)) {

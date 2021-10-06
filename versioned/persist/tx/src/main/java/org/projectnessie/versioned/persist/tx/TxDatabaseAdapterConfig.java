@@ -19,7 +19,6 @@ import org.immutables.value.Value;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 
 /** TX-database-adapter config interface. */
-@Value.Immutable(lazyhash = true)
 public interface TxDatabaseAdapterConfig extends DatabaseAdapterConfig {
 
   int DEFAULT_BATCH_SIZE = 20;

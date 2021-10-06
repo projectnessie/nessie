@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.projectnessie.versioned.persist.adapter.AdjustableDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseConnectionConfig;
 
@@ -37,7 +38,8 @@ public class SystemPropertiesConfigurer {
 
   public static final String CONFIG_NAME_PREFIX = "nessie.store.";
 
-  public static <T extends DatabaseAdapterConfig> T configureAdapterFromSystemProperties(T config) {
+  public static <T extends AdjustableDatabaseAdapterConfig> T configureAdapterFromSystemProperties(
+      T config) {
     return configureAdapterFromProperties(config, System::getProperty);
   }
 
@@ -46,7 +48,7 @@ public class SystemPropertiesConfigurer {
     return configureConnectionFromProperties(config, System::getProperty);
   }
 
-  public static <T extends DatabaseAdapterConfig> T configureAdapterFromProperties(
+  public static <T extends AdjustableDatabaseAdapterConfig> T configureAdapterFromProperties(
       T config, Function<String, String> property) {
     return configureFromPropertiesGeneric(config, DatabaseAdapterConfig.class, property);
   }

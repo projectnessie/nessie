@@ -29,7 +29,7 @@ public class H2TestConnectionProviderSource
 
   @Override
   public boolean isCompatibleWith(
-      DatabaseAdapterConfig adapterConfig, DatabaseAdapterFactory<?, ?> databaseAdapterFactory) {
+      DatabaseAdapterConfig adapterConfig, DatabaseAdapterFactory<?, ?, ?> databaseAdapterFactory) {
     return adapterConfig instanceof TxDatabaseAdapterConfig
         && databaseAdapterFactory instanceof H2DatabaseAdapterFactory;
   }

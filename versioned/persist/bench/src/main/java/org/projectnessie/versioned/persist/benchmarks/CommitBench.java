@@ -47,6 +47,7 @@ import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceRetryFailureException;
 import org.projectnessie.versioned.StringStoreWorker;
+import org.projectnessie.versioned.persist.adapter.AdjustableDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
@@ -108,13 +109,20 @@ public class CommitBench {
           initialOperations(this, keys, contentsIds));
     }
 
-    private <CONFIG extends DatabaseAdapterConfig> DatabaseAdapter adapterByName() {
+    private DatabaseAdapter adapterByName() {
       String adapterName =
           (adapter.indexOf(':') <= 0) ? adapter : adapter.substring(0, adapter.indexOf(':'));
-      DatabaseAdapterFactory<CONFIG, DatabaseConnectionProvider<DatabaseConnectionConfig>> factory =
-          DatabaseAdapterFactory.loadFactory(f -> f.getName().equalsIgnoreCase(adapterName));
+      DatabaseAdapterFactory<
+              ? extends DatabaseAdapterConfig,
+              ? extends AdjustableDatabaseAdapterConfig,
+              DatabaseConnectionProvider<DatabaseConnectionConfig>>
+          factory =
+              DatabaseAdapterFactory.loadFactory(f -> f.getName().equalsIgnoreCase(adapterName));
 
-      DatabaseAdapterFactory.Builder<CONFIG, DatabaseConnectionProvider<DatabaseConnectionConfig>>
+      DatabaseAdapterFactory.Builder<
+              ? extends DatabaseAdapterConfig,
+              ? extends AdjustableDatabaseAdapterConfig,
+              DatabaseConnectionProvider<DatabaseConnectionConfig>>
           builder =
               factory
                   .newBuilder()
