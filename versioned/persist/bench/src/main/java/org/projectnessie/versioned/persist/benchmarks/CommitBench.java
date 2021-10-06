@@ -76,7 +76,7 @@ public class CommitBench {
     final AtomicInteger retryFailures = new AtomicInteger();
     final AtomicInteger conflictsFailures = new AtomicInteger();
     final AtomicInteger success = new AtomicInteger();
-    DatabaseConnectionProvider<?> connectionProvider;
+    TestConnectionProviderSource<DatabaseConnectionConfig> providerSource;
     DatabaseAdapter databaseAdapter;
     PersistVersionStore<String, String, StringStoreWorker.TestEnum> versionStore;
     List<Key> keys;
@@ -124,7 +124,7 @@ public class CommitBench {
           adapter.indexOf(':') == -1
               ? null
               : adapter.substring(adapter.indexOf(':') + 1).toLowerCase(Locale.ROOT);
-      TestConnectionProviderSource<DatabaseConnectionConfig> providerSource =
+      providerSource =
           TestConnectionProviderSource.findCompatibleProviderSource(
               builder.getConfig(), factory, providerSpec);
       providerSource.configureConnectionProviderConfigFromDefaults(
@@ -154,9 +154,9 @@ public class CommitBench {
       successRate /= total;
       successRate *= 100;
       System.out.printf(
-          "(%.02f%% retries (%d), %.02f%% conflicts (%d), %.02f%% success (%d))",
+          "(%.02f%% retries (%d), %.02f%% conflicts (%d), %.02f%% success (%d)) ",
           retryRate, retries, conflictRate, conflicts, successRate, successes);
-      connectionProvider.close();
+      providerSource.stop();
     }
   }
 
