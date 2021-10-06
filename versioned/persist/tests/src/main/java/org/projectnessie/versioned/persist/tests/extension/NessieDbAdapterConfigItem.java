@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.persist.tests.extension;
 
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -24,6 +25,7 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE, ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
 @Repeatable(NessieDbAdapterConfigItems.class)
+@Inherited
 public @interface NessieDbAdapterConfigItem {
   String name();
 
