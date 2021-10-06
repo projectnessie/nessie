@@ -13,7 +13,7 @@ In pyspark this would look like
 ``` python
 SparkSession.builder
     .config('spark.jars.packages',
-            'org.apache.iceberg:iceberg-spark3-runtime:{{ versions.iceberg}}')
+            'org.apache.iceberg:iceberg-spark3-runtime:{{ versions.iceberg }}')
     ... rest of spark config
     .getOrCreate()
 ```
