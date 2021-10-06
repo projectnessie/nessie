@@ -1063,28 +1063,28 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       } else {
         parents.add(0, targetHead);
       }
-      ByteString commitMetadata = updateCommitMetadata.apply(sourceCommit.getMetadata());
-      sourceCommit = sourceCommit.withMetadata(commitMetadata);
-      final Hash sourceCommitValueHash =
+      ByteString upatedCommitMeta = updateCommitMetadata.apply(sourceCommit.getMetadata());
+      CommitLogEntry updatedSourceCommit = sourceCommit.withMetadata(upatedCommitMeta);
+      Hash updatedSourceCommitHash =
           individualCommitHash(
-              sourceCommit.getParents(),
-              commitMetadata,
-              sourceCommit.getPuts(),
-              sourceCommit.getDeletes());
+              updatedSourceCommit.getParents(),
+              upatedCommitMeta,
+              updatedSourceCommit.getPuts(),
+              updatedSourceCommit.getDeletes());
 
       CommitLogEntry newEntry =
           buildIndividualCommit(
               ctx,
               timeInMicros,
               parents,
-              sourceCommit.getMetadata(),
-              sourceCommit.getPuts(),
-              sourceCommit.getDeletes(),
+              updatedSourceCommit.getMetadata(),
+              updatedSourceCommit.getPuts(),
+              updatedSourceCommit.getDeletes(),
               keyListDistance,
               newKeyLists);
       keyListDistance = newEntry.getKeyListDistance();
 
-      if (!newEntry.getHash().equals(sourceCommitValueHash)) {
+      if (!newEntry.getHash().equals(updatedSourceCommitHash)) {
         commitsChronological.set(i, newEntry);
         targetHead = newEntry.getHash();
       } else {
