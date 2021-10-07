@@ -50,7 +50,7 @@ public class FlapdoodleMongoTestConnectionProviderSource extends MongoTestConnec
 
   @Override
   public boolean isCompatibleWith(
-      DatabaseAdapterConfig adapterConfig, DatabaseAdapterFactory<?, ?> databaseAdapterFactory) {
+      DatabaseAdapterConfig adapterConfig, DatabaseAdapterFactory<?, ?, ?> databaseAdapterFactory) {
     return adapterConfig instanceof NonTransactionalDatabaseAdapterConfig;
   }
 

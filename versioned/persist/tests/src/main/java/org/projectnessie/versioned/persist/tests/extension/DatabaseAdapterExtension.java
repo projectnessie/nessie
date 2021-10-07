@@ -42,6 +42,7 @@ import org.junit.platform.commons.util.ExceptionUtils;
 import org.junit.platform.commons.util.ReflectionUtils;
 import org.projectnessie.versioned.StringStoreWorker;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.persist.adapter.AdjustableDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
@@ -197,16 +198,22 @@ public class DatabaseAdapterExtension
     return opt;
   }
 
-  static <CONFIG extends DatabaseAdapterConfig, CONNECTOR extends DatabaseConnectionProvider<?>>
-      DatabaseAdapter createAdapterResource(
-          ExtensionContext context, ParameterContext parameterContext) {
-    DatabaseAdapterFactory<CONFIG, CONNECTOR> factory =
-        findAnnotation(context, parameterContext, NessieDbAdapterName.class)
-            .map(NessieDbAdapterName::value)
-            .map(DatabaseAdapterFactory::<CONFIG, CONNECTOR>loadFactoryByName)
-            .orElseGet(() -> DatabaseAdapterFactory.loadFactory(x -> true));
+  static DatabaseAdapter createAdapterResource(
+      ExtensionContext context, ParameterContext parameterContext) {
+    DatabaseAdapterFactory<
+            DatabaseAdapterConfig, AdjustableDatabaseAdapterConfig, DatabaseConnectionProvider<?>>
+        factory =
+            findAnnotation(context, parameterContext, NessieDbAdapterName.class)
+                .map(NessieDbAdapterName::value)
+                .map(
+                    DatabaseAdapterFactory
+                        ::<DatabaseAdapterConfig, AdjustableDatabaseAdapterConfig,
+                            DatabaseConnectionProvider<?>>loadFactoryByName)
+                .orElseGet(() -> DatabaseAdapterFactory.loadFactory(x -> true));
 
-    DatabaseAdapterFactory.Builder<CONFIG, CONNECTOR> builder = factory.newBuilder();
+    DatabaseAdapterFactory.Builder<
+            DatabaseAdapterConfig, AdjustableDatabaseAdapterConfig, DatabaseConnectionProvider<?>>
+        builder = factory.newBuilder();
     builder
         .configure(
             c ->

@@ -16,12 +16,11 @@
 package org.projectnessie.versioned.persist.mongodb;
 
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
-import org.projectnessie.versioned.persist.nontx.ImmutableNonTransactionalDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
+import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterFactory;
 
 public class MongoDatabaseAdapterFactory
-    implements DatabaseAdapterFactory<NonTransactionalDatabaseAdapterConfig, MongoDatabaseClient> {
+    extends NonTransactionalDatabaseAdapterFactory<MongoDatabaseClient> {
 
   public static final String NAME = "MongoDB";
 
@@ -31,17 +30,8 @@ public class MongoDatabaseAdapterFactory
   }
 
   @Override
-  public Builder<NonTransactionalDatabaseAdapterConfig, MongoDatabaseClient> newBuilder() {
-    return new Builder<NonTransactionalDatabaseAdapterConfig, MongoDatabaseClient>() {
-      @Override
-      protected NonTransactionalDatabaseAdapterConfig getDefaultConfig() {
-        return ImmutableNonTransactionalDatabaseAdapterConfig.builder().build();
-      }
-
-      @Override
-      public DatabaseAdapter build() {
-        return new MongoDatabaseAdapter(getConfig(), getConnector());
-      }
-    };
+  protected DatabaseAdapter create(
+      NonTransactionalDatabaseAdapterConfig config, MongoDatabaseClient client) {
+    return new MongoDatabaseAdapter(config, client);
   }
 }

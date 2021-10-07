@@ -26,7 +26,7 @@ public class PostgresTestConnectionProviderSource extends ContainerTestConnectio
 
   @Override
   public boolean isCompatibleWith(
-      DatabaseAdapterConfig adapterConfig, DatabaseAdapterFactory<?, ?> databaseAdapterFactory) {
+      DatabaseAdapterConfig adapterConfig, DatabaseAdapterFactory<?, ?, ?> databaseAdapterFactory) {
     return adapterConfig instanceof TxDatabaseAdapterConfig
         && databaseAdapterFactory instanceof PostgresDatabaseAdapterFactory;
   }
