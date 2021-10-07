@@ -49,6 +49,7 @@ import org.projectnessie.model.Operation;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
+import org.projectnessie.model.Validation;
 
 public class ITNessieStatements extends AbstractSparkTest {
 
@@ -227,13 +228,33 @@ public class ITNessieStatements extends AbstractSparkTest {
     assertThat(sql("CREATE BRANCH %s IN nessie", random))
         .containsExactly(row("Branch", random, hash));
 
-    commitAndReturnLog(refName);
+    List<Object[]> commits = commitAndReturnLog(refName);
     sql("USE REFERENCE %s", refName);
     sql("MERGE BRANCH %s INTO main IN nessie", refName);
     Reference main = nessieClient.getTreeApi().getReferenceByName("main");
 
     assertThat(sql("ASSIGN BRANCH %s TO main IN nessie", random))
         .containsExactly(row("Branch", random, main.getHash()));
+
+    for (Object[] commit : commits) {
+      String currentHash = (String) commit[2];
+      assertThat(sql("ASSIGN BRANCH %s TO main AT %s IN nessie", random, currentHash))
+          .containsExactly(row("Branch", random, currentHash));
+    }
+
+    String invalidHash = "abc";
+    String unknownHash = "dd8d46a3dd5478ce69749a5455dba29d74f6d1171188f4c21d0e15ff4a0a9a9c";
+    String invalidBranch = "invalidBranch";
+    assertThatThrownBy(() -> sql("ASSIGN BRANCH %s TO main AT %s IN nessie", random, invalidHash))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage(Validation.HASH_MESSAGE + " - but was: " + invalidHash);
+    assertThatThrownBy(() -> sql("ASSIGN BRANCH %s TO main AT %s IN nessie", random, unknownHash))
+        .isInstanceOf(NessieNotFoundException.class)
+        .hasMessage("Unable to find a ref or hash provided.");
+    assertThatThrownBy(
+            () -> sql("ASSIGN BRANCH %s TO %s AT %s IN nessie", random, invalidBranch, hash))
+        .isInstanceOf(NessieNotFoundException.class)
+        .hasMessage(String.format("Unable to find reference [%s].", invalidBranch));
   }
 
   @Test
@@ -241,13 +262,32 @@ public class ITNessieStatements extends AbstractSparkTest {
     String random = "randomTag";
     assertThat(sql("CREATE TAG %s IN nessie", random)).containsExactly(row("Tag", random, hash));
 
-    commitAndReturnLog(refName);
+    List<Object[]> commits = commitAndReturnLog(refName);
     sql("USE REFERENCE %s", refName);
     sql("MERGE BRANCH %s INTO main IN nessie", refName);
     Reference main = nessieClient.getTreeApi().getReferenceByName("main");
 
     assertThat(sql("ASSIGN TAG %s TO main IN nessie", random))
         .containsExactly(row("Tag", random, main.getHash()));
+
+    for (Object[] commit : commits) {
+      String currentHash = (String) commit[2];
+      assertThat(sql("ASSIGN TAG %s TO main AT %s IN nessie", random, currentHash))
+          .containsExactly(row("Tag", random, currentHash));
+    }
+
+    String invalidHash = "abc";
+    String unknownHash = "dd8d46a3dd5478ce69749a5455dba29d74f6d1171188f4c21d0e15ff4a0a9a9c";
+    String invalidTag = "invalidTag";
+    assertThatThrownBy(() -> sql("ASSIGN TAG %s TO main AT %s IN nessie", random, invalidHash))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage(Validation.HASH_MESSAGE + " - but was: " + invalidHash);
+    assertThatThrownBy(() -> sql("ASSIGN TAG %s TO main AT %s IN nessie", random, unknownHash))
+        .isInstanceOf(NessieNotFoundException.class)
+        .hasMessage("Unable to find a ref or hash provided.");
+    assertThatThrownBy(() -> sql("ASSIGN TAG %s TO %s AT %s IN nessie", random, invalidTag, hash))
+        .isInstanceOf(NessieNotFoundException.class)
+        .hasMessage(String.format("Unable to find reference [%s].", invalidTag));
   }
 
   @Test

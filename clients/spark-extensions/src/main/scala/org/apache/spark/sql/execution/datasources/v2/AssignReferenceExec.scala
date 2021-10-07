@@ -28,6 +28,7 @@ case class AssignReferenceExec(
     isBranch: Boolean,
     currentCatalog: CatalogPlugin,
     toRefName: Option[String],
+    toHash: Option[String],
     catalog: Option[String]
 ) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog) {
 
@@ -38,17 +39,18 @@ case class AssignReferenceExec(
       .map(r => nessieClient.getTreeApi.getReferenceByName(r))
       .getOrElse(nessieClient.getTreeApi.getDefaultBranch)
     val hash = nessieClient.getTreeApi.getReferenceByName(branch).getHash
+    val assignToHash = toHash.getOrElse(toRef.getHash)
     if (isBranch) {
       nessieClient.getTreeApi.assignBranch(
         branch,
         hash,
-        Branch.of(toRef.getName, toRef.getHash)
+        Branch.of(toRef.getName, assignToHash)
       )
     } else {
       nessieClient.getTreeApi.assignTag(
         branch,
         hash,
-        Tag.of(toRef.getName, toRef.getHash)
+        Tag.of(toRef.getName, assignToHash)
       )
     }
 

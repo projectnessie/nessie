@@ -67,7 +67,7 @@ statement
     | SHOW REFERENCE (IN catalog=identifier)?                                               #nessieShowRef
     | MERGE BRANCH (identifier)? (INTO toRef=identifier)?  (IN catalog=identifier)?         #nessieMergeRef
     | SHOW LOG (identifier)? (IN catalog=identifier)?                                       #nessieShowLog
-    | ASSIGN (BRANCH|TAG) (identifier)? (TO toRef=identifier)? (IN catalog=identifier)?     #nessieAssignRef
+    | ASSIGN (BRANCH|TAG) (identifier)? (TO toRef=identifier (AT toHash=identifier)?)? (IN catalog=identifier)?     #nessieAssignRef
     // add collect gc action
     // add purge gc action
     ;

@@ -94,6 +94,7 @@ case class NessieExtendedDataSourceV2Strategy(spark: SparkSession)
           reference,
           isBranch,
           toRefName,
+          toHash,
           catalog
         ) =>
       AssignReferenceExec(
@@ -102,6 +103,7 @@ case class NessieExtendedDataSourceV2Strategy(spark: SparkSession)
         isBranch,
         spark.sessionState.catalogManager.currentCatalog,
         toRefName,
+        toHash,
         catalog
       ) :: Nil
     case _ => Nil
