@@ -25,7 +25,7 @@ case class UseReferenceExec(
     output: Seq[Attribute],
     branch: String,
     currentCatalog: CatalogPlugin,
-    ts: Option[String],
+    timestampOrHash: Option[String],
     catalog: Option[String]
 ) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog) {
 
@@ -33,11 +33,8 @@ case class UseReferenceExec(
       nessieClient: NessieClient
   ): Seq[InternalRow] = {
 
-    val ref = NessieUtils.setCurrentRef(
-      currentCatalog,
-      catalog,
-      NessieUtils.calculateRef(branch, ts, nessieClient)
-    )
+    val ref = NessieUtils.calculateRef(branch, timestampOrHash, nessieClient)
+    NessieUtils.setCurrentRefForSpark(currentCatalog, catalog, ref)
 
     Seq(
       InternalRow(

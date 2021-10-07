@@ -20,7 +20,7 @@ import org.apache.spark.sql.types.{DataTypes, Metadata, StructField, StructType}
 
 case class UseReferenceCommand(
     branch: String,
-    ts: Option[String],
+    timestampOrHash: Option[String],
     catalog: Option[String]
 ) extends Command {
 
