@@ -37,7 +37,7 @@ public @interface NessieDbAdapter {
    *   <li>static
    *   <li>not private
    *   <li>have a single parameter {@code
-   *       org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig}
+   *       org.projectnessie.versioned.persist.adapter.AdjustableDatabaseAdapterConfig}
    *   <li>return {@code org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig}
    * </ul>
    *
@@ -47,7 +47,7 @@ public @interface NessieDbAdapter {
    *   &#64;NessieDbAdapter(configMethod = "applyTestClock")
    *   protected static DatabaseAdapter databaseAdapter;
    *
-   *   static DatabaseAdapterConfig applyTestClock(DatabaseAdapterConfig config) {
+   *   static DatabaseAdapterConfig applyTestClock(AdjustableDatabaseAdapterConfig config) {
    *     return config.withClock(TEST_CLOCK);
    *   }
    * </code></pre>

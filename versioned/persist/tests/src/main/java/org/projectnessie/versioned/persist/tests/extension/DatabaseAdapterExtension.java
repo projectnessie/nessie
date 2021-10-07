@@ -313,8 +313,7 @@ public class DatabaseAdapterExtension
       applyCustomConfig =
           c -> {
             try {
-              DatabaseAdapterConfig r = (DatabaseAdapterConfig) configMethod.invoke(null, c);
-              return (DatabaseAdapterConfig) r;
+              return (DatabaseAdapterConfig) configMethod.invoke(null, c);
             } catch (InvocationTargetException | IllegalAccessException e) {
               throw new RuntimeException(e);
             }
