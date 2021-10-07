@@ -19,14 +19,14 @@ Additional configuration details can be found in the [Spark via Iceberg](iceberg
 ## Grammar
 The current grammar is shown below:
 ```
-: CREATE (BRANCH|TAG) (IF NOT EXISTS)? identifier (IN catalog=identifier)? (AS reference=identifier)?
+: CREATE (BRANCH|TAG) (IF NOT EXISTS)? identifier (IN catalog=identifier)? (FROM reference=identifier)?
 | DROP (BRANCH|TAG) identifier (IN catalog=identifier)?
 | USE REFERENCE identifier (AT ts=identifier)?  (IN catalog=identifier)?
 | LIST REFERENCES (IN catalog=identifier)?
 | SHOW REFERENCE (IN catalog=identifier)?
 | MERGE BRANCH (identifier)? (INTO toRef=identifier)?  (IN catalog=identifier)?
 | SHOW LOG (identifier)? (IN catalog=identifier)?
-| ASSIGN (BRANCH|TAG) (identifier)? (AS toRef=identifier)? (IN catalog=identifier)?
+| ASSIGN (BRANCH|TAG) (identifier)? (TO toRef=identifier)? (IN catalog=identifier)?
 ```
 
 ## Creating Branches/Tags
@@ -41,7 +41,7 @@ Creating a tag `devTag` in the `nessie` catalog (in case it doesn't already exis
 
 Creating a branch `dev` in the `nessie` catalog off of an existing branch/tag `base`:
 
-* `CREATE BRANCH IF NOT EXISTS dev IN nessie AS base`
+* `CREATE BRANCH IF NOT EXISTS dev IN nessie FROM base`
 
 Note that in case `base` doesn't exist, Nessie will fallback to the default branch (`main`).
 
@@ -87,11 +87,11 @@ It is possible to look at the commit log of a particular branch/tag in the `ness
 
 Assigning a branch `dev` to `base` in catalog `nessie` can be done via:
 
-* `ASSIGN BRANCH dev AS base IN nessie`
+* `ASSIGN BRANCH dev TO base IN nessie`
 
 Assigning a tag `devTag` to `base` in catalog `nessie` can be done via:
 
-* `ASSIGN TAG devTag AS base IN nessie`
+* `ASSIGN TAG devTag TO base IN nessie`
 
 Note that in case `base` doesn't exist, Nessie will fallback to the default branch (`main`).
 
