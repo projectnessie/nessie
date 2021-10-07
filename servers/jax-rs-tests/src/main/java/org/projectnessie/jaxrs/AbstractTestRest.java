@@ -1665,6 +1665,33 @@ public abstract class AbstractTestRest {
                 "Could not find commit '%s' in reference '%s'.", invalidHash, b.getName()));
   }
 
+  /** Assigning a branch/tag to a fresh main without any commits didn't work in 0.9.2 */
+  @Test
+  public void testAssignRefToFreshMain() throws NessieNotFoundException, NessieConflictException {
+    Reference main = api.getReference().refName("main").get();
+    // make sure main doesn't have any commits
+    LogResponse log = api.getCommitLog().refName(main.getName()).get();
+    assertThat(log.getOperations()).isEmpty();
+
+    String testBranch = "testBranch";
+    api.createReference()
+        .sourceRefName(main.getName())
+        .reference(Branch.of(testBranch, null))
+        .create();
+    Reference testBranchRef = api.getReference().refName(testBranch).get();
+    api.assignBranch().hash(testBranchRef.getHash()).branchName(testBranch).assignTo(main).assign();
+    assertThat(testBranchRef.getHash()).isEqualTo(main.getHash());
+
+    String testTag = "testTag";
+    api.createReference()
+        .sourceRefName(main.getName())
+        .reference(Branch.of(testTag, null))
+        .create();
+    Reference testTagRef = api.getReference().refName(testTag).get();
+    api.assignTag().hash(testTagRef.getHash()).tagName(testTag).assignTo(main).assign();
+    assertThat(testTagRef.getHash()).isEqualTo(main.getHash());
+  }
+
   void unwrap(Executable exec) throws Throwable {
     try {
       exec.execute();

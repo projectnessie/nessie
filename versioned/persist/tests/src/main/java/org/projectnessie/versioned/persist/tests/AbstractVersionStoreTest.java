@@ -43,6 +43,8 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.Operation;
 import org.projectnessie.versioned.Put;
+import org.projectnessie.versioned.Ref;
+import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.StringStoreWorker;
@@ -576,5 +578,28 @@ public abstract class AbstractVersionStoreTest extends AbstractITVersionStore {
     assertThatThrownBy(() -> f.function.run(store()))
         .isInstanceOf(ReferenceNotFoundException.class)
         .hasMessage(f.msg);
+  }
+
+  /** Assigning a branch/tag to a fresh main without any commits didn't work in 0.9.2 */
+  @Test
+  public void assignReferenceToFreshMain()
+      throws ReferenceNotFoundException, ReferenceAlreadyExistsException,
+          ReferenceConflictException {
+    BranchName main = BranchName.of("main");
+    WithHash<Ref> mainRef = store.toRef(main.getName());
+    assertThat(store().getCommits(main)).isEmpty();
+    assertThat(store.getNamedRefs())
+        .extracting(r -> r.getValue().getName())
+        .containsExactly(main.getName());
+
+    BranchName testBranch = BranchName.of("testBranch");
+    Hash testBranchHash = store.create(testBranch, Optional.empty());
+    store.assign(testBranch, Optional.of(testBranchHash), mainRef.getHash());
+    assertThat(store.toRef(testBranch.getName()).getHash()).isEqualTo(mainRef.getHash());
+
+    TagName testTag = TagName.of("testTag");
+    Hash testTagHash = store.create(testTag, Optional.empty());
+    store.assign(testTag, Optional.of(testTagHash), mainRef.getHash());
+    assertThat(store.toRef(testTag.getName()).getHash()).isEqualTo(mainRef.getHash());
   }
 }
