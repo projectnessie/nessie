@@ -105,8 +105,9 @@ class NessieSqlExtensionsAstBuilder(delegate: ParserInterface)
       val isBranch = ctx.TAG == null
       val refName = ctx.identifier(0).getText
       val toRefName = asText(ctx.toRef)
+      val toHash = asText(ctx.toHash)
       val catalogName = asText(ctx.catalog)
-      AssignReferenceCommand(refName, isBranch, toRefName, catalogName)
+      AssignReferenceCommand(refName, isBranch, toRefName, toHash, catalogName)
     }
 
   private def asText(parameter: IdentifierContext): Option[String] = {

@@ -99,6 +99,10 @@ Assigning a tag `devTag` to `base` in catalog `nessie` can be done via:
 
 Note that in case `base` doesn't exist, Nessie will fallback to the default branch (`main`).
 
+It is also possible to assign a branch/tag to a `base` at a particular `hash`:
+
+* `ASSIGN TAG devTag TO base AT dd8d46a3dd5478ce69749a5455dba29d74f6d1171188f4c21d0e15ff4a0a9a9b IN nessie`
+
 
 ## Merging a Branch into another Branch
 

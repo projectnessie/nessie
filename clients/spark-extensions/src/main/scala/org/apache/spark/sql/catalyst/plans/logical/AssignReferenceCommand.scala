@@ -22,6 +22,7 @@ case class AssignReferenceCommand(
     reference: String,
     isBranch: Boolean,
     toRefName: Option[String],
+    toHash: Option[String],
     catalog: Option[String]
 ) extends Command {
 
