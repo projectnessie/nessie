@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.persist.tests.extension;
 
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -27,8 +28,9 @@ import java.lang.annotation.Target;
  * org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory} implementation on the
  * classpath.
  */
-@Target({ElementType.TYPE, ElementType.FIELD, ElementType.PARAMETER})
+@Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
+@Inherited
 public @interface NessieDbAdapterName {
   String value();
 }

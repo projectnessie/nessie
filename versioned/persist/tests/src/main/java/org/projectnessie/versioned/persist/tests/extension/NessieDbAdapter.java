@@ -16,10 +16,41 @@
 package org.projectnessie.versioned.persist.tests.extension;
 
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 @Target({ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface NessieDbAdapter {}
+@Inherited
+public @interface NessieDbAdapter {
+
+  /**
+   * Optional: name of method to update the {@link
+   * org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig configuration} for the {@link
+   * org.projectnessie.versioned.persist.adapter.DatabaseAdapter}.
+   *
+   * <p>The method must be
+   *
+   * <ul>
+   *   <li>static
+   *   <li>not private
+   *   <li>have a single parameter {@code
+   *       org.projectnessie.versioned.persist.adapter.AdjustableDatabaseAdapterConfig}
+   *   <li>return {@code org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig}
+   * </ul>
+   *
+   * <p>Example:
+   *
+   * <pre><code>
+   *   &#64;NessieDbAdapter(configMethod = "applyTestClock")
+   *   protected static DatabaseAdapter databaseAdapter;
+   *
+   *   static DatabaseAdapterConfig applyTestClock(AdjustableDatabaseAdapterConfig config) {
+   *     return config.withClock(TEST_CLOCK);
+   *   }
+   * </code></pre>
+   */
+  String configMethod() default "";
+}
