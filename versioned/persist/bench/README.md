@@ -35,7 +35,7 @@ Benchmarks:
 ## Database-adapter configuration options
 
 Some database-adapters need extra configuration. These options are "injected" via
-[SystemPropertiesConfigurer](../adapter/src/main/java/org/projectnessie/versioned/persist/adapter/SystemPropertiesConfigurer.java)
+[SystemPropertiesConfigurer](../tests/src/main/java/org/projectnessie/versioned/persist/tests/SystemPropertiesConfigurer.java)
 .
 
 Basically all database-adapters, except those intended for testing, require configuration options
@@ -95,19 +95,19 @@ docker run -d \
   mongo:latest
 
 java \
-  -Dnessie.store.connection.string=mongodb://localhost:27017 \
-  -Dnessie.store.database.name=nessie-mongodb \
   -jar versioned/persist/bench/target/nessie-versioned-persist-bench-0.9.3-SNAPSHOT-jmh.jar \
-  -p adapter=MongoDB
+  -p adapter=MongoDB \
+  -jvmArgs -Dnessie.store.connection.string=mongodb://localhost:27017 \
+  -jvmArgs -Dnessie.store.database.name=nessie-mongodb
 ```
 
 ### H2 / In-Memory
 
 ```bash
 java \
-  -Dnessie.store.jdbc.url=jdbc:h2:mem:nessie \
   -jar versioned/persist/bench/target/nessie-versioned-persist-bench-0.9.3-SNAPSHOT-jmh.jar \
-  -p adapter=H2:h2
+  -p adapter=H2:h2 \
+  -jvmArgs -Dnessie.store.jdbc.url=jdbc:h2:mem:nessie 
 ```
 
 ### H2 / Remote
@@ -116,9 +116,9 @@ java \
 
 ```bash
 java \
-  -Dnessie.store.jdbc.url=<JDBC_URL_HERE> \
   -jar versioned/persist/bench/target/nessie-versioned-persist-bench-0.9.3-SNAPSHOT-jmh.jar \
-  -p adapter=H2:generic
+  -p adapter=H2:generic \
+  -jvmArgs -Dnessie.store.jdbc.url=<JDBC_URL_HERE>
 ```
 
 ### PostgreSQL
@@ -131,11 +131,11 @@ docker run -d \
   postgres:latest
 
 java \
-  -Dnessie.store.jdbc.url=jdbc:postgresql://localhost:5432/postgres \
-  -Dnessie.store.jdbc.user=postgres \
-  -Dnessie.store.jdbc.pass=nessie-bench \
   -jar versioned/persist/bench/target/nessie-versioned-persist-bench-0.9.3-SNAPSHOT-jmh.jar \
-  -p adapter=PostgreSQL
+  -p adapter=PostgreSQL \
+  -jvmArgs -Dnessie.store.jdbc.url=jdbc:postgresql://localhost:5432/postgres \ 
+  -jvmArgs -Dnessie.store.jdbc.user=postgres \ 
+  -jvmArgs -Dnessie.store.jdbc.pass=nessie-bench 
 ```
 
 ### Cockroach
@@ -149,11 +149,11 @@ docker run -d \
   --insecure
 
 java \
-  -Dnessie.store.jdbc.url=jdbc:postgresql://localhost:26257/postgres \
-  -Dnessie.store.jdbc.user=root \
-  -Dnessie.store.jdbc.pass= \
   -jar versioned/persist/bench/target/nessie-versioned-persist-bench-0.9.3-SNAPSHOT-jmh.jar \
-  -p adapter=PostgreSQL
+  -p adapter=PostgreSQL \
+  -jvmArgs -Dnessie.store.jdbc.url=jdbc:postgresql://localhost:26257/postgres \
+  -jvmArgs -Dnessie.store.jdbc.user=root \
+  -jvmArgs -Dnessie.store.jdbc.pass= 
 ```
 
 Docs: [Cockroach](https://www.cockroachlabs.com/docs/stable/start-a-local-cluster-in-docker-linux.html)
