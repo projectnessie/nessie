@@ -564,9 +564,7 @@ public abstract class AbstractVersionStoreTest extends AbstractITVersionStore {
                     s.merge(
                         s.noAncestorHash(),
                         BranchName.of("main"),
-                        Optional.of(Hash.of("12341234123412341234123412341234123412341234"))))
-        //
-        );
+                        Optional.of(Hash.of("12341234123412341234123412341234123412341234")))));
   }
 
   @ParameterizedTest

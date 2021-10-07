@@ -28,10 +28,12 @@ import org.projectnessie.model.{
   ImmutableHash,
   ImmutableTag,
   Reference,
-  Tag
+  Tag,
+  Validation
 }
 
-import java.time.{LocalDateTime, ZoneOffset}
+import java.time.format.DateTimeParseException
+import java.time.{Instant, LocalDateTime, ZoneOffset}
 import scala.collection.JavaConverters._
 
 object NessieUtils {
@@ -42,54 +44,122 @@ object NessieUtils {
 
   def calculateRef(
       branch: String,
-      ts: Option[String],
+      tsOrHash: Option[String],
       nessieClient: NessieClient
   ): Reference = {
-    //todo we are assuming always in UTC. ignoring tz set by spark etc
-    val timestamp = ts
+    val hash = tsOrHash
       .map(x => x.replaceAll("`", ""))
-      .map(x => LocalDateTime.parse(x).atZone(ZoneOffset.UTC).toInstant)
+      .filter(x => Validation.isValidHash(x))
       .orNull
+
+    if (null != hash) {
+      return findReferenceFromHash(branch, hash, nessieClient)
+    }
+
+    //todo we are assuming always in UTC. ignoring tz set by spark etc
+    val timestamp = tsOrHash
+      .map(x => x.replaceAll("`", ""))
+      .map(x => {
+        try {
+          LocalDateTime.parse(x).atZone(ZoneOffset.UTC).toInstant
+        } catch {
+          case e: DateTimeParseException =>
+            throw new NessieNotFoundException(
+              "Invalid timestamp provided: " + e.getMessage
+            )
+        }
+      })
+      .orNull
+
     if (timestamp == null) {
       nessieClient.getTreeApi.getReferenceByName(branch)
     } else {
-      val cm = Option(
-        StreamingUtil
-          .getCommitLogStream(
-            nessieClient.getTreeApi,
-            branch,
-            CommitLogParams
-              .builder()
-              .expression(
-                String.format(
-                  "timestamp(commit.commitTime) < timestamp('%s')",
-                  timestamp
-                )
+      findReferenceFromTimestamp(branch, nessieClient, timestamp)
+    }
+  }
+
+  private def findReferenceFromHash(
+      branch: String,
+      requestedHash: String,
+      nessieClient: NessieClient
+  ) = {
+    val commit = Option(
+      StreamingUtil
+        .getCommitLogStream(
+          nessieClient.getTreeApi,
+          branch,
+          CommitLogParams
+            .builder()
+            .endHash(Validation.validateHash(requestedHash))
+            .build()
+        )
+        .findFirst()
+        .orElse(null)
+    ).map(x => Hash.of(x.getHash))
+    println(commit)
+    val hash = commit match {
+      case Some(value) => value
+      case None =>
+        throw new NessieNotFoundException(
+          String.format(
+            "Cannot find requested hash %s on reference %s.",
+            requestedHash,
+            branch
+          )
+        )
+    }
+    convertToSpecificRef(
+      hash,
+      nessieClient.getTreeApi.getReferenceByName(branch)
+    )
+  }
+
+  private def findReferenceFromTimestamp(
+      branch: String,
+      nessieClient: NessieClient,
+      timestamp: Instant
+  ) = {
+    val commit = Option(
+      StreamingUtil
+        .getCommitLogStream(
+          nessieClient.getTreeApi,
+          branch,
+          CommitLogParams
+            .builder()
+            .expression(
+              String.format(
+                "timestamp(commit.commitTime) < timestamp('%s')",
+                timestamp
               )
-              .build()
-          )
-          .findFirst()
-          .orElse(null)
-      ).map(x => Hash.of(x.getHash))
+            )
+            .build()
+        )
+        .findFirst()
+        .orElse(null)
+    ).map(x => Hash.of(x.getHash))
 
-      val hash = cm match {
-        case Some(value) => value
-        case None =>
-          throw new NessieNotFoundException(
-            String.format("Cannot find a hash before %s.", timestamp)
-          )
-      }
-      val reference = nessieClient.getTreeApi.getReferenceByName(branch)
+    val hash = commit match {
+      case Some(value) => value
+      case None =>
+        throw new NessieNotFoundException(
+          String.format("Cannot find a hash before %s.", timestamp)
+        )
+    }
+    convertToSpecificRef(
+      hash,
+      nessieClient.getTreeApi.getReferenceByName(branch)
+    )
+  }
 
-      reference match {
-        case branch: ImmutableBranch => Branch.of(branch.getName, hash.getHash)
-        case hash: ImmutableHash     => hash
-        case tag: ImmutableTag       => Tag.of(tag.getName, hash.getHash)
-        case _ =>
-          throw new UnsupportedOperationException(
-            s"Unknown reference type $reference"
-          )
-      }
+  private def convertToSpecificRef(hash: Hash, reference: Reference) = {
+    reference match {
+      case branch: ImmutableBranch => Branch.of(branch.getName, hash.getHash)
+      case hash: ImmutableHash     => hash
+      case tag: ImmutableTag       => Tag.of(tag.getName, hash.getHash)
+      case _ =>
+        throw new UnsupportedOperationException(
+          s"Unknown reference type $reference"
+        )
     }
   }
 
@@ -107,11 +177,11 @@ object NessieUtils {
       .build()
   }
 
-  def setCurrentRef(
+  def setCurrentRefForSpark(
       currentCatalog: CatalogPlugin,
       catalog: Option[String],
       ref: Reference
-  ): Reference = {
+  ): Unit = {
     val catalogName = catalog.getOrElse(currentCatalog.name)
     val catalogImpl =
       SparkSession.active.sessionState.catalogManager.catalog(catalogName)
@@ -125,7 +195,6 @@ object NessieUtils {
       catalogName,
       new CaseInsensitiveStringMap(catalogConf)
     )
-    getCurrentRef(currentCatalog, catalog)
   }
 
   def getCurrentRef(

@@ -21,7 +21,7 @@ The current grammar is shown below:
 ```
 : CREATE (BRANCH|TAG) (IF NOT EXISTS)? identifier (IN catalog=identifier)? (FROM reference=identifier)?
 | DROP (BRANCH|TAG) identifier (IN catalog=identifier)?
-| USE REFERENCE identifier (AT ts=identifier)?  (IN catalog=identifier)?
+| USE REFERENCE identifier (AT tsOrHash=identifier)?  (IN catalog=identifier)?
 | LIST REFERENCES (IN catalog=identifier)?
 | SHOW REFERENCE (IN catalog=identifier)?
 | MERGE BRANCH (identifier)? (INTO toRef=identifier)?  (IN catalog=identifier)?
@@ -64,6 +64,10 @@ In order to switch to the HEAD of the branch/tag `ref` in the `nessie` catalog:
 It is also possible to switch to a specific timestamp on a given branch/tag:
 
 * ``USE REFERENCE ref AT `2021-10-06T08:50:37.157602` IN nessie``
+
+Additionally, one can switch to a specific hash on a given branch/tag:
+
+* `USE REFERENCE ref AT dd8d46a3dd5478ce69749a5455dba29d74f6d1171188f4c21d0e15ff4a0a9a9b IN nessie`
 
 ## Listing available Branches/Tags
 

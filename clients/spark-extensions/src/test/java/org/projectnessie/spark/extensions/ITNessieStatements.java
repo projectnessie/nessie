@@ -302,7 +302,7 @@ public class ITNessieStatements extends AbstractSparkTest {
   }
 
   @Test
-  void useShowReferencesAt() throws NessieNotFoundException, NessieConflictException {
+  void useShowReferencesAtTimestamp() throws NessieNotFoundException, NessieConflictException {
     commitAndReturnLog(refName);
     String time = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(LocalDateTime.now(ZoneOffset.UTC));
     hash = nessieClient.getTreeApi().getReferenceByName(refName).getHash();
@@ -314,6 +314,46 @@ public class ITNessieStatements extends AbstractSparkTest {
     assertThatThrownBy(() -> nessieClient.getTreeApi().getReferenceByName(refName))
         .isInstanceOf(NessieNotFoundException.class)
         .hasMessage("Unable to find reference [testBranch].");
+  }
+
+  @Test
+  void useShowReferencesAtHash() throws NessieNotFoundException, NessieConflictException {
+    for (Object[] commit : commitAndReturnLog(refName)) {
+      String currentHash = (String) commit[2];
+      assertThat(sql("USE REFERENCE %s AT %s IN nessie ", refName, currentHash))
+          .containsExactly(row("Branch", refName, currentHash));
+    }
+  }
+
+  @Test
+  void useShowReferencesAtWithFailureConditions()
+      throws NessieNotFoundException, NessieConflictException {
+    commitAndReturnLog(refName);
+    String randomHash = "dd8d46a3dd5478ce69749a5455dba29d74f6d1171188f4c21d0e15ff4a0a9a9c";
+    String invalidTimestamp = "01-01-01";
+    String invalidBranch = "invalidBranch";
+    String invalidHash = "abcdef123";
+    assertThatThrownBy(() -> sql("USE REFERENCE %s AT %s IN nessie ", invalidBranch, hash))
+        .isInstanceOf(NessieNotFoundException.class)
+        .hasMessage(
+            String.format("Could not find commit '%s' in reference '%s'.", hash, invalidBranch));
+
+    assertThatThrownBy(() -> sql("USE REFERENCE %s AT %s IN nessie ", refName, randomHash))
+        .isInstanceOf(NessieNotFoundException.class)
+        .hasMessage(
+            String.format("Could not find commit '%s' in reference '%s'.", randomHash, refName));
+
+    assertThatThrownBy(() -> sql("USE REFERENCE %s AT `%s` IN nessie ", refName, invalidTimestamp))
+        .isInstanceOf(NessieNotFoundException.class)
+        .hasMessageStartingWith(
+            String.format(
+                "Invalid timestamp provided: Text '%s' could not be parsed", invalidTimestamp));
+
+    assertThatThrownBy(() -> sql("USE REFERENCE %s AT %s IN nessie ", refName, invalidHash))
+        .isInstanceOf(NessieNotFoundException.class)
+        .hasMessageStartingWith(
+            String.format(
+                "Invalid timestamp provided: Text '%s' could not be parsed", invalidHash));
   }
 
   @Test

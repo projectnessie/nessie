@@ -58,9 +58,9 @@ class NessieSqlExtensionsAstBuilder(delegate: ParserInterface)
   ): UseReferenceCommand =
     withOrigin(ctx) {
       val refName = ctx.identifier(0).getText
-      val timestamp = asText(ctx.ts)
+      val timestampOrHash = asText(ctx.tsOrHash)
       val catalogName = asText(ctx.catalog)
-      UseReferenceCommand(refName, timestamp, catalogName)
+      UseReferenceCommand(refName, timestampOrHash, catalogName)
     }
 
   override def visitNessieListRef(
