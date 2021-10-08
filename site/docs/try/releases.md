@@ -1,6 +1,6 @@
 # Releases
 
-## 0.10.0 Release (October 8, 2021)
+## 0.10.1 Release (October 8, 2021)
 
 * Spark SQL extension changes
 * Various (Open)API and client (Java, Python) implementation changes to prepare for better

@@ -2,7 +2,7 @@
 History
 =======
 
-0.10.0 (2021-10-08)
+0.10.1 (2021-10-08)
 -------------------
 
 * Various fixes and improvements
