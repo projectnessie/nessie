@@ -296,7 +296,7 @@ def _format_time(dt: datetime.datetime) -> str:
     help="Conditional Hash. Only perform the action if the branch currently points to the hash specified by this option.",
 )
 @click.argument("branch", nargs=1, required=False)
-@click.argument("new_branch", nargs=1, required=False)
+@click.argument("base_ref", nargs=1, required=False)
 @pass_client
 @error_handler
 def branch_(
@@ -306,14 +306,14 @@ def branch_(
     hash_on_ref: str,
     delete: bool,
     branch: str,
-    new_branch: str,
+    base_ref: str,
     condition: str,
 ) -> None:
     """Branch operations.
 
     BRANCH name of branch to list or create/assign
 
-    NEW_BRANCH name of branch to assign from or rename to
+    BASE_REF name of branch or tag from which to create/assign the new BRANCH
 
     Examples:
 
@@ -327,18 +327,18 @@ def branch_(
 
         nessie branch new_branch -> create new branch named 'new_branch' at current HEAD of the default branch
 
-        nessie branch new_branch test -> create new branch named 'new_branch' at head of reference named 'test'
+        nessie branch new_branch main -> create new branch named 'new_branch' at head of reference named 'main'
 
-        nessie branch -o 12345678abcdef new_branch test -> create new branch named 'new_branch' at hash 12345678abcdef
-    on reference named 'test'
+        nessie branch -o 12345678abcdef new_branch main -> create a branch named 'new_branch' at hash 12345678abcdef
+    on reference named 'main'
 
-        nessie branch -f existing_branch test -> assign branch named 'existing_branch' to head of reference named 'test'
+        nessie branch -f existing_branch main -> assign branch named 'existing_branch' to head of reference named 'main'
 
-        nessie branch -o 12345678abcdef -f existing_branch test -> assign branch named 'existing_branch' to hash 12345678abcdef
-    on reference named 'test'
+        nessie branch -o 12345678abcdef -f existing_branch main -> assign branch named 'existing_branch' to hash 12345678abcdef
+    on reference named 'main'
 
     """
-    results = handle_branch_tag(ctx.nessie, list, delete, branch, hash_on_ref, new_branch, True, ctx.json, force, ctx.verbose, condition)
+    results = handle_branch_tag(ctx.nessie, list, delete, branch, hash_on_ref, base_ref, True, ctx.json, force, ctx.verbose, condition)
     if ctx.json:
         click.echo(results)
     elif results:
@@ -363,15 +363,15 @@ def branch_(
     help="Conditional Hash. Only perform the action if the tag currently points to the hash specified by this option.",
 )
 @click.argument("tag_name", nargs=1, required=False)
-@click.argument("new_tag", nargs=1, required=False)
+@click.argument("base_ref", nargs=1, required=False)
 @pass_client
 @error_handler
-def tag(ctx: ContextObject, list: bool, force: bool, hash_on_ref: str, delete: bool, tag_name: str, new_tag: str, condition: str) -> None:
+def tag(ctx: ContextObject, list: bool, force: bool, hash_on_ref: str, delete: bool, tag_name: str, base_ref: str, condition: str) -> None:
     """Tag operations.
 
     TAG_NAME name of branch to list or create/assign
 
-    NEW_TAG name of branch to assign from or rename to
+    BASE_REF name of branch or tag whose HEAD reference is to be used for the new tag
 
     Examples:
 
@@ -379,24 +379,24 @@ def tag(ctx: ContextObject, list: bool, force: bool, hash_on_ref: str, delete: b
 
         nessie tag -l -> list all tags
 
-        nessie tag -l main -> list only main
+        nessie tag -l v1.0 -> list only tag "v1.0"
 
-        nessie tag -d main -> delete main
+        nessie tag -d v1.0 -> delete tag "v1.0"
 
         nessie tag new_tag -> create new tag named 'new_tag' at current HEAD of the default branch
 
-        nessie tag new_tag test -> create new tag named 'new_tag' at head of reference named 'test'
+        nessie tag new_tag main -> create new tag named 'new_tag' at head of reference named 'main' (branch or tag)
 
         nessie tag -o 12345678abcdef new_tag test -> create new tag named 'new_tag' at hash 12345678abcdef on
     reference named 'test'
 
-        nessie tag -f existing_tag test -> assign tag named 'existing_tag' to head of reference named 'test'
+        nessie tag -f existing_tag main -> assign tag named 'existing_tag' to head of reference named 'main'
 
-        nessie tag -o 12345678abcdef -f existing_tag test -> assign tag named 'existing_tag' to hash 12345678abcdef
-    on reference named 'test'
+        nessie tag -o 12345678abcdef -f existing_tag main -> assign tag named 'existing_tag' to hash 12345678abcdef
+    on reference named 'main'
 
     """
-    results = handle_branch_tag(ctx.nessie, list, delete, tag_name, hash_on_ref, new_tag, False, ctx.json, force, ctx.verbose, condition)
+    results = handle_branch_tag(ctx.nessie, list, delete, tag_name, hash_on_ref, base_ref, False, ctx.json, force, ctx.verbose, condition)
     if ctx.json:
         click.echo(results)
     elif results:

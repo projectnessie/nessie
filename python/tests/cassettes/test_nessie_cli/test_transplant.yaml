@@ -1,23 +1,46 @@
 interactions:
 - request:
-    body: '{"name": "dev", "hash": null, "type": "BRANCH"}'
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.26.0
+    method: GET
+    uri: http://localhost:19120/api/v1/trees/tree/main
+  response:
+    body:
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}"
+    headers:
+      Content-Length:
+      - '121'
+      Content-Type:
+      - application/json
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+      "name": "dev", "type": "BRANCH"}'
     headers:
       Accept:
       - '*/*'
       Accept-Encoding:
       - gzip, deflate
-      Authorization:
-      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       Content-Length:
-      - '47'
+      - '109'
       Content-Type:
       - application/json
       User-Agent:
       - python-requests/2.26.0
     method: POST
-    uri: http://localhost:19120/api/v1/trees/tree
+    uri: http://localhost:19120/api/v1/trees/tree?sourceRefName=main
   response:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}"
@@ -36,8 +59,6 @@ interactions:
       - application/json
       Accept-Encoding:
       - gzip, deflate
-      Authorization:
-      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       User-Agent:
@@ -65,8 +86,6 @@ interactions:
       - application/json
       Accept-Encoding:
       - gzip, deflate
-      Authorization:
-      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       User-Agent:
@@ -87,22 +106,20 @@ interactions:
       code: 404
       message: Not Found
 - request:
-    body: '{"operations": [{"key": {"elements": ["transplant", "foo", "bar"]}, "contents":
-      {"snapshotId": 42, "metadataLocation": "/a/b/c", "id": "uuid1", "type": "ICEBERG_TABLE"},
-      "type": "PUT"}], "commitMeta": {"committer": null, "author": null, "authorTime":
-      null, "email": null, "commitTime": null, "message": "test_message", "properties":
-      null, "hash": null, "signedOffBy": null}}'
+    body: '{"operations": [{"contents": {"metadataLocation": "/a/b/c", "snapshotId":
+      42, "id": "uuid1", "type": "ICEBERG_TABLE"}, "key": {"elements": ["transplant",
+      "foo", "bar"]}, "type": "PUT"}], "commitMeta": {"signedOffBy": null, "message":
+      "test_message", "author": null, "hash": null, "committer": null, "properties":
+      null, "authorTime": null, "commitTime": null}}'
     headers:
       Accept:
       - '*/*'
       Accept-Encoding:
       - gzip, deflate
-      Authorization:
-      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       Content-Length:
-      - '374'
+      - '359'
       Content-Type:
       - application/json
       User-Agent:
@@ -111,7 +128,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/branch/dev/commit?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"4814fecdb01be53336fe3dfd3f7644f7213891ab1a60973536c80bec4769e68b\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"15c90de7fdd3965be5e80fad1fa44f08e02ca64537aad72fa580e49e985f653b\"\n}"
     headers:
       Content-Length:
       - '120'
@@ -127,8 +144,6 @@ interactions:
       - application/json
       Accept-Encoding:
       - gzip, deflate
-      Authorization:
-      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       User-Agent:
@@ -149,22 +164,20 @@ interactions:
       code: 404
       message: Not Found
 - request:
-    body: '{"operations": [{"key": {"elements": ["bar", "bar"]}, "contents": {"snapshotId":
-      42, "metadataLocation": "/a/b/c", "id": "uuid2", "type": "ICEBERG_TABLE"}, "type":
-      "PUT"}], "commitMeta": {"committer": null, "author": null, "authorTime": null,
-      "email": null, "commitTime": null, "message": "test_message2", "properties":
-      null, "hash": null, "signedOffBy": null}}'
+    body: '{"operations": [{"contents": {"metadataLocation": "/a/b/c", "snapshotId":
+      42, "id": "uuid2", "type": "ICEBERG_TABLE"}, "key": {"elements": ["bar", "bar"]},
+      "type": "PUT"}], "commitMeta": {"signedOffBy": null, "message": "test_message2",
+      "author": null, "hash": null, "committer": null, "properties": null, "authorTime":
+      null, "commitTime": null}}'
     headers:
       Accept:
       - '*/*'
       Accept-Encoding:
       - gzip, deflate
-      Authorization:
-      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       Content-Length:
-      - '361'
+      - '346'
       Content-Type:
       - application/json
       User-Agent:
@@ -173,7 +186,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/branch/dev/commit?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"717547666512e0d77b339e488c832d516ec60df7df35f55a876bbc807a246136\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"7be4e9d95c823bebbe358014919c6d3cc4891e1376484fb7e4cfd43fbe4fd2b5\"\n}"
     headers:
       Content-Length:
       - '120'
@@ -189,8 +202,6 @@ interactions:
       - application/json
       Accept-Encoding:
       - gzip, deflate
-      Authorization:
-      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       User-Agent:
@@ -211,22 +222,20 @@ interactions:
       code: 404
       message: Not Found
 - request:
-    body: '{"operations": [{"key": {"elements": ["foo", "baz"]}, "contents": {"snapshotId":
-      42, "metadataLocation": "/a/b/c", "id": "uuid3", "type": "ICEBERG_TABLE"}, "type":
-      "PUT"}], "commitMeta": {"committer": null, "author": null, "authorTime": null,
-      "email": null, "commitTime": null, "message": "test_message3", "properties":
-      null, "hash": null, "signedOffBy": null}}'
+    body: '{"operations": [{"contents": {"metadataLocation": "/a/b/c", "snapshotId":
+      42, "id": "uuid3", "type": "ICEBERG_TABLE"}, "key": {"elements": ["foo", "baz"]},
+      "type": "PUT"}], "commitMeta": {"signedOffBy": null, "message": "test_message3",
+      "author": null, "hash": null, "committer": null, "properties": null, "authorTime":
+      null, "commitTime": null}}'
     headers:
       Accept:
       - '*/*'
       Accept-Encoding:
       - gzip, deflate
-      Authorization:
-      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       Content-Length:
-      - '361'
+      - '346'
       Content-Type:
       - application/json
       User-Agent:
@@ -235,7 +244,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/branch/main/commit?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"82b183d04c56f32f74f7f161c73d7205a0811516985a814490c0e9dbc5c5d81e\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"0c6808c80e3b9780c8ca7f4608666e0d0b8ab72f8c4aea96086b82703321bd64\"\n}"
     headers:
       Content-Length:
       - '121'
@@ -251,8 +260,6 @@ interactions:
       - application/json
       Accept-Encoding:
       - gzip, deflate
-      Authorization:
-      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       User-Agent:
@@ -262,8 +269,8 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
-        \"82b183d04c56f32f74f7f161c73d7205a0811516985a814490c0e9dbc5c5d81e\"\n}, {\n
-        \ \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"717547666512e0d77b339e488c832d516ec60df7df35f55a876bbc807a246136\"\n}
+        \"0c6808c80e3b9780c8ca7f4608666e0d0b8ab72f8c4aea96086b82703321bd64\"\n}, {\n
+        \ \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"7be4e9d95c823bebbe358014919c6d3cc4891e1376484fb7e4cfd43fbe4fd2b5\"\n}
         ]"
     headers:
       Content-Length:
@@ -280,8 +287,6 @@ interactions:
       - application/json
       Accept-Encoding:
       - gzip, deflate
-      Authorization:
-      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       User-Agent:
@@ -291,14 +296,14 @@ interactions:
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :
-        [ {\n    \"hash\" : \"717547666512e0d77b339e488c832d516ec60df7df35f55a876bbc807a246136\",\n
+        [ {\n    \"hash\" : \"7be4e9d95c823bebbe358014919c6d3cc4891e1376484fb7e4cfd43fbe4fd2b5\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"\",\n    \"signedOffBy\" : null,\n
-        \   \"message\" : \"test_message2\",\n    \"commitTime\" : \"2021-09-13T18:44:05.609513Z\",\n
-        \   \"authorTime\" : \"2021-09-13T18:44:05.609513Z\",\n    \"properties\"
-        : { }\n  }, {\n    \"hash\" : \"4814fecdb01be53336fe3dfd3f7644f7213891ab1a60973536c80bec4769e68b\",\n
+        \   \"message\" : \"test_message2\",\n    \"commitTime\" : \"2021-10-08T23:38:38.129594Z\",\n
+        \   \"authorTime\" : \"2021-10-08T23:38:38.129594Z\",\n    \"properties\"
+        : { }\n  }, {\n    \"hash\" : \"15c90de7fdd3965be5e80fad1fa44f08e02ca64537aad72fa580e49e985f653b\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"\",\n    \"signedOffBy\" : null,\n
-        \   \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-09-13T18:44:03.533309Z\",\n
-        \   \"authorTime\" : \"2021-09-13T18:44:03.533309Z\",\n    \"properties\"
+        \   \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-10-08T23:38:36.071428Z\",\n
+        \   \"authorTime\" : \"2021-10-08T23:38:36.071428Z\",\n    \"properties\"
         : { }\n  } ]\n}"
     headers:
       Content-Length:
@@ -309,15 +314,13 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"fromRefName": "dev", "hashesToTransplant": ["4814fecdb01be53336fe3dfd3f7644f7213891ab1a60973536c80bec4769e68b",
-      "717547666512e0d77b339e488c832d516ec60df7df35f55a876bbc807a246136"]}'
+    body: '{"fromRefName": "dev", "hashesToTransplant": ["15c90de7fdd3965be5e80fad1fa44f08e02ca64537aad72fa580e49e985f653b",
+      "7be4e9d95c823bebbe358014919c6d3cc4891e1376484fb7e4cfd43fbe4fd2b5"]}'
     headers:
       Accept:
       - '*/*'
       Accept-Encoding:
       - gzip, deflate
-      Authorization:
-      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       Content-Length:
@@ -327,7 +330,7 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/main/transplant?expectedHash=82b183d04c56f32f74f7f161c73d7205a0811516985a814490c0e9dbc5c5d81e
+    uri: http://localhost:19120/api/v1/trees/branch/main/transplant?expectedHash=0c6808c80e3b9780c8ca7f4608666e0d0b8ab72f8c4aea96086b82703321bd64
   response:
     body:
       string: ''
@@ -342,8 +345,6 @@ interactions:
       - application/json
       Accept-Encoding:
       - gzip, deflate
-      Authorization:
-      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       User-Agent:
@@ -353,18 +354,18 @@ interactions:
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :
-        [ {\n    \"hash\" : \"5d4b165d97fd2214bc5aea3c68b72859fc1c6bf765035ec08d1464e2642d4fd1\",\n
+        [ {\n    \"hash\" : \"b7792bfb24e4be17f197d544befc19d0d0a483e3a418cae05b57fce3cacfec1d\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"\",\n    \"signedOffBy\" : null,\n
-        \   \"message\" : \"test_message2\",\n    \"commitTime\" : \"2021-09-13T18:44:05.609513Z\",\n
-        \   \"authorTime\" : \"2021-09-13T18:44:05.609513Z\",\n    \"properties\"
-        : { }\n  }, {\n    \"hash\" : \"2227d73dff0a580222e8aad4694a480ff703cd2624b4fbb99c13a91fa0e678d9\",\n
+        \   \"message\" : \"test_message2\",\n    \"commitTime\" : \"2021-10-08T23:38:38.129594Z\",\n
+        \   \"authorTime\" : \"2021-10-08T23:38:38.129594Z\",\n    \"properties\"
+        : { }\n  }, {\n    \"hash\" : \"a76b89b36f382bde865608096b00701d8d555862208e2da1c84e3a909f82a7c0\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"\",\n    \"signedOffBy\" : null,\n
-        \   \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-09-13T18:44:03.533309Z\",\n
-        \   \"authorTime\" : \"2021-09-13T18:44:03.533309Z\",\n    \"properties\"
-        : { }\n  }, {\n    \"hash\" : \"82b183d04c56f32f74f7f161c73d7205a0811516985a814490c0e9dbc5c5d81e\",\n
+        \   \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-10-08T23:38:36.071428Z\",\n
+        \   \"authorTime\" : \"2021-10-08T23:38:36.071428Z\",\n    \"properties\"
+        : { }\n  }, {\n    \"hash\" : \"0c6808c80e3b9780c8ca7f4608666e0d0b8ab72f8c4aea96086b82703321bd64\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"\",\n    \"signedOffBy\" : null,\n
-        \   \"message\" : \"test_message3\",\n    \"commitTime\" : \"2021-09-13T18:44:07.691051Z\",\n
-        \   \"authorTime\" : \"2021-09-13T18:44:07.691051Z\",\n    \"properties\"
+        \   \"message\" : \"test_message3\",\n    \"commitTime\" : \"2021-10-08T23:38:40.192736Z\",\n
+        \   \"authorTime\" : \"2021-10-08T23:38:40.192736Z\",\n    \"properties\"
         : { }\n  } ]\n}"
     headers:
       Content-Length:
@@ -381,8 +382,6 @@ interactions:
       - application/json
       Accept-Encoding:
       - gzip, deflate
-      Authorization:
-      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       User-Agent:
@@ -403,29 +402,27 @@ interactions:
       message: OK
 - request:
     body: '{"operations": [{"key": {"elements": ["transplant", "foo", "bar"]}, "type":
-      "DELETE"}], "commitMeta": {"committer": null, "author": null, "authorTime":
-      null, "email": null, "commitTime": null, "message": "delete_message", "properties":
-      null, "hash": null, "signedOffBy": null}}'
+      "DELETE"}], "commitMeta": {"signedOffBy": null, "message": "delete_message",
+      "author": null, "hash": null, "committer": null, "properties": null, "authorTime":
+      null, "commitTime": null}}'
     headers:
       Accept:
       - '*/*'
       Accept-Encoding:
       - gzip, deflate
-      Authorization:
-      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       Content-Length:
-      - '277'
+      - '262'
       Content-Type:
       - application/json
       User-Agent:
       - python-requests/2.26.0
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/main/commit?expectedHash=5d4b165d97fd2214bc5aea3c68b72859fc1c6bf765035ec08d1464e2642d4fd1
+    uri: http://localhost:19120/api/v1/trees/branch/main/commit?expectedHash=b7792bfb24e4be17f197d544befc19d0d0a483e3a418cae05b57fce3cacfec1d
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"bc78743b0b43dccce0a2cc78ed99af9b45aa96640cfb8befbee1dc43960c6f51\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"c7d84a070ae2ef6aff6e590be83ed5550b2393311feb53c046124590abd4fb6e\"\n}"
     headers:
       Content-Length:
       - '121'
@@ -441,8 +438,6 @@ interactions:
       - application/json
       Accept-Encoding:
       - gzip, deflate
-      Authorization:
-      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       User-Agent:
@@ -451,7 +446,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/dev
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"717547666512e0d77b339e488c832d516ec60df7df35f55a876bbc807a246136\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"7be4e9d95c823bebbe358014919c6d3cc4891e1376484fb7e4cfd43fbe4fd2b5\"\n}"
     headers:
       Content-Length:
       - '120'
@@ -467,8 +462,6 @@ interactions:
       - application/json
       Accept-Encoding:
       - gzip, deflate
-      Authorization:
-      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       Content-Length:
@@ -476,7 +469,7 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: DELETE
-    uri: http://localhost:19120/api/v1/trees/branch/dev?expectedHash=717547666512e0d77b339e488c832d516ec60df7df35f55a876bbc807a246136
+    uri: http://localhost:19120/api/v1/trees/branch/dev?expectedHash=7be4e9d95c823bebbe358014919c6d3cc4891e1376484fb7e4cfd43fbe4fd2b5
   response:
     body:
       string: ''
@@ -491,8 +484,6 @@ interactions:
       - application/json
       Accept-Encoding:
       - gzip, deflate
-      Authorization:
-      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       User-Agent:
@@ -501,7 +492,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/main
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"bc78743b0b43dccce0a2cc78ed99af9b45aa96640cfb8befbee1dc43960c6f51\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"c7d84a070ae2ef6aff6e590be83ed5550b2393311feb53c046124590abd4fb6e\"\n}"
     headers:
       Content-Length:
       - '121'
@@ -517,8 +508,6 @@ interactions:
       - application/json
       Accept-Encoding:
       - gzip, deflate
-      Authorization:
-      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       Content-Length:
@@ -526,7 +515,7 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: DELETE
-    uri: http://localhost:19120/api/v1/trees/branch/main?expectedHash=bc78743b0b43dccce0a2cc78ed99af9b45aa96640cfb8befbee1dc43960c6f51
+    uri: http://localhost:19120/api/v1/trees/branch/main?expectedHash=c7d84a070ae2ef6aff6e590be83ed5550b2393311feb53c046124590abd4fb6e
   response:
     body:
       string: ''
@@ -535,24 +524,23 @@ interactions:
       code: 204
       message: No Content
 - request:
-    body: '{"name": "main", "hash": null, "type": "BRANCH"}'
+    body: '{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+      "name": "main", "type": "BRANCH"}'
     headers:
       Accept:
       - '*/*'
       Accept-Encoding:
       - gzip, deflate
-      Authorization:
-      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       Content-Length:
-      - '48'
+      - '110'
       Content-Type:
       - application/json
       User-Agent:
       - python-requests/2.26.0
     method: POST
-    uri: http://localhost:19120/api/v1/trees/tree
+    uri: http://localhost:19120/api/v1/trees/tree?sourceRefName=main
   response:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}"
