@@ -15,9 +15,6 @@
  */
 package org.projectnessie.versioned.persist.dynamodb;
 
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
-import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
@@ -32,12 +29,6 @@ public class LocalDynamoTestConnectionProviderSource extends DynamoTestConnectio
 
   private GenericContainer<?> container;
   private String endpointURI;
-
-  @Override
-  public boolean isCompatibleWith(
-      DatabaseAdapterConfig adapterConfig, DatabaseAdapterFactory<?, ?, ?> databaseAdapterFactory) {
-    return adapterConfig instanceof NonTransactionalDatabaseAdapterConfig;
-  }
 
   @Override
   public DynamoClientConfig createDefaultConnectionProviderConfig() {
