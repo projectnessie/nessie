@@ -3,7 +3,7 @@ History
 =======
 
 0.10.0 (2021-10-08)
-------------------
+-------------------
 
 * Various fixes and improvements
 * Update REST-API calls for new version-store API requirements
