@@ -1,8 +1,14 @@
 # Releases
 
-## 0.10.0 Release (August xx, 2021)
+## 0.10.0 Release (October 8, 2021)
 
-* New tiered-version-store implementation
+* Spark SQL extension changes
+* Various (Open)API and client (Java, Python) implementation changes to prepare for better
+  backwards compatibility.
+* JUnit extension based test support against different database/store types and configurations
+* Unified version-store implementations into a part w/ the Nessie logic and a tier implementing
+  database access (MongoDB, DynamoDB, RocksDB, PostgreSQL).
+* Remove JGit
 
 ## 0.9.2 Release (August 26, 2021)
 
