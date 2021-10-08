@@ -17,6 +17,7 @@ def pytest_configure(config):  # noqa
 def pytest_sessionstart(session: "Session") -> None:
     """Setup a fresh temporary config directory for tests."""
     pytest.nessie_config_dir = tempfile.mkdtemp() + "/"
+    # Instruct Confuse to keep Nessie config file in the temp location:
     os.environ["NESSIEDIR"] = pytest.nessie_config_dir
 
 
