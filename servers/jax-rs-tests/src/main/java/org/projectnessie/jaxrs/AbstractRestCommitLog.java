@@ -478,7 +478,7 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
                                 ContentKey.of("key" + i),
                                 IcebergTable.of("meta" + i, i, i, i, i, c2.apply(i))))
                         .operation(Delete.of(ContentKey.of("delete" + i)))
-                        .operation(Unchanged.of(ContentKey.of("key" + i)))
+                        .operation(Unchanged.of(ContentKey.of("unchanged" + i)))
                         .commitMeta(CommitMeta.fromMessage("Commit #" + i))
                         .branchName(branch)
                         .hash(head)

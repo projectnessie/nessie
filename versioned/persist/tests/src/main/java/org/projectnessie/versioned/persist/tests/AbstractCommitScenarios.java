@@ -433,4 +433,71 @@ public abstract class AbstractCommitScenarios {
             .validator(validator);
     databaseAdapter.commit(commit.build());
   }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void duplicateKeys(boolean globalState) {
+    BranchName branch = BranchName.of("main");
+
+    Key key = Key.of("my.awesome.table");
+    ContentId contentsId = ContentId.of("cid");
+    ByteString tableRefState = ByteString.copyFromUtf8("table ref state");
+    ByteString tableGlobalState = ByteString.copyFromUtf8("table global state");
+
+    KeyWithBytes createPut1 =
+        KeyWithBytes.of(key, contentsId, (byte) 0, ByteString.copyFromUtf8("no no"));
+    KeyWithBytes createPut2 = KeyWithBytes.of(key, contentsId, (byte) 0, tableRefState);
+
+    ImmutableCommitAttempt.Builder commit1 =
+        ImmutableCommitAttempt.builder()
+            .commitToBranch(branch)
+            .commitMetaSerialized(ByteString.copyFromUtf8("initial"))
+            .addPuts(createPut1)
+            .addPuts(createPut2);
+    if (globalState) {
+      commit1.putGlobal(contentsId, tableGlobalState);
+    }
+    assertThatThrownBy(() -> databaseAdapter.commit(commit1.build()))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining(key.toString());
+
+    ImmutableCommitAttempt.Builder commit2 =
+        ImmutableCommitAttempt.builder()
+            .commitToBranch(branch)
+            .commitMetaSerialized(ByteString.copyFromUtf8("initial"))
+            .addDeletes(key)
+            .addPuts(createPut2);
+    if (globalState) {
+      commit2.putGlobal(contentsId, tableGlobalState);
+    }
+    assertThatThrownBy(() -> databaseAdapter.commit(commit2.build()))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining(key.toString());
+
+    ImmutableCommitAttempt.Builder commit3 =
+        ImmutableCommitAttempt.builder()
+            .commitToBranch(branch)
+            .commitMetaSerialized(ByteString.copyFromUtf8("initial"))
+            .addDeletes(key)
+            .addUnchanged(key);
+    if (globalState) {
+      commit3.putGlobal(contentsId, tableGlobalState);
+    }
+    assertThatThrownBy(() -> databaseAdapter.commit(commit3.build()))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining(key.toString());
+
+    ImmutableCommitAttempt.Builder commit4 =
+        ImmutableCommitAttempt.builder()
+            .commitToBranch(branch)
+            .commitMetaSerialized(ByteString.copyFromUtf8("initial"))
+            .addUnchanged(key)
+            .addPuts(createPut2);
+    if (globalState) {
+      commit4.putGlobal(contentsId, tableGlobalState);
+    }
+    assertThatThrownBy(() -> databaseAdapter.commit(commit4.build()))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining(key.toString());
+  }
 }

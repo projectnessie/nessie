@@ -139,8 +139,27 @@ recorded within the [_Put Operation_](#put-operation) of a Nessie commit.
 
 ## Operations in a Nessie commit
 
-Each Nessie commit carries one or more operations. Each operation contains the Content Key and
-comes in one of the following variations.
+Each Nessie commit carries one or more operations. Each operation contains the
+[Content Key](#content-key) and is either a [Put](#put-operation), [Delete](#delete-operation) or
+[Unmodified](#unmodified-operation) operation.
+
+One [Content Key](#content-key) must only occur once in a Nessie commit.
+
+Operations present in a commit are passed into Nessie as a list of operations.
+
+### Mapping SQL DDL to Nessie commit operations
+
+A `CREATE TABLE` is mapped to one _Put operation_.
+
+An `ALTER TABLE RENAME` is mapped to a _Delete operation_ using the Content Key for the table
+being renamed plus at least one _Put operation_ using the Content Key of the table's new name,
+using the Content Id of the table being renamed.
+
+A `DROP TABLE` is represented as a Nessie _Delete operation_ (without a _Put operation_ for the
+same Content Id).
+
+A `DROP TABLE` + `CREATE TABLE` using the same table name (Content Key) in a single commit are
+mapped to one _Put operation_ with a different Content Id.
 
 ### Put operation
 
@@ -158,15 +177,14 @@ definition (think: SQL DDL) or data (think: SQL DML).
 A _Delete operation_ does not carry any Content object and is used to indicate that a Content
 object is no longer referenced using the Content Key of the _Delete operation_.
 
-Example for a Nessie _Delete operation_ is an SQL `DROP TABLE`. An `ALTER TABLE RENAME` is mapped
-to a _Delete operation_ plus a _Put operation_.
-
 ### Unmodified operation
 
 An _Unmodified operation_ does not represent any change of the data, but can be included in a
 Nessie commit operation to enforce strict serializable transactions. The presence of an
 _Unmodified operation_ means that the Content object referred to via the operation's Content Key
 must not have been modified since the Nessie commit's `expectedHash`.
+
+The _Unmodified operation_ is not persisted.
 
 ## Version Store
 

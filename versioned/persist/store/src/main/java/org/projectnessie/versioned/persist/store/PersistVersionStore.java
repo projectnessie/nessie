@@ -102,6 +102,9 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
             .commitMetaSerialized(serializeMetadata(metadata))
             .validator(validator);
 
+    Map<ContentId, ByteString> globals = new HashMap<>();
+    Map<ContentId, Optional<ByteString>> expectedStates = new HashMap<>();
+
     for (Operation<CONTENT> operation : operations) {
       if (operation instanceof Put) {
         Put<CONTENT> op = (Put<CONTENT>) operation;
@@ -135,8 +138,26 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
           } else {
             expectedValue = Optional.empty();
           }
-          commitAttempt.putExpectedStates(contentId, expectedValue);
-          commitAttempt.putGlobal(contentId, newState);
+
+          // Handle the case when there are multiple operations against the same contents-id.
+          if (!expectedStates.containsKey(contentId)) {
+            // First occurrence of contentsId in this commit.
+            commitAttempt.putExpectedStates(contentId, expectedValue);
+            expectedStates.put(contentId, expectedValue);
+          } else {
+            // Consecutive occurrence of contentsId in this commit.
+            if (expectedValue.isPresent()) {
+              // Operation expects a certain global, compare against the previous global-value
+              // from this commit.
+              if (!globals.get(contentId).equals(expectedValue.get())) {
+                // Value not equal - aka not expected -> report conflict.
+                throw new ReferenceConflictException(
+                    String.format("Mismatch in global-state for contents-id '%s'.", contentId));
+              }
+            }
+          }
+          globals.put(contentId, newState);
+
         } else {
           if (op.getExpectedValue() != null) {
             throw new IllegalArgumentException(
@@ -154,7 +175,7 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
       }
     }
 
-    return databaseAdapter.commit(commitAttempt.build());
+    return databaseAdapter.commit(commitAttempt.global(globals).build());
   }
 
   @Override

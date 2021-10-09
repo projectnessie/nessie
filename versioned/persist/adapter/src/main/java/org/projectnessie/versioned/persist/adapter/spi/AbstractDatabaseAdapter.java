@@ -182,6 +182,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       }
     }
 
+    checkContentKeysUnique(commitAttempt);
+
     // verify expected global-states
     checkExpectedGlobalStates(ctx, commitAttempt, mismatches::add);
 
@@ -219,6 +221,28 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
             NO_IN_MEMORY_COMMITS);
     writeIndividualCommit(ctx, newBranchCommit);
     return newBranchCommit;
+  }
+
+  private void checkContentKeysUnique(CommitAttempt commitAttempt) {
+    Set<Key> keys = new HashSet<>();
+    Set<Key> duplicates = new HashSet<>();
+    Stream.concat(
+            Stream.concat(
+                commitAttempt.getDeletes().stream(),
+                commitAttempt.getPuts().stream().map(KeyWithBytes::getKey)),
+            commitAttempt.getUnchanged().stream())
+        .forEach(
+            key -> {
+              if (!keys.add(key)) {
+                duplicates.add(key);
+              }
+            });
+    if (!duplicates.isEmpty()) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Duplicate keys are not allowed in a commit: %s",
+              duplicates.stream().map(Key::toString).collect(Collectors.joining(", "))));
+    }
   }
 
   /**
