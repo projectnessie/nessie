@@ -77,7 +77,7 @@ public class AbstractResteasyTest {
         newReference,
         rest().get("trees/tree/test").then().statusCode(200).extract().as(Branch.class));
 
-    IcebergTable table = IcebergTable.of("/the/directory/over/there", -1L);
+    IcebergTable table = IcebergTable.of("/the/directory/over/there", -1L, 0, 0, 0);
 
     Branch commitResponse =
         rest()
@@ -107,6 +107,9 @@ public class AbstractResteasyTest {
                   ImmutableIcebergTable.builder()
                       .metadataLocation("/the/directory/over/there/" + i)
                       .snapshotId(-1L)
+                      .schemaId(0)
+                      .specId(0)
+                      .sortOrderId(0)
                       .build())
               .build();
     }
@@ -117,6 +120,9 @@ public class AbstractResteasyTest {
                 ImmutableIcebergTable.builder()
                     .metadataLocation("/the/directory/over/there/has/been/moved")
                     .snapshotId(-1L)
+                    .schemaId(0)
+                    .specId(0)
+                    .sortOrderId(0)
                     .build())
             .build();
 
@@ -251,10 +257,11 @@ public class AbstractResteasyTest {
                 (expectedMetadataUrl != null)
                     ? Put.of(
                         ContentsKey.of(contentsKey),
-                        IcebergTable.of(metadataUrl, -1L, contentsId),
-                        IcebergTable.of(expectedMetadataUrl, -1L, contentsId))
+                        IcebergTable.of(metadataUrl, -1L, 0, 0, 0, contentsId),
+                        IcebergTable.of(expectedMetadataUrl, -1L, 0, 0, 0, contentsId))
                     : Put.of(
-                        ContentsKey.of(contentsKey), IcebergTable.of(metadataUrl, -1L, contentsId)))
+                        ContentsKey.of(contentsKey),
+                        IcebergTable.of(metadataUrl, -1L, 0, 0, 0, contentsId)))
             .commitMeta(CommitMeta.builder().author(author).message("").build())
             .build();
     return rest()

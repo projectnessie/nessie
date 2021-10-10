@@ -50,7 +50,11 @@ public class TableCommitMetaStoreWorker
     if (contents instanceof IcebergTable) {
       IcebergTable state = (IcebergTable) contents;
       ObjectTypes.IcebergSnapshot.Builder stateBuilder =
-          ObjectTypes.IcebergSnapshot.newBuilder().setSnapshotId(state.getSnapshotId());
+          ObjectTypes.IcebergSnapshot.newBuilder()
+              .setSnapshotId(state.getSnapshotId())
+              .setSchemaId(state.getSchemaId())
+              .setSpecId(state.getSpecId())
+              .setSortOrderId(state.getSortOrderId());
       builder.setIcebergSnapshot(stateBuilder);
 
     } else if (contents instanceof DeltaLakeTable) {
@@ -122,6 +126,9 @@ public class TableCommitMetaStoreWorker
                 .map(IcebergTableMetadata::getMetadataLocation)
                 .orElseThrow(IllegalStateException::new),
             contents.getIcebergSnapshot().getSnapshotId(),
+            contents.getIcebergSnapshot().getSchemaId(),
+            contents.getIcebergSnapshot().getSpecId(),
+            contents.getIcebergSnapshot().getSortOrderId(),
             contents.getId());
 
       case SQL_VIEW:

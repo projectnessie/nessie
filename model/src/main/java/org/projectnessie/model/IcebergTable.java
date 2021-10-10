@@ -28,14 +28,16 @@ import org.immutables.value.Value;
  * Represents the state of an Iceberg table in Nessie. An Iceberg table is globally identified via
  * its {@link Contents#getId() unique ID}.
  *
- * <p>The Iceberg-table-state consists of the location to the table-metadata and the snapshot-ID.
+ * <p>The Iceberg-table-state consists of the location to the table-metadata, the snapshot-ID, the
+ * schema-ID, the partition-spec-ID and the default sort-order-ID.
  *
  * <p>The table-metadata-location is managed globally within Nessie, which means that all versions
  * of the same table share the table-metadata across all named-references (branches and tags). There
  * is only one version, the current version, of Iceberg's table-metadata.
  *
- * <p>Within each named-reference (branch or tag), the (current) Iceberg-snapshot-ID will be
- * different. In other words: changes to an Iceberg table update the snapshot-ID.
+ * <p>Within each named-reference (branch or tag), the (current) Iceberg snapshot, schema,
+ * partition-spec and sort-order IDs will be different. In other words: changes to an Iceberg table
+ * update the snapshot-ID.
  *
  * <p>When adding a new table (aka contents-object identified by a contents-id), use a {@link
  * org.projectnessie.model.Operation.Put} without an expected-value. In all other cases (updating an
@@ -69,20 +71,42 @@ public abstract class IcebergTable extends Contents {
   @NotBlank
   public abstract String getMetadataLocation();
 
-  /** ID of the current Iceberg snapshot. This value is not present, if there is no snapshot. */
+  /** ID of the current Iceberg snapshot. */
   public abstract long getSnapshotId();
 
-  public static IcebergTable of(String metadataLocation, long snapshotId) {
+  /** ID of the current Iceberg schema. */
+  public abstract int getSchemaId();
+
+  /** ID of the current Iceberg partition spec. */
+  public abstract int getSpecId();
+
+  /** ID of the current Iceberg sort-order. */
+  public abstract int getSortOrderId();
+
+  public static IcebergTable of(
+      String metadataLocation, long snapshotId, int schemaId, int specId, int sortOrderId) {
     return ImmutableIcebergTable.builder()
         .metadataLocation(metadataLocation)
         .snapshotId(snapshotId)
+        .schemaId(schemaId)
+        .specId(specId)
+        .sortOrderId(sortOrderId)
         .build();
   }
 
-  public static IcebergTable of(String metadataLocation, long snapshotId, String contentsId) {
+  public static IcebergTable of(
+      String metadataLocation,
+      long snapshotId,
+      int schemaId,
+      int specId,
+      int sortOrderId,
+      String contentsId) {
     return ImmutableIcebergTable.builder()
         .metadataLocation(metadataLocation)
         .snapshotId(snapshotId)
+        .schemaId(schemaId)
+        .specId(specId)
+        .sortOrderId(sortOrderId)
         .id(contentsId)
         .build();
   }

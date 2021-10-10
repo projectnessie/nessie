@@ -36,6 +36,9 @@ message IcebergTableMetadata {
 
 message IcebergSnapshot {
   int64 snapshot_id = 1;
+  int32 schema_id = 2;
+  int32 spec_id = 3;
+  int32 sort_order_id = 4;
 }
 
 message SqlView {

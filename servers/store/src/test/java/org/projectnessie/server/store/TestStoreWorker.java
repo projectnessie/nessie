@@ -69,7 +69,7 @@ class TestStoreWorker {
   @Test
   void testSerdeIceberg() {
     String path = "foo/bar";
-    IcebergTable table = IcebergTable.of(path, 42L, ID);
+    IcebergTable table = IcebergTable.of(path, 42L, 0, 0, 0, ID);
 
     ObjectTypes.Contents protoTableGlobal =
         ObjectTypes.Contents.newBuilder()
