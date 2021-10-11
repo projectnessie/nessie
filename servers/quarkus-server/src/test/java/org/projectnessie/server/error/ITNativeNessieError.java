@@ -50,7 +50,7 @@ public class ITNativeNessieError {
   @Test
   void testNullParamViolation() {
     ContentsKey k = ContentsKey.of("a");
-    IcebergTable t = IcebergTable.of("path1", -1L, 0, 0, 0);
+    IcebergTable t = IcebergTable.of("path1", 0, 0);
     assertEquals(
         "Bad Request (HTTP/400): commitMultipleOperations.hash: must not be null",
         assertThrows(

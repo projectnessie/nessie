@@ -33,7 +33,6 @@ import org.projectnessie.model.ImmutableSqlView;
 import org.projectnessie.model.SqlView;
 import org.projectnessie.model.SqlView.Dialect;
 import org.projectnessie.store.ObjectTypes;
-import org.projectnessie.store.ObjectTypes.IcebergTableMetadata;
 import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.StoreWorker;
 
@@ -49,13 +48,10 @@ public class TableCommitMetaStoreWorker
         ObjectTypes.Contents.newBuilder().setId(contents.getId());
     if (contents instanceof IcebergTable) {
       IcebergTable state = (IcebergTable) contents;
-      ObjectTypes.IcebergSnapshot.Builder stateBuilder =
-          ObjectTypes.IcebergSnapshot.newBuilder()
-              .setSnapshotId(state.getSnapshotId())
-              .setSchemaId(state.getSchemaId())
-              .setSpecId(state.getSpecId())
-              .setSortOrderId(state.getSortOrderId());
-      builder.setIcebergSnapshot(stateBuilder);
+      ObjectTypes.IcebergMetadataPointer.Builder stateBuilder =
+          ObjectTypes.IcebergMetadataPointer.newBuilder()
+              .setMetadataLocation(state.getMetadataLocation());
+      builder.setIcebergMetadataPointer(stateBuilder);
 
     } else if (contents instanceof DeltaLakeTable) {
       ObjectTypes.DeltaLakeTable.Builder table =
@@ -89,10 +85,11 @@ public class TableCommitMetaStoreWorker
         ObjectTypes.Contents.newBuilder().setId(contents.getId());
     if (contents instanceof IcebergTable) {
       IcebergTable state = (IcebergTable) contents;
-      ObjectTypes.IcebergTableMetadata.Builder stateBuilder =
-          ObjectTypes.IcebergTableMetadata.newBuilder()
-              .setMetadataLocation(state.getMetadataLocation());
-      builder.setIcebergTableMetadata(stateBuilder);
+      ObjectTypes.IcebergGlobal.Builder stateBuilder =
+          ObjectTypes.IcebergGlobal.newBuilder()
+              .setLastColumnId(state.getLastColumnId())
+              .setLastAssignedPartitionId(state.getLastAssignedPartitionId());
+      builder.setIcebergGlobal(stateBuilder);
     } else {
       throw new IllegalArgumentException("Unknown type " + contents);
     }
@@ -119,16 +116,15 @@ public class TableCommitMetaStoreWorker
         }
         return builder.build();
 
-      case ICEBERG_SNAPSHOT:
+      case ICEBERG_METADATA_POINTER:
+        ObjectTypes.Contents global = globalContents.orElseThrow(IllegalStateException::new);
+        if (!global.hasIcebergGlobal()) {
+          throw new IllegalArgumentException();
+        }
         return IcebergTable.of(
-            globalContents
-                .map(ObjectTypes.Contents::getIcebergTableMetadata)
-                .map(IcebergTableMetadata::getMetadataLocation)
-                .orElseThrow(IllegalStateException::new),
-            contents.getIcebergSnapshot().getSnapshotId(),
-            contents.getIcebergSnapshot().getSchemaId(),
-            contents.getIcebergSnapshot().getSpecId(),
-            contents.getIcebergSnapshot().getSortOrderId(),
+            contents.getIcebergMetadataPointer().getMetadataLocation(),
+            global.getIcebergGlobal().getLastColumnId(),
+            global.getIcebergGlobal().getLastAssignedPartitionId(),
             contents.getId());
 
       case SQL_VIEW:

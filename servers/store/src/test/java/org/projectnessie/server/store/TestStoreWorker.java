@@ -35,8 +35,8 @@ import org.projectnessie.model.ImmutableDeltaLakeTable;
 import org.projectnessie.model.ImmutableSqlView;
 import org.projectnessie.model.SqlView;
 import org.projectnessie.store.ObjectTypes;
-import org.projectnessie.store.ObjectTypes.IcebergSnapshot;
-import org.projectnessie.store.ObjectTypes.IcebergTableMetadata;
+import org.projectnessie.store.ObjectTypes.IcebergGlobal;
+import org.projectnessie.store.ObjectTypes.IcebergMetadataPointer;
 
 class TestStoreWorker {
   private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -69,25 +69,25 @@ class TestStoreWorker {
   @Test
   void testSerdeIceberg() {
     String path = "foo/bar";
-    IcebergTable table = IcebergTable.of(path, 42L, 0, 0, 0, ID);
+    IcebergTable table = IcebergTable.of(path, 42, 0, ID);
 
     ObjectTypes.Contents protoTableGlobal =
         ObjectTypes.Contents.newBuilder()
             .setId(ID)
-            .setIcebergTableMetadata(
-                IcebergTableMetadata.newBuilder().setMetadataLocation(path).build())
+            .setIcebergGlobal(IcebergGlobal.newBuilder().setLastColumnId(42))
             .build();
-    ObjectTypes.Contents protoSnapshot =
+    ObjectTypes.Contents protoOnRef =
         ObjectTypes.Contents.newBuilder()
             .setId(ID)
-            .setIcebergSnapshot(IcebergSnapshot.newBuilder().setSnapshotId(42L).build())
+            .setIcebergMetadataPointer(
+                IcebergMetadataPointer.newBuilder().setMetadataLocation(path))
             .build();
 
     ByteString tableGlobalBytes = worker.toStoreGlobalState(table);
     ByteString snapshotBytes = worker.toStoreOnReferenceState(table);
 
     Assertions.assertEquals(protoTableGlobal.toByteString(), tableGlobalBytes);
-    Assertions.assertEquals(protoSnapshot.toByteString(), snapshotBytes);
+    Assertions.assertEquals(protoOnRef.toByteString(), snapshotBytes);
 
     Contents deserialized = worker.valueFromStore(snapshotBytes, Optional.of(tableGlobalBytes));
     Assertions.assertEquals(table, deserialized);

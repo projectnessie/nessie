@@ -33,7 +33,6 @@ import org.projectnessie.model.Contents;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableBranch;
-import org.projectnessie.model.ImmutableIcebergTable;
 import org.projectnessie.model.ImmutableOperations;
 import org.projectnessie.model.ImmutablePut;
 import org.projectnessie.model.LogResponse;
@@ -77,7 +76,7 @@ public class AbstractResteasyTest {
         newReference,
         rest().get("trees/tree/test").then().statusCode(200).extract().as(Branch.class));
 
-    IcebergTable table = IcebergTable.of("/the/directory/over/there", -1L, 0, 0, 0);
+    IcebergTable table = IcebergTable.of("/the/directory/over/there", 0, 0);
 
     Branch commitResponse =
         rest()
@@ -103,27 +102,13 @@ public class AbstractResteasyTest {
       updates[i] =
           ImmutablePut.builder()
               .key(ContentsKey.of("item", Integer.toString(i)))
-              .contents(
-                  ImmutableIcebergTable.builder()
-                      .metadataLocation("/the/directory/over/there/" + i)
-                      .snapshotId(-1L)
-                      .schemaId(0)
-                      .specId(0)
-                      .sortOrderId(0)
-                      .build())
+              .contents(IcebergTable.of("/the/directory/over/there/" + i, 0, 0))
               .build();
     }
     updates[10] =
         ImmutablePut.builder()
             .key(ContentsKey.of("xxx", "test"))
-            .contents(
-                ImmutableIcebergTable.builder()
-                    .metadataLocation("/the/directory/over/there/has/been/moved")
-                    .snapshotId(-1L)
-                    .schemaId(0)
-                    .specId(0)
-                    .sortOrderId(0)
-                    .build())
+            .contents(IcebergTable.of("/the/directory/over/there/has/been/moved", 0, 0))
             .build();
 
     Reference branch = rest().get("trees/tree/test").as(Reference.class);
@@ -149,12 +134,7 @@ public class AbstractResteasyTest {
     Assertions.assertEquals(updates[10].getContents(), res.body().as(Contents.class));
 
     IcebergTable currentTable = table;
-    table =
-        ImmutableIcebergTable.builder()
-            .from(table)
-            .metadataLocation("/the/directory/over/there/has/been/moved/again")
-            .snapshotId(-1L)
-            .build();
+    table = IcebergTable.of("/the/directory/over/there/has/been/moved/again", 0, 0, table.getId());
 
     Branch b2 = rest().get("trees/tree/test").as(Branch.class);
     rest()
@@ -257,11 +237,11 @@ public class AbstractResteasyTest {
                 (expectedMetadataUrl != null)
                     ? Put.of(
                         ContentsKey.of(contentsKey),
-                        IcebergTable.of(metadataUrl, -1L, 0, 0, 0, contentsId),
-                        IcebergTable.of(expectedMetadataUrl, -1L, 0, 0, 0, contentsId))
+                        IcebergTable.of(metadataUrl, 0, 0, contentsId),
+                        IcebergTable.of(expectedMetadataUrl, 0, 0, contentsId))
                     : Put.of(
                         ContentsKey.of(contentsKey),
-                        IcebergTable.of(metadataUrl, -1L, 0, 0, 0, contentsId)))
+                        IcebergTable.of(metadataUrl, 0, 0, contentsId)))
             .commitMeta(CommitMeta.builder().author(author).message("").build())
             .build();
     return rest()

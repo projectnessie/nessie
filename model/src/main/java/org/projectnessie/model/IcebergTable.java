@@ -71,42 +71,27 @@ public abstract class IcebergTable extends Contents {
   @NotBlank
   public abstract String getMetadataLocation();
 
-  /** ID of the current Iceberg snapshot. */
-  public abstract long getSnapshotId();
+  /** ID of the last column. */
+  public abstract int getLastColumnId();
 
-  /** ID of the current Iceberg schema. */
-  public abstract int getSchemaId();
-
-  /** ID of the current Iceberg partition spec. */
-  public abstract int getSpecId();
-
-  /** ID of the current Iceberg sort-order. */
-  public abstract int getSortOrderId();
+  /** ID of the last assigned partition. */
+  public abstract int getLastAssignedPartitionId();
 
   public static IcebergTable of(
-      String metadataLocation, long snapshotId, int schemaId, int specId, int sortOrderId) {
+      String metadataLocation, int lastColumnId, int lastAssignedPartitionId) {
     return ImmutableIcebergTable.builder()
         .metadataLocation(metadataLocation)
-        .snapshotId(snapshotId)
-        .schemaId(schemaId)
-        .specId(specId)
-        .sortOrderId(sortOrderId)
+        .lastColumnId(lastColumnId)
+        .lastAssignedPartitionId(lastAssignedPartitionId)
         .build();
   }
 
   public static IcebergTable of(
-      String metadataLocation,
-      long snapshotId,
-      int schemaId,
-      int specId,
-      int sortOrderId,
-      String contentsId) {
+      String metadataLocation, int lastColumnId, int lastAssignedPartitionId, String contentsId) {
     return ImmutableIcebergTable.builder()
         .metadataLocation(metadataLocation)
-        .snapshotId(snapshotId)
-        .schemaId(schemaId)
-        .specId(specId)
-        .sortOrderId(sortOrderId)
+        .lastColumnId(lastColumnId)
+        .lastAssignedPartitionId(lastAssignedPartitionId)
         .id(contentsId)
         .build();
   }
