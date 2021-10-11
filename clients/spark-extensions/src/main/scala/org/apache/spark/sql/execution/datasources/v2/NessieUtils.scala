@@ -15,25 +15,28 @@
  */
 package org.apache.spark.sql.execution.datasources.v2
 
+import java.time.format.DateTimeParseException
+import java.time.{Instant, LocalDateTime, ZoneOffset}
+import java.util.OptionalInt
+
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 import org.projectnessie.api.params.CommitLogParams
-import org.projectnessie.client.{NessieClient, StreamingUtil}
+import org.projectnessie.client.StreamingUtil
+import org.projectnessie.client.api.NessieApiV1
+import org.projectnessie.client.http.v1api.HttpApiV1
+import org.projectnessie.client.http.{HttpClientBuilder, NessieApiClient}
 import org.projectnessie.error.NessieNotFoundException
 import org.projectnessie.model.{
   Branch,
-  Hash,
   ImmutableBranch,
-  ImmutableHash,
   ImmutableTag,
   Reference,
   Tag,
   Validation
 }
 
-import java.time.format.DateTimeParseException
-import java.time.{Instant, LocalDateTime, ZoneOffset}
 import scala.collection.JavaConverters._
 
 object NessieUtils {
@@ -45,7 +48,7 @@ object NessieUtils {
   def calculateRef(
       branch: String,
       tsOrHash: Option[String],
-      nessieClient: NessieClient
+      nessieClient: NessieApiClient
   ): Reference = {
     val hash = tsOrHash
       .map(x => x.replaceAll("`", ""))
@@ -81,21 +84,25 @@ object NessieUtils {
   private def findReferenceFromHash(
       branch: String,
       requestedHash: String,
-      nessieClient: NessieClient
+      nessieClient: NessieApiClient
   ) = {
+    val commitLogParams = CommitLogParams
+      .builder()
+      .endHash(Validation.validateHash(requestedHash))
+      .build()
     val commit = Option(
       StreamingUtil
         .getCommitLogStream(
-          nessieClient.getTreeApi,
+          new HttpApiV1(nessieClient),
           branch,
-          CommitLogParams
-            .builder()
-            .endHash(Validation.validateHash(requestedHash))
-            .build()
+          commitLogParams.startHash(),
+          commitLogParams.endHash(),
+          commitLogParams.queryExpression(),
+          OptionalInt.empty()
         )
         .findFirst()
         .orElse(null)
-    ).map(x => Hash.of(x.getHash))
+    ).map(x => x.getHash)
     println(commit)
     val hash = commit match {
       case Some(value) => value
@@ -108,6 +115,7 @@ object NessieUtils {
           )
         )
     }
+
     convertToSpecificRef(
       hash,
       nessieClient.getTreeApi.getReferenceByName(branch)
@@ -116,27 +124,31 @@ object NessieUtils {
 
   private def findReferenceFromTimestamp(
       branch: String,
-      nessieClient: NessieClient,
+      nessieClient: NessieApiClient,
       timestamp: Instant
   ) = {
+    val commitLogParams = CommitLogParams
+      .builder()
+      .expression(
+        String.format(
+          "timestamp(commit.commitTime) < timestamp('%s')",
+          timestamp
+        )
+      )
+      .build()
     val commit = Option(
       StreamingUtil
         .getCommitLogStream(
-          nessieClient.getTreeApi,
+          new HttpApiV1(nessieClient),
           branch,
-          CommitLogParams
-            .builder()
-            .expression(
-              String.format(
-                "timestamp(commit.commitTime) < timestamp('%s')",
-                timestamp
-              )
-            )
-            .build()
+          commitLogParams.startHash(),
+          commitLogParams.endHash(),
+          commitLogParams.queryExpression(),
+          OptionalInt.empty()
         )
         .findFirst()
         .orElse(null)
-    ).map(x => Hash.of(x.getHash))
+    ).map(x => x.getHash)
 
     val hash = commit match {
       case Some(value) => value
@@ -151,11 +163,10 @@ object NessieUtils {
     )
   }
 
-  private def convertToSpecificRef(hash: Hash, reference: Reference) = {
+  private def convertToSpecificRef(hash: String, reference: Reference) = {
     reference match {
-      case branch: ImmutableBranch => Branch.of(branch.getName, hash.getHash)
-      case hash: ImmutableHash     => hash
-      case tag: ImmutableTag       => Tag.of(tag.getName, hash.getHash)
+      case branch: ImmutableBranch => Branch.of(branch.getName, hash)
+      case tag: ImmutableTag       => Tag.of(tag.getName, hash)
       case _ =>
         throw new UnsupportedOperationException(
           s"Unknown reference type $reference"
@@ -166,15 +177,16 @@ object NessieUtils {
   def nessieClient(
       currentCatalog: CatalogPlugin,
       catalog: Option[String]
-  ): NessieClient = {
+  ): NessieApiClient = {
     val catalogName = catalog.getOrElse(currentCatalog.name)
     val catalogConf = SparkSession.active.sparkContext.conf
       .getAllWithPrefix(s"spark.sql.catalog.$catalogName.")
       .toMap
-    NessieClient
+    HttpClientBuilder
       .builder()
       .fromConfig(x => catalogConf.getOrElse(x.replace("nessie.", ""), null))
-      .build()
+      .build(classOf[NessieApiV1])
+      .getClient()
   }
 
   def setCurrentRefForSpark(
@@ -210,7 +222,6 @@ object NessieUtils {
   def getRefType(ref: Reference): String = {
     ref match {
       case branch: ImmutableBranch => NessieUtils.BRANCH
-      case hash: ImmutableHash     => NessieUtils.HASH
       case tag: ImmutableTag       => NessieUtils.TAG
       case _ =>
         throw new UnsupportedOperationException(s"Unknown reference type $ref")

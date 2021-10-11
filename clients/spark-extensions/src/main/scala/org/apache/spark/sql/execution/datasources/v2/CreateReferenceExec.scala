@@ -19,7 +19,7 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
 import org.apache.spark.unsafe.types.UTF8String
-import org.projectnessie.client.NessieClient
+import org.projectnessie.client.http.NessieApiClient
 import org.projectnessie.error.NessieConflictException
 import org.projectnessie.model._
 
@@ -34,7 +34,7 @@ case class CreateReferenceExec(
 ) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog) {
 
   override protected def runInternal(
-      nessieClient: NessieClient
+      nessieClient: NessieApiClient
   ): Seq[InternalRow] = {
     val sourceRef = createdFrom
       .map(nessieClient.getTreeApi.getReferenceByName)
@@ -45,7 +45,7 @@ case class CreateReferenceExec(
       else Tag.of(branch, sourceRef.getHash)
     try {
       // TODO !!! nessieClient.getTreeApi.createReference(sourceRef.getName, ref)
-      nessieClient.getTreeApi.createReference(ref)
+      nessieClient.getTreeApi.createReference(ref.getName, ref)
     } catch {
       case e: NessieConflictException =>
         if (failOnCreate) {

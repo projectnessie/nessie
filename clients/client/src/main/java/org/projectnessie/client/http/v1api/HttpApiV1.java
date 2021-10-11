@@ -121,4 +121,9 @@ public final class HttpApiV1 implements NessieApiV1 {
   public CommitMultipleOperationsBuilder commitMultipleOperations() {
     return new HttpCommitMultipleOperations(client);
   }
+
+  @Override
+  public NessieApiClient getClient() {
+    return client;
+  }
 }

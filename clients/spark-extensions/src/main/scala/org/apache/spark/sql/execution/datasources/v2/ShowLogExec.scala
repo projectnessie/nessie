@@ -15,16 +15,20 @@
  */
 package org.apache.spark.sql.execution.datasources.v2
 
+import java.time.Instant
+import java.time.temporal.ChronoUnit
+import java.util.OptionalInt
+
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.util.{ArrayBasedMapData, MapData}
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
 import org.apache.spark.unsafe.types.UTF8String
 import org.projectnessie.api.params.CommitLogParams
-import org.projectnessie.client.{NessieClient, StreamingUtil}
+import org.projectnessie.client.StreamingUtil
+import org.projectnessie.client.http.NessieApiClient
+import org.projectnessie.client.http.v1api.HttpApiV1
 
-import java.time.Instant
-import java.time.temporal.ChronoUnit
 import scala.collection.JavaConverters._
 
 case class ShowLogExec(
@@ -35,17 +39,20 @@ case class ShowLogExec(
 ) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog) {
 
   override protected def runInternal(
-      nessieClient: NessieClient
+      nessieClient: NessieApiClient
   ): Seq[InternalRow] = {
     val refName = branch.getOrElse(
       NessieUtils.getCurrentRef(currentCatalog, catalog).getName
     )
+    val commitLogParams = CommitLogParams.empty()
     val stream = StreamingUtil.getCommitLogStream(
-      nessieClient.getTreeApi,
+      new HttpApiV1(nessieClient),
       refName,
-      CommitLogParams.empty()
+      commitLogParams.startHash(),
+      commitLogParams.endHash(),
+      commitLogParams.queryExpression(),
+      OptionalInt.empty()
     )
-
     stream.iterator.asScala
       .map(cm =>
         InternalRow(

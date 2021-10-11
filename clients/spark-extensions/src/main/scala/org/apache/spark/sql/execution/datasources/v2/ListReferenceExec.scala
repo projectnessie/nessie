@@ -19,8 +19,7 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
 import org.apache.spark.unsafe.types.UTF8String
-import org.projectnessie.client.NessieClient
-import org.projectnessie.model.Branch
+import org.projectnessie.client.http.NessieApiClient
 
 import scala.collection.JavaConverters._
 
@@ -31,7 +30,7 @@ case class ListReferenceExec(
 ) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog) {
 
   override protected def runInternal(
-      nessieClient: NessieClient
+      nessieClient: NessieApiClient
   ): Seq[InternalRow] = {
     nessieClient.getTreeApi.getAllReferences.asScala.map(ref => {
       InternalRow(

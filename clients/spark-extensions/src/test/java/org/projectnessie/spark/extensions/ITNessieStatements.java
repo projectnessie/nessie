@@ -531,17 +531,17 @@ public class ITNessieStatements extends AbstractSparkTest {
             .build();
     Operations ops =
         ImmutableOperations.builder()
-            .addOperations(Operation.Put.of(key, IcebergTable.of("foo")))
+            .addOperations(Operation.Put.of(key, IcebergTable.of("foo", 0)))
             .commitMeta(cm1)
             .build();
     Operations ops2 =
         ImmutableOperations.builder()
-            .addOperations(Operation.Put.of(key, IcebergTable.of("bar")))
+            .addOperations(Operation.Put.of(key, IcebergTable.of("bar", 0)))
             .commitMeta(cm2)
             .build();
     Operations ops3 =
         ImmutableOperations.builder()
-            .addOperations(Operation.Put.of(key, IcebergTable.of("baz")))
+            .addOperations(Operation.Put.of(key, IcebergTable.of("baz", 0)))
             .commitMeta(cm3)
             .build();
 
