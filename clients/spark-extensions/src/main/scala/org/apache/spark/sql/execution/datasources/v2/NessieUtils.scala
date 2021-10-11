@@ -15,10 +15,14 @@
  */
 package org.apache.spark.sql.execution.datasources.v2
 
+import java.time.format.DateTimeParseException
+import java.time.{Instant, LocalDateTime, ZoneOffset}
+
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 import org.projectnessie.api.params.CommitLogParams
+import org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URI
 import org.projectnessie.client.{NessieClient, StreamingUtil}
 import org.projectnessie.error.NessieNotFoundException
 import org.projectnessie.model.{
@@ -32,8 +36,6 @@ import org.projectnessie.model.{
   Validation
 }
 
-import java.time.format.DateTimeParseException
-import java.time.{Instant, LocalDateTime, ZoneOffset}
 import scala.collection.JavaConverters._
 
 object NessieUtils {
@@ -171,6 +173,11 @@ object NessieUtils {
     val catalogConf = SparkSession.active.sparkContext.conf
       .getAllWithPrefix(s"spark.sql.catalog.$catalogName.")
       .toMap
+    val uriConf = CONF_NESSIE_URI.replace("nessie.", "")
+    require(
+      catalogConf.get(uriConf).nonEmpty,
+      s"Nessie catalog URI not defined. Please set a value for conf [spark.sql.catalog.$catalogName.$uriConf]."
+    )
     NessieClient
       .builder()
       .fromConfig(x => catalogConf.getOrElse(x.replace("nessie.", ""), null))

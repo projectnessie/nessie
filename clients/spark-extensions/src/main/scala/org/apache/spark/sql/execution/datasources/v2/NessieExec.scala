@@ -26,6 +26,10 @@ abstract class NessieExec(
   protected def runInternal(nessieClient: NessieClient): Seq[InternalRow]
 
   override protected def run(): Seq[InternalRow] = {
+    require(
+      catalog.nonEmpty,
+      "Catalog is not defined. Either set the catalog in context before running the command [eg. `USE nessie`] or provide the catalog in the command [eg. `<COMMAND> IN nessie`]."
+    )
     val nessieClient = NessieUtils.nessieClient(currentCatalog, catalog);
     try {
       runInternal(nessieClient)
