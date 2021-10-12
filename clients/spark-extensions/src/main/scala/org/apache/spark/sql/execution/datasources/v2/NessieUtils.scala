@@ -21,16 +21,7 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap
 import org.projectnessie.api.params.CommitLogParams
 import org.projectnessie.client.{NessieClient, StreamingUtil}
 import org.projectnessie.error.NessieNotFoundException
-import org.projectnessie.model.{
-  Branch,
-  Hash,
-  ImmutableBranch,
-  ImmutableHash,
-  ImmutableTag,
-  Reference,
-  Tag,
-  Validation
-}
+import org.projectnessie.model._
 
 import java.time.format.DateTimeParseException
 import java.time.{Instant, LocalDateTime, ZoneOffset}
@@ -96,7 +87,6 @@ object NessieUtils {
         .findFirst()
         .orElse(null)
     ).map(x => Hash.of(x.getHash))
-    println(commit)
     val hash = commit match {
       case Some(value) => value
       case None =>
@@ -128,7 +118,7 @@ object NessieUtils {
             .builder()
             .expression(
               String.format(
-                "timestamp(commit.commitTime) < timestamp('%s')",
+                "timestamp(commit.commitTime) <= timestamp('%s')",
                 timestamp
               )
             )
@@ -142,7 +132,7 @@ object NessieUtils {
       case Some(value) => value
       case None =>
         throw new NessieNotFoundException(
-          String.format("Cannot find a hash before %s.", timestamp)
+          String.format("Cannot find a hash before or at %s.", timestamp)
         )
     }
     convertToSpecificRef(
@@ -187,6 +177,8 @@ object NessieUtils {
       SparkSession.active.sessionState.catalogManager.catalog(catalogName)
     SparkSession.active.sparkContext.conf
       .set(s"spark.sql.catalog.$catalogName.ref", ref.getName)
+    SparkSession.active.sparkContext.conf
+      .set(s"spark.sql.catalog.$catalogName.refHash", ref.getHash)
     val catalogConf = SparkSession.active.sparkContext.conf
       .getAllWithPrefix(s"spark.sql.catalog.$catalogName.")
       .toMap
@@ -197,7 +189,7 @@ object NessieUtils {
     )
   }
 
-  def getCurrentRef(
+  def getCurrentRefAtHead(
       currentCatalog: CatalogPlugin,
       catalog: Option[String]
   ): Reference = {
@@ -205,6 +197,39 @@ object NessieUtils {
     val refName = SparkSession.active.sparkContext.conf
       .get(s"spark.sql.catalog.$catalogName.ref")
     nessieClient(currentCatalog, catalog).getTreeApi.getReferenceByName(refName)
+  }
+
+  def getCurrentRefAtConfiguredHash(
+      currentCatalog: CatalogPlugin,
+      catalog: Option[String]
+  ): Reference = {
+    val catalogName = catalog.getOrElse(currentCatalog.name)
+    val refName = SparkSession.active.sparkContext.conf
+      .get(s"spark.sql.catalog.$catalogName.ref")
+    val refHash = SparkSession.active.sparkContext.conf
+      .getOption(s"spark.sql.catalog.$catalogName.refHash")
+      .orElse(null)
+    if (null != refHash) {
+      // fetch the reference at the given hash
+      try {
+        findReferenceFromHash(
+          refName,
+          refHash.get,
+          nessieClient(currentCatalog, catalog)
+        )
+      } catch {
+        // TODO: this fallback is only needed for nessie <= 0.9.2 and should be removed once Iceberg is on a newer version of Nessie
+        // This issue only happens because the code in nessie 0.9.2 doesn't check whether the hash is the ancestor of the root commit
+        case _: Exception =>
+          nessieClient(currentCatalog, catalog).getTreeApi.getReferenceByName(
+            refName
+          )
+      }
+    } else {
+      nessieClient(currentCatalog, catalog).getTreeApi.getReferenceByName(
+        refName
+      )
+    }
   }
 
   def getRefType(ref: Reference): String = {

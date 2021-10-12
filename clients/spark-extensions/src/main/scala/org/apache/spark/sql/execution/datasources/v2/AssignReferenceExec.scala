@@ -54,7 +54,8 @@ case class AssignReferenceExec(
       )
     }
 
-    val ref = nessieClient.getTreeApi.getReferenceByName(branch)
+    val ref = NessieUtils.calculateRef(branch, Some(assignToHash), nessieClient)
+    NessieUtils.setCurrentRefForSpark(currentCatalog, catalog, ref)
 
     Seq(
       InternalRow(

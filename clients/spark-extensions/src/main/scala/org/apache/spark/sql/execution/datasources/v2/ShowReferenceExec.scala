@@ -32,7 +32,7 @@ case class ShowReferenceExec(
       nessieClient: NessieClient
   ): Seq[InternalRow] = {
 
-    val ref = NessieUtils.getCurrentRef(currentCatalog, catalog)
+    val ref = NessieUtils.getCurrentRefAtConfiguredHash(currentCatalog, catalog)
     // todo have to figure out if this is delta or iceberg and extract the ref accordingly
     Seq(
       InternalRow(

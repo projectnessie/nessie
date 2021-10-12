@@ -36,7 +36,7 @@ case class MergeBranchExec(
     val from = nessieClient.getTreeApi
       .getReferenceByName(
         branch.getOrElse(
-          NessieUtils.getCurrentRef(currentCatalog, catalog).getName
+          NessieUtils.getCurrentRefAtHead(currentCatalog, catalog).getName
         )
       )
     nessieClient.getTreeApi.mergeRefIntoBranch(

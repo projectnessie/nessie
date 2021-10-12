@@ -20,10 +20,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -34,6 +34,7 @@ import org.apache.spark.sql.functions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.NessieClient;
 import org.projectnessie.client.tests.AbstractSparkTest;
@@ -342,26 +343,57 @@ public class ITNessieStatements extends AbstractSparkTest {
   }
 
   @Test
+  @Disabled(
+      "currently not working due to timezone handling: https://github.com/projectnessie/nessie/issues/1452")
   void useShowReferencesAtTimestamp() throws NessieNotFoundException, NessieConflictException {
     commitAndReturnLog(refName);
-    String time = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(LocalDateTime.now(ZoneOffset.UTC));
-    hash = nessieClient.getTreeApi().getReferenceByName(refName).getHash();
-    assertThat(sql("USE REFERENCE %s AT `%s` IN nessie ", refName, time))
-        .containsExactly(row("Branch", refName, hash));
-    assertThat(sql("SHOW REFERENCE IN nessie")).containsExactly(row("Branch", refName, hash));
 
-    assertThat(sql("DROP BRANCH %s IN nessie", refName)).containsExactly(row("OK"));
-    assertThatThrownBy(() -> nessieClient.getTreeApi().getReferenceByName(refName))
-        .isInstanceOf(NessieNotFoundException.class)
-        .hasMessage("Unable to find reference [testBranch].");
+    // since the commitTime is set on the server, we need to fetch the commit log and get the
+    // commitTime from there
+    List<Object[]> commits = sql("SHOW LOG %s", refName);
+    for (Object[] commit : commits) {
+      System.out.println("Arrays.toString(commit) = " + Arrays.toString(commit));
+    }
+    for (int i = 0; i < commits.size(); i++) {
+      Object[] commit = commits.get(i);
+      String currentHash = (String) commit[2];
+      Timestamp commitTime = (Timestamp) commit[6];
+      String time =
+          DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(
+              commitTime.toLocalDateTime().atOffset(ZoneOffset.UTC));
+      assertThat(sql("USE REFERENCE %s AT `%s` IN nessie ", refName, time))
+          .containsExactly(row("Branch", refName, currentHash));
+      assertThat(sql("SHOW REFERENCE IN nessie"))
+          .containsExactly(row("Branch", refName, currentHash));
+
+      // make sure the SHOW LOG cmd also only shows commits starting from currentHash
+      List<Object[]> commitLog =
+          sql("SHOW LOG IN nessie").stream()
+              .map(ITNessieStatements::convert)
+              .collect(Collectors.toList());
+      assertThat(commitLog.get(0)[2]).isEqualTo(currentHash);
+      assertThat(commitLog).containsExactlyElementsOf(commits.subList(i, commits.size()));
+    }
   }
 
   @Test
   void useShowReferencesAtHash() throws NessieNotFoundException, NessieConflictException {
-    for (Object[] commit : commitAndReturnLog(refName)) {
+    List<Object[]> commits = commitAndReturnLog(refName);
+    for (int i = 0; i < commits.size(); i++) {
+      Object[] commit = commits.get(i);
       String currentHash = (String) commit[2];
       assertThat(sql("USE REFERENCE %s AT %s IN nessie ", refName, currentHash))
           .containsExactly(row("Branch", refName, currentHash));
+      assertThat(sql("SHOW REFERENCE IN nessie"))
+          .containsExactly(row("Branch", refName, currentHash));
+
+      // make sure the SHOW LOG cmd also only shows commits starting from currentHash
+      List<Object[]> commitLog =
+          sql("SHOW LOG IN nessie").stream()
+              .map(ITNessieStatements::convert)
+              .collect(Collectors.toList());
+      assertThat(commitLog.get(0)[2]).isEqualTo(currentHash);
+      assertThat(commitLog).containsExactlyElementsOf(commits.subList(i, commits.size()));
     }
   }
 

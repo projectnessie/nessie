@@ -22,6 +22,7 @@ import org.apache.spark.sql.connector.catalog.CatalogPlugin
 import org.apache.spark.unsafe.types.UTF8String
 import org.projectnessie.api.params.CommitLogParams
 import org.projectnessie.client.{NessieClient, StreamingUtil}
+import org.projectnessie.model.Reference
 
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -37,13 +38,18 @@ case class ShowLogExec(
   override protected def runInternal(
       nessieClient: NessieClient
   ): Seq[InternalRow] = {
-    val refName = branch.getOrElse(
-      NessieUtils.getCurrentRef(currentCatalog, catalog).getName
-    )
+    val refWithHash =
+      if (branch.isEmpty)
+        Some(NessieUtils.getCurrentRefAtConfiguredHash(currentCatalog, catalog))
+      else None
+    val ref = branch.getOrElse(refWithHash.get.getName)
+    val params =
+      if (refWithHash.isEmpty) CommitLogParams.empty()
+      else CommitLogParams.builder().endHash(refWithHash.get.getHash).build()
     val stream = StreamingUtil.getCommitLogStream(
       nessieClient.getTreeApi,
-      refName,
-      CommitLogParams.empty()
+      ref,
+      params
     )
 
     stream.iterator.asScala
