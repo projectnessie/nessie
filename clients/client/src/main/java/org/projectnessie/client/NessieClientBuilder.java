@@ -83,7 +83,9 @@ public interface NessieClientBuilder<IMPL extends NessieClientBuilder<IMPL>> {
    * @param uri server URI
    * @return {@code this}
    */
-  IMPL withUri(String uri);
+  default IMPL withUri(String uri) {
+    return withUri(URI.create(uri));
+  }
 
   /**
    * Builds a new {@link NessieApi}.

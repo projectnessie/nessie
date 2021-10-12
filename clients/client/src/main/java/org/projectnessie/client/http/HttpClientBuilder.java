@@ -111,17 +111,6 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
     return this;
   }
 
-  /**
-   * Convenience method for {@link #withUri(URI)} taking a string.
-   *
-   * @param uri server URI
-   * @return {@code this}
-   */
-  @Override
-  public HttpClientBuilder withUri(String uri) {
-    return withUri(URI.create(uri));
-  }
-
   @Override
   public HttpClientBuilder withAuthentication(NessieAuthentication authentication) {
     if (authentication != null && !(authentication instanceof HttpAuthentication)) {
