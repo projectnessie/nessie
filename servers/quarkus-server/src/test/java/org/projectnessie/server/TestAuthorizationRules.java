@@ -77,7 +77,7 @@ class TestAuthorizationRules extends BaseClientAuthTest {
     listAllReferences(branchName, shouldFail);
 
     String cid = "cid-foo-" + UUID.randomUUID();
-    addContent(branch, Put.of(key, IcebergTable.of("foo", 0, 0, cid)), role, shouldFail);
+    addContent(branch, Put.of(key, IcebergTable.of("foo", "x", cid)), role, shouldFail);
 
     if (!shouldFail) {
       // These requests cannot succeed, because "disallowedBranchForTestUser" could not be created
@@ -114,7 +114,7 @@ class TestAuthorizationRules extends BaseClientAuthTest {
                     .commitMultipleOperations()
                     .branch(branch)
                     .commitMeta(CommitMeta.fromMessage("add stuff"))
-                    .operation(Put.of(key, IcebergTable.of("foo", 0, 0, "cid-foo")))
+                    .operation(Put.of(key, IcebergTable.of("foo", "x", "cid-foo")))
                     .commit())
         .isInstanceOf(NessieForbiddenException.class)
         .hasMessageContaining(

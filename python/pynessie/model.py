@@ -30,7 +30,7 @@ class IcebergTable(Contents):
     """Dataclass for Nessie Contents."""
 
     metadata_location: str = desert.ib(fields.Str(data_key="metadataLocation"))
-    snapshot_id: int = desert.ib(fields.Int(data_key="snapshotId"))
+    id_generators: str = desert.ib(fields.Str(data_key="idGenerators"))
 
     def requires_expected_state(self: "IcebergTable") -> bool:
         """Returns True - expected state should be provided for Put operations on Iceberg tables."""
@@ -38,7 +38,7 @@ class IcebergTable(Contents):
 
     def pretty_print(self: "IcebergTable") -> str:
         """Print out for cli."""
-        return "Iceberg table:\n\tmetadata-location:{}\n\tsnapshot-id:{}".format(self.metadata_location, self.snapshot_id)
+        return "Iceberg table:\n\tmetadata-location:{}\n\tid-generators:{}".format(self.metadata_location, self.id_generators)
 
 
 IcebergTableSchema = desert.schema_class(IcebergTable)

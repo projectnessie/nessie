@@ -86,9 +86,7 @@ public class TableCommitMetaStoreWorker
     if (contents instanceof IcebergTable) {
       IcebergTable state = (IcebergTable) contents;
       ObjectTypes.IcebergGlobal.Builder stateBuilder =
-          ObjectTypes.IcebergGlobal.newBuilder()
-              .setLastColumnId(state.getLastColumnId())
-              .setLastAssignedPartitionId(state.getLastAssignedPartitionId());
+          ObjectTypes.IcebergGlobal.newBuilder().setIdGenerators(state.getIdGenerators());
       builder.setIcebergGlobal(stateBuilder);
     } else {
       throw new IllegalArgumentException("Unknown type " + contents);
@@ -123,8 +121,7 @@ public class TableCommitMetaStoreWorker
         }
         return IcebergTable.of(
             contents.getIcebergMetadataPointer().getMetadataLocation(),
-            global.getIcebergGlobal().getLastColumnId(),
-            global.getIcebergGlobal().getLastAssignedPartitionId(),
+            global.getIcebergGlobal().getIdGenerators(),
             contents.getId());
 
       case SQL_VIEW:

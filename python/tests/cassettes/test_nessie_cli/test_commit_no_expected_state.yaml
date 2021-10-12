@@ -48,8 +48,8 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-      "name": "dev", "type": "BRANCH"}'
+    body: '{"name": "dev", "hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+      "type": "BRANCH"}'
     headers:
       Accept:
       - '*/*'
@@ -130,12 +130,13 @@ interactions:
       code: 404
       message: Not Found
 - request:
-    body: '{"operations": [{"contents": {"id": "test_commit_no_expected_state", "metadataLocationHistory":
-      ["asd111"], "lastCheckpoint": "x", "checkpointLocationHistory": ["def"], "type":
-      "DELTA_LAKE_TABLE"}, "expectedContents": null, "key": {"elements": ["commit",
-      "expected", "contents"]}, "type": "PUT"}], "commitMeta": {"authorTime": null,
-      "properties": null, "committer": null, "message": "commit 1", "hash": null,
-      "author": "nessie test", "signedOffBy": null, "commitTime": null}}'
+    body: '{"operations": [{"expectedContents": null, "key": {"elements": ["commit",
+      "expected", "contents"]}, "contents": {"metadataLocationHistory": ["asd111"],
+      "id": "test_commit_no_expected_state", "checkpointLocationHistory": ["def"],
+      "lastCheckpoint": "x", "type": "DELTA_LAKE_TABLE"}, "type": "PUT"}], "commitMeta":
+      {"commitTime": null, "committer": null, "author": "nessie test", "properties":
+      null, "signedOffBy": null, "message": "commit 1", "authorTime": null, "hash":
+      null}}'
     headers:
       Accept:
       - '*/*'
@@ -153,7 +154,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/branch/dev/commit?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"94dcaac8ffc3f16b9f30b932abec068bee2926d57d1015eefb416bd081e5b629\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"902d633d055966bc00eb36b536b01170cbb378d363c08bc6eb08d42e48e3fb08\"\n}"
     headers:
       Content-Length:
       - '120'
@@ -179,7 +180,7 @@ interactions:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
         \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}, {\n
-        \ \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"94dcaac8ffc3f16b9f30b932abec068bee2926d57d1015eefb416bd081e5b629\"\n}
+        \ \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"902d633d055966bc00eb36b536b01170cbb378d363c08bc6eb08d42e48e3fb08\"\n}
         ]"
     headers:
       Content-Length:
@@ -216,12 +217,13 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"operations": [{"contents": {"id": "test_commit_no_expected_state", "metadataLocationHistory":
-      ["asd222"], "lastCheckpoint": "x", "checkpointLocationHistory": ["def"], "type":
-      "DELTA_LAKE_TABLE"}, "expectedContents": null, "key": {"elements": ["commit",
-      "expected", "contents"]}, "type": "PUT"}], "commitMeta": {"authorTime": null,
-      "properties": null, "committer": null, "message": "commit 2", "hash": null,
-      "author": "nessie test", "signedOffBy": null, "commitTime": null}}'
+    body: '{"operations": [{"expectedContents": null, "key": {"elements": ["commit",
+      "expected", "contents"]}, "contents": {"metadataLocationHistory": ["asd222"],
+      "id": "test_commit_no_expected_state", "checkpointLocationHistory": ["def"],
+      "lastCheckpoint": "x", "type": "DELTA_LAKE_TABLE"}, "type": "PUT"}], "commitMeta":
+      {"commitTime": null, "committer": null, "author": "nessie test", "properties":
+      null, "signedOffBy": null, "message": "commit 2", "authorTime": null, "hash":
+      null}}'
     headers:
       Accept:
       - '*/*'
@@ -236,10 +238,10 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/dev/commit?expectedHash=94dcaac8ffc3f16b9f30b932abec068bee2926d57d1015eefb416bd081e5b629
+    uri: http://localhost:19120/api/v1/trees/branch/dev/commit?expectedHash=902d633d055966bc00eb36b536b01170cbb378d363c08bc6eb08d42e48e3fb08
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"c6ea469d4a3a09689cca2e4101f748ea9de1a7a5c54131576d8b1133d8bb854b\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"55c561467dc61e13c38c9bdb7e0a9cfeb43fd45ad91b59b643409b06e964ad60\"\n}"
     headers:
       Content-Length:
       - '120'
@@ -263,7 +265,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/dev
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"c6ea469d4a3a09689cca2e4101f748ea9de1a7a5c54131576d8b1133d8bb854b\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"55c561467dc61e13c38c9bdb7e0a9cfeb43fd45ad91b59b643409b06e964ad60\"\n}"
     headers:
       Content-Length:
       - '120'
@@ -286,7 +288,7 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: DELETE
-    uri: http://localhost:19120/api/v1/trees/branch/dev?expectedHash=c6ea469d4a3a09689cca2e4101f748ea9de1a7a5c54131576d8b1133d8bb854b
+    uri: http://localhost:19120/api/v1/trees/branch/dev?expectedHash=55c561467dc61e13c38c9bdb7e0a9cfeb43fd45ad91b59b643409b06e964ad60
   response:
     body:
       string: ''
@@ -295,8 +297,8 @@ interactions:
       code: 204
       message: No Content
 - request:
-    body: '{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-      "name": "main", "type": "BRANCH"}'
+    body: '{"name": "main", "hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+      "type": "BRANCH"}'
     headers:
       Accept:
       - '*/*'
@@ -349,8 +351,8 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-      "name": "main", "type": "BRANCH"}'
+    body: '{"name": "main", "hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+      "type": "BRANCH"}'
     headers:
       Accept:
       - '*/*'

@@ -76,7 +76,7 @@ public class AbstractResteasyTest {
         newReference,
         rest().get("trees/tree/test").then().statusCode(200).extract().as(Branch.class));
 
-    IcebergTable table = IcebergTable.of("/the/directory/over/there", 0, 0);
+    IcebergTable table = IcebergTable.of("/the/directory/over/there", "x");
 
     Branch commitResponse =
         rest()
@@ -102,13 +102,13 @@ public class AbstractResteasyTest {
       updates[i] =
           ImmutablePut.builder()
               .key(ContentsKey.of("item", Integer.toString(i)))
-              .contents(IcebergTable.of("/the/directory/over/there/" + i, 0, 0))
+              .contents(IcebergTable.of("/the/directory/over/there/" + i, "x"))
               .build();
     }
     updates[10] =
         ImmutablePut.builder()
             .key(ContentsKey.of("xxx", "test"))
-            .contents(IcebergTable.of("/the/directory/over/there/has/been/moved", 0, 0))
+            .contents(IcebergTable.of("/the/directory/over/there/has/been/moved", "x"))
             .build();
 
     Reference branch = rest().get("trees/tree/test").as(Reference.class);
@@ -134,7 +134,7 @@ public class AbstractResteasyTest {
     Assertions.assertEquals(updates[10].getContents(), res.body().as(Contents.class));
 
     IcebergTable currentTable = table;
-    table = IcebergTable.of("/the/directory/over/there/has/been/moved/again", 0, 0, table.getId());
+    table = IcebergTable.of("/the/directory/over/there/has/been/moved/again", "x", table.getId());
 
     Branch b2 = rest().get("trees/tree/test").as(Branch.class);
     rest()
@@ -237,11 +237,10 @@ public class AbstractResteasyTest {
                 (expectedMetadataUrl != null)
                     ? Put.of(
                         ContentsKey.of(contentsKey),
-                        IcebergTable.of(metadataUrl, 0, 0, contentsId),
-                        IcebergTable.of(expectedMetadataUrl, 0, 0, contentsId))
+                        IcebergTable.of(metadataUrl, "x", contentsId),
+                        IcebergTable.of(expectedMetadataUrl, "x", contentsId))
                     : Put.of(
-                        ContentsKey.of(contentsKey),
-                        IcebergTable.of(metadataUrl, 0, 0, contentsId)))
+                        ContentsKey.of(contentsKey), IcebergTable.of(metadataUrl, "x", contentsId)))
             .commitMeta(CommitMeta.builder().author(author).message("").build())
             .build();
     return rest()

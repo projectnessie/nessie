@@ -75,7 +75,7 @@ class AbstractTestBasicOperations {
         () ->
             api.commitMultipleOperations()
                 .branch(branch)
-                .operation(Put.of(key, IcebergTable.of("foo", 0, 0, "cid-foo")))
+                .operation(Put.of(key, IcebergTable.of("foo", "x", "cid-foo")))
                 .commitMeta(CommitMeta.fromMessage("empty message"))
                 .commit());
 
@@ -110,7 +110,7 @@ class AbstractTestBasicOperations {
           // have conflicts.
           api.commitMultipleOperations()
               .branch(b)
-              .operation(Put.of(key, IcebergTable.of("bar", 0, 0, "cid-bar")))
+              .operation(Put.of(key, IcebergTable.of("bar", "x", "cid-bar")))
               .commitMeta(CommitMeta.fromMessage(""))
               .commit();
         });

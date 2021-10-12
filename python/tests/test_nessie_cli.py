@@ -93,7 +93,7 @@ def test_remote() -> None:
 
 
 def _new_table(table_id: str) -> IcebergTable:
-    return IcebergTable(table_id, "/a/b/c", 42)
+    return IcebergTable(table_id, "/a/b/c", "xyz")
 
 
 def _make_commit(
@@ -370,7 +370,7 @@ def test_contents_listing() -> None:
     branch = "contents_listing_dev"
     _run(runner, ["branch", branch])
 
-    iceberg_table = IcebergTable(id="test_contents_listing", metadata_location="/a/b/c", snapshot_id=42)
+    iceberg_table = IcebergTable(id="test_contents_listing", metadata_location="/a/b/c", id_generators="xyz")
     delta_lake_table = DeltaLakeTable(
         id="uuid2", metadata_location_history=["asd"], checkpoint_location_history=["def"], last_checkpoint="x"
     )

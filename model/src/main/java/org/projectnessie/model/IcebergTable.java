@@ -28,16 +28,14 @@ import org.immutables.value.Value;
  * Represents the state of an Iceberg table in Nessie. An Iceberg table is globally identified via
  * its {@link Contents#getId() unique ID}.
  *
- * <p>The Iceberg-table-state consists of the location to the table-metadata, the snapshot-ID, the
- * schema-ID, the partition-spec-ID and the default sort-order-ID.
+ * <p>The Iceberg-table-state consists of the location to the table-metadata and the state of the ID
+ * generators using the serialized version of Iceberg's {@code TableIdGenerators} object.
  *
- * <p>The table-metadata-location is managed globally within Nessie, which means that all versions
- * of the same table share the table-metadata across all named-references (branches and tags). There
- * is only one version, the current version, of Iceberg's table-metadata.
+ * <p>The table-metadata-location is managed on each Nessie reference, which means that all versions
+ * of the same table have distinct table-metadata across all named-references (branches and tags).
  *
- * <p>Within each named-reference (branch or tag), the (current) Iceberg snapshot, schema,
- * partition-spec and sort-order IDs will be different. In other words: changes to an Iceberg table
- * update the snapshot-ID.
+ * <p>The information needed to generate IDs for an Iceberg table that need to be globally unique,
+ * for example the last-column-ID, is managed globally within Nessie.
  *
  * <p>When adding a new table (aka contents-object identified by a contents-id), use a {@link
  * org.projectnessie.model.Operation.Put} without an expected-value. In all other cases (updating an
@@ -71,27 +69,20 @@ public abstract class IcebergTable extends Contents {
   @NotBlank
   public abstract String getMetadataLocation();
 
-  /** ID of the last column. */
-  public abstract int getLastColumnId();
+  /** Opaque representation of Iceberg's {@code TableIdGenerators}. */
+  public abstract String getIdGenerators();
 
-  /** ID of the last assigned partition. */
-  public abstract int getLastAssignedPartitionId();
-
-  public static IcebergTable of(
-      String metadataLocation, int lastColumnId, int lastAssignedPartitionId) {
+  public static IcebergTable of(String metadataLocation, String idGenerators) {
     return ImmutableIcebergTable.builder()
         .metadataLocation(metadataLocation)
-        .lastColumnId(lastColumnId)
-        .lastAssignedPartitionId(lastAssignedPartitionId)
+        .idGenerators(idGenerators)
         .build();
   }
 
-  public static IcebergTable of(
-      String metadataLocation, int lastColumnId, int lastAssignedPartitionId, String contentsId) {
+  public static IcebergTable of(String metadataLocation, String idGenerators, String contentsId) {
     return ImmutableIcebergTable.builder()
         .metadataLocation(metadataLocation)
-        .lastColumnId(lastColumnId)
-        .lastAssignedPartitionId(lastAssignedPartitionId)
+        .idGenerators(idGenerators)
         .id(contentsId)
         .build();
   }

@@ -69,12 +69,12 @@ class TestStoreWorker {
   @Test
   void testSerdeIceberg() {
     String path = "foo/bar";
-    IcebergTable table = IcebergTable.of(path, 42, 0, ID);
+    IcebergTable table = IcebergTable.of(path, "xyz", ID);
 
     ObjectTypes.Contents protoTableGlobal =
         ObjectTypes.Contents.newBuilder()
             .setId(ID)
-            .setIcebergGlobal(IcebergGlobal.newBuilder().setLastColumnId(42))
+            .setIcebergGlobal(IcebergGlobal.newBuilder().setIdGenerators("xyz"))
             .build();
     ObjectTypes.Contents protoOnRef =
         ObjectTypes.Contents.newBuilder()

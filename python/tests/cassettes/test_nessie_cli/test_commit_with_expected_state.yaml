@@ -48,8 +48,8 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-      "name": "dev", "type": "BRANCH"}'
+    body: '{"name": "dev", "hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+      "type": "BRANCH"}'
     headers:
       Accept:
       - '*/*'
@@ -130,11 +130,11 @@ interactions:
       code: 404
       message: Not Found
 - request:
-    body: '{"operations": [{"contents": {"id": "test_expected_contents", "snapshotId":
-      42, "metadataLocation": "/a/b/c", "type": "ICEBERG_TABLE"}, "expectedContents":
-      null, "key": {"elements": ["commit", "expected", "contents"]}, "type": "PUT"}],
-      "commitMeta": {"authorTime": null, "properties": null, "committer": null, "message":
-      "commit 1", "hash": null, "author": "nessie test", "signedOffBy": null, "commitTime":
+    body: '{"operations": [{"expectedContents": null, "key": {"elements": ["commit",
+      "expected", "contents"]}, "contents": {"idGenerators": "xyz", "id": "test_expected_contents",
+      "metadataLocation": "/a/b/c", "type": "ICEBERG_TABLE"}, "type": "PUT"}], "commitMeta":
+      {"commitTime": null, "committer": null, "author": "nessie test", "properties":
+      null, "signedOffBy": null, "message": "commit 1", "authorTime": null, "hash":
       null}}'
     headers:
       Accept:
@@ -144,7 +144,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '413'
+      - '418'
       Content-Type:
       - application/json
       User-Agent:
@@ -153,7 +153,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/branch/dev/commit?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"b2aafcc0ae1d5a6c189d4a0dc5def5773ee9025fc4fe91141b63b3cc0cd8919a\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"185f6fbc781d6ae29e9b15e8e9acfab2c56888562cf7ffac87d8a9a485efae8d\"\n}"
     headers:
       Content-Length:
       - '120'
@@ -179,7 +179,7 @@ interactions:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
         \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}, {\n
-        \ \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"b2aafcc0ae1d5a6c189d4a0dc5def5773ee9025fc4fe91141b63b3cc0cd8919a\"\n}
+        \ \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"185f6fbc781d6ae29e9b15e8e9acfab2c56888562cf7ffac87d8a9a485efae8d\"\n}
         ]"
     headers:
       Content-Length:
@@ -205,23 +205,23 @@ interactions:
   response:
     body:
       string: "{\n  \"type\" : \"ICEBERG_TABLE\",\n  \"id\" : \"test_expected_contents\",\n
-        \ \"metadataLocation\" : \"/a/b/c\",\n  \"snapshotId\" : 42\n}"
+        \ \"metadataLocation\" : \"/a/b/c\",\n  \"idGenerators\" : \"xyz\"\n}"
     headers:
       Content-Length:
-      - '119'
+      - '124'
       Content-Type:
       - application/json
     status:
       code: 200
       message: OK
 - request:
-    body: '{"operations": [{"contents": {"id": "test_expected_contents", "snapshotId":
-      42, "metadataLocation": "/a/b/c", "type": "ICEBERG_TABLE"}, "expectedContents":
-      {"id": "test_expected_contents", "snapshotId": 42, "metadataLocation": "/a/b/c",
-      "type": "ICEBERG_TABLE"}, "key": {"elements": ["commit", "expected", "contents"]},
-      "type": "PUT"}], "commitMeta": {"authorTime": null, "properties": null, "committer":
-      null, "message": "commit 2", "hash": null, "author": "nessie test", "signedOffBy":
-      null, "commitTime": null}}'
+    body: '{"operations": [{"expectedContents": {"idGenerators": "xyz", "id": "test_expected_contents",
+      "metadataLocation": "/a/b/c", "type": "ICEBERG_TABLE"}, "key": {"elements":
+      ["commit", "expected", "contents"]}, "contents": {"idGenerators": "xyz", "id":
+      "test_expected_contents", "metadataLocation": "/a/b/c", "type": "ICEBERG_TABLE"},
+      "type": "PUT"}], "commitMeta": {"commitTime": null, "committer": null, "author":
+      "nessie test", "properties": null, "signedOffBy": null, "message": "commit 2",
+      "authorTime": null, "hash": null}}'
     headers:
       Accept:
       - '*/*'
@@ -230,16 +230,16 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '514'
+      - '524'
       Content-Type:
       - application/json
       User-Agent:
       - python-requests/2.26.0
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/dev/commit?expectedHash=b2aafcc0ae1d5a6c189d4a0dc5def5773ee9025fc4fe91141b63b3cc0cd8919a
+    uri: http://localhost:19120/api/v1/trees/branch/dev/commit?expectedHash=185f6fbc781d6ae29e9b15e8e9acfab2c56888562cf7ffac87d8a9a485efae8d
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"03f7b02fb8d1ba2913087d3aae965c7cb0da3b52cffa154ec674e36b86b7139c\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"e8703b6e1d465df68d7215d6cbbd1a674f6159172fa58712917ced81f8c6480f\"\n}"
     headers:
       Content-Length:
       - '120'
@@ -263,7 +263,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/dev
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"03f7b02fb8d1ba2913087d3aae965c7cb0da3b52cffa154ec674e36b86b7139c\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"e8703b6e1d465df68d7215d6cbbd1a674f6159172fa58712917ced81f8c6480f\"\n}"
     headers:
       Content-Length:
       - '120'
@@ -286,7 +286,7 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: DELETE
-    uri: http://localhost:19120/api/v1/trees/branch/dev?expectedHash=03f7b02fb8d1ba2913087d3aae965c7cb0da3b52cffa154ec674e36b86b7139c
+    uri: http://localhost:19120/api/v1/trees/branch/dev?expectedHash=e8703b6e1d465df68d7215d6cbbd1a674f6159172fa58712917ced81f8c6480f
   response:
     body:
       string: ''
@@ -295,8 +295,8 @@ interactions:
       code: 204
       message: No Content
 - request:
-    body: '{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-      "name": "main", "type": "BRANCH"}'
+    body: '{"name": "main", "hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+      "type": "BRANCH"}'
     headers:
       Accept:
       - '*/*'
@@ -349,8 +349,8 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-      "name": "main", "type": "BRANCH"}'
+    body: '{"name": "main", "hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+      "type": "BRANCH"}'
     headers:
       Accept:
       - '*/*'

@@ -230,7 +230,7 @@ public abstract class AbstractTestRest {
     Reference main =
         api.createReference().sourceRefName("main").reference(Branch.of(root, null)).create();
 
-    IcebergTable meta = IcebergTable.of("meep", 0, 0);
+    IcebergTable meta = IcebergTable.of("meep", "x");
     main =
         api.commitMultipleOperations()
             .branchName(main.getName())
@@ -307,7 +307,7 @@ public abstract class AbstractTestRest {
 
     // Need to have at least one op, otherwise all following operations (assignTag/Branch, merge,
     // delete) will fail
-    meta = IcebergTable.of("foo", 0, 0);
+    meta = IcebergTable.of("foo", "x");
     api.commitMultipleOperations()
         .branchName(branchName)
         .hash(branchHash)
@@ -588,7 +588,7 @@ public abstract class AbstractTestRest {
     for (int j = 0; j < numAuthors; j++) {
       String author = "author-" + j;
       for (int i = 0; i < commitsPerAuthor; i++) {
-        IcebergTable meta = IcebergTable.of("some-file-" + i, 0, 0);
+        IcebergTable meta = IcebergTable.of("some-file-" + i, "x");
         String nextHash =
             api.commitMultipleOperations()
                 .branchName(branch.getName())
@@ -659,7 +659,7 @@ public abstract class AbstractTestRest {
     for (int i = 0; i < commits; i++) {
       String msg = "message-for-" + i;
       allMessages.add(msg);
-      IcebergTable tableMeta = IcebergTable.of("some-file-" + i, 0, 0);
+      IcebergTable tableMeta = IcebergTable.of("some-file-" + i, "x");
       String nextHash =
           api.commitMultipleOperations()
               .branchName(branchName)
@@ -732,8 +732,8 @@ public abstract class AbstractTestRest {
         api.createReference().sourceRefName("main").reference(Branch.of(branch, null)).create();
     ContentsKey a = ContentsKey.of("a");
     ContentsKey b = ContentsKey.of("b");
-    IcebergTable ta = IcebergTable.of("path1", 0, 0);
-    IcebergTable tb = IcebergTable.of("path2", 0, 0);
+    IcebergTable ta = IcebergTable.of("path1", "x");
+    IcebergTable tb = IcebergTable.of("path2", "x");
     api.commitMultipleOperations()
         .branchName(branch)
         .hash(r.getHash())
@@ -795,7 +795,7 @@ public abstract class AbstractTestRest {
     return Stream.of(
         new ContentAndOperationType(
             Type.ICEBERG_TABLE,
-            Put.of(ContentsKey.of("iceberg"), IcebergTable.of("/iceberg/table", 0, 0))),
+            Put.of(ContentsKey.of("iceberg"), IcebergTable.of("/iceberg/table", "x"))),
         new ContentAndOperationType(
             Type.VIEW,
             Put.of(
@@ -915,7 +915,7 @@ public abstract class AbstractTestRest {
         api.createReference().sourceRefName("main").reference(Branch.of(branch, null)).create();
     ContentsKey a = ContentsKey.of("a");
     ContentsKey b = ContentsKey.of("b");
-    IcebergTable tam = IcebergTable.of("path1", 0, 0);
+    IcebergTable tam = IcebergTable.of("path1", "x");
     SqlView tb =
         ImmutableSqlView.builder().sqlText("select * from table").dialect(Dialect.DREMIO).build();
     api.commitMultipleOperations()
@@ -979,25 +979,25 @@ public abstract class AbstractTestRest {
     api.commitMultipleOperations()
         .branchName(branch)
         .hash(r.getHash())
-        .operation(Put.of(first, IcebergTable.of("path1", 0, 0)))
+        .operation(Put.of(first, IcebergTable.of("path1", "x")))
         .commitMeta(CommitMeta.fromMessage("commit 1"))
         .commit();
     api.commitMultipleOperations()
         .branchName(branch)
         .hash(r.getHash())
-        .operation(Put.of(second, IcebergTable.of("path2", 0, 0)))
+        .operation(Put.of(second, IcebergTable.of("path2", "x")))
         .commitMeta(CommitMeta.fromMessage("commit 2"))
         .commit();
     api.commitMultipleOperations()
         .branchName(branch)
         .hash(r.getHash())
-        .operation(Put.of(third, IcebergTable.of("path3", 0, 0)))
+        .operation(Put.of(third, IcebergTable.of("path3", "x")))
         .commitMeta(CommitMeta.fromMessage("commit 3"))
         .commit();
     api.commitMultipleOperations()
         .branchName(branch)
         .hash(r.getHash())
-        .operation(Put.of(fourth, IcebergTable.of("path4", 0, 0)))
+        .operation(Put.of(fourth, IcebergTable.of("path4", "x")))
         .commitMeta(CommitMeta.fromMessage("commit 4"))
         .commit();
 
@@ -1063,7 +1063,7 @@ public abstract class AbstractTestRest {
       api.commitMultipleOperations()
           .branchName(branch)
           .hash(r.getHash())
-          .operation(Put.of(keys.get(i), IcebergTable.of("path" + i, 0, 0)))
+          .operation(Put.of(keys.get(i), IcebergTable.of("path" + i, "x")))
           .commitMeta(CommitMeta.fromMessage("commit " + i))
           .commit();
     }
@@ -1151,7 +1151,7 @@ public abstract class AbstractTestRest {
         api.createReference().sourceRefName("main").reference(Branch.of(branch, null)).create();
     // ContentsKey k = ContentsKey.of("/%国","国.国");
     ContentsKey k = ContentsKey.of("a.b", "c.txt");
-    IcebergTable ta = IcebergTable.of("path1", 0, 0);
+    IcebergTable ta = IcebergTable.of("path1", "x");
     api.commitMultipleOperations()
         .branchName(branch)
         .hash(r.getHash())

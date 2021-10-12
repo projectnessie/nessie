@@ -35,8 +35,7 @@ message IcebergMetadataPointer {
 }
 
 message IcebergGlobal {
-  int32 last_column_id = 1;
-  int32 last_assigned_partition_id = 2;
+  string id_generators = 1;
 }
 
 message SqlView {
