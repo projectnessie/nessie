@@ -61,8 +61,8 @@ Therefore, combining all of them in one Quarkus configuration object should not 
 
 | Property                                        | Default values      | Type     | Description                                                         |
 | ----------------------------------------------- | ------------------- | -------- |-------------------------------------------------------------------- |
-| `nessie.server.authorization.enabled`           | `false`             | `boolean`| Sets whether [authorization](./authorization.md) should be enabled on Nessie server.  |
-| `nessie.server.authorization.rules.<ruleId>`    |                     | `Map`     | Sets the [authorization](./authorization.md) rules that can be used in CEL format.  |
+| `nessie.server.authorization.enabled`           | `false`             | `boolean`| Sets whether [authorization](../features/metadata_authorization.md) should be enabled on Nessie server.  |
+| `nessie.server.authorization.rules.<ruleId>`    |                     | `Map`     | Sets the [authorization](../features/metadata_authorization.md) rules that can be used in CEL format.  |
 
 
 ## Quarkus Server Settings Related to Nessie

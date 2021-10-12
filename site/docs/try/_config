@@ -5,6 +5,5 @@ arrange:
   - helm.md
   - configuration.md
   - authentication.md
-  - authorization.md
   - releases.md
   
