@@ -1,9 +1,10 @@
-title: Try Now
+title: Getting Started
 arrange:
   - index.md
   - docker.md
   - helm.md
   - configuration.md
   - authentication.md
+  - authorization.md
   - releases.md
   
