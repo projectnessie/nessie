@@ -81,8 +81,9 @@ public abstract class ContentsKey {
 
   @JsonCreator
   public static ContentsKey of(@JsonProperty("elements") List<String> elements) {
-    if (elements == null || elements.isEmpty() || elements.get(elements.size() - 1).isEmpty()) {
-      throw new IllegalArgumentException("Null or empty name not allowed");
+    Objects.requireNonNull(elements);
+    if (elements.isEmpty() || elements.get(elements.size() - 1).isEmpty()) {
+      throw new IllegalArgumentException("An object key must not contain a null or empty element.");
     }
     return ImmutableContentsKey.builder().elements(elements).build();
   }
@@ -91,11 +92,10 @@ public abstract class ContentsKey {
   protected void validate() {
     for (String e : getElements()) {
       if (e == null || e.isEmpty()) {
-        throw new IllegalArgumentException(
-            "An object key cannot contain a null element or empty element.");
+        throw new IllegalArgumentException("An object key must not contain a null or empty element.");
       }
       if (e.contains(ZERO_BYTE_STRING)) {
-        throw new IllegalArgumentException("An object key cannot contain a zero byte.");
+        throw new IllegalArgumentException("An object key must not contain a zero byte.");
       }
     }
   }

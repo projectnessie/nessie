@@ -27,23 +27,23 @@ import org.immutables.value.Value;
  * optional reference name, commit hash or timestamp.
  *
  * <p>The syntax is <br>
- * {@code table-identifier ( '@' reference-name )? ( '#' pointer )?}
+ * {@code table-identifier ( '@' reference-name )? ( '#' hashOrTimestamp )?}
  *
  * <p>{@code table-identifier} is the table-identifier.
  *
  * <p>{@code reference-name} is the optional name of a branch or tag in Nessie.
  *
- * <p>{@code pointer} is the optional Nessie commit-hash or a timestamp within the named reference.
- * If {@code pointer} represents a valid commit hash, it is interpreted as one, otherwise it
- * represents a timestamp.
+ * <p>{@code hashOrTimestamp} is the optional Nessie commit-hash or a timestamp within the named
+ * reference. If {@code hashOrTimestamp} represents a valid commit hash, it is interpreted as one,
+ * otherwise it represents a timestamp.
  */
 @Value.Immutable(prehash = true)
 public abstract class TableReference {
 
   static final String ILLEGAL_TABLE_REFERENCE_MESSAGE =
       "Illegal table reference syntax, '%s' must match the syntax "
-          + "'table-identifier ( '@' reference-name )? ( '#' pointer )?',"
-          + " optional enclosed by backticks or single-quotes.";
+          + "'table-identifier ( '@' reference-name )? ( '#' hashOrTimestamp )?',"
+          + " optionally enclosed by backticks or single-quotes.";
 
   private static final Pattern TABLE_REFERENCE_PATTERN =
       Pattern.compile("^([^@#]+)(@([^@#]+))?(#([^@#]+))?$");

@@ -19,6 +19,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -229,7 +230,7 @@ class TestContentsKey {
   public void validation() {
     assertThatThrownBy(() -> ContentsKey.of("a", "b", "\u0000", "c", "d"))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("An object key cannot contain a zero byte.");
+        .hasMessage("An object key must not contain a zero byte.");
   }
 
   @Test
@@ -259,6 +260,57 @@ class TestContentsKey {
   @Test
   void blockZeroByteUsage() {
     assertThrows(IllegalArgumentException.class, () -> ContentsKey.of("\u0000"));
+  }
+
+  @Test
+  void npe() {
+    assertAll(
+        () ->
+            assertThatThrownBy(() -> ContentsKey.of((String[]) null))
+                .isInstanceOf(NullPointerException.class),
+        () ->
+            assertThatThrownBy(() -> ContentsKey.of(null, null))
+                .isInstanceOf(NullPointerException.class),
+        () ->
+            assertThatThrownBy(() -> ContentsKey.of("a", null))
+                .isInstanceOf(NullPointerException.class),
+        () ->
+            assertThatThrownBy(() -> ContentsKey.of((List<String>) null))
+                .isInstanceOf(NullPointerException.class),
+        () ->
+            assertThatThrownBy(() -> ContentsKey.of(singletonList(null)))
+                .isInstanceOf(NullPointerException.class),
+        () ->
+            assertThatThrownBy(() -> ContentsKey.of(asList("a", null)))
+                .isInstanceOf(NullPointerException.class),
+        () ->
+            assertThatThrownBy(() -> ContentsKey.of(asList(null, "a")))
+                .isInstanceOf(NullPointerException.class));
+  }
+
+  @Test
+  void empty() {
+    assertAll(
+        () ->
+            assertThatThrownBy(() -> ContentsKey.of(null, ""))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("An object key must not contain a null or empty element."),
+        () ->
+            assertThatThrownBy(() -> ContentsKey.of("a", ""))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("An object key must not contain a null or empty element."),
+        () ->
+            assertThatThrownBy(() -> ContentsKey.of(singletonList("")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("An object key must not contain a null or empty element."),
+        () ->
+            assertThatThrownBy(() -> ContentsKey.of(asList("a", "")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("An object key must not contain a null or empty element."),
+        () ->
+            assertThatThrownBy(() -> ContentsKey.of(asList("", "a")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("An object key must not contain a null or empty element."));
   }
 
   private void assertRoundTrip(String... elements) {
