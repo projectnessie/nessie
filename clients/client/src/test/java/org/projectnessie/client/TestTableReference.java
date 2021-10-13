@@ -72,6 +72,14 @@ public class TestTableReference {
           null,
           "12345678abcdef12345678abcdef",
           null
+        },
+        new Object[] {
+          Namespace.of("ns1", "ns2"),
+          "'simple_name#12345678abcdef12345678abcdef'",
+          "simple_name",
+          null,
+          "12345678abcdef12345678abcdef",
+          null
         });
   }
 
@@ -87,17 +95,29 @@ public class TestTableReference {
     TableReference tr = TableReference.parse(namespace, name);
     assertThat(tr)
         .extracting(
+            TableReference::getNamespace,
             TableReference::getName,
+            TableReference::hasReference,
             TableReference::getReference,
+            TableReference::hasHash,
             TableReference::getHash,
+            TableReference::hasTimestamp,
             TableReference::getTimestamp,
             TableReference::toString)
         .containsExactly(
+            namespace,
             expectedName,
+            expectedReference != null,
             expectedReference,
+            expectedHash != null,
             expectedHash,
+            expectedTimestamp != null,
             expectedTimestamp,
-            (namespace.isEmpty() ? "" : namespace.name() + '.') + name);
+            (namespace.isEmpty() ? "" : namespace.name() + '.') + name.replace('\'', '`'));
+
+    assertThat(tr)
+        .isEqualTo(TableReference.parse(namespace.getElements(), name))
+        .isEqualTo(TableReference.parse(Arrays.asList(namespace.getElements()), name));
   }
 
   @Test
