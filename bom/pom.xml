@@ -142,17 +142,11 @@
       <dependency>
         <groupId>org.projectnessie</groupId>
         <artifactId>nessie-versioned-persist-in-memory</artifactId>
-        <type>test-jar</type>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.projectnessie</groupId>
         <artifactId>nessie-versioned-persist-in-memory</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.projectnessie</groupId>
-        <artifactId>nessie-versioned-persist-rocks</artifactId>
         <type>test-jar</type>
         <version>${project.version}</version>
       </dependency>
