@@ -143,10 +143,7 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
       )
     }
     if (tr.hasReference) {
-      if (tr.hasHash) {
-        return (tr.getName, tr.getReference, tr.getHash)
-      }
-      return (tr.getName, tr.getReference, null)
+      return (tr.getName, tr.getReference, tr.getHash)
     }
 
     (
