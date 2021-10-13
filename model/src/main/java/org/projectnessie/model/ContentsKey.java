@@ -97,7 +97,8 @@ public abstract class ContentsKey {
       }
     }
     if (elements.get(elements.size() - 1).isEmpty()) {
-      throw new IllegalArgumentException("An object key must not contain an empty name (last element).");
+      throw new IllegalArgumentException(
+          "An object key must not contain an empty name (last element).");
     }
   }
 
