@@ -203,7 +203,7 @@ class NessieClient(object):
         cherry_pick(self._base_url, self._auth, branch, transplant_json, old_hash, self._ssl_verify)
 
     def get_log(
-        self: "NessieClient", start_ref: str, hash_on_ref: Optional[str] = None, **filtering_args: Any
+        self: "NessieClient", start_ref: str, hash_on_ref: Optional[str] = None, max_records: Optional[int] = None, **filtering_args: Any
     ) -> Generator[CommitMeta, Any, None]:
         """Fetch all logs starting at start_ref.
 
@@ -215,7 +215,7 @@ class NessieClient(object):
         """
         page_token = filtering_args.get("pageToken", None)
 
-        def fetch_logs(token: Optional[str] = page_token) -> LogResponse:
+        def fetch_logs(max: Optional[int], token: Optional[str] = page_token) -> LogResponse:
             if token:
                 filtering_args["pageToken"] = token
 
@@ -225,23 +225,28 @@ class NessieClient(object):
                 hash_on_ref=hash_on_ref,
                 ref=start_ref,
                 ssl_verify=self._ssl_verify,
+                max_records=max,
                 **filtering_args
             )
             log_schema = LogResponseSchema().load(fetched_logs)
             return log_schema
 
-        log_schema = fetch_logs()
+        log_schema = fetch_logs(max=max_records)
 
-        def generator(log_schema: LogResponse) -> Generator[CommitMeta, Any, None]:
+        def generator(log_schema: LogResponse, max_records: Optional[int]) -> Generator[CommitMeta, Any, None]:
             while True:
-                for i in log_schema.operations:
-                    yield i
-                if log_schema.has_more:
-                    log_schema = fetch_logs(token=log_schema.token)
-                else:
+                for log in log_schema.operations:
+                    yield log
+                    if max_records is not None:
+                        max_records -= 1
+                        if max_records <= 0:
+                            # yield only the requierd number of results, if server returns more records than expected.
+                            break
+                if not log_schema.has_more or (max_records is not None and max_records <= 0):
                     break
+                log_schema = fetch_logs(max=max_records, token=log_schema.token)
 
-        return generator(log_schema)
+        return generator(log_schema, max_records)
 
     def get_default_branch(self: "NessieClient") -> str:
         """Fetch default branch either from config if specified or from the server."""
