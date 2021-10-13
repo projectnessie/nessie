@@ -20,7 +20,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.FileAlreadyExistsException
 import java.util.UUID
 import java.util.regex.Pattern
-import org.projectnessie.client.NessieConfigConstants
+import org.projectnessie.client.{NessieConfigConstants, TableReference}
 import org.projectnessie.error.{
   NessieConflictException,
   NessieNotFoundException
@@ -150,15 +150,17 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
   }
 
   private def parseTableIdentifier(path: String): (String, String, String) = {
-    if (path.contains("@") && path.contains("#")) {
-      val tableRef = path.split("@")
-      val refHash = tableRef(1).split("#")
-      return (tableRef(0), refHash(0), refHash(0))
+    val tr = TableReference.parseEmptyNamespace(path);
+    if (tr.hasTimestamp) {
+      throw new IllegalArgumentException(
+        "Invalid table name:" + " # is only allowed for hashes (reference by timestamp is not supported)"
+      )
     }
-
-    if (path.contains("@")) {
-      val tableRef = path.split("@")
-      return (tableRef(0), tableRef(1), null)
+    if (tr.hasReference) {
+      if (tr.hasHash) {
+        return (tr.getName, tr.getReference, tr.getHash)
+      }
+      return (tr.getName, tr.getReference, null)
     }
 
     (
