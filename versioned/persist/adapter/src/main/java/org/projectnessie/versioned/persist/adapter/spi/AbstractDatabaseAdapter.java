@@ -1085,13 +1085,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     for (Entry<ContentsId, Optional<ByteString>> expectedState :
         commitAttempt.getExpectedStates().entrySet()) {
       ByteString currentState = globalStates.get(expectedState.getKey());
-      if (currentState == null) {
-        if (expectedState.getValue().isPresent()) {
-          mismatches.accept(
-              String.format(
-                  "No current global-state for contents-id '%s'.", expectedState.getKey()));
-        }
-      } else {
+      if (currentState != null) {
         if (!expectedState.getValue().isPresent()) {
           // This happens, when a table's being created on a branch, but that table already exists.
           mismatches.accept(

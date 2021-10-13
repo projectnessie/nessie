@@ -328,26 +328,27 @@ public abstract class AbstractGlobalStates {
                         .build()))
         .isInstanceOf(ReferenceConflictException.class)
         .hasMessageContaining("Mismatch in global-state for contents-id 'id-0'.");
+  }
 
-    assertThatThrownBy(
-            () ->
-                databaseAdapter.commit(
-                    ImmutableCommitAttempt.builder()
-                        .commitToBranch(branch)
-                        .expectedHead(Optional.of(branchInitial))
-                        .commitMetaSerialized(ByteString.EMPTY)
-                        .addPuts(
-                            KeyWithBytes.of(
-                                Key.of("my", "table", "num0"),
-                                ContentsId.of("id-NOPE"),
-                                (byte) 0,
-                                ByteString.copyFromUtf8("no no")))
-                        .putGlobal(ContentsId.of("id-NOPE"), ByteString.copyFromUtf8("DUPLICATE"))
-                        .putExpectedStates(
-                            ContentsId.of("id-NOPE"),
-                            Optional.of(ByteString.copyFromUtf8("NOT THIS")))
-                        .build()))
-        .isInstanceOf(ReferenceConflictException.class)
-        .hasMessageContaining("No current global-state for contents-id 'id-NOPE'.");
+  @Test
+  void commitAllowedWithExpectedGlobalStateWhenNoneIsPresentInStorage() throws Exception {
+    BranchName branch = BranchName.of("main");
+    Hash branchInitial = databaseAdapter.toHash(branch);
+
+    ContentsId contentsId = ContentsId.of("new-with-expected-state");
+    databaseAdapter.commit(
+        ImmutableCommitAttempt.builder()
+            .commitToBranch(branch)
+            .expectedHead(Optional.of(branchInitial))
+            .commitMetaSerialized(ByteString.EMPTY)
+            .addPuts(
+                KeyWithBytes.of(
+                    Key.of("my", "table", "key-" + contentsId.getId()),
+                    contentsId,
+                    (byte) 0,
+                    ByteString.copyFromUtf8("no no")))
+            .putGlobal(contentsId, ByteString.copyFromUtf8("SOME-GLOBAL-STATE"))
+            .putExpectedStates(contentsId, Optional.of(ByteString.copyFromUtf8("NOT THIS")))
+            .build());
   }
 }
