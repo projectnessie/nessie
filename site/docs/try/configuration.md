@@ -29,8 +29,42 @@ docker run -p 8080:8080 projectnessie/nessie \
 | `nessie.version.store.type`                 | `INMEMORY`      | `VersionStoreType` | Sets which type of version store to use by Nessie. Possible values are: `DYNAMO`, `INMEMORY`, `ROCKS`, `MONGO`.  |
 | `nessie.version.store.trace.enable`         | `true`          | `boolean`          | Sets whether calls against the version-store are traced with OpenTracing/OpenTelemetry (Jaeger), enabled by default.  |
 | `nessie.version.store.metrics.enable`       | `true`          | `boolean`          | Sets whether metrics for the version-store are enabled (enabled by default).  |
-| `nessie.version.store.rocks.db-path`        |                 | `String`           | Sets RocksDB storage path, this is only if the store type is set to `ROCKS` |
 
+#### RocksDB Version Store Settings
+
+When setting `nessie.version.store.type=ROCKS` which enables RockDB as the version store used by Nessie server, the following configs are applicable in combination with `nessie.version.store.type`:
+
+| Property                                    | Default values  | Type               | Description                                                         |
+| ------------------------------------------- | --------------- | ------------------ |-------------------------------------------------------------------- |
+| `nessie.version.store.rocks.db-path`        |                 | `String`           | Sets RocksDB storage path, e.g: `/tmp/rocks-nessie`. |
+
+
+#### MongoDB Version Store Settings
+
+When setting `nessie.version.store.type=MONGO` which enables MongoDB as the version store used by Nessie server, the following configs are applicable in combination with `nessie.version.store.type`:
+
+| Property                                        | Default values      | Type         | Description                                                         |
+| ----------------------------------------------- | ------------------- | ------------ |-------------------------------------------------------------------- |
+| `quarkus.mongodb.database`                      |                     | `String`     | Sets MongoDB database name.                                         |
+| `quarkus.mongodb.connection-string`             |                     | `String`     | Sets MongoDB connection string.                                     |
+
+!!! info
+    A complete set of MongoDB configuration options for Quarkus can be found on [quarkus.io](https://quarkus.io/guides/all-config#quarkus-mongodb-client_quarkus-mongodb-client-mongodb-client)
+
+
+#### DynamoDB Version Store Settings
+
+When setting `nessie.version.store.type=DYNAMO` which enables DynamoDB as the version store used by Nessie server, the following configs are applicable in combination with `nessie.version.store.type`:
+
+| Property                                        | Default values      | Type         | Description                                                         |
+| ----------------------------------------------- | ------------------- | ------------ |-------------------------------------------------------------------- |
+| `quarkus.dynamodb.aws.region`                   |                     | `String`     | Sets DynamoDB AWS region. |
+| `quarkus.dynamodb.aws.credentials.type`         |                     |              | Sets the credentials provider that should be used to authenticate with AWS. |
+| `quarkus.dynamodb.endpoint-override`            |                     | `URI`        | Sets the endpoint URI with which the SDK should communicate. If not specified, an appropriate endpoint to be used for the given service and region. |
+| `quarkus.dynamodb.sync-client.type`             | `url`               | `url, apache`| Sets the type of the sync HTTP client implementation |
+
+!!! info
+    A complete set of DynamoDB configuration options for Quarkus can be found on [quarkus.io](https://quarkus.io/guides/all-config#quarkus-amazon-dynamodb_quarkus-amazon-dynamodb-amazon-dynamodb)
 
 ### Database Adapter Settings
 This is a superset of all database adapter configuration interfaces to be implemented by Quarkus.
@@ -55,6 +89,8 @@ Therefore, combining all of them in one Quarkus configuration object should not 
 | Property                                        | Default values      | Type     | Description                                                         |
 | ----------------------------------------------- | ------------------- | -------- |-------------------------------------------------------------------- |
 | `nessie.server.authentication.enabled`          | `false`             | `boolean`| Sets whether [authentication](./authentication.md) should be enabled on Nessie server.  |
+| `quarkus.oidc.auth-server-url`                  |                     | `String` | Sets the base URL of the OpenID Connect (OIDC) server if `nessie.server.authentication.enabled=true` |
+| `quarkus.oidc.client-id`                        |                     | `String` | Sets client-id of the application if `nessie.server.authentication.enabled=true`. Each application has a client-id that is used to identify the application. |
 
 
 ### Authorization settings
@@ -69,16 +105,8 @@ Therefore, combining all of them in one Quarkus configuration object should not 
 
 | Property                                        | Default values      | Type         | Description                                                         |
 | ----------------------------------------------- | ------------------- | ------------ |-------------------------------------------------------------------- |
-| `quarkus.mongodb.database`                      |                     | `String`     | Sets MongoDB database name.                                           |
-| `quarkus.mongodb.connection-string`             |                     | `String`     | Sets MongoDB connection string. |
-| `quarkus.dynamodb.aws.region`                   |                     | `String`     | Sets DynamoDB AWS region. |
-| `quarkus.dynamodb.aws.credentials.type`         |                     |              | Sets the credentials provider that should be used to authenticate with AWS. |
-| `quarkus.dynamodb.endpoint-override`            |                     | `URI`        | Sets the endpoint URI with which the SDK should communicate. If not specified, an appropriate endpoint to be used for the given service and region. |
-| `quarkus.dynamodb.sync-client.type`             | `url`               | `url, apache`| Sets the type of the sync HTTP client implementation |
 | `quarkus.http.port`                             | `19120`             | `int`        | Sets the HTTP port |
-| `quarkus.oidc.auth-server-url`                  |                     | `String`     | Sets the base URL of the OpenID Connect (OIDC) server |
 | `quarkus.http.auth.basic`                       |                     | `boolean`    | Sets if basic auth should be enabled. |
-| `quarkus.oidc.enabled`                          | `true`              | `boolean`    | Sets if the OIDC extension is enabled. |
 
 
 !!! info
