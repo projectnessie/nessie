@@ -455,6 +455,14 @@ public class ITNessieStatements extends AbstractSparkTest {
                 .map(ITNessieStatements::convert)
                 .collect(Collectors.toList()))
         .containsExactlyElementsOf(resultList);
+
+    // omit the branch name to show log on main
+    assertThat(
+            sql("SHOW LOG IN nessie").stream()
+                .map(ITNessieStatements::convert)
+                .collect(Collectors.toList()))
+        .containsExactlyElementsOf(resultList);
+
     spark.sessionState().catalogManager().setCurrentCatalog(catalog);
   }
 

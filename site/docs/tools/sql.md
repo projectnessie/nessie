@@ -19,14 +19,14 @@ Additional configuration details can be found in the [Spark via Iceberg](iceberg
 ## Grammar
 The current grammar is shown below:
 ```
-: CREATE (BRANCH|TAG) (IF NOT EXISTS)? identifier (IN catalog=identifier)? (FROM reference=identifier)?
+: CREATE (BRANCH|TAG) (IF NOT EXISTS)? reference=identifier (IN catalog=identifier)? (FROM fromRef=identifier)?
 | DROP (BRANCH|TAG) identifier (IN catalog=identifier)?
-| USE REFERENCE identifier (AT tsOrHash=identifier)?  (IN catalog=identifier)?
+| USE REFERENCE reference=identifier (AT tsOrHash=identifier)?  (IN catalog=identifier)?
 | LIST REFERENCES (IN catalog=identifier)?
 | SHOW REFERENCE (IN catalog=identifier)?
-| MERGE BRANCH (identifier)? (INTO toRef=identifier)?  (IN catalog=identifier)?
-| SHOW LOG (identifier)? (IN catalog=identifier)?
-| ASSIGN (BRANCH|TAG) (identifier)? (TO toRef=identifier)? (IN catalog=identifier)?
+| MERGE BRANCH (reference=identifier)? (INTO toRef=identifier)?  (IN catalog=identifier)?
+| SHOW LOG (reference=identifier)? (IN catalog=identifier)?
+| ASSIGN (BRANCH|TAG) (reference=identifier)? (TO toRef=identifier)? (IN catalog=identifier)?
 ```
 
 ## Creating Branches/Tags
