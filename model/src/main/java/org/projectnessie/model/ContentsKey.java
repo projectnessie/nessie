@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import org.immutables.value.Value;
+import org.projectnessie.model.ImmutableContentsKey.Builder;
 
 /**
  * Key for the contents of an object.
@@ -53,17 +54,40 @@ public abstract class ContentsKey {
    *     from {@link ContentsKey#getElements()}.
    */
   @JsonIgnore
-  @Value.Derived
+  @Value.Redacted
   public Namespace getNamespace() {
-    return Namespace.of(getElements());
+    return Namespace.of(getElements().subList(0, getElements().size() - 1));
+  }
+
+  @JsonIgnore
+  @Value.Redacted
+  public String getName() {
+    return getElements().get(getElements().size() - 1);
+  }
+
+  public static ContentsKey of(Namespace namespace, String name) {
+    Builder b = ImmutableContentsKey.builder();
+    if (!namespace.isEmpty()) {
+      b.addElements(namespace.getElements());
+    }
+    if (name == null || name.isEmpty()) {
+      throw new IllegalArgumentException("Null or empty name not allowed");
+    }
+    return b.addElements(name).build();
   }
 
   public static ContentsKey of(String... elements) {
+    if (elements == null || elements.length == 0 || elements[elements.length - 1].isEmpty()) {
+      throw new IllegalArgumentException("Null or empty name not allowed");
+    }
     return ImmutableContentsKey.builder().elements(Arrays.asList(elements)).build();
   }
 
   @JsonCreator
   public static ContentsKey of(@JsonProperty("elements") List<String> elements) {
+    if (elements == null || elements.isEmpty() || elements.get(elements.size() - 1).isEmpty()) {
+      throw new IllegalArgumentException("Null or empty name not allowed");
+    }
     return ImmutableContentsKey.builder().elements(elements).build();
   }
 

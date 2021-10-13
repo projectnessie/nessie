@@ -27,7 +27,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-public class NamespaceTest {
+public class TestNamespace {
 
   @Test
   public void testNullAndEmpty() {
@@ -50,10 +50,6 @@ public class NamespaceTest {
   @Test
   public void testOneElement() {
     Namespace namespace = Namespace.of("");
-    assertThat(namespace.name()).isEmpty();
-    assertThat(namespace.isEmpty()).isTrue();
-
-    namespace = Namespace.of("tableName");
     assertThat(namespace.name()).isEmpty();
     assertThat(namespace.isEmpty()).isTrue();
   }
@@ -100,16 +96,13 @@ public class NamespaceTest {
 
   private static Stream<Arguments> elementsProvider() {
     return Stream.of(
-        Arguments.of(new String[] {"a", "b"}, "a"),
-        Arguments.of(new String[] {"a", "b", "c"}, "a.b"),
-        Arguments.of(new String[] {"a", "b", "c", "tableName"}, "a.b.c"));
+        Arguments.of(new String[] {"a", "b"}, "a.b"),
+        Arguments.of(new String[] {"a", "b", "c"}, "a.b.c"));
   }
 
   private static Stream<Arguments> identifierProvider() {
     return Stream.of(
-        Arguments.of("a.b", "a"),
-        Arguments.of("a.b.c", "a.b"),
-        Arguments.of("a.b.c.tableName", "a.b.c"));
+        Arguments.of("a", "a"), Arguments.of("a.b", "a.b"), Arguments.of("a.b.c", "a.b.c"));
   }
 
   private static Stream<Arguments> invalidElementsProvider() {
