@@ -21,7 +21,7 @@ import org.immutables.value.Value;
 import org.projectnessie.versioned.persist.tx.TxConnectionConfig;
 
 /** TX-database-adapter config interface. */
-@Value.Immutable(lazyhash = true)
+@Value.Immutable
 public interface LocalTxConnectionConfig extends TxConnectionConfig {
 
   @Nullable

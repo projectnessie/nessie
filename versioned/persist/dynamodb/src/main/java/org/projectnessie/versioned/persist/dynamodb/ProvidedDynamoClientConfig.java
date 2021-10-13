@@ -18,7 +18,7 @@ package org.projectnessie.versioned.persist.dynamodb;
 import org.immutables.value.Value;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
-@Value.Immutable(lazyhash = true)
+@Value.Immutable
 public interface ProvidedDynamoClientConfig extends DynamoClientConfig {
 
   static ProvidedDynamoClientConfig of(DynamoDbClient db) {

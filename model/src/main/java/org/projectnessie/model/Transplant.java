@@ -37,7 +37,7 @@ import org.immutables.value.Value;
       @SchemaProperty(name = "fromRefName", pattern = Validation.REF_NAME_REGEX),
       @SchemaProperty(name = "hashesToTransplant", uniqueItems = true)
     })
-@Value.Immutable(prehash = true)
+@Value.Immutable
 @JsonSerialize(as = ImmutableTransplant.class)
 @JsonDeserialize(as = ImmutableTransplant.class)
 public interface Transplant {

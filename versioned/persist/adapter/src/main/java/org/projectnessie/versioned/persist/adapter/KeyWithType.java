@@ -19,7 +19,7 @@ import org.immutables.value.Value;
 import org.projectnessie.versioned.Key;
 
 /** Composite of key, contents-id, contents-type. */
-@Value.Immutable(lazyhash = true)
+@Value.Immutable(prehash = true)
 public interface KeyWithType {
   Key getKey();
 

@@ -30,7 +30,7 @@ import org.immutables.value.Value;
  * table and is not included in the {@link Namespace} itself. Therefore, the {@link Namespace} is
  * always consisting of the first <b>N-1</b> elements.
  */
-@Value.Immutable(prehash = true)
+@Value.Immutable
 @JsonSerialize(as = ImmutableNamespace.class)
 @JsonDeserialize(as = ImmutableNamespace.class)
 public abstract class Namespace {

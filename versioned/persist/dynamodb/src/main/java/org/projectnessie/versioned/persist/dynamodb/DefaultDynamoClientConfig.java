@@ -20,7 +20,7 @@ import org.immutables.value.Value;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
-@Value.Immutable(lazyhash = true)
+@Value.Immutable
 public interface DefaultDynamoClientConfig extends DynamoClientConfig {
 
   @Nullable

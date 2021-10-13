@@ -24,7 +24,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
 
 @Schema(type = SchemaType.OBJECT, title = "MultiGetContentsResponse")
-@Value.Immutable(prehash = true)
+@Value.Immutable
 @JsonSerialize(as = ImmutableMultiGetContentsResponse.class)
 @JsonDeserialize(as = ImmutableMultiGetContentsResponse.class)
 public interface MultiGetContentsResponse {
@@ -36,7 +36,7 @@ public interface MultiGetContentsResponse {
     return ImmutableMultiGetContentsResponse.builder().addAllContents(items).build();
   }
 
-  @Value.Immutable(prehash = true)
+  @Value.Immutable
   @JsonSerialize(as = ImmutableContentsWithKey.class)
   @JsonDeserialize(as = ImmutableContentsWithKey.class)
   interface ContentsWithKey {

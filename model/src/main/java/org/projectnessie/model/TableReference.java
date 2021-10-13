@@ -37,7 +37,7 @@ import org.immutables.value.Value;
  * reference. If {@code hashOrTimestamp} represents a valid commit hash, it is interpreted as one,
  * otherwise it represents a timestamp.
  */
-@Value.Immutable(prehash = true)
+@Value.Immutable
 public abstract class TableReference {
 
   static final String ILLEGAL_TABLE_REFERENCE_MESSAGE =

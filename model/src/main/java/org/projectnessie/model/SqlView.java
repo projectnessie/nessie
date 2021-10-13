@@ -22,7 +22,7 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import org.immutables.value.Value;
 
-@Value.Immutable(prehash = true)
+@Value.Immutable
 @JsonSerialize(as = ImmutableSqlView.class)
 @JsonDeserialize(as = ImmutableSqlView.class)
 @JsonTypeName("VIEW")

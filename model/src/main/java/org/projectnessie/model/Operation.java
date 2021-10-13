@@ -43,7 +43,7 @@ import org.immutables.value.Value;
   @Type(Operation.Delete.class),
   @Type(Operation.Unchanged.class)
 })
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public interface Operation {
 
   @NotNull
@@ -56,7 +56,7 @@ public interface Operation {
           "Add or replace (put) a 'Contents' object for a 'ContentsKey'. "
               + "If the actual table type tracks the 'global state' of individual tables (Iceberg "
               + "as of today), every 'Put'-operation must contain a non-null value for 'expectedContents'.")
-  @Value.Immutable(prehash = true)
+  @Value.Immutable
   @JsonSerialize(as = ImmutablePut.class)
   @JsonDeserialize(as = ImmutablePut.class)
   @JsonTypeName("PUT")
@@ -67,11 +67,11 @@ public interface Operation {
     @Nullable
     Contents getExpectedContents();
 
-    public static Put of(ContentsKey key, Contents contents) {
+    static Put of(ContentsKey key, Contents contents) {
       return ImmutablePut.builder().key(key).contents(contents).build();
     }
 
-    public static Put of(ContentsKey key, Contents contents, Contents expectedContents) {
+    static Put of(ContentsKey key, Contents contents, Contents expectedContents) {
       return ImmutablePut.builder()
           .key(key)
           .contents(contents)
@@ -80,24 +80,24 @@ public interface Operation {
     }
   }
 
-  @Value.Immutable(prehash = true)
+  @Value.Immutable
   @JsonSerialize(as = ImmutableDelete.class)
   @JsonDeserialize(as = ImmutableDelete.class)
   @JsonTypeName("DELETE")
   interface Delete extends Operation {
 
-    public static Delete of(ContentsKey key) {
+    static Delete of(ContentsKey key) {
       return ImmutableDelete.builder().key(key).build();
     }
   }
 
-  @Value.Immutable(prehash = true)
+  @Value.Immutable
   @JsonSerialize(as = ImmutableUnchanged.class)
   @JsonDeserialize(as = ImmutableUnchanged.class)
   @JsonTypeName("UNCHANGED")
   interface Unchanged extends Operation {
 
-    public static Unchanged of(ContentsKey key) {
+    static Unchanged of(ContentsKey key) {
       return ImmutableUnchanged.builder().key(key).build();
     }
   }

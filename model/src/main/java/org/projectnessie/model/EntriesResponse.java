@@ -21,7 +21,7 @@ import java.util.List;
 import javax.validation.constraints.NotNull;
 import org.immutables.value.Value;
 
-@Value.Immutable(prehash = true)
+@Value.Immutable
 @JsonSerialize(as = ImmutableEntriesResponse.class)
 @JsonDeserialize(as = ImmutableEntriesResponse.class)
 public interface EntriesResponse extends PaginatedResponse {
@@ -33,7 +33,7 @@ public interface EntriesResponse extends PaginatedResponse {
   @NotNull
   List<Entry> getEntries();
 
-  @Value.Immutable(prehash = true)
+  @Value.Immutable
   @JsonSerialize(as = ImmutableEntry.class)
   @JsonDeserialize(as = ImmutableEntry.class)
   interface Entry {

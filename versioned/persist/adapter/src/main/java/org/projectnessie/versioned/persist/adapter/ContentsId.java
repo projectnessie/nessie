@@ -16,43 +16,22 @@
 package org.projectnessie.versioned.persist.adapter;
 
 import java.util.Objects;
+import javax.annotation.Nonnull;
+import org.immutables.value.Value;
 
 // TODO move this class to :nessie-model in a follow-up
-public class ContentsId {
-  private final String id;
-
-  private ContentsId(String id) {
-    this.id = id;
-  }
-
+@Value.Immutable
+public abstract class ContentsId {
   public static ContentsId of(String id) {
     Objects.requireNonNull(id);
-    return new ContentsId(id);
+    return ImmutableContentsId.builder().id(id).build();
   }
 
-  public String getId() {
-    return id;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    ContentsId that = (ContentsId) o;
-    return id.equals(that.id);
-  }
-
-  @Override
-  public int hashCode() {
-    return id.hashCode();
-  }
+  @Nonnull
+  public abstract String getId();
 
   @Override
   public String toString() {
-    return id;
+    return getId();
   }
 }
