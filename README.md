@@ -6,10 +6,11 @@
 [![PyPI](https://img.shields.io/pypi/v/pynessie.svg)](https://pypi.python.org/pypi/pynessie)
 [![Docker](https://img.shields.io/docker/v/projectnessie/nessie/latest?label=docker)](https://hub.docker.com/r/projectnessie/nessie)
 
-Project Nessie is a system to provide Git like capability for Iceberg Tables, Delta Lake Tables and Sql Views.
+Project Nessie is a Transactional Catalog for Data Lakes with Git-like semantics.
+
+Nessie supports Iceberg Tables, Delta Lake Tables and Sql Views.
 
 More information can be found at [projectnessie.org](https://projectnessie.org/).
-
 
 ## Using Nessie
 
@@ -22,7 +23,7 @@ docker run -p 19120:19120 projectnessie/nessie
 
 A local [Web UI](https://projectnessie.org/tools/ui/) will be available at this point.
 
-Then install the Nessie CLI tool (to learn more about CLI tool and how to use it, check [Nessie CLI Documentation](https://projectnessie.org/tools/cli/)
+Then install the Nessie CLI tool (to learn more about CLI tool and how to use it, check [Nessie CLI Documentation](https://projectnessie.org/tools/cli/)).
 
 ```
 pip install pynessie
