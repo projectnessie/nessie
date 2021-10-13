@@ -82,22 +82,22 @@ public abstract class ContentsKey {
   @JsonCreator
   public static ContentsKey of(@JsonProperty("elements") List<String> elements) {
     Objects.requireNonNull(elements);
-    if (elements.isEmpty() || elements.get(elements.size() - 1).isEmpty()) {
-      throw new IllegalArgumentException("An object key must not contain a null or empty element.");
-    }
     return ImmutableContentsKey.builder().elements(elements).build();
   }
 
   @Value.Check
   protected void validate() {
-    for (String e : getElements()) {
-      if (e == null || e.isEmpty()) {
-        throw new IllegalArgumentException(
-            "An object key must not contain a null or empty element.");
+    List<String> elements = getElements();
+    for (String e : elements) {
+      if (e == null) {
+        throw new IllegalArgumentException("An object key must not contain a null element.");
       }
       if (e.contains(ZERO_BYTE_STRING)) {
         throw new IllegalArgumentException("An object key must not contain a zero byte.");
       }
+    }
+    if (elements.get(elements.size() - 1).isEmpty()) {
+      throw new IllegalArgumentException("An object key must not contain an empty name (last element).");
     }
   }
 

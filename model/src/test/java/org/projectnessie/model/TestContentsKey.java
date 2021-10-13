@@ -294,23 +294,19 @@ class TestContentsKey {
         () ->
             assertThatThrownBy(() -> ContentsKey.of(null, ""))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("An object key must not contain a null or empty element."),
+                .hasMessage("An object key must not contain an empty name (last element)."),
         () ->
             assertThatThrownBy(() -> ContentsKey.of("a", ""))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("An object key must not contain a null or empty element."),
+                .hasMessage("An object key must not contain an empty name (last element)."),
         () ->
             assertThatThrownBy(() -> ContentsKey.of(singletonList("")))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("An object key must not contain a null or empty element."),
+                .hasMessage("An object key must not contain an empty name (last element)."),
         () ->
             assertThatThrownBy(() -> ContentsKey.of(asList("a", "")))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("An object key must not contain a null or empty element."),
-        () ->
-            assertThatThrownBy(() -> ContentsKey.of(asList("", "a")))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("An object key must not contain a null or empty element."));
+                .hasMessage("An object key must not contain an empty name (last element)."));
   }
 
   private void assertRoundTrip(String... elements) {
