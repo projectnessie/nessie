@@ -30,11 +30,11 @@ class NessieSqlExtensionsAstBuilder(delegate: ParserInterface)
       ctx: NessieCreateRefContext
   ): CreateReferenceCommand = withOrigin(ctx) {
     val isBranch = ctx.TAG == null
-    val refName = ctx.identifier(0).getText
+    val refName = ctx.reference.getText
     val failOnCreate = ctx.IF() == null && ctx.NOT() == null && ctx
       .EXISTS() == null
     val catalogName = asText(ctx.catalog)
-    val createdFrom = asText(ctx.reference)
+    val createdFrom = asText(ctx.fromRef)
     CreateReferenceCommand(
       refName,
       isBranch,
@@ -48,7 +48,7 @@ class NessieSqlExtensionsAstBuilder(delegate: ParserInterface)
       ctx: NessieDropRefContext
   ): DropReferenceCommand = withOrigin(ctx) {
     val isBranch = ctx.TAG == null
-    val refName = ctx.identifier(0).getText
+    val refName = ctx.reference.getText
     val catalogName = asText(ctx.catalog)
     DropReferenceCommand(refName, isBranch, catalogName)
   }
@@ -57,7 +57,7 @@ class NessieSqlExtensionsAstBuilder(delegate: ParserInterface)
       ctx: NessieUseRefContext
   ): UseReferenceCommand =
     withOrigin(ctx) {
-      val refName = ctx.identifier(0).getText
+      val refName = ctx.reference.getText
       val timestampOrHash = asText(ctx.tsOrHash)
       val catalogName = asText(ctx.catalog)
       UseReferenceCommand(refName, timestampOrHash, catalogName)
@@ -80,7 +80,7 @@ class NessieSqlExtensionsAstBuilder(delegate: ParserInterface)
   override def visitNessieMergeRef(
       ctx: NessieMergeRefContext
   ): MergeBranchCommand = withOrigin(ctx) {
-    val refName = asText(ctx.identifier(0))
+    val refName = asText(ctx.reference)
     val toRefName = asText(ctx.toRef)
     val catalogName = asText(ctx.catalog)
     MergeBranchCommand(refName, toRefName, catalogName)
@@ -88,7 +88,7 @@ class NessieSqlExtensionsAstBuilder(delegate: ParserInterface)
 
   override def visitNessieShowLog(ctx: NessieShowLogContext): ShowLogCommand =
     withOrigin(ctx) {
-      val refName = asText(ctx.identifier(0))
+      val refName = asText(ctx.reference)
       val catalogName = asText(ctx.catalog)
       ShowLogCommand(refName, catalogName)
     }
@@ -103,7 +103,7 @@ class NessieSqlExtensionsAstBuilder(delegate: ParserInterface)
   ): AssignReferenceCommand =
     withOrigin(ctx) {
       val isBranch = ctx.TAG == null
-      val refName = ctx.identifier(0).getText
+      val refName = ctx.reference.getText
       val toRefName = asText(ctx.toRef)
       val toHash = asText(ctx.toHash)
       val catalogName = asText(ctx.catalog)

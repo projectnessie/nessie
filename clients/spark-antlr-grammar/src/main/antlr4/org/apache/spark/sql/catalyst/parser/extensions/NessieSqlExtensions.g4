@@ -60,14 +60,14 @@ singleStatement
     ;
 
 statement
-    : CREATE (BRANCH|TAG) (IF NOT EXISTS)? identifier (IN catalog=identifier)? (FROM reference=identifier)?    #nessieCreateRef
-    | DROP (BRANCH|TAG) identifier (IN catalog=identifier)?                                 #nessieDropRef
-    | USE REFERENCE identifier (AT tsOrHash=identifier)?  (IN catalog=identifier)?          #nessieUseRef
-    | LIST REFERENCES (IN catalog=identifier)?                                              #nessieListRef
-    | SHOW REFERENCE (IN catalog=identifier)?                                               #nessieShowRef
-    | MERGE BRANCH (identifier)? (INTO toRef=identifier)?  (IN catalog=identifier)?         #nessieMergeRef
-    | SHOW LOG (identifier)? (IN catalog=identifier)?                                       #nessieShowLog
-    | ASSIGN (BRANCH|TAG) (identifier)? (TO toRef=identifier (AT toHash=identifier)?)? (IN catalog=identifier)?     #nessieAssignRef
+    : CREATE (BRANCH|TAG) (IF NOT EXISTS)? reference=identifier (IN catalog=identifier)? (FROM fromRef=identifier)?    #nessieCreateRef
+    | DROP (BRANCH|TAG) reference=identifier (IN catalog=identifier)?                                 #nessieDropRef
+    | USE REFERENCE reference=identifier (AT tsOrHash=identifier)?  (IN catalog=identifier)?          #nessieUseRef
+    | LIST REFERENCES (IN catalog=identifier)?                                                        #nessieListRef
+    | SHOW REFERENCE (IN catalog=identifier)?                                                         #nessieShowRef
+    | MERGE BRANCH (reference=identifier)? (INTO toRef=identifier)?  (IN catalog=identifier)?         #nessieMergeRef
+    | SHOW LOG (reference=identifier)? (IN catalog=identifier)?                                       #nessieShowLog
+    | ASSIGN (BRANCH|TAG) (reference=identifier)? (TO toRef=identifier (AT toHash=identifier)?)? (IN catalog=identifier)?     #nessieAssignRef
     // add collect gc action
     // add purge gc action
     ;
