@@ -47,7 +47,7 @@ public abstract class Namespace {
 
   @Value.Redacted
   public boolean isEmpty() {
-    return "".equals(name());
+    return name().isEmpty();
   }
 
   @Value.Redacted

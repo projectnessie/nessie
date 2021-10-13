@@ -45,13 +45,17 @@ public class TestNamespace {
 
     assertThat(Namespace.of().name()).isEmpty();
     assertThat(Namespace.parse("").name()).isEmpty();
+    assertThat(Namespace.of(""))
+        .extracting(Namespace::name, Namespace::isEmpty)
+        .containsExactly("", true);
   }
 
   @Test
   public void testOneElement() {
-    Namespace namespace = Namespace.of("");
-    assertThat(namespace.name()).isEmpty();
-    assertThat(namespace.isEmpty()).isTrue();
+    Namespace namespace = Namespace.of("foo");
+    assertThat(namespace)
+        .extracting(Namespace::name, Namespace::isEmpty)
+        .containsExactly("foo", false);
   }
 
   @ParameterizedTest
