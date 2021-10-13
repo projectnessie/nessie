@@ -21,8 +21,18 @@ import java.nio.file.FileAlreadyExistsException
 import java.util.UUID
 import java.util.regex.Pattern
 import org.projectnessie.client.NessieConfigConstants
-import org.projectnessie.error.{NessieConflictException, NessieNotFoundException}
-import org.projectnessie.model.{CommitMeta, ContentsKey, DeltaLakeTable, ImmutableDeltaLakeTable, Reference, TableReference}
+import org.projectnessie.error.{
+  NessieConflictException,
+  NessieNotFoundException
+}
+import org.projectnessie.model.{
+  CommitMeta,
+  ContentsKey,
+  DeltaLakeTable,
+  ImmutableDeltaLakeTable,
+  Reference,
+  TableReference
+}
 import org.apache.commons.io.IOUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileStatus, Path}
@@ -30,7 +40,12 @@ import org.apache.spark.SparkConf
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.delta.storage.LogStore
-import org.apache.spark.sql.delta.util.FileNames.{checkpointFileSingular, checkpointFileWithParts, deltaFile, getFileVersion}
+import org.apache.spark.sql.delta.util.FileNames.{
+  checkpointFileSingular,
+  checkpointFileWithParts,
+  deltaFile,
+  getFileVersion
+}
 import org.apache.spark.sql.delta.CheckpointMetaData
 import org.apache.spark.sql.delta.storage.{DeltaFileType, LogFileMeta}
 import org.json4s._
