@@ -136,7 +136,7 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
   }
 
   private def parseTableIdentifier(path: String): (String, String, String) = {
-    val tr = TableReference.parseEmptyNamespace(path);
+    val tr = TableReference.parse(path);
     if (tr.hasTimestamp) {
       throw new IllegalArgumentException(
         "Invalid table name:" + " # is only allowed for hashes (reference by timestamp is not supported)"
