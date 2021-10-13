@@ -293,10 +293,11 @@ def _format_time(dt: datetime.datetime) -> str:
 @click.option(
     "-c",
     "--condition",
-    help="Conditional Hash. Only perform the action if the branch currently points to the hash specified by this option.",
+    "expected_hash",
+    help="Expected hash. Only perform the action if the branch currently points to the hash specified by this option.",
 )
 @click.argument("branch", nargs=1, required=False)
-@click.argument("new_branch", nargs=1, required=False)
+@click.argument("base_ref", nargs=1, required=False)
 @pass_client
 @error_handler
 def branch_(
@@ -306,14 +307,14 @@ def branch_(
     hash_on_ref: str,
     delete: bool,
     branch: str,
-    new_branch: str,
-    condition: str,
+    base_ref: str,
+    expected_hash: str,
 ) -> None:
     """Branch operations.
 
     BRANCH name of branch to list or create/assign
 
-    NEW_BRANCH name of branch to assign from or rename to
+    BASE_REF name of branch or tag from which to create/assign the new BRANCH
 
     Examples:
 
@@ -327,18 +328,18 @@ def branch_(
 
         nessie branch new_branch -> create new branch named 'new_branch' at current HEAD of the default branch
 
-        nessie branch new_branch test -> create new branch named 'new_branch' at head of reference named 'test'
+        nessie branch new_branch main -> create new branch named 'new_branch' at head of reference named 'main'
 
-        nessie branch -o 12345678abcdef new_branch test -> create new branch named 'new_branch' at hash 12345678abcdef
-    on reference named 'test'
+        nessie branch -o 12345678abcdef new_branch main -> create a branch named 'new_branch' at hash 12345678abcdef
+    on reference named 'main'
 
-        nessie branch -f existing_branch test -> assign branch named 'existing_branch' to head of reference named 'test'
+        nessie branch -f existing_branch main -> assign branch named 'existing_branch' to head of reference named 'main'
 
-        nessie branch -o 12345678abcdef -f existing_branch test -> assign branch named 'existing_branch' to hash 12345678abcdef
-    on reference named 'test'
+        nessie branch -o 12345678abcdef -f existing_branch main -> assign branch named 'existing_branch' to hash 12345678abcdef
+    on reference named 'main'
 
     """
-    results = handle_branch_tag(ctx.nessie, list, delete, branch, hash_on_ref, new_branch, True, ctx.json, force, ctx.verbose, condition)
+    results = handle_branch_tag(ctx.nessie, list, delete, branch, hash_on_ref, base_ref, True, ctx.json, force, ctx.verbose, expected_hash)
     if ctx.json:
         click.echo(results)
     elif results:
@@ -360,18 +361,21 @@ def branch_(
 @click.option(
     "-c",
     "--condition",
-    help="Conditional Hash. Only perform the action if the tag currently points to the hash specified by this option.",
+    "expected_hash",
+    help="Expected hash. Only perform the action if the tag currently points to the hash specified by this option.",
 )
 @click.argument("tag_name", nargs=1, required=False)
-@click.argument("new_tag", nargs=1, required=False)
+@click.argument("base_ref", nargs=1, required=False)
 @pass_client
 @error_handler
-def tag(ctx: ContextObject, list: bool, force: bool, hash_on_ref: str, delete: bool, tag_name: str, new_tag: str, condition: str) -> None:
+def tag(
+    ctx: ContextObject, list: bool, force: bool, hash_on_ref: str, delete: bool, tag_name: str, base_ref: str, expected_hash: str
+) -> None:
     """Tag operations.
 
     TAG_NAME name of branch to list or create/assign
 
-    NEW_TAG name of branch to assign from or rename to
+    BASE_REF name of branch or tag whose HEAD reference is to be used for the new tag
 
     Examples:
 
@@ -379,24 +383,26 @@ def tag(ctx: ContextObject, list: bool, force: bool, hash_on_ref: str, delete: b
 
         nessie tag -l -> list all tags
 
-        nessie tag -l main -> list only main
+        nessie tag -l v1.0 -> list only tag "v1.0"
 
-        nessie tag -d main -> delete main
+        nessie tag -d v1.0 -> delete tag "v1.0"
 
         nessie tag new_tag -> create new tag named 'new_tag' at current HEAD of the default branch
 
-        nessie tag new_tag test -> create new tag named 'new_tag' at head of reference named 'test'
+        nessie tag new_tag main -> create new tag named 'new_tag' at head of reference named 'main' (branch or tag)
 
         nessie tag -o 12345678abcdef new_tag test -> create new tag named 'new_tag' at hash 12345678abcdef on
     reference named 'test'
 
-        nessie tag -f existing_tag test -> assign tag named 'existing_tag' to head of reference named 'test'
+        nessie tag -f existing_tag main -> assign tag named 'existing_tag' to head of reference named 'main'
 
-        nessie tag -o 12345678abcdef -f existing_tag test -> assign tag named 'existing_tag' to hash 12345678abcdef
-    on reference named 'test'
+        nessie tag -o 12345678abcdef -f existing_tag main -> assign tag named 'existing_tag' to hash 12345678abcdef
+    on reference named 'main'
 
     """
-    results = handle_branch_tag(ctx.nessie, list, delete, tag_name, hash_on_ref, new_tag, False, ctx.json, force, ctx.verbose, condition)
+    results = handle_branch_tag(
+        ctx.nessie, list, delete, tag_name, hash_on_ref, base_ref, False, ctx.json, force, ctx.verbose, expected_hash
+    )
     if ctx.json:
         click.echo(results)
     elif results:
@@ -419,21 +425,22 @@ def tag(ctx: ContextObject, list: bool, force: bool, hash_on_ref: str, delete: b
 @click.option(
     "-c",
     "--condition",
+    "expected_hash",
     cls=MutuallyExclusiveOption,
     mutually_exclusive=["force"],
-    help="Conditional Hash. Only perform the action if the branch currently points to the hash specified by this option.",
+    help="Expected hash. Only perform the action if the branch currently points to the hash specified by this option.",
 )
 @click.option("-o", "--hash-on-ref", help="Hash on merge-from-reference")
 @pass_client
 @error_handler
-def merge(ctx: ContextObject, onto_branch: str, force: bool, condition: str, hash_on_ref: str, from_branch: str) -> None:
+def merge(ctx: ContextObject, onto_branch: str, force: bool, expected_hash: str, hash_on_ref: str, from_branch: str) -> None:
     """Merge FROM_BRANCH into another branch. FROM_BRANCH can be a hash or branch."""
-    if not force and not condition:
+    if not force and not expected_hash:
         raise UsageError(
             """Either condition or force must be set. Condition should be set to a valid hash for concurrency
             control or force to ignore current state of Nessie Store."""
         )
-    ctx.nessie.merge(from_branch, onto_branch if onto_branch else ctx.nessie.get_default_branch(), hash_on_ref, condition)
+    ctx.nessie.merge(from_branch, onto_branch if onto_branch else ctx.nessie.get_default_branch(), hash_on_ref, expected_hash)
     click.echo()
 
 
@@ -450,22 +457,23 @@ def merge(ctx: ContextObject, onto_branch: str, force: bool, condition: str, has
 @click.option(
     "-c",
     "--condition",
+    "expected_hash",
     cls=MutuallyExclusiveOption,
     mutually_exclusive=["force"],
-    help="Conditional Hash. Only perform the action if the branch currently points to the hash specified by this option.",
+    help="Expected hash. Only perform the action if the branch currently points to the hash specified by this option.",
 )
 @click.option("-s", "--source-ref", required=True, help="Name of the reference used to read the hashes from.")
 @click.argument("hashes", nargs=-1, required=False)
 @pass_client
 @error_handler
-def cherry_pick(ctx: ContextObject, branch: str, force: bool, condition: str, source_ref: str, hashes: Tuple[str]) -> None:
+def cherry_pick(ctx: ContextObject, branch: str, force: bool, expected_hash: str, source_ref: str, hashes: Tuple[str]) -> None:
     """Transplant HASHES onto another branch."""
-    if not force and not condition:
+    if not force and not expected_hash:
         raise UsageError(
             """Either condition or force must be set. Condition should be set to a valid hash for concurrency
             control or force to ignore current state of Nessie Store."""
         )
-    ctx.nessie.cherry_pick(branch if branch else ctx.nessie.get_default_branch(), source_ref, condition, *hashes)
+    ctx.nessie.cherry_pick(branch if branch else ctx.nessie.get_default_branch(), source_ref, expected_hash, *hashes)
     click.echo()
 
 
@@ -497,7 +505,8 @@ def cherry_pick(ctx: ContextObject, branch: str, force: bool, condition: str, so
 @click.option(
     "-c",
     "--condition",
-    help="Conditional Hash. Only perform the action if the branch currently points to the hash specified by this option.",
+    "expected_hash",
+    help="Expected hash. Only perform the action if the branch currently points to the hash specified by this option.",
 )
 @click.option("-r", "--ref", help="branch to list from. If not supplied the default branch from config is used")
 @click.option("-m", "--message", help="commit message")
@@ -534,7 +543,7 @@ def contents(
     key: List[str],
     ref: str,
     message: str,
-    condition: str,
+    expected_hash: str,
     entity_types: List[str],
     author: str,
     query_expression: str,
@@ -550,10 +559,10 @@ def contents(
         )
         results = EntrySchema().dumps(_format_keys_json(keys, *key), many=True) if ctx.json else _format_keys(keys, *key)
     elif delete:
-        ctx.nessie.commit(ref, condition, _get_message(message), author, *_get_contents(ctx.nessie, ref, delete, *key))
+        ctx.nessie.commit(ref, expected_hash, _get_message(message), author, *_get_contents(ctx.nessie, ref, delete, *key))
         results = ""
     elif set:
-        ctx.nessie.commit(ref, condition, _get_message(message), author, *_get_contents(ctx.nessie, ref, delete, *key))
+        ctx.nessie.commit(ref, expected_hash, _get_message(message), author, *_get_contents(ctx.nessie, ref, delete, *key))
         results = ""
     else:
 

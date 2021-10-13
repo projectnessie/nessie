@@ -84,15 +84,15 @@ class NessieClient(object):
         ref = ReferenceSchema().load(ref_obj)
         return ref
 
-    def create_branch(self: "NessieClient", branch: str, ref: Optional[str] = None, hash_on_ref: Optional[str] = None) -> Branch:
+    def create_branch(self: "NessieClient", branch: str, ref: str = None, hash_on_ref: str = None) -> Branch:
         """Create a branch.
 
         :param branch: name of new branch to create
-        :param ref: name of the reference via which 'hash_on_ref' is reachable
+        :param ref: branch or tag to fork from ('hash_on_ref' should be reachable from this reference)
         :param hash_on_ref: hash to assign 'branch' to
         :return: Nessie branch object
         """
-        ref_json = ReferenceSchema().dump(Branch(branch, hash_on_ref) if hash_on_ref else Branch(branch))
+        ref_json = ReferenceSchema().dump(Branch(branch, hash_on_ref))
         ref_obj = create_reference(self._base_url, self._auth, ref_json, ref, self._ssl_verify)
         return cast(Branch, ReferenceSchema().load(ref_obj))
 
@@ -104,7 +104,7 @@ class NessieClient(object):
         """
         delete_branch(self._base_url, self._auth, branch, hash_, self._ssl_verify)
 
-    def create_tag(self: "NessieClient", tag: str, ref: str, hash_on_ref: Optional[str] = None) -> Tag:
+    def create_tag(self: "NessieClient", tag: str, ref: str, hash_on_ref: str = None) -> Tag:
         """Create a tag.
 
         :param tag: name of new tag to create
@@ -166,9 +166,7 @@ class NessieClient(object):
         ref_obj = commit(self._base_url, self._auth, branch, MultiContentsSchema().dumps(MultiContents(meta, list(ops))), old_hash)
         return cast(Branch, ReferenceSchema().load(ref_obj))
 
-    def assign_branch(
-        self: "NessieClient", branch: str, to_ref: str, to_ref_hash: Optional[str] = None, old_hash: Optional[str] = None
-    ) -> None:
+    def assign_branch(self: "NessieClient", branch: str, to_ref: str, to_ref_hash: str = None, old_hash: Optional[str] = None) -> None:
         """Assign a hash to a branch."""
         if not old_hash:
             old_hash = self.get_reference(branch).hash_
@@ -176,7 +174,7 @@ class NessieClient(object):
         ref_json = ReferenceSchema().dumps(Branch(to_ref, to_ref_hash) if to_ref_hash else Branch(to_ref))
         assign_branch(self._base_url, self._auth, branch, ref_json, old_hash, self._ssl_verify)
 
-    def assign_tag(self: "NessieClient", tag: str, to_ref: str, to_ref_hash: Optional[str] = None, old_hash: Optional[str] = None) -> None:
+    def assign_tag(self: "NessieClient", tag: str, to_ref: str, to_ref_hash: str = None, old_hash: Optional[str] = None) -> None:
         """Assign a hash to a tag."""
         if not old_hash:
             old_hash = self.get_reference(tag).hash_

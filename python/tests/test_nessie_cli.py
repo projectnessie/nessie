@@ -167,6 +167,8 @@ def test_log() -> None:
     result = _run(runner, ["--json", "log", "--after", "2001-01-01T00:00:00+00:00", "--before", "2999-12-30T23:00:00+00:00"])
     logs = simplejson.loads(result.output)
     assert len(logs) == 2
+    # Re-create branch main from the root hash (assuming in-memory store)
+    _run(runner, ["branch", "--force", "-o", "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d", "main", "main"])
 
 
 @pytest.mark.vcr
@@ -211,7 +213,13 @@ def test_tag() -> None:
     result = _run(runner, ["--json", "tag"])
     references = ReferenceSchema().loads(result.output, many=True)
     assert len(references) == 0
-    _run(runner, ["tag", "v1.0"], ret_val=1)
+    _run(runner, ["tag", "v1.0"])
+    result = _run(runner, ["--json", "tag"])
+    tags = {i.name: i.hash_ for i in ReferenceSchema().loads(result.output, many=True)}
+    result = _run(runner, ["--json", "branch"])
+    branches = {i.name: i.hash_ for i in ReferenceSchema().loads(result.output, many=True)}
+    assert tags["v1.0"] == branches["main"]
+    _run(runner, ["tag", "-d", "v1.0"])
 
 
 @pytest.mark.vcr
@@ -255,7 +263,8 @@ def test_assign() -> None:
     logs = simplejson.loads(result.output)
     _run(runner, ["--json", "contents", "--delete", "assign.foo.bar", "--ref", "main", "-m", "delete_message", "-c", logs[0]["hash"]])
     _run(runner, ["branch", "main", "--delete"])
-    _run(runner, ["branch", "main"])
+    # Re-create branch main from the root hash (assuming in-memory store)
+    _run(runner, ["branch", "--force", "-o", "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d", "main", "main"])
 
 
 @pytest.mark.vcr
@@ -292,7 +301,8 @@ def test_merge() -> None:
     logs = simplejson.loads(result.output)
     _run(runner, ["--json", "contents", "--delete", "merge.foo.bar", "--ref", "main", "-m", "delete_message", "-c", logs[0]["hash"]])
     _run(runner, ["branch", "main", "--delete"])
-    _run(runner, ["branch", "main"])
+    # Re-create branch main from the root hash (assuming in-memory store)
+    _run(runner, ["branch", "--force", "-o", "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d", "main", "main"])
 
 
 @pytest.mark.vcr
@@ -360,7 +370,8 @@ def test_transplant() -> None:
     _run(runner, ["--json", "contents", "--delete", "transplant.foo.bar", "--ref", "main", "-m", "delete_message", "-c", logs[0]["hash"]])
     _run(runner, ["branch", "dev", "--delete"])
     _run(runner, ["branch", "main", "--delete"])
-    _run(runner, ["branch", "main"])
+    # Re-create branch main from the root hash (assuming in-memory store)
+    _run(runner, ["branch", "--force", "-o", "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d", "main", "main"])
 
 
 @pytest.mark.doc

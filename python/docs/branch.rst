@@ -1,12 +1,12 @@
 .. code-block:: bash
 
-	Usage: cli branch [OPTIONS] [BRANCH] [NEW_BRANCH]
+	Usage: cli branch [OPTIONS] [BRANCH] [BASE_REF]
 	
 	  Branch operations.
 	
 	  BRANCH name of branch to list or create/assign
 	
-	  NEW_BRANCH name of branch to assign from or rename to
+	  BASE_REF name of branch or tag from which to create/assign the new BRANCH
 	
 	  Examples:
 	
@@ -21,17 +21,17 @@
 	      nessie branch new_branch -> create new branch named 'new_branch' at
 	      current HEAD of the default branch
 	
-	      nessie branch new_branch test -> create new branch named 'new_branch' at
-	      head of reference named 'test'
+	      nessie branch new_branch main -> create new branch named 'new_branch' at
+	      head of reference named 'main'
 	
-	      nessie branch -o 12345678abcdef new_branch test -> create new branch named
-	      'new_branch' at hash 12345678abcdef on reference named 'test'
+	      nessie branch -o 12345678abcdef new_branch main -> create a branch named
+	      'new_branch' at hash 12345678abcdef on reference named 'main'
 	
-	      nessie branch -f existing_branch test -> assign branch named
-	      'existing_branch' to head of reference named 'test'
+	      nessie branch -f existing_branch main -> assign branch named
+	      'existing_branch' to head of reference named 'main'
 	
-	      nessie branch -o 12345678abcdef -f existing_branch test -> assign branch
-	      named 'existing_branch' to hash 12345678abcdef on reference named 'test'
+	      nessie branch -o 12345678abcdef -f existing_branch main -> assign branch
+	      named 'existing_branch' to hash 12345678abcdef on reference named 'main'
 	
 	Options:
 	  -l, --list              list branches
@@ -40,9 +40,8 @@
 	  -o, --hash-on-ref TEXT  Hash on source-reference for 'create' and 'assign'
 	                          operations, if the branch shall not point to the HEAD
 	                          of the given source-reference.
-	  -c, --condition TEXT    Conditional Hash. Only perform the action if the
-	                          branch currently points to the hash specified by this
-	                          option.
+	  -c, --condition TEXT    Expected hash. Only perform the action if the branch
+	                          currently points to the hash specified by this option.
 	  --help                  Show this message and exit.
 	
 	
