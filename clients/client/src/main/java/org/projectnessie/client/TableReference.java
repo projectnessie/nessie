@@ -15,9 +15,10 @@
  */
 package org.projectnessie.client;
 
+import java.util.List;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Validation;
 
@@ -30,52 +31,127 @@ public class TableReference {
       "Invalid table name:"
           + " # is only allowed for hashes (reference by timestamp is not supported)";
 
-  private final ContentsKey contentsKey;
-  private final String timestamp;
+  private final Namespace namespace;
+  private final String name;
   private final String reference;
   private final String hash;
+  private final String timestamp;
 
   private static final Pattern PATH_PATTERN = Pattern.compile("^([^@#]+)(@([^@#]+))?(#([^@#]+))?$");
 
-  /**
-   * Container class to specify a TableIdentifier on a specific Reference or at an Instant in time.
-   */
   @SuppressWarnings({"QsPrivateBeanMembersInspection", "CdiInjectionPointsInspection"})
-  private TableReference(ContentsKey contentsKey, String timestamp, String reference, String hash) {
-    this.contentsKey = contentsKey;
-    this.timestamp = timestamp;
+  private TableReference(
+      Namespace namespace, String name, String reference, String hash, String timestamp) {
+    this.namespace = namespace;
+    this.name = name;
     this.reference = reference;
+    this.timestamp = timestamp;
     this.hash = hash;
   }
 
-  public ContentsKey contentsKey() {
-    return contentsKey;
+  public Namespace getNamespace() {
+    return namespace;
   }
 
-  public String reference() {
+  public String getName() {
+    return name;
+  }
+
+  public String getReference() {
     return reference;
   }
 
-  public String timestamp() {
+  public String getTimestamp() {
     return timestamp;
   }
 
-  public String hash() {
+  public String getHash() {
     return hash;
   }
 
-  /** Convert dataset read/write options to a table and ref/hash. */
-  public static TableReference parse(Namespace namespace, String name) {
-    TableReference noNamespace = parse(name);
-    return new TableReference(
-        ContentsKey.of(namespace, noNamespace.contentsKey().getName()),
-        noNamespace.timestamp(),
-        noNamespace.reference(),
-        noNamespace.hash());
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder();
+    if (!namespace.isEmpty()) {
+      sb.append(namespace.name()).append('.');
+    }
+    if (reference != null || timestamp != null || hash != null) {
+      sb.append('`').append(name);
+      if (reference != null) {
+        sb.append('@').append(reference);
+      }
+      if (hash != null || timestamp != null) {
+        sb.append('#').append(hash != null ? hash : timestamp);
+      }
+      sb.append('`');
+    } else {
+      sb.append(name);
+    }
+    return sb.toString();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    TableReference that = (TableReference) o;
+    return Objects.equals(namespace, that.namespace)
+        && Objects.equals(name, that.name)
+        && Objects.equals(timestamp, that.timestamp)
+        && Objects.equals(reference, that.reference)
+        && Objects.equals(hash, that.hash);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(namespace, name, timestamp, reference, hash);
   }
 
   /**
-   * Parses a "path" to a {@link TableReference}.
+   * Convert a namespace and the string representation of a table-reference into a {@link
+   * TableReference}.
+   *
+   * @param namespace namespace to return in the {@link TableReference} as is
+   * @param name name being parsed via {@link #parseEmptyNamespace(String)}
+   */
+  public static TableReference parse(String[] namespace, String name) {
+    return parse(Namespace.of(namespace), name);
+  }
+
+  /**
+   * Convert a namespace and the string representation of a table-reference into a {@link
+   * TableReference}.
+   *
+   * @param namespace namespace to return in the {@link TableReference} as is
+   * @param name name being parsed via {@link #parseEmptyNamespace(String)}
+   */
+  public static TableReference parse(List<String> namespace, String name) {
+    return parse(Namespace.of(namespace), name);
+  }
+
+  /**
+   * Convert a namespace and the string representation of a table-reference into a {@link
+   * TableReference}.
+   *
+   * @param namespace namespace to return in the {@link TableReference} as is
+   * @param name name being parsed via {@link #parseEmptyNamespace(String)}
+   */
+  public static TableReference parse(Namespace namespace, String name) {
+    TableReference noNamespace = parseEmptyNamespace(name);
+    return new TableReference(
+        namespace,
+        noNamespace.getName(),
+        noNamespace.getReference(),
+        noNamespace.getHash(),
+        noNamespace.getTimestamp());
+  }
+
+  /**
+   * Parses a "path" to a {@link TableReference} without a namespace.
    *
    * <p>The syntax is <br>
    * {@code table-identifier ( '@' reference-name )? ( '#' pointer )?}
@@ -87,7 +163,7 @@ public class TableReference {
    * <p>{@code pointer} is the optional Nessie commit-hash within the named reference. Defaults to
    * the "HEAD" of the named reference.
    */
-  public static TableReference parse(String path) {
+  public static TableReference parseEmptyNamespace(String path) {
     String unquoted = unquote(path);
     Matcher matcher = PATH_PATTERN.matcher(unquoted);
     if (!matcher.matches()) {
@@ -105,8 +181,7 @@ public class TableReference {
       throw new IllegalArgumentException(ILLEGAL_HASH_MESSAGE);
     }
 
-    ContentsKey contentsKey = ContentsKey.fromPathString(table);
-    return new TableReference(contentsKey, null, refName, hash);
+    return new TableReference(Namespace.EMPTY, table, refName, hash, null);
   }
 
   /**
