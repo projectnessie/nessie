@@ -92,7 +92,8 @@ public abstract class ContentsKey {
   protected void validate() {
     for (String e : getElements()) {
       if (e == null || e.isEmpty()) {
-        throw new IllegalArgumentException("An object key must not contain a null or empty element.");
+        throw new IllegalArgumentException(
+            "An object key must not contain a null or empty element.");
       }
       if (e.contains(ZERO_BYTE_STRING)) {
         throw new IllegalArgumentException("An object key must not contain a zero byte.");
