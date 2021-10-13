@@ -1,6 +1,6 @@
 # Configuration
 
-Nessie server is configurable via properties as listed in the [application.properties](https://github.com/projectnessie/nessie/blob/main/servers/quarkus-server/src/main/resources/application.properties) file.
+The Nessie server is configurable via properties as listed in the [application.properties](https://github.com/projectnessie/nessie/blob/main/servers/quarkus-server/src/main/resources/application.properties) file.
 These properties can be set when starting up the docker image by adding them to the Docker invocation prefixed with `-D`.  For example, if you want to 
 set Nessie to use the INMEMORY version store running on port 8080, you would run the 
 following:
@@ -31,7 +31,7 @@ docker run -p 8080:8080 projectnessie/nessie \
 
 #### RocksDB Version Store Settings
 
-When setting `nessie.version.store.type=ROCKS` which enables RockDB as the version store used by Nessie server, the following configurations are applicable in combination with `nessie.version.store.type`:
+When setting `nessie.version.store.type=ROCKS` which enables RockDB as the version store used by the Nessie server, the following configurations are applicable in combination with `nessie.version.store.type`:
 
 | Property                                    | Default values  | Type               | Description                                                         |
 | ------------------------------------------- | --------------- | ------------------ |-------------------------------------------------------------------- |
@@ -40,7 +40,7 @@ When setting `nessie.version.store.type=ROCKS` which enables RockDB as the versi
 
 #### MongoDB Version Store Settings
 
-When setting `nessie.version.store.type=MONGO` which enables MongoDB as the version store used by Nessie server, the following configurations are applicable in combination with `nessie.version.store.type`:
+When setting `nessie.version.store.type=MONGO` which enables MongoDB as the version store used by the Nessie server, the following configurations are applicable in combination with `nessie.version.store.type`:
 
 | Property                                        | Default values      | Type         | Description                                                         |
 | ----------------------------------------------- | ------------------- | ------------ |-------------------------------------------------------------------- |
@@ -53,7 +53,7 @@ When setting `nessie.version.store.type=MONGO` which enables MongoDB as the vers
 
 #### DynamoDB Version Store Settings
 
-When setting `nessie.version.store.type=DYNAMO` which enables DynamoDB as the version store used by Nessie server, the following configurations are applicable in combination with `nessie.version.store.type`:
+When setting `nessie.version.store.type=DYNAMO` which enables DynamoDB as the version store used by the Nessie server, the following configurations are applicable in combination with `nessie.version.store.type`:
 
 | Property                                        | Default values      | Type         | Description                                                         |
 | ----------------------------------------------- | ------------------- | ------------ |-------------------------------------------------------------------- |
@@ -67,7 +67,7 @@ When setting `nessie.version.store.type=DYNAMO` which enables DynamoDB as the ve
 
 ### Database Adapter Settings
 
-The following configurations are advance configurations to configure how Nessie will store the data into the configured data store:
+The following configurations are advanced configurations to configure how Nessie will store the data into the configured data store:
 
 | Property                                        | Default values      | Type     | Description                                                         |
 | ----------------------------------------------- | ------------------- | -------- |-------------------------------------------------------------------- |
@@ -85,7 +85,7 @@ The following configurations are advance configurations to configure how Nessie 
 
 | Property                                        | Default values      | Type     | Description                                                         |
 | ----------------------------------------------- | ------------------- | -------- |-------------------------------------------------------------------- |
-| `nessie.server.authentication.enabled`          | `false`             | `boolean`| Sets whether [authentication](./authentication.md) should be enabled on Nessie server.  |
+| `nessie.server.authentication.enabled`          | `false`             | `boolean`| Sets whether [authentication](./authentication.md) should be enabled on the Nessie server.  |
 | `quarkus.oidc.auth-server-url`                  |                     | `String` | Sets the base URL of the OpenID Connect (OIDC) server if `nessie.server.authentication.enabled=true` |
 | `quarkus.oidc.client-id`                        |                     | `String` | Sets client-id of the application if `nessie.server.authentication.enabled=true`. Each application has a client-id that is used to identify the application. |
 
@@ -94,7 +94,7 @@ The following configurations are advance configurations to configure how Nessie 
 
 | Property                                        | Default values      | Type     | Description                                                         |
 | ----------------------------------------------- | ------------------- | -------- |-------------------------------------------------------------------- |
-| `nessie.server.authorization.enabled`           | `false`             | `boolean`| Sets whether [authorization](../features/metadata_authorization.md) should be enabled on Nessie server.  |
+| `nessie.server.authorization.enabled`           | `false`             | `boolean`| Sets whether [authorization](../features/metadata_authorization.md) should be enabled on the Nessie server.  |
 | `nessie.server.authorization.rules.<ruleId>`    |                     | `Map`     | Sets the [authorization](../features/metadata_authorization.md) rules that can be used in CEL format.  |
 
 
