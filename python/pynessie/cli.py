@@ -293,7 +293,8 @@ def _format_time(dt: datetime.datetime) -> str:
 @click.option(
     "-c",
     "--condition",
-    help="Conditional Hash. Only perform the action if the branch currently points to the hash specified by this option.",
+    "expected_hash",
+    help="Expected hash. Only perform the action if the branch currently points to the hash specified by this option.",
 )
 @click.argument("branch", nargs=1, required=False)
 @click.argument("base_ref", nargs=1, required=False)
@@ -307,7 +308,7 @@ def branch_(
     delete: bool,
     branch: str,
     base_ref: str,
-    condition: str,
+    expected_hash: str,
 ) -> None:
     """Branch operations.
 
@@ -338,7 +339,7 @@ def branch_(
     on reference named 'main'
 
     """
-    results = handle_branch_tag(ctx.nessie, list, delete, branch, hash_on_ref, base_ref, True, ctx.json, force, ctx.verbose, condition)
+    results = handle_branch_tag(ctx.nessie, list, delete, branch, hash_on_ref, base_ref, True, ctx.json, force, ctx.verbose, expected_hash)
     if ctx.json:
         click.echo(results)
     elif results:
@@ -360,13 +361,16 @@ def branch_(
 @click.option(
     "-c",
     "--condition",
-    help="Conditional Hash. Only perform the action if the tag currently points to the hash specified by this option.",
+    "expected_hash",
+    help="Expected hash. Only perform the action if the tag currently points to the hash specified by this option.",
 )
 @click.argument("tag_name", nargs=1, required=False)
 @click.argument("base_ref", nargs=1, required=False)
 @pass_client
 @error_handler
-def tag(ctx: ContextObject, list: bool, force: bool, hash_on_ref: str, delete: bool, tag_name: str, base_ref: str, condition: str) -> None:
+def tag(
+    ctx: ContextObject, list: bool, force: bool, hash_on_ref: str, delete: bool, tag_name: str, base_ref: str, expected_hash: str
+) -> None:
     """Tag operations.
 
     TAG_NAME name of branch to list or create/assign
@@ -396,7 +400,9 @@ def tag(ctx: ContextObject, list: bool, force: bool, hash_on_ref: str, delete: b
     on reference named 'main'
 
     """
-    results = handle_branch_tag(ctx.nessie, list, delete, tag_name, hash_on_ref, base_ref, False, ctx.json, force, ctx.verbose, condition)
+    results = handle_branch_tag(
+        ctx.nessie, list, delete, tag_name, hash_on_ref, base_ref, False, ctx.json, force, ctx.verbose, expected_hash
+    )
     if ctx.json:
         click.echo(results)
     elif results:
@@ -419,21 +425,22 @@ def tag(ctx: ContextObject, list: bool, force: bool, hash_on_ref: str, delete: b
 @click.option(
     "-c",
     "--condition",
+    "expected_hash",
     cls=MutuallyExclusiveOption,
     mutually_exclusive=["force"],
-    help="Conditional Hash. Only perform the action if the branch currently points to the hash specified by this option.",
+    help="Expected hash. Only perform the action if the branch currently points to the hash specified by this option.",
 )
 @click.option("-o", "--hash-on-ref", help="Hash on merge-from-reference")
 @pass_client
 @error_handler
-def merge(ctx: ContextObject, onto_branch: str, force: bool, condition: str, hash_on_ref: str, from_branch: str) -> None:
+def merge(ctx: ContextObject, onto_branch: str, force: bool, expected_hash: str, hash_on_ref: str, from_branch: str) -> None:
     """Merge FROM_BRANCH into another branch. FROM_BRANCH can be a hash or branch."""
-    if not force and not condition:
+    if not force and not expected_hash:
         raise UsageError(
             """Either condition or force must be set. Condition should be set to a valid hash for concurrency
             control or force to ignore current state of Nessie Store."""
         )
-    ctx.nessie.merge(from_branch, onto_branch if onto_branch else ctx.nessie.get_default_branch(), hash_on_ref, condition)
+    ctx.nessie.merge(from_branch, onto_branch if onto_branch else ctx.nessie.get_default_branch(), hash_on_ref, expected_hash)
     click.echo()
 
 
@@ -450,22 +457,23 @@ def merge(ctx: ContextObject, onto_branch: str, force: bool, condition: str, has
 @click.option(
     "-c",
     "--condition",
+    "expected_hash",
     cls=MutuallyExclusiveOption,
     mutually_exclusive=["force"],
-    help="Conditional Hash. Only perform the action if the branch currently points to the hash specified by this option.",
+    help="Expected hash. Only perform the action if the branch currently points to the hash specified by this option.",
 )
 @click.option("-s", "--source-ref", required=True, help="Name of the reference used to read the hashes from.")
 @click.argument("hashes", nargs=-1, required=False)
 @pass_client
 @error_handler
-def cherry_pick(ctx: ContextObject, branch: str, force: bool, condition: str, source_ref: str, hashes: Tuple[str]) -> None:
+def cherry_pick(ctx: ContextObject, branch: str, force: bool, expected_hash: str, source_ref: str, hashes: Tuple[str]) -> None:
     """Transplant HASHES onto another branch."""
-    if not force and not condition:
+    if not force and not expected_hash:
         raise UsageError(
             """Either condition or force must be set. Condition should be set to a valid hash for concurrency
             control or force to ignore current state of Nessie Store."""
         )
-    ctx.nessie.cherry_pick(branch if branch else ctx.nessie.get_default_branch(), source_ref, condition, *hashes)
+    ctx.nessie.cherry_pick(branch if branch else ctx.nessie.get_default_branch(), source_ref, expected_hash, *hashes)
     click.echo()
 
 
@@ -497,7 +505,8 @@ def cherry_pick(ctx: ContextObject, branch: str, force: bool, condition: str, so
 @click.option(
     "-c",
     "--condition",
-    help="Conditional Hash. Only perform the action if the branch currently points to the hash specified by this option.",
+    "expected_hash",
+    help="Expected hash. Only perform the action if the branch currently points to the hash specified by this option.",
 )
 @click.option("-r", "--ref", help="branch to list from. If not supplied the default branch from config is used")
 @click.option("-m", "--message", help="commit message")
@@ -534,7 +543,7 @@ def contents(
     key: List[str],
     ref: str,
     message: str,
-    condition: str,
+    expected_hash: str,
     entity_types: List[str],
     author: str,
     query_expression: str,
@@ -550,10 +559,10 @@ def contents(
         )
         results = EntrySchema().dumps(_format_keys_json(keys, *key), many=True) if ctx.json else _format_keys(keys, *key)
     elif delete:
-        ctx.nessie.commit(ref, condition, _get_message(message), author, *_get_contents(ctx.nessie, ref, delete, *key))
+        ctx.nessie.commit(ref, expected_hash, _get_message(message), author, *_get_contents(ctx.nessie, ref, delete, *key))
         results = ""
     elif set:
-        ctx.nessie.commit(ref, condition, _get_message(message), author, *_get_contents(ctx.nessie, ref, delete, *key))
+        ctx.nessie.commit(ref, expected_hash, _get_message(message), author, *_get_contents(ctx.nessie, ref, delete, *key))
         results = ""
     else:
 

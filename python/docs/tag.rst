@@ -41,7 +41,7 @@
 	  -o, --hash-on-ref TEXT  Hash on source-reference for 'create' and 'assign'
 	                          operations, if the tag shall not point to the HEAD of
 	                          the given source-reference.
-	  -c, --condition TEXT    Conditional Hash. Only perform the action if the tag
+	  -c, --condition TEXT    Expected hash. Only perform the action if the tag
 	                          currently points to the hash specified by this option.
 	  --help                  Show this message and exit.
 	

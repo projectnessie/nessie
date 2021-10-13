@@ -88,7 +88,7 @@ class NessieClient(object):
         """Create a branch.
 
         :param branch: name of new branch to create
-        :param ref: to fork from ('hash_on_ref' should be reachable from this ref)
+        :param ref: branch or tag to fork from ('hash_on_ref' should be reachable from this reference)
         :param hash_on_ref: hash to assign 'branch' to
         :return: Nessie branch object
         """

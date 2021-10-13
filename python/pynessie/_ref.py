@@ -21,9 +21,23 @@ def handle_branch_tag(
     json: bool,
     force: bool,
     verbose: bool,
-    old_hash: Optional[str] = None,
+    expected_hash: Optional[str] = None,
 ) -> str:
-    """Perform branch/tag actions."""
+    """Perform branch/tag actions.
+
+    :param nessie NessieClient to use
+    :param list_references the -l option choice
+    :param delete_reference the -d option choice
+    :param branch the name of the branch to create/assign/delete
+    :param hash_on_ref a specific hash (reachable from base_ref) to be used for creating the new branch or tag instead
+           of the HEAD of base_ref
+    :param base_ref existing branch or tag to act at the base for creating the new branch or tag
+    :param is_branch whether the operation is about a branch (true) or tag (false)
+    :param json the --json option choice
+    :param force the -f option choice
+    :param verbose the -v option choice
+    :param expected_hash hash whose existence needs to be checked (on the server side) before performing the operation
+    """
     if list_references or (not list_references and not delete_reference and not branch and not base_ref):
         return _handle_list(nessie, json, verbose, is_branch, branch)
     elif delete_reference:
@@ -45,7 +59,7 @@ def handle_branch_tag(
         except NessieConflictException as conflict:
             # NessieConflictException means the branch/tag already exists - force reassignment if requested
             if force:
-                getattr(nessie, "assign_{}".format("branch" if is_branch else "tag"))(branch, base_ref, hash_on_ref, old_hash)
+                getattr(nessie, "assign_{}".format("branch" if is_branch else "tag"))(branch, base_ref, hash_on_ref, expected_hash)
             else:
                 raise conflict
     return ""
