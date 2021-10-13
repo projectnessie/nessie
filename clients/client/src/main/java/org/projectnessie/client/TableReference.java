@@ -27,9 +27,6 @@ public class TableReference {
   static final String ILLEGAL_PATH_MESSAGE =
       "Path must match the syntax 'table-identifier ( '@' reference-name )? ( '#' pointer )?',"
           + " optional enclosed by backticks or single-quotes.";
-  static final String ILLEGAL_HASH_MESSAGE =
-      "Invalid table name:"
-          + " # is only allowed for hashes (reference by timestamp is not supported)";
 
   private final Namespace namespace;
   private final String name;
@@ -45,6 +42,10 @@ public class TableReference {
     this.namespace = namespace;
     this.name = name;
     this.reference = reference;
+    if (timestamp != null && hash != null) {
+      throw new IllegalArgumentException(
+          "TableReference must be either point to a hash or a timestamp");
+    }
     this.timestamp = timestamp;
     this.hash = hash;
   }
@@ -61,12 +62,24 @@ public class TableReference {
     return reference;
   }
 
+  public boolean hasReference() {
+    return reference != null;
+  }
+
   public String getTimestamp() {
     return timestamp;
   }
 
+  public boolean hasTimestamp() {
+    return timestamp != null;
+  }
+
   public String getHash() {
     return hash;
+  }
+
+  public boolean hasHash() {
+    return hash != null;
   }
 
   @Override
@@ -178,7 +191,7 @@ public class TableReference {
       Validation.validateReferenceName(refName);
     }
     if (hash != null && !Validation.isValidHash(hash)) {
-      throw new IllegalArgumentException(ILLEGAL_HASH_MESSAGE);
+      return new TableReference(Namespace.EMPTY, table, refName, null, hash);
     }
 
     return new TableReference(Namespace.EMPTY, table, refName, hash, null);

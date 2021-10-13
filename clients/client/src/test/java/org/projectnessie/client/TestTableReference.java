@@ -31,7 +31,29 @@ public class TestTableReference {
     return Arrays.asList(
         new Object[] {Namespace.EMPTY, "simple_name", "simple_name", null, null, null},
         new Object[] {Namespace.EMPTY, "`simple_name@ref`", "simple_name", "ref", null, null},
+        new Object[] {
+          Namespace.EMPTY, "`simple_name@ref#2020-12-24`", "simple_name", "ref", null, "2020-12-24"
+        },
+        new Object[] {
+          Namespace.EMPTY, "`simple_name#2020-12-24`", "simple_name", null, null, "2020-12-24"
+        },
         new Object[] {Namespace.of("ns1", "ns2"), "simple_name", "simple_name", null, null, null},
+        new Object[] {
+          Namespace.of("ns1", "ns2"),
+          "`simple_name#2020-12-24`",
+          "simple_name",
+          null,
+          null,
+          "2020-12-24"
+        },
+        new Object[] {
+          Namespace.of("ns1", "ns2"),
+          "`simple_name@ref#2020-12-24`",
+          "simple_name",
+          "ref",
+          null,
+          "2020-12-24"
+        },
         new Object[] {
           Namespace.of("ns1", "ns2"), "`simple_name@ref`", "simple_name", "ref", null, null
         },
@@ -76,14 +98,6 @@ public class TestTableReference {
             expectedHash,
             expectedTimestamp,
             (namespace.isEmpty() ? "" : namespace.name() + '.') + name);
-  }
-
-  @Test
-  public void branchAndTimestamp() {
-    String path = "foo@bar#baz";
-    Assertions.assertThatThrownBy(() -> TableReference.parseEmptyNamespace(path))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage(TableReference.ILLEGAL_HASH_MESSAGE);
   }
 
   @Test
