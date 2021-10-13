@@ -1,8 +1,7 @@
 # Configuration
 
-Nessie server is configurable via setting available properties as listed in the [application.properties](https://github.com/projectnessie/nessie/blob/main/servers/quarkus-server/src/main/resources/application.properties) file. 
-These configuration settings are able to be set when starting up the docker image by 
-adding them to the Docker invocation prefixed with `-D`.  For example, if you want to 
+Nessie server is configurable via properties as listed in the [application.properties](https://github.com/projectnessie/nessie/blob/main/servers/quarkus-server/src/main/resources/application.properties) file.
+These properties can be set when starting up the docker image by adding them to the Docker invocation prefixed with `-D`.  For example, if you want to 
 set Nessie to use the INMEMORY version store running on port 8080, you would run the 
 following:
 
@@ -27,12 +26,12 @@ docker run -p 8080:8080 projectnessie/nessie \
 | Property                                    | Default values  | Type               | Description                                                         |
 | ------------------------------------------- | --------------- | ------------------ |-------------------------------------------------------------------- |
 | `nessie.version.store.type`                 | `INMEMORY`      | `VersionStoreType` | Sets which type of version store to use by Nessie. Possible values are: `DYNAMO`, `INMEMORY`, `ROCKS`, `MONGO`.  |
-| `nessie.version.store.trace.enable`         | `true`          | `boolean`          | Sets whether calls against the version-store are traced with OpenTracing/OpenTelemetry (Jaeger), enabled by default.  |
-| `nessie.version.store.metrics.enable`       | `true`          | `boolean`          | Sets whether metrics for the version-store are enabled (enabled by default).  |
+| `nessie.version.store.trace.enable`         | `true`          | `boolean`          | Sets whether calls against the version-store are traced with OpenTracing/OpenTelemetry (Jaeger).  |
+| `nessie.version.store.metrics.enable`       | `true`          | `boolean`          | Sets whether metrics for the version-store are enabled.  |
 
 #### RocksDB Version Store Settings
 
-When setting `nessie.version.store.type=ROCKS` which enables RockDB as the version store used by Nessie server, the following configs are applicable in combination with `nessie.version.store.type`:
+When setting `nessie.version.store.type=ROCKS` which enables RockDB as the version store used by Nessie server, the following configurations are applicable in combination with `nessie.version.store.type`:
 
 | Property                                    | Default values  | Type               | Description                                                         |
 | ------------------------------------------- | --------------- | ------------------ |-------------------------------------------------------------------- |
@@ -41,7 +40,7 @@ When setting `nessie.version.store.type=ROCKS` which enables RockDB as the versi
 
 #### MongoDB Version Store Settings
 
-When setting `nessie.version.store.type=MONGO` which enables MongoDB as the version store used by Nessie server, the following configs are applicable in combination with `nessie.version.store.type`:
+When setting `nessie.version.store.type=MONGO` which enables MongoDB as the version store used by Nessie server, the following configurations are applicable in combination with `nessie.version.store.type`:
 
 | Property                                        | Default values      | Type         | Description                                                         |
 | ----------------------------------------------- | ------------------- | ------------ |-------------------------------------------------------------------- |
@@ -54,7 +53,7 @@ When setting `nessie.version.store.type=MONGO` which enables MongoDB as the vers
 
 #### DynamoDB Version Store Settings
 
-When setting `nessie.version.store.type=DYNAMO` which enables DynamoDB as the version store used by Nessie server, the following configs are applicable in combination with `nessie.version.store.type`:
+When setting `nessie.version.store.type=DYNAMO` which enables DynamoDB as the version store used by Nessie server, the following configurations are applicable in combination with `nessie.version.store.type`:
 
 | Property                                        | Default values      | Type         | Description                                                         |
 | ----------------------------------------------- | ------------------- | ------------ |-------------------------------------------------------------------- |
@@ -67,10 +66,8 @@ When setting `nessie.version.store.type=DYNAMO` which enables DynamoDB as the ve
     A complete set of DynamoDB configuration options for Quarkus can be found on [quarkus.io](https://quarkus.io/guides/all-config#quarkus-amazon-dynamodb_quarkus-amazon-dynamodb-amazon-dynamodb)
 
 ### Database Adapter Settings
-This is a superset of all database adapter configuration interfaces to be implemented by Quarkus.
 
-All adapter configuration properties are assumed to be optional or have default values.
-Therefore, combining all of them in one Quarkus configuration object should not cause any errors even when only a sub-set of the values is defined in runtime.
+The following configurations are advance configurations to configure how Nessie will store the data into the configured data store:
 
 | Property                                        | Default values      | Type     | Description                                                         |
 | ----------------------------------------------- | ------------------- | -------- |-------------------------------------------------------------------- |
