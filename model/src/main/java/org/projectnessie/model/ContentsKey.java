@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
@@ -67,19 +68,14 @@ public abstract class ContentsKey {
 
   public static ContentsKey of(Namespace namespace, String name) {
     Builder b = ImmutableContentsKey.builder();
-    if (!namespace.isEmpty()) {
+    if (namespace != null && !namespace.isEmpty()) {
       b.addElements(namespace.getElements());
-    }
-    if (name == null || name.isEmpty()) {
-      throw new IllegalArgumentException("Null or empty name not allowed");
     }
     return b.addElements(name).build();
   }
 
   public static ContentsKey of(String... elements) {
-    if (elements == null || elements.length == 0 || elements[elements.length - 1].isEmpty()) {
-      throw new IllegalArgumentException("Null or empty name not allowed");
-    }
+    Objects.requireNonNull(elements, "Elements array must not be null");
     return ImmutableContentsKey.builder().elements(Arrays.asList(elements)).build();
   }
 
@@ -94,6 +90,10 @@ public abstract class ContentsKey {
   @Value.Check
   protected void validate() {
     for (String e : getElements()) {
+      if (e == null || e.isEmpty()) {
+        throw new IllegalArgumentException(
+            "An object key cannot contain a null element or empty element.");
+      }
       if (e.contains(ZERO_BYTE_STRING)) {
         throw new IllegalArgumentException("An object key cannot contain a zero byte.");
       }
