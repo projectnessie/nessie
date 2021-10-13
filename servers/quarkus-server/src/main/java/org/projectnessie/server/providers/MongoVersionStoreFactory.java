@@ -34,9 +34,6 @@ import org.projectnessie.versioned.persist.store.PersistVersionStore;
 @Dependent
 public class MongoVersionStoreFactory implements VersionStoreFactory {
 
-  @ConfigProperty(name = "quarkus.mongodb.database")
-  String databaseName;
-
   @Inject MongoDatabaseClient client;
   @Inject NonTransactionalDatabaseAdapterConfig config;
 
@@ -52,7 +49,7 @@ public class MongoVersionStoreFactory implements VersionStoreFactory {
             .withConnector(client)
             .build();
 
-    adapter.reinitializeRepo(serverConfig.getDefaultBranch());
+    adapter.initializeRepo(serverConfig.getDefaultBranch());
 
     return new PersistVersionStore<>(adapter, worker);
   }
