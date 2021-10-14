@@ -17,5 +17,5 @@ package org.projectnessie.versioned.persist.tx;
 
 import org.immutables.value.Value;
 
-@Value.Immutable(lazyhash = true)
+@Value.Immutable
 public interface DefaultTxConnectionConfig extends TxConnectionConfig {}

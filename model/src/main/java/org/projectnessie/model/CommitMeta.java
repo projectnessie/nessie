@@ -36,7 +36,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.media.SchemaProperty;
 import org.immutables.value.Value;
 
-@Value.Immutable(prehash = true)
+@Value.Immutable
 @Schema(
     type = SchemaType.OBJECT,
     title = "CommitMeta",

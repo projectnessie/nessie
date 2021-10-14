@@ -22,7 +22,7 @@ import org.immutables.value.Value;
  * Contains/references a list of keys that are "visible" from a specific {@link
  * org.projectnessie.versioned.persist.adapter.CommitLogEntry}.
  */
-@Value.Immutable(lazyhash = true)
+@Value.Immutable
 public interface KeyList {
   List<KeyWithType> getKeys();
 

@@ -55,7 +55,7 @@ import org.immutables.value.Value;
             + "\n"
             + "During a commit-operation, Nessie checks whether the known global state of the "
             + "Iceberg table is compatible (think: equal) to 'Operation.Put.expectedContents'.")
-@Value.Immutable(prehash = true)
+@Value.Immutable
 @JsonSerialize(as = ImmutableIcebergTable.class)
 @JsonDeserialize(as = ImmutableIcebergTable.class)
 @JsonTypeName("ICEBERG_TABLE")

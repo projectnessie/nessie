@@ -25,7 +25,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
 
 @Schema(type = SchemaType.OBJECT, title = "MultiGetContentsRequest")
-@Value.Immutable(prehash = true)
+@Value.Immutable
 @JsonSerialize(as = ImmutableMultiGetContentsRequest.class)
 @JsonDeserialize(as = ImmutableMultiGetContentsRequest.class)
 public interface MultiGetContentsRequest {

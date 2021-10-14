@@ -19,7 +19,7 @@ import java.security.Principal;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
-@Value.Immutable(prehash = true)
+@Value.Immutable
 public abstract class ServerAccessContext implements AccessContext {
 
   @Override

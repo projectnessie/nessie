@@ -23,7 +23,7 @@ import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import org.immutables.value.Value;
 
-@Value.Immutable(prehash = true)
+@Value.Immutable
 @JsonSerialize(as = ImmutableDeltaLakeTable.class)
 @JsonDeserialize(as = ImmutableDeltaLakeTable.class)
 @JsonTypeName("DELTA_LAKE_TABLE")

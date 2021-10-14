@@ -34,7 +34,7 @@ import org.immutables.value.Value;
       @SchemaProperty(name = "fromRefName", pattern = Validation.REF_NAME_REGEX),
       @SchemaProperty(name = "fromHash", pattern = Validation.HASH_REGEX)
     })
-@Value.Immutable(prehash = true)
+@Value.Immutable
 @JsonSerialize(as = ImmutableMerge.class)
 @JsonDeserialize(as = ImmutableMerge.class)
 public interface Merge {
