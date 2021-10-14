@@ -62,7 +62,6 @@ public abstract class AbstractSparkTest {
         .set("spark.sql.catalog.nessie", "org.apache.iceberg.spark.SparkCatalog");
     spark = SparkSession.builder().master("local[2]").config(conf).getOrCreate();
     spark.sparkContext().setLogLevel("WARN");
-    spark.sessionState().catalogManager().setCurrentCatalog("nessie");
   }
 
   @AfterAll
