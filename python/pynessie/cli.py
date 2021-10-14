@@ -517,10 +517,7 @@ def cherry_pick(ctx: ContextObject, branch: str, force: bool, condition: str, so
     mutually_exclusive=["entity_type"],
     help="Allows advanced filtering using the Common Expression Language (CEL). "
     "An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n"
-    "Some examples with usable variables 'entry.namespace' (string, the namespace of the content), "
-    "'entry.name' (string, the name of the content), "
-    "'entry.fullname' (string, the namespace + name of the content) & "
-    "& 'entry.contentType' (string) are:\n"
+    "Some examples with usable variables 'entry.namespace' (string) & 'entry.contentType' (string) are:\n"
     "entry.namespace.startsWith('a.b.c')\n"
     "entry.contentType in ['ICEBERG_TABLE','DELTA_LAKE_TABLE']\n"
     "entry.namespace.startsWith('some.name.space') && entry.contentType in ['ICEBERG_TABLE','DELTA_LAKE_TABLE']\n",

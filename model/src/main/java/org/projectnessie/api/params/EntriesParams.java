@@ -61,10 +61,7 @@ public class EntriesParams {
   @Parameter(
       description =
           "A Common Expression Language (CEL) expression. An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n"
-              + "Usable variables within the expression are 'entry.namespace' (string, the namespace of the content), "
-              + "'entry.name' (string, the name of the content), "
-              + "'entry.fullname' (string, the namespace + name of the content) & "
-              + "'entry.contentType' (string)",
+              + "Usable variables within the expression are 'entry.namespace' (string) & 'entry.contentType' (string)",
       examples = {
         @ExampleObject(ref = "expr_by_namespace"),
         @ExampleObject(ref = "expr_by_contentType"),

@@ -375,10 +375,6 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
                   ImmutableMap.of(
                       "namespace",
                       entry.getName().getNamespace().name(),
-                      "name",
-                      entry.getName().getName(),
-                      "fullname",
-                      entry.getName().toString(),
                       "contentType",
                       entry.getType().name()));
 
