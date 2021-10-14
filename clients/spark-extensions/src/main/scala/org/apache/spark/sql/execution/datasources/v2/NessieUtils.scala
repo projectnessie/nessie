@@ -171,6 +171,15 @@ object NessieUtils {
     val catalogConf = SparkSession.active.sparkContext.conf
       .getAllWithPrefix(s"spark.sql.catalog.$catalogName.")
       .toMap
+    // Referring to https://github.com/apache/iceberg/blob/master/nessie/src/main/java/org/apache/iceberg/nessie/NessieCatalog.java
+    // Not using fully-qualified class name to provide protection from shading activities (if any)
+    require(
+      catalogConf
+        .get("catalog-impl")
+        .map(impl => impl.endsWith("NessieCatalog"))
+        .getOrElse(false),
+      "The command works only when the catalog is of type Nessie. Either set the nessie catalog in context before running the command [eg. `USE <catalog_name>`] or provide the catalog in the command [eg. `<command> IN <catalog_name>`]."
+    )
     NessieClient
       .builder()
       .fromConfig(x => catalogConf.getOrElse(x.replace("nessie.", ""), null))

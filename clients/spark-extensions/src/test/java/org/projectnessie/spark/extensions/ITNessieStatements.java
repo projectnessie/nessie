@@ -200,6 +200,7 @@ public class ITNessieStatements extends AbstractSparkTest {
         .containsExactly(row("Branch", random, hash));
 
     commitAndReturnLog(refName);
+    spark.sessionState().catalogManager().setCurrentCatalog("nessie");
     sql("USE REFERENCE %s", refName);
     sql("MERGE BRANCH %s INTO main IN nessie", refName);
     Reference main = nessieClient.getTreeApi().getReferenceByName("main");
@@ -214,6 +215,7 @@ public class ITNessieStatements extends AbstractSparkTest {
     assertThat(sql("CREATE TAG %s IN nessie", random)).containsExactly(row("Tag", random, hash));
 
     commitAndReturnLog(refName);
+    spark.sessionState().catalogManager().setCurrentCatalog("nessie");
     sql("USE REFERENCE %s", refName);
     sql("MERGE BRANCH %s INTO main IN nessie", refName);
     Reference main = nessieClient.getTreeApi().getReferenceByName("main");
@@ -229,6 +231,7 @@ public class ITNessieStatements extends AbstractSparkTest {
         .containsExactly(row("Branch", random, hash));
 
     List<Object[]> commits = commitAndReturnLog(refName);
+    spark.sessionState().catalogManager().setCurrentCatalog("nessie");
     sql("USE REFERENCE %s", refName);
     sql("MERGE BRANCH %s INTO main IN nessie", refName);
     Reference main = nessieClient.getTreeApi().getReferenceByName("main");
@@ -577,6 +580,13 @@ public class ITNessieStatements extends AbstractSparkTest {
                 .collect(Collectors.toList()))
         .containsExactlyElementsOf(resultList);
     spark.sessionState().catalogManager().setCurrentCatalog(catalog);
+  }
+
+  @Test
+  void testInvalidCatalog() {
+    assertThatThrownBy(() -> sql("LIST REFERENCES IN hive"))
+        .hasMessage(
+            "requirement failed: The command works only when the catalog is of type Nessie. Either set the nessie catalog in context before running the command [eg. `USE <catalog_name>`] or provide the catalog in the command [eg. `<command> IN <catalog_name>`].");
   }
 
   private static Object[] convert(Object[] object) {
