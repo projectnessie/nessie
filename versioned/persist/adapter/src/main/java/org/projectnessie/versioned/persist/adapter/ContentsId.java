@@ -16,10 +16,8 @@
 package org.projectnessie.versioned.persist.adapter;
 
 import java.util.Objects;
-import javax.annotation.Nonnull;
 import org.immutables.value.Value;
 
-// TODO move this class to :nessie-model in a follow-up
 @Value.Immutable
 public abstract class ContentsId {
   public static ContentsId of(String id) {
@@ -27,7 +25,6 @@ public abstract class ContentsId {
     return ImmutableContentsId.builder().id(id).build();
   }
 
-  @Nonnull
   public abstract String getId();
 
   @Override
