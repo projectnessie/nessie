@@ -30,7 +30,8 @@ import org.projectnessie.model.{
   ContentsKey,
   DeltaLakeTable,
   ImmutableDeltaLakeTable,
-  Reference
+  Reference,
+  TableReference
 }
 import org.apache.commons.io.IOUtils
 import org.apache.hadoop.conf.Configuration
@@ -150,15 +151,14 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
   }
 
   private def parseTableIdentifier(path: String): (String, String, String) = {
-    if (path.contains("@") && path.contains("#")) {
-      val tableRef = path.split("@")
-      val refHash = tableRef(1).split("#")
-      return (tableRef(0), refHash(0), refHash(0))
+    val tr = TableReference.parse(path);
+    if (tr.hasTimestamp) {
+      throw new IllegalArgumentException(
+        "Invalid table name:" + " # is only allowed for hashes (reference by timestamp is not supported)"
+      )
     }
-
-    if (path.contains("@")) {
-      val tableRef = path.split("@")
-      return (tableRef(0), tableRef(1), null)
+    if (tr.hasReference) {
+      return (tr.getName, tr.getReference, tr.getHash)
     }
 
     (
