@@ -19,7 +19,7 @@ import org.immutables.value.Value;
 import org.projectnessie.versioned.Key;
 
 /** Composite of key, contents-id, contents-type. */
-@Value.Immutable(prehash = true)
+@Value.Immutable(lazyhash = true) // this type is used as a map-key in an expensive test
 public interface KeyWithType {
   Key getKey();
 
