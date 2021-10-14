@@ -42,6 +42,8 @@ The only change is that a Nessie catalog should be instantiated
     still have to go through the jvm objects. See the [demo](https://mybinder.org/v2/gh/projectnessie/nessie-demos/main?filepath=notebooks/nessie-iceberg-demo-nba.ipynb)
     directory for details.
 
+## Configuration
+
 The Nessie Catalog needs the following parameters set in the Spark/Hadoop config.
 
 These are set as follows in code (or through other methods as described [here](https://spark.apache.org/docs/latest/configuration.html))
@@ -104,13 +106,21 @@ These are set as follows in code (or through other methods as described [here](h
                 "org.apache.iceberg.spark.SparkCatalog") \
             .getOrCreate()
     ```
-Note above we specified the option `spark.sql.catalog.nessie.ref`. This value sets the default branch that the iceberg
-catalog will use. We have specified `spark.sql.catalog.nessie` to point to `SparkCatalog`. This is a Spark
-option to set the catalog `nessie` to be managed by Nessie's Catalog implementation. All configuration for the Nessie catalog
-exists below this `spark.sql.catalog.nessie` configuration namespace. The catalog name is not important, it is important that the
+
+All configuration for the Nessie catalog exists below this `spark.sql.catalog.nessie` configuration namespace. The catalog name is not important, it is important that the
 required options are all given below the catalog name.
 
-Additional authentication settings are documented in the [Authentication in Tools](../auth_config.md) section.
+The following properties are **required** in Spark when creating the Nessie Catalog (replace `<catalog_name>` with the name of your catalog):
+
+- `spark.sql.catalog.<catalog_name>.uri` : The location of the Nessie server.
+- `spark.sql.catalog.<catalog_name>.ref` : The default Nessie branch that the iceberg
+  catalog will use.
+- `spark.sql.catalog.<catalog_name>.authentication.type` : The authentication type to be used, set to `NONE` by default. Please refer to the [authentication docs](../auth_config.md) for more info.
+- `spark.sql.catalog.<catalog_name>.catalog-impl` : This **must** be `org.apache.iceberg.nessie.NessieCatalog` in order to tell Spark to use Nessie catalog implementation.
+- `spark.sql.catalog.<catalog_name>.warehouse` : The location where to store Iceberg tables managed by Nessie catalog.
+- `spark.sql.catalog.<catalog_name>` : This **must** be `org.apache.iceberg.spark.SparkCatalog`. This is a Spark
+  option to set the catalog `<catalog_name>` to be managed by Nessie's Catalog implementation.
+
 
 ## Writing
 
