@@ -46,26 +46,15 @@ it("Explore renders", async () => {
   };
   const now = new Date();
   now.setDate(now.getDate() - 1);
-  const commitMeta = {
-    hash: "deadbeef",
-    author: "bob",
-    commitTime: now,
-    committer: "sally",
-    message: "commitMessage",
-    properties: { a: "b", c: "d" },
-  };
   const scope1 = nock("http://localhost/api/v1")
-    .get("/trees/tree/main/log")
-    .reply(200, { token: "foo", operations: [commitMeta] });
-  const scope2 = nock("http://localhost/api/v1")
     .get(
       "/trees/tree/main/entries?namespaceDepth=1&query_expression=entry.namespace.matches(%27(%5C%5C.%7C%24)%27)"
     )
     .reply(200, { token: "foo", entries: [entry] });
-  const scope3 = nock("http://localhost/api/v1")
+  const scope2 = nock("http://localhost/api/v1")
     .get("/trees/tree")
     .reply(200, { name: "main", hash: "deadbeef" });
-  const scope4 = nock("http://localhost/api/v1")
+  const scope3 = nock("http://localhost/api/v1")
     .get("/trees")
     .reply(200, [tag("a"), tag("b"), branch("c"), branch("d")]);
 
@@ -82,7 +71,6 @@ it("Explore renders", async () => {
   scope1.done();
   scope2.done();
   scope3.done();
-  scope4.done();
   expect(asFragment()).toMatchSnapshot();
   expect(screen.getByText("a").closest("a")).toHaveAttribute(
     "href",
@@ -97,26 +85,15 @@ it("Explore renders with slug", async () => {
   };
   const now = new Date();
   now.setDate(now.getDate() - 1);
-  const commitMeta = {
-    hash: "deadbeef",
-    author: "bob",
-    commitTime: now,
-    committer: "sally",
-    message: "commitMessage",
-    properties: { a: "b", c: "d" },
-  };
   const scope1 = nock("http://localhost/api/v1")
-    .get("/trees/tree/main/log")
-    .reply(200, { token: "foo", operations: [commitMeta] });
-  const scope2 = nock("http://localhost/api/v1")
     .get(
       "/trees/tree/main/entries?namespaceDepth=1&query_expression=entry.namespace.matches(%27(%5C%5C.%7C%24)%27)"
     )
     .reply(200, { token: "foo", entries: [entry] });
-  const scope3 = nock("http://localhost/api/v1")
+  const scope2 = nock("http://localhost/api/v1")
     .get("/trees/tree")
     .reply(200, { name: "main", hash: "deadbeef" });
-  const scope4 = nock("http://localhost/api/v1")
+  const scope3 = nock("http://localhost/api/v1")
     .get("/trees")
     .reply(200, [tag("a"), tag("b"), branch("c"), branch("d")]);
   // jest.spyOn(MemoryRouter, 'useParams').mockReturnValue({ slug: "/main/a" });
@@ -128,7 +105,6 @@ it("Explore renders with slug", async () => {
   scope1.done();
   scope2.done();
   scope3.done();
-  scope4.done();
   expect(asFragment()).toMatchSnapshot();
   expect(screen.getByText("a").closest("a")).toHaveAttribute(
     "href",

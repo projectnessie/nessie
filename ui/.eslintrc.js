@@ -221,7 +221,7 @@ module.exports = {
     "react/jsx-curly-spacing": "off",
     "react/jsx-equals-spacing": "off",
     "react/jsx-key": "error",
-    "react/jsx-no-bind": "error",
+    "react/jsx-no-bind": ["error", { allowArrowFunctions: true } ],
     "react/jsx-tag-spacing": [
       "off",
       {

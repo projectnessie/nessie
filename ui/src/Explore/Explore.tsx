@@ -18,9 +18,11 @@ import { Card, Container } from "react-bootstrap";
 import { useParams } from "react-router-dom";
 import TableHead from "./TableHead";
 import TableListing from "./TableListing";
-import CommitHeader from "./CommitHeader";
+import { routeSlugs } from "./Constants";
+import CommitLog from "./CommitLog";
 import { api, Branch, Reference, Tag } from "../utils";
 import { factory } from "../ConfigLog4j";
+import "./Explore.css";
 
 const log = factory.getLogger("api.Explore");
 
@@ -174,8 +176,8 @@ const Explore = (): React.ReactElement => {
 
   return currentRef ? (
     <div>
-      <Container style={{ marginTop: "100px" }}>
-        <Card>
+      <Container className="explore">
+        <Card className="explore__wrapper">
           <TableHead
             branches={branches.branches}
             tags={branches.tags}
@@ -183,8 +185,11 @@ const Explore = (): React.ReactElement => {
             defaultBranch={defaultBranch}
             path={path}
           />
-          <CommitHeader currentRef={currentRef} />
-          <TableListing currentRef={currentRef} path={path} />
+          {path.length > 0 && path[0] === routeSlugs.commits ? (
+            <CommitLog currentRef={currentRef} path={path} />
+          ) : (
+            <TableListing currentRef={currentRef} path={path} />
+          )}
         </Card>
       </Container>
     </div>
