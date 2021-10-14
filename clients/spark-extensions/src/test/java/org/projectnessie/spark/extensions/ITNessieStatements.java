@@ -586,7 +586,7 @@ public class ITNessieStatements extends AbstractSparkTest {
   void testInvalidCatalog() {
     assertThatThrownBy(() -> sql("LIST REFERENCES IN hive"))
         .hasMessage(
-            "requirement failed: The command works only when the catalog is of type Nessie. Either set the nessie catalog in context before running the command [eg. `USE <catalog_name>`] or provide the catalog in the command [eg. `<command> IN <catalog_name>`].");
+            "requirement failed: The command works only when the catalog is a NessieCatalog. Either set the catalog via USE <catalog_name> or provide the catalog during execution: <command> IN <catalog_name>.");
   }
 
   private static Object[] convert(Object[] object) {
