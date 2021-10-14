@@ -33,9 +33,9 @@ docker run -p 8080:8080 projectnessie/nessie \
 
 When setting `nessie.version.store.type=ROCKS` which enables RockDB as the version store used by the Nessie server, the following configurations are applicable in combination with `nessie.version.store.type`:
 
-| Property                                    | Default values  | Type               | Description                                                         |
-| ------------------------------------------- | --------------- | ------------------ |-------------------------------------------------------------------- |
-| `nessie.version.store.rocks.db-path`        |                 | `String`           | Sets RocksDB storage path, e.g: `/tmp/rocks-nessie`. |
+| Property                                    | Default values        | Type         | Description                                                         |
+| ------------------------------------------- | --------------------- | ------------ |-------------------------------------------------------------------- |
+| `nessie.version.store.rocks.db-path`        | `/tmp/nessie-rocksdb` | `String`     | Sets RocksDB storage path, e.g: `/tmp/rocks-nessie`. |
 
 
 #### MongoDB Version Store Settings
