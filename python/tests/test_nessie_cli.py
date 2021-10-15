@@ -17,6 +17,7 @@ from click.testing import Result
 from pynessie import __version__
 from pynessie import cli
 from pynessie.model import Branch
+from pynessie.model import Contents
 from pynessie.model import ContentsSchema
 from pynessie.model import DeltaLakeTable
 from pynessie.model import EntrySchema
@@ -89,7 +90,31 @@ def test_remote() -> None:
     result = _run(runner, ["config", "default_branch"], ret_val=1)
     assert result.output == ""
     assert isinstance(result.exception, confuse.exceptions.ConfigTypeError)
-    _run(runner, ["remote", "set-head", "main"])
+
+
+def _new_table(table_id: str) -> IcebergTable:
+    return IcebergTable(table_id, "/a/b/c", 42)
+
+
+def _make_commit(
+    key: str, table: Contents, branch: str, head_hash: str = None, message: str = "test message", author: str = "nessie test"
+) -> IcebergTable:
+    if not head_hash:
+        result = _run(CliRunner(), ["--json", "branch"])
+        refs = {i.name: i.hash_ for i in ReferenceSchema().loads(result.output, many=True)}
+        head_hash = refs[branch]
+    _run(
+        CliRunner(),
+        ["contents", "--set", "--stdin", key, "--ref", branch, "-m", message, "-c", head_hash, "--author", author],
+        input=ContentsSchema().dumps(table),
+    )
+
+
+def _reset_main() -> None:
+    # Note: This hash should match the java constant AbstractDatabaseAdapter.NO_ANCESTOR
+    no_ancestor_hash = "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d"
+    # Re-create branch main from the root hash (assuming in-memory store)
+    _run(CliRunner(), ["branch", "--force", "-o", no_ancestor_hash, "main", "main"])
 
 
 @pytest.mark.vcr
@@ -99,17 +124,12 @@ def test_log() -> None:
     result = _run(runner, ["--json", "log"])
     logs = simplejson.loads(result.output)
     assert len(logs) == 0
-    refs = ReferenceSchema().loads(_run(runner, ["--json", "branch", "-l", "main"]).output, many=True)
-    empty_hash = refs[0].hash_
-    _run(
-        runner,
-        ["contents", "--set", "log.foo.bar", "--ref", "main", "-m", "test_message", "-c", empty_hash, "--author", "nessie_user1"],
-        input=ContentsSchema().dumps(IcebergTable("test_log", "/a/b/c", 42)),
-    )
+    table = _new_table("test_log")
+    _make_commit("log.foo.bar", table, "main", author="nessie_user1")
     result = _run(runner, ["--json", "contents", "log.foo.bar"])
     tables = ContentsSchema().loads(result.output, many=True)
     assert len(tables) == 1
-    assert tables[0] == IcebergTable("test_log", "/a/b/c", 42)
+    assert tables[0] == table
     result = _run(runner, ["--json", "log"])
     logs = simplejson.loads(result.output)
     assert len(logs) == 1
@@ -170,12 +190,11 @@ def test_log() -> None:
     result = _run(runner, ["--json", "log", "--after", "2001-01-01T00:00:00+00:00", "--before", "2999-12-30T23:00:00+00:00"])
     logs = simplejson.loads(result.output)
     assert len(logs) == 2
-    # Re-create branch main from the root hash (assuming in-memory store)
-    _run(runner, ["branch", "--force", "-o", "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d", "main", "main"])
+    _reset_main()
 
 
 @pytest.mark.vcr
-def test_ref() -> None:
+def test_branch() -> None:
     """Test create and assign refs."""
     runner = CliRunner()
     result = _run(runner, ["--json", "branch"])
@@ -226,27 +245,41 @@ def test_tag() -> None:
 
 
 @pytest.mark.vcr
+def test_commit_with_expected_state() -> None:
+    """Test making a commit with some expected Contents, i.e. IcebergTable."""
+    runner = CliRunner()
+    _run(runner, ["branch", "dev"])
+    _make_commit("commit.expected.contents", _new_table("test_expected_contents"), "dev", message="commit 1")
+    # the second commit will use the Contents of the first one as "expected contents"
+    _make_commit("commit.expected.contents", _new_table("test_expected_contents"), "dev", message="commit 2")
+    _run(runner, ["branch", "-d", "dev"])
+    _reset_main()
+
+
+@pytest.mark.vcr
+def test_commit_no_expected_state() -> None:
+    """Test making two commit without any expected Contents, i.e. using DeltaLakeTable."""
+    runner = CliRunner()
+    _run(runner, ["branch", "dev"])
+    table1 = DeltaLakeTable(
+        id="test_commit_no_expected_state", metadata_location_history=["asd111"], checkpoint_location_history=["def"], last_checkpoint="x"
+    )
+    _make_commit("commit.expected.contents", table1, "dev", message="commit 1")
+    table2 = DeltaLakeTable(
+        id="test_commit_no_expected_state", metadata_location_history=["asd222"], checkpoint_location_history=["def"], last_checkpoint="x"
+    )
+    # the second commit will set new contents without the "expected contents" parameter due to using a DeltaLakeTable
+    _make_commit("commit.expected.contents", table2, "dev", message="commit 2")
+    _run(runner, ["branch", "-d", "dev"])
+    _reset_main()
+
+
+@pytest.mark.vcr
 def test_assign() -> None:
     """Test assign operation."""
     runner = CliRunner()
     _run(runner, ["branch", "dev"])
-    refs = ReferenceSchema().loads(_run(runner, ["--json", "branch", "-l", "dev"]).output, many=True)
-    empty_hash = next(i.hash_ for i in refs if i.name == "dev")
-    _run(
-        runner,
-        [
-            "contents",
-            "--set",
-            "assign.foo.bar",
-            "--ref",
-            "dev",
-            "-m",
-            "test_message",
-            "-c",
-            empty_hash,
-        ],
-        input=ContentsSchema().dumps(IcebergTable("test_assign", "/a/b/c", 42)),
-    )
+    _make_commit("assign.foo.bar", _new_table("test_assign"), "dev")
     _run(runner, ["branch", "main", "dev", "--force"])
     result = _run(runner, ["--json", "branch"])
     branches = ReferenceSchema().loads(result.output, many=True)
@@ -266,8 +299,7 @@ def test_assign() -> None:
     logs = simplejson.loads(result.output)
     _run(runner, ["--json", "contents", "--delete", "assign.foo.bar", "--ref", "main", "-m", "delete_message", "-c", logs[0]["hash"]])
     _run(runner, ["branch", "main", "--delete"])
-    # Re-create branch main from the root hash (assuming in-memory store)
-    _run(runner, ["branch", "--force", "-o", "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d", "main", "main"])
+    _reset_main()
 
 
 @pytest.mark.vcr
@@ -275,23 +307,7 @@ def test_merge() -> None:
     """Test merge operation."""
     runner = CliRunner()
     _run(runner, ["branch", "dev"])
-    refs = ReferenceSchema().loads(_run(runner, ["--json", "branch", "-l", "dev"]).output, many=True)
-    empty_hash = next(i.hash_ for i in refs if i.name == "dev")
-    _run(
-        runner,
-        [
-            "contents",
-            "--set",
-            "merge.foo.bar",
-            "--ref",
-            "dev",
-            "-m",
-            "test_message",
-            "-c",
-            empty_hash,
-        ],
-        input=ContentsSchema().dumps(IcebergTable("test_merge", "/a/b/c", 42)),
-    )
+    _make_commit("merge.foo.bar", _new_table("test_merge"), "dev")
     refs = ReferenceSchema().loads(_run(runner, ["--json", "branch", "-l", "main"]).output, many=True)
     main_hash = next(i.hash_ for i in refs if i.name == "main")
     _run(runner, ["merge", "dev", "-c", main_hash])
@@ -304,8 +320,7 @@ def test_merge() -> None:
     logs = simplejson.loads(result.output)
     _run(runner, ["--json", "contents", "--delete", "merge.foo.bar", "--ref", "main", "-m", "delete_message", "-c", logs[0]["hash"]])
     _run(runner, ["branch", "main", "--delete"])
-    # Re-create branch main from the root hash (assuming in-memory store)
-    _run(runner, ["branch", "--force", "-o", "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d", "main", "main"])
+    _reset_main()
 
 
 @pytest.mark.vcr
@@ -313,53 +328,9 @@ def test_transplant() -> None:
     """Test transplant operation."""
     runner = CliRunner()
     _run(runner, ["branch", "dev"])
-    refs = ReferenceSchema().loads(_run(runner, ["--json", "branch", "-l", "dev"]).output, many=True)
-    empty_hash = next(i.hash_ for i in refs if i.name == "dev")
-    _run(
-        runner,
-        [
-            "contents",
-            "--set",
-            "transplant.foo.bar",
-            "--ref",
-            "dev",
-            "-m",
-            "test_message",
-            "-c",
-            empty_hash,
-        ],
-        input=ContentsSchema().dumps(IcebergTable("uuid1", "/a/b/c", 42)),
-    )
-    _run(
-        runner,
-        [
-            "contents",
-            "--set",
-            "bar.bar",
-            "--ref",
-            "dev",
-            "-m",
-            "test_message2",
-            "-c",
-            empty_hash,
-        ],
-        input=ContentsSchema().dumps(IcebergTable("uuid2", "/a/b/c", 42)),
-    )
-    _run(
-        runner,
-        [
-            "contents",
-            "--set",
-            "foo.baz",
-            "--ref",
-            "main",
-            "-m",
-            "test_message3",
-            "-c",
-            empty_hash,
-        ],
-        input=ContentsSchema().dumps(IcebergTable("uuid3", "/a/b/c", 42)),
-    )
+    _make_commit("transplant.foo.bar", _new_table("test_transplant_1"), "dev")
+    _make_commit("bar.bar", _new_table("test_transplant_2"), "dev")
+    _make_commit("foo.baz", _new_table("test_transplant_3"), "dev")
     refs = ReferenceSchema().loads(_run(runner, ["--json", "branch", "-l"]).output, many=True)
     main_hash = next(i.hash_ for i in refs if i.name == "main")
     result = _run(runner, ["--json", "log", "--ref", "dev"])
@@ -369,12 +340,11 @@ def test_transplant() -> None:
 
     result = _run(runner, ["--json", "log"])
     logs = simplejson.loads(result.output)
-    assert len(logs) == 3
+    assert len(logs) == 2  # two commits were transplanted into an empty `main`
     _run(runner, ["--json", "contents", "--delete", "transplant.foo.bar", "--ref", "main", "-m", "delete_message", "-c", logs[0]["hash"]])
     _run(runner, ["branch", "dev", "--delete"])
     _run(runner, ["branch", "main", "--delete"])
-    # Re-create branch main from the root hash (assuming in-memory store)
-    _run(runner, ["branch", "--force", "-o", "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d", "main", "main"])
+    _reset_main()
 
 
 @pytest.mark.doc
@@ -406,50 +376,9 @@ def test_contents_listing() -> None:
     )
     sql_view = SqlView(id="uuid3", sql_text="SELECT * FROM foo", dialect="SPARK")
 
-    refs = ReferenceSchema().loads(_run(runner, ["--json", "branch", "-l", branch]).output, many=True)
-    _run(
-        runner,
-        [
-            "contents",
-            "--set",
-            "this.is.iceberg.foo",
-            "--ref",
-            branch,
-            "-m",
-            "test_message1",
-            "-c",
-            refs[0].hash_,
-            "--author",
-            "nessie-author1",
-        ],
-        input=ContentsSchema().dumps(iceberg_table),
-    )
-
-    refs = ReferenceSchema().loads(_run(runner, ["--json", "branch", "-l", branch]).output, many=True)
-    _run(
-        runner,
-        [
-            "contents",
-            "--set",
-            "this.is.delta.bar",
-            "--ref",
-            branch,
-            "-m",
-            "test_message2",
-            "-c",
-            refs[0].hash_,
-            "--author",
-            "nessie-author2",
-        ],
-        input=ContentsSchema().dumps(delta_lake_table),
-    )
-
-    refs = ReferenceSchema().loads(_run(runner, ["--json", "branch", "-l", branch]).output, many=True)
-    _run(
-        runner,
-        ["contents", "--set", "this.is.sql.baz", "--ref", branch, "-m", "test_message3", "-c", refs[0].hash_, "--author", "nessie-author3"],
-        input=ContentsSchema().dumps(sql_view),
-    )
+    _make_commit("this.is.iceberg.foo", iceberg_table, branch)
+    _make_commit("this.is.delta.bar", delta_lake_table, branch)
+    _make_commit("this.is.sql.baz", sql_view, branch)
 
     result = _run(runner, ["--json", "contents", "--ref", branch, "this.is.iceberg.foo"])
     tables = ContentsSchema().loads(result.output, many=True)

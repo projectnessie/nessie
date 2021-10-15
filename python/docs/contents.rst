@@ -11,6 +11,11 @@
 	  -l, --list                      list tables
 	  -d, --delete                    delete a table
 	  -s, --set                       modify a table
+	  -i, --stdin                     read contents for --set from STDIN (separated
+	                                  by Ctrl-D)
+	  -S, --expect-same-contents      send the same contents both as the new and
+	                                  expected (old contents) parameters for --set
+	                                  operations
 	  -c, --condition TEXT            Expected hash. Only perform the action if the
 	                                  branch currently points to the hash specified
 	                                  by this option.
