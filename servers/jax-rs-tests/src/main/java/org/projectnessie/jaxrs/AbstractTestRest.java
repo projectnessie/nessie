@@ -134,8 +134,16 @@ public abstract class AbstractTestRest {
     api.close();
   }
 
+  public NessieApiV1 getApi() {
+    return api;
+  }
+
+  public HttpClient getHttpClient() {
+    return httpClient;
+  }
+
   @Test
-  void createRecreateDefaultBranch() throws NessieConflictException, NessieNotFoundException {
+  public void createRecreateDefaultBranch() throws NessieConflictException, NessieNotFoundException {
     api.deleteBranch().branch(api.getDefaultBranch()).delete();
 
     api.createReference().reference(Branch.of("main", null)).create();
@@ -143,7 +151,7 @@ public abstract class AbstractTestRest {
   }
 
   @Test
-  void createReferences() throws NessieNotFoundException {
+  public void createReferences() throws NessieNotFoundException {
     String mainHash = api.getReference().refName("main").get().getHash();
 
     String tagName1 = "createReferences_tag1";
@@ -211,7 +219,7 @@ public abstract class AbstractTestRest {
 
   @ParameterizedTest
   @ValueSource(strings = {"normal", "with-no_space", "slash/thing"})
-  void referenceNames(String refNamePart) throws NessieNotFoundException, NessieConflictException {
+  public void referenceNames(String refNamePart) throws NessieNotFoundException, NessieConflictException {
     String tagName = "tag" + refNamePart;
     String branchName = "branch" + refNamePart;
     String branchName2 = "branch2" + refNamePart;
@@ -572,7 +580,7 @@ public abstract class AbstractTestRest {
     }
   }
 
-  private void createCommits(
+  protected void createCommits(
       Reference branch, int numAuthors, int commitsPerAuthor, String currentHash)
       throws NessieNotFoundException, NessieConflictException {
     for (int j = 0; j < numAuthors; j++) {
@@ -599,7 +607,7 @@ public abstract class AbstractTestRest {
   }
 
   @Test
-  void commitLogPagingAndFilteringByAuthor()
+  public void commitLogPagingAndFilteringByAuthor()
       throws NessieNotFoundException, NessieConflictException {
     String someHash = api.getReference().refName("main").get().getHash();
     String branchName = "commitLogPagingAndFiltering";
@@ -635,7 +643,7 @@ public abstract class AbstractTestRest {
   }
 
   @Test
-  void commitLogPaging() throws NessieNotFoundException, NessieConflictException {
+  public void commitLogPaging() throws NessieNotFoundException, NessieConflictException {
     String someHash = api.getReference().refName("main").get().getHash();
     String branchName = "commitLogPaging";
     Branch branch = Branch.of(branchName, someHash);
@@ -673,7 +681,7 @@ public abstract class AbstractTestRest {
         completeLog.stream().map(CommitMeta::getMessage).collect(Collectors.toList()), allMessages);
   }
 
-  private void verifyPaging(
+  protected void verifyPaging(
       String branchName,
       int commits,
       int pageSizeHint,
@@ -716,7 +724,7 @@ public abstract class AbstractTestRest {
   }
 
   @Test
-  void multiget() throws NessieNotFoundException, NessieConflictException {
+  public void multiget() throws NessieNotFoundException, NessieConflictException {
     final String branch = "foo";
     Reference r =
         api.createReference().sourceRefName("main").reference(Branch.of(branch, null)).create();
@@ -748,16 +756,16 @@ public abstract class AbstractTestRest {
         .delete();
   }
 
-  private static final class ContentAndOperationType {
+  public static final class ContentAndOperationType {
     final Type type;
     final Operation operation;
     final Operation globalOperation;
 
-    ContentAndOperationType(Type type, Operation operation) {
+    public ContentAndOperationType(Type type, Operation operation) {
       this(type, operation, null);
     }
 
-    ContentAndOperationType(Type type, Operation operation, Operation globalOperation) {
+    public ContentAndOperationType(Type type, Operation operation, Operation globalOperation) {
       this.type = type;
       this.operation = operation;
       this.globalOperation = globalOperation;
@@ -781,7 +789,7 @@ public abstract class AbstractTestRest {
     }
   }
 
-  static Stream<ContentAndOperationType> contentAndOperationTypes() {
+  public static Stream<ContentAndOperationType> contentAndOperationTypes() {
     return Stream.of(
         new ContentAndOperationType(
             Type.ICEBERG_TABLE,
@@ -835,7 +843,7 @@ public abstract class AbstractTestRest {
   }
 
   @Test
-  void verifyAllContentAndOperationTypes() throws NessieNotFoundException, NessieConflictException {
+  public void verifyAllContentAndOperationTypes() throws NessieNotFoundException, NessieConflictException {
     String branchName = "contentAndOperationAll";
     Reference r =
         api.createReference().sourceRefName("main").reference(Branch.of(branchName, null)).create();
@@ -865,7 +873,7 @@ public abstract class AbstractTestRest {
 
   @ParameterizedTest
   @MethodSource("contentAndOperationTypes")
-  void verifyContentAndOperationTypesIndividually(ContentAndOperationType contentAndOperationType)
+  public void verifyContentAndOperationTypesIndividually(ContentAndOperationType contentAndOperationType)
       throws NessieNotFoundException, NessieConflictException {
     String branchName = "contentAndOperation_" + contentAndOperationType;
     Reference r =
@@ -897,7 +905,7 @@ public abstract class AbstractTestRest {
   }
 
   @Test
-  void filterEntriesByType() throws NessieNotFoundException, NessieConflictException {
+  public void filterEntriesByType() throws NessieNotFoundException, NessieConflictException {
     final String branch = "filterTypes";
     Reference r =
         api.createReference().sourceRefName("main").reference(Branch.of(branch, null)).create();
@@ -1132,7 +1140,7 @@ public abstract class AbstractTestRest {
   }
 
   @Test
-  void checkSpecialCharacterRoundTrip() throws NessieNotFoundException, NessieConflictException {
+  public void checkSpecialCharacterRoundTrip() throws NessieNotFoundException, NessieConflictException {
     final String branch = "specialchar";
     Reference r =
         api.createReference().sourceRefName("main").reference(Branch.of(branch, null)).create();
@@ -1155,7 +1163,7 @@ public abstract class AbstractTestRest {
   }
 
   @Test
-  void checkServerErrorPropagation() throws NessieNotFoundException, NessieConflictException {
+  public void checkServerErrorPropagation() throws NessieNotFoundException, NessieConflictException {
     final String branch = "bar";
     api.createReference().sourceRefName("main").reference(Branch.of(branch, null)).create();
     assertThatThrownBy(
@@ -1177,7 +1185,7 @@ public abstract class AbstractTestRest {
     "abc'de..blah" + COMMA_VALID_HASH_3,
     "abc'de@{blah" + COMMA_VALID_HASH_3
   })
-  void invalidBranchNames(String invalidBranchName, String validHash) {
+  public void invalidBranchNames(String invalidBranchName, String validHash) {
     ContentsKey key = ContentsKey.of("x");
     Tag tag = Tag.of("valid", validHash);
 
@@ -1309,7 +1317,7 @@ public abstract class AbstractTestRest {
     "abc'de..blah" + COMMA_VALID_HASH_3,
     "abc'de@{blah" + COMMA_VALID_HASH_3
   })
-  void invalidHashes(String invalidHashIn, String validHash) {
+  public void invalidHashes(String invalidHashIn, String validHash) {
     // CsvSource maps an empty string as null
     String invalidHash = invalidHashIn != null ? invalidHashIn : "";
 
@@ -1450,7 +1458,7 @@ public abstract class AbstractTestRest {
     "abc'de..blah" + COMMA_VALID_HASH_3,
     "abc'de@{blah" + COMMA_VALID_HASH_3
   })
-  void invalidTags(String invalidTagNameIn, String validHash) {
+  public void invalidTags(String invalidTagNameIn, String validHash) {
     Assumptions.assumeThat(httpClient).isNotNull();
     // CsvSource maps an empty string as null
     String invalidTagName = invalidTagNameIn != null ? invalidTagNameIn : "";
@@ -1692,7 +1700,7 @@ public abstract class AbstractTestRest {
     assertThat(testTagRef.getHash()).isEqualTo(main.getHash());
   }
 
-  void unwrap(Executable exec) throws Throwable {
+  protected void unwrap(Executable exec) throws Throwable {
     try {
       exec.execute();
     } catch (Throwable targetException) {
