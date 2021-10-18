@@ -27,7 +27,7 @@ import org.projectnessie.versioned.Key;
 /**
  * API helper method to encapsulate parameters for {@link DatabaseAdapter#commit(CommitAttempt)}.
  */
-@Value.Immutable(lazyhash = true)
+@Value.Immutable
 public interface CommitAttempt {
 
   /**

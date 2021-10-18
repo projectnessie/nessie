@@ -87,15 +87,15 @@ public class TestModelObjectsSerialization {
                         .name(ContentsKey.fromPathString("/tmp/testpath"))
                         .build())
                 .token(HASH)
-                .hasMore(true)
+                .isHasMore(true)
                 .build(),
             EntriesResponse.class,
-            Json.noQuotes("hasMore", true)
-                .add("token", HASH)
+            Json.from("token", HASH)
                 .addArrNoQuotes(
                     "entries",
                     Json.from("type", "ICEBERG_TABLE")
-                        .addNoQuotes("name", Json.arr("elements", "/tmp/testpath")))),
+                        .addNoQuotes("name", Json.arr("elements", "/tmp/testpath")))
+                .addNoQuotes("hasMore", true)),
         new Case(
             ImmutableLogResponse.builder()
                 .addOperations()
@@ -111,11 +111,10 @@ public class TestModelObjectsSerialization {
                         .putProperties("prop1", "val1")
                         .signedOffBy("signer@example.com")
                         .build())
-                .hasMore(true)
+                .isHasMore(true)
                 .build(),
             LogResponse.class,
-            Json.noQuotes("hasMore", true)
-                .add("token", HASH)
+            Json.from("token", HASH)
                 .addArrNoQuotes(
                     "operations",
                     Json.from("hash", HASH)
@@ -125,7 +124,8 @@ public class TestModelObjectsSerialization {
                         .add("message", "test commit")
                         .add("commitTime", now.toString())
                         .add("authorTime", now.toString())
-                        .addNoQuotes("properties", Json.from("prop1", "val1")))),
+                        .addNoQuotes("properties", Json.from("prop1", "val1")))
+                .addNoQuotes("hasMore", true)),
         new Case(
             ImmutableMerge.builder().fromHash(HASH).fromRefName(branchName).build(),
             Merge.class,

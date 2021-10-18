@@ -183,7 +183,7 @@ class TestResultStreamPaginator {
     }
 
     @Override
-    public boolean hasMore() {
+    public boolean isHasMore() {
       return more;
     }
 

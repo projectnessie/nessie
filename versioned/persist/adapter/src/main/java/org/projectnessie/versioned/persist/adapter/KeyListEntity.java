@@ -22,7 +22,7 @@ import org.projectnessie.versioned.Hash;
  * Persistable entity with a list of keys for {@link
  * org.projectnessie.versioned.persist.adapter.CommitLogEntry#getKeyListsIds()}.
  */
-@Value.Immutable(lazyhash = true)
+@Value.Immutable
 public interface KeyListEntity {
   Hash getId();
 

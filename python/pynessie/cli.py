@@ -250,8 +250,6 @@ def log(  # noqa: C901
             end_hash = revision_range
 
     filtering_args: Any = {}
-    if number:
-        filtering_args["max"] = str(number)
     if start_hash:
         filtering_args["startHash"] = start_hash
     if end_hash:
@@ -261,7 +259,7 @@ def log(  # noqa: C901
         filtering_args["query_expression"] = expr
 
     # TODO: limiting by path is not yet supported.
-    log_result = ctx.nessie.get_log(start_ref=ref, **filtering_args)
+    log_result = ctx.nessie.get_log(start_ref=ref, max_records=number, **filtering_args)
     if ctx.json:
         click.echo(CommitMetaSchema().dumps(log_result, many=True))
     else:

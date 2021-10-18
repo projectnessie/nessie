@@ -22,10 +22,12 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import org.immutables.value.Value;
+import org.projectnessie.model.ImmutableContentsKey.Builder;
 
 /**
  * Key for the contents of an object.
@@ -33,7 +35,7 @@ import org.immutables.value.Value;
  * <p>For URL encoding, embedded periods within a segment are replaced with zero byte values before
  * passing in a url string.
  */
-@Value.Immutable(prehash = true)
+@Value.Immutable(lazyhash = true)
 @JsonSerialize(as = ImmutableContentsKey.class)
 @JsonDeserialize(as = ImmutableContentsKey.class)
 public abstract class ContentsKey {
@@ -53,26 +55,50 @@ public abstract class ContentsKey {
    *     from {@link ContentsKey#getElements()}.
    */
   @JsonIgnore
-  @Value.Derived
+  @Value.Redacted
   public Namespace getNamespace() {
-    return Namespace.of(getElements());
+    return Namespace.of(getElements().subList(0, getElements().size() - 1));
+  }
+
+  @JsonIgnore
+  @Value.Redacted
+  public String getName() {
+    return getElements().get(getElements().size() - 1);
+  }
+
+  public static ContentsKey of(Namespace namespace, String name) {
+    Builder b = ImmutableContentsKey.builder();
+    if (namespace != null && !namespace.isEmpty()) {
+      b.addElements(namespace.getElements());
+    }
+    return b.addElements(name).build();
   }
 
   public static ContentsKey of(String... elements) {
+    Objects.requireNonNull(elements, "Elements array must not be null");
     return ImmutableContentsKey.builder().elements(Arrays.asList(elements)).build();
   }
 
   @JsonCreator
   public static ContentsKey of(@JsonProperty("elements") List<String> elements) {
+    Objects.requireNonNull(elements);
     return ImmutableContentsKey.builder().elements(elements).build();
   }
 
   @Value.Check
   protected void validate() {
-    for (String e : getElements()) {
-      if (e.contains(ZERO_BYTE_STRING)) {
-        throw new IllegalArgumentException("An object key cannot contain a zero byte.");
+    List<String> elements = getElements();
+    for (String e : elements) {
+      if (e == null) {
+        throw new IllegalArgumentException("An object key must not contain a null element.");
       }
+      if (e.contains(ZERO_BYTE_STRING)) {
+        throw new IllegalArgumentException("An object key must not contain a zero byte.");
+      }
+    }
+    if (elements.get(elements.size() - 1).isEmpty()) {
+      throw new IllegalArgumentException(
+          "An object key must not contain an empty name (last element).");
     }
   }
 

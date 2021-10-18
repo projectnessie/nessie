@@ -215,7 +215,7 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
       if (items.size() == max + 1) {
         return ImmutableLogResponse.builder()
             .addAllOperations(items.subList(0, max))
-            .hasMore(true)
+            .isHasMore(true)
             .token(items.get(max).getHash())
             .build();
       }

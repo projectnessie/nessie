@@ -135,7 +135,8 @@ public interface HttpTreeApi {
     @APIResponse(responseCode = "409", description = "Reference already exists"),
   })
   Reference createReference(
-      @Nullable
+      @Valid
+          @Nullable
           @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           @Parameter(description = "Source named reference")
           @QueryParam("sourceRefName")
@@ -173,7 +174,8 @@ public interface HttpTreeApi {
     @APIResponse(responseCode = "404", description = "Ref not found")
   })
   Reference getReferenceByName(
-      @NotNull
+      @Valid
+          @NotNull
           @Pattern(
               regexp = Validation.REF_NAME_OR_HASH_REGEX,
               message = Validation.REF_NAME_OR_HASH_MESSAGE)
@@ -195,8 +197,8 @@ public interface HttpTreeApi {
    * <p>Invoking {@code getEntries()} does <em>not</em> guarantee to return all commit log entries
    * of a given reference, because the result can be truncated by the backend.
    *
-   * <p>To implement paging, check {@link EntriesResponse#hasMore() EntriesResponse.hasMore()} and,
-   * if {@code true}, pass the value of {@link EntriesResponse#getToken()
+   * <p>To implement paging, check {@link EntriesResponse#isHasMore() EntriesResponse.isHasMore()}
+   * and, if {@code true}, pass the value of {@link EntriesResponse#getToken()
    * EntriesResponse.getToken()} in the next invocation of {@code getEntries()} as the {@code
    * pageToken} parameter.
    *
@@ -249,14 +251,15 @@ public interface HttpTreeApi {
     @APIResponse(responseCode = "404", description = "Ref not found")
   })
   EntriesResponse getEntries(
-      @NotNull
+      @Valid
+          @NotNull
           @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           @Parameter(
               description = "name of ref to fetch from",
               examples = {@ExampleObject(ref = "ref")})
           @PathParam("ref")
           String refName,
-      @NotNull @Valid @BeanParam EntriesParams params)
+      @Valid @NotNull @BeanParam EntriesParams params)
       throws NessieNotFoundException;
 
   /**
@@ -270,7 +273,7 @@ public interface HttpTreeApi {
    * <p>Invoking {@code getCommitLog()} does <em>not</em> guarantee to return all commit log entries
    * of a given reference, because the result can be truncated by the backend.
    *
-   * <p>To implement paging, check {@link LogResponse#hasMore() LogResponse.hasMore()} and, if
+   * <p>To implement paging, check {@link LogResponse#isHasMore() LogResponse.isHasMore()} and, if
    * {@code true}, pass the value of {@link LogResponse#getToken() LogResponse.getToken()} in the
    * next invocation of {@code getCommitLog()} as the {@code pageToken} parameter.
    *
@@ -319,14 +322,15 @@ public interface HttpTreeApi {
     @APIResponse(responseCode = "404", description = "Ref doesn't exists")
   })
   LogResponse getCommitLog(
-      @NotNull
+      @Valid
+          @NotNull
           @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           @Parameter(
               description = "ref to show log from",
               examples = {@ExampleObject(ref = "ref")})
           @PathParam("ref")
           String ref,
-      @NotNull @Valid @BeanParam CommitLogParams params)
+      @Valid @NotNull @BeanParam CommitLogParams params)
       throws NessieNotFoundException;
 
   /** Update a tag. */
@@ -346,14 +350,16 @@ public interface HttpTreeApi {
     @APIResponse(responseCode = "412", description = "Update conflict")
   })
   void assignTag(
-      @NotNull
+      @Valid
+          @NotNull
           @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           @Parameter(
               description = "Tag name to reassign",
               examples = {@ExampleObject(ref = "ref")})
           @PathParam("tagName")
           String tagName,
-      @NotNull
+      @Valid
+          @NotNull
           @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           @Parameter(
               description = "Expected previous hash of tag",
@@ -386,14 +392,16 @@ public interface HttpTreeApi {
     @APIResponse(responseCode = "409", description = "update conflict"),
   })
   void deleteTag(
-      @NotNull
+      @Valid
+          @NotNull
           @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           @Parameter(
               description = "Tag to delete",
               examples = {@ExampleObject(ref = "ref")})
           @PathParam("tagName")
           String tagName,
-      @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+      @Valid
+          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           @Parameter(
               description = "Expected hash of tag",
               examples = {@ExampleObject(ref = "hash")})
@@ -418,14 +426,16 @@ public interface HttpTreeApi {
     @APIResponse(responseCode = "409", description = "Update conflict")
   })
   void assignBranch(
-      @NotNull
+      @Valid
+          @NotNull
           @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           @Parameter(
               description = "Tag name to reassign",
               examples = {@ExampleObject(ref = "ref")})
           @PathParam("branchName")
           String branchName,
-      @NotNull
+      @Valid
+          @NotNull
           @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           @Parameter(
               description = "Expected previous hash of tag",
@@ -458,14 +468,16 @@ public interface HttpTreeApi {
     @APIResponse(responseCode = "409", description = "update conflict"),
   })
   void deleteBranch(
-      @NotNull
+      @Valid
+          @NotNull
           @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           @Parameter(
               description = "Branch to delete",
               examples = {@ExampleObject(ref = "ref")})
           @PathParam("branchName")
           String branchName,
-      @NotNull
+      @Valid
+          @NotNull
           @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           @Parameter(
               description = "Expected hash of tag",
@@ -494,21 +506,24 @@ public interface HttpTreeApi {
     @APIResponse(responseCode = "409", description = "update conflict")
   })
   void transplantCommitsIntoBranch(
-      @NotNull
+      @Valid
+          @NotNull
           @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           @Parameter(
               description = "Branch to transplant into",
               examples = {@ExampleObject(ref = "ref")})
           @PathParam("branchName")
           String branchName,
-      @NotNull
+      @Valid
+          @NotNull
           @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           @Parameter(
               description = "Expected hash of tag.",
               examples = {@ExampleObject(ref = "hash")})
           @QueryParam("expectedHash")
           String hash,
-      @Parameter(
+      @Valid
+          @Parameter(
               description = "commit message",
               examples = {@ExampleObject(ref = "commitMessage")})
           @QueryParam("message")
@@ -545,14 +560,16 @@ public interface HttpTreeApi {
     @APIResponse(responseCode = "409", description = "update conflict")
   })
   void mergeRefIntoBranch(
-      @NotNull
+      @Valid
+          @NotNull
           @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           @Parameter(
               description = "Branch to merge into",
               examples = {@ExampleObject(ref = "ref")})
           @PathParam("branchName")
           String branchName,
-      @NotNull
+      @Valid
+          @NotNull
           @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           @Parameter(
               description = "Expected current HEAD of 'branchName'",
@@ -612,14 +629,16 @@ public interface HttpTreeApi {
     @APIResponse(responseCode = "409", description = "Update conflict")
   })
   Branch commitMultipleOperations(
-      @NotNull
+      @Valid
+          @NotNull
           @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           @Parameter(
               description = "Branch to change, defaults to default branch.",
               examples = {@ExampleObject(ref = "ref")})
           @PathParam("branchName")
           String branchName,
-      @NotNull
+      @Valid
+          @NotNull
           @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           @Parameter(
               description = "Expected hash of branch.",

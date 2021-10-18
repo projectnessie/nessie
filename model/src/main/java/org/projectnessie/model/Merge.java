@@ -17,10 +17,10 @@ package org.projectnessie.model;
 
 import static org.projectnessie.model.Validation.validateHash;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Pattern;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.media.SchemaProperty;
@@ -34,17 +34,17 @@ import org.immutables.value.Value;
       @SchemaProperty(name = "fromRefName", pattern = Validation.REF_NAME_REGEX),
       @SchemaProperty(name = "fromHash", pattern = Validation.HASH_REGEX)
     })
-@Value.Immutable(prehash = true)
+@Value.Immutable
 @JsonSerialize(as = ImmutableMerge.class)
 @JsonDeserialize(as = ImmutableMerge.class)
 public interface Merge {
 
   @NotBlank
-  @JsonFormat(pattern = Validation.HASH_REGEX)
+  @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
   String getFromHash();
 
   @NotBlank
-  @JsonFormat(pattern = Validation.REF_NAME_REGEX)
+  @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
   String getFromRefName();
 
   /**

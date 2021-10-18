@@ -20,7 +20,7 @@ import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.persist.adapter.DatabaseConnectionConfig;
 
-@Value.Immutable(lazyhash = true)
+@Value.Immutable
 public interface MongoClientConfig extends DatabaseConnectionConfig {
 
   static MongoClientConfig of(MongoClient client) {

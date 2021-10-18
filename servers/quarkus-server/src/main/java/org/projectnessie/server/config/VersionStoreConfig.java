@@ -52,6 +52,7 @@ public interface VersionStoreConfig {
   @ConfigMapping(prefix = "nessie.version.store.rocks")
   interface RocksVersionStoreConfig {
     @WithName("db-path")
+    @WithDefault("/tmp/nessie-rocksdb")
     String getDbPath();
   }
 }

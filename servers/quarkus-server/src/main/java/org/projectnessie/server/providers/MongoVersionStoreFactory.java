@@ -19,7 +19,6 @@ import static org.projectnessie.server.config.VersionStoreConfig.VersionStoreTyp
 
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.VersionStore;
@@ -33,9 +32,6 @@ import org.projectnessie.versioned.persist.store.PersistVersionStore;
 @StoreType(MONGO)
 @Dependent
 public class MongoVersionStoreFactory implements VersionStoreFactory {
-
-  @ConfigProperty(name = "quarkus.mongodb.database")
-  String databaseName;
 
   @Inject MongoDatabaseClient client;
   @Inject NonTransactionalDatabaseAdapterConfig config;
@@ -52,7 +48,7 @@ public class MongoVersionStoreFactory implements VersionStoreFactory {
             .withConnector(client)
             .build();
 
-    adapter.reinitializeRepo(serverConfig.getDefaultBranch());
+    adapter.initializeRepo(serverConfig.getDefaultBranch());
 
     return new PersistVersionStore<>(adapter, worker);
   }

@@ -187,7 +187,13 @@ def list_tables(
 
 
 def list_logs(
-    base_url: str, auth: AuthBase, ref: str, hash_on_ref: Optional[str] = None, ssl_verify: bool = True, **filtering_args: Any
+    base_url: str,
+    auth: AuthBase,
+    ref: str,
+    hash_on_ref: Optional[str] = None,
+    ssl_verify: bool = True,
+    max_records: Optional[int] = None,
+    **filtering_args: Any
 ) -> dict:
     """Fetch a list of all logs from a known starting reference.
 
@@ -195,6 +201,7 @@ def list_logs(
     :param auth: Authentication settings
     :param ref: starting reference
     :param hash_on_ref: hash on reference
+    :param max_records: maximum number of entries to return
     :param ssl_verify: ignore ssl errors if False
     :param filtering_args: All of the args used to filter the log
     :return: json dict of Nessie logs
@@ -202,6 +209,8 @@ def list_logs(
     params = filtering_args
     if hash_on_ref:
         params["hashOnRef"] = hash_on_ref
+    if max_records:
+        params["max"] = max_records
     return cast(dict, _get(base_url + "/trees/tree/{}/log".format(ref), auth, ssl_verify=ssl_verify, params=filtering_args))
 
 

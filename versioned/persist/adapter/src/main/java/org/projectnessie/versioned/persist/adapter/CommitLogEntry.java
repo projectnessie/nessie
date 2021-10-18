@@ -23,7 +23,7 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 
 /** Represents a commit-log-entry stored in the database. */
-@Value.Immutable(lazyhash = true)
+@Value.Immutable
 public interface CommitLogEntry {
   /** Creation timestamp in microseconds since epoch. */
   long getCreatedTime();

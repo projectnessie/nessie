@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.StringJoiner;
 import javax.validation.constraints.NotNull;
 import org.immutables.value.Value;
 
@@ -31,7 +30,7 @@ import org.immutables.value.Value;
  * table and is not included in the {@link Namespace} itself. Therefore, the {@link Namespace} is
  * always consisting of the first <b>N-1</b> elements.
  */
-@Value.Immutable(prehash = true)
+@Value.Immutable
 @JsonSerialize(as = ImmutableNamespace.class)
 @JsonDeserialize(as = ImmutableNamespace.class)
 public abstract class Namespace {
@@ -40,22 +39,27 @@ public abstract class Namespace {
   static final String ERROR_MSG_TEMPLATE =
       "'%s' is not a valid namespace identifier (should not end with '.')";
 
-  public static final ImmutableNamespace EMPTY = ImmutableNamespace.builder().name("").build();
+  public static final Namespace EMPTY = ImmutableNamespace.builder().name("").build();
 
   @JsonValue
   @NotNull
   public abstract String name();
 
+  @Value.Redacted
   public boolean isEmpty() {
-    return "".equals(name());
+    return name().isEmpty();
+  }
+
+  @Value.Redacted
+  public String[] getElements() {
+    return name().split("\\.");
   }
 
   /**
-   * Builds a {@link Namespace} instance out of the first <b>N-1</b> elements.
+   * Builds a {@link Namespace} instance for the given elements.
    *
    * @param elements The elements to build the namespace from.
-   * @return A {@link Namespace} instance, where the {@link Namespace#name()} represents the first
-   *     <b>N-1</b> elements. If <b>elements</b> consists only of a single element, then {@link
+   * @return The constructed {@link Namespace} instance. If <b>elements</b> is empty, then {@link
    *     Namespace#name()} will be an empty string.
    */
   public static Namespace of(String... elements) {
@@ -69,19 +73,15 @@ public abstract class Namespace {
           String.format(ERROR_MSG_TEMPLATE, Arrays.toString(elements)));
     }
 
-    StringJoiner joiner = new StringJoiner(DOT);
-    for (int i = 0; i < elements.length - 1; i++) {
-      joiner.add(elements[i]);
-    }
-    return ImmutableNamespace.builder().name(joiner.toString()).build();
+    String name = String.join(DOT, Arrays.asList(elements));
+    return ImmutableNamespace.builder().name(name).build();
   }
 
   /**
-   * Builds a {@link Namespace} instance out of the first <b>N-1</b> elements.
+   * Builds a {@link Namespace} instance for the given elements.
    *
    * @param elements The elements to build the namespace from.
-   * @return A {@link Namespace} instance, where the {@link Namespace#name()} represents the first
-   *     <b>N-1</b> elements. If <b>elements</b> consists only of a single element, then {@link
+   * @return The constructed {@link Namespace} instance. If <b>elements</b> is empty, then {@link
    *     Namespace#name()} will be an empty string.
    */
   public static Namespace of(List<String> elements) {
@@ -90,17 +90,19 @@ public abstract class Namespace {
   }
 
   /**
-   * Builds a {@link Namespace} instance out of the first <b>N-1</b> elements when those are split
-   * by the <b>.</b> (dot) character.
+   * Builds a {@link Namespace} instance for the given elements split by the <b>.</b> (dot)
+   * character.
    *
    * @param identifier The identifier to build the namespace from.
    * @return Splits the given <b>identifier</b> by <b>.</b> and returns a {@link Namespace}
-   *     instance, where the {@link Namespace#name()} represents the first <b>N-1</b> elements. If
-   *     <b>identifier</b> consists only of a single element, then {@link Namespace#name()} will be
-   *     an empty string.
+   *     instance. If <b>identifier</b> is empty, then {@link Namespace#name()} will be an empty
+   *     string.
    */
   public static Namespace parse(String identifier) {
     Objects.requireNonNull(identifier, "identifier must be non-null");
+    if (identifier.isEmpty()) {
+      return EMPTY;
+    }
     if (identifier.endsWith(DOT)) {
       throw new IllegalArgumentException(String.format(ERROR_MSG_TEMPLATE, identifier));
     }
