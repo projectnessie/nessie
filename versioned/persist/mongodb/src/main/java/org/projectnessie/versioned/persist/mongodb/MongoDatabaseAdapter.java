@@ -59,9 +59,12 @@ import org.projectnessie.versioned.persist.serialize.ProtoSerialization.Parser;
 public class MongoDatabaseAdapter
     extends NonTransactionalDatabaseAdapter<NonTransactionalDatabaseAdapterConfig> {
 
+  private static final String ID_PROPERTY_NAME = "_id";
   private static final String ID_PREFIX_NAME = "prefix";
   private static final String ID_HASH_NAME = "hash";
-  private static final String ID_PREFIX_PATH = "_id." + ID_PREFIX_NAME;
+  private static final String ID_PREFIX_PATH = ID_PROPERTY_NAME + "." + ID_PREFIX_NAME;
+  private static final String DATA_PROPERTY_NAME = "data";
+  private static final String GLOBAL_ID_PROPERTY_NAME = "globalId";
 
   private final String keyPrefix;
   private final String globalPointerKey;
@@ -110,16 +113,16 @@ public class MongoDatabaseAdapter
 
   private static Document toDoc(Document id, byte[] data) {
     Document doc = new Document();
-    doc.put("_id", id);
-    doc.put("data", data);
+    doc.put(ID_PROPERTY_NAME, id);
+    doc.put(DATA_PROPERTY_NAME, data);
     return doc;
   }
 
   private Document toDoc(GlobalStatePointer pointer) {
     Document doc = new Document();
-    doc.put("_id", globalPointerKey);
-    doc.put("data", pointer.toByteArray());
-    doc.put("globalId", pointer.getGlobalId().toByteArray());
+    doc.put(ID_PROPERTY_NAME, globalPointerKey);
+    doc.put(DATA_PROPERTY_NAME, pointer.toByteArray());
+    doc.put(GLOBAL_ID_PROPERTY_NAME, pointer.getGlobalId().toByteArray());
     return doc;
   }
 
@@ -175,7 +178,7 @@ public class MongoDatabaseAdapter
   }
 
   private void delete(MongoCollection<Document> collection, Set<Hash> ids) {
-    DeleteResult result = collection.deleteMany(Filters.in("_id", toIds(ids)));
+    DeleteResult result = collection.deleteMany(Filters.in(ID_PROPERTY_NAME, toIds(ids)));
 
     if (!result.wasAcknowledged()) {
       throw new IllegalStateException("Unacknowledged write to " + collection.getNamespace());
@@ -188,7 +191,7 @@ public class MongoDatabaseAdapter
       return null;
     }
 
-    Binary data = doc.get("data", Binary.class);
+    Binary data = doc.get(DATA_PROPERTY_NAME, Binary.class);
     if (data == null) {
       return null;
     }
@@ -221,7 +224,8 @@ public class MongoDatabaseAdapter
   private <T> List<T> fetchMappedPage(
       MongoCollection<Document> collection, List<Hash> hashes, Function<Document, T> mapper) {
     List<Document> ids = hashes.stream().map(this::toId).collect(Collectors.toList());
-    FindIterable<Document> docs = collection.find(Filters.in("_id", ids)).limit(hashes.size());
+    FindIterable<Document> docs =
+        collection.find(Filters.in(ID_PROPERTY_NAME, ids)).limit(hashes.size());
 
     HashMap<Hash, Document> loaded = new HashMap<>(hashes.size() * 4 / 3 + 1, 0.75f);
     for (Document doc : docs) {
@@ -263,7 +267,7 @@ public class MongoDatabaseAdapter
   }
 
   private Hash idAsHash(Document doc) {
-    Document id = doc.get("_id", Document.class);
+    Document id = doc.get(ID_PROPERTY_NAME, Document.class);
 
     String prefix = id.getString(ID_PREFIX_NAME);
     if (!keyPrefix.equals(prefix)) {
@@ -276,7 +280,7 @@ public class MongoDatabaseAdapter
   }
 
   private static byte[] data(Document doc) {
-    return doc.get("data", Binary.class).getData();
+    return doc.get(DATA_PROPERTY_NAME, Binary.class).getData();
   }
 
   @Override
@@ -376,7 +380,9 @@ public class MongoDatabaseAdapter
         client
             .getGlobalPointers()
             .replaceOne(
-                Filters.and(Filters.eq(globalPointerKey), Filters.eq("globalId", expectedGlobalId)),
+                Filters.and(
+                    Filters.eq(globalPointerKey),
+                    Filters.eq(GLOBAL_ID_PROPERTY_NAME, expectedGlobalId)),
                 doc);
 
     return result.wasAcknowledged()
