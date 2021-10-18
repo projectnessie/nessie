@@ -15,6 +15,7 @@
  */
 package org.projectnessie.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import javax.annotation.Nullable;
 import javax.validation.constraints.Size;
 import org.immutables.value.Value.Default;
@@ -30,7 +31,8 @@ public interface PaginatedResponse {
    * @return {@code true}, if there are more result items.
    */
   @Default
-  default boolean hasMore() {
+  @JsonProperty(value = "hasMore")
+  default boolean isHasMore() {
     return false;
   }
 
@@ -40,8 +42,8 @@ public interface PaginatedResponse {
    * <p>Paging tokens are opaque and the structure may change without prior notice even in patch
    * releases.
    *
-   * @return paging-token for the next invocation of an API function, if {@link #hasMore()} is
-   *     {@code true}. Undefined, if {@link #hasMore()} is {@code false}.
+   * @return paging-token for the next invocation of an API function, if {@link #isHasMore()} is
+   *     {@code true}. Undefined, if {@link #isHasMore()} is {@code false}.
    */
   @Nullable
   @Size(min = 1)

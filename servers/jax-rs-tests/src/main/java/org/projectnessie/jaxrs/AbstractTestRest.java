@@ -704,7 +704,7 @@ public abstract class AbstractTestRest {
               .queryExpression(queryExpression)
               .get();
       if (pos + pageSizeHint <= commits) {
-        assertTrue(response.hasMore());
+        assertTrue(response.isHasMore());
         assertNotNull(response.getToken());
         assertEquals(
             commitMessages.subList(pos, pos + pageSizeHint),
@@ -713,7 +713,7 @@ public abstract class AbstractTestRest {
                 .collect(Collectors.toList()));
         pageToken = response.getToken();
       } else {
-        assertFalse(response.hasMore());
+        assertFalse(response.isHasMore());
         assertNull(response.getToken());
         assertEquals(
             commitMessages.subList(pos, commitMessages.size()),

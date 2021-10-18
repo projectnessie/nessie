@@ -87,7 +87,7 @@ final class ResultStreamPaginator<R extends PaginatedResponse, E> {
             if (currentPage != null
                 && entriesFromResponse.apply(currentPage).size() == offsetInPage) {
               // Already returned the last entry in the current page
-              if (!currentPage.hasMore()) {
+              if (!currentPage.isHasMore()) {
                 eof = true;
                 return false;
               }
@@ -104,7 +104,7 @@ final class ResultStreamPaginator<R extends PaginatedResponse, E> {
                 offsetInPage = 0;
                 // an empty returned page is probably an error, let's assume something went wrong
                 if (entriesFromResponse.apply(currentPage).isEmpty()) {
-                  if (currentPage.hasMore()) {
+                  if (currentPage.isHasMore()) {
                     throw new IllegalStateException(
                         "Backend returned empty page, but indicates there are more results");
                   }

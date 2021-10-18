@@ -197,8 +197,8 @@ public interface HttpTreeApi {
    * <p>Invoking {@code getEntries()} does <em>not</em> guarantee to return all commit log entries
    * of a given reference, because the result can be truncated by the backend.
    *
-   * <p>To implement paging, check {@link EntriesResponse#hasMore() EntriesResponse.hasMore()} and,
-   * if {@code true}, pass the value of {@link EntriesResponse#getToken()
+   * <p>To implement paging, check {@link EntriesResponse#isHasMore() EntriesResponse.isHasMore()}
+   * and, if {@code true}, pass the value of {@link EntriesResponse#getToken()
    * EntriesResponse.getToken()} in the next invocation of {@code getEntries()} as the {@code
    * pageToken} parameter.
    *
@@ -273,7 +273,7 @@ public interface HttpTreeApi {
    * <p>Invoking {@code getCommitLog()} does <em>not</em> guarantee to return all commit log entries
    * of a given reference, because the result can be truncated by the backend.
    *
-   * <p>To implement paging, check {@link LogResponse#hasMore() LogResponse.hasMore()} and, if
+   * <p>To implement paging, check {@link LogResponse#isHasMore() LogResponse.isHasMore()} and, if
    * {@code true}, pass the value of {@link LogResponse#getToken() LogResponse.getToken()} in the
    * next invocation of {@code getCommitLog()} as the {@code pageToken} parameter.
    *
