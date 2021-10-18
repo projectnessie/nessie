@@ -17,12 +17,12 @@ package org.projectnessie.model;
 
 import static org.projectnessie.model.Validation.validateHash;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.List;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -47,7 +47,7 @@ public interface Transplant {
   List<String> getHashesToTransplant();
 
   @NotBlank
-  @JsonFormat(pattern = Validation.REF_NAME_REGEX)
+  @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
   String getFromRefName();
 
   /**
