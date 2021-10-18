@@ -56,7 +56,7 @@
     "http-proxy-middleware": "^2.0.1",
     "identity-obj-proxy": "3.0.0",
     "jest": "27.3.0",
-    "jest-circus": "27.2.5",
+    "jest-circus": "27.3.0",
     "jest-resolve": "27.3.0",
     "jest-watch-typeahead": "1.0.0",
     "mini-css-extract-plugin": "1.6.2",
