@@ -3,7 +3,7 @@
 You can quickly get started with Nessie variants by following docker templates.
 
 ## Nessie with MongoDB
-The template brings up two containers, one for nessie and one for DynamoDB. Nessie uses MongoDB as a backing store.
+The template brings up two containers, one for Nessie and one for MongoDB. Nessie uses MongoDB as a backing store.
 ```
 docker-compose up
 ```
@@ -12,7 +12,7 @@ docker-compose up
 - MongoDB root credentials - root/password
 
 ## Nessie with Amazon DynamoDB
-The template brings up two containers, one for nessie and one for DynamoDB.
+The template brings up two containers, one for Nessie and one for DynamoDB.
 ```
 docker-compose -f dynamodb/docker-compose.yml up
 ```
@@ -32,7 +32,7 @@ docker-compose -f in_memory/docker-compose.yml up
 ## Nessie with Authentication Enabled
 Nessie supports two modes of authentication - OIDC and Basic.
 
-The template brings up two containers, one for nessie and one for Keycloak (OIDC server).
+The template brings up two containers, one for Nessie and one for Keycloak (OIDC server).
 ```
 docker-compose -f authn/docker-compose.yml up
 ```
@@ -42,7 +42,7 @@ docker-compose -f authn/docker-compose.yml up
 ### OIDC Authentication
 
 The docker template uses bridge network to communicate with the keycloak server. Hence, the token has to be generated with the issuer host `keycloak` <br><br>
-_Enter the nessie container, and generate the token_
+_Enter the Nessie container, and generate the token_
 ```
 docker exec -it authn_nessie_1 /bin/bash
 ```
