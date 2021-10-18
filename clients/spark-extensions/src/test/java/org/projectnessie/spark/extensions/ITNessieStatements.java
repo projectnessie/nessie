@@ -571,13 +571,24 @@ public class ITNessieStatements extends AbstractSparkTest {
             "requirement failed: The command works only when the catalog is a NessieCatalog. Either set the catalog via USE <catalog_name> or provide the catalog during execution: <command> IN <catalog_name>.");
 
     // Catalog picked from the session
-    spark.sessionState().catalogManager().setCurrentCatalog("nessie");
-    assertThat(sql("LIST REFERENCES")).containsExactlyInAnyOrder(row("Branch", "main", hash));
-
+    String catalog = spark.sessionState().catalogManager().currentCatalog().name();
     spark.sessionState().catalogManager().setCurrentCatalog("hive");
     assertThatThrownBy(() -> sql("LIST REFERENCES"))
         .hasMessage(
             "requirement failed: The command works only when the catalog is a NessieCatalog. Either set the catalog via USE <catalog_name> or provide the catalog during execution: <command> IN <catalog_name>.");
+    spark.sessionState().catalogManager().setCurrentCatalog(catalog);
+  }
+
+  @Test
+  void testValidCatalog() {
+    assertThat(sql("LIST REFERENCES IN nessie"))
+        .containsExactlyInAnyOrder(row("Branch", "main", hash));
+
+    // Catalog picked from the session
+    String catalog = spark.sessionState().catalogManager().currentCatalog().name();
+    spark.sessionState().catalogManager().setCurrentCatalog("nessie");
+    assertThat(sql("LIST REFERENCES")).containsExactlyInAnyOrder(row("Branch", "main", hash));
+    spark.sessionState().catalogManager().setCurrentCatalog(catalog);
   }
 
   private static Object[] convert(Object[] object) {
