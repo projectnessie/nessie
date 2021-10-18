@@ -34,9 +34,9 @@ import org.projectnessie.versioned.persist.tx.TxDatabaseAdapterConfig;
  * <p>This interface overrides all getters to assign explicit Quarkus configuration names and
  * default values to them.
  */
-@ConfigMapping(prefix = "nessie.version.store.advance")
+@ConfigMapping(prefix = "nessie.version.store.advanced")
 @RegisterForReflection(targets = TrimmedStringConverter.class)
-public interface QuarkusVersionStoreAdvanceConfig
+public interface QuarkusVersionStoreAdvancedConfig
     extends NonTransactionalDatabaseAdapterConfig, TxDatabaseAdapterConfig {
 
   @WithName("key-prefix")
