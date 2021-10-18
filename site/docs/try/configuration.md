@@ -65,21 +65,21 @@ When setting `nessie.version.store.type=DYNAMO` which enables DynamoDB as the ve
 !!! info
     A complete set of DynamoDB configuration options for Quarkus can be found on [quarkus.io](https://quarkus.io/guides/all-config#quarkus-amazon-dynamodb_quarkus-amazon-dynamodb-amazon-dynamodb)
 
-### Database Adapter Settings
+### Version Store Advanced Settings
 
 The following configurations are advanced configurations to configure how Nessie will store the data into the configured data store:
 
-| Property                                        | Default values      | Type     | Description                                                         |
-| ----------------------------------------------- | ------------------- | -------- |-------------------------------------------------------------------- |
-| `nessie.adapter.key-prefix`                     |                     | `String` | Sets prefix for all primary-keys.  |
-| `nessie.adapter.parent-per-commit`              | `20`                | `int`    | Sets the number of parent-commit-hashes stored in Nessie store.  |
-| `nessie.adapter.key-list-distance`              | `20`                | `int`    | Sets the number "reachable" or "known" keys for each `CommitLogEntry`.   |
-| `nessie.adapter.max-key-list-size`              | `250_000`           | `int`    | Sets the maximum size of a database object/row. This parameter is respected for `CommitLogEntry` and `KeyList`. This value must not be "on the edge" - means: it must leave enough room for a somewhat large-ish list   |
-| `nessie.adapter.default-max-key-list-size`      | `250_000`           | `int`    | Sets the default number of a database object/row. Database adapter implementations that actually do have a hard technical or highly recommended limit on a maximum db-object / db-row size limitation should use a "good" value here.   |
-| `nessie.adapter.commit-timeout`                 | `500`               | `int`    | Sets the timeout for CAS-like operations in milliseconds.   |
-| `nessie.adapter.commit-retries`                 | `Integer.MAX_VALUE` | `int`    | Sets the maximum retries for CAS-like operations.   |
-| `nessie.adapter.nontx.parents-per-global-commit`| `50`                | `int`    | Sets the number of parent-global-commit-hashes.   |
-| `nessie.adapter.tx.batch-size`                  | `20`                | `int`    | Sets the DML batch size, used when writing multiple commits to a branch during a transplant or merge operation or when writing "overflow full key-lists".   |
+| Property                                                      | Default values      | Type     | Description                                                         |
+| -----------------------------------------------               | ------------------- | -------- |-------------------------------------------------------------------- |
+| `nessie.version.store.advanced.key-prefix`                     |                     | `String` | Sets prefix for all primary-keys.  |
+| `nessie.version.store.advanced.parent-per-commit`              | `20`                | `int`    | Sets the number of parent-commit-hashes stored in Nessie store.  |
+| `nessie.version.store.advanced.key-list-distance`              | `20`                | `int`    | Sets the number "reachable" or "known" keys for each `CommitLogEntry`.   |
+| `nessie.version.store.advanced.max-key-list-size`              | `250_000`           | `int`    | Sets the maximum size of a database object/row. This parameter is respected for `CommitLogEntry` and `KeyList`. This value must not be "on the edge" - means: it must leave enough room for a somewhat large-ish list   |
+| `nessie.version.store.advanced.default-max-key-list-size`      | `250_000`           | `int`    | Sets the default number of a database object/row. Database adapter implementations that actually do have a hard technical or highly recommended limit on a maximum db-object / db-row size limitation should use a "good" value here.   |
+| `nessie.version.store.advanced.commit-timeout`                 | `500`               | `int`    | Sets the timeout for CAS-like operations in milliseconds.   |
+| `nessie.version.store.advanced.commit-retries`                 | `Integer.MAX_VALUE` | `int`    | Sets the maximum retries for CAS-like operations.   |
+| `nessie.version.store.advanced.nontx.parents-per-global-commit`| `50`                | `int`    | Sets the number of parent-global-commit-hashes.   |
+| `nessie.version.store.advanced.tx.batch-size`                  | `20`                | `int`    | Sets the DML batch size, used when writing multiple commits to a branch during a transplant or merge operation or when writing "overflow full key-lists".   |
 
 ### Authentication settings
 
