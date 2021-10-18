@@ -17,12 +17,12 @@ package org.projectnessie.model;
 
 import static org.projectnessie.model.Validation.validateHash;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Pattern;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.DiscriminatorMapping;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -48,12 +48,12 @@ import org.immutables.value.Value;
 public interface Reference extends Base {
   /** Human readable reference name. */
   @NotBlank
-  @JsonFormat(pattern = Validation.REF_NAME_REGEX)
+  @Pattern(regexp = Validation.REF_NAME_REGEX)
   String getName();
 
   /** backend system id. Usually the 32-byte hash of the commit this reference points to. */
   @Nullable
-  @JsonFormat(pattern = Validation.HASH_REGEX)
+  @Pattern(regexp = Validation.HASH_REGEX)
   String getHash();
 
   /**
