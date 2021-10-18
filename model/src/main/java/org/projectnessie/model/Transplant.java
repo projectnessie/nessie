@@ -47,7 +47,7 @@ public interface Transplant {
   List<String> getHashesToTransplant();
 
   @NotBlank
-  @Pattern(regexp = Validation.REF_NAME_REGEX)
+  @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
   String getFromRefName();
 
   /**

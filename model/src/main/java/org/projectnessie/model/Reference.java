@@ -48,12 +48,12 @@ import org.immutables.value.Value;
 public interface Reference extends Base {
   /** Human readable reference name. */
   @NotBlank
-  @Pattern(regexp = Validation.REF_NAME_REGEX)
+  @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
   String getName();
 
   /** backend system id. Usually the 32-byte hash of the commit this reference points to. */
   @Nullable
-  @Pattern(regexp = Validation.HASH_REGEX)
+  @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
   String getHash();
 
   /**

@@ -40,11 +40,11 @@ import org.immutables.value.Value;
 public interface Merge {
 
   @NotBlank
-  @Pattern(regexp = Validation.HASH_REGEX)
+  @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
   String getFromHash();
 
   @NotBlank
-  @Pattern(regexp = Validation.REF_NAME_REGEX)
+  @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
   String getFromRefName();
 
   /**
