@@ -64,9 +64,10 @@ public class ITNessieStatements extends AbstractSparkTest {
   }
 
   @BeforeEach
-  void getHash() throws NessieNotFoundException {
+  void setupTestData() throws NessieNotFoundException {
     nessieClient = NessieClient.builder().withUri(url).build();
     hash = nessieClient.getTreeApi().getDefaultBranch().getHash();
+    spark.sessionState().catalogManager().setCurrentCatalog("nessie");
   }
 
   @AfterEach
@@ -200,7 +201,6 @@ public class ITNessieStatements extends AbstractSparkTest {
         .containsExactly(row("Branch", random, hash));
 
     commitAndReturnLog(refName);
-    spark.sessionState().catalogManager().setCurrentCatalog("nessie");
     sql("USE REFERENCE %s", refName);
     sql("MERGE BRANCH %s INTO main IN nessie", refName);
     Reference main = nessieClient.getTreeApi().getReferenceByName("main");
@@ -215,7 +215,6 @@ public class ITNessieStatements extends AbstractSparkTest {
     assertThat(sql("CREATE TAG %s IN nessie", random)).containsExactly(row("Tag", random, hash));
 
     commitAndReturnLog(refName);
-    spark.sessionState().catalogManager().setCurrentCatalog("nessie");
     sql("USE REFERENCE %s", refName);
     sql("MERGE BRANCH %s INTO main IN nessie", refName);
     Reference main = nessieClient.getTreeApi().getReferenceByName("main");
@@ -231,7 +230,6 @@ public class ITNessieStatements extends AbstractSparkTest {
         .containsExactly(row("Branch", random, hash));
 
     List<Object[]> commits = commitAndReturnLog(refName);
-    spark.sessionState().catalogManager().setCurrentCatalog("nessie");
     sql("USE REFERENCE %s", refName);
     sql("MERGE BRANCH %s INTO main IN nessie", refName);
     Reference main = nessieClient.getTreeApi().getReferenceByName("main");

@@ -176,7 +176,7 @@ object NessieUtils {
     require(
       catalogConf
         .get("catalog-impl")
-        .map(impl => impl.endsWith("NessieCatalog"))
+        .map(impl => impl.endsWith(".NessieCatalog"))
         .getOrElse(false),
       "The command works only when the catalog is a NessieCatalog. Either set the catalog via USE <catalog_name> or provide the catalog during execution: <command> IN <catalog_name>."
     )
