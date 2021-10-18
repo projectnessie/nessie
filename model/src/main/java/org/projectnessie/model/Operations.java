@@ -25,7 +25,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
 
 @Schema(type = SchemaType.OBJECT, title = "Operations")
-@Value.Immutable(prehash = true)
+@Value.Immutable
 @JsonSerialize(as = ImmutableOperations.class)
 @JsonDeserialize(as = ImmutableOperations.class)
 public interface Operations {

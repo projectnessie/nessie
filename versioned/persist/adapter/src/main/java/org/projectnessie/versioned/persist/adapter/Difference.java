@@ -20,7 +20,7 @@ import java.util.Optional;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.Key;
 
-@Value.Immutable(lazyhash = true)
+@Value.Immutable
 public interface Difference {
 
   Key getKey();

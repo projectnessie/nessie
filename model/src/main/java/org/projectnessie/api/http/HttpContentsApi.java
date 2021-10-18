@@ -97,13 +97,15 @@ public interface HttpContentsApi {
               examples = {@ExampleObject(ref = "ContentsKey")})
           @PathParam("key")
           ContentsKey key,
-      @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+      @Valid
+          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           @Parameter(
               description = "Reference to use. Defaults to default branch if not provided.",
               examples = {@ExampleObject(ref = "ref")})
           @QueryParam("ref")
           String ref,
-      @Nullable
+      @Valid
+          @Nullable
           @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           @Parameter(
               description = "a particular hash on the given ref",
@@ -158,13 +160,15 @@ public interface HttpContentsApi {
     @APIResponse(responseCode = "404", description = "Provided ref doesn't exists")
   })
   MultiGetContentsResponse getMultipleContents(
-      @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+      @Valid
+          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           @Parameter(
               description = "Reference to use. Defaults to default branch if not provided.",
               examples = {@ExampleObject(ref = "ref")})
           @QueryParam("ref")
           String ref,
-      @Nullable
+      @Valid
+          @Nullable
           @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           @Parameter(
               description = "a particular hash on the given ref",

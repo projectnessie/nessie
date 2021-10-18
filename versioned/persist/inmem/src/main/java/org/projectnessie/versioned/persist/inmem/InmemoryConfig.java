@@ -18,5 +18,5 @@ package org.projectnessie.versioned.persist.inmem;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.persist.adapter.DatabaseConnectionConfig;
 
-@Value.Immutable(lazyhash = true)
+@Value.Immutable
 public interface InmemoryConfig extends DatabaseConnectionConfig {}

@@ -136,6 +136,9 @@ def test_log() -> None:
             "nessie_user2",
         ],
     )
+    result = _run(runner, ["--json", "log", "-n", 1])
+    logs = simplejson.loads(result.output)
+    assert len(logs) == 1
     result = _run(runner, ["--json", "log"])
     logs = simplejson.loads(result.output)
     assert len(logs) == 2

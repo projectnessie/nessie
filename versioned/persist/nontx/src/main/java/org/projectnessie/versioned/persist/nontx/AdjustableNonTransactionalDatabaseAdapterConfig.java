@@ -18,7 +18,7 @@ package org.projectnessie.versioned.persist.nontx;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.persist.adapter.AdjustableDatabaseAdapterConfig;
 
-@Value.Immutable(lazyhash = true)
+@Value.Immutable
 public interface AdjustableNonTransactionalDatabaseAdapterConfig
     extends NonTransactionalDatabaseAdapterConfig, AdjustableDatabaseAdapterConfig {
 

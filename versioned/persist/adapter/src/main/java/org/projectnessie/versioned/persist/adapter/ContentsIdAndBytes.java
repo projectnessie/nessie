@@ -22,7 +22,7 @@ import org.immutables.value.Value;
  * Used when dealing with global states in operations for Nessie-GC, like enumerating all globally
  * managed contents. Composite of contents-id, contents-type and contents.
  */
-@Value.Immutable(lazyhash = true)
+@Value.Immutable
 public interface ContentsIdAndBytes {
   ContentsId getContentsId();
 

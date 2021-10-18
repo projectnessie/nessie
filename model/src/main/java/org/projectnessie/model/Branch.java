@@ -25,7 +25,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
 
 /** Api representation of an Nessie Tag/Branch. This object is akin to a Ref in Git terminology. */
-@Value.Immutable(prehash = true)
+@Value.Immutable
 @Schema(type = SchemaType.OBJECT, title = "Branch")
 @JsonSerialize(as = ImmutableBranch.class)
 @JsonDeserialize(as = ImmutableBranch.class)
