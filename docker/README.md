@@ -5,7 +5,7 @@ You can quickly get started with Nessie variants by following docker templates.
 ## Nessie with MongoDB
 The template brings up two containers, one for Nessie and one for MongoDB. Nessie uses MongoDB as a backing store.
 ```
-docker-compose up
+docker-compose -f mongodb/docker-compose.yml up
 ```
 - Nessie port - 19120
 - MongoDB port - 27017
@@ -19,7 +19,7 @@ docker-compose -f dynamodb/docker-compose.yml up
 - Nessie port - 19120
 - DynamoDB port - 8000
 
-## Nessie with in-memory backing store
+## Nessie with an In-memory Store
 
 ```
 docker-compose -f in_memory/docker-compose.yml up

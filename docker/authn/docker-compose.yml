@@ -24,8 +24,6 @@ services:
       - keycloak
     environment:
       - nessie.version.store.type=INMEMORY
-      - quarkus.log.console.level=DEBUG
-      - quarkus.log.level=DEBUG
       - nessie.server.authentication.enabled=true
       - quarkus.oidc.enabled=true
       - quarkus.oidc.auth-server-url=http://keycloak:8080/auth/realms/master

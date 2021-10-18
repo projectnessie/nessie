@@ -26,7 +26,6 @@ services:
       - nessie.version.store.type=MONGO
       - quarkus.mongodb.database=nessie
       - quarkus.mongodb.connection-string=mongodb://root:password@mongo:27017
-      - quarkus.log.console.level=DEBUG
   mongo:
     image: mongo
     ports:

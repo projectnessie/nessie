@@ -9,7 +9,7 @@ It is meant to be used for testing purposes only.
   docker run -p 8080:8080 -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=admin --name keycloak quay.io/keycloak/keycloak:latest
   ```
 2. Log into Keycloak Admin Console at http://localhost:8080/auth/
-3. Create user `nessie` with password `nessie` (under the `master` realm)
+3. Create user `quarkus` with password `quarkus` (under the `master` realm)
 4. Goto `Clients > Admin-cli > Advanced Settings` and set Access Token Lifespan to 1 day (for convenience)
 5. Start Nessie server in test mode preconfigured to use the local Keycloak server:
 ```shell
@@ -19,7 +19,7 @@ It is meant to be used for testing purposes only.
 ```shell
 curl -X POST http://localhost:8080/auth/realms/master/protocol/openid-connect/token \
   --user admin-cli:none -H 'content-type: application/x-www-form-urlencoded' \
-  -d 'username=nessie&password=nessie&grant_type=password' |jq -r .access_token
+  -d 'username=quarkus&password=quarkus&grant_type=password' |jq -r .access_token
 ```
 6. Access Nessie API with the auth token
   * With `curl`:
