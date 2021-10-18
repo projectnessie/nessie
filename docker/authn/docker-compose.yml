@@ -30,14 +30,6 @@ services:
       - quarkus.oidc.enabled=true
       - quarkus.oidc.auth-server-url=http://keycloak:8080/auth/realms/master
       - quarkus.oidc.client-id=projectnessie
-      # Build time property - To use basic auth, create a new nessie image with 'quarkus.http.auth.basic'
-      # set to true in application.properties, update template with the new nessie image coordinates,
-      # and uncomment following env variables.
-      #- quarkus.http.auth.basic=true
-      #- quarkus.security.users.embedded.enabled=true
-      #- quarkus.security.users.embedded.plain-text=true
-      #- quarkus.security.users.embedded.users.admin=password
-      #- quarkus.security.users.embedded.roles.admin=admin,user
   keycloak:
     image: quay.io/keycloak/keycloak:latest
     ports:

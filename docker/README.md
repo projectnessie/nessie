@@ -30,7 +30,6 @@ docker-compose -f in_memory/docker-compose.yml up
 | --- |
 
 ## Nessie with Authentication Enabled
-Nessie supports two modes of authentication - OIDC and Basic.
 
 The template brings up two containers, one for Nessie and one for Keycloak (OIDC server).
 ```
@@ -38,8 +37,6 @@ docker-compose -f authn/docker-compose.yml up
 ```
 - Nessie port - 19120
 - Keycloak server port - 8080
-
-### OIDC Authentication
 
 The docker template uses bridge network to communicate with the keycloak server. Hence, the token has to be generated with the issuer host `keycloak` <br><br>
 _Enter the Nessie container, and generate the token_
@@ -57,12 +54,6 @@ curl --location --request GET 'http://localhost:19120/api/v1/trees' \
 --header 'Authorization: Bearer <TOKEN>'
 ```
 You can configure new users, and reset the expiry time from the keycloak console as described [here](../servers/quarkus-server#readme).
-
-### Basic Authentication
-
-Username password authentication not turned-on by default and is meant only for testing purposes.
-The docker template doesn't support basic authentication out of the box, because `quarkus.http.auth.basic` property cannot be overridden at runtime.
-
 
 ## Misc
 - To check the status - `docker ps -a`
