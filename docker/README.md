@@ -39,8 +39,9 @@ docker-compose -f authn/docker-compose.yml up
 - Nessie port - 19120
 - Keycloak server port - 8080
 
-####OIDC Authentication
-The docker template uses bridge network to communicate with the keycloak server. Hence, the token has to be generated with the issuer host 'keycloak' <br><br>
+###OIDC Authentication
+
+The docker template uses bridge network to communicate with the keycloak server. Hence, the token has to be generated with the issuer host `keycloak` <br><br>
 _Enter the nessie container, and generate the token_
 ```
 docker exec -it authn_nessie_1 /bin/bash
@@ -48,7 +49,7 @@ docker exec -it authn_nessie_1 /bin/bash
 ```
 curl -X POST http://keycloak:8080/auth/realms/master/protocol/openid-connect/token \
 --user admin-cli:none -H 'content-type: application/x-www-form-urlencoded' \
--d 'username=admin&password=admin&grant_type=password' |jq -r .access_token
+-d 'username=admin&password=admin&grant_type=password'
 ```
 Use this token as a bearer token for authenticating the requests to Nessie.
 ```
@@ -57,6 +58,14 @@ curl --location --request GET 'http://localhost:19120/api/v1/trees' \
 ```
 You can configure new users, and reset the expiry time from the keycloak console as described [here](../servers/quarkus-server#readme).
 
-####Basic Authentication
-Basic, in other words username and password based, authentication is supported only for testing purposes.
+###Basic Authentication
+
+Username password authentication not turned-on by default and is meant only for testing purposes.
 The docker template doesn't support basic authentication out of the box, because `quarkus.http.auth.basic` property cannot be overridden at runtime.
+
+
+## Misc
+- To check the status - `docker ps -a`
+- To stop the containers - `docker-compose stop`
+- To start the containers - `docker-compose start`
+- To destroy the env - `docker-compose down`
