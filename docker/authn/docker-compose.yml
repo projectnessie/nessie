@@ -1,0 +1,47 @@
+#
+# Copyright (C) 2020 Dremio
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+version: '3'
+services:
+  nessie:
+    image: projectnessie/nessie:latest
+    ports:
+      - 19120:19120
+    depends_on:
+      - keycloak
+    environment:
+      - nessie.version.store.type=INMEMORY
+      - quarkus.log.console.level=DEBUG
+      - quarkus.log.level=DEBUG
+      - nessie.server.authentication.enabled=true
+      - quarkus.oidc.enabled=true
+      - quarkus.oidc.auth-server-url=http://keycloak:8080/auth/realms/master
+      - quarkus.oidc.client-id=projectnessie
+      # Build time property - To use basic auth, create a new nessie image with 'quarkus.http.auth.basic'
+      # set to true in application.properties, update template with the new nessie image coordinates,
+      # and uncomment following env variables.
+      #- quarkus.http.auth.basic=true
+      #- quarkus.security.users.embedded.enabled=true
+      #- quarkus.security.users.embedded.plain-text=true
+      #- quarkus.security.users.embedded.users.admin=password
+      #- quarkus.security.users.embedded.roles.admin=admin,user
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    ports:
+      - 8080:8080
+    environment:
+      KEYCLOAK_USER: admin
+      KEYCLOAK_PASSWORD: admin
