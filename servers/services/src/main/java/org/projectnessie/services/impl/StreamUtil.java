@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.services.rest;
+package org.projectnessie.services.impl;
 
 import java.util.Spliterator;
 import java.util.Spliterators;
@@ -21,7 +21,8 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /** Helper methods around streaming. */
-public class StreamUtil {
+final class StreamUtil {
+  private StreamUtil() {}
 
   /**
    * A spliterator supporting taking until the predicate condition is met. The element that matches
@@ -32,8 +33,7 @@ public class StreamUtil {
    * @param <T> the type of elements returned by this spliterator
    * @return A new {@link Spliterator}
    */
-  public static <T> Spliterator<T> takeUntilIncl(
-      Spliterator<T> src, Predicate<? super T> predicate) {
+  static <T> Spliterator<T> takeUntilIncl(Spliterator<T> src, Predicate<? super T> predicate) {
     return new Spliterators.AbstractSpliterator<T>(src.estimateSize(), 0) {
       boolean found = false;
 

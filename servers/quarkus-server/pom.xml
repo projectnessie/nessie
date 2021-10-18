@@ -39,7 +39,7 @@
   <dependencies>
     <dependency>
       <groupId>org.projectnessie</groupId>
-      <artifactId>nessie-services</artifactId>
+      <artifactId>nessie-rest-services</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

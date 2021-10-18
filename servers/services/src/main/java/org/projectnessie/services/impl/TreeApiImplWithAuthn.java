@@ -13,18 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.services.rest;
+package org.projectnessie.services.impl;
 
 import static org.projectnessie.model.Operation.Delete;
 import static org.projectnessie.model.Operation.Put;
 
 import java.security.AccessControlException;
+import java.security.Principal;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
-import javax.enterprise.context.RequestScoped;
-import javax.enterprise.inject.Default;
-import javax.inject.Inject;
 import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.error.NessieConflictException;
@@ -48,17 +46,15 @@ import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.VersionStore;
 
-/** Does authorization checks (if enabled) on the {@link TreeResource} endpoints. */
-@RequestScoped
-@Default
-public class TreeResourceWithAuthorizationChecks extends TreeResource {
+/** Does authorization checks (if enabled) on the {@link TreeApiImpl}. */
+public class TreeApiImplWithAuthn extends TreeApiImpl {
 
-  @Inject
-  public TreeResourceWithAuthorizationChecks(
+  public TreeApiImplWithAuthn(
       ServerConfig config,
       VersionStore<Contents, CommitMeta, Type> store,
-      AccessChecker accessChecker) {
-    super(config, store, accessChecker);
+      AccessChecker accessChecker,
+      Principal principal) {
+    super(config, store, accessChecker, principal);
   }
 
   @Override
