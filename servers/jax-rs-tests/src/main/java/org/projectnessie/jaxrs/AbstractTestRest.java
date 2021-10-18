@@ -143,7 +143,8 @@ public abstract class AbstractTestRest {
   }
 
   @Test
-  public void createRecreateDefaultBranch() throws NessieConflictException, NessieNotFoundException {
+  public void createRecreateDefaultBranch()
+      throws NessieConflictException, NessieNotFoundException {
     api.deleteBranch().branch(api.getDefaultBranch()).delete();
 
     api.createReference().reference(Branch.of("main", null)).create();
@@ -219,7 +220,8 @@ public abstract class AbstractTestRest {
 
   @ParameterizedTest
   @ValueSource(strings = {"normal", "with-no_space", "slash/thing"})
-  public void referenceNames(String refNamePart) throws NessieNotFoundException, NessieConflictException {
+  public void referenceNames(String refNamePart)
+      throws NessieNotFoundException, NessieConflictException {
     String tagName = "tag" + refNamePart;
     String branchName = "branch" + refNamePart;
     String branchName2 = "branch2" + refNamePart;
@@ -843,7 +845,8 @@ public abstract class AbstractTestRest {
   }
 
   @Test
-  public void verifyAllContentAndOperationTypes() throws NessieNotFoundException, NessieConflictException {
+  public void verifyAllContentAndOperationTypes()
+      throws NessieNotFoundException, NessieConflictException {
     String branchName = "contentAndOperationAll";
     Reference r =
         api.createReference().sourceRefName("main").reference(Branch.of(branchName, null)).create();
@@ -873,7 +876,8 @@ public abstract class AbstractTestRest {
 
   @ParameterizedTest
   @MethodSource("contentAndOperationTypes")
-  public void verifyContentAndOperationTypesIndividually(ContentAndOperationType contentAndOperationType)
+  public void verifyContentAndOperationTypesIndividually(
+      ContentAndOperationType contentAndOperationType)
       throws NessieNotFoundException, NessieConflictException {
     String branchName = "contentAndOperation_" + contentAndOperationType;
     Reference r =
@@ -1140,7 +1144,8 @@ public abstract class AbstractTestRest {
   }
 
   @Test
-  public void checkSpecialCharacterRoundTrip() throws NessieNotFoundException, NessieConflictException {
+  public void checkSpecialCharacterRoundTrip()
+      throws NessieNotFoundException, NessieConflictException {
     final String branch = "specialchar";
     Reference r =
         api.createReference().sourceRefName("main").reference(Branch.of(branch, null)).create();
@@ -1163,7 +1168,8 @@ public abstract class AbstractTestRest {
   }
 
   @Test
-  public void checkServerErrorPropagation() throws NessieNotFoundException, NessieConflictException {
+  public void checkServerErrorPropagation()
+      throws NessieNotFoundException, NessieConflictException {
     final String branch = "bar";
     api.createReference().sourceRefName("main").reference(Branch.of(branch, null)).create();
     assertThatThrownBy(
