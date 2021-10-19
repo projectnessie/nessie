@@ -15,9 +15,8 @@
 #  limitations under the License.
 
 import pytest
-from click.testing import CliRunner
 
-from .test_nessie_cli import _run
+from .conftest import _cli
 
 
 # Note: tests in this file use custom VCR files for error server responses.
@@ -29,16 +28,14 @@ from .test_nessie_cli import _run
 @pytest.mark.vcr
 def test_server_error_html() -> None:
     """Test the handling of 500 responses with HTML payload (unexpected, but possible)."""
-    runner = CliRunner()
-    result = _run(runner, ["--json", "remote", "show"], ret_val=1)
-    assert "Internal Server Error" in result.output
-    assert "500" in result.output
+    result = _cli(["--json", "remote", "show"], ret_val=1)
+    assert "Internal Server Error" in result
+    assert "500" in result
 
 
 @pytest.mark.vcr
 def test_server_error_json() -> None:
     """Test the handling of 500 responses with JSON payload."""
-    runner = CliRunner()
-    result = _run(runner, ["--json", "remote", "show"], ret_val=1)
-    assert "Default branch isn't a branch" in result.output
-    assert "500" in result.output
+    result = _cli(["--json", "remote", "show"], ret_val=1)
+    assert "Default branch isn't a branch" in result
+    assert "500" in result
