@@ -20,6 +20,7 @@ You can quickly get started with Nessie by using our small, fast docker image.
 docker pull projectnessie/nessie
 docker run -p 19120:19120 projectnessie/nessie
 ```
+_For trying Nessie image with different configuration options, refer to the templates under the [docker module](./docker#readme)._<br>
 
 A local [Web UI](https://projectnessie.org/tools/ui/) will be available at this point.
 
