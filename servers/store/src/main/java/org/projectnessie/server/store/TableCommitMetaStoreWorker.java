@@ -33,7 +33,6 @@ import org.projectnessie.model.ImmutableSqlView;
 import org.projectnessie.model.SqlView;
 import org.projectnessie.model.SqlView.Dialect;
 import org.projectnessie.store.ObjectTypes;
-import org.projectnessie.store.ObjectTypes.IcebergTableMetadata;
 import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.StoreWorker;
 
@@ -49,9 +48,10 @@ public class TableCommitMetaStoreWorker
         ObjectTypes.Contents.newBuilder().setId(contents.getId());
     if (contents instanceof IcebergTable) {
       IcebergTable state = (IcebergTable) contents;
-      ObjectTypes.IcebergSnapshot.Builder stateBuilder =
-          ObjectTypes.IcebergSnapshot.newBuilder().setSnapshotId(state.getSnapshotId());
-      builder.setIcebergSnapshot(stateBuilder);
+      ObjectTypes.IcebergMetadataPointer.Builder stateBuilder =
+          ObjectTypes.IcebergMetadataPointer.newBuilder()
+              .setMetadataLocation(state.getMetadataLocation());
+      builder.setIcebergMetadataPointer(stateBuilder);
 
     } else if (contents instanceof DeltaLakeTable) {
       ObjectTypes.DeltaLakeTable.Builder table =
@@ -85,10 +85,9 @@ public class TableCommitMetaStoreWorker
         ObjectTypes.Contents.newBuilder().setId(contents.getId());
     if (contents instanceof IcebergTable) {
       IcebergTable state = (IcebergTable) contents;
-      ObjectTypes.IcebergTableMetadata.Builder stateBuilder =
-          ObjectTypes.IcebergTableMetadata.newBuilder()
-              .setMetadataLocation(state.getMetadataLocation());
-      builder.setIcebergTableMetadata(stateBuilder);
+      ObjectTypes.IcebergGlobal.Builder stateBuilder =
+          ObjectTypes.IcebergGlobal.newBuilder().setIdGenerators(state.getIdGenerators());
+      builder.setIcebergGlobal(stateBuilder);
     } else {
       throw new IllegalArgumentException("Unknown type " + contents);
     }
@@ -115,13 +114,15 @@ public class TableCommitMetaStoreWorker
         }
         return builder.build();
 
-      case ICEBERG_SNAPSHOT:
+      case ICEBERG_METADATA_POINTER:
+        ObjectTypes.Contents global =
+            globalContents.orElseThrow(TableCommitMetaStoreWorker::noIcebergGlobal);
+        if (!global.hasIcebergGlobal()) {
+          throw noIcebergGlobal();
+        }
         return IcebergTable.of(
-            globalContents
-                .map(ObjectTypes.Contents::getIcebergTableMetadata)
-                .map(IcebergTableMetadata::getMetadataLocation)
-                .orElseThrow(IllegalStateException::new),
-            contents.getIcebergSnapshot().getSnapshotId(),
+            contents.getIcebergMetadataPointer().getMetadataLocation(),
+            global.getIcebergGlobal().getIdGenerators(),
             contents.getId());
 
       case SQL_VIEW:
@@ -136,6 +137,11 @@ public class TableCommitMetaStoreWorker
       default:
         throw new IllegalArgumentException("Unknown type " + contents.getObjectTypeCase());
     }
+  }
+
+  private static IllegalArgumentException noIcebergGlobal() {
+    return new IllegalArgumentException(
+        "Iceberg content from reference must have global state, but has none");
   }
 
   @Override
