@@ -115,9 +115,10 @@ public class TableCommitMetaStoreWorker
         return builder.build();
 
       case ICEBERG_METADATA_POINTER:
-        ObjectTypes.Contents global = globalContents.orElseThrow(IllegalStateException::new);
+        ObjectTypes.Contents global =
+            globalContents.orElseThrow(TableCommitMetaStoreWorker::noIcebergGlobal);
         if (!global.hasIcebergGlobal()) {
-          throw new IllegalArgumentException();
+          throw noIcebergGlobal();
         }
         return IcebergTable.of(
             contents.getIcebergMetadataPointer().getMetadataLocation(),
@@ -136,6 +137,11 @@ public class TableCommitMetaStoreWorker
       default:
         throw new IllegalArgumentException("Unknown type " + contents.getObjectTypeCase());
     }
+  }
+
+  private static IllegalArgumentException noIcebergGlobal() {
+    return new IllegalArgumentException(
+        "Iceberg content from reference must have global state, but has none");
   }
 
   @Override
