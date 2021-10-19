@@ -30,7 +30,7 @@ import org.projectnessie.model.MultiGetContentsRequest;
 import org.projectnessie.model.MultiGetContentsResponse;
 import org.projectnessie.services.authz.AccessChecker;
 import org.projectnessie.services.config.ServerConfig;
-import org.projectnessie.services.impl.ContentsApiImplWithAuthn;
+import org.projectnessie.services.impl.ContentsApiImplWithAuthorization;
 import org.projectnessie.versioned.VersionStore;
 
 /** REST endpoint for the contents-API. */
@@ -63,7 +63,7 @@ public class RestContentsResource implements HttpContentsApi {
   }
 
   private ContentsApi resource() {
-    return new ContentsApiImplWithAuthn(
+    return new ContentsApiImplWithAuthorization(
         config,
         store,
         accessChecker,

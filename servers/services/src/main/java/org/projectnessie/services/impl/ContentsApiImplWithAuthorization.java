@@ -30,9 +30,9 @@ import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
 
 /** Does authorization checks (if enabled) on the {@link ContentsApiImpl}. */
-public class ContentsApiImplWithAuthn extends ContentsApiImpl {
+public class ContentsApiImplWithAuthorization extends ContentsApiImpl {
 
-  public ContentsApiImplWithAuthn(
+  public ContentsApiImplWithAuthorization(
       ServerConfig config,
       VersionStore<Contents, CommitMeta, Type> store,
       AccessChecker accessChecker,

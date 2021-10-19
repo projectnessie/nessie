@@ -38,7 +38,7 @@ import org.projectnessie.model.Reference;
 import org.projectnessie.model.Transplant;
 import org.projectnessie.services.authz.AccessChecker;
 import org.projectnessie.services.config.ServerConfig;
-import org.projectnessie.services.impl.TreeApiImplWithAuthn;
+import org.projectnessie.services.impl.TreeApiImplWithAuthorization;
 import org.projectnessie.versioned.VersionStore;
 
 /** REST endpoint for the tree-API. */
@@ -71,7 +71,7 @@ public class RestTreeResource implements HttpTreeApi {
   }
 
   private TreeApi resource() {
-    return new TreeApiImplWithAuthn(
+    return new TreeApiImplWithAuthorization(
         config,
         store,
         accessChecker,

@@ -47,9 +47,9 @@ import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.VersionStore;
 
 /** Does authorization checks (if enabled) on the {@link TreeApiImpl}. */
-public class TreeApiImplWithAuthn extends TreeApiImpl {
+public class TreeApiImplWithAuthorization extends TreeApiImpl {
 
-  public TreeApiImplWithAuthn(
+  public TreeApiImplWithAuthorization(
       ServerConfig config,
       VersionStore<Contents, CommitMeta, Type> store,
       AccessChecker accessChecker,
