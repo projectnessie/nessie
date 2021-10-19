@@ -8,6 +8,10 @@ can be run against a live Nessie engine.
 
 1. run the Nessie server to record new cassettes, it is sufficient to run
    `./mvnw quarkus:dev -am -pl :nessie-quarkus` locally.
+   * Note: if the server is running in `dev` mode for a long time, it is necessary to reset its in-memory store
+     every time the tests are re-recorded so that the "global" state from old test runs is erased and will not
+     interfere with newer recordings. The reset can be performed by restarting the server or by pressing the `s` key
+     in the Quarkus console (STDIN).
 1. Run `pytest --record-mode=all tests/` (in a venv with `requirements_dev.txt` installed)
    to add test data for newly added tests and updated tests data.
    * Note: when running authentication tests (e.g. `test_nessie_cli_auth.py`) in recording more, the tests will most

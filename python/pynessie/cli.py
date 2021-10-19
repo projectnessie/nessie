@@ -501,6 +501,22 @@ def cherry_pick(ctx: ContextObject, branch: str, force: bool, expected_hash: str
     mutually_exclusive=["list", "delete"],
 )
 @click.option(
+    "-i",
+    "--stdin",
+    cls=MutuallyExclusiveOption,
+    is_flag=True,
+    help="read contents for --set from STDIN (separated by Ctrl-D)",
+    mutually_exclusive=["list", "delete"],
+)
+@click.option(
+    "-S",
+    "--expect-same-contents",
+    cls=MutuallyExclusiveOption,
+    is_flag=True,
+    help="send the same contents both as the new and expected (old contents) parameters for --set operations",
+    mutually_exclusive=["list", "delete"],
+)
+@click.option(
     "-c",
     "--condition",
     "expected_hash",
@@ -538,6 +554,8 @@ def contents(
     list: bool,
     delete: bool,
     set: bool,
+    stdin: bool,
+    expect_same_contents: bool,
     key: List[str],
     ref: str,
     message: str,
@@ -556,11 +574,12 @@ def contents(
             query_expression=build_query_expression_for_contents_listing_flags(query_expression, entity_types),
         )
         results = EntrySchema().dumps(_format_keys_json(keys, *key), many=True) if ctx.json else _format_keys(keys, *key)
-    elif delete:
-        ctx.nessie.commit(ref, expected_hash, _get_message(message), author, *_get_contents(ctx.nessie, ref, delete, *key))
-        results = ""
-    elif set:
-        ctx.nessie.commit(ref, expected_hash, _get_message(message), author, *_get_contents(ctx.nessie, ref, delete, *key))
+    elif delete or set:
+        ops = _get_contents(ctx.nessie, ref, delete, stdin, expect_same_contents, *key)
+        if ops:
+            ctx.nessie.commit(ref, expected_hash, _get_message(message), author, *ops)
+        else:
+            click.echo("No changes requested")
         results = ""
     else:
 
@@ -571,46 +590,74 @@ def contents(
     click.echo(results)
 
 
-def _get_contents(nessie: NessieClient, ref: str, delete: bool = False, *keys: str) -> List[Operation]:
+def _edit_contents(key: str, body: str) -> Optional[str]:
+    marker = "# Everything below is ignored\n"
+    edit_message = (
+        body
+        + "\n\n"
+        + marker
+        + "Edit the content above to commit changes."
+        + " Closing without change will result in a no-op."
+        + " Removing the content results in a delete"
+        + "\nContents Key: "
+        + key
+    )
+    try:
+        message = click.edit(edit_message)
+        # Note: None can occur when the user quits the editor without saving
+        if message is None:
+            return None
+        message_altered = message.split(marker, 1)[0].strip("\n")
+        return message_altered
+    except click.ClickException:
+        pass
+    return None
+
+
+def _get_contents(
+    nessie: NessieClient, ref: str, delete: bool = False, use_stdin: bool = False, expect_same_contents: bool = False, *keys: str
+) -> List[Operation]:
     contents_altered: List[Operation] = list()
     for raw_key in keys:
         key = _format_key(raw_key)
-        try:
+        content_orig = None
+
+        try:  # get current contents, if present
             content = nessie.get_values(ref, key)
-            content_json = ContentsSchema().dumps(content.__next__())
+            content_orig = content.__next__()
         except NessieNotFoundException:
-            content_json = click.get_text_stream("stdin").read()
+            pass
 
-        MARKER = "# Everything below is ignored\n"
-        message: Optional[str] = None
         if delete:
-            message = "\n\n" + MARKER
-        else:
-            edit_message = (
-                content_json
-                + "\n\n"
-                + MARKER
-                + "Edit the content above to commit changes."
-                + " Closing without change will result in a no-op."
-                + " Removing the content results in a delete"
-            )
-            try:
-                message = click.edit(edit_message)
-            except click.ClickException:
-                message = edit_message
+            content_json = None
+        elif use_stdin:
+            click.echo("Enter JSON contents for key " + key)
+            content_json = click.get_text_stream("stdin").read()
+            content_json = content_json.strip("\n")
+        else:  # allow the user to provide interactive input via the shell $EDITOR
+            content_json = _edit_contents(key, (ContentsSchema().dumps(content_orig) if content_orig else ""))
+            if content_json is None:
+                click.echo("Skipping key " + key + " (contents not edited)")
+                continue
 
-        if message is not None:
-            message_altered = message.split(MARKER, 1)[0].strip("\n")
-            if message_altered:
-                contents_altered.append(Put(_contents_key(raw_key), ContentsSchema().loads(message_altered)))
+        if content_json:
+            click.echo("Setting contents for key " + key)
+            content_new = ContentsSchema().loads(content_json)
+            if content_new.requires_expected_state():
+                content_expected = content_new if expect_same_contents else content_orig
+                contents_altered.append(Put(_contents_key(raw_key), content_new, content_expected))
             else:
-                contents_altered.append(Delete(_contents_key(raw_key)))
+                contents_altered.append(Put(_contents_key(raw_key), content_new))
+        else:
+            click.echo("Deleting contents for key " + key)
+            contents_altered.append(Delete(_contents_key(raw_key)))
+
     return contents_altered
 
 
 def _get_commit_message(*keys: str) -> Optional[str]:
     MARKER = "# Everything below is ignored\n"
-    message = click.edit("\n\n" + MARKER + "\n".join(keys))
+    message = click.edit("\n\n" + MARKER + "Edit the commit message above." + "\n".join(keys))
     return message.split(MARKER, 1)[0].rstrip("\n") if message is not None else None
 
 
