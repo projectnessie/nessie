@@ -13,7 +13,7 @@
     "@svgr/webpack": "5.5.0",
     "@testing-library/jest-dom": "^5.14.1",
     "@testing-library/react": "^12.1.2",
-    "@testing-library/user-event": "^13.4.1",
+    "@testing-library/user-event": "^13.5.0",
     "@types/bootstrap": "^5.1.6",
     "@types/history": "^4.7.9",
     "@types/http-proxy-middleware": "^1.0.0",
