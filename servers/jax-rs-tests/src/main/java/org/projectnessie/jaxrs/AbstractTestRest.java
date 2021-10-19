@@ -49,7 +49,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
-import org.assertj.core.api.Assumptions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -58,6 +57,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.opentest4j.TestAbortedException;
 import org.projectnessie.client.StreamingUtil;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.client.api.NessieApiV1;
@@ -1465,7 +1465,9 @@ public abstract class AbstractTestRest {
     "abc'de@{blah" + COMMA_VALID_HASH_3
   })
   public void invalidTags(String invalidTagNameIn, String validHash) {
-    Assumptions.assumeThat(httpClient).isNotNull();
+    if (httpClient == null) {
+      throw new TestAbortedException("no HttpClient");
+    }
     // CsvSource maps an empty string as null
     String invalidTagName = invalidTagNameIn != null ? invalidTagNameIn : "";
 
