@@ -54,6 +54,3 @@ From there, you can use one of the three main Nessie integrations of:
 * Take a look at your current empty repository in the [Web UI](../tools/ui.md)
 * NessieCatalog for [Spark via Iceberg](../tools/iceberg/spark.md) integration
 * Nessie Log Handle for [Spark via Delta Lake](../tools/deltalake/spark.md) integration
-
---- 
-_For trying Nessie image with different configuration options, refer to the templates under the [docker module](https://github.com/projectnessie/nessie/tree/main/docker#readme)._<br>
