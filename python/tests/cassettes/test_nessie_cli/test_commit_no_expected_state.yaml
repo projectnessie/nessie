@@ -48,8 +48,8 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"name": "dev", "hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-      "type": "BRANCH"}'
+    body: '{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+      "name": "dev", "type": "BRANCH"}'
     headers:
       Accept:
       - '*/*'
@@ -130,13 +130,12 @@ interactions:
       code: 404
       message: Not Found
 - request:
-    body: '{"operations": [{"expectedContents": null, "key": {"elements": ["commit",
-      "expected", "contents"]}, "contents": {"metadataLocationHistory": ["asd111"],
-      "id": "test_commit_no_expected_state", "checkpointLocationHistory": ["def"],
-      "lastCheckpoint": "x", "type": "DELTA_LAKE_TABLE"}, "type": "PUT"}], "commitMeta":
-      {"commitTime": null, "committer": null, "author": "nessie test", "properties":
-      null, "signedOffBy": null, "message": "commit 1", "authorTime": null, "hash":
-      null}}'
+    body: '{"operations": [{"contents": {"id": "test_commit_no_expected_state", "checkpointLocationHistory":
+      ["def"], "metadataLocationHistory": ["asd111"], "lastCheckpoint": "x", "type":
+      "DELTA_LAKE_TABLE"}, "key": {"elements": ["commit", "expected", "contents"]},
+      "expectedContents": null, "type": "PUT"}], "commitMeta": {"author": "nessie
+      test", "properties": null, "committer": null, "signedOffBy": null, "hash": null,
+      "commitTime": null, "message": "commit 1", "authorTime": null}}'
     headers:
       Accept:
       - '*/*'
@@ -154,7 +153,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/branch/dev/commit?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"902d633d055966bc00eb36b536b01170cbb378d363c08bc6eb08d42e48e3fb08\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"13326c835719419906534171b1a8b651bd1a686d3fb2cd98d78d93b353cbc65a\"\n}"
     headers:
       Content-Length:
       - '120'
@@ -180,7 +179,7 @@ interactions:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
         \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}, {\n
-        \ \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"902d633d055966bc00eb36b536b01170cbb378d363c08bc6eb08d42e48e3fb08\"\n}
+        \ \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"13326c835719419906534171b1a8b651bd1a686d3fb2cd98d78d93b353cbc65a\"\n}
         ]"
     headers:
       Content-Length:
@@ -217,13 +216,12 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"operations": [{"expectedContents": null, "key": {"elements": ["commit",
-      "expected", "contents"]}, "contents": {"metadataLocationHistory": ["asd222"],
-      "id": "test_commit_no_expected_state", "checkpointLocationHistory": ["def"],
-      "lastCheckpoint": "x", "type": "DELTA_LAKE_TABLE"}, "type": "PUT"}], "commitMeta":
-      {"commitTime": null, "committer": null, "author": "nessie test", "properties":
-      null, "signedOffBy": null, "message": "commit 2", "authorTime": null, "hash":
-      null}}'
+    body: '{"operations": [{"contents": {"id": "test_commit_no_expected_state", "checkpointLocationHistory":
+      ["def"], "metadataLocationHistory": ["asd222"], "lastCheckpoint": "x", "type":
+      "DELTA_LAKE_TABLE"}, "key": {"elements": ["commit", "expected", "contents"]},
+      "expectedContents": null, "type": "PUT"}], "commitMeta": {"author": "nessie
+      test", "properties": null, "committer": null, "signedOffBy": null, "hash": null,
+      "commitTime": null, "message": "commit 2", "authorTime": null}}'
     headers:
       Accept:
       - '*/*'
@@ -238,10 +236,10 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/dev/commit?expectedHash=902d633d055966bc00eb36b536b01170cbb378d363c08bc6eb08d42e48e3fb08
+    uri: http://localhost:19120/api/v1/trees/branch/dev/commit?expectedHash=13326c835719419906534171b1a8b651bd1a686d3fb2cd98d78d93b353cbc65a
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"55c561467dc61e13c38c9bdb7e0a9cfeb43fd45ad91b59b643409b06e964ad60\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"18ba05ff14ce6eb31cfe141db58f818e327cf9ec3fb657d08f323ecf553ebe16\"\n}"
     headers:
       Content-Length:
       - '120'
@@ -250,129 +248,4 @@ interactions:
     status:
       code: 200
       message: OK
-- request:
-    body: null
-    headers:
-      Accept:
-      - application/json
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      User-Agent:
-      - python-requests/2.26.0
-    method: GET
-    uri: http://localhost:19120/api/v1/trees/tree/dev
-  response:
-    body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"55c561467dc61e13c38c9bdb7e0a9cfeb43fd45ad91b59b643409b06e964ad60\"\n}"
-    headers:
-      Content-Length:
-      - '120'
-      Content-Type:
-      - application/json
-    status:
-      code: 200
-      message: OK
-- request:
-    body: null
-    headers:
-      Accept:
-      - application/json
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '0'
-      User-Agent:
-      - python-requests/2.26.0
-    method: DELETE
-    uri: http://localhost:19120/api/v1/trees/branch/dev?expectedHash=55c561467dc61e13c38c9bdb7e0a9cfeb43fd45ad91b59b643409b06e964ad60
-  response:
-    body:
-      string: ''
-    headers: {}
-    status:
-      code: 204
-      message: No Content
-- request:
-    body: '{"name": "main", "hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-      "type": "BRANCH"}'
-    headers:
-      Accept:
-      - '*/*'
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '110'
-      Content-Type:
-      - application/json
-      User-Agent:
-      - python-requests/2.26.0
-    method: POST
-    uri: http://localhost:19120/api/v1/trees/tree?sourceRefName=main
-  response:
-    body:
-      string: "{\n  \"message\" : \"Named reference 'main' already exists.\",\n  \"status\"
-        : 409,\n  \"reason\" : \"Conflict\",\n  \"serverStackTrace\" : null\n}"
-    headers:
-      Content-Length:
-      - '130'
-      Content-Type:
-      - application/json
-    status:
-      code: 409
-      message: Conflict
-- request:
-    body: null
-    headers:
-      Accept:
-      - application/json
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      User-Agent:
-      - python-requests/2.26.0
-    method: GET
-    uri: http://localhost:19120/api/v1/trees/tree/main
-  response:
-    body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}"
-    headers:
-      Content-Length:
-      - '121'
-      Content-Type:
-      - application/json
-    status:
-      code: 200
-      message: OK
-- request:
-    body: '{"name": "main", "hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-      "type": "BRANCH"}'
-    headers:
-      Accept:
-      - '*/*'
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '110'
-      Content-Type:
-      - application/json
-      User-Agent:
-      - python-requests/2.26.0
-    method: PUT
-    uri: http://localhost:19120/api/v1/trees/branch/main?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
-  response:
-    body:
-      string: ''
-    headers: {}
-    status:
-      code: 204
-      message: No Content
 version: 1
