@@ -17,8 +17,11 @@ import React, { Fragment } from "react";
 import { Badge, Nav, NavDropdown } from "react-bootstrap";
 import DeviceHubIcon from "@material-ui/icons/DeviceHub";
 import LocalOfferIcon from "@material-ui/icons/LocalOffer";
+import HistoryIcon from "@material-ui/icons/History";
 import ExploreLink from "./ExploreLink";
 import { Branch, Tag } from "../generated/utils/api";
+import { routeSlugs } from "./Constants";
+import "./TableHead.css";
 
 interface ITableHeadProps {
   branches: Branch[];
@@ -39,6 +42,22 @@ const TableHead = ({
     return <div />;
   }
   path = path || [];
+
+  const rightContent = path.length === 0 && (
+    <Nav.Item className="tableHead__rightContentWrapper">
+      <ExploreLink
+        toRef={currentRef}
+        path={path.concat(routeSlugs.commits)}
+        type="CONTAINER"
+        className="nav-link"
+      >
+        <>
+          <HistoryIcon />
+          Commit History
+        </>
+      </ExploreLink>
+    </Nav.Item>
+  );
 
   const additional =
     path.length === 0 ? (
@@ -79,55 +98,58 @@ const TableHead = ({
     );
 
   return (
-    <Nav variant={"pills"} activeKey={1}>
-      <NavDropdown
-        title={currentRef}
-        id="nav-dropdown"
-        style={{ paddingLeft: "1em" }}
-      >
-        <NavDropdown.Item disabled>Branches</NavDropdown.Item>
+    <Nav variant={"pills"} activeKey={1} className="tableHead">
+      <div className="tableHead__leftContentWrapper">
+        <NavDropdown
+          title={currentRef}
+          id="nav-dropdown"
+          style={{ paddingLeft: "1em" }}
+        >
+          <NavDropdown.Item disabled>Branches</NavDropdown.Item>
 
-        {branches.map((branch) => {
-          return (
-            <ExploreLink
-              toRef={branch.name}
-              path={path}
-              type="CONTAINER"
-              key={branch.name}
-            >
-              <NavDropdown.Item as={"button"} key={branch.name}>
-                {branch.name}
-                <span>
-                  {branch.name === defaultBranch ? (
-                    <Badge pill className="float-right" variant={"secondary"}>
-                      default
-                    </Badge>
-                  ) : (
-                    ""
-                  )}
-                </span>
-              </NavDropdown.Item>
-            </ExploreLink>
-          );
-        })}
-        <NavDropdown.Divider />
-        <NavDropdown.Item disabled>Tags</NavDropdown.Item>
-        {tags.map((tag) => {
-          return (
-            <ExploreLink
-              toRef={tag.name}
-              path={path}
-              type="CONTAINER"
-              key={tag.name}
-            >
-              <NavDropdown.Item as={"button"} key={tag.name}>
-                {tag.name}
-              </NavDropdown.Item>
-            </ExploreLink>
-          );
-        })}
-      </NavDropdown>
-      {additional}
+          {branches.map((branch) => {
+            return (
+              <ExploreLink
+                toRef={branch.name}
+                path={path}
+                type="CONTAINER"
+                key={branch.name}
+              >
+                <NavDropdown.Item as={"button"} key={branch.name}>
+                  {branch.name}
+                  <span>
+                    {branch.name === defaultBranch ? (
+                      <Badge pill className="float-right" variant={"secondary"}>
+                        default
+                      </Badge>
+                    ) : (
+                      ""
+                    )}
+                  </span>
+                </NavDropdown.Item>
+              </ExploreLink>
+            );
+          })}
+          <NavDropdown.Divider />
+          <NavDropdown.Item disabled>Tags</NavDropdown.Item>
+          {tags.map((tag) => {
+            return (
+              <ExploreLink
+                toRef={tag.name}
+                path={path}
+                type="CONTAINER"
+                key={tag.name}
+              >
+                <NavDropdown.Item as={"button"} key={tag.name}>
+                  {tag.name}
+                </NavDropdown.Item>
+              </ExploreLink>
+            );
+          })}
+        </NavDropdown>
+        {additional}
+      </div>
+      {rightContent}
     </Nav>
   );
 };
