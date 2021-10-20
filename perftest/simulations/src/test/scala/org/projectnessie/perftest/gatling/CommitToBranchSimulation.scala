@@ -78,8 +78,7 @@ class CommitToBranchSimulation extends Simulation {
               CommitMeta.fromMessage(s"test-commit $userId $commitNum")
             )
             .operation(op)
-
-          updatedBranch.commit()
+            .commit()
 
           session.set("branch", updatedBranch)
         }
