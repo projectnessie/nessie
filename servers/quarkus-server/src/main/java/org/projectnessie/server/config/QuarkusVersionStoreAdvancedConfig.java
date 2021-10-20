@@ -16,6 +16,7 @@
 package org.projectnessie.server.config;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
+import io.quarkus.runtime.annotations.StaticInitSafe;
 import io.quarkus.runtime.configuration.TrimmedStringConverter;
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithConverter;
@@ -34,6 +35,7 @@ import org.projectnessie.versioned.persist.tx.TxDatabaseAdapterConfig;
  * <p>This interface overrides all getters to assign explicit Quarkus configuration names and
  * default values to them.
  */
+@StaticInitSafe
 @ConfigMapping(prefix = "nessie.version.store.advanced")
 @RegisterForReflection(targets = TrimmedStringConverter.class)
 public interface QuarkusVersionStoreAdvancedConfig
