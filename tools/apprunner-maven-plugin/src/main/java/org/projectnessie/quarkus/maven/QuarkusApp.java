@@ -21,7 +21,6 @@ import io.quarkus.bootstrap.app.QuarkusBootstrap;
 import io.quarkus.bootstrap.app.QuarkusBootstrap.Mode;
 import io.quarkus.bootstrap.app.RunningQuarkusApplication;
 import io.quarkus.bootstrap.app.StartupAction;
-import io.quarkus.bootstrap.model.AppArtifact;
 import io.quarkus.bootstrap.model.AppArtifactCoords;
 import io.quarkus.bootstrap.model.ApplicationModel;
 import io.quarkus.bootstrap.resolver.BootstrapAppModelResolver;
@@ -70,14 +69,7 @@ public class QuarkusApp implements AutoCloseable {
       String appArtifactId,
       Properties applicationProperties)
       throws MojoExecutionException {
-    final AppArtifactCoords appCoords = AppArtifactCoords.fromString(appArtifactId);
-    final AppArtifact appArtifact =
-        new AppArtifact(
-            appCoords.getGroupId(),
-            appCoords.getArtifactId(),
-            appCoords.getClassifier(),
-            appCoords.getType(),
-            appCoords.getVersion());
+    AppArtifactCoords appCoords = AppArtifactCoords.fromString(appArtifactId);
 
     ApplicationModel appModel;
     try {
@@ -93,10 +85,10 @@ public class QuarkusApp implements AutoCloseable {
           new BootstrapAppModelResolver(resolver)
               .setDevMode(false)
               .setTest(false)
-              .resolveModel(appArtifact);
+              .resolveModel(appCoords);
     } catch (Exception e) {
       throw new MojoExecutionException(
-          "Failed to resolve application model " + appArtifact + " dependencies", e);
+          "Failed to resolve application model " + appCoords + " dependencies", e);
     }
 
     return newApplication(
