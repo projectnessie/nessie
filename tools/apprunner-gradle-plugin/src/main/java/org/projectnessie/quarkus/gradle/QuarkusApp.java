@@ -26,7 +26,7 @@ import io.quarkus.bootstrap.app.RunningQuarkusApplication;
 import io.quarkus.bootstrap.model.AppArtifact;
 import io.quarkus.bootstrap.model.AppDependency;
 import io.quarkus.bootstrap.model.AppModel;
-import io.quarkus.bootstrap.util.QuarkusModelHelper;
+import io.quarkus.bootstrap.util.PathsUtils;
 import io.quarkus.bootstrap.util.ZipUtils;
 import java.io.BufferedReader;
 import java.io.File;
@@ -275,7 +275,7 @@ public class QuarkusApp extends org.projectnessie.quarkus.maven.QuarkusApp {
             dependency.getClassifier(),
             dependency.getType(),
             id.getVersion());
-    artifact.setPaths(QuarkusModelHelper.toPathsCollection(ImmutableList.of(dependency.getFile())));
+    artifact.setPaths(PathsUtils.toPathsCollection(ImmutableList.of(dependency.getFile())));
     return new AppDependency(artifact, "runtime");
   }
 }
