@@ -134,7 +134,7 @@
     "eslint-plugin-unicorn": "^37.0.1",
     "husky": "^7.0.2",
     "lint-staged": "^11.2.3",
-    "nock": "^13.1.3",
+    "nock": "^13.1.4",
     "prettier": "^2.4.1"
   },
   "jest": {
