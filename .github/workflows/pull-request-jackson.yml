@@ -37,6 +37,9 @@ jobs:
           - jackson-version: 2.10.0
             target-library: Spark 3.0.1
             java-version: 11
+          - jackson-version: 2.11.4
+            target-library: Spark 3.0.1
+            java-version: 11
           - jackson-version: 2.12.5
             target-library: Spark 3.0.1
             java-version: 11
