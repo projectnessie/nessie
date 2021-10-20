@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.services.rest;
+package org.projectnessie.services.impl;
 
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
@@ -24,7 +24,7 @@ public class StreamUtilTest {
 
   @Test
   public void testTakeUntil() {
-    Assertions.<Integer>assertThat(
+    Assertions.assertThat(
             StreamSupport.stream(
                 StreamUtil.takeUntilIncl(
                     IntStream.rangeClosed(1, 10).spliterator(), x -> x.equals(7)),
@@ -32,7 +32,7 @@ public class StreamUtilTest {
         .hasSize(7)
         .containsExactly(1, 2, 3, 4, 5, 6, 7);
 
-    Assertions.<Integer>assertThat(
+    Assertions.assertThat(
             StreamSupport.stream(
                 StreamUtil.takeUntilIncl(
                     IntStream.rangeClosed(1, 10).spliterator(), x -> x.equals(3)),
@@ -40,7 +40,7 @@ public class StreamUtilTest {
         .hasSize(3)
         .containsExactly(1, 2, 3);
 
-    Assertions.<Integer>assertThat(
+    Assertions.assertThat(
             StreamSupport.stream(
                 StreamUtil.takeUntilIncl(
                     IntStream.rangeClosed(1, 1).spliterator(), x -> x.equals(2)),
@@ -51,7 +51,7 @@ public class StreamUtilTest {
 
   @Test
   public void testTakeUntilWithNonMatchingPredicate() {
-    Assertions.<Integer>assertThat(
+    Assertions.assertThat(
             StreamSupport.stream(
                 StreamUtil.takeUntilIncl(
                     IntStream.rangeClosed(1, 5).spliterator(), x -> x.equals(6)),
@@ -59,7 +59,7 @@ public class StreamUtilTest {
         .hasSize(5)
         .containsExactly(1, 2, 3, 4, 5);
 
-    Assertions.<Integer>assertThat(
+    Assertions.assertThat(
             StreamSupport.stream(
                 StreamUtil.takeUntilIncl(
                     IntStream.rangeClosed(1, 5).spliterator(), x -> x.equals(0)),

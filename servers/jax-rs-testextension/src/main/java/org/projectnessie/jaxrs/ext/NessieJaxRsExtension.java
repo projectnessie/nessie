@@ -31,12 +31,13 @@ import org.projectnessie.jaxrs.NessieJaxRsJsonMappingExceptionMapper;
 import org.projectnessie.jaxrs.NessieJaxRsJsonParseExceptionMapper;
 import org.projectnessie.services.authz.AccessCheckerExtension;
 import org.projectnessie.services.config.ServerConfigExtension;
-import org.projectnessie.services.rest.ConfigResource;
+import org.projectnessie.services.impl.ConfigApiImpl;
+import org.projectnessie.services.impl.TreeApiImpl;
 import org.projectnessie.services.rest.ContentsKeyParamConverterProvider;
-import org.projectnessie.services.rest.ContentsResource;
 import org.projectnessie.services.rest.InstantParamConverterProvider;
 import org.projectnessie.services.rest.NessieExceptionMapper;
-import org.projectnessie.services.rest.TreeResource;
+import org.projectnessie.services.rest.RestContentsResource;
+import org.projectnessie.services.rest.RestTreeResource;
 import org.projectnessie.services.rest.ValidationExceptionMapper;
 import org.projectnessie.versioned.PersistVersionStoreExtension;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
@@ -60,7 +61,7 @@ public class NessieJaxRsExtension implements BeforeAllCallback, AfterAllCallback
   public void beforeAll(ExtensionContext extensionContext) throws Exception {
     weld = new Weld();
     // Let Weld scan all the resources to discover injection points and dependencies
-    weld.addPackages(true, TreeResource.class);
+    weld.addPackages(true, TreeApiImpl.class);
     // Inject external beans
     weld.addExtension(new ServerConfigExtension());
     weld.addExtension(
@@ -78,9 +79,9 @@ public class NessieJaxRsExtension implements BeforeAllCallback, AfterAllCallback
           @Override
           protected Application configure() {
             ResourceConfig config = new ResourceConfig();
-            config.register(TreeResource.class);
-            config.register(ContentsResource.class);
-            config.register(ConfigResource.class);
+            config.register(RestTreeResource.class);
+            config.register(RestContentsResource.class);
+            config.register(ConfigApiImpl.class);
             config.register(ContentsKeyParamConverterProvider.class);
             config.register(InstantParamConverterProvider.class);
             config.register(ValidationExceptionMapper.class, 10);

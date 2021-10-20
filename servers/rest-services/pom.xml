@@ -25,19 +25,14 @@
     <version>0.10.2-SNAPSHOT</version>
   </parent>
 
-  <artifactId>nessie-services</artifactId>
+  <artifactId>nessie-rest-services</artifactId>
 
-  <name>Nessie - Services</name>
+  <name>Nessie - REST Services</name>
 
   <dependencies>
     <dependency>
       <groupId>org.projectnessie</groupId>
-      <artifactId>nessie-model</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.projectnessie</groupId>
-      <artifactId>nessie-versioned-spi</artifactId>
+      <artifactId>nessie-services</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -45,17 +40,28 @@
       <artifactId>slf4j-api</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.projectnessie.cel</groupId>
-      <artifactId>cel-tools</artifactId>
+      <groupId>jakarta.enterprise</groupId>
+      <artifactId>jakarta.enterprise.cdi-api</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.projectnessie.cel</groupId>
-      <artifactId>cel-jackson</artifactId>
+      <groupId>jakarta.annotation</groupId>
+      <artifactId>jakarta.annotation-api</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.immutables</groupId>
-      <artifactId>value</artifactId>
-      <scope>provided</scope>
+      <groupId>jakarta.validation</groupId>
+      <artifactId>jakarta.validation-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.jboss.spec.javax.ws.rs</groupId>
+      <artifactId>jboss-jaxrs-api_2.1_spec</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>javax.servlet</groupId>
+      <artifactId>javax.servlet-api</artifactId>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>

@@ -13,11 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.services.rest;
+package org.projectnessie.services.impl;
 
-import javax.enterprise.context.RequestScoped;
-import javax.enterprise.inject.Default;
-import javax.inject.Inject;
+import java.security.Principal;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
@@ -31,17 +29,15 @@ import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
 
-/** Does authorization checks (if enabled) on the {@link ContentsResource} endpoints. */
-@RequestScoped
-@Default
-public class ContentsResourceWithAuthorizationChecks extends ContentsResource {
+/** Does authorization checks (if enabled) on the {@link ContentsApiImpl}. */
+public class ContentsApiImplWithAuthorization extends ContentsApiImpl {
 
-  @Inject
-  public ContentsResourceWithAuthorizationChecks(
+  public ContentsApiImplWithAuthorization(
       ServerConfig config,
       VersionStore<Contents, CommitMeta, Type> store,
-      AccessChecker accessChecker) {
-    super(config, store, accessChecker);
+      AccessChecker accessChecker,
+      Principal principal) {
+    super(config, store, accessChecker, principal);
   }
 
   @Override

@@ -96,6 +96,11 @@
       </dependency>
       <dependency>
         <groupId>org.projectnessie</groupId>
+        <artifactId>nessie-rest-services</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.projectnessie</groupId>
         <artifactId>nessie-jaxrs</artifactId>
         <version>${project.version}</version>
       </dependency>

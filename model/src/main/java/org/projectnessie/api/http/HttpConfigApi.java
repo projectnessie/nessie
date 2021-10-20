@@ -24,12 +24,13 @@ import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.projectnessie.api.ConfigApi;
 import org.projectnessie.model.NessieConfiguration;
 
 @Path("config")
-public interface HttpConfigApi {
+public interface HttpConfigApi extends ConfigApi {
 
-  /** Get the server configuration. */
+  @Override
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(summary = "List all configuration settings")
