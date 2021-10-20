@@ -15,22 +15,22 @@
  */
 package org.projectnessie.error;
 
-/**
- * Base class for all exceptions that lead to the HTTP {@code Conflict} status code (409).
- *
- * <p>This exception should not be instantiated directly by server-side code.
- */
-public class NessieConflictException extends BaseNessieClientServerException {
+import org.projectnessie.model.ContentsKey;
 
-  public NessieConflictException(String message, Throwable cause) {
-    super(message, 409, "Conflict", cause);
+/** This exception is thrown when the requested contents object is not present in the store. */
+public class NessieContentsNotFoundException extends NessieNotFoundException {
+
+  public NessieContentsNotFoundException(ContentsKey key, String ref) {
+    super(
+        String.format("Contents do not exist for key [%s] on reference [%s]", key.toString(), ref));
   }
 
-  public NessieConflictException(String message) {
-    super(message, 409, "Conflict");
-  }
-
-  public NessieConflictException(NessieError error) {
+  public NessieContentsNotFoundException(NessieError error) {
     super(error);
+  }
+
+  @Override
+  public ErrorCode getErrorCode() {
+    return ErrorCode.CONTENTS_NOT_FOUND;
   }
 }

@@ -19,6 +19,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import org.projectnessie.error.NessieConflictException;
+import org.projectnessie.error.NessieIllegalArgumentException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Validation;
@@ -35,5 +36,6 @@ public interface CreateReferenceBuilder {
 
   CreateReferenceBuilder reference(@Valid @NotNull Reference reference);
 
-  Reference create() throws NessieNotFoundException, NessieConflictException;
+  Reference create()
+      throws NessieNotFoundException, NessieConflictException, NessieIllegalArgumentException;
 }

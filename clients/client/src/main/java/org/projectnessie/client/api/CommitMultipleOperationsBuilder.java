@@ -17,6 +17,7 @@ package org.projectnessie.client.api;
 
 import java.util.List;
 import org.projectnessie.error.NessieConflictException;
+import org.projectnessie.error.NessieIllegalArgumentException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
@@ -36,5 +37,6 @@ public interface CommitMultipleOperationsBuilder
 
   CommitMultipleOperationsBuilder operation(Operation operation);
 
-  Branch commit() throws NessieNotFoundException, NessieConflictException;
+  Branch commit()
+      throws NessieNotFoundException, NessieConflictException, NessieIllegalArgumentException;
 }

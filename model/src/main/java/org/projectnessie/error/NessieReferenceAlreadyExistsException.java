@@ -16,21 +16,24 @@
 package org.projectnessie.error;
 
 /**
- * Base class for all exceptions that lead to the HTTP {@code Conflict} status code (409).
- *
- * <p>This exception should not be instantiated directly by server-side code.
+ * This exception is thrown when a reference could not be created because another reference with the
+ * same name is already present in the store.
  */
-public class NessieConflictException extends BaseNessieClientServerException {
-
-  public NessieConflictException(String message, Throwable cause) {
-    super(message, 409, "Conflict", cause);
+public class NessieReferenceAlreadyExistsException extends NessieConflictException {
+  public NessieReferenceAlreadyExistsException(String message, Throwable cause) {
+    super(message, cause);
   }
 
-  public NessieConflictException(String message) {
-    super(message, 409, "Conflict");
+  public NessieReferenceAlreadyExistsException(String message) {
+    super(message);
   }
 
-  public NessieConflictException(NessieError error) {
+  public NessieReferenceAlreadyExistsException(NessieError error) {
     super(error);
+  }
+
+  @Override
+  public ErrorCode getErrorCode() {
+    return ErrorCode.REFERENCE_ALREADY_EXISTS;
   }
 }

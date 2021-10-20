@@ -15,6 +15,11 @@
  */
 package org.projectnessie.error;
 
+/**
+ * Base class for all exceptions that lead to the HTTP {@code Not Found} status code (404).
+ *
+ * <p>This exception should not be instantiated directly by server-side code.
+ */
 public class NessieNotFoundException extends BaseNessieClientServerException {
 
   public NessieNotFoundException(String message, Throwable cause) {

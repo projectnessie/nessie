@@ -20,6 +20,7 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 import org.projectnessie.error.NessieConflictException;
+import org.projectnessie.error.NessieIllegalArgumentException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Validation;
 
@@ -38,5 +39,6 @@ public interface TransplantCommitsBuilder extends OnBranchBuilder<TransplantComm
   TransplantCommitsBuilder hashesToTransplant(
       @NotNull @Size(min = 1) List<String> hashesToTransplant);
 
-  void transplant() throws NessieNotFoundException, NessieConflictException;
+  void transplant()
+      throws NessieNotFoundException, NessieConflictException, NessieIllegalArgumentException;
 }

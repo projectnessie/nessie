@@ -18,6 +18,7 @@ package org.projectnessie.client.http.v1api;
 import org.projectnessie.client.api.AssignBranchBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieConflictException;
+import org.projectnessie.error.NessieIllegalArgumentException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Reference;
 
@@ -36,7 +37,8 @@ final class HttpAssignBranch extends BaseHttpOnBranchRequest<AssignBranchBuilder
   }
 
   @Override
-  public void assign() throws NessieNotFoundException, NessieConflictException {
+  public void assign()
+      throws NessieNotFoundException, NessieConflictException, NessieIllegalArgumentException {
     client.getTreeApi().assignBranch(branchName, hash, assignTo);
   }
 }

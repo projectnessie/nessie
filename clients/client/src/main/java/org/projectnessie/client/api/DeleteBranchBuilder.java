@@ -16,6 +16,7 @@
 package org.projectnessie.client.api;
 
 import org.projectnessie.error.NessieConflictException;
+import org.projectnessie.error.NessieIllegalArgumentException;
 import org.projectnessie.error.NessieNotFoundException;
 
 /**
@@ -24,5 +25,6 @@ import org.projectnessie.error.NessieNotFoundException;
  * @since {@link NessieApiV1}
  */
 public interface DeleteBranchBuilder extends OnBranchBuilder<DeleteBranchBuilder> {
-  void delete() throws NessieConflictException, NessieNotFoundException;
+  void delete()
+      throws NessieConflictException, NessieNotFoundException, NessieIllegalArgumentException;
 }

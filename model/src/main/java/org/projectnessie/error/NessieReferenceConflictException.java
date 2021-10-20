@@ -16,21 +16,24 @@
 package org.projectnessie.error;
 
 /**
- * Base class for all exceptions that lead to the HTTP {@code Conflict} status code (409).
- *
- * <p>This exception should not be instantiated directly by server-side code.
+ * This exception is thrown when the hash associated with a named reference does not match with the
+ * hash provided by the caller.
  */
-public class NessieConflictException extends BaseNessieClientServerException {
-
-  public NessieConflictException(String message, Throwable cause) {
-    super(message, 409, "Conflict", cause);
+public class NessieReferenceConflictException extends NessieConflictException {
+  public NessieReferenceConflictException(String message, Throwable cause) {
+    super(message, cause);
   }
 
-  public NessieConflictException(String message) {
-    super(message, 409, "Conflict");
+  public NessieReferenceConflictException(String message) {
+    super(message);
   }
 
-  public NessieConflictException(NessieError error) {
+  public NessieReferenceConflictException(NessieError error) {
     super(error);
+  }
+
+  @Override
+  public ErrorCode getErrorCode() {
+    return ErrorCode.REFERENCE_CONFLICT;
   }
 }

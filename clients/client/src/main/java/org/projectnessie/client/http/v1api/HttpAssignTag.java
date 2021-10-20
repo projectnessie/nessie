@@ -18,6 +18,7 @@ package org.projectnessie.client.http.v1api;
 import org.projectnessie.client.api.AssignTagBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieConflictException;
+import org.projectnessie.error.NessieIllegalArgumentException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Reference;
 
@@ -37,7 +38,8 @@ final class HttpAssignTag extends BaseHttpOnTagRequest<AssignTagBuilder>
   }
 
   @Override
-  public void assign() throws NessieNotFoundException, NessieConflictException {
+  public void assign()
+      throws NessieNotFoundException, NessieConflictException, NessieIllegalArgumentException {
     client.getTreeApi().assignTag(tagName, hash, assignTo);
   }
 }

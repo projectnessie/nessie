@@ -21,6 +21,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.ext.ExceptionMapper;
+import org.projectnessie.error.BaseNessieClientServerException;
+import org.projectnessie.error.ErrorCode;
 import org.projectnessie.error.NessieError;
 import org.projectnessie.services.config.ServerConfig;
 import org.slf4j.Logger;
@@ -52,7 +54,13 @@ public abstract class BaseExceptionMapper<T extends Throwable> implements Except
       Consumer<ResponseBuilder> responseHandler) {
 
     String stack = includeExceptionStackTrace ? Throwables.getStackTraceAsString(e) : null;
-    NessieError error = new NessieError(message, status, reason, stack);
+
+    ErrorCode errorCode = ErrorCode.UNKNOWN;
+    if (e instanceof BaseNessieClientServerException) {
+      errorCode = ((BaseNessieClientServerException) e).getErrorCode();
+    }
+
+    NessieError error = new NessieError(message, status, errorCode, reason, stack);
     LOGGER.debug(
         "Failure on server, propagated to client. Status: {} {}, Message: {}.",
         status,

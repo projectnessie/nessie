@@ -19,6 +19,7 @@ import java.util.List;
 import org.projectnessie.client.api.TransplantCommitsBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieConflictException;
+import org.projectnessie.error.NessieIllegalArgumentException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.ImmutableTransplant;
 
@@ -51,7 +52,8 @@ final class HttpTransplantCommits extends BaseHttpOnBranchRequest<TransplantComm
   }
 
   @Override
-  public void transplant() throws NessieNotFoundException, NessieConflictException {
+  public void transplant()
+      throws NessieNotFoundException, NessieConflictException, NessieIllegalArgumentException {
     client.getTreeApi().transplantCommitsIntoBranch(branchName, hash, message, transplant.build());
   }
 }

@@ -68,6 +68,10 @@ public class BaseNessieClientServerException extends IOException {
     return status;
   }
 
+  public ErrorCode getErrorCode() {
+    return ErrorCode.UNKNOWN;
+  }
+
   public String getReason() {
     return reason;
   }

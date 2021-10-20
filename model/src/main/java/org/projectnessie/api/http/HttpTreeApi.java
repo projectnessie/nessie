@@ -40,6 +40,7 @@ import org.projectnessie.api.TreeApi;
 import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.error.NessieConflictException;
+import org.projectnessie.error.NessieIllegalArgumentException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.EntriesResponse;
@@ -129,7 +130,7 @@ public interface HttpTreeApi extends TreeApi {
                     examples = {@ExampleObject(ref = "refObjNew")})
               })
           Reference reference)
-      throws NessieNotFoundException, NessieConflictException;
+      throws NessieNotFoundException, NessieConflictException, NessieIllegalArgumentException;
 
   @Override
   @GET
@@ -303,7 +304,7 @@ public interface HttpTreeApi extends TreeApi {
                       mediaType = MediaType.APPLICATION_JSON,
                       examples = {@ExampleObject(ref = "refObj"), @ExampleObject(ref = "tagObj")}))
           Reference assignTo)
-      throws NessieNotFoundException, NessieConflictException;
+      throws NessieNotFoundException, NessieConflictException, NessieIllegalArgumentException;
 
   @Override
   @DELETE
@@ -328,7 +329,7 @@ public interface HttpTreeApi extends TreeApi {
               examples = {@ExampleObject(ref = "hash")})
           @QueryParam("expectedHash")
           String hash)
-      throws NessieConflictException, NessieNotFoundException;
+      throws NessieConflictException, NessieNotFoundException, NessieIllegalArgumentException;
 
   @Override
   @PUT
@@ -366,7 +367,7 @@ public interface HttpTreeApi extends TreeApi {
                       mediaType = MediaType.APPLICATION_JSON,
                       examples = {@ExampleObject(ref = "refObj"), @ExampleObject(ref = "tagObj")}))
           Reference assignTo)
-      throws NessieNotFoundException, NessieConflictException;
+      throws NessieNotFoundException, NessieConflictException, NessieIllegalArgumentException;
 
   @Override
   @DELETE
@@ -391,7 +392,7 @@ public interface HttpTreeApi extends TreeApi {
               examples = {@ExampleObject(ref = "hash")})
           @QueryParam("expectedHash")
           String hash)
-      throws NessieConflictException, NessieNotFoundException;
+      throws NessieConflictException, NessieNotFoundException, NessieIllegalArgumentException;
 
   @Override
   @POST
@@ -435,7 +436,7 @@ public interface HttpTreeApi extends TreeApi {
                       mediaType = MediaType.APPLICATION_JSON,
                       examples = {@ExampleObject(ref = "transplant")}))
           Transplant transplant)
-      throws NessieNotFoundException, NessieConflictException;
+      throws NessieNotFoundException, NessieConflictException, NessieIllegalArgumentException;
 
   @Override
   @POST
@@ -478,7 +479,7 @@ public interface HttpTreeApi extends TreeApi {
                       mediaType = MediaType.APPLICATION_JSON,
                       examples = {@ExampleObject(ref = "merge")}))
           Merge merge)
-      throws NessieNotFoundException, NessieConflictException;
+      throws NessieNotFoundException, NessieConflictException, NessieIllegalArgumentException;
 
   @Override
   @POST
@@ -525,5 +526,5 @@ public interface HttpTreeApi extends TreeApi {
                       mediaType = MediaType.APPLICATION_JSON,
                       examples = {@ExampleObject(ref = "operations")}))
           Operations operations)
-      throws NessieNotFoundException, NessieConflictException;
+      throws NessieNotFoundException, NessieConflictException, NessieIllegalArgumentException;
 }

@@ -26,6 +26,7 @@ public class NessieError {
 
   private final String message;
   private final int status;
+  private final ErrorCode errorCode;
   private final String reason;
   private final String serverStackTrace;
   private final Exception clientProcessingException;
@@ -41,9 +42,23 @@ public class NessieError {
   public NessieError(
       @JsonProperty("message") String message,
       @JsonProperty("status") int status,
+      @JsonProperty("errorCode") ErrorCode errorCode,
       @JsonProperty("reason") String reason,
       @JsonProperty("serverStackTrace") String serverStackTrace) {
+    this(message, status, errorCode, reason, serverStackTrace, null);
+  }
+
+  public NessieError(String message, int status, String reason, String serverStackTrace) {
     this(message, status, reason, serverStackTrace, null);
+  }
+
+  public NessieError(
+      String message,
+      int status,
+      String reason,
+      String serverStackTrace,
+      Exception processingException) {
+    this(message, status, ErrorCode.UNKNOWN, reason, serverStackTrace, processingException);
   }
 
   /**
@@ -51,6 +66,7 @@ public class NessieError {
    *
    * @param message Message of error.
    * @param status Status of error.
+   * @param errorCode Nessie-specific error code.
    * @param reason Reason for status.
    * @param serverStackTrace Server stack trace, if available.
    * @param processingException Any processing exceptions that happened on the client.
@@ -58,11 +74,13 @@ public class NessieError {
   public NessieError(
       String message,
       int status,
+      ErrorCode errorCode,
       String reason,
       String serverStackTrace,
       Exception processingException) {
     this.message = message;
     this.status = status;
+    this.errorCode = errorCode;
     this.reason = reason;
     this.serverStackTrace = serverStackTrace;
     this.clientProcessingException = processingException;
@@ -78,11 +96,7 @@ public class NessieError {
    */
   public NessieError(
       int statusCode, String reason, String serverStackTrace, Exception processingException) {
-    this.status = statusCode;
-    this.message = reason;
-    this.reason = reason;
-    this.serverStackTrace = serverStackTrace;
-    this.clientProcessingException = processingException;
+    this(reason, statusCode, ErrorCode.UNKNOWN, reason, serverStackTrace, processingException);
   }
 
   public String getMessage() {
@@ -91,6 +105,10 @@ public class NessieError {
 
   public int getStatus() {
     return status;
+  }
+
+  public ErrorCode getErrorCode() {
+    return errorCode;
   }
 
   public String getReason() {
@@ -147,6 +165,7 @@ public class NessieError {
     NessieError error = (NessieError) o;
     return status == error.status
         && Objects.equals(message, error.message)
+        && Objects.equals(errorCode, error.errorCode)
         && Objects.equals(serverStackTrace, error.serverStackTrace);
   }
 
