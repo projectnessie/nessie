@@ -23,7 +23,7 @@ import io.quarkus.bootstrap.app.RunningQuarkusApplication;
 import io.quarkus.bootstrap.app.StartupAction;
 import io.quarkus.bootstrap.model.AppArtifact;
 import io.quarkus.bootstrap.model.AppArtifactCoords;
-import io.quarkus.bootstrap.model.AppModel;
+import io.quarkus.bootstrap.model.ApplicationModel;
 import io.quarkus.bootstrap.resolver.BootstrapAppModelResolver;
 import io.quarkus.bootstrap.resolver.maven.MavenArtifactResolver;
 import java.lang.reflect.Method;
@@ -79,7 +79,7 @@ public class QuarkusApp implements AutoCloseable {
             appCoords.getType(),
             appCoords.getVersion());
 
-    final AppModel appModel;
+    ApplicationModel appModel;
     try {
       MavenArtifactResolver resolver =
           MavenArtifactResolver.builder()
@@ -120,7 +120,10 @@ public class QuarkusApp implements AutoCloseable {
    * @throws MojoExecutionException if an error occurs during execution
    */
   public static QuarkusApp newApplication(
-      AppModel appModel, Path projectRoot, Path targetDirectory, Properties applicationProperties)
+      ApplicationModel appModel,
+      Path projectRoot,
+      Path targetDirectory,
+      Properties applicationProperties)
       throws MojoExecutionException {
     return newApplication(
         appModel,
@@ -145,7 +148,7 @@ public class QuarkusApp implements AutoCloseable {
    * @throws MojoExecutionException if an error occurs during execution
    */
   public static QuarkusApp newApplication(
-      AppModel appModel,
+      ApplicationModel appModel,
       Path projectRoot,
       Path targetDirectory,
       Properties applicationProperties,
