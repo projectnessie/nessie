@@ -2,6 +2,13 @@
 History
 =======
 
+0.11.0 (2021-10-20)
+-------------------
+
+* Fix Nessie's representation of global and on-reference state (Iceberg tables)
+* Support expected contents in Nessie Put operations in CLI
+* Fix CLI log -n option
+
 0.10.1 (2021-10-08)
 -------------------
 
