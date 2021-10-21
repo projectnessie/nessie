@@ -45,6 +45,9 @@ The following table lists the configurable parameters of the Nessie chart and th
 | authentication.enabled | Configures whether authentication is enabled | `false` |
 | authentication.oidcAuthServerUrl | Sets the base URL of the OpenID Connect (OIDC) server. Needs to be overridden with `authentication.enabled=true` | `http://127.255.0.0:0/auth/realms/unset/` |
 | authentication.oidcClientId | Set the OIDC client ID when `authentication.enabled=true`. Each application has a client ID that is used to identify the application | `nessie` |
+| authorization | Authorization settings | |
+| authorization.enabled | Configures whether authorization is enabled | `false` |
+| authorization.rules | The authorization rules when `authorization.enabled=true`. Example rules can be found [here](https://projectnessie.org/features/metadata_authorization/#authorization-rules) | |
 | jaegerTracing | Jaeger Tracing configuration | |
 | jaegerTracing.enabled | Determines whether Jaeger Tracing for Nessie is enabled or not via `true` / `false` | `false` |
 | jaegerTracing.endpoint | The traces endpoint, in case the client should connect directly to the Collector, such as `http://jaeger-collector:14268/api/traces` | None |

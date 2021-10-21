@@ -37,6 +37,14 @@ authentication:
   # Set the OIDC client ID when authentication.enabled=true. Each application has a client ID that is used to identify the application
   oidcClientId: nessie
 
+# configures authorization for the nessie server
+authorization:
+  enabled: false
+  # the authorization rules when authorization.enabled=true. Example rules can be found at https://projectnessie.org/features/metadata_authorization/#authorization-rules
+  #rules:
+  #  allowViewingBranch: op=='VIEW_REFERENCE' && role.startsWith('test_user') && ref.startsWith('allowedBranch')
+  #  allowCommits: op=='COMMIT_CHANGE_AGAINST_REFERENCE' && role.startsWith('test_user') && ref.startsWith('allowedBranch')
+
 # configure jaeger tracing for the nessie server
 jaegerTracing:
   enabled: false
