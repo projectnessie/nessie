@@ -18,15 +18,32 @@ package org.projectnessie.server.authn;
 import com.google.common.collect.ImmutableMap;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import java.util.Map;
+import org.projectnessie.server.profiles.BaseConfigProfile;
 
 /** A simple {@link QuarkusTestProfile} that enables Nessie authentication. */
 public class AuthenticationEnabledProfile implements QuarkusTestProfile {
 
-  public static final Map<String, String> CONFIG_OVERRIDES =
-      ImmutableMap.of("nessie.server.authentication.enabled", "true");
+  public static final Map<String, String> AUTH_CONFIG_OVERRIDES =
+      ImmutableMap.<String, String>builder()
+          .put("nessie.server.authentication.enabled", "true")
+          .build();
+
+  public static final Map<String, String> SECURITY_CONFIG =
+      ImmutableMap.<String, String>builder()
+          .put("quarkus.security.users.embedded.enabled", "true")
+          .put("quarkus.security.users.embedded.plain-text", "true")
+          .put("quarkus.security.users.embedded.users.admin_user", "test123")
+          .put("quarkus.security.users.embedded.users.test_user", "test_user")
+          .put("quarkus.security.users.embedded.roles.admin_user", "admin,user")
+          .put("quarkus.security.users.embedded.roles.test_user", "test123")
+          .build();
 
   @Override
   public Map<String, String> getConfigOverrides() {
-    return CONFIG_OVERRIDES;
+    return ImmutableMap.<String, String>builder()
+        .putAll(BaseConfigProfile.CONFIG_OVERRIDES)
+        .putAll(AUTH_CONFIG_OVERRIDES)
+        .putAll(SECURITY_CONFIG)
+        .build();
   }
 }

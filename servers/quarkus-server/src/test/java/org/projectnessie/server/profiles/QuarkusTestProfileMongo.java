@@ -17,16 +17,16 @@ package org.projectnessie.server.profiles;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import io.quarkus.test.junit.QuarkusTestProfile;
 import java.util.List;
 import java.util.Map;
 import org.projectnessie.server.config.VersionStoreConfig.VersionStoreType;
 
-public class QuarkusTestProfileMongo implements QuarkusTestProfile {
+public class QuarkusTestProfileMongo extends BaseConfigProfile {
 
   @Override
   public Map<String, String> getConfigOverrides() {
     return ImmutableMap.<String, String>builder()
+        .putAll(super.getConfigOverrides())
         .put("nessie.version.store.type", VersionStoreType.MONGO.name())
         .put("quarkus.mongodb.write-concern.journal", "false")
         .build();

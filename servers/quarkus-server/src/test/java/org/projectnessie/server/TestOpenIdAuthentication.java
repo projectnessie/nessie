@@ -76,7 +76,7 @@ public class TestOpenIdAuthentication extends BaseClientAuthTest {
     @Override
     public Map<String, String> getConfigOverrides() {
       return ImmutableMap.<String, String>builder()
-          .putAll(AuthenticationEnabledProfile.CONFIG_OVERRIDES)
+          .putAll(AuthenticationEnabledProfile.AUTH_CONFIG_OVERRIDES)
           .put("quarkus.oidc.client-id", getClass().getName())
           .put("quarkus.oidc.auth-server-url", "${keycloak.url}/realms/quarkus/")
           .put("smallrye.jwt.sign.key.location", "privateKey.jwk")

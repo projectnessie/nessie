@@ -13,7 +13,7 @@ It is meant to be used for testing purposes only.
 4. Goto `Clients > Admin-cli > Advanced Settings` and set Access Token Lifespan to 1 day (for convenience)
 5. Start Nessie server in test mode preconfigured to use the local Keycloak server:
 ```shell
-./mvnw -pl :nessie-quarkus quarkus:dev -Dquarkus.profile=auth-test
+./mvnw -pl :nessie-quarkus quarkus:dev -Dnessie.server.authentication.enabled=true -Dquarkus.oidc.auth-server-url=http://localhost:8080/auth/realms/master -Dquarkus.oidc.client-id=projectnessie
 ```
 5. Generate a token for `nessie` (note that the default token lifespan is pretty short):
 ```shell
