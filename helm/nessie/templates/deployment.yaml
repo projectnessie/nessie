@@ -83,14 +83,25 @@ spec:
 
             {{- if .Values.authentication.enabled }}
             - name: NESSIE_SERVER_AUTHENTICATION_ENABLED
-              value: {{ .Values.authentication.enabled }}
+              value: {{ .Values.authentication.enabled | quote }}
             {{- if .Values.authentication.oidcAuthServerUrl }}
-            - name: QUARKUS.OIDC.AUTH_SERVER_URL
+            - name: QUARKUS_OIDC_AUTH_SERVER_URL
               value: {{ .Values.authentication.oidcAuthServerUrl }}
             {{- end }}
             {{- if .Values.authentication.oidcClientId }}
-            - name: QUARKUS.OIDC.CLIENT_ID
+            - name: QUARKUS_OIDC_CLIENT_ID
               value: {{ .Values.authentication.oidcClientId }}
+            {{- end }}
+            {{- end }}
+
+            {{- if .Values.authorization.enabled }}
+            - name: NESSIE_SERVER_AUTHORIZATION_ENABLED
+              value: {{ .Values.authorization.enabled | quote }}
+            {{- if .Values.authorization.rules }}
+            {{- range $ruleId, $rule := .Values.authorization.rules }}
+            - name: NESSIE_SERVER_AUTHORIZATION_RULES_{{ upper $ruleId }}
+              value: {{ $rule }}
+            {{- end }}
             {{- end }}
             {{- end }}
 
