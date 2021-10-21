@@ -36,12 +36,64 @@ spec:
           env:
             - name: NESSIE_VERSION_STORE_TYPE
               value: {{ .Values.versionStoreType }}
+
+            {{- if .Values.logLevel }}
+            - name: QUARKUS_LOG_LEVEL
+              value: {{ .Values.logLevel }}
+            - name: QUARKUS_CONSOLE_LOG_LEVEL
+              value: {{ .Values.logLevel }}
+            - name: QUARKUS_LOG_FILE_LEVEL
+              value: {{ .Values.logLevel }}
+            {{- end }}
+
             {{- if eq .Values.versionStoreType "DYNAMO" }}
             {{- if .Values.dynamodb.region }}
             - name: AWS_REGION
               value: {{ .Values.dynamodb.region }}
             {{- end }}
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.dynamodb.secret.name }}
+                  key: {{ .Values.dynamodb.secret.awsAccessKeyId }}
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.dynamodb.secret.name }}
+                  key: {{ .Values.dynamodb.secret.awsSecretAccessKey }}
             {{- end }}
+
+            {{- if eq .Values.versionStoreType "ROCKS" }}
+            {{- if .Values.rocksdb.dbPath }}
+            - name: NESSIE_VERSION_STORE_ROCKS_DB_PATH
+              value: {{ .Values.rocksdb.dbPath }}
+            {{- end }}
+            {{- end }}
+
+            {{- if eq .Values.versionStoreType "MONGO" }}
+            {{- if .Values.mongodb.name }}
+            - name: QUARKUS_MONGODB_DATABASE
+              value: {{ .Values.mongodb.name }}
+            {{- end }}
+            {{- if .Values.mongodb.connectionString }}
+            - name: QUARKUS_MONGODB_CONNECTION_STRING
+              value: {{ .Values.mongodb.connectionString }}
+            {{- end }}
+            {{- end }}
+
+            {{- if .Values.authentication.enabled }}
+            - name: NESSIE_SERVER_AUTHENTICATION_ENABLED
+              value: {{ .Values.authentication.enabled }}
+            {{- if .Values.authentication.oidcAuthServerUrl }}
+            - name: QUARKUS.OIDC.AUTH_SERVER_URL
+              value: {{ .Values.authentication.oidcAuthServerUrl }}
+            {{- end }}
+            {{- if .Values.authentication.oidcClientId }}
+            - name: QUARKUS.OIDC.CLIENT_ID
+              value: {{ .Values.authentication.oidcClientId }}
+            {{- end }}
+            {{- end }}
+
             {{- if .Values.jaegerTracing.enabled }}
             {{- if .Values.jaegerTracing.serviceName }}
             - name: QUARKUS_JAEGER_SERVICE_NAME
