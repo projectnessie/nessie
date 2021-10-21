@@ -63,7 +63,7 @@
     "moment": "^2.29.1",
     "optimize-css-assets-webpack-plugin": "6.0.1",
     "pnp-webpack-plugin": "1.7.0",
-    "postcss": "8.3.9",
+    "postcss": "8.3.10",
     "postcss-flexbugs-fixes": "5.0.2",
     "postcss-loader": "4.3.0",
     "postcss-normalize": "10.0.1",
