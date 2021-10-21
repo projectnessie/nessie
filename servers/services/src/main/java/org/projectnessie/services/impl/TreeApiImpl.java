@@ -38,7 +38,6 @@ import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.cel.tools.Script;
 import org.projectnessie.cel.tools.ScriptException;
 import org.projectnessie.error.NessieConflictException;
-import org.projectnessie.error.NessieIllegalArgumentException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceAlreadyExistsException;
 import org.projectnessie.error.NessieReferenceConflictException;
@@ -107,7 +106,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
 
   @Override
   public Reference createReference(String sourceRefName, Reference reference)
-      throws NessieNotFoundException, NessieConflictException, NessieIllegalArgumentException {
+      throws NessieNotFoundException, NessieConflictException {
     NamedRef namedReference;
     if (reference instanceof Branch) {
       namedReference = BranchName.of(reference.getName());
@@ -123,8 +122,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   }
 
   private Hash createReference(NamedRef reference, String hash)
-      throws NessieNotFoundException, NessieIllegalArgumentException,
-          NessieReferenceAlreadyExistsException {
+      throws NessieNotFoundException, NessieReferenceAlreadyExistsException {
     if (reference instanceof TagName && hash == null) {
       throw new IllegalArgumentException(
           "Tag-creation requires a target named-reference and hash.");
@@ -151,25 +149,25 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
 
   @Override
   public void assignTag(String tagName, String expectedHash, Reference assignTo)
-      throws NessieNotFoundException, NessieConflictException, NessieIllegalArgumentException {
+      throws NessieNotFoundException, NessieConflictException {
     assignReference(TagName.of(tagName), expectedHash, assignTo);
   }
 
   @Override
   public void deleteTag(String tagName, String hash)
-      throws NessieConflictException, NessieNotFoundException, NessieIllegalArgumentException {
+      throws NessieConflictException, NessieNotFoundException {
     deleteReference(TagName.of(tagName), hash);
   }
 
   @Override
   public void assignBranch(String branchName, String expectedHash, Reference assignTo)
-      throws NessieNotFoundException, NessieConflictException, NessieIllegalArgumentException {
+      throws NessieNotFoundException, NessieConflictException {
     assignReference(BranchName.of(branchName), expectedHash, assignTo);
   }
 
   @Override
   public void deleteBranch(String branchName, String hash)
-      throws NessieConflictException, NessieNotFoundException, NessieIllegalArgumentException {
+      throws NessieConflictException, NessieNotFoundException {
     deleteReference(BranchName.of(branchName), hash);
   }
 
@@ -250,7 +248,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   @Override
   public void transplantCommitsIntoBranch(
       String branchName, String hash, String message, Transplant transplant)
-      throws NessieNotFoundException, NessieConflictException, NessieIllegalArgumentException {
+      throws NessieNotFoundException, NessieConflictException {
     try {
       List<Hash> transplants;
       try (Stream<Hash> s = transplant.getHashesToTransplant().stream().map(Hash::of)) {
@@ -266,7 +264,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
 
   @Override
   public void mergeRefIntoBranch(String branchName, String hash, Merge merge)
-      throws NessieNotFoundException, NessieConflictException, NessieIllegalArgumentException {
+      throws NessieNotFoundException, NessieConflictException {
     try {
       getStore()
           .merge(
@@ -374,7 +372,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
 
   @Override
   public Branch commitMultipleOperations(String branch, String hash, Operations operations)
-      throws NessieNotFoundException, NessieConflictException, NessieIllegalArgumentException {
+      throws NessieNotFoundException, NessieConflictException {
     List<org.projectnessie.versioned.Operation<Contents>> ops =
         operations.getOperations().stream()
             .map(TreeApiImpl::toOp)
@@ -388,7 +386,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
       String hash,
       CommitMeta commitMeta,
       List<org.projectnessie.versioned.Operation<Contents>> operations)
-      throws NessieConflictException, NessieNotFoundException, NessieIllegalArgumentException {
+      throws NessieConflictException, NessieNotFoundException {
     try {
       return getStore()
           .commit(
@@ -396,17 +394,16 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
               Optional.ofNullable(hash).map(Hash::of),
               meta(getPrincipal(), commitMeta),
               operations);
-    } catch (IllegalArgumentException | ReferenceNotFoundException e) {
+    } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
       throw new NessieReferenceConflictException(e.getMessage(), e);
     }
   }
 
-  private static CommitMeta meta(Principal principal, CommitMeta commitMeta)
-      throws NessieIllegalArgumentException {
+  private static CommitMeta meta(Principal principal, CommitMeta commitMeta) {
     if (commitMeta.getCommitter() != null) {
-      throw new NessieIllegalArgumentException(
+      throw new IllegalArgumentException(
           "Cannot set the committer on the client side. It is set by the server.");
     }
     String committer = principal == null ? "" : principal.getName();
@@ -420,7 +417,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   }
 
   private Hash toHash(String referenceName, String hashOnReference)
-      throws ReferenceNotFoundException, NessieIllegalArgumentException {
+      throws ReferenceNotFoundException {
     if (hashOnReference == null) {
       WithHash<Ref> hash = getStore().toRef(referenceName);
       return hash.getHash();
@@ -429,11 +426,10 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
         .orElseThrow(() -> new IllegalStateException("Required hash is missing"));
   }
 
-  private static Optional<Hash> toHash(String hash, boolean required)
-      throws NessieIllegalArgumentException {
+  private static Optional<Hash> toHash(String hash, boolean required) {
     if (hash == null || hash.isEmpty()) {
       if (required) {
-        throw new NessieIllegalArgumentException("Must provide expected hash value for operation.");
+        throw new IllegalArgumentException("Must provide expected hash value for operation.");
       }
       return Optional.empty();
     }
@@ -441,7 +437,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   }
 
   protected void deleteReference(NamedRef ref, String hash)
-      throws NessieConflictException, NessieNotFoundException, NessieIllegalArgumentException {
+      throws NessieConflictException, NessieNotFoundException {
     try {
       getStore().delete(ref, toHash(hash, true));
     } catch (ReferenceNotFoundException e) {
@@ -452,7 +448,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   }
 
   protected void assignReference(NamedRef ref, String oldHash, Reference assignTo)
-      throws NessieNotFoundException, NessieConflictException, NessieIllegalArgumentException {
+      throws NessieNotFoundException, NessieConflictException {
     try {
       WithHash<Ref> resolved = getStore().toRef(ref.getName());
       Ref resolvedRef = resolved.getValue();

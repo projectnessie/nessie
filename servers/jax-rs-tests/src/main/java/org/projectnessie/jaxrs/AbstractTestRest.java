@@ -1165,13 +1165,11 @@ public abstract class AbstractTestRest {
   @Test
   public void checkServerErrorPropagation() throws BaseNessieClientServerException {
     final String branch = "bar";
-    assertThat(
-            api.createReference()
-                .sourceRefName("main")
-                .reference(Branch.of(branch, null))
-                .create()
-                .getHash())
-        .isNotNull();
+    Reference ref =
+        api.createReference().sourceRefName("main").reference(Branch.of(branch, null)).create();
+    assertThat(ref.getName()).isEqualTo(branch);
+    assertThat(ref.getHash()).isNotNull();
+
     assertThatThrownBy(
             () ->
                 api.createReference()
@@ -1180,6 +1178,22 @@ public abstract class AbstractTestRest {
                     .create())
         .isInstanceOf(NessieReferenceAlreadyExistsException.class)
         .hasMessageContaining("already exists");
+
+    assertThatThrownBy(
+            () ->
+                api.commitMultipleOperations()
+                    .branchName(ref.getName())
+                    .hash(ref.getHash())
+                    .commitMeta(
+                        CommitMeta.builder()
+                            .author("author")
+                            .message("committed-by-test")
+                            .committer("disallowed-client-side-committer")
+                            .build())
+                    .operation(Unchanged.of(ContentsKey.of("table")))
+                    .commit())
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Cannot set the committer on the client side.");
   }
 
   @ParameterizedTest

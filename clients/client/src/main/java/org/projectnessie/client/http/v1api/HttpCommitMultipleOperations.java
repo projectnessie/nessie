@@ -19,7 +19,6 @@ import java.util.List;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieConflictException;
-import org.projectnessie.error.NessieIllegalArgumentException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
@@ -55,8 +54,7 @@ final class HttpCommitMultipleOperations
   }
 
   @Override
-  public Branch commit()
-      throws NessieNotFoundException, NessieConflictException, NessieIllegalArgumentException {
+  public Branch commit() throws NessieNotFoundException, NessieConflictException {
     return client.getTreeApi().commitMultipleOperations(branchName, hash, operations.build());
   }
 }

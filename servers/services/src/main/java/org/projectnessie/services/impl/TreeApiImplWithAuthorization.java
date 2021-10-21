@@ -26,7 +26,6 @@ import javax.annotation.Nullable;
 import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.error.NessieConflictException;
-import org.projectnessie.error.NessieIllegalArgumentException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
@@ -92,7 +91,7 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
 
   @Override
   public Reference createReference(@Nullable String sourceRefName, Reference reference)
-      throws NessieNotFoundException, NessieConflictException, NessieIllegalArgumentException {
+      throws NessieNotFoundException, NessieConflictException {
     if (reference instanceof Branch) {
       getAccessChecker()
           .canCreateReference(createAccessContext(), BranchName.of(reference.getName()));
@@ -121,7 +120,7 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
 
   @Override
   protected void assignReference(NamedRef ref, String oldHash, Reference assignTo)
-      throws NessieNotFoundException, NessieConflictException, NessieIllegalArgumentException {
+      throws NessieNotFoundException, NessieConflictException {
     namedRefWithHashOrThrow(assignTo.getName(), assignTo.getHash());
 
     getAccessChecker().canAssignRefToHash(createAccessContext(), ref);
@@ -130,7 +129,7 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
 
   @Override
   protected void deleteReference(NamedRef ref, String hash)
-      throws NessieConflictException, NessieNotFoundException, NessieIllegalArgumentException {
+      throws NessieConflictException, NessieNotFoundException {
     getAccessChecker().canDeleteReference(createAccessContext(), ref);
     super.deleteReference(ref, hash);
   }
@@ -161,7 +160,7 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
   @Override
   public void transplantCommitsIntoBranch(
       String branchName, String hash, String message, Transplant transplant)
-      throws NessieNotFoundException, NessieConflictException, NessieIllegalArgumentException {
+      throws NessieNotFoundException, NessieConflictException {
     if (transplant.getHashesToTransplant().isEmpty()) {
       throw new IllegalArgumentException("No hashes given to transplant.");
     }
@@ -176,7 +175,7 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
 
   @Override
   public void mergeRefIntoBranch(String branchName, String hash, Merge merge)
-      throws NessieNotFoundException, NessieConflictException, NessieIllegalArgumentException {
+      throws NessieNotFoundException, NessieConflictException {
     getAccessChecker()
         .canCommitChangeAgainstReference(createAccessContext(), BranchName.of(branchName));
     super.mergeRefIntoBranch(branchName, hash, merge);
@@ -184,7 +183,7 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
 
   @Override
   public Branch commitMultipleOperations(String branch, String hash, Operations operations)
-      throws NessieNotFoundException, NessieConflictException, NessieIllegalArgumentException {
+      throws NessieNotFoundException, NessieConflictException {
     BranchName branchName = BranchName.of(branch);
     ServerAccessContext accessContext = createAccessContext();
     getAccessChecker().canCommitChangeAgainstReference(accessContext, branchName);

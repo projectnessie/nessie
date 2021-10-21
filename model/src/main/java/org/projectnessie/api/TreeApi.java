@@ -23,7 +23,6 @@ import javax.validation.constraints.Pattern;
 import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.error.NessieConflictException;
-import org.projectnessie.error.NessieIllegalArgumentException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.EntriesResponse;
@@ -62,7 +61,7 @@ public interface TreeApi {
           @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           String sourceRefName,
       @Valid @NotNull Reference reference)
-      throws NessieNotFoundException, NessieConflictException, NessieIllegalArgumentException;
+      throws NessieNotFoundException, NessieConflictException;
 
   /** Get details of a particular ref, if it exists. */
   Reference getReferenceByName(
@@ -134,7 +133,7 @@ public interface TreeApi {
       @Valid @NotNull @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String oldHash,
       @Valid @NotNull Reference assignTo)
-      throws NessieNotFoundException, NessieConflictException, NessieIllegalArgumentException;
+      throws NessieNotFoundException, NessieConflictException;
 
   /** Delete a tag. */
   void deleteTag(
@@ -144,7 +143,7 @@ public interface TreeApi {
           String tagName,
       @Valid @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String hash)
-      throws NessieConflictException, NessieNotFoundException, NessieIllegalArgumentException;
+      throws NessieConflictException, NessieNotFoundException;
 
   /** Update a branch. */
   void assignBranch(
@@ -155,7 +154,7 @@ public interface TreeApi {
       @Valid @NotNull @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String oldHash,
       @Valid @NotNull Reference assignTo)
-      throws NessieNotFoundException, NessieConflictException, NessieIllegalArgumentException;
+      throws NessieNotFoundException, NessieConflictException;
 
   /** Delete a branch. */
   void deleteBranch(
@@ -165,7 +164,7 @@ public interface TreeApi {
           String branchName,
       @Valid @NotNull @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String hash)
-      throws NessieConflictException, NessieNotFoundException, NessieIllegalArgumentException;
+      throws NessieConflictException, NessieNotFoundException;
 
   /** cherry pick a set of commits into a branch. */
   void transplantCommitsIntoBranch(
@@ -177,7 +176,7 @@ public interface TreeApi {
           String hash,
       @Valid String message,
       @Valid Transplant transplant)
-      throws NessieNotFoundException, NessieConflictException, NessieIllegalArgumentException;
+      throws NessieNotFoundException, NessieConflictException;
 
   /** merge mergeRef onto ref. */
   void mergeRefIntoBranch(
@@ -188,7 +187,7 @@ public interface TreeApi {
       @Valid @NotNull @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String hash,
       @Valid @NotNull Merge merge)
-      throws NessieNotFoundException, NessieConflictException, NessieIllegalArgumentException;
+      throws NessieNotFoundException, NessieConflictException;
 
   /**
    * Commit multiple operations against the given branch expecting that branch to have the given
@@ -211,5 +210,5 @@ public interface TreeApi {
       @Valid @NotNull @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String hash,
       @Valid @NotNull Operations operations)
-      throws NessieNotFoundException, NessieConflictException, NessieIllegalArgumentException;
+      throws NessieNotFoundException, NessieConflictException;
 }

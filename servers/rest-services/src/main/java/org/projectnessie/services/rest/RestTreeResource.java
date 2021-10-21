@@ -25,7 +25,6 @@ import org.projectnessie.api.http.HttpTreeApi;
 import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.error.NessieConflictException;
-import org.projectnessie.error.NessieIllegalArgumentException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
@@ -91,7 +90,7 @@ public class RestTreeResource implements HttpTreeApi {
 
   @Override
   public Reference createReference(String sourceRefName, Reference reference)
-      throws NessieNotFoundException, NessieConflictException, NessieIllegalArgumentException {
+      throws NessieNotFoundException, NessieConflictException {
     return resource().createReference(sourceRefName, reference);
   }
 
@@ -114,44 +113,44 @@ public class RestTreeResource implements HttpTreeApi {
 
   @Override
   public void assignTag(String tagName, String oldHash, Reference assignTo)
-      throws NessieNotFoundException, NessieConflictException, NessieIllegalArgumentException {
+      throws NessieNotFoundException, NessieConflictException {
     resource().assignTag(tagName, oldHash, assignTo);
   }
 
   @Override
   public void deleteTag(String tagName, String hash)
-      throws NessieConflictException, NessieNotFoundException, NessieIllegalArgumentException {
+      throws NessieConflictException, NessieNotFoundException {
     resource().deleteTag(tagName, hash);
   }
 
   @Override
   public void assignBranch(String branchName, String oldHash, Reference assignTo)
-      throws NessieNotFoundException, NessieConflictException, NessieIllegalArgumentException {
+      throws NessieNotFoundException, NessieConflictException {
     resource().assignBranch(branchName, oldHash, assignTo);
   }
 
   @Override
   public void deleteBranch(String branchName, String hash)
-      throws NessieConflictException, NessieNotFoundException, NessieIllegalArgumentException {
+      throws NessieConflictException, NessieNotFoundException {
     resource().deleteBranch(branchName, hash);
   }
 
   @Override
   public void transplantCommitsIntoBranch(
       String branchName, String hash, String message, Transplant transplant)
-      throws NessieNotFoundException, NessieConflictException, NessieIllegalArgumentException {
+      throws NessieNotFoundException, NessieConflictException {
     resource().transplantCommitsIntoBranch(branchName, hash, message, transplant);
   }
 
   @Override
   public void mergeRefIntoBranch(String branchName, String hash, Merge merge)
-      throws NessieNotFoundException, NessieConflictException, NessieIllegalArgumentException {
+      throws NessieNotFoundException, NessieConflictException {
     resource().mergeRefIntoBranch(branchName, hash, merge);
   }
 
   @Override
   public Branch commitMultipleOperations(String branchName, String hash, Operations operations)
-      throws NessieNotFoundException, NessieConflictException, NessieIllegalArgumentException {
+      throws NessieNotFoundException, NessieConflictException {
     return resource().commitMultipleOperations(branchName, hash, operations);
   }
 }

@@ -16,7 +16,6 @@
 package org.projectnessie.client.api;
 
 import org.projectnessie.error.NessieConflictException;
-import org.projectnessie.error.NessieIllegalArgumentException;
 import org.projectnessie.error.NessieNotFoundException;
 
 /**
@@ -25,6 +24,5 @@ import org.projectnessie.error.NessieNotFoundException;
  * @since {@link NessieApiV1}
  */
 public interface DeleteTagBuilder extends OnTagBuilder<DeleteTagBuilder> {
-  void delete()
-      throws NessieConflictException, NessieNotFoundException, NessieIllegalArgumentException;
+  void delete() throws NessieConflictException, NessieNotFoundException;
 }
