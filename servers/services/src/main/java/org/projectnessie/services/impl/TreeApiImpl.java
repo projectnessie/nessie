@@ -131,8 +131,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     try {
       return getStore().create(reference, toHash(hash, false));
     } catch (ReferenceNotFoundException e) {
-      throw new NessieReferenceNotFoundException(
-          "Failure while searching for provided targeted hash.", e);
+      throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (ReferenceAlreadyExistsException e) {
       throw new NessieReferenceAlreadyExistsException(e.getMessage(), e);
     }
@@ -205,8 +204,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
       }
       return ImmutableLogResponse.builder().addAllOperations(items).build();
     } catch (ReferenceNotFoundException e) {
-      throw new NessieReferenceNotFoundException(
-          String.format("Unable to find the requested ref [%s].", namedRef), e);
+      throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }
   }
 
@@ -310,8 +308,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
       }
       return EntriesResponse.builder().addAllEntries(entries).build();
     } catch (ReferenceNotFoundException e) {
-      throw new NessieReferenceNotFoundException(
-          String.format("Unable to find the reference [%s].", namedRef), e);
+      throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }
   }
 

@@ -60,8 +60,7 @@ public class ContentsApiImpl extends BaseApiImpl implements ContentsApi {
       }
       throw new NessieContentsNotFoundException(key, namedRef);
     } catch (ReferenceNotFoundException e) {
-      throw new NessieReferenceNotFoundException(
-          String.format("Provided reference [%s] does not exist.", namedRef), e);
+      throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }
   }
 
@@ -84,7 +83,7 @@ public class ContentsApiImpl extends BaseApiImpl implements ContentsApi {
 
       return ImmutableMultiGetContentsResponse.builder().contents(output).build();
     } catch (ReferenceNotFoundException ex) {
-      throw new NessieReferenceNotFoundException("Unable to find the requested ref.", ex);
+      throw new NessieReferenceNotFoundException(ex.getMessage(), ex);
     }
   }
 
