@@ -152,6 +152,9 @@ def test_branch() -> None:
     _cli(["branch", "etl", "main"])
     references = ReferenceSchema().loads(_cli(["--json", "branch"]), many=True)
     assert len(references) == 3
+    references = ReferenceSchema().loads(_cli(["--json", "branch", "-l", "etl"]), many=True)
+    assert len(references) == 1
+    assert references[0].name == "etl"
     _cli(["branch", "-d", "etl"])
     _cli(["branch", "-d", "dev"])
     references = ReferenceSchema().loads(_cli(["--json", "branch"]), many=True)
@@ -169,6 +172,9 @@ def test_tag() -> None:
     _cli(["tag", "etl-tag", "main"])
     references = ReferenceSchema().loads(_cli(["--json", "tag"]), many=True)
     assert len(references) == 2
+    references = ReferenceSchema().loads(_cli(["--json", "tag", "-l", "etl-tag"]), many=True)
+    assert len(references) == 1
+    assert references[0].name == "etl-tag"
     _cli(["tag", "-d", "etl-tag"])
     _cli(["tag", "-d", "dev-tag"])
     references = ReferenceSchema().loads(_cli(["--json", "tag"]), many=True)
