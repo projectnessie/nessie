@@ -57,6 +57,8 @@ public abstract class AbstractSparkTest {
     conf.set(SQLConf.PARTITION_OVERWRITE_MODE().key(), "dynamic")
         .set("spark.testing", "true")
         .set("spark.sql.shuffle.partitions", "4")
+        .set("spark.sql.catalog.hive", "org.apache.iceberg.spark.SparkCatalog")
+        .set("spark.sql.catalog.hive.catalog-impl", "org.apache.iceberg.hive.HiveCatalog")
         .set("spark.sql.catalog.nessie.catalog-impl", "org.apache.iceberg.nessie.NessieCatalog")
         .set("spark.sql.catalog.nessie", "org.apache.iceberg.spark.SparkCatalog");
     spark = SparkSession.builder().master("local[2]").config(conf).getOrCreate();

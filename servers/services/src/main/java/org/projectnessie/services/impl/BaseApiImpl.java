@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.services.rest;
+package org.projectnessie.services.impl;
 
 import java.security.Principal;
 import java.util.Optional;
 import java.util.UUID;
 import javax.annotation.Nullable;
-import javax.ws.rs.core.SecurityContext;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
@@ -33,25 +32,21 @@ import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
 
-abstract class BaseResource {
+abstract class BaseApiImpl {
   private final ServerConfig config;
-
   private final VersionStore<Contents, CommitMeta, Contents.Type> store;
-
   private final AccessChecker accessChecker;
+  private final Principal principal;
 
-  // Mandated by CDI 2.0
-  protected BaseResource() {
-    this(null, null, null);
-  }
-
-  protected BaseResource(
+  protected BaseApiImpl(
       ServerConfig config,
       VersionStore<Contents, CommitMeta, Contents.Type> store,
-      AccessChecker accessChecker) {
+      AccessChecker accessChecker,
+      Principal principal) {
     this.config = config;
     this.store = store;
     this.accessChecker = accessChecker;
+    this.principal = principal;
   }
 
   WithHash<NamedRef> namedRefWithHashOrThrow(@Nullable String namedRef, @Nullable String hashOnRef)
@@ -100,10 +95,8 @@ abstract class BaseResource {
     return store;
   }
 
-  protected abstract SecurityContext getSecurityContext();
-
   protected Principal getPrincipal() {
-    return null == getSecurityContext() ? null : getSecurityContext().getUserPrincipal();
+    return principal;
   }
 
   protected AccessChecker getAccessChecker() {

@@ -19,13 +19,13 @@ import static org.projectnessie.server.config.VersionStoreConfig.VersionStoreTyp
 
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
+import org.projectnessie.server.config.QuarkusVersionStoreAdvancedConfig;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.inmem.InmemoryDatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.inmem.InmemoryStore;
-import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.store.PersistVersionStore;
 
 /** In-memory version store factory. */
@@ -33,7 +33,7 @@ import org.projectnessie.versioned.persist.store.PersistVersionStore;
 @Dependent
 public class InMemVersionStoreFactory implements VersionStoreFactory {
   @Inject InmemoryStore store;
-  @Inject NonTransactionalDatabaseAdapterConfig config;
+  @Inject QuarkusVersionStoreAdvancedConfig config;
 
   @Override
   public <VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>>

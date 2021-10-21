@@ -13,18 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.services.rest;
+package org.projectnessie.services.impl;
 
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.enterprise.context.RequestScoped;
-import javax.enterprise.inject.Alternative;
-import javax.inject.Inject;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.SecurityContext;
-import org.projectnessie.api.http.HttpContentsApi;
+import org.projectnessie.api.ContentsApi;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
@@ -41,29 +37,14 @@ import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
 
-/** REST endpoint for contents. */
-@RequestScoped
-@Alternative
-public class ContentsResource extends BaseResource implements HttpContentsApi {
+public class ContentsApiImpl extends BaseApiImpl implements ContentsApi {
 
-  // Mandated by CDI 2.0
-  public ContentsResource() {
-    this(null, null, null);
-  }
-
-  @Context SecurityContext securityContext;
-
-  @Inject
-  public ContentsResource(
+  public ContentsApiImpl(
       ServerConfig config,
       VersionStore<Contents, CommitMeta, Contents.Type> store,
-      AccessChecker accessChecker) {
-    super(config, store, accessChecker);
-  }
-
-  @Override
-  protected SecurityContext getSecurityContext() {
-    return securityContext;
+      AccessChecker accessChecker,
+      Principal principal) {
+    super(config, store, accessChecker, principal);
   }
 
   @Override
@@ -90,7 +71,7 @@ public class ContentsResource extends BaseResource implements HttpContentsApi {
       WithHash<NamedRef> ref = namedRefWithHashOrThrow(namedRef, hashOnRef);
       List<ContentsKey> externalKeys = request.getRequestedKeys();
       List<Key> internalKeys =
-          externalKeys.stream().map(ContentsResource::toKey).collect(Collectors.toList());
+          externalKeys.stream().map(ContentsApiImpl::toKey).collect(Collectors.toList());
       List<Optional<Contents>> values = getStore().getValues(ref.getHash(), internalKeys);
       List<ContentsWithKey> output = new ArrayList<>();
 

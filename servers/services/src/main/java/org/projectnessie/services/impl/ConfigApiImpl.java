@@ -13,26 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.services.rest;
+package org.projectnessie.services.impl;
 
-import javax.enterprise.context.RequestScoped;
-import javax.inject.Inject;
-import org.projectnessie.api.http.HttpConfigApi;
+import org.projectnessie.api.ConfigApi;
 import org.projectnessie.model.ImmutableNessieConfiguration;
 import org.projectnessie.model.NessieConfiguration;
 import org.projectnessie.services.config.ServerConfig;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-/** REST endpoint to retrieve server settings. */
-@RequestScoped
-public class ConfigResource implements HttpConfigApi {
+public class ConfigApiImpl implements ConfigApi {
 
-  private static final Logger logger = LoggerFactory.getLogger(ConfigResource.class);
   private final ServerConfig config;
 
-  @Inject
-  public ConfigResource(ServerConfig config) {
+  public ConfigApiImpl(ServerConfig config) {
     this.config = config;
   }
 

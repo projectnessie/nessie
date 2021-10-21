@@ -31,7 +31,6 @@ public class StartTask extends DefaultTask {
   @TaskAction
   public void noop() {}
 
-  @SuppressWarnings("UnstableApiUsage") // omit warning about `Property`+`MapProperty`
   void quarkusStart(Test testTask) {
     StopTask stopTask =
         (StopTask) getProject().getTasks().getByName(QuarkusAppPlugin.STOP_TASK_NAME);

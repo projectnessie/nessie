@@ -22,7 +22,7 @@
   <parent>
     <groupId>org.projectnessie</groupId>
     <artifactId>nessie-perftest</artifactId>
-    <version>0.10.2-SNAPSHOT</version>
+    <version>0.11.1-SNAPSHOT</version>
   </parent>
 
   <artifactId>nessie-perftest-gatling</artifactId>
@@ -44,6 +44,12 @@
       <groupId>io.gatling.highcharts</groupId>
       <artifactId>gatling-charts-highcharts</artifactId>
       <version>${gatling.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-tcnative-boringssl-static</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.scala-lang</groupId>

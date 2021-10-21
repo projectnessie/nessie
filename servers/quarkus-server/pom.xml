@@ -22,7 +22,7 @@
   <parent>
     <groupId>org.projectnessie</groupId>
     <artifactId>nessie-server-parent</artifactId>
-    <version>0.10.2-SNAPSHOT</version>
+    <version>0.11.1-SNAPSHOT</version>
   </parent>
 
   <artifactId>nessie-quarkus</artifactId>
@@ -39,7 +39,7 @@
   <dependencies>
     <dependency>
       <groupId>org.projectnessie</groupId>
-      <artifactId>nessie-services</artifactId>
+      <artifactId>nessie-rest-services</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -119,7 +119,7 @@
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-vertx-web</artifactId>
+      <artifactId>quarkus-reactive-routes</artifactId>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>

@@ -21,7 +21,6 @@ import org.gradle.api.Project;
 import org.gradle.api.provider.MapProperty;
 import org.gradle.api.provider.Property;
 
-@SuppressWarnings("UnstableApiUsage") // omit warning about `Property`+`MapProperty`
 public class QuarkusAppExtension {
   private final MapProperty<String, Object> props;
   private final MapProperty<String, String> systemProperties;

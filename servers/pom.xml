@@ -22,7 +22,7 @@
   <parent>
     <groupId>org.projectnessie</groupId>
     <artifactId>nessie</artifactId>
-    <version>0.10.2-SNAPSHOT</version>
+    <version>0.11.1-SNAPSHOT</version>
   </parent>
 
   <artifactId>nessie-server-parent</artifactId>
@@ -34,6 +34,7 @@
     <module>lambda</module>
     <module>quarkus-server</module>
     <module>services</module>
+    <module>rest-services</module>
     <module>store</module>
     <module>jax-rs</module>
     <module>jax-rs-testextension</module>

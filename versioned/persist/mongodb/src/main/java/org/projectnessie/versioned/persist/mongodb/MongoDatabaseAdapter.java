@@ -39,6 +39,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.bson.types.Binary;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ReferenceConflictException;
@@ -58,7 +59,12 @@ import org.projectnessie.versioned.persist.serialize.ProtoSerialization.Parser;
 public class MongoDatabaseAdapter
     extends NonTransactionalDatabaseAdapter<NonTransactionalDatabaseAdapterConfig> {
 
-  public static final char PREFIX_SEPARATOR = '#';
+  private static final String ID_PROPERTY_NAME = "_id";
+  private static final String ID_PREFIX_NAME = "prefix";
+  private static final String ID_HASH_NAME = "hash";
+  private static final String ID_PREFIX_PATH = ID_PROPERTY_NAME + "." + ID_PREFIX_NAME;
+  private static final String DATA_PROPERTY_NAME = "data";
+  private static final String GLOBAL_ID_PROPERTY_NAME = "globalId";
 
   private final String keyPrefix;
   private final String globalPointerKey;
@@ -72,30 +78,32 @@ public class MongoDatabaseAdapter
     Objects.requireNonNull(client, "MongoDatabaseClient cannot be null");
     this.client = client;
 
-    String keyPrefix = config.getKeyPrefix();
-    if (keyPrefix.indexOf(PREFIX_SEPARATOR) >= 0) {
-      throw new IllegalArgumentException("Invalid key prefix: " + keyPrefix);
-    }
-    this.keyPrefix = keyPrefix + PREFIX_SEPARATOR;
+    this.keyPrefix = config.getKeyPrefix();
+    Objects.requireNonNull(keyPrefix, "Key prefix cannot be null");
 
     globalPointerKey = keyPrefix;
   }
 
   @Override
   public void reinitializeRepo(String defaultBranchName) {
-    client.getGlobalPointers().deleteMany(Filters.eq(globalPointerKey)); // empty filter matches all
-    client.getGlobalLog().deleteMany(Filters.regex("_id", keyPrefix + ".*"));
-    client.getCommitLog().deleteMany(Filters.regex("_id", keyPrefix + ".*"));
-    client.getKeyLists().deleteMany(Filters.regex("_id", keyPrefix + ".*"));
+    client.getGlobalPointers().deleteMany(Filters.eq(globalPointerKey));
+    Bson idPrefixFilter = Filters.eq(ID_PREFIX_PATH, keyPrefix);
+    client.getGlobalLog().deleteMany(idPrefixFilter);
+    client.getCommitLog().deleteMany(idPrefixFilter);
+    client.getKeyLists().deleteMany(idPrefixFilter);
 
     super.initializeRepo(defaultBranchName);
   }
 
-  private String toId(Hash id) {
-    return keyPrefix + id.asString();
+  private Document toId(Hash id) {
+    Document idDoc = new Document();
+    // Note: the order of `put` calls matters
+    idDoc.put(ID_PREFIX_NAME, keyPrefix);
+    idDoc.put(ID_HASH_NAME, id.asString());
+    return idDoc;
   }
 
-  private List<String> toIds(Collection<Hash> ids) {
+  private List<Document> toIds(Collection<Hash> ids) {
     return ids.stream().map(this::toId).collect(Collectors.toList());
   }
 
@@ -103,18 +111,18 @@ public class MongoDatabaseAdapter
     return toDoc(toId(id), data);
   }
 
-  private static Document toDoc(String id, byte[] data) {
+  private static Document toDoc(Document id, byte[] data) {
     Document doc = new Document();
-    doc.put("_id", id);
-    doc.put("data", data);
+    doc.put(ID_PROPERTY_NAME, id);
+    doc.put(DATA_PROPERTY_NAME, data);
     return doc;
   }
 
   private Document toDoc(GlobalStatePointer pointer) {
     Document doc = new Document();
-    doc.put("_id", globalPointerKey);
-    doc.put("data", pointer.toByteArray());
-    doc.put("globalId", pointer.getGlobalId().toByteArray());
+    doc.put(ID_PROPERTY_NAME, globalPointerKey);
+    doc.put(DATA_PROPERTY_NAME, pointer.toByteArray());
+    doc.put(GLOBAL_ID_PROPERTY_NAME, pointer.getGlobalId().toByteArray());
     return doc;
   }
 
@@ -170,20 +178,20 @@ public class MongoDatabaseAdapter
   }
 
   private void delete(MongoCollection<Document> collection, Set<Hash> ids) {
-    DeleteResult result = collection.deleteMany(Filters.in("_id", toIds(ids)));
+    DeleteResult result = collection.deleteMany(Filters.in(ID_PROPERTY_NAME, toIds(ids)));
 
     if (!result.wasAcknowledged()) {
       throw new IllegalStateException("Unacknowledged write to " + collection.getNamespace());
     }
   }
 
-  private byte[] loadById(MongoCollection<Document> collection, String id) {
+  private <ID> byte[] loadById(MongoCollection<Document> collection, ID id) {
     Document doc = collection.find(Filters.eq(id)).first();
     if (doc == null) {
       return null;
     }
 
-    Binary data = doc.get("data", Binary.class);
+    Binary data = doc.get(DATA_PROPERTY_NAME, Binary.class);
     if (data == null) {
       return null;
     }
@@ -195,7 +203,7 @@ public class MongoDatabaseAdapter
     return loadById(collection, toId(id), parser);
   }
 
-  private <T> T loadById(MongoCollection<Document> collection, String id, Parser<T> parser) {
+  private <T, ID> T loadById(MongoCollection<Document> collection, ID id, Parser<T> parser) {
     byte[] data = loadById(collection, id);
     if (data == null) {
       return null;
@@ -215,8 +223,9 @@ public class MongoDatabaseAdapter
    */
   private <T> List<T> fetchMappedPage(
       MongoCollection<Document> collection, List<Hash> hashes, Function<Document, T> mapper) {
-    List<String> ids = hashes.stream().map(this::toId).collect(Collectors.toList());
-    FindIterable<Document> docs = collection.find(Filters.in("_id", ids)).limit(hashes.size());
+    List<Document> ids = hashes.stream().map(this::toId).collect(Collectors.toList());
+    FindIterable<Document> docs =
+        collection.find(Filters.in(ID_PROPERTY_NAME, ids)).limit(hashes.size());
 
     HashMap<Hash, Document> loaded = new HashMap<>(hashes.size() * 4 / 3 + 1, 0.75f);
     for (Document doc : docs) {
@@ -258,19 +267,20 @@ public class MongoDatabaseAdapter
   }
 
   private Hash idAsHash(Document doc) {
-    String id = doc.get("_id", String.class);
+    Document id = doc.get(ID_PROPERTY_NAME, Document.class);
 
-    if (!id.startsWith(keyPrefix)) {
+    String prefix = id.getString(ID_PREFIX_NAME);
+    if (!keyPrefix.equals(prefix)) {
       throw new IllegalStateException(
           String.format("Key prefix mismatch for id '%s' (expected prefix: '%s')", id, keyPrefix));
     }
 
-    String hash = id.substring(keyPrefix.length());
+    String hash = id.getString(ID_HASH_NAME);
     return Hash.of(hash);
   }
 
   private static byte[] data(Document doc) {
-    return doc.get("data", Binary.class).getData();
+    return doc.get(DATA_PROPERTY_NAME, Binary.class).getData();
   }
 
   @Override
@@ -335,7 +345,7 @@ public class MongoDatabaseAdapter
   @Override
   protected void writeGlobalCommit(NonTransactionalOperationContext ctx, GlobalStateLogEntry entry)
       throws ReferenceConflictException {
-    String id = toId(Hash.of(entry.getId()));
+    Document id = toId(Hash.of(entry.getId()));
     insert(client.getGlobalLog(), toDoc(id, entry.toByteArray()));
   }
 
@@ -370,7 +380,9 @@ public class MongoDatabaseAdapter
         client
             .getGlobalPointers()
             .replaceOne(
-                Filters.and(Filters.eq(globalPointerKey), Filters.eq("globalId", expectedGlobalId)),
+                Filters.and(
+                    Filters.eq(globalPointerKey),
+                    Filters.eq(GLOBAL_ID_PROPERTY_NAME, expectedGlobalId)),
                 doc);
 
     return result.wasAcknowledged()

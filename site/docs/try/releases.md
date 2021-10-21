@@ -1,5 +1,12 @@
 # Releases
 
+## 0.11.0 Release (October 20, 2021)
+
+* Various doc + site improvements
+* Fix Nessie's representation of global and on-reference state (Iceberg tables)
+* Fix CLI log -n option
+* Spark SQL extension improvements
+
 ## 0.10.1 Release (October 8, 2021)
 
 * Spark SQL extension changes

@@ -22,20 +22,20 @@ option java_generate_equals_and_hash = true;
 
 message Contents {
   oneof object_type {
-    IcebergTableMetadata iceberg_table_metadata = 1;
-    IcebergSnapshot iceberg_snapshot = 2;
+    IcebergMetadataPointer iceberg_metadata_pointer = 1;
+    IcebergGlobal iceberg_global = 2;
     SqlView sql_view = 3;
     DeltaLakeTable delta_lake_table = 4;
   }
   string id = 5;
 }
 
-message IcebergTableMetadata {
+message IcebergMetadataPointer {
   string metadata_location = 1;
 }
 
-message IcebergSnapshot {
-  int64 snapshot_id = 1;
+message IcebergGlobal {
+  string id_generators = 1;
 }
 
 message SqlView {

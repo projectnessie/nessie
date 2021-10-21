@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.services.rest;
+package org.projectnessie.services.impl;
 
 import static org.projectnessie.services.cel.CELUtil.COMMIT_LOG_DECLARATIONS;
 import static org.projectnessie.services.cel.CELUtil.COMMIT_LOG_TYPES;
@@ -32,12 +32,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import javax.enterprise.context.RequestScoped;
-import javax.enterprise.inject.Alternative;
-import javax.inject.Inject;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.SecurityContext;
-import org.projectnessie.api.http.HttpTreeApi;
+import org.projectnessie.api.TreeApi;
 import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.cel.tools.Script;
@@ -78,36 +73,22 @@ import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
 
-/** REST endpoint for trees. */
-@RequestScoped
-@Alternative
-public class TreeResource extends BaseResource implements HttpTreeApi {
+public class TreeApiImpl extends BaseApiImpl implements TreeApi {
+
   private static final int MAX_COMMIT_LOG_ENTRIES = 250;
 
-  // Mandated by CDI 2.0
-  public TreeResource() {
-    this(null, null, null);
-  }
-
-  @Context SecurityContext securityContext;
-
-  @Inject
-  public TreeResource(
+  public TreeApiImpl(
       ServerConfig config,
       VersionStore<Contents, CommitMeta, Contents.Type> store,
-      AccessChecker accessChecker) {
-    super(config, store, accessChecker);
-  }
-
-  @Override
-  protected SecurityContext getSecurityContext() {
-    return securityContext;
+      AccessChecker accessChecker,
+      Principal principal) {
+    super(config, store, accessChecker, principal);
   }
 
   @Override
   public List<Reference> getAllReferences() {
     try (Stream<WithHash<NamedRef>> str = getStore().getNamedRefs()) {
-      return str.map(TreeResource::makeNamedRef).collect(Collectors.toList());
+      return str.map(TreeApiImpl::makeNamedRef).collect(Collectors.toList());
     }
   }
 
@@ -391,7 +372,7 @@ public class TreeResource extends BaseResource implements HttpTreeApi {
       throws NessieNotFoundException, NessieConflictException {
     List<org.projectnessie.versioned.Operation<Contents>> ops =
         operations.getOperations().stream()
-            .map(TreeResource::toOp)
+            .map(TreeApiImpl::toOp)
             .collect(ImmutableList.toImmutableList());
     String newHash = doOps(branch, hash, operations.getCommitMeta(), ops).asString();
     return Branch.of(branch, newHash);

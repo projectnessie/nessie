@@ -11,14 +11,13 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: GET
-    uri: http://localhost:19120/api/v1/trees
+    uri: http://localhost:19120/api/v1/trees/tree
   response:
     body:
-      string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
-        \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n} ]"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}"
     headers:
       Content-Length:
-      - '125'
+      - '121'
       Content-Type:
       - application/json
     status:
@@ -116,21 +115,27 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: GET
-    uri: http://localhost:19120/api/v1/trees/tree/main
+    uri: http://localhost:19120/api/v1/contents/commit.expected.contents?ref=dev
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}"
+      string: "{\n  \"message\" : \"Requested contents do not exist for specified
+        reference.\",\n  \"status\" : 404,\n  \"reason\" : \"Not Found\",\n  \"serverStackTrace\"
+        : null\n}"
     headers:
       Content-Length:
-      - '121'
+      - '149'
       Content-Type:
       - application/json
     status:
-      code: 200
-      message: OK
+      code: 404
+      message: Not Found
 - request:
-    body: '{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-      "name": "etl", "type": "BRANCH"}'
+    body: '{"operations": [{"contents": {"id": "test_commit_no_expected_state", "checkpointLocationHistory":
+      ["def"], "metadataLocationHistory": ["asd111"], "lastCheckpoint": "x", "type":
+      "DELTA_LAKE_TABLE"}, "key": {"elements": ["commit", "expected", "contents"]},
+      "expectedContents": null, "type": "PUT"}], "commitMeta": {"author": "nessie
+      test", "properties": null, "committer": null, "signedOffBy": null, "hash": null,
+      "commitTime": null, "message": "commit 1", "authorTime": null}}'
     headers:
       Accept:
       - '*/*'
@@ -139,16 +144,16 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '109'
+      - '475'
       Content-Type:
       - application/json
       User-Agent:
       - python-requests/2.26.0
     method: POST
-    uri: http://localhost:19120/api/v1/trees/tree?sourceRefName=main
+    uri: http://localhost:19120/api/v1/trees/branch/dev/commit?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"etl\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"13326c835719419906534171b1a8b651bd1a686d3fb2cd98d78d93b353cbc65a\"\n}"
     headers:
       Content-Length:
       - '120'
@@ -174,12 +179,11 @@ interactions:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
         \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}, {\n
-        \ \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n},
-        {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"etl\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}
+        \ \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"13326c835719419906534171b1a8b651bd1a686d3fb2cd98d78d93b353cbc65a\"\n}
         ]"
     headers:
       Content-Length:
-      - '369'
+      - '247'
       Content-Type:
       - application/json
     status:
@@ -197,106 +201,48 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: GET
-    uri: http://localhost:19120/api/v1/trees/tree/etl
+    uri: http://localhost:19120/api/v1/contents/commit.expected.contents?ref=dev
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"etl\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}"
+      string: "{\n  \"type\" : \"DELTA_LAKE_TABLE\",\n  \"id\" : \"test_commit_no_expected_state\",\n
+        \ \"metadataLocationHistory\" : [ \"asd111\" ],\n  \"checkpointLocationHistory\"
+        : [ \"def\" ],\n  \"lastCheckpoint\" : \"x\"\n}"
+    headers:
+      Content-Length:
+      - '188'
+      Content-Type:
+      - application/json
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"operations": [{"contents": {"id": "test_commit_no_expected_state", "checkpointLocationHistory":
+      ["def"], "metadataLocationHistory": ["asd222"], "lastCheckpoint": "x", "type":
+      "DELTA_LAKE_TABLE"}, "key": {"elements": ["commit", "expected", "contents"]},
+      "expectedContents": null, "type": "PUT"}], "commitMeta": {"author": "nessie
+      test", "properties": null, "committer": null, "signedOffBy": null, "hash": null,
+      "commitTime": null, "message": "commit 2", "authorTime": null}}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '475'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.26.0
+    method: POST
+    uri: http://localhost:19120/api/v1/trees/branch/dev/commit?expectedHash=13326c835719419906534171b1a8b651bd1a686d3fb2cd98d78d93b353cbc65a
+  response:
+    body:
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"18ba05ff14ce6eb31cfe141db58f818e327cf9ec3fb657d08f323ecf553ebe16\"\n}"
     headers:
       Content-Length:
       - '120'
-      Content-Type:
-      - application/json
-    status:
-      code: 200
-      message: OK
-- request:
-    body: null
-    headers:
-      Accept:
-      - application/json
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '0'
-      User-Agent:
-      - python-requests/2.26.0
-    method: DELETE
-    uri: http://localhost:19120/api/v1/trees/branch/etl?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
-  response:
-    body:
-      string: ''
-    headers: {}
-    status:
-      code: 204
-      message: No Content
-- request:
-    body: null
-    headers:
-      Accept:
-      - application/json
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      User-Agent:
-      - python-requests/2.26.0
-    method: GET
-    uri: http://localhost:19120/api/v1/trees/tree/dev
-  response:
-    body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}"
-    headers:
-      Content-Length:
-      - '120'
-      Content-Type:
-      - application/json
-    status:
-      code: 200
-      message: OK
-- request:
-    body: null
-    headers:
-      Accept:
-      - application/json
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '0'
-      User-Agent:
-      - python-requests/2.26.0
-    method: DELETE
-    uri: http://localhost:19120/api/v1/trees/branch/dev?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
-  response:
-    body:
-      string: ''
-    headers: {}
-    status:
-      code: 204
-      message: No Content
-- request:
-    body: null
-    headers:
-      Accept:
-      - application/json
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      User-Agent:
-      - python-requests/2.26.0
-    method: GET
-    uri: http://localhost:19120/api/v1/trees
-  response:
-    body:
-      string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
-        \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n} ]"
-    headers:
-      Content-Length:
-      - '125'
       Content-Type:
       - application/json
     status:
