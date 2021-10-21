@@ -36,15 +36,15 @@
     align-items: center;
     background-color: #f5f7f9;
 }
-.commitLog__notFoundText{
-    display: flex;
-    justify-content: center;
-}
 .commitLog__copyBtn{
     color: #000 !important;
 }
 .commitLog__hashBtn{
     color: #0969da !important;
+}
+.commitLog__hashBtn:hover span{
+    color: #f5f7f9 !important;
+    text-decoration: underline;
 }
 .rightBtnHover:hover{
     color: #f5f7f9 !important;

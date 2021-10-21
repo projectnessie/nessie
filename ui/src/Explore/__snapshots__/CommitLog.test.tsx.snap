@@ -1,0 +1,109 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Commit log renders 1`] = `
+<DocumentFragment>
+  <div
+    class="EmptyView card-header"
+  >
+    <span
+      class="EmptyView__message"
+    >
+      Nothing to show
+    </span>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Commit log renders 2`] = `
+<DocumentFragment>
+  <div
+    class="commitLog card"
+  >
+    <div
+      class="commitLog__body border-bottom card-body"
+    >
+      <div>
+        <div
+          class="nav-item"
+        >
+          <a
+            class="commitLog__messageLink"
+            href="/tree/main/main/deadbeef"
+          >
+            commitMessage
+          </a>
+        </div>
+        <p
+          class="ml-3 card-text"
+        >
+          bob
+          <span
+            class="ml-2"
+          >
+            committed on
+          </span>
+          <span
+            class="ml-2"
+          >
+            a day ago
+          </span>
+        </p>
+      </div>
+      <div
+        class="commitLog__btnWrapper"
+      >
+        <div
+          class="border rounded commitLog__hashBtnWrapper"
+        >
+          <button
+            class="border-right commitLog__copyBtn rightBtnHover btn btn-link"
+            title="Copy hash"
+            type="button"
+          >
+            <span
+              aria-hidden="true"
+              class="material-icons MuiIcon-root"
+            >
+              content_copy
+            </span>
+          </button>
+          <a
+            class="commitLog__hashBtn rightBtnHover"
+            href="/tree/main/main/deadbeef"
+          >
+            <button
+              class="btn btn-link"
+              title="Commit details"
+              type="button"
+            >
+              <span
+                class="font-italic"
+              >
+                deadbeef
+              </span>
+            </button>
+          </a>
+        </div>
+        <div>
+          <button
+            class="ml-3 rightBtnHover btn btn-light"
+            title="Browse the repository at this point in the history"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="MuiSvgIcon-root"
+              focusable="false"
+              viewBox="0 0 24 24"
+            >
+              <path
+                d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;

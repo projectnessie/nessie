@@ -17,19 +17,22 @@
 import { Button, Card, Nav } from "react-bootstrap";
 import moment from "moment";
 import React, { useEffect, useState, Fragment } from "react";
+import { useParams, useHistory, useLocation } from "react-router-dom";
 import { api, CommitMeta } from "../utils";
 import { factory } from "../ConfigLog4j";
 import CodeIcon from "@material-ui/icons/Code";
 import "./CommitLog.css";
 import { Icon, Tooltip } from "@material-ui/core";
+import ExploreLink from "./ExploreLink";
+import { routeSlugs } from "./Constants";
+import { EmptyMessageView } from "./Components";
+import CommitDetails from "./CommitDetails";
 
 const log = factory.getLogger("api.CommitHeader");
 
-const fetchLog = (
-  currentRef: string
-): Promise<void | CommitMeta[] | undefined> => {
+const fetchLog = (ref: string): Promise<void | CommitMeta[] | undefined> => {
   return api()
-    .getCommitLog({ ref: currentRef })
+    .getCommitLog({ ref })
     .then((data) => {
       if (data.operations && data.operations.length > 0) {
         return data.operations;
@@ -42,6 +45,8 @@ const CommitLog = (props: {
   currentRef: string;
   path: string[];
 }): React.ReactElement => {
+  const { currentRef, path } = props;
+  const { slug } = useParams<{ slug: string }>();
   const [logList, setLogList] = useState<CommitMeta[]>([
     {
       author: undefined,
@@ -54,35 +59,49 @@ const CommitLog = (props: {
       signedOffBy: undefined,
     },
   ]);
+  const [showCommitDetails, setShowCommitDetails] = useState(false);
+  const [commitDetails, setCommitDetails] = useState<CommitMeta | undefined>();
+  const location = useLocation();
+  const history = useHistory();
   useEffect(() => {
     const logs = async () => {
-      const results = await fetchLog(props.currentRef);
+      const results = await fetchLog(currentRef);
       if (results) {
         setLogList(results);
       }
+      if (showCommitDetails) {
+        const listPath = location.pathname.substring(
+          0,
+          location.pathname.lastIndexOf("/")
+        );
+        history.push(listPath);
+      }
     };
     void logs();
-  }, [props.currentRef]);
+  }, [currentRef]);
+
+  useEffect(() => {
+    if (slug) {
+      const last = slug.substring(slug.lastIndexOf("/") + 1, slug.length);
+      setShowCommitDetails(last !== routeSlugs.commits);
+      const logDetails = logList.find((logItem) => logItem.hash === last);
+      setCommitDetails(logDetails);
+    }
+  }, [slug, logList]);
 
   if (!logList || (logList.length === 1 && !logList[0].hash)) {
-    return (
-      <Card.Header className="commitLog__notFound">
-        <span className="commitLog__notFoundText"> Nothing to show </span>
-      </Card.Header>
-    );
+    return <EmptyMessageView />;
   }
 
   const copyHash = async (hashCode: string) => {
     await navigator.clipboard.writeText(hashCode);
   };
-
   const commitList = (currentLog: CommitMeta, index: number) => {
     const { commitTime, author, message, hash } = currentLog;
-    const commitDetailsURL = `/commit/${hash ?? "#"}`;
     const hoursDiff = moment().diff(moment(commitTime), "hours");
     const dateTimeAgo =
       hoursDiff > 24
-        ? moment(commitTime).format("MMM DD YYYY, hh:mm a")
+        ? moment(commitTime).format("YYYY-MM-DD, hh:mm a")
         : `${moment(commitTime).fromNow()}`;
 
     return (
@@ -90,12 +109,14 @@ const CommitLog = (props: {
         <Card.Body className="commitLog__body border-bottom">
           <div>
             <Nav.Item>
-              <Nav.Link
-                href={commitDetailsURL}
-                className={"commitLog__messageLink"}
+              <ExploreLink
+                toRef={currentRef}
+                path={path.concat(hash ?? "#")}
+                type="CONTAINER"
+                className="commitLog__messageLink"
               >
                 {message}
-              </Nav.Link>
+              </ExploreLink>
             </Nav.Item>
             <Card.Text className={"ml-3"}>
               {author}
@@ -114,15 +135,18 @@ const CommitLog = (props: {
                   <Icon>content_copy</Icon>
                 </Button>
               </Tooltip>
-              <Tooltip title="Browse the commit details for this hash">
-                <Button
-                  variant="link"
-                  className="commitLog__hashBtn rightBtnHover"
-                  href={commitDetailsURL}
-                >
-                  <span className="font-italic">{hash?.slice(0, 8)}</span>
-                </Button>
-              </Tooltip>
+              <ExploreLink
+                toRef={currentRef}
+                path={path.concat(hash ?? "#")}
+                type="CONTAINER"
+                className="commitLog__hashBtn rightBtnHover"
+              >
+                <Tooltip title="Commit details">
+                  <Button variant="link">
+                    <span className="font-italic">{hash?.slice(0, 8)}</span>
+                  </Button>
+                </Tooltip>
+              </ExploreLink>
             </div>
             <div>
               <Tooltip title="Browse the repository at this point in the history">
@@ -139,9 +163,13 @@ const CommitLog = (props: {
 
   return (
     <Card className={"commitLog"}>
-      {logList.map((item, index) => {
-        return commitList(item, index);
-      })}
+      {!showCommitDetails ? (
+        logList.map((item, index) => {
+          return commitList(item, index);
+        })
+      ) : (
+        <CommitDetails commitDetails={commitDetails} currentRef={currentRef} />
+      )}
     </Card>
   );
 };
