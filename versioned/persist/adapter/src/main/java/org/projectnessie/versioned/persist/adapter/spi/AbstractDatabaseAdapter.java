@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.persist.adapter.spi;
 
+import static com.google.common.collect.Iterables.getLast;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.hashKey;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.hashNotFound;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.newHasher;
@@ -1051,6 +1052,13 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
 
     int keyListDistance = targetHeadCommit != null ? targetHeadCommit.getKeyListDistance() : 0;
 
+    if (targetHead.equals(getLast(commitsChronological).getParents().get(0))) {
+      // Target head is equal to the parent of the chain, can do a fast forward merge.
+      targetHead = commitsChronological.get(0).getHash();
+      commitsChronological.clear();
+      return targetHead;
+    }
+
     // Rewrite commits to transplant and store those in 'commitsToTransplantReverse'
     for (int i = commitsChronological.size() - 1; i >= 0; i--) {
       CommitLogEntry sourceCommit = commitsChronological.get(i);
@@ -1063,36 +1071,21 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       } else {
         parents.add(0, targetHead);
       }
-      ByteString upatedCommitMeta = updateCommitMetadata.apply(sourceCommit.getMetadata());
-      CommitLogEntry updatedSourceCommit = sourceCommit.withMetadata(upatedCommitMeta);
-      Hash updatedSourceCommitHash =
-          individualCommitHash(
-              updatedSourceCommit.getParents(),
-              upatedCommitMeta,
-              updatedSourceCommit.getPuts(),
-              updatedSourceCommit.getDeletes());
 
       CommitLogEntry newEntry =
           buildIndividualCommit(
               ctx,
               timeInMicros,
               parents,
-              updatedSourceCommit.getMetadata(),
-              updatedSourceCommit.getPuts(),
-              updatedSourceCommit.getDeletes(),
+              updateCommitMetadata.apply(sourceCommit.getMetadata()),
+              sourceCommit.getPuts(),
+              sourceCommit.getDeletes(),
               keyListDistance,
               newKeyLists);
       keyListDistance = newEntry.getKeyListDistance();
 
-      if (!newEntry.getHash().equals(updatedSourceCommitHash)) {
-        commitsChronological.set(i, newEntry);
-        targetHead = newEntry.getHash();
-      } else {
-        // Newly built CommitLogEntry is equal to the CommitLogEntry to transplant.
-        // This can happen, if the commit to transplant has NO_ANCESTOR as its parent.
-        commitsChronological.remove(i);
-        targetHead = sourceCommit.getHash();
-      }
+      commitsChronological.set(i, newEntry);
+      targetHead = newEntry.getHash();
     }
     return targetHead;
   }
