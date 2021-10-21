@@ -147,7 +147,7 @@
     <jackson.version>2.13.0</jackson.version>
     <javax.version>4.0.1</javax.version>
     <javax.ws.rs.version>2.1.1</javax.ws.rs.version>
-    <jersey.version>2.35</jersey.version>
+    <jersey.version>3.0.3</jersey.version>
     <jetty.version>9.4.31.v20200723</jetty.version>
     <jjwt.version>0.11.2</jjwt.version>
     <jmh.version>1.33</jmh.version>
