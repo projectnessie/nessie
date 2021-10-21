@@ -1551,7 +1551,7 @@ public abstract class AbstractTestRest {
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageStartingWith(
                     "Bad Request (HTTP/400): Could not resolve type id 'FOOBAR' as a subtype of "
-                        + "`org.projectnessie.model.Reference`: known type ids = []\n"));
+                        + "`org.projectnessie.model.Reference`: known type ids = ["));
   }
 
   @Test
