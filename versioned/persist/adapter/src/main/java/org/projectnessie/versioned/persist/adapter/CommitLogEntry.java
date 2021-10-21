@@ -36,8 +36,6 @@ public interface CommitLogEntry {
   /** Serialized commit-metadata. */
   ByteString getMetadata();
 
-  CommitLogEntry withMetadata(ByteString metadata);
-
   /**
    * List of all {@code Put} operations, with their keys, content-types and serialized {@code
    * Contents}.
