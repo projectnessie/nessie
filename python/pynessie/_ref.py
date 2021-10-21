@@ -68,13 +68,13 @@ def handle_branch_tag(
 def _handle_list(nessie: NessieClient, json: bool, verbose: bool, is_branch: bool, branch: str) -> str:
     results = nessie.list_references()
     kept_results = [ref for ref in results if isinstance(ref, (Branch if is_branch else Tag))]
-    if json:
-        return ReferenceSchema().dumps(kept_results, many=True)
     output = ""
-    default_branch = nessie.get_default_branch()
     if branch:
         kept_results = [i for i in kept_results if i.name == branch]
+    if json:
+        return ReferenceSchema().dumps(kept_results, many=True)
     max_width = max((len(i.name) for i in kept_results), default=0)
+    default_branch = nessie.get_default_branch()
     for x in kept_results:
         next_row = "{}{}{}{}{}\n".format(
             "*".ljust(2) if x.name == default_branch else "  ",
