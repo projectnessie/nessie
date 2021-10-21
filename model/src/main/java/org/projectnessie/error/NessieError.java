@@ -171,6 +171,6 @@ public class NessieError {
 
   @Override
   public int hashCode() {
-    return Objects.hash(message, status, serverStackTrace);
+    return Objects.hash(message, status, errorCode, serverStackTrace);
   }
 }
