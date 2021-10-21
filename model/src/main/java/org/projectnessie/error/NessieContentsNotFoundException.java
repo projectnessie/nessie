@@ -21,8 +21,7 @@ import org.projectnessie.model.ContentsKey;
 public class NessieContentsNotFoundException extends NessieNotFoundException {
 
   public NessieContentsNotFoundException(ContentsKey key, String ref) {
-    super(
-        String.format("Contents do not exist for key [%s] on reference [%s]", key.toString(), ref));
+    super(String.format("Could not find contents for key '%s' in reference '%s'.", key, ref));
   }
 
   public NessieContentsNotFoundException(NessieError error) {
