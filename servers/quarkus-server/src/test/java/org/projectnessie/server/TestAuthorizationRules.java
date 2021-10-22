@@ -28,7 +28,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.client.rest.NessieForbiddenException;
-import org.projectnessie.error.NessieConflictException;
+import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
@@ -49,19 +49,18 @@ class TestAuthorizationRules extends BaseClientAuthTest {
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
   @TestSecurity(user = "test_user")
-  void testAllOpsWithTestUser(boolean shouldFail)
-      throws NessieNotFoundException, NessieConflictException {
+  void testAllOpsWithTestUser(boolean shouldFail) throws BaseNessieClientServerException {
     testAllOps("allowedBranchForTestUser", "test_user", shouldFail);
   }
 
   @Test
   @TestSecurity(user = "admin_user")
-  void testAdminUserIsAllowedEverything() throws NessieNotFoundException, NessieConflictException {
+  void testAdminUserIsAllowedEverything() throws BaseNessieClientServerException {
     testAllOps("testAdminUserIsAllowedAllBranch", "admin_user", false);
   }
 
   private void testAllOps(String branchName, String role, boolean shouldFail)
-      throws NessieConflictException, NessieNotFoundException {
+      throws BaseNessieClientServerException {
     ContentsKey key = ContentsKey.of("allowed", "x");
     if (shouldFail) {
       branchName = "disallowedBranchForTestUser";
@@ -97,8 +96,7 @@ class TestAuthorizationRules extends BaseClientAuthTest {
   @Test
   // test_user2 has all permissions on a Branch, but not permissions on a Key
   @TestSecurity(user = "test_user2")
-  void testCanCommitButNotUpdateOrDeleteEntity()
-      throws NessieNotFoundException, NessieConflictException {
+  void testCanCommitButNotUpdateOrDeleteEntity() throws BaseNessieClientServerException {
     String role = "test_user2";
     ContentsKey key = ContentsKey.of("allowed", "some");
     String branchName = "allowedBranchForTestUser2";
@@ -177,7 +175,7 @@ class TestAuthorizationRules extends BaseClientAuthTest {
   }
 
   private void createBranch(Branch branch, String role, boolean shouldFail)
-      throws NessieConflictException, NessieNotFoundException {
+      throws BaseNessieClientServerException {
     if (shouldFail) {
       assertThatThrownBy(
               () -> api().createReference().sourceRefName("main").reference(branch).create())
@@ -192,7 +190,7 @@ class TestAuthorizationRules extends BaseClientAuthTest {
   }
 
   private void deleteBranch(Branch branch, String role, boolean shouldFail)
-      throws NessieConflictException, NessieNotFoundException {
+      throws BaseNessieClientServerException {
     if (shouldFail) {
       assertThatThrownBy(() -> api().deleteBranch().branch(branch).delete())
           .isInstanceOf(NessieForbiddenException.class)
@@ -265,7 +263,7 @@ class TestAuthorizationRules extends BaseClientAuthTest {
   }
 
   private void addContent(Branch branch, Put put, String role, boolean shouldFail)
-      throws NessieNotFoundException, NessieConflictException {
+      throws BaseNessieClientServerException {
 
     CommitMultipleOperationsBuilder commitOp =
         api()
@@ -289,7 +287,7 @@ class TestAuthorizationRules extends BaseClientAuthTest {
   }
 
   private void deleteContent(Branch branch, Delete delete, String role, boolean shouldFail)
-      throws NessieConflictException, NessieNotFoundException {
+      throws BaseNessieClientServerException {
 
     CommitMultipleOperationsBuilder commitOp =
         api()

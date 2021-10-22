@@ -35,7 +35,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.client.tests.AbstractSparkTest;
-import org.projectnessie.error.NessieConflictException;
+import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.Contents;
@@ -64,7 +64,7 @@ class ITDeltaLogBranches extends AbstractSparkTest {
   }
 
   @AfterEach
-  void closeClient() throws NessieNotFoundException, NessieConflictException {
+  void closeClient() throws BaseNessieClientServerException {
     Reference ref = null;
     try {
       ref = api.getReference().refName("test").get();
@@ -82,7 +82,7 @@ class ITDeltaLogBranches extends AbstractSparkTest {
   }
 
   @Test
-  void testBranches() throws NessieNotFoundException, NessieConflictException {
+  void testBranches() throws BaseNessieClientServerException {
     Dataset<Row> targetTable =
         createKVDataSet(
             Arrays.asList(tuple2(1, 10), tuple2(2, 20), tuple2(3, 30), tuple2(4, 40)),

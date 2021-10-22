@@ -16,31 +16,40 @@
 package org.projectnessie.error;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import javax.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
 
 class TestNessieError {
 
-  @Test
-  void allNulls() {
-    NessieError e = new NessieError(0, null, null, null);
-    assertNull(e.getMessage());
-  }
+  private static final ObjectMapper mapper = new ObjectMapper();
 
   @Test
-  void userContructor() {
+  void fullMessage() {
     NessieError e =
-        new NessieError(
-            "message",
-            Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
-            Response.Status.INTERNAL_SERVER_ERROR.getReasonPhrase(),
-            "foo.bar.InternalServerError\n" + "\tat some.other.Class",
-            new Exception("processingException"));
-    assertEquals("message", e.getMessage());
+        ImmutableNessieError.builder()
+            .message("message")
+            .errorCode(ErrorCode.UNKNOWN)
+            .status(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode())
+            .reason(Response.Status.INTERNAL_SERVER_ERROR.getReasonPhrase())
+            .serverStackTrace("foo.bar.InternalServerError\n" + "\tat some.other.Class")
+            .build();
+    assertThat(e.getFullMessage())
+        .isEqualTo(
+            Response.Status.INTERNAL_SERVER_ERROR.getReasonPhrase()
+                + " (HTTP/"
+                + Response.Status.INTERNAL_SERVER_ERROR.getStatusCode()
+                + "): message\n"
+                + "foo.bar.InternalServerError\n"
+                + "\tat some.other.Class");
+
+    e =
+        ImmutableNessieError.builder()
+            .from(e)
+            .clientProcessingException(new Exception("processingException"))
+            .build();
     assertThat(e.getFullMessage())
         .startsWith(
             Response.Status.INTERNAL_SERVER_ERROR.getReasonPhrase()
@@ -50,32 +59,29 @@ class TestNessieError {
                 + "foo.bar.InternalServerError\n"
                 + "\tat some.other.Class\n"
                 + "java.lang.Exception: processingException\n"
-                + "\tat org.projectnessie.error.TestNessieError.userContructor(TestNessieError.java:");
+                + "\tat org.projectnessie.error.TestNessieError.fullMessage(TestNessieError.java:");
   }
 
   @Test
-  void jsonCreator() {
-    NessieError e =
-        new NessieError(
-            "message",
-            Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
-            Response.Status.INTERNAL_SERVER_ERROR.getReasonPhrase(),
-            "foo.bar.InternalServerError\n" + "\tat some.other.Class");
-    assertAll(
-        () ->
-            assertEquals(
-                Response.Status.INTERNAL_SERVER_ERROR.getReasonPhrase()
-                    + " (HTTP/"
-                    + Response.Status.INTERNAL_SERVER_ERROR.getStatusCode()
-                    + "): message\n"
-                    + "foo.bar.InternalServerError\n"
-                    + "\tat some.other.Class",
-                e.getFullMessage()),
-        () -> assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), e.getStatus()),
-        () -> assertEquals("message", e.getMessage()),
-        () ->
-            assertEquals(
-                "foo.bar.InternalServerError\n" + "\tat some.other.Class",
-                e.getServerStackTrace()));
+  void jsonRoundTrip() throws JsonProcessingException {
+    NessieError e0 =
+        ImmutableNessieError.builder()
+            .message("message")
+            .errorCode(ErrorCode.UNKNOWN)
+            .status(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode())
+            .reason(Response.Status.INTERNAL_SERVER_ERROR.getReasonPhrase())
+            .serverStackTrace("foo.bar.InternalServerError\n" + "\tat some.other.Class")
+            .clientProcessingException(new Exception("processingException"))
+            .build();
+
+    String json = mapper.writeValueAsString(e0);
+    NessieError e1 = mapper.readValue(json, NessieError.class);
+
+    assertThat(e1.getClientProcessingException()).isNull(); // not propagated through JSON
+
+    // Copy e0 without the client error
+    NessieError e2 =
+        ImmutableNessieError.builder().from(e0).clientProcessingException(null).build();
+    assertThat(e1).isEqualTo(e2);
   }
 }

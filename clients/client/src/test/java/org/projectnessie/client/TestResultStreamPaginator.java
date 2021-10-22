@@ -28,7 +28,7 @@ import java.util.OptionalInt;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.junit.jupiter.api.Test;
-import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.PaginatedResponse;
 
 class TestResultStreamPaginator {
@@ -38,10 +38,10 @@ class TestResultStreamPaginator {
         new ResultStreamPaginator<>(
             MockPaginatedResponse::getElements,
             (ref, pageSize, token) -> {
-              throw new NessieNotFoundException("Ref not found");
+              throw new NessieReferenceNotFoundException("Ref not found");
             });
     assertThatThrownBy(() -> paginator.generateStream("ref", OptionalInt.empty()))
-        .isInstanceOf(NessieNotFoundException.class)
+        .isInstanceOf(NessieReferenceNotFoundException.class)
         .hasMessage("Ref not found");
   }
 

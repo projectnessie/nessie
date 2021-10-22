@@ -32,9 +32,13 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.client.http.ResponseContext;
 import org.projectnessie.client.http.Status;
 import org.projectnessie.error.BaseNessieClientServerException;
+import org.projectnessie.error.ErrorCode;
+import org.projectnessie.error.ImmutableNessieError;
 import org.projectnessie.error.NessieConflictException;
+import org.projectnessie.error.NessieContentsNotFoundException;
 import org.projectnessie.error.NessieError;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.error.NessieReferenceNotFoundException;
 import software.amazon.awssdk.utils.StringInputStream;
 
 public class TestResponseFilter {
@@ -43,9 +47,16 @@ public class TestResponseFilter {
 
   @ParameterizedTest
   @MethodSource("provider")
-  void testResponseFilter(Status responseCode, Class<? extends Exception> clazz) {
-    final NessieError error =
-        new NessieError(responseCode.getCode(), responseCode.getReason(), "xxx", null);
+  void testResponseFilter(
+      Status responseCode, ErrorCode errorCode, Class<? extends Exception> clazz) {
+    NessieError error =
+        ImmutableNessieError.builder()
+            .message("test-error")
+            .status(responseCode.getCode())
+            .errorCode(errorCode)
+            .reason(responseCode.getReason())
+            .serverStackTrace("xxx")
+            .build();
     try {
       ResponseCheckFilter.checkResponse(new TestResponseContext(responseCode, error), MAPPER);
     } catch (Exception e) {
@@ -63,7 +74,8 @@ public class TestResponseFilter {
 
   @Test
   void testBadReturn() {
-    final NessieError error = new NessieError("unknown", 415, "xxx", null);
+    NessieError error =
+        ImmutableNessieError.builder().message("unknown").status(415).reason("xxx").build();
     assertThatThrownBy(
             () ->
                 ResponseCheckFilter.checkResponse(
@@ -137,11 +149,13 @@ public class TestResponseFilter {
   @Test
   void testBadReturnBadError() {
     NessieError defaultError =
-        new NessieError(
-            Status.UNAUTHORIZED.getCode(),
-            Status.UNAUTHORIZED.getReason(),
-            "Could not parse error object in response.",
-            new RuntimeException("Could not parse error object in response."));
+        ImmutableNessieError.builder()
+            .status(Status.UNAUTHORIZED.getCode())
+            .reason(Status.UNAUTHORIZED.getReason())
+            .message("Could not parse error object in response.")
+            .clientProcessingException(
+                new RuntimeException("Could not parse error object in response."))
+            .build();
     assertThatThrownBy(
             () ->
                 ResponseCheckFilter.checkResponse(
@@ -159,12 +173,20 @@ public class TestResponseFilter {
 
   private static Stream<Arguments> provider() {
     return Stream.of(
-        Arguments.of(Status.BAD_REQUEST, NessieBadRequestException.class),
-        Arguments.of(Status.UNAUTHORIZED, NessieNotAuthorizedException.class),
-        Arguments.of(Status.FORBIDDEN, NessieForbiddenException.class),
-        Arguments.of(Status.NOT_FOUND, NessieNotFoundException.class),
-        Arguments.of(Status.CONFLICT, NessieConflictException.class),
-        Arguments.of(Status.INTERNAL_SERVER_ERROR, NessieInternalServerException.class));
+        Arguments.of(Status.BAD_REQUEST, ErrorCode.UNKNOWN, NessieBadRequestException.class),
+        Arguments.of(Status.UNAUTHORIZED, ErrorCode.UNKNOWN, NessieNotAuthorizedException.class),
+        Arguments.of(Status.FORBIDDEN, ErrorCode.UNKNOWN, NessieForbiddenException.class),
+        Arguments.of(
+            Status.NOT_FOUND, ErrorCode.CONTENTS_NOT_FOUND, NessieContentsNotFoundException.class),
+        Arguments.of(
+            Status.NOT_FOUND,
+            ErrorCode.REFERENCE_NOT_FOUND,
+            NessieReferenceNotFoundException.class),
+        Arguments.of(Status.NOT_FOUND, ErrorCode.UNKNOWN, NessieNotFoundException.class),
+        Arguments.of(Status.CONFLICT, ErrorCode.REFERENCE_CONFLICT, NessieConflictException.class),
+        Arguments.of(Status.CONFLICT, ErrorCode.UNKNOWN, NessieConflictException.class),
+        Arguments.of(
+            Status.INTERNAL_SERVER_ERROR, ErrorCode.UNKNOWN, NessieInternalServerException.class));
   }
 
   private static class TestResponseContext implements ResponseContext {

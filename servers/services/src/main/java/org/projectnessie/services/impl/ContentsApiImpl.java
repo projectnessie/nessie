@@ -21,7 +21,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.projectnessie.api.ContentsApi;
+import org.projectnessie.error.NessieContentsNotFoundException;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
 import org.projectnessie.model.ContentsKey;
@@ -56,10 +58,9 @@ public class ContentsApiImpl extends BaseApiImpl implements ContentsApi {
       if (obj != null) {
         return obj;
       }
-      throw new NessieNotFoundException("Requested contents do not exist for specified reference.");
+      throw new NessieContentsNotFoundException(key, namedRef);
     } catch (ReferenceNotFoundException e) {
-      throw new NessieNotFoundException(
-          String.format("Provided reference [%s] does not exist.", namedRef), e);
+      throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }
   }
 
@@ -82,7 +83,7 @@ public class ContentsApiImpl extends BaseApiImpl implements ContentsApi {
 
       return ImmutableMultiGetContentsResponse.builder().contents(output).build();
     } catch (ReferenceNotFoundException ex) {
-      throw new NessieNotFoundException("Unable to find the requested ref.", ex);
+      throw new NessieReferenceNotFoundException(ex.getMessage(), ex);
     }
   }
 
