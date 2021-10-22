@@ -1202,8 +1202,7 @@ public abstract class AbstractITVersionStore {
 
       assertThrows(
           ReferenceConflictException.class,
-          () ->
-              store().merge(thirdCommit, newBranch, Optional.of(initialHash), transformMeta));
+          () -> store().merge(thirdCommit, newBranch, Optional.of(initialHash), transformMeta));
     }
 
     @Test
@@ -1211,8 +1210,7 @@ public abstract class AbstractITVersionStore {
       final BranchName newBranch = BranchName.of("bar_5");
       assertThrows(
           ReferenceNotFoundException.class,
-          () ->
-              store().merge(thirdCommit, newBranch, Optional.of(initialHash), transformMeta));
+          () -> store().merge(thirdCommit, newBranch, Optional.of(initialHash), transformMeta));
     }
 
     @Test
