@@ -25,7 +25,8 @@ import org.junit.jupiter.params.provider.EnumSource;
 class TestErrorCode {
 
   private Optional<BaseNessieClientServerException> ex(ErrorCode errorCode) {
-    NessieError error = new NessieError("msg", 1, errorCode, "reason", "stack");
+    NessieError error =
+        ImmutableNessieError.builder().reason("test").status(1).errorCode(errorCode).build();
     return ErrorCode.asException(error);
   }
 

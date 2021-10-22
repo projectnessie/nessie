@@ -23,6 +23,7 @@ import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.ext.ExceptionMapper;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.ErrorCode;
+import org.projectnessie.error.ImmutableNessieError;
 import org.projectnessie.error.NessieError;
 import org.projectnessie.services.config.ServerConfig;
 import org.slf4j.Logger;
@@ -60,7 +61,14 @@ public abstract class BaseExceptionMapper<T extends Throwable> implements Except
       errorCode = ((BaseNessieClientServerException) e).getErrorCode();
     }
 
-    NessieError error = new NessieError(message, status, errorCode, reason, stack);
+    NessieError error =
+        ImmutableNessieError.builder()
+            .message(message)
+            .status(status)
+            .errorCode(errorCode)
+            .reason(reason)
+            .serverStackTrace(stack)
+            .build();
     LOGGER.debug(
         "Failure on server, propagated to client. Status: {} {}, Message: {}.",
         status,

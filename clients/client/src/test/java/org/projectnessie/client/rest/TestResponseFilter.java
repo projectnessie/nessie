@@ -33,6 +33,7 @@ import org.projectnessie.client.http.ResponseContext;
 import org.projectnessie.client.http.Status;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.ErrorCode;
+import org.projectnessie.error.ImmutableNessieError;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieContentsNotFoundException;
 import org.projectnessie.error.NessieError;
@@ -48,9 +49,14 @@ public class TestResponseFilter {
   @MethodSource("provider")
   void testResponseFilter(
       Status responseCode, ErrorCode errorCode, Class<? extends Exception> clazz) {
-    final NessieError error =
-        new NessieError(
-            "test-error", responseCode.getCode(), errorCode, responseCode.getReason(), "xxx");
+    NessieError error =
+        ImmutableNessieError.builder()
+            .message("test-error")
+            .status(responseCode.getCode())
+            .errorCode(errorCode)
+            .reason(responseCode.getReason())
+            .serverStackTrace("xxx")
+            .build();
     try {
       ResponseCheckFilter.checkResponse(new TestResponseContext(responseCode, error), MAPPER);
     } catch (Exception e) {
@@ -68,7 +74,8 @@ public class TestResponseFilter {
 
   @Test
   void testBadReturn() {
-    final NessieError error = new NessieError("unknown", 415, "xxx", null);
+    NessieError error =
+        ImmutableNessieError.builder().message("unknown").status(415).reason("xxx").build();
     assertThatThrownBy(
             () ->
                 ResponseCheckFilter.checkResponse(
@@ -142,11 +149,13 @@ public class TestResponseFilter {
   @Test
   void testBadReturnBadError() {
     NessieError defaultError =
-        new NessieError(
-            Status.UNAUTHORIZED.getCode(),
-            Status.UNAUTHORIZED.getReason(),
-            "Could not parse error object in response.",
-            new RuntimeException("Could not parse error object in response."));
+        ImmutableNessieError.builder()
+            .status(Status.UNAUTHORIZED.getCode())
+            .reason(Status.UNAUTHORIZED.getReason())
+            .message("Could not parse error object in response.")
+            .clientProcessingException(
+                new RuntimeException("Could not parse error object in response."))
+            .build();
     assertThatThrownBy(
             () ->
                 ResponseCheckFilter.checkResponse(

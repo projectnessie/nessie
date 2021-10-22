@@ -15,162 +15,74 @@
  */
 package org.projectnessie.error;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.Objects;
+import javax.annotation.Nullable;
+import org.immutables.value.Value;
 
-public class NessieError {
+/** Represents Nessie-specific API error details. */
+@Value.Immutable
+@JsonSerialize(as = ImmutableNessieError.class)
+@JsonDeserialize(as = ImmutableNessieError.class)
+public interface NessieError {
 
-  private final String message;
-  private final int status;
-  private final ErrorCode errorCode;
-  private final String reason;
-  private final String serverStackTrace;
-  private final Exception clientProcessingException;
+  /** HTTP status code of this error. */
+  int getStatus();
+
+  /** Reason phrase for the HTTP status code. */
+  String getReason();
+
+  /** Nessie-specific Error message. */
+  @Value.Default
+  default String getMessage() {
+    return getReason();
+  }
+
+  /** Nessie-specific error code. */
+  @Value.Default
+  default ErrorCode getErrorCode() {
+    return ErrorCode.UNKNOWN;
+  }
+
+  /** Server-side exception stack trace related to this error (if available). */
+  @Nullable
+  String getServerStackTrace();
 
   /**
-   * Deserialize error message from the server.
+   * Client-side {@link Exception} related to the processing of the error response.
    *
-   * @param message Error message
-   * @param status HTTP status code
-   * @param serverStackTrace exception, if present (can be empty or {@code null}
-   */
-  @JsonCreator
-  public NessieError(
-      @JsonProperty("message") String message,
-      @JsonProperty("status") int status,
-      @JsonProperty("errorCode") ErrorCode errorCode,
-      @JsonProperty("reason") String reason,
-      @JsonProperty("serverStackTrace") String serverStackTrace) {
-    this(message, status, errorCode, reason, serverStackTrace, null);
-  }
-
-  public NessieError(String message, int status, String reason, String serverStackTrace) {
-    this(message, status, reason, serverStackTrace, null);
-  }
-
-  public NessieError(
-      String message,
-      int status,
-      String reason,
-      String serverStackTrace,
-      Exception processingException) {
-    this(message, status, ErrorCode.UNKNOWN, reason, serverStackTrace, processingException);
-  }
-
-  /**
-   * Create Error.
-   *
-   * @param message Message of error.
-   * @param status Status of error.
-   * @param errorCode Nessie-specific error code.
-   * @param reason Reason for status.
-   * @param serverStackTrace Server stack trace, if available.
-   * @param processingException Any processing exceptions that happened on the client.
-   */
-  public NessieError(
-      String message,
-      int status,
-      ErrorCode errorCode,
-      String reason,
-      String serverStackTrace,
-      Exception processingException) {
-    this.message = message;
-    this.status = status;
-    this.errorCode = errorCode;
-    this.reason = reason;
-    this.serverStackTrace = serverStackTrace;
-    this.clientProcessingException = processingException;
-  }
-
-  /**
-   * Create Error.
-   *
-   * @param statusCode Status of error.
-   * @param reason Reason for status.
-   * @param serverStackTrace Server stack trace, if available.
-   * @param processingException Any processing exceptions that happened on the client.
-   */
-  public NessieError(
-      int statusCode, String reason, String serverStackTrace, Exception processingException) {
-    this(reason, statusCode, ErrorCode.UNKNOWN, reason, serverStackTrace, processingException);
-  }
-
-  public String getMessage() {
-    return message;
-  }
-
-  public int getStatus() {
-    return status;
-  }
-
-  public ErrorCode getErrorCode() {
-    return errorCode;
-  }
-
-  public String getReason() {
-    return reason;
-  }
-
-  public String getServerStackTrace() {
-    return serverStackTrace;
-  }
-
-  @JsonIgnore
-  public Exception getClientProcessingException() {
-    return clientProcessingException;
-  }
-
-  /**
-   * Get full error message.
-   *
-   * @return Full error message.
+   * <p>This {@link Exception} generally represents any errors related to the decoding of the
+   * payload returned by the server to describe the error.
    */
   @JsonIgnore
-  public String getFullMessage() {
+  @Value.Auxiliary
+  @Nullable
+  Exception getClientProcessingException();
+
+  /**
+   * The full error message, including HTTP status, reason, server- and client-side exception stack
+   * traces.
+   */
+  @JsonIgnore
+  default String getFullMessage() {
     StringBuilder sb = new StringBuilder();
-    if (reason != null) {
-      sb.append(reason).append(" (HTTP/").append(status).append(')');
+    sb.append(getReason()).append(" (HTTP/").append(getStatus()).append(')');
+    sb.append(": ");
+    sb.append(getMessage());
+
+    if (getServerStackTrace() != null) {
+      sb.append("\n").append(getServerStackTrace());
     }
 
-    if (message != null) {
-      if (sb.length() > 0) {
-        sb.append(": ");
-      }
-      sb.append(message);
-    }
-
-    if (serverStackTrace != null) {
-      sb.append("\n").append(serverStackTrace);
-    }
-    if (clientProcessingException != null) {
+    if (getClientProcessingException() != null) {
       StringWriter sw = new StringWriter();
-      clientProcessingException.printStackTrace(new PrintWriter(sw));
+      getClientProcessingException().printStackTrace(new PrintWriter(sw));
       sb.append("\n").append(sw);
     }
+
     return sb.toString();
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    NessieError error = (NessieError) o;
-    return status == error.status
-        && Objects.equals(message, error.message)
-        && Objects.equals(errorCode, error.errorCode)
-        && Objects.equals(serverStackTrace, error.serverStackTrace);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(message, status, errorCode, serverStackTrace);
   }
 }

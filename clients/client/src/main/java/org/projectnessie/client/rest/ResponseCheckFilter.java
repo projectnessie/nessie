@@ -26,6 +26,7 @@ import org.projectnessie.client.http.ResponseContext;
 import org.projectnessie.client.http.Status;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.ErrorCode;
+import org.projectnessie.error.ImmutableNessieError;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieError;
 import org.projectnessie.error.NessieNotFoundException;
@@ -89,11 +90,14 @@ public class ResponseCheckFilter {
     NessieError error;
     if (inputStream == null) {
       error =
-          new NessieError(
-              status.getCode(),
-              status.getReason(),
-              "Could not parse error object in response.",
-              new RuntimeException("Could not parse error object in response."));
+          ImmutableNessieError.builder()
+              .errorCode(ErrorCode.UNKNOWN)
+              .status(status.getCode())
+              .reason(status.getReason())
+              .message("Could not parse error object in response.")
+              .clientProcessingException(
+                  new RuntimeException("Could not parse error object in response."))
+              .build();
     } else {
       try {
         JsonNode errorData = reader.readTree(inputStream);
@@ -104,10 +108,20 @@ public class ResponseCheckFilter {
           // produced by Quarkus and contains the server-side logged error ID. Report the raw JSON
           // text to the caller for trouble-shooting.
           error =
-              new NessieError(errorData.toString(), status.getCode(), status.getReason(), null, e);
+              ImmutableNessieError.builder()
+                  .message(errorData.toString())
+                  .status(status.getCode())
+                  .reason(status.getReason())
+                  .clientProcessingException(e)
+                  .build();
         }
       } catch (IOException e) {
-        error = new NessieError(status.getCode(), status.getReason(), null, e);
+        error =
+            ImmutableNessieError.builder()
+                .status(status.getCode())
+                .reason(status.getReason())
+                .clientProcessingException(e)
+                .build();
       }
     }
     return error;
