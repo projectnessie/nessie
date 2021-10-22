@@ -2,12 +2,11 @@
 """Nessie Exceptions."""
 import functools
 import sys
-import traceback
 from typing import Any
 from typing import Callable
+from typing import Optional
 
 import click
-import requests
 import simplejson as json
 
 _REMEDIES = {
@@ -18,40 +17,46 @@ _REMEDIES = {
 class NessieException(Exception):
     """Base Nessie exception."""
 
-    def __init__(self: "NessieException", msg: str, original_exception: Exception, response: requests.models.Response) -> None:
+    def __init__(
+        self: "NessieException",
+        parsed_response: dict,
+        status: int,
+        url: str,
+        reason: str,
+        msg: str = None,
+    ) -> None:
         """Construct base Nessie Exception."""
-        super(NessieException, self).__init__(msg + (": %s" % original_exception))
-        self.original_exception = original_exception
-        try:
-            parsed_response = response.json()
-
-        except:  # NOQA
+        if "message" in parsed_response:
+            exception_msg = reason + ": " + parsed_response["message"]
+        elif msg:
+            exception_msg = reason + ": " + msg
+        else:
             # If we did not get a JSON response for a 500 error, use a generic message.
             # In this case the HTML response contents are likely not user-friendly anyway.
-            if 500 <= response.status_code <= 599:
-                parsed_response = {
-                    "message": "Internal Server Error",
-                    "status": response.status_code,
-                }
+            if 500 <= status <= 599:
+                exception_msg = "Internal Server Error"
             else:
-                parsed_response = dict()
+                exception_msg = "Unknown Error"
 
-        self.status_code = response.status_code
-        self.server_message = parsed_response.get("message", response.text)
-        self.server_status = parsed_response.get("status")
+        super(NessieException, self).__init__(exception_msg)
+
+        self.status_code = status
+        self.server_message = parsed_response.get("message", str(parsed_response))
+        self.server_status = parsed_response.get("status", "UNKNOWN")
+        self.error_code = parsed_response.get("errorCode", "UNKNOWN")
         self.server_stack_trace = parsed_response.get("serverStackTrace")
-        self.url = response.url
+        self.url = url
 
     def json(self: "NessieException") -> str:
         """Dump this exception as a json object."""
         return json.dumps(
             dict(
                 server_message=self.server_message,
+                error_code=self.error_code,
                 server_status=self.server_status,
                 server_stack_trace=self.server_stack_trace,
                 status_code=self.status_code,
                 url=self.url,
-                original_exception=traceback.format_tb(self.original_exception.__traceback__),
                 msg=" ".join(self.args),
             )
         )
@@ -70,7 +75,19 @@ class NessiePermissionException(NessieException):
 
 
 class NessieNotFoundException(NessieException):
-    """Nessie exception for not found error 404."""
+    """Generic Nessie exception for not found error 404."""
+
+    pass
+
+
+class NessieReferenceNotFoundException(NessieNotFoundException):
+    """This exception is thrown when a requested reference is not present in the store."""
+
+    pass
+
+
+class NessieContentsNotFoundException(NessieNotFoundException):
+    """This exception is thrown when the requested contents object is not present in the store."""
 
     pass
 
@@ -82,7 +99,27 @@ class NessiePreconidtionFailedException(NessieException):
 
 
 class NessieConflictException(NessieException):
-    """Nessie exception for conflict error 408."""
+    """Generic Nessie exception for conflict error 409."""
+
+    pass
+
+
+class NessieReferenceAlreadyExistsException(NessieConflictException):
+    """Reference not found.
+
+    This exception is thrown when a reference could not be created because another reference with the same name is
+    already present in the store.
+    """
+
+    pass
+
+
+class NessieReferenceConflictException(NessieConflictException):
+    """Expected hash did not match actual hash on a reference.
+
+    This exception is thrown when the hash associated with a named reference does not match with the hash provided
+    by the caller.
+    """
 
     pass
 
@@ -104,18 +141,61 @@ def error_handler(f: Callable) -> Callable:
         except NessieException as e:
             if args[0].json:
                 click.echo(e.json())
-            click.echo(_format_error(e))
+            else:
+                click.echo(_format_error(e))
             sys.exit(1)
 
     return wrapper
 
 
+def _create_nessie_exception(error: dict, status: int, reason: str, url: str) -> Optional[Exception]:
+    if "errorCode" not in error:
+        return None
+
+    error_code = error["errorCode"]
+    if "REFERENCE_NOT_FOUND" == error_code:
+        return NessieReferenceNotFoundException(error, status, url, reason)
+    elif "REFERENCE_ALREADY_EXISTS" == error_code:
+        return NessieReferenceAlreadyExistsException(error, status, url, reason)
+    elif "CONTENTS_NOT_FOUND" == error_code:
+        return NessieContentsNotFoundException(error, status, url, reason)
+    elif "REFERENCE_CONFLICT" == error_code:
+        return NessieReferenceConflictException(error, status, url, reason)
+    return None
+
+
+def _create_exception(error: dict, status: int, reason: str, url: str) -> Exception:
+    if 400 <= status < 500:
+        reason = u"Client Error (%s)" % reason
+    elif 500 <= status < 600:
+        reason = u"Server Error (%s)" % reason
+
+    ex = _create_nessie_exception(error, status, reason, url)
+    if ex:
+        return ex
+
+    if status == 412:
+        return NessiePreconidtionFailedException(error, status, url, reason, msg="Unable to complete transaction, please retry.")
+    if status == 401:
+        return NessieUnauthorizedException(error, status, url, reason, msg="Unauthorized to access API endpoint")
+    if status == 403:
+        return NessiePermissionException(error, status, url, reason, msg="Insufficient permissions to access " + url)
+    if status == 404:
+        return NessieNotFoundException(error, status, url, reason, msg="Entity not found at " + url)
+    if status == 409:
+        return NessieConflictException(error, status, url, reason, msg="Unable to complete transaction.")
+    if 500 <= status <= 599:
+        return NessieServerException(error, status, url, reason)
+    return NessieException(error, status, url, reason)
+
+
 def _format_error(e: NessieException) -> str:
-    fmt = "{} is {} with status code: {}.\n".format(click.style("Nessie Exception", fg="red"), e, e.status_code)
+    fmt = "{} (Status code: {})\n".format(click.style(e, fg="red"), e.status_code)
     if e.server_message in _REMEDIES:
         fmt += "{} {}\n".format(click.style("FIX:", fg="green"), _REMEDIES[e.server_message])
-    fmt += "{} {}\n".format(click.style("Original URL:", fg="yellow"), e.url)
+    fmt += "{} {}\n".format(click.style("Requested URL:", fg="yellow"), e.url)
     fmt += "{} {}\n".format(click.style("Server status:", fg="yellow"), e.server_status)
+    fmt += "{} {}\n".format(click.style("Error code:", fg="yellow"), e.error_code)
     fmt += "{} {}\n".format(click.style("Server message:", fg="yellow"), e.server_message)
     fmt += "{} {}\n".format(click.style("Server traceback:", fg="yellow"), e.server_stack_trace)
     return fmt

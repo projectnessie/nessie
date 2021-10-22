@@ -130,12 +130,11 @@ interactions:
       code: 404
       message: Not Found
 - request:
-    body: '{"operations": [{"expectedContents": null, "contents": {"idGenerators":
-      "xyz", "id": "test_merge", "metadataLocation": "/a/b/c", "type": "ICEBERG_TABLE"},
-      "key": {"elements": ["merge", "foo", "bar"]}, "type": "PUT"}], "commitMeta":
-      {"properties": null, "author": "nessie test", "committer": null, "hash": null,
-      "message": "test message", "authorTime": null, "commitTime": null, "signedOffBy":
-      null}}'
+    body: '{"commitMeta": {"author": "nessie test", "commitTime": null, "committer":
+      null, "properties": null, "message": "test message", "hash": null, "signedOffBy":
+      null, "authorTime": null}, "operations": [{"expectedContents": null, "contents":
+      {"metadataLocation": "/a/b/c", "id": "test_merge", "idGenerators": "xyz", "type":
+      "ICEBERG_TABLE"}, "key": {"elements": ["merge", "foo", "bar"]}, "type": "PUT"}]}'
     headers:
       Accept:
       - '*/*'
@@ -153,7 +152,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/branch/dev/commit?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"273f8913d342bd3ef4cc2f286d7a62cf24ec623c6f3d14c3c56e481c88f1a994\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"f4bfbbe68dca6f7983bced9f49e3af7aaf5eda71e2334e7dd6eab6331a82319d\"\n}"
     headers:
       Content-Type:
       - application/json
@@ -179,7 +178,7 @@ interactions:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
         \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}, {\n
-        \ \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"273f8913d342bd3ef4cc2f286d7a62cf24ec623c6f3d14c3c56e481c88f1a994\"\n}
+        \ \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"f4bfbbe68dca6f7983bced9f49e3af7aaf5eda71e2334e7dd6eab6331a82319d\"\n}
         ]"
     headers:
       Content-Type:
@@ -228,7 +227,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/dev
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"273f8913d342bd3ef4cc2f286d7a62cf24ec623c6f3d14c3c56e481c88f1a994\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"f4bfbbe68dca6f7983bced9f49e3af7aaf5eda71e2334e7dd6eab6331a82319d\"\n}"
     headers:
       Content-Type:
       - application/json
@@ -238,7 +237,7 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"fromRefName": "dev", "fromHash": "273f8913d342bd3ef4cc2f286d7a62cf24ec623c6f3d14c3c56e481c88f1a994"}'
+    body: '{"fromRefName": "dev", "fromHash": "f4bfbbe68dca6f7983bced9f49e3af7aaf5eda71e2334e7dd6eab6331a82319d"}'
     headers:
       Accept:
       - '*/*'
@@ -277,8 +276,8 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
-        \"273f8913d342bd3ef4cc2f286d7a62cf24ec623c6f3d14c3c56e481c88f1a994\"\n}, {\n
-        \ \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"273f8913d342bd3ef4cc2f286d7a62cf24ec623c6f3d14c3c56e481c88f1a994\"\n}
+        \"f4bfbbe68dca6f7983bced9f49e3af7aaf5eda71e2334e7dd6eab6331a82319d\"\n}, {\n
+        \ \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"f4bfbbe68dca6f7983bced9f49e3af7aaf5eda71e2334e7dd6eab6331a82319d\"\n}
         ]"
     headers:
       Content-Type:

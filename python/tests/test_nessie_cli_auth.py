@@ -21,4 +21,5 @@ def test_bearer_auth() -> None:
 def test_bearer_auth_invalid() -> None:
     """Test any command with an invalid bearer authentication token."""
     result = _cli(["--json", "--auth-token", "invalid", "remote", "show"], ret_val=1)
-    assert "401 Client Error: Unauthorized" in result
+    assert "Client Error" in result
+    assert "Unauthorized" in result
