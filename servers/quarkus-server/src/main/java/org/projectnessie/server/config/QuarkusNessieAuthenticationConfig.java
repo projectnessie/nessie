@@ -15,11 +15,13 @@
  */
 package org.projectnessie.server.config;
 
+import io.quarkus.runtime.annotations.StaticInitSafe;
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
 import io.smallrye.config.WithName;
 
 /** Configuration for Nessie authentication settings. */
+@StaticInitSafe
 @ConfigMapping(prefix = "nessie.server.authentication")
 public interface QuarkusNessieAuthenticationConfig {
 
