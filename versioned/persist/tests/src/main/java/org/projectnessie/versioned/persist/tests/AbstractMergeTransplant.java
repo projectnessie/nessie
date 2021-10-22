@@ -189,8 +189,11 @@ public abstract class AbstractMergeTransplant {
 
     databaseAdapter.create(branch, databaseAdapter.toHash(main));
 
-    Hash[] commits = new Hash[3];
-    IntStream.range(0, commits.length).forEach(i -> commits[i] = commit(branch, i));
+    Hash[] commits =
+        IntStream.range(0, 3)
+            .mapToObj(i -> commit(branch, i))
+            .collect(Collectors.toList())
+            .toArray(new Hash[3]);
 
     for (int i = 0; i < commits.length; i++) {
       BranchName target = BranchName.of("transplant-" + i);

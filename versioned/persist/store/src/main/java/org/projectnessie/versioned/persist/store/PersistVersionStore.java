@@ -168,12 +168,8 @@ public class PersistVersionStore<CONTENTS, METADATA, CONTENTS_TYPE extends Enum<
       List<Hash> sequenceToTransplant,
       Function<METADATA, METADATA> updateCommitMetadata)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    Serializer<METADATA> ser = storeWorker.getMetadataSerializer();
     databaseAdapter.transplant(
-        targetBranch,
-        referenceHash,
-        sequenceToTransplant,
-        metaBytes -> ser.toBytes(updateCommitMetadata.apply(ser.fromBytes(metaBytes))));
+        targetBranch, referenceHash, sequenceToTransplant, withSerDe(updateCommitMetadata));
   }
 
   @Override
@@ -183,12 +179,7 @@ public class PersistVersionStore<CONTENTS, METADATA, CONTENTS_TYPE extends Enum<
       Optional<Hash> expectedHash,
       Function<METADATA, METADATA> updateCommitMetadata)
       throws ReferenceConflictException, ReferenceNotFoundException {
-    Serializer<METADATA> ser = storeWorker.getMetadataSerializer();
-    databaseAdapter.merge(
-        fromHash,
-        toBranch,
-        expectedHash,
-        metaBytes -> ser.toBytes(updateCommitMetadata.apply(ser.fromBytes(metaBytes))));
+    databaseAdapter.merge(fromHash, toBranch, expectedHash, withSerDe(updateCommitMetadata));
   }
 
   @Override
@@ -248,6 +239,12 @@ public class PersistVersionStore<CONTENTS, METADATA, CONTENTS_TYPE extends Enum<
             .map(contentsAndStateOptional -> contentsAndStateOptional.map(mapContentsAndState()))) {
       return values.collect(Collectors.toList());
     }
+  }
+
+  private Function<ByteString, ByteString> withSerDe(
+      Function<METADATA, METADATA> updateCommitMetadata) {
+    Serializer<METADATA> ser = storeWorker.getMetadataSerializer();
+    return metaBytes -> ser.toBytes(updateCommitMetadata.apply(ser.fromBytes(metaBytes)));
   }
 
   private Function<ContentsAndState<ByteString>, CONTENTS> mapContentsAndState() {

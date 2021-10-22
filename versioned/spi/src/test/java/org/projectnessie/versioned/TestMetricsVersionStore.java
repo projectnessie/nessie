@@ -65,8 +65,6 @@ import org.mockito.stubbing.Stubber;
 
 class TestMetricsVersionStore {
 
-  protected static Function<String, String> NOOP = Function.identity();
-
   // This test implementation shall exercise all functions on VersionStore and cover all exception
   // variants, which are all declared exceptions plus IllegalArgumentException (parameter error)
   // plus a runtime-exception (server error).
@@ -127,13 +125,16 @@ class TestMetricsVersionStore {
                         BranchName.of("mock-branch"),
                         Optional.empty(),
                         Collections.emptyList(),
-                        NOOP),
+                        Function.identity()),
                 refNotFoundAndRefConflictThrows),
             new VersionStoreInvocation<>(
                 "merge",
                 vs ->
                     vs.merge(
-                        Hash.of("42424242"), BranchName.of("mock-branch"), Optional.empty(), NOOP),
+                        Hash.of("42424242"),
+                        BranchName.of("mock-branch"),
+                        Optional.empty(),
+                        Function.identity()),
                 refNotFoundAndRefConflictThrows),
             new VersionStoreInvocation<>(
                 "assign",

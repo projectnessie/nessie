@@ -48,8 +48,6 @@ import org.projectnessie.versioned.test.tracing.TestedTraceingStoreInvocation;
 
 class TestTracingVersionStore {
 
-  protected static Function<String, String> NOOP = Function.identity();
-
   // This test implementation shall exercise all functions on VersionStore and cover all exception
   // variants, which are all declared exceptions plus IllegalArgumentException (parameter error)
   // plus a runtime-exception (server error).
@@ -120,7 +118,7 @@ class TestTracingVersionStore {
                                 BranchName.of("mock-branch"),
                                 Optional.empty(),
                                 Collections.emptyList(),
-                                NOOP)),
+                                Function.identity())),
                 new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>(
                         "Merge", refNotFoundAndRefConflictThrows)
                     .tag("nessie.version-store.to-branch", "mock-branch")
@@ -132,7 +130,7 @@ class TestTracingVersionStore {
                                 Hash.of("42424242"),
                                 BranchName.of("mock-branch"),
                                 Optional.empty(),
-                                NOOP)),
+                                Function.identity())),
                 new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>(
                         "Assign", refNotFoundAndRefConflictThrows)
                     .tag("nessie.version-store.ref", "BranchName{name=mock-branch}")

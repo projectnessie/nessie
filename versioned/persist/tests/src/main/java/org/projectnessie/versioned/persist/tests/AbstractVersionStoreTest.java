@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.IntFunction;
 import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.junit.jupiter.api.Disabled;
@@ -530,7 +531,7 @@ public abstract class AbstractVersionStoreTest extends AbstractITVersionStore {
                         BranchName.of("this-one-should-not-exist"),
                         Optional.empty(),
                         singletonList(s.toHash(BranchName.of("main"))),
-                        NOOP)),
+                        Function.identity())),
         new ReferenceNotFoundFunction("transplant/hash/empty")
             .msg(
                 "Could not find commit '12341234123412341234123412341234123412341234' in reference 'main'.")
@@ -540,7 +541,7 @@ public abstract class AbstractVersionStoreTest extends AbstractITVersionStore {
                         BranchName.of("main"),
                         Optional.of(Hash.of("12341234123412341234123412341234123412341234")),
                         singletonList(Hash.of("12341234123412341234123412341234123412341234")),
-                        NOOP)),
+                        Function.identity())),
         new ReferenceNotFoundFunction("transplant/empty/hash")
             .msg("Commit '12341234123412341234123412341234123412341234' not found")
             .function(
@@ -549,7 +550,7 @@ public abstract class AbstractVersionStoreTest extends AbstractITVersionStore {
                         BranchName.of("main"),
                         Optional.empty(),
                         singletonList(Hash.of("12341234123412341234123412341234123412341234")),
-                        NOOP)),
+                        Function.identity())),
         // merge()
         new ReferenceNotFoundFunction("merge/hash/empty")
             .msg("Commit '12341234123412341234123412341234123412341234' not found")
@@ -559,7 +560,7 @@ public abstract class AbstractVersionStoreTest extends AbstractITVersionStore {
                         Hash.of("12341234123412341234123412341234123412341234"),
                         BranchName.of("main"),
                         Optional.empty(),
-                        NOOP)),
+                        Function.identity())),
         new ReferenceNotFoundFunction("merge/empty/hash")
             .msg(
                 "Could not find commit '12341234123412341234123412341234123412341234' in reference 'main'.")
@@ -569,7 +570,7 @@ public abstract class AbstractVersionStoreTest extends AbstractITVersionStore {
                         s.noAncestorHash(),
                         BranchName.of("main"),
                         Optional.of(Hash.of("12341234123412341234123412341234123412341234")),
-                        NOOP)));
+                        Function.identity())));
   }
 
   @ParameterizedTest

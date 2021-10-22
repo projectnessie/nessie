@@ -59,8 +59,6 @@ import org.projectnessie.versioned.WithType;
 
 /** Base class used for integration tests against version store implementations. */
 public abstract class AbstractITVersionStore {
-  protected static Function<String, String> NOOP = Function.identity();
-
   protected abstract VersionStore<String, String, StringStoreWorker.TestEnum> store();
 
   // Puts the metadata through a transformation, that appends a suffix
@@ -905,7 +903,7 @@ public abstract class AbstractITVersionStore {
                       newBranch,
                       Optional.of(initialHash),
                       Arrays.asList(firstCommit, secondCommit, thirdCommit),
-                      NOOP));
+                      transformMeta));
     }
 
     @Test
@@ -920,7 +918,7 @@ public abstract class AbstractITVersionStore {
                       newBranch,
                       Optional.of(initialHash),
                       Collections.singletonList(Hash.of("1234567890abcdef")),
-                      NOOP));
+                      transformMeta));
     }
 
     @Test
@@ -969,7 +967,7 @@ public abstract class AbstractITVersionStore {
                       newBranch,
                       Optional.empty(),
                       Arrays.asList(secondCommit, firstCommit, thirdCommit),
-                      NOOP));
+                      transformMeta));
     }
 
     @Test
@@ -994,7 +992,7 @@ public abstract class AbstractITVersionStore {
                       newBranch,
                       Optional.of(unrelatedCommit),
                       Arrays.asList(firstCommit, secondCommit, thirdCommit),
-                      NOOP));
+                      transformMeta));
     }
 
     @Test
@@ -1189,7 +1187,7 @@ public abstract class AbstractITVersionStore {
                   "commit 4",
                   Collections.singletonList(Put.of(key2, "value4")));
 
-      assertThatThrownBy(() -> store().merge(barHash, foo, Optional.empty(), NOOP))
+      assertThatThrownBy(() -> store().merge(barHash, foo, Optional.empty(), transformMeta))
           .isInstanceOf(ReferenceConflictException.class)
           .hasMessageContaining("The following keys have been changed in conflict:")
           .hasMessageContaining(key1.toString())
@@ -1204,7 +1202,8 @@ public abstract class AbstractITVersionStore {
 
       assertThrows(
           ReferenceConflictException.class,
-          () -> store().merge(thirdCommit, newBranch, Optional.of(initialHash), NOOP));
+          () ->
+              store().merge(thirdCommit, newBranch, Optional.of(initialHash), transformMeta));
     }
 
     @Test
@@ -1212,7 +1211,8 @@ public abstract class AbstractITVersionStore {
       final BranchName newBranch = BranchName.of("bar_5");
       assertThrows(
           ReferenceNotFoundException.class,
-          () -> store().merge(thirdCommit, newBranch, Optional.of(initialHash), NOOP));
+          () ->
+              store().merge(thirdCommit, newBranch, Optional.of(initialHash), transformMeta));
     }
 
     @Test
@@ -1223,7 +1223,11 @@ public abstract class AbstractITVersionStore {
           ReferenceNotFoundException.class,
           () ->
               store()
-                  .merge(Hash.of("1234567890abcdef"), newBranch, Optional.of(initialHash), NOOP));
+                  .merge(
+                      Hash.of("1234567890abcdef"),
+                      newBranch,
+                      Optional.of(initialHash),
+                      transformMeta));
     }
   }
 
