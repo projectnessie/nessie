@@ -2,6 +2,12 @@
 History
 =======
 
+0.12.0 (2021-10-25)
+-------------------
+
+* Specialize and document Nessie exceptions
+* Fix --json on specific branches and tags
+
 0.11.0 (2021-10-20)
 -------------------
 
