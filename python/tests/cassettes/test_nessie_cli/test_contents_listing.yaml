@@ -16,10 +16,10 @@ interactions:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}"
     headers:
-      Content-Length:
-      - '121'
       Content-Type:
       - application/json
+      content-length:
+      - '121'
     status:
       code: 200
       message: OK
@@ -40,10 +40,10 @@ interactions:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}"
     headers:
-      Content-Length:
-      - '121'
       Content-Type:
       - application/json
+      content-length:
+      - '121'
     status:
       code: 200
       message: OK
@@ -70,10 +70,10 @@ interactions:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\",\n
         \ \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}"
     headers:
-      Content-Length:
-      - '137'
       Content-Type:
       - application/json
+      content-length:
+      - '137'
     status:
       code: 200
       message: OK
@@ -98,10 +98,10 @@ interactions:
         : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}
         ]"
     headers:
-      Content-Length:
-      - '264'
       Content-Type:
       - application/json
+      content-length:
+      - '264'
     status:
       code: 200
       message: OK
@@ -120,24 +120,24 @@ interactions:
     uri: http://localhost:19120/api/v1/contents/this.is.iceberg.foo?ref=contents_listing_dev
   response:
     body:
-      string: "{\n  \"message\" : \"Requested contents do not exist for specified
-        reference.\",\n  \"status\" : 404,\n  \"reason\" : \"Not Found\",\n  \"serverStackTrace\"
-        : null\n}"
+      string: "{\n  \"status\" : 404,\n  \"reason\" : \"Not Found\",\n  \"message\"
+        : \"Could not find contents for key 'this.is.iceberg.foo' in reference 'contents_listing_dev'.\",\n
+        \ \"errorCode\" : \"CONTENTS_NOT_FOUND\",\n  \"serverStackTrace\" : null\n}"
     headers:
-      Content-Length:
-      - '149'
       Content-Type:
       - application/json
+      content-length:
+      - '221'
     status:
       code: 404
       message: Not Found
 - request:
-    body: '{"operations": [{"contents": {"id": "test_contents_listing", "metadataLocation":
-      "/a/b/c", "idGenerators": "xyz", "type": "ICEBERG_TABLE"}, "key": {"elements":
-      ["this", "is", "iceberg", "foo"]}, "expectedContents": null, "type": "PUT"}],
-      "commitMeta": {"author": "nessie test", "properties": null, "committer": null,
-      "signedOffBy": null, "hash": null, "commitTime": null, "message": "test message",
-      "authorTime": null}}'
+    body: '{"commitMeta": {"author": "nessie test", "commitTime": null, "committer":
+      null, "properties": null, "message": "test message", "hash": null, "signedOffBy":
+      null, "authorTime": null}, "operations": [{"expectedContents": null, "contents":
+      {"metadataLocation": "/a/b/c", "id": "test_contents_listing", "idGenerators":
+      "xyz", "type": "ICEBERG_TABLE"}, "key": {"elements": ["this", "is", "iceberg",
+      "foo"]}, "type": "PUT"}]}'
     headers:
       Accept:
       - '*/*'
@@ -156,12 +156,12 @@ interactions:
   response:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\",\n
-        \ \"hash\" : \"6233a0f88765a7da04276bfe6d47694d4ac6dc8454a86a681c5adc73e8031b24\"\n}"
+        \ \"hash\" : \"9b49014b81a94516de2def9fc362556907095b29396d56b053f6ba530290aecb\"\n}"
     headers:
-      Content-Length:
-      - '137'
       Content-Type:
       - application/json
+      content-length:
+      - '137'
     status:
       code: 200
       message: OK
@@ -183,13 +183,13 @@ interactions:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
         \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}, {\n
         \ \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\",\n  \"hash\"
-        : \"6233a0f88765a7da04276bfe6d47694d4ac6dc8454a86a681c5adc73e8031b24\"\n}
+        : \"9b49014b81a94516de2def9fc362556907095b29396d56b053f6ba530290aecb\"\n}
         ]"
     headers:
-      Content-Length:
-      - '264'
       Content-Type:
       - application/json
+      content-length:
+      - '264'
     status:
       code: 200
       message: OK
@@ -208,24 +208,24 @@ interactions:
     uri: http://localhost:19120/api/v1/contents/this.is.delta.bar?ref=contents_listing_dev
   response:
     body:
-      string: "{\n  \"message\" : \"Requested contents do not exist for specified
-        reference.\",\n  \"status\" : 404,\n  \"reason\" : \"Not Found\",\n  \"serverStackTrace\"
-        : null\n}"
+      string: "{\n  \"status\" : 404,\n  \"reason\" : \"Not Found\",\n  \"message\"
+        : \"Could not find contents for key 'this.is.delta.bar' in reference 'contents_listing_dev'.\",\n
+        \ \"errorCode\" : \"CONTENTS_NOT_FOUND\",\n  \"serverStackTrace\" : null\n}"
     headers:
-      Content-Length:
-      - '149'
       Content-Type:
       - application/json
+      content-length:
+      - '219'
     status:
       code: 404
       message: Not Found
 - request:
-    body: '{"operations": [{"contents": {"id": "uuid2", "checkpointLocationHistory":
-      ["def"], "metadataLocationHistory": ["asd"], "lastCheckpoint": "x", "type":
-      "DELTA_LAKE_TABLE"}, "key": {"elements": ["this", "is", "delta", "bar"]}, "expectedContents":
-      null, "type": "PUT"}], "commitMeta": {"author": "nessie test", "properties":
-      null, "committer": null, "signedOffBy": null, "hash": null, "commitTime": null,
-      "message": "test message", "authorTime": null}}'
+    body: '{"commitMeta": {"author": "nessie test", "commitTime": null, "committer":
+      null, "properties": null, "message": "test message", "hash": null, "signedOffBy":
+      null, "authorTime": null}, "operations": [{"expectedContents": null, "contents":
+      {"metadataLocationHistory": ["asd"], "checkpointLocationHistory": ["def"], "id":
+      "uuid2", "lastCheckpoint": "x", "type": "DELTA_LAKE_TABLE"}, "key": {"elements":
+      ["this", "is", "delta", "bar"]}, "type": "PUT"}]}'
     headers:
       Accept:
       - '*/*'
@@ -240,16 +240,16 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/contents_listing_dev/commit?expectedHash=6233a0f88765a7da04276bfe6d47694d4ac6dc8454a86a681c5adc73e8031b24
+    uri: http://localhost:19120/api/v1/trees/branch/contents_listing_dev/commit?expectedHash=9b49014b81a94516de2def9fc362556907095b29396d56b053f6ba530290aecb
   response:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\",\n
-        \ \"hash\" : \"a8b576c59a491b10c57365ea22df4e4c76f3e1f05210a1c53dc410c9234be547\"\n}"
+        \ \"hash\" : \"ab5a1f626a7d606e0a5de9be8b8677fab354d3303915598332b3c139bbf257c7\"\n}"
     headers:
-      Content-Length:
-      - '137'
       Content-Type:
       - application/json
+      content-length:
+      - '137'
     status:
       code: 200
       message: OK
@@ -271,13 +271,13 @@ interactions:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
         \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}, {\n
         \ \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\",\n  \"hash\"
-        : \"a8b576c59a491b10c57365ea22df4e4c76f3e1f05210a1c53dc410c9234be547\"\n}
+        : \"ab5a1f626a7d606e0a5de9be8b8677fab354d3303915598332b3c139bbf257c7\"\n}
         ]"
     headers:
-      Content-Length:
-      - '264'
       Content-Type:
       - application/json
+      content-length:
+      - '264'
     status:
       code: 200
       message: OK
@@ -296,23 +296,23 @@ interactions:
     uri: http://localhost:19120/api/v1/contents/this.is.sql.baz?ref=contents_listing_dev
   response:
     body:
-      string: "{\n  \"message\" : \"Requested contents do not exist for specified
-        reference.\",\n  \"status\" : 404,\n  \"reason\" : \"Not Found\",\n  \"serverStackTrace\"
-        : null\n}"
+      string: "{\n  \"status\" : 404,\n  \"reason\" : \"Not Found\",\n  \"message\"
+        : \"Could not find contents for key 'this.is.sql.baz' in reference 'contents_listing_dev'.\",\n
+        \ \"errorCode\" : \"CONTENTS_NOT_FOUND\",\n  \"serverStackTrace\" : null\n}"
     headers:
-      Content-Length:
-      - '149'
       Content-Type:
       - application/json
+      content-length:
+      - '217'
     status:
       code: 404
       message: Not Found
 - request:
-    body: '{"operations": [{"contents": {"id": "uuid3", "dialect": "SPARK", "sqlText":
-      "SELECT * FROM foo", "type": "VIEW"}, "key": {"elements": ["this", "is", "sql",
-      "baz"]}, "expectedContents": null, "type": "PUT"}], "commitMeta": {"author":
-      "nessie test", "properties": null, "committer": null, "signedOffBy": null, "hash":
-      null, "commitTime": null, "message": "test message", "authorTime": null}}'
+    body: '{"commitMeta": {"author": "nessie test", "commitTime": null, "committer":
+      null, "properties": null, "message": "test message", "hash": null, "signedOffBy":
+      null, "authorTime": null}, "operations": [{"expectedContents": null, "contents":
+      {"sqlText": "SELECT * FROM foo", "id": "uuid3", "dialect": "SPARK", "type":
+      "VIEW"}, "key": {"elements": ["this", "is", "sql", "baz"]}, "type": "PUT"}]}'
     headers:
       Accept:
       - '*/*'
@@ -327,16 +327,16 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/contents_listing_dev/commit?expectedHash=a8b576c59a491b10c57365ea22df4e4c76f3e1f05210a1c53dc410c9234be547
+    uri: http://localhost:19120/api/v1/trees/branch/contents_listing_dev/commit?expectedHash=ab5a1f626a7d606e0a5de9be8b8677fab354d3303915598332b3c139bbf257c7
   response:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\",\n
-        \ \"hash\" : \"5e2b56e040b7b0aae665ba3c6a09630eb1401d240ad6de9eb644f0e091f4c3e0\"\n}"
+        \ \"hash\" : \"d76e94d31c334e8a9b3aade04c3871138edb4013e2f7fae642767bedcdf8afc6\"\n}"
     headers:
-      Content-Length:
-      - '137'
       Content-Type:
       - application/json
+      content-length:
+      - '137'
     status:
       code: 200
       message: OK
@@ -358,10 +358,10 @@ interactions:
       string: "{\n  \"type\" : \"ICEBERG_TABLE\",\n  \"id\" : \"test_contents_listing\",\n
         \ \"metadataLocation\" : \"/a/b/c\",\n  \"idGenerators\" : \"xyz\"\n}"
     headers:
-      Content-Length:
-      - '123'
       Content-Type:
       - application/json
+      content-length:
+      - '123'
     status:
       code: 200
       message: OK
@@ -384,10 +384,10 @@ interactions:
         : [ \"asd\" ],\n  \"checkpointLocationHistory\" : [ \"def\" ],\n  \"lastCheckpoint\"
         : \"x\"\n}"
     headers:
-      Content-Length:
-      - '161'
       Content-Type:
       - application/json
+      content-length:
+      - '161'
     status:
       code: 200
       message: OK
@@ -410,10 +410,10 @@ interactions:
         \   \"name\" : {\n      \"elements\" : [ \"this\", \"is\", \"iceberg\", \"foo\"
         ]\n    }\n  } ],\n  \"hasMore\" : false\n}"
     headers:
-      Content-Length:
-      - '171'
       Content-Type:
       - application/json
+      content-length:
+      - '171'
     status:
       code: 200
       message: OK
@@ -436,10 +436,10 @@ interactions:
         \   \"name\" : {\n      \"elements\" : [ \"this\", \"is\", \"delta\", \"bar\"
         ]\n    }\n  } ],\n  \"hasMore\" : false\n}"
     headers:
-      Content-Length:
-      - '172'
       Content-Type:
       - application/json
+      content-length:
+      - '172'
     status:
       code: 200
       message: OK
@@ -462,10 +462,10 @@ interactions:
         \   \"name\" : {\n      \"elements\" : [ \"this\", \"is\", \"iceberg\", \"foo\"
         ]\n    }\n  } ],\n  \"hasMore\" : false\n}"
     headers:
-      Content-Length:
-      - '171'
       Content-Type:
       - application/json
+      content-length:
+      - '171'
     status:
       code: 200
       message: OK
@@ -490,10 +490,10 @@ interactions:
         : [ \"this\", \"is\", \"iceberg\", \"foo\" ]\n    }\n  } ],\n  \"hasMore\"
         : false\n}"
     headers:
-      Content-Length:
-      - '284'
       Content-Type:
       - application/json
+      content-length:
+      - '284'
     status:
       code: 200
       message: OK
@@ -516,10 +516,10 @@ interactions:
         \   \"name\" : {\n      \"elements\" : [ \"this\", \"is\", \"delta\", \"bar\"
         ]\n    }\n  } ],\n  \"hasMore\" : false\n}"
     headers:
-      Content-Length:
-      - '172'
       Content-Type:
       - application/json
+      content-length:
+      - '172'
     status:
       code: 200
       message: OK
@@ -546,10 +546,10 @@ interactions:
         : [ \"this\", \"is\", \"iceberg\", \"foo\" ]\n    }\n  } ],\n  \"hasMore\"
         : false\n}"
     headers:
-      Content-Length:
-      - '383'
       Content-Type:
       - application/json
+      content-length:
+      - '383'
     status:
       code: 200
       message: OK
