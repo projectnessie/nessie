@@ -152,9 +152,10 @@ def test_branch() -> None:
     _cli(["branch", "etl", "main"])
     references = ReferenceSchema().loads(_cli(["--json", "branch"]), many=True)
     assert len(references) == 3
-    references = ReferenceSchema().loads(_cli(["--json", "branch", "-l", "etl"]), many=True)
-    assert len(references) == 1
-    assert references[0].name == "etl"
+    references = ReferenceSchema().loads(_cli(["--json", "branch", "-l", "etl"]), many=False)
+    assert_that(references.name).is_equal_to("etl")
+    references = simplejson.loads(_cli(["--json", "branch", "-l", "foo"]))
+    assert len(references) == 0
     _cli(["branch", "-d", "etl"])
     _cli(["branch", "-d", "dev"])
     references = ReferenceSchema().loads(_cli(["--json", "branch"]), many=True)
@@ -172,9 +173,10 @@ def test_tag() -> None:
     _cli(["tag", "etl-tag", "main"])
     references = ReferenceSchema().loads(_cli(["--json", "tag"]), many=True)
     assert len(references) == 2
-    references = ReferenceSchema().loads(_cli(["--json", "tag", "-l", "etl-tag"]), many=True)
-    assert len(references) == 1
-    assert references[0].name == "etl-tag"
+    references = ReferenceSchema().loads(_cli(["--json", "tag", "-l", "etl-tag"]), many=False)
+    assert_that(references.name).is_equal_to("etl-tag")
+    references = simplejson.loads(_cli(["--json", "tag", "-l", "foo"]))
+    assert len(references) == 0
     _cli(["tag", "-d", "etl-tag"])
     _cli(["tag", "-d", "dev-tag"])
     references = ReferenceSchema().loads(_cli(["--json", "tag"]), many=True)
@@ -231,8 +233,8 @@ def test_merge() -> None:
     """Test merge operation."""
     _cli(["branch", "dev"])
     _make_commit("merge.foo.bar", _new_table("test_merge"), "dev")
-    refs = ReferenceSchema().loads(_cli(["--json", "branch", "-l", "main"]), many=True)
-    main_hash = next(i.hash_ for i in refs if i.name == "main")
+    ref = ReferenceSchema().loads(_cli(["--json", "branch", "-l", "main"]), many=False)
+    main_hash = ref.hash_
     _cli(["merge", "dev", "-c", main_hash])
     branches = ReferenceSchema().loads(_cli(["--json", "branch"]), many=True)
     refs = {i.name: i.hash_ for i in branches}
