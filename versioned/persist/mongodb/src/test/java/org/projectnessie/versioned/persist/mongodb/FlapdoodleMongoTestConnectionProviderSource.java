@@ -66,12 +66,12 @@ public class FlapdoodleMongoTestConnectionProviderSource extends MongoTestConnec
                 port.set(Integer.parseInt(portString));
               }
             }
-            defaultOutput.getOutput().process(block);
+            defaultOutput.output().process(block);
           }
 
           @Override
           public void onProcessed() {
-            defaultOutput.getOutput().onProcessed();
+            defaultOutput.output().onProcessed();
           }
         };
 
@@ -79,8 +79,11 @@ public class FlapdoodleMongoTestConnectionProviderSource extends MongoTestConnec
         MongodStarter.getInstance(
             Defaults.runtimeConfigFor(Command.MongoD)
                 .processOutput(
-                    new ProcessOutput(
-                        capturedStdout, defaultOutput.getError(), defaultOutput.getCommands()))
+                    ProcessOutput.builder()
+                        .output(capturedStdout)
+                        .error(defaultOutput.error())
+                        .commands(defaultOutput.commands())
+                        .build())
                 .build());
 
     MongodConfig mongodConfig =
