@@ -15,7 +15,6 @@
  */
 package org.projectnessie.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import javax.annotation.Nullable;
@@ -29,15 +28,10 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ImmutableNessieConfiguration.class)
 public abstract class NessieConfiguration {
 
-  @JsonIgnore private static final String CURRENT_VERSION = "1.0";
-
   @Nullable
   @Size(min = 1)
   public abstract String getDefaultBranch();
 
-  @Value.Default
   @NotNull
-  public String getVersion() {
-    return CURRENT_VERSION;
-  }
+  public abstract String getVersion();
 }

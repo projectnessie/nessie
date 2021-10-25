@@ -121,9 +121,10 @@ class TestNessieHttpClient {
 
       h.getRequestBody().close();
 
-      h.sendResponseHeaders(200, 2);
+      byte[] response = "{\"version\":\"unknown\"}".getBytes(UTF_8);
+      h.sendResponseHeaders(200, response.length);
       try (OutputStream out = h.getResponseBody()) {
-        out.write("{}".getBytes(UTF_8));
+        out.write(response);
       }
     };
   }
