@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.UUID;
 import javax.annotation.Nullable;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
 import org.projectnessie.services.authz.AccessChecker;
@@ -64,7 +65,7 @@ abstract class BaseApiImpl {
       }
       namedRefWithHash = WithHash.of(refWithHash.getHash(), (NamedRef) ref);
     } catch (ReferenceNotFoundException e) {
-      throw new NessieNotFoundException(e.getMessage());
+      throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }
 
     try {
@@ -83,7 +84,7 @@ abstract class BaseApiImpl {
           getStore().hashOnReference(namedRefWithHash.getValue(), Optional.of(Hash.of(hashOnRef))),
           namedRefWithHash.getValue());
     } catch (ReferenceNotFoundException e) {
-      throw new NessieNotFoundException(e.getMessage());
+      throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }
   }
 

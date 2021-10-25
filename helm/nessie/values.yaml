@@ -6,15 +6,46 @@ image:
   # Overrides the image tag whose default is the chart version.
   tag: ""
 
-# which type of version store to use: JGIT, INMEMORY, DYNAMO. JGIT is best for local testing, DYNAMO preferred for production
+# The default logging level for the nessie server
+logLevel: INFO
+
+# which type of version store to use: INMEMORY, ROCKS, DYNAMO, MONGO
 versionStoreType: INMEMORY
+
+# this is needed when selecting ROCKS
+rocksdb:
+  dbPath: /tmp/rocks-nessie
 
 # this is needed when selecting DYNAMO
 dynamodb:
   region: us-west-2
+  secret:
+    name: awscreds
+    awsAccessKeyId: aws_access_key_id
+    awsSecretAccessKey: aws_secret_access_key
 
+# this is needed when selecting MONGO
+mongodb:
+  name: nessie
+  connectionString: mongodb://localhost:27017
 
-# configure jaeger tracing for nessie
+# configures authentication for the nessie server
+authentication:
+  enabled: false
+  # Sets the base URL of the OpenID Connect (OIDC) server. Needs to be overridden with authentication.enabled=true
+  oidcAuthServerUrl: http://127.255.0.0:0/auth/realms/unset/
+  # Set the OIDC client ID when authentication.enabled=true. Each application has a client ID that is used to identify the application
+  oidcClientId: nessie
+
+# configures authorization for the nessie server
+authorization:
+  enabled: false
+  # the authorization rules when authorization.enabled=true. Example rules can be found at https://projectnessie.org/features/metadata_authorization/#authorization-rules
+  #rules:
+  #  allowViewingBranch: op=='VIEW_REFERENCE' && role.startsWith('test_user') && ref.startsWith('allowedBranch')
+  #  allowCommits: op=='COMMIT_CHANGE_AGAINST_REFERENCE' && role.startsWith('test_user') && ref.startsWith('allowedBranch')
+
+# configure jaeger tracing for the nessie server
 jaegerTracing:
   enabled: false
   # The traces endpoint, in case the client should connect directly to the Collector, like http://jaeger-collector:14268/api/traces

@@ -16,6 +16,9 @@
 package org.projectnessie.server.providers;
 
 import com.mongodb.client.MongoClient;
+import io.quarkus.arc.Arc;
+import io.quarkus.mongodb.runtime.MongoClientBeanUtil;
+import io.quarkus.mongodb.runtime.MongoClients;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -27,8 +30,11 @@ import org.projectnessie.versioned.persist.mongodb.MongoDatabaseClient;
 public class QuarkusMongoDatabaseClient extends MongoDatabaseClient {
   @Inject
   public QuarkusMongoDatabaseClient(
-      @ConfigProperty(name = "quarkus.mongodb.database") String databaseName,
-      MongoClient mongoClient) {
+      @ConfigProperty(name = "quarkus.mongodb.database") String databaseName) {
+    MongoClients mongoClients = Arc.container().instance(MongoClients.class).get();
+    MongoClient mongoClient =
+        mongoClients.createMongoClient(MongoClientBeanUtil.DEFAULT_MONGOCLIENT_NAME);
+
     configure(MongoClientConfig.of(mongoClient).withDatabaseName(databaseName));
     initialize();
   }

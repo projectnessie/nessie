@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.jaxrs;
+package org.projectnessie.services.rest;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
 import javax.inject.Inject;
@@ -21,8 +21,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.ext.Provider;
 import org.projectnessie.services.config.ServerConfig;
-import org.projectnessie.services.rest.BaseExceptionMapper;
-import org.projectnessie.services.rest.NessieExceptionMapper;
 
 /**
  * "Special" implementation for exceptions that extend {@link JsonMappingException} that is needed

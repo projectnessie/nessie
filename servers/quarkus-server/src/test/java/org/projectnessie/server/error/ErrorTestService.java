@@ -34,6 +34,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import org.mockito.Mockito;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.versioned.BackendLimitExceededException;
 import org.projectnessie.versioned.StringStoreWorker;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
@@ -73,7 +74,8 @@ public class ErrorTestService {
   @Path("nessieNotFound")
   @GET
   public String nessieNotFound() throws NessieNotFoundException {
-    throw new NessieNotFoundException("not-there-message", new Exception("not-there-exception"));
+    throw new NessieReferenceNotFoundException(
+        "not-there-message", new Exception("not-there-exception"));
   }
 
   @Path("basicEntity")

@@ -66,8 +66,11 @@ import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.client.http.HttpClientException;
 import org.projectnessie.client.rest.NessieBadRequestException;
 import org.projectnessie.client.rest.NessieHttpResponseFilter;
+import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.error.NessieReferenceAlreadyExistsException;
+import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
@@ -138,17 +141,15 @@ public abstract class AbstractTestRest {
     return api;
   }
 
-  public HttpClient getHttpClient() {
-    return httpClient;
-  }
-
   @Test
-  public void createRecreateDefaultBranch()
-      throws NessieConflictException, NessieNotFoundException {
+  public void createRecreateDefaultBranch() throws BaseNessieClientServerException {
     api.deleteBranch().branch(api.getDefaultBranch()).delete();
 
-    api.createReference().reference(Branch.of("main", null)).create();
-    api.getReference().refName("main").get();
+    Reference main = api.createReference().reference(Branch.of("main", null)).create();
+    assertThat(main).isNotNull();
+    assertThat(main.getName()).isEqualTo("main");
+    assertThat(main.getHash()).isNotNull();
+    assertThat(api.getReference().refName("main").get()).isEqualTo(main);
   }
 
   @Test
@@ -169,7 +170,7 @@ public abstract class AbstractTestRest {
                             .sourceRefName("unknownSource")
                             .reference(Tag.of(tagName2, null))
                             .create())
-                .isInstanceOf(NessieNotFoundException.class)
+                .isInstanceOf(NessieReferenceNotFoundException.class)
                 .hasMessageContainingAll("'unknownSource'", "not"),
         // Tag without sourceRefName & null hash
         () ->
@@ -220,8 +221,7 @@ public abstract class AbstractTestRest {
 
   @ParameterizedTest
   @ValueSource(strings = {"normal", "with-no_space", "slash/thing"})
-  public void referenceNames(String refNamePart)
-      throws NessieNotFoundException, NessieConflictException {
+  public void referenceNames(String refNamePart) throws BaseNessieClientServerException {
     String tagName = "tag" + refNamePart;
     String branchName = "branch" + refNamePart;
     String branchName2 = "branch2" + refNamePart;
@@ -340,7 +340,7 @@ public abstract class AbstractTestRest {
   }
 
   @Test
-  public void filterCommitLogByAuthor() throws NessieNotFoundException, NessieConflictException {
+  public void filterCommitLogByAuthor() throws BaseNessieClientServerException {
     Reference main = api.getReference().refName("main").get();
     Branch filterCommitLogByAuthor = Branch.of("filterCommitLogByAuthor", main.getHash());
     Reference branch =
@@ -426,7 +426,7 @@ public abstract class AbstractTestRest {
   }
 
   @Test
-  public void filterCommitLogByTimeRange() throws NessieNotFoundException, NessieConflictException {
+  public void filterCommitLogByTimeRange() throws BaseNessieClientServerException {
     Reference main = api.getReference().refName("main").get();
     Branch filterCommitLogByAuthor = Branch.of("filterCommitLogByTimeRange", main.getHash());
     Reference branch =
@@ -503,8 +503,7 @@ public abstract class AbstractTestRest {
   }
 
   @Test
-  public void filterCommitLogByProperties()
-      throws NessieNotFoundException, NessieConflictException {
+  public void filterCommitLogByProperties() throws BaseNessieClientServerException {
     Reference main = api.getReference().refName("main").get();
     Branch filterCommitLogByAuthor = Branch.of("filterCommitLogByProperties", main.getHash());
     Reference branch =
@@ -543,8 +542,7 @@ public abstract class AbstractTestRest {
   }
 
   @Test
-  public void filterCommitLogByCommitRange()
-      throws NessieNotFoundException, NessieConflictException {
+  public void filterCommitLogByCommitRange() throws BaseNessieClientServerException {
     Reference main = api.getReference().refName("main").get();
     Branch b = Branch.of("filterCommitLogByCommitRange", main.getHash());
     Reference branch = api.createReference().sourceRefName(main.getName()).reference(b).create();
@@ -584,7 +582,7 @@ public abstract class AbstractTestRest {
 
   protected void createCommits(
       Reference branch, int numAuthors, int commitsPerAuthor, String currentHash)
-      throws NessieNotFoundException, NessieConflictException {
+      throws BaseNessieClientServerException {
     for (int j = 0; j < numAuthors; j++) {
       String author = "author-" + j;
       for (int i = 0; i < commitsPerAuthor; i++) {
@@ -609,12 +607,12 @@ public abstract class AbstractTestRest {
   }
 
   @Test
-  public void commitLogPagingAndFilteringByAuthor()
-      throws NessieNotFoundException, NessieConflictException {
+  public void commitLogPagingAndFilteringByAuthor() throws BaseNessieClientServerException {
     String someHash = api.getReference().refName("main").get().getHash();
     String branchName = "commitLogPagingAndFiltering";
     Branch branch = Branch.of(branchName, someHash);
-    api.createReference().sourceRefName("main").reference(branch).create();
+    assertThat(api.createReference().sourceRefName("main").reference(branch).create().getHash())
+        .isNotNull();
 
     int numAuthors = 3;
     int commits = 45;
@@ -645,11 +643,12 @@ public abstract class AbstractTestRest {
   }
 
   @Test
-  public void commitLogPaging() throws NessieNotFoundException, NessieConflictException {
+  public void commitLogPaging() throws BaseNessieClientServerException {
     String someHash = api.getReference().refName("main").get().getHash();
     String branchName = "commitLogPaging";
     Branch branch = Branch.of(branchName, someHash);
-    api.createReference().sourceRefName("main").reference(branch).create();
+    assertThat(api.createReference().sourceRefName("main").reference(branch).create().getHash())
+        .isNotNull();
 
     int commits = 95;
     int pageSizeHint = 10;
@@ -726,7 +725,7 @@ public abstract class AbstractTestRest {
   }
 
   @Test
-  public void multiget() throws NessieNotFoundException, NessieConflictException {
+  public void multiget() throws BaseNessieClientServerException {
     final String branch = "foo";
     Reference r =
         api.createReference().sourceRefName("main").reference(Branch.of(branch, null)).create();
@@ -845,8 +844,7 @@ public abstract class AbstractTestRest {
   }
 
   @Test
-  public void verifyAllContentAndOperationTypes()
-      throws NessieNotFoundException, NessieConflictException {
+  public void verifyAllContentAndOperationTypes() throws BaseNessieClientServerException {
     String branchName = "contentAndOperationAll";
     Reference r =
         api.createReference().sourceRefName("main").reference(Branch.of(branchName, null)).create();
@@ -877,8 +875,7 @@ public abstract class AbstractTestRest {
   @ParameterizedTest
   @MethodSource("contentAndOperationTypes")
   public void verifyContentAndOperationTypesIndividually(
-      ContentAndOperationType contentAndOperationType)
-      throws NessieNotFoundException, NessieConflictException {
+      ContentAndOperationType contentAndOperationType) throws BaseNessieClientServerException {
     String branchName = "contentAndOperation_" + contentAndOperationType;
     Reference r =
         api.createReference().sourceRefName("main").reference(Branch.of(branchName, null)).create();
@@ -909,7 +906,7 @@ public abstract class AbstractTestRest {
   }
 
   @Test
-  public void filterEntriesByType() throws NessieNotFoundException, NessieConflictException {
+  public void filterEntriesByType() throws BaseNessieClientServerException {
     final String branch = "filterTypes";
     Reference r =
         api.createReference().sourceRefName("main").reference(Branch.of(branch, null)).create();
@@ -968,7 +965,7 @@ public abstract class AbstractTestRest {
   }
 
   @Test
-  public void filterEntriesByNamespace() throws NessieConflictException, NessieNotFoundException {
+  public void filterEntriesByNamespace() throws BaseNessieClientServerException {
     final String branch = "filterEntriesByNamespace";
     Reference r =
         api.createReference().sourceRefName("main").reference(Branch.of(branch, null)).create();
@@ -1048,8 +1045,7 @@ public abstract class AbstractTestRest {
   }
 
   @Test
-  public void filterEntriesByNamespaceAndPrefixDepth()
-      throws NessieConflictException, NessieNotFoundException {
+  public void filterEntriesByNamespaceAndPrefixDepth() throws BaseNessieClientServerException {
     final String branch = "filterEntriesByNamespaceAndPrefixDepth";
     Reference r =
         api.createReference().sourceRefName("main").reference(Branch.of(branch, null)).create();
@@ -1144,8 +1140,7 @@ public abstract class AbstractTestRest {
   }
 
   @Test
-  public void checkSpecialCharacterRoundTrip()
-      throws NessieNotFoundException, NessieConflictException {
+  public void checkSpecialCharacterRoundTrip() throws BaseNessieClientServerException {
     final String branch = "specialchar";
     Reference r =
         api.createReference().sourceRefName("main").reference(Branch.of(branch, null)).create();
@@ -1168,18 +1163,37 @@ public abstract class AbstractTestRest {
   }
 
   @Test
-  public void checkServerErrorPropagation()
-      throws NessieNotFoundException, NessieConflictException {
+  public void checkServerErrorPropagation() throws BaseNessieClientServerException {
     final String branch = "bar";
-    api.createReference().sourceRefName("main").reference(Branch.of(branch, null)).create();
+    Reference ref =
+        api.createReference().sourceRefName("main").reference(Branch.of(branch, null)).create();
+    assertThat(ref.getName()).isEqualTo(branch);
+    assertThat(ref.getHash()).isNotNull();
+
     assertThatThrownBy(
             () ->
                 api.createReference()
                     .sourceRefName("main")
                     .reference(Branch.of(branch, null))
                     .create())
-        .isInstanceOf(NessieConflictException.class)
+        .isInstanceOf(NessieReferenceAlreadyExistsException.class)
         .hasMessageContaining("already exists");
+
+    assertThatThrownBy(
+            () ->
+                api.commitMultipleOperations()
+                    .branchName(ref.getName())
+                    .hash(ref.getHash())
+                    .commitMeta(
+                        CommitMeta.builder()
+                            .author("author")
+                            .message("committed-by-test")
+                            .committer("disallowed-client-side-committer")
+                            .build())
+                    .operation(Unchanged.of(ContentsKey.of("table")))
+                    .commit())
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Cannot set the committer on the client side.");
   }
 
   @ParameterizedTest
@@ -1551,7 +1565,7 @@ public abstract class AbstractTestRest {
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageStartingWith(
                     "Bad Request (HTTP/400): Could not resolve type id 'FOOBAR' as a subtype of "
-                        + "`org.projectnessie.model.Reference`: known type ids = []\n"));
+                        + "`org.projectnessie.model.Reference`: known type ids = ["));
   }
 
   @Test
@@ -1581,8 +1595,7 @@ public abstract class AbstractTestRest {
   }
 
   @Test
-  public void testValidHashesOnValidNamedRefs()
-      throws NessieNotFoundException, NessieConflictException {
+  public void testValidHashesOnValidNamedRefs() throws BaseNessieClientServerException {
     Reference main = api.getReference().refName("main").get();
     Branch b = Branch.of("testValidHashesOnValidNamedRefs", main.getHash());
     Reference branch = api.createReference().sourceRefName(main.getName()).reference(b).create();
@@ -1628,8 +1641,7 @@ public abstract class AbstractTestRest {
   }
 
   @Test
-  public void testUnknownHashesOnValidNamedRefs()
-      throws NessieNotFoundException, NessieConflictException {
+  public void testUnknownHashesOnValidNamedRefs() throws BaseNessieClientServerException {
     Reference main = api.getReference().refName("main").get();
     Branch b = Branch.of("testUnknownHashesOnValidNamedRefs", main.getHash());
     Reference branch = api.createReference().sourceRefName(main.getName()).reference(b).create();
@@ -1681,26 +1693,32 @@ public abstract class AbstractTestRest {
 
   /** Assigning a branch/tag to a fresh main without any commits didn't work in 0.9.2 */
   @Test
-  public void testAssignRefToFreshMain() throws NessieNotFoundException, NessieConflictException {
+  public void testAssignRefToFreshMain() throws BaseNessieClientServerException {
     Reference main = api.getReference().refName("main").get();
     // make sure main doesn't have any commits
     LogResponse log = api.getCommitLog().refName(main.getName()).get();
     assertThat(log.getOperations()).isEmpty();
 
     String testBranch = "testBranch";
-    api.createReference()
-        .sourceRefName(main.getName())
-        .reference(Branch.of(testBranch, null))
-        .create();
+    assertThat(
+            api.createReference()
+                .sourceRefName(main.getName())
+                .reference(Branch.of(testBranch, null))
+                .create()
+                .getHash())
+        .isNotNull();
     Reference testBranchRef = api.getReference().refName(testBranch).get();
     api.assignBranch().hash(testBranchRef.getHash()).branchName(testBranch).assignTo(main).assign();
     assertThat(testBranchRef.getHash()).isEqualTo(main.getHash());
 
     String testTag = "testTag";
-    api.createReference()
-        .sourceRefName(main.getName())
-        .reference(Branch.of(testTag, null))
-        .create();
+    assertThat(
+            api.createReference()
+                .sourceRefName(main.getName())
+                .reference(Branch.of(testTag, null))
+                .create()
+                .getHash())
+        .isNotNull();
     Reference testTagRef = api.getReference().refName(testTag).get();
     api.assignTag().hash(testTagRef.getHash()).tagName(testTag).assignTo(main).assign();
     assertThat(testTagRef.getHash()).isEqualTo(main.getHash());

@@ -25,8 +25,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.http.HttpClientBuilder;
-import org.projectnessie.error.NessieConflictException;
-import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentsKey;
@@ -47,7 +46,7 @@ class AbstractTestBasicOperations {
     }
   }
 
-  void getCatalog(String branch) throws NessieNotFoundException, NessieConflictException {
+  void getCatalog(String branch) throws BaseNessieClientServerException {
     api =
         HttpClientBuilder.builder()
             .withUri("http://localhost:19121/api/v1")
@@ -65,7 +64,7 @@ class AbstractTestBasicOperations {
   @TestSecurity(
       user = "admin_user",
       roles = {"admin", "user"})
-  void testAdmin() throws NessieNotFoundException, NessieConflictException {
+  void testAdmin() throws BaseNessieClientServerException {
     getCatalog("testx");
     Branch branch = (Branch) api.getReference().refName("testx").get();
     List<Entry> tables = api.getEntries().refName("testx").get().getEntries();
@@ -118,7 +117,7 @@ class AbstractTestBasicOperations {
 
   @Test
   @TestSecurity(authorizationEnabled = false)
-  void testUserCleanup() throws NessieNotFoundException, NessieConflictException {
+  void testUserCleanup() throws BaseNessieClientServerException {
     getCatalog(null);
     Branch r = (Branch) api.getReference().refName("testx").get();
     api.deleteBranch().branch(r).delete();

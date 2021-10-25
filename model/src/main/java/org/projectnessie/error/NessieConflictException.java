@@ -15,6 +15,14 @@
  */
 package org.projectnessie.error;
 
+/**
+ * Base class for all exceptions that are represented by the HTTP {@code Conflict} status code
+ * (409).
+ *
+ * <p>This exception should not be instantiated directly on the server-side. It may be instantiated
+ * and thrown on the client side to represent cases when the server responded with the HTTP {@code
+ * Conflict} status code, but no fine-grained error information was available.
+ */
 public class NessieConflictException extends BaseNessieClientServerException {
 
   public NessieConflictException(String message, Throwable cause) {
