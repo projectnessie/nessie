@@ -387,7 +387,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
       throws NessieConflictException, NessieNotFoundException {
     try {
       if (commitMeta.getCommitter() != null) {
-        throw new NessieConflictException(
+        throw new IllegalArgumentException(
             "Cannot set the committer on the client side. It is set by the server.");
       }
       return getStore()
