@@ -14,7 +14,7 @@ def handle_branch_tag(
     nessie: NessieClient,
     list_references: bool,
     delete_reference: bool,
-    branch: str,
+    ref_name: str,
     hash_on_ref: Optional[str],
     base_ref: str,
     is_branch: bool,
@@ -28,7 +28,7 @@ def handle_branch_tag(
     :param nessie NessieClient to use
     :param list_references the -l option choice
     :param delete_reference the -d option choice
-    :param branch the name of the branch to create/assign/delete
+    :param ref_name the name of the reference to create/assign/delete
     :param hash_on_ref a specific hash (reachable from base_ref) to be used for creating the new branch or tag instead
            of the HEAD of base_ref
     :param base_ref existing branch or tag to act at the base for creating the new branch or tag
@@ -38,12 +38,12 @@ def handle_branch_tag(
     :param verbose the -v option choice
     :param expected_hash hash whose existence needs to be checked (on the server side) before performing the operation
     """
-    if list_references or (not list_references and not delete_reference and not branch and not base_ref):
-        return _handle_list(nessie, json, verbose, is_branch, branch)
+    if list_references or (not list_references and not delete_reference and not ref_name and not base_ref):
+        return _handle_list(nessie, json, verbose, is_branch, ref_name)
     elif delete_reference:
         if not hash_on_ref:
-            hash_on_ref = nessie.get_reference(branch).hash_ or "fail"
-        getattr(nessie, "delete_{}".format("branch" if is_branch else "tag"))(branch, hash_on_ref)
+            hash_on_ref = nessie.get_reference(ref_name).hash_ or "fail"
+        getattr(nessie, "delete_{}".format("branch" if is_branch else "tag"))(ref_name, hash_on_ref)
     else:  # create or force assign
         # use locally configured default branch as base_ref by default
         if not base_ref:
@@ -55,30 +55,30 @@ def handle_branch_tag(
 
         # try creating a _new_ branch/tag first
         try:
-            getattr(nessie, "create_{}".format("branch" if is_branch else "tag"))(branch, base_ref, hash_on_ref)
+            getattr(nessie, "create_{}".format("branch" if is_branch else "tag"))(ref_name, base_ref, hash_on_ref)
         except NessieConflictException as conflict:
             # NessieConflictException means the branch/tag already exists - force reassignment if requested
             if force:
-                getattr(nessie, "assign_{}".format("branch" if is_branch else "tag"))(branch, base_ref, hash_on_ref, expected_hash)
+                getattr(nessie, "assign_{}".format("branch" if is_branch else "tag"))(ref_name, base_ref, hash_on_ref, expected_hash)
             else:
                 raise conflict
     return ""
 
 
-def _handle_list(nessie: NessieClient, json: bool, verbose: bool, is_branch: bool, branch: str) -> str:
+def _handle_list(nessie: NessieClient, json: bool, verbose: bool, is_branch: bool, ref_name: str) -> str:
     results = nessie.list_references()
     kept_results = [ref for ref in results if isinstance(ref, (Branch if is_branch else Tag))]
-    if branch:
-        kept_results = [i for i in kept_results if i.name == branch]
+    if ref_name:
+        kept_results = [i for i in kept_results if i.name == ref_name]
     if json:
-        return _handle_json_output(kept_results, branch)
+        return _handle_json_output(kept_results, ref_name)
     return _handle_normal_output(kept_results, verbose, nessie.get_default_branch())
 
 
-def _handle_json_output(input_data: list, branch: str) -> str:
-    if branch and len(input_data) == 1:
+def _handle_json_output(input_data: list, ref_name: str) -> str:
+    if ref_name and len(input_data) == 1:
         return ReferenceSchema().dumps(input_data[0], many=False)
-    if branch and len(input_data) < 1:
+    if ref_name and len(input_data) < 1:
         return "{}"
     return ReferenceSchema().dumps(input_data, many=True)
 
