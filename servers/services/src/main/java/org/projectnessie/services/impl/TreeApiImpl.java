@@ -21,6 +21,7 @@ import static org.projectnessie.services.cel.CELUtil.CONTAINER;
 import static org.projectnessie.services.cel.CELUtil.ENTRIES_DECLARATIONS;
 import static org.projectnessie.services.cel.CELUtil.SCRIPT_HOST;
 
+import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -386,10 +387,9 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
       List<org.projectnessie.versioned.Operation<Contents>> operations)
       throws NessieConflictException, NessieNotFoundException {
     try {
-      if (commitMeta.getCommitter() != null) {
-        throw new IllegalArgumentException(
-            "Cannot set the committer on the client side. It is set by the server.");
-      }
+      Preconditions.checkArgument(
+          commitMeta.getCommitter() == null,
+          "Cannot set the committer on the client side. It is set by the server.");
       return getStore()
           .commit(
               BranchName.of(Optional.ofNullable(branch).orElse(getConfig().getDefaultBranch())),

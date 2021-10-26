@@ -64,7 +64,7 @@ public abstract class AbstractITVersionStore {
   // Puts the metadata through a transformation, that appends a suffix
   protected Function<String, String> transformMeta = meta -> meta + "_suffix";
 
-  protected void assertMetaIsUpdated(
+  protected void assertCommitMetaIsUpdated(
       List<WithHash<String>> commits, int startInclusive, int endExclusive) {
     Assertions.assertThat(
             IntStream.range(startInclusive, endExclusive)
@@ -73,7 +73,7 @@ public abstract class AbstractITVersionStore {
         .isTrue();
   }
 
-  protected void assertMetaIsUnchanged(
+  protected void assertCommitMetaIsUnchanged(
       List<WithHash<String>> commits, int startInclusive, int endExclusive) {
     Assertions.assertThat(
             IntStream.range(startInclusive, endExclusive)
@@ -816,7 +816,7 @@ public abstract class AbstractITVersionStore {
 
       // The merges didn't create new commits because both the branches are running identical.
       List<WithHash<String>> commits = commitsList(newBranch);
-      assertMetaIsUnchanged(commits, 0, commits.size());
+      assertCommitMetaIsUnchanged(commits, 0, commits.size());
     }
 
     @Test
@@ -845,8 +845,8 @@ public abstract class AbstractITVersionStore {
               Optional.of("v5_1"));
 
       List<WithHash<String>> commits = commitsList(newBranch);
-      assertMetaIsUpdated(commits, 0, 3);
-      assertMetaIsUnchanged(commits, 3, commits.size());
+      assertCommitMetaIsUpdated(commits, 0, 3);
+      assertCommitMetaIsUnchanged(commits, 3, commits.size());
     }
 
     @Test
@@ -888,8 +888,8 @@ public abstract class AbstractITVersionStore {
               Optional.of("v1_2"), Optional.of("v2_2"), Optional.empty(), Optional.of("v4_1"));
 
       List<WithHash<String>> commits = commitsList(newBranch);
-      assertMetaIsUpdated(commits, 0, 3);
-      assertMetaIsUnchanged(commits, 3, commits.size());
+      assertCommitMetaIsUpdated(commits, 0, 3);
+      assertCommitMetaIsUnchanged(commits, 3, commits.size());
     }
 
     @Test
@@ -950,8 +950,8 @@ public abstract class AbstractITVersionStore {
 
       // First 2 commits - Base commit and "Another commit" will not have metadata changed,
       // remaining should be suffixed.
-      assertMetaIsUpdated(commits, 0, 3);
-      assertMetaIsUnchanged(commits, 3, commits.size());
+      assertCommitMetaIsUpdated(commits, 0, 3);
+      assertCommitMetaIsUnchanged(commits, 3, commits.size());
     }
 
     @Test
@@ -1011,8 +1011,8 @@ public abstract class AbstractITVersionStore {
               store().getValues(newBranch, Arrays.asList(Key.of("t1"), Key.of("t4"), Key.of("t5"))))
           .contains(Optional.of("v1_2"), Optional.of("v4_1"), Optional.of("v5_1"));
       List<WithHash<String>> commits = commitsList(newBranch);
-      assertMetaIsUpdated(commits, 0, 2);
-      assertMetaIsUnchanged(commits, 2, commits.size());
+      assertCommitMetaIsUpdated(commits, 0, 2);
+      assertCommitMetaIsUnchanged(commits, 2, commits.size());
     }
   }
 
@@ -1072,7 +1072,7 @@ public abstract class AbstractITVersionStore {
 
       // The merges didn't create new commits because both the branches are running identical.
       List<WithHash<String>> commits = commitsList(newBranch);
-      assertMetaIsUnchanged(commits, 0, commits.size());
+      assertCommitMetaIsUnchanged(commits, 0, commits.size());
     }
 
     @Test
@@ -1102,7 +1102,7 @@ public abstract class AbstractITVersionStore {
       assertThat(commits.get(2).getValue()).startsWith("First Commit");
       assertThat(commits.get(1).getValue()).startsWith("Second Commit");
       assertThat(commits.get(0).getValue()).startsWith("Third Commit");
-      assertMetaIsUpdated(commits, 0, 3);
+      assertCommitMetaIsUpdated(commits, 0, 3);
     }
 
     @Test
@@ -1124,7 +1124,7 @@ public abstract class AbstractITVersionStore {
 
       // The merges didn't create new commits because both the branches are running identical.
       List<WithHash<String>> commits = commitsList(review);
-      assertMetaIsUnchanged(commits, 0, commits.size());
+      assertCommitMetaIsUnchanged(commits, 0, commits.size());
     }
 
     @Test
@@ -1155,7 +1155,7 @@ public abstract class AbstractITVersionStore {
       assertThat(commits.get(2).getHash()).isEqualTo(newCommit);
       assertThat(commits.get(1).getValue()).startsWith("Second Commit");
       assertThat(commits.get(0).getValue()).startsWith("Third Commit");
-      assertMetaIsUpdated(commits, 0, 2);
+      assertCommitMetaIsUpdated(commits, 0, 2);
     }
 
     @Test

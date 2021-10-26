@@ -29,7 +29,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -131,13 +130,21 @@ public abstract class AbstractMergeTransplant {
         new Hash[] {branch1Commit},
         transformMeta,
         0);
-    Assertions.assertThat(
+    assertThat(
             databaseAdapter
                 .commitLog(databaseAdapter.toHash(main))
                 .map(c -> c.getMetadata().toStringUtf8())
                 .filter(meta -> !meta.equals("commit 99"))
                 .allMatch(isTransformed))
         .isTrue();
+  }
+
+  @ParameterizedTest
+  @MethodSource("updateActions")
+  void testCommitMetaNoUpdates(MergeOrTransplant mergeOrTransplant) throws Exception {
+    BranchName main = BranchName.of("main");
+    BranchName branch = BranchName.of("branch");
+    databaseAdapter.create(branch, databaseAdapter.toHash(main));
 
     // Without metadata properties updated
     BranchName branch2 = BranchName.of("branch2");
@@ -157,12 +164,8 @@ public abstract class AbstractMergeTransplant {
             .map(c -> c.getMetadata().toStringUtf8())
             .collect(Collectors.toList());
 
-    Assertions.assertThat(isTransformed.test(allCommitMeta.get(1))).isTrue();
-
     // Validate that the transformed commits are untouched
-    Assertions.assertThat(
-            IntStream.of(0, 2).mapToObj(i -> allCommitMeta.get(i)).noneMatch(isTransformed))
-        .isTrue();
+    assertThat(allCommitMeta.stream().noneMatch(isTransformed)).isTrue();
   }
 
   static List<MergeOrTransplant> updateActions() {
