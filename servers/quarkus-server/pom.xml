@@ -96,11 +96,6 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.projectnessie</groupId>
-      <artifactId>nessie-ui</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-resteasy</artifactId>
     </dependency>
@@ -436,6 +431,21 @@
         <dependency>
           <groupId>io.quarkus</groupId>
           <artifactId>quarkus-minikube</artifactId>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <id>build-all</id>
+      <activation>
+        <property>
+          <name>!quickly</name>
+        </property>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>org.projectnessie</groupId>
+          <artifactId>nessie-ui</artifactId>
+          <version>${project.version}</version>
         </dependency>
       </dependencies>
     </profile>

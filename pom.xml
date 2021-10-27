@@ -91,9 +91,7 @@
     <module>bom</module>
     <module>model</module>
     <module>clients</module>
-    <module>ui</module>
     <module>versioned</module>
-    <module>perftest</module>
     <module>servers</module>
     <module>tools</module>
   </modules>
@@ -807,6 +805,7 @@
           <resourceIncludes>**/*.properties,**/*.conf,**/*.json,**/*.xml</resourceIncludes>
           <includeTestSourceDirectory>true</includeTestSourceDirectory>
           <configLocation>codestyle/checkstyle-config.xml</configLocation>
+          <skip>${skipCheckstyle}</skip>
         </configuration>
         <executions>
           <execution>
@@ -822,6 +821,7 @@
         <groupId>com.mycila</groupId>
         <artifactId>license-maven-plugin</artifactId>
         <configuration>
+          <skip>${skipLicense}</skip>
           <inlineHeader>
 Copyright (C) ${project.inceptionYear} ${owner}
 
@@ -1054,6 +1054,7 @@ limitations under the License.
               <goal>enforce</goal>
             </goals>
             <configuration>
+              <skip>${skipEnforcer}</skip>
               <rules>
                 <bannedDependencies>
                   <excludes>
@@ -1364,6 +1365,35 @@ limitations under the License.
             </executions>
           </plugin>
         </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>build-all</id>
+      <activation>
+        <property>
+          <name>!quickly</name>
+        </property>
+      </activation>
+      <modules>
+        <module>perftest</module>
+        <module>ui</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>build-quickly</id>
+      <activation>
+        <property>
+          <name>quickly</name>
+        </property>
+      </activation>
+      <properties>
+        <skipTests>true</skipTests>
+        <skipLicense>true</skipLicense>
+        <skipEnforcer>true</skipEnforcer>
+        <skipCheckstyle>true</skipCheckstyle>
+      </properties>
+      <build>
+        <defaultGoal>clean install</defaultGoal>
       </build>
     </profile>
   </profiles>
