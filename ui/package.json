@@ -18,7 +18,7 @@
     "@types/history": "^4.7.9",
     "@types/http-proxy-middleware": "^1.0.0",
     "@types/material-ui": "^0.21.12",
-    "@types/ramda": "^0.27.45",
+    "@types/ramda": "^0.27.46",
     "@types/react": "^17.0.33",
     "@types/react-bootstrap": "^0.32.28",
     "@types/react-dom": "^17.0.10",
