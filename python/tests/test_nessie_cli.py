@@ -88,6 +88,9 @@ def test_log() -> None:
     """Test log and log filtering."""
     logs = simplejson.loads(_cli(["--json", "log"]))
     assert len(logs) == 0
+    _cli(["branch", "dev_test_log"])
+    table = _new_table("test_log_dev")
+    _make_commit("log.foo.dev", table, "dev_test_log", author="nessie_user1")
     table = _new_table("test_log")
     _make_commit("log.foo.bar", table, "main", author="nessie_user1")
     tables = ContentsSchema().loads(_cli(["--json", "contents", "log.foo.bar"]), many=True)
@@ -95,7 +98,7 @@ def test_log() -> None:
     assert tables[0] == table
     logs = simplejson.loads(_cli(["--json", "log"]))
     assert len(logs) == 1
-    logs = simplejson.loads(_cli(["--json", "log", logs[0]["hash"]]))
+    logs = simplejson.loads(_cli(["--json", "log", "--revision-range", logs[0]["hash"]]))
     assert len(logs) == 1
     entries = EntrySchema().loads(_cli(["--json", "contents", "--list"]), many=True)
     assert len(entries) == 1
@@ -117,9 +120,11 @@ def test_log() -> None:
     )
     logs = simplejson.loads(_cli(["--json", "log", "-n", 1]))
     assert len(logs) == 1
+    logs = simplejson.loads(_cli(["--json", "log", "dev_test_log"]))
+    assert len(logs) == 1
     logs = simplejson.loads(_cli(["--json", "log"]))
     assert len(logs) == 2
-    logs = simplejson.loads(_cli(["--json", "log", "{}..{}".format(logs[0]["hash"], logs[1]["hash"])]))
+    logs = simplejson.loads(_cli(["--json", "log", "--revision-range", "{}..{}".format(logs[0]["hash"], logs[1]["hash"])]))
     assert len(logs) == 1
     logs = simplejson.loads(_cli(["--json", "log"]))
     assert len(logs) == 2
@@ -250,7 +255,7 @@ def test_transplant() -> None:
     _make_commit("foo.baz", _new_table("test_transplant_3"), "dev")
     refs = ReferenceSchema().loads(_cli(["--json", "branch", "-l"]), many=True)
     main_hash = next(i.hash_ for i in refs if i.name == "main")
-    logs = simplejson.loads(_cli(["--json", "log", "--ref", "dev"]))
+    logs = simplejson.loads(_cli(["--json", "log", "dev"]))
     first_hash = [i["hash"] for i in logs]
     _cli(["cherry-pick", "-c", main_hash, "-s", "dev", first_hash[1], first_hash[0]])
 
