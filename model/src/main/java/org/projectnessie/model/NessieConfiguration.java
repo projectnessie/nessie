@@ -15,11 +15,9 @@
  */
 package org.projectnessie.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import org.immutables.value.Value;
 
@@ -29,15 +27,22 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ImmutableNessieConfiguration.class)
 public abstract class NessieConfiguration {
 
-  @JsonIgnore private static final String CURRENT_VERSION = "1.0";
-
+  /**
+   * The name of the default branch that the server will use unless an explicit branch was specified
+   * as an API call parameter.
+   *
+   * <p>Note: the notion of "default branch" may be different on the client and server sides.
+   */
   @Nullable
   @Size(min = 1)
   public abstract String getDefaultBranch();
 
-  @Value.Default
-  @NotNull
-  public String getVersion() {
-    return CURRENT_VERSION;
-  }
+  /**
+   * The maximum API version supported by the server.
+   *
+   * <p>API versions are numbered sequentially, as they are developed.
+   *
+   * <p>In java clients this number corresponds to a particular sub-class of {@code NessieApi}.
+   */
+  public abstract int getMaxSupportedApiVersion();
 }

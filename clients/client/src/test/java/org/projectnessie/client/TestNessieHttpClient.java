@@ -121,9 +121,10 @@ class TestNessieHttpClient {
 
       h.getRequestBody().close();
 
-      h.sendResponseHeaders(200, 2);
+      byte[] body = "{\"maxSupportedApiVersion\":1}".getBytes(UTF_8);
+      h.sendResponseHeaders(200, body.length);
       try (OutputStream out = h.getResponseBody()) {
-        out.write("{}".getBytes(UTF_8));
+        out.write(body);
       }
     };
   }

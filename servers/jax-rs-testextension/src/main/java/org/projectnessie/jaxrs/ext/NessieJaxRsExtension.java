@@ -36,6 +36,7 @@ import org.projectnessie.services.rest.InstantParamConverterProvider;
 import org.projectnessie.services.rest.NessieExceptionMapper;
 import org.projectnessie.services.rest.NessieJaxRsJsonMappingExceptionMapper;
 import org.projectnessie.services.rest.NessieJaxRsJsonParseExceptionMapper;
+import org.projectnessie.services.rest.RestConfigResource;
 import org.projectnessie.services.rest.RestContentsResource;
 import org.projectnessie.services.rest.RestTreeResource;
 import org.projectnessie.services.rest.ValidationExceptionMapper;
@@ -79,6 +80,7 @@ public class NessieJaxRsExtension implements BeforeAllCallback, AfterAllCallback
           @Override
           protected Application configure() {
             ResourceConfig config = new ResourceConfig();
+            config.register(RestConfigResource.class);
             config.register(RestTreeResource.class);
             config.register(RestContentsResource.class);
             config.register(ConfigApiImpl.class);
