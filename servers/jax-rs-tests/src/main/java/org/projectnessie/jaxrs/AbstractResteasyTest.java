@@ -19,24 +19,18 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.google.common.collect.ImmutableList;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
-import org.projectnessie.model.Contents.Type;
 import org.projectnessie.model.ContentsKey;
-import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableBranch;
 import org.projectnessie.model.ImmutableOperations;
@@ -227,19 +221,13 @@ public class AbstractResteasyTest {
   }
 
   private Branch commit(String contentsId, Branch branch, String contentsKey, String metadataUrl) {
-    return commit(
-        contentsId,
-        branch,
-        Collections.singletonList(contentsKey),
-        metadataUrl,
-        "nessieAuthor",
-        null);
+    return commit(contentsId, branch, contentsKey, metadataUrl, "nessieAuthor", null);
   }
 
   private Branch commit(
       String contentsId,
       Branch branch,
-      List<String> contentsKey,
+      String contentsKey,
       String metadataUrl,
       String author,
       String expectedMetadataUrl) {
@@ -288,7 +276,7 @@ public class AbstractResteasyTest {
         commit(
                 contentsId,
                 b2,
-                ImmutableList.of("xxx", "test"),
+                "xxx.test",
                 "/the/directory/over/there/has/been/moved",
                 "i",
                 "/the/directory/over/there")
@@ -300,7 +288,7 @@ public class AbstractResteasyTest {
         commit(
                 contentsId,
                 b3,
-                ImmutableList.of("xxx", "test"),
+                "xxx.test",
                 "/the/directory/over/there/has/been/moved/again",
                 "me",
                 "/the/directory/over/there/has/been/moved")
@@ -320,7 +308,7 @@ public class AbstractResteasyTest {
           commit(
                   contentsId,
                   branch,
-                  ImmutableList.of("xxx", "test"),
+                  "xxx.test",
                   "/the/directory/over/there",
                   "author-" + i,
                   i > 0 ? "/the/directory/over/there" : null)
@@ -398,67 +386,5 @@ public class AbstractResteasyTest {
     assertThat(log.getOperations().get(0).getCommitTime())
         .isBefore(lastCommitTime)
         .isAfter(firstCommitTime);
-  }
-
-  @Test
-  public void testLogFilteringOnNamespaceDepth() {
-    String branchName = "logFilteringNamespace";
-    makeBranch(branchName);
-    Branch branch = getBranch(branchName);
-    int numCommits = 4;
-    List<String> contentsKeyVarDepth = new ArrayList<>(5);
-    contentsKeyVarDepth.add("test");
-    for (int i = 0; i < numCommits; i++) {
-      String newHash =
-          commit(
-                  "cid-test-log-filtering" + i,
-                  branch,
-                  contentsKeyVarDepth,
-                  "/the/directory/over/there",
-                  "nessie-author",
-                  null)
-              .getHash();
-      assertThat(newHash).isNotEqualTo(branch.getHash());
-      branch = getBranch(branchName);
-      contentsKeyVarDepth.add("xxx");
-    }
-
-    EntriesResponse entries1 = entriesReqWithNamespaceDepth(1, branch);
-    assertThat(entries1.getEntries()).hasSize(2);
-    assertThat(entries1.getEntries().get(0).getType())
-        .isEqualByComparingTo(Type.UNKNOWN); // considered as a interim path
-    assertThat(entries1.getEntries().get(1).getType()).isEqualByComparingTo(Type.ICEBERG_TABLE);
-
-    EntriesResponse entries2 = entriesReqWithNamespaceDepth(2, branch);
-    assertThat(entries2.getEntries()).hasSize(2);
-    assertThat(entries2.getEntries().get(0).getType())
-        .isEqualByComparingTo(Type.UNKNOWN); // considered as a interim path
-    assertThat(entries2.getEntries().get(1).getType()).isEqualByComparingTo(Type.ICEBERG_TABLE);
-
-    EntriesResponse entries3 = entriesReqWithNamespaceDepth(4, branch);
-    assertThat(entries3.getEntries()).hasSize(1);
-    assertThat(entries3.getEntries().get(0).getType()).isEqualByComparingTo(Type.ICEBERG_TABLE);
-
-    EntriesResponse entriesN = entriesReqWithNamespaceDepth(10, branch);
-    assertThat(entriesN.getEntries()).isEmpty();
-
-    EntriesResponse entriesNoDepth = entriesReqWithNamespaceDepth(0, branch);
-    assertThat(entriesNoDepth.getEntries()).hasSize(numCommits);
-    assertThat(
-            entriesNoDepth.getEntries().stream()
-                .allMatch(e -> Type.ICEBERG_TABLE.equals(e.getType())))
-        .isTrue();
-  }
-
-  private EntriesResponse entriesReqWithNamespaceDepth(int depth, Branch branch) {
-    return rest()
-        .queryParam("namespaceDepth", depth)
-        .queryParam("query_expression", "entry.namespace.matches('(\\\\.|$)')")
-        .queryParam("hashOnRef", branch.getHash())
-        .get(String.format("trees/tree/%s/entries", branch.getName()))
-        .then()
-        .statusCode(200)
-        .extract()
-        .as(EntriesResponse.class);
   }
 }
