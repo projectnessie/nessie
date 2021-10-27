@@ -141,6 +141,12 @@
         <configuration>
           <skip>${skipTests}</skip>
           <appArtifactId>org.projectnessie:nessie-quarkus:${client.nessie.version}</appArtifactId>
+          <systemProperties>
+            <!-- disable devservices to stop Quarkus from starting Mongo via testcontainers -->
+            <quarkus.devservices.enabled>false</quarkus.devservices.enabled>
+            <!-- Use INMEMORY version store for testing -->
+            <nessie.version.store.type>INMEMORY</nessie.version.store.type>
+          </systemProperties>
           <applicationProperties>
             <quarkus.http.test-port>0</quarkus.http.test-port>
           </applicationProperties>
