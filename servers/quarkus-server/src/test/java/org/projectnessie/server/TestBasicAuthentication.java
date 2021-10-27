@@ -18,15 +18,17 @@ package org.projectnessie.server;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.google.common.collect.ImmutableMap;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.auth.BasicAuthenticationProvider;
 import org.projectnessie.client.rest.NessieNotAuthorizedException;
 import org.projectnessie.server.authn.AuthenticationEnabledProfile;
 
 @QuarkusTest
-@TestProfile(value = AuthenticationEnabledProfile.class)
+@TestProfile(value = TestBasicAuthentication.Profile.class)
 class TestBasicAuthentication extends BaseClientAuthTest {
 
   @Test
@@ -51,5 +53,15 @@ class TestBasicAuthentication extends BaseClientAuthTest {
         .isInstanceOfSatisfying(
             NessieNotAuthorizedException.class,
             e -> assertThat(e.getError().getStatus()).isEqualTo(401));
+  }
+
+  public static class Profile extends AuthenticationEnabledProfile {
+    @Override
+    public Map<String, String> getConfigOverrides() {
+      return ImmutableMap.<String, String>builder()
+          .putAll(super.getConfigOverrides())
+          .put("quarkus.http.auth.basic", "true")
+          .build();
+    }
   }
 }
