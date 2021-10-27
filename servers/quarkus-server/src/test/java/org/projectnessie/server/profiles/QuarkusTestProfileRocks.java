@@ -16,14 +16,16 @@
 package org.projectnessie.server.profiles;
 
 import com.google.common.collect.ImmutableMap;
-import io.quarkus.test.junit.QuarkusTestProfile;
 import java.util.Map;
 import org.projectnessie.server.config.VersionStoreConfig.VersionStoreType;
 
-public class QuarkusTestProfileRocks implements QuarkusTestProfile {
+public class QuarkusTestProfileRocks extends BaseConfigProfile {
 
   @Override
   public Map<String, String> getConfigOverrides() {
-    return ImmutableMap.of("nessie.version.store.type", VersionStoreType.ROCKS.name());
+    return ImmutableMap.<String, String>builder()
+        .putAll(super.getConfigOverrides())
+        .put("nessie.version.store.type", VersionStoreType.ROCKS.name())
+        .build();
   }
 }
