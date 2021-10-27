@@ -106,7 +106,7 @@ class AbstractTestBasicOperations {
           Branch b = (Branch) api.getReference().refName(branch.getName()).get();
           // Note: the initial version-store implementations just committed this operation, but it
           // should actually fail, because the operations of the 1st commit above and this commit
-          // have conflicts.
+          // have conflicts. dummy.
           api.commitMultipleOperations()
               .branch(b)
               .operation(Put.of(key, IcebergTable.of("bar", "x", "cid-bar")))
