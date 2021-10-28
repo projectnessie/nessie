@@ -94,7 +94,7 @@
     </dependency>
     <dependency>
       <groupId>org.projectnessie</groupId>
-      <artifactId>nessie-jaxrs-tests</artifactId>
+      <artifactId>nessie-rest-tests</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

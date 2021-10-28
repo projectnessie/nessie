@@ -38,6 +38,6 @@
     <module>store</module>
     <module>jax-rs</module>
     <module>jax-rs-testextension</module>
-    <module>jax-rs-tests</module>
+    <module>rest-tests</module>
   </modules>
 </project>

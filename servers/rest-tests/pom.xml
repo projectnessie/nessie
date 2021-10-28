@@ -25,7 +25,7 @@
     <version>0.12.1-SNAPSHOT</version>
   </parent>
 
-  <artifactId>nessie-jaxrs-tests</artifactId>
+  <artifactId>nessie-rest-tests</artifactId>
 
   <name>Nessie - REST-API Tests</name>
   <description>Artifact for REST-API tests, includes Glassfish/Jersey/Weld implementation.</description>
