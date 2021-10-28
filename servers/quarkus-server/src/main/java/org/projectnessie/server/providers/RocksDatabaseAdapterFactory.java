@@ -21,34 +21,22 @@ import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 import org.projectnessie.server.config.QuarkusVersionStoreAdvancedConfig;
 import org.projectnessie.services.config.ServerConfig;
-import org.projectnessie.versioned.StoreWorker;
-import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
-import org.projectnessie.versioned.persist.rocks.RocksDatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.rocks.RocksDbInstance;
-import org.projectnessie.versioned.persist.store.PersistVersionStore;
 
 /** In-memory version store factory. */
 @StoreType(ROCKS)
 @Dependent
-public class RocksVersionStoreFactory implements VersionStoreFactory {
+public class RocksDatabaseAdapterFactory implements DatabaseAdapterFactory {
   @Inject RocksDbInstance rocksDbInstance;
   @Inject QuarkusVersionStoreAdvancedConfig config;
 
   @Override
-  public <VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>>
-      VersionStore<VALUE, METADATA, VALUE_TYPE> newStore(
-          StoreWorker<VALUE, METADATA, VALUE_TYPE> worker, ServerConfig serverConfig) {
-
-    DatabaseAdapter databaseAdapter =
-        new RocksDatabaseAdapterFactory()
-            .newBuilder()
-            .withConfig(config)
-            .withConnector(rocksDbInstance)
-            .build();
-
-    databaseAdapter.initializeRepo(serverConfig.getDefaultBranch());
-
-    return new PersistVersionStore<>(databaseAdapter, worker);
+  public DatabaseAdapter newDatabaseAdapter(ServerConfig serverConfig) {
+    return new org.projectnessie.versioned.persist.rocks.RocksDatabaseAdapterFactory()
+        .newBuilder()
+        .withConfig(config)
+        .withConnector(rocksDbInstance)
+        .build();
   }
 }
