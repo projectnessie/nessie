@@ -35,6 +35,10 @@ import org.projectnessie.model.Validation;
 
 public interface TreeApi {
 
+  // Note: When substantial changes in Nessie API (this and related interfaces) are made
+  // the API version number reported by NessieConfiguration.getMaxSupportedApiVersion()
+  // should be increased as well.
+
   /** Get all references. */
   List<Reference> getAllReferences();
 

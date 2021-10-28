@@ -142,6 +142,11 @@ public abstract class AbstractTestRest {
   }
 
   @Test
+  public void testSupportedApiVersions() {
+    assertThat(api.getConfig().getMaxSupportedApiVersion()).isEqualTo(1);
+  }
+
+  @Test
   public void createRecreateDefaultBranch() throws BaseNessieClientServerException {
     api.deleteBranch().branch(api.getDefaultBranch()).delete();
 
