@@ -302,7 +302,11 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
         Stream<EntriesResponse.Entry> entriesStream =
             filterEntries(entryStream, params.queryExpression());
         if (params.namespaceDepth() != null && params.namespaceDepth() > 0) {
-          entriesStream = entriesStream.map(e -> truncate(e, params.namespaceDepth())).distinct();
+          entriesStream =
+              entriesStream
+                  .filter(e -> e.getName().getElements().size() >= params.namespaceDepth())
+                  .map(e -> truncate(e, params.namespaceDepth()))
+                  .distinct();
         }
         entries = entriesStream.collect(ImmutableList.toImmutableList());
       }

@@ -1120,6 +1120,33 @@ public abstract class AbstractTestRest {
     assertThat(entries.stream().map(e -> e.getName().toPathString()))
         .containsExactlyInAnyOrder("a.b.c.firstTable", "a.b.c.secondTable");
 
+    entries =
+        api.getEntries()
+            .refName(branch)
+            .namespaceDepth(5)
+            .queryExpression("entry.namespace.matches('(\\\\.|$)')")
+            .get()
+            .getEntries();
+    assertThat(entries).isEmpty();
+
+    entries =
+        api.getEntries()
+            .refName(branch)
+            .namespaceDepth(3)
+            .queryExpression("entry.namespace.matches('(\\\\.|$)')")
+            .get()
+            .getEntries();
+    assertThat(entries).hasSize(3);
+    assertThat(entries.get(2))
+        .matches(e -> e.getType().equals(Type.UNKNOWN))
+        .matches(e -> e.getName().equals(ContentsKey.of("a", "b", "c")));
+    assertThat(entries.get(1))
+        .matches(e -> e.getType().equals(Type.ICEBERG_TABLE))
+        .matches(e -> e.getName().equals(ContentsKey.of("a", "b", "fourthTable")));
+    assertThat(entries.get(0))
+        .matches(e -> e.getType().equals(Type.ICEBERG_TABLE))
+        .matches(e -> e.getName().equals(ContentsKey.of("a", "boo", "fifthTable")));
+
     api.deleteBranch()
         .branchName(branch)
         .hash(api.getReference().refName(branch).get().getHash())
