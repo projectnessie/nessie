@@ -16,9 +16,9 @@
 
 from assertpy import assert_that
 
-from pynessie.expression_util import build_query_expression_for_commit_log_flags
-from pynessie.expression_util import build_query_expression_for_contents_listing_flags
-from pynessie.expression_util import parse_to_iso8601
+from pynessie.utils import build_query_expression_for_commit_log_flags
+from pynessie.utils import build_query_expression_for_contents_listing_flags
+from pynessie.utils import parse_to_iso8601
 
 
 def test_building_empty_query_expression() -> None:

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Main module."""
-import re
+
 from typing import Any
 from typing import cast
 from typing import Generator
@@ -23,28 +23,26 @@ from ._endpoints import get_table
 from ._endpoints import list_logs
 from ._endpoints import list_tables
 from ._endpoints import merge
-from .auth.config import setup_auth
-from .model import Branch
-from .model import CommitMeta
-from .model import Contents
-from .model import ContentsKey
-from .model import ContentsSchema
-from .model import Entries
-from .model import EntriesSchema
-from .model import LogResponse
-from .model import LogResponseSchema
-from .model import Merge
-from .model import MergeSchema
-from .model import MultiContents
-from .model import MultiContentsSchema
-from .model import Operation
-from .model import Reference
-from .model import ReferenceSchema
-from .model import Tag
-from .model import Transplant
-from .model import TransplantSchema
-
-_dot_regex = re.compile('\\.(?=([^"]*"[^"]*")*[^"]*$)')
+from ..auth import setup_auth
+from ..model import Branch
+from ..model import CommitMeta
+from ..model import Contents
+from ..model import ContentsSchema
+from ..model import Entries
+from ..model import EntriesSchema
+from ..model import LogResponse
+from ..model import LogResponseSchema
+from ..model import Merge
+from ..model import MergeSchema
+from ..model import MultiContents
+from ..model import MultiContentsSchema
+from ..model import Operation
+from ..model import Reference
+from ..model import ReferenceSchema
+from ..model import Tag
+from ..model import Transplant
+from ..model import TransplantSchema
+from ..utils import format_key
 
 
 class NessieClient(object):
@@ -153,7 +151,7 @@ class NessieClient(object):
         :return: Nessie Table
         """
         return (
-            ContentsSchema().load(get_table(self._base_url, self._auth, ref, _format_key(i), hash_on_ref, self._ssl_verify)) for i in tables
+            ContentsSchema().load(get_table(self._base_url, self._auth, ref, format_key(i), hash_on_ref, self._ssl_verify)) for i in tables
         )
 
     def commit(
@@ -251,13 +249,3 @@ class NessieClient(object):
     def get_default_branch(self: "NessieClient") -> str:
         """Fetch default branch either from config if specified or from the server."""
         return self._base_branch if self._base_branch else self.get_reference(None).name
-
-
-def _format_key(raw_key: str) -> str:
-    elements = _dot_regex.split(raw_key)
-    return ".".join(i.replace(".", "\0") for i in elements if i)
-
-
-def _contents_key(raw_key: str) -> ContentsKey:
-    elements = _dot_regex.split(raw_key)
-    return ContentsKey([i for i in elements if i])

@@ -1,0 +1,50 @@
+# -*- coding: utf-8 -*-
+
+"""Remote CLI group command."""
+
+import click
+
+from ..cli_common_context import ContextObject, pass_client
+from ..conf import process
+from ..error import error_handler
+
+
+@click.group()
+@pass_client
+def remote(ctx: ContextObject) -> None:
+    """Set and view remote endpoint."""
+    pass
+
+
+@remote.command("show")
+@pass_client
+@error_handler
+def show(ctx: ContextObject) -> None:
+    """Show current remote."""
+    click.echo("Remote URL: " + ctx.nessie._base_url)
+    click.echo("Default branch: " + ctx.nessie.get_reference(None).name)
+    click.echo("Remote branches: ")
+    for i in ctx.nessie.list_references():
+        click.echo("\t" + i.name)
+
+
+@remote.command(name="add")
+@click.argument("endpoint", nargs=1, required=True)
+@pass_client
+@error_handler
+def set_(ctx: ContextObject, endpoint: str) -> None:
+    """Set current remote."""
+    click.echo(process(None, "endpoint", False, None, endpoint))
+
+
+@remote.command("set-head")
+@click.argument("head", nargs=1, required=True)
+@click.option("-d", "--delete", is_flag=True, help="delete the default branch")
+@pass_client
+@error_handler
+def set_head(ctx: ContextObject, head: str, delete: bool) -> None:
+    """Set current default branch. If -d is passed it will remove the default branch."""
+    if delete:
+        click.echo(process(None, None, False, "default_branch", None))
+    else:
+        click.echo(process(None, "default_branch", False, None, head))
