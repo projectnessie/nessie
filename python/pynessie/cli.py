@@ -441,7 +441,7 @@ def tag(
 
 @cli.command("merge")
 @click.option("-b", "--branch", "onto_branch", help="branch to merge onto. If not supplied the default branch from config is used")
-@click.argument("from_branch", nargs=1, required=False)
+@click.argument("from_ref", nargs=1, required=False)
 @click.option(
     "-f",
     "--force",
@@ -461,14 +461,30 @@ def tag(
 @click.option("-o", "--hash-on-ref", help="Hash on merge-from-reference")
 @pass_client
 @error_handler
-def merge(ctx: ContextObject, onto_branch: str, force: bool, expected_hash: str, hash_on_ref: str, from_branch: str) -> None:
-    """Merge FROM_BRANCH into another branch. FROM_BRANCH can be a hash or branch."""
+def merge(ctx: ContextObject, onto_branch: str, force: bool, expected_hash: str, hash_on_ref: str, from_ref: str) -> None:
+    """Merge FROM_REF into another branch.
+
+    FROM_REF can be a hash or branch.
+
+    Examples:
+
+        nessie merge -c 12345678abcdef dev -> merge dev to default branch with default branch's
+    expected hash '12345678abcdef'
+
+        nessie merge -b main -c 12345678abcdef dev -> merge dev to a branch named main with main branch's
+    expected hash '12345678abcdef'
+
+        nessie merge -b main -o 56781234abcdef -c 12345678abcdef dev -> merge dev at hash-on-ref '56781234abcdef' to
+    main branch with main branch's expected hash '12345678abcdef'
+
+        nessie merge -f -b main dev -> forcefully merge dev to a branch named main
+    """
     if not force and not expected_hash:
         raise UsageError(
             """Either condition or force must be set. Condition should be set to a valid hash for concurrency
             control or force to ignore current state of Nessie Store."""
         )
-    ctx.nessie.merge(from_branch, onto_branch if onto_branch else ctx.nessie.get_default_branch(), hash_on_ref, expected_hash)
+    ctx.nessie.merge(from_ref, onto_branch if onto_branch else ctx.nessie.get_default_branch(), hash_on_ref, expected_hash)
     click.echo()
 
 
@@ -495,7 +511,20 @@ def merge(ctx: ContextObject, onto_branch: str, force: bool, expected_hash: str,
 @pass_client
 @error_handler
 def cherry_pick(ctx: ContextObject, branch: str, force: bool, expected_hash: str, source_ref: str, hashes: Tuple[str]) -> None:
-    """Transplant HASHES onto another branch."""
+    """Cherry-pick HASHES onto another branch.
+
+    HASHES commit hashes to be cherry-picked from the source reference.
+
+    Examples:
+
+        nessie cherry-pick -c 12345678abcdef -s dev 21345678abcdef 31245678abcdef -> cherry pick 2 commits with
+    commit hash '21345678abcdef' '31245678abcdef' from dev branch to default branch
+    with default branch's expected hash '12345678abcdef'
+
+        nessie cherry-pick -b main -c 12345678abcdef -s dev 21345678abcdef 31245678abcdef -> cherry pick 2 commits with
+    commit hash '21345678abcdef' '31245678abcdef' from dev branch to a branch named main
+    with main branch's expected hash '12345678abcdef'
+    """
     if not force and not expected_hash:
         raise UsageError(
             """Either condition or force must be set. Condition should be set to a valid hash for concurrency
