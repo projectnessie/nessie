@@ -163,17 +163,14 @@ public abstract class AbstractConcurrency {
                     break;
                   }
 
-                  List<ByteString> currentStates;
-                  try (Stream<ByteString> str =
+                  List<ByteString> currentStates =
                       databaseAdapter
                           .values(
                               databaseAdapter.toHash(branch), keys, KeyFilterPredicate.ALLOW_ALL)
-                          .collect(Collectors.toList())
+                          .values()
                           .stream()
-                          .map(Optional::get)
-                          .map(ContentsAndState::getGlobalState)) {
-                    currentStates = str.collect(Collectors.toList());
-                  }
+                          .map(ContentsAndState::getGlobalState)
+                          .collect(Collectors.toList());
 
                   ImmutableCommitAttempt.Builder commitAttempt = ImmutableCommitAttempt.builder();
 
@@ -254,23 +251,20 @@ public abstract class AbstractConcurrency {
         Hash hash = databaseAdapter.toHash(branch);
         Map<Key, ByteString> onRef = onRefStates.get(branch);
         ArrayList<Key> keys = new ArrayList<>(branchKeys.getValue());
-        try (Stream<Optional<ContentsAndState<ByteString>>> values =
-            databaseAdapter.values(hash, keys, KeyFilterPredicate.ALLOW_ALL)) {
-          List<ContentsAndState<ByteString>> csList =
-              values.map(o -> o.orElse(null)).collect(Collectors.toList());
-          List<ContentsAndState<ByteString>> csExpected = new ArrayList<>();
-          for (int i = 0; i < keys.size(); i++) {
-            Key key = keys.get(i);
-            ContentsAndState<ByteString> cs = csList.get(i);
-            ContentsId contentsId = keyToContentsId.get(key);
-            csExpected.add(ContentsAndState.of(onRef.get(key), globalStates.get(contentsId)));
-          }
-          // There is a race between test threads (code above) updating the maps that store
-          // per-branch and global state in this test class. Random delays in the execution
-          // of test threads can cause false positive assertion failure in the below line...
-          // Disabling this assertion for now so as not to destabilize CI.
-          // TODO: assertThat(csList).describedAs("For branch %s", branch).isEqualTo(csExpected);
+        Map<Key, ContentsAndState<ByteString>> values =
+            databaseAdapter.values(hash, keys, KeyFilterPredicate.ALLOW_ALL);
+        List<ContentsAndState<ByteString>> csExpected = new ArrayList<>();
+        for (int i = 0; i < keys.size(); i++) {
+          Key key = keys.get(i);
+          ContentsAndState<ByteString> cs = values.get(key);
+          ContentsId contentsId = keyToContentsId.get(key);
+          csExpected.add(ContentsAndState.of(onRef.get(key), globalStates.get(contentsId)));
         }
+        // There is a race between test threads (code above) updating the maps that store
+        // per-branch and global state in this test class. Random delays in the execution
+        // of test threads can cause false positive assertion failure in the below line...
+        // Disabling this assertion for now so as not to destabilize CI.
+        // TODO: assertThat(csList).describedAs("For branch %s", branch).isEqualTo(csExpected);
       }
 
     } finally {

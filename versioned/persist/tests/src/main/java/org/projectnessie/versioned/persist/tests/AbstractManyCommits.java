@@ -17,8 +17,10 @@ package org.projectnessie.versioned.persist.tests;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.google.common.collect.Maps;
 import com.google.protobuf.ByteString;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -129,14 +131,15 @@ public abstract class AbstractManyCommits {
       throw new RuntimeException(e);
     }
 
-    try (Stream<Optional<ContentsAndState<ByteString>>> x =
-        databaseAdapter.values(
-            commit, Collections.singletonList(key), KeyFilterPredicate.ALLOW_ALL)) {
+    try {
+      Map<Key, ContentsAndState<ByteString>> values =
+          databaseAdapter.values(
+              commit, Collections.singletonList(key), KeyFilterPredicate.ALLOW_ALL);
       ByteString expectValue = ByteString.copyFromUtf8("value for #" + i + " of " + numCommits);
       ByteString expectState =
           ByteString.copyFromUtf8("state for #" + (numCommits - 1) + " of " + numCommits);
       ContentsAndState<ByteString> expect = ContentsAndState.of(expectValue, expectState);
-      assertThat(x).containsExactly(Optional.of(expect));
+      assertThat(values).containsExactly(Maps.immutableEntry(key, expect));
     } catch (ReferenceNotFoundException e) {
       throw new RuntimeException(e);
     }

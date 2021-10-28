@@ -16,10 +16,11 @@
 package org.projectnessie.versioned.persist.store;
 
 import com.google.protobuf.ByteString;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
@@ -217,24 +218,19 @@ public class PersistVersionStore<CONTENTS, METADATA, CONTENTS_TYPE extends Enum<
 
   @Override
   public CONTENTS getValue(Ref ref, Key key) throws ReferenceNotFoundException {
-    return getValues(ref, Collections.singletonList(key)).get(0).orElse(null);
+    return getValues(ref, Collections.singletonList(key)).get(key);
   }
 
   @Override
-  public List<Optional<CONTENTS>> getValues(Ref ref, List<Key> keys)
+  public Map<Key, CONTENTS> getValues(Ref ref, Collection<Key> keys)
       throws ReferenceNotFoundException {
     Hash hash = ref instanceof NamedRef ? toHash((NamedRef) ref) : (Hash) ref;
-    try (Stream<Optional<CONTENTS>> values =
-        databaseAdapter
-            .values(hash, keys, KeyFilterPredicate.ALLOW_ALL)
-            .map(contentsAndStateOptional -> contentsAndStateOptional.map(mapContentsAndState()))) {
-      return values.collect(Collectors.toList());
-    }
+    return databaseAdapter.values(hash, keys, KeyFilterPredicate.ALLOW_ALL).entrySet().stream()
+        .collect(Collectors.toMap(Map.Entry::getKey, e -> mapContentsAndState(e.getValue())));
   }
 
-  private Function<ContentsAndState<ByteString>, CONTENTS> mapContentsAndState() {
-    return cs ->
-        storeWorker.valueFromStore(cs.getRefState(), Optional.ofNullable(cs.getGlobalState()));
+  private CONTENTS mapContentsAndState(ContentsAndState<ByteString> cs) {
+    return storeWorker.valueFromStore(cs.getRefState(), Optional.ofNullable(cs.getGlobalState()));
   }
 
   @Override
