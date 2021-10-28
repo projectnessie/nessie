@@ -158,6 +158,12 @@ public abstract class AbstractTestRest {
   }
 
   @Test
+  public void getAllReferences() {
+    List<Reference> references = api.getAllReferences().get();
+    assertThat(references).anySatisfy(r -> assertThat(r.getName()).isEqualTo("main"));
+  }
+
+  @Test
   public void createReferences() throws NessieNotFoundException {
     String mainHash = api.getReference().refName("main").get().getHash();
 
@@ -685,6 +691,109 @@ public abstract class AbstractTestRest {
             .collect(Collectors.toList());
     assertEquals(
         completeLog.stream().map(CommitMeta::getMessage).collect(Collectors.toList()), allMessages);
+  }
+
+  private Branch createBranch(String name) throws BaseNessieClientServerException {
+    Branch main = api.getDefaultBranch();
+    Branch branch = Branch.of(name, main.getHash());
+    assertThat(api.createReference().sourceRefName("main").reference(branch).create().getHash())
+        .isEqualTo(branch.getHash());
+    return branch;
+  }
+
+  @Test
+  public void transplant() throws BaseNessieClientServerException {
+    Branch base = createBranch("transplant-base");
+    Branch branch = createBranch("transplant-branch");
+
+    IcebergTable table1 = IcebergTable.of("transplant-table1", "x");
+    IcebergTable table2 = IcebergTable.of("transplant-table2", "y");
+
+    Branch committed1 =
+        api.commitMultipleOperations()
+            .branchName(branch.getName())
+            .hash(branch.getHash())
+            .commitMeta(CommitMeta.fromMessage("test-transplant-branch1"))
+            .operation(Put.of(ContentsKey.of("key1"), table1))
+            .commit();
+    assertThat(committed1.getHash()).isNotNull();
+
+    Branch committed2 =
+        api.commitMultipleOperations()
+            .branchName(branch.getName())
+            .hash(committed1.getHash())
+            .commitMeta(CommitMeta.fromMessage("test-transplant-branch2"))
+            .operation(Put.of(ContentsKey.of("key1"), table1, table1))
+            .commit();
+    assertThat(committed2.getHash()).isNotNull();
+
+    api.commitMultipleOperations()
+        .branchName(base.getName())
+        .hash(base.getHash())
+        .commitMeta(CommitMeta.fromMessage("test-transplant-main"))
+        .operation(Put.of(ContentsKey.of("key2"), table2))
+        .commit();
+
+    api.transplantCommitsIntoBranch()
+        .hashesToTransplant(ImmutableList.of(committed1.getHash(), committed2.getHash()))
+        .fromRefName(branch.getName())
+        .branch(base)
+        .transplant();
+
+    LogResponse log = api.getCommitLog().refName(base.getName()).untilHash(base.getHash()).get();
+    assertThat(log.getOperations().stream().map(CommitMeta::getMessage))
+        .containsExactly(
+            "test-transplant-branch2", "test-transplant-branch1", "test-transplant-main");
+
+    assertThat(
+            api.getEntries().refName(base.getName()).get().getEntries().stream()
+                .map(e -> e.getName().getName()))
+        .containsExactlyInAnyOrder("key1", "key2");
+  }
+
+  @Test
+  public void merge() throws BaseNessieClientServerException {
+    Branch base = createBranch("merge-base");
+    Branch branch = createBranch("merge-branch");
+
+    IcebergTable table1 = IcebergTable.of("merge-table1", "x");
+    IcebergTable table2 = IcebergTable.of("merge-table2", "y");
+
+    Branch committed1 =
+        api.commitMultipleOperations()
+            .branchName(branch.getName())
+            .hash(branch.getHash())
+            .commitMeta(CommitMeta.fromMessage("test-merge-branch1"))
+            .operation(Put.of(ContentsKey.of("key1"), table1))
+            .commit();
+    assertThat(committed1.getHash()).isNotNull();
+
+    Branch committed2 =
+        api.commitMultipleOperations()
+            .branchName(branch.getName())
+            .hash(committed1.getHash())
+            .commitMeta(CommitMeta.fromMessage("test-merge-branch2"))
+            .operation(Put.of(ContentsKey.of("key1"), table1, table1))
+            .commit();
+    assertThat(committed2.getHash()).isNotNull();
+
+    api.commitMultipleOperations()
+        .branchName(base.getName())
+        .hash(base.getHash())
+        .commitMeta(CommitMeta.fromMessage("test-merge-main"))
+        .operation(Put.of(ContentsKey.of("key2"), table2))
+        .commit();
+
+    api.mergeRefIntoBranch().branch(base).fromRef(committed2).merge();
+
+    LogResponse log = api.getCommitLog().refName(base.getName()).untilHash(base.getHash()).get();
+    assertThat(log.getOperations().stream().map(CommitMeta::getMessage))
+        .containsExactly("test-merge-branch2", "test-merge-branch1", "test-merge-main");
+
+    assertThat(
+            api.getEntries().refName(base.getName()).get().getEntries().stream()
+                .map(e -> e.getName().getName()))
+        .containsExactlyInAnyOrder("key1", "key2");
   }
 
   protected void verifyPaging(

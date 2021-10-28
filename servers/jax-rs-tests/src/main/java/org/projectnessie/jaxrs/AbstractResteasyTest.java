@@ -41,7 +41,7 @@ import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
 
-public class AbstractResteasyTest {
+public abstract class AbstractResteasyTest {
 
   protected static String basePath = "/api/v1/";
 
@@ -259,8 +259,7 @@ public class AbstractResteasyTest {
 
   private Branch makeBranch(String name) {
     Branch test = ImmutableBranch.builder().name(name).build();
-    rest().body(test).post("trees/tree").then().statusCode(200);
-    return test;
+    return rest().body(test).post("trees/tree").then().statusCode(200).extract().as(Branch.class);
   }
 
   @Test
@@ -386,5 +385,25 @@ public class AbstractResteasyTest {
     assertThat(log.getOperations().get(0).getCommitTime())
         .isBefore(lastCommitTime)
         .isAfter(firstCommitTime);
+  }
+
+  @Test
+  public void testGetContents() {
+    Branch branch = makeBranch("contents-test");
+    IcebergTable table = IcebergTable.of("contents-table1", "x");
+
+    commit(table.getId(), branch, "key1", table.getMetadataLocation());
+
+    Contents contents =
+        rest()
+            .queryParam("ref", branch.getName())
+            .queryParam("hashOnRef", branch.getHash())
+            .get(String.format("contents/%s", "key1"))
+            .then()
+            .statusCode(200)
+            .extract()
+            .as(Contents.class);
+
+    assertThat(contents).isEqualTo(table);
   }
 }
