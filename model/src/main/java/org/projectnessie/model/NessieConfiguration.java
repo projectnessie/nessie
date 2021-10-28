@@ -30,8 +30,6 @@ public abstract class NessieConfiguration {
   /**
    * The name of the default branch that the server will use unless an explicit branch was specified
    * as an API call parameter.
-   *
-   * <p>Note: the notion of "default branch" may be different on the client and server sides.
    */
   @Nullable
   @Size(min = 1)
@@ -41,8 +39,6 @@ public abstract class NessieConfiguration {
    * The maximum API version supported by the server.
    *
    * <p>API versions are numbered sequentially, as they are developed.
-   *
-   * <p>In java clients this number corresponds to a particular sub-class of {@code NessieApi}.
    */
   public abstract int getMaxSupportedApiVersion();
 }
