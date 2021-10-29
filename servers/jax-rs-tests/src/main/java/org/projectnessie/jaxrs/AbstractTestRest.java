@@ -60,6 +60,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.client.StreamingUtil;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
+import org.projectnessie.client.api.MultipleContents;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpClientBuilder;
@@ -68,6 +69,7 @@ import org.projectnessie.client.rest.NessieBadRequestException;
 import org.projectnessie.client.rest.NessieHttpResponseFilter;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieConflictException;
+import org.projectnessie.error.NessieContentsNotFoundException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceAlreadyExistsException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
@@ -869,6 +871,30 @@ public abstract class AbstractTestRest {
         .branchName(branch)
         .hash(api.getReference().refName(branch).get().getHash())
         .delete();
+  }
+
+  @Test
+  public void getContentsSingle() throws BaseNessieClientServerException {
+    final String branch = "test-get-contents";
+    Reference r =
+        api.createReference().sourceRefName("main").reference(Branch.of(branch, null)).create();
+    ContentsKey key1 = ContentsKey.of("key1");
+    ContentsKey missingKey = ContentsKey.of("missing");
+    IcebergTable table = IcebergTable.of("path1", "x");
+    api.commitMultipleOperations()
+        .branchName(branch)
+        .hash(r.getHash())
+        .operation(Put.of(key1, table))
+        .commitMeta(CommitMeta.fromMessage("commit 1"))
+        .commit();
+
+    MultipleContents contents = api.getContents().key(key1).key(missingKey).refName(branch).get();
+
+    assertThat(contents).hasSize(1);
+    assertThat(contents.unwrapSingle(key1, IcebergTable.class)).isEqualTo(table);
+    assertThatThrownBy(() -> contents.single(missingKey))
+        .isInstanceOf(NessieContentsNotFoundException.class)
+        .hasMessageContaining(missingKey.toString());
   }
 
   public static final class ContentAndOperationType {

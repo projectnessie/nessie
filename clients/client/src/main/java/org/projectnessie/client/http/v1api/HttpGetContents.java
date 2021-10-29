@@ -16,16 +16,13 @@
 package org.projectnessie.client.http.v1api;
 
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 import org.projectnessie.client.api.GetContentsBuilder;
+import org.projectnessie.client.api.MultipleContents;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieNotFoundException;
-import org.projectnessie.model.Contents;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.ImmutableMultiGetContentsRequest;
 import org.projectnessie.model.MultiGetContentsResponse;
-import org.projectnessie.model.MultiGetContentsResponse.ContentsWithKey;
 
 final class HttpGetContents extends BaseHttpOnReferenceRequest<GetContentsBuilder>
     implements GetContentsBuilder {
@@ -50,10 +47,9 @@ final class HttpGetContents extends BaseHttpOnReferenceRequest<GetContentsBuilde
   }
 
   @Override
-  public Map<ContentsKey, Contents> get() throws NessieNotFoundException {
+  public MultipleContents get() throws NessieNotFoundException {
     MultiGetContentsResponse resp =
         client.getContentsApi().getMultipleContents(refName, hashOnRef, request.build());
-    return resp.getContents().stream()
-        .collect(Collectors.toMap(ContentsWithKey::getKey, ContentsWithKey::getContents));
+    return MultipleContentsImpl.of(resp.getContents());
   }
 }

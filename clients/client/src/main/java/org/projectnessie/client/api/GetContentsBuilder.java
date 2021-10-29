@@ -16,10 +16,8 @@
 package org.projectnessie.client.api;
 
 import java.util.List;
-import java.util.Map;
 import javax.validation.Valid;
 import org.projectnessie.error.NessieNotFoundException;
-import org.projectnessie.model.Contents;
 import org.projectnessie.model.ContentsKey;
 
 /**
@@ -32,5 +30,5 @@ public interface GetContentsBuilder extends OnReferenceBuilder<GetContentsBuilde
 
   GetContentsBuilder keys(List<ContentsKey> keys);
 
-  Map<ContentsKey, Contents> get() throws NessieNotFoundException;
+  MultipleContents get() throws NessieNotFoundException;
 }
