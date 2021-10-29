@@ -238,8 +238,7 @@ public abstract class AbstractTestRest {
     String branchName2 = "branch2" + refNamePart;
 
     String root = "ref_name_" + refNamePart.replaceAll("[^a-z]", "");
-    Reference main =
-        api.createReference().sourceRefName("main").reference(Branch.of(root, null)).create();
+    Branch main = createBranch(root);
 
     IcebergTable meta = IcebergTable.of("meep", "x");
     main =
@@ -352,19 +351,12 @@ public abstract class AbstractTestRest {
 
   @Test
   public void filterCommitLogByAuthor() throws BaseNessieClientServerException {
-    Reference main = api.getReference().refName("main").get();
-    Branch filterCommitLogByAuthor = Branch.of("filterCommitLogByAuthor", main.getHash());
-    Reference branch =
-        api.createReference()
-            .sourceRefName(main.getName())
-            .reference(filterCommitLogByAuthor)
-            .create();
-    assertThat(branch).isEqualTo(filterCommitLogByAuthor);
+    Branch branch = createBranch("filterCommitLogByAuthor");
 
     int numAuthors = 5;
     int commitsPerAuthor = 10;
 
-    String currentHash = main.getHash();
+    String currentHash = branch.getHash();
     createCommits(branch, numAuthors, commitsPerAuthor, currentHash);
     LogResponse log = api.getCommitLog().refName(branch.getName()).get();
     assertThat(log).isNotNull();
@@ -438,20 +430,13 @@ public abstract class AbstractTestRest {
 
   @Test
   public void filterCommitLogByTimeRange() throws BaseNessieClientServerException {
-    Reference main = api.getReference().refName("main").get();
-    Branch filterCommitLogByAuthor = Branch.of("filterCommitLogByTimeRange", main.getHash());
-    Reference branch =
-        api.createReference()
-            .sourceRefName(main.getName())
-            .reference(filterCommitLogByAuthor)
-            .create();
-    assertThat(branch).isEqualTo(filterCommitLogByAuthor);
+    Branch branch = createBranch("filterCommitLogByTimeRange");
 
     int numAuthors = 5;
     int commitsPerAuthor = 10;
     int expectedTotalSize = numAuthors * commitsPerAuthor;
 
-    String currentHash = main.getHash();
+    String currentHash = branch.getHash();
     createCommits(branch, numAuthors, commitsPerAuthor, currentHash);
     LogResponse log = api.getCommitLog().refName(branch.getName()).get();
     assertThat(log).isNotNull();
@@ -515,19 +500,12 @@ public abstract class AbstractTestRest {
 
   @Test
   public void filterCommitLogByProperties() throws BaseNessieClientServerException {
-    Reference main = api.getReference().refName("main").get();
-    Branch filterCommitLogByAuthor = Branch.of("filterCommitLogByProperties", main.getHash());
-    Reference branch =
-        api.createReference()
-            .sourceRefName(main.getName())
-            .reference(filterCommitLogByAuthor)
-            .create();
-    assertThat(branch).isEqualTo(filterCommitLogByAuthor);
+    Branch branch = createBranch("filterCommitLogByProperties");
 
     int numAuthors = 5;
     int commitsPerAuthor = 10;
 
-    String currentHash = main.getHash();
+    String currentHash = branch.getHash();
     createCommits(branch, numAuthors, commitsPerAuthor, currentHash);
     LogResponse log = api.getCommitLog().refName(branch.getName()).get();
     assertThat(log).isNotNull();
@@ -554,14 +532,11 @@ public abstract class AbstractTestRest {
 
   @Test
   public void filterCommitLogByCommitRange() throws BaseNessieClientServerException {
-    Reference main = api.getReference().refName("main").get();
-    Branch b = Branch.of("filterCommitLogByCommitRange", main.getHash());
-    Reference branch = api.createReference().sourceRefName(main.getName()).reference(b).create();
-    assertThat(branch).isEqualTo(b);
+    Branch branch = createBranch("filterCommitLogByCommitRange");
 
     int numCommits = 10;
 
-    String currentHash = main.getHash();
+    String currentHash = branch.getHash();
     createCommits(branch, 1, numCommits, currentHash);
     LogResponse entireLog = api.getCommitLog().refName(branch.getName()).get();
     assertThat(entireLog).isNotNull();
@@ -619,18 +594,14 @@ public abstract class AbstractTestRest {
 
   @Test
   public void commitLogPagingAndFilteringByAuthor() throws BaseNessieClientServerException {
-    String someHash = api.getReference().refName("main").get().getHash();
-    String branchName = "commitLogPagingAndFiltering";
-    Branch branch = Branch.of(branchName, someHash);
-    assertThat(api.createReference().sourceRefName("main").reference(branch).create().getHash())
-        .isNotNull();
+    Branch branch = createBranch("commitLogPagingAndFiltering");
 
     int numAuthors = 3;
     int commits = 45;
     int pageSizeHint = 10;
     int expectedTotalSize = numAuthors * commits;
 
-    createCommits(branch, numAuthors, commits, someHash);
+    createCommits(branch, numAuthors, commits, branch.getHash());
     LogResponse log = api.getCommitLog().refName(branch.getName()).get();
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(expectedTotalSize);
@@ -641,13 +612,13 @@ public abstract class AbstractTestRest {
             .filter(c -> author.equals(c.getAuthor()))
             .map(CommitMeta::getMessage)
             .collect(Collectors.toList());
-    verifyPaging(branchName, commits, pageSizeHint, messagesOfAuthorOne, author);
+    verifyPaging(branch.getName(), commits, pageSizeHint, messagesOfAuthorOne, author);
 
     List<String> allMessages =
         log.getOperations().stream().map(CommitMeta::getMessage).collect(Collectors.toList());
     List<CommitMeta> completeLog =
         StreamingUtil.getCommitLogStream(
-                api, branchName, null, null, null, OptionalInt.of(pageSizeHint))
+                api, branch.getName(), null, null, null, OptionalInt.of(pageSizeHint))
             .collect(Collectors.toList());
     assertThat(completeLog.stream().map(CommitMeta::getMessage))
         .containsExactlyElementsOf(allMessages);
@@ -655,16 +626,12 @@ public abstract class AbstractTestRest {
 
   @Test
   public void commitLogPaging() throws BaseNessieClientServerException {
-    String someHash = api.getReference().refName("main").get().getHash();
-    String branchName = "commitLogPaging";
-    Branch branch = Branch.of(branchName, someHash);
-    assertThat(api.createReference().sourceRefName("main").reference(branch).create().getHash())
-        .isNotNull();
+    Branch branch = createBranch("commitLogPaging");
 
     int commits = 95;
     int pageSizeHint = 10;
 
-    String currentHash = someHash;
+    String currentHash = branch.getHash();
     List<String> allMessages = new ArrayList<>();
     for (int i = 0; i < commits; i++) {
       String msg = "message-for-" + i;
@@ -672,7 +639,7 @@ public abstract class AbstractTestRest {
       IcebergTable tableMeta = IcebergTable.of("some-file-" + i, "x");
       String nextHash =
           api.commitMultipleOperations()
-              .branchName(branchName)
+              .branchName(branch.getName())
               .hash(currentHash)
               .commitMeta(CommitMeta.fromMessage(msg))
               .operation(Put.of(ContentsKey.of("table"), tableMeta))
@@ -683,11 +650,11 @@ public abstract class AbstractTestRest {
     }
     Collections.reverse(allMessages);
 
-    verifyPaging(branchName, commits, pageSizeHint, allMessages, null);
+    verifyPaging(branch.getName(), commits, pageSizeHint, allMessages, null);
 
     List<CommitMeta> completeLog =
         StreamingUtil.getCommitLogStream(
-                api, branchName, null, null, null, OptionalInt.of(pageSizeHint))
+                api, branch.getName(), null, null, null, OptionalInt.of(pageSizeHint))
             .collect(Collectors.toList());
     assertEquals(
         completeLog.stream().map(CommitMeta::getMessage).collect(Collectors.toList()), allMessages);
@@ -696,8 +663,8 @@ public abstract class AbstractTestRest {
   private Branch createBranch(String name) throws BaseNessieClientServerException {
     Branch main = api.getDefaultBranch();
     Branch branch = Branch.of(name, main.getHash());
-    assertThat(api.createReference().sourceRefName("main").reference(branch).create().getHash())
-        .isEqualTo(branch.getHash());
+    Reference created = api.createReference().sourceRefName("main").reference(branch).create();
+    assertThat(created).isEqualTo(branch);
     return branch;
   }
 
@@ -840,22 +807,18 @@ public abstract class AbstractTestRest {
 
   @Test
   public void multiget() throws BaseNessieClientServerException {
-    final String branch = "foo";
-    Reference r =
-        api.createReference().sourceRefName("main").reference(Branch.of(branch, null)).create();
+    Branch branch = createBranch("foo");
     ContentsKey a = ContentsKey.of("a");
     ContentsKey b = ContentsKey.of("b");
     IcebergTable ta = IcebergTable.of("path1", "x");
     IcebergTable tb = IcebergTable.of("path2", "x");
     api.commitMultipleOperations()
-        .branchName(branch)
-        .hash(r.getHash())
+        .branch(branch)
         .operation(Put.of(a, ta))
         .commitMeta(CommitMeta.fromMessage("commit 1"))
         .commit();
     api.commitMultipleOperations()
-        .branchName(branch)
-        .hash(r.getHash())
+        .branch(branch)
         .operation(Put.of(b, tb))
         .commitMeta(CommitMeta.fromMessage("commit 2"))
         .commit();
@@ -866,8 +829,8 @@ public abstract class AbstractTestRest {
         .containsEntry(b, tb)
         .doesNotContainKey(ContentsKey.of("noexist"));
     api.deleteBranch()
-        .branchName(branch)
-        .hash(api.getReference().refName(branch).get().getHash())
+        .branchName(branch.getName())
+        .hash(api.getReference().refName(branch.getName()).get().getHash())
         .delete();
   }
 
@@ -959,14 +922,11 @@ public abstract class AbstractTestRest {
 
   @Test
   public void verifyAllContentAndOperationTypes() throws BaseNessieClientServerException {
-    String branchName = "contentAndOperationAll";
-    Reference r =
-        api.createReference().sourceRefName("main").reference(Branch.of(branchName, null)).create();
+    Branch branch = createBranch("contentAndOperationAll");
 
     CommitMultipleOperationsBuilder commit =
         api.commitMultipleOperations()
-            .branchName(branchName)
-            .hash(r.getHash())
+            .branch(branch)
             .commitMeta(CommitMeta.fromMessage("verifyAllContentAndOperationTypes"));
     contentAndOperationTypes()
         .flatMap(
@@ -977,7 +937,7 @@ public abstract class AbstractTestRest {
         .forEach(commit::operation);
     commit.commit();
 
-    List<Entry> entries = api.getEntries().refName(branchName).get().getEntries();
+    List<Entry> entries = api.getEntries().refName(branch.getName()).get().getEntries();
     List<Entry> expect =
         contentAndOperationTypes()
             .filter(c -> c.operation instanceof Put)
@@ -990,20 +950,17 @@ public abstract class AbstractTestRest {
   @MethodSource("contentAndOperationTypes")
   public void verifyContentAndOperationTypesIndividually(
       ContentAndOperationType contentAndOperationType) throws BaseNessieClientServerException {
-    String branchName = "contentAndOperation_" + contentAndOperationType;
-    Reference r =
-        api.createReference().sourceRefName("main").reference(Branch.of(branchName, null)).create();
+    Branch branch = createBranch("contentAndOperation_" + contentAndOperationType);
     CommitMultipleOperationsBuilder commit =
         api.commitMultipleOperations()
-            .branchName(branchName)
-            .hash(r.getHash())
+            .branch(branch)
             .commitMeta(CommitMeta.fromMessage("commit " + contentAndOperationType))
             .operation(contentAndOperationType.operation);
     if (contentAndOperationType.globalOperation != null) {
       commit.operation(contentAndOperationType.globalOperation);
     }
     commit.commit();
-    List<Entry> entries = api.getEntries().refName(branchName).get().getEntries();
+    List<Entry> entries = api.getEntries().refName(branch.getName()).get().getEntries();
     // Oh, yea - this is weird. The property ContentAndOperationType.operation.key.namespace is null
     // (!!!)
     // here, because somehow JUnit @MethodSource implementation re-constructs the objects returned
@@ -1021,27 +978,23 @@ public abstract class AbstractTestRest {
 
   @Test
   public void filterEntriesByType() throws BaseNessieClientServerException {
-    final String branch = "filterTypes";
-    Reference r =
-        api.createReference().sourceRefName("main").reference(Branch.of(branch, null)).create();
+    Branch branch = createBranch("filterTypes");
     ContentsKey a = ContentsKey.of("a");
     ContentsKey b = ContentsKey.of("b");
     IcebergTable tam = IcebergTable.of("path1", "x");
     SqlView tb =
         ImmutableSqlView.builder().sqlText("select * from table").dialect(Dialect.DREMIO).build();
     api.commitMultipleOperations()
-        .branchName(branch)
-        .hash(r.getHash())
+        .branch(branch)
         .operation(Put.of(a, tam))
         .commitMeta(CommitMeta.fromMessage("commit 1"))
         .commit();
     api.commitMultipleOperations()
-        .branchName(branch)
-        .hash(r.getHash())
+        .branch(branch)
         .operation(Put.of(b, tb))
         .commitMeta(CommitMeta.fromMessage("commit 2"))
         .commit();
-    List<Entry> entries = api.getEntries().refName(branch).get().getEntries();
+    List<Entry> entries = api.getEntries().refName(branch.getName()).get().getEntries();
     List<Entry> expected =
         asList(
             Entry.builder().name(a).type(Type.ICEBERG_TABLE).build(),
@@ -1050,7 +1003,7 @@ public abstract class AbstractTestRest {
 
     entries =
         api.getEntries()
-            .refName(branch)
+            .refName(branch.getName())
             .queryExpression("entry.contentType=='ICEBERG_TABLE'")
             .get()
             .getEntries();
@@ -1058,7 +1011,7 @@ public abstract class AbstractTestRest {
 
     entries =
         api.getEntries()
-            .refName(branch)
+            .refName(branch.getName())
             .queryExpression("entry.contentType=='VIEW'")
             .get()
             .getEntries();
@@ -1066,61 +1019,55 @@ public abstract class AbstractTestRest {
 
     entries =
         api.getEntries()
-            .refName(branch)
+            .refName(branch.getName())
             .queryExpression("entry.contentType in ['ICEBERG_TABLE', 'VIEW']")
             .get()
             .getEntries();
     assertThat(entries).containsExactlyInAnyOrderElementsOf(expected);
 
     api.deleteBranch()
-        .branchName(branch)
-        .hash(api.getReference().refName(branch).get().getHash())
+        .branchName(branch.getName())
+        .hash(api.getReference().refName(branch.getName()).get().getHash())
         .delete();
   }
 
   @Test
   public void filterEntriesByNamespace() throws BaseNessieClientServerException {
-    final String branch = "filterEntriesByNamespace";
-    Reference r =
-        api.createReference().sourceRefName("main").reference(Branch.of(branch, null)).create();
+    Branch branch = createBranch("filterEntriesByNamespace");
     ContentsKey first = ContentsKey.of("a", "b", "c", "firstTable");
     ContentsKey second = ContentsKey.of("a", "b", "c", "secondTable");
     ContentsKey third = ContentsKey.of("a", "thirdTable");
     ContentsKey fourth = ContentsKey.of("a", "fourthTable");
     api.commitMultipleOperations()
-        .branchName(branch)
-        .hash(r.getHash())
+        .branch(branch)
         .operation(Put.of(first, IcebergTable.of("path1", "x")))
         .commitMeta(CommitMeta.fromMessage("commit 1"))
         .commit();
     api.commitMultipleOperations()
-        .branchName(branch)
-        .hash(r.getHash())
+        .branch(branch)
         .operation(Put.of(second, IcebergTable.of("path2", "x")))
         .commitMeta(CommitMeta.fromMessage("commit 2"))
         .commit();
     api.commitMultipleOperations()
-        .branchName(branch)
-        .hash(r.getHash())
+        .branch(branch)
         .operation(Put.of(third, IcebergTable.of("path3", "x")))
         .commitMeta(CommitMeta.fromMessage("commit 3"))
         .commit();
     api.commitMultipleOperations()
-        .branchName(branch)
-        .hash(r.getHash())
+        .branch(branch)
         .operation(Put.of(fourth, IcebergTable.of("path4", "x")))
         .commitMeta(CommitMeta.fromMessage("commit 4"))
         .commit();
 
-    List<Entry> entries = api.getEntries().refName(branch).get().getEntries();
+    List<Entry> entries = api.getEntries().refName(branch.getName()).get().getEntries();
     assertThat(entries).isNotNull().hasSize(4);
 
-    entries = api.getEntries().refName(branch).get().getEntries();
+    entries = api.getEntries().refName(branch.getName()).get().getEntries();
     assertThat(entries).isNotNull().hasSize(4);
 
     entries =
         api.getEntries()
-            .refName(branch)
+            .refName(branch.getName())
             .queryExpression("entry.namespace.startsWith('a.b')")
             .get()
             .getEntries();
@@ -1129,7 +1076,7 @@ public abstract class AbstractTestRest {
 
     entries =
         api.getEntries()
-            .refName(branch)
+            .refName(branch.getName())
             .queryExpression("entry.namespace.startsWith('a')")
             .get()
             .getEntries();
@@ -1138,7 +1085,7 @@ public abstract class AbstractTestRest {
 
     entries =
         api.getEntries()
-            .refName(branch)
+            .refName(branch.getName())
             .queryExpression("entry.namespace.startsWith('a.b.c.firstTable')")
             .get()
             .getEntries();
@@ -1146,23 +1093,21 @@ public abstract class AbstractTestRest {
 
     entries =
         api.getEntries()
-            .refName(branch)
+            .refName(branch.getName())
             .queryExpression("entry.namespace.startsWith('a.fourthTable')")
             .get()
             .getEntries();
     assertThat(entries).isEmpty();
 
     api.deleteBranch()
-        .branchName(branch)
-        .hash(api.getReference().refName(branch).get().getHash())
+        .branchName(branch.getName())
+        .hash(api.getReference().refName(branch.getName()).get().getHash())
         .delete();
   }
 
   @Test
   public void filterEntriesByNamespaceAndPrefixDepth() throws BaseNessieClientServerException {
-    final String branch = "filterEntriesByNamespaceAndPrefixDepth";
-    Reference r =
-        api.createReference().sourceRefName("main").reference(Branch.of(branch, null)).create();
+    Branch branch = createBranch("filterEntriesByNamespaceAndPrefixDepth");
     ContentsKey first = ContentsKey.of("a", "b", "c", "firstTable");
     ContentsKey second = ContentsKey.of("a", "b", "c", "secondTable");
     ContentsKey third = ContentsKey.of("a", "thirdTable");
@@ -1171,19 +1116,19 @@ public abstract class AbstractTestRest {
     List<ContentsKey> keys = ImmutableList.of(first, second, third, fourth, fifth);
     for (int i = 0; i < 5; i++) {
       api.commitMultipleOperations()
-          .branchName(branch)
-          .hash(r.getHash())
+          .branch(branch)
           .operation(Put.of(keys.get(i), IcebergTable.of("path" + i, "x")))
           .commitMeta(CommitMeta.fromMessage("commit " + i))
           .commit();
     }
 
-    List<Entry> entries = api.getEntries().refName(branch).namespaceDepth(0).get().getEntries();
+    List<Entry> entries =
+        api.getEntries().refName(branch.getName()).namespaceDepth(0).get().getEntries();
     assertThat(entries).isNotNull().hasSize(5);
 
     entries =
         api.getEntries()
-            .refName(branch)
+            .refName(branch.getName())
             .namespaceDepth(0)
             .queryExpression("entry.namespace.matches('a(\\\\.|$)')")
             .get()
@@ -1192,7 +1137,7 @@ public abstract class AbstractTestRest {
 
     entries =
         api.getEntries()
-            .refName(branch)
+            .refName(branch.getName())
             .namespaceDepth(1)
             .queryExpression("entry.namespace.matches('a(\\\\.|$)')")
             .get()
@@ -1203,7 +1148,7 @@ public abstract class AbstractTestRest {
 
     entries =
         api.getEntries()
-            .refName(branch)
+            .refName(branch.getName())
             .namespaceDepth(2)
             .queryExpression("entry.namespace.matches('a(\\\\.|$)')")
             .get()
@@ -1214,7 +1159,7 @@ public abstract class AbstractTestRest {
 
     entries =
         api.getEntries()
-            .refName(branch)
+            .refName(branch.getName())
             .namespaceDepth(3)
             .queryExpression("entry.namespace.matches('a\\\\.b(\\\\.|$)')")
             .get()
@@ -1225,7 +1170,7 @@ public abstract class AbstractTestRest {
 
     entries =
         api.getEntries()
-            .refName(branch)
+            .refName(branch.getName())
             .namespaceDepth(4)
             .queryExpression("entry.namespace.matches('a\\\\.b\\\\.c(\\\\.|$)')")
             .get()
@@ -1236,7 +1181,7 @@ public abstract class AbstractTestRest {
 
     entries =
         api.getEntries()
-            .refName(branch)
+            .refName(branch.getName())
             .namespaceDepth(5)
             .queryExpression("entry.namespace.matches('(\\\\.|$)')")
             .get()
@@ -1245,7 +1190,7 @@ public abstract class AbstractTestRest {
 
     entries =
         api.getEntries()
-            .refName(branch)
+            .refName(branch.getName())
             .namespaceDepth(3)
             .queryExpression("entry.namespace.matches('(\\\\.|$)')")
             .get()
@@ -1262,8 +1207,8 @@ public abstract class AbstractTestRest {
         .matches(e -> e.getName().equals(ContentsKey.of("a", "boo", "fifthTable")));
 
     api.deleteBranch()
-        .branchName(branch)
-        .hash(api.getReference().refName(branch).get().getHash())
+        .branchName(branch.getName())
+        .hash(api.getReference().refName(branch.getName()).get().getHash())
         .delete();
   }
 
@@ -1282,49 +1227,36 @@ public abstract class AbstractTestRest {
 
   @Test
   public void checkSpecialCharacterRoundTrip() throws BaseNessieClientServerException {
-    final String branch = "specialchar";
-    Reference r =
-        api.createReference().sourceRefName("main").reference(Branch.of(branch, null)).create();
+    Branch branch = createBranch("specialchar");
     // ContentsKey k = ContentsKey.of("/%国","国.国");
     ContentsKey k = ContentsKey.of("a.b", "c.txt");
     IcebergTable ta = IcebergTable.of("path1", "x");
     api.commitMultipleOperations()
-        .branchName(branch)
-        .hash(r.getHash())
+        .branch(branch)
         .operation(Put.of(k, ta))
         .commitMeta(CommitMeta.fromMessage("commit 1"))
         .commit();
 
-    assertThat(api.getContents().key(k).refName(branch).get()).containsEntry(k, ta);
-    assertEquals(ta, api.getContents().key(k).refName(branch).get().get(k));
+    assertThat(api.getContents().key(k).refName(branch.getName()).get()).containsEntry(k, ta);
+    assertEquals(ta, api.getContents().key(k).refName(branch.getName()).get().get(k));
     api.deleteBranch()
-        .branchName(branch)
-        .hash(api.getReference().refName(branch).get().getHash())
+        .branchName(branch.getName())
+        .hash(api.getReference().refName(branch.getName()).get().getHash())
         .delete();
   }
 
   @Test
   public void checkServerErrorPropagation() throws BaseNessieClientServerException {
-    final String branch = "bar";
-    Reference ref =
-        api.createReference().sourceRefName("main").reference(Branch.of(branch, null)).create();
-    assertThat(ref.getName()).isEqualTo(branch);
-    assertThat(ref.getHash()).isNotNull();
+    Branch branch = createBranch("bar");
 
-    assertThatThrownBy(
-            () ->
-                api.createReference()
-                    .sourceRefName("main")
-                    .reference(Branch.of(branch, null))
-                    .create())
+    assertThatThrownBy(() -> api.createReference().sourceRefName("main").reference(branch).create())
         .isInstanceOf(NessieReferenceAlreadyExistsException.class)
         .hasMessageContaining("already exists");
 
     assertThatThrownBy(
             () ->
                 api.commitMultipleOperations()
-                    .branchName(ref.getName())
-                    .hash(ref.getHash())
+                    .branch(branch)
                     .commitMeta(
                         CommitMeta.builder()
                             .author("author")
@@ -1737,14 +1669,11 @@ public abstract class AbstractTestRest {
 
   @Test
   public void testValidHashesOnValidNamedRefs() throws BaseNessieClientServerException {
-    Reference main = api.getReference().refName("main").get();
-    Branch b = Branch.of("testValidHashesOnValidNamedRefs", main.getHash());
-    Reference branch = api.createReference().sourceRefName(main.getName()).reference(b).create();
-    assertThat(branch).isEqualTo(b);
+    Branch branch = createBranch("testValidHashesOnValidNamedRefs");
 
     int commits = 10;
 
-    String currentHash = main.getHash();
+    String currentHash = branch.getHash();
     createCommits(branch, 1, commits, currentHash);
     LogResponse entireLog = api.getCommitLog().refName(branch.getName()).get();
     assertThat(entireLog).isNotNull();
@@ -1783,29 +1712,26 @@ public abstract class AbstractTestRest {
 
   @Test
   public void testUnknownHashesOnValidNamedRefs() throws BaseNessieClientServerException {
-    Reference main = api.getReference().refName("main").get();
-    Branch b = Branch.of("testUnknownHashesOnValidNamedRefs", main.getHash());
-    Reference branch = api.createReference().sourceRefName(main.getName()).reference(b).create();
-    assertThat(branch).isEqualTo(b);
+    Branch branch = createBranch("testUnknownHashesOnValidNamedRefs");
     String invalidHash = "1234567890123456";
 
     int commits = 10;
 
-    String currentHash = main.getHash();
+    String currentHash = branch.getHash();
     createCommits(branch, 1, commits, currentHash);
     assertThatThrownBy(
             () -> api.getCommitLog().refName(branch.getName()).hashOnRef(invalidHash).get())
         .isInstanceOf(NessieNotFoundException.class)
         .hasMessageContaining(
             String.format(
-                "Could not find commit '%s' in reference '%s'.", invalidHash, b.getName()));
+                "Could not find commit '%s' in reference '%s'.", invalidHash, branch.getName()));
 
     assertThatThrownBy(
             () -> api.getEntries().refName(branch.getName()).hashOnRef(invalidHash).get())
         .isInstanceOf(NessieNotFoundException.class)
         .hasMessageContaining(
             String.format(
-                "Could not find commit '%s' in reference '%s'.", invalidHash, b.getName()));
+                "Could not find commit '%s' in reference '%s'.", invalidHash, branch.getName()));
 
     assertThatThrownBy(
             () ->
@@ -1817,7 +1743,7 @@ public abstract class AbstractTestRest {
         .isInstanceOf(NessieNotFoundException.class)
         .hasMessageContaining(
             String.format(
-                "Could not find commit '%s' in reference '%s'.", invalidHash, b.getName()));
+                "Could not find commit '%s' in reference '%s'.", invalidHash, branch.getName()));
 
     assertThatThrownBy(
             () ->
@@ -1829,7 +1755,7 @@ public abstract class AbstractTestRest {
         .isInstanceOf(NessieNotFoundException.class)
         .hasMessageContaining(
             String.format(
-                "Could not find commit '%s' in reference '%s'.", invalidHash, b.getName()));
+                "Could not find commit '%s' in reference '%s'.", invalidHash, branch.getName()));
   }
 
   /** Assigning a branch/tag to a fresh main without any commits didn't work in 0.9.2 */
@@ -1840,28 +1766,20 @@ public abstract class AbstractTestRest {
     LogResponse log = api.getCommitLog().refName(main.getName()).get();
     assertThat(log.getOperations()).isEmpty();
 
-    String testBranch = "testBranch";
-    assertThat(
-            api.createReference()
-                .sourceRefName(main.getName())
-                .reference(Branch.of(testBranch, null))
-                .create()
-                .getHash())
-        .isNotNull();
-    Reference testBranchRef = api.getReference().refName(testBranch).get();
-    api.assignBranch().hash(testBranchRef.getHash()).branchName(testBranch).assignTo(main).assign();
+    Branch testBranch = createBranch("testBranch");
+    api.assignBranch().branch(testBranch).assignTo(main).assign();
+    Reference testBranchRef = api.getReference().refName(testBranch.getName()).get();
     assertThat(testBranchRef.getHash()).isEqualTo(main.getHash());
 
     String testTag = "testTag";
-    assertThat(
-            api.createReference()
-                .sourceRefName(main.getName())
-                .reference(Branch.of(testTag, null))
-                .create()
-                .getHash())
-        .isNotNull();
-    Reference testTagRef = api.getReference().refName(testTag).get();
+    Reference testTagRef =
+        api.createReference()
+            .sourceRefName(main.getName())
+            .reference(Tag.of(testTag, main.getHash()))
+            .create();
+    assertThat(testTagRef.getHash()).isNotNull();
     api.assignTag().hash(testTagRef.getHash()).tagName(testTag).assignTo(main).assign();
+    testTagRef = api.getReference().refName(testTag).get();
     assertThat(testTagRef.getHash()).isEqualTo(main.getHash());
   }
 
