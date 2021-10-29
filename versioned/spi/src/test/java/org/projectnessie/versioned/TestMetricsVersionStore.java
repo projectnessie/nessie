@@ -173,7 +173,7 @@ class TestMetricsVersionStore {
                     vs.getValues(
                         BranchName.of("mock-branch"),
                         Collections.singletonList(Key.of("some", "key"))),
-                () -> Collections.singletonList(Optional.empty()),
+                Collections::emptyMap,
                 refNotFoundThrows),
             new VersionStoreInvocation<>(
                 "getdiffs",

@@ -38,6 +38,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -117,12 +118,12 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
-  public Stream<Optional<ContentsAndState<ByteString>>> values(
-      Hash commit, List<Key> keys, KeyFilterPredicate keyFilter) throws ReferenceNotFoundException {
+  public Map<Key, ContentsAndState<ByteString>> values(
+      Hash commit, Collection<Key> keys, KeyFilterPredicate keyFilter)
+      throws ReferenceNotFoundException {
     Connection conn = borrowConnection();
     try {
-      Map<Key, ContentsAndState<ByteString>> result = fetchValues(conn, commit, keys, keyFilter);
-      return keys.stream().map(result::get).map(Optional::ofNullable);
+      return fetchValues(conn, commit, keys, keyFilter);
     } finally {
       releaseConnection(conn);
     }

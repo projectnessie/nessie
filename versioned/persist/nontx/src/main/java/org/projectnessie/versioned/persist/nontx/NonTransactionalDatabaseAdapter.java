@@ -32,6 +32,7 @@ import static org.projectnessie.versioned.persist.adapter.spi.TryLoopState.newTr
 import static org.projectnessie.versioned.persist.nontx.NonTransactionalOperationContext.NON_TRANSACTIONAL_OPERATION_CONTEXT;
 
 import com.google.protobuf.ByteString;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -101,12 +102,10 @@ public abstract class NonTransactionalDatabaseAdapter<
   }
 
   @Override
-  public Stream<Optional<ContentsAndState<ByteString>>> values(
-      Hash commit, List<Key> keys, KeyFilterPredicate keyFilter) throws ReferenceNotFoundException {
-    Map<Key, ContentsAndState<ByteString>> result =
-        fetchValues(NON_TRANSACTIONAL_OPERATION_CONTEXT, commit, keys, keyFilter);
-
-    return keys.stream().map(result::get).map(Optional::ofNullable);
+  public Map<Key, ContentsAndState<ByteString>> values(
+      Hash commit, Collection<Key> keys, KeyFilterPredicate keyFilter)
+      throws ReferenceNotFoundException {
+    return fetchValues(NON_TRANSACTIONAL_OPERATION_CONTEXT, commit, keys, keyFilter);
   }
 
   @Override
