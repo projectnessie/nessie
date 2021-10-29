@@ -60,13 +60,9 @@ final class ContentsMap extends HashMap<ContentsKey, Contents> implements Multip
   @Override
   public <T extends Contents> T valueAs(ContentsKey key, Class<T> valueClass)
       throws NessieContentsNotFoundException {
-    Contents contents = value(key);
-    Optional<T> value = contents.unwrap(valueClass);
-    if (!value.isPresent()) {
-      throw new NessieContentsNotFoundException(key, valueClass);
-    }
-
-    return value.get();
+    return value(key)
+        .unwrap(valueClass)
+        .orElseThrow(() -> new NessieContentsNotFoundException(key, valueClass));
   }
 
   @Nonnull
