@@ -13,7 +13,7 @@ exports[`ExploreLink renders with container 1`] = `
 exports[`ExploreLink renders with object 1`] = `
 <DocumentFragment>
   <a
-    href="/contents/main/"
+    href="/content/main/"
   >
     xxx
   </a>

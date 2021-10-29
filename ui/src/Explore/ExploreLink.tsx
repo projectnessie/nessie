@@ -32,7 +32,7 @@ const ExploreLink = ({
 }: IExploreLink): React.ReactElement => {
   path = path || [];
   const currentRef = toRef;
-  const prefix = type === "CONTAINER" ? "/tree/" : "/contents/";
+  const prefix = type === "CONTAINER" ? "/tree/" : "/content/";
   return (
     <Link to={`${prefix}${currentRef}/${path.join("/")}`} className={className}>
       {children}

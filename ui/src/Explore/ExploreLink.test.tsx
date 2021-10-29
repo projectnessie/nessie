@@ -49,6 +49,6 @@ it("ExploreLink renders with object", () => {
   expect(asFragment()).toMatchSnapshot();
   expect(screen.getByText("xxx").closest("a")).toHaveAttribute(
     "href",
-    "/contents/main/"
+    "/content/main/"
   );
 });

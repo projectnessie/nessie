@@ -80,7 +80,7 @@ exports[`TableListing renders object 2`] = `
         class="list-group-item"
       >
         <a
-          href="/contents/main/b"
+          href="/content/main/b"
         >
           <svg
             aria-hidden="true"

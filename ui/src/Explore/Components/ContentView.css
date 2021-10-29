@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (C) 2020 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,10 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-const routeSlugs = {
-  commits: "commits",
-  content: "content",
-};
-
-export { routeSlugs };
+.ContentView{
+    display: flex;
+    align-items: center;
+}
+.ContentView__contentWrapper{
+    word-break: break-word;
+}
+.ContentView__contentWrapper div{
+    padding: 10px;
+}
+.ContentView__imagetWrapper{
+    margin-left: 20px;
+}
+.ContentView__uidContent{
+    color: #007bff;
+}
