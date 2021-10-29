@@ -891,8 +891,8 @@ public abstract class AbstractTestRest {
     MultipleContents contents = api.getContents().key(key1).key(missingKey).refName(branch).get();
 
     assertThat(contents).hasSize(1);
-    assertThat(contents.unwrapSingle(key1, IcebergTable.class)).isEqualTo(table);
-    assertThatThrownBy(() -> contents.single(missingKey))
+    assertThat(contents.valueAs(key1, IcebergTable.class)).isEqualTo(table);
+    assertThatThrownBy(() -> contents.value(missingKey))
         .isInstanceOf(NessieContentsNotFoundException.class)
         .hasMessageContaining(missingKey.toString());
   }

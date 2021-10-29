@@ -41,7 +41,7 @@ public class ContentsMap extends HashMap<ContentsKey, Contents> implements Multi
 
   @Nonnull
   @Override
-  public Contents single(ContentsKey key) throws NessieContentsNotFoundException {
+  public Contents value(ContentsKey key) throws NessieContentsNotFoundException {
     Contents contents = get(key);
     if (contents == null) {
       throw new NessieContentsNotFoundException(key);
@@ -52,15 +52,15 @@ public class ContentsMap extends HashMap<ContentsKey, Contents> implements Multi
 
   @Nonnull
   @Override
-  public <T extends Contents> Optional<T> unwrap(ContentsKey key, Class<T> valueClass) {
+  public <T extends Contents> Optional<T> getAs(ContentsKey key, Class<T> valueClass) {
     return Optional.ofNullable(get(key)).flatMap(c -> c.unwrap(valueClass));
   }
 
   @Nonnull
   @Override
-  public <T extends Contents> T unwrapSingle(ContentsKey key, Class<T> valueClass)
+  public <T extends Contents> T valueAs(ContentsKey key, Class<T> valueClass)
       throws NessieContentsNotFoundException {
-    Contents contents = single(key);
+    Contents contents = value(key);
     Optional<T> value = contents.unwrap(valueClass);
     if (!value.isPresent()) {
       throw new NessieContentsNotFoundException(key, valueClass);
@@ -71,9 +71,8 @@ public class ContentsMap extends HashMap<ContentsKey, Contents> implements Multi
 
   @Nonnull
   @Override
-  public <T extends Contents> T unwrapSingle(ContentsKey key)
-      throws NessieContentsNotFoundException {
+  public <T extends Contents> T valueAs(ContentsKey key) throws NessieContentsNotFoundException {
     //noinspection unchecked
-    return (T) unwrapSingle(key, Contents.class);
+    return (T) valueAs(key, Contents.class);
   }
 }

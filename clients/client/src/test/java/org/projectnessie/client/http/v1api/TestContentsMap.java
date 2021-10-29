@@ -51,8 +51,8 @@ class TestContentsMap {
   @Test
   void testSingle() throws NessieContentsNotFoundException {
     MultipleContents contents = ContentsMap.of(ImmutableList.of(c1, c2));
-    assertThat(contents.single(key1).getId()).isEqualTo(table1.getId());
-    assertThatThrownBy(() -> contents.single(key3))
+    assertThat(contents.value(key1).getId()).isEqualTo(table1.getId());
+    assertThatThrownBy(() -> contents.value(key3))
         .isInstanceOf(NessieContentsNotFoundException.class)
         .hasMessageContaining(key3.toString());
   }
@@ -60,22 +60,22 @@ class TestContentsMap {
   @Test
   void testUnwrap() {
     MultipleContents contents = ContentsMap.of(ImmutableList.of(c1, c2));
-    assertThat(contents.unwrap(key1, IcebergTable.class)).hasValue(table1);
-    assertThat(contents.unwrap(key1, DeltaLakeTable.class)).isEmpty();
-    assertThat(contents.unwrap(key3, IcebergTable.class)).isEmpty();
+    assertThat(contents.getAs(key1, IcebergTable.class)).hasValue(table1);
+    assertThat(contents.getAs(key1, DeltaLakeTable.class)).isEmpty();
+    assertThat(contents.getAs(key3, IcebergTable.class)).isEmpty();
   }
 
   @Test
   void testUnwrapSingle() throws NessieContentsNotFoundException {
     MultipleContents contents = ContentsMap.of(ImmutableList.of(c1, c2));
-    assertThat(contents.unwrapSingle(key1, IcebergTable.class)).isEqualTo(table1);
-    assertThat(contents.<IcebergTable>unwrapSingle(key1)).isEqualTo(table1);
+    assertThat(contents.valueAs(key1, IcebergTable.class)).isEqualTo(table1);
+    assertThat(contents.<IcebergTable>valueAs(key1)).isEqualTo(table1);
 
-    assertThatThrownBy(() -> contents.unwrapSingle(key1, DeltaLakeTable.class))
+    assertThatThrownBy(() -> contents.valueAs(key1, DeltaLakeTable.class))
         .isInstanceOf(NessieContentsNotFoundException.class)
         .hasMessageContaining(DeltaLakeTable.class.getSimpleName());
 
-    assertThatThrownBy(() -> contents.unwrapSingle(key3, IcebergTable.class))
+    assertThatThrownBy(() -> contents.valueAs(key3, IcebergTable.class))
         .isInstanceOf(NessieContentsNotFoundException.class)
         .hasMessageContaining(key3.toString());
   }

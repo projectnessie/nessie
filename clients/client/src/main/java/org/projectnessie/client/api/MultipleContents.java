@@ -25,14 +25,17 @@ import org.projectnessie.model.ContentsKey;
 public interface MultipleContents extends Map<ContentsKey, Contents> {
 
   /**
-   * Returns a single {@link Contents} object by key assuming it is present.
+   * Returns the {@link Contents} object by its key assuming it is present.
+   *
+   * <p>This method is similar to {@link Map#get(Object)}, but it throws an exception on trying to
+   * retrieve missing contents.
    *
    * @param key the contents key to retrieve
    * @return a non-null {@link Contents} object for the specified key.
    * @throws NessieContentsNotFoundException if no contents are present for the specified key.
    */
   @Nonnull
-  Contents single(ContentsKey key) throws NessieContentsNotFoundException;
+  Contents value(ContentsKey key) throws NessieContentsNotFoundException;
 
   /**
    * Extracts the contents value of the specified type, if possible.
@@ -46,7 +49,7 @@ public interface MultipleContents extends Map<ContentsKey, Contents> {
    * @see Contents#unwrap(Class)
    */
   @Nonnull
-  <T extends Contents> Optional<T> unwrap(ContentsKey key, Class<T> valueClass);
+  <T extends Contents> Optional<T> getAs(ContentsKey key, Class<T> valueClass);
 
   /**
    * Extracts the contents value of the specified type assuming it is present.
@@ -59,11 +62,11 @@ public interface MultipleContents extends Map<ContentsKey, Contents> {
    * @return a non-null value object for the specified key and type.
    * @throws NessieContentsNotFoundException if no contents are present for the specified key or if
    *     the contents do not contain a value of the specified type.
-   * @see #single(ContentsKey)
-   * @see #unwrap(ContentsKey, Class)
+   * @see #value(ContentsKey)
+   * @see #getAs(ContentsKey, Class)
    */
   @Nonnull
-  <T extends Contents> T unwrapSingle(ContentsKey key, Class<T> valueClass)
+  <T extends Contents> T valueAs(ContentsKey key, Class<T> valueClass)
       throws NessieContentsNotFoundException;
 
   /**
@@ -77,9 +80,9 @@ public interface MultipleContents extends Map<ContentsKey, Contents> {
    * @param key the contents key to retrieve
    * @return a non-null value object for the specified key and type.
    * @throws NessieContentsNotFoundException if no contents are present for the specified key.
-   * @see #single(ContentsKey)
-   * @see #unwrap(ContentsKey, Class)
+   * @see #value(ContentsKey)
+   * @see #getAs(ContentsKey, Class)
    */
   @Nonnull
-  <T extends Contents> T unwrapSingle(ContentsKey key) throws NessieContentsNotFoundException;
+  <T extends Contents> T valueAs(ContentsKey key) throws NessieContentsNotFoundException;
 }
