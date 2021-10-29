@@ -1,0 +1,72 @@
+# -*- coding: utf-8 -*-
+
+"""tag CLI command."""
+
+import click
+
+from ._branch_tag_handlers import handle_branch_tag
+from ..cli_common_context import ContextObject, MutuallyExclusiveOption, pass_client
+from ..error import error_handler
+
+
+@click.command("tag")
+@click.option("-l", "--list", cls=MutuallyExclusiveOption, is_flag=True, help="list branches", mutually_exclusive=["delete"])
+@click.option("-d", "--delete", cls=MutuallyExclusiveOption, is_flag=True, help="delete a branches", mutually_exclusive=["list"])
+@click.option("-f", "--force", is_flag=True, help="force branch assignment")
+@click.option(
+    "-o",
+    "--hash-on-ref",
+    help="Hash on source-reference for 'create' and 'assign' operations, if the tag shall not point to the HEAD "
+    "of the given source-reference.",
+)
+@click.option(
+    "-c",
+    "--condition",
+    "expected_hash",
+    help="Expected hash. Only perform the action if the tag currently points to the hash specified by this option.",
+)
+@click.argument("tag_name", nargs=1, required=False)
+@click.argument("base_ref", nargs=1, required=False)
+@pass_client
+@error_handler
+def tag(
+    ctx: ContextObject, list: bool, force: bool, hash_on_ref: str, delete: bool, tag_name: str, base_ref: str, expected_hash: str
+) -> None:
+    """Tag operations.
+
+    TAG_NAME name of branch to list or create/assign
+
+    BASE_REF name of branch or tag whose HEAD reference is to be used for the new tag
+
+    Examples:
+
+        nessie tag -> list all tags
+
+        nessie tag -l -> list all tags
+
+        nessie tag -l v1.0 -> list only tag "v1.0"
+
+        nessie tag -d v1.0 -> delete tag "v1.0"
+
+        nessie tag new_tag -> create new tag named 'new_tag' at current HEAD of the default branch
+
+        nessie tag new_tag main -> create new tag named 'new_tag' at head of reference named 'main' (branch or tag)
+
+        nessie tag -o 12345678abcdef new_tag test -> create new tag named 'new_tag' at hash 12345678abcdef on
+    reference named 'test'
+
+        nessie tag -f existing_tag main -> assign tag named 'existing_tag' to head of reference named 'main'
+
+        nessie tag -o 12345678abcdef -f existing_tag main -> assign tag named 'existing_tag' to hash 12345678abcdef
+    on reference named 'main'
+
+    """
+    results = handle_branch_tag(
+        ctx.nessie, list, delete, tag_name, hash_on_ref, base_ref, False, ctx.json, force, ctx.verbose, expected_hash
+    )
+    if ctx.json:
+        click.echo(results)
+    elif results:
+        click.echo(results)
+    else:
+        click.echo()

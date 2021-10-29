@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
+
 from typing import Optional
 
 import click
 
-from . import NessieClient
-from .error import NessieConflictException
-from .model import Branch
-from .model import ReferenceSchema
-from .model import Tag
+from ..client import NessieClient
+from ..error import NessieConflictException
+from ..model import Branch, ReferenceSchema, Tag
 
 
 def handle_branch_tag(

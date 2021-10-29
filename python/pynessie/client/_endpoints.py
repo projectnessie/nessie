@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
+
 """Direct API operations on Nessie with requests."""
+
 from typing import Any
 from typing import cast
 from typing import Optional
@@ -9,7 +11,7 @@ import requests
 import simplejson as jsonlib
 from requests.auth import AuthBase
 
-from .error import _create_exception
+from ..error import _create_exception
 
 
 def _get_headers(has_body: bool = False) -> dict:

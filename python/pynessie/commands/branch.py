@@ -1,0 +1,77 @@
+# -*- coding: utf-8 -*-
+
+"""Branch CLI command."""
+
+import click
+
+from ._branch_tag_handlers import handle_branch_tag
+from ..cli_common_context import ContextObject, MutuallyExclusiveOption, pass_client
+from ..error import error_handler
+
+
+@click.command(name="branch")
+@click.option("-l", "--list", cls=MutuallyExclusiveOption, is_flag=True, help="list branches", mutually_exclusive=["delete"])
+@click.option("-d", "--delete", cls=MutuallyExclusiveOption, is_flag=True, help="delete a branch", mutually_exclusive=["list"])
+@click.option("-f", "--force", is_flag=True, help="force branch assignment")
+@click.option(
+    "-o",
+    "--hash-on-ref",
+    help="Hash on source-reference for 'create' and 'assign' operations, if the branch shall not point to the HEAD of "
+    "the given source-reference.",
+)
+@click.option(
+    "-c",
+    "--condition",
+    "expected_hash",
+    help="Expected hash. Only perform the action if the branch currently points to the hash specified by this option.",
+)
+@click.argument("branch", nargs=1, required=False)
+@click.argument("base_ref", nargs=1, required=False)
+@pass_client
+@error_handler
+def branch_(
+    ctx: ContextObject,
+    list: bool,
+    force: bool,
+    hash_on_ref: str,
+    delete: bool,
+    branch: str,
+    base_ref: str,
+    expected_hash: str,
+) -> None:
+    """Branch operations.
+
+    BRANCH name of branch to list or create/assign
+
+    BASE_REF name of branch or tag from which to create/assign the new BRANCH
+
+    Examples:
+
+        nessie branch -> list all branches
+
+        nessie branch -l -> list all branches
+
+        nessie branch -l main -> list only main
+
+        nessie branch -d main -> delete main
+
+        nessie branch new_branch -> create new branch named 'new_branch' at current HEAD of the default branch
+
+        nessie branch new_branch main -> create new branch named 'new_branch' at head of reference named 'main'
+
+        nessie branch -o 12345678abcdef new_branch main -> create a branch named 'new_branch' at hash 12345678abcdef
+    on reference named 'main'
+
+        nessie branch -f existing_branch main -> assign branch named 'existing_branch' to head of reference named 'main'
+
+        nessie branch -o 12345678abcdef -f existing_branch main -> assign branch named 'existing_branch' to hash 12345678abcdef
+    on reference named 'main'
+
+    """
+    results = handle_branch_tag(ctx.nessie, list, delete, branch, hash_on_ref, base_ref, True, ctx.json, force, ctx.verbose, expected_hash)
+    if ctx.json:
+        click.echo(results)
+    elif results:
+        click.echo(results)
+    else:
+        click.echo()
