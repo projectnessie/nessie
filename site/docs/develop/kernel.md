@@ -28,9 +28,10 @@ a so-called commit operation instructs Nessie to record the new state in a Nessi
 carries the `Content` object(s).
 
 `IcebergTable` contains the _current_ and _global_ pointer to Iceberg's table metadata plus the
-ID of the snapshot defined in the table metadata. Since Iceberg's table metadata manages information
-that must be consistent across all branches in Nessie, it is stored as so-called _global state_.
-The value of the snapshot-ID is stored per Nessie named reference (branch or tag).
+IDs of the snapshot, schema, partition spec, sort order defined in the table metadata.
+- Since Iceberg's table metadata manages information that must be consistent across all branches in Nessie, it is stored as so-called _global state_.
+- The value of the snapshot-ID, schema-ID, partition-spec-ID, sort-order-ID is stored per Nessie named reference (branch or tag).
+For more information, please refer the spec [On Reference State vs Global State](spec.md#on-reference-state-vs-global-state)
 
 Updating _global-state_ and _on-reference-state_ are technically operations against two different
 entities in Nessie's backend database. Classic, relational databases (usually) come with a
@@ -191,7 +192,8 @@ conditional updates to multiple rows/records is either not supported at all or e
 
 Nessie differentiates between content types that do require so called _global-state_ and those
 that do not. Apache Iceberg is currently the only content type that supports global state:
-the pointer to the Iceberg "Table Metadata" is tracked as "global state" and the Iceberg snapshot ID
+the pointer to the Iceberg "Table Metadata" is tracked as "global state" and 
+the Iceberg snapshot ID, schema ID, partition spec ID, sort order ID
 is tracker per _Nessie named reference_. For _Nessie commits_, which are atomic, this means that
 Nessie has to update both the global-state and the on-reference-state for the Iceberg table. While
 this is not an issue with a relational/transactional database, it is an issue in a key-value store.

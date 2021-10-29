@@ -43,6 +43,9 @@ same physical table but with different state of the data and potentially differe
 table formats like Apache Iceberg require Nessie to refer to a single _Global State_, in case of
 Iceberg the _table metadata_. This _Global State_ is not versioned in Nessie, because it has to
 contain enough information to resolve all information in all Nessie commits.
+the IDs of the _Iceberg snapshot_, _Iceberg schema_, _Iceberg partition spec_, _Iceberg sort order_ 
+within the Iceberg _table metadata_ is stored per Nessie named reference(branch or tag)
+as so-called _on-reference-state_.
 
 !!! note
     The term _all information in all Nessie commits_ used above precisely means all information
@@ -103,16 +106,14 @@ a new Iceberg snapshot. Any Nessie commit refers to a particular Iceberg snapsho
 table, which translates to the state of an Iceberg table for a particular Nessie commit.
 
 Nessie needs to track Iceberg's _table metadata_ as so called _Global State_ within Nessie to
-ensure that schema evolution works as expected.
+ensure that table evolution and other operations like delete works as expected.
 
 The Nessie `IcebergTable` object passed to Nessie in a [_Put operation_](#put-operation) therefore
 consists of
 
-1. the pointer to the Iceberg _table metadata_ and
-2. the ID of the _Iceberg snapshot_ within the Iceberg _table metadata_.
-
-The pointer to the Iceberg table is recorded as _Global State_ and the ID of the Iceberg snapshot
-is recorded within the _Put operation_ in a Nessie commit.
+1. the pointer to the Iceberg _table metadata_ (so called _Global State_) and
+2. the IDs of the _Iceberg snapshot_, _Iceberg schema_, _Iceberg partition spec_, _Iceberg sort order_ 
+within the Iceberg _table metadata_.  (so called _On Reference State_)
 
 !!! note
     This model puts a strong restriction on the Iceberg table. All metadata JSON documents must be
