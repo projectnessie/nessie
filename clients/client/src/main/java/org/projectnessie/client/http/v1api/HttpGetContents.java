@@ -50,6 +50,6 @@ final class HttpGetContents extends BaseHttpOnReferenceRequest<GetContentsBuilde
   public MultipleContents get() throws NessieNotFoundException {
     MultiGetContentsResponse resp =
         client.getContentsApi().getMultipleContents(refName, hashOnRef, request.build());
-    return MultipleContentsImpl.of(resp.getContents());
+    return ContentsMap.of(resp.getContents());
   }
 }

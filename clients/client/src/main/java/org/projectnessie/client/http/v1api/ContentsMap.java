@@ -27,15 +27,15 @@ import org.projectnessie.model.Contents;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.MultiGetContentsResponse.ContentsWithKey;
 
-public class MultipleContentsImpl extends HashMap<ContentsKey, Contents>
+public class ContentsMap extends HashMap<ContentsKey, Contents>
     implements MultipleContents {
 
-  private MultipleContentsImpl(Map<? extends ContentsKey, ? extends Contents> m) {
+  private ContentsMap(Map<? extends ContentsKey, ? extends Contents> m) {
     super(m);
   }
 
   public static MultipleContents of(Collection<ContentsWithKey> contents) {
-    return new MultipleContentsImpl(
+    return new ContentsMap(
         contents.stream()
             .collect(Collectors.toMap(ContentsWithKey::getKey, ContentsWithKey::getContents)));
   }

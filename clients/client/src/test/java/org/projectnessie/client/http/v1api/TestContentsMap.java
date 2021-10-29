@@ -26,7 +26,7 @@ import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.MultiGetContentsResponse.ContentsWithKey;
 
-class TestMultipleContentsImpl {
+class TestContentsMap {
 
   private static final ContentsKey key1 = ContentsKey.of("key1");
   private static final ContentsKey key2 = ContentsKey.of("key2");
@@ -38,7 +38,7 @@ class TestMultipleContentsImpl {
 
   @Test
   void testMapApi() {
-    MultipleContents contents = MultipleContentsImpl.of(ImmutableList.of(c1, c2));
+    MultipleContents contents = ContentsMap.of(ImmutableList.of(c1, c2));
     assertThat(contents).hasSize(2);
     assertThat(contents).doesNotContainKey(key3);
     assertThat(contents)
@@ -49,7 +49,7 @@ class TestMultipleContentsImpl {
 
   @Test
   void testSingle() throws NessieContentsNotFoundException {
-    MultipleContents contents = MultipleContentsImpl.of(ImmutableList.of(c1, c2));
+    MultipleContents contents = ContentsMap.of(ImmutableList.of(c1, c2));
     assertThat(contents.single(key1).getId()).isEqualTo(table1.getId());
     assertThatThrownBy(() -> contents.single(key3))
         .isInstanceOf(NessieContentsNotFoundException.class)
@@ -58,7 +58,7 @@ class TestMultipleContentsImpl {
 
   @Test
   void testUnwrap() {
-    MultipleContents contents = MultipleContentsImpl.of(ImmutableList.of(c1, c2));
+    MultipleContents contents = ContentsMap.of(ImmutableList.of(c1, c2));
     assertThat(contents.unwrap(key1, IcebergTable.class)).hasValue(table1);
     assertThat(contents.unwrap(key1, String.class)).isEmpty();
     assertThat(contents.unwrap(key3, IcebergTable.class)).isEmpty();
@@ -66,13 +66,13 @@ class TestMultipleContentsImpl {
 
   @Test
   void testUnwrapSingle() throws NessieContentsNotFoundException {
-    MultipleContents contents = MultipleContentsImpl.of(ImmutableList.of(c1, c2));
+    MultipleContents contents = ContentsMap.of(ImmutableList.of(c1, c2));
     assertThat(contents.unwrapSingle(key1, IcebergTable.class)).isEqualTo(table1);
     assertThat(contents.<IcebergTable>unwrapSingle(key1)).isEqualTo(table1);
 
-    assertThatThrownBy(() -> contents.unwrapSingle(key1, TestMultipleContentsImpl.class))
+    assertThatThrownBy(() -> contents.unwrapSingle(key1, TestContentsMap.class))
         .isInstanceOf(NessieContentsNotFoundException.class)
-        .hasMessageContaining(TestMultipleContentsImpl.class.getSimpleName());
+        .hasMessageContaining(TestContentsMap.class.getSimpleName());
 
     assertThatThrownBy(() -> contents.unwrapSingle(key3, IcebergTable.class))
         .isInstanceOf(NessieContentsNotFoundException.class)
