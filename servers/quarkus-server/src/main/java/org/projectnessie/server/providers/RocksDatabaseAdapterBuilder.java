@@ -15,28 +15,34 @@
  */
 package org.projectnessie.server.providers;
 
-import static org.projectnessie.server.config.VersionStoreConfig.VersionStoreType.DYNAMO;
+import static org.projectnessie.server.config.VersionStoreConfig.VersionStoreType.ROCKS;
 
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 import org.projectnessie.server.config.QuarkusVersionStoreAdvancedConfig;
-import org.projectnessie.services.config.ServerConfig;
+import org.projectnessie.server.config.VersionStoreConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
-import org.projectnessie.versioned.persist.dynamodb.DynamoDatabaseClient;
+import org.projectnessie.versioned.persist.rocks.ImmutableRocksDbConfig;
+import org.projectnessie.versioned.persist.rocks.RocksDbInstance;
 
-/** DynamoDB version store factory. */
-@StoreType(DYNAMO)
+/** In-memory version store factory. */
+@StoreType(ROCKS)
 @Dependent
-public class DynamoDatabaseAdapterFactory implements DatabaseAdapterFactory {
-  @Inject DynamoDatabaseClient client;
+public class RocksDatabaseAdapterBuilder implements DatabaseAdapterBuilder {
+  @Inject VersionStoreConfig.RocksVersionStoreConfig rocksConfig;
   @Inject QuarkusVersionStoreAdvancedConfig config;
 
   @Override
-  public DatabaseAdapter newDatabaseAdapter(ServerConfig serverConfig) {
-    return new org.projectnessie.versioned.persist.dynamodb.DynamoDatabaseAdapterFactory()
+  public DatabaseAdapter newDatabaseAdapter() {
+    RocksDbInstance rocksDbInstance = new RocksDbInstance();
+    rocksDbInstance.configure(
+        ImmutableRocksDbConfig.builder().dbPath(rocksConfig.getDbPath()).build());
+    rocksDbInstance.initialize();
+
+    return new org.projectnessie.versioned.persist.rocks.RocksDatabaseAdapterFactory()
         .newBuilder()
         .withConfig(config)
-        .withConnector(client)
+        .withConnector(rocksDbInstance)
         .build();
   }
 }

@@ -15,28 +15,27 @@
  */
 package org.projectnessie.server.providers;
 
-import static org.projectnessie.server.config.VersionStoreConfig.VersionStoreType.ROCKS;
+import static org.projectnessie.server.config.VersionStoreConfig.VersionStoreType.INMEMORY;
 
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 import org.projectnessie.server.config.QuarkusVersionStoreAdvancedConfig;
-import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
-import org.projectnessie.versioned.persist.rocks.RocksDbInstance;
+import org.projectnessie.versioned.persist.inmem.InmemoryDatabaseAdapterFactory;
+import org.projectnessie.versioned.persist.inmem.InmemoryStore;
 
 /** In-memory version store factory. */
-@StoreType(ROCKS)
+@StoreType(INMEMORY)
 @Dependent
-public class RocksDatabaseAdapterFactory implements DatabaseAdapterFactory {
-  @Inject RocksDbInstance rocksDbInstance;
+public class InmemoryDatabaseAdapterBuilder implements DatabaseAdapterBuilder {
   @Inject QuarkusVersionStoreAdvancedConfig config;
 
   @Override
-  public DatabaseAdapter newDatabaseAdapter(ServerConfig serverConfig) {
-    return new org.projectnessie.versioned.persist.rocks.RocksDatabaseAdapterFactory()
+  public DatabaseAdapter newDatabaseAdapter() {
+    return new InmemoryDatabaseAdapterFactory()
         .newBuilder()
         .withConfig(config)
-        .withConnector(rocksDbInstance)
+        .withConnector(new InmemoryStore())
         .build();
   }
 }

@@ -15,29 +15,33 @@
  */
 package org.projectnessie.server.providers;
 
-import static org.projectnessie.server.config.VersionStoreConfig.VersionStoreType.INMEMORY;
+import static org.projectnessie.server.config.VersionStoreConfig.VersionStoreType.DYNAMO;
 
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 import org.projectnessie.server.config.QuarkusVersionStoreAdvancedConfig;
-import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
-import org.projectnessie.versioned.persist.inmem.InmemoryDatabaseAdapterFactory;
-import org.projectnessie.versioned.persist.inmem.InmemoryStore;
+import org.projectnessie.versioned.persist.dynamodb.DynamoDatabaseClient;
+import org.projectnessie.versioned.persist.dynamodb.ProvidedDynamoClientConfig;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
-/** In-memory version store factory. */
-@StoreType(INMEMORY)
+/** DynamoDB version store factory. */
+@StoreType(DYNAMO)
 @Dependent
-public class InMemDatabaseAdapterFactory implements DatabaseAdapterFactory {
-  @Inject InmemoryStore store;
+public class DynamoDatabaseAdapterBuilder implements DatabaseAdapterBuilder {
+  @Inject DynamoDbClient dynamoConfig;
   @Inject QuarkusVersionStoreAdvancedConfig config;
 
   @Override
-  public DatabaseAdapter newDatabaseAdapter(ServerConfig serverConfig) {
-    return new InmemoryDatabaseAdapterFactory()
+  public DatabaseAdapter newDatabaseAdapter() {
+    DynamoDatabaseClient client = new DynamoDatabaseClient();
+    client.configure(ProvidedDynamoClientConfig.of(dynamoConfig));
+    client.initialize();
+
+    return new org.projectnessie.versioned.persist.dynamodb.DynamoDatabaseAdapterFactory()
         .newBuilder()
         .withConfig(config)
-        .withConnector(store)
+        .withConnector(client)
         .build();
   }
 }

@@ -15,27 +15,44 @@
  */
 package org.projectnessie.server.providers;
 
+import static org.projectnessie.server.config.VersionStoreConfig.VersionStoreType.MONGO;
+
 import com.mongodb.client.MongoClient;
 import io.quarkus.arc.Arc;
 import io.quarkus.mongodb.runtime.MongoClientBeanUtil;
 import io.quarkus.mongodb.runtime.MongoClients;
+import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
-import javax.inject.Singleton;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.projectnessie.server.config.QuarkusVersionStoreAdvancedConfig;
+import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.mongodb.MongoClientConfig;
 import org.projectnessie.versioned.persist.mongodb.MongoDatabaseClient;
 
-/** CDI bean for {@link MongoDatabaseClient}. */
-@Singleton
-public class QuarkusMongoDatabaseClient extends MongoDatabaseClient {
+/** Version store factory for the MongoDB Database Adapter. */
+@StoreType(MONGO)
+@Dependent
+public class MongoDatabaseAdapterBuilder implements DatabaseAdapterBuilder {
   @Inject
-  public QuarkusMongoDatabaseClient(
-      @ConfigProperty(name = "quarkus.mongodb.database") String databaseName) {
+  @ConfigProperty(name = "quarkus.mongodb.database")
+  String databaseName;
+
+  @Inject QuarkusVersionStoreAdvancedConfig config;
+
+  @Override
+  public DatabaseAdapter newDatabaseAdapter() {
     MongoClients mongoClients = Arc.container().instance(MongoClients.class).get();
     MongoClient mongoClient =
         mongoClients.createMongoClient(MongoClientBeanUtil.DEFAULT_MONGOCLIENT_NAME);
 
-    configure(MongoClientConfig.of(mongoClient).withDatabaseName(databaseName));
-    initialize();
+    MongoDatabaseClient client = new MongoDatabaseClient();
+    client.configure(MongoClientConfig.of(mongoClient).withDatabaseName(databaseName));
+    client.initialize();
+
+    return new org.projectnessie.versioned.persist.mongodb.MongoDatabaseAdapterFactory()
+        .newBuilder()
+        .withConfig(config)
+        .withConnector(client)
+        .build();
   }
 }
