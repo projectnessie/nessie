@@ -27,7 +27,7 @@ import org.projectnessie.model.Contents;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.MultiGetContentsResponse.ContentsWithKey;
 
-public class ContentsMap extends HashMap<ContentsKey, Contents> implements MultipleContents {
+final class ContentsMap extends HashMap<ContentsKey, Contents> implements MultipleContents {
 
   private ContentsMap(Map<? extends ContentsKey, ? extends Contents> m) {
     super(m);
