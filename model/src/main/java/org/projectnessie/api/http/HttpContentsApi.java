@@ -74,7 +74,7 @@ public interface HttpContentsApi extends ContentsApi {
   Contents getContents(
       @Parameter(
               description = "object name to search for",
-              examples = {@ExampleObject(ref = "ContentsKey")})
+              examples = {@ExampleObject(ref = "ContentsKeyGet")})
           @PathParam("key")
           ContentsKey key,
       @Parameter(
