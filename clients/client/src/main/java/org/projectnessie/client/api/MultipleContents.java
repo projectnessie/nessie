@@ -46,7 +46,7 @@ public interface MultipleContents extends Map<ContentsKey, Contents> {
    * @see Contents#unwrap(Class)
    */
   @Nonnull
-  <T> Optional<T> unwrap(ContentsKey key, Class<T> valueClass);
+  <T extends Contents> Optional<T> unwrap(ContentsKey key, Class<T> valueClass);
 
   /**
    * Extracts the contents value of the specified type assuming it is present.
@@ -63,7 +63,8 @@ public interface MultipleContents extends Map<ContentsKey, Contents> {
    * @see #unwrap(ContentsKey, Class)
    */
   @Nonnull
-  <T> T unwrapSingle(ContentsKey key, Class<T> valueClass) throws NessieContentsNotFoundException;
+  <T extends Contents> T unwrapSingle(ContentsKey key, Class<T> valueClass)
+      throws NessieContentsNotFoundException;
 
   /**
    * Extracts the contents value assuming it is present and the type matches the expected
@@ -80,5 +81,5 @@ public interface MultipleContents extends Map<ContentsKey, Contents> {
    * @see #unwrap(ContentsKey, Class)
    */
   @Nonnull
-  <T> T unwrapSingle(ContentsKey key) throws NessieContentsNotFoundException;
+  <T extends Contents> T unwrapSingle(ContentsKey key) throws NessieContentsNotFoundException;
 }

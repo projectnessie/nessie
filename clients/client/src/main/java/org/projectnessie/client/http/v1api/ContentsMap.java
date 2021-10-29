@@ -27,8 +27,7 @@ import org.projectnessie.model.Contents;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.MultiGetContentsResponse.ContentsWithKey;
 
-public class ContentsMap extends HashMap<ContentsKey, Contents>
-    implements MultipleContents {
+public class ContentsMap extends HashMap<ContentsKey, Contents> implements MultipleContents {
 
   private ContentsMap(Map<? extends ContentsKey, ? extends Contents> m) {
     super(m);
@@ -53,13 +52,13 @@ public class ContentsMap extends HashMap<ContentsKey, Contents>
 
   @Nonnull
   @Override
-  public <T> Optional<T> unwrap(ContentsKey key, Class<T> valueClass) {
+  public <T extends Contents> Optional<T> unwrap(ContentsKey key, Class<T> valueClass) {
     return Optional.ofNullable(get(key)).flatMap(c -> c.unwrap(valueClass));
   }
 
   @Nonnull
   @Override
-  public <T> T unwrapSingle(ContentsKey key, Class<T> valueClass)
+  public <T extends Contents> T unwrapSingle(ContentsKey key, Class<T> valueClass)
       throws NessieContentsNotFoundException {
     Contents contents = single(key);
     Optional<T> value = contents.unwrap(valueClass);
@@ -72,8 +71,9 @@ public class ContentsMap extends HashMap<ContentsKey, Contents>
 
   @Nonnull
   @Override
-  public <T> T unwrapSingle(ContentsKey key) throws NessieContentsNotFoundException {
+  public <T extends Contents> T unwrapSingle(ContentsKey key)
+      throws NessieContentsNotFoundException {
     //noinspection unchecked
-    return (T) unwrapSingle(key, Object.class);
+    return (T) unwrapSingle(key, Contents.class);
   }
 }

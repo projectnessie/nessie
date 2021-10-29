@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.projectnessie.client.api.MultipleContents;
 import org.projectnessie.error.NessieContentsNotFoundException;
 import org.projectnessie.model.ContentsKey;
+import org.projectnessie.model.DeltaLakeTable;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.MultiGetContentsResponse.ContentsWithKey;
 
@@ -60,7 +61,7 @@ class TestContentsMap {
   void testUnwrap() {
     MultipleContents contents = ContentsMap.of(ImmutableList.of(c1, c2));
     assertThat(contents.unwrap(key1, IcebergTable.class)).hasValue(table1);
-    assertThat(contents.unwrap(key1, String.class)).isEmpty();
+    assertThat(contents.unwrap(key1, DeltaLakeTable.class)).isEmpty();
     assertThat(contents.unwrap(key3, IcebergTable.class)).isEmpty();
   }
 
@@ -70,9 +71,9 @@ class TestContentsMap {
     assertThat(contents.unwrapSingle(key1, IcebergTable.class)).isEqualTo(table1);
     assertThat(contents.<IcebergTable>unwrapSingle(key1)).isEqualTo(table1);
 
-    assertThatThrownBy(() -> contents.unwrapSingle(key1, TestContentsMap.class))
+    assertThatThrownBy(() -> contents.unwrapSingle(key1, DeltaLakeTable.class))
         .isInstanceOf(NessieContentsNotFoundException.class)
-        .hasMessageContaining(TestContentsMap.class.getSimpleName());
+        .hasMessageContaining(DeltaLakeTable.class.getSimpleName());
 
     assertThatThrownBy(() -> contents.unwrapSingle(key3, IcebergTable.class))
         .isInstanceOf(NessieContentsNotFoundException.class)
