@@ -21,6 +21,7 @@ import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 import org.projectnessie.server.config.QuarkusVersionStoreAdvancedConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
+import org.projectnessie.versioned.persist.dynamodb.DynamoDatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.dynamodb.DynamoDatabaseClient;
 import org.projectnessie.versioned.persist.dynamodb.ProvidedDynamoClientConfig;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -38,7 +39,7 @@ public class DynamoDatabaseAdapterBuilder implements DatabaseAdapterBuilder {
     client.configure(ProvidedDynamoClientConfig.of(dynamoConfig));
     client.initialize();
 
-    return new org.projectnessie.versioned.persist.dynamodb.DynamoDatabaseAdapterFactory()
+    return new DynamoDatabaseAdapterFactory()
         .newBuilder()
         .withConfig(config)
         .withConnector(client)

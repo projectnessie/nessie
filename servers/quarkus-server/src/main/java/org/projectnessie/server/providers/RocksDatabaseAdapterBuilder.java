@@ -23,6 +23,7 @@ import org.projectnessie.server.config.QuarkusVersionStoreAdvancedConfig;
 import org.projectnessie.server.config.VersionStoreConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.rocks.ImmutableRocksDbConfig;
+import org.projectnessie.versioned.persist.rocks.RocksDatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.rocks.RocksDbInstance;
 
 /** In-memory version store factory. */
@@ -39,7 +40,7 @@ public class RocksDatabaseAdapterBuilder implements DatabaseAdapterBuilder {
         ImmutableRocksDbConfig.builder().dbPath(rocksConfig.getDbPath()).build());
     rocksDbInstance.initialize();
 
-    return new org.projectnessie.versioned.persist.rocks.RocksDatabaseAdapterFactory()
+    return new RocksDatabaseAdapterFactory()
         .newBuilder()
         .withConfig(config)
         .withConnector(rocksDbInstance)

@@ -27,6 +27,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.projectnessie.server.config.QuarkusVersionStoreAdvancedConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.mongodb.MongoClientConfig;
+import org.projectnessie.versioned.persist.mongodb.MongoDatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.mongodb.MongoDatabaseClient;
 
 /** Version store factory for the MongoDB Database Adapter. */
@@ -49,7 +50,7 @@ public class MongoDatabaseAdapterBuilder implements DatabaseAdapterBuilder {
     client.configure(MongoClientConfig.of(mongoClient).withDatabaseName(databaseName));
     client.initialize();
 
-    return new org.projectnessie.versioned.persist.mongodb.MongoDatabaseAdapterFactory()
+    return new MongoDatabaseAdapterFactory()
         .newBuilder()
         .withConfig(config)
         .withConnector(client)
