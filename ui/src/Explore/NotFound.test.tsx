@@ -13,15 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import React from "react";
 import { BrowserRouter } from "react-router-dom";
 import { render, screen } from "@testing-library/react";
 import NotFound from "./NotFound";
 
 it("Test not found", async () => {
-    render(
-      <BrowserRouter>
-        <NotFound />
-      </BrowserRouter>
-    );
-    expect(screen.getByText("404 - Not found")).toBeEnabled();
+  render(
+    <BrowserRouter>
+      <NotFound />
+    </BrowserRouter>
+  );
+  await screen.findByText("404 - Not found");
 });
