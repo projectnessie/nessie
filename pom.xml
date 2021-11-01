@@ -155,7 +155,7 @@
     <deltalake.version>1.0.0-nessie</deltalake.version>
     <dockerjava.version>3.2.12</dockerjava.version>
     <dynamodb.version>1.12.0</dynamodb.version>
-    <flapdoodle.version>3.1.3</flapdoodle.version>
+    <flapdoodle.version>3.1.4</flapdoodle.version>
     <gatling.maven.version>3.1.2</gatling.maven.version>
     <gatling.version>3.6.1</gatling.version>
     <guava.version>31.0.1-jre</guava.version>
