@@ -64,7 +64,7 @@ components:
         name: "exampleTag"
 
     ContentsKeyGet:
-      value: "this.is.the.example.key"
+      value: "example.key"
 
     ContentsKey:
       value:
