@@ -20,6 +20,7 @@ import FolderIcon from "@material-ui/icons/Folder";
 import ExploreLink from "./ExploreLink";
 import { api, Entry } from "../utils";
 import { factory } from "../ConfigLog4j";
+import { Redirect } from "react-router-dom";
 
 const log = factory.getLogger("api.TableListing");
 
@@ -84,20 +85,25 @@ const TableListing = ({
   path,
 }: ITableListing): React.ReactElement => {
   const [keys, setKeys] = useState<Key[]>([]);
+  const [isRefNotFound, setRefNotFound] = useState(false);
   useEffect(() => {
     const keysFn = async () => {
       const fetched = await fetchKeys(currentRef, path);
       if (fetched) {
         setKeys(fetched);
+        setRefNotFound(false);
+      } else {
+        setRefNotFound(true);
       }
     };
     void keysFn();
   }, [currentRef, path]);
-
-  return (
+  return isRefNotFound ? (
+    <Redirect to="/notfound" />
+  ) : (
     <Card>
       <ListGroup variant={"flush"}>
-        {keys.map((key) => {
+        {keys.map((key: Key) => {
           return groupItem(key, currentRef, path);
         })}
       </ListGroup>

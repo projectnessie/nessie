@@ -17,6 +17,7 @@ import React from "react";
 import { Route, Switch } from "react-router-dom";
 import Explore from "./Explore/Explore";
 import { Nav, Navbar } from "react-bootstrap";
+import NotFound from "./Explore/NotFound";
 
 const App: React.FunctionComponent = () => {
   return (
@@ -37,6 +38,7 @@ const App: React.FunctionComponent = () => {
         </Nav>
       </Navbar>
       <Switch>
+        <Route exact path="/notfound" component={NotFound} />
         <Route path="/tree/:slug*" component={Explore} />
         <Route exact path="/" component={Explore} />
       </Switch>
