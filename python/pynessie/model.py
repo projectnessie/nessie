@@ -126,6 +126,37 @@ ContentsKeySchema = desert.schema_class(ContentsKey)
 
 
 @attr.dataclass
+class ContentsWithKey:
+    """ContentsWithKey."""
+
+    key: ContentsKey = desert.ib(fields.Nested(ContentsKeySchema))
+    contents: Optional[Contents] = attr.ib(default=None, metadata=desert.metadata(fields.Nested(ContentsSchema, allow_none=True)))
+
+
+ContentsWithKeySchema = desert.schema_class(ContentsWithKey)
+
+
+@attr.dataclass
+class MultiGetContentsRequest:
+    """Get Contents request."""
+
+    requestedKeys: List[ContentsKey] = desert.ib(fields.List(fields.Nested(ContentsKeySchema)))
+
+
+MultiGetContentsRequestSchema = desert.schema_class(MultiGetContentsRequest)
+
+
+@attr.dataclass
+class MultiGetContentsResponse:
+    """Get Contents response."""
+
+    contents: List[ContentsWithKey] = desert.ib(fields.List(fields.Nested(ContentsWithKeySchema)))
+
+
+MultiGetContentsResponseSchema = desert.schema_class(MultiGetContentsResponse)
+
+
+@attr.dataclass
 class Operation:
     """Single Commit Operation."""
 
@@ -137,7 +168,7 @@ class Put(Operation):
     """Single Commit Operation."""
 
     contents: Contents = desert.ib(fields.Nested(ContentsSchema))
-    expectedContents: Optional[Contents] = attr.ib(default=None, metadata=desert.metadata(fields.Nested(ContentsSchema)))
+    expectedContents: Optional[Contents] = attr.ib(default=None, metadata=desert.metadata(fields.Nested(ContentsSchema, allow_none=True)))
 
 
 PutOperationSchema = desert.schema_class(Put)
@@ -308,7 +339,7 @@ class Merge:
     """Dataclass for Merge operation."""
 
     from_ref_name: str = attr.ib(metadata=desert.metadata(fields.Str(data_key="fromRefName")))
-    from_hash: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(data_key="fromHash")))
+    from_hash: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(data_key="fromHash", allow_none=True)))
 
 
 MergeSchema = desert.schema_class(Merge)

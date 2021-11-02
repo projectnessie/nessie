@@ -18,6 +18,7 @@
 
 from typing import Any
 from typing import cast
+from typing import Dict
 from typing import Generator
 from typing import List
 from typing import Optional
@@ -34,7 +35,7 @@ from ._endpoints import delete_branch
 from ._endpoints import delete_tag
 from ._endpoints import get_default_branch
 from ._endpoints import get_reference
-from ._endpoints import get_table
+from ._endpoints import get_tables
 from ._endpoints import list_logs
 from ._endpoints import list_tables
 from ._endpoints import merge
@@ -42,7 +43,6 @@ from ..auth import setup_auth
 from ..model import Branch
 from ..model import CommitMeta
 from ..model import Contents
-from ..model import ContentsSchema
 from ..model import Entries
 from ..model import EntriesSchema
 from ..model import LogResponse
@@ -51,13 +51,18 @@ from ..model import Merge
 from ..model import MergeSchema
 from ..model import MultiContents
 from ..model import MultiContentsSchema
+from ..model import MultiGetContentsRequest
+from ..model import MultiGetContentsRequestSchema
+from ..model import MultiGetContentsResponse
+from ..model import MultiGetContentsResponseSchema
 from ..model import Operation
 from ..model import Reference
 from ..model import ReferenceSchema
 from ..model import Tag
 from ..model import Transplant
 from ..model import TransplantSchema
-from ..utils import format_key
+from ..utils import contents_key
+from ..utils import contents_key_as_string
 
 
 class NessieClient(object):
@@ -157,7 +162,7 @@ class NessieClient(object):
             list_tables(self._base_url, self._auth, ref, hash_on_ref, max_result_hint, page_token, query_expression, self._ssl_verify)
         )
 
-    def get_values(self: "NessieClient", ref: str, *tables: str, hash_on_ref: Optional[str] = None) -> Generator[Contents, Any, None]:
+    def get_values(self: "NessieClient", ref: str, tables: List[str], hash_on_ref: Optional[str] = None) -> Dict[str, Optional[Contents]]:
         """Fetch a table from a known ref.
 
         :param ref: name of ref
@@ -165,9 +170,11 @@ class NessieClient(object):
         :param tables: tables to fetch
         :return: Nessie Table
         """
-        return (
-            ContentsSchema().load(get_table(self._base_url, self._auth, ref, format_key(i), hash_on_ref, self._ssl_verify)) for i in tables
-        )
+        content_keys = [contents_key(i) for i in tables]
+        request_json = MultiGetContentsRequestSchema().dump(MultiGetContentsRequest(content_keys))
+        response = get_tables(self._base_url, self._auth, ref, request_json, hash_on_ref, self._ssl_verify)
+        contents = cast(MultiGetContentsResponse, MultiGetContentsResponseSchema().load(response))
+        return {contents_key_as_string(c.key.elements): c.contents for c in contents.contents}
 
     def commit(
         self: "NessieClient", branch: str, old_hash: str, reason: Optional[str] = None, author: Optional[str] = None, *ops: Operation

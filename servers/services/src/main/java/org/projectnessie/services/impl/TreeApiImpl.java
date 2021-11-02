@@ -29,9 +29,11 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import javax.annotation.Nullable;
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.params.EntriesParams;
@@ -51,15 +53,20 @@ import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.ImmutableBranch;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableLogResponse;
+import org.projectnessie.model.ImmutableMultiGetContentsResponse;
 import org.projectnessie.model.ImmutableTag;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Merge;
+import org.projectnessie.model.MultiGetContentsRequest;
+import org.projectnessie.model.MultiGetContentsResponse;
+import org.projectnessie.model.MultiGetContentsResponse.ContentsWithKey;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
 import org.projectnessie.model.Transplant;
 import org.projectnessie.services.authz.AccessChecker;
+import org.projectnessie.services.authz.ServerAccessContext;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Delete;
@@ -76,16 +83,24 @@ import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
 
-public class TreeApiImpl extends BaseApiImpl implements TreeApi {
+public class TreeApiImpl implements TreeApi {
 
   private static final int MAX_COMMIT_LOG_ENTRIES = 250;
+
+  private final ServerConfig config;
+  private final VersionStore<Contents, CommitMeta, Contents.Type> store;
+  private final AccessChecker accessChecker;
+  private final Principal principal;
 
   public TreeApiImpl(
       ServerConfig config,
       VersionStore<Contents, CommitMeta, Contents.Type> store,
       AccessChecker accessChecker,
       Principal principal) {
-    super(config, store, accessChecker, principal);
+    this.config = config;
+    this.store = store;
+    this.accessChecker = accessChecker;
+    this.principal = principal;
   }
 
   @Override
@@ -378,23 +393,15 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
         operations.getOperations().stream()
             .map(TreeApiImpl::toOp)
             .collect(ImmutableList.toImmutableList());
-    String newHash = doOps(branch, hash, operations.getCommitMeta(), ops).asString();
-    return Branch.of(branch, newHash);
-  }
-
-  protected Hash doOps(
-      String branch,
-      String hash,
-      CommitMeta commitMeta,
-      List<org.projectnessie.versioned.Operation<Contents>> operations)
-      throws NessieConflictException, NessieNotFoundException {
     try {
-      return getStore()
-          .commit(
-              BranchName.of(Optional.ofNullable(branch).orElse(getConfig().getDefaultBranch())),
-              Optional.ofNullable(hash).map(Hash::of),
-              meta(getPrincipal(), commitMeta),
-              operations);
+      Hash newHead =
+          getStore()
+              .commit(
+                  BranchName.of(Optional.ofNullable(branch).orElse(getConfig().getDefaultBranch())),
+                  Optional.ofNullable(hash).map(Hash::of),
+                  meta(getPrincipal(), operations.getCommitMeta()),
+                  ops);
+      return Branch.of(branch, newHead.asString());
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
@@ -415,6 +422,35 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
         .author(commitMeta.getAuthor() == null ? committer : commitMeta.getAuthor())
         .authorTime(commitMeta.getAuthorTime() == null ? now : commitMeta.getAuthorTime())
         .build();
+  }
+
+  @Override
+  public MultiGetContentsResponse getMultipleContents(
+      String namedRef, String hashOnRef, MultiGetContentsRequest request)
+      throws NessieNotFoundException {
+    try {
+      WithHash<NamedRef> ref = namedRefWithHashOrThrow(namedRef, hashOnRef);
+      List<ContentsKey> externalKeys = request.getRequestedKeys();
+      List<Key> internalKeys =
+          externalKeys.stream().map(TreeApiImpl::toKey).collect(Collectors.toList());
+      Map<Key, Contents> values = getStore().getValues(ref.getHash(), internalKeys);
+      List<ContentsWithKey> output =
+          values.entrySet().stream()
+              .map(e -> ContentsWithKey.of(toContentsKey(e.getKey()), e.getValue()))
+              .collect(Collectors.toList());
+
+      return ImmutableMultiGetContentsResponse.builder().contents(output).build();
+    } catch (ReferenceNotFoundException ex) {
+      throw new NessieReferenceNotFoundException(ex.getMessage(), ex);
+    }
+  }
+
+  static Key toKey(ContentsKey key) {
+    return Key.of(key.getElements().toArray(new String[0]));
+  }
+
+  static ContentsKey toContentsKey(Key key) {
+    return ContentsKey.of(key.getElements());
   }
 
   private Hash toHash(String referenceName, String hashOnReference)
@@ -467,6 +503,64 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     } catch (ReferenceConflictException e) {
       throw new NessieReferenceConflictException(e.getMessage(), e);
     }
+  }
+
+  WithHash<NamedRef> namedRefWithHashOrThrow(@Nullable String namedRef, @Nullable String hashOnRef)
+      throws NessieNotFoundException {
+    if (null == namedRef) {
+      namedRef = config.getDefaultBranch();
+    }
+    WithHash<NamedRef> namedRefWithHash;
+    try {
+      WithHash<Ref> refWithHash = getStore().toRef(namedRef);
+      Ref ref = refWithHash.getValue();
+      if (!(ref instanceof NamedRef)) {
+        throw new ReferenceNotFoundException(
+            String.format("Named reference '%s' not found", namedRef));
+      }
+      namedRefWithHash = WithHash.of(refWithHash.getHash(), (NamedRef) ref);
+    } catch (ReferenceNotFoundException e) {
+      throw new NessieReferenceNotFoundException(e.getMessage(), e);
+    }
+
+    try {
+      if (null == hashOnRef || store.noAncestorHash().asString().equals(hashOnRef)) {
+        return namedRefWithHash;
+      }
+
+      // the version store already gave us the hash on namedRef, so we can skip checking whether the
+      // hash actually exists on the named reference and return early here
+      if (namedRefWithHash.getHash().asString().equals(hashOnRef)) {
+        return namedRefWithHash;
+      }
+
+      // we need to make sure that the hash in fact exists on the named ref
+      return WithHash.of(
+          getStore().hashOnReference(namedRefWithHash.getValue(), Optional.of(Hash.of(hashOnRef))),
+          namedRefWithHash.getValue());
+    } catch (ReferenceNotFoundException e) {
+      throw new NessieReferenceNotFoundException(e.getMessage(), e);
+    }
+  }
+
+  protected ServerConfig getConfig() {
+    return config;
+  }
+
+  protected VersionStore<Contents, CommitMeta, Contents.Type> getStore() {
+    return store;
+  }
+
+  protected Principal getPrincipal() {
+    return principal;
+  }
+
+  protected AccessChecker getAccessChecker() {
+    return accessChecker;
+  }
+
+  protected ServerAccessContext createAccessContext() {
+    return ServerAccessContext.of(UUID.randomUUID().toString(), getPrincipal());
   }
 
   private static ContentsKey fromKey(Key key) {
