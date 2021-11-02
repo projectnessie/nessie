@@ -15,11 +15,12 @@
  */
 
 import React from "react";
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter, Router } from "react-router-dom";
 import { render, screen, waitFor } from "@testing-library/react";
 import CommitLog from "./CommitLog";
 // tslint:disable-next-line:no-implicit-dependencies
 import nock from "nock";
+import { createMemoryHistory } from "history";
 
 it("Commit log renders", async () => {
   const now = new Date();
@@ -49,4 +50,26 @@ it("Commit log renders", async () => {
   scope1.done();
   expect(asFragment()).toMatchSnapshot();
   expect(screen.getByText("deadbeef")).toBeInTheDocument();
+});
+
+it("Commit redirects on an invalid ref", async () => {
+  const scope1 = nock("http://localhost/api/v1")
+    .get("/trees/tree/main/log")
+    .reply(404);
+  const history = createMemoryHistory();
+
+  const { getByText, asFragment } = render(
+    <Router history={history}>
+      <CommitLog currentRef={"main"} path={["main"]} />
+    </Router>
+  );
+  expect(asFragment()).toMatchSnapshot();
+  await waitFor(() =>
+    getByText((content, element) => {
+      return element?.tagName.toLowerCase() === "div";
+    })
+  );
+
+  scope1.done();
+  expect(history.location.pathname).toEqual("/notfound");
 });

@@ -17,7 +17,7 @@
 import { Button, Card, Nav } from "react-bootstrap";
 import moment from "moment";
 import React, { useEffect, useState, Fragment } from "react";
-import { useParams, useHistory, useLocation } from "react-router-dom";
+import { useParams, useHistory, useLocation, Redirect } from "react-router-dom";
 import { api, CommitMeta } from "../utils";
 import { factory } from "../ConfigLog4j";
 import CodeIcon from "@material-ui/icons/Code";
@@ -34,9 +34,9 @@ const fetchLog = (ref: string): Promise<void | CommitMeta[] | undefined> => {
   return api()
     .getCommitLog({ ref })
     .then((data) => {
-      if (data.operations && data.operations.length > 0) {
-        return data.operations;
-      }
+      return data.operations && data.operations.length > 0
+        ? data.operations
+        : [];
     })
     .catch((t) => log.error("CommitLog", t));
 };
@@ -61,14 +61,17 @@ const CommitLog = (props: {
   ]);
   const [showCommitDetails, setShowCommitDetails] = useState(false);
   const [commitDetails, setCommitDetails] = useState<CommitMeta | undefined>();
+  const [isRefNotFound, setRefNotFound] = useState(false);
   const location = useLocation();
   const history = useHistory();
   useEffect(() => {
     const logs = async () => {
-      const results = await fetchLog(currentRef);
-      if (results) {
-        setLogList(results);
+      const fetchLogResults = await fetchLog(currentRef);
+      if (fetchLogResults) {
+        setLogList(fetchLogResults);
+        setRefNotFound(false);
       }
+      setRefNotFound(fetchLogResults === undefined);
       if (showCommitDetails) {
         const listPath = location.pathname.substring(
           0,
@@ -81,13 +84,17 @@ const CommitLog = (props: {
   }, [currentRef]);
 
   useEffect(() => {
-    if (slug) {
+    if (slug && !isRefNotFound) {
       const last = slug.substring(slug.lastIndexOf("/") + 1, slug.length);
       setShowCommitDetails(last !== routeSlugs.commits);
       const logDetails = logList.find((logItem) => logItem.hash === last);
       setCommitDetails(logDetails);
     }
   }, [slug, logList]);
+
+  if (isRefNotFound) {
+    return <Redirect to="/notfound" />;
+  }
 
   if (!logList || (logList.length === 1 && !logList[0].hash)) {
     return <EmptyMessageView />;
