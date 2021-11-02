@@ -32,9 +32,9 @@ from ._endpoints import commit
 from ._endpoints import create_reference
 from ._endpoints import delete_branch
 from ._endpoints import delete_tag
+from ._endpoints import get_content
 from ._endpoints import get_default_branch
 from ._endpoints import get_reference
-from ._endpoints import get_table
 from ._endpoints import list_logs
 from ._endpoints import list_tables
 from ._endpoints import merge
@@ -157,17 +157,15 @@ class NessieClient:
             list_tables(self._base_url, self._auth, ref, hash_on_ref, max_result_hint, page_token, query_expression, self._ssl_verify)
         )
 
-    def get_values(self: "NessieClient", ref: str, *tables: str, hash_on_ref: Optional[str] = None) -> Generator[Content, Any, None]:
-        """Fetch a table from a known ref.
+    def get_content(self: "NessieClient", ref: str, content_key: str, hash_on_ref: Optional[str] = None) -> Content:
+        """Fetch a content from a known ref.
 
         :param ref: name of ref
         :param hash_on_ref: hash on reference
-        :param tables: tables to fetch
-        :return: Nessie Table
+        :param content_key: content key to fetch
+        :return: A single content
         """
-        return (
-            ContentSchema().load(get_table(self._base_url, self._auth, ref, format_key(i), hash_on_ref, self._ssl_verify)) for i in tables
-        )
+        return ContentSchema().load(get_content(self._base_url, self._auth, ref, format_key(content_key), hash_on_ref, self._ssl_verify))
 
     def commit(
         self: "NessieClient", branch: str, old_hash: str, reason: Optional[str] = None, author: Optional[str] = None, *ops: Operation

@@ -15,15 +15,24 @@
 # limitations under the License.
 #
 
-"""Top-level package for Nessie CLI commands."""
+"""Top-level package for Nessie Contents CLI commands."""
 
-from .branch import branch_
-from .cherry_pick import cherry_pick
-from .config import config
-from .content import content
-from .log import log
-from .merge import merge
-from .remote import remote
-from .tag import tag
+import click
 
-__all__ = ["remote", "tag", "branch_", "cherry_pick", "config", "log", "merge", "content"]
+from .commit import commit
+from .list_ import list_
+from .view import view
+from ...cli_common_context import ContextObject
+from ...decorators import pass_client
+
+
+@click.group(name="content")
+@pass_client
+def content(ctx: ContextObject) -> None:
+    """View, list content, and commit changes."""
+    pass
+
+
+content.add_command(list_)
+content.add_command(view)
+content.add_command(commit)

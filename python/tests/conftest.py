@@ -19,7 +19,7 @@
 import os
 import shutil
 import tempfile
-from typing import List
+from typing import Any, List
 from typing import Optional
 
 import attr
@@ -32,7 +32,7 @@ from pytest import Session
 from vcr.request import Request
 
 from pynessie import cli
-from pynessie.model import ReferenceSchema
+from pynessie.model import Content, ContentSchema, ReferenceSchema
 
 
 @attr.dataclass
@@ -63,6 +63,14 @@ def pytest_sessionfinish(session: "Session", exitstatus: int) -> None:
     shutil.rmtree(nessie_test_config.config_dir)
 
 
+def execute_cli_command(args: List[str], input_data: Optional[str] = None, ret_val: int = 0, output_string: bool = True) -> Any:
+    """Execute a Nessie CLI command."""
+    if output_string:
+        return _run(args, input_data, ret_val).output
+
+    return _run(args, input_data, ret_val)
+
+
 def _run(args: List[str], input_data: Optional[str] = None, ret_val: int = 0) -> Result:
     result = CliRunner().invoke(cli.cli, args, input=input_data)
     if result.exit_code != ret_val:
@@ -72,30 +80,39 @@ def _run(args: List[str], input_data: Optional[str] = None, ret_val: int = 0) ->
     return result
 
 
-def _cli(args: List[str], input_data: Optional[str] = None, ret_val: int = 0) -> str:
-    return _run(args, input_data, ret_val).output
+def make_commit(
+    key: str, table: Content, branch: str, head_hash: str = None, message: str = "test message", author: str = "nessie test"
+) -> None:
+    """Make commit through Nessie CLI."""
+    if not head_hash:
+        refs = {i.name: i.hash_ for i in ReferenceSchema().loads(execute_cli_command(["--json", "branch"]), many=True)}
+        head_hash = refs[branch]
+    execute_cli_command(
+        ["content", "commit", "--stdin", key, "--ref", branch, "-m", message, "-c", head_hash, "--author", author],
+        input_data=ContentSchema().dumps(table),
+    )
 
 
 def reset_nessie_server_state() -> None:
     """Resets the Nessie Server to an initial, clean state for testing."""
     # Delete all branches
-    branches = ReferenceSchema().loads(_cli(["--json", "branch"]), many=True)
+    branches = ReferenceSchema().loads(execute_cli_command(["--json", "branch"]), many=True)
     for branch in branches:
-        _cli(["branch", "-d", branch.name])
+        execute_cli_command(["branch", "-d", branch.name])
 
     # Delete all tags
-    tags = ReferenceSchema().loads(_cli(["--json", "tag"]), many=True)
+    tags = ReferenceSchema().loads(execute_cli_command(["--json", "tag"]), many=True)
     for tag in tags:
-        _cli(["tag", "-d", tag.name])
+        execute_cli_command(["tag", "-d", tag.name])
 
     # Note: This hash should match the java constant AbstractDatabaseAdapter.NO_ANCESTOR
     no_ancestor_hash = "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d"
 
     # Re-create the main branch from the "root" (a.k.a. no ancestor) hash
-    _cli(["branch", "--force", "-o", no_ancestor_hash, "main", "main"])
+    execute_cli_command(["branch", "--force", "-o", no_ancestor_hash, "main", "main"])
 
     # Verify the re-created main branch
-    branches = ReferenceSchema().loads(_cli(["--json", "branch"]), many=True)
+    branches = ReferenceSchema().loads(execute_cli_command(["--json", "branch"]), many=True)
     assert_that(branches).is_length(1)
     assert_that(branches[0].name).is_equal_to("main")
     assert_that(branches[0].hash_).is_equal_to(no_ancestor_hash)

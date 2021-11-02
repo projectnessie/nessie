@@ -19,9 +19,9 @@
 
 import click
 
-from ..cli_common_context import ContextObject, pass_client
+from ..cli_common_context import ContextObject
 from ..conf import process
-from ..error import error_handler
+from ..decorators import error_handler, pass_client
 
 
 @click.group()

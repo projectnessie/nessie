@@ -221,8 +221,8 @@ def list_logs(
     return cast(dict, _get(base_url + "/trees/tree/{}/log".format(ref), auth, ssl_verify=ssl_verify, params=filtering_args))
 
 
-def get_table(
-    base_url: str, auth: Optional[AuthBase], ref: str, table: str, hash_on_ref: Optional[str] = None, ssl_verify: bool = True
+def get_content(
+    base_url: str, auth: Optional[AuthBase], ref: str, content_key: str, hash_on_ref: Optional[str] = None, ssl_verify: bool = True
 ) -> dict:
     """Fetch a table from a known branch.
 
@@ -230,14 +230,14 @@ def get_table(
     :param auth: Authentication settings
     :param ref: ref
     :param hash_on_ref: hash on reference
-    :param table: name of table
+    :param content_key: key that is associated with content like table
     :param ssl_verify: ignore ssl errors if False
     :return: json dict of Nessie table
     """
     params = {"ref": ref}
     if hash_on_ref:
         params["hashOnRef"] = hash_on_ref
-    return cast(dict, _get(base_url + "/contents/{}".format(table), auth, ssl_verify=ssl_verify, params=params))
+    return cast(dict, _get(base_url + "/contents/{}".format(content_key), auth, ssl_verify=ssl_verify, params=params))
 
 
 def assign_branch(

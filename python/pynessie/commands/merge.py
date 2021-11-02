@@ -20,12 +20,12 @@
 import click
 from click import UsageError
 
-from ..cli_common_context import ContextObject, MutuallyExclusiveOption, pass_client
-from ..error import error_handler
+from ..cli_common_context import ContextObject, MutuallyExclusiveOption
+from ..decorators import error_handler, pass_client, validate_reference
 
 
 @click.command("merge")
-@click.option("-b", "--branch", "onto_branch", help="branch to merge onto. If not supplied the default branch from config is used")
+@click.option("-b", "--branch", "ref", help="branch to merge onto. If not supplied the default branch from config is used")
 @click.argument("from_ref", nargs=1, required=False)
 @click.option(
     "-f",
@@ -46,7 +46,8 @@ from ..error import error_handler
 @click.option("-o", "--hash-on-ref", help="Hash on merge-from-reference")
 @pass_client
 @error_handler
-def merge(ctx: ContextObject, onto_branch: str, force: bool, expected_hash: str, hash_on_ref: str, from_ref: str) -> None:
+@validate_reference
+def merge(ctx: ContextObject, ref: str, force: bool, expected_hash: str, hash_on_ref: str, from_ref: str) -> None:
     """Merge FROM_REF into another branch.
 
     FROM_REF can be a hash or branch.
@@ -69,5 +70,5 @@ def merge(ctx: ContextObject, onto_branch: str, force: bool, expected_hash: str,
             """Either condition or force must be set. Condition should be set to a valid hash for concurrency
             control or force to ignore current state of Nessie Store."""
         )
-    ctx.nessie.merge(from_ref, onto_branch if onto_branch else ctx.nessie.get_default_branch(), hash_on_ref, expected_hash)
+    ctx.nessie.merge(from_ref, ref, hash_on_ref, expected_hash)
     click.echo()

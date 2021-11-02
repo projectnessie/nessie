@@ -24,8 +24,8 @@ from typing import List
 import click
 from dateutil.tz import tzlocal
 
-from ..cli_common_context import ContextObject, MutuallyExclusiveOption, pass_client
-from ..error import error_handler
+from ..cli_common_context import ContextObject, MutuallyExclusiveOption
+from ..decorators import error_handler, pass_client, validate_reference
 from ..model import CommitMeta, CommitMetaSchema
 from ..utils import build_query_expression_for_commit_log_flags
 
@@ -70,6 +70,7 @@ from ..utils import build_query_expression_for_commit_log_flags
 )
 @pass_client
 @error_handler
+@validate_reference
 def log(  # noqa: C901
     ctx: ContextObject,
     ref: str,
@@ -105,8 +106,6 @@ def log(  # noqa: C901
     show commit logs between "2019-01-01T00:00:00+00:00" and "2021-01-01T00:00:00+00:00" in 'dev' branch
 
     """
-    if not ref:
-        ref = ctx.nessie.get_default_branch()
     start_hash = None
     end_hash = None
     if revision_range:
