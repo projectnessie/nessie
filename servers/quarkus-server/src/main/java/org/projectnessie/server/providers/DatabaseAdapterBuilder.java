@@ -15,19 +15,15 @@
  */
 package org.projectnessie.server.providers;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
-import org.projectnessie.versioned.persist.dynamodb.DynamoDatabaseClient;
-import org.projectnessie.versioned.persist.dynamodb.ProvidedDynamoClientConfig;
-import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 
-/** CDI bean for {@link DynamoDatabaseClient}. */
-@Singleton
-public class QuarkusDynamoDatabaseClient extends DynamoDatabaseClient {
+/** Factory interface for creating database adapter instances. */
+public interface DatabaseAdapterBuilder {
 
-  @Inject
-  public QuarkusDynamoDatabaseClient(DynamoDbClient db) {
-    configure(ProvidedDynamoClientConfig.of(db));
-    initialize();
-  }
+  /**
+   * Creates a new database adapter instance.
+   *
+   * @return new database adapter instance
+   */
+  DatabaseAdapter newDatabaseAdapter();
 }
