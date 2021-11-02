@@ -70,9 +70,8 @@ const CommitLog = (props: {
       if (fetchLogResults) {
         setLogList(fetchLogResults);
         setRefNotFound(false);
-      } else if (fetchLogResults === undefined) {
-        setRefNotFound(true);
       }
+      setRefNotFound(fetchLogResults === undefined);
       if (showCommitDetails) {
         const listPath = location.pathname.substring(
           0,

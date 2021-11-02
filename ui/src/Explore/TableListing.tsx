@@ -91,10 +91,8 @@ const TableListing = ({
       const fetched = await fetchKeys(currentRef, path);
       if (fetched) {
         setKeys(fetched);
-        setRefNotFound(false);
-      } else {
-        setRefNotFound(true);
       }
+      setRefNotFound(fetched === undefined);
     };
     void keysFn();
   }, [currentRef, path]);
