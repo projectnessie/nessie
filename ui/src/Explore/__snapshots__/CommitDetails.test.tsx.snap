@@ -1,0 +1,121 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Commit details renders 1`] = `
+<DocumentFragment>
+  <div
+    class="commitDetails card-body"
+  >
+    <div
+      class="card-header"
+    >
+      <div
+        class="card-title h5"
+      >
+        commitMessage
+      </div>
+      <p
+        class="ml-3 card-text"
+      >
+        <span
+          class="ml-2"
+        >
+          Authored by: 
+        </span>
+        <span
+          class="ml-2"
+        >
+          bob
+        </span>
+        <span
+          class="ml-2"
+        >
+          at
+        </span>
+        <span
+          class="ml-2"
+        >
+          a day ago
+        </span>
+      </p>
+      <p
+        class="ml-3 card-text"
+      >
+        <span
+          class="ml-2"
+        >
+          Committed by: 
+        </span>
+        <span
+          class="ml-2"
+        >
+          sally
+        </span>
+        <span
+          class="ml-2"
+        >
+          at
+        </span>
+        <span
+          class="ml-2"
+        >
+          a day ago
+        </span>
+      </p>
+      <div
+        class="ml-3"
+      >
+        <span
+          class="ml-2"
+        >
+          Properties: 
+        </span>
+        <ul>
+          <li
+            class="ml-4"
+          >
+            a: b
+          </li>
+          <li
+            class="ml-4"
+          >
+            c: d
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div
+      class="commitDetails__branchFooter card-footer"
+    >
+      <img
+        alt="branchIcon"
+        class="mr-2"
+        height="22"
+        src="/branchIcon.svg"
+        width="22"
+      />
+      <div
+        class="card-title h5"
+      >
+        main
+      </div>
+    </div>
+    <div
+      class="commitDetails__authorFooter card-footer"
+    >
+      <div>
+        <span
+          class="commitDetails__authorName mr-1"
+        >
+          bob
+        </span>
+        <span>
+          committed on a day ago
+        </span>
+      </div>
+      <span>
+        commit deadbeef
+      </span>
+    </div>
+  </div>
+</DocumentFragment>
+`;

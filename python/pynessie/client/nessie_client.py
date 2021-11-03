@@ -1,6 +1,21 @@
 # -*- coding: utf-8 -*-
+#
+# Copyright (C) 2020 Dremio
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 """Main module."""
-import re
+
 from typing import Any
 from typing import cast
 from typing import Generator
@@ -23,28 +38,26 @@ from ._endpoints import get_table
 from ._endpoints import list_logs
 from ._endpoints import list_tables
 from ._endpoints import merge
-from .auth.config import setup_auth
-from .model import Branch
-from .model import CommitMeta
-from .model import Contents
-from .model import ContentsKey
-from .model import ContentsSchema
-from .model import Entries
-from .model import EntriesSchema
-from .model import LogResponse
-from .model import LogResponseSchema
-from .model import Merge
-from .model import MergeSchema
-from .model import MultiContents
-from .model import MultiContentsSchema
-from .model import Operation
-from .model import Reference
-from .model import ReferenceSchema
-from .model import Tag
-from .model import Transplant
-from .model import TransplantSchema
-
-_dot_regex = re.compile('\\.(?=([^"]*"[^"]*")*[^"]*$)')
+from ..auth import setup_auth
+from ..model import Branch
+from ..model import CommitMeta
+from ..model import Contents
+from ..model import ContentsSchema
+from ..model import Entries
+from ..model import EntriesSchema
+from ..model import LogResponse
+from ..model import LogResponseSchema
+from ..model import Merge
+from ..model import MergeSchema
+from ..model import MultiContents
+from ..model import MultiContentsSchema
+from ..model import Operation
+from ..model import Reference
+from ..model import ReferenceSchema
+from ..model import Tag
+from ..model import Transplant
+from ..model import TransplantSchema
+from ..utils import format_key
 
 
 class NessieClient(object):
@@ -153,7 +166,7 @@ class NessieClient(object):
         :return: Nessie Table
         """
         return (
-            ContentsSchema().load(get_table(self._base_url, self._auth, ref, _format_key(i), hash_on_ref, self._ssl_verify)) for i in tables
+            ContentsSchema().load(get_table(self._base_url, self._auth, ref, format_key(i), hash_on_ref, self._ssl_verify)) for i in tables
         )
 
     def commit(
@@ -183,15 +196,15 @@ class NessieClient(object):
         assign_tag(self._base_url, self._auth, tag, ref_json, old_hash, self._ssl_verify)
 
     def merge(
-        self: "NessieClient", from_branch: str, onto_branch: str, from_hash: Optional[str] = None, old_hash: Optional[str] = None
+        self: "NessieClient", from_ref: str, onto_branch: str, from_hash: Optional[str] = None, old_hash: Optional[str] = None
     ) -> None:
         """Merge a branch into another branch."""
         if not old_hash:
             old_hash = self.get_reference(onto_branch).hash_
         assert old_hash is not None
         if not from_hash:
-            from_hash = self.get_reference(from_branch).hash_
-        merge_json = MergeSchema().dump(Merge(from_branch, str(from_hash)))
+            from_hash = self.get_reference(from_ref).hash_
+        merge_json = MergeSchema().dump(Merge(from_ref, str(from_hash)))
         merge(self._base_url, self._auth, onto_branch, merge_json, old_hash, self._ssl_verify)
 
     def cherry_pick(self: "NessieClient", branch: str, from_ref: str, old_hash: Optional[str] = None, *hashes: str) -> None:
@@ -251,13 +264,3 @@ class NessieClient(object):
     def get_default_branch(self: "NessieClient") -> str:
         """Fetch default branch either from config if specified or from the server."""
         return self._base_branch if self._base_branch else self.get_reference(None).name
-
-
-def _format_key(raw_key: str) -> str:
-    elements = _dot_regex.split(raw_key)
-    return ".".join(i.replace(".", "\0") for i in elements if i)
-
-
-def _contents_key(raw_key: str) -> ContentsKey:
-    elements = _dot_regex.split(raw_key)
-    return ContentsKey([i for i in elements if i])

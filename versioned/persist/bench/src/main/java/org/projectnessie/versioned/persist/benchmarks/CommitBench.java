@@ -222,17 +222,16 @@ public class CommitBench {
   private void doCommit(
       BenchmarkParam bp, BranchName branch, List<Key> keys, Map<Key, String> contentsIds)
       throws Exception {
-    List<Optional<String>> contents = bp.versionStore.getValues(branch, keys);
+    Map<Key, String> contents = bp.versionStore.getValues(branch, keys);
 
     try {
       List<Operation<String>> operations = new ArrayList<>(bp.tablesPerCommit);
       for (int i = 0; i < bp.tablesPerCommit; i++) {
         Key key = keys.get(i);
-        String value =
-            contents
-                .get(i)
-                .orElseThrow(
-                    () -> new RuntimeException("no value for key " + key + " in " + branch));
+        String value = contents.get(key);
+        if (value == null) {
+          throw new RuntimeException("no value for key " + key + " in " + branch);
+        }
         String currentState = value.split("\\|")[0];
         String newGlobalState = Integer.toString(Integer.parseInt(currentState) + 1);
         String contentsId = contentsIds.get(key);

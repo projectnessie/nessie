@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -59,6 +60,7 @@ import org.projectnessie.versioned.WithType;
 
 /** Base class used for integration tests against version store implementations. */
 public abstract class AbstractITVersionStore {
+
   protected abstract VersionStore<String, String, StringStoreWorker.TestEnum> store();
 
   // Puts the metadata through a transformation, that appends a suffix
@@ -411,14 +413,19 @@ public abstract class AbstractITVersionStore {
                 .getValues(
                     secondCommit,
                     Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"))))
-        .contains(Optional.of("v1_2"), Optional.empty(), Optional.empty(), Optional.of("v4_1"));
+        .containsExactlyInAnyOrderEntriesOf(
+            ImmutableMap.of(Key.of("t1"), "v1_2", Key.of("t4"), "v4_1"));
 
     assertThat(
             store()
                 .getValues(
                     initialCommit,
                     Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"))))
-        .contains(Optional.of("v1_1"), Optional.of("v2_1"), Optional.of("v3_1"), Optional.empty());
+        .containsExactlyInAnyOrderEntriesOf(
+            ImmutableMap.of(
+                Key.of("t1"), "v1_1",
+                Key.of("t2"), "v2_1",
+                Key.of("t3"), "v3_1"));
 
     assertThat(store().getValue(branch, Key.of("t1"))).isEqualTo("v1_2");
     assertThat(store().getValue(branch, Key.of("t2"))).isEqualTo("v2_2");
@@ -489,24 +496,45 @@ public abstract class AbstractITVersionStore {
     }
 
     assertThat(store().getValues(branch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"))))
-        .contains(Optional.of("v1_3"), Optional.of("new_v2_1"), Optional.of("v3_2"));
+        .containsExactlyInAnyOrderEntriesOf(
+            ImmutableMap.of(
+                Key.of("t1"), "v1_3",
+                Key.of("t2"), "new_v2_1",
+                Key.of("t3"), "v3_2"));
 
     assertThat(
             store().getValues(newT2Commit, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"))))
-        .contains(Optional.of("v1_3"), Optional.of("new_v2_1"), Optional.of("v3_2"));
+        .containsExactlyInAnyOrderEntriesOf(
+            ImmutableMap.of(
+                Key.of("t1"), "v1_3",
+                Key.of("t2"), "new_v2_1",
+                Key.of("t3"), "v3_2"));
 
     assertThat(
             store().getValues(extraCommit, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"))))
-        .contains(Optional.of("v1_3"), Optional.empty(), Optional.of("v3_2"));
+        .containsExactlyInAnyOrderEntriesOf(
+            ImmutableMap.of(
+                Key.of("t1"), "v1_3",
+                Key.of("t3"), "v3_2"));
 
     assertThat(store().getValues(t3Commit, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"))))
-        .contains(Optional.of("v1_2"), Optional.empty(), Optional.of("v3_1"));
+        .containsExactlyInAnyOrderEntriesOf(
+            ImmutableMap.of(
+                Key.of("t1"), "v1_2",
+                Key.of("t3"), "v3_1"));
 
     assertThat(store().getValues(t2Commit, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"))))
-        .contains(Optional.of("v1_2"), Optional.empty(), Optional.of("v3_1"));
+        .containsExactlyInAnyOrderEntriesOf(
+            ImmutableMap.of(
+                Key.of("t1"), "v1_2",
+                Key.of("t3"), "v3_1"));
 
     assertThat(store().getValues(t1Commit, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"))))
-        .contains(Optional.of("v1_2"), Optional.of("v2_1"), Optional.of("v3_1"));
+        .containsExactlyInAnyOrderEntriesOf(
+            ImmutableMap.of(
+                Key.of("t1"), "v1_2",
+                Key.of("t2"), "v2_1",
+                Key.of("t3"), "v3_1"));
   }
 
   /*
@@ -609,7 +637,11 @@ public abstract class AbstractITVersionStore {
 
     assertThat(store().toHash(branch)).isEqualTo(putCommit);
     assertThat(store().getValues(branch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"))))
-        .contains(Optional.of("v1_3"), Optional.of("v2_2"), Optional.of("v3_2"));
+        .containsExactlyInAnyOrderEntriesOf(
+            ImmutableMap.of(
+                Key.of("t1"), "v1_3",
+                Key.of("t2"), "v2_2",
+                Key.of("t3"), "v3_2"));
 
     final Hash unchangedCommit =
         commit("Conflicting Commit")
@@ -619,13 +651,17 @@ public abstract class AbstractITVersionStore {
             .toBranch(branch);
     assertThat(store().toHash(branch)).isEqualTo(unchangedCommit);
     assertThat(store().getValues(branch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"))))
-        .contains(Optional.of("v1_3"), Optional.of("v2_2"), Optional.of("v3_2"));
+        .containsExactlyInAnyOrderEntriesOf(
+            ImmutableMap.of(
+                Key.of("t1"), "v1_3",
+                Key.of("t2"), "v2_2",
+                Key.of("t3"), "v3_2"));
 
     final Hash deleteCommit =
         commit("Conflicting Commit").delete("t1").delete("t2").delete("t3").toBranch(branch);
     assertThat(store().toHash(branch)).isEqualTo(deleteCommit);
     assertThat(store().getValues(branch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"))))
-        .contains(Optional.empty(), Optional.empty(), Optional.empty());
+        .isEmpty();
   }
 
   /*
@@ -800,6 +836,7 @@ public abstract class AbstractITVersionStore {
     protected void checkTransplantOnEmptyBranch() throws VersionStoreException {
       final BranchName newBranch = BranchName.of("bar_1");
       store().create(newBranch, Optional.empty());
+
       store()
           .transplant(
               newBranch,
@@ -811,8 +848,11 @@ public abstract class AbstractITVersionStore {
                   .getValues(
                       newBranch,
                       Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"))))
-          .contains(
-              Optional.of("v1_2"), Optional.of("v2_2"), Optional.empty(), Optional.of("v4_1"));
+          .containsExactlyInAnyOrderEntriesOf(
+              ImmutableMap.of(
+                  Key.of("t1"), "v1_2",
+                  Key.of("t2"), "v2_2",
+                  Key.of("t4"), "v4_1"));
 
       // The merges didn't create new commits because both the branches are running identical.
       List<WithHash<String>> commits = commitsList(newBranch);
@@ -837,12 +877,12 @@ public abstract class AbstractITVersionStore {
                       newBranch,
                       Arrays.asList(
                           Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"), Key.of("t5"))))
-          .contains(
-              Optional.of("v1_2"),
-              Optional.of("v2_2"),
-              Optional.empty(),
-              Optional.of("v4_1"),
-              Optional.of("v5_1"));
+          .containsExactlyInAnyOrderEntriesOf(
+              ImmutableMap.of(
+                  Key.of("t1"), "v1_2",
+                  Key.of("t2"), "v2_2",
+                  Key.of("t4"), "v4_1",
+                  Key.of("t5"), "v5_1"));
 
       List<WithHash<String>> commits = commitsList(newBranch);
       assertCommitMetaIsUpdated(commits, 0, 3);
@@ -884,8 +924,11 @@ public abstract class AbstractITVersionStore {
                   .getValues(
                       newBranch,
                       Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"))))
-          .contains(
-              Optional.of("v1_2"), Optional.of("v2_2"), Optional.empty(), Optional.of("v4_1"));
+          .containsExactlyInAnyOrderEntriesOf(
+              ImmutableMap.of(
+                  Key.of("t1"), "v1_2",
+                  Key.of("t2"), "v2_2",
+                  Key.of("t4"), "v4_1"));
 
       List<WithHash<String>> commits = commitsList(newBranch);
       assertCommitMetaIsUpdated(commits, 0, 3);
@@ -940,12 +983,12 @@ public abstract class AbstractITVersionStore {
                       newBranch,
                       Arrays.asList(
                           Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"), Key.of("t5"))))
-          .contains(
-              Optional.of("v1_2"),
-              Optional.of("v2_2"),
-              Optional.empty(),
-              Optional.of("v4_1"),
-              Optional.of("v5_1"));
+          .containsExactlyInAnyOrderEntriesOf(
+              ImmutableMap.of(
+                  Key.of("t1"), "v1_2",
+                  Key.of("t2"), "v2_2",
+                  Key.of("t4"), "v4_1",
+                  Key.of("t5"), "v5_1"));
       List<WithHash<String>> commits = commitsList(newBranch);
 
       // First 2 commits - Base commit and "Another commit" will not have metadata changed,
@@ -1009,7 +1052,11 @@ public abstract class AbstractITVersionStore {
               transformMeta);
       assertThat(
               store().getValues(newBranch, Arrays.asList(Key.of("t1"), Key.of("t4"), Key.of("t5"))))
-          .contains(Optional.of("v1_2"), Optional.of("v4_1"), Optional.of("v5_1"));
+          .containsExactlyInAnyOrderEntriesOf(
+              ImmutableMap.of(
+                  Key.of("t1"), "v1_2",
+                  Key.of("t4"), "v4_1",
+                  Key.of("t5"), "v5_1"));
       List<WithHash<String>> commits = commitsList(newBranch);
       assertCommitMetaIsUpdated(commits, 0, 2);
       assertCommitMetaIsUnchanged(commits, 2, commits.size());
@@ -1064,8 +1111,11 @@ public abstract class AbstractITVersionStore {
                   .getValues(
                       newBranch,
                       Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"))))
-          .contains(
-              Optional.of("v1_2"), Optional.of("v2_2"), Optional.empty(), Optional.of("v4_1"));
+          .containsExactlyInAnyOrderEntriesOf(
+              ImmutableMap.of(
+                  Key.of("t1"), "v1_2",
+                  Key.of("t2"), "v2_2",
+                  Key.of("t4"), "v4_1"));
 
       List<WithHash<String>> allCommits = commitsList(newBranch);
       assertThat(allCommits.get(0).getValue()).startsWith("Third Commit");
@@ -1088,12 +1138,12 @@ public abstract class AbstractITVersionStore {
                       newBranch,
                       Arrays.asList(
                           Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"), Key.of("t5"))))
-          .contains(
-              Optional.of("v1_2"),
-              Optional.of("v2_2"),
-              Optional.empty(),
-              Optional.of("v4_1"),
-              Optional.of("v5_1"));
+          .containsExactlyInAnyOrderEntriesOf(
+              ImmutableMap.of(
+                  Key.of("t1"), "v1_2",
+                  Key.of("t2"), "v2_2",
+                  Key.of("t4"), "v4_1",
+                  Key.of("t5"), "v5_1"));
 
       final List<WithHash<String>> commits = commitsList(newBranch);
       assertThat(commits).hasSize(5);
@@ -1141,12 +1191,12 @@ public abstract class AbstractITVersionStore {
                       newBranch,
                       Arrays.asList(
                           Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"), Key.of("t5"))))
-          .contains(
-              Optional.of("v1_2"),
-              Optional.of("v2_2"),
-              Optional.empty(),
-              Optional.of("v4_1"),
-              Optional.of("v5_1"));
+          .containsExactlyInAnyOrderEntriesOf(
+              ImmutableMap.of(
+                  Key.of("t1"), "v1_2",
+                  Key.of("t2"), "v2_2",
+                  Key.of("t4"), "v4_1",
+                  Key.of("t5"), "v5_1"));
 
       final List<WithHash<String>> commits = commitsList(newBranch);
       assertThat(commits).hasSize(5);

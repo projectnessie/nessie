@@ -21,7 +21,7 @@
 
   <groupId>org.projectnessie</groupId>
   <artifactId>nessie</artifactId>
-  <version>0.11.1-SNAPSHOT</version>
+  <version>0.12.2-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Nessie</name>
@@ -69,6 +69,26 @@
       <name>Dmitri Bourlatchkov</name>
       <url>https://github.com/dimas-b</url>
     </developer>
+    <developer>
+      <id>omarsmak</id>
+      <name>Omar Al-Safi</name>
+      <url>https://github.com/omarsmak</url>
+    </developer>
+    <developer>
+      <id>harshm-dev</id>
+      <name>Harsh Maheshwari</name>
+      <url>https://github.com/harshm-dev</url>
+    </developer>
+    <developer>
+      <id>ajantha-bhat</id>
+      <name>Ajantha Bhat</name>
+      <url>https://github.com/ajantha-bhat</url>
+    </developer>
+    <developer>
+      <id>maheshsapkal</id>
+      <name>Mahesh Sapkal</name>
+      <url>https://github.com/maheshsapkal</url>
+    </developer>
   </developers>
   <contributors>
     <contributor>
@@ -91,9 +111,7 @@
     <module>bom</module>
     <module>model</module>
     <module>clients</module>
-    <module>ui</module>
     <module>versioned</module>
-    <module>perftest</module>
     <module>servers</module>
     <module>tools</module>
   </modules>
@@ -129,15 +147,15 @@
     <!-- Version properties -->
     <antlr.version>4.8</antlr.version>
     <assertj.version>3.21.0</assertj.version>
-    <awssdk.version>2.17.66</awssdk.version>
+    <awssdk.version>2.17.73</awssdk.version>
     <bouncycastle.version>1.66</bouncycastle.version>
-    <cel.version>0.2.1</cel.version>
+    <cel.version>0.2.2</cel.version>
     <!-- to fix circular dependencies with NessieClient, certain projects need to use the same Nessie version as Iceberg/Delta has -->
     <client.nessie.version>0.9.2</client.nessie.version>
     <deltalake.version>1.0.0-nessie</deltalake.version>
     <dockerjava.version>3.2.12</dockerjava.version>
     <dynamodb.version>1.12.0</dynamodb.version>
-    <flapdoodle.version>3.0.0</flapdoodle.version>
+    <flapdoodle.version>3.1.4</flapdoodle.version>
     <gatling.maven.version>3.1.2</gatling.maven.version>
     <gatling.version>3.6.1</gatling.version>
     <guava.version>31.0.1-jre</guava.version>
@@ -158,12 +176,12 @@
     <nessie.version>${project.version}</nessie.version>
     <openapi.version>2.0</openapi.version>
     <prometheus.version>0.9.0</prometheus.version>
-    <protobuf.version>3.19.0</protobuf.version>
+    <protobuf.version>3.19.1</protobuf.version>
     <quarkus.version>2.4.0.Final</quarkus.version>
     <reactor.version>2020.0.12</reactor.version>
-    <rocksdb.version>6.22.1.1</rocksdb.version>
+    <rocksdb.version>6.25.3</rocksdb.version>
     <scala2.12.version>2.12.13</scala2.12.version>
-    <scala2.13.version>2.13.6</scala2.13.version>
+    <scala2.13.version>2.13.7</scala2.13.version>
     <serverless.version>1.5</serverless.version>
     <slf4j.version>1.7.32</slf4j.version>
     <spark3.jackson.version>2.13.0</spark3.jackson.version>
@@ -619,14 +637,14 @@
             <dependency>
               <groupId>com.puppycrawl.tools</groupId>
               <artifactId>checkstyle</artifactId>
-              <version>9.0.1</version>
+              <version>9.1</version>
             </dependency>
           </dependencies>
         </plugin>
         <plugin>
           <groupId>com.diffplug.spotless</groupId>
           <artifactId>spotless-maven-plugin</artifactId>
-          <version>2.17.2</version>
+          <version>2.17.3</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -807,6 +825,7 @@
           <resourceIncludes>**/*.properties,**/*.conf,**/*.json,**/*.xml</resourceIncludes>
           <includeTestSourceDirectory>true</includeTestSourceDirectory>
           <configLocation>codestyle/checkstyle-config.xml</configLocation>
+          <skip>${skipCheckstyle}</skip>
         </configuration>
         <executions>
           <execution>
@@ -822,6 +841,7 @@
         <groupId>com.mycila</groupId>
         <artifactId>license-maven-plugin</artifactId>
         <configuration>
+          <skip>${skipLicense}</skip>
           <inlineHeader>
 Copyright (C) ${project.inceptionYear} ${owner}
 
@@ -1054,6 +1074,7 @@ limitations under the License.
               <goal>enforce</goal>
             </goals>
             <configuration>
+              <skip>${skipEnforcer}</skip>
               <rules>
                 <bannedDependencies>
                   <excludes>
@@ -1364,6 +1385,35 @@ limitations under the License.
             </executions>
           </plugin>
         </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>build-all</id>
+      <activation>
+        <property>
+          <name>!quickly</name>
+        </property>
+      </activation>
+      <modules>
+        <module>perftest</module>
+        <module>ui</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>build-quickly</id>
+      <activation>
+        <property>
+          <name>quickly</name>
+        </property>
+      </activation>
+      <properties>
+        <skipTests>true</skipTests>
+        <skipLicense>true</skipLicense>
+        <skipEnforcer>true</skipEnforcer>
+        <skipCheckstyle>true</skipCheckstyle>
+      </properties>
+      <build>
+        <defaultGoal>clean install</defaultGoal>
       </build>
     </profile>
   </profiles>

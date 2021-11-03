@@ -198,7 +198,7 @@ class TestTracingVersionStore {
                             vs.getValues(
                                 BranchName.of("mock-branch"),
                                 Collections.singletonList(Key.of("some", "key"))),
-                        () -> Collections.singletonList(Optional.empty())),
+                        Collections::emptyMap),
                 new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>(
                         "GetDiffs", refNotFoundThrows)
                     .tag("nessie.version-store.from", "BranchName{name=mock-branch}")

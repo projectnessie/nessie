@@ -25,7 +25,9 @@ import io.opentracing.Span;
 import io.opentracing.Tracer;
 import io.opentracing.Tracer.SpanBuilder;
 import io.opentracing.util.GlobalTracer;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -207,7 +209,7 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
   }
 
   @Override
-  public List<Optional<VALUE>> getValues(Ref ref, List<Key> keys)
+  public Map<Key, VALUE> getValues(Ref ref, Collection<Key> keys)
       throws ReferenceNotFoundException {
     return callWithOneException(
         "GetValues",

@@ -16,11 +16,11 @@
 	
 	Commands:
 	  branch       Branch operations.
-	  cherry-pick  Transplant HASHES onto another branch.
+	  cherry-pick  Cherry-pick HASHES onto another branch.
 	  config       Set and view config.
 	  contents     Contents operations.
 	  log          Show commit log.
-	  merge        Merge FROM_BRANCH into another branch.
+	  merge        Merge FROM_REF into another branch.
 	  remote       Set and view remote endpoint.
 	  tag          Tag operations.
 	

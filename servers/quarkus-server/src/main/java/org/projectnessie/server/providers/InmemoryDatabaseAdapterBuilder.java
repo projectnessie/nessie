@@ -20,34 +20,22 @@ import static org.projectnessie.server.config.VersionStoreConfig.VersionStoreTyp
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 import org.projectnessie.server.config.QuarkusVersionStoreAdvancedConfig;
-import org.projectnessie.services.config.ServerConfig;
-import org.projectnessie.versioned.StoreWorker;
-import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.inmem.InmemoryDatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.inmem.InmemoryStore;
-import org.projectnessie.versioned.persist.store.PersistVersionStore;
 
 /** In-memory version store factory. */
 @StoreType(INMEMORY)
 @Dependent
-public class InMemVersionStoreFactory implements VersionStoreFactory {
-  @Inject InmemoryStore store;
+public class InmemoryDatabaseAdapterBuilder implements DatabaseAdapterBuilder {
   @Inject QuarkusVersionStoreAdvancedConfig config;
 
   @Override
-  public <VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>>
-      VersionStore<VALUE, METADATA, VALUE_TYPE> newStore(
-          StoreWorker<VALUE, METADATA, VALUE_TYPE> worker, ServerConfig serverConfig) {
-    DatabaseAdapter databaseAdapter =
-        new InmemoryDatabaseAdapterFactory()
-            .newBuilder()
-            .withConfig(config)
-            .withConnector(store)
-            .build();
-
-    databaseAdapter.initializeRepo(serverConfig.getDefaultBranch());
-
-    return new PersistVersionStore<>(databaseAdapter, worker);
+  public DatabaseAdapter newDatabaseAdapter() {
+    return new InmemoryDatabaseAdapterFactory()
+        .newBuilder()
+        .withConfig(config)
+        .withConnector(new InmemoryStore())
+        .build();
   }
 }

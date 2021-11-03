@@ -22,7 +22,7 @@
   <parent>
     <groupId>org.projectnessie</groupId>
     <artifactId>nessie-server-parent</artifactId>
-    <version>0.11.1-SNAPSHOT</version>
+    <version>0.12.2-SNAPSHOT</version>
   </parent>
 
   <artifactId>nessie-quarkus</artifactId>
@@ -94,11 +94,6 @@
       <artifactId>nessie-client</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.projectnessie</groupId>
-      <artifactId>nessie-ui</artifactId>
-      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
@@ -436,6 +431,21 @@
         <dependency>
           <groupId>io.quarkus</groupId>
           <artifactId>quarkus-minikube</artifactId>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <id>build-all</id>
+      <activation>
+        <property>
+          <name>!quickly</name>
+        </property>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>org.projectnessie</groupId>
+          <artifactId>nessie-ui</artifactId>
+          <version>${project.version}</version>
         </dependency>
       </dependencies>
     </profile>

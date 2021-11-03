@@ -16,7 +16,9 @@
 package org.projectnessie.versioned.persist.adapter;
 
 import com.google.protobuf.ByteString;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -95,8 +97,9 @@ public interface DatabaseAdapter {
    * @return Ordered stream
    * @throws ReferenceNotFoundException if {@code commit} does not exist.
    */
-  Stream<Optional<ContentsAndState<ByteString>>> values(
-      Hash commit, List<Key> keys, KeyFilterPredicate keyFilter) throws ReferenceNotFoundException;
+  Map<Key, ContentsAndState<ByteString>> values(
+      Hash commit, Collection<Key> keys, KeyFilterPredicate keyFilter)
+      throws ReferenceNotFoundException;
 
   /**
    * Retrieve the commit-log starting at the commit referenced by {@code offset}.

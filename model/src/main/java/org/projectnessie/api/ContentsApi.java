@@ -28,6 +28,10 @@ import org.projectnessie.model.Validation;
 
 public interface ContentsApi {
 
+  // Note: When substantial changes in Nessie API (this and related interfaces) are made
+  // the API version number reported by NessieConfiguration.getMaxSupportedApiVersion()
+  // should be increased as well.
+
   /**
    * This operation returns the {@link Contents} for a {@link ContentsKey} in a named-reference (a
    * {@link org.projectnessie.model.Branch} or {@link org.projectnessie.model.Tag}).

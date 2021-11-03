@@ -12,7 +12,7 @@ can be run against a live Nessie engine.
      every time the tests are re-recorded so that the "global" state from old test runs is erased and will not
      interfere with newer recordings. The reset can be performed by restarting the server or by pressing the `s` key
      in the Quarkus console (STDIN).
-1. Run `pytest --record-mode=all tests/` (in a venv with `requirements_dev.txt` installed)
+1. Run `pytest --record-mode=rewrite tests/` (in a venv with `requirements_dev.txt` installed)
    to add test data for newly added tests and updated tests data.
    * Note: when running authentication tests (e.g. `test_nessie_cli_auth.py`) in recording more, the tests will most
      likely fail out-of-the box because the server will not recognize the auth tokens those tests use. In order to

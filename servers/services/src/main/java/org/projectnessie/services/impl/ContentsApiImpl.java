@@ -16,9 +16,8 @@
 package org.projectnessie.services.impl;
 
 import java.security.Principal;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.projectnessie.api.ContentsApi;
 import org.projectnessie.error.NessieContentsNotFoundException;
@@ -73,13 +72,11 @@ public class ContentsApiImpl extends BaseApiImpl implements ContentsApi {
       List<ContentsKey> externalKeys = request.getRequestedKeys();
       List<Key> internalKeys =
           externalKeys.stream().map(ContentsApiImpl::toKey).collect(Collectors.toList());
-      List<Optional<Contents>> values = getStore().getValues(ref.getHash(), internalKeys);
-      List<ContentsWithKey> output = new ArrayList<>();
-
-      for (int i = 0; i < externalKeys.size(); i++) {
-        final int pos = i;
-        values.get(i).ifPresent(v -> output.add(ContentsWithKey.of(externalKeys.get(pos), v)));
-      }
+      Map<Key, Contents> values = getStore().getValues(ref.getHash(), internalKeys);
+      List<ContentsWithKey> output =
+          values.entrySet().stream()
+              .map(e -> ContentsWithKey.of(toContentsKey(e.getKey()), e.getValue()))
+              .collect(Collectors.toList());
 
       return ImmutableMultiGetContentsResponse.builder().contents(output).build();
     } catch (ReferenceNotFoundException ex) {
@@ -88,6 +85,10 @@ public class ContentsApiImpl extends BaseApiImpl implements ContentsApi {
   }
 
   static Key toKey(ContentsKey key) {
-    return Key.of(key.getElements().toArray(new String[key.getElements().size()]));
+    return Key.of(key.getElements().toArray(new String[0]));
+  }
+
+  static ContentsKey toContentsKey(Key key) {
+    return ContentsKey.of(key.getElements());
   }
 }

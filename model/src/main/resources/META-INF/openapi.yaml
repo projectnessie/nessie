@@ -63,6 +63,9 @@ components:
         hash: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
         name: "exampleTag"
 
+    ContentsKeyGet:
+      value: "example.key"
+
     ContentsKey:
       value:
         elements:

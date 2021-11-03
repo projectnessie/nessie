@@ -30,6 +30,7 @@ import com.google.protobuf.UnsafeByteOperations;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -823,7 +824,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
    * commitSha}. Non-existing keys must not be present in the returned map.
    */
   protected Map<Key, ContentsAndState<ByteString>> fetchValues(
-      OP_CONTEXT ctx, Hash refHead, List<Key> keys, KeyFilterPredicate keyFilter)
+      OP_CONTEXT ctx, Hash refHead, Collection<Key> keys, KeyFilterPredicate keyFilter)
       throws ReferenceNotFoundException {
     Set<Key> remainingKeys = new HashSet<>(keys);
 

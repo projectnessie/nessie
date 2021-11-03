@@ -1,5 +1,20 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#
+# Copyright (C) 2020 Dremio
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 """Tests for `pynessie` package."""
 import itertools
 import os
@@ -88,6 +103,9 @@ def test_log() -> None:
     """Test log and log filtering."""
     logs = simplejson.loads(_cli(["--json", "log"]))
     assert len(logs) == 0
+    _cli(["branch", "dev_test_log"])
+    table = _new_table("test_log_dev")
+    _make_commit("log.foo.dev", table, "dev_test_log", author="nessie_user1")
     table = _new_table("test_log")
     _make_commit("log.foo.bar", table, "main", author="nessie_user1")
     tables = ContentsSchema().loads(_cli(["--json", "contents", "log.foo.bar"]), many=True)
@@ -95,7 +113,7 @@ def test_log() -> None:
     assert tables[0] == table
     logs = simplejson.loads(_cli(["--json", "log"]))
     assert len(logs) == 1
-    logs = simplejson.loads(_cli(["--json", "log", logs[0]["hash"]]))
+    logs = simplejson.loads(_cli(["--json", "log", "--revision-range", logs[0]["hash"]]))
     assert len(logs) == 1
     entries = EntrySchema().loads(_cli(["--json", "contents", "--list"]), many=True)
     assert len(entries) == 1
@@ -117,9 +135,11 @@ def test_log() -> None:
     )
     logs = simplejson.loads(_cli(["--json", "log", "-n", 1]))
     assert len(logs) == 1
+    logs = simplejson.loads(_cli(["--json", "log", "dev_test_log"]))
+    assert len(logs) == 1
     logs = simplejson.loads(_cli(["--json", "log"]))
     assert len(logs) == 2
-    logs = simplejson.loads(_cli(["--json", "log", "{}..{}".format(logs[0]["hash"], logs[1]["hash"])]))
+    logs = simplejson.loads(_cli(["--json", "log", "--revision-range", "{}..{}".format(logs[0]["hash"], logs[1]["hash"])]))
     assert len(logs) == 1
     logs = simplejson.loads(_cli(["--json", "log"]))
     assert len(logs) == 2
@@ -152,9 +172,10 @@ def test_branch() -> None:
     _cli(["branch", "etl", "main"])
     references = ReferenceSchema().loads(_cli(["--json", "branch"]), many=True)
     assert len(references) == 3
-    references = ReferenceSchema().loads(_cli(["--json", "branch", "-l", "etl"]), many=True)
-    assert len(references) == 1
-    assert references[0].name == "etl"
+    references = ReferenceSchema().loads(_cli(["--json", "branch", "-l", "etl"]), many=False)
+    assert_that(references.name).is_equal_to("etl")
+    references = simplejson.loads(_cli(["--json", "branch", "-l", "foo"]))
+    assert len(references) == 0
     _cli(["branch", "-d", "etl"])
     _cli(["branch", "-d", "dev"])
     references = ReferenceSchema().loads(_cli(["--json", "branch"]), many=True)
@@ -172,9 +193,10 @@ def test_tag() -> None:
     _cli(["tag", "etl-tag", "main"])
     references = ReferenceSchema().loads(_cli(["--json", "tag"]), many=True)
     assert len(references) == 2
-    references = ReferenceSchema().loads(_cli(["--json", "tag", "-l", "etl-tag"]), many=True)
-    assert len(references) == 1
-    assert references[0].name == "etl-tag"
+    references = ReferenceSchema().loads(_cli(["--json", "tag", "-l", "etl-tag"]), many=False)
+    assert_that(references.name).is_equal_to("etl-tag")
+    references = simplejson.loads(_cli(["--json", "tag", "-l", "foo"]))
+    assert len(references) == 0
     _cli(["tag", "-d", "etl-tag"])
     _cli(["tag", "-d", "dev-tag"])
     references = ReferenceSchema().loads(_cli(["--json", "tag"]), many=True)
@@ -231,8 +253,8 @@ def test_merge() -> None:
     """Test merge operation."""
     _cli(["branch", "dev"])
     _make_commit("merge.foo.bar", _new_table("test_merge"), "dev")
-    refs = ReferenceSchema().loads(_cli(["--json", "branch", "-l", "main"]), many=True)
-    main_hash = next(i.hash_ for i in refs if i.name == "main")
+    ref = ReferenceSchema().loads(_cli(["--json", "branch", "-l", "main"]), many=False)
+    main_hash = ref.hash_
     _cli(["merge", "dev", "-c", main_hash])
     branches = ReferenceSchema().loads(_cli(["--json", "branch"]), many=True)
     refs = {i.name: i.hash_ for i in branches}
@@ -248,7 +270,7 @@ def test_transplant() -> None:
     _make_commit("foo.baz", _new_table("test_transplant_3"), "dev")
     refs = ReferenceSchema().loads(_cli(["--json", "branch", "-l"]), many=True)
     main_hash = next(i.hash_ for i in refs if i.name == "main")
-    logs = simplejson.loads(_cli(["--json", "log", "--ref", "dev"]))
+    logs = simplejson.loads(_cli(["--json", "log", "dev"]))
     first_hash = [i["hash"] for i in logs]
     _cli(["cherry-pick", "-c", main_hash, "-s", "dev", first_hash[1], first_hash[0]])
 

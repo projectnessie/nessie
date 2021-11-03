@@ -18,15 +18,15 @@ package org.projectnessie.services.rest;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import org.projectnessie.api.http.HttpConfigApi;
-import org.projectnessie.model.ImmutableNessieConfiguration;
 import org.projectnessie.model.NessieConfiguration;
 import org.projectnessie.services.config.ServerConfig;
+import org.projectnessie.services.impl.ConfigApiImpl;
 
 /** REST endpoint to retrieve server settings. */
 @RequestScoped
 public class RestConfigResource implements HttpConfigApi {
 
-  private final ServerConfig config;
+  private final ConfigApiImpl config;
 
   // Mandated by CDI 2.0
   public RestConfigResource() {
@@ -35,13 +35,11 @@ public class RestConfigResource implements HttpConfigApi {
 
   @Inject
   public RestConfigResource(ServerConfig config) {
-    this.config = config;
+    this.config = new ConfigApiImpl(config);
   }
 
   @Override
   public NessieConfiguration getConfig() {
-    return ImmutableNessieConfiguration.builder()
-        .defaultBranch(this.config.getDefaultBranch())
-        .build();
+    return config.getConfig();
   }
 }

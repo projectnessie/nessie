@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (C) 2020 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,11 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.server.providers;
-
-import javax.inject.Singleton;
-import org.projectnessie.versioned.persist.inmem.InmemoryStore;
-
-/** CDI bean for {@link InmemoryStore}. */
-@Singleton
-public class QuarkusInmemoryStore extends InmemoryStore {}
+.not_found{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    margin-top: 100px;
+}

@@ -15,7 +15,9 @@
  */
 package org.projectnessie.versioned;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -263,7 +265,7 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @return A parallel list of values.
    * @throws ReferenceNotFoundException if {@code ref} is not present in the store
    */
-  List<Optional<VALUE>> getValues(Ref ref, List<Key> keys) throws ReferenceNotFoundException;
+  Map<Key, VALUE> getValues(Ref ref, Collection<Key> keys) throws ReferenceNotFoundException;
 
   /**
    * Get list of diffs between two refs.

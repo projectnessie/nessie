@@ -24,6 +24,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -74,7 +75,8 @@ public interface HttpContentsApi extends ContentsApi {
   Contents getContents(
       @Parameter(
               description = "object name to search for",
-              examples = {@ExampleObject(ref = "ContentsKey")})
+              examples = {@ExampleObject(ref = "ContentsKeyGet")},
+              schema = @Schema(type = SchemaType.STRING))
           @PathParam("key")
           ContentsKey key,
       @Parameter(

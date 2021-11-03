@@ -1,5 +1,18 @@
 # Releases
 
+## 0.12.1 Release (November 3, 2021)
+
+* Test code improvements
+* Swagger examples fixes
+* Web UI improvements
+* Faster local builds w/ `./mvnw -Dquickly`
+
+## 0.12.0 Release (October 25, 2021)
+
+* Specialize and document Nessie exceptions
+* Adopt Helm chart with new Nessie server settings
+* Bump to GraalVM 21.3
+
 ## 0.11.0 Release (October 20, 2021)
 
 * Various doc + site improvements

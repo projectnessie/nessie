@@ -20,35 +20,29 @@ import static org.projectnessie.server.config.VersionStoreConfig.VersionStoreTyp
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 import org.projectnessie.server.config.QuarkusVersionStoreAdvancedConfig;
-import org.projectnessie.services.config.ServerConfig;
-import org.projectnessie.versioned.StoreWorker;
-import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.dynamodb.DynamoDatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.dynamodb.DynamoDatabaseClient;
-import org.projectnessie.versioned.persist.store.PersistVersionStore;
+import org.projectnessie.versioned.persist.dynamodb.ProvidedDynamoClientConfig;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 /** DynamoDB version store factory. */
 @StoreType(DYNAMO)
 @Dependent
-public class DynamoVersionStoreFactory implements VersionStoreFactory {
-  @Inject DynamoDatabaseClient client;
+public class DynamoDatabaseAdapterBuilder implements DatabaseAdapterBuilder {
+  @Inject DynamoDbClient dynamoConfig;
   @Inject QuarkusVersionStoreAdvancedConfig config;
 
   @Override
-  public <VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>>
-      VersionStore<VALUE, METADATA, VALUE_TYPE> newStore(
-          StoreWorker<VALUE, METADATA, VALUE_TYPE> worker, ServerConfig serverConfig) {
+  public DatabaseAdapter newDatabaseAdapter() {
+    DynamoDatabaseClient client = new DynamoDatabaseClient();
+    client.configure(ProvidedDynamoClientConfig.of(dynamoConfig));
+    client.initialize();
 
-    DatabaseAdapter databaseAdapter =
-        new DynamoDatabaseAdapterFactory()
-            .newBuilder()
-            .withConfig(config)
-            .withConnector(client)
-            .build();
-
-    databaseAdapter.initializeRepo(serverConfig.getDefaultBranch());
-
-    return new PersistVersionStore<>(databaseAdapter, worker);
+    return new DynamoDatabaseAdapterFactory()
+        .newBuilder()
+        .withConfig(config)
+        .withConnector(client)
+        .build();
   }
 }

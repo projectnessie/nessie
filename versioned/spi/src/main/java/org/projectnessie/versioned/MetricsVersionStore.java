@@ -22,7 +22,9 @@ import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.Timer.Sample;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -162,7 +164,7 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
   }
 
   @Override
-  public List<Optional<VALUE>> getValues(Ref ref, List<Key> keys)
+  public Map<Key, VALUE> getValues(Ref ref, Collection<Key> keys)
       throws ReferenceNotFoundException {
     return delegate1Ex("getvalues", () -> delegate.getValues(ref, keys));
   }

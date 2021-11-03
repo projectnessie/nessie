@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.IntFunction;
@@ -306,21 +307,15 @@ public abstract class AbstractCommitScenarios {
     Hash head = databaseAdapter.commit(commit.build());
 
     for (int commitNum = 0; commitNum < 3; commitNum++) {
-      List<Optional<String>> contents;
-      try (Stream<Optional<ContentsAndState<ByteString>>> stream =
+      Map<Key, ContentsAndState<ByteString>> values =
           databaseAdapter.values(
-              databaseAdapter.toHash(branch), keys, KeyFilterPredicate.ALLOW_ALL)) {
-        contents =
-            stream
-                .map(o -> o.map(ContentsAndState::getGlobalState).map(ByteString::toStringUtf8))
-                .collect(Collectors.toList());
-      }
+              databaseAdapter.toHash(branch), keys, KeyFilterPredicate.ALLOW_ALL);
       commit =
           ImmutableCommitAttempt.builder()
               .commitToBranch(branch)
               .commitMetaSerialized(ByteString.copyFromUtf8("initial commit meta"));
       for (int i = 0; i < tablesPerCommit; i++) {
-        String currentState = contents.get(i).orElseThrow(RuntimeException::new);
+        String currentState = values.get(keys.get(i)).getGlobalState().toStringUtf8();
         String newGlobalState = Integer.toString(Integer.parseInt(currentState) + 1);
 
         commit

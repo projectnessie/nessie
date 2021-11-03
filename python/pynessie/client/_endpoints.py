@@ -1,23 +1,32 @@
 # -*- coding: utf-8 -*-
+#
+# Copyright (C) 2020 Dremio
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
 """Direct API operations on Nessie with requests."""
+
 from typing import Any
 from typing import cast
 from typing import Optional
-from typing import Tuple
 from typing import Union
 
 import requests
 import simplejson as jsonlib
 from requests.auth import AuthBase
-from requests.exceptions import HTTPError
 
-from .error import NessieConflictException
-from .error import NessieException
-from .error import NessieNotFoundException
-from .error import NessiePermissionException
-from .error import NessiePreconidtionFailedException
-from .error import NessieServerException
-from .error import NessieUnauthorizedException
+from ..error import _create_exception
 
 
 def _get_headers(has_body: bool = False) -> dict:
@@ -27,56 +36,54 @@ def _get_headers(has_body: bool = False) -> dict:
     return headers
 
 
-def _get(url: str, auth: AuthBase, details: str = "", ssl_verify: bool = True, params: dict = None) -> Union[str, dict, list]:
+def _get(url: str, auth: Optional[AuthBase], ssl_verify: bool = True, params: dict = None) -> Union[str, dict, list]:
     r = requests.get(url, headers=_get_headers(), verify=ssl_verify, params=params, auth=auth)
-    return _check_error(r, details)
+    return _check_error(r)
 
 
 def _post(
-    url: str, auth: AuthBase, json: Union[str, dict] = None, details: str = "", ssl_verify: bool = True, params: dict = None
+    url: str, auth: Optional[AuthBase], json: Union[str, dict] = None, ssl_verify: bool = True, params: dict = None
 ) -> Union[str, dict, list]:
     if isinstance(json, str):
         json = jsonlib.loads(json)
     r = requests.post(url, headers=_get_headers(json is not None), verify=ssl_verify, json=json, params=params, auth=auth)
-    return _check_error(r, details)
+    return _check_error(r)
 
 
-def _delete(url: str, auth: AuthBase, details: str = "", ssl_verify: bool = True, params: dict = None) -> Union[str, dict, list]:
+def _delete(url: str, auth: Optional[AuthBase], ssl_verify: bool = True, params: dict = None) -> Union[str, dict, list]:
     r = requests.delete(url, headers=_get_headers(), verify=ssl_verify, params=params, auth=auth)
-    return _check_error(r, details)
+    return _check_error(r)
 
 
-def _put(url: str, auth: AuthBase, json: Union[str, dict] = None, details: str = "", ssl_verify: bool = True, params: dict = None) -> Any:
+def _put(url: str, auth: Optional[AuthBase], json: Union[str, dict] = None, ssl_verify: bool = True, params: dict = None) -> Any:
     if isinstance(json, str):
         json = jsonlib.loads(json)
     r = requests.put(url, headers=_get_headers(json is not None), verify=ssl_verify, json=json, params=params, auth=auth)
-    return _check_error(r, details)
+    return _check_error(r)
 
 
-def _check_error(r: requests.models.Response, details: str = "") -> Union[str, dict, list]:
-    error, code, _ = _raise_for_status(r)
-    if not error:
+def _check_error(r: requests.models.Response) -> Union[dict, list]:
+    if 200 <= r.status_code < 300:
+        return r.json() if r.content else dict()
+
+    if isinstance(r.reason, bytes):
         try:
-            data = r.json()
-            return data
-        except:  # NOQA
-            return r.text
-    if code == 412:
-        raise NessiePreconidtionFailedException("Unable to complete transaction, please retry " + details, error, r)
-    if code == 401:
-        raise NessieUnauthorizedException("Unauthorized on api endpoint " + details, error, r)
-    if code == 403:
-        raise NessiePermissionException("Not permissioned to view entity at " + details, error, r)
-    if code == 404:
-        raise NessieNotFoundException("No entity exists at " + details, error, r)
-    if code == 409:
-        raise NessieConflictException("Entity already exists at " + details, error, r)
-    if code == 500:
-        raise NessieServerException("Server error at " + details, error, r)
-    raise NessieException("unknown error", error, r)
+            reason = r.reason.decode("utf-8")
+        except UnicodeDecodeError:
+            reason = r.reason.decode("iso-8859-1")
+    else:
+        reason = r.reason
+
+    try:
+        parsed_response = r.json()
+    except:  # NOQA
+        # rare/unexpected case when the server responds with a non-JSON payload for an error
+        parsed_response = dict()
+
+    raise _create_exception(parsed_response, r.status_code, reason, r.url)
 
 
-def all_references(base_url: str, auth: AuthBase, ssl_verify: bool = True) -> list:
+def all_references(base_url: str, auth: Optional[AuthBase], ssl_verify: bool = True) -> list:
     """Fetch all known references.
 
     :param base_url: base Nessie url
@@ -87,7 +94,7 @@ def all_references(base_url: str, auth: AuthBase, ssl_verify: bool = True) -> li
     return cast(list, _get(base_url + "/trees", auth, ssl_verify=ssl_verify))
 
 
-def get_reference(base_url: str, auth: AuthBase, ref: str, ssl_verify: bool = True) -> dict:
+def get_reference(base_url: str, auth: Optional[AuthBase], ref: str, ssl_verify: bool = True) -> dict:
     """Fetch a reference.
 
     :param base_url: base Nessie url
@@ -99,7 +106,7 @@ def get_reference(base_url: str, auth: AuthBase, ref: str, ssl_verify: bool = Tr
     return cast(dict, _get(base_url + "/trees/tree/{}".format(ref), auth, ssl_verify=ssl_verify))
 
 
-def create_reference(base_url: str, auth: AuthBase, ref_json: dict, source_ref: str = None, ssl_verify: bool = True) -> dict:
+def create_reference(base_url: str, auth: Optional[AuthBase], ref_json: dict, source_ref: str = None, ssl_verify: bool = True) -> dict:
     """Create a reference.
 
     :param base_url: base Nessie url
@@ -115,7 +122,7 @@ def create_reference(base_url: str, auth: AuthBase, ref_json: dict, source_ref: 
     return cast(dict, _post(base_url + "/trees/tree", auth, ref_json, ssl_verify=ssl_verify, params=params))
 
 
-def get_default_branch(base_url: str, auth: AuthBase, ssl_verify: bool = True) -> dict:
+def get_default_branch(base_url: str, auth: Optional[AuthBase], ssl_verify: bool = True) -> dict:
     """Fetch a reference.
 
     :param base_url: base Nessie url
@@ -126,7 +133,7 @@ def get_default_branch(base_url: str, auth: AuthBase, ssl_verify: bool = True) -
     return cast(dict, _get(base_url + "/trees/tree", auth, ssl_verify=ssl_verify))
 
 
-def delete_branch(base_url: str, auth: AuthBase, branch: str, hash_: str, ssl_verify: bool = True) -> None:
+def delete_branch(base_url: str, auth: Optional[AuthBase], branch: str, hash_: str, ssl_verify: bool = True) -> None:
     """Delete a branch.
 
     :param base_url: base Nessie url
@@ -139,7 +146,7 @@ def delete_branch(base_url: str, auth: AuthBase, branch: str, hash_: str, ssl_ve
     _delete(base_url + "/trees/branch/{}".format(branch), auth, ssl_verify=ssl_verify, params=params)
 
 
-def delete_tag(base_url: str, auth: AuthBase, tag: str, hash_: str, ssl_verify: bool = True) -> None:
+def delete_tag(base_url: str, auth: Optional[AuthBase], tag: str, hash_: str, ssl_verify: bool = True) -> None:
     """Delete a tag.
 
     :param base_url: base Nessie url
@@ -154,7 +161,7 @@ def delete_tag(base_url: str, auth: AuthBase, tag: str, hash_: str, ssl_verify: 
 
 def list_tables(
     base_url: str,
-    auth: AuthBase,
+    auth: Optional[AuthBase],
     ref: str,
     hash_on_ref: Optional[str] = None,
     max_result_hint: Optional[int] = None,
@@ -188,7 +195,7 @@ def list_tables(
 
 def list_logs(
     base_url: str,
-    auth: AuthBase,
+    auth: Optional[AuthBase],
     ref: str,
     hash_on_ref: Optional[str] = None,
     ssl_verify: bool = True,
@@ -214,7 +221,9 @@ def list_logs(
     return cast(dict, _get(base_url + "/trees/tree/{}/log".format(ref), auth, ssl_verify=ssl_verify, params=filtering_args))
 
 
-def get_table(base_url: str, auth: AuthBase, ref: str, table: str, hash_on_ref: Optional[str] = None, ssl_verify: bool = True) -> dict:
+def get_table(
+    base_url: str, auth: Optional[AuthBase], ref: str, table: str, hash_on_ref: Optional[str] = None, ssl_verify: bool = True
+) -> dict:
     """Fetch a table from a known branch.
 
     :param base_url: base Nessie url
@@ -232,7 +241,7 @@ def get_table(base_url: str, auth: AuthBase, ref: str, table: str, hash_on_ref: 
 
 
 def assign_branch(
-    base_url: str, auth: AuthBase, branch: str, assign_to_json: dict, old_hash: Optional[str], ssl_verify: bool = True
+    base_url: str, auth: Optional[AuthBase], branch: str, assign_to_json: dict, old_hash: Optional[str], ssl_verify: bool = True
 ) -> None:
     """Assign a reference to a branch.
 
@@ -248,7 +257,9 @@ def assign_branch(
     _put(base_url + url, auth, assign_to_json, ssl_verify=ssl_verify, params=params)
 
 
-def assign_tag(base_url: str, auth: AuthBase, tag: str, assign_to_json: dict, old_hash: Optional[str], ssl_verify: bool = True) -> None:
+def assign_tag(
+    base_url: str, auth: Optional[AuthBase], tag: str, assign_to_json: dict, old_hash: Optional[str], ssl_verify: bool = True
+) -> None:
     """Assign a reference to a tag.
 
     :param base_url: base Nessie url
@@ -263,31 +274,8 @@ def assign_tag(base_url: str, auth: AuthBase, tag: str, assign_to_json: dict, ol
     _put(base_url + url, auth, assign_to_json, ssl_verify=ssl_verify, params=params)
 
 
-def _raise_for_status(self: requests.models.Response) -> Tuple[Union[HTTPError, None], int, Union[Any, str]]:
-    """Raises stored :class:`HTTPError`, if one occurred. Copy from requests request.raise_for_status()."""
-    http_error_msg = ""
-    if isinstance(self.reason, bytes):
-        try:
-            reason = self.reason.decode("utf-8")
-        except UnicodeDecodeError:
-            reason = self.reason.decode("iso-8859-1")
-    else:
-        reason = self.reason
-
-    if 400 <= self.status_code < 500:
-        http_error_msg = u"%s Client Error: %s for url: %s" % (self.status_code, reason, self.url)
-
-    elif 500 <= self.status_code < 600:
-        http_error_msg = u"%s Server Error: %s for url: %s" % (self.status_code, reason, self.url)
-
-    if http_error_msg:
-        return HTTPError(http_error_msg, response=self), self.status_code, reason
-    else:
-        return None, self.status_code, reason
-
-
 def cherry_pick(
-    base_url: str, auth: AuthBase, branch: str, transplant_json: dict, expected_hash: Optional[str], ssl_verify: bool = True
+    base_url: str, auth: Optional[AuthBase], branch: str, transplant_json: dict, expected_hash: Optional[str], ssl_verify: bool = True
 ) -> None:
     """cherry-pick a list of hashes to a branch.
 
@@ -305,7 +293,9 @@ def cherry_pick(
     _post(base_url + url, auth, json=transplant_json, ssl_verify=ssl_verify, params=params)
 
 
-def merge(base_url: str, auth: AuthBase, branch: str, merge_json: dict, expected_hash: Optional[str], ssl_verify: bool = True) -> None:
+def merge(
+    base_url: str, auth: Optional[AuthBase], branch: str, merge_json: dict, expected_hash: Optional[str], ssl_verify: bool = True
+) -> None:
     """Merge a branch into another branch.
 
     :param base_url: base Nessie url
@@ -324,7 +314,7 @@ def merge(base_url: str, auth: AuthBase, branch: str, merge_json: dict, expected
 
 def commit(
     base_url: str,
-    auth: AuthBase,
+    auth: Optional[AuthBase],
     branch: str,
     operations: str,
     expected_hash: str,
