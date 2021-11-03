@@ -61,8 +61,7 @@ def cli(ctx: click.core.Context, json: bool, verbose: bool, endpoint: str, auth_
         if auth_token:
             cfg_map["auth.type"] = "bearer"
             cfg_map["auth.token"] = auth_token
-        config = build_config(cfg_map)
-        nessie = NessieClient(config)
+        nessie = NessieClient(build_config(cfg_map))
         ctx.obj = ContextObject(nessie, verbose, json)
     except confuse.exceptions.ConfigTypeError as e:
         raise click.ClickException(str(e)) from e

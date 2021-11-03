@@ -36,14 +36,14 @@ def setup_auth(config: Configuration) -> Optional[AuthBase]:
 
     if auth_type == "none":
         return None
-    elif auth_type == "basic":
+    if auth_type == "basic":
         username = config["auth"]["username"].get()
         password = config["auth"]["password"].get()
         return HTTPBasicAuth(username, password)
-    elif auth_type == "bearer":
+    if auth_type == "bearer":
         token = config["auth"]["token"].get()
         return BearerTokenAuth(token)
-    elif auth_type == "aws":
+    if auth_type == "aws":
         region = config["auth"]["region"].get()
         profile = config["auth"]["profile"].get()
         return setup_aws_auth(region=region, profile=profile)

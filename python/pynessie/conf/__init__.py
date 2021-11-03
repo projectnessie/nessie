@@ -29,7 +29,7 @@ __all__ = ["build_config", "to_dict", "write_to_file", "process"]
 
 def to_dict(config: confuse.Configuration) -> dict:
     """Convert confuse Configuration object to dict."""
-    ys = config.dump(redact=True)
-    fd = StringIO(ys)
-    dct = yaml.safe_load(fd)
+    y_s = config.dump(redact=True)
+    f_d = StringIO(y_s)
+    dct = yaml.safe_load(f_d)
     return dct

@@ -36,7 +36,7 @@ def remote(ctx: ContextObject) -> None:
 @error_handler
 def show(ctx: ContextObject) -> None:
     """Show current remote."""
-    click.echo("Remote URL: " + ctx.nessie._base_url)
+    click.echo("Remote URL: " + ctx.nessie.get_base_url())
     click.echo("Default branch: " + ctx.nessie.get_reference(None).name)
     click.echo("Remote branches: ")
     for i in ctx.nessie.list_references():

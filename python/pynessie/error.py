@@ -53,7 +53,7 @@ class NessieException(Exception):
             else:
                 exception_msg = "Unknown Error"
 
-        super(NessieException, self).__init__(exception_msg)
+        super().__init__(exception_msg)
 
         self.status_code = status
         self.server_message = parsed_response.get("message", str(parsed_response))
@@ -168,22 +168,22 @@ def _create_nessie_exception(error: dict, status: int, reason: str, url: str) ->
         return None
 
     error_code = error["errorCode"]
-    if "REFERENCE_NOT_FOUND" == error_code:
+    if error_code == "REFERENCE_NOT_FOUND":
         return NessieReferenceNotFoundException(error, status, url, reason)
-    elif "REFERENCE_ALREADY_EXISTS" == error_code:
+    if error_code == "REFERENCE_ALREADY_EXISTS":
         return NessieReferenceAlreadyExistsException(error, status, url, reason)
-    elif "CONTENTS_NOT_FOUND" == error_code:
+    if error_code == "CONTENTS_NOT_FOUND":
         return NessieContentsNotFoundException(error, status, url, reason)
-    elif "REFERENCE_CONFLICT" == error_code:
+    if error_code == "REFERENCE_CONFLICT":
         return NessieReferenceConflictException(error, status, url, reason)
     return None
 
 
 def _create_exception(error: dict, status: int, reason: str, url: str) -> Exception:
     if 400 <= status < 500:
-        reason = u"Client Error (%s)" % reason
+        reason = f"Client Error {reason}"
     elif 500 <= status < 600:
-        reason = u"Server Error (%s)" % reason
+        reason = f"Server Error {reason}"
 
     ex = _create_nessie_exception(error, status, reason, url)
     if ex:

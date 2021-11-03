@@ -31,7 +31,8 @@ class Contents:
 
     id: str = desert.ib(fields.Str())
 
-    def requires_expected_state(self: "Contents") -> bool:
+    @staticmethod
+    def requires_expected_state() -> bool:
         """Checks whether this Contents object requires the "expected" state to be provided for Put operations."""
         return False
 
@@ -47,7 +48,8 @@ class IcebergTable(Contents):
     metadata_location: str = desert.ib(fields.Str(data_key="metadataLocation"))
     id_generators: str = desert.ib(fields.Str(data_key="idGenerators"))
 
-    def requires_expected_state(self: "IcebergTable") -> bool:
+    @staticmethod
+    def requires_expected_state() -> bool:
         """Returns True - expected state should be provided for Put operations on Iceberg tables."""
         return True
 
@@ -107,12 +109,12 @@ class ContentsSchema(OneOfSchema):
         """Returns the object type based on its class."""
         if isinstance(obj, IcebergTable):
             return "ICEBERG_TABLE"
-        elif isinstance(obj, DeltaLakeTable):
+        if isinstance(obj, DeltaLakeTable):
             return "DELTA_LAKE_TABLE"
-        elif isinstance(obj, SqlView):
+        if isinstance(obj, SqlView):
             return "VIEW"
-        else:
-            raise Exception("Unknown object type: {}".format(obj.__class__.__name__))
+
+        raise Exception("Unknown object type: {}".format(obj.__class__.__name__))
 
 
 @attr.dataclass
@@ -176,12 +178,12 @@ class OperationsSchema(OneOfSchema):
         """Returns the object type based on its class."""
         if isinstance(obj, Put):
             return "PUT"
-        elif isinstance(obj, Unchanged):
+        if isinstance(obj, Unchanged):
             return "UNCHANGED"
-        elif isinstance(obj, Delete):
+        if isinstance(obj, Delete):
             return "DELETE"
-        else:
-            raise Exception("Unknown object type: {}".format(obj.__class__.__name__))
+
+        raise Exception("Unknown object type: {}".format(obj.__class__.__name__))
 
 
 @attr.dataclass
@@ -224,10 +226,10 @@ class ReferenceSchema(OneOfSchema):
         """Returns the object type based on its class."""
         if isinstance(obj, Branch):
             return "BRANCH"
-        elif isinstance(obj, Tag):
+        if isinstance(obj, Tag):
             return "TAG"
-        else:
-            raise Exception("Unknown object type: {}".format(obj.__class__.__name__))
+
+        raise Exception("Unknown object type: {}".format(obj.__class__.__name__))
 
 
 @attr.dataclass
