@@ -19,11 +19,11 @@ import static org.projectnessie.server.config.VersionStoreConfig.VersionStoreTyp
 
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
-import org.projectnessie.server.config.QuarkusVersionStoreAdvancedConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.dynamodb.DynamoDatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.dynamodb.DynamoDatabaseClient;
 import org.projectnessie.versioned.persist.dynamodb.ProvidedDynamoClientConfig;
+import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 /** DynamoDB version store factory. */
@@ -31,7 +31,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 @Dependent
 public class DynamoDatabaseAdapterBuilder implements DatabaseAdapterBuilder {
   @Inject DynamoDbClient dynamoConfig;
-  @Inject QuarkusVersionStoreAdvancedConfig config;
+  @Inject NonTransactionalDatabaseAdapterConfig config;
 
   @Override
   public DatabaseAdapter newDatabaseAdapter() {
