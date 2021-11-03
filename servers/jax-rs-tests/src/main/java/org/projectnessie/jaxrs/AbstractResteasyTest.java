@@ -24,18 +24,21 @@ import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import java.time.Instant;
+import java.util.Collections;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.Contents;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableBranch;
 import org.projectnessie.model.ImmutableOperations;
 import org.projectnessie.model.ImmutablePut;
 import org.projectnessie.model.LogResponse;
+import org.projectnessie.model.MultiGetContentsRequest;
+import org.projectnessie.model.MultiGetContentsResponse;
+import org.projectnessie.model.MultiGetContentsResponse.ContentsWithKey;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
@@ -129,9 +132,19 @@ public abstract class AbstractResteasyTest {
             .as(Branch.class);
     Assertions.assertNotEquals(branch.getHash(), commitResponse.getHash());
 
+    ContentsKey key = ContentsKey.of("xxx", "test");
     Response res =
-        rest().queryParam("ref", "test").get("contents/xxx.test").then().extract().response();
-    Assertions.assertEquals(updates[10].getContents(), res.body().as(Contents.class));
+        rest()
+            .body(MultiGetContentsRequest.of(key))
+            .queryParam("ref", "test")
+            .post("trees/contents")
+            .then()
+            .extract()
+            .response();
+    assertThat(res.body())
+        .extracting(b -> b.as(MultiGetContentsResponse.class))
+        .extracting(r -> r.getContents().get(0))
+        .isEqualTo(ContentsWithKey.of(key, updates[10].getContents()));
 
     IcebergTable currentTable = table;
     table = IcebergTable.of("/the/directory/over/there/has/been/moved/again", "x", table.getId());
@@ -154,15 +167,16 @@ public abstract class AbstractResteasyTest {
         .statusCode(200)
         .extract()
         .as(Branch.class);
-    Contents returned =
+    MultiGetContentsResponse returned =
         rest()
+            .body(MultiGetContentsRequest.of(key))
             .queryParam("ref", "test")
-            .get("contents/xxx.test")
+            .post("trees/contents")
             .then()
             .statusCode(200)
             .extract()
-            .as(Contents.class);
-    Assertions.assertEquals(table, returned);
+            .as(MultiGetContentsResponse.class);
+    Assertions.assertEquals(table, returned.getContents().get(0).getContents());
 
     Branch b3 = rest().get("trees/tree/test").as(Branch.class);
     rest()
@@ -394,16 +408,21 @@ public abstract class AbstractResteasyTest {
 
     commit(table.getId(), branch, "key1", table.getMetadataLocation());
 
-    Contents contents =
+    ContentsKey key = ContentsKey.of("key1");
+
+    MultiGetContentsResponse contents =
         rest()
+            .body(MultiGetContentsRequest.builder().addRequestedKeys(key).build())
             .queryParam("ref", branch.getName())
             .queryParam("hashOnRef", branch.getHash())
-            .get(String.format("contents/%s", "key1"))
+            .post("trees/contents")
             .then()
             .statusCode(200)
             .extract()
-            .as(Contents.class);
+            .as(MultiGetContentsResponse.class);
 
-    assertThat(contents).isEqualTo(table);
+    assertThat(contents)
+        .extracting(MultiGetContentsResponse::getContents)
+        .isEqualTo(Collections.singletonList(ContentsWithKey.of(key, table)));
   }
 }

@@ -34,6 +34,8 @@ import org.projectnessie.model.Contents.Type;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Merge;
+import org.projectnessie.model.MultiGetContentsRequest;
+import org.projectnessie.model.MultiGetContentsResponse;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
@@ -45,6 +47,7 @@ import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.WithHash;
 
 /** Does authorization checks (if enabled) on the {@link TreeApiImpl}. */
 public class TreeApiImplWithAuthorization extends TreeApiImpl {
@@ -198,5 +201,19 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
               }
             });
     return super.commitMultipleOperations(branch, hash, operations);
+  }
+
+  @Override
+  public MultiGetContentsResponse getMultipleContents(
+      String namedRef, String hashOnRef, MultiGetContentsRequest request)
+      throws NessieNotFoundException {
+    WithHash<NamedRef> ref = namedRefWithHashOrThrow(namedRef, hashOnRef);
+    request
+        .getRequestedKeys()
+        .forEach(
+            k ->
+                getAccessChecker()
+                    .canReadEntityValue(createAccessContext(), ref.getValue(), k, null));
+    return super.getMultipleContents(namedRef, hashOnRef, request);
   }
 }

@@ -49,8 +49,8 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"name": "dev-tag", "hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-      "type": "TAG"}'
+    body: '{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+      "name": "dev-tag", "type": "TAG"}'
     headers:
       Accept:
       - '*/*'
@@ -129,8 +129,8 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"name": "etl-tag", "hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-      "type": "TAG"}'
+    body: '{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+      "name": "etl-tag", "type": "TAG"}'
     headers:
       Accept:
       - '*/*'
@@ -407,8 +407,8 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"name": "v1.0", "hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-      "type": "TAG"}'
+    body: '{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+      "name": "v1.0", "type": "TAG"}'
     headers:
       Accept:
       - '*/*'

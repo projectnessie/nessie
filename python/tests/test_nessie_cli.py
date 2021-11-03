@@ -29,11 +29,14 @@ from pynessie import __version__
 from pynessie.model import Branch
 from pynessie.model import Contents
 from pynessie.model import ContentsSchema
+from pynessie.model import ContentsWithKey
+from pynessie.model import ContentsWithKeySchema
 from pynessie.model import DeltaLakeTable
 from pynessie.model import EntrySchema
 from pynessie.model import IcebergTable
 from pynessie.model import ReferenceSchema
 from pynessie.model import SqlView
+from pynessie.utils import contents_key
 from .conftest import _cli
 from .conftest import _run
 
@@ -108,9 +111,9 @@ def test_log() -> None:
     _make_commit("log.foo.dev", table, "dev_test_log", author="nessie_user1")
     table = _new_table("test_log")
     _make_commit("log.foo.bar", table, "main", author="nessie_user1")
-    tables = ContentsSchema().loads(_cli(["--json", "contents", "log.foo.bar"]), many=True)
+    tables = ContentsWithKeySchema().loads(_cli(["--json", "contents", "log.foo.bar"]), many=True)
     assert len(tables) == 1
-    assert tables[0] == table
+    assert tables[0] == ContentsWithKey(contents_key("log.foo.bar"), table)
     logs = simplejson.loads(_cli(["--json", "log"]))
     assert len(logs) == 1
     logs = simplejson.loads(_cli(["--json", "log", "--revision-range", logs[0]["hash"]]))
@@ -309,13 +312,32 @@ def test_contents_listing() -> None:
     _make_commit("this.is.delta.bar", delta_lake_table, branch)
     _make_commit("this.is.sql.baz", sql_view, branch)
 
-    tables = ContentsSchema().loads(_cli(["--json", "contents", "--ref", branch, "this.is.iceberg.foo"]), many=True)
-    assert_that(tables).is_length(1)
-    assert_that(tables[0]).is_equal_to(iceberg_table)
+    tables = ContentsWithKeySchema().loads(_cli(["--json", "contents", "--ref", branch, "this.is.iceberg.foo"]), many=True)
+    assert_that(tables).is_equal_to([ContentsWithKey(contents_key("this.is.iceberg.foo"), iceberg_table)])
 
-    tables = ContentsSchema().loads(_cli(["--json", "contents", "--ref", branch, "this.is.delta.bar"]), many=True)
-    assert_that(tables).is_length(1)
-    assert_that(tables[0]).is_equal_to(delta_lake_table)
+    tables = ContentsWithKeySchema().loads(_cli(["--json", "contents", "--ref", branch, "this.is.delta.bar"]), many=True)
+    assert_that(tables).is_equal_to([ContentsWithKey(contents_key("this.is.delta.bar"), delta_lake_table)])
+
+    tables = ContentsWithKeySchema().loads(
+        _cli(["--json", "contents", "--ref", branch, "this.is.iceberg.foo", "this.is.delta.bar"]), many=True
+    )
+    assert_that(tables).is_equal_to(
+        [
+            ContentsWithKey(contents_key("this.is.iceberg.foo"), iceberg_table),
+            ContentsWithKey(contents_key("this.is.delta.bar"), delta_lake_table),
+        ]
+    )
+
+    tables = ContentsWithKeySchema().loads(
+        _cli(["--json", "contents", "--ref", branch, "this.is.iceberg.foo", "this.is.not.there", "this.is.delta.bar"]), many=True
+    )
+    assert_that(tables).is_equal_to(
+        [
+            ContentsWithKey(contents_key("this.is.iceberg.foo"), iceberg_table),
+            ContentsWithKey(contents_key("this.is.not.there"), None),
+            ContentsWithKey(contents_key("this.is.delta.bar"), delta_lake_table),
+        ]
+    )
 
     tables = EntrySchema().loads(_cli(["--json", "contents", "--ref", branch, "--list", "--type", "ICEBERG_TABLE"]), many=True)
     assert_that(tables).is_length(1)

@@ -25,9 +25,13 @@ import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
+import org.projectnessie.model.Contents;
+import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Merge;
+import org.projectnessie.model.MultiGetContentsRequest;
+import org.projectnessie.model.MultiGetContentsResponse;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Transplant;
@@ -215,4 +219,28 @@ public interface TreeApi {
           String hash,
       @Valid @NotNull Operations operations)
       throws NessieNotFoundException, NessieConflictException;
+
+  /**
+   * Takes multiple {@link ContentsKey}s and returns the {@link Contents} for the one or more {@link
+   * ContentsKey}s in a named-reference (a {@link org.projectnessie.model.Branch} or {@link
+   * org.projectnessie.model.Tag}).
+   *
+   * <p>If the table-metadata is tracked globally (Iceberg), Nessie returns a {@link Contents}
+   * object, that contains the most up-to-date part for the globally tracked part (Iceberg:
+   * table-metadata) plus the per-Nessie-reference/hash specific part (Iceberg: snapshot-ID).
+   *
+   * @param ref named-reference to retrieve the contents for
+   * @param hashOnRef hash on {@code ref} to retrieve the contents for, translates to {@code HEAD},
+   *     if missing/{@code null}
+   * @param request the {@link ContentsKey}s to retrieve
+   * @return list of {@link MultiGetContentsResponse.ContentsWithKey}s
+   * @throws NessieNotFoundException if {@code ref} or {@code hashOnRef} does not exist
+   */
+  MultiGetContentsResponse getMultipleContents(
+      @Valid @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          String ref,
+      @Valid @Nullable @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          String hashOnRef,
+      @Valid @NotNull MultiGetContentsRequest request)
+      throws NessieNotFoundException;
 }

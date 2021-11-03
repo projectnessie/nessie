@@ -18,15 +18,15 @@
 """contents CLI command."""
 
 from collections import defaultdict
-from typing import Any, Generator, Optional
 from typing import List
+from typing import Optional
 
 import click
 
 from ..cli_common_context import ContextObject, MutuallyExclusiveOption, pass_client
 from ..client import NessieClient
-from ..error import error_handler, NessieNotFoundException
-from ..model import Contents, ContentsSchema, Delete, Entries, Entry, EntrySchema, Operation, Put
+from ..error import error_handler
+from ..model import ContentsSchema, ContentsWithKey, ContentsWithKeySchema, Delete, Entries, Entry, EntrySchema, Operation, Put
 from ..utils import build_query_expression_for_contents_listing_flags, contents_key, format_key
 
 
@@ -123,25 +123,37 @@ def contents(
 
     KEY name of object to view, delete. If listing the key will limit by namespace what is included.
     """
+    reference = ref if ref else ctx.nessie.get_default_branch()
     if list:
         keys = ctx.nessie.list_keys(
-            ref if ref else ctx.nessie.get_default_branch(),
+            reference,
             query_expression=build_query_expression_for_contents_listing_flags(query_expression, entity_types),
         )
         results = EntrySchema().dumps(_format_keys_json(keys, *key), many=True) if ctx.json else _format_keys(keys, *key)
     elif delete or set:
-        ops = _get_contents(ctx.nessie, ref, delete, stdin, expect_same_contents, *key)
+        if not expected_hash:
+            raise click.ClickException("Must provide the expected hash using the --condition option.")
+        ops = _get_contents(ctx.nessie, reference, key, delete, stdin, expect_same_contents)
         if ops:
-            ctx.nessie.commit(ref, expected_hash, _get_message(message), author, *ops)
+            ctx.nessie.commit(reference, expected_hash, _get_message(message), author, *ops)
         else:
             click.echo("No changes requested")
         results = ""
     else:
+        if len(key) == 0:
+            raise click.ClickException("Must specify at least one key on the command line.")
+        contents_dict = ctx.nessie.get_values(reference, key)
+        if ctx.json:
+            results = ContentsWithKeySchema().dumps([ContentsWithKey(contents_key(i), contents_dict.get(i)) for i in key], many=True)
+        else:
 
-        def content(*x: str) -> Generator[Contents, Any, None]:
-            return ctx.nessie.get_values(ref if ref else ctx.nessie.get_default_branch(), *x)
+            def _pretty_print(k: str) -> str:
+                c = contents_dict.get(k)
+                if not c:
+                    return "No contents for key {}".format(k)
+                return "Key {}\n{}".format(k, c.pretty_print())
 
-        results = ContentsSchema().dumps(content(*key), many=True) if ctx.json else "\n".join((i.pretty_print() for i in content(*key)))
+            results = "\n\n".join(_pretty_print(i) for i in key)
     click.echo(results)
 
 
@@ -170,18 +182,13 @@ def _edit_contents(key: str, body: str) -> Optional[str]:
 
 
 def _get_contents(
-    nessie: NessieClient, ref: str, delete: bool = False, use_stdin: bool = False, expect_same_contents: bool = False, *keys: str
+    nessie: NessieClient, ref: str, keys: List[str], delete: bool = False, use_stdin: bool = False, expect_same_contents: bool = False
 ) -> List[Operation]:
     contents_altered: List[Operation] = list()
+    contents_dict = nessie.get_values(ref, keys)
     for raw_key in keys:
         key = format_key(raw_key)
-        content_orig = None
-
-        try:  # get current contents, if present
-            content = nessie.get_values(ref, key)
-            content_orig = content.__next__()
-        except NessieNotFoundException:
-            pass
+        content_orig = contents_dict.get(raw_key)
 
         if delete:
             content_json = None

@@ -39,6 +39,7 @@ nessie_config_dir: str
 # Helper variable to control VCR recording in test fixtures
 nessie_cleanup: bool = False
 
+
 def pytest_configure(config):  # noqa
     """Configure pytest."""
     config.addinivalue_line("markers", "doc: mark as end-to-end test.")
