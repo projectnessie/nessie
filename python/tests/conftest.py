@@ -40,7 +40,7 @@ class NessieTestConfig:
     """Test configs for pynessie tests."""
 
     config_dir: str
-    cleanup: bool = False
+    cleanup: bool
 
 
 nessie_test_config: NessieTestConfig = NessieTestConfig("", False)
