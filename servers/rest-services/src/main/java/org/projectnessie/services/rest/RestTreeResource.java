@@ -33,8 +33,6 @@ import org.projectnessie.model.Contents.Type;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Merge;
-import org.projectnessie.model.MultiGetContentsRequest;
-import org.projectnessie.model.MultiGetContentsResponse;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Transplant;
@@ -154,12 +152,5 @@ public class RestTreeResource implements HttpTreeApi {
   public Branch commitMultipleOperations(String branchName, String hash, Operations operations)
       throws NessieNotFoundException, NessieConflictException {
     return resource().commitMultipleOperations(branchName, hash, operations);
-  }
-
-  @Override
-  public MultiGetContentsResponse getMultipleContents(
-      String ref, String hashOnRef, MultiGetContentsRequest request)
-      throws NessieNotFoundException {
-    return resource().getMultipleContents(ref, hashOnRef, request);
   }
 }

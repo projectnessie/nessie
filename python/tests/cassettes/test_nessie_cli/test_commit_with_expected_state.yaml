@@ -16,10 +16,10 @@ interactions:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}"
     headers:
+      Content-Length:
+      - '121'
       Content-Type:
       - application/json
-      content-length:
-      - '121'
     status:
       code: 200
       message: OK
@@ -40,10 +40,10 @@ interactions:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}"
     headers:
+      Content-Length:
+      - '121'
       Content-Type:
       - application/json
-      content-length:
-      - '121'
     status:
       code: 200
       message: OK
@@ -69,10 +69,10 @@ interactions:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}"
     headers:
+      Content-Length:
+      - '120'
       Content-Type:
       - application/json
-      content-length:
-      - '120'
     status:
       code: 200
       message: OK
@@ -96,48 +96,46 @@ interactions:
         \ \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}
         ]"
     headers:
+      Content-Length:
+      - '247'
       Content-Type:
       - application/json
-      content-length:
-      - '247'
     status:
       code: 200
       message: OK
 - request:
-    body: '{"requestedKeys": [{"elements": ["commit", "expected", "contents"]}]}'
+    body: null
     headers:
       Accept:
-      - '*/*'
+      - application/json
       Accept-Encoding:
       - gzip, deflate
       Connection:
       - keep-alive
-      Content-Length:
-      - '69'
-      Content-Type:
-      - application/json
       User-Agent:
       - python-requests/2.26.0
-    method: POST
-    uri: http://localhost:19120/api/v1/trees/contents?ref=dev
+    method: GET
+    uri: http://localhost:19120/api/v1/contents/commit.expected.contents?ref=dev
   response:
     body:
-      string: "{\n  \"contents\" : [ ]\n}"
+      string: "{\n  \"message\" : \"Requested contents do not exist for specified
+        reference.\",\n  \"status\" : 404,\n  \"reason\" : \"Not Found\",\n  \"serverStackTrace\"
+        : null\n}"
     headers:
+      Content-Length:
+      - '149'
       Content-Type:
       - application/json
-      content-length:
-      - '22'
     status:
-      code: 200
-      message: OK
+      code: 404
+      message: Not Found
 - request:
-    body: '{"commitMeta": {"author": "nessie test", "commitTime": null, "authorTime":
-      null, "message": "commit 1", "signedOffBy": null, "hash": null, "committer":
-      null, "properties": null}, "operations": [{"contents": {"id": "test_expected_contents",
-      "metadataLocation": "/a/b/c", "idGenerators": "xyz", "type": "ICEBERG_TABLE"},
-      "key": {"elements": ["commit", "expected", "contents"]}, "expectedContents":
-      null, "type": "PUT"}]}'
+    body: '{"operations": [{"contents": {"id": "test_expected_contents", "metadataLocation":
+      "/a/b/c", "idGenerators": "xyz", "type": "ICEBERG_TABLE"}, "key": {"elements":
+      ["commit", "expected", "contents"]}, "expectedContents": null, "type": "PUT"}],
+      "commitMeta": {"author": "nessie test", "properties": null, "committer": null,
+      "signedOffBy": null, "hash": null, "commitTime": null, "message": "commit 1",
+      "authorTime": null}}'
     headers:
       Accept:
       - '*/*'
@@ -155,12 +153,12 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/branch/dev/commit?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"038e7157a195c904537f4510902007943e18f6d8c728006012d01754759a815b\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"1b80e34098fab4883e48c66a953f0b20f2fb7c3d0146548cfd98af3e45a7ac71\"\n}"
     headers:
+      Content-Length:
+      - '120'
       Content-Type:
       - application/json
-      content-length:
-      - '120'
     status:
       code: 200
       message: OK
@@ -181,55 +179,49 @@ interactions:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
         \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}, {\n
-        \ \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"038e7157a195c904537f4510902007943e18f6d8c728006012d01754759a815b\"\n}
+        \ \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"1b80e34098fab4883e48c66a953f0b20f2fb7c3d0146548cfd98af3e45a7ac71\"\n}
         ]"
     headers:
+      Content-Length:
+      - '247'
       Content-Type:
       - application/json
-      content-length:
-      - '247'
     status:
       code: 200
       message: OK
 - request:
-    body: '{"requestedKeys": [{"elements": ["commit", "expected", "contents"]}]}'
+    body: null
     headers:
       Accept:
-      - '*/*'
+      - application/json
       Accept-Encoding:
       - gzip, deflate
       Connection:
       - keep-alive
-      Content-Length:
-      - '69'
-      Content-Type:
-      - application/json
       User-Agent:
       - python-requests/2.26.0
-    method: POST
-    uri: http://localhost:19120/api/v1/trees/contents?ref=dev
+    method: GET
+    uri: http://localhost:19120/api/v1/contents/commit.expected.contents?ref=dev
   response:
     body:
-      string: "{\n  \"contents\" : [ {\n    \"key\" : {\n      \"elements\" : [ \"commit\",
-        \"expected\", \"contents\" ]\n    },\n    \"contents\" : {\n      \"type\"
-        : \"ICEBERG_TABLE\",\n      \"id\" : \"test_expected_contents\",\n      \"metadataLocation\"
-        : \"/a/b/c\",\n      \"idGenerators\" : \"xyz\"\n    }\n  } ]\n}"
+      string: "{\n  \"type\" : \"ICEBERG_TABLE\",\n  \"id\" : \"test_expected_contents\",\n
+        \ \"metadataLocation\" : \"/a/b/c\",\n  \"idGenerators\" : \"xyz\"\n}"
     headers:
+      Content-Length:
+      - '124'
       Content-Type:
       - application/json
-      content-length:
-      - '267'
     status:
       code: 200
       message: OK
 - request:
-    body: '{"commitMeta": {"author": "nessie test", "commitTime": null, "authorTime":
-      null, "message": "commit 2", "signedOffBy": null, "hash": null, "committer":
-      null, "properties": null}, "operations": [{"contents": {"id": "test_expected_contents",
+    body: '{"operations": [{"contents": {"id": "test_expected_contents", "metadataLocation":
+      "/a/b/c", "idGenerators": "xyz", "type": "ICEBERG_TABLE"}, "key": {"elements":
+      ["commit", "expected", "contents"]}, "expectedContents": {"id": "test_expected_contents",
       "metadataLocation": "/a/b/c", "idGenerators": "xyz", "type": "ICEBERG_TABLE"},
-      "key": {"elements": ["commit", "expected", "contents"]}, "expectedContents":
-      {"id": "test_expected_contents", "metadataLocation": "/a/b/c", "idGenerators":
-      "xyz", "type": "ICEBERG_TABLE"}, "type": "PUT"}]}'
+      "type": "PUT"}], "commitMeta": {"author": "nessie test", "properties": null,
+      "committer": null, "signedOffBy": null, "hash": null, "commitTime": null, "message":
+      "commit 2", "authorTime": null}}'
     headers:
       Accept:
       - '*/*'
@@ -244,15 +236,15 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/dev/commit?expectedHash=038e7157a195c904537f4510902007943e18f6d8c728006012d01754759a815b
+    uri: http://localhost:19120/api/v1/trees/branch/dev/commit?expectedHash=1b80e34098fab4883e48c66a953f0b20f2fb7c3d0146548cfd98af3e45a7ac71
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"1601a6526ed086525f5de3e7e43ee168263c88a799642517e0f13fd094c0809a\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"cab302a07d613f23241c4425f594fc84ca3ca3fbecacd52860241651f4813c60\"\n}"
     headers:
+      Content-Length:
+      - '120'
       Content-Type:
       - application/json
-      content-length:
-      - '120'
     status:
       code: 200
       message: OK

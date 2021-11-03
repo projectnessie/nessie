@@ -104,40 +104,37 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"requestedKeys": [{"elements": ["merge", "foo", "bar"]}]}'
+    body: null
     headers:
       Accept:
-      - '*/*'
+      - application/json
       Accept-Encoding:
       - gzip, deflate
       Connection:
       - keep-alive
-      Content-Length:
-      - '58'
-      Content-Type:
-      - application/json
       User-Agent:
       - python-requests/2.26.0
-    method: POST
-    uri: http://localhost:19120/api/v1/trees/contents?ref=dev
+    method: GET
+    uri: http://localhost:19120/api/v1/contents/merge.foo.bar?ref=dev
   response:
     body:
-      string: "{\n  \"contents\" : [ ]\n}"
+      string: "{\n  \"status\" : 404,\n  \"reason\" : \"Not Found\",\n  \"message\"
+        : \"Could not find contents for key 'merge.foo.bar' in reference 'dev'.\",\n
+        \ \"errorCode\" : \"CONTENTS_NOT_FOUND\",\n  \"serverStackTrace\" : null\n}"
     headers:
       Content-Type:
       - application/json
       content-length:
-      - '22'
+      - '198'
     status:
-      code: 200
-      message: OK
+      code: 404
+      message: Not Found
 - request:
-    body: '{"commitMeta": {"author": "nessie test", "commitTime": null, "authorTime":
-      null, "message": "test message", "signedOffBy": null, "hash": null, "committer":
-      null, "properties": null}, "operations": [{"contents": {"id": "test_merge",
-      "metadataLocation": "/a/b/c", "idGenerators": "xyz", "type": "ICEBERG_TABLE"},
-      "key": {"elements": ["merge", "foo", "bar"]}, "expectedContents": null, "type":
-      "PUT"}]}'
+    body: '{"commitMeta": {"author": "nessie test", "commitTime": null, "committer":
+      null, "properties": null, "message": "test message", "hash": null, "signedOffBy":
+      null, "authorTime": null}, "operations": [{"expectedContents": null, "contents":
+      {"metadataLocation": "/a/b/c", "id": "test_merge", "idGenerators": "xyz", "type":
+      "ICEBERG_TABLE"}, "key": {"elements": ["merge", "foo", "bar"]}, "type": "PUT"}]}'
     headers:
       Accept:
       - '*/*'
@@ -155,7 +152,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/branch/dev/commit?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"96600d9d922682d217c6da7ffc7fe39ede0fb4278d79009b9ab36427982296eb\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"f4bfbbe68dca6f7983bced9f49e3af7aaf5eda71e2334e7dd6eab6331a82319d\"\n}"
     headers:
       Content-Type:
       - application/json
@@ -181,7 +178,7 @@ interactions:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
         \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}, {\n
-        \ \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"96600d9d922682d217c6da7ffc7fe39ede0fb4278d79009b9ab36427982296eb\"\n}
+        \ \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"f4bfbbe68dca6f7983bced9f49e3af7aaf5eda71e2334e7dd6eab6331a82319d\"\n}
         ]"
     headers:
       Content-Type:
@@ -230,7 +227,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/dev
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"96600d9d922682d217c6da7ffc7fe39ede0fb4278d79009b9ab36427982296eb\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"f4bfbbe68dca6f7983bced9f49e3af7aaf5eda71e2334e7dd6eab6331a82319d\"\n}"
     headers:
       Content-Type:
       - application/json
@@ -240,7 +237,7 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"fromRefName": "dev", "fromHash": "96600d9d922682d217c6da7ffc7fe39ede0fb4278d79009b9ab36427982296eb"}'
+    body: '{"fromRefName": "dev", "fromHash": "f4bfbbe68dca6f7983bced9f49e3af7aaf5eda71e2334e7dd6eab6331a82319d"}'
     headers:
       Accept:
       - '*/*'
@@ -279,8 +276,8 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
-        \"96600d9d922682d217c6da7ffc7fe39ede0fb4278d79009b9ab36427982296eb\"\n}, {\n
-        \ \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"96600d9d922682d217c6da7ffc7fe39ede0fb4278d79009b9ab36427982296eb\"\n}
+        \"f4bfbbe68dca6f7983bced9f49e3af7aaf5eda71e2334e7dd6eab6331a82319d\"\n}, {\n
+        \ \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"f4bfbbe68dca6f7983bced9f49e3af7aaf5eda71e2334e7dd6eab6331a82319d\"\n}
         ]"
     headers:
       Content-Type:
