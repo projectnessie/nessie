@@ -18,39 +18,39 @@ package org.projectnessie.services.impl;
 import java.security.Principal;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.Contents;
-import org.projectnessie.model.Contents.Type;
-import org.projectnessie.model.ContentsKey;
-import org.projectnessie.model.MultiGetContentsRequest;
-import org.projectnessie.model.MultiGetContentsResponse;
+import org.projectnessie.model.Content;
+import org.projectnessie.model.Content.Type;
+import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.MultiGetContentRequest;
+import org.projectnessie.model.MultiGetContentResponse;
 import org.projectnessie.services.authz.AccessChecker;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
 
-/** Does authorization checks (if enabled) on the {@link ContentsApiImpl}. */
-public class ContentsApiImplWithAuthorization extends ContentsApiImpl {
+/** Does authorization checks (if enabled) on the {@link ContentApiImpl}. */
+public class ContentApiImplWithAuthorization extends ContentApiImpl {
 
-  public ContentsApiImplWithAuthorization(
+  public ContentApiImplWithAuthorization(
       ServerConfig config,
-      VersionStore<Contents, CommitMeta, Type> store,
+      VersionStore<Content, CommitMeta, Type> store,
       AccessChecker accessChecker,
       Principal principal) {
     super(config, store, accessChecker, principal);
   }
 
   @Override
-  public Contents getContents(ContentsKey key, String namedRef, String hashOnRef)
+  public Content getContent(ContentKey key, String namedRef, String hashOnRef)
       throws NessieNotFoundException {
     NamedRef ref = namedRefWithHashOrThrow(namedRef, hashOnRef).getValue();
     getAccessChecker().canReadEntityValue(createAccessContext(), ref, key, null);
-    return super.getContents(key, namedRef, hashOnRef);
+    return super.getContent(key, namedRef, hashOnRef);
   }
 
   @Override
-  public MultiGetContentsResponse getMultipleContents(
-      String namedRef, String hashOnRef, MultiGetContentsRequest request)
+  public MultiGetContentResponse getMultipleContents(
+      String namedRef, String hashOnRef, MultiGetContentRequest request)
       throws NessieNotFoundException {
     WithHash<NamedRef> ref = namedRefWithHashOrThrow(namedRef, hashOnRef);
     request

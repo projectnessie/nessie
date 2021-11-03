@@ -38,13 +38,13 @@ message Key {
 
 message KeyWithType {
   Key key = 1;
-  ContentsId contents_id = 2;
+  ContentId content_id = 2;
   int32 type = 3;
 }
 
 message KeyWithBytes {
   Key key = 1;
-  ContentsId contents_id = 2;
+  ContentId content_id = 2;
   int32 type = 3;
   bytes value = 4;
 }
@@ -53,17 +53,17 @@ message KeyList {
   repeated KeyWithType keys = 1;
 }
 
-message ContentsId {
+message ContentId {
   string id = 1;
 }
 
-message ContentsIdWithType {
-  ContentsId contents_id = 1;
+message ContentIdWithType {
+  ContentId content_id = 1;
   int32 type = 2;
 }
 
-message ContentsIdWithBytes {
-  ContentsId contents_id = 1;
+message ContentIdWithBytes {
+  ContentId content_id = 1;
   int32 type = 2;
   bytes value = 3;
 }
@@ -73,7 +73,7 @@ message GlobalStateLogEntry {
   int64 createdTime = 1;
   bytes id = 2;
   repeated bytes parents = 3;
-  repeated ContentsIdWithBytes puts = 4;
+  repeated ContentIdWithBytes puts = 4;
 }
 
 // Used by non-transactional database-adapters

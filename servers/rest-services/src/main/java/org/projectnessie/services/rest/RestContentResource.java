@@ -19,51 +19,51 @@ import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.SecurityContext;
-import org.projectnessie.api.ContentsApi;
-import org.projectnessie.api.http.HttpContentsApi;
+import org.projectnessie.api.ContentApi;
+import org.projectnessie.api.http.HttpContentApi;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.Contents;
-import org.projectnessie.model.Contents.Type;
-import org.projectnessie.model.ContentsKey;
-import org.projectnessie.model.MultiGetContentsRequest;
-import org.projectnessie.model.MultiGetContentsResponse;
+import org.projectnessie.model.Content;
+import org.projectnessie.model.Content.Type;
+import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.MultiGetContentRequest;
+import org.projectnessie.model.MultiGetContentResponse;
 import org.projectnessie.services.authz.AccessChecker;
 import org.projectnessie.services.config.ServerConfig;
-import org.projectnessie.services.impl.ContentsApiImplWithAuthorization;
+import org.projectnessie.services.impl.ContentApiImplWithAuthorization;
 import org.projectnessie.versioned.VersionStore;
 
-/** REST endpoint for the contents-API. */
+/** REST endpoint for the content-API. */
 @RequestScoped
-public class RestContentsResource implements HttpContentsApi {
-  // Cannot extend the ContentsApiImplWithAuthn class, because then CDI gets confused
-  // about which interface to use - either HttpContentsApi or the plain ContentsApi. This can lead
+public class RestContentResource implements HttpContentApi {
+  // Cannot extend the ContentApiImplWithAuthn class, because then CDI gets confused
+  // about which interface to use - either HttpContentApi or the plain ContentApi. This can lead
   // to various symptoms: complaints about varying validation-constraints in HttpTreeApi + TreeAPi,
   // empty resources (no REST methods defined) and potentially other.
 
   private final ServerConfig config;
-  private final VersionStore<Contents, CommitMeta, Type> store;
+  private final VersionStore<Content, CommitMeta, Type> store;
   private final AccessChecker accessChecker;
 
   @Context SecurityContext securityContext;
 
   // Mandated by CDI 2.0
-  public RestContentsResource() {
+  public RestContentResource() {
     this(null, null, null);
   }
 
   @Inject
-  public RestContentsResource(
+  public RestContentResource(
       ServerConfig config,
-      VersionStore<Contents, CommitMeta, Type> store,
+      VersionStore<Content, CommitMeta, Type> store,
       AccessChecker accessChecker) {
     this.config = config;
     this.store = store;
     this.accessChecker = accessChecker;
   }
 
-  private ContentsApi resource() {
-    return new ContentsApiImplWithAuthorization(
+  private ContentApi resource() {
+    return new ContentApiImplWithAuthorization(
         config,
         store,
         accessChecker,
@@ -71,15 +71,14 @@ public class RestContentsResource implements HttpContentsApi {
   }
 
   @Override
-  public Contents getContents(ContentsKey key, String ref, String hashOnRef)
+  public Content getContent(ContentKey key, String ref, String hashOnRef)
       throws NessieNotFoundException {
-    return resource().getContents(key, ref, hashOnRef);
+    return resource().getContent(key, ref, hashOnRef);
   }
 
   @Override
-  public MultiGetContentsResponse getMultipleContents(
-      String ref, String hashOnRef, MultiGetContentsRequest request)
-      throws NessieNotFoundException {
+  public MultiGetContentResponse getMultipleContents(
+      String ref, String hashOnRef, MultiGetContentRequest request) throws NessieNotFoundException {
     return resource().getMultipleContents(ref, hashOnRef, request);
   }
 }

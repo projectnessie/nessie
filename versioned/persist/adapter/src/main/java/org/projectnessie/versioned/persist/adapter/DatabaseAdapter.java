@@ -39,9 +39,9 @@ import org.projectnessie.versioned.WithHash;
  * databases that share common core implementations for example for the commit/merge/transplant
  * operations.
  *
- * <p>Database-adapters treat the actual "Nessie contents" and "Nessie commit metadata" as an opaque
- * value ("BLOB") without interpreting the contents. Database-adapter must persist serialized values
- * for commit-metadata and contents as is and must return those in the exact same representation on
+ * <p>Database-adapters treat the actual "Nessie content" and "Nessie commit metadata" as an opaque
+ * value ("BLOB") without interpreting the content. Database-adapter must persist serialized values
+ * for commit-metadata and content as is and must return those in the exact same representation on
  * read.
  *
  * <p>Actual implementation usually extend either {@code
@@ -96,7 +96,7 @@ public interface DatabaseAdapter {
    * @return Ordered stream
    * @throws ReferenceNotFoundException if {@code commit} does not exist.
    */
-  Map<Key, ContentsAndState<ByteString>> values(
+  Map<Key, ContentAndState<ByteString>> values(
       Hash commit, Collection<Key> keys, KeyFilterPredicate keyFilter)
       throws ReferenceNotFoundException;
 
@@ -110,7 +110,7 @@ public interface DatabaseAdapter {
   Stream<CommitLogEntry> commitLog(Hash offset) throws ReferenceNotFoundException;
 
   /**
-   * Retrieve the contents-keys that are "present" for the specified commit.
+   * Retrieve the content-keys that are "present" for the specified commit.
    *
    * @param commit commit to retrieve the values for.
    * @param keyFilter predicate to optionally skip specific keys in the result and return those as
@@ -228,15 +228,15 @@ public interface DatabaseAdapter {
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**
-   * Compute the difference of the contents for the two commits identified by {@code from} and
-   * {@code to}.
+   * Compute the difference of the content for the two commits identified by {@code from} and {@code
+   * to}.
    *
    * @param from {@link Diff#getFromValue() "From"} side of the diff
    * @param to {@link Diff#getToValue() "To" side} of the diff
    * @param keyFilter predicate to optionally skip specific keys in the diff result and not return
    *     those, for example to implement a security policy.
-   * @return stream containing the difference of the contents, excluding both equal values and
-   *     values that were excluded via {@code keyFilter}
+   * @return stream containing the difference of the content, excluding both equal values and values
+   *     that were excluded via {@code keyFilter}
    * @throws ReferenceNotFoundException if {@code from} or {@code to} does not exist.
    */
   Stream<Difference> diff(Hash from, Hash to, KeyFilterPredicate keyFilter)
@@ -246,19 +246,18 @@ public interface DatabaseAdapter {
   // for Nessie-GC need to look like.
 
   /**
-   * Retrieve all keys recorded in the global-contents-log.
+   * Retrieve all keys recorded in the global-content-log.
    *
    * <p>This operation is primarily used by Nessie-GC and must not be exposed via a public API.
    */
-  Stream<ContentsIdWithType> globalKeys(ToIntFunction<ByteString> contentsTypeExtractor);
+  Stream<ContentIdWithType> globalKeys(ToIntFunction<ByteString> contentTypeExtractor);
 
   /**
-   * Retrieve all global-contents recorded in the global-contents-log for the given keys +
-   * contents-ids. Callers must assume that the result will not be grouped by key or
-   * key+contents-id.
+   * Retrieve all global-content recorded in the global-content-log for the given keys +
+   * content-ids. Callers must assume that the result will not be grouped by key or key+content-id.
    *
    * <p>This operation is primarily used by Nessie-GC and must not be exposed via a public API.
    */
-  Stream<ContentsIdAndBytes> globalContents(
-      Set<ContentsId> keys, ToIntFunction<ByteString> contentsTypeExtractor);
+  Stream<ContentIdAndBytes> globalContent(
+      Set<ContentId> keys, ToIntFunction<ByteString> contentTypeExtractor);
 }

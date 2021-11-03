@@ -17,26 +17,26 @@ package org.projectnessie.client.http;
 
 import java.io.Closeable;
 import org.projectnessie.api.http.HttpConfigApi;
-import org.projectnessie.api.http.HttpContentsApi;
+import org.projectnessie.api.http.HttpContentApi;
 import org.projectnessie.api.http.HttpTreeApi;
 
 public class NessieApiClient implements Closeable {
   private final HttpConfigApi config;
   private final HttpTreeApi tree;
-  private final HttpContentsApi contents;
+  private final HttpContentApi content;
 
-  public NessieApiClient(HttpConfigApi config, HttpTreeApi tree, HttpContentsApi contents) {
+  public NessieApiClient(HttpConfigApi config, HttpTreeApi tree, HttpContentApi content) {
     this.config = config;
     this.tree = tree;
-    this.contents = contents;
+    this.content = content;
   }
 
   public HttpTreeApi getTreeApi() {
     return tree;
   }
 
-  public HttpContentsApi getContentsApi() {
-    return contents;
+  public HttpContentApi getContentApi() {
+    return content;
   }
 
   public HttpConfigApi getConfigApi() {

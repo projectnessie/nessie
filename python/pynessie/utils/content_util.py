@@ -19,7 +19,7 @@
 
 import re
 
-from ..model import ContentsKey
+from ..model import ContentKey
 
 _dot_regex = re.compile('\\.(?=([^"]*"[^"]*")*[^"]*$)')
 
@@ -30,7 +30,7 @@ def format_key(raw_key: str) -> str:
     return ".".join(i.replace(".", "\0") for i in elements if i)
 
 
-def contents_key(raw_key: str) -> ContentsKey:
+def content_key(raw_key: str) -> ContentKey:
     """Format given content key based on regex."""
     elements = _dot_regex.split(raw_key)
-    return ContentsKey([i for i in elements if i])
+    return ContentKey([i for i in elements if i])

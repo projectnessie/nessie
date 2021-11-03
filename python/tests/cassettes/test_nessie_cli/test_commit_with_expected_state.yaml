@@ -16,10 +16,10 @@ interactions:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}"
     headers:
-      Content-Length:
-      - '121'
       Content-Type:
       - application/json
+      content-length:
+      - '121'
     status:
       code: 200
       message: OK
@@ -40,10 +40,10 @@ interactions:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}"
     headers:
-      Content-Length:
-      - '121'
       Content-Type:
       - application/json
+      content-length:
+      - '121'
     status:
       code: 200
       message: OK
@@ -69,10 +69,10 @@ interactions:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}"
     headers:
-      Content-Length:
-      - '120'
       Content-Type:
       - application/json
+      content-length:
+      - '120'
     status:
       code: 200
       message: OK
@@ -96,10 +96,10 @@ interactions:
         \ \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}
         ]"
     headers:
-      Content-Length:
-      - '247'
       Content-Type:
       - application/json
+      content-length:
+      - '247'
     status:
       code: 200
       message: OK
@@ -118,24 +118,25 @@ interactions:
     uri: http://localhost:19120/api/v1/contents/commit.expected.contents?ref=dev
   response:
     body:
-      string: "{\n  \"message\" : \"Requested contents do not exist for specified
-        reference.\",\n  \"status\" : 404,\n  \"reason\" : \"Not Found\",\n  \"serverStackTrace\"
+      string: "{\n  \"status\" : 404,\n  \"reason\" : \"Not Found\",\n  \"message\"
+        : \"Could not find content for key 'commit.expected.contents' in reference
+        'dev'.\",\n  \"errorCode\" : \"CONTENT_NOT_FOUND\",\n  \"serverStackTrace\"
         : null\n}"
     headers:
-      Content-Length:
-      - '149'
       Content-Type:
       - application/json
+      content-length:
+      - '207'
     status:
       code: 404
       message: Not Found
 - request:
-    body: '{"operations": [{"contents": {"id": "test_expected_contents", "metadataLocation":
-      "/a/b/c", "idGenerators": "xyz", "type": "ICEBERG_TABLE"}, "key": {"elements":
-      ["commit", "expected", "contents"]}, "expectedContents": null, "type": "PUT"}],
-      "commitMeta": {"author": "nessie test", "properties": null, "committer": null,
-      "signedOffBy": null, "hash": null, "commitTime": null, "message": "commit 1",
-      "authorTime": null}}'
+    body: '{"commitMeta": {"properties": null, "author": "nessie test", "commitTime":
+      null, "signedOffBy": null, "authorTime": null, "committer": null, "hash": null,
+      "message": "commit 1"}, "operations": [{"expectedContent": null, "content":
+      {"idGenerators": "xyz", "metadataLocation": "/a/b/c", "id": "test_expected_contents",
+      "type": "ICEBERG_TABLE"}, "key": {"elements": ["commit", "expected", "contents"]},
+      "type": "PUT"}]}'
     headers:
       Accept:
       - '*/*'
@@ -144,7 +145,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '418'
+      - '416'
       Content-Type:
       - application/json
       User-Agent:
@@ -153,12 +154,12 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/branch/dev/commit?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"1b80e34098fab4883e48c66a953f0b20f2fb7c3d0146548cfd98af3e45a7ac71\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"ef213d14e1e183cd71b2d16957de2b3efe2fa7189027a6eb00a25cd2cd4d21e5\"\n}"
     headers:
-      Content-Length:
-      - '120'
       Content-Type:
       - application/json
+      content-length:
+      - '120'
     status:
       code: 200
       message: OK
@@ -179,13 +180,13 @@ interactions:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
         \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}, {\n
-        \ \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"1b80e34098fab4883e48c66a953f0b20f2fb7c3d0146548cfd98af3e45a7ac71\"\n}
+        \ \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"ef213d14e1e183cd71b2d16957de2b3efe2fa7189027a6eb00a25cd2cd4d21e5\"\n}
         ]"
     headers:
-      Content-Length:
-      - '247'
       Content-Type:
       - application/json
+      content-length:
+      - '247'
     status:
       code: 200
       message: OK
@@ -207,21 +208,21 @@ interactions:
       string: "{\n  \"type\" : \"ICEBERG_TABLE\",\n  \"id\" : \"test_expected_contents\",\n
         \ \"metadataLocation\" : \"/a/b/c\",\n  \"idGenerators\" : \"xyz\"\n}"
     headers:
-      Content-Length:
-      - '124'
       Content-Type:
       - application/json
+      content-length:
+      - '124'
     status:
       code: 200
       message: OK
 - request:
-    body: '{"operations": [{"contents": {"id": "test_expected_contents", "metadataLocation":
-      "/a/b/c", "idGenerators": "xyz", "type": "ICEBERG_TABLE"}, "key": {"elements":
-      ["commit", "expected", "contents"]}, "expectedContents": {"id": "test_expected_contents",
-      "metadataLocation": "/a/b/c", "idGenerators": "xyz", "type": "ICEBERG_TABLE"},
-      "type": "PUT"}], "commitMeta": {"author": "nessie test", "properties": null,
-      "committer": null, "signedOffBy": null, "hash": null, "commitTime": null, "message":
-      "commit 2", "authorTime": null}}'
+    body: '{"commitMeta": {"properties": null, "author": "nessie test", "commitTime":
+      null, "signedOffBy": null, "authorTime": null, "committer": null, "hash": null,
+      "message": "commit 2"}, "operations": [{"expectedContent": {"idGenerators":
+      "xyz", "metadataLocation": "/a/b/c", "id": "test_expected_contents", "type":
+      "ICEBERG_TABLE"}, "content": {"idGenerators": "xyz", "metadataLocation": "/a/b/c",
+      "id": "test_expected_contents", "type": "ICEBERG_TABLE"}, "key": {"elements":
+      ["commit", "expected", "contents"]}, "type": "PUT"}]}'
     headers:
       Accept:
       - '*/*'
@@ -230,21 +231,21 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '524'
+      - '522'
       Content-Type:
       - application/json
       User-Agent:
       - python-requests/2.26.0
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/dev/commit?expectedHash=1b80e34098fab4883e48c66a953f0b20f2fb7c3d0146548cfd98af3e45a7ac71
+    uri: http://localhost:19120/api/v1/trees/branch/dev/commit?expectedHash=ef213d14e1e183cd71b2d16957de2b3efe2fa7189027a6eb00a25cd2cd4d21e5
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"cab302a07d613f23241c4425f594fc84ca3ca3fbecacd52860241651f4813c60\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"047c770b06da674552dc58903ae16e317ddda0d6b579cf5afde7a4d4413d86dd\"\n}"
     headers:
-      Content-Length:
-      - '120'
       Content-Type:
       - application/json
+      content-length:
+      - '120'
     status:
       code: 200
       message: OK

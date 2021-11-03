@@ -24,8 +24,8 @@ import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.util.TypeLiteral;
 import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.Contents;
-import org.projectnessie.model.Contents.Type;
+import org.projectnessie.model.Content;
+import org.projectnessie.model.Content.Type;
 import org.projectnessie.server.store.TableCommitMetaStoreWorker;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.store.PersistVersionStore;
@@ -46,7 +46,7 @@ public class PersistVersionStoreExtension implements Extension {
     TableCommitMetaStoreWorker storeWorker = new TableCommitMetaStoreWorker();
 
     abd.addBean()
-        .addType(new TypeLiteral<VersionStore<Contents, CommitMeta, Type>>() {})
+        .addType(new TypeLiteral<VersionStore<Content, CommitMeta, Type>>() {})
         .addQualifier(Default.Literal.INSTANCE)
         .scope(ApplicationScoped.class)
         .produceWith(i -> new PersistVersionStore<>(databaseAdapter.get(), storeWorker));

@@ -13,22 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.persist.adapter;
+package org.projectnessie.error;
 
-import java.util.Objects;
-import org.immutables.value.Value;
+import org.projectnessie.model.ContentKey;
 
-@Value.Immutable
-public abstract class ContentsId {
-  public static ContentsId of(String id) {
-    Objects.requireNonNull(id);
-    return ImmutableContentsId.builder().id(id).build();
+/** This exception is thrown when the requested content object is not present in the store. */
+public class NessieContentNotFoundException extends NessieNotFoundException {
+
+  public NessieContentNotFoundException(ContentKey key, String ref) {
+    super(String.format("Could not find content for key '%s' in reference '%s'.", key, ref));
   }
 
-  public abstract String getId();
+  public NessieContentNotFoundException(NessieError error) {
+    super(error);
+  }
 
   @Override
-  public String toString() {
-    return getId();
+  public ErrorCode getErrorCode() {
+    return ErrorCode.CONTENT_NOT_FOUND;
   }
 }

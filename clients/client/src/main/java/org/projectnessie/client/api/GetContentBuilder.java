@@ -19,18 +19,18 @@ import java.util.List;
 import java.util.Map;
 import javax.validation.Valid;
 import org.projectnessie.error.NessieNotFoundException;
-import org.projectnessie.model.Contents;
-import org.projectnessie.model.ContentsKey;
+import org.projectnessie.model.Content;
+import org.projectnessie.model.ContentKey;
 
 /**
- * Request builder for "get contents".
+ * Request builder for "get content".
  *
  * @since {@link NessieApiV1}
  */
-public interface GetContentsBuilder extends OnReferenceBuilder<GetContentsBuilder> {
-  GetContentsBuilder key(@Valid ContentsKey key);
+public interface GetContentBuilder extends OnReferenceBuilder<GetContentBuilder> {
+  GetContentBuilder key(@Valid ContentKey key);
 
-  GetContentsBuilder keys(List<ContentsKey> keys);
+  GetContentBuilder keys(List<ContentKey> keys);
 
-  Map<ContentsKey, Contents> get() throws NessieNotFoundException;
+  Map<ContentKey, Content> get() throws NessieNotFoundException;
 }

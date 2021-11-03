@@ -27,18 +27,18 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import org.immutables.value.Value;
-import org.projectnessie.model.ImmutableContentsKey.Builder;
+import org.projectnessie.model.ImmutableContentKey.Builder;
 
 /**
- * Key for the contents of an object.
+ * Key for the content of an object.
  *
  * <p>For URL encoding, embedded periods within a segment are replaced with zero byte values before
  * passing in a url string.
  */
 @Value.Immutable(lazyhash = true)
-@JsonSerialize(as = ImmutableContentsKey.class)
-@JsonDeserialize(as = ImmutableContentsKey.class)
-public abstract class ContentsKey {
+@JsonSerialize(as = ImmutableContentKey.class)
+@JsonDeserialize(as = ImmutableContentKey.class)
+public abstract class ContentKey {
 
   private static final char ZERO_BYTE = '\u0000';
   private static final String ZERO_BYTE_STRING = Character.toString(ZERO_BYTE);
@@ -49,10 +49,10 @@ public abstract class ContentsKey {
 
   /**
    * Returns the namespace that is always consisting of the first <b>N-1</b> elements from {@link
-   * ContentsKey#getElements()}.
+   * ContentKey#getElements()}.
    *
    * @return A {@link Namespace} instance that is always consisting of the first <b>N-1</b> elements
-   *     from {@link ContentsKey#getElements()}.
+   *     from {@link ContentKey#getElements()}.
    */
   @JsonIgnore
   @Value.Redacted
@@ -66,23 +66,23 @@ public abstract class ContentsKey {
     return getElements().get(getElements().size() - 1);
   }
 
-  public static ContentsKey of(Namespace namespace, String name) {
-    Builder b = ImmutableContentsKey.builder();
+  public static ContentKey of(Namespace namespace, String name) {
+    Builder b = ImmutableContentKey.builder();
     if (namespace != null && !namespace.isEmpty()) {
       b.addElements(namespace.getElements());
     }
     return b.addElements(name).build();
   }
 
-  public static ContentsKey of(String... elements) {
+  public static ContentKey of(String... elements) {
     Objects.requireNonNull(elements, "Elements array must not be null");
-    return ImmutableContentsKey.builder().elements(Arrays.asList(elements)).build();
+    return ImmutableContentKey.builder().elements(Arrays.asList(elements)).build();
   }
 
   @JsonCreator
-  public static ContentsKey of(@JsonProperty("elements") List<String> elements) {
+  public static ContentKey of(@JsonProperty("elements") List<String> elements) {
     Objects.requireNonNull(elements);
-    return ImmutableContentsKey.builder().elements(elements).build();
+    return ImmutableContentKey.builder().elements(elements).build();
   }
 
   @Value.Check
@@ -108,7 +108,7 @@ public abstract class ContentsKey {
    * @param encoded Path encoded string
    * @return Actual key.
    */
-  public static ContentsKey fromPathString(String encoded) {
+  public static ContentKey fromPathString(String encoded) {
     List<String> elements =
         Arrays.stream(encoded.split("\\."))
             .map(x -> x.replace('\u0000', '.'))

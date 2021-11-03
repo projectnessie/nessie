@@ -28,7 +28,7 @@ import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.ContentsKey;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.Operation.Delete;
@@ -69,7 +69,7 @@ class AbstractTestBasicOperations {
     Branch branch = (Branch) api.getReference().refName("testx").get();
     List<Entry> tables = api.getEntries().refName("testx").get().getEntries();
     Assertions.assertTrue(tables.isEmpty());
-    ContentsKey key = ContentsKey.of("x", "x");
+    ContentKey key = ContentKey.of("x", "x");
     tryEndpointPass(
         () ->
             api.commitMultipleOperations()
@@ -79,7 +79,7 @@ class AbstractTestBasicOperations {
                 .commit());
 
     Assertions.assertTrue(
-        api.getContents()
+        api.getContent()
             .refName("testx")
             .key(key)
             .get()
@@ -100,7 +100,7 @@ class AbstractTestBasicOperations {
                 .operation(Delete.of(key))
                 .commitMeta(CommitMeta.fromMessage(""))
                 .commit());
-    assertThat(api.getContents().refName("testx").key(key).get()).isEmpty();
+    assertThat(api.getContent().refName("testx").key(key).get()).isEmpty();
     tryEndpointPass(
         () -> {
           Branch b = (Branch) api.getReference().refName(branch.getName()).get();

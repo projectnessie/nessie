@@ -19,17 +19,17 @@ import java.security.Principal;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.projectnessie.api.ContentsApi;
-import org.projectnessie.error.NessieContentsNotFoundException;
+import org.projectnessie.api.ContentApi;
+import org.projectnessie.error.NessieContentNotFoundException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.Contents;
-import org.projectnessie.model.ContentsKey;
-import org.projectnessie.model.ImmutableMultiGetContentsResponse;
-import org.projectnessie.model.MultiGetContentsRequest;
-import org.projectnessie.model.MultiGetContentsResponse;
-import org.projectnessie.model.MultiGetContentsResponse.ContentsWithKey;
+import org.projectnessie.model.Content;
+import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.ImmutableMultiGetContentResponse;
+import org.projectnessie.model.MultiGetContentRequest;
+import org.projectnessie.model.MultiGetContentResponse;
+import org.projectnessie.model.MultiGetContentResponse.ContentWithKey;
 import org.projectnessie.services.authz.AccessChecker;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.Key;
@@ -38,57 +38,57 @@ import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
 
-public class ContentsApiImpl extends BaseApiImpl implements ContentsApi {
+public class ContentApiImpl extends BaseApiImpl implements ContentApi {
 
-  public ContentsApiImpl(
+  public ContentApiImpl(
       ServerConfig config,
-      VersionStore<Contents, CommitMeta, Contents.Type> store,
+      VersionStore<Content, CommitMeta, Content.Type> store,
       AccessChecker accessChecker,
       Principal principal) {
     super(config, store, accessChecker, principal);
   }
 
   @Override
-  public Contents getContents(ContentsKey key, String namedRef, String hashOnRef)
+  public Content getContent(ContentKey key, String namedRef, String hashOnRef)
       throws NessieNotFoundException {
     WithHash<NamedRef> ref = namedRefWithHashOrThrow(namedRef, hashOnRef);
     try {
-      Contents obj = getStore().getValue(ref.getHash(), toKey(key));
+      Content obj = getStore().getValue(ref.getHash(), toKey(key));
       if (obj != null) {
         return obj;
       }
-      throw new NessieContentsNotFoundException(key, namedRef);
+      throw new NessieContentNotFoundException(key, namedRef);
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }
   }
 
   @Override
-  public MultiGetContentsResponse getMultipleContents(
-      String namedRef, String hashOnRef, MultiGetContentsRequest request)
+  public MultiGetContentResponse getMultipleContents(
+      String namedRef, String hashOnRef, MultiGetContentRequest request)
       throws NessieNotFoundException {
     try {
       WithHash<NamedRef> ref = namedRefWithHashOrThrow(namedRef, hashOnRef);
-      List<ContentsKey> externalKeys = request.getRequestedKeys();
+      List<ContentKey> externalKeys = request.getRequestedKeys();
       List<Key> internalKeys =
-          externalKeys.stream().map(ContentsApiImpl::toKey).collect(Collectors.toList());
-      Map<Key, Contents> values = getStore().getValues(ref.getHash(), internalKeys);
-      List<ContentsWithKey> output =
+          externalKeys.stream().map(ContentApiImpl::toKey).collect(Collectors.toList());
+      Map<Key, Content> values = getStore().getValues(ref.getHash(), internalKeys);
+      List<ContentWithKey> output =
           values.entrySet().stream()
-              .map(e -> ContentsWithKey.of(toContentsKey(e.getKey()), e.getValue()))
+              .map(e -> ContentWithKey.of(toContentKey(e.getKey()), e.getValue()))
               .collect(Collectors.toList());
 
-      return ImmutableMultiGetContentsResponse.builder().contents(output).build();
+      return ImmutableMultiGetContentResponse.builder().contents(output).build();
     } catch (ReferenceNotFoundException ex) {
       throw new NessieReferenceNotFoundException(ex.getMessage(), ex);
     }
   }
 
-  static Key toKey(ContentsKey key) {
+  static Key toKey(ContentKey key) {
     return Key.of(key.getElements().toArray(new String[0]));
   }
 
-  static ContentsKey toContentsKey(Key key) {
-    return ContentsKey.of(key.getElements());
+  static ContentKey toContentKey(Key key) {
+    return ContentKey.of(key.getElements());
   }
 }

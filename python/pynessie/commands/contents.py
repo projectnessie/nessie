@@ -26,8 +26,8 @@ import click
 from ..cli_common_context import ContextObject, MutuallyExclusiveOption, pass_client
 from ..client import NessieClient
 from ..error import error_handler, NessieNotFoundException
-from ..model import Contents, ContentsSchema, Delete, Entries, Entry, EntrySchema, Operation, Put
-from ..utils import build_query_expression_for_contents_listing_flags, contents_key, format_key
+from ..model import Content, ContentSchema, Delete, Entries, Entry, EntrySchema, Operation, Put
+from ..utils import build_query_expression_for_contents_listing_flags, content_key, format_key
 
 
 @click.command("contents")
@@ -140,10 +140,10 @@ def contents(
         results = ""
     else:
 
-        def content(x: List[str]) -> Generator[Contents, Any, None]:
+        def content(x: List[str]) -> Generator[Content, Any, None]:
             return ctx.nessie.get_values(ref if ref else ctx.nessie.get_default_branch(), *x)
 
-        results = ContentsSchema().dumps(content(key), many=True) if ctx.json else "\n".join((i.pretty_print() for i in content(key)))
+        results = ContentSchema().dumps(content(key), many=True) if ctx.json else "\n".join((i.pretty_print() for i in content(key)))
     click.echo(results)
 
 
@@ -188,26 +188,26 @@ def _get_contents(
         if delete:
             content_json = None
         elif use_stdin:
-            click.echo("Enter JSON contents for key " + key)
+            click.echo("Enter JSON content for key " + key)
             content_json = click.get_text_stream("stdin").read()
             content_json = content_json.strip("\n")
         else:  # allow the user to provide interactive input via the shell $EDITOR
-            content_json = _edit_contents(key, (ContentsSchema().dumps(content_orig) if content_orig else ""))
+            content_json = _edit_contents(key, (ContentSchema().dumps(content_orig) if content_orig else ""))
             if content_json is None:
                 click.echo("Skipping key " + key + " (contents not edited)")
                 continue
 
         if content_json:
-            click.echo("Setting contents for key " + key)
-            content_new = ContentsSchema().loads(content_json)
+            click.echo("Setting content for key " + key)
+            content_new = ContentSchema().loads(content_json)
             if content_new.requires_expected_state():
                 content_expected = content_new if expect_same_contents else content_orig
-                contents_altered.append(Put(contents_key(raw_key), content_new, content_expected))
+                contents_altered.append(Put(content_key(raw_key), content_new, content_expected))
             else:
-                contents_altered.append(Put(contents_key(raw_key), content_new))
+                contents_altered.append(Put(content_key(raw_key), content_new))
         else:
-            click.echo("Deleting contents for key " + key)
-            contents_altered.append(Delete(contents_key(raw_key)))
+            click.echo("Deleting content for key " + key)
+            contents_altered.append(Delete(content_key(raw_key)))
 
     return contents_altered
 

@@ -35,7 +35,7 @@ import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.ErrorCode;
 import org.projectnessie.error.ImmutableNessieError;
 import org.projectnessie.error.NessieConflictException;
-import org.projectnessie.error.NessieContentsNotFoundException;
+import org.projectnessie.error.NessieContentNotFoundException;
 import org.projectnessie.error.NessieError;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
@@ -177,7 +177,7 @@ public class TestResponseFilter {
         Arguments.of(Status.UNAUTHORIZED, ErrorCode.UNKNOWN, NessieNotAuthorizedException.class),
         Arguments.of(Status.FORBIDDEN, ErrorCode.UNKNOWN, NessieForbiddenException.class),
         Arguments.of(
-            Status.NOT_FOUND, ErrorCode.CONTENTS_NOT_FOUND, NessieContentsNotFoundException.class),
+            Status.NOT_FOUND, ErrorCode.CONTENT_NOT_FOUND, NessieContentNotFoundException.class),
         Arguments.of(
             Status.NOT_FOUND,
             ErrorCode.REFERENCE_NOT_FOUND,

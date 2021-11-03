@@ -26,24 +26,24 @@ from marshmallow_oneofschema import OneOfSchema
 
 
 @attr.dataclass
-class Contents:
-    """Dataclass for Nessie Contents."""
+class Content:
+    """Dataclass for Nessie Content."""
 
     id: str = desert.ib(fields.Str())
 
     @staticmethod
     def requires_expected_state() -> bool:
-        """Checks whether this Contents object requires the "expected" state to be provided for Put operations."""
+        """Checks whether this Content object requires the "expected" state to be provided for Put operations."""
         return False
 
-    def pretty_print(self: "Contents") -> str:
+    def pretty_print(self: "Content") -> str:
         """Print out for cli."""
         pass
 
 
 @attr.dataclass
-class IcebergTable(Contents):
-    """Dataclass for Nessie Contents."""
+class IcebergTable(Content):
+    """Dataclass for Nessie Content."""
 
     metadata_location: str = desert.ib(fields.Str(data_key="metadataLocation"))
     id_generators: str = desert.ib(fields.Str(data_key="idGenerators"))
@@ -62,8 +62,8 @@ IcebergTableSchema = desert.schema_class(IcebergTable)
 
 
 @attr.dataclass
-class DeltaLakeTable(Contents):
-    """Dataclass for Nessie Contents."""
+class DeltaLakeTable(Content):
+    """Dataclass for Nessie Content."""
 
     last_checkpoint: str = desert.ib(fields.Str(data_key="lastCheckpoint"))
     checkpoint_location_history: List[str] = desert.ib(fields.List(fields.Str(), data_key="checkpointLocationHistory"))
@@ -82,7 +82,7 @@ DeltaLakeTableSchema = desert.schema_class(DeltaLakeTable)
 
 
 @attr.dataclass
-class SqlView(Contents):
+class SqlView(Content):
     """Dataclass for Nessie SQL View."""
 
     dialect: str = desert.ib(fields.Str())
@@ -96,7 +96,7 @@ class SqlView(Contents):
 SqlViewSchema = desert.schema_class(SqlView)
 
 
-class ContentsSchema(OneOfSchema):
+class ContentSchema(OneOfSchema):
     """Schema for Nessie Content."""
 
     type_schemas = {
@@ -105,7 +105,7 @@ class ContentsSchema(OneOfSchema):
         "VIEW": SqlViewSchema,
     }
 
-    def get_obj_type(self: "ContentsSchema", obj: Contents) -> str:
+    def get_obj_type(self: "ContentSchema", obj: Content) -> str:
         """Returns the object type based on its class."""
         if isinstance(obj, IcebergTable):
             return "ICEBERG_TABLE"
@@ -118,28 +118,28 @@ class ContentsSchema(OneOfSchema):
 
 
 @attr.dataclass
-class ContentsKey:
-    """ContentsKey."""
+class ContentKey:
+    """ContentKey."""
 
     elements: List[str] = desert.ib(fields.List(fields.Str))
 
 
-ContentsKeySchema = desert.schema_class(ContentsKey)
+ContentKeySchema = desert.schema_class(ContentKey)
 
 
 @attr.dataclass
 class Operation:
     """Single Commit Operation."""
 
-    key: ContentsKey = desert.ib(fields.Nested(ContentsKeySchema))
+    key: ContentKey = desert.ib(fields.Nested(ContentKeySchema))
 
 
 @attr.dataclass
 class Put(Operation):
     """Single Commit Operation."""
 
-    contents: Contents = desert.ib(fields.Nested(ContentsSchema))
-    expectedContents: Optional[Contents] = attr.ib(default=None, metadata=desert.metadata(fields.Nested(ContentsSchema)))
+    content: Content = desert.ib(fields.Nested(ContentSchema))
+    expectedContent: Optional[Content] = attr.ib(default=None, metadata=desert.metadata(fields.Nested(ContentSchema)))
 
 
 PutOperationSchema = desert.schema_class(Put)
@@ -324,4 +324,4 @@ class MultiContents:
     operations: List[Operation] = desert.ib(fields.List(fields.Nested(OperationsSchema())))
 
 
-MultiContentsSchema = desert.schema_class(MultiContents)
+MultiContentSchema = desert.schema_class(MultiContents)

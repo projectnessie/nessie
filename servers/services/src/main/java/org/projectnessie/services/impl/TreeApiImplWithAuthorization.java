@@ -29,8 +29,8 @@ import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.Contents;
-import org.projectnessie.model.Contents.Type;
+import org.projectnessie.model.Content;
+import org.projectnessie.model.Content.Type;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Merge;
@@ -51,7 +51,7 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
 
   public TreeApiImplWithAuthorization(
       ServerConfig config,
-      VersionStore<Contents, CommitMeta, Type> store,
+      VersionStore<Content, CommitMeta, Type> store,
       AccessChecker accessChecker,
       Principal principal) {
     super(config, store, accessChecker, principal);

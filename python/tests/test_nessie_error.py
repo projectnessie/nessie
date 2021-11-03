@@ -16,7 +16,7 @@
 
 from pynessie.error import _create_exception
 from pynessie.error import NessieConflictException
-from pynessie.error import NessieContentsNotFoundException
+from pynessie.error import NessieContentNotFoundException
 from pynessie.error import NessieException
 from pynessie.error import NessieNotFoundException
 from pynessie.error import NessiePermissionException
@@ -82,9 +82,9 @@ def test_raise_ref_not_found() -> None:
     _test_error_code("REFERENCE_NOT_FOUND", NessieReferenceNotFoundException)
 
 
-def test_raise_contents_not_found() -> None:
-    """Test the handling error code CONTENTS_NOT_FOUND."""
-    _test_error_code("CONTENTS_NOT_FOUND", NessieContentsNotFoundException)
+def test_raise_content_not_found() -> None:
+    """Test the handling error code CONTENT_NOT_FOUND."""
+    _test_error_code("CONTENT_NOT_FOUND", NessieContentNotFoundException)
 
 
 def test_raise_ref_conflict() -> None:

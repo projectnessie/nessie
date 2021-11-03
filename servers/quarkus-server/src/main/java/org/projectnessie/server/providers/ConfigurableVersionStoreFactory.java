@@ -24,7 +24,7 @@ import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.Contents;
+import org.projectnessie.model.Content;
 import org.projectnessie.server.config.VersionStoreConfig;
 import org.projectnessie.server.config.VersionStoreConfig.VersionStoreType;
 import org.projectnessie.server.providers.StoreType.Literal;
@@ -73,7 +73,7 @@ public class ConfigurableVersionStoreFactory {
   @Produces
   @Singleton
   @Startup
-  public VersionStore<Contents, CommitMeta, Contents.Type> getVersionStore() {
+  public VersionStore<Content, CommitMeta, Content.Type> getVersionStore() {
     VersionStoreType versionStoreType = storeConfig.getVersionStoreType();
 
     try {
@@ -82,7 +82,7 @@ public class ConfigurableVersionStoreFactory {
           databaseAdapterBuilder.select(new Literal(versionStoreType)).get().newDatabaseAdapter();
       databaseAdapter.initializeRepo(serverConfig.getDefaultBranch());
 
-      VersionStore<Contents, CommitMeta, Contents.Type> versionStore =
+      VersionStore<Content, CommitMeta, Content.Type> versionStore =
           new PersistVersionStore<>(databaseAdapter, new TableCommitMetaStoreWorker());
 
       if (storeConfig.isTracingEnabled()) {

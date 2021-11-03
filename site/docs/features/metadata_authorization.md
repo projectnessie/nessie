@@ -51,13 +51,13 @@ Note that those operations combine themselves with the reference operations. For
 The SPI is named [AccessChecker](https://github.com/projectnessie/nessie/blob/main/servers/services/src/main/java/org/projectnessie/services/authz/AccessChecker.java) and uses [AccessContext](https://github.com/projectnessie/nessie/blob/main/servers/services/src/main/java/org/projectnessie/services/authz/AccessContext.java), which carries information about the overall context of the operation.
 Implementers of `AccessChecker` are completely free to define their own way of creating/updating/checking authorization rules.
 
-### ContentsId Usage
-Note that there is a `contentsId` parameter in some methods of the [AccessChecker](https://github.com/projectnessie/nessie/blob/main/servers/services/src/main/java/org/projectnessie/services/authz/AccessChecker.java), which allows checking specific rules for a given entity at a given point in time.
-The `contentsId` parameter refers to the ID of a `Contents` object and its contract is defined [here](https://projectnessie.org/develop/spec/#content-id).
+### ContentId Usage
+Note that there is a `contentId` parameter in some methods of the [AccessChecker](https://github.com/projectnessie/nessie/blob/main/servers/services/src/main/java/org/projectnessie/services/authz/AccessChecker.java), which allows checking specific rules for a given entity at a given point in time.
+The `contentId` parameter refers to the ID of a `Content` object and its contract is defined [here](https://projectnessie.org/develop/spec/#content-id).
 
 One can think of this similar to how permissions are defined in Google Docs. There are some permissions that are specific to the parent folder and to the doc itself. When a Doc is moved from one folder to another, it inherits the permissions of the parent folder.
 However, the doc-specific permissions are carried over with the doc and still apply.
-The same is true in the context of entities. There are some rules that apply to an entity in a global fashion, and then there's the possibility to define rules specific to the `contentsId` of an entity.
+The same is true in the context of entities. There are some rules that apply to an entity in a global fashion, and then there's the possibility to define rules specific to the `contentId` of an entity.
 
 ## Reference implementation for Metadata Authorization
 

@@ -16,23 +16,23 @@
 package org.projectnessie.client.http;
 
 import javax.validation.constraints.NotNull;
-import org.projectnessie.api.http.HttpContentsApi;
+import org.projectnessie.api.http.HttpContentApi;
 import org.projectnessie.error.NessieNotFoundException;
-import org.projectnessie.model.Contents;
-import org.projectnessie.model.ContentsKey;
-import org.projectnessie.model.MultiGetContentsRequest;
-import org.projectnessie.model.MultiGetContentsResponse;
+import org.projectnessie.model.Content;
+import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.MultiGetContentRequest;
+import org.projectnessie.model.MultiGetContentResponse;
 
-class HttpContentsClient implements HttpContentsApi {
+class HttpContentClient implements HttpContentApi {
 
   private final HttpClient client;
 
-  public HttpContentsClient(HttpClient client) {
+  public HttpContentClient(HttpClient client) {
     this.client = client;
   }
 
   @Override
-  public Contents getContents(@NotNull ContentsKey key, String ref, String hashOnRef)
+  public Content getContent(@NotNull ContentKey key, String ref, String hashOnRef)
       throws NessieNotFoundException {
     return client
         .newRequest()
@@ -41,12 +41,12 @@ class HttpContentsClient implements HttpContentsApi {
         .queryParam("ref", ref)
         .queryParam("hashOnRef", hashOnRef)
         .get()
-        .readEntity(Contents.class);
+        .readEntity(Content.class);
   }
 
   @Override
-  public MultiGetContentsResponse getMultipleContents(
-      @NotNull String ref, String hashOnRef, @NotNull MultiGetContentsRequest request)
+  public MultiGetContentResponse getMultipleContents(
+      @NotNull String ref, String hashOnRef, @NotNull MultiGetContentRequest request)
       throws NessieNotFoundException {
     return client
         .newRequest()
@@ -54,6 +54,6 @@ class HttpContentsClient implements HttpContentsApi {
         .queryParam("ref", ref)
         .queryParam("hashOnRef", hashOnRef)
         .post(request)
-        .readEntity(MultiGetContentsResponse.class);
+        .readEntity(MultiGetContentResponse.class);
   }
 }

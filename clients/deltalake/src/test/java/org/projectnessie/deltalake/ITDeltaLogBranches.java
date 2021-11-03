@@ -38,8 +38,8 @@ import org.projectnessie.client.tests.AbstractSparkTest;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
-import org.projectnessie.model.Contents;
-import org.projectnessie.model.ContentsKey;
+import org.projectnessie.model.Content;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.DeltaLakeTable;
 import org.projectnessie.model.Reference;
 import scala.Tuple2;
@@ -138,9 +138,9 @@ class ITDeltaLogBranches extends AbstractSparkTest {
     Assertions.assertEquals(64, expectedSize);
 
     String tableName = tempPath.getAbsolutePath() + "/_delta_log";
-    ContentsKey key = ContentsKey.of(tableName.split("/"));
-    Contents contents = api.getContents().key(key).refName("main").get().get(key);
-    Optional<DeltaLakeTable> table = contents.unwrap(DeltaLakeTable.class);
+    ContentKey key = ContentKey.of(tableName.split("/"));
+    Content content = api.getContent().key(key).refName("main").get().get(key);
+    Optional<DeltaLakeTable> table = content.unwrap(DeltaLakeTable.class);
     Assertions.assertTrue(table.isPresent());
     Assertions.assertEquals(1, table.get().getCheckpointLocationHistory().size());
     Assertions.assertEquals(5, table.get().getMetadataLocationHistory().size());

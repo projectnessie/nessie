@@ -47,8 +47,8 @@ import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.ReferenceRetryFailureException;
 import org.projectnessie.versioned.persist.adapter.CommitAttempt;
-import org.projectnessie.versioned.persist.adapter.ContentsAndState;
-import org.projectnessie.versioned.persist.adapter.ContentsId;
+import org.projectnessie.versioned.persist.adapter.ContentAndState;
+import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt.Builder;
@@ -64,7 +64,7 @@ import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
  * <ul>
  *   <li>Single branch, shared keys - contention on the branch and on the keys
  *   <li>Single branch, distinct keys - contention on the branch
- *   <li>Branch per thread, shared keys - contention on the contents-ids
+ *   <li>Branch per thread, shared keys - contention on the content-ids
  *   <li>Branch per thread, distinct keys - no contention, except for implementations that use a
  *       single "root state pointer", like the non-transactional database-adapters
  * </ul>
@@ -126,8 +126,8 @@ public abstract class AbstractConcurrency {
     AtomicInteger retryFailures = new AtomicInteger();
     AtomicBoolean stopFlag = new AtomicBoolean();
     List<Runnable> tasks = new ArrayList<>(variation.threads);
-    Map<Key, ContentsId> keyToContentsId = new HashMap<>();
-    Map<ContentsId, ByteString> globalStates = new ConcurrentHashMap<>();
+    Map<Key, ContentId> keyToContentId = new HashMap<>();
+    Map<ContentId, ByteString> globalStates = new ConcurrentHashMap<>();
     Map<BranchName, Map<Key, ByteString>> onRefStates = new ConcurrentHashMap<>();
     try {
       CountDownLatch startLatch = new CountDownLatch(1);
@@ -145,9 +145,9 @@ public abstract class AbstractConcurrency {
                   variation.sharedKeys ? "shared" : Integer.toString(i),
                   "table-" + k);
           keys.add(key);
-          keyToContentsId.put(
+          keyToContentId.put(
               key,
-              ContentsId.of(
+              ContentId.of(
                   String.format(
                       "%s-table-%d", variation.sharedKeys ? "shared" : Integer.toString(i), k)));
           keysPerBranch.computeIfAbsent(branch, x -> new HashSet<>()).add(key);
@@ -169,25 +169,25 @@ public abstract class AbstractConcurrency {
                               databaseAdapter.toHash(branch), keys, KeyFilterPredicate.ALLOW_ALL)
                           .values()
                           .stream()
-                          .map(ContentsAndState::getGlobalState)
+                          .map(ContentAndState::getGlobalState)
                           .collect(Collectors.toList());
 
                   ImmutableCommitAttempt.Builder commitAttempt = ImmutableCommitAttempt.builder();
 
                   for (int ki = 0; ki < keys.size(); ki++) {
                     Key key = keys.get(ki);
-                    ContentsId contentsId = keyToContentsId.get(key);
+                    ContentId contentId = keyToContentId.get(key);
                     commitAttempt.putGlobal(
-                        contentsId,
+                        contentId,
                         ByteString.copyFromUtf8(
                             Integer.toString(
                                 Integer.parseInt(currentStates.get(ki).toStringUtf8()) + 1)));
                     if (!variation.sharedKeys) {
                       commitAttempt.putExpectedStates(
-                          contentsId, Optional.of(currentStates.get(ki)));
+                          contentId, Optional.of(currentStates.get(ki)));
                     }
                     commitAttempt.addPuts(
-                        KeyWithBytes.of(keys.get(ki), contentsId, (byte) 0, ByteString.EMPTY));
+                        KeyWithBytes.of(keys.get(ki), contentId, (byte) 0, ByteString.EMPTY));
                   }
 
                   try {
@@ -223,9 +223,9 @@ public abstract class AbstractConcurrency {
                 .commitMetaSerialized(
                     ByteString.copyFromUtf8("initial commit for " + branch.getName()));
         for (Key k : branchKeys.getValue()) {
-          ContentsId contentsId = keyToContentsId.get(k);
-          commitAttempt.addPuts(KeyWithBytes.of(k, contentsId, (byte) 0, ByteString.EMPTY));
-          commitAttempt.putGlobal(contentsId, ByteString.copyFromUtf8("0"));
+          ContentId contentId = keyToContentId.get(k);
+          commitAttempt.addPuts(KeyWithBytes.of(k, contentId, (byte) 0, ByteString.EMPTY));
+          commitAttempt.putGlobal(contentId, ByteString.copyFromUtf8("0"));
         }
         commitAndRecord(globalStates, onRefStates, branch, commitAttempt);
       }
@@ -251,14 +251,14 @@ public abstract class AbstractConcurrency {
         Hash hash = databaseAdapter.toHash(branch);
         Map<Key, ByteString> onRef = onRefStates.get(branch);
         ArrayList<Key> keys = new ArrayList<>(branchKeys.getValue());
-        Map<Key, ContentsAndState<ByteString>> values =
+        Map<Key, ContentAndState<ByteString>> values =
             databaseAdapter.values(hash, keys, KeyFilterPredicate.ALLOW_ALL);
-        List<ContentsAndState<ByteString>> csExpected = new ArrayList<>();
+        List<ContentAndState<ByteString>> csExpected = new ArrayList<>();
         for (int i = 0; i < keys.size(); i++) {
           Key key = keys.get(i);
-          ContentsAndState<ByteString> cs = values.get(key);
-          ContentsId contentsId = keyToContentsId.get(key);
-          csExpected.add(ContentsAndState.of(onRef.get(key), globalStates.get(contentsId)));
+          ContentAndState<ByteString> cs = values.get(key);
+          ContentId contentId = keyToContentId.get(key);
+          csExpected.add(ContentAndState.of(onRef.get(key), globalStates.get(contentId)));
         }
         // There is a race between test threads (code above) updating the maps that store
         // per-branch and global state in this test class. Random delays in the execution
@@ -283,7 +283,7 @@ public abstract class AbstractConcurrency {
   }
 
   private void commitAndRecord(
-      Map<ContentsId, ByteString> globalStates,
+      Map<ContentId, ByteString> globalStates,
       Map<BranchName, Map<Key, ByteString>> onRefStates,
       BranchName branch,
       Builder commitAttempt)

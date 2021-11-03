@@ -36,7 +36,7 @@ public class PostgresDatabaseAdapter extends TxDatabaseAdapter {
         .put(NessieSqlDataType.KEY, "VARCHAR")
         .put(NessieSqlDataType.NAMED_REF, "VARCHAR")
         .put(NessieSqlDataType.NAMED_REF_TYPE, "VARCHAR")
-        .put(NessieSqlDataType.CONTENTS_ID, "VARCHAR")
+        .put(NessieSqlDataType.CONTENT_ID, "VARCHAR")
         .put(NessieSqlDataType.INTEGER, "BIGINT")
         .build();
   }

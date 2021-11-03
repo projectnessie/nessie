@@ -43,21 +43,21 @@ import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
 import org.projectnessie.versioned.WithType;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
-import org.projectnessie.versioned.persist.adapter.ContentsAndState;
-import org.projectnessie.versioned.persist.adapter.ContentsId;
+import org.projectnessie.versioned.persist.adapter.ContentAndState;
+import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 
-public class PersistVersionStore<CONTENTS, METADATA, CONTENTS_TYPE extends Enum<CONTENTS_TYPE>>
-    implements VersionStore<CONTENTS, METADATA, CONTENTS_TYPE> {
+public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CONTENT_TYPE>>
+    implements VersionStore<CONTENT, METADATA, CONTENT_TYPE> {
 
   private final DatabaseAdapter databaseAdapter;
-  protected final StoreWorker<CONTENTS, METADATA, CONTENTS_TYPE> storeWorker;
+  protected final StoreWorker<CONTENT, METADATA, CONTENT_TYPE> storeWorker;
 
   public PersistVersionStore(
-      DatabaseAdapter databaseAdapter, StoreWorker<CONTENTS, METADATA, CONTENTS_TYPE> storeWorker) {
+      DatabaseAdapter databaseAdapter, StoreWorker<CONTENT, METADATA, CONTENT_TYPE> storeWorker) {
     this.databaseAdapter = databaseAdapter;
     this.storeWorker = storeWorker;
   }
@@ -98,20 +98,20 @@ public class PersistVersionStore<CONTENTS, METADATA, CONTENTS_TYPE extends Enum<
       @Nonnull BranchName branch,
       @Nonnull Optional<Hash> expectedHead,
       @Nonnull METADATA metadata,
-      @Nonnull List<Operation<CONTENTS>> operations)
+      @Nonnull List<Operation<CONTENT>> operations)
       throws ReferenceNotFoundException, ReferenceConflictException {
 
     ImmutableCommitAttempt.Builder commitAttempt =
         ImmutableCommitAttempt.builder().commitToBranch(branch).expectedHead(expectedHead);
 
-    for (Operation<CONTENTS> operation : operations) {
+    for (Operation<CONTENT> operation : operations) {
       if (operation instanceof Put) {
-        Put<CONTENTS> op = (Put<CONTENTS>) operation;
-        ContentsId contentsId = ContentsId.of(storeWorker.getId(op.getValue()));
+        Put<CONTENT> op = (Put<CONTENT>) operation;
+        ContentId contentId = ContentId.of(storeWorker.getId(op.getValue()));
         commitAttempt.addPuts(
             KeyWithBytes.of(
                 op.getKey(),
-                contentsId,
+                contentId,
                 storeWorker.getPayload(op.getValue()),
                 storeWorker.toStoreOnReferenceState(op.getValue())));
         if (storeWorker.requiresGlobalState(op.getValue())) {
@@ -121,15 +121,15 @@ public class PersistVersionStore<CONTENTS, METADATA, CONTENTS_TYPE extends Enum<
             if (storeWorker.getType(op.getValue()) != storeWorker.getType(op.getExpectedValue())) {
               throw new IllegalArgumentException(
                   String.format(
-                      "Contents-type for conditional put-operation for key '%s' for 'value' and 'expectedValue' must be the same, but are '%s' and '%s'.",
+                      "Content-type for conditional put-operation for key '%s' for 'value' and 'expectedValue' must be the same, but are '%s' and '%s'.",
                       op.getKey(),
                       storeWorker.getType(op.getValue()),
                       storeWorker.getType(op.getExpectedValue())));
             }
-            if (!contentsId.equals(ContentsId.of(storeWorker.getId(op.getExpectedValue())))) {
+            if (!contentId.equals(ContentId.of(storeWorker.getId(op.getExpectedValue())))) {
               throw new IllegalArgumentException(
                   String.format(
-                      "Conditional put-operation key '%s' has different contents-ids.",
+                      "Conditional put-operation key '%s' has different content-ids.",
                       op.getKey()));
             }
 
@@ -137,13 +137,13 @@ public class PersistVersionStore<CONTENTS, METADATA, CONTENTS_TYPE extends Enum<
           } else {
             expectedValue = Optional.empty();
           }
-          commitAttempt.putExpectedStates(contentsId, expectedValue);
-          commitAttempt.putGlobal(contentsId, newState);
+          commitAttempt.putExpectedStates(contentId, expectedValue);
+          commitAttempt.putGlobal(contentId, newState);
         } else {
           if (op.getExpectedValue() != null) {
             throw new IllegalArgumentException(
                 String.format(
-                    "Contents-type '%s' for put-operation for key '%s' does not support global state, expected-value not supported for this contents-type.",
+                    "Content-type '%s' for put-operation for key '%s' does not support global state, expected-value not supported for this content-type.",
                     storeWorker.getType(op.getValue()), op.getKey()));
           }
         }
@@ -209,7 +209,7 @@ public class PersistVersionStore<CONTENTS, METADATA, CONTENTS_TYPE extends Enum<
   }
 
   @Override
-  public Stream<WithType<Key, CONTENTS_TYPE>> getKeys(Ref ref) throws ReferenceNotFoundException {
+  public Stream<WithType<Key, CONTENT_TYPE>> getKeys(Ref ref) throws ReferenceNotFoundException {
     Hash hash = ref instanceof NamedRef ? toHash((NamedRef) ref) : (Hash) ref;
     return databaseAdapter
         .keys(hash, KeyFilterPredicate.ALLOW_ALL)
@@ -217,24 +217,24 @@ public class PersistVersionStore<CONTENTS, METADATA, CONTENTS_TYPE extends Enum<
   }
 
   @Override
-  public CONTENTS getValue(Ref ref, Key key) throws ReferenceNotFoundException {
+  public CONTENT getValue(Ref ref, Key key) throws ReferenceNotFoundException {
     return getValues(ref, Collections.singletonList(key)).get(key);
   }
 
   @Override
-  public Map<Key, CONTENTS> getValues(Ref ref, Collection<Key> keys)
+  public Map<Key, CONTENT> getValues(Ref ref, Collection<Key> keys)
       throws ReferenceNotFoundException {
     Hash hash = ref instanceof NamedRef ? toHash((NamedRef) ref) : (Hash) ref;
     return databaseAdapter.values(hash, keys, KeyFilterPredicate.ALLOW_ALL).entrySet().stream()
-        .collect(Collectors.toMap(Map.Entry::getKey, e -> mapContentsAndState(e.getValue())));
+        .collect(Collectors.toMap(Map.Entry::getKey, e -> mapContentAndState(e.getValue())));
   }
 
-  private CONTENTS mapContentsAndState(ContentsAndState<ByteString> cs) {
+  private CONTENT mapContentAndState(ContentAndState<ByteString> cs) {
     return storeWorker.valueFromStore(cs.getRefState(), Optional.ofNullable(cs.getGlobalState()));
   }
 
   @Override
-  public Stream<Diff<CONTENTS>> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException {
+  public Stream<Diff<CONTENT>> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException {
     Hash fromHash = from instanceof NamedRef ? toHash((NamedRef) from) : (Hash) from;
     Hash toHash = to instanceof NamedRef ? toHash((NamedRef) to) : (Hash) to;
     return databaseAdapter

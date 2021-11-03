@@ -119,21 +119,21 @@ interactions:
   response:
     body:
       string: "{\n  \"status\" : 404,\n  \"reason\" : \"Not Found\",\n  \"message\"
-        : \"Could not find contents for key 'merge.foo.bar' in reference 'dev'.\",\n
-        \ \"errorCode\" : \"CONTENTS_NOT_FOUND\",\n  \"serverStackTrace\" : null\n}"
+        : \"Could not find content for key 'merge.foo.bar' in reference 'dev'.\",\n
+        \ \"errorCode\" : \"CONTENT_NOT_FOUND\",\n  \"serverStackTrace\" : null\n}"
     headers:
       Content-Type:
       - application/json
       content-length:
-      - '198'
+      - '196'
     status:
       code: 404
       message: Not Found
 - request:
-    body: '{"commitMeta": {"author": "nessie test", "commitTime": null, "committer":
-      null, "properties": null, "message": "test message", "hash": null, "signedOffBy":
-      null, "authorTime": null}, "operations": [{"expectedContents": null, "contents":
-      {"metadataLocation": "/a/b/c", "id": "test_merge", "idGenerators": "xyz", "type":
+    body: '{"commitMeta": {"properties": null, "author": "nessie test", "commitTime":
+      null, "signedOffBy": null, "authorTime": null, "committer": null, "hash": null,
+      "message": "test message"}, "operations": [{"expectedContent": null, "content":
+      {"idGenerators": "xyz", "metadataLocation": "/a/b/c", "id": "test_merge", "type":
       "ICEBERG_TABLE"}, "key": {"elements": ["merge", "foo", "bar"]}, "type": "PUT"}]}'
     headers:
       Accept:
@@ -143,7 +143,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '399'
+      - '397'
       Content-Type:
       - application/json
       User-Agent:
@@ -152,7 +152,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/branch/dev/commit?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"f4bfbbe68dca6f7983bced9f49e3af7aaf5eda71e2334e7dd6eab6331a82319d\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"7319a568c68bed06dac83bba07434645b6a147cba6a1f3c1e51f97e88be0bc15\"\n}"
     headers:
       Content-Type:
       - application/json
@@ -178,7 +178,7 @@ interactions:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
         \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}, {\n
-        \ \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"f4bfbbe68dca6f7983bced9f49e3af7aaf5eda71e2334e7dd6eab6331a82319d\"\n}
+        \ \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"7319a568c68bed06dac83bba07434645b6a147cba6a1f3c1e51f97e88be0bc15\"\n}
         ]"
     headers:
       Content-Type:
@@ -227,7 +227,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/dev
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"f4bfbbe68dca6f7983bced9f49e3af7aaf5eda71e2334e7dd6eab6331a82319d\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"7319a568c68bed06dac83bba07434645b6a147cba6a1f3c1e51f97e88be0bc15\"\n}"
     headers:
       Content-Type:
       - application/json
@@ -237,7 +237,7 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"fromRefName": "dev", "fromHash": "f4bfbbe68dca6f7983bced9f49e3af7aaf5eda71e2334e7dd6eab6331a82319d"}'
+    body: '{"fromRefName": "dev", "fromHash": "7319a568c68bed06dac83bba07434645b6a147cba6a1f3c1e51f97e88be0bc15"}'
     headers:
       Accept:
       - '*/*'
@@ -276,8 +276,8 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
-        \"f4bfbbe68dca6f7983bced9f49e3af7aaf5eda71e2334e7dd6eab6331a82319d\"\n}, {\n
-        \ \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"f4bfbbe68dca6f7983bced9f49e3af7aaf5eda71e2334e7dd6eab6331a82319d\"\n}
+        \"7319a568c68bed06dac83bba07434645b6a147cba6a1f3c1e51f97e88be0bc15\"\n}, {\n
+        \ \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"7319a568c68bed06dac83bba07434645b6a147cba6a1f3c1e51f97e88be0bc15\"\n}
         ]"
     headers:
       Content-Type:

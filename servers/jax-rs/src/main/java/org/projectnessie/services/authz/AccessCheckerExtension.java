@@ -21,7 +21,7 @@ import javax.enterprise.inject.Default;
 import javax.enterprise.inject.spi.AfterBeanDiscovery;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.Extension;
-import org.projectnessie.model.ContentsKey;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.NamedRef;
 
 /** This class needs to be in the same package as {@link AccessChecker}. */
@@ -51,15 +51,15 @@ public class AccessCheckerExtension implements Extension {
 
         @Override
         public void canReadEntityValue(
-            AccessContext context, NamedRef ref, ContentsKey key, String contentsId) {}
+            AccessContext context, NamedRef ref, ContentKey key, String contentId) {}
 
         @Override
         public void canUpdateEntity(
-            AccessContext context, NamedRef ref, ContentsKey key, String contentsId) {}
+            AccessContext context, NamedRef ref, ContentKey key, String contentId) {}
 
         @Override
         public void canDeleteEntity(
-            AccessContext context, NamedRef ref, ContentsKey key, String contentsId) {}
+            AccessContext context, NamedRef ref, ContentKey key, String contentId) {}
       };
 
   @SuppressWarnings("unused")

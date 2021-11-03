@@ -19,15 +19,15 @@ import org.immutables.value.Value;
 
 /**
  * Used when dealing with global states in operations for Nessie-GC, like enumerating all globally
- * managed contents. Composite of contents-id and contents-type.
+ * managed content. Composite of content-id and content-type.
  */
 @Value.Immutable
-public interface ContentsIdWithType {
-  ContentsId getContentsId();
+public interface ContentIdWithType {
+  ContentId getContentId();
 
   byte getType();
 
-  static ContentsIdWithType of(ContentsId contentsId, byte type) {
-    return ImmutableContentsIdWithType.builder().type(type).contentsId(contentsId).build();
+  static ContentIdWithType of(ContentId contentId, byte type) {
+    return ImmutableContentIdWithType.builder().type(type).contentId(contentId).build();
   }
 }
