@@ -33,32 +33,32 @@ from pynessie.error import NessieUnauthorizedException
 
 def test_raise_exception_missing_payload() -> None:
     """Test the handling error responses with missing JSON payload."""
-    ex = _create_exception(dict(), 412, "reason123", "url123")
+    ex = _create_exception({}, 412, "reason123", "url123")
     assert isinstance(ex, NessiePreconidtionFailedException)
     assert "412" in str(ex.json())
     assert "reason123" in str(ex.json())
     assert "url123" in str(ex.json())
 
-    ex = _create_exception(dict(), 401, "reason123", "url123")
+    ex = _create_exception({}, 401, "reason123", "url123")
     assert isinstance(ex, NessieUnauthorizedException)
 
-    ex = _create_exception(dict(), 403, "reason123", "url123")
+    ex = _create_exception({}, 403, "reason123", "url123")
     assert isinstance(ex, NessiePermissionException)
 
-    ex = _create_exception(dict(), 404, "reason123", "url123")
+    ex = _create_exception({}, 404, "reason123", "url123")
     assert isinstance(ex, NessieNotFoundException)
 
-    ex = _create_exception(dict(), 409, "reason123", "url123")
+    ex = _create_exception({}, 409, "reason123", "url123")
     assert isinstance(ex, NessieConflictException)
 
-    ex = _create_exception(dict(), 599, "reason123", "url123")
+    ex = _create_exception({}, 599, "reason123", "url123")
     assert isinstance(ex, NessieServerException)
     assert "599" in str(ex.json())
     assert "Server Error" in str(ex)
     assert "Server Error" in str(ex.json())
     assert "Internal Server Error" in str(ex.json())
 
-    ex = _create_exception(dict(), 12345, "reason123", "url123")
+    ex = _create_exception({}, 12345, "reason123", "url123")
     assert isinstance(ex, NessieException)
     assert "12345" in str(ex.json())
 

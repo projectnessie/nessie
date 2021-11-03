@@ -228,7 +228,7 @@ class NessieClient:
         """
         page_token = filtering_args.get("pageToken", None)
 
-        def fetch_logs(max_: Optional[int], token: Optional[str] = page_token) -> LogResponse:
+        def fetch_logs(max_records: Optional[int], token: Optional[str] = page_token) -> LogResponse:
             if token:
                 filtering_args["pageToken"] = token
 
@@ -238,13 +238,13 @@ class NessieClient:
                 hash_on_ref=hash_on_ref,
                 ref=start_ref,
                 ssl_verify=self._ssl_verify,
-                max_records=max_,
+                max_records=max_records,
                 **filtering_args
             )
             log_schema = LogResponseSchema().load(fetched_logs)
             return log_schema
 
-        log_schema = fetch_logs(max_=max_records)
+        log_schema = fetch_logs(max_records=max_records)
 
         def generator(log_schema: LogResponse, max_records: Optional[int]) -> Generator[CommitMeta, Any, None]:
             while True:
@@ -257,7 +257,7 @@ class NessieClient:
                             break
                 if not log_schema.has_more or (max_records is not None and max_records <= 0):
                     break
-                log_schema = fetch_logs(max_=max_records, token=log_schema.token)
+                log_schema = fetch_logs(max_records=max_records, token=log_schema.token)
 
         return generator(log_schema, max_records)
 

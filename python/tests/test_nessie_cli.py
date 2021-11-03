@@ -41,7 +41,7 @@ from .conftest import _run
 @pytest.mark.vcr
 def test_command_line_interface() -> None:
     """Test the CLI."""
-    assert "Usage: cli" in _cli(list())
+    assert "Usage: cli" in _cli([])
     assert "Usage: cli" in _cli(["--help"])
     assert __version__ in _cli(["--version"])
     references = ReferenceSchema().loads(_cli(["--json", "branch", "-l"]), many=True)
@@ -53,8 +53,8 @@ def test_command_line_interface() -> None:
 def test_config_options() -> None:
     """Ensure config cli option is consistent."""
     assert "Usage: cli" in _cli(["config"])
-    vars = ["--add x", "--get x", "--list", "--unset x"]
-    for i in itertools.permutations(vars, 2):
+    vars_to_add = ["--add x", "--get x", "--list", "--unset x"]
+    for i in itertools.permutations(vars_to_add, 2):
         assert "Error: Illegal usage: " in _cli(["config"] + [*i[0].split(" "), *i[1].split(" ")], ret_val=2)
 
     _cli(["config", "x", "--add", "x"])
@@ -94,7 +94,7 @@ def _make_commit(
         head_hash = refs[branch]
     _cli(
         ["contents", "--set", "--stdin", key, "--ref", branch, "-m", message, "-c", head_hash, "--author", author],
-        input=ContentsSchema().dumps(table),
+        input_data=ContentsSchema().dumps(table),
     )
 
 
@@ -286,7 +286,7 @@ def test_all_help_options() -> None:
     for i in args:
         result = _cli([x for x in [i] if x] + ["--help"])
         cwd = os.getcwd()
-        with open(Path(Path(cwd), "docs", "{}.rst".format(i if i else "main")), "w") as f:
+        with open(Path(Path(cwd), "docs", "{}.rst".format(i if i else "main")), "w", encoding="UTF-8") as f:
             f.write(".. code-block:: bash\n\n\t")
             for line in result.split("\n"):
                 f.write(line + "\n\t")
