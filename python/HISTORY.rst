@@ -2,6 +2,13 @@
 History
 =======
 
+0.12.1 (2021-11-03)
+-------------------
+
+* Update / clarify CLI docs
+* Fix 'pynessie.auth' not found error
+* Clearer 'nessie log' cli command
+
 0.12.0 (2021-10-25)
 -------------------
 

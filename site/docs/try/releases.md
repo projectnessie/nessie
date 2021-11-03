@@ -1,5 +1,12 @@
 # Releases
 
+## 0.12.1 Release (November 3, 2021)
+
+* Test code improvements
+* Swagger examples fixes
+* Web UI improvements
+* Faster local builds w/ `./mvnw -Dquickly`
+
 ## 0.12.0 Release (October 25, 2021)
 
 * Specialize and document Nessie exceptions
