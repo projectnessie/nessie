@@ -45,8 +45,6 @@ import org.projectnessie.model.Branch;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Merge;
-import org.projectnessie.model.MultiGetContentsRequest;
-import org.projectnessie.model.MultiGetContentsResponse;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Transplant;
@@ -528,48 +526,4 @@ public interface HttpTreeApi extends TreeApi {
                       examples = {@ExampleObject(ref = "operations")}))
           Operations operations)
       throws NessieNotFoundException, NessieConflictException;
-
-  @Override
-  @POST
-  @Path("contents")
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Operation(
-      summary = "Get multiple objects' content.",
-      description =
-          "Similar to 'getContents', but takes multiple 'ContentKey's and returns the "
-              + "contents-values for the one or more contents-keys in a named-reference "
-              + "(a branch or tag).\n"
-              + "\n"
-              + "If the table-metadata is tracked globally (Iceberg), "
-              + "Nessie returns a 'Contents' object, that contains the most up-to-date part for "
-              + "the globally tracked part (Iceberg: table-metadata) plus the "
-              + "per-Nessie-reference/hash specific part (Iceberg: snapshot-ID).")
-  @APIResponses({
-    @APIResponse(
-        responseCode = "200",
-        description = "Retrieved successfully.",
-        content =
-            @Content(
-                mediaType = MediaType.APPLICATION_JSON,
-                schema = @Schema(implementation = MultiGetContentsResponse.class))),
-    @APIResponse(responseCode = "400", description = "Invalid input, ref name not valid"),
-    @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
-    @APIResponse(
-        responseCode = "403",
-        description = "Not allowed to view the given reference or read object content for a key"),
-    @APIResponse(responseCode = "404", description = "Provided ref doesn't exists")
-  })
-  MultiGetContentsResponse getMultipleContents(
-      @Parameter(
-              description = "Reference to use. Defaults to default branch if not provided.",
-              examples = {@ExampleObject(ref = "ref")})
-          @QueryParam("ref")
-          String ref,
-      @Parameter(
-              description = "a particular hash on the given ref",
-              examples = {@ExampleObject(ref = "nullHash"), @ExampleObject(ref = "hash")})
-          @QueryParam("hashOnRef")
-          String hashOnRef,
-      @RequestBody(description = "Keys to retrieve.") MultiGetContentsRequest request)
-      throws NessieNotFoundException;
 }

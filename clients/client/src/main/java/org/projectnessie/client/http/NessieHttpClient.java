@@ -35,6 +35,7 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import org.projectnessie.api.http.HttpConfigApi;
+import org.projectnessie.api.http.HttpContentsApi;
 import org.projectnessie.api.http.HttpTreeApi;
 import org.projectnessie.client.rest.NessieHttpResponseFilter;
 import org.projectnessie.error.NessieConflictException;
@@ -83,7 +84,8 @@ public class NessieHttpClient extends NessieApiClient {
   private NessieHttpClient(HttpClient client) {
     super(
         wrap(HttpConfigApi.class, new HttpConfigClient(client)),
-        wrap(HttpTreeApi.class, new HttpTreeClient(client)));
+        wrap(HttpTreeApi.class, new HttpTreeClient(client)),
+        wrap(HttpContentsApi.class, new HttpContentsClient(client)));
     this.client = client;
   }
 

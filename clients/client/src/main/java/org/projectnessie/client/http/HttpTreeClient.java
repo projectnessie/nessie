@@ -28,8 +28,6 @@ import org.projectnessie.model.Branch;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Merge;
-import org.projectnessie.model.MultiGetContentsRequest;
-import org.projectnessie.model.MultiGetContentsResponse;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Transplant;
@@ -193,18 +191,5 @@ class HttpTreeClient implements HttpTreeApi {
         .queryParam("expectedHash", expectedHash)
         .post(operations)
         .readEntity(Branch.class);
-  }
-
-  @Override
-  public MultiGetContentsResponse getMultipleContents(
-      @NotNull String ref, String hashOnRef, @NotNull MultiGetContentsRequest request)
-      throws NessieNotFoundException {
-    return client
-        .newRequest()
-        .path("trees/contents")
-        .queryParam("ref", ref)
-        .queryParam("hashOnRef", hashOnRef)
-        .post(request)
-        .readEntity(MultiGetContentsResponse.class);
   }
 }

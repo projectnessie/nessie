@@ -6,6 +6,8 @@ interactions:
       - application/json
       Accept-Encoding:
       - gzip, deflate
+      Authorization:
+      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       User-Agent:
@@ -17,20 +19,22 @@ interactions:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
         \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n} ]"
     headers:
+      Content-Length:
+      - '125'
       Content-Type:
       - application/json
-      content-length:
-      - '125'
     status:
       code: 200
       message: OK
 - request:
-    body: '{"hash": null, "name": "main", "type": "BRANCH"}'
+    body: '{"name": "main", "hash": null, "type": "BRANCH"}'
     headers:
       Accept:
       - '*/*'
       Accept-Encoding:
       - gzip, deflate
+      Authorization:
+      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       Content-Length:
@@ -43,25 +47,26 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree
   response:
     body:
-      string: "{\n  \"status\" : 409,\n  \"reason\" : \"Conflict\",\n  \"message\"
-        : \"Named reference 'main' already exists.\",\n  \"errorCode\" : \"REFERENCE_ALREADY_EXISTS\",\n
-        \ \"serverStackTrace\" : null\n}"
+      string: "{\n  \"message\" : \"branch 'main' already exists\",\n  \"status\"
+        : 409,\n  \"reason\" : \"Conflict\",\n  \"serverStackTrace\" : null\n}"
     headers:
+      Content-Length:
+      - '120'
       Content-Type:
       - application/json
-      content-length:
-      - '174'
     status:
       code: 409
       message: Conflict
 - request:
-    body: '{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-      "name": "test", "type": "BRANCH"}'
+    body: '{"name": "test", "hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+      "type": "BRANCH"}'
     headers:
       Accept:
       - '*/*'
       Accept-Encoding:
       - gzip, deflate
+      Authorization:
+      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       Content-Length:
@@ -76,10 +81,10 @@ interactions:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"test\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}"
     headers:
+      Content-Length:
+      - '121'
       Content-Type:
       - application/json
-      content-length:
-      - '121'
     status:
       code: 200
       message: OK
@@ -90,6 +95,8 @@ interactions:
       - application/json
       Accept-Encoding:
       - gzip, deflate
+      Authorization:
+      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       User-Agent:
@@ -103,10 +110,10 @@ interactions:
         \ \"type\" : \"BRANCH\",\n  \"name\" : \"test\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}
         ]"
     headers:
+      Content-Length:
+      - '248'
       Content-Type:
       - application/json
-      content-length:
-      - '248'
     status:
       code: 200
       message: OK
@@ -117,6 +124,8 @@ interactions:
       - application/json
       Accept-Encoding:
       - gzip, deflate
+      Authorization:
+      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       User-Agent:
@@ -127,10 +136,10 @@ interactions:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"test\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}"
     headers:
+      Content-Length:
+      - '121'
       Content-Type:
       - application/json
-      content-length:
-      - '121'
     status:
       code: 200
       message: OK
@@ -141,6 +150,8 @@ interactions:
       - application/json
       Accept-Encoding:
       - gzip, deflate
+      Authorization:
+      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       User-Agent:
@@ -149,12 +160,12 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/test/entries?hashOnRef=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
-      string: "{\n  \"token\" : null,\n  \"entries\" : [ ],\n  \"hasMore\" : false\n}"
+      string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"entries\" : [ ]\n}"
     headers:
+      Content-Length:
+      - '60'
       Content-Type:
       - application/json
-      content-length:
-      - '60'
     status:
       code: 200
       message: OK
@@ -165,6 +176,8 @@ interactions:
       - application/json
       Accept-Encoding:
       - gzip, deflate
+      Authorization:
+      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       Content-Length:
@@ -187,6 +200,8 @@ interactions:
       - application/json
       Accept-Encoding:
       - gzip, deflate
+      Authorization:
+      - Basic YWRtaW5fdXNlcjp0ZXN0MTIz
       Connection:
       - keep-alive
       User-Agent:
@@ -198,10 +213,10 @@ interactions:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
         \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n} ]"
     headers:
+      Content-Length:
+      - '125'
       Content-Type:
       - application/json
-      content-length:
-      - '125'
     status:
       code: 200
       message: OK

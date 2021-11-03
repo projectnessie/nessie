@@ -106,40 +106,38 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"requestedKeys": [{"elements": ["this", "is", "iceberg", "foo"]}]}'
+    body: null
     headers:
       Accept:
-      - '*/*'
+      - application/json
       Accept-Encoding:
       - gzip, deflate
       Connection:
       - keep-alive
-      Content-Length:
-      - '67'
-      Content-Type:
-      - application/json
       User-Agent:
       - python-requests/2.26.0
-    method: POST
-    uri: http://localhost:19120/api/v1/trees/contents?ref=contents_listing_dev
+    method: GET
+    uri: http://localhost:19120/api/v1/contents/this.is.iceberg.foo?ref=contents_listing_dev
   response:
     body:
-      string: "{\n  \"contents\" : [ ]\n}"
+      string: "{\n  \"status\" : 404,\n  \"reason\" : \"Not Found\",\n  \"message\"
+        : \"Could not find contents for key 'this.is.iceberg.foo' in reference 'contents_listing_dev'.\",\n
+        \ \"errorCode\" : \"CONTENTS_NOT_FOUND\",\n  \"serverStackTrace\" : null\n}"
     headers:
       Content-Type:
       - application/json
       content-length:
-      - '22'
+      - '221'
     status:
-      code: 200
-      message: OK
+      code: 404
+      message: Not Found
 - request:
-    body: '{"commitMeta": {"author": "nessie test", "commitTime": null, "authorTime":
-      null, "message": "test message", "signedOffBy": null, "hash": null, "committer":
-      null, "properties": null}, "operations": [{"contents": {"id": "test_contents_listing",
-      "metadataLocation": "/a/b/c", "idGenerators": "xyz", "type": "ICEBERG_TABLE"},
-      "key": {"elements": ["this", "is", "iceberg", "foo"]}, "expectedContents": null,
-      "type": "PUT"}]}'
+    body: '{"commitMeta": {"author": "nessie test", "commitTime": null, "committer":
+      null, "properties": null, "message": "test message", "hash": null, "signedOffBy":
+      null, "authorTime": null}, "operations": [{"expectedContents": null, "contents":
+      {"metadataLocation": "/a/b/c", "id": "test_contents_listing", "idGenerators":
+      "xyz", "type": "ICEBERG_TABLE"}, "key": {"elements": ["this", "is", "iceberg",
+      "foo"]}, "type": "PUT"}]}'
     headers:
       Accept:
       - '*/*'
@@ -158,7 +156,7 @@ interactions:
   response:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\",\n
-        \ \"hash\" : \"b3c2e85daf956d11b3332c9a2ed3c939468b29107acde8a088c1a5568d30d5b2\"\n}"
+        \ \"hash\" : \"9b49014b81a94516de2def9fc362556907095b29396d56b053f6ba530290aecb\"\n}"
     headers:
       Content-Type:
       - application/json
@@ -185,7 +183,7 @@ interactions:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
         \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}, {\n
         \ \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\",\n  \"hash\"
-        : \"b3c2e85daf956d11b3332c9a2ed3c939468b29107acde8a088c1a5568d30d5b2\"\n}
+        : \"9b49014b81a94516de2def9fc362556907095b29396d56b053f6ba530290aecb\"\n}
         ]"
     headers:
       Content-Type:
@@ -196,40 +194,38 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"requestedKeys": [{"elements": ["this", "is", "delta", "bar"]}]}'
+    body: null
     headers:
       Accept:
-      - '*/*'
+      - application/json
       Accept-Encoding:
       - gzip, deflate
       Connection:
       - keep-alive
-      Content-Length:
-      - '65'
-      Content-Type:
-      - application/json
       User-Agent:
       - python-requests/2.26.0
-    method: POST
-    uri: http://localhost:19120/api/v1/trees/contents?ref=contents_listing_dev
+    method: GET
+    uri: http://localhost:19120/api/v1/contents/this.is.delta.bar?ref=contents_listing_dev
   response:
     body:
-      string: "{\n  \"contents\" : [ ]\n}"
+      string: "{\n  \"status\" : 404,\n  \"reason\" : \"Not Found\",\n  \"message\"
+        : \"Could not find contents for key 'this.is.delta.bar' in reference 'contents_listing_dev'.\",\n
+        \ \"errorCode\" : \"CONTENTS_NOT_FOUND\",\n  \"serverStackTrace\" : null\n}"
     headers:
       Content-Type:
       - application/json
       content-length:
-      - '22'
+      - '219'
     status:
-      code: 200
-      message: OK
+      code: 404
+      message: Not Found
 - request:
-    body: '{"commitMeta": {"author": "nessie test", "commitTime": null, "authorTime":
-      null, "message": "test message", "signedOffBy": null, "hash": null, "committer":
-      null, "properties": null}, "operations": [{"contents": {"id": "uuid2", "metadataLocationHistory":
-      ["asd"], "lastCheckpoint": "x", "checkpointLocationHistory": ["def"], "type":
-      "DELTA_LAKE_TABLE"}, "key": {"elements": ["this", "is", "delta", "bar"]}, "expectedContents":
-      null, "type": "PUT"}]}'
+    body: '{"commitMeta": {"author": "nessie test", "commitTime": null, "committer":
+      null, "properties": null, "message": "test message", "hash": null, "signedOffBy":
+      null, "authorTime": null}, "operations": [{"expectedContents": null, "contents":
+      {"metadataLocationHistory": ["asd"], "checkpointLocationHistory": ["def"], "id":
+      "uuid2", "lastCheckpoint": "x", "type": "DELTA_LAKE_TABLE"}, "key": {"elements":
+      ["this", "is", "delta", "bar"]}, "type": "PUT"}]}'
     headers:
       Accept:
       - '*/*'
@@ -244,11 +240,11 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/contents_listing_dev/commit?expectedHash=b3c2e85daf956d11b3332c9a2ed3c939468b29107acde8a088c1a5568d30d5b2
+    uri: http://localhost:19120/api/v1/trees/branch/contents_listing_dev/commit?expectedHash=9b49014b81a94516de2def9fc362556907095b29396d56b053f6ba530290aecb
   response:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\",\n
-        \ \"hash\" : \"1d2e71f9a231ed333ba50931496247c56ca7521d656be38e23f0e08d0792b673\"\n}"
+        \ \"hash\" : \"ab5a1f626a7d606e0a5de9be8b8677fab354d3303915598332b3c139bbf257c7\"\n}"
     headers:
       Content-Type:
       - application/json
@@ -275,7 +271,7 @@ interactions:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
         \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}, {\n
         \ \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\",\n  \"hash\"
-        : \"1d2e71f9a231ed333ba50931496247c56ca7521d656be38e23f0e08d0792b673\"\n}
+        : \"ab5a1f626a7d606e0a5de9be8b8677fab354d3303915598332b3c139bbf257c7\"\n}
         ]"
     headers:
       Content-Type:
@@ -286,39 +282,37 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"requestedKeys": [{"elements": ["this", "is", "sql", "baz"]}]}'
+    body: null
     headers:
       Accept:
-      - '*/*'
+      - application/json
       Accept-Encoding:
       - gzip, deflate
       Connection:
       - keep-alive
-      Content-Length:
-      - '63'
-      Content-Type:
-      - application/json
       User-Agent:
       - python-requests/2.26.0
-    method: POST
-    uri: http://localhost:19120/api/v1/trees/contents?ref=contents_listing_dev
+    method: GET
+    uri: http://localhost:19120/api/v1/contents/this.is.sql.baz?ref=contents_listing_dev
   response:
     body:
-      string: "{\n  \"contents\" : [ ]\n}"
+      string: "{\n  \"status\" : 404,\n  \"reason\" : \"Not Found\",\n  \"message\"
+        : \"Could not find contents for key 'this.is.sql.baz' in reference 'contents_listing_dev'.\",\n
+        \ \"errorCode\" : \"CONTENTS_NOT_FOUND\",\n  \"serverStackTrace\" : null\n}"
     headers:
       Content-Type:
       - application/json
       content-length:
-      - '22'
+      - '217'
     status:
-      code: 200
-      message: OK
+      code: 404
+      message: Not Found
 - request:
-    body: '{"commitMeta": {"author": "nessie test", "commitTime": null, "authorTime":
-      null, "message": "test message", "signedOffBy": null, "hash": null, "committer":
-      null, "properties": null}, "operations": [{"contents": {"id": "uuid3", "sqlText":
-      "SELECT * FROM foo", "dialect": "SPARK", "type": "VIEW"}, "key": {"elements":
-      ["this", "is", "sql", "baz"]}, "expectedContents": null, "type": "PUT"}]}'
+    body: '{"commitMeta": {"author": "nessie test", "commitTime": null, "committer":
+      null, "properties": null, "message": "test message", "hash": null, "signedOffBy":
+      null, "authorTime": null}, "operations": [{"expectedContents": null, "contents":
+      {"sqlText": "SELECT * FROM foo", "id": "uuid3", "dialect": "SPARK", "type":
+      "VIEW"}, "key": {"elements": ["this", "is", "sql", "baz"]}, "type": "PUT"}]}'
     headers:
       Accept:
       - '*/*'
@@ -333,11 +327,11 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/contents_listing_dev/commit?expectedHash=1d2e71f9a231ed333ba50931496247c56ca7521d656be38e23f0e08d0792b673
+    uri: http://localhost:19120/api/v1/trees/branch/contents_listing_dev/commit?expectedHash=ab5a1f626a7d606e0a5de9be8b8677fab354d3303915598332b3c139bbf257c7
   response:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_listing_dev\",\n
-        \ \"hash\" : \"666abdcedd73d57428452fcbbd6c123555056094180f629476d031cf2f978358\"\n}"
+        \ \"hash\" : \"d76e94d31c334e8a9b3aade04c3871138edb4013e2f7fae642767bedcdf8afc6\"\n}"
     headers:
       Content-Type:
       - application/json
@@ -347,137 +341,53 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"requestedKeys": [{"elements": ["this", "is", "iceberg", "foo"]}]}'
+    body: null
     headers:
       Accept:
-      - '*/*'
+      - application/json
       Accept-Encoding:
       - gzip, deflate
       Connection:
       - keep-alive
-      Content-Length:
-      - '67'
-      Content-Type:
-      - application/json
       User-Agent:
       - python-requests/2.26.0
-    method: POST
-    uri: http://localhost:19120/api/v1/trees/contents?ref=contents_listing_dev
+    method: GET
+    uri: http://localhost:19120/api/v1/contents/this.is.iceberg.foo?ref=contents_listing_dev
   response:
     body:
-      string: "{\n  \"contents\" : [ {\n    \"key\" : {\n      \"elements\" : [ \"this\",
-        \"is\", \"iceberg\", \"foo\" ]\n    },\n    \"contents\" : {\n      \"type\"
-        : \"ICEBERG_TABLE\",\n      \"id\" : \"test_contents_listing\",\n      \"metadataLocation\"
-        : \"/a/b/c\",\n      \"idGenerators\" : \"xyz\"\n    }\n  } ]\n}"
+      string: "{\n  \"type\" : \"ICEBERG_TABLE\",\n  \"id\" : \"test_contents_listing\",\n
+        \ \"metadataLocation\" : \"/a/b/c\",\n  \"idGenerators\" : \"xyz\"\n}"
     headers:
       Content-Type:
       - application/json
       content-length:
-      - '264'
+      - '123'
     status:
       code: 200
       message: OK
 - request:
-    body: '{"requestedKeys": [{"elements": ["this", "is", "delta", "bar"]}]}'
+    body: null
     headers:
       Accept:
-      - '*/*'
+      - application/json
       Accept-Encoding:
       - gzip, deflate
       Connection:
       - keep-alive
-      Content-Length:
-      - '65'
-      Content-Type:
-      - application/json
       User-Agent:
       - python-requests/2.26.0
-    method: POST
-    uri: http://localhost:19120/api/v1/trees/contents?ref=contents_listing_dev
+    method: GET
+    uri: http://localhost:19120/api/v1/contents/this.is.delta.bar?ref=contents_listing_dev
   response:
     body:
-      string: "{\n  \"contents\" : [ {\n    \"key\" : {\n      \"elements\" : [ \"this\",
-        \"is\", \"delta\", \"bar\" ]\n    },\n    \"contents\" : {\n      \"type\"
-        : \"DELTA_LAKE_TABLE\",\n      \"id\" : \"uuid2\",\n      \"metadataLocationHistory\"
-        : [ \"asd\" ],\n      \"checkpointLocationHistory\" : [ \"def\" ],\n      \"lastCheckpoint\"
-        : \"x\"\n    }\n  } ]\n}"
+      string: "{\n  \"type\" : \"DELTA_LAKE_TABLE\",\n  \"id\" : \"uuid2\",\n  \"metadataLocationHistory\"
+        : [ \"asd\" ],\n  \"checkpointLocationHistory\" : [ \"def\" ],\n  \"lastCheckpoint\"
+        : \"x\"\n}"
     headers:
       Content-Type:
       - application/json
       content-length:
-      - '304'
-    status:
-      code: 200
-      message: OK
-- request:
-    body: '{"requestedKeys": [{"elements": ["this", "is", "iceberg", "foo"]}, {"elements":
-      ["this", "is", "delta", "bar"]}]}'
-    headers:
-      Accept:
-      - '*/*'
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '113'
-      Content-Type:
-      - application/json
-      User-Agent:
-      - python-requests/2.26.0
-    method: POST
-    uri: http://localhost:19120/api/v1/trees/contents?ref=contents_listing_dev
-  response:
-    body:
-      string: "{\n  \"contents\" : [ {\n    \"key\" : {\n      \"elements\" : [ \"this\",
-        \"is\", \"iceberg\", \"foo\" ]\n    },\n    \"contents\" : {\n      \"type\"
-        : \"ICEBERG_TABLE\",\n      \"id\" : \"test_contents_listing\",\n      \"metadataLocation\"
-        : \"/a/b/c\",\n      \"idGenerators\" : \"xyz\"\n    }\n  }, {\n    \"key\"
-        : {\n      \"elements\" : [ \"this\", \"is\", \"delta\", \"bar\" ]\n    },\n
-        \   \"contents\" : {\n      \"type\" : \"DELTA_LAKE_TABLE\",\n      \"id\"
-        : \"uuid2\",\n      \"metadataLocationHistory\" : [ \"asd\" ],\n      \"checkpointLocationHistory\"
-        : [ \"def\" ],\n      \"lastCheckpoint\" : \"x\"\n    }\n  } ]\n}"
-    headers:
-      Content-Type:
-      - application/json
-      content-length:
-      - '547'
-    status:
-      code: 200
-      message: OK
-- request:
-    body: '{"requestedKeys": [{"elements": ["this", "is", "iceberg", "foo"]}, {"elements":
-      ["this", "is", "not", "there"]}, {"elements": ["this", "is", "delta", "bar"]}]}'
-    headers:
-      Accept:
-      - '*/*'
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '159'
-      Content-Type:
-      - application/json
-      User-Agent:
-      - python-requests/2.26.0
-    method: POST
-    uri: http://localhost:19120/api/v1/trees/contents?ref=contents_listing_dev
-  response:
-    body:
-      string: "{\n  \"contents\" : [ {\n    \"key\" : {\n      \"elements\" : [ \"this\",
-        \"is\", \"iceberg\", \"foo\" ]\n    },\n    \"contents\" : {\n      \"type\"
-        : \"ICEBERG_TABLE\",\n      \"id\" : \"test_contents_listing\",\n      \"metadataLocation\"
-        : \"/a/b/c\",\n      \"idGenerators\" : \"xyz\"\n    }\n  }, {\n    \"key\"
-        : {\n      \"elements\" : [ \"this\", \"is\", \"delta\", \"bar\" ]\n    },\n
-        \   \"contents\" : {\n      \"type\" : \"DELTA_LAKE_TABLE\",\n      \"id\"
-        : \"uuid2\",\n      \"metadataLocationHistory\" : [ \"asd\" ],\n      \"checkpointLocationHistory\"
-        : [ \"def\" ],\n      \"lastCheckpoint\" : \"x\"\n    }\n  } ]\n}"
-    headers:
-      Content-Type:
-      - application/json
-      content-length:
-      - '547'
+      - '161'
     status:
       code: 200
       message: OK

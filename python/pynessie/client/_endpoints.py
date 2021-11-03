@@ -221,8 +221,8 @@ def list_logs(
     return cast(dict, _get(base_url + "/trees/tree/{}/log".format(ref), auth, ssl_verify=ssl_verify, params=filtering_args))
 
 
-def get_tables(
-    base_url: str, auth: Optional[AuthBase], ref: str, get_tables_json: dict, hash_on_ref: Optional[str] = None, ssl_verify: bool = True
+def get_table(
+    base_url: str, auth: Optional[AuthBase], ref: str, table: str, hash_on_ref: Optional[str] = None, ssl_verify: bool = True
 ) -> dict:
     """Fetch a table from a known branch.
 
@@ -237,7 +237,7 @@ def get_tables(
     params = {"ref": ref}
     if hash_on_ref:
         params["hashOnRef"] = hash_on_ref
-    return cast(dict, _post(base_url + "/trees/contents", auth, get_tables_json, ssl_verify=ssl_verify, params=params))
+    return cast(dict, _get(base_url + "/contents/{}".format(table), auth, ssl_verify=ssl_verify, params=params))
 
 
 def assign_branch(
