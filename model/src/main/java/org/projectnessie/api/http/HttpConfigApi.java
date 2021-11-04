@@ -27,7 +27,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.projectnessie.api.ConfigApi;
 import org.projectnessie.model.NessieConfiguration;
 
-@Path("config")
+@Path("/config")
 public interface HttpConfigApi extends ConfigApi {
 
   @Override
