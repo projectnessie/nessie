@@ -35,8 +35,8 @@ import org.projectnessie.api.ContentApi;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
-import org.projectnessie.model.MultiGetContentRequest;
-import org.projectnessie.model.MultiGetContentResponse;
+import org.projectnessie.model.GetMultipleContentsRequest;
+import org.projectnessie.model.GetMultipleContentsResponse;
 
 @Consumes(value = MediaType.APPLICATION_JSON)
 @Path("contents")
@@ -111,7 +111,7 @@ public interface HttpContentApi extends ContentApi {
         content =
             @org.eclipse.microprofile.openapi.annotations.media.Content(
                 mediaType = MediaType.APPLICATION_JSON,
-                schema = @Schema(implementation = MultiGetContentResponse.class))),
+                schema = @Schema(implementation = GetMultipleContentsResponse.class))),
     @APIResponse(responseCode = "400", description = "Invalid input, ref name not valid"),
     @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
     @APIResponse(
@@ -119,7 +119,7 @@ public interface HttpContentApi extends ContentApi {
         description = "Not allowed to view the given reference or read object content for a key"),
     @APIResponse(responseCode = "404", description = "Provided ref doesn't exists")
   })
-  MultiGetContentResponse getMultipleContents(
+  GetMultipleContentsResponse getMultipleContents(
       @Parameter(
               description = "Reference to use. Defaults to default branch if not provided.",
               examples = {@ExampleObject(ref = "ref")})
@@ -130,6 +130,6 @@ public interface HttpContentApi extends ContentApi {
               examples = {@ExampleObject(ref = "nullHash"), @ExampleObject(ref = "hash")})
           @QueryParam("hashOnRef")
           String hashOnRef,
-      @RequestBody(description = "Keys to retrieve.") MultiGetContentRequest request)
+      @RequestBody(description = "Keys to retrieve.") GetMultipleContentsRequest request)
       throws NessieNotFoundException;
 }

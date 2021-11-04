@@ -22,9 +22,9 @@ import javax.validation.constraints.Pattern;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
-import org.projectnessie.model.MultiGetContentRequest;
-import org.projectnessie.model.MultiGetContentResponse;
-import org.projectnessie.model.MultiGetContentResponse.ContentWithKey;
+import org.projectnessie.model.GetMultipleContentsRequest;
+import org.projectnessie.model.GetMultipleContentsResponse;
+import org.projectnessie.model.GetMultipleContentsResponse.ContentWithKey;
 import org.projectnessie.model.Validation;
 
 public interface ContentApi {
@@ -73,11 +73,11 @@ public interface ContentApi {
    * @return list of {@link ContentWithKey}s
    * @throws NessieNotFoundException if {@code ref} or {@code hashOnRef} does not exist
    */
-  MultiGetContentResponse getMultipleContents(
+  GetMultipleContentsResponse getMultipleContents(
       @Valid @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           String ref,
       @Valid @Nullable @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String hashOnRef,
-      @Valid @NotNull MultiGetContentRequest request)
+      @Valid @NotNull GetMultipleContentsRequest request)
       throws NessieNotFoundException;
 }

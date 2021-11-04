@@ -26,8 +26,8 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.Content.Type;
 import org.projectnessie.model.ContentKey;
-import org.projectnessie.model.MultiGetContentRequest;
-import org.projectnessie.model.MultiGetContentResponse;
+import org.projectnessie.model.GetMultipleContentsRequest;
+import org.projectnessie.model.GetMultipleContentsResponse;
 import org.projectnessie.services.authz.AccessChecker;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.impl.ContentApiImplWithAuthorization;
@@ -77,8 +77,9 @@ public class RestContentResource implements HttpContentApi {
   }
 
   @Override
-  public MultiGetContentResponse getMultipleContents(
-      String ref, String hashOnRef, MultiGetContentRequest request) throws NessieNotFoundException {
+  public GetMultipleContentsResponse getMultipleContents(
+      String ref, String hashOnRef, GetMultipleContentsRequest request)
+      throws NessieNotFoundException {
     return resource().getMultipleContents(ref, hashOnRef, request);
   }
 }

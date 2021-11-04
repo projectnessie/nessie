@@ -218,7 +218,7 @@ def test_commit_with_expected_state() -> None:
 
 @pytest.mark.vcr
 def test_commit_no_expected_state() -> None:
-    """Test making two commit without any expected Content, i.e. using DeltaLakeTable."""
+    """Test making two commits without any expected Content, i.e. using DeltaLakeTable."""
     _cli(["branch", "dev"])
     table1 = DeltaLakeTable(
         id="test_commit_no_expected_state", metadata_location_history=["asd111"], checkpoint_location_history=["def"], last_checkpoint="x"

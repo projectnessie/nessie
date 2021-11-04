@@ -19,30 +19,36 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.List;
 import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
 
-@Schema(type = SchemaType.OBJECT, title = "MultiGetContentRequest")
+@Schema(type = SchemaType.OBJECT, title = "GetMultipleContentsResponse")
 @Value.Immutable
-@JsonSerialize(as = ImmutableMultiGetContentRequest.class)
-@JsonDeserialize(as = ImmutableMultiGetContentRequest.class)
-public interface MultiGetContentRequest {
+@JsonSerialize(as = ImmutableGetMultipleContentsResponse.class)
+@JsonDeserialize(as = ImmutableGetMultipleContentsResponse.class)
+public interface GetMultipleContentsResponse {
 
   @NotNull
-  @Size(min = 1)
-  List<ContentKey> getRequestedKeys();
+  List<ContentWithKey> getContents();
 
-  static ImmutableMultiGetContentRequest.Builder builder() {
-    return ImmutableMultiGetContentRequest.builder();
+  static GetMultipleContentsResponse of(List<ContentWithKey> items) {
+    return ImmutableGetMultipleContentsResponse.builder().addAllContents(items).build();
   }
 
-  static MultiGetContentRequest of(ContentKey... keys) {
-    return builder().addRequestedKeys(keys).build();
-  }
+  @Value.Immutable
+  @JsonSerialize(as = ImmutableContentWithKey.class)
+  @JsonDeserialize(as = ImmutableContentWithKey.class)
+  interface ContentWithKey {
 
-  static MultiGetContentRequest of(List<ContentKey> keys) {
-    return builder().addAllRequestedKeys(keys).build();
+    @NotNull
+    ContentKey getKey();
+
+    @NotNull
+    Content getContent();
+
+    static ContentWithKey of(ContentKey key, Content content) {
+      return ImmutableContentWithKey.builder().key(key).content(content).build();
+    }
   }
 }

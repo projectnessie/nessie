@@ -23,15 +23,15 @@ import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
-import org.projectnessie.model.ImmutableMultiGetContentRequest;
-import org.projectnessie.model.MultiGetContentResponse;
-import org.projectnessie.model.MultiGetContentResponse.ContentWithKey;
+import org.projectnessie.model.GetMultipleContentsResponse;
+import org.projectnessie.model.GetMultipleContentsResponse.ContentWithKey;
+import org.projectnessie.model.ImmutableGetMultipleContentsRequest;
 
 final class HttpGetContent extends BaseHttpOnReferenceRequest<GetContentBuilder>
     implements GetContentBuilder {
 
-  private final ImmutableMultiGetContentRequest.Builder request =
-      ImmutableMultiGetContentRequest.builder();
+  private final ImmutableGetMultipleContentsRequest.Builder request =
+      ImmutableGetMultipleContentsRequest.builder();
 
   HttpGetContent(NessieApiClient client) {
     super(client);
@@ -51,7 +51,7 @@ final class HttpGetContent extends BaseHttpOnReferenceRequest<GetContentBuilder>
 
   @Override
   public Map<ContentKey, Content> get() throws NessieNotFoundException {
-    MultiGetContentResponse resp =
+    GetMultipleContentsResponse resp =
         client.getContentApi().getMultipleContents(refName, hashOnRef, request.build());
     return resp.getContents().stream()
         .collect(Collectors.toMap(ContentWithKey::getKey, ContentWithKey::getContent));

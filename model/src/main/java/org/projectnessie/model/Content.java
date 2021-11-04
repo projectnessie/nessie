@@ -26,7 +26,7 @@ import org.eclipse.microprofile.openapi.annotations.media.DiscriminatorMapping;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
 
-/** Abstract implementation of content within Nessie. */
+/** Base class for an object stored within Nessie. */
 @Schema(
     type = SchemaType.OBJECT,
     title = "Content",

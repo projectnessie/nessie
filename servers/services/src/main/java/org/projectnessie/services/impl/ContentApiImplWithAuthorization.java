@@ -21,8 +21,8 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.Content.Type;
 import org.projectnessie.model.ContentKey;
-import org.projectnessie.model.MultiGetContentRequest;
-import org.projectnessie.model.MultiGetContentResponse;
+import org.projectnessie.model.GetMultipleContentsRequest;
+import org.projectnessie.model.GetMultipleContentsResponse;
 import org.projectnessie.services.authz.AccessChecker;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.NamedRef;
@@ -49,8 +49,8 @@ public class ContentApiImplWithAuthorization extends ContentApiImpl {
   }
 
   @Override
-  public MultiGetContentResponse getMultipleContents(
-      String namedRef, String hashOnRef, MultiGetContentRequest request)
+  public GetMultipleContentsResponse getMultipleContents(
+      String namedRef, String hashOnRef, GetMultipleContentsRequest request)
       throws NessieNotFoundException {
     WithHash<NamedRef> ref = namedRefWithHashOrThrow(namedRef, hashOnRef);
     request

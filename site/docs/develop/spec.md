@@ -13,7 +13,7 @@ user facing applications like Web UIs.
 Nessie defines a [REST API](rest.md) (OpenAPI) and implementations for [Java](java.md)
 and [Python](python.md).
 
-## Content in Nessie
+## Content managed by Nessie
 
 ### General Contract
 

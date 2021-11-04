@@ -20,8 +20,8 @@ import org.projectnessie.api.http.HttpContentApi;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
-import org.projectnessie.model.MultiGetContentRequest;
-import org.projectnessie.model.MultiGetContentResponse;
+import org.projectnessie.model.GetMultipleContentsRequest;
+import org.projectnessie.model.GetMultipleContentsResponse;
 
 class HttpContentClient implements HttpContentApi {
 
@@ -45,8 +45,8 @@ class HttpContentClient implements HttpContentApi {
   }
 
   @Override
-  public MultiGetContentResponse getMultipleContents(
-      @NotNull String ref, String hashOnRef, @NotNull MultiGetContentRequest request)
+  public GetMultipleContentsResponse getMultipleContents(
+      @NotNull String ref, String hashOnRef, @NotNull GetMultipleContentsRequest request)
       throws NessieNotFoundException {
     return client
         .newRequest()
@@ -54,6 +54,6 @@ class HttpContentClient implements HttpContentApi {
         .queryParam("ref", ref)
         .queryParam("hashOnRef", hashOnRef)
         .post(request)
-        .readEntity(MultiGetContentResponse.class);
+        .readEntity(GetMultipleContentsResponse.class);
   }
 }

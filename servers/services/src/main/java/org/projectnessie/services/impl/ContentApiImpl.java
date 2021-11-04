@@ -26,10 +26,10 @@ import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
-import org.projectnessie.model.ImmutableMultiGetContentResponse;
-import org.projectnessie.model.MultiGetContentRequest;
-import org.projectnessie.model.MultiGetContentResponse;
-import org.projectnessie.model.MultiGetContentResponse.ContentWithKey;
+import org.projectnessie.model.GetMultipleContentsRequest;
+import org.projectnessie.model.GetMultipleContentsResponse;
+import org.projectnessie.model.GetMultipleContentsResponse.ContentWithKey;
+import org.projectnessie.model.ImmutableGetMultipleContentsResponse;
 import org.projectnessie.services.authz.AccessChecker;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.Key;
@@ -64,8 +64,8 @@ public class ContentApiImpl extends BaseApiImpl implements ContentApi {
   }
 
   @Override
-  public MultiGetContentResponse getMultipleContents(
-      String namedRef, String hashOnRef, MultiGetContentRequest request)
+  public GetMultipleContentsResponse getMultipleContents(
+      String namedRef, String hashOnRef, GetMultipleContentsRequest request)
       throws NessieNotFoundException {
     try {
       WithHash<NamedRef> ref = namedRefWithHashOrThrow(namedRef, hashOnRef);
@@ -78,7 +78,7 @@ public class ContentApiImpl extends BaseApiImpl implements ContentApi {
               .map(e -> ContentWithKey.of(toContentKey(e.getKey()), e.getValue()))
               .collect(Collectors.toList());
 
-      return ImmutableMultiGetContentResponse.builder().contents(output).build();
+      return ImmutableGetMultipleContentsResponse.builder().contents(output).build();
     } catch (ReferenceNotFoundException ex) {
       throw new NessieReferenceNotFoundException(ex.getMessage(), ex);
     }
