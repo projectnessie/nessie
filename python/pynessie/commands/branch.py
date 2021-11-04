@@ -25,8 +25,8 @@ from ..error import error_handler
 
 
 @click.command(name="branch")
-@click.option("-l", "--list", cls=MutuallyExclusiveOption, is_flag=True, help="list branches", mutually_exclusive=["delete"])
-@click.option("-d", "--delete", cls=MutuallyExclusiveOption, is_flag=True, help="delete a branch", mutually_exclusive=["list"])
+@click.option("-l", "--list", "is_list", cls=MutuallyExclusiveOption, is_flag=True, help="list branches", mutually_exclusive=["delete"])
+@click.option("-d", "--delete", cls=MutuallyExclusiveOption, is_flag=True, help="delete a branch", mutually_exclusive=["is_list"])
 @click.option("-f", "--force", is_flag=True, help="force branch assignment")
 @click.option(
     "-o",
@@ -46,7 +46,7 @@ from ..error import error_handler
 @error_handler
 def branch_(
     ctx: ContextObject,
-    list: bool,
+    is_list: bool,
     force: bool,
     hash_on_ref: str,
     delete: bool,
@@ -83,7 +83,9 @@ def branch_(
     on reference named 'main'
 
     """
-    results = handle_branch_tag(ctx.nessie, list, delete, branch, hash_on_ref, base_ref, True, ctx.json, force, ctx.verbose, expected_hash)
+    results = handle_branch_tag(
+        ctx.nessie, is_list, delete, branch, hash_on_ref, base_ref, True, ctx.json, force, ctx.verbose, expected_hash
+    )
     if ctx.json:
         click.echo(results)
     elif results:

@@ -63,19 +63,19 @@ def process(
 def _get_type(type_str: Optional[str]) -> type:
     if type_str == "bool":
         return bool
-    elif type_str == "int":
+    if type_str == "int":
         return int
-    else:
-        return str
+
+    return str
 
 
 def _set_type(key: str, type_str: Optional[str]) -> Union[bool, int, str]:
     if type_str == "bool":
         return key.lower() in {"true", "1", "t", "y", "yes", "yeah", "yup", "certainly", "uh-huh"}
-    elif type_str == "int":
+    if type_str == "int":
         return int(key)
-    else:
-        return key
+
+    return key
 
 
 def _get_key(key: str) -> confuse.Configuration:

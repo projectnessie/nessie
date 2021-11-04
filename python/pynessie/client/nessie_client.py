@@ -60,7 +60,7 @@ from ..model import TransplantSchema
 from ..utils import format_key
 
 
-class NessieClient(object):
+class NessieClient:
     """Base Nessie Client."""
 
     def __init__(self: "NessieClient", config: confuse.Configuration) -> None:
@@ -228,7 +228,7 @@ class NessieClient(object):
         """
         page_token = filtering_args.get("pageToken", None)
 
-        def fetch_logs(max: Optional[int], token: Optional[str] = page_token) -> LogResponse:
+        def fetch_logs(max_records: Optional[int], token: Optional[str] = page_token) -> LogResponse:
             if token:
                 filtering_args["pageToken"] = token
 
@@ -238,13 +238,13 @@ class NessieClient(object):
                 hash_on_ref=hash_on_ref,
                 ref=start_ref,
                 ssl_verify=self._ssl_verify,
-                max_records=max,
+                max_records=max_records,
                 **filtering_args
             )
             log_schema = LogResponseSchema().load(fetched_logs)
             return log_schema
 
-        log_schema = fetch_logs(max=max_records)
+        log_schema = fetch_logs(max_records=max_records)
 
         def generator(log_schema: LogResponse, max_records: Optional[int]) -> Generator[CommitMeta, Any, None]:
             while True:
@@ -257,10 +257,14 @@ class NessieClient(object):
                             break
                 if not log_schema.has_more or (max_records is not None and max_records <= 0):
                     break
-                log_schema = fetch_logs(max=max_records, token=log_schema.token)
+                log_schema = fetch_logs(max_records=max_records, token=log_schema.token)
 
         return generator(log_schema, max_records)
 
     def get_default_branch(self: "NessieClient") -> str:
         """Fetch default branch either from config if specified or from the server."""
         return self._base_branch if self._base_branch else self.get_reference(None).name
+
+    def get_base_url(self: "NessieClient") -> str:
+        """Return Nessie server configured base URL."""
+        return self._base_url

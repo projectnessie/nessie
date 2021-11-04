@@ -149,5 +149,5 @@ def _format_commit_log_string(commit_hash: str, ref: str, index: int) -> str:
     return result
 
 
-def _format_time(dt: datetime.datetime) -> str:
-    return dt.astimezone(tzlocal()).strftime("%c %z")
+def _format_time(date_time: datetime.datetime) -> str:
+    return date_time.astimezone(tzlocal()).strftime("%c %z")

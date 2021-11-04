@@ -28,8 +28,8 @@ from pynessie.model import Entries
 def test_client_interface_e2e() -> None:
     """Test client object against live server."""
     client = init()
-    assert isinstance(client._base_url, str)
-    assert client._base_url == "http://localhost:19120/api/v1"
+    assert isinstance(client.get_base_url(), str)
+    assert client.get_base_url() == "http://localhost:19120/api/v1"
     references = client.list_references()
     assert len(references) == 1
     assert references[0] == Branch("main", references[0].hash_)

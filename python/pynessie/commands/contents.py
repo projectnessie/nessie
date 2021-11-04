@@ -34,6 +34,7 @@ from ..utils import build_query_expression_for_contents_listing_flags, contents_
 @click.option(
     "-l",
     "--list",
+    "is_list",
     cls=MutuallyExclusiveOption,
     is_flag=True,
     help="list tables",
@@ -50,6 +51,7 @@ from ..utils import build_query_expression_for_contents_listing_flags, contents_
 @click.option(
     "-s",
     "--set",
+    "is_set",
     cls=MutuallyExclusiveOption,
     is_flag=True,
     help="modify a table",
@@ -106,9 +108,9 @@ from ..utils import build_query_expression_for_contents_listing_flags, contents_
 @error_handler
 def contents(
     ctx: ContextObject,
-    list: bool,
+    is_list: bool,
     delete: bool,
-    set: bool,
+    is_set: bool,
     stdin: bool,
     expect_same_contents: bool,
     key: List[str],
@@ -123,14 +125,14 @@ def contents(
 
     KEY name of object to view, delete. If listing the key will limit by namespace what is included.
     """
-    if list:
+    if is_list:
         keys = ctx.nessie.list_keys(
             ref if ref else ctx.nessie.get_default_branch(),
             query_expression=build_query_expression_for_contents_listing_flags(query_expression, entity_types),
         )
-        results = EntrySchema().dumps(_format_keys_json(keys, *key), many=True) if ctx.json else _format_keys(keys, *key)
-    elif delete or set:
-        ops = _get_contents(ctx.nessie, ref, delete, stdin, expect_same_contents, *key)
+        results = EntrySchema().dumps(_format_keys_json(keys, key), many=True) if ctx.json else _format_keys(keys, key)
+    elif delete or is_set:
+        ops = _get_contents(ctx.nessie, ref, key, delete, stdin, expect_same_contents)
         if ops:
             ctx.nessie.commit(ref, expected_hash, _get_message(message), author, *ops)
         else:
@@ -138,10 +140,10 @@ def contents(
         results = ""
     else:
 
-        def content(*x: str) -> Generator[Contents, Any, None]:
+        def content(x: List[str]) -> Generator[Contents, Any, None]:
             return ctx.nessie.get_values(ref if ref else ctx.nessie.get_default_branch(), *x)
 
-        results = ContentsSchema().dumps(content(*key), many=True) if ctx.json else "\n".join((i.pretty_print() for i in content(*key)))
+        results = ContentsSchema().dumps(content(key), many=True) if ctx.json else "\n".join((i.pretty_print() for i in content(key)))
     click.echo(results)
 
 
@@ -170,9 +172,9 @@ def _edit_contents(key: str, body: str) -> Optional[str]:
 
 
 def _get_contents(
-    nessie: NessieClient, ref: str, delete: bool = False, use_stdin: bool = False, expect_same_contents: bool = False, *keys: str
+    nessie: NessieClient, ref: str, keys: List[str], delete: bool = False, use_stdin: bool = False, expect_same_contents: bool = False
 ) -> List[Operation]:
-    contents_altered: List[Operation] = list()
+    contents_altered: List[Operation] = []
     for raw_key in keys:
         key = format_key(raw_key)
         content_orig = None
@@ -211,9 +213,9 @@ def _get_contents(
 
 
 def _get_commit_message(*keys: str) -> Optional[str]:
-    MARKER = "# Everything below is ignored\n"
-    message = click.edit("\n\n" + MARKER + "Edit the commit message above." + "\n".join(keys))
-    return message.split(MARKER, 1)[0].rstrip("\n") if message is not None else None
+    marker = "# Everything below is ignored\n"
+    message = click.edit("\n\n" + marker + "Edit the commit message above." + "\n".join(keys))
+    return message.split(marker, 1)[0].rstrip("\n") if message is not None else None
 
 
 def _get_message(message: str, *keys: str) -> Optional[str]:
@@ -222,8 +224,8 @@ def _get_message(message: str, *keys: str) -> Optional[str]:
     return _get_commit_message(*keys)
 
 
-def _format_keys_json(keys: Entries, *expected_keys: str) -> List[Entry]:
-    results = list()
+def _format_keys_json(keys: Entries, expected_keys: List[str]) -> List[Entry]:
+    results = []
     for k in keys.entries:
         value = ['"{}"'.format(i) if "." in i else i for i in k.name.elements]
         if expected_keys and all(key for key in expected_keys if key not in value):
@@ -232,7 +234,7 @@ def _format_keys_json(keys: Entries, *expected_keys: str) -> List[Entry]:
     return results
 
 
-def _format_keys(keys: Entries, *key: str) -> str:
+def _format_keys(keys: Entries, expected_keys: List[str]) -> str:
     results = defaultdict(list)
     result_str = ""
     for e in keys.entries:
@@ -241,7 +243,7 @@ def _format_keys(keys: Entries, *key: str) -> str:
         result_str += k + ":\n"
         for v in results[k]:
             value = ['"{}"'.format(i) if "." in i else i for i in v.elements]
-            if key and all(k for k in key if k not in value):
+            if expected_keys and all(k for k in expected_keys if k not in value):
                 continue
             result_str += "\t{}\n".format(".".join(value))
     return result_str

@@ -44,7 +44,7 @@ def init(config_dir: str = None, config_dict: dict = None) -> NessieClient:
     >>> client = init('/my/config/dir')
     """
     if config_dict is None:
-        config_dict = dict()
+        config_dict = {}
     config = get_config(config_dir, args=config_dict)
     return _connect(config)
 

@@ -32,7 +32,7 @@ from .client import NessieClient
 
 
 @attr.s(auto_attribs=True)
-class ContextObject(object):
+class ContextObject:
     """Click context object."""
 
     nessie: NessieClient
@@ -46,7 +46,7 @@ class MutuallyExclusiveOption(Option):
     def __init__(self: "MutuallyExclusiveOption", *args: List, **kwargs: Dict) -> None:
         """Instantiated a mutually exclusive option."""
         self.mutually_exclusive = set(kwargs.pop("mutually_exclusive", []))
-        super(MutuallyExclusiveOption, self).__init__(*args, **kwargs)  # type: ignore
+        super().__init__(*args, **kwargs)  # type: ignore
 
     def handle_parse_result(self: "MutuallyExclusiveOption", ctx: click.Context, opts: Mapping, args: List) -> Tuple[Any, List[str]]:
         """Ensure mutually exclusive options are not used together."""
@@ -55,7 +55,7 @@ class MutuallyExclusiveOption(Option):
                 "Illegal usage: `{}` is mutually exclusive with " "arguments `{}`.".format(self.name, ", ".join(self.mutually_exclusive))
             )
 
-        return super(MutuallyExclusiveOption, self).handle_parse_result(ctx, opts, args)
+        return super().handle_parse_result(ctx, opts, args)
 
 
 class DefaultHelp(click.Command):
@@ -67,13 +67,13 @@ class DefaultHelp(click.Command):
         if "help_option_names" not in context_settings:
             context_settings["help_option_names"] = ["-h", "--help"]
         self.help_flag = context_settings["help_option_names"][0]
-        super(DefaultHelp, self).__init__(*args, **kwargs)  # type: ignore
+        super().__init__(*args, **kwargs)  # type: ignore
 
     def parse_args(self: "DefaultHelp", ctx: click.Context, args: List) -> List:
         """Ensure that help is shown if nothing else is selected."""
         if not args:
             args = [self.help_flag]
-        return super(DefaultHelp, self).parse_args(ctx, args)
+        return super().parse_args(ctx, args)
 
 
 pass_client = click.make_pass_decorator(ContextObject)

@@ -21,7 +21,7 @@ import confuse
 
 
 def _get_env_args() -> dict:
-    args = dict()
+    args = {}
     for k, v in os.environ.items():
         if "NESSIE_" in k and k != "NESSIE_CLIENTDIR":
             name = k.replace("NESSIE_", "").lower().replace("_", ".")

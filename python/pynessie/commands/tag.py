@@ -25,8 +25,8 @@ from ..error import error_handler
 
 
 @click.command("tag")
-@click.option("-l", "--list", cls=MutuallyExclusiveOption, is_flag=True, help="list branches", mutually_exclusive=["delete"])
-@click.option("-d", "--delete", cls=MutuallyExclusiveOption, is_flag=True, help="delete a branches", mutually_exclusive=["list"])
+@click.option("-l", "--list", "is_list", cls=MutuallyExclusiveOption, is_flag=True, help="list branches", mutually_exclusive=["delete"])
+@click.option("-d", "--delete", cls=MutuallyExclusiveOption, is_flag=True, help="delete a branches", mutually_exclusive=["is_list"])
 @click.option("-f", "--force", is_flag=True, help="force branch assignment")
 @click.option(
     "-o",
@@ -45,7 +45,7 @@ from ..error import error_handler
 @pass_client
 @error_handler
 def tag(
-    ctx: ContextObject, list: bool, force: bool, hash_on_ref: str, delete: bool, tag_name: str, base_ref: str, expected_hash: str
+    ctx: ContextObject, is_list: bool, force: bool, hash_on_ref: str, delete: bool, tag_name: str, base_ref: str, expected_hash: str
 ) -> None:
     """Tag operations.
 
@@ -77,7 +77,7 @@ def tag(
 
     """
     results = handle_branch_tag(
-        ctx.nessie, list, delete, tag_name, hash_on_ref, base_ref, False, ctx.json, force, ctx.verbose, expected_hash
+        ctx.nessie, is_list, delete, tag_name, hash_on_ref, base_ref, False, ctx.json, force, ctx.verbose, expected_hash
     )
     if ctx.json:
         click.echo(results)
