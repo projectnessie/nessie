@@ -107,3 +107,17 @@ exports[`Commit log renders 2`] = `
   </div>
 </DocumentFragment>
 `;
+
+exports[`Commit redirects on an invalid ref 1`] = `
+<DocumentFragment>
+  <div
+    class="EmptyView card-header"
+  >
+    <span
+      class="EmptyView__message"
+    >
+      Nothing to show
+    </span>
+  </div>
+</DocumentFragment>
+`;

@@ -74,7 +74,7 @@
     "ramda": "^0.27.1",
     "react": "^16.14.0",
     "react-app-polyfill": "^2.0.0",
-    "react-bootstrap": "^1.6.4",
+    "react-bootstrap": "^2.0.2",
     "react-dev-utils": "^11.0.3",
     "react-dom": "^16.14.0",
     "react-refresh": "^0.10.0",
