@@ -27,6 +27,7 @@ import ExploreLink from "./ExploreLink";
 import { routeSlugs } from "./Constants";
 import { EmptyMessageView } from "./Components";
 import CommitDetails from "./CommitDetails";
+import { Location, History } from "history";
 
 const log = factory.getLogger("api.CommitHeader");
 
@@ -62,8 +63,8 @@ const CommitLog = (props: {
   const [showCommitDetails, setShowCommitDetails] = useState(false);
   const [commitDetails, setCommitDetails] = useState<CommitMeta | undefined>();
   const [isRefNotFound, setRefNotFound] = useState(false);
-  const location = useLocation();
-  const history = useHistory();
+  const location = useLocation() as Location;
+  const history = useHistory() as History;
   useEffect(() => {
     const logs = async () => {
       const fetchLogResults = await fetchLog(currentRef);
