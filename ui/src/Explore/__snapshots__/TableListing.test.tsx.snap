@@ -1,5 +1,17 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`TableListing redirects on an invalid ref 1`] = `
+<DocumentFragment>
+  <div
+    class="card"
+  >
+    <div
+      class="list-group list-group-flush"
+    />
+  </div>
+</DocumentFragment>
+`;
+
 exports[`TableListing renders 1`] = `
 <DocumentFragment>
   <div

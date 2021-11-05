@@ -119,7 +119,7 @@ const TableHead = ({
                   {branch.name}
                   <span>
                     {branch.name === defaultBranch ? (
-                      <Badge pill className="float-right" variant={"secondary"}>
+                      <Badge pill className="float-right" bg={"secondary"}>
                         default
                       </Badge>
                     ) : (
