@@ -15,7 +15,6 @@
  */
 package org.projectnessie.services.rest;
 
-import java.util.List;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.ws.rs.core.Context;
@@ -24,6 +23,7 @@ import org.projectnessie.api.TreeApi;
 import org.projectnessie.api.http.HttpTreeApi;
 import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.params.EntriesParams;
+import org.projectnessie.api.params.ReferencesParams;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -35,6 +35,7 @@ import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Merge;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
+import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.Transplant;
 import org.projectnessie.services.authz.AccessChecker;
 import org.projectnessie.services.config.ServerConfig;
@@ -79,8 +80,8 @@ public class RestTreeResource implements HttpTreeApi {
   }
 
   @Override
-  public List<Reference> getAllReferences() {
-    return resource().getAllReferences();
+  public ReferencesResponse getAllReferences(ReferencesParams params) {
+    return resource().getAllReferences(params);
   }
 
   @Override

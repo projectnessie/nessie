@@ -92,16 +92,16 @@ interactions:
     uri: http://localhost:19120/api/v1/trees
   response:
     body:
-      string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
-        \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}, {\n
-        \ \"type\" : \"BRANCH\",\n  \"name\" : \"contents_commit_delete_dev\",\n  \"hash\"
-        : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}
-        ]"
+      string: "{\n  \"token\" : null,\n  \"references\" : [ {\n    \"type\" : \"BRANCH\",\n
+        \   \"name\" : \"main\",\n    \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n
+        \ }, {\n    \"type\" : \"BRANCH\",\n    \"name\" : \"contents_commit_delete_dev\",\n
+        \   \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n
+        \ } ],\n  \"hasMore\" : false\n}"
     headers:
       Content-Type:
       - application/json
       content-length:
-      - '270'
+      - '346'
     status:
       code: 200
       message: OK
@@ -132,12 +132,12 @@ interactions:
       code: 404
       message: Not Found
 - request:
-    body: '{"operations": [{"content": {"metadataLocation": "/a/b/c", "idGenerators":
-      "xyz", "id": "test_contents_delete", "type": "ICEBERG_TABLE"}, "key": {"elements":
-      ["this", "is", "iceberg", "foo"]}, "expectedContent": null, "type": "PUT"}],
-      "commitMeta": {"signedOffBy": null, "hash": null, "author": "nessie test", "commitTime":
-      null, "committer": null, "message": "test message", "properties": null, "authorTime":
-      null}}'
+    body: '{"commitMeta": {"commitTime": null, "author": "nessie test", "authorTime":
+      null, "hash": null, "properties": null, "committer": null, "message": "test
+      message", "signedOffBy": null}, "operations": [{"expectedContent": null, "key":
+      {"elements": ["this", "is", "iceberg", "foo"]}, "content": {"idGenerators":
+      "xyz", "metadataLocation": "/a/b/c", "id": "test_contents_delete", "type": "ICEBERG_TABLE"},
+      "type": "PUT"}]}'
     headers:
       Accept:
       - '*/*'
@@ -156,7 +156,7 @@ interactions:
   response:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_commit_delete_dev\",\n
-        \ \"hash\" : \"3a2d6f66bd9aa04ada68240ea9a4044545c660f912c882337b4638774a923483\"\n}"
+        \ \"hash\" : \"4be9dfed84e1d6d39125e16f7501130e376cdfce6ea4a1b594657aae74cf0ce6\"\n}"
     headers:
       Content-Type:
       - application/json
@@ -206,24 +206,24 @@ interactions:
     uri: http://localhost:19120/api/v1/trees
   response:
     body:
-      string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
-        \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}, {\n
-        \ \"type\" : \"BRANCH\",\n  \"name\" : \"contents_commit_delete_dev\",\n  \"hash\"
-        : \"3a2d6f66bd9aa04ada68240ea9a4044545c660f912c882337b4638774a923483\"\n}
-        ]"
+      string: "{\n  \"token\" : null,\n  \"references\" : [ {\n    \"type\" : \"BRANCH\",\n
+        \   \"name\" : \"main\",\n    \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n
+        \ }, {\n    \"type\" : \"BRANCH\",\n    \"name\" : \"contents_commit_delete_dev\",\n
+        \   \"hash\" : \"4be9dfed84e1d6d39125e16f7501130e376cdfce6ea4a1b594657aae74cf0ce6\"\n
+        \ } ],\n  \"hasMore\" : false\n}"
     headers:
       Content-Type:
       - application/json
       content-length:
-      - '270'
+      - '346'
     status:
       code: 200
       message: OK
 - request:
-    body: '{"operations": [{"key": {"elements": ["this", "is", "iceberg", "foo"]},
-      "type": "DELETE"}], "commitMeta": {"signedOffBy": null, "hash": null, "author":
-      null, "commitTime": null, "committer": null, "message": "delete test table",
-      "properties": null, "authorTime": null}}'
+    body: '{"commitMeta": {"commitTime": null, "author": null, "authorTime": null,
+      "hash": null, "properties": null, "committer": null, "message": "delete test
+      table", "signedOffBy": null}, "operations": [{"key": {"elements": ["this", "is",
+      "iceberg", "foo"]}, "type": "DELETE"}]}'
     headers:
       Accept:
       - '*/*'
@@ -238,11 +238,11 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/contents_commit_delete_dev/commit?expectedHash=3a2d6f66bd9aa04ada68240ea9a4044545c660f912c882337b4638774a923483
+    uri: http://localhost:19120/api/v1/trees/branch/contents_commit_delete_dev/commit?expectedHash=4be9dfed84e1d6d39125e16f7501130e376cdfce6ea4a1b594657aae74cf0ce6
   response:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_commit_delete_dev\",\n
-        \ \"hash\" : \"6aaa56614cb82b8609ba9bd16060c3c567097c9893f7646132ca1a1d27ae9eaa\"\n}"
+        \ \"hash\" : \"3e6f18cc20f7feb8994cabbcb88969d4357f4fa2399a962b4176b378775a5476\"\n}"
     headers:
       Content-Type:
       - application/json

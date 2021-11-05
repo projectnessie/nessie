@@ -39,6 +39,7 @@ import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
+import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.Tag;
 
 public abstract class AbstractResteasyTest {
@@ -52,14 +53,22 @@ public abstract class AbstractResteasyTest {
 
   @Test
   public void testBasic() {
-    int preSize = rest().get("trees").then().statusCode(200).extract().as(Reference[].class).length;
+    int preSize =
+        rest()
+            .get("trees")
+            .then()
+            .statusCode(200)
+            .extract()
+            .as(ReferencesResponse.class)
+            .getReferences()
+            .size();
 
     rest().get("trees/tree/mainx").then().statusCode(404);
     rest().body(Branch.of("mainx", null)).post("trees/tree").then().statusCode(200);
 
-    Reference[] references =
-        rest().get("trees").then().statusCode(200).extract().as(Reference[].class);
-    Assertions.assertEquals(preSize + 1, references.length);
+    ReferencesResponse references =
+        rest().get("trees").then().statusCode(200).extract().as(ReferencesResponse.class);
+    Assertions.assertEquals(preSize + 1, references.getReferences().size());
 
     Reference reference =
         rest().get("trees/tree/mainx").then().statusCode(200).extract().as(Reference.class);

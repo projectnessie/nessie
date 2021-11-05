@@ -15,14 +15,13 @@
  */
 package org.projectnessie.client.api;
 
-import java.util.List;
-import org.projectnessie.model.Reference;
+import org.projectnessie.model.ReferencesResponse;
 
 /**
  * Request builder for "get all references".
  *
  * @since {@link NessieApiV1}
  */
-public interface GetAllReferencesBuilder {
-  List<Reference> get();
+public interface GetAllReferencesBuilder extends PagingBuilder<GetAllReferencesBuilder> {
+  ReferencesResponse get();
 }

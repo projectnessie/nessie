@@ -92,16 +92,16 @@ interactions:
     uri: http://localhost:19120/api/v1/trees
   response:
     body:
-      string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
-        \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}, {\n
-        \ \"type\" : \"BRANCH\",\n  \"name\" : \"contents_commit_with_expected_state\",\n
-        \ \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}
-        ]"
+      string: "{\n  \"token\" : null,\n  \"references\" : [ {\n    \"type\" : \"BRANCH\",\n
+        \   \"name\" : \"main\",\n    \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n
+        \ }, {\n    \"type\" : \"BRANCH\",\n    \"name\" : \"contents_commit_with_expected_state\",\n
+        \   \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n
+        \ } ],\n  \"hasMore\" : false\n}"
     headers:
       Content-Type:
       - application/json
       content-length:
-      - '279'
+      - '355'
     status:
       code: 200
       message: OK
@@ -133,12 +133,12 @@ interactions:
       code: 404
       message: Not Found
 - request:
-    body: '{"operations": [{"content": {"metadataLocation": "/a/b/c", "idGenerators":
-      "xyz", "id": "test_expected_contents", "type": "ICEBERG_TABLE"}, "key": {"elements":
-      ["commit", "expected", "contents"]}, "expectedContent": null, "type": "PUT"}],
-      "commitMeta": {"signedOffBy": null, "hash": null, "author": "nessie test", "commitTime":
-      null, "committer": null, "message": "commit 1", "properties": null, "authorTime":
-      null}}'
+    body: '{"commitMeta": {"commitTime": null, "author": "nessie test", "authorTime":
+      null, "hash": null, "properties": null, "committer": null, "message": "commit
+      1", "signedOffBy": null}, "operations": [{"expectedContent": null, "key": {"elements":
+      ["commit", "expected", "contents"]}, "content": {"idGenerators": "xyz", "metadataLocation":
+      "/a/b/c", "id": "test_expected_contents", "type": "ICEBERG_TABLE"}, "type":
+      "PUT"}]}'
     headers:
       Accept:
       - '*/*'
@@ -157,7 +157,7 @@ interactions:
   response:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_commit_with_expected_state\",\n
-        \ \"hash\" : \"14f708d587afcd1cc150ebfffcc6c94f1a2bf12d157ae01fcfb3f8b00a059a77\"\n}"
+        \ \"hash\" : \"d878236e630948097c6db2c2f303a0d40558d3397bb66a83b1164d082aadcd1f\"\n}"
     headers:
       Content-Type:
       - application/json
@@ -181,16 +181,16 @@ interactions:
     uri: http://localhost:19120/api/v1/trees
   response:
     body:
-      string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
-        \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}, {\n
-        \ \"type\" : \"BRANCH\",\n  \"name\" : \"contents_commit_with_expected_state\",\n
-        \ \"hash\" : \"14f708d587afcd1cc150ebfffcc6c94f1a2bf12d157ae01fcfb3f8b00a059a77\"\n}
-        ]"
+      string: "{\n  \"token\" : null,\n  \"references\" : [ {\n    \"type\" : \"BRANCH\",\n
+        \   \"name\" : \"main\",\n    \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n
+        \ }, {\n    \"type\" : \"BRANCH\",\n    \"name\" : \"contents_commit_with_expected_state\",\n
+        \   \"hash\" : \"d878236e630948097c6db2c2f303a0d40558d3397bb66a83b1164d082aadcd1f\"\n
+        \ } ],\n  \"hasMore\" : false\n}"
     headers:
       Content-Type:
       - application/json
       content-length:
-      - '279'
+      - '355'
     status:
       code: 200
       message: OK

@@ -22,7 +22,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import javax.validation.constraints.NotNull;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.PaginatedResponse;
 
@@ -45,7 +44,7 @@ final class ResultStreamPaginator<R extends PaginatedResponse, E> {
      * @return response object
      * @throws NessieNotFoundException if the ref does not exist
      */
-    R fetch(@NotNull String ref, Integer pageSize, String token) throws NessieNotFoundException;
+    R fetch(String ref, Integer pageSize, String token) throws NessieNotFoundException;
   }
 
   private final Function<R, List<E>> entriesFromResponse;
@@ -67,8 +66,7 @@ final class ResultStreamPaginator<R extends PaginatedResponse, E> {
    * @return stream of entries
    * @throws NessieNotFoundException propagated from {@link Fetcher#fetch(String, Integer, String)}
    */
-  Stream<E> generateStream(@NotNull String ref, OptionalInt pageSizeHint)
-      throws NessieNotFoundException {
+  Stream<E> generateStream(String ref, OptionalInt pageSizeHint) throws NessieNotFoundException {
     R firstPage =
         fetcher.fetch(ref, pageSizeHint.isPresent() ? pageSizeHint.getAsInt() : null, null);
     Spliterator<E> spliterator =

@@ -87,6 +87,7 @@ import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Operation.Unchanged;
 import org.projectnessie.model.Reference;
+import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.SqlView;
 import org.projectnessie.model.SqlView.Dialect;
 import org.projectnessie.model.Tag;
@@ -159,8 +160,9 @@ public abstract class AbstractTestRest {
 
   @Test
   public void getAllReferences() {
-    List<Reference> references = api.getAllReferences().get();
-    assertThat(references).anySatisfy(r -> assertThat(r.getName()).isEqualTo("main"));
+    ReferencesResponse references = api.getAllReferences().get();
+    assertThat(references.getReferences())
+        .anySatisfy(r -> assertThat(r.getName()).isEqualTo("main"));
   }
 
   @Test
@@ -274,7 +276,7 @@ public abstract class AbstractTestRest {
     assertEquals(Branch.of(branchName2, someHash), createdBranch2);
 
     Map<String, Reference> references =
-        api.getAllReferences().get().stream()
+        api.getAllReferences().get().getReferences().stream()
             .filter(r -> root.equals(r.getName()) || r.getName().endsWith(refNamePart))
             .collect(Collectors.toMap(Reference::getName, Function.identity()));
 

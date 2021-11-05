@@ -233,6 +233,18 @@ class ReferenceSchema(OneOfSchema):
 
 
 @attr.dataclass
+class ReferencesResponse:
+    """Dataclass for References."""
+
+    references: List[Reference] = desert.ib(fields.List(fields.Nested(ReferenceSchema())))
+    has_more: bool = attr.ib(default=False, metadata=desert.metadata(fields.Bool(allow_none=True, data_key="hasMore")))
+    token: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True)))
+
+
+ReferencesResponseSchema = desert.schema_class(ReferencesResponse)
+
+
+@attr.dataclass
 class EntryName:
     """Dataclass for Nessie Entry Name."""
 

@@ -39,7 +39,7 @@ def show(ctx: ContextObject) -> None:
     click.echo("Remote URL: " + ctx.nessie.get_base_url())
     click.echo("Default branch: " + ctx.nessie.get_reference(None).name)
     click.echo("Remote branches: ")
-    for i in ctx.nessie.list_references():
+    for i in ctx.nessie.list_references().references:
         click.echo("\t" + i.name)
 
 

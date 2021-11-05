@@ -48,8 +48,8 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-      "name": "dev", "type": "BRANCH"}'
+    body: '{"name": "dev", "hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+      "type": "BRANCH"}'
     headers:
       Accept:
       - '*/*'
@@ -91,15 +91,16 @@ interactions:
     uri: http://localhost:19120/api/v1/trees
   response:
     body:
-      string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
-        \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}, {\n
-        \ \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}
-        ]"
+      string: "{\n  \"token\" : null,\n  \"references\" : [ {\n    \"type\" : \"BRANCH\",\n
+        \   \"name\" : \"main\",\n    \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n
+        \ }, {\n    \"type\" : \"BRANCH\",\n    \"name\" : \"dev\",\n    \"hash\"
+        : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n  }
+        ],\n  \"hasMore\" : false\n}"
     headers:
       Content-Type:
       - application/json
       content-length:
-      - '247'
+      - '323'
     status:
       code: 200
       message: OK
@@ -131,12 +132,12 @@ interactions:
       code: 404
       message: Not Found
 - request:
-    body: '{"commitMeta": {"properties": null, "author": "nessie test", "commitTime":
-      null, "signedOffBy": null, "authorTime": null, "committer": null, "hash": null,
-      "message": "commit 1"}, "operations": [{"expectedContent": null, "content":
-      {"checkpointLocationHistory": ["def"], "metadataLocationHistory": ["asd111"],
-      "lastCheckpoint": "x", "id": "test_commit_no_expected_state", "type": "DELTA_LAKE_TABLE"},
-      "key": {"elements": ["commit", "expected", "contents"]}, "type": "PUT"}]}'
+    body: '{"operations": [{"content": {"metadataLocationHistory": ["asd111"], "lastCheckpoint":
+      "x", "checkpointLocationHistory": ["def"], "id": "test_commit_no_expected_state",
+      "type": "DELTA_LAKE_TABLE"}, "key": {"elements": ["commit", "expected", "contents"]},
+      "expectedContent": null, "type": "PUT"}], "commitMeta": {"hash": null, "author":
+      "nessie test", "properties": null, "message": "commit 1", "authorTime": null,
+      "signedOffBy": null, "committer": null, "commitTime": null}}'
     headers:
       Accept:
       - '*/*'
@@ -154,7 +155,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/branch/dev/commit?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"b94e901532280205c41ca3e82d75e2522bf1da591104fc18ebbc9f1ae133672f\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"12249b9c5c46e5a7ee2cb2aeb618405bb9b9762a4dedc68b0ce03f4a13e8673d\"\n}"
     headers:
       Content-Type:
       - application/json
@@ -178,15 +179,16 @@ interactions:
     uri: http://localhost:19120/api/v1/trees
   response:
     body:
-      string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :
-        \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}, {\n
-        \ \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"b94e901532280205c41ca3e82d75e2522bf1da591104fc18ebbc9f1ae133672f\"\n}
-        ]"
+      string: "{\n  \"token\" : null,\n  \"references\" : [ {\n    \"type\" : \"BRANCH\",\n
+        \   \"name\" : \"main\",\n    \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n
+        \ }, {\n    \"type\" : \"BRANCH\",\n    \"name\" : \"dev\",\n    \"hash\"
+        : \"12249b9c5c46e5a7ee2cb2aeb618405bb9b9762a4dedc68b0ce03f4a13e8673d\"\n  }
+        ],\n  \"hasMore\" : false\n}"
     headers:
       Content-Type:
       - application/json
       content-length:
-      - '247'
+      - '323'
     status:
       code: 200
       message: OK
@@ -217,12 +219,12 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"commitMeta": {"properties": null, "author": "nessie test", "commitTime":
-      null, "signedOffBy": null, "authorTime": null, "committer": null, "hash": null,
-      "message": "commit 2"}, "operations": [{"expectedContent": null, "content":
-      {"checkpointLocationHistory": ["def"], "metadataLocationHistory": ["asd222"],
-      "lastCheckpoint": "x", "id": "test_commit_no_expected_state", "type": "DELTA_LAKE_TABLE"},
-      "key": {"elements": ["commit", "expected", "contents"]}, "type": "PUT"}]}'
+    body: '{"operations": [{"content": {"metadataLocationHistory": ["asd222"], "lastCheckpoint":
+      "x", "checkpointLocationHistory": ["def"], "id": "test_commit_no_expected_state",
+      "type": "DELTA_LAKE_TABLE"}, "key": {"elements": ["commit", "expected", "contents"]},
+      "expectedContent": null, "type": "PUT"}], "commitMeta": {"hash": null, "author":
+      "nessie test", "properties": null, "message": "commit 2", "authorTime": null,
+      "signedOffBy": null, "committer": null, "commitTime": null}}'
     headers:
       Accept:
       - '*/*'
@@ -237,10 +239,10 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/dev/commit?expectedHash=b94e901532280205c41ca3e82d75e2522bf1da591104fc18ebbc9f1ae133672f
+    uri: http://localhost:19120/api/v1/trees/branch/dev/commit?expectedHash=12249b9c5c46e5a7ee2cb2aeb618405bb9b9762a4dedc68b0ce03f4a13e8673d
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"f5e85f4fb4043af56e6e0afd1512b7e90721248dea0fa9f4fbd8c75c0fcd4ea9\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"b504d9c492dc40836906594991429879501b5635e20ef3480a04482371fd7c01\"\n}"
     headers:
       Content-Type:
       - application/json

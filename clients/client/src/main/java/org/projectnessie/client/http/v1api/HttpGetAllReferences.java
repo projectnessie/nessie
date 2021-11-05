@@ -15,19 +15,33 @@
  */
 package org.projectnessie.client.http.v1api;
 
-import java.util.List;
+import org.projectnessie.api.params.ReferencesParams;
 import org.projectnessie.client.api.GetAllReferencesBuilder;
 import org.projectnessie.client.http.NessieApiClient;
-import org.projectnessie.model.Reference;
+import org.projectnessie.model.ReferencesResponse;
 
 final class HttpGetAllReferences extends BaseHttpRequest implements GetAllReferencesBuilder {
+
+  private final ReferencesParams.Builder params = ReferencesParams.builder();
 
   HttpGetAllReferences(NessieApiClient client) {
     super(client);
   }
 
   @Override
-  public List<Reference> get() {
-    return client.getTreeApi().getAllReferences();
+  public GetAllReferencesBuilder maxRecords(int maxRecords) {
+    params.maxRecords(maxRecords);
+    return this;
+  }
+
+  @Override
+  public GetAllReferencesBuilder pageToken(String pageToken) {
+    params.pageToken(pageToken);
+    return this;
+  }
+
+  @Override
+  public ReferencesResponse get() {
+    return client.getTreeApi().getAllReferences(params.build());
   }
 }

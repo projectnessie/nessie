@@ -31,7 +31,7 @@ import org.projectnessie.model.Validation;
  * <p>For easier usage of this class, there is {@link EntriesParams#builder()}, which allows
  * configuring/setting the different parameters.
  */
-public class EntriesParams {
+public class EntriesParams extends AbstractParams {
 
   @Nullable
   @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
@@ -40,16 +40,6 @@ public class EntriesParams {
       examples = {@ExampleObject(ref = "nullHash"), @ExampleObject(ref = "hash")})
   @QueryParam("hashOnRef")
   private String hashOnRef;
-
-  @Parameter(description = "maximum number of entries to return, just a hint for the server")
-  @QueryParam("max")
-  private Integer maxRecords;
-
-  @Parameter(
-      description =
-          "pagination continuation token, as returned in the previous EntriesResponse.token")
-  @QueryParam("pageToken")
-  private String pageToken;
 
   @Parameter(
       description =
@@ -78,9 +68,8 @@ public class EntriesParams {
       String pageToken,
       Integer namespaceDepth,
       String queryExpression) {
+    super(maxRecords, pageToken);
     this.hashOnRef = hashOnRef;
-    this.maxRecords = maxRecords;
-    this.pageToken = pageToken;
     this.namespaceDepth = namespaceDepth;
     this.queryExpression = queryExpression;
   }
@@ -107,14 +96,6 @@ public class EntriesParams {
     return hashOnRef;
   }
 
-  public Integer maxRecords() {
-    return maxRecords;
-  }
-
-  public String pageToken() {
-    return pageToken;
-  }
-
   public String queryExpression() {
     return queryExpression;
   }
@@ -127,8 +108,8 @@ public class EntriesParams {
   public String toString() {
     return new StringJoiner(", ", EntriesParams.class.getSimpleName() + "[", "]")
         .add("hashOnRef='" + hashOnRef + "'")
-        .add("maxRecords=" + maxRecords)
-        .add("pageToken='" + pageToken + "'")
+        .add("maxRecords=" + maxRecords())
+        .add("pageToken='" + pageToken() + "'")
         .add("queryExpression='" + queryExpression + "'")
         .add("namespaceDepth='" + namespaceDepth + "'")
         .toString();
@@ -144,22 +125,20 @@ public class EntriesParams {
     }
     EntriesParams that = (EntriesParams) o;
     return Objects.equals(hashOnRef, that.hashOnRef)
-        && Objects.equals(maxRecords, that.maxRecords)
-        && Objects.equals(pageToken, that.pageToken)
+        && Objects.equals(maxRecords(), that.maxRecords())
+        && Objects.equals(pageToken(), that.pageToken())
         && Objects.equals(namespaceDepth, that.namespaceDepth)
         && Objects.equals(queryExpression, that.queryExpression);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(hashOnRef, maxRecords, pageToken, namespaceDepth, queryExpression);
+    return Objects.hash(hashOnRef, maxRecords(), pageToken(), namespaceDepth, queryExpression);
   }
 
-  public static class Builder {
+  public static class Builder extends AbstractParams.Builder<Builder> {
 
     private String hashOnRef;
-    private Integer maxRecords;
-    private String pageToken;
     private String queryExpression;
     private Integer namespaceDepth;
 
@@ -167,16 +146,6 @@ public class EntriesParams {
 
     public EntriesParams.Builder hashOnRef(String hashOnRef) {
       this.hashOnRef = hashOnRef;
-      return this;
-    }
-
-    public EntriesParams.Builder maxRecords(Integer maxRecords) {
-      this.maxRecords = maxRecords;
-      return this;
-    }
-
-    public EntriesParams.Builder pageToken(String pageToken) {
-      this.pageToken = pageToken;
       return this;
     }
 
@@ -192,8 +161,8 @@ public class EntriesParams {
 
     public EntriesParams.Builder from(EntriesParams params) {
       return hashOnRef(params.hashOnRef)
-          .maxRecords(params.maxRecords)
-          .pageToken(params.pageToken)
+          .maxRecords(params.maxRecords())
+          .pageToken(params.pageToken())
           .namespaceDepth(params.namespaceDepth)
           .expression(params.queryExpression);
     }

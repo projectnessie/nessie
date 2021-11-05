@@ -35,14 +35,14 @@ class TestBasicAuthentication extends BaseClientAuthTest {
   void testValidCredentials() {
     withClientCustomizer(
         c -> c.withAuthentication(BasicAuthenticationProvider.create("test_user", "test_user")));
-    assertThat(api().getAllReferences().get()).isNotEmpty();
+    assertThat(api().getAllReferences().get().getReferences()).isNotEmpty();
   }
 
   @Test
   void testValidAdminCredentials() {
     withClientCustomizer(
         c -> c.withAuthentication(BasicAuthenticationProvider.create("admin_user", "test123")));
-    assertThat(api().getAllReferences().get()).isNotEmpty();
+    assertThat(api().getAllReferences().get().getReferences()).isNotEmpty();
   }
 
   @Test

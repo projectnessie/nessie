@@ -39,10 +39,9 @@ const fetchDefaultBranch = (): Promise<string | void> => {
 
 const loadBranchesAndTags = (): Promise<Reference[] | void> => {
   return api()
-    .getAllReferences()
+    .getAllReferences({})
     .then((data) => {
-      data = data.sort(btCompare);
-      return data;
+      return data.references.sort(btCompare);
     })
     .catch((t) => log.error("AllReferences", t));
 };

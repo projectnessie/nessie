@@ -56,7 +56,7 @@ it("Explore renders", async () => {
     .reply(200, { name: "main", hash: "deadbeef" });
   const scope3 = nock("http://localhost/api/v1")
     .get("/trees")
-    .reply(200, [tag("a"), tag("b"), branch("c"), branch("d")]);
+    .reply(200, { references: [tag("a"), tag("b"), branch("c"), branch("d")] });
 
   const { getByText, asFragment } = render(
     <React.StrictMode>
@@ -95,7 +95,7 @@ it("Explore renders with slug", async () => {
     .reply(200, { name: "main", hash: "deadbeef" });
   const scope3 = nock("http://localhost/api/v1")
     .get("/trees")
-    .reply(200, [tag("a"), tag("b"), branch("c"), branch("d")]);
+    .reply(200, { references: [tag("a"), tag("b"), branch("c"), branch("d")] });
   // jest.spyOn(MemoryRouter, 'useParams').mockReturnValue({ slug: "/main/a" });
 
   const { getByText, asFragment } = renderWithRouter(<Explore />);

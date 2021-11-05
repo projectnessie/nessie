@@ -19,7 +19,6 @@
 from typing import Any
 from typing import cast
 from typing import Generator
-from typing import List
 from typing import Optional
 
 import confuse
@@ -54,6 +53,8 @@ from ..model import MultiContentSchema
 from ..model import Operation
 from ..model import Reference
 from ..model import ReferenceSchema
+from ..model import ReferencesResponse
+from ..model import ReferencesResponseSchema
 from ..model import Tag
 from ..model import Transplant
 from ..model import TransplantSchema
@@ -75,13 +76,13 @@ class NessieClient:
         except confuse.exceptions.NotFoundError:
             self._base_branch = None
 
-    def list_references(self: "NessieClient") -> List[Reference]:
+    def list_references(self: "NessieClient") -> ReferencesResponse:
         """Fetch all known references.
 
         :return: list of Nessie References
         """
         references = all_references(self._base_url, self._auth, self._ssl_verify)
-        return [ReferenceSchema().load(ref) for ref in references]
+        return ReferencesResponseSchema().load(references)
 
     def get_reference(self: "NessieClient", name: Optional[str]) -> Reference:
         """Fetch a ref.
