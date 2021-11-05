@@ -40,6 +40,11 @@ module.exports = {
     "eslint-plugin-prettier",
     "@typescript-eslint",
   ],
+  settings: {
+    "react": {
+      "version": "detect"
+    }
+  },
   rules: {
     "prettier/prettier": "error",
     "@typescript-eslint/adjacent-overload-signatures": "error",
