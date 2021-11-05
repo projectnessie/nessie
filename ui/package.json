@@ -51,7 +51,7 @@
     "file-loader": "6.2.0",
     "formik": "^2.2.9",
     "fs-extra": "^10.0.0",
-    "history": "^5.0.1",
+    "history": "^5.1.0",
     "html-webpack-plugin": "4.5.2",
     "http-proxy-middleware": "^2.0.1",
     "identity-obj-proxy": "3.0.0",
