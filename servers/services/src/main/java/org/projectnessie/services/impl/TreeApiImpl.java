@@ -253,7 +253,9 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
       try (Stream<Hash> s = transplant.getHashesToTransplant().stream().map(Hash::of)) {
         transplants = s.collect(Collectors.toList());
       }
-      getStore().transplant(BranchName.of(branchName), toHash(hash, true), transplants, this::meta);
+      getStore()
+          .transplant(
+              BranchName.of(branchName), toHash(hash, true), transplants, this::withCommitContext);
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
@@ -270,7 +272,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
               toHash(merge.getFromRefName(), merge.getFromHash()),
               BranchName.of(branchName),
               toHash(hash, true),
-              this::meta);
+              this::withCommitContext);
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
@@ -398,7 +400,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
           .commit(
               BranchName.of(Optional.ofNullable(branch).orElse(getConfig().getDefaultBranch())),
               Optional.ofNullable(hash).map(Hash::of),
-              meta(commitMeta),
+              withCommitContext(commitMeta),
               operations);
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
@@ -407,7 +409,9 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     }
   }
 
-  private CommitMeta meta(CommitMeta commitMeta) {
+  private CommitMeta withCommitContext(CommitMeta commitMeta) {
+    // Used for setting contextual commit properties during new and merge/transplant commits.
+    // WARNING: ONLY SET PROPERTIES, WHICH APPLY COMMONLY TO ALL COMMIT TYPES.
     Principal principal = getPrincipal();
     String committer = principal == null ? "" : principal.getName();
     Instant now = Instant.now();
