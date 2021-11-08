@@ -53,4 +53,7 @@ public @interface NessieDbAdapter {
    * </code></pre>
    */
   String configMethod() default "";
+
+  /** Whether to initialize the adapter, defaults to {@code true}. */
+  boolean initializeRepo() default true;
 }
