@@ -17,7 +17,7 @@
 """Authentication tests for Nessi CLI."""
 import pytest
 
-from .conftest import _cli
+from .conftest import execute_cli_command
 
 
 @pytest.fixture(scope="module")
@@ -29,12 +29,12 @@ def vcr_config() -> dict:
 @pytest.mark.vcr
 def test_bearer_auth() -> None:
     """Test the "remote show" command with bearer authentication."""
-    assert "main" in _cli(["--json", "--auth-token", "test_token_123", "remote", "show"])
+    assert "main" in execute_cli_command(["--json", "--auth-token", "test_token_123", "remote", "show"])
 
 
 @pytest.mark.vcr
 def test_bearer_auth_invalid() -> None:
     """Test any command with an invalid bearer authentication token."""
-    result = _cli(["--json", "--auth-token", "invalid", "remote", "show"], ret_val=1)
+    result = execute_cli_command(["--json", "--auth-token", "invalid", "remote", "show"], ret_val=1)
     assert "Client Error" in result
     assert "Unauthorized" in result

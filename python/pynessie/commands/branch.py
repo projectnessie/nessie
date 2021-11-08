@@ -20,8 +20,8 @@
 import click
 
 from ._branch_tag_handlers import handle_branch_tag
-from ..cli_common_context import ContextObject, MutuallyExclusiveOption, pass_client
-from ..error import error_handler
+from ..cli_common_context import ContextObject, MutuallyExclusiveOption
+from ..decorators import error_handler, pass_client
 
 
 @click.command(name="branch")

@@ -22,12 +22,12 @@ from typing import Tuple
 import click
 from click import UsageError
 
-from ..cli_common_context import ContextObject, MutuallyExclusiveOption, pass_client
-from ..error import error_handler
+from ..cli_common_context import ContextObject, MutuallyExclusiveOption
+from ..decorators import error_handler, pass_client, validate_reference
 
 
 @click.command("cherry-pick")
-@click.option("-b", "--branch", help="branch to cherry-pick onto. If not supplied the default branch from config is used")
+@click.option("-b", "--branch", "ref", help="branch to cherry-pick onto. If not supplied the default branch from config is used")
 @click.option(
     "-f",
     "--force",
@@ -48,7 +48,8 @@ from ..error import error_handler
 @click.argument("hashes", nargs=-1, required=False)
 @pass_client
 @error_handler
-def cherry_pick(ctx: ContextObject, branch: str, force: bool, expected_hash: str, source_ref: str, hashes: Tuple[str]) -> None:
+@validate_reference
+def cherry_pick(ctx: ContextObject, ref: str, force: bool, expected_hash: str, source_ref: str, hashes: Tuple[str]) -> None:
     """Cherry-pick HASHES onto another branch.
 
     HASHES commit hashes to be cherry-picked from the source reference.
@@ -68,5 +69,5 @@ def cherry_pick(ctx: ContextObject, branch: str, force: bool, expected_hash: str
             """Either condition or force must be set. Condition should be set to a valid hash for concurrency
             control or force to ignore current state of Nessie Store."""
         )
-    ctx.nessie.cherry_pick(branch if branch else ctx.nessie.get_default_branch(), source_ref, expected_hash, *hashes)
+    ctx.nessie.cherry_pick(ref, source_ref, expected_hash, *hashes)
     click.echo()

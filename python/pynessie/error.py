@@ -15,18 +15,9 @@
 # limitations under the License.
 #
 """Nessie Exceptions."""
-import functools
-import sys
-from typing import Any
-from typing import Callable
 from typing import Optional
 
-import click
 import simplejson as json
-
-_REMEDIES = {
-    "Cannot create an unassigned tag reference": "set a valid reference on which to create this tag. eg `nessie tag tag_name main`"
-}
 
 
 class NessieException(Exception):
@@ -145,22 +136,19 @@ class NessieServerException(NessieException):
     pass
 
 
-def error_handler(f: Callable) -> Callable:
-    """Wrap a click method to catch and pretty print errors."""
+class NessieCliError(Exception):
+    """Base Nessie CLI related errors."""
 
-    @functools.wraps(f)
-    def wrapper(*args: Any, **kwargs: Any) -> None:
-        """Wrapper object."""
-        try:
-            f(*args, **kwargs)
-        except NessieException as e:
-            if args[0].json:
-                click.echo(e.json())
-            else:
-                click.echo(_format_error(e))
-            sys.exit(1)
+    def __init__(self: "NessieCliError", title: str, msg: str = None) -> None:
+        """Construct base Nessie CLI Error."""
+        super().__init__()
 
-    return wrapper
+        self.title = title
+        self.msg = msg
+
+    def json(self: "NessieCliError") -> str:
+        """Dump this error as a json object."""
+        return json.dumps(dict(title=self.title, message=self.msg))
 
 
 def _create_nessie_exception(error: dict, status: int, reason: str, url: str) -> Optional[Exception]:
@@ -202,15 +190,3 @@ def _create_exception(error: dict, status: int, reason: str, url: str) -> Except
     if 500 <= status <= 599:
         return NessieServerException(error, status, url, reason)
     return NessieException(error, status, url, reason)
-
-
-def _format_error(e: NessieException) -> str:
-    fmt = "{} (Status code: {})\n".format(click.style(e, fg="red"), e.status_code)
-    if e.server_message in _REMEDIES:
-        fmt += "{} {}\n".format(click.style("FIX:", fg="green"), _REMEDIES[e.server_message])
-    fmt += "{} {}\n".format(click.style("Requested URL:", fg="yellow"), e.url)
-    fmt += "{} {}\n".format(click.style("Server status:", fg="yellow"), e.server_status)
-    fmt += "{} {}\n".format(click.style("Error code:", fg="yellow"), e.error_code)
-    fmt += "{} {}\n".format(click.style("Server message:", fg="yellow"), e.server_message)
-    fmt += "{} {}\n".format(click.style("Server traceback:", fg="yellow"), e.server_stack_trace)
-    return fmt

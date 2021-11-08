@@ -16,7 +16,6 @@
 #
 
 """Cli Common context functions that can be used by CLI commands/groups."""
-
 from typing import Any
 from typing import Dict
 from typing import List
@@ -74,6 +73,3 @@ class DefaultHelp(click.Command):
         if not args:
             args = [self.help_flag]
         return super().parse_args(ctx, args)
-
-
-pass_client = click.make_pass_decorator(ContextObject)
