@@ -145,7 +145,7 @@
     <quarkus.native.builder-image>quay.io/quarkus/ubi-quarkus-native-image:21.3-java11</quarkus.native.builder-image>
 
     <!-- Version properties -->
-    <antlr.version>4.8</antlr.version>
+    <antlr.version>4.9.3</antlr.version>
     <assertj.version>3.21.0</assertj.version>
     <awssdk.version>2.17.76</awssdk.version>
     <bouncycastle.version>1.66</bouncycastle.version>
