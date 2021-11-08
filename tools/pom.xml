@@ -32,5 +32,6 @@
 
   <modules>
     <module>apprunner-maven-plugin</module>
+    <module>content-generator</module>
   </modules>
 </project>
