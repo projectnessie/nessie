@@ -22,8 +22,8 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import java.io.IOException;
 import java.util.Optional;
 import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.Contents;
-import org.projectnessie.model.Contents.Type;
+import org.projectnessie.model.Content;
+import org.projectnessie.model.Content.Type;
 import org.projectnessie.model.DeltaLakeTable;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableCommitMeta;
@@ -36,106 +36,103 @@ import org.projectnessie.store.ObjectTypes;
 import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.StoreWorker;
 
-public class TableCommitMetaStoreWorker
-    implements StoreWorker<Contents, CommitMeta, Contents.Type> {
+public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMeta, Content.Type> {
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
   private final Serializer<CommitMeta> metaSerializer = new MetadataSerializer();
 
   @Override
-  public ByteString toStoreOnReferenceState(Contents contents) {
-    ObjectTypes.Contents.Builder builder =
-        ObjectTypes.Contents.newBuilder().setId(contents.getId());
-    if (contents instanceof IcebergTable) {
-      IcebergTable state = (IcebergTable) contents;
+  public ByteString toStoreOnReferenceState(Content content) {
+    ObjectTypes.Content.Builder builder = ObjectTypes.Content.newBuilder().setId(content.getId());
+    if (content instanceof IcebergTable) {
+      IcebergTable state = (IcebergTable) content;
       ObjectTypes.IcebergMetadataPointer.Builder stateBuilder =
           ObjectTypes.IcebergMetadataPointer.newBuilder()
               .setMetadataLocation(state.getMetadataLocation());
       builder.setIcebergMetadataPointer(stateBuilder);
 
-    } else if (contents instanceof DeltaLakeTable) {
+    } else if (content instanceof DeltaLakeTable) {
       ObjectTypes.DeltaLakeTable.Builder table =
           ObjectTypes.DeltaLakeTable.newBuilder()
               .addAllMetadataLocationHistory(
-                  ((DeltaLakeTable) contents).getMetadataLocationHistory())
+                  ((DeltaLakeTable) content).getMetadataLocationHistory())
               .addAllCheckpointLocationHistory(
-                  ((DeltaLakeTable) contents).getCheckpointLocationHistory());
-      String lastCheckpoint = ((DeltaLakeTable) contents).getLastCheckpoint();
+                  ((DeltaLakeTable) content).getCheckpointLocationHistory());
+      String lastCheckpoint = ((DeltaLakeTable) content).getLastCheckpoint();
       if (lastCheckpoint != null) {
         table.setLastCheckpoint(lastCheckpoint);
       }
       builder.setDeltaLakeTable(table);
 
-    } else if (contents instanceof SqlView) {
-      SqlView view = (SqlView) contents;
+    } else if (content instanceof SqlView) {
+      SqlView view = (SqlView) content;
       builder.setSqlView(
           ObjectTypes.SqlView.newBuilder()
               .setDialect(view.getDialect().name())
               .setSqlText(view.getSqlText()));
     } else {
-      throw new IllegalArgumentException("Unknown type " + contents);
+      throw new IllegalArgumentException("Unknown type " + content);
     }
 
     return builder.build().toByteString();
   }
 
   @Override
-  public ByteString toStoreGlobalState(Contents contents) {
-    ObjectTypes.Contents.Builder builder =
-        ObjectTypes.Contents.newBuilder().setId(contents.getId());
-    if (contents instanceof IcebergTable) {
-      IcebergTable state = (IcebergTable) contents;
+  public ByteString toStoreGlobalState(Content content) {
+    ObjectTypes.Content.Builder builder = ObjectTypes.Content.newBuilder().setId(content.getId());
+    if (content instanceof IcebergTable) {
+      IcebergTable state = (IcebergTable) content;
       ObjectTypes.IcebergGlobal.Builder stateBuilder =
           ObjectTypes.IcebergGlobal.newBuilder().setIdGenerators(state.getIdGenerators());
       builder.setIcebergGlobal(stateBuilder);
     } else {
-      throw new IllegalArgumentException("Unknown type " + contents);
+      throw new IllegalArgumentException("Unknown type " + content);
     }
 
     return builder.build().toByteString();
   }
 
   @Override
-  public Contents valueFromStore(ByteString onReferenceValue, Optional<ByteString> globalState) {
-    ObjectTypes.Contents contents = parse(onReferenceValue);
-    Optional<ObjectTypes.Contents> globalContents =
+  public Content valueFromStore(ByteString onReferenceValue, Optional<ByteString> globalState) {
+    ObjectTypes.Content content = parse(onReferenceValue);
+    Optional<ObjectTypes.Content> globalContent =
         globalState.map(TableCommitMetaStoreWorker::parse);
-    switch (contents.getObjectTypeCase()) {
+    switch (content.getObjectTypeCase()) {
       case DELTA_LAKE_TABLE:
         Builder builder =
             ImmutableDeltaLakeTable.builder()
-                .id(contents.getId())
+                .id(content.getId())
                 .addAllMetadataLocationHistory(
-                    contents.getDeltaLakeTable().getMetadataLocationHistoryList())
+                    content.getDeltaLakeTable().getMetadataLocationHistoryList())
                 .addAllCheckpointLocationHistory(
-                    contents.getDeltaLakeTable().getCheckpointLocationHistoryList());
-        if (contents.getDeltaLakeTable().getLastCheckpoint() != null) {
-          builder.lastCheckpoint(contents.getDeltaLakeTable().getLastCheckpoint());
+                    content.getDeltaLakeTable().getCheckpointLocationHistoryList());
+        if (content.getDeltaLakeTable().getLastCheckpoint() != null) {
+          builder.lastCheckpoint(content.getDeltaLakeTable().getLastCheckpoint());
         }
         return builder.build();
 
       case ICEBERG_METADATA_POINTER:
-        ObjectTypes.Contents global =
-            globalContents.orElseThrow(TableCommitMetaStoreWorker::noIcebergGlobal);
+        ObjectTypes.Content global =
+            globalContent.orElseThrow(TableCommitMetaStoreWorker::noIcebergGlobal);
         if (!global.hasIcebergGlobal()) {
           throw noIcebergGlobal();
         }
         return IcebergTable.of(
-            contents.getIcebergMetadataPointer().getMetadataLocation(),
+            content.getIcebergMetadataPointer().getMetadataLocation(),
             global.getIcebergGlobal().getIdGenerators(),
-            contents.getId());
+            content.getId());
 
       case SQL_VIEW:
-        ObjectTypes.SqlView view = contents.getSqlView();
+        ObjectTypes.SqlView view = content.getSqlView();
         return ImmutableSqlView.builder()
             .dialect(Dialect.valueOf(view.getDialect()))
             .sqlText(view.getSqlText())
-            .id(contents.getId())
+            .id(content.getId())
             .build();
 
       case OBJECTTYPE_NOT_SET:
       default:
-        throw new IllegalArgumentException("Unknown type " + contents.getObjectTypeCase());
+        throw new IllegalArgumentException("Unknown type " + content.getObjectTypeCase());
     }
   }
 
@@ -145,40 +142,40 @@ public class TableCommitMetaStoreWorker
   }
 
   @Override
-  public String getId(Contents contents) {
-    return contents.getId();
+  public String getId(Content content) {
+    return content.getId();
   }
 
   @Override
-  public Byte getPayload(Contents contents) {
-    if (contents instanceof IcebergTable) {
-      return (byte) Contents.Type.ICEBERG_TABLE.ordinal();
-    } else if (contents instanceof DeltaLakeTable) {
-      return (byte) Contents.Type.DELTA_LAKE_TABLE.ordinal();
-    } else if (contents instanceof SqlView) {
-      return (byte) Contents.Type.VIEW.ordinal();
+  public Byte getPayload(Content content) {
+    if (content instanceof IcebergTable) {
+      return (byte) Content.Type.ICEBERG_TABLE.ordinal();
+    } else if (content instanceof DeltaLakeTable) {
+      return (byte) Content.Type.DELTA_LAKE_TABLE.ordinal();
+    } else if (content instanceof SqlView) {
+      return (byte) Content.Type.VIEW.ordinal();
     } else {
-      throw new IllegalArgumentException("Unknown type " + contents);
+      throw new IllegalArgumentException("Unknown type " + content);
     }
   }
 
   @Override
   public Type getType(Byte payload) {
-    if (payload == null || payload > Contents.Type.values().length || payload < 0) {
+    if (payload == null || payload > Content.Type.values().length || payload < 0) {
       throw new IllegalArgumentException(
           String.format("Cannot create type from payload. Payload %d does not exist", payload));
     }
-    return Contents.Type.values()[payload];
+    return Content.Type.values()[payload];
   }
 
   @Override
-  public boolean requiresGlobalState(Contents contents) {
-    return contents instanceof IcebergTable;
+  public boolean requiresGlobalState(Content content) {
+    return content instanceof IcebergTable;
   }
 
-  private static ObjectTypes.Contents parse(ByteString onReferenceValue) {
+  private static ObjectTypes.Content parse(ByteString onReferenceValue) {
     try {
-      return ObjectTypes.Contents.parseFrom(onReferenceValue);
+      return ObjectTypes.Content.parseFrom(onReferenceValue);
     } catch (InvalidProtocolBufferException e) {
       throw new RuntimeException("Failure parsing data", e);
     }

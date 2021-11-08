@@ -23,32 +23,32 @@ import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
 
-@Schema(type = SchemaType.OBJECT, title = "MultiGetContentsResponse")
+@Schema(type = SchemaType.OBJECT, title = "GetMultipleContentsResponse")
 @Value.Immutable
-@JsonSerialize(as = ImmutableMultiGetContentsResponse.class)
-@JsonDeserialize(as = ImmutableMultiGetContentsResponse.class)
-public interface MultiGetContentsResponse {
+@JsonSerialize(as = ImmutableGetMultipleContentsResponse.class)
+@JsonDeserialize(as = ImmutableGetMultipleContentsResponse.class)
+public interface GetMultipleContentsResponse {
 
   @NotNull
-  List<ContentsWithKey> getContents();
+  List<ContentWithKey> getContents();
 
-  static MultiGetContentsResponse of(List<ContentsWithKey> items) {
-    return ImmutableMultiGetContentsResponse.builder().addAllContents(items).build();
+  static GetMultipleContentsResponse of(List<ContentWithKey> items) {
+    return ImmutableGetMultipleContentsResponse.builder().addAllContents(items).build();
   }
 
   @Value.Immutable
-  @JsonSerialize(as = ImmutableContentsWithKey.class)
-  @JsonDeserialize(as = ImmutableContentsWithKey.class)
-  interface ContentsWithKey {
+  @JsonSerialize(as = ImmutableContentWithKey.class)
+  @JsonDeserialize(as = ImmutableContentWithKey.class)
+  interface ContentWithKey {
 
     @NotNull
-    ContentsKey getKey();
+    ContentKey getKey();
 
     @NotNull
-    Contents getContents();
+    Content getContent();
 
-    static ContentsWithKey of(ContentsKey key, Contents contents) {
-      return ImmutableContentsWithKey.builder().key(key).contents(contents).build();
+    static ContentWithKey of(ContentKey key, Content content) {
+      return ImmutableContentWithKey.builder().key(key).content(content).build();
     }
   }
 }

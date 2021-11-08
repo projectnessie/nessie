@@ -20,9 +20,9 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
-import org.projectnessie.versioned.persist.adapter.ContentsId;
-import org.projectnessie.versioned.persist.adapter.ContentsIdAndBytes;
-import org.projectnessie.versioned.persist.adapter.ContentsIdWithType;
+import org.projectnessie.versioned.persist.adapter.ContentId;
+import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
+import org.projectnessie.versioned.persist.adapter.ContentIdWithType;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ImmutableKeyList;
 import org.projectnessie.versioned.persist.adapter.KeyList;
@@ -97,31 +97,28 @@ public class ProtoSerialization {
     return entry.build();
   }
 
-  public static AdapterTypes.ContentsIdWithBytes toProto(ContentsIdAndBytes x) {
-    return AdapterTypes.ContentsIdWithBytes.newBuilder()
-        .setContentsId(AdapterTypes.ContentsId.newBuilder().setId(x.getContentsId().getId()))
+  public static AdapterTypes.ContentIdWithBytes toProto(ContentIdAndBytes x) {
+    return AdapterTypes.ContentIdWithBytes.newBuilder()
+        .setContentId(AdapterTypes.ContentId.newBuilder().setId(x.getContentId().getId()))
         .setType(x.getType())
         .setValue(x.getValue())
         .build();
   }
 
-  public static ContentsIdAndBytes protoToContentsIdAndBytes(
-      AdapterTypes.ContentsIdWithBytes proto) {
-    return ContentsIdAndBytes.of(
-        ContentsId.of(proto.getContentsId().getId()), (byte) proto.getType(), proto.getValue());
+  public static ContentIdAndBytes protoToContentIdAndBytes(AdapterTypes.ContentIdWithBytes proto) {
+    return ContentIdAndBytes.of(
+        ContentId.of(proto.getContentId().getId()), (byte) proto.getType(), proto.getValue());
   }
 
-  public static AdapterTypes.ContentsIdWithType toProto(ContentsIdWithType x) {
-    return AdapterTypes.ContentsIdWithType.newBuilder()
-        .setContentsId(AdapterTypes.ContentsId.newBuilder().setId(x.getContentsId().getId()))
+  public static AdapterTypes.ContentIdWithType toProto(ContentIdWithType x) {
+    return AdapterTypes.ContentIdWithType.newBuilder()
+        .setContentId(AdapterTypes.ContentId.newBuilder().setId(x.getContentId().getId()))
         .setType(x.getType())
         .build();
   }
 
-  public static ContentsIdWithType protoToContentsIdWithType(
-      AdapterTypes.ContentsIdWithType proto) {
-    return ContentsIdWithType.of(
-        ContentsId.of(proto.getContentsId().getId()), (byte) proto.getType());
+  public static ContentIdWithType protoToContentIdWithType(AdapterTypes.ContentIdWithType proto) {
+    return ContentIdWithType.of(ContentId.of(proto.getContentId().getId()), (byte) proto.getType());
   }
 
   public static AdapterTypes.KeyList toProto(KeyList x) {
@@ -161,7 +158,7 @@ public class ProtoSerialization {
   public static AdapterTypes.KeyWithBytes toProto(KeyWithBytes x) {
     return AdapterTypes.KeyWithBytes.newBuilder()
         .setKey(keyToProto(x.getKey()))
-        .setContentsId(AdapterTypes.ContentsId.newBuilder().setId(x.getContentsId().getId()))
+        .setContentId(AdapterTypes.ContentId.newBuilder().setId(x.getContentId().getId()))
         .setType(x.getType())
         .setValue(x.getValue())
         .build();
@@ -170,7 +167,7 @@ public class ProtoSerialization {
   public static KeyWithBytes protoToKeyWithBytes(AdapterTypes.KeyWithBytes proto) {
     return KeyWithBytes.of(
         Key.of(proto.getKey().getElementList().toArray(new String[0])),
-        ContentsId.of(proto.getContentsId().getId()),
+        ContentId.of(proto.getContentId().getId()),
         (byte) proto.getType(),
         proto.getValue());
   }
@@ -178,7 +175,7 @@ public class ProtoSerialization {
   public static AdapterTypes.KeyWithType toProto(KeyWithType x) {
     return AdapterTypes.KeyWithType.newBuilder()
         .setKey(keyToProto(x.getKey()))
-        .setContentsId(AdapterTypes.ContentsId.newBuilder().setId(x.getContentsId().getId()))
+        .setContentId(AdapterTypes.ContentId.newBuilder().setId(x.getContentId().getId()))
         .setType(x.getType())
         .build();
   }
@@ -186,7 +183,7 @@ public class ProtoSerialization {
   public static KeyWithType protoToKeyWithType(AdapterTypes.KeyWithType proto) {
     return KeyWithType.of(
         protoToKey(proto.getKey()),
-        ContentsId.of(proto.getContentsId().getId()),
+        ContentId.of(proto.getContentId().getId()),
         (byte) proto.getType());
   }
 

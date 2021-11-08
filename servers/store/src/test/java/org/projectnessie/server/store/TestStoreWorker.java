@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.Contents;
+import org.projectnessie.model.Content;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
@@ -45,25 +45,25 @@ class TestStoreWorker {
 
   @ParameterizedTest
   @MethodSource("provideDeserialization")
-  void testDeserialization(Map.Entry<ByteString, Contents> entry) {
-    Contents actual = worker.valueFromStore(entry.getKey(), Optional.empty());
+  void testDeserialization(Map.Entry<ByteString, Content> entry) {
+    Content actual = worker.valueFromStore(entry.getKey(), Optional.empty());
     Assertions.assertEquals(entry.getValue(), actual);
   }
 
   @ParameterizedTest
   @MethodSource("provideDeserialization")
-  void testSerialization(Map.Entry<ByteString, Contents> entry) {
+  void testSerialization(Map.Entry<ByteString, Content> entry) {
     ByteString actual = worker.toStoreOnReferenceState(entry.getValue());
     Assertions.assertEquals(entry.getKey(), actual);
   }
 
   @ParameterizedTest
   @MethodSource("provideDeserialization")
-  void testSerde(Map.Entry<ByteString, Contents> entry) {
+  void testSerde(Map.Entry<ByteString, Content> entry) {
     ByteString actualBytes = worker.toStoreOnReferenceState(entry.getValue());
     Assertions.assertEquals(entry.getValue(), worker.valueFromStore(actualBytes, Optional.empty()));
-    Contents actualContents = worker.valueFromStore(entry.getKey(), Optional.empty());
-    Assertions.assertEquals(entry.getKey(), worker.toStoreOnReferenceState(actualContents));
+    Content actualContent = worker.valueFromStore(entry.getKey(), Optional.empty());
+    Assertions.assertEquals(entry.getKey(), worker.toStoreOnReferenceState(actualContent));
   }
 
   @Test
@@ -71,13 +71,13 @@ class TestStoreWorker {
     String path = "foo/bar";
     IcebergTable table = IcebergTable.of(path, "xyz", ID);
 
-    ObjectTypes.Contents protoTableGlobal =
-        ObjectTypes.Contents.newBuilder()
+    ObjectTypes.Content protoTableGlobal =
+        ObjectTypes.Content.newBuilder()
             .setId(ID)
             .setIcebergGlobal(IcebergGlobal.newBuilder().setIdGenerators("xyz"))
             .build();
-    ObjectTypes.Contents protoOnRef =
-        ObjectTypes.Contents.newBuilder()
+    ObjectTypes.Content protoOnRef =
+        ObjectTypes.Content.newBuilder()
             .setId(ID)
             .setIcebergMetadataPointer(
                 IcebergMetadataPointer.newBuilder().setMetadataLocation(path))
@@ -89,7 +89,7 @@ class TestStoreWorker {
     Assertions.assertEquals(protoTableGlobal.toByteString(), tableGlobalBytes);
     Assertions.assertEquals(protoOnRef.toByteString(), snapshotBytes);
 
-    Contents deserialized = worker.valueFromStore(snapshotBytes, Optional.of(tableGlobalBytes));
+    Content deserialized = worker.valueFromStore(snapshotBytes, Optional.of(tableGlobalBytes));
     Assertions.assertEquals(table, deserialized);
   }
 
@@ -116,17 +116,17 @@ class TestStoreWorker {
     Assertions.assertEquals(expectedBytes, worker.getMetadataSerializer().toBytes(actualCommit));
   }
 
-  private static Stream<Map.Entry<ByteString, Contents>> provideDeserialization() {
+  private static Stream<Map.Entry<ByteString, Content>> provideDeserialization() {
     return Stream.of(getDelta(), getView());
   }
 
-  private static Map.Entry<ByteString, Contents> getDelta() {
+  private static Map.Entry<ByteString, Content> getDelta() {
     String path = "foo/bar";
     String cl1 = "xyz";
     String cl2 = "abc";
     String ml1 = "efg";
     String ml2 = "hij";
-    Contents contents =
+    Content content =
         ImmutableDeltaLakeTable.builder()
             .lastCheckpoint(path)
             .addCheckpointLocationHistory(cl1)
@@ -136,7 +136,7 @@ class TestStoreWorker {
             .id(ID)
             .build();
     ByteString bytes =
-        ObjectTypes.Contents.newBuilder()
+        ObjectTypes.Content.newBuilder()
             .setId(ID)
             .setDeltaLakeTable(
                 ObjectTypes.DeltaLakeTable.newBuilder()
@@ -147,19 +147,19 @@ class TestStoreWorker {
                     .addMetadataLocationHistory(ml2))
             .build()
             .toByteString();
-    return new AbstractMap.SimpleImmutableEntry<>(bytes, contents);
+    return new AbstractMap.SimpleImmutableEntry<>(bytes, content);
   }
 
-  private static Map.Entry<ByteString, Contents> getView() {
+  private static Map.Entry<ByteString, Content> getView() {
     String path = "SELECT * FROM foo.bar,";
-    Contents contents =
+    Content content =
         ImmutableSqlView.builder().dialect(SqlView.Dialect.DREMIO).sqlText(path).id(ID).build();
     ByteString bytes =
-        ObjectTypes.Contents.newBuilder()
+        ObjectTypes.Content.newBuilder()
             .setId(ID)
             .setSqlView(ObjectTypes.SqlView.newBuilder().setSqlText(path).setDialect("DREMIO"))
             .build()
             .toByteString();
-    return new AbstractMap.SimpleImmutableEntry<>(bytes, contents);
+    return new AbstractMap.SimpleImmutableEntry<>(bytes, content);
   }
 }

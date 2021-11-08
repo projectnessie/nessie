@@ -44,9 +44,9 @@ import org.projectnessie.error.NessieReferenceConflictException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.Contents;
-import org.projectnessie.model.Contents.Type;
-import org.projectnessie.model.ContentsKey;
+import org.projectnessie.model.Content;
+import org.projectnessie.model.Content.Type;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.ImmutableBranch;
 import org.projectnessie.model.ImmutableCommitMeta;
@@ -82,7 +82,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
 
   public TreeApiImpl(
       ServerConfig config,
-      VersionStore<Contents, CommitMeta, Contents.Type> store,
+      VersionStore<Content, CommitMeta, Content.Type> store,
       AccessChecker accessChecker,
       Principal principal) {
     super(config, store, accessChecker, principal);
@@ -321,7 +321,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
       return entry;
     }
     Type type = entry.getName().getElements().size() > depth ? Type.UNKNOWN : entry.getType();
-    ContentsKey key = ContentsKey.of(entry.getName().getElements().subList(0, depth));
+    ContentKey key = ContentKey.of(entry.getName().getElements().subList(0, depth));
     return EntriesResponse.Entry.builder().type(type).name(key).build();
   }
 
@@ -374,7 +374,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   @Override
   public Branch commitMultipleOperations(String branch, String hash, Operations operations)
       throws NessieNotFoundException, NessieConflictException {
-    List<org.projectnessie.versioned.Operation<Contents>> ops =
+    List<org.projectnessie.versioned.Operation<Content>> ops =
         operations.getOperations().stream()
             .map(TreeApiImpl::toOp)
             .collect(ImmutableList.toImmutableList());
@@ -386,7 +386,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
       String branch,
       String hash,
       CommitMeta commitMeta,
-      List<org.projectnessie.versioned.Operation<Contents>> operations)
+      List<org.projectnessie.versioned.Operation<Content>> operations)
       throws NessieConflictException, NessieNotFoundException {
     try {
       return getStore()
@@ -469,8 +469,8 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     }
   }
 
-  private static ContentsKey fromKey(Key key) {
-    return ContentsKey.of(key.getElements());
+  private static ContentKey fromKey(Key key) {
+    return ContentKey.of(key.getElements());
   }
 
   private static Reference makeNamedRef(WithHash<NamedRef> refWithHash) {
@@ -494,15 +494,15 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     }
   }
 
-  protected static org.projectnessie.versioned.Operation<Contents> toOp(Operation o) {
+  protected static org.projectnessie.versioned.Operation<Content> toOp(Operation o) {
     Key key = Key.of(o.getKey().getElements().toArray(new String[0]));
     if (o instanceof Operation.Delete) {
       return Delete.of(key);
     } else if (o instanceof Operation.Put) {
       Operation.Put put = (Operation.Put) o;
-      return put.getExpectedContents() != null
-          ? Put.of(key, put.getContents(), put.getExpectedContents())
-          : Put.of(key, put.getContents());
+      return put.getExpectedContent() != null
+          ? Put.of(key, put.getContent(), put.getExpectedContent())
+          : Put.of(key, put.getContent());
     } else if (o instanceof Operation.Unchanged) {
       return Unchanged.of(key);
     } else {

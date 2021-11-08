@@ -18,13 +18,13 @@ package org.projectnessie.versioned.persist.adapter;
 import org.projectnessie.versioned.Key;
 
 /**
- * Predicate to filter contents-key/contents-id/contents-type for {@link DatabaseAdapter}
- * functionality that returns or handles contents-keys and contents-values to skip deserialization
- * and potentially prevent unnecessary read operations. A typical use case is to filter early based
- * on authorization rules.
+ * Predicate to filter content-key/content-id/content-type for {@link DatabaseAdapter} functionality
+ * that returns or handles content-keys and content-values to skip deserialization and potentially
+ * prevent unnecessary read operations. A typical use case is to filter early based on authorization
+ * rules.
  */
 public interface KeyFilterPredicate {
-  boolean check(Key key, ContentsId contentsId, byte type);
+  boolean check(Key key, ContentId contentId, byte type);
 
   KeyFilterPredicate ALLOW_ALL = (k, c, t) -> true;
 }

@@ -101,8 +101,8 @@ class NessieReferenceNotFoundException(NessieNotFoundException):
     pass
 
 
-class NessieContentsNotFoundException(NessieNotFoundException):
-    """This exception is thrown when the requested contents object is not present in the store."""
+class NessieContentNotFoundException(NessieNotFoundException):
+    """This exception is thrown when the requested content object is not present in the store."""
 
     pass
 
@@ -172,8 +172,8 @@ def _create_nessie_exception(error: dict, status: int, reason: str, url: str) ->
         return NessieReferenceNotFoundException(error, status, url, reason)
     if error_code == "REFERENCE_ALREADY_EXISTS":
         return NessieReferenceAlreadyExistsException(error, status, url, reason)
-    if error_code == "CONTENTS_NOT_FOUND":
-        return NessieContentsNotFoundException(error, status, url, reason)
+    if error_code == "CONTENT_NOT_FOUND":
+        return NessieContentNotFoundException(error, status, url, reason)
     if error_code == "REFERENCE_CONFLICT":
         return NessieReferenceConflictException(error, status, url, reason)
     return None

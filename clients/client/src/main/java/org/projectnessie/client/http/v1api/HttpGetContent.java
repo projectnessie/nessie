@@ -18,42 +18,42 @@ package org.projectnessie.client.http.v1api;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.projectnessie.client.api.GetContentsBuilder;
+import org.projectnessie.client.api.GetContentBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieNotFoundException;
-import org.projectnessie.model.Contents;
-import org.projectnessie.model.ContentsKey;
-import org.projectnessie.model.ImmutableMultiGetContentsRequest;
-import org.projectnessie.model.MultiGetContentsResponse;
-import org.projectnessie.model.MultiGetContentsResponse.ContentsWithKey;
+import org.projectnessie.model.Content;
+import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.GetMultipleContentsResponse;
+import org.projectnessie.model.GetMultipleContentsResponse.ContentWithKey;
+import org.projectnessie.model.ImmutableGetMultipleContentsRequest;
 
-final class HttpGetContents extends BaseHttpOnReferenceRequest<GetContentsBuilder>
-    implements GetContentsBuilder {
+final class HttpGetContent extends BaseHttpOnReferenceRequest<GetContentBuilder>
+    implements GetContentBuilder {
 
-  private final ImmutableMultiGetContentsRequest.Builder request =
-      ImmutableMultiGetContentsRequest.builder();
+  private final ImmutableGetMultipleContentsRequest.Builder request =
+      ImmutableGetMultipleContentsRequest.builder();
 
-  HttpGetContents(NessieApiClient client) {
+  HttpGetContent(NessieApiClient client) {
     super(client);
   }
 
   @Override
-  public GetContentsBuilder key(ContentsKey key) {
+  public GetContentBuilder key(ContentKey key) {
     request.addRequestedKeys(key);
     return this;
   }
 
   @Override
-  public GetContentsBuilder keys(List<ContentsKey> keys) {
+  public GetContentBuilder keys(List<ContentKey> keys) {
     request.addAllRequestedKeys(keys);
     return this;
   }
 
   @Override
-  public Map<ContentsKey, Contents> get() throws NessieNotFoundException {
-    MultiGetContentsResponse resp =
-        client.getContentsApi().getMultipleContents(refName, hashOnRef, request.build());
+  public Map<ContentKey, Content> get() throws NessieNotFoundException {
+    GetMultipleContentsResponse resp =
+        client.getContentApi().getMultipleContents(refName, hashOnRef, request.build());
     return resp.getContents().stream()
-        .collect(Collectors.toMap(ContentsWithKey::getKey, ContentsWithKey::getContents));
+        .collect(Collectors.toMap(ContentWithKey::getKey, ContentWithKey::getContent));
   }
 }

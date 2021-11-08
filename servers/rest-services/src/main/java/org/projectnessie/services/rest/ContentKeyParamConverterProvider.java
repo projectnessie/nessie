@@ -20,28 +20,28 @@ import java.lang.reflect.Type;
 import javax.ws.rs.ext.ParamConverter;
 import javax.ws.rs.ext.ParamConverterProvider;
 import javax.ws.rs.ext.Provider;
-import org.projectnessie.model.ContentsKey;
+import org.projectnessie.model.ContentKey;
 
 /**
- * JAX-RS parameter converter provider to transform {@code String} into {@code ContentsKey}, and
+ * JAX-RS parameter converter provider to transform {@code String} into {@code ContentKey}, and
  * vice-versa.
  */
 @Provider
-public class ContentsKeyParamConverterProvider implements ParamConverterProvider {
+public class ContentKeyParamConverterProvider implements ParamConverterProvider {
 
-  private static final class ContentsKeyParamConverter implements ParamConverter<ContentsKey> {
+  private static final class ContentKeyParamConverter implements ParamConverter<ContentKey> {
 
     @Override
-    public ContentsKey fromString(String value) {
+    public ContentKey fromString(String value) {
       if (value == null) {
         return null;
       }
 
-      return ContentsKey.fromPathString(value);
+      return ContentKey.fromPathString(value);
     }
 
     @Override
-    public String toString(ContentsKey value) {
+    public String toString(ContentKey value) {
       if (value == null) {
         return null;
       }
@@ -53,8 +53,8 @@ public class ContentsKeyParamConverterProvider implements ParamConverterProvider
   @Override
   public <T> ParamConverter<T> getConverter(
       Class<T> rawType, Type genericType, Annotation[] annotations) {
-    if (rawType.equals(ContentsKey.class)) {
-      return (ParamConverter<T>) new ContentsKeyParamConverter();
+    if (rawType.equals(ContentKey.class)) {
+      return (ParamConverter<T>) new ContentKeyParamConverter();
     }
     return null;
   }

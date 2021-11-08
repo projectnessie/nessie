@@ -22,10 +22,10 @@ atomic and consistent.
 
 ### Nessie Content Types
 
-The state of so called `Contents` objects like `IcebergTable` or `DeltaLakeTable` represents the
+The state of so called `Content` objects like `IcebergTable` or `DeltaLakeTable` represents the
 current state of a table in a data lake. Whenever a table has changed via for example Iceberg,
 a so-called commit operation instructs Nessie to record the new state in a Nessie commit, which
-carries the `Contents` object(s).
+carries the `Content` object(s).
 
 `IcebergTable` contains the _current_ and _global_ pointer to Iceberg's table metadata plus the
 ID of the snapshot defined in the table metadata. Since Iceberg's table metadata manages information
@@ -118,7 +118,7 @@ FunctionResult nessieWriteOperation(parameters...) {
 ### Transactional databases
 
 The data model for transactional databases defines tables for
-* the _global-state_, where the primary key is the globally unique _contents-id_ and the
+* the _global-state_, where the primary key is the globally unique _content-id_ and the
   value of the _global-state_,
 * the _named-references_, which define the commit hash/id of the "HEAD" of each named reference,
 * the _commit-log_, which contains all commits

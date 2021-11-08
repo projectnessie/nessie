@@ -27,8 +27,8 @@ from assertpy import assert_that
 
 from pynessie import __version__
 from pynessie.model import Branch
-from pynessie.model import Contents
-from pynessie.model import ContentsSchema
+from pynessie.model import Content
+from pynessie.model import ContentSchema
 from pynessie.model import DeltaLakeTable
 from pynessie.model import EntrySchema
 from pynessie.model import IcebergTable
@@ -87,14 +87,14 @@ def _new_table(table_id: str) -> IcebergTable:
 
 
 def _make_commit(
-    key: str, table: Contents, branch: str, head_hash: str = None, message: str = "test message", author: str = "nessie test"
+    key: str, table: Content, branch: str, head_hash: str = None, message: str = "test message", author: str = "nessie test"
 ) -> None:
     if not head_hash:
         refs = {i.name: i.hash_ for i in ReferenceSchema().loads(_cli(["--json", "branch"]), many=True)}
         head_hash = refs[branch]
     _cli(
         ["contents", "--set", "--stdin", key, "--ref", branch, "-m", message, "-c", head_hash, "--author", author],
-        input_data=ContentsSchema().dumps(table),
+        input_data=ContentSchema().dumps(table),
     )
 
 
@@ -108,7 +108,7 @@ def test_log() -> None:
     _make_commit("log.foo.dev", table, "dev_test_log", author="nessie_user1")
     table = _new_table("test_log")
     _make_commit("log.foo.bar", table, "main", author="nessie_user1")
-    tables = ContentsSchema().loads(_cli(["--json", "contents", "log.foo.bar"]), many=True)
+    tables = ContentSchema().loads(_cli(["--json", "contents", "log.foo.bar"]), many=True)
     assert len(tables) == 1
     assert tables[0] == table
     logs = simplejson.loads(_cli(["--json", "log"]))
@@ -209,16 +209,16 @@ def test_tag() -> None:
 
 @pytest.mark.vcr
 def test_commit_with_expected_state() -> None:
-    """Test making a commit with some expected Contents, i.e. IcebergTable."""
+    """Test making a commit with some expected Content, i.e. IcebergTable."""
     _cli(["branch", "dev"])
     _make_commit("commit.expected.contents", _new_table("test_expected_contents"), "dev", message="commit 1")
-    # the second commit will use the Contents of the first one as "expected contents"
+    # the second commit will use the Content of the first one as "expected contents"
     _make_commit("commit.expected.contents", _new_table("test_expected_contents"), "dev", message="commit 2")
 
 
 @pytest.mark.vcr
 def test_commit_no_expected_state() -> None:
-    """Test making two commit without any expected Contents, i.e. using DeltaLakeTable."""
+    """Test making two commits without any expected Content, i.e. using DeltaLakeTable."""
     _cli(["branch", "dev"])
     table1 = DeltaLakeTable(
         id="test_commit_no_expected_state", metadata_location_history=["asd111"], checkpoint_location_history=["def"], last_checkpoint="x"
@@ -309,11 +309,11 @@ def test_contents_listing() -> None:
     _make_commit("this.is.delta.bar", delta_lake_table, branch)
     _make_commit("this.is.sql.baz", sql_view, branch)
 
-    tables = ContentsSchema().loads(_cli(["--json", "contents", "--ref", branch, "this.is.iceberg.foo"]), many=True)
+    tables = ContentSchema().loads(_cli(["--json", "contents", "--ref", branch, "this.is.iceberg.foo"]), many=True)
     assert_that(tables).is_length(1)
     assert_that(tables[0]).is_equal_to(iceberg_table)
 
-    tables = ContentsSchema().loads(_cli(["--json", "contents", "--ref", branch, "this.is.delta.bar"]), many=True)
+    tables = ContentSchema().loads(_cli(["--json", "contents", "--ref", branch, "this.is.delta.bar"]), many=True)
     assert_that(tables).is_length(1)
     assert_that(tables[0]).is_equal_to(delta_lake_table)
 

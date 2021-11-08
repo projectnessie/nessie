@@ -24,25 +24,25 @@ import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
 
-@Schema(type = SchemaType.OBJECT, title = "MultiGetContentsRequest")
+@Schema(type = SchemaType.OBJECT, title = "GetMultipleContentsRequest")
 @Value.Immutable
-@JsonSerialize(as = ImmutableMultiGetContentsRequest.class)
-@JsonDeserialize(as = ImmutableMultiGetContentsRequest.class)
-public interface MultiGetContentsRequest {
+@JsonSerialize(as = ImmutableGetMultipleContentsRequest.class)
+@JsonDeserialize(as = ImmutableGetMultipleContentsRequest.class)
+public interface GetMultipleContentsRequest {
 
   @NotNull
   @Size(min = 1)
-  List<ContentsKey> getRequestedKeys();
+  List<ContentKey> getRequestedKeys();
 
-  static ImmutableMultiGetContentsRequest.Builder builder() {
-    return ImmutableMultiGetContentsRequest.builder();
+  static ImmutableGetMultipleContentsRequest.Builder builder() {
+    return ImmutableGetMultipleContentsRequest.builder();
   }
 
-  static MultiGetContentsRequest of(ContentsKey... keys) {
+  static GetMultipleContentsRequest of(ContentKey... keys) {
     return builder().addRequestedKeys(keys).build();
   }
 
-  static MultiGetContentsRequest of(List<ContentsKey> keys) {
+  static GetMultipleContentsRequest of(List<ContentKey> keys) {
     return builder().addAllRequestedKeys(keys).build();
   }
 }

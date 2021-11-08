@@ -32,7 +32,7 @@ import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.ContentsKey;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableDelete;
@@ -61,10 +61,10 @@ class TestAuthorizationRules extends BaseClientAuthTest {
 
   private void testAllOps(String branchName, String role, boolean shouldFail)
       throws BaseNessieClientServerException {
-    ContentsKey key = ContentsKey.of("allowed", "x");
+    ContentKey key = ContentKey.of("allowed", "x");
     if (shouldFail) {
       branchName = "disallowedBranchForTestUser";
-      key = ContentsKey.of("disallowed", "x");
+      key = ContentKey.of("disallowed", "x");
     }
 
     createBranch(Branch.of(branchName, null), role, shouldFail);
@@ -98,7 +98,7 @@ class TestAuthorizationRules extends BaseClientAuthTest {
   @TestSecurity(user = "test_user2")
   void testCanCommitButNotUpdateOrDeleteEntity() throws BaseNessieClientServerException {
     String role = "test_user2";
-    ContentsKey key = ContentsKey.of("allowed", "some");
+    ContentKey key = ContentKey.of("allowed", "some");
     String branchName = "allowedBranchForTestUser2";
     createBranch(Branch.of(branchName, null), role, false);
 
@@ -203,13 +203,13 @@ class TestAuthorizationRules extends BaseClientAuthTest {
     }
   }
 
-  private void readContent(String branchName, ContentsKey key, String role, boolean shouldFail)
+  private void readContent(String branchName, ContentKey key, String role, boolean shouldFail)
       throws NessieNotFoundException {
     if (shouldFail) {
       assertThatThrownBy(
               () ->
                   api()
-                      .getContents()
+                      .getContent()
                       .refName(branchName)
                       .key(key)
                       .get()
@@ -224,7 +224,7 @@ class TestAuthorizationRules extends BaseClientAuthTest {
     } else {
       assertThat(
               api()
-                  .getContents()
+                  .getContent()
                   .refName(branchName)
                   .key(key)
                   .get()

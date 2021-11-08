@@ -26,7 +26,7 @@ import java.util.stream.Stream;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.projectnessie.model.Contents.Type;
+import org.projectnessie.model.Content.Type;
 
 /**
  * This test merely checks the JSON serialization/deserialization of the model classes, with an
@@ -84,7 +84,7 @@ public class TestModelObjectsSerialization {
                 .addEntries(
                     ImmutableEntry.builder()
                         .type(Type.ICEBERG_TABLE)
-                        .name(ContentsKey.fromPathString("/tmp/testpath"))
+                        .name(ContentKey.fromPathString("/tmp/testpath"))
                         .build())
                 .token(HASH)
                 .isHasMore(true)

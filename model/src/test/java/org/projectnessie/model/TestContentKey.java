@@ -30,18 +30,18 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-class TestContentsKey {
+class TestContentKey {
 
   @ParameterizedTest
-  @MethodSource("contentsKeyOfAndParseCases")
-  void contentsKeyOfAndParse(ContentsKeyOfParse testCase) {
+  @MethodSource("contentKeyOfAndParseCases")
+  void contentKeyOfAndParse(ContentKeyOfParse testCase) {
     assertThat(testCase.key)
         .extracting(
-            ContentsKey::getElements,
-            ContentsKey::getName,
-            ContentsKey::getNamespace,
-            ContentsKey::toString,
-            ContentsKey::toPathString)
+            ContentKey::getElements,
+            ContentKey::getName,
+            ContentKey::getNamespace,
+            ContentKey::toString,
+            ContentKey::toPathString)
         .containsExactly(
             testCase.elements,
             testCase.name,
@@ -50,16 +50,16 @@ class TestContentsKey {
             testCase.pathString);
   }
 
-  static class ContentsKeyOfParse {
-    final ContentsKey key;
+  static class ContentKeyOfParse {
+    final ContentKey key;
     final List<String> elements;
     final String name;
     final Namespace namespace;
     final String string;
     final String pathString;
 
-    ContentsKeyOfParse(
-        ContentsKey key,
+    ContentKeyOfParse(
+        ContentKey key,
         List<String> elements,
         String name,
         Namespace namespace,
@@ -90,117 +90,117 @@ class TestContentsKey {
     }
   }
 
-  static List<ContentsKeyOfParse> contentsKeyOfAndParseCases() {
+  static List<ContentKeyOfParse> contentKeyOfAndParseCases() {
     return asList(
-        new ContentsKeyOfParse(
-            ContentsKey.fromPathString("a.table"),
+        new ContentKeyOfParse(
+            ContentKey.fromPathString("a.table"),
             asList("a", "table"),
             "table",
             Namespace.of("a"),
             "a.table",
             "a.table"),
-        new ContentsKeyOfParse(
-            ContentsKey.of("a", "table"),
+        new ContentKeyOfParse(
+            ContentKey.of("a", "table"),
             asList("a", "table"),
             "table",
             Namespace.of("a"),
             "a.table",
             "a.table"),
-        new ContentsKeyOfParse(
-            ContentsKey.of(asList("a", "table")),
+        new ContentKeyOfParse(
+            ContentKey.of(asList("a", "table")),
             asList("a", "table"),
             "table",
             Namespace.of("a"),
             "a.table",
             "a.table"),
-        new ContentsKeyOfParse(
-            ContentsKey.of(Namespace.of("a"), "table"),
+        new ContentKeyOfParse(
+            ContentKey.of(Namespace.of("a"), "table"),
             asList("a", "table"),
             "table",
             Namespace.of("a"),
             "a.table",
             "a.table"),
-        new ContentsKeyOfParse(
-            ContentsKey.of(Namespace.of(singletonList("a")), "table"),
+        new ContentKeyOfParse(
+            ContentKey.of(Namespace.of(singletonList("a")), "table"),
             asList("a", "table"),
             "table",
             Namespace.of("a"),
             "a.table",
             "a.table"),
-        new ContentsKeyOfParse(
-            ContentsKey.of(Namespace.parse("a"), "table"),
+        new ContentKeyOfParse(
+            ContentKey.of(Namespace.parse("a"), "table"),
             asList("a", "table"),
             "table",
             Namespace.of("a"),
             "a.table",
             "a.table"),
         //
-        new ContentsKeyOfParse(
-            ContentsKey.fromPathString("a.b.table"),
+        new ContentKeyOfParse(
+            ContentKey.fromPathString("a.b.table"),
             asList("a", "b", "table"),
             "table",
             Namespace.of("a", "b"),
             "a.b.table",
             "a.b.table"),
-        new ContentsKeyOfParse(
-            ContentsKey.of("a", "b", "table"),
+        new ContentKeyOfParse(
+            ContentKey.of("a", "b", "table"),
             asList("a", "b", "table"),
             "table",
             Namespace.of("a", "b"),
             "a.b.table",
             "a.b.table"),
-        new ContentsKeyOfParse(
-            ContentsKey.of(asList("a", "b", "table")),
+        new ContentKeyOfParse(
+            ContentKey.of(asList("a", "b", "table")),
             asList("a", "b", "table"),
             "table",
             Namespace.of("a", "b"),
             "a.b.table",
             "a.b.table"),
-        new ContentsKeyOfParse(
-            ContentsKey.of(Namespace.of("a", "b"), "table"),
+        new ContentKeyOfParse(
+            ContentKey.of(Namespace.of("a", "b"), "table"),
             asList("a", "b", "table"),
             "table",
             Namespace.of("a", "b"),
             "a.b.table",
             "a.b.table"),
-        new ContentsKeyOfParse(
-            ContentsKey.of(Namespace.of(asList("a", "b")), "table"),
+        new ContentKeyOfParse(
+            ContentKey.of(Namespace.of(asList("a", "b")), "table"),
             asList("a", "b", "table"),
             "table",
             Namespace.of("a", "b"),
             "a.b.table",
             "a.b.table"),
-        new ContentsKeyOfParse(
-            ContentsKey.of(Namespace.parse("a.b"), "table"),
+        new ContentKeyOfParse(
+            ContentKey.of(Namespace.parse("a.b"), "table"),
             asList("a", "b", "table"),
             "table",
             Namespace.of("a", "b"),
             "a.b.table",
             "a.b.table"),
         //
-        new ContentsKeyOfParse(
-            ContentsKey.of(Namespace.EMPTY, "table"),
+        new ContentKeyOfParse(
+            ContentKey.of(Namespace.EMPTY, "table"),
             singletonList("table"),
             "table",
             Namespace.parse(""),
             "table",
             "table"),
-        new ContentsKeyOfParse(
-            ContentsKey.of("table"),
+        new ContentKeyOfParse(
+            ContentKey.of("table"),
             singletonList("table"),
             "table",
             Namespace.parse(""),
             "table",
             "table"),
-        new ContentsKeyOfParse(
-            ContentsKey.of(singletonList("table")),
+        new ContentKeyOfParse(
+            ContentKey.of(singletonList("table")),
             singletonList("table"),
             "table",
             Namespace.parse(""),
             "table",
             "table"),
-        new ContentsKeyOfParse(
-            ContentsKey.fromPathString("table"),
+        new ContentKeyOfParse(
+            ContentKey.fromPathString("table"),
             singletonList("table"),
             "table",
             Namespace.parse(""),
@@ -216,19 +216,19 @@ class TestContentsKey {
     assertThat(namespace.name()).isEqualTo("a.b.c");
     assertThat(namespace.getElements()).containsExactly("a", "b", "c");
 
-    ContentsKey key = ContentsKey.of("a", "b", "c", "tableName");
+    ContentKey key = ContentKey.of("a", "b", "c", "tableName");
     assertThat(key.getNamespace()).isEqualTo(namespace);
     String serializedKey = mapper.writeValueAsString(key);
     assertThat(serializedKey).contains("elements").doesNotContain("namespace");
 
-    ContentsKey deserialized = mapper.readValue(serializedKey, ContentsKey.class);
+    ContentKey deserialized = mapper.readValue(serializedKey, ContentKey.class);
     assertThat(deserialized).isEqualTo(key);
     assertThat(deserialized.getNamespace()).isEqualTo(namespace);
   }
 
   @Test
   public void validation() {
-    assertThatThrownBy(() -> ContentsKey.of("a", "b", "\u0000", "c", "d"))
+    assertThatThrownBy(() -> ContentKey.of("a", "b", "\u0000", "c", "d"))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("An object key must not contain a zero byte.");
   }
@@ -236,10 +236,10 @@ class TestContentsKey {
   @Test
   public void construction() {
     String[] elements = {"a", "b", "c", "d"};
-    ContentsKey key = ContentsKey.of(elements);
+    ContentKey key = ContentKey.of(elements);
     assertThat(key.getElements()).containsExactlyElementsOf(asList(elements));
     assertThat(key.toPathString()).isEqualTo(String.join(".", elements));
-    assertThat(ContentsKey.fromPathString("a.b.c.d")).isEqualTo(key);
+    assertThat(ContentKey.fromPathString("a.b.c.d")).isEqualTo(key);
   }
 
   @Test
@@ -259,32 +259,32 @@ class TestContentsKey {
 
   @Test
   void blockZeroByteUsage() {
-    assertThrows(IllegalArgumentException.class, () -> ContentsKey.of("\u0000"));
+    assertThrows(IllegalArgumentException.class, () -> ContentKey.of("\u0000"));
   }
 
   @Test
   void npe() {
     assertAll(
         () ->
-            assertThatThrownBy(() -> ContentsKey.of((String[]) null))
+            assertThatThrownBy(() -> ContentKey.of((String[]) null))
                 .isInstanceOf(NullPointerException.class),
         () ->
-            assertThatThrownBy(() -> ContentsKey.of(null, null))
+            assertThatThrownBy(() -> ContentKey.of(null, null))
                 .isInstanceOf(NullPointerException.class),
         () ->
-            assertThatThrownBy(() -> ContentsKey.of("a", null))
+            assertThatThrownBy(() -> ContentKey.of("a", null))
                 .isInstanceOf(NullPointerException.class),
         () ->
-            assertThatThrownBy(() -> ContentsKey.of((List<String>) null))
+            assertThatThrownBy(() -> ContentKey.of((List<String>) null))
                 .isInstanceOf(NullPointerException.class),
         () ->
-            assertThatThrownBy(() -> ContentsKey.of(singletonList(null)))
+            assertThatThrownBy(() -> ContentKey.of(singletonList(null)))
                 .isInstanceOf(NullPointerException.class),
         () ->
-            assertThatThrownBy(() -> ContentsKey.of(asList("a", null)))
+            assertThatThrownBy(() -> ContentKey.of(asList("a", null)))
                 .isInstanceOf(NullPointerException.class),
         () ->
-            assertThatThrownBy(() -> ContentsKey.of(asList(null, "a")))
+            assertThatThrownBy(() -> ContentKey.of(asList(null, "a")))
                 .isInstanceOf(NullPointerException.class));
   }
 
@@ -292,26 +292,26 @@ class TestContentsKey {
   void empty() {
     assertAll(
         () ->
-            assertThatThrownBy(() -> ContentsKey.of(null, ""))
+            assertThatThrownBy(() -> ContentKey.of(null, ""))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("An object key must not contain an empty name (last element)."),
         () ->
-            assertThatThrownBy(() -> ContentsKey.of("a", ""))
+            assertThatThrownBy(() -> ContentKey.of("a", ""))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("An object key must not contain an empty name (last element)."),
         () ->
-            assertThatThrownBy(() -> ContentsKey.of(singletonList("")))
+            assertThatThrownBy(() -> ContentKey.of(singletonList("")))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("An object key must not contain an empty name (last element)."),
         () ->
-            assertThatThrownBy(() -> ContentsKey.of(asList("a", "")))
+            assertThatThrownBy(() -> ContentKey.of(asList("a", "")))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("An object key must not contain an empty name (last element)."));
   }
 
   private void assertRoundTrip(String... elements) {
-    ContentsKey k = ContentsKey.of(elements);
-    ContentsKey k2 = ContentsKey.fromPathString(k.toPathString());
+    ContentKey k = ContentKey.of(elements);
+    ContentKey k2 = ContentKey.fromPathString(k.toPathString());
     assertEquals(k, k2);
   }
 }

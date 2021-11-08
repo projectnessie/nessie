@@ -29,7 +29,7 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
-import org.projectnessie.versioned.persist.adapter.ContentsId;
+import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
@@ -110,7 +110,7 @@ public abstract class AbstractMergeTransplant {
         commit.addPuts(
             KeyWithBytes.of(
                 Key.of("key", Integer.toString(k)),
-                ContentsId.of("C" + k),
+                ContentId.of("C" + k),
                 (byte) 0,
                 ByteString.copyFromUtf8("value " + i + " for " + k)));
       }
@@ -140,7 +140,7 @@ public abstract class AbstractMergeTransplant {
       commit.addPuts(
           KeyWithBytes.of(
               Key.of("key", Integer.toString(k)),
-              ContentsId.of("C" + k),
+              ContentId.of("C" + k),
               (byte) 0,
               ByteString.copyFromUtf8("conflict value for " + k)));
     }

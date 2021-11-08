@@ -13,7 +13,7 @@ user facing applications like Web UIs.
 Nessie defines a [REST API](rest.md) (OpenAPI) and implementations for [Java](java.md)
 and [Python](python.md).
 
-## Contents in Nessie
+## Content managed by Nessie
 
 ### General Contract
 
@@ -66,7 +66,7 @@ capacity. An example usage of the `id` field might be storing auxiliary data on 
 local cache and using `id` to look up that auxiliary data.
 
 !!! note
-    A note about caching: The `Contents` objects or the values of the referred information
+    A note about caching: The `Content` objects or the values of the referred information
     (e.g. schema, partitions etc.) might be cached locally by services using Nessie.
 
     For content types that do **not** track [Global State](#on-reference-state-vs-global-state),
@@ -81,7 +81,7 @@ local cache and using `id` to look up that auxiliary data.
 
     For simplicity, it is recommeded to always include the Content Id.
 
-    Since the Contents object is immutable, the hash is stable and since it is disconnected from
+    Since the Content object is immutable, the hash is stable and since it is disconnected from
     Nessie's version store properties it exists across commits/branches and survives GC and other
     table maintenance operations.
 

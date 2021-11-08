@@ -23,7 +23,7 @@ import org.projectnessie.client.api.DeleteBranchBuilder;
 import org.projectnessie.client.api.DeleteTagBuilder;
 import org.projectnessie.client.api.GetAllReferencesBuilder;
 import org.projectnessie.client.api.GetCommitLogBuilder;
-import org.projectnessie.client.api.GetContentsBuilder;
+import org.projectnessie.client.api.GetContentBuilder;
 import org.projectnessie.client.api.GetEntriesBuilder;
 import org.projectnessie.client.api.GetReferenceBuilder;
 import org.projectnessie.client.api.MergeReferenceBuilder;
@@ -58,8 +58,8 @@ public final class HttpApiV1 implements NessieApiV1 {
   }
 
   @Override
-  public GetContentsBuilder getContents() {
-    return new HttpGetContents(client);
+  public GetContentBuilder getContent() {
+    return new HttpGetContent(client);
   }
 
   @Override

@@ -19,29 +19,29 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.immutables.value.Value.Immutable;
 
-/** Composite for the per-named-reference and global state for a contents key. */
+/** Composite for the per-named-reference and global state for a content key. */
 @Immutable
-public interface ContentsAndState<CONTENTS> {
+public interface ContentAndState<CONTENT> {
 
-  /** Per-named-reference state for a contents key. For example, Iceberg's snapshot-ID. */
+  /** Per-named-reference state for a content key. For example, Iceberg's snapshot-ID. */
   @Nonnull
-  CONTENTS getRefState();
+  CONTENT getRefState();
 
-  /** Global state for a contents key. For example, the pointer to Iceberg's table-metadata. */
+  /** Global state for a content key. For example, the pointer to Iceberg's table-metadata. */
   @Nullable
-  CONTENTS getGlobalState();
+  CONTENT getGlobalState();
 
   @Nonnull
-  static <CONTENTS> ContentsAndState<CONTENTS> of(
-      @Nonnull CONTENTS refState, @Nonnull CONTENTS globalState) {
-    return ImmutableContentsAndState.<CONTENTS>builder()
+  static <CONTENT> ContentAndState<CONTENT> of(
+      @Nonnull CONTENT refState, @Nonnull CONTENT globalState) {
+    return ImmutableContentAndState.<CONTENT>builder()
         .refState(refState)
         .globalState(globalState)
         .build();
   }
 
   @Nonnull
-  static <CONTENTS> ContentsAndState<CONTENTS> of(@Nonnull CONTENTS refState) {
-    return ImmutableContentsAndState.<CONTENTS>builder().refState(refState).build();
+  static <CONTENT> ContentAndState<CONTENT> of(@Nonnull CONTENT refState) {
+    return ImmutableContentAndState.<CONTENT>builder().refState(refState).build();
   }
 }

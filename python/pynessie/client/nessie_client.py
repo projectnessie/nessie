@@ -41,8 +41,8 @@ from ._endpoints import merge
 from ..auth import setup_auth
 from ..model import Branch
 from ..model import CommitMeta
-from ..model import Contents
-from ..model import ContentsSchema
+from ..model import Content
+from ..model import ContentSchema
 from ..model import Entries
 from ..model import EntriesSchema
 from ..model import LogResponse
@@ -50,7 +50,7 @@ from ..model import LogResponseSchema
 from ..model import Merge
 from ..model import MergeSchema
 from ..model import MultiContents
-from ..model import MultiContentsSchema
+from ..model import MultiContentSchema
 from ..model import Operation
 from ..model import Reference
 from ..model import ReferenceSchema
@@ -157,7 +157,7 @@ class NessieClient:
             list_tables(self._base_url, self._auth, ref, hash_on_ref, max_result_hint, page_token, query_expression, self._ssl_verify)
         )
 
-    def get_values(self: "NessieClient", ref: str, *tables: str, hash_on_ref: Optional[str] = None) -> Generator[Contents, Any, None]:
+    def get_values(self: "NessieClient", ref: str, *tables: str, hash_on_ref: Optional[str] = None) -> Generator[Content, Any, None]:
         """Fetch a table from a known ref.
 
         :param ref: name of ref
@@ -166,7 +166,7 @@ class NessieClient:
         :return: Nessie Table
         """
         return (
-            ContentsSchema().load(get_table(self._base_url, self._auth, ref, format_key(i), hash_on_ref, self._ssl_verify)) for i in tables
+            ContentSchema().load(get_table(self._base_url, self._auth, ref, format_key(i), hash_on_ref, self._ssl_verify)) for i in tables
         )
 
     def commit(
@@ -176,7 +176,7 @@ class NessieClient:
         meta = CommitMeta(message=reason if reason else "")
         if author:
             meta.author = author
-        ref_obj = commit(self._base_url, self._auth, branch, MultiContentsSchema().dumps(MultiContents(meta, list(ops))), old_hash)
+        ref_obj = commit(self._base_url, self._auth, branch, MultiContentSchema().dumps(MultiContents(meta, list(ops))), old_hash)
         return cast(Branch, ReferenceSchema().load(ref_obj))
 
     def assign_branch(self: "NessieClient", branch: str, to_ref: str, to_ref_hash: str = None, old_hash: Optional[str] = None) -> None:

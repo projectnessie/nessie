@@ -79,19 +79,19 @@ public abstract class AbstractVersionStoreTest extends AbstractITVersionStore {
   static class SingleBranchParam {
     final String branchName;
     final IntFunction<String> tableNameGen;
-    final IntFunction<String> contentsIdGen;
+    final IntFunction<String> contentIdGen;
     final boolean allowInconsistentValueException;
     final boolean globalState;
 
     SingleBranchParam(
         String branchName,
         IntFunction<String> tableNameGen,
-        IntFunction<String> contentsIdGen,
+        IntFunction<String> contentIdGen,
         boolean allowInconsistentValueException,
         boolean globalState) {
       this.branchName = branchName;
       this.tableNameGen = tableNameGen;
-      this.contentsIdGen = contentsIdGen;
+      this.contentIdGen = contentIdGen;
       this.allowInconsistentValueException = allowInconsistentValueException;
       this.globalState = globalState;
     }
@@ -165,7 +165,7 @@ public abstract class AbstractVersionStoreTest extends AbstractITVersionStore {
         expectedValues.add(msg);
 
         Key key = Key.of(param.tableNameGen.apply(user));
-        String contentsId = param.contentsIdGen.apply(user);
+        String contentId = param.contentIdGen.apply(user);
         Operation<String> put;
         if (param.globalState) {
           String state = String.format("%03d_%03d", user, commitNum);
@@ -173,10 +173,10 @@ public abstract class AbstractVersionStoreTest extends AbstractITVersionStore {
             put =
                 Put.of(
                     key,
-                    StringStoreWorker.withStateAndId(state, "data_file", contentsId),
-                    StringStoreWorker.withStateAndId(previousState.get(key), "foo", contentsId));
+                    StringStoreWorker.withStateAndId(state, "data_file", contentId),
+                    StringStoreWorker.withStateAndId(previousState.get(key), "foo", contentId));
           } else {
-            put = Put.of(key, StringStoreWorker.withStateAndId(state, "data_file", contentsId));
+            put = Put.of(key, StringStoreWorker.withStateAndId(state, "data_file", contentId));
           }
           previousState.put(key, state);
         } else {
@@ -209,7 +209,7 @@ public abstract class AbstractVersionStoreTest extends AbstractITVersionStore {
     assertEquals(expectedValues, committedValues);
   }
 
-  /** Test behavior when a table (contents-key) is created, then dropped and then re-created. */
+  /** Test behavior when a table (content-key) is created, then dropped and then re-created. */
   @Test
   void recreateTable() throws Exception {
     BranchName branch = BranchName.of("recreateTable-main");
@@ -228,9 +228,9 @@ public abstract class AbstractVersionStoreTest extends AbstractITVersionStore {
                     Put.of(
                         key,
                         StringStoreWorker.withStateAndId(
-                            "initial-state", "value", "CONTENTS-ID-1"))));
-    assertThat(store().getValue(branch, key)).isEqualTo("initial-state|value@CONTENTS-ID-1");
-    assertThat(store().getValue(ancestor, key)).isEqualTo("initial-state|value@CONTENTS-ID-1");
+                            "initial-state", "value", "CONTENT-ID-1"))));
+    assertThat(store().getValue(branch, key)).isEqualTo("initial-state|value@CONTENT-ID-1");
+    assertThat(store().getValue(ancestor, key)).isEqualTo("initial-state|value@CONTENT-ID-1");
 
     Hash delete =
         store().commit(branch, Optional.empty(), "drop table", ImmutableList.of(Delete.of(key)));
@@ -247,11 +247,11 @@ public abstract class AbstractVersionStoreTest extends AbstractITVersionStore {
                     Put.of(
                         key,
                         StringStoreWorker.withStateAndId(
-                            "recreate-state", "value", "CONTENTS-ID-DIFFERENT"))));
+                            "recreate-state", "value", "CONTENT-ID-DIFFERENT"))));
     assertThat(store().getValue(branch, key))
-        .isEqualTo("recreate-state|value@CONTENTS-ID-DIFFERENT");
+        .isEqualTo("recreate-state|value@CONTENT-ID-DIFFERENT");
     assertThat(store().getValue(recreate, key))
-        .isEqualTo("recreate-state|value@CONTENTS-ID-DIFFERENT");
+        .isEqualTo("recreate-state|value@CONTENT-ID-DIFFERENT");
   }
 
   enum DuplicateTableMode {
@@ -264,26 +264,26 @@ public abstract class AbstractVersionStoreTest extends AbstractITVersionStore {
     /**
      * Stateful tables (think: Iceberg).
      *
-     * <p>Global state uses the table's {@link Key} + {@code Contents.id} as the global key.
+     * <p>Global state uses the table's {@link Key} + {@code Content.id} as the global key.
      *
-     * <p>Means: creating a table with the same key and same contents-id on different branches does
+     * <p>Means: creating a table with the same key and same content-id on different branches does
      * fail.
      */
-    STATEFUL_SAME_CONTENTS_ID,
+    STATEFUL_SAME_CONTENT_ID,
     /**
      * Stateful tables (think: Iceberg).
      *
-     * <p>Global state uses the table's {@link Key} + {@code Contents.id} as the global key.
+     * <p>Global state uses the table's {@link Key} + {@code Content.id} as the global key.
      *
-     * <p>Means: creating a table with the same key but different contents-ids on different branches
+     * <p>Means: creating a table with the same key but different content-ids on different branches
      * does work.
      */
-    STATEFUL_DIFFERENT_CONTENTS_ID
+    STATEFUL_DIFFERENT_CONTENT_ID
   }
 
   /**
-   * Test behavior when a table (contents-key) is created on two different branches using either
-   * table-types with and without global-states and same/different contents-ids.
+   * Test behavior when a table (content-key) is created on two different branches using either
+   * table-types with and without global-states and same/different content-ids.
    */
   @ParameterizedTest
   @EnumSource(value = DuplicateTableMode.class)
@@ -321,37 +321,35 @@ public abstract class AbstractVersionStoreTest extends AbstractITVersionStore {
         putForBranch1 = ImmutableList.of(Put.of(key, valuebranch1));
         putForBranch2 = ImmutableList.of(Put.of(key, valuebranch2));
         break;
-      case STATEFUL_SAME_CONTENTS_ID:
+      case STATEFUL_SAME_CONTENT_ID:
         valuebranch1 =
-            StringStoreWorker.withStateAndId("state", "create table", "contents-id-equal");
+            StringStoreWorker.withStateAndId("state", "create table", "content-id-equal");
         valuebranch2 =
-            StringStoreWorker.withStateAndId("state", "create table", "contents-id-equal");
+            StringStoreWorker.withStateAndId("state", "create table", "content-id-equal");
         putForBranch1 =
             singletonList(
                 Put.of(
                     key,
-                    StringStoreWorker.withStateAndId(
-                        "state", "create table", "contents-id-equal")));
+                    StringStoreWorker.withStateAndId("state", "create table", "content-id-equal")));
         putForBranch2 =
             singletonList(
                 Put.of(
                     key,
-                    StringStoreWorker.withStateAndId(
-                        "state", "create table", "contents-id-equal")));
+                    StringStoreWorker.withStateAndId("state", "create table", "content-id-equal")));
         break;
-      case STATEFUL_DIFFERENT_CONTENTS_ID:
-        valuebranch1 = StringStoreWorker.withStateAndId("state", "create table", "contents-id-1");
-        valuebranch2 = StringStoreWorker.withStateAndId("state", "create table", "contents-id-2");
+      case STATEFUL_DIFFERENT_CONTENT_ID:
+        valuebranch1 = StringStoreWorker.withStateAndId("state", "create table", "content-id-1");
+        valuebranch2 = StringStoreWorker.withStateAndId("state", "create table", "content-id-2");
         putForBranch1 =
             singletonList(
                 Put.of(
                     key,
-                    StringStoreWorker.withStateAndId("state", "create table", "contents-id-1")));
+                    StringStoreWorker.withStateAndId("state", "create table", "content-id-1")));
         putForBranch2 =
             singletonList(
                 Put.of(
                     key,
-                    StringStoreWorker.withStateAndId("state", "create table", "contents-id-2")));
+                    StringStoreWorker.withStateAndId("state", "create table", "content-id-2")));
         break;
       default:
         throw new IllegalStateException();
@@ -365,10 +363,10 @@ public abstract class AbstractVersionStoreTest extends AbstractITVersionStore {
             store()
                 .commit(branch2, Optional.empty(), "create table on other branch", putForBranch2);
 
-    if (mode == DuplicateTableMode.STATEFUL_SAME_CONTENTS_ID) {
+    if (mode == DuplicateTableMode.STATEFUL_SAME_CONTENT_ID) {
       assertThatThrownBy(createTableOnOtherBranch)
           .isInstanceOf(ReferenceConflictException.class)
-          .hasMessage("Global-state for contents-id 'contents-id-equal' already exists.");
+          .hasMessage("Global-state for content-id 'content-id-equal' already exists.");
       assertThat(store().getValue(branch2, key)).isNull();
     } else {
       createTableOnOtherBranch.call();

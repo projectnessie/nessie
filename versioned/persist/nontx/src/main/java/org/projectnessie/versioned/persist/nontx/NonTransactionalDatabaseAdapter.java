@@ -56,17 +56,17 @@ import org.projectnessie.versioned.VersionStoreException;
 import org.projectnessie.versioned.WithHash;
 import org.projectnessie.versioned.persist.adapter.CommitAttempt;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
-import org.projectnessie.versioned.persist.adapter.ContentsAndState;
-import org.projectnessie.versioned.persist.adapter.ContentsId;
-import org.projectnessie.versioned.persist.adapter.ContentsIdAndBytes;
-import org.projectnessie.versioned.persist.adapter.ContentsIdWithType;
+import org.projectnessie.versioned.persist.adapter.ContentAndState;
+import org.projectnessie.versioned.persist.adapter.ContentId;
+import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
+import org.projectnessie.versioned.persist.adapter.ContentIdWithType;
 import org.projectnessie.versioned.persist.adapter.Difference;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyWithType;
 import org.projectnessie.versioned.persist.adapter.spi.AbstractDatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.spi.TryLoopState;
-import org.projectnessie.versioned.persist.serialize.AdapterTypes.ContentsIdWithBytes;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.ContentIdWithBytes;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefPointer;
@@ -82,7 +82,7 @@ import org.projectnessie.versioned.persist.serialize.ProtoSerialization;
  *   <li><em>Global state pointer</em> points to the current HEAD in the <em>global state log</em>
  *       and also contains all named-references and their current HEADs.
  *   <li><em>Global state log entry</em> is organized as a linked list and contains the new global
- *       states for all contents-keys and a (list of) its parents..
+ *       states for all content-keys and a (list of) its parents..
  *   <li><em>Commit log entry</em> is organized as a linked list and contains the changes to
  *       content-keys, the commit-metadata and a (list of) its parents.
  * </ul>
@@ -102,7 +102,7 @@ public abstract class NonTransactionalDatabaseAdapter<
   }
 
   @Override
-  public Map<Key, ContentsAndState<ByteString>> values(
+  public Map<Key, ContentAndState<ByteString>> values(
       Hash commit, Collection<Key> keys, KeyFilterPredicate keyFilter)
       throws ReferenceNotFoundException {
     return fetchValues(NON_TRANSACTIONAL_OPERATION_CONTEXT, commit, keys, keyFilter);
@@ -241,7 +241,7 @@ public abstract class NonTransactionalDatabaseAdapter<
                     timeInMicros,
                     Hash.of(pointer.getGlobalId()),
                     commitAttempt.getGlobal().entrySet().stream()
-                        .map(e -> ContentsIdAndBytes.of(e.getKey(), (byte) 0, e.getValue()))
+                        .map(e -> ContentIdAndBytes.of(e.getKey(), (byte) 0, e.getValue()))
                         .collect(Collectors.toList()));
 
             return updateNamedRef(
@@ -378,33 +378,33 @@ public abstract class NonTransactionalDatabaseAdapter<
   }
 
   @Override
-  public Stream<ContentsIdWithType> globalKeys(ToIntFunction<ByteString> contentsTypeExtractor) {
+  public Stream<ContentIdWithType> globalKeys(ToIntFunction<ByteString> contentTypeExtractor) {
     NonTransactionalOperationContext ctx = NON_TRANSACTIONAL_OPERATION_CONTEXT;
 
     GlobalStatePointer pointer = fetchGlobalPointer(ctx);
 
     return globalLogFetcher(ctx, Hash.of(pointer.getGlobalId()))
         .flatMap(e -> e.getPutsList().stream())
-        .map(ProtoSerialization::protoToContentsIdAndBytes)
-        .map(ContentsIdAndBytes::asIdWithType)
+        .map(ProtoSerialization::protoToContentIdAndBytes)
+        .map(ContentIdAndBytes::asIdWithType)
         .distinct();
   }
 
   @Override
-  public Stream<ContentsIdAndBytes> globalContents(
-      Set<ContentsId> keys, ToIntFunction<ByteString> contentsTypeExtractor) {
+  public Stream<ContentIdAndBytes> globalContent(
+      Set<ContentId> keys, ToIntFunction<ByteString> contentTypeExtractor) {
     NonTransactionalOperationContext ctx = NON_TRANSACTIONAL_OPERATION_CONTEXT;
 
     GlobalStatePointer pointer = fetchGlobalPointer(ctx);
 
-    HashSet<ContentsId> remaining = new HashSet<>(keys);
+    HashSet<ContentId> remaining = new HashSet<>(keys);
 
     Stream<GlobalStateLogEntry> stream = globalLogFetcher(ctx, Hash.of(pointer.getGlobalId()));
 
     return takeUntilIncludeLast(stream, x -> remaining.isEmpty())
         .flatMap(e -> e.getPutsList().stream())
-        .map(ProtoSerialization::protoToContentsIdAndBytes)
-        .filter(kct -> remaining.remove(kct.getContentsId()));
+        .map(ProtoSerialization::protoToContentIdAndBytes)
+        .filter(kct -> remaining.remove(kct.getContentId()));
   }
 
   // /////////////////////////////////////////////////////////////////////////////////////////////
@@ -608,7 +608,7 @@ public abstract class NonTransactionalDatabaseAdapter<
       NonTransactionalOperationContext ctx,
       long timeInMicros,
       Hash parentHash,
-      List<ContentsIdAndBytes> globals)
+      List<ContentIdAndBytes> globals)
       throws ReferenceConflictException {
     GlobalStateLogEntry currentEntry = fetchFromGlobalLog(ctx, parentHash);
 
@@ -695,23 +695,23 @@ public abstract class NonTransactionalDatabaseAdapter<
   protected abstract GlobalStatePointer fetchGlobalPointer(NonTransactionalOperationContext ctx);
 
   @Override
-  protected Map<ContentsId, ByteString> fetchGlobalStates(
-      NonTransactionalOperationContext ctx, Set<ContentsId> contentsIds) {
-    if (contentsIds.isEmpty()) {
+  protected Map<ContentId, ByteString> fetchGlobalStates(
+      NonTransactionalOperationContext ctx, Set<ContentId> contentIds) {
+    if (contentIds.isEmpty()) {
       return Collections.emptyMap();
     }
 
-    Set<ContentsId> remainingIds = new HashSet<>(contentsIds);
+    Set<ContentId> remainingIds = new HashSet<>(contentIds);
     Hash globalHead = Hash.of(fetchGlobalPointer(ctx).getGlobalId());
 
     Stream<GlobalStateLogEntry> log = globalLogFetcher(ctx, globalHead);
 
     return takeUntilExcludeLast(log, x -> remainingIds.isEmpty())
         .flatMap(e -> e.getPutsList().stream())
-        .filter(put -> remainingIds.remove(ContentsId.of(put.getContentsId().getId())))
+        .filter(put -> remainingIds.remove(ContentId.of(put.getContentId().getId())))
         .collect(
             Collectors.toMap(
-                e -> ContentsId.of(e.getContentsId().getId()), ContentsIdWithBytes::getValue));
+                e -> ContentId.of(e.getContentId().getId()), ContentIdWithBytes::getValue));
   }
 
   /** Reads from the global-state-log starting at the given global-state-log-ID. */

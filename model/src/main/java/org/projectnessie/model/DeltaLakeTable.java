@@ -27,7 +27,7 @@ import org.immutables.value.Value;
 @JsonSerialize(as = ImmutableDeltaLakeTable.class)
 @JsonDeserialize(as = ImmutableDeltaLakeTable.class)
 @JsonTypeName("DELTA_LAKE_TABLE")
-public abstract class DeltaLakeTable extends Contents {
+public abstract class DeltaLakeTable extends Content {
 
   @NotNull
   public abstract List<String> getMetadataLocationHistory();

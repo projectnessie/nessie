@@ -43,9 +43,9 @@ public interface EntriesResponse extends PaginatedResponse {
     }
 
     @NotNull
-    Contents.Type getType();
+    Content.Type getType();
 
     @NotNull
-    ContentsKey getName();
+    ContentKey getName();
   }
 }

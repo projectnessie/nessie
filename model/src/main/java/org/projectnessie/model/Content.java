@@ -26,10 +26,10 @@ import org.eclipse.microprofile.openapi.annotations.media.DiscriminatorMapping;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
 
-/** Abstract implementation of contents within Nessie. */
+/** Base class for an object stored within Nessie. */
 @Schema(
     type = SchemaType.OBJECT,
-    title = "Contents",
+    title = "Content",
     oneOf = {IcebergTable.class, DeltaLakeTable.class, SqlView.class},
     discriminatorMapping = {
       @DiscriminatorMapping(value = "ICEBERG_TABLE", schema = IcebergTable.class),
@@ -39,7 +39,7 @@ import org.immutables.value.Value;
     discriminatorProperty = "type")
 @JsonSubTypes({@Type(IcebergTable.class), @Type(DeltaLakeTable.class), @Type(SqlView.class)})
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
-public abstract class Contents {
+public abstract class Content {
 
   public enum Type {
     UNKNOWN,
@@ -51,8 +51,8 @@ public abstract class Contents {
   /**
    * Unique id for this object.
    *
-   * <p>This id is unique for the entire lifetime of this Contents object and persists across
-   * renames. Two contents with the same key will have different id.
+   * <p>This id is unique for the entire lifetime of this Content object and persists across
+   * renames. Two content objects with the same key will have different id.
    */
   @Value.Default
   public String getId() {

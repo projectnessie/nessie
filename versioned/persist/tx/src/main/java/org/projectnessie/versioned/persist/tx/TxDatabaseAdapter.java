@@ -66,10 +66,10 @@ import org.projectnessie.versioned.VersionStoreException;
 import org.projectnessie.versioned.WithHash;
 import org.projectnessie.versioned.persist.adapter.CommitAttempt;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
-import org.projectnessie.versioned.persist.adapter.ContentsAndState;
-import org.projectnessie.versioned.persist.adapter.ContentsId;
-import org.projectnessie.versioned.persist.adapter.ContentsIdAndBytes;
-import org.projectnessie.versioned.persist.adapter.ContentsIdWithType;
+import org.projectnessie.versioned.persist.adapter.ContentAndState;
+import org.projectnessie.versioned.persist.adapter.ContentId;
+import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
+import org.projectnessie.versioned.persist.adapter.ContentIdWithType;
 import org.projectnessie.versioned.persist.adapter.Difference;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
@@ -118,7 +118,7 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
-  public Map<Key, ContentsAndState<ByteString>> values(
+  public Map<Key, ContentAndState<ByteString>> values(
       Hash commit, Collection<Key> keys, KeyFilterPredicate keyFilter)
       throws ReferenceNotFoundException {
     Connection conn = borrowConnection();
@@ -425,28 +425,28 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
-  public Stream<ContentsIdWithType> globalKeys(ToIntFunction<ByteString> contentsTypeExtractor) {
+  public Stream<ContentIdWithType> globalKeys(ToIntFunction<ByteString> contentTypeExtractor) {
     Connection conn = borrowConnection();
     return JdbcSelectSpliterator.buildStream(
             conn,
             SqlStatements.SELECT_GLOBAL_STATE_ALL,
             ps -> ps.setString(1, config.getKeyPrefix()),
             (rs) -> {
-              ContentsId contentsId = ContentsId.of(rs.getString(1));
+              ContentId contentId = ContentId.of(rs.getString(1));
               byte[] value = rs.getBytes(2);
               byte type =
-                  (byte) contentsTypeExtractor.applyAsInt(UnsafeByteOperations.unsafeWrap(value));
+                  (byte) contentTypeExtractor.applyAsInt(UnsafeByteOperations.unsafeWrap(value));
 
-              return ContentsIdWithType.of(contentsId, type);
+              return ContentIdWithType.of(contentId, type);
             })
         .onClose(() -> releaseConnection(conn));
   }
 
   @Override
-  public Stream<ContentsIdAndBytes> globalContents(
-      Set<ContentsId> keys, ToIntFunction<ByteString> contentsTypeExtractor) {
+  public Stream<ContentIdAndBytes> globalContent(
+      Set<ContentId> keys, ToIntFunction<ByteString> contentTypeExtractor) {
     // 1. Fetch the global states,
-    // 1.1. filter the requested keys + contents-ids
+    // 1.1. filter the requested keys + content-ids
     // 1.2. extract the current state from the GLOBAL_STATE table
 
     // 1. Fetch the global states,
@@ -457,21 +457,21 @@ public abstract class TxDatabaseAdapter
             ps -> {
               ps.setString(1, config.getKeyPrefix());
               int i = 2;
-              for (ContentsId key : keys) {
+              for (ContentId key : keys) {
                 ps.setString(i++, key.getId());
               }
             },
             (rs) -> {
-              ContentsId cid = ContentsId.of(rs.getString(1));
+              ContentId cid = ContentId.of(rs.getString(1));
               ByteString value = UnsafeByteOperations.unsafeWrap(rs.getBytes(2));
-              byte type = (byte) contentsTypeExtractor.applyAsInt(value);
+              byte type = (byte) contentTypeExtractor.applyAsInt(value);
               if (!keys.contains(cid)) {
-                // 1.1. filter the requested keys + contents-ids
+                // 1.1. filter the requested keys + content-ids
                 return null;
               }
 
               // 1.2. extract the current state from the GLOBAL_STATE table
-              return ContentsIdAndBytes.of(cid, type, value);
+              return ContentIdAndBytes.of(cid, type, value);
             })
         .onClose(() -> releaseConnection(conn));
   }
@@ -739,12 +739,12 @@ public abstract class TxDatabaseAdapter
    * <p>The algorithm works like this:
    *
    * <ol>
-   *   <li>Try to update the existing {@code Key + Contents.id} rows in {@value
+   *   <li>Try to update the existing {@code Key + Content.id} rows in {@value
    *       SqlStatements#TABLE_GLOBAL_STATE}
    *       <ol>
    *         <li>Perform a {@code SELECT} on {@value SqlStatements#TABLE_GLOBAL_STATE} fetching all
    *             rows for the requested keys.
-   *         <li>Filter those rows that match the contents-ids
+   *         <li>Filter those rows that match the content-ids
    *         <li>Perform the {@code UPDATE} on {@value SqlStatements#TABLE_GLOBAL_STATE}. If the
    *             user requested to compare the current-global-state, perform a conditional update.
    *             Otherwise blindly update it.
@@ -762,7 +762,7 @@ public abstract class TxDatabaseAdapter
         sqlForManyPlaceholders(
             SqlStatements.SELECT_GLOBAL_STATE_MANY_WITH_LOGS, commitAttempt.getGlobal().size());
 
-    Set<ContentsId> newKeys = new HashSet<>(commitAttempt.getGlobal().keySet());
+    Set<ContentId> newKeys = new HashSet<>(commitAttempt.getGlobal().keySet());
 
     try (PreparedStatement psSelect = conn.prepareStatement(sql);
         PreparedStatement psUpdate = conn.prepareStatement(SqlStatements.UPDATE_GLOBAL_STATE);
@@ -773,26 +773,26 @@ public abstract class TxDatabaseAdapter
 
       psSelect.setString(1, config.getKeyPrefix());
       int i = 2;
-      for (ContentsId cid : commitAttempt.getGlobal().keySet()) {
+      for (ContentId cid : commitAttempt.getGlobal().keySet()) {
         psSelect.setString(i++, cid.getId());
       }
 
       try (ResultSet rs = psSelect.executeQuery()) {
         while (rs.next()) {
-          ContentsId contentsId = ContentsId.of(rs.getString(1));
+          ContentId contentId = ContentId.of(rs.getString(1));
 
           // 1.3. Use only those rows from the SELECT against the GLOBAL_STATE table that match the
-          // key + contents-id we need.
+          // key + content-id we need.
 
-          // contents-id exists -> not a new row
-          newKeys.remove(contentsId);
+          // content-id exists -> not a new row
+          newKeys.remove(contentId);
 
-          ByteString newState = commitAttempt.getGlobal().get(contentsId);
+          ByteString newState = commitAttempt.getGlobal().get(contentId);
 
           ByteString expected =
               commitAttempt
                   .getExpectedStates()
-                  .getOrDefault(contentsId, Optional.empty())
+                  .getOrDefault(contentId, Optional.empty())
                   .orElse(ByteString.EMPTY);
 
           // 1.4. Perform the UPDATE. If an expected-state is present, perform a "conditional"
@@ -810,7 +810,7 @@ public abstract class TxDatabaseAdapter
           ps.setString(2, newHash);
           ps.setLong(3, newCreatedAt);
           ps.setString(4, config.getKeyPrefix());
-          ps.setString(5, contentsId.getId());
+          ps.setString(5, contentId.getId());
           if (!expected.isEmpty()) {
             // Only perform a conditional update, if the client asked us to do so...
 
@@ -833,20 +833,20 @@ public abstract class TxDatabaseAdapter
       if (!newKeys.isEmpty()) {
         try (PreparedStatement psInsert =
             conn.prepareStatement(SqlStatements.INSERT_GLOBAL_STATE)) {
-          for (ContentsId contentsId : newKeys) {
-            ByteString newGlob = commitAttempt.getGlobal().get(contentsId);
+          for (ContentId contentId : newKeys) {
+            ByteString newGlob = commitAttempt.getGlobal().get(contentId);
             byte[] newGlobBytes = newGlob.toByteArray();
             @SuppressWarnings("UnstableApiUsage")
             String newHash = newHasher().putBytes(newGlobBytes).hash().toString();
 
-            if (contentsId == null) {
+            if (contentId == null) {
               throw new IllegalArgumentException(
                   String.format(
-                      "No contentsId in CommitAttempt.keyToContents contents-id '%s'", contentsId));
+                      "No contentId in CommitAttempt.keyToContent content-id '%s'", contentId));
             }
 
             psInsert.setString(1, config.getKeyPrefix());
-            psInsert.setString(2, contentsId.getId());
+            psInsert.setString(2, contentId.getId());
             psInsert.setString(3, newHash);
             psInsert.setBytes(4, newGlobBytes);
             psInsert.setLong(5, newCreatedAt);
@@ -864,8 +864,8 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
-  protected Map<ContentsId, ByteString> fetchGlobalStates(
-      Connection conn, Set<ContentsId> contentIds) {
+  protected Map<ContentId, ByteString> fetchGlobalStates(
+      Connection conn, Set<ContentId> contentIds) {
     if (contentIds.isEmpty()) {
       return Collections.emptyMap();
     }
@@ -875,18 +875,18 @@ public abstract class TxDatabaseAdapter
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
       ps.setString(1, config.getKeyPrefix());
       int i = 2;
-      for (ContentsId cid : contentIds) {
+      for (ContentId cid : contentIds) {
         ps.setString(i++, cid.getId());
       }
 
-      Map<ContentsId, ByteString> result = new HashMap<>();
+      Map<ContentId, ByteString> result = new HashMap<>();
       try (ResultSet rs = ps.executeQuery()) {
         while (rs.next()) {
-          ContentsId contentsId = ContentsId.of(rs.getString(1));
-          if (contentIds.contains(contentsId)) {
+          ContentId contentId = ContentId.of(rs.getString(1));
+          if (contentIds.contains(contentId)) {
             byte[] data = rs.getBytes(2);
             ByteString val = UnsafeByteOperations.unsafeWrap(data);
-            result.put(contentsId, val);
+            result.put(contentId, val);
           }
         }
       }
@@ -1178,8 +1178,8 @@ public abstract class TxDatabaseAdapter
     NAMED_REF,
     /** Column-type string for the named-reference-type (single char). */
     NAMED_REF_TYPE,
-    /** Column-type string for the contents-id. */
-    CONTENTS_ID,
+    /** Column-type string for the content-id. */
+    CONTENT_ID,
     /** Column-type string for an integer. */
     INTEGER
   }

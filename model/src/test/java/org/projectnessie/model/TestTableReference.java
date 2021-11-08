@@ -27,7 +27,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 public class TestTableReference {
 
-  static List<Object[]> fromContentsKeyTestCases() {
+  static List<Object[]> fromContentKeyTestCases() {
     return Arrays.asList(
         new Object[] {"simple_name", "simple_name", null, null, null},
         new Object[] {"`simple_name@ref`", "simple_name", "ref", null, null},
@@ -50,8 +50,8 @@ public class TestTableReference {
   }
 
   @ParameterizedTest
-  @MethodSource("fromContentsKeyTestCases")
-  public void fromContentsKey(
+  @MethodSource("fromContentKeyTestCases")
+  public void fromContentKey(
       String name,
       String expectedName,
       String expectedReference,

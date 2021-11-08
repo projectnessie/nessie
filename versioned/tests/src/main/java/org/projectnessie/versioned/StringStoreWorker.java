@@ -46,49 +46,49 @@ public final class StringStoreWorker implements StoreWorker<String, String, Test
 
   private StringStoreWorker() {}
 
-  public static String withStateAndId(String state, String value, String contentsId) {
-    return state + '|' + value + '@' + contentsId;
+  public static String withStateAndId(String state, String value, String contentId) {
+    return state + '|' + value + '@' + contentId;
   }
 
-  public static String withId(String value, String contentsId) {
-    return value + '@' + contentsId;
-  }
-
-  @Override
-  public ByteString toStoreOnReferenceState(String contents) {
-    int i = contents.indexOf('|');
-    if (i != -1) {
-      contents = contents.substring(i + 1);
-    }
-    return ByteString.copyFromUtf8(contents);
+  public static String withId(String value, String contentId) {
+    return value + '@' + contentId;
   }
 
   @Override
-  public ByteString toStoreGlobalState(String contents) {
-    int i = contents.indexOf('@');
-    String cid = contents.substring(i);
-    i = contents.indexOf('|');
+  public ByteString toStoreOnReferenceState(String content) {
+    int i = content.indexOf('|');
     if (i != -1) {
-      contents = contents.substring(0, i) + cid;
+      content = content.substring(i + 1);
     }
-    return ByteString.copyFromUtf8(contents);
+    return ByteString.copyFromUtf8(content);
+  }
+
+  @Override
+  public ByteString toStoreGlobalState(String content) {
+    int i = content.indexOf('@');
+    String cid = content.substring(i);
+    i = content.indexOf('|');
+    if (i != -1) {
+      content = content.substring(0, i) + cid;
+    }
+    return ByteString.copyFromUtf8(content);
   }
 
   @Override
   public String valueFromStore(ByteString onReferenceValue, Optional<ByteString> globalState) {
     return globalState
-        .map(bytes -> stripContentsId(bytes.toStringUtf8()) + '|' + onReferenceValue.toStringUtf8())
+        .map(bytes -> stripContentId(bytes.toStringUtf8()) + '|' + onReferenceValue.toStringUtf8())
         .orElseGet(onReferenceValue::toStringUtf8);
   }
 
   @Override
-  public String getId(String contents) {
-    int i = contents.indexOf('@');
-    return i != -1 ? contents.substring(i + 1) : "FIXED";
+  public String getId(String content) {
+    int i = content.indexOf('@');
+    return i != -1 ? content.substring(i + 1) : "FIXED";
   }
 
   @Override
-  public Byte getPayload(String contents) {
+  public Byte getPayload(String content) {
     return 0;
   }
 
@@ -101,8 +101,8 @@ public final class StringStoreWorker implements StoreWorker<String, String, Test
   }
 
   @Override
-  public boolean requiresGlobalState(String contents) {
-    return contents.indexOf('|') != -1 || contents.indexOf('@') != -1;
+  public boolean requiresGlobalState(String content) {
+    return content.indexOf('|') != -1 || content.indexOf('@') != -1;
   }
 
   @Override
@@ -110,7 +110,7 @@ public final class StringStoreWorker implements StoreWorker<String, String, Test
     return METADATA;
   }
 
-  private static String stripContentsId(String s) {
+  private static String stripContentId(String s) {
     int i = s.indexOf('@');
     return i == -1 ? s : s.substring(0, i);
   }
