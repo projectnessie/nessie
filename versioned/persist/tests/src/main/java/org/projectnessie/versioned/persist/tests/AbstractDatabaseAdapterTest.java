@@ -377,6 +377,26 @@ public abstract class AbstractDatabaseAdapterTest {
   }
 
   @Test
+  void nonExistentKeyPrefixTest(
+      @NessieDbAdapter(initializeRepo = false)
+          @NessieDbAdapterConfigItem(name = "key.prefix", value = "non-existent")
+          DatabaseAdapter nonExistent) {
+    assertAll(
+        () -> {
+          try (Stream<WithHash<NamedRef>> r = nonExistent.namedRefs()) {
+            assertThat(r).isEmpty();
+          }
+        },
+        () ->
+            assertThatThrownBy(
+                    () -> nonExistent.hashOnReference(BranchName.of("main"), Optional.empty()))
+                .isInstanceOf(ReferenceNotFoundException.class),
+        () ->
+            assertThatThrownBy(() -> nonExistent.toHash(BranchName.of("main")))
+                .isInstanceOf(ReferenceNotFoundException.class));
+  }
+
+  @Test
   void keyPrefixBasic(
       @NessieDbAdapter @NessieDbAdapterConfigItem(name = "key.prefix", value = "foo")
           DatabaseAdapter foo,

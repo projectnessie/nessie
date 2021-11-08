@@ -116,6 +116,9 @@ public abstract class NonTransactionalDatabaseAdapter<
   @Override
   public Stream<WithHash<NamedRef>> namedRefs() {
     GlobalStatePointer pointer = fetchGlobalPointer(NON_TRANSACTIONAL_OPERATION_CONTEXT);
+    if (pointer == null) {
+      return Stream.empty();
+    }
     return pointer.getNamedReferencesMap().entrySet().stream()
         .map(
             r ->
@@ -382,6 +385,9 @@ public abstract class NonTransactionalDatabaseAdapter<
     NonTransactionalOperationContext ctx = NON_TRANSACTIONAL_OPERATION_CONTEXT;
 
     GlobalStatePointer pointer = fetchGlobalPointer(ctx);
+    if (pointer == null) {
+      return Stream.empty();
+    }
 
     return globalLogFetcher(ctx, Hash.of(pointer.getGlobalId()))
         .flatMap(e -> e.getPutsList().stream())
@@ -396,6 +402,9 @@ public abstract class NonTransactionalDatabaseAdapter<
     NonTransactionalOperationContext ctx = NON_TRANSACTIONAL_OPERATION_CONTEXT;
 
     GlobalStatePointer pointer = fetchGlobalPointer(ctx);
+    if (pointer == null) {
+      return Stream.empty();
+    }
 
     HashSet<ContentId> remaining = new HashSet<>(keys);
 
@@ -560,6 +569,9 @@ public abstract class NonTransactionalDatabaseAdapter<
     try (TryLoopState tryState = newTryLoopState(retryErrorMessage, config)) {
       while (true) {
         GlobalStatePointer pointer = fetchGlobalPointer(ctx);
+        if (pointer == null) {
+          throw referenceNotFound(ref);
+        }
         Set<Hash> individualCommits = new HashSet<>();
         Set<Hash> individualKeyLists = new HashSet<>();
 
@@ -680,6 +692,9 @@ public abstract class NonTransactionalDatabaseAdapter<
    */
   protected static Hash branchHead(GlobalStatePointer pointer, NamedRef ref)
       throws ReferenceNotFoundException {
+    if (pointer == null) {
+      throw referenceNotFound(ref);
+    }
     RefPointer branchHead = pointer.getNamedReferencesMap().get(ref.getName());
     if (branchHead == null || !ref.equals(toNamedRef(branchHead.getType(), ref.getName()))) {
       throw referenceNotFound(ref);
@@ -702,7 +717,11 @@ public abstract class NonTransactionalDatabaseAdapter<
     }
 
     Set<ContentId> remainingIds = new HashSet<>(contentIds);
-    Hash globalHead = Hash.of(fetchGlobalPointer(ctx).getGlobalId());
+    GlobalStatePointer pointer = fetchGlobalPointer(ctx);
+    if (pointer == null) {
+      return Collections.emptyMap();
+    }
+    Hash globalHead = Hash.of(pointer.getGlobalId());
 
     Stream<GlobalStateLogEntry> log = globalLogFetcher(ctx, globalHead);
 
