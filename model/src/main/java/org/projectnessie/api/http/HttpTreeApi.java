@@ -15,7 +15,6 @@
  */
 package org.projectnessie.api.http;
 
-import java.util.List;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -28,7 +27,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -39,6 +37,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.params.EntriesParams;
+import org.projectnessie.api.params.ReferencesParams;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -47,6 +46,7 @@ import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Merge;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
+import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.Transplant;
 
 @Consumes(value = MediaType.APPLICATION_JSON)
@@ -64,10 +64,11 @@ public interface HttpTreeApi extends TreeApi {
         content =
             @Content(
                 mediaType = MediaType.APPLICATION_JSON,
-                schema = @Schema(type = SchemaType.ARRAY, implementation = Reference.class))),
+                examples = {@ExampleObject(ref = "referencesResponse")},
+                schema = @Schema(implementation = ReferencesResponse.class))),
     @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
   })
-  List<Reference> getAllReferences();
+  ReferencesResponse getAllReferences(@BeanParam ReferencesParams params);
 
   @Override
   @GET

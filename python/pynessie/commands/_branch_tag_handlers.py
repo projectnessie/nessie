@@ -82,7 +82,7 @@ def handle_branch_tag(
 
 
 def _handle_list(nessie: NessieClient, json: bool, verbose: bool, is_branch: bool, ref_name: str) -> str:
-    results = nessie.list_references()
+    results = nessie.list_references().references
     kept_results = [ref for ref in results if isinstance(ref, (Branch if is_branch else Tag))]
     if ref_name:
         kept_results = [i for i in kept_results if i.name == ref_name]

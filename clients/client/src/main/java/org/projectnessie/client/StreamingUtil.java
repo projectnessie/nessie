@@ -26,12 +26,30 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.LogResponse;
+import org.projectnessie.model.Reference;
+import org.projectnessie.model.ReferencesResponse;
 
 /** Helper and utility methods around streaming of {@link NessieApiV1} et al. */
 public final class StreamingUtil {
 
   private StreamingUtil() {
     // intentionally blank
+  }
+
+  /**
+   * Default implementation to return a stream of references, functionally equivalent to calling
+   * {@link NessieApiV1#getAllReferences()} with manual paging.
+   *
+   * @return stream of {@link Reference} objects
+   */
+  public static Stream<Reference> getAllReferencesStream(
+      @NotNull NessieApiV1 api, OptionalInt maxRecords) throws NessieNotFoundException {
+
+    return new ResultStreamPaginator<>(
+            ReferencesResponse::getReferences,
+            (r, pageSize, token) ->
+                builderWithPaging(api.getAllReferences(), pageSize, token).get())
+        .generateStream(null, maxRecords);
   }
 
   /**
@@ -55,8 +73,10 @@ public final class StreamingUtil {
     return new ResultStreamPaginator<>(
             EntriesResponse::getEntries,
             (ref1, pageSize, token) ->
-                builderWithPagedQuery(
-                        api.getEntries(), ref1, hashOnRef, pageSize, token, queryExpression)
+                builderWithPaging(api.getEntries(), pageSize, token)
+                    .refName(ref1)
+                    .hashOnRef(hashOnRef)
+                    .queryExpression(queryExpression)
                     .get())
         .generateStream(ref, maxRecords);
   }
@@ -83,21 +103,17 @@ public final class StreamingUtil {
     return new ResultStreamPaginator<>(
             LogResponse::getOperations,
             (reference, pageSize, token) ->
-                builderWithPagedQuery(
-                        api.getCommitLog(), reference, hashOnRef, pageSize, token, queryExpression)
+                builderWithPaging(api.getCommitLog(), pageSize, token)
+                    .refName(reference)
+                    .hashOnRef(hashOnRef)
+                    .queryExpression(queryExpression)
                     .untilHash(untilHash)
                     .get())
         .generateStream(ref, maxRecords);
   }
 
-  private static <B extends PagingBuilder<B>> B builderWithPagedQuery(
-      B builder,
-      String reference,
-      String hashOnRef,
-      Integer pageSize,
-      String token,
-      String queryExpression) {
-    builder.refName(reference).hashOnRef(hashOnRef).queryExpression(queryExpression);
+  private static <B extends PagingBuilder<B>> B builderWithPaging(
+      B builder, Integer pageSize, String token) {
     if (pageSize != null) {
       builder.maxRecords(pageSize);
     }

@@ -15,16 +15,8 @@
  */
 package org.projectnessie.client.api;
 
-import org.projectnessie.model.EntriesResponse;
+public interface QueryBuilder<R extends QueryBuilder<R>> {
 
-public interface PagingBuilder<R extends PagingBuilder<R>> {
-
-  /** Recommended: specify the maximum number of records to return. */
-  R maxRecords(int maxRecords);
-
-  /**
-   * For paged requests: pass the {@link EntriesResponse#getToken()} from the previous request,
-   * otherwise don't call this method.
-   */
-  R pageToken(String pageToken);
+  /** Required: the <a href="https://github.com/projectnessie/cel-java">CEL</a> script. */
+  R queryExpression(String queryExpression);
 }

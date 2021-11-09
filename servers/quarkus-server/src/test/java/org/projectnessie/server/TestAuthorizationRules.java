@@ -149,11 +149,11 @@ class TestAuthorizationRules extends BaseClientAuthTest {
 
   private void listAllReferences(String branchName, boolean filteredOut) {
     if (filteredOut) {
-      assertThat(api().getAllReferences().get())
+      assertThat(api().getAllReferences().get().getReferences())
           .extracting(Reference::getName)
           .doesNotContain(branchName);
     } else {
-      assertThat(api().getAllReferences().get())
+      assertThat(api().getAllReferences().get().getReferences())
           .extracting(Reference::getName)
           .contains(branchName);
     }

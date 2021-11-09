@@ -26,7 +26,10 @@ import org.projectnessie.model.Validation;
  *
  * @since {@link NessieApiV1}
  */
-public interface GetCommitLogBuilder extends PagingBuilder<GetCommitLogBuilder> {
+public interface GetCommitLogBuilder
+    extends QueryBuilder<GetCommitLogBuilder>,
+        PagingBuilder<GetCommitLogBuilder>,
+        OnReferenceBuilder<GetCommitLogBuilder> {
   GetCommitLogBuilder untilHash(
       @Nullable @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String untilHash);

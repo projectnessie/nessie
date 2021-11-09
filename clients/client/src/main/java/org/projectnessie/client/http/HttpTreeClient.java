@@ -15,13 +15,12 @@
  */
 package org.projectnessie.client.http;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import org.projectnessie.api.http.HttpTreeApi;
 import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.params.EntriesParams;
+import org.projectnessie.api.params.ReferencesParams;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -30,12 +29,10 @@ import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Merge;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
+import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.Transplant;
 
 class HttpTreeClient implements HttpTreeApi {
-
-  private static final TypeReference<List<Reference>> REFERENCE_LIST =
-      new TypeReference<List<Reference>>() {};
 
   private final HttpClient client;
 
@@ -44,8 +41,14 @@ class HttpTreeClient implements HttpTreeApi {
   }
 
   @Override
-  public List<Reference> getAllReferences() {
-    return client.newRequest().path("trees").get().readEntity(REFERENCE_LIST);
+  public ReferencesResponse getAllReferences(ReferencesParams params) {
+    return client
+        .newRequest()
+        .path("trees")
+        .queryParam("max", params.maxRecords() != null ? params.maxRecords().toString() : null)
+        .queryParam("pageToken", params.pageToken())
+        .get()
+        .readEntity(ReferencesResponse.class);
   }
 
   @Override

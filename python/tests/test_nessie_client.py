@@ -30,7 +30,7 @@ def test_client_interface_e2e() -> None:
     client = init()
     assert isinstance(client.get_base_url(), str)
     assert client.get_base_url() == "http://localhost:19120/api/v1"
-    references = client.list_references()
+    references = client.list_references().references
     assert len(references) == 1
     assert references[0] == Branch("main", references[0].hash_)
     main_name = references[0].name
@@ -38,7 +38,7 @@ def test_client_interface_e2e() -> None:
     with pytest.raises(NessieConflictException):
         client.create_branch("main")
     created_reference = client.create_branch("test", main_name, main_commit)
-    references = client.list_references()
+    references = client.list_references().references
     assert len(references) == 2
     assert next(i for i in references if i.name == "main") == Branch("main", main_commit)
     assert next(i for i in references if i.name == "test") == Branch("test", main_commit)
@@ -48,5 +48,5 @@ def test_client_interface_e2e() -> None:
     assert isinstance(tables, Entries)
     assert len(tables.entries) == 0
     client.delete_branch("test", main_commit)
-    references = client.list_references()
+    references = client.list_references().references
     assert len(references) == 1

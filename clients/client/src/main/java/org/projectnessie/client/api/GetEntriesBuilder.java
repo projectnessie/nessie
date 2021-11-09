@@ -23,7 +23,10 @@ import org.projectnessie.model.EntriesResponse;
  *
  * @since {@link NessieApiV1}
  */
-public interface GetEntriesBuilder extends PagingBuilder<GetEntriesBuilder> {
+public interface GetEntriesBuilder
+    extends QueryBuilder<GetEntriesBuilder>,
+        PagingBuilder<GetEntriesBuilder>,
+        OnReferenceBuilder<GetEntriesBuilder> {
 
   GetEntriesBuilder namespaceDepth(Integer namespaceDepth);
 
