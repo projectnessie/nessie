@@ -17,9 +17,12 @@ package org.projectnessie.tools.contentgenerator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.http.HttpClientBuilder;
+import org.projectnessie.model.Content;
 import org.projectnessie.tools.contentgenerator.cli.NessieContentGenerator;
 
 class ITGenerateContent {
@@ -29,21 +32,33 @@ class ITGenerateContent {
   static final String NESSIE_API_URI =
       String.format("http://localhost:%d/api/v1", NESSIE_HTTP_PORT);
 
-  @Test
-  void basicGenerateContentTest() throws Exception {
-    int numCommits = 20;
+  @ParameterizedTest
+  @EnumSource(Content.Type.class)
+  void basicGenerateContentTest(Content.Type contentType) throws Exception {
+    Assumptions.assumeTrue(contentType != Content.Type.UNKNOWN);
 
-    assertThat(
-            NessieContentGenerator.runMain(
-                new String[] {
-                  "generate", "-n", Integer.toString(numCommits), "-u", NESSIE_API_URI
-                }))
-        .isEqualTo(0);
+    int numCommits = 20;
 
     try (NessieApiV1 api =
         HttpClientBuilder.builder().withUri(NESSIE_API_URI).build(NessieApiV1.class)) {
+
+      String testCaseBranch = "type_" + contentType.name();
+
       assertThat(
-              api.getCommitLog().refName(api.getConfig().getDefaultBranch()).get().getOperations())
+              NessieContentGenerator.runMain(
+                  new String[] {
+                    "generate",
+                    "-n",
+                    Integer.toString(numCommits),
+                    "-u",
+                    NESSIE_API_URI,
+                    "-D",
+                    testCaseBranch,
+                    "--type=" + contentType.name()
+                  }))
+          .isEqualTo(0);
+
+      assertThat(api.getCommitLog().refName(testCaseBranch).get().getOperations())
           .hasSize(numCommits);
     }
   }

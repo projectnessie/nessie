@@ -27,12 +27,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.validation.constraints.Min;
+import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.error.BaseNessieClientServerException;
+import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
 import org.projectnessie.model.ImmutableIcebergTable;
 import org.projectnessie.model.ImmutableSqlView;
@@ -59,6 +62,12 @@ public class GenerateContent extends AbstractCommand {
       defaultValue = "0",
       description = "Probability to create a new tag off the last commit.")
   private double newTagProbability;
+
+  @Option(
+      names = {"-D", "--default-branch"},
+      description =
+          "Name of the default branch, uses the server's default branch if not specified.")
+  private String defaultBranchName;
 
   @Min(value = 1, message = "Must create at least one commit.")
   @Option(
@@ -121,7 +130,25 @@ public class GenerateContent extends AbstractCommand {
                         Integer.toString(i)))
             .collect(Collectors.toList());
 
-    Branch defaultBranch = api.getDefaultBranch();
+    Branch defaultBranch;
+    if (defaultBranchName == null) {
+      // Use the server's default branch.
+      defaultBranch = api.getDefaultBranch();
+    } else {
+      // Use the specified default branch.
+      try {
+        defaultBranch = (Branch) api.getReference().refName(defaultBranchName).get();
+      } catch (NessieReferenceNotFoundException e) {
+        // Create branch if it does not exist.
+        defaultBranch = api.getDefaultBranch();
+        defaultBranch =
+            (Branch)
+                api.createReference()
+                    .reference(Branch.of(defaultBranchName, defaultBranch.getHash()))
+                    .sourceRefName(defaultBranch.getName())
+                    .create();
+      }
+    }
 
     List<String> branches = new ArrayList<>();
     branches.add(defaultBranch.getName());
@@ -148,7 +175,8 @@ public class GenerateContent extends AbstractCommand {
 
       ContentKey tableName = tableNames.get(random.nextInt(tableNames.size()));
 
-      Content tableContents = api.getContent().key(tableName).get().get(tableName);
+      Content tableContents =
+          api.getContent().refName(branchName).key(tableName).get().get(tableName);
       Content newContents = createContents(tableContents, random);
 
       spec.commandLine()
@@ -157,7 +185,7 @@ public class GenerateContent extends AbstractCommand {
               "Committing content-key '%s' to branch '%s' at %s%n",
               tableName, commitToBranch.getName(), commitToBranch.getHash());
 
-      Branch newHead =
+      CommitMultipleOperationsBuilder commit =
           api.commitMultipleOperations()
               .branch(commitToBranch)
               .commitMeta(
@@ -172,9 +200,13 @@ public class GenerateContent extends AbstractCommand {
                               numCommits))
                       .author(System.getProperty("user.name"))
                       .authorTime(Instant.now())
-                      .build())
-              .operation(Put.of(tableName, newContents, tableContents))
-              .commit();
+                      .build());
+      if (newContents instanceof IcebergTable) {
+        commit.operation(Put.of(tableName, newContents, tableContents));
+      } else {
+        commit.operation(Put.of(tableName, newContents));
+      }
+      Branch newHead = commit.commit();
 
       if (random.nextDouble() < newTagProbability) {
         Tag tag = Tag.of("new-tag-" + random.nextLong(), newHead.getHash());
@@ -212,13 +244,20 @@ public class GenerateContent extends AbstractCommand {
             ImmutableDeltaLakeTable.builder()
                 .lastCheckpoint("Last checkpoint foo bar " + random.nextLong())
                 .addMetadataLocationHistory("metadata location history " + random.nextLong());
+        for (int i = 0; i < random.nextInt(4); i++) {
+          deltaBuilder
+              .lastCheckpoint("Another checkpoint " + random.nextLong())
+              .addMetadataLocationHistory("Another metadata location " + random.nextLong());
+        }
         if (currentContents != null) {
           deltaBuilder.id(currentContents.getId());
         }
         return deltaBuilder.build();
       case VIEW:
         ImmutableSqlView.Builder viewBuilder =
-            ImmutableSqlView.builder().dialect(Dialect.SPARK).sqlText("SELECT blah FROM meh;");
+            ImmutableSqlView.builder()
+                .dialect(Dialect.values()[random.nextInt(Dialect.values().length)])
+                .sqlText("SELECT blah FROM meh;");
         if (currentContents != null) {
           viewBuilder.id(currentContents.getId());
         }
