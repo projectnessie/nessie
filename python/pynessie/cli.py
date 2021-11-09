@@ -42,7 +42,7 @@ def _print_version(ctx: Any, param: Any, value: Any) -> None:
     ctx.exit()
 
 
-@click.group()
+@click.group("nessie")
 @click.option("--json", is_flag=True, help="write output in json format.")
 @click.option("-v", "--verbose", is_flag=True, help="Verbose output.")
 @click.option("--endpoint", help="Optional endpoint, if different from config file.")

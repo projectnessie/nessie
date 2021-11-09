@@ -17,8 +17,6 @@
 #
 """Tests for `pynessie` package."""
 import itertools
-import os
-from pathlib import Path
 
 import confuse
 import pytest
@@ -37,8 +35,8 @@ from .conftest import execute_cli_command, make_commit
 @pytest.mark.vcr
 def test_command_line_interface() -> None:
     """Test the CLI."""
-    assert "Usage: cli" in execute_cli_command([])
-    assert "Usage: cli" in execute_cli_command(["--help"])
+    assert "Usage: nessie" in execute_cli_command([])
+    assert "Usage: nessie" in execute_cli_command(["--help"])
     assert __version__ in execute_cli_command(["--version"])
     references = ReferenceSchema().loads(execute_cli_command(["--json", "branch", "-l"]), many=True)
     assert len(references) == 1
@@ -48,7 +46,7 @@ def test_command_line_interface() -> None:
 
 def test_config_options() -> None:
     """Ensure config cli option is consistent."""
-    assert "Usage: cli" in execute_cli_command(["config"])
+    assert "Usage: nessie" in execute_cli_command(["config"])
     vars_to_add = ["--add x", "--get x", "--list", "--unset x"]
     for i in itertools.permutations(vars_to_add, 2):
         assert "Error: Illegal usage: " in execute_cli_command(["config"] + [*i[0].split(" "), *i[1].split(" ")], ret_val=2)
@@ -241,18 +239,3 @@ def test_transplant() -> None:
 
     logs = simplejson.loads(execute_cli_command(["--json", "log"]))
     assert len(logs) == 2  # two commits were transplanted into an empty `main`
-
-
-@pytest.mark.doc
-def test_all_help_options() -> None:
-    """Write out all help options to std out."""
-    args = ["", "config", "branch", "tag", "remote", "log", "merge", "cherry-pick", "content"]
-
-    for i in args:
-        result = execute_cli_command([x for x in [i] if x] + ["--help"])
-        cwd = os.getcwd()
-        with open(Path(Path(cwd), "docs", "{}.rst".format(i if i else "main")), "w", encoding="UTF-8") as f:
-            f.write(".. code-block:: bash\n\n\t")
-            for line in result.split("\n"):
-                f.write(line + "\n\t")
-            f.write("\n\n")
