@@ -46,10 +46,13 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
     ObjectTypes.Content.Builder builder = ObjectTypes.Content.newBuilder().setId(content.getId());
     if (content instanceof IcebergTable) {
       IcebergTable state = (IcebergTable) content;
-      ObjectTypes.IcebergMetadataPointer.Builder stateBuilder =
-          ObjectTypes.IcebergMetadataPointer.newBuilder()
-              .setMetadataLocation(state.getMetadataLocation());
-      builder.setIcebergMetadataPointer(stateBuilder);
+      ObjectTypes.IcebergRefState.Builder stateBuilder =
+          ObjectTypes.IcebergRefState.newBuilder()
+              .setSnapshotId(state.getSnapshotId())
+              .setSchemaId(state.getSchemaId())
+              .setSpecId(state.getSpecId())
+              .setSortOrderId(state.getSortOrderId());
+      builder.setIcebergRefState(stateBuilder);
 
     } else if (content instanceof DeltaLakeTable) {
       ObjectTypes.DeltaLakeTable.Builder table =
@@ -82,9 +85,10 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
     ObjectTypes.Content.Builder builder = ObjectTypes.Content.newBuilder().setId(content.getId());
     if (content instanceof IcebergTable) {
       IcebergTable state = (IcebergTable) content;
-      ObjectTypes.IcebergGlobal.Builder stateBuilder =
-          ObjectTypes.IcebergGlobal.newBuilder().setIdGenerators(state.getIdGenerators());
-      builder.setIcebergGlobal(stateBuilder);
+      ObjectTypes.IcebergMetadataPointer.Builder stateBuilder =
+          ObjectTypes.IcebergMetadataPointer.newBuilder()
+              .setMetadataLocation(state.getMetadataLocation());
+      builder.setIcebergMetadataPointer(stateBuilder);
     } else {
       throw new IllegalArgumentException("Unknown type " + content);
     }
@@ -111,15 +115,18 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
         }
         return builder.build();
 
-      case ICEBERG_METADATA_POINTER:
+      case ICEBERG_REF_STATE:
         ObjectTypes.Content global =
-            globalContent.orElseThrow(TableCommitMetaStoreWorker::noIcebergGlobal);
-        if (!global.hasIcebergGlobal()) {
-          throw noIcebergGlobal();
+            globalContent.orElseThrow(TableCommitMetaStoreWorker::noIcebergMetadataPointer);
+        if (!global.hasIcebergMetadataPointer()) {
+          throw noIcebergMetadataPointer();
         }
         return IcebergTable.of(
-            content.getIcebergMetadataPointer().getMetadataLocation(),
-            global.getIcebergGlobal().getIdGenerators(),
+            global.getIcebergMetadataPointer().getMetadataLocation(),
+            content.getIcebergRefState().getSnapshotId(),
+            content.getIcebergRefState().getSchemaId(),
+            content.getIcebergRefState().getSpecId(),
+            content.getIcebergRefState().getSortOrderId(),
             content.getId());
 
       case SQL_VIEW:
@@ -136,7 +143,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
     }
   }
 
-  private static IllegalArgumentException noIcebergGlobal() {
+  private static IllegalArgumentException noIcebergMetadataPointer() {
     return new IllegalArgumentException(
         "Iceberg content from reference must have global state, but has none");
   }

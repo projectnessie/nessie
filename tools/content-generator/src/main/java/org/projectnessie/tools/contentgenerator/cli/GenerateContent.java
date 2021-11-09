@@ -233,7 +233,10 @@ public class GenerateContent extends AbstractCommand {
       case ICEBERG_TABLE:
         ImmutableIcebergTable.Builder icebergBuilder =
             ImmutableIcebergTable.builder()
-                .idGenerators("ids " + random.nextLong())
+                .snapshotId(random.nextLong())
+                .schemaId(random.nextInt())
+                .specId(random.nextInt())
+                .sortOrderId(random.nextInt())
                 .metadataLocation("metadata " + random.nextLong());
         if (currentContents != null) {
           icebergBuilder.id(currentContents.getId());

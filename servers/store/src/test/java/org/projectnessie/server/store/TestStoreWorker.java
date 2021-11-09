@@ -35,8 +35,8 @@ import org.projectnessie.model.ImmutableDeltaLakeTable;
 import org.projectnessie.model.ImmutableSqlView;
 import org.projectnessie.model.SqlView;
 import org.projectnessie.store.ObjectTypes;
-import org.projectnessie.store.ObjectTypes.IcebergGlobal;
 import org.projectnessie.store.ObjectTypes.IcebergMetadataPointer;
+import org.projectnessie.store.ObjectTypes.IcebergRefState;
 
 class TestStoreWorker {
   private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -69,18 +69,23 @@ class TestStoreWorker {
   @Test
   void testSerdeIceberg() {
     String path = "foo/bar";
-    IcebergTable table = IcebergTable.of(path, "xyz", ID);
+    IcebergTable table = IcebergTable.of(path, 42, 43, 44, 45, ID);
 
     ObjectTypes.Content protoTableGlobal =
         ObjectTypes.Content.newBuilder()
             .setId(ID)
-            .setIcebergGlobal(IcebergGlobal.newBuilder().setIdGenerators("xyz"))
+            .setIcebergMetadataPointer(
+                IcebergMetadataPointer.newBuilder().setMetadataLocation(path))
             .build();
     ObjectTypes.Content protoOnRef =
         ObjectTypes.Content.newBuilder()
             .setId(ID)
-            .setIcebergMetadataPointer(
-                IcebergMetadataPointer.newBuilder().setMetadataLocation(path))
+            .setIcebergRefState(
+                IcebergRefState.newBuilder()
+                    .setSnapshotId(42)
+                    .setSchemaId(43)
+                    .setSpecId(44)
+                    .setSortOrderId(45))
             .build();
 
     ByteString tableGlobalBytes = worker.toStoreGlobalState(table);
