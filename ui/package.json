@@ -130,7 +130,7 @@
     "eslint-plugin-prefer-arrow": "^1.2.3",
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-react": "^7.26.1",
-    "eslint-plugin-unicorn": "^38.0.0",
+    "eslint-plugin-unicorn": "^38.0.1",
     "husky": "^7.0.4",
     "lint-staged": "^11.2.6",
     "nock": "^13.2.0",
