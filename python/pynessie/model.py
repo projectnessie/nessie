@@ -15,6 +15,7 @@
 # limitations under the License.
 #
 """Nessie Data objects."""
+import re
 from datetime import datetime
 from typing import List
 from typing import Optional
@@ -122,6 +123,38 @@ class ContentKey:
     """ContentKey."""
 
     elements: List[str] = desert.ib(fields.List(fields.Str))
+
+    def to_string(self: "ContentKey") -> str:
+        """Convert this key to friendly CLI string."""
+        # false positives in pylint
+        # pylint: disable=E1133
+        return ".".join(f'"{i}"' if "." in i else i for i in self.elements)
+
+    def to_path_string(self: "ContentKey") -> str:
+        """Convert this key to a url encoded path string."""
+        # false positives in pylint
+        # pylint: disable=E1133
+        return ".".join(i.replace(".", "\00") if i else "" for i in self.elements)
+
+    @staticmethod
+    def from_path_string(key: str) -> "ContentKey":
+        """Convert from path encoded string to normal string."""
+        return ContentKey([i for i in ContentKey._split_key_based_on_regex(key) if i])
+
+    @staticmethod
+    def _split_key_based_on_regex(raw_key: str) -> List[str]:
+        # Find all occurrences of strings between double quotes
+        # E.g: a.b."c.d"
+        regex = re.compile('"[^"]*"')
+
+        # Replace any dot that is inside double quotes with null char '\00' and remove the double quotes
+        key_with_null = regex.sub(lambda x: x.group(0).replace(".", "\00").replace('"', ""), raw_key)
+
+        # Split based on the dot
+        splitted_key = key_with_null.split(".")
+
+        # Return back the splitted elements and make sure to change back '/0' to '.'
+        return [i.replace("\00", ".") for i in splitted_key]
 
 
 ContentKeySchema = desert.schema_class(ContentKey)

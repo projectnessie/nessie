@@ -27,6 +27,7 @@ import simplejson as jsonlib
 from requests.auth import AuthBase
 
 from ..error import _create_exception
+from ..model import ContentKey
 
 
 def _get_headers(has_body: bool = False) -> dict:
@@ -222,7 +223,7 @@ def list_logs(
 
 
 def get_content(
-    base_url: str, auth: Optional[AuthBase], ref: str, content_key: str, hash_on_ref: Optional[str] = None, ssl_verify: bool = True
+    base_url: str, auth: Optional[AuthBase], ref: str, content_key: ContentKey, hash_on_ref: Optional[str] = None, ssl_verify: bool = True
 ) -> dict:
     """Fetch a table from a known branch.
 
@@ -237,7 +238,7 @@ def get_content(
     params = {"ref": ref}
     if hash_on_ref:
         params["hashOnRef"] = hash_on_ref
-    return cast(dict, _get(base_url + "/contents/{}".format(content_key), auth, ssl_verify=ssl_verify, params=params))
+    return cast(dict, _get(base_url + "/contents/{}".format(content_key.to_path_string()), auth, ssl_verify=ssl_verify, params=params))
 
 
 def assign_branch(

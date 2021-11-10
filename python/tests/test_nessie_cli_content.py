@@ -37,7 +37,7 @@ def test_content_view() -> None:
 
     make_commit("this.is.iceberg.foo", iceberg_table, branch)
     make_commit("this.is.delta.bar", delta_lake_table, branch)
-    make_commit("this.is.sql.baz", sql_view, branch)
+    make_commit('this.is."sql.baz"', sql_view, branch)
 
     result_table = ContentSchema().loads(
         execute_cli_command(["--json", CONTENT_COMMAND, "view", "--ref", branch, "this.is.iceberg.foo"]), many=True
@@ -54,7 +54,7 @@ def test_content_view() -> None:
     assert_that(result_table[0]).is_equal_to(delta_lake_table)
 
     result_table = ContentSchema().loads(
-        execute_cli_command(["--json", CONTENT_COMMAND, "view", "--ref", branch, "this.is.sql.baz"]), many=True
+        execute_cli_command(["--json", CONTENT_COMMAND, "view", "--ref", branch, 'this.is."sql.baz"']), many=True
     )
 
     assert_that(result_table).is_length(1)
