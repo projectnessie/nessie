@@ -468,8 +468,8 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
 
   }
 
-  //this is annoying, Delta requires at least one delta file even though everything is contained in the checkpoint.
-  //We add on a useless delta file here if and only if only checkpoints are required
+  // this is annoying, Delta requires at least one delta file even though everything is contained in the checkpoint.
+  // We add on a useless delta file here if and only if only checkpoints are required
   private def emptyCheckpoint(
       version: Long,
       logFileMeta: LogFileMeta
