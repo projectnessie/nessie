@@ -23,7 +23,10 @@ import org.immutables.value.Value.Immutable;
 @Immutable
 public interface ContentAndState<CONTENT> {
 
-  /** Per-named-reference state for a content key. For example, Iceberg's snapshot-ID. */
+  /**
+   * Per-named-reference state for a content key. For example, Iceberg's snapshot-ID, schema-ID,
+   * partition-spec-ID, default-sort-order-ID.
+   */
   @Nonnull
   CONTENT getRefState();
 

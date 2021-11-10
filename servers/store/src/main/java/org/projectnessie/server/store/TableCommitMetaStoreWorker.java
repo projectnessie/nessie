@@ -29,6 +29,7 @@ import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
 import org.projectnessie.model.ImmutableDeltaLakeTable.Builder;
+import org.projectnessie.model.ImmutableIcebergTable;
 import org.projectnessie.model.ImmutableSqlView;
 import org.projectnessie.model.SqlView;
 import org.projectnessie.model.SqlView.Dialect;
@@ -121,13 +122,14 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
         if (!global.hasIcebergMetadataPointer()) {
           throw noIcebergMetadataPointer();
         }
-        return IcebergTable.of(
-            global.getIcebergMetadataPointer().getMetadataLocation(),
-            content.getIcebergRefState().getSnapshotId(),
-            content.getIcebergRefState().getSchemaId(),
-            content.getIcebergRefState().getSpecId(),
-            content.getIcebergRefState().getSortOrderId(),
-            content.getId());
+        return ImmutableIcebergTable.builder()
+            .metadataLocation(global.getIcebergMetadataPointer().getMetadataLocation())
+            .snapshotId(content.getIcebergRefState().getSnapshotId())
+            .schemaId(content.getIcebergRefState().getSchemaId())
+            .specId(content.getIcebergRefState().getSpecId())
+            .sortOrderId(content.getIcebergRefState().getSortOrderId())
+            .id(content.getId())
+            .build();
 
       case SQL_VIEW:
         ObjectTypes.SqlView view = content.getSqlView();

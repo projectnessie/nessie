@@ -54,7 +54,8 @@ public interface HttpContentApi extends ContentApi {
               + "If the table-metadata is tracked globally (Iceberg), "
               + "Nessie returns a 'Content' object, that contains the most up-to-date part for "
               + "the globally tracked part (Iceberg: table-metadata) plus the "
-              + "per-Nessie-reference/hash specific part (Iceberg: snapshot-ID).")
+              + "per-Nessie-reference/hash specific part (Iceberg: snapshot-ID, "
+              + "schema-ID, partition-spec-ID, default-sort-order-ID).")
   @APIResponses({
     @APIResponse(
         responseCode = "200",
@@ -103,7 +104,8 @@ public interface HttpContentApi extends ContentApi {
               + "If the table-metadata is tracked globally (Iceberg), "
               + "Nessie returns a 'Content' object, that contains the most up-to-date part for "
               + "the globally tracked part (Iceberg: table-metadata) plus the "
-              + "per-Nessie-reference/hash specific part (Iceberg: snapshot-ID).")
+              + "per-Nessie-reference/hash specific part (Iceberg: snapshot-ID,"
+              + "schema-ID, partition-spec-ID, default-sort-order-ID).")
   @APIResponses({
     @APIResponse(
         responseCode = "200",

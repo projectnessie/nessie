@@ -39,7 +39,8 @@ public interface ContentApi {
    *
    * <p>If the table-metadata is tracked globally (Iceberg), Nessie returns a {@link Content}
    * object, that contains the most up-to-date part for the globally tracked part (Iceberg:
-   * table-metadata) plus the per-Nessie-reference/hash specific part (Iceberg: snapshot-ID).
+   * table-metadata) plus the per-Nessie-reference/hash specific part (Iceberg: snapshot-ID,
+   * schema-ID, partition-spec-ID, default-sort-order-ID).
    *
    * @param key the {@link ContentKey}s to retrieve
    * @param ref named-reference to retrieve the content for
@@ -64,7 +65,8 @@ public interface ContentApi {
    *
    * <p>If the table-metadata is tracked globally (Iceberg), Nessie returns a {@link Content}
    * object, that contains the most up-to-date part for the globally tracked part (Iceberg:
-   * table-metadata) plus the per-Nessie-reference/hash specific part (Iceberg: snapshot-ID).
+   * table-metadata) plus the per-Nessie-reference/hash specific part (Iceberg: snapshot-ID,
+   * schema-ID, partition-spec-ID, default-sort-order-ID).
    *
    * @param ref named-reference to retrieve the content for
    * @param hashOnRef hash on {@code ref} to retrieve the content for, translates to {@code HEAD},
