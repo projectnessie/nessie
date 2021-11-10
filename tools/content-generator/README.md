@@ -11,7 +11,6 @@ Functionality supported:
 * Generate content for N tables (default: 1 table)
 * Generate content for any content type (default: Iceberg-table)
 
-Uses the picocli library.
 
 ```
 $ java -jar tools/content-generator/target/nessie-content-generator-0.12.2-SNAPSHOT.jar help generate
