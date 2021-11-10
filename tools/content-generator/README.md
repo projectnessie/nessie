@@ -17,8 +17,9 @@ Uses the picocli library.
 $ java -jar tools/content-generator/target/nessie-content-generator-0.12.2-SNAPSHOT.jar help generate
 
 Usage: nessie-content-generator generate [-hV] [-b=<branchCount>]
-       [-d=<runtimeDuration>] [-n=<numCommits>] [-t=<numTables>]
-       [-T=<newTagProbability>] [--type=<contentType>] [-u=<uri>]
+       [-d=<runtimeDuration>] [-D=<defaultBranchName>] [-n=<numCommits>]
+       [-t=<numTables>] [-T=<newTagProbability>] [--type=<contentType>]
+       [-u=<uri>]
 Generate commits
   -b, --num-branches=<branchCount>
                              Number of branches to use.
@@ -26,6 +27,9 @@ Generate commits
                              Runtime duration, equally distributed among the
                                number of commits to create. See java.time.
                                Duration for argument format details.
+  -D, --default-branch=<defaultBranchName>
+                             Name of the default branch, uses the server's
+                               default branch if not specified.
   -h, --help                 Show this help message and exit.
   -n, --num-commits=<numCommits>
                              Number of commits to create.
