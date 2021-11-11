@@ -104,7 +104,7 @@
     "eslint-plugin-jsx-a11y": "^6.3.1",
     "eslint-plugin-prefer-arrow": "^1.2.3",
     "eslint-plugin-prettier": "^4.0.0",
-    "eslint-plugin-react": "^7.26.1",
+    "eslint-plugin-react": "^7.27.0",
     "eslint-plugin-react-hooks": "^4.3.0",
     "eslint-plugin-testing-library": "^3.9.2",
     "eslint-plugin-unicorn": "^38.0.1",
