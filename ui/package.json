@@ -106,7 +106,7 @@
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-react": "^7.27.0",
     "eslint-plugin-react-hooks": "^4.3.0",
-    "eslint-plugin-testing-library": "^3.9.2",
+    "eslint-plugin-testing-library": "^5.0.0",
     "eslint-plugin-unicorn": "^38.0.1",
     "eslint-webpack-plugin": "^2.5.2",
     "file-loader": "6.2.0",
