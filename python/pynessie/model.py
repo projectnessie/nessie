@@ -60,9 +60,9 @@ class IcebergTable(Content):
     def pretty_print(self: "IcebergTable") -> str:
         """Print out for cli."""
         return (
-            f"Iceberg table:\n\tmetadata-location:{self.metadata_location}\n\tsnapshot-id:{self.snapshot_id}"
-            f"\n\tschema-id:{self.schema_id}"
-            f"\n\tpartition-spec-id:{self.spec_id}\n\tdefault-sort-order-id:{self.sort_order_id}"
+            f"Iceberg table:\n\tmetadata-location: {self.metadata_location}\n\tsnapshot-id: {self.snapshot_id}"
+            f"\n\tschema-id: {self.schema_id}"
+            f"\n\tpartition-spec-id: {self.spec_id}\n\tdefault-sort-order-id: {self.sort_order_id}"
         )
 
 
