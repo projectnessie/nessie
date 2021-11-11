@@ -67,7 +67,7 @@ def commit(
 
         KEY is the content key that is associated with a specific content to commit.
     This accepts as well multiple keys with space in between. The key can be in this format:
-    'table.key' or 'table."namespace.key"'.
+    'table.key' or 'namespace."table.key"'.
 
     Examples:
 

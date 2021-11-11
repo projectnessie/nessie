@@ -38,7 +38,7 @@ def view(ctx: ContextObject, ref: str, key: List[ContentKey]) -> None:
 
         KEY is the content key that is associated with a specific content to view.
     This accepts as well multiple keys with space in between. The key can be in this format:
-    'table.key' or 'table."namespace.key"'.
+    'table.key' or 'namespace."table.key"'.
 
     Examples:
 

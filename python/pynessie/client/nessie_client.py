@@ -38,9 +38,10 @@ from ._endpoints import list_logs
 from ._endpoints import list_tables
 from ._endpoints import merge
 from ..auth import setup_auth
-from ..model import Branch, ContentKey
+from ..model import Branch
 from ..model import CommitMeta
 from ..model import Content
+from ..model import ContentKey
 from ..model import ContentSchema
 from ..model import Entries
 from ..model import EntriesSchema
