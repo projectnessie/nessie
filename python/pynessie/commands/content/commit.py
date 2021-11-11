@@ -25,8 +25,8 @@ from ...cli_common_context import ContextObject
 from ...client import NessieClient
 from ...decorators import error_handler, pass_client, validate_reference
 from ...error import NessieCliError, NessieNotFoundException
-from ...model import Content, ContentSchema, Delete, Operation, Put
-from ...utils import content_key, format_key
+from ...model import Content, ContentKey, ContentSchema, Delete, Operation, Put
+from ...types import CONTENT_KEY
 
 
 @click.command("commit")
@@ -48,7 +48,7 @@ from ...utils import content_key, format_key
 @click.option("-R", "--remove-key", "delete", is_flag=True, help="Delete a content.")
 @click.option("-m", "--message", help="Commit message.")
 @click.option("--author", help="The author to use for the commit")
-@click.argument("key", nargs=-1, required=True)
+@click.argument("key", nargs=-1, required=True, type=CONTENT_KEY)
 @pass_client
 @error_handler
 @validate_reference
@@ -61,12 +61,13 @@ def commit(
     delete: bool,
     message: str,
     author: str,
-    key: List[str],
+    key: List[ContentKey],
 ) -> None:
     """Commit content.
 
         KEY is the content key that is associated with a specific content to commit.
-    This accepts as well multiple keys with space in between.
+    This accepts as well multiple keys with space in between. The key can be in this format:
+    'table.key' or 'namespace."table.key"'.
 
     Examples:
 
@@ -92,7 +93,7 @@ def commit(
 
 
 def _get_commit_operations(
-    client: NessieClient, ref: str, keys: List[str], is_delete: bool, use_stdin: bool = False, expect_same_contents: bool = False
+    client: NessieClient, ref: str, keys: List[ContentKey], is_delete: bool, use_stdin: bool = False, expect_same_contents: bool = False
 ) -> List[Operation]:
     if is_delete:
         return _get_delete_content_operations(keys)
@@ -100,32 +101,31 @@ def _get_commit_operations(
     return _get_edit_content_operations(client, ref, keys, use_stdin, expect_same_contents)
 
 
-def _get_delete_content_operations(keys: List[str]) -> List[Operation]:
+def _get_delete_content_operations(keys: List[ContentKey]) -> List[Operation]:
     contents_operations: List[Operation] = []
-    for raw_key in keys:
-        contents_operations.append(Delete(content_key(raw_key)))
+    for content_key in keys:
+        contents_operations.append(Delete(content_key))
 
     return contents_operations
 
 
 def _get_edit_content_operations(
-    client: NessieClient, ref: str, keys: List[str], use_stdin: bool = False, expect_same_contents: bool = False
+    client: NessieClient, ref: str, keys: List[ContentKey], use_stdin: bool = False, expect_same_contents: bool = False
 ) -> List[Operation]:
     contents_operations: List[Operation] = []
-    for raw_key in keys:
-        key = format_key(raw_key)
+    for content_key in keys:
+        content_original = _get_existing_content(client, ref, content_key)
+        formatted_content_key = content_key.to_string()
 
-        content_original = _get_existing_content(client, ref, raw_key)
-
-        content_json = _get_edited_json_content(key, content_original, use_stdin)
+        content_json = _get_edited_json_content(content_key, content_original, use_stdin)
 
         if _shall_skip_key(content_json, content_original):
-            click.echo("Skipping key " + key + " (content not edited)")
+            click.echo("Skipping key " + formatted_content_key + " (content not edited)")
             continue
 
         if _is_delete_operation(content_json, content_original):
-            contents_operations.append(Delete(content_key(raw_key)))
-            click.echo("Deleting content for key " + key)
+            contents_operations.append(Delete(content_key))
+            click.echo("Deleting content for key " + formatted_content_key)
             continue
 
         # If the user has an invalid JSON, we raise an Error
@@ -136,20 +136,20 @@ def _get_edit_content_operations(
 
         # if we have the same content as the original one, we just skip
         if content_new == content_original:
-            click.echo("Skipping key " + key + " (content not edited)")
+            click.echo("Skipping key " + formatted_content_key + " (content not edited)")
             continue
 
-        click.echo("Setting content for key " + key)
+        click.echo("Setting content for key " + formatted_content_key)
         if content_new.requires_expected_state():
             content_expected = content_new if expect_same_contents else content_original
-            contents_operations.append(Put(content_key(raw_key), content_new, content_expected))
+            contents_operations.append(Put(content_key, content_new, content_expected))
         else:
-            contents_operations.append(Put(content_key(raw_key), content_new))
+            contents_operations.append(Put(content_key, content_new))
 
     return contents_operations
 
 
-def _get_existing_content(client: NessieClient, ref: str, key: str) -> Optional[Content]:
+def _get_existing_content(client: NessieClient, ref: str, key: ContentKey) -> Optional[Content]:
     # get current contents, if present
     try:
         return client.get_content(ref, key)
@@ -157,13 +157,13 @@ def _get_existing_content(client: NessieClient, ref: str, key: str) -> Optional[
         return None
 
 
-def _get_edited_json_content(key: str, content_orig: Optional[Content], use_stdin: bool) -> Optional[str]:
+def _get_edited_json_content(key: ContentKey, content_orig: Optional[Content], use_stdin: bool) -> Optional[str]:
     if use_stdin:
-        click.echo("Enter JSON content for key " + key)
+        click.echo("Enter JSON content for key " + key.to_string())
         return click.get_text_stream("stdin").read().strip("\n")
 
     # allow the user to provide interactive input via the shell $EDITOR
-    edited_content = _edit_contents(key, (ContentSchema().dumps(content_orig) if content_orig else ""))
+    edited_content = _edit_contents(key.to_string(), (ContentSchema().dumps(content_orig) if content_orig else ""))
 
     if edited_content is not None:
         return edited_content.strip()
@@ -214,13 +214,13 @@ def _is_delete_operation(content_json: Optional[str], content_original: Optional
     return False
 
 
-def _get_message(message: str, keys: List[str]) -> Optional[str]:
+def _get_message(message: str, keys: List[ContentKey]) -> Optional[str]:
     if message:
         return message
     return _get_commit_message(keys)
 
 
-def _get_commit_message(keys: List[str]) -> Optional[str]:
+def _get_commit_message(keys: List[ContentKey]) -> Optional[str]:
     marker = "# Everything below is ignored\n"
-    message = click.edit("\n\n" + marker + "Edit the commit message above: " + "\n".join(keys))
+    message = click.edit("\n\n" + marker + "Edit the commit message above: " + "\n".join([i.to_string() for i in keys]))
     return message.split(marker, 1)[0].rstrip("\n") if message is not None else None

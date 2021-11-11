@@ -41,6 +41,7 @@ from ..auth import setup_auth
 from ..model import Branch
 from ..model import CommitMeta
 from ..model import Content
+from ..model import ContentKey
 from ..model import ContentSchema
 from ..model import Entries
 from ..model import EntriesSchema
@@ -58,7 +59,6 @@ from ..model import ReferencesResponseSchema
 from ..model import Tag
 from ..model import Transplant
 from ..model import TransplantSchema
-from ..utils import format_key
 
 
 class NessieClient:
@@ -158,7 +158,7 @@ class NessieClient:
             list_tables(self._base_url, self._auth, ref, hash_on_ref, max_result_hint, page_token, query_expression, self._ssl_verify)
         )
 
-    def get_content(self: "NessieClient", ref: str, content_key: str, hash_on_ref: Optional[str] = None) -> Content:
+    def get_content(self: "NessieClient", ref: str, content_key: ContentKey, hash_on_ref: Optional[str] = None) -> Content:
         """Fetch a content from a known ref.
 
         :param ref: name of ref
@@ -166,7 +166,7 @@ class NessieClient:
         :param content_key: content key to fetch
         :return: A single content
         """
-        return ContentSchema().load(get_content(self._base_url, self._auth, ref, format_key(content_key), hash_on_ref, self._ssl_verify))
+        return ContentSchema().load(get_content(self._base_url, self._auth, ref, content_key, hash_on_ref, self._ssl_verify))
 
     def commit(
         self: "NessieClient", branch: str, old_hash: str, reason: Optional[str] = None, author: Optional[str] = None, *ops: Operation

@@ -20,23 +20,25 @@ from typing import List
 
 import click
 
+from pynessie.types import CONTENT_KEY
 from ... import NessieClient
 from ...cli_common_context import ContextObject
 from ...decorators import error_handler, pass_client, validate_reference
-from ...model import Content, ContentSchema
+from ...model import Content, ContentKey, ContentSchema
 
 
 @click.command("view")
 @click.option("-r", "--ref", help="Branch to list from. If not supplied the default branch from config is used.")
-@click.argument("key", nargs=-1, required=True)
+@click.argument("key", nargs=-1, required=True, type=CONTENT_KEY)
 @pass_client
 @error_handler
 @validate_reference
-def view(ctx: ContextObject, ref: str, key: List[str]) -> None:
+def view(ctx: ContextObject, ref: str, key: List[ContentKey]) -> None:
     """View content.
 
         KEY is the content key that is associated with a specific content to view.
-    This accepts as well multiple keys with space in between.
+    This accepts as well multiple keys with space in between. The key can be in this format:
+    'table.key' or 'namespace."table.key"'.
 
     Examples:
 
@@ -51,7 +53,7 @@ def view(ctx: ContextObject, ref: str, key: List[str]) -> None:
     click.echo(results)
 
 
-def _get_content_for_all_keys(client: NessieClient, ref: str, keys: List[str]) -> List[Content]:
+def _get_content_for_all_keys(client: NessieClient, ref: str, keys: List[ContentKey]) -> List[Content]:
     contents: List[Content] = []
 
     for key in keys:
