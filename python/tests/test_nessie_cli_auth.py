@@ -26,13 +26,13 @@ def vcr_config() -> dict:
     return {"match_on": ["method", "scheme", "host", "port", "path", "query", "headers"]}
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(record_mode="none")
 def test_bearer_auth() -> None:
     """Test the "remote show" command with bearer authentication."""
     assert "main" in execute_cli_command(["--json", "--auth-token", "test_token_123", "remote", "show"])
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(record_mode="none")
 def test_bearer_auth_invalid() -> None:
     """Test any command with an invalid bearer authentication token."""
     result = execute_cli_command(["--json", "--auth-token", "invalid", "remote", "show"], ret_val=1)
