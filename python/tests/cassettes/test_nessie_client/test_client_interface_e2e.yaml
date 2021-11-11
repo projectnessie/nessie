@@ -26,7 +26,7 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"name": "main", "hash": null, "type": "BRANCH"}'
+    body: '{"hash": null, "name": "main", "type": "BRANCH"}'
     headers:
       Accept:
       - '*/*'
@@ -56,8 +56,8 @@ interactions:
       code: 409
       message: Conflict
 - request:
-    body: '{"name": "test", "hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-      "type": "BRANCH"}'
+    body: '{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+      "name": "test", "type": "BRANCH"}'
     headers:
       Accept:
       - '*/*'

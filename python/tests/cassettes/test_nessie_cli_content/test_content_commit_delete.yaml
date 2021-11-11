@@ -48,8 +48,8 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"name": "contents_commit_delete_dev", "hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-      "type": "BRANCH"}'
+    body: '{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+      "name": "contents_commit_delete_dev", "type": "BRANCH"}'
     headers:
       Accept:
       - '*/*'
@@ -132,12 +132,12 @@ interactions:
       code: 404
       message: Not Found
 - request:
-    body: '{"operations": [{"key": {"elements": ["this", "is", "iceberg", "foo"]},
-      "content": {"metadataLocation": "/a/b/c", "specId": 42, "id": "test_contents_delete",
-      "snapshotId": 42, "sortOrderId": 42, "schemaId": 42, "type": "ICEBERG_TABLE"},
-      "expectedContent": null, "type": "PUT"}], "commitMeta": {"hash": null, "author":
-      "nessie test", "signedOffBy": null, "committer": null, "commitTime": null, "message":
-      "test message", "properties": null, "authorTime": null}}'
+    body: '{"commitMeta": {"hash": null, "authorTime": null, "signedOffBy": null,
+      "message": "test message", "commitTime": null, "properties": null, "committer":
+      null, "author": "nessie test"}, "operations": [{"expectedContent": null, "key":
+      {"elements": ["this", "is", "iceberg", "foo"]}, "content": {"specId": 42, "id":
+      "test_contents_delete", "schemaId": 42, "snapshotId": 42, "sortOrderId": 42,
+      "metadataLocation": "/a/b/c", "type": "ICEBERG_TABLE"}, "type": "PUT"}]}'
     headers:
       Accept:
       - '*/*'
@@ -156,7 +156,7 @@ interactions:
   response:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_commit_delete_dev\",\n
-        \ \"hash\" : \"58b5634c3eebe333fec73a31df4b31676c79530b30211ef0f0cd93a6d8fe7d12\"\n}"
+        \ \"hash\" : \"44eef1796a019b990caba6d5cadb9aa933ca4b883b9eac15971edd5069d862bc\"\n}"
     headers:
       Content-Type:
       - application/json
@@ -209,7 +209,7 @@ interactions:
       string: "{\n  \"token\" : null,\n  \"references\" : [ {\n    \"type\" : \"BRANCH\",\n
         \   \"name\" : \"main\",\n    \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n
         \ }, {\n    \"type\" : \"BRANCH\",\n    \"name\" : \"contents_commit_delete_dev\",\n
-        \   \"hash\" : \"58b5634c3eebe333fec73a31df4b31676c79530b30211ef0f0cd93a6d8fe7d12\"\n
+        \   \"hash\" : \"44eef1796a019b990caba6d5cadb9aa933ca4b883b9eac15971edd5069d862bc\"\n
         \ } ],\n  \"hasMore\" : false\n}"
     headers:
       Content-Type:
@@ -220,10 +220,10 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"operations": [{"key": {"elements": ["this", "is", "iceberg", "foo"]},
-      "type": "DELETE"}], "commitMeta": {"hash": null, "author": null, "signedOffBy":
-      null, "committer": null, "commitTime": null, "message": "delete test table",
-      "properties": null, "authorTime": null}}'
+    body: '{"commitMeta": {"hash": null, "authorTime": null, "signedOffBy": null,
+      "message": "delete test table", "commitTime": null, "properties": null, "committer":
+      null, "author": null}, "operations": [{"key": {"elements": ["this", "is", "iceberg",
+      "foo"]}, "type": "DELETE"}]}'
     headers:
       Accept:
       - '*/*'
@@ -238,11 +238,11 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/contents_commit_delete_dev/commit?expectedHash=58b5634c3eebe333fec73a31df4b31676c79530b30211ef0f0cd93a6d8fe7d12
+    uri: http://localhost:19120/api/v1/trees/branch/contents_commit_delete_dev/commit?expectedHash=44eef1796a019b990caba6d5cadb9aa933ca4b883b9eac15971edd5069d862bc
   response:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_commit_delete_dev\",\n
-        \ \"hash\" : \"f798272414c83d3f1a52411a3792977ec4e12303ce8c5b44301873e13566d70e\"\n}"
+        \ \"hash\" : \"731fa342fce6079ab3155b7a932f2a75c250dabc4fd43480564ac2bd1d655112\"\n}"
     headers:
       Content-Type:
       - application/json
