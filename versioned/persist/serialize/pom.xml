@@ -22,7 +22,7 @@
   <parent>
     <groupId>org.projectnessie</groupId>
     <artifactId>nessie-versioned-persist</artifactId>
-    <version>0.14.0</version>
+    <version>0.14.1-SNAPSHOT</version>
   </parent>
 
   <artifactId>nessie-versioned-persist-serialize</artifactId>
