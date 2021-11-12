@@ -2,6 +2,13 @@
 History
 =======
 
+0.14.0 (2021-11-12)
+-------------------
+
+* Updated 'IcebergTable' to track more information
+* Better 'ContentKey' handling
+* Nessie CLI code cleanups
+
 0.12.1 (2021-11-03)
 -------------------
 
