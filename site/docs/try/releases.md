@@ -1,6 +1,6 @@
 # Releases
 
-## 0.10.0 Release (November 12, 2021)
+## 0.14.0 Release (November 12, 2021)
 
 * Updated `IcebergTable` to track more information
 * UI dependencies cleanup
