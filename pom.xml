@@ -119,7 +119,7 @@
   <scm>
     <connection>scm:git:https://github.com/projectnessie/nessie</connection>
     <developerConnection>scm:git:https://github.com/projectnessie/nessie</developerConnection>
-    <url>https://github.com/projectnessie/nessie/tree/${project.scm.tag}</url>
+    <url>https://github.com/projectnessie/nessie</url>
     <tag>main</tag>
   </scm>
   <issueManagement>
