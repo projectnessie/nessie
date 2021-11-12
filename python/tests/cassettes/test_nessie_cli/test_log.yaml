@@ -96,8 +96,8 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"name": "dev_test_log", "hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-      "type": "BRANCH"}'
+    body: '{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+      "name": "dev_test_log", "type": "BRANCH"}'
     headers:
       Accept:
       - '*/*'
@@ -180,11 +180,12 @@ interactions:
       code: 404
       message: Not Found
 - request:
-    body: '{"commitMeta": {"commitTime": null, "author": "nessie_user1", "authorTime":
-      null, "hash": null, "properties": null, "committer": null, "message": "test
-      message", "signedOffBy": null}, "operations": [{"expectedContent": null, "key":
-      {"elements": ["log", "foo", "dev"]}, "content": {"idGenerators": "xyz", "metadataLocation":
-      "/a/b/c", "id": "test_log_dev", "type": "ICEBERG_TABLE"}, "type": "PUT"}]}'
+    body: '{"commitMeta": {"hash": null, "authorTime": null, "signedOffBy": null,
+      "message": "test message", "commitTime": null, "properties": null, "committer":
+      null, "author": "nessie_user1"}, "operations": [{"expectedContent": null, "key":
+      {"elements": ["log", "foo", "dev"]}, "content": {"specId": 44, "id": "test_log_dev",
+      "schemaId": 43, "snapshotId": 42, "sortOrderId": 45, "metadataLocation": "/a/b/c",
+      "type": "ICEBERG_TABLE"}, "type": "PUT"}]}'
     headers:
       Accept:
       - '*/*'
@@ -193,7 +194,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '398'
+      - '442'
       Content-Type:
       - application/json
       User-Agent:
@@ -203,7 +204,7 @@ interactions:
   response:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev_test_log\",\n  \"hash\"
-        : \"9a0c04da3ea2962f3d56ed1b4b8cfb15d40d090516a4ef8c1c024ac9a355d2da\"\n}"
+        : \"72a5b98f44c950bb86cd9d1039a431e79b10d3e6afb56a5e00df03a8c463e463\"\n}"
     headers:
       Content-Type:
       - application/json
@@ -230,7 +231,7 @@ interactions:
       string: "{\n  \"token\" : null,\n  \"references\" : [ {\n    \"type\" : \"BRANCH\",\n
         \   \"name\" : \"main\",\n    \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n
         \ }, {\n    \"type\" : \"BRANCH\",\n    \"name\" : \"dev_test_log\",\n    \"hash\"
-        : \"9a0c04da3ea2962f3d56ed1b4b8cfb15d40d090516a4ef8c1c024ac9a355d2da\"\n  }
+        : \"72a5b98f44c950bb86cd9d1039a431e79b10d3e6afb56a5e00df03a8c463e463\"\n  }
         ],\n  \"hasMore\" : false\n}"
     headers:
       Content-Type:
@@ -267,11 +268,12 @@ interactions:
       code: 404
       message: Not Found
 - request:
-    body: '{"commitMeta": {"commitTime": null, "author": "nessie_user1", "authorTime":
-      null, "hash": null, "properties": null, "committer": null, "message": "test
-      message", "signedOffBy": null}, "operations": [{"expectedContent": null, "key":
-      {"elements": ["log", "foo", "bar"]}, "content": {"idGenerators": "xyz", "metadataLocation":
-      "/a/b/c", "id": "test_log", "type": "ICEBERG_TABLE"}, "type": "PUT"}]}'
+    body: '{"commitMeta": {"hash": null, "authorTime": null, "signedOffBy": null,
+      "message": "test message", "commitTime": null, "properties": null, "committer":
+      null, "author": "nessie_user1"}, "operations": [{"expectedContent": null, "key":
+      {"elements": ["log", "foo", "bar"]}, "content": {"specId": 44, "id": "test_log",
+      "schemaId": 43, "snapshotId": 42, "sortOrderId": 45, "metadataLocation": "/a/b/c",
+      "type": "ICEBERG_TABLE"}, "type": "PUT"}]}'
     headers:
       Accept:
       - '*/*'
@@ -280,7 +282,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '394'
+      - '438'
       Content-Type:
       - application/json
       User-Agent:
@@ -289,7 +291,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/branch/main/commit?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"d7f2439ccdcb233ce58085b4a3c4c81dc88a370d42caa524838b36417e3fed2d\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"807d617005ada6cb8008ce394ea72d1c9ca3d805afaa2ea896b0ff26aa840777\"\n}"
     headers:
       Content-Type:
       - application/json
@@ -313,7 +315,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"d7f2439ccdcb233ce58085b4a3c4c81dc88a370d42caa524838b36417e3fed2d\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"807d617005ada6cb8008ce394ea72d1c9ca3d805afaa2ea896b0ff26aa840777\"\n}"
     headers:
       Content-Type:
       - application/json
@@ -338,12 +340,13 @@ interactions:
   response:
     body:
       string: "{\n  \"type\" : \"ICEBERG_TABLE\",\n  \"id\" : \"test_log\",\n  \"metadataLocation\"
-        : \"/a/b/c\",\n  \"idGenerators\" : \"xyz\"\n}"
+        : \"/a/b/c\",\n  \"snapshotId\" : 42,\n  \"schemaId\" : 43,\n  \"specId\"
+        : 44,\n  \"sortOrderId\" : 45\n}"
     headers:
       Content-Type:
       - application/json
       content-length:
-      - '110'
+      - '163'
     status:
       code: 200
       message: OK
@@ -362,7 +365,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"d7f2439ccdcb233ce58085b4a3c4c81dc88a370d42caa524838b36417e3fed2d\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"807d617005ada6cb8008ce394ea72d1c9ca3d805afaa2ea896b0ff26aa840777\"\n}"
     headers:
       Content-Type:
       - application/json
@@ -386,10 +389,10 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/main/log
   response:
     body:
-      string: "{\n  \"token\" : null,\n  \"operations\" : [ {\n    \"hash\" : \"d7f2439ccdcb233ce58085b4a3c4c81dc88a370d42caa524838b36417e3fed2d\",\n
+      string: "{\n  \"token\" : null,\n  \"operations\" : [ {\n    \"hash\" : \"807d617005ada6cb8008ce394ea72d1c9ca3d805afaa2ea896b0ff26aa840777\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test message\",\n    \"commitTime\" : \"2021-11-08T16:11:46.508832Z\",\n
-        \   \"authorTime\" : \"2021-11-08T16:11:46.508832Z\",\n    \"properties\"
+        : null,\n    \"message\" : \"test message\",\n    \"commitTime\" : \"2021-11-11T14:53:56.524663Z\",\n
+        \   \"authorTime\" : \"2021-11-11T14:53:56.524663Z\",\n    \"properties\"
         : { }\n  } ],\n  \"hasMore\" : false\n}"
     headers:
       Content-Type:
@@ -414,7 +417,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"d7f2439ccdcb233ce58085b4a3c4c81dc88a370d42caa524838b36417e3fed2d\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"807d617005ada6cb8008ce394ea72d1c9ca3d805afaa2ea896b0ff26aa840777\"\n}"
     headers:
       Content-Type:
       - application/json
@@ -435,13 +438,13 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: GET
-    uri: http://localhost:19120/api/v1/trees/tree/main/log?endHash=d7f2439ccdcb233ce58085b4a3c4c81dc88a370d42caa524838b36417e3fed2d
+    uri: http://localhost:19120/api/v1/trees/tree/main/log?endHash=807d617005ada6cb8008ce394ea72d1c9ca3d805afaa2ea896b0ff26aa840777
   response:
     body:
-      string: "{\n  \"token\" : null,\n  \"operations\" : [ {\n    \"hash\" : \"d7f2439ccdcb233ce58085b4a3c4c81dc88a370d42caa524838b36417e3fed2d\",\n
+      string: "{\n  \"token\" : null,\n  \"operations\" : [ {\n    \"hash\" : \"807d617005ada6cb8008ce394ea72d1c9ca3d805afaa2ea896b0ff26aa840777\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test message\",\n    \"commitTime\" : \"2021-11-08T16:11:46.508832Z\",\n
-        \   \"authorTime\" : \"2021-11-08T16:11:46.508832Z\",\n    \"properties\"
+        : null,\n    \"message\" : \"test message\",\n    \"commitTime\" : \"2021-11-11T14:53:56.524663Z\",\n
+        \   \"authorTime\" : \"2021-11-11T14:53:56.524663Z\",\n    \"properties\"
         : { }\n  } ],\n  \"hasMore\" : false\n}"
     headers:
       Content-Type:
@@ -466,7 +469,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"d7f2439ccdcb233ce58085b4a3c4c81dc88a370d42caa524838b36417e3fed2d\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"807d617005ada6cb8008ce394ea72d1c9ca3d805afaa2ea896b0ff26aa840777\"\n}"
     headers:
       Content-Type:
       - application/json
@@ -502,10 +505,10 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"commitMeta": {"commitTime": null, "author": "nessie_user2", "authorTime":
-      null, "hash": null, "properties": null, "committer": null, "message": "delete_message",
-      "signedOffBy": null}, "operations": [{"key": {"elements": ["log", "foo", "bar"]},
-      "type": "DELETE"}]}'
+    body: '{"commitMeta": {"hash": null, "authorTime": null, "signedOffBy": null,
+      "message": "delete_message", "commitTime": null, "properties": null, "committer":
+      null, "author": "nessie_user2"}, "operations": [{"key": {"elements": ["log",
+      "foo", "bar"]}, "type": "DELETE"}]}'
     headers:
       Accept:
       - '*/*'
@@ -520,10 +523,10 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/main/commit?expectedHash=d7f2439ccdcb233ce58085b4a3c4c81dc88a370d42caa524838b36417e3fed2d
+    uri: http://localhost:19120/api/v1/trees/branch/main/commit?expectedHash=807d617005ada6cb8008ce394ea72d1c9ca3d805afaa2ea896b0ff26aa840777
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"08d4b67cabbc709cbad9e9f5618a3196e5ace53088b1322a8c7181afc56126a1\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"6cddad4ab780c81e09876d88e51cd18833c671cf41e9b7d3e2126bdc20c96d94\"\n}"
     headers:
       Content-Type:
       - application/json
@@ -547,7 +550,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"08d4b67cabbc709cbad9e9f5618a3196e5ace53088b1322a8c7181afc56126a1\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"6cddad4ab780c81e09876d88e51cd18833c671cf41e9b7d3e2126bdc20c96d94\"\n}"
     headers:
       Content-Type:
       - application/json
@@ -571,11 +574,11 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/main/log?max=1
   response:
     body:
-      string: "{\n  \"token\" : \"d7f2439ccdcb233ce58085b4a3c4c81dc88a370d42caa524838b36417e3fed2d\",\n
-        \ \"operations\" : [ {\n    \"hash\" : \"08d4b67cabbc709cbad9e9f5618a3196e5ace53088b1322a8c7181afc56126a1\",\n
+      string: "{\n  \"token\" : \"807d617005ada6cb8008ce394ea72d1c9ca3d805afaa2ea896b0ff26aa840777\",\n
+        \ \"operations\" : [ {\n    \"hash\" : \"6cddad4ab780c81e09876d88e51cd18833c671cf41e9b7d3e2126bdc20c96d94\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user2\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-11-08T16:11:46.685649Z\",\n
-        \   \"authorTime\" : \"2021-11-08T16:11:46.685649Z\",\n    \"properties\"
+        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-11-11T14:53:56.700638Z\",\n
+        \   \"authorTime\" : \"2021-11-11T14:53:56.700638Z\",\n    \"properties\"
         : { }\n  } ],\n  \"hasMore\" : true\n}"
     headers:
       Content-Type:
@@ -600,10 +603,10 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/dev_test_log/log
   response:
     body:
-      string: "{\n  \"token\" : null,\n  \"operations\" : [ {\n    \"hash\" : \"9a0c04da3ea2962f3d56ed1b4b8cfb15d40d090516a4ef8c1c024ac9a355d2da\",\n
+      string: "{\n  \"token\" : null,\n  \"operations\" : [ {\n    \"hash\" : \"72a5b98f44c950bb86cd9d1039a431e79b10d3e6afb56a5e00df03a8c463e463\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test message\",\n    \"commitTime\" : \"2021-11-08T16:11:46.426175Z\",\n
-        \   \"authorTime\" : \"2021-11-08T16:11:46.426175Z\",\n    \"properties\"
+        : null,\n    \"message\" : \"test message\",\n    \"commitTime\" : \"2021-11-11T14:53:56.443550Z\",\n
+        \   \"authorTime\" : \"2021-11-11T14:53:56.443550Z\",\n    \"properties\"
         : { }\n  } ],\n  \"hasMore\" : false\n}"
     headers:
       Content-Type:
@@ -628,7 +631,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"08d4b67cabbc709cbad9e9f5618a3196e5ace53088b1322a8c7181afc56126a1\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"6cddad4ab780c81e09876d88e51cd18833c671cf41e9b7d3e2126bdc20c96d94\"\n}"
     headers:
       Content-Type:
       - application/json
@@ -652,14 +655,14 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/main/log
   response:
     body:
-      string: "{\n  \"token\" : null,\n  \"operations\" : [ {\n    \"hash\" : \"08d4b67cabbc709cbad9e9f5618a3196e5ace53088b1322a8c7181afc56126a1\",\n
+      string: "{\n  \"token\" : null,\n  \"operations\" : [ {\n    \"hash\" : \"6cddad4ab780c81e09876d88e51cd18833c671cf41e9b7d3e2126bdc20c96d94\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user2\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-11-08T16:11:46.685649Z\",\n
-        \   \"authorTime\" : \"2021-11-08T16:11:46.685649Z\",\n    \"properties\"
-        : { }\n  }, {\n    \"hash\" : \"d7f2439ccdcb233ce58085b4a3c4c81dc88a370d42caa524838b36417e3fed2d\",\n
+        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-11-11T14:53:56.700638Z\",\n
+        \   \"authorTime\" : \"2021-11-11T14:53:56.700638Z\",\n    \"properties\"
+        : { }\n  }, {\n    \"hash\" : \"807d617005ada6cb8008ce394ea72d1c9ca3d805afaa2ea896b0ff26aa840777\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test message\",\n    \"commitTime\" : \"2021-11-08T16:11:46.508832Z\",\n
-        \   \"authorTime\" : \"2021-11-08T16:11:46.508832Z\",\n    \"properties\"
+        : null,\n    \"message\" : \"test message\",\n    \"commitTime\" : \"2021-11-11T14:53:56.524663Z\",\n
+        \   \"authorTime\" : \"2021-11-11T14:53:56.524663Z\",\n    \"properties\"
         : { }\n  } ],\n  \"hasMore\" : false\n}"
     headers:
       Content-Type:
@@ -684,7 +687,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"08d4b67cabbc709cbad9e9f5618a3196e5ace53088b1322a8c7181afc56126a1\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"6cddad4ab780c81e09876d88e51cd18833c671cf41e9b7d3e2126bdc20c96d94\"\n}"
     headers:
       Content-Type:
       - application/json
@@ -705,13 +708,13 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: GET
-    uri: http://localhost:19120/api/v1/trees/tree/main/log?startHash=08d4b67cabbc709cbad9e9f5618a3196e5ace53088b1322a8c7181afc56126a1&endHash=d7f2439ccdcb233ce58085b4a3c4c81dc88a370d42caa524838b36417e3fed2d
+    uri: http://localhost:19120/api/v1/trees/tree/main/log?startHash=6cddad4ab780c81e09876d88e51cd18833c671cf41e9b7d3e2126bdc20c96d94&endHash=807d617005ada6cb8008ce394ea72d1c9ca3d805afaa2ea896b0ff26aa840777
   response:
     body:
-      string: "{\n  \"token\" : null,\n  \"operations\" : [ {\n    \"hash\" : \"d7f2439ccdcb233ce58085b4a3c4c81dc88a370d42caa524838b36417e3fed2d\",\n
+      string: "{\n  \"token\" : null,\n  \"operations\" : [ {\n    \"hash\" : \"807d617005ada6cb8008ce394ea72d1c9ca3d805afaa2ea896b0ff26aa840777\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test message\",\n    \"commitTime\" : \"2021-11-08T16:11:46.508832Z\",\n
-        \   \"authorTime\" : \"2021-11-08T16:11:46.508832Z\",\n    \"properties\"
+        : null,\n    \"message\" : \"test message\",\n    \"commitTime\" : \"2021-11-11T14:53:56.524663Z\",\n
+        \   \"authorTime\" : \"2021-11-11T14:53:56.524663Z\",\n    \"properties\"
         : { }\n  } ],\n  \"hasMore\" : false\n}"
     headers:
       Content-Type:
@@ -736,7 +739,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"08d4b67cabbc709cbad9e9f5618a3196e5ace53088b1322a8c7181afc56126a1\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"6cddad4ab780c81e09876d88e51cd18833c671cf41e9b7d3e2126bdc20c96d94\"\n}"
     headers:
       Content-Type:
       - application/json
@@ -760,14 +763,14 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/main/log
   response:
     body:
-      string: "{\n  \"token\" : null,\n  \"operations\" : [ {\n    \"hash\" : \"08d4b67cabbc709cbad9e9f5618a3196e5ace53088b1322a8c7181afc56126a1\",\n
+      string: "{\n  \"token\" : null,\n  \"operations\" : [ {\n    \"hash\" : \"6cddad4ab780c81e09876d88e51cd18833c671cf41e9b7d3e2126bdc20c96d94\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user2\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-11-08T16:11:46.685649Z\",\n
-        \   \"authorTime\" : \"2021-11-08T16:11:46.685649Z\",\n    \"properties\"
-        : { }\n  }, {\n    \"hash\" : \"d7f2439ccdcb233ce58085b4a3c4c81dc88a370d42caa524838b36417e3fed2d\",\n
+        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-11-11T14:53:56.700638Z\",\n
+        \   \"authorTime\" : \"2021-11-11T14:53:56.700638Z\",\n    \"properties\"
+        : { }\n  }, {\n    \"hash\" : \"807d617005ada6cb8008ce394ea72d1c9ca3d805afaa2ea896b0ff26aa840777\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test message\",\n    \"commitTime\" : \"2021-11-08T16:11:46.508832Z\",\n
-        \   \"authorTime\" : \"2021-11-08T16:11:46.508832Z\",\n    \"properties\"
+        : null,\n    \"message\" : \"test message\",\n    \"commitTime\" : \"2021-11-11T14:53:56.524663Z\",\n
+        \   \"authorTime\" : \"2021-11-11T14:53:56.524663Z\",\n    \"properties\"
         : { }\n  } ],\n  \"hasMore\" : false\n}"
     headers:
       Content-Type:
@@ -792,7 +795,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"08d4b67cabbc709cbad9e9f5618a3196e5ace53088b1322a8c7181afc56126a1\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"6cddad4ab780c81e09876d88e51cd18833c671cf41e9b7d3e2126bdc20c96d94\"\n}"
     headers:
       Content-Type:
       - application/json
@@ -816,10 +819,10 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/main/log?query_expression=commit.author%3D%3D%27nessie_user1%27
   response:
     body:
-      string: "{\n  \"token\" : null,\n  \"operations\" : [ {\n    \"hash\" : \"d7f2439ccdcb233ce58085b4a3c4c81dc88a370d42caa524838b36417e3fed2d\",\n
+      string: "{\n  \"token\" : null,\n  \"operations\" : [ {\n    \"hash\" : \"807d617005ada6cb8008ce394ea72d1c9ca3d805afaa2ea896b0ff26aa840777\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test message\",\n    \"commitTime\" : \"2021-11-08T16:11:46.508832Z\",\n
-        \   \"authorTime\" : \"2021-11-08T16:11:46.508832Z\",\n    \"properties\"
+        : null,\n    \"message\" : \"test message\",\n    \"commitTime\" : \"2021-11-11T14:53:56.524663Z\",\n
+        \   \"authorTime\" : \"2021-11-11T14:53:56.524663Z\",\n    \"properties\"
         : { }\n  } ],\n  \"hasMore\" : false\n}"
     headers:
       Content-Type:
@@ -844,7 +847,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"08d4b67cabbc709cbad9e9f5618a3196e5ace53088b1322a8c7181afc56126a1\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"6cddad4ab780c81e09876d88e51cd18833c671cf41e9b7d3e2126bdc20c96d94\"\n}"
     headers:
       Content-Type:
       - application/json
@@ -868,10 +871,10 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/main/log?query_expression=commit.author%3D%3D%27nessie_user2%27
   response:
     body:
-      string: "{\n  \"token\" : null,\n  \"operations\" : [ {\n    \"hash\" : \"08d4b67cabbc709cbad9e9f5618a3196e5ace53088b1322a8c7181afc56126a1\",\n
+      string: "{\n  \"token\" : null,\n  \"operations\" : [ {\n    \"hash\" : \"6cddad4ab780c81e09876d88e51cd18833c671cf41e9b7d3e2126bdc20c96d94\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user2\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-11-08T16:11:46.685649Z\",\n
-        \   \"authorTime\" : \"2021-11-08T16:11:46.685649Z\",\n    \"properties\"
+        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-11-11T14:53:56.700638Z\",\n
+        \   \"authorTime\" : \"2021-11-11T14:53:56.700638Z\",\n    \"properties\"
         : { }\n  } ],\n  \"hasMore\" : false\n}"
     headers:
       Content-Type:
@@ -896,7 +899,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"08d4b67cabbc709cbad9e9f5618a3196e5ace53088b1322a8c7181afc56126a1\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"6cddad4ab780c81e09876d88e51cd18833c671cf41e9b7d3e2126bdc20c96d94\"\n}"
     headers:
       Content-Type:
       - application/json
@@ -920,14 +923,14 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/main/log?query_expression=%28commit.author%3D%3D%27nessie_user2%27+%7C%7C+commit.author%3D%3D%27nessie_user1%27%29
   response:
     body:
-      string: "{\n  \"token\" : null,\n  \"operations\" : [ {\n    \"hash\" : \"08d4b67cabbc709cbad9e9f5618a3196e5ace53088b1322a8c7181afc56126a1\",\n
+      string: "{\n  \"token\" : null,\n  \"operations\" : [ {\n    \"hash\" : \"6cddad4ab780c81e09876d88e51cd18833c671cf41e9b7d3e2126bdc20c96d94\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user2\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-11-08T16:11:46.685649Z\",\n
-        \   \"authorTime\" : \"2021-11-08T16:11:46.685649Z\",\n    \"properties\"
-        : { }\n  }, {\n    \"hash\" : \"d7f2439ccdcb233ce58085b4a3c4c81dc88a370d42caa524838b36417e3fed2d\",\n
+        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-11-11T14:53:56.700638Z\",\n
+        \   \"authorTime\" : \"2021-11-11T14:53:56.700638Z\",\n    \"properties\"
+        : { }\n  }, {\n    \"hash\" : \"807d617005ada6cb8008ce394ea72d1c9ca3d805afaa2ea896b0ff26aa840777\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test message\",\n    \"commitTime\" : \"2021-11-08T16:11:46.508832Z\",\n
-        \   \"authorTime\" : \"2021-11-08T16:11:46.508832Z\",\n    \"properties\"
+        : null,\n    \"message\" : \"test message\",\n    \"commitTime\" : \"2021-11-11T14:53:56.524663Z\",\n
+        \   \"authorTime\" : \"2021-11-11T14:53:56.524663Z\",\n    \"properties\"
         : { }\n  } ],\n  \"hasMore\" : false\n}"
     headers:
       Content-Type:
@@ -952,7 +955,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"08d4b67cabbc709cbad9e9f5618a3196e5ace53088b1322a8c7181afc56126a1\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"6cddad4ab780c81e09876d88e51cd18833c671cf41e9b7d3e2126bdc20c96d94\"\n}"
     headers:
       Content-Type:
       - application/json
@@ -976,14 +979,14 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/main/log?query_expression=commit.committer%3D%3D%27%27
   response:
     body:
-      string: "{\n  \"token\" : null,\n  \"operations\" : [ {\n    \"hash\" : \"08d4b67cabbc709cbad9e9f5618a3196e5ace53088b1322a8c7181afc56126a1\",\n
+      string: "{\n  \"token\" : null,\n  \"operations\" : [ {\n    \"hash\" : \"6cddad4ab780c81e09876d88e51cd18833c671cf41e9b7d3e2126bdc20c96d94\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user2\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-11-08T16:11:46.685649Z\",\n
-        \   \"authorTime\" : \"2021-11-08T16:11:46.685649Z\",\n    \"properties\"
-        : { }\n  }, {\n    \"hash\" : \"d7f2439ccdcb233ce58085b4a3c4c81dc88a370d42caa524838b36417e3fed2d\",\n
+        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-11-11T14:53:56.700638Z\",\n
+        \   \"authorTime\" : \"2021-11-11T14:53:56.700638Z\",\n    \"properties\"
+        : { }\n  }, {\n    \"hash\" : \"807d617005ada6cb8008ce394ea72d1c9ca3d805afaa2ea896b0ff26aa840777\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test message\",\n    \"commitTime\" : \"2021-11-08T16:11:46.508832Z\",\n
-        \   \"authorTime\" : \"2021-11-08T16:11:46.508832Z\",\n    \"properties\"
+        : null,\n    \"message\" : \"test message\",\n    \"commitTime\" : \"2021-11-11T14:53:56.524663Z\",\n
+        \   \"authorTime\" : \"2021-11-11T14:53:56.524663Z\",\n    \"properties\"
         : { }\n  } ],\n  \"hasMore\" : false\n}"
     headers:
       Content-Type:
@@ -1008,7 +1011,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"08d4b67cabbc709cbad9e9f5618a3196e5ace53088b1322a8c7181afc56126a1\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"6cddad4ab780c81e09876d88e51cd18833c671cf41e9b7d3e2126bdc20c96d94\"\n}"
     headers:
       Content-Type:
       - application/json
@@ -1032,10 +1035,10 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/main/log?query_expression=commit.author+%3D%3D+%27nessie_user2%27+%7C%7C+commit.author+%3D%3D+%27non_existing%27
   response:
     body:
-      string: "{\n  \"token\" : null,\n  \"operations\" : [ {\n    \"hash\" : \"08d4b67cabbc709cbad9e9f5618a3196e5ace53088b1322a8c7181afc56126a1\",\n
+      string: "{\n  \"token\" : null,\n  \"operations\" : [ {\n    \"hash\" : \"6cddad4ab780c81e09876d88e51cd18833c671cf41e9b7d3e2126bdc20c96d94\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user2\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-11-08T16:11:46.685649Z\",\n
-        \   \"authorTime\" : \"2021-11-08T16:11:46.685649Z\",\n    \"properties\"
+        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-11-11T14:53:56.700638Z\",\n
+        \   \"authorTime\" : \"2021-11-11T14:53:56.700638Z\",\n    \"properties\"
         : { }\n  } ],\n  \"hasMore\" : false\n}"
     headers:
       Content-Type:
@@ -1060,7 +1063,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"08d4b67cabbc709cbad9e9f5618a3196e5ace53088b1322a8c7181afc56126a1\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"6cddad4ab780c81e09876d88e51cd18833c671cf41e9b7d3e2126bdc20c96d94\"\n}"
     headers:
       Content-Type:
       - application/json
@@ -1084,14 +1087,14 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/main/log?query_expression=%28timestamp%28commit.commitTime%29+%3E+timestamp%28%272001-01-01T00%3A00%3A00%2B00%3A00%27%29+%26%26+timestamp%28commit.commitTime%29+%3C+timestamp%28%272999-12-30T23%3A00%3A00%2B00%3A00%27%29%29
   response:
     body:
-      string: "{\n  \"token\" : null,\n  \"operations\" : [ {\n    \"hash\" : \"08d4b67cabbc709cbad9e9f5618a3196e5ace53088b1322a8c7181afc56126a1\",\n
+      string: "{\n  \"token\" : null,\n  \"operations\" : [ {\n    \"hash\" : \"6cddad4ab780c81e09876d88e51cd18833c671cf41e9b7d3e2126bdc20c96d94\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user2\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-11-08T16:11:46.685649Z\",\n
-        \   \"authorTime\" : \"2021-11-08T16:11:46.685649Z\",\n    \"properties\"
-        : { }\n  }, {\n    \"hash\" : \"d7f2439ccdcb233ce58085b4a3c4c81dc88a370d42caa524838b36417e3fed2d\",\n
+        : null,\n    \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-11-11T14:53:56.700638Z\",\n
+        \   \"authorTime\" : \"2021-11-11T14:53:56.700638Z\",\n    \"properties\"
+        : { }\n  }, {\n    \"hash\" : \"807d617005ada6cb8008ce394ea72d1c9ca3d805afaa2ea896b0ff26aa840777\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"nessie_user1\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test message\",\n    \"commitTime\" : \"2021-11-08T16:11:46.508832Z\",\n
-        \   \"authorTime\" : \"2021-11-08T16:11:46.508832Z\",\n    \"properties\"
+        : null,\n    \"message\" : \"test message\",\n    \"commitTime\" : \"2021-11-11T14:53:56.524663Z\",\n
+        \   \"authorTime\" : \"2021-11-11T14:53:56.524663Z\",\n    \"properties\"
         : { }\n  } ],\n  \"hasMore\" : false\n}"
     headers:
       Content-Type:

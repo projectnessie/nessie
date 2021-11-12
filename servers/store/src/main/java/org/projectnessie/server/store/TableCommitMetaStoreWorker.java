@@ -29,6 +29,7 @@ import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
 import org.projectnessie.model.ImmutableDeltaLakeTable.Builder;
+import org.projectnessie.model.ImmutableIcebergTable;
 import org.projectnessie.model.ImmutableSqlView;
 import org.projectnessie.model.SqlView;
 import org.projectnessie.model.SqlView.Dialect;
@@ -46,10 +47,13 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
     ObjectTypes.Content.Builder builder = ObjectTypes.Content.newBuilder().setId(content.getId());
     if (content instanceof IcebergTable) {
       IcebergTable state = (IcebergTable) content;
-      ObjectTypes.IcebergMetadataPointer.Builder stateBuilder =
-          ObjectTypes.IcebergMetadataPointer.newBuilder()
-              .setMetadataLocation(state.getMetadataLocation());
-      builder.setIcebergMetadataPointer(stateBuilder);
+      ObjectTypes.IcebergRefState.Builder stateBuilder =
+          ObjectTypes.IcebergRefState.newBuilder()
+              .setSnapshotId(state.getSnapshotId())
+              .setSchemaId(state.getSchemaId())
+              .setSpecId(state.getSpecId())
+              .setSortOrderId(state.getSortOrderId());
+      builder.setIcebergRefState(stateBuilder);
 
     } else if (content instanceof DeltaLakeTable) {
       ObjectTypes.DeltaLakeTable.Builder table =
@@ -82,9 +86,10 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
     ObjectTypes.Content.Builder builder = ObjectTypes.Content.newBuilder().setId(content.getId());
     if (content instanceof IcebergTable) {
       IcebergTable state = (IcebergTable) content;
-      ObjectTypes.IcebergGlobal.Builder stateBuilder =
-          ObjectTypes.IcebergGlobal.newBuilder().setIdGenerators(state.getIdGenerators());
-      builder.setIcebergGlobal(stateBuilder);
+      ObjectTypes.IcebergMetadataPointer.Builder stateBuilder =
+          ObjectTypes.IcebergMetadataPointer.newBuilder()
+              .setMetadataLocation(state.getMetadataLocation());
+      builder.setIcebergMetadataPointer(stateBuilder);
     } else {
       throw new IllegalArgumentException("Unknown type " + content);
     }
@@ -111,16 +116,20 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
         }
         return builder.build();
 
-      case ICEBERG_METADATA_POINTER:
+      case ICEBERG_REF_STATE:
         ObjectTypes.Content global =
-            globalContent.orElseThrow(TableCommitMetaStoreWorker::noIcebergGlobal);
-        if (!global.hasIcebergGlobal()) {
-          throw noIcebergGlobal();
+            globalContent.orElseThrow(TableCommitMetaStoreWorker::noIcebergMetadataPointer);
+        if (!global.hasIcebergMetadataPointer()) {
+          throw noIcebergMetadataPointer();
         }
-        return IcebergTable.of(
-            content.getIcebergMetadataPointer().getMetadataLocation(),
-            global.getIcebergGlobal().getIdGenerators(),
-            content.getId());
+        return ImmutableIcebergTable.builder()
+            .metadataLocation(global.getIcebergMetadataPointer().getMetadataLocation())
+            .snapshotId(content.getIcebergRefState().getSnapshotId())
+            .schemaId(content.getIcebergRefState().getSchemaId())
+            .specId(content.getIcebergRefState().getSpecId())
+            .sortOrderId(content.getIcebergRefState().getSortOrderId())
+            .id(content.getId())
+            .build();
 
       case SQL_VIEW:
         ObjectTypes.SqlView view = content.getSqlView();
@@ -136,7 +145,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
     }
   }
 
-  private static IllegalArgumentException noIcebergGlobal() {
+  private static IllegalArgumentException noIcebergMetadataPointer() {
     return new IllegalArgumentException(
         "Iceberg content from reference must have global state, but has none");
   }

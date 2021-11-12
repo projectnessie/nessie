@@ -15,9 +15,9 @@ interactions:
   response:
     body:
       string: "{\n  \"token\" : null,\n  \"references\" : [ {\n    \"type\" : \"BRANCH\",\n
-        \   \"name\" : \"main\",\n    \"hash\" : \"d575bf1f9967fe77bb12dde178a91c7395f273de0892a39f19a43af0a62e656d\"\n
+        \   \"name\" : \"main\",\n    \"hash\" : \"f642677fb7dd347eb6d3956c7506a6f49aad73c47858c367802223d080221d33\"\n
         \ }, {\n    \"type\" : \"BRANCH\",\n    \"name\" : \"dev\",\n    \"hash\"
-        : \"c33ffb75a555d105bcad6b3219825a41e887676d54f4be1a2390c3974df3ed82\"\n  }
+        : \"0bbfa4ad27bb1ef19a8823e74dd648ff632bc7ba8437f4bb5bbf0f4c6a28f2b8\"\n  }
         ],\n  \"hasMore\" : false\n}"
     headers:
       Content-Type:
@@ -42,7 +42,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/main
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"d575bf1f9967fe77bb12dde178a91c7395f273de0892a39f19a43af0a62e656d\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"f642677fb7dd347eb6d3956c7506a6f49aad73c47858c367802223d080221d33\"\n}"
     headers:
       Content-Type:
       - application/json
@@ -65,7 +65,7 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: DELETE
-    uri: http://localhost:19120/api/v1/trees/branch/main?expectedHash=d575bf1f9967fe77bb12dde178a91c7395f273de0892a39f19a43af0a62e656d
+    uri: http://localhost:19120/api/v1/trees/branch/main?expectedHash=f642677fb7dd347eb6d3956c7506a6f49aad73c47858c367802223d080221d33
   response:
     body:
       string: ''
@@ -88,7 +88,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/dev
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"c33ffb75a555d105bcad6b3219825a41e887676d54f4be1a2390c3974df3ed82\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"0bbfa4ad27bb1ef19a8823e74dd648ff632bc7ba8437f4bb5bbf0f4c6a28f2b8\"\n}"
     headers:
       Content-Type:
       - application/json
@@ -111,7 +111,7 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: DELETE
-    uri: http://localhost:19120/api/v1/trees/branch/dev?expectedHash=c33ffb75a555d105bcad6b3219825a41e887676d54f4be1a2390c3974df3ed82
+    uri: http://localhost:19120/api/v1/trees/branch/dev?expectedHash=0bbfa4ad27bb1ef19a8823e74dd648ff632bc7ba8437f4bb5bbf0f4c6a28f2b8
   response:
     body:
       string: ''
@@ -144,8 +144,8 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"name": "main", "hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-      "type": "BRANCH"}'
+    body: '{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+      "name": "main", "type": "BRANCH"}'
     headers:
       Accept:
       - '*/*'

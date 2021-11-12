@@ -48,8 +48,8 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"name": "contents_commit_with_expected_state", "hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-      "type": "BRANCH"}'
+    body: '{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+      "name": "contents_commit_with_expected_state", "type": "BRANCH"}'
     headers:
       Accept:
       - '*/*'
@@ -133,12 +133,12 @@ interactions:
       code: 404
       message: Not Found
 - request:
-    body: '{"commitMeta": {"commitTime": null, "author": "nessie test", "authorTime":
-      null, "hash": null, "properties": null, "committer": null, "message": "commit
-      1", "signedOffBy": null}, "operations": [{"expectedContent": null, "key": {"elements":
-      ["commit", "expected", "contents"]}, "content": {"idGenerators": "xyz", "metadataLocation":
-      "/a/b/c", "id": "test_expected_contents", "type": "ICEBERG_TABLE"}, "type":
-      "PUT"}]}'
+    body: '{"commitMeta": {"hash": null, "authorTime": null, "signedOffBy": null,
+      "message": "commit 1", "commitTime": null, "properties": null, "committer":
+      null, "author": "nessie test"}, "operations": [{"expectedContent": null, "key":
+      {"elements": ["commit", "expected", "contents"]}, "content": {"specId": 42,
+      "id": "test_expected_contents", "schemaId": 42, "snapshotId": 42, "sortOrderId":
+      42, "metadataLocation": "/a/b/c", "type": "ICEBERG_TABLE"}, "type": "PUT"}]}'
     headers:
       Accept:
       - '*/*'
@@ -147,7 +147,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '416'
+      - '460'
       Content-Type:
       - application/json
       User-Agent:
@@ -157,7 +157,7 @@ interactions:
   response:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"contents_commit_with_expected_state\",\n
-        \ \"hash\" : \"d878236e630948097c6db2c2f303a0d40558d3397bb66a83b1164d082aadcd1f\"\n}"
+        \ \"hash\" : \"ee02e3b3495818c9b151e2684242cbc8ffd84d116d1731db8a87e3d817e78795\"\n}"
     headers:
       Content-Type:
       - application/json
@@ -184,7 +184,7 @@ interactions:
       string: "{\n  \"token\" : null,\n  \"references\" : [ {\n    \"type\" : \"BRANCH\",\n
         \   \"name\" : \"main\",\n    \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n
         \ }, {\n    \"type\" : \"BRANCH\",\n    \"name\" : \"contents_commit_with_expected_state\",\n
-        \   \"hash\" : \"d878236e630948097c6db2c2f303a0d40558d3397bb66a83b1164d082aadcd1f\"\n
+        \   \"hash\" : \"ee02e3b3495818c9b151e2684242cbc8ffd84d116d1731db8a87e3d817e78795\"\n
         \ } ],\n  \"hasMore\" : false\n}"
     headers:
       Content-Type:
@@ -210,12 +210,13 @@ interactions:
   response:
     body:
       string: "{\n  \"type\" : \"ICEBERG_TABLE\",\n  \"id\" : \"test_expected_contents\",\n
-        \ \"metadataLocation\" : \"/a/b/c\",\n  \"idGenerators\" : \"xyz\"\n}"
+        \ \"metadataLocation\" : \"/a/b/c\",\n  \"snapshotId\" : 42,\n  \"schemaId\"
+        : 42,\n  \"specId\" : 42,\n  \"sortOrderId\" : 42\n}"
     headers:
       Content-Type:
       - application/json
       content-length:
-      - '124'
+      - '177'
     status:
       code: 200
       message: OK

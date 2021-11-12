@@ -85,7 +85,7 @@ public abstract class AbstractResteasyTest {
         newReference,
         rest().get("trees/tree/test").then().statusCode(200).extract().as(Branch.class));
 
-    IcebergTable table = IcebergTable.of("/the/directory/over/there", "x");
+    IcebergTable table = IcebergTable.of("/the/directory/over/there", 42, 42, 42, 42);
 
     Branch commitResponse =
         rest()
@@ -111,13 +111,13 @@ public abstract class AbstractResteasyTest {
       updates[i] =
           ImmutablePut.builder()
               .key(ContentKey.of("item", Integer.toString(i)))
-              .content(IcebergTable.of("/the/directory/over/there/" + i, "x"))
+              .content(IcebergTable.of("/the/directory/over/there/" + i, 42, 42, 42, 42))
               .build();
     }
     updates[10] =
         ImmutablePut.builder()
             .key(ContentKey.of("xxx", "test"))
-            .content(IcebergTable.of("/the/directory/over/there/has/been/moved", "x"))
+            .content(IcebergTable.of("/the/directory/over/there/has/been/moved", 42, 42, 42, 42))
             .build();
 
     Reference branch = rest().get("trees/tree/test").as(Reference.class);
@@ -143,7 +143,9 @@ public abstract class AbstractResteasyTest {
     Assertions.assertEquals(updates[10].getContent(), res.body().as(Content.class));
 
     IcebergTable currentTable = table;
-    table = IcebergTable.of("/the/directory/over/there/has/been/moved/again", "x", table.getId());
+    table =
+        IcebergTable.of(
+            "/the/directory/over/there/has/been/moved/again", 42, 42, 42, 42, table.getId());
 
     Branch b2 = rest().get("trees/tree/test").as(Branch.class);
     rest()
@@ -246,10 +248,11 @@ public abstract class AbstractResteasyTest {
                 (expectedMetadataUrl != null)
                     ? Put.of(
                         ContentKey.of(contentKey),
-                        IcebergTable.of(metadataUrl, "x", contentId),
-                        IcebergTable.of(expectedMetadataUrl, "x", contentId))
+                        IcebergTable.of(metadataUrl, 42, 42, 42, 42, contentId),
+                        IcebergTable.of(expectedMetadataUrl, 42, 42, 42, 42, contentId))
                     : Put.of(
-                        ContentKey.of(contentKey), IcebergTable.of(metadataUrl, "x", contentId)))
+                        ContentKey.of(contentKey),
+                        IcebergTable.of(metadataUrl, 42, 42, 42, 42, contentId)))
             .commitMeta(CommitMeta.builder().author(author).message("").build())
             .build();
     return rest()
@@ -399,7 +402,7 @@ public abstract class AbstractResteasyTest {
   @Test
   public void testGetContent() {
     Branch branch = makeBranch("content-test");
-    IcebergTable table = IcebergTable.of("content-table1", "x");
+    IcebergTable table = IcebergTable.of("content-table1", 42, 42, 42, 42);
 
     commit(table.getId(), branch, "key1", table.getMetadataLocation());
 

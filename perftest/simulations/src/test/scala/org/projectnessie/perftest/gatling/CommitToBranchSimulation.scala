@@ -55,7 +55,14 @@ class CommitToBranchSimulation extends Simulation {
           val contentId = tableName
 
           val tableMeta = IcebergTable
-            .of(s"path_on_disk_${tableName}_$commitNum", "x", contentId)
+            .of(
+              s"path_on_disk_${tableName}_$commitNum",
+              42,
+              43,
+              44,
+              45,
+              contentId
+            )
 
           // TODO the expectedContent is wrong!! commitNum is for the session, but we need the actual global state!!
           val op =
@@ -65,7 +72,10 @@ class CommitToBranchSimulation extends Simulation {
                 tableMeta,
                 IcebergTable.of(
                   s"path_on_disk_${tableName}_${commitNum - 1}",
-                  "x",
+                  42,
+                  43,
+                  44,
+                  45,
                   contentId
                 )
               )

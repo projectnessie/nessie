@@ -242,7 +242,7 @@ public abstract class AbstractTestRest {
     String root = "ref_name_" + refNamePart.replaceAll("[^a-z]", "");
     Branch main = createBranch(root);
 
-    IcebergTable meta = IcebergTable.of("meep", "x");
+    IcebergTable meta = IcebergTable.of("meep", 42, 42, 42, 42);
     main =
         api.commitMultipleOperations()
             .branchName(main.getName())
@@ -319,7 +319,7 @@ public abstract class AbstractTestRest {
 
     // Need to have at least one op, otherwise all following operations (assignTag/Branch, merge,
     // delete) will fail
-    meta = IcebergTable.of("foo", "x");
+    meta = IcebergTable.of("foo", 42, 42, 42, 42);
     api.commitMultipleOperations()
         .branchName(branchName)
         .hash(branchHash)
@@ -574,7 +574,7 @@ public abstract class AbstractTestRest {
     for (int j = 0; j < numAuthors; j++) {
       String author = "author-" + j;
       for (int i = 0; i < commitsPerAuthor; i++) {
-        IcebergTable meta = IcebergTable.of("some-file-" + i, "x");
+        IcebergTable meta = IcebergTable.of("some-file-" + i, 42, 42, 42, 42);
         String nextHash =
             api.commitMultipleOperations()
                 .branchName(branch.getName())
@@ -638,7 +638,7 @@ public abstract class AbstractTestRest {
     for (int i = 0; i < commits; i++) {
       String msg = "message-for-" + i;
       allMessages.add(msg);
-      IcebergTable tableMeta = IcebergTable.of("some-file-" + i, "x");
+      IcebergTable tableMeta = IcebergTable.of("some-file-" + i, 42, 42, 42, 42);
       String nextHash =
           api.commitMultipleOperations()
               .branchName(branch.getName())
@@ -675,8 +675,8 @@ public abstract class AbstractTestRest {
     Branch base = createBranch("transplant-base");
     Branch branch = createBranch("transplant-branch");
 
-    IcebergTable table1 = IcebergTable.of("transplant-table1", "x");
-    IcebergTable table2 = IcebergTable.of("transplant-table2", "y");
+    IcebergTable table1 = IcebergTable.of("transplant-table1", 42, 42, 42, 42);
+    IcebergTable table2 = IcebergTable.of("transplant-table2", 43, 43, 43, 43);
 
     Branch committed1 =
         api.commitMultipleOperations()
@@ -725,8 +725,8 @@ public abstract class AbstractTestRest {
     Branch base = createBranch("merge-base");
     Branch branch = createBranch("merge-branch");
 
-    IcebergTable table1 = IcebergTable.of("merge-table1", "x");
-    IcebergTable table2 = IcebergTable.of("merge-table2", "y");
+    IcebergTable table1 = IcebergTable.of("merge-table1", 42, 42, 42, 42);
+    IcebergTable table2 = IcebergTable.of("merge-table2", 43, 43, 43, 43);
 
     Branch committed1 =
         api.commitMultipleOperations()
@@ -812,8 +812,8 @@ public abstract class AbstractTestRest {
     Branch branch = createBranch("foo");
     ContentKey a = ContentKey.of("a");
     ContentKey b = ContentKey.of("b");
-    IcebergTable ta = IcebergTable.of("path1", "x");
-    IcebergTable tb = IcebergTable.of("path2", "x");
+    IcebergTable ta = IcebergTable.of("path1", 42, 42, 42, 42);
+    IcebergTable tb = IcebergTable.of("path2", 42, 42, 42, 42);
     api.commitMultipleOperations()
         .branch(branch)
         .operation(Put.of(a, ta))
@@ -873,7 +873,7 @@ public abstract class AbstractTestRest {
     return Stream.of(
         new ContentAndOperationType(
             Type.ICEBERG_TABLE,
-            Put.of(ContentKey.of("iceberg"), IcebergTable.of("/iceberg/table", "x"))),
+            Put.of(ContentKey.of("iceberg"), IcebergTable.of("/iceberg/table", 42, 42, 42, 42))),
         new ContentAndOperationType(
             Type.VIEW,
             Put.of(
@@ -981,7 +981,7 @@ public abstract class AbstractTestRest {
     Branch branch = createBranch("filterTypes");
     ContentKey a = ContentKey.of("a");
     ContentKey b = ContentKey.of("b");
-    IcebergTable tam = IcebergTable.of("path1", "x");
+    IcebergTable tam = IcebergTable.of("path1", 42, 42, 42, 42);
     SqlView tb =
         ImmutableSqlView.builder().sqlText("select * from table").dialect(Dialect.DREMIO).build();
     api.commitMultipleOperations()
@@ -1040,22 +1040,22 @@ public abstract class AbstractTestRest {
     ContentKey fourth = ContentKey.of("a", "fourthTable");
     api.commitMultipleOperations()
         .branch(branch)
-        .operation(Put.of(first, IcebergTable.of("path1", "x")))
+        .operation(Put.of(first, IcebergTable.of("path1", 42, 42, 42, 42)))
         .commitMeta(CommitMeta.fromMessage("commit 1"))
         .commit();
     api.commitMultipleOperations()
         .branch(branch)
-        .operation(Put.of(second, IcebergTable.of("path2", "x")))
+        .operation(Put.of(second, IcebergTable.of("path2", 42, 42, 42, 42)))
         .commitMeta(CommitMeta.fromMessage("commit 2"))
         .commit();
     api.commitMultipleOperations()
         .branch(branch)
-        .operation(Put.of(third, IcebergTable.of("path3", "x")))
+        .operation(Put.of(third, IcebergTable.of("path3", 42, 42, 42, 42)))
         .commitMeta(CommitMeta.fromMessage("commit 3"))
         .commit();
     api.commitMultipleOperations()
         .branch(branch)
-        .operation(Put.of(fourth, IcebergTable.of("path4", "x")))
+        .operation(Put.of(fourth, IcebergTable.of("path4", 42, 42, 42, 42)))
         .commitMeta(CommitMeta.fromMessage("commit 4"))
         .commit();
 
@@ -1117,7 +1117,7 @@ public abstract class AbstractTestRest {
     for (int i = 0; i < 5; i++) {
       api.commitMultipleOperations()
           .branch(branch)
-          .operation(Put.of(keys.get(i), IcebergTable.of("path" + i, "x")))
+          .operation(Put.of(keys.get(i), IcebergTable.of("path" + i, 42, 42, 42, 42)))
           .commitMeta(CommitMeta.fromMessage("commit " + i))
           .commit();
     }
@@ -1230,7 +1230,7 @@ public abstract class AbstractTestRest {
     Branch branch = createBranch("specialchar");
     // ContentKey k = ContentKey.of("/%国","国.国");
     ContentKey k = ContentKey.of("a.b", "c.txt");
-    IcebergTable ta = IcebergTable.of("path1", "x");
+    IcebergTable ta = IcebergTable.of("path1", 42, 42, 42, 42);
     api.commitMultipleOperations()
         .branch(branch)
         .operation(Put.of(k, ta))

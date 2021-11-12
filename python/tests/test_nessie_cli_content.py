@@ -231,8 +231,10 @@ def test_content_commit_no_expected_state() -> None:
     make_commit("commit.expected.contents", table2, branch, message="commit 2")
 
 
-def _create_iceberg_table(table_id: str, metadata_location: str = "/a/b/c", id_generators: str = "xyz") -> IcebergTable:
-    return IcebergTable(table_id, metadata_location, id_generators)
+def _create_iceberg_table(
+    table_id: str, metadata_location: str = "/a/b/c", snapshot_id: int = 42, schema_id: int = 42, spec_id: int = 42, sort_order_id: int = 42
+) -> IcebergTable:
+    return IcebergTable(table_id, metadata_location, snapshot_id, schema_id, spec_id, sort_order_id)
 
 
 def _create_delta_lake_table(

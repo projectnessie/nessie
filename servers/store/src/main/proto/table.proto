@@ -23,7 +23,7 @@ option java_generate_equals_and_hash = true;
 message Content {
   oneof object_type {
     IcebergMetadataPointer iceberg_metadata_pointer = 1;
-    IcebergGlobal iceberg_global = 2;
+    IcebergRefState iceberg_ref_state = 2;
     SqlView sql_view = 3;
     DeltaLakeTable delta_lake_table = 4;
   }
@@ -34,8 +34,11 @@ message IcebergMetadataPointer {
   string metadata_location = 1;
 }
 
-message IcebergGlobal {
-  string id_generators = 1;
+message IcebergRefState {
+  int64 snapshot_id = 1;
+  int32 schema_id = 2;
+  int32 spec_id = 3;
+  int32 sort_order_id = 4;
 }
 
 message SqlView {

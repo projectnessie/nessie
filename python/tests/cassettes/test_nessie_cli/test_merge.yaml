@@ -48,8 +48,8 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"name": "dev", "hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-      "type": "BRANCH"}'
+    body: '{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+      "name": "dev", "type": "BRANCH"}'
     headers:
       Accept:
       - '*/*'
@@ -131,11 +131,12 @@ interactions:
       code: 404
       message: Not Found
 - request:
-    body: '{"commitMeta": {"commitTime": null, "author": "nessie test", "authorTime":
-      null, "hash": null, "properties": null, "committer": null, "message": "test
-      message", "signedOffBy": null}, "operations": [{"expectedContent": null, "key":
-      {"elements": ["merge", "foo", "bar"]}, "content": {"idGenerators": "xyz", "metadataLocation":
-      "/a/b/c", "id": "test_merge", "type": "ICEBERG_TABLE"}, "type": "PUT"}]}'
+    body: '{"commitMeta": {"hash": null, "authorTime": null, "signedOffBy": null,
+      "message": "test message", "commitTime": null, "properties": null, "committer":
+      null, "author": "nessie test"}, "operations": [{"expectedContent": null, "key":
+      {"elements": ["merge", "foo", "bar"]}, "content": {"specId": 44, "id": "test_merge",
+      "schemaId": 43, "snapshotId": 42, "sortOrderId": 45, "metadataLocation": "/a/b/c",
+      "type": "ICEBERG_TABLE"}, "type": "PUT"}]}'
     headers:
       Accept:
       - '*/*'
@@ -144,7 +145,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '397'
+      - '441'
       Content-Type:
       - application/json
       User-Agent:
@@ -153,7 +154,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/branch/dev/commit?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"120fd20c68e136107564c20a87182b49cf256eddede9d4af336e7d3de06f23f9\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"1d26ea747944ead371eeeabc5229af13bcfe6069611cc894116c06c9c2125512\"\n}"
     headers:
       Content-Type:
       - application/json
@@ -180,7 +181,7 @@ interactions:
       string: "{\n  \"token\" : null,\n  \"references\" : [ {\n    \"type\" : \"BRANCH\",\n
         \   \"name\" : \"main\",\n    \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n
         \ }, {\n    \"type\" : \"BRANCH\",\n    \"name\" : \"dev\",\n    \"hash\"
-        : \"120fd20c68e136107564c20a87182b49cf256eddede9d4af336e7d3de06f23f9\"\n  }
+        : \"1d26ea747944ead371eeeabc5229af13bcfe6069611cc894116c06c9c2125512\"\n  }
         ],\n  \"hasMore\" : false\n}"
     headers:
       Content-Type:
@@ -229,7 +230,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/dev
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"120fd20c68e136107564c20a87182b49cf256eddede9d4af336e7d3de06f23f9\"\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"1d26ea747944ead371eeeabc5229af13bcfe6069611cc894116c06c9c2125512\"\n}"
     headers:
       Content-Type:
       - application/json
@@ -239,7 +240,8 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"fromRefName": "dev", "fromHash": "120fd20c68e136107564c20a87182b49cf256eddede9d4af336e7d3de06f23f9"}'
+    body: '{"fromHash": "1d26ea747944ead371eeeabc5229af13bcfe6069611cc894116c06c9c2125512",
+      "fromRefName": "dev"}'
     headers:
       Accept:
       - '*/*'
@@ -278,9 +280,9 @@ interactions:
   response:
     body:
       string: "{\n  \"token\" : null,\n  \"references\" : [ {\n    \"type\" : \"BRANCH\",\n
-        \   \"name\" : \"main\",\n    \"hash\" : \"120fd20c68e136107564c20a87182b49cf256eddede9d4af336e7d3de06f23f9\"\n
+        \   \"name\" : \"main\",\n    \"hash\" : \"1d26ea747944ead371eeeabc5229af13bcfe6069611cc894116c06c9c2125512\"\n
         \ }, {\n    \"type\" : \"BRANCH\",\n    \"name\" : \"dev\",\n    \"hash\"
-        : \"120fd20c68e136107564c20a87182b49cf256eddede9d4af336e7d3de06f23f9\"\n  }
+        : \"1d26ea747944ead371eeeabc5229af13bcfe6069611cc894116c06c9c2125512\"\n  }
         ],\n  \"hasMore\" : false\n}"
     headers:
       Content-Type:

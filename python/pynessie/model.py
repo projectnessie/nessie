@@ -47,7 +47,10 @@ class IcebergTable(Content):
     """Dataclass for Nessie Content."""
 
     metadata_location: str = desert.ib(fields.Str(data_key="metadataLocation"))
-    id_generators: str = desert.ib(fields.Str(data_key="idGenerators"))
+    snapshot_id: int = desert.ib(fields.Int(data_key="snapshotId"))
+    schema_id: int = desert.ib(fields.Int(data_key="schemaId"))
+    spec_id: int = desert.ib(fields.Int(data_key="specId"))
+    sort_order_id: int = desert.ib(fields.Int(data_key="sortOrderId"))
 
     @staticmethod
     def requires_expected_state() -> bool:
@@ -56,7 +59,11 @@ class IcebergTable(Content):
 
     def pretty_print(self: "IcebergTable") -> str:
         """Print out for cli."""
-        return "Iceberg table:\n\tmetadata-location:{}\n\tid-generators:{}".format(self.metadata_location, self.id_generators)
+        return (
+            f"Iceberg table:\n\tmetadata-location: {self.metadata_location}\n\tsnapshot-id: {self.snapshot_id}"
+            f"\n\tschema-id: {self.schema_id}"
+            f"\n\tpartition-spec-id: {self.spec_id}\n\tdefault-sort-order-id: {self.sort_order_id}"
+        )
 
 
 IcebergTableSchema = desert.schema_class(IcebergTable)

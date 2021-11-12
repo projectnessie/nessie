@@ -77,7 +77,7 @@ def test_remote() -> None:
 
 
 def _new_table(table_id: str) -> IcebergTable:
-    return IcebergTable(table_id, "/a/b/c", "xyz")
+    return IcebergTable(table_id, "/a/b/c", 42, 43, 44, 45)
 
 
 @pytest.mark.vcr
