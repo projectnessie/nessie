@@ -21,7 +21,7 @@
 
   <groupId>org.projectnessie</groupId>
   <artifactId>nessie</artifactId>
-  <version>0.12.2-SNAPSHOT</version>
+  <version>0.14.0</version>
   <packaging>pom</packaging>
 
   <name>Nessie</name>
