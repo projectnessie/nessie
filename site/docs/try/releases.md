@@ -1,5 +1,11 @@
 # Releases
 
+## 0.10.0 Release (November 12, 2021)
+
+* Updated `IcebergTable` to track more information
+* UI dependencies cleanup
+* OpenAPI/REST API cleanup (breaking change)
+
 ## 0.12.1 Release (November 3, 2021)
 
 * Test code improvements
