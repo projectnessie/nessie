@@ -108,7 +108,7 @@
     "eslint-plugin-react-hooks": "^4.3.0",
     "eslint-plugin-testing-library": "^5.0.0",
     "eslint-plugin-unicorn": "^38.0.1",
-    "eslint-webpack-plugin": "^2.5.2",
+    "eslint-webpack-plugin": "^2.6.0",
     "file-loader": "6.2.0",
     "fs-extra": "^10.0.0",
     "html-webpack-plugin": "4.5.2",
