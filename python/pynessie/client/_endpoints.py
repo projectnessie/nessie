@@ -27,6 +27,7 @@ import simplejson as jsonlib
 from requests.auth import AuthBase
 
 from ..error import _create_exception
+from ..model import ContentKey
 
 
 def _get_headers(has_body: bool = False) -> dict:
@@ -64,7 +65,7 @@ def _put(url: str, auth: Optional[AuthBase], json: Union[str, dict] = None, ssl_
 
 def _check_error(r: requests.models.Response) -> Union[dict, list]:
     if 200 <= r.status_code < 300:
-        return r.json() if r.content else dict()
+        return r.json() if r.content else {}
 
     if isinstance(r.reason, bytes):
         try:
@@ -76,14 +77,14 @@ def _check_error(r: requests.models.Response) -> Union[dict, list]:
 
     try:
         parsed_response = r.json()
-    except:  # NOQA
+    except:  # NOQA # pylint: disable=W0702
         # rare/unexpected case when the server responds with a non-JSON payload for an error
-        parsed_response = dict()
+        parsed_response = {}
 
     raise _create_exception(parsed_response, r.status_code, reason, r.url)
 
 
-def all_references(base_url: str, auth: Optional[AuthBase], ssl_verify: bool = True) -> list:
+def all_references(base_url: str, auth: Optional[AuthBase], ssl_verify: bool = True) -> dict:
     """Fetch all known references.
 
     :param base_url: base Nessie url
@@ -91,7 +92,7 @@ def all_references(base_url: str, auth: Optional[AuthBase], ssl_verify: bool = T
     :param ssl_verify: ignore ssl errors if False
     :return: json list of Nessie references
     """
-    return cast(list, _get(base_url + "/trees", auth, ssl_verify=ssl_verify))
+    return cast(dict, _get(base_url + "/trees", auth, ssl_verify=ssl_verify))
 
 
 def get_reference(base_url: str, auth: Optional[AuthBase], ref: str, ssl_verify: bool = True) -> dict:
@@ -181,7 +182,7 @@ def list_tables(
     :param ssl_verify: ignore ssl errors if False
     :return: json list of Nessie table names
     """
-    params = dict()
+    params = {}
     if max_result_hint:
         params["max"] = str(max_result_hint)
     if hash_on_ref:
@@ -221,8 +222,8 @@ def list_logs(
     return cast(dict, _get(base_url + "/trees/tree/{}/log".format(ref), auth, ssl_verify=ssl_verify, params=filtering_args))
 
 
-def get_table(
-    base_url: str, auth: Optional[AuthBase], ref: str, table: str, hash_on_ref: Optional[str] = None, ssl_verify: bool = True
+def get_content(
+    base_url: str, auth: Optional[AuthBase], ref: str, content_key: ContentKey, hash_on_ref: Optional[str] = None, ssl_verify: bool = True
 ) -> dict:
     """Fetch a table from a known branch.
 
@@ -230,14 +231,14 @@ def get_table(
     :param auth: Authentication settings
     :param ref: ref
     :param hash_on_ref: hash on reference
-    :param table: name of table
+    :param content_key: key that is associated with content like table
     :param ssl_verify: ignore ssl errors if False
     :return: json dict of Nessie table
     """
     params = {"ref": ref}
     if hash_on_ref:
         params["hashOnRef"] = hash_on_ref
-    return cast(dict, _get(base_url + "/contents/{}".format(table), auth, ssl_verify=ssl_verify, params=params))
+    return cast(dict, _get(base_url + "/contents/{}".format(content_key.to_path_string()), auth, ssl_verify=ssl_verify, params=params))
 
 
 def assign_branch(

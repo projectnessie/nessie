@@ -16,7 +16,7 @@
 
 from pynessie.error import _create_exception
 from pynessie.error import NessieConflictException
-from pynessie.error import NessieContentsNotFoundException
+from pynessie.error import NessieContentNotFoundException
 from pynessie.error import NessieException
 from pynessie.error import NessieNotFoundException
 from pynessie.error import NessiePermissionException
@@ -33,32 +33,32 @@ from pynessie.error import NessieUnauthorizedException
 
 def test_raise_exception_missing_payload() -> None:
     """Test the handling error responses with missing JSON payload."""
-    ex = _create_exception(dict(), 412, "reason123", "url123")
+    ex = _create_exception({}, 412, "reason123", "url123")
     assert isinstance(ex, NessiePreconidtionFailedException)
     assert "412" in str(ex.json())
     assert "reason123" in str(ex.json())
     assert "url123" in str(ex.json())
 
-    ex = _create_exception(dict(), 401, "reason123", "url123")
+    ex = _create_exception({}, 401, "reason123", "url123")
     assert isinstance(ex, NessieUnauthorizedException)
 
-    ex = _create_exception(dict(), 403, "reason123", "url123")
+    ex = _create_exception({}, 403, "reason123", "url123")
     assert isinstance(ex, NessiePermissionException)
 
-    ex = _create_exception(dict(), 404, "reason123", "url123")
+    ex = _create_exception({}, 404, "reason123", "url123")
     assert isinstance(ex, NessieNotFoundException)
 
-    ex = _create_exception(dict(), 409, "reason123", "url123")
+    ex = _create_exception({}, 409, "reason123", "url123")
     assert isinstance(ex, NessieConflictException)
 
-    ex = _create_exception(dict(), 599, "reason123", "url123")
+    ex = _create_exception({}, 599, "reason123", "url123")
     assert isinstance(ex, NessieServerException)
     assert "599" in str(ex.json())
     assert "Server Error" in str(ex)
     assert "Server Error" in str(ex.json())
     assert "Internal Server Error" in str(ex.json())
 
-    ex = _create_exception(dict(), 12345, "reason123", "url123")
+    ex = _create_exception({}, 12345, "reason123", "url123")
     assert isinstance(ex, NessieException)
     assert "12345" in str(ex.json())
 
@@ -82,9 +82,9 @@ def test_raise_ref_not_found() -> None:
     _test_error_code("REFERENCE_NOT_FOUND", NessieReferenceNotFoundException)
 
 
-def test_raise_contents_not_found() -> None:
-    """Test the handling error code CONTENTS_NOT_FOUND."""
-    _test_error_code("CONTENTS_NOT_FOUND", NessieContentsNotFoundException)
+def test_raise_content_not_found() -> None:
+    """Test the handling error code CONTENT_NOT_FOUND."""
+    _test_error_code("CONTENT_NOT_FOUND", NessieContentNotFoundException)
 
 
 def test_raise_ref_conflict() -> None:

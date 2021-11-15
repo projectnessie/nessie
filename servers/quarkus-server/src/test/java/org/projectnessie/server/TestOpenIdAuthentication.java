@@ -51,7 +51,7 @@ public class TestOpenIdAuthentication extends BaseClientAuthTest {
   void testValidJwt() {
     withClientCustomizer(
         b -> b.withAuthentication(BearerAuthenticationProvider.create(getJwtToken())));
-    assertThat(api().getAllReferences().get()).isNotEmpty();
+    assertThat(api().getAllReferences().get().getReferences()).isNotEmpty();
   }
 
   @Test

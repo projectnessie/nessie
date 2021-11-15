@@ -14,11 +14,10 @@ exports[`TableHead renders with different current ref 1`] = `
       >
         <a
           aria-expanded="false"
-          aria-haspopup="true"
           class="dropdown-toggle nav-link"
-          href="#"
           id="nav-dropdown"
           role="button"
+          tabindex="0"
         >
           b2
         </a>
@@ -28,8 +27,8 @@ exports[`TableHead renders with different current ref 1`] = `
       >
         <a
           class="nav-link"
-          href="#"
           role="button"
+          tabindex="0"
         >
           <svg
             aria-hidden="true"
@@ -49,8 +48,8 @@ exports[`TableHead renders with different current ref 1`] = `
       >
         <a
           class="nav-link"
-          href="#"
           role="button"
+          tabindex="0"
         >
           <svg
             aria-hidden="true"
@@ -104,11 +103,10 @@ exports[`TableHead renders with path 1`] = `
       >
         <a
           aria-expanded="false"
-          aria-haspopup="true"
           class="dropdown-toggle nav-link"
-          href="#"
           id="nav-dropdown"
           role="button"
+          tabindex="0"
         >
           main
         </a>
@@ -177,11 +175,10 @@ exports[`TableHead renders without path 1`] = `
       >
         <a
           aria-expanded="false"
-          aria-haspopup="true"
           class="dropdown-toggle nav-link"
-          href="#"
           id="nav-dropdown"
           role="button"
+          tabindex="0"
         >
           main
         </a>
@@ -191,8 +188,8 @@ exports[`TableHead renders without path 1`] = `
       >
         <a
           class="nav-link"
-          href="#"
           role="button"
+          tabindex="0"
         >
           <svg
             aria-hidden="true"
@@ -212,8 +209,8 @@ exports[`TableHead renders without path 1`] = `
       >
         <a
           class="nav-link"
-          href="#"
           role="button"
+          tabindex="0"
         >
           <svg
             aria-hidden="true"

@@ -73,9 +73,9 @@ import org.projectnessie.error.NessieReferenceAlreadyExistsException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.Contents;
-import org.projectnessie.model.Contents.Type;
-import org.projectnessie.model.ContentsKey;
+import org.projectnessie.model.Content;
+import org.projectnessie.model.Content.Type;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.IcebergTable;
@@ -87,6 +87,7 @@ import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Operation.Unchanged;
 import org.projectnessie.model.Reference;
+import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.SqlView;
 import org.projectnessie.model.SqlView.Dialect;
 import org.projectnessie.model.Tag;
@@ -159,8 +160,9 @@ public abstract class AbstractTestRest {
 
   @Test
   public void getAllReferences() {
-    List<Reference> references = api.getAllReferences().get();
-    assertThat(references).anySatisfy(r -> assertThat(r.getName()).isEqualTo("main"));
+    ReferencesResponse references = api.getAllReferences().get();
+    assertThat(references.getReferences())
+        .anySatisfy(r -> assertThat(r.getName()).isEqualTo("main"));
   }
 
   @Test
@@ -240,7 +242,7 @@ public abstract class AbstractTestRest {
     String root = "ref_name_" + refNamePart.replaceAll("[^a-z]", "");
     Branch main = createBranch(root);
 
-    IcebergTable meta = IcebergTable.of("meep", "x");
+    IcebergTable meta = IcebergTable.of("meep", 42, 42, 42, 42);
     main =
         api.commitMultipleOperations()
             .branchName(main.getName())
@@ -250,7 +252,7 @@ public abstract class AbstractTestRest {
                     .message("common-merge-ancestor")
                     .properties(ImmutableMap.of("prop1", "val1", "prop2", "val2"))
                     .build())
-            .operation(Operation.Put.of(ContentsKey.of("meep"), meta))
+            .operation(Operation.Put.of(ContentKey.of("meep"), meta))
             .commit();
     String someHash = main.getHash();
 
@@ -274,7 +276,7 @@ public abstract class AbstractTestRest {
     assertEquals(Branch.of(branchName2, someHash), createdBranch2);
 
     Map<String, Reference> references =
-        api.getAllReferences().get().stream()
+        api.getAllReferences().get().getReferences().stream()
             .filter(r -> root.equals(r.getName()) || r.getName().endsWith(refNamePart))
             .collect(Collectors.toMap(Reference::getName, Function.identity()));
 
@@ -317,11 +319,11 @@ public abstract class AbstractTestRest {
 
     // Need to have at least one op, otherwise all following operations (assignTag/Branch, merge,
     // delete) will fail
-    meta = IcebergTable.of("foo", "x");
+    meta = IcebergTable.of("foo", 42, 42, 42, 42);
     api.commitMultipleOperations()
         .branchName(branchName)
         .hash(branchHash)
-        .operation(Put.of(ContentsKey.of("some-key"), meta))
+        .operation(Put.of(ContentKey.of("some-key"), meta))
         .commitMeta(CommitMeta.fromMessage("One dummy op"))
         .commit();
     log = api.getCommitLog().refName(branchName).get();
@@ -572,7 +574,7 @@ public abstract class AbstractTestRest {
     for (int j = 0; j < numAuthors; j++) {
       String author = "author-" + j;
       for (int i = 0; i < commitsPerAuthor; i++) {
-        IcebergTable meta = IcebergTable.of("some-file-" + i, "x");
+        IcebergTable meta = IcebergTable.of("some-file-" + i, 42, 42, 42, 42);
         String nextHash =
             api.commitMultipleOperations()
                 .branchName(branch.getName())
@@ -583,7 +585,7 @@ public abstract class AbstractTestRest {
                         .message("committed-by-" + author)
                         .properties(ImmutableMap.of("prop1", "val1", "prop2", "val2"))
                         .build())
-                .operation(Put.of(ContentsKey.of("table" + i), meta))
+                .operation(Put.of(ContentKey.of("table" + i), meta))
                 .commit()
                 .getHash();
         assertThat(currentHash).isNotEqualTo(nextHash);
@@ -636,13 +638,13 @@ public abstract class AbstractTestRest {
     for (int i = 0; i < commits; i++) {
       String msg = "message-for-" + i;
       allMessages.add(msg);
-      IcebergTable tableMeta = IcebergTable.of("some-file-" + i, "x");
+      IcebergTable tableMeta = IcebergTable.of("some-file-" + i, 42, 42, 42, 42);
       String nextHash =
           api.commitMultipleOperations()
               .branchName(branch.getName())
               .hash(currentHash)
               .commitMeta(CommitMeta.fromMessage(msg))
-              .operation(Put.of(ContentsKey.of("table"), tableMeta))
+              .operation(Put.of(ContentKey.of("table"), tableMeta))
               .commit()
               .getHash();
       assertNotEquals(currentHash, nextHash);
@@ -673,15 +675,15 @@ public abstract class AbstractTestRest {
     Branch base = createBranch("transplant-base");
     Branch branch = createBranch("transplant-branch");
 
-    IcebergTable table1 = IcebergTable.of("transplant-table1", "x");
-    IcebergTable table2 = IcebergTable.of("transplant-table2", "y");
+    IcebergTable table1 = IcebergTable.of("transplant-table1", 42, 42, 42, 42);
+    IcebergTable table2 = IcebergTable.of("transplant-table2", 43, 43, 43, 43);
 
     Branch committed1 =
         api.commitMultipleOperations()
             .branchName(branch.getName())
             .hash(branch.getHash())
             .commitMeta(CommitMeta.fromMessage("test-transplant-branch1"))
-            .operation(Put.of(ContentsKey.of("key1"), table1))
+            .operation(Put.of(ContentKey.of("key1"), table1))
             .commit();
     assertThat(committed1.getHash()).isNotNull();
 
@@ -690,7 +692,7 @@ public abstract class AbstractTestRest {
             .branchName(branch.getName())
             .hash(committed1.getHash())
             .commitMeta(CommitMeta.fromMessage("test-transplant-branch2"))
-            .operation(Put.of(ContentsKey.of("key1"), table1, table1))
+            .operation(Put.of(ContentKey.of("key1"), table1, table1))
             .commit();
     assertThat(committed2.getHash()).isNotNull();
 
@@ -698,7 +700,7 @@ public abstract class AbstractTestRest {
         .branchName(base.getName())
         .hash(base.getHash())
         .commitMeta(CommitMeta.fromMessage("test-transplant-main"))
-        .operation(Put.of(ContentsKey.of("key2"), table2))
+        .operation(Put.of(ContentKey.of("key2"), table2))
         .commit();
 
     api.transplantCommitsIntoBranch()
@@ -723,15 +725,15 @@ public abstract class AbstractTestRest {
     Branch base = createBranch("merge-base");
     Branch branch = createBranch("merge-branch");
 
-    IcebergTable table1 = IcebergTable.of("merge-table1", "x");
-    IcebergTable table2 = IcebergTable.of("merge-table2", "y");
+    IcebergTable table1 = IcebergTable.of("merge-table1", 42, 42, 42, 42);
+    IcebergTable table2 = IcebergTable.of("merge-table2", 43, 43, 43, 43);
 
     Branch committed1 =
         api.commitMultipleOperations()
             .branchName(branch.getName())
             .hash(branch.getHash())
             .commitMeta(CommitMeta.fromMessage("test-merge-branch1"))
-            .operation(Put.of(ContentsKey.of("key1"), table1))
+            .operation(Put.of(ContentKey.of("key1"), table1))
             .commit();
     assertThat(committed1.getHash()).isNotNull();
 
@@ -740,7 +742,7 @@ public abstract class AbstractTestRest {
             .branchName(branch.getName())
             .hash(committed1.getHash())
             .commitMeta(CommitMeta.fromMessage("test-merge-branch2"))
-            .operation(Put.of(ContentsKey.of("key1"), table1, table1))
+            .operation(Put.of(ContentKey.of("key1"), table1, table1))
             .commit();
     assertThat(committed2.getHash()).isNotNull();
 
@@ -748,7 +750,7 @@ public abstract class AbstractTestRest {
         .branchName(base.getName())
         .hash(base.getHash())
         .commitMeta(CommitMeta.fromMessage("test-merge-main"))
-        .operation(Put.of(ContentsKey.of("key2"), table2))
+        .operation(Put.of(ContentKey.of("key2"), table2))
         .commit();
 
     api.mergeRefIntoBranch().branch(base).fromRef(committed2).merge();
@@ -808,10 +810,10 @@ public abstract class AbstractTestRest {
   @Test
   public void multiget() throws BaseNessieClientServerException {
     Branch branch = createBranch("foo");
-    ContentsKey a = ContentsKey.of("a");
-    ContentsKey b = ContentsKey.of("b");
-    IcebergTable ta = IcebergTable.of("path1", "x");
-    IcebergTable tb = IcebergTable.of("path2", "x");
+    ContentKey a = ContentKey.of("a");
+    ContentKey b = ContentKey.of("b");
+    IcebergTable ta = IcebergTable.of("path1", 42, 42, 42, 42);
+    IcebergTable tb = IcebergTable.of("path2", 42, 42, 42, 42);
     api.commitMultipleOperations()
         .branch(branch)
         .operation(Put.of(a, ta))
@@ -822,12 +824,12 @@ public abstract class AbstractTestRest {
         .operation(Put.of(b, tb))
         .commitMeta(CommitMeta.fromMessage("commit 2"))
         .commit();
-    Map<ContentsKey, Contents> response =
-        api.getContents().key(a).key(b).key(ContentsKey.of("noexist")).refName("foo").get();
+    Map<ContentKey, Content> response =
+        api.getContent().key(a).key(b).key(ContentKey.of("noexist")).refName("foo").get();
     assertThat(response)
         .containsEntry(a, ta)
         .containsEntry(b, tb)
-        .doesNotContainKey(ContentsKey.of("noexist"));
+        .doesNotContainKey(ContentKey.of("noexist"));
     api.deleteBranch()
         .branchName(branch.getName())
         .hash(api.getReference().refName(branch.getName()).get().getHash())
@@ -860,7 +862,7 @@ public abstract class AbstractTestRest {
 
     private static String opString(Operation operation) {
       if (operation instanceof Put) {
-        return "Put_" + ((Put) operation).getContents().getClass().getSimpleName();
+        return "Put_" + ((Put) operation).getContent().getClass().getSimpleName();
       } else {
         return operation.getClass().getSimpleName();
       }
@@ -871,11 +873,11 @@ public abstract class AbstractTestRest {
     return Stream.of(
         new ContentAndOperationType(
             Type.ICEBERG_TABLE,
-            Put.of(ContentsKey.of("iceberg"), IcebergTable.of("/iceberg/table", "x"))),
+            Put.of(ContentKey.of("iceberg"), IcebergTable.of("/iceberg/table", 42, 42, 42, 42))),
         new ContentAndOperationType(
             Type.VIEW,
             Put.of(
-                ContentsKey.of("view_dremio"),
+                ContentKey.of("view_dremio"),
                 ImmutableSqlView.builder()
                     .dialect(Dialect.DREMIO)
                     .sqlText("SELECT foo FROM dremio")
@@ -883,7 +885,7 @@ public abstract class AbstractTestRest {
         new ContentAndOperationType(
             Type.VIEW,
             Put.of(
-                ContentsKey.of("view_presto"),
+                ContentKey.of("view_presto"),
                 ImmutableSqlView.builder()
                     .dialect(Dialect.PRESTO)
                     .sqlText("SELECT foo FROM presto")
@@ -891,7 +893,7 @@ public abstract class AbstractTestRest {
         new ContentAndOperationType(
             Type.VIEW,
             Put.of(
-                ContentsKey.of("view_spark"),
+                ContentKey.of("view_spark"),
                 ImmutableSqlView.builder()
                     .dialect(Dialect.SPARK)
                     .sqlText("SELECT foo FROM spark")
@@ -899,25 +901,23 @@ public abstract class AbstractTestRest {
         new ContentAndOperationType(
             Type.DELTA_LAKE_TABLE,
             Put.of(
-                ContentsKey.of("delta"),
+                ContentKey.of("delta"),
                 ImmutableDeltaLakeTable.builder()
                     .addCheckpointLocationHistory("checkpoint")
                     .addMetadataLocationHistory("metadata")
                     .build())),
+        new ContentAndOperationType(Type.ICEBERG_TABLE, Delete.of(ContentKey.of("iceberg_delete"))),
         new ContentAndOperationType(
-            Type.ICEBERG_TABLE, Delete.of(ContentsKey.of("iceberg_delete"))),
+            Type.ICEBERG_TABLE, Unchanged.of(ContentKey.of("iceberg_unchanged"))),
+        new ContentAndOperationType(Type.VIEW, Delete.of(ContentKey.of("view_dremio_delete"))),
         new ContentAndOperationType(
-            Type.ICEBERG_TABLE, Unchanged.of(ContentsKey.of("iceberg_unchanged"))),
-        new ContentAndOperationType(Type.VIEW, Delete.of(ContentsKey.of("view_dremio_delete"))),
+            Type.VIEW, Unchanged.of(ContentKey.of("view_dremio_unchanged"))),
+        new ContentAndOperationType(Type.VIEW, Delete.of(ContentKey.of("view_spark_delete"))),
+        new ContentAndOperationType(Type.VIEW, Unchanged.of(ContentKey.of("view_spark_unchanged"))),
         new ContentAndOperationType(
-            Type.VIEW, Unchanged.of(ContentsKey.of("view_dremio_unchanged"))),
-        new ContentAndOperationType(Type.VIEW, Delete.of(ContentsKey.of("view_spark_delete"))),
+            Type.DELTA_LAKE_TABLE, Delete.of(ContentKey.of("delta_delete"))),
         new ContentAndOperationType(
-            Type.VIEW, Unchanged.of(ContentsKey.of("view_spark_unchanged"))),
-        new ContentAndOperationType(
-            Type.DELTA_LAKE_TABLE, Delete.of(ContentsKey.of("delta_delete"))),
-        new ContentAndOperationType(
-            Type.DELTA_LAKE_TABLE, Unchanged.of(ContentsKey.of("delta_unchanged"))));
+            Type.DELTA_LAKE_TABLE, Unchanged.of(ContentKey.of("delta_unchanged"))));
   }
 
   @Test
@@ -966,8 +966,8 @@ public abstract class AbstractTestRest {
     // here, because somehow JUnit @MethodSource implementation re-constructs the objects returned
     // from
     // the source-method contentAndOperationTypes.
-    ContentsKey fixedContentKey =
-        ContentsKey.of(contentAndOperationType.operation.getKey().getElements());
+    ContentKey fixedContentKey =
+        ContentKey.of(contentAndOperationType.operation.getKey().getElements());
     List<Entry> expect =
         contentAndOperationType.operation instanceof Put
             ? singletonList(
@@ -979,9 +979,9 @@ public abstract class AbstractTestRest {
   @Test
   public void filterEntriesByType() throws BaseNessieClientServerException {
     Branch branch = createBranch("filterTypes");
-    ContentsKey a = ContentsKey.of("a");
-    ContentsKey b = ContentsKey.of("b");
-    IcebergTable tam = IcebergTable.of("path1", "x");
+    ContentKey a = ContentKey.of("a");
+    ContentKey b = ContentKey.of("b");
+    IcebergTable tam = IcebergTable.of("path1", 42, 42, 42, 42);
     SqlView tb =
         ImmutableSqlView.builder().sqlText("select * from table").dialect(Dialect.DREMIO).build();
     api.commitMultipleOperations()
@@ -1034,28 +1034,28 @@ public abstract class AbstractTestRest {
   @Test
   public void filterEntriesByNamespace() throws BaseNessieClientServerException {
     Branch branch = createBranch("filterEntriesByNamespace");
-    ContentsKey first = ContentsKey.of("a", "b", "c", "firstTable");
-    ContentsKey second = ContentsKey.of("a", "b", "c", "secondTable");
-    ContentsKey third = ContentsKey.of("a", "thirdTable");
-    ContentsKey fourth = ContentsKey.of("a", "fourthTable");
+    ContentKey first = ContentKey.of("a", "b", "c", "firstTable");
+    ContentKey second = ContentKey.of("a", "b", "c", "secondTable");
+    ContentKey third = ContentKey.of("a", "thirdTable");
+    ContentKey fourth = ContentKey.of("a", "fourthTable");
     api.commitMultipleOperations()
         .branch(branch)
-        .operation(Put.of(first, IcebergTable.of("path1", "x")))
+        .operation(Put.of(first, IcebergTable.of("path1", 42, 42, 42, 42)))
         .commitMeta(CommitMeta.fromMessage("commit 1"))
         .commit();
     api.commitMultipleOperations()
         .branch(branch)
-        .operation(Put.of(second, IcebergTable.of("path2", "x")))
+        .operation(Put.of(second, IcebergTable.of("path2", 42, 42, 42, 42)))
         .commitMeta(CommitMeta.fromMessage("commit 2"))
         .commit();
     api.commitMultipleOperations()
         .branch(branch)
-        .operation(Put.of(third, IcebergTable.of("path3", "x")))
+        .operation(Put.of(third, IcebergTable.of("path3", 42, 42, 42, 42)))
         .commitMeta(CommitMeta.fromMessage("commit 3"))
         .commit();
     api.commitMultipleOperations()
         .branch(branch)
-        .operation(Put.of(fourth, IcebergTable.of("path4", "x")))
+        .operation(Put.of(fourth, IcebergTable.of("path4", 42, 42, 42, 42)))
         .commitMeta(CommitMeta.fromMessage("commit 4"))
         .commit();
 
@@ -1108,16 +1108,16 @@ public abstract class AbstractTestRest {
   @Test
   public void filterEntriesByNamespaceAndPrefixDepth() throws BaseNessieClientServerException {
     Branch branch = createBranch("filterEntriesByNamespaceAndPrefixDepth");
-    ContentsKey first = ContentsKey.of("a", "b", "c", "firstTable");
-    ContentsKey second = ContentsKey.of("a", "b", "c", "secondTable");
-    ContentsKey third = ContentsKey.of("a", "thirdTable");
-    ContentsKey fourth = ContentsKey.of("a", "b", "fourthTable");
-    ContentsKey fifth = ContentsKey.of("a", "boo", "fifthTable");
-    List<ContentsKey> keys = ImmutableList.of(first, second, third, fourth, fifth);
+    ContentKey first = ContentKey.of("a", "b", "c", "firstTable");
+    ContentKey second = ContentKey.of("a", "b", "c", "secondTable");
+    ContentKey third = ContentKey.of("a", "thirdTable");
+    ContentKey fourth = ContentKey.of("a", "b", "fourthTable");
+    ContentKey fifth = ContentKey.of("a", "boo", "fifthTable");
+    List<ContentKey> keys = ImmutableList.of(first, second, third, fourth, fifth);
     for (int i = 0; i < 5; i++) {
       api.commitMultipleOperations()
           .branch(branch)
-          .operation(Put.of(keys.get(i), IcebergTable.of("path" + i, "x")))
+          .operation(Put.of(keys.get(i), IcebergTable.of("path" + i, 42, 42, 42, 42)))
           .commitMeta(CommitMeta.fromMessage("commit " + i))
           .commit();
     }
@@ -1198,13 +1198,13 @@ public abstract class AbstractTestRest {
     assertThat(entries).hasSize(3);
     assertThat(entries.get(2))
         .matches(e -> e.getType().equals(Type.UNKNOWN))
-        .matches(e -> e.getName().equals(ContentsKey.of("a", "b", "c")));
+        .matches(e -> e.getName().equals(ContentKey.of("a", "b", "c")));
     assertThat(entries.get(1))
         .matches(e -> e.getType().equals(Type.ICEBERG_TABLE))
-        .matches(e -> e.getName().equals(ContentsKey.of("a", "b", "fourthTable")));
+        .matches(e -> e.getName().equals(ContentKey.of("a", "b", "fourthTable")));
     assertThat(entries.get(0))
         .matches(e -> e.getType().equals(Type.ICEBERG_TABLE))
-        .matches(e -> e.getName().equals(ContentsKey.of("a", "boo", "fifthTable")));
+        .matches(e -> e.getName().equals(ContentKey.of("a", "boo", "fifthTable")));
 
     api.deleteBranch()
         .branchName(branch.getName())
@@ -1228,17 +1228,17 @@ public abstract class AbstractTestRest {
   @Test
   public void checkSpecialCharacterRoundTrip() throws BaseNessieClientServerException {
     Branch branch = createBranch("specialchar");
-    // ContentsKey k = ContentsKey.of("/%国","国.国");
-    ContentsKey k = ContentsKey.of("a.b", "c.txt");
-    IcebergTable ta = IcebergTable.of("path1", "x");
+    // ContentKey k = ContentKey.of("/%国","国.国");
+    ContentKey k = ContentKey.of("a.b", "c.txt");
+    IcebergTable ta = IcebergTable.of("path1", 42, 42, 42, 42);
     api.commitMultipleOperations()
         .branch(branch)
         .operation(Put.of(k, ta))
         .commitMeta(CommitMeta.fromMessage("commit 1"))
         .commit();
 
-    assertThat(api.getContents().key(k).refName(branch.getName()).get()).containsEntry(k, ta);
-    assertEquals(ta, api.getContents().key(k).refName(branch.getName()).get().get(k));
+    assertThat(api.getContent().key(k).refName(branch.getName()).get()).containsEntry(k, ta);
+    assertEquals(ta, api.getContent().key(k).refName(branch.getName()).get().get(k));
     api.deleteBranch()
         .branchName(branch.getName())
         .hash(api.getReference().refName(branch.getName()).get().getHash())
@@ -1263,7 +1263,7 @@ public abstract class AbstractTestRest {
                             .message("committed-by-test")
                             .committer("disallowed-client-side-committer")
                             .build())
-                    .operation(Unchanged.of(ContentsKey.of("table")))
+                    .operation(Unchanged.of(ContentKey.of("table")))
                     .commit())
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessageContaining("Cannot set the committer on the client side.");
@@ -1279,7 +1279,7 @@ public abstract class AbstractTestRest {
     "abc'de@{blah" + COMMA_VALID_HASH_3
   })
   public void invalidBranchNames(String invalidBranchName, String validHash) {
-    ContentsKey key = ContentsKey.of("x");
+    ContentKey key = ContentKey.of("x");
     Tag tag = Tag.of("valid", validHash);
 
     String opsCountMsg = ".operations.operations: size must be between 1 and 2147483647";
@@ -1381,7 +1381,7 @@ public abstract class AbstractTestRest {
         () ->
             assertThatThrownBy(
                     () ->
-                        api.getContents()
+                        api.getContent()
                             .key(key)
                             .refName(invalidBranchName)
                             .hashOnRef(validHash)
@@ -1392,7 +1392,7 @@ public abstract class AbstractTestRest {
         () ->
             assertThatThrownBy(
                     () ->
-                        api.getContents()
+                        api.getContent()
                             .key(key)
                             .refName(invalidBranchName)
                             .hashOnRef(validHash)
@@ -1415,7 +1415,7 @@ public abstract class AbstractTestRest {
     String invalidHash = invalidHashIn != null ? invalidHashIn : "";
 
     String validBranchName = "hello";
-    ContentsKey key = ContentsKey.of("x");
+    ContentKey key = ContentKey.of("x");
     Tag tag = Tag.of("valid", validHash);
 
     String opsCountMsg = ".operations.operations: size must be between 1 and 2147483647";
@@ -1497,7 +1497,7 @@ public abstract class AbstractTestRest {
                 .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining("transplantCommitsIntoBranch.hash: " + HASH_MESSAGE),
         () ->
-            assertThatThrownBy(() -> api.getContents().refName(invalidHash).get())
+            assertThatThrownBy(() -> api.getContent().refName(invalidHash).get())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining(
@@ -1505,7 +1505,7 @@ public abstract class AbstractTestRest {
                 .hasMessageContaining(".ref: " + REF_NAME_MESSAGE),
         () ->
             assertThatThrownBy(
-                    () -> api.getContents().refName(validBranchName).hashOnRef(invalidHash).get())
+                    () -> api.getContent().refName(validBranchName).hashOnRef(invalidHash).get())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining(
@@ -1514,7 +1514,7 @@ public abstract class AbstractTestRest {
         () ->
             assertThatThrownBy(
                     () ->
-                        api.getContents()
+                        api.getContent()
                             .key(key)
                             .refName(validBranchName)
                             .hashOnRef(invalidHash)
@@ -1643,7 +1643,7 @@ public abstract class AbstractTestRest {
 
   @Test
   public void testInvalidNamedRefs() {
-    ContentsKey key = ContentsKey.of("x");
+    ContentKey key = ContentKey.of("x");
     String invalidRef = "1234567890123456";
 
     assertThatThrownBy(() -> api.getCommitLog().refName(invalidRef).get())
@@ -1656,12 +1656,12 @@ public abstract class AbstractTestRest {
         .hasMessageContaining("Bad Request (HTTP/400):")
         .hasMessageContaining("getEntries.refName: " + REF_NAME_MESSAGE);
 
-    assertThatThrownBy(() -> api.getContents().key(key).refName(invalidRef).get())
+    assertThatThrownBy(() -> api.getContent().key(key).refName(invalidRef).get())
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessageContaining("Bad Request (HTTP/400):")
         .hasMessageContaining(".ref: " + REF_NAME_MESSAGE);
 
-    assertThatThrownBy(() -> api.getContents().refName(invalidRef).key(key).get())
+    assertThatThrownBy(() -> api.getContent().refName(invalidRef).key(key).get())
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessageContaining("Bad Request (HTTP/400):")
         .hasMessageContaining(".ref: " + REF_NAME_MESSAGE);
@@ -1683,12 +1683,12 @@ public abstract class AbstractTestRest {
     assertThat(allEntries).isNotNull();
     assertThat(allEntries.getEntries()).hasSize(commits);
 
-    List<ContentsKey> keys = new ArrayList<>();
-    IntStream.range(0, commits).forEach(i -> keys.add(ContentsKey.of("table" + i)));
+    List<ContentKey> keys = new ArrayList<>();
+    IntStream.range(0, commits).forEach(i -> keys.add(ContentKey.of("table" + i)));
 
     // TODO: check where hashOnRef is set
-    Map<ContentsKey, Contents> allContents =
-        api.getContents().keys(keys).refName(branch.getName()).get();
+    Map<ContentKey, Content> allContent =
+        api.getContent().keys(keys).refName(branch.getName()).get();
 
     for (int i = 0; i < commits; i++) {
       String hash = entireLog.getOperations().get(i).getHash();
@@ -1703,10 +1703,10 @@ public abstract class AbstractTestRest {
       assertThat(entries.getEntries()).hasSize(commits - i);
 
       int idx = commits - 1 - i;
-      ContentsKey key = ContentsKey.of("table" + idx);
-      Contents c =
-          api.getContents().key(key).refName(branch.getName()).hashOnRef(hash).get().get(key);
-      assertThat(c).isNotNull().isEqualTo(allContents.get(key));
+      ContentKey key = ContentKey.of("table" + idx);
+      Content c =
+          api.getContent().key(key).refName(branch.getName()).hashOnRef(hash).get().get(key);
+      assertThat(c).isNotNull().isEqualTo(allContent.get(key));
     }
   }
 
@@ -1735,8 +1735,8 @@ public abstract class AbstractTestRest {
 
     assertThatThrownBy(
             () ->
-                api.getContents()
-                    .key(ContentsKey.of("table0"))
+                api.getContent()
+                    .key(ContentKey.of("table0"))
                     .refName(branch.getName())
                     .hashOnRef(invalidHash)
                     .get())
@@ -1747,8 +1747,8 @@ public abstract class AbstractTestRest {
 
     assertThatThrownBy(
             () ->
-                api.getContents()
-                    .key(ContentsKey.of("table0"))
+                api.getContent()
+                    .key(ContentKey.of("table0"))
                     .refName(branch.getName())
                     .hashOnRef(invalidHash)
                     .get())

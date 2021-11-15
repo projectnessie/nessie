@@ -19,27 +19,27 @@ import com.google.protobuf.ByteString;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.Key;
 
-/** Composite of key, contents-id, contents-type and contents. */
+/** Composite of key, content-id, content-type and content. */
 @Value.Immutable
 public interface KeyWithBytes {
   Key getKey();
 
-  ContentsId getContentsId();
+  ContentId getContentId();
 
   byte getType();
 
   ByteString getValue();
 
-  static KeyWithBytes of(Key key, ContentsId contentsId, byte type, ByteString value) {
+  static KeyWithBytes of(Key key, ContentId contentId, byte type, ByteString value) {
     return ImmutableKeyWithBytes.builder()
         .key(key)
-        .contentsId(contentsId)
+        .contentId(contentId)
         .type(type)
         .value(value)
         .build();
   }
 
   default KeyWithType asKeyWithType() {
-    return KeyWithType.of(getKey(), getContentsId(), getType());
+    return KeyWithType.of(getKey(), getContentId(), getType());
   }
 }

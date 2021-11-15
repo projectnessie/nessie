@@ -140,7 +140,15 @@ public class DatabaseAdapterExtension
                 findAnnotatedFields(
                         instance.getClass(), NessieDbAdapter.class, ReflectionUtils::isNotStatic)
                     .forEach(
-                        field -> injectField(context, field, DatabaseAdapterExtension::reinit)));
+                        field ->
+                            injectField(
+                                context,
+                                field,
+                                adapter -> {
+                                  if (field.getAnnotation(NessieDbAdapter.class).initializeRepo()) {
+                                    reinit(adapter);
+                                  }
+                                })));
   }
 
   private void injectField(
@@ -180,15 +188,17 @@ public class DatabaseAdapterExtension
       throws ParameterResolutionException {
     Parameter parameter = parameterContext.getParameter();
 
-    DatabaseAdapter databaseAdapter =
-        createAdapterResource(
-            parameterContext
-                .findAnnotation(NessieDbAdapter.class)
-                .orElseThrow(IllegalStateException::new),
-            context,
-            parameterContext);
+    NessieDbAdapter nessieDbAdapter =
+        parameterContext
+            .findAnnotation(NessieDbAdapter.class)
+            .orElseThrow(IllegalStateException::new);
 
-    reinit(databaseAdapter);
+    DatabaseAdapter databaseAdapter =
+        createAdapterResource(nessieDbAdapter, context, parameterContext);
+
+    if (nessieDbAdapter.initializeRepo()) {
+      reinit(databaseAdapter);
+    }
 
     Object assign;
     if (parameter.getType().isAssignableFrom(DatabaseAdapter.class)) {

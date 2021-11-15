@@ -16,14 +16,14 @@
 package org.projectnessie.services.authz;
 
 import java.security.AccessControlException;
-import org.projectnessie.model.Contents;
-import org.projectnessie.model.ContentsKey;
+import org.projectnessie.model.Content;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.NamedRef;
 
 /**
  * The purpose of the {@link AccessChecker} is to make sure that a particular role is allowed to
  * perform an action (such as creation, deletion) on a {@link NamedRef} (Branch/Tag). Additionally,
- * this interface also provides checks based on a given {@link ContentsKey}.
+ * this interface also provides checks based on a given {@link ContentKey}.
  */
 public interface AccessChecker {
 
@@ -97,46 +97,46 @@ public interface AccessChecker {
 
   /**
    * Checks whether the given role/principal is allowed to read an entity value as defined by the
-   * {@link ContentsKey} for the given Branch/Tag.
+   * {@link ContentKey} for the given Branch/Tag.
    *
    * @param context The context carrying the principal information.
    * @param ref The {@link NamedRef} to check
-   * @param key The {@link ContentsKey} to check
-   * @param contentsId The ID of the {@link Contents} object. See the <a
-   *     href="https://projectnessie.org/features/metadata_authorization/#contentsid">ContentsId
+   * @param key The {@link ContentKey} to check
+   * @param contentId The ID of the {@link Content} object. See the <a
+   *     href="https://projectnessie.org/features/metadata_authorization/#contentid">ContentId
    *     docs</a> for how to use this.
    * @throws AccessControlException When the permission to read an entity value is not granted.
    */
-  void canReadEntityValue(AccessContext context, NamedRef ref, ContentsKey key, String contentsId)
+  void canReadEntityValue(AccessContext context, NamedRef ref, ContentKey key, String contentId)
       throws AccessControlException;
 
   /**
    * Checks whether the given role/principal is allowed to update an entity value as defined by the
-   * {@link ContentsKey} for the given Branch/Tag.
+   * {@link ContentKey} for the given Branch/Tag.
    *
    * @param context The context carrying the principal information.
    * @param ref The {@link NamedRef} to check
-   * @param key The {@link ContentsKey} to check
-   * @param contentsId The ID of the {@link Contents} object. See the <a
-   *     href="https://projectnessie.org/features/metadata_authorization/#contentsid">ContentsId
+   * @param key The {@link ContentKey} to check
+   * @param contentId The ID of the {@link Content} object. See the <a
+   *     href="https://projectnessie.org/features/metadata_authorization/#contentid">ContentId
    *     docs</a> for how to use this.
    * @throws AccessControlException When the permission to update an entity value is not granted.
    */
-  void canUpdateEntity(AccessContext context, NamedRef ref, ContentsKey key, String contentsId)
+  void canUpdateEntity(AccessContext context, NamedRef ref, ContentKey key, String contentId)
       throws AccessControlException;
 
   /**
    * Checks whether the given role/principal is allowed to delete an entity value as defined by the
-   * {@link ContentsKey} for the given Branch/Tag.
+   * {@link ContentKey} for the given Branch/Tag.
    *
    * @param context The context carrying the principal information.
    * @param ref The {@link NamedRef} to check
-   * @param key The {@link ContentsKey} to check
-   * @param contentsId The ID of the {@link Contents} object. See the <a
-   *     href="https://projectnessie.org/features/metadata_authorization/#contentsid">ContentsId
+   * @param key The {@link ContentKey} to check
+   * @param contentId The ID of the {@link Content} object. See the <a
+   *     href="https://projectnessie.org/features/metadata_authorization/#contentid">ContentId
    *     docs</a> for how to use this.
    * @throws AccessControlException When the permission to delete an entity value is not granted.
    */
-  void canDeleteEntity(AccessContext context, NamedRef ref, ContentsKey key, String contentsId)
+  void canDeleteEntity(AccessContext context, NamedRef ref, ContentKey key, String contentId)
       throws AccessControlException;
 }

@@ -51,13 +51,20 @@ class CommitToBranchSimulation extends Simulation {
           val tableName = params.makeTableName(session)
 
           // Call the Nessie client operation to perform a commit
-          val key = ContentsKey.of("name", "space", tableName)
-          val contentsId = tableName
+          val key = ContentKey.of("name", "space", tableName)
+          val contentId = tableName
 
           val tableMeta = IcebergTable
-            .of(s"path_on_disk_${tableName}_$commitNum", "x", contentsId)
+            .of(
+              s"path_on_disk_${tableName}_$commitNum",
+              42,
+              43,
+              44,
+              45,
+              contentId
+            )
 
-          // TODO the expectedContents is wrong!! commitNum is for the session, but we need the actual global state!!
+          // TODO the expectedContent is wrong!! commitNum is for the session, but we need the actual global state!!
           val op =
             if (commitNum > 0)
               Put.of(
@@ -65,8 +72,11 @@ class CommitToBranchSimulation extends Simulation {
                 tableMeta,
                 IcebergTable.of(
                   s"path_on_disk_${tableName}_${commitNum - 1}",
-                  "x",
-                  contentsId
+                  42,
+                  43,
+                  44,
+                  45,
+                  contentId
                 )
               )
             else Put.of(key, tableMeta);

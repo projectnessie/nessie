@@ -38,9 +38,9 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
-import org.projectnessie.versioned.persist.adapter.ContentsId;
-import org.projectnessie.versioned.persist.adapter.ContentsIdAndBytes;
-import org.projectnessie.versioned.persist.adapter.ContentsIdWithType;
+import org.projectnessie.versioned.persist.adapter.ContentId;
+import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
+import org.projectnessie.versioned.persist.adapter.ContentIdWithType;
 import org.projectnessie.versioned.persist.adapter.KeyList;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.KeyWithType;
@@ -200,42 +200,42 @@ class TestSerialization {
 
     params.add(
         new TypeSerialization<>(
-            ContentsIdAndBytes.class,
-            AdapterTypes.ContentsIdWithBytes.class,
-            TestSerialization::createContentsIdWithBytes,
+            ContentIdAndBytes.class,
+            AdapterTypes.ContentIdWithBytes.class,
+            TestSerialization::createContentIdWithBytes,
             ProtoSerialization::toProto,
             v -> {
               try {
-                return AdapterTypes.ContentsIdWithBytes.parseFrom(v);
+                return AdapterTypes.ContentIdWithBytes.parseFrom(v);
               } catch (InvalidProtocolBufferException e) {
                 throw new RuntimeException(e);
               }
             },
             v -> {
               try {
-                return ProtoSerialization.protoToContentsIdAndBytes(
-                    AdapterTypes.ContentsIdWithBytes.parseFrom(v));
+                return ProtoSerialization.protoToContentIdAndBytes(
+                    AdapterTypes.ContentIdWithBytes.parseFrom(v));
               } catch (InvalidProtocolBufferException e) {
                 throw new RuntimeException(e);
               }
             }));
     params.add(
         new TypeSerialization<>(
-            ContentsIdWithType.class,
-            AdapterTypes.ContentsIdWithType.class,
-            TestSerialization::createContentsIdWithType,
+            ContentIdWithType.class,
+            AdapterTypes.ContentIdWithType.class,
+            TestSerialization::createContentIdWithType,
             ProtoSerialization::toProto,
             v -> {
               try {
-                return AdapterTypes.ContentsIdWithType.parseFrom(v);
+                return AdapterTypes.ContentIdWithType.parseFrom(v);
               } catch (InvalidProtocolBufferException e) {
                 throw new RuntimeException(e);
               }
             },
             v -> {
               try {
-                return ProtoSerialization.protoToContentsIdWithType(
-                    AdapterTypes.ContentsIdWithType.parseFrom(v));
+                return ProtoSerialization.protoToContentIdWithType(
+                    AdapterTypes.ContentIdWithType.parseFrom(v));
               } catch (InvalidProtocolBufferException e) {
                 throw new RuntimeException(e);
               }
@@ -301,8 +301,8 @@ class TestSerialization {
     }
   }
 
-  public static ContentsId randomId() {
-    return ContentsId.of(UUID.randomUUID().toString());
+  public static ContentId randomId() {
+    return ContentId.of(UUID.randomUUID().toString());
   }
 
   public static Key randomKey() {
@@ -336,8 +336,8 @@ class TestSerialization {
     }
     for (int i = 0; i < 20; i++) {
       entry.addPuts(
-          AdapterTypes.ContentsIdWithBytes.newBuilder()
-              .setContentsId(AdapterTypes.ContentsId.newBuilder().setId(randomString(64)).build())
+          AdapterTypes.ContentIdWithBytes.newBuilder()
+              .setContentId(AdapterTypes.ContentId.newBuilder().setId(randomString(64)).build())
               .setType(2)
               .setValue(randomBytes(120))
               .build());
@@ -394,7 +394,7 @@ class TestSerialization {
         KeyList.of(
             IntStream.range(0, 20)
                 .mapToObj(
-                    i -> KeyWithType.of(randomKey(), ContentsId.of(randomString(60)), (byte) 0))
+                    i -> KeyWithType.of(randomKey(), ContentId.of(randomString(60)), (byte) 0))
                 .collect(Collectors.toList())),
         IntStream.range(0, 20).mapToObj(i -> randomHash()).collect(Collectors.toList()));
   }
@@ -402,26 +402,26 @@ class TestSerialization {
   static KeyWithType createKeyWithType() {
     return KeyWithType.of(
         randomKey(),
-        ContentsId.of(randomString(64)),
+        ContentId.of(randomString(64)),
         (byte) ThreadLocalRandom.current().nextInt(0, 127));
   }
 
   static KeyWithBytes createKeyWithBytes() {
     return KeyWithBytes.of(
         randomKey(),
-        ContentsId.of(randomString(64)),
+        ContentId.of(randomString(64)),
         (byte) ThreadLocalRandom.current().nextInt(0, 127),
         randomBytes(120));
   }
 
-  static ContentsIdWithType createContentsIdWithType() {
-    return ContentsIdWithType.of(
-        ContentsId.of(randomString(64)), (byte) ThreadLocalRandom.current().nextInt(0, 127));
+  static ContentIdWithType createContentIdWithType() {
+    return ContentIdWithType.of(
+        ContentId.of(randomString(64)), (byte) ThreadLocalRandom.current().nextInt(0, 127));
   }
 
-  static ContentsIdAndBytes createContentsIdWithBytes() {
-    return ContentsIdAndBytes.of(
-        ContentsId.of(randomString(64)),
+  static ContentIdAndBytes createContentIdWithBytes() {
+    return ContentIdAndBytes.of(
+        ContentId.of(randomString(64)),
         (byte) ThreadLocalRandom.current().nextInt(0, 127),
         randomBytes(120));
   }

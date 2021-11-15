@@ -37,8 +37,8 @@ public interface Put<V> extends Operation<V> {
    * Creates a put-operation for the given key and value without an expected-value so the returned
    * put-operation is unconditional.
    *
-   * <p>Unconditional put-operations must be used for contents-types that do not support
-   * global-state and for those that do support global-state when a new contents object is added.
+   * <p>Unconditional put-operations must be used for content-types that do not support global-state
+   * and for those that do support global-state when a new content object is added.
    *
    * @param <V> the store value type
    * @param key the key impacted by the operation
@@ -55,7 +55,7 @@ public interface Put<V> extends Operation<V> {
    * returned put-operation will check whether the current state in Nessie matches the expected
    * state in {@code expectedValue}.
    *
-   * <p>Using a conditional put-operation for a contents-type that does not support global-state
+   * <p>Using a conditional put-operation for a content-type that does not support global-state
    * results in an error.
    *
    * @param <V> the store value type

@@ -15,18 +15,9 @@
 # limitations under the License.
 #
 """Nessie Exceptions."""
-import functools
-import sys
-from typing import Any
-from typing import Callable
 from typing import Optional
 
-import click
 import simplejson as json
-
-_REMEDIES = {
-    "Cannot create an unassigned tag reference": "set a valid reference on which to create this tag. eg `nessie tag tag_name main`"
-}
 
 
 class NessieException(Exception):
@@ -53,7 +44,7 @@ class NessieException(Exception):
             else:
                 exception_msg = "Unknown Error"
 
-        super(NessieException, self).__init__(exception_msg)
+        super().__init__(exception_msg)
 
         self.status_code = status
         self.server_message = parsed_response.get("message", str(parsed_response))
@@ -101,8 +92,8 @@ class NessieReferenceNotFoundException(NessieNotFoundException):
     pass
 
 
-class NessieContentsNotFoundException(NessieNotFoundException):
-    """This exception is thrown when the requested contents object is not present in the store."""
+class NessieContentNotFoundException(NessieNotFoundException):
+    """This exception is thrown when the requested content object is not present in the store."""
 
     pass
 
@@ -145,22 +136,19 @@ class NessieServerException(NessieException):
     pass
 
 
-def error_handler(f: Callable) -> Callable:
-    """Wrap a click method to catch and pretty print errors."""
+class NessieCliError(Exception):
+    """Base Nessie CLI related errors."""
 
-    @functools.wraps(f)
-    def wrapper(*args: Any, **kwargs: Any) -> None:
-        """Wrapper object."""
-        try:
-            f(*args, **kwargs)
-        except NessieException as e:
-            if args[0].json:
-                click.echo(e.json())
-            else:
-                click.echo(_format_error(e))
-            sys.exit(1)
+    def __init__(self: "NessieCliError", title: str, msg: str = None) -> None:
+        """Construct base Nessie CLI Error."""
+        super().__init__()
 
-    return wrapper
+        self.title = title
+        self.msg = msg
+
+    def json(self: "NessieCliError") -> str:
+        """Dump this error as a json object."""
+        return json.dumps(dict(title=self.title, message=self.msg))
 
 
 def _create_nessie_exception(error: dict, status: int, reason: str, url: str) -> Optional[Exception]:
@@ -168,22 +156,22 @@ def _create_nessie_exception(error: dict, status: int, reason: str, url: str) ->
         return None
 
     error_code = error["errorCode"]
-    if "REFERENCE_NOT_FOUND" == error_code:
+    if error_code == "REFERENCE_NOT_FOUND":
         return NessieReferenceNotFoundException(error, status, url, reason)
-    elif "REFERENCE_ALREADY_EXISTS" == error_code:
+    if error_code == "REFERENCE_ALREADY_EXISTS":
         return NessieReferenceAlreadyExistsException(error, status, url, reason)
-    elif "CONTENTS_NOT_FOUND" == error_code:
-        return NessieContentsNotFoundException(error, status, url, reason)
-    elif "REFERENCE_CONFLICT" == error_code:
+    if error_code == "CONTENT_NOT_FOUND":
+        return NessieContentNotFoundException(error, status, url, reason)
+    if error_code == "REFERENCE_CONFLICT":
         return NessieReferenceConflictException(error, status, url, reason)
     return None
 
 
 def _create_exception(error: dict, status: int, reason: str, url: str) -> Exception:
     if 400 <= status < 500:
-        reason = u"Client Error (%s)" % reason
+        reason = f"Client Error {reason}"
     elif 500 <= status < 600:
-        reason = u"Server Error (%s)" % reason
+        reason = f"Server Error {reason}"
 
     ex = _create_nessie_exception(error, status, reason, url)
     if ex:
@@ -202,15 +190,3 @@ def _create_exception(error: dict, status: int, reason: str, url: str) -> Except
     if 500 <= status <= 599:
         return NessieServerException(error, status, url, reason)
     return NessieException(error, status, url, reason)
-
-
-def _format_error(e: NessieException) -> str:
-    fmt = "{} (Status code: {})\n".format(click.style(e, fg="red"), e.status_code)
-    if e.server_message in _REMEDIES:
-        fmt += "{} {}\n".format(click.style("FIX:", fg="green"), _REMEDIES[e.server_message])
-    fmt += "{} {}\n".format(click.style("Requested URL:", fg="yellow"), e.url)
-    fmt += "{} {}\n".format(click.style("Server status:", fg="yellow"), e.server_status)
-    fmt += "{} {}\n".format(click.style("Error code:", fg="yellow"), e.error_code)
-    fmt += "{} {}\n".format(click.style("Server message:", fg="yellow"), e.server_message)
-    fmt += "{} {}\n".format(click.style("Server traceback:", fg="yellow"), e.server_stack_trace)
-    return fmt

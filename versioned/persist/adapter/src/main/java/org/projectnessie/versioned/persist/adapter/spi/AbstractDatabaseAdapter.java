@@ -60,8 +60,8 @@ import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.persist.adapter.CommitAttempt;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
-import org.projectnessie.versioned.persist.adapter.ContentsAndState;
-import org.projectnessie.versioned.persist.adapter.ContentsId;
+import org.projectnessie.versioned.persist.adapter.ContentAndState;
+import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.Difference;
@@ -348,7 +348,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
    *     {@link Diff} with hash in {@code from} to compute the diff for, must exist in {@code from}
    * @param to "to" reference to compute the difference from, appears on the "to" side in {@link
    *     Diff} with hash in {@code to} to compute the diff for, must exist in {@code to}
-   * @param keyFilter optional filter on key + contents-id + contents-type
+   * @param keyFilter optional filter on key + content-id + content-type
    * @return computed difference
    */
   protected Stream<Difference> buildDiff(
@@ -370,21 +370,21 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     }
 
     List<Key> allKeysList = new ArrayList<>(allKeys);
-    Map<Key, ContentsAndState<ByteString>> fromValues =
+    Map<Key, ContentAndState<ByteString>> fromValues =
         fetchValues(ctx, from, allKeysList, keyFilter);
-    Map<Key, ContentsAndState<ByteString>> toValues = fetchValues(ctx, to, allKeysList, keyFilter);
+    Map<Key, ContentAndState<ByteString>> toValues = fetchValues(ctx, to, allKeysList, keyFilter);
 
-    Function<ContentsAndState<ByteString>, Optional<ByteString>> valToContents =
+    Function<ContentAndState<ByteString>, Optional<ByteString>> valToContent =
         cs -> cs != null ? Optional.of(cs.getRefState()) : Optional.empty();
 
     return IntStream.range(0, allKeys.size())
         .mapToObj(allKeysList::get)
         .map(
             k -> {
-              ContentsAndState<ByteString> fromVal = fromValues.get(k);
-              ContentsAndState<ByteString> toVal = toValues.get(k);
-              Optional<ByteString> f = valToContents.apply(fromVal);
-              Optional<ByteString> t = valToContents.apply(toVal);
+              ContentAndState<ByteString> fromVal = fromValues.get(k);
+              ContentAndState<ByteString> toVal = toValues.get(k);
+              Optional<ByteString> f = valToContent.apply(fromVal);
+              Optional<ByteString> t = valToContent.apply(toVal);
               if (f.equals(t)) {
                 return null;
               }
@@ -588,7 +588,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     return entry;
   }
 
-  /** Calculate the hash for the contents of a {@link CommitLogEntry}. */
+  /** Calculate the hash for the content of a {@link CommitLogEntry}. */
   @SuppressWarnings("UnstableApiUsage")
   protected Hash individualCommitHash(
       List<Hash> parentHashes, ByteString commitMeta, List<KeyWithBytes> puts, List<Key> deletes) {
@@ -599,7 +599,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     puts.forEach(
         e -> {
           hashKey(hasher, e.getKey());
-          hasher.putString(e.getContentsId().getId(), StandardCharsets.UTF_8);
+          hasher.putString(e.getContentId().getId(), StandardCharsets.UTF_8);
           hasher.putBytes(e.getValue().asReadOnlyByteBuffer());
         });
     deletes.forEach(e -> hashKey(hasher, e));
@@ -766,14 +766,14 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     }
   }
 
-  /** Retrieve the contents-keys and their types for the commit-log-entry with the given hash. */
+  /** Retrieve the content-keys and their types for the commit-log-entry with the given hash. */
   protected Stream<KeyWithType> keysForCommitEntry(
       OP_CONTEXT ctx, Hash hash, KeyFilterPredicate keyFilter) throws ReferenceNotFoundException {
     return keysForCommitEntry(ctx, hash)
-        .filter(kt -> keyFilter.check(kt.getKey(), kt.getContentsId(), kt.getType()));
+        .filter(kt -> keyFilter.check(kt.getKey(), kt.getContentId(), kt.getType()));
   }
 
-  /** Retrieve the contents-keys and their types for the commit-log-entry with the given hash. */
+  /** Retrieve the content-keys and their types for the commit-log-entry with the given hash. */
   protected Stream<KeyWithType> keysForCommitEntry(OP_CONTEXT ctx, Hash hash)
       throws ReferenceNotFoundException {
     // walk the commit-logs in reverse order - starting with the last persisted key-list
@@ -820,51 +820,51 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
   }
 
   /**
-   * Fetch the global-state and per-ref contents for the given {@link Key}s and {@link Hash
+   * Fetch the global-state and per-ref content for the given {@link Key}s and {@link Hash
    * commitSha}. Non-existing keys must not be present in the returned map.
    */
-  protected Map<Key, ContentsAndState<ByteString>> fetchValues(
+  protected Map<Key, ContentAndState<ByteString>> fetchValues(
       OP_CONTEXT ctx, Hash refHead, Collection<Key> keys, KeyFilterPredicate keyFilter)
       throws ReferenceNotFoundException {
     Set<Key> remainingKeys = new HashSet<>(keys);
 
     Map<Key, ByteString> nonGlobal = new HashMap<>();
-    Map<Key, ContentsId> keyToContentsIds = new HashMap<>();
-    Set<ContentsId> contentsIds = new HashSet<>();
+    Map<Key, ContentId> keyToContentIds = new HashMap<>();
+    Set<ContentId> contentIds = new HashSet<>();
     try (Stream<CommitLogEntry> log =
         takeUntilExcludeLast(readCommitLogStream(ctx, refHead), e -> remainingKeys.isEmpty())) {
       log.peek(entry -> entry.getDeletes().forEach(remainingKeys::remove))
           .flatMap(entry -> entry.getPuts().stream())
           .filter(put -> remainingKeys.remove(put.getKey()))
-          .filter(put -> keyFilter.check(put.getKey(), put.getContentsId(), put.getType()))
+          .filter(put -> keyFilter.check(put.getKey(), put.getContentId(), put.getType()))
           .forEach(
               put -> {
                 nonGlobal.put(put.getKey(), put.getValue());
-                keyToContentsIds.put(put.getKey(), put.getContentsId());
-                contentsIds.add(put.getContentsId());
+                keyToContentIds.put(put.getKey(), put.getContentId());
+                contentIds.add(put.getContentId());
               });
     }
 
-    Map<ContentsId, ByteString> globals = fetchGlobalStates(ctx, contentsIds);
+    Map<ContentId, ByteString> globals = fetchGlobalStates(ctx, contentIds);
 
     return nonGlobal.entrySet().stream()
         .collect(
             Collectors.toMap(
                 Entry::getKey,
                 e ->
-                    ContentsAndState.of(
-                        e.getValue(), globals.get(keyToContentsIds.get(e.getKey())))));
+                    ContentAndState.of(
+                        e.getValue(), globals.get(keyToContentIds.get(e.getKey())))));
   }
 
   /**
    * Fetches the global-state information for the given content-ids.
    *
    * @param ctx technical context
-   * @param contentIds the contents-ids to fetch
+   * @param contentIds the content-ids to fetch
    * @return map of content-id to state
    */
-  protected abstract Map<ContentsId, ByteString> fetchGlobalStates(
-      OP_CONTEXT ctx, Set<ContentsId> contentIds) throws ReferenceNotFoundException;
+  protected abstract Map<ContentId, ByteString> fetchGlobalStates(
+      OP_CONTEXT ctx, Set<ContentId> contentIds) throws ReferenceNotFoundException;
 
   protected abstract Stream<KeyListEntity> fetchKeyLists(OP_CONTEXT ctx, List<Hash> keyListsIds);
 
@@ -1098,27 +1098,27 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
   protected void checkExpectedGlobalStates(
       OP_CONTEXT ctx, CommitAttempt commitAttempt, Consumer<String> mismatches)
       throws ReferenceNotFoundException {
-    Map<ContentsId, ByteString> globalStates =
+    Map<ContentId, ByteString> globalStates =
         fetchGlobalStates(ctx, commitAttempt.getExpectedStates().keySet());
-    for (Entry<ContentsId, Optional<ByteString>> expectedState :
+    for (Entry<ContentId, Optional<ByteString>> expectedState :
         commitAttempt.getExpectedStates().entrySet()) {
       ByteString currentState = globalStates.get(expectedState.getKey());
       if (currentState == null) {
         if (expectedState.getValue().isPresent()) {
           mismatches.accept(
               String.format(
-                  "No current global-state for contents-id '%s'.", expectedState.getKey()));
+                  "No current global-state for content-id '%s'.", expectedState.getKey()));
         }
       } else {
         if (!expectedState.getValue().isPresent()) {
           // This happens, when a table's being created on a branch, but that table already exists.
           mismatches.accept(
               String.format(
-                  "Global-state for contents-id '%s' already exists.", expectedState.getKey()));
+                  "Global-state for content-id '%s' already exists.", expectedState.getKey()));
         } else if (!currentState.equals(expectedState.getValue().get())) {
           mismatches.accept(
               String.format(
-                  "Mismatch in global-state for contents-id '%s'.", expectedState.getKey()));
+                  "Mismatch in global-state for content-id '%s'.", expectedState.getKey()));
         }
       }
     }

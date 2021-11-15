@@ -20,22 +20,23 @@ import static org.projectnessie.model.Operation.Put;
 
 import java.security.AccessControlException;
 import java.security.Principal;
-import java.util.List;
-import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.params.EntriesParams;
+import org.projectnessie.api.params.ReferencesParams;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.Contents;
-import org.projectnessie.model.Contents.Type;
+import org.projectnessie.model.Content;
+import org.projectnessie.model.Content.Type;
 import org.projectnessie.model.EntriesResponse;
+import org.projectnessie.model.ImmutableReferencesResponse;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Merge;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
+import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.Tag;
 import org.projectnessie.model.Transplant;
 import org.projectnessie.services.authz.AccessChecker;
@@ -51,17 +52,17 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
 
   public TreeApiImplWithAuthorization(
       ServerConfig config,
-      VersionStore<Contents, CommitMeta, Type> store,
+      VersionStore<Content, CommitMeta, Type> store,
       AccessChecker accessChecker,
       Principal principal) {
     super(config, store, accessChecker, principal);
   }
 
   @Override
-  public List<Reference> getAllReferences() {
-    List<Reference> allReferences = super.getAllReferences();
+  public ReferencesResponse getAllReferences(ReferencesParams params) {
     ServerAccessContext accessContext = createAccessContext();
-    return allReferences.stream()
+    ImmutableReferencesResponse.Builder resp = ReferencesResponse.builder();
+    super.getAllReferences(params).getReferences().stream()
         .filter(
             ref -> {
               try {
@@ -75,7 +76,8 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
                 return false;
               }
             })
-        .collect(Collectors.toList());
+        .forEach(resp::addReferences);
+    return resp.build();
   }
 
   @Override

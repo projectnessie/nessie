@@ -31,7 +31,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
-import org.projectnessie.versioned.persist.adapter.ContentsId;
+import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
@@ -109,7 +109,7 @@ public abstract class AbstractManyKeys {
                       "foobarbazfoobarbazfoobarbazfoobarbazfoobarbazfoobarbaz");
               allKeys.add(key);
               return KeyWithBytes.of(
-                  key, ContentsId.of("cid-" + i), (byte) 0, ByteString.copyFromUtf8("value " + i));
+                  key, ContentId.of("cid-" + i), (byte) 0, ByteString.copyFromUtf8("value " + i));
             })
         .forEach(kb -> commits.get(commitDist.incrementAndGet() % params.commits).addPuts(kb));
 

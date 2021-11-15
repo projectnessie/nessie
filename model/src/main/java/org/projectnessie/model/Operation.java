@@ -47,35 +47,35 @@ import org.immutables.value.Value;
 public interface Operation {
 
   @NotNull
-  ContentsKey getKey();
+  ContentKey getKey();
 
   @Schema(
       type = SchemaType.OBJECT,
-      title = "Put-'Contents'-operation for a 'ContentsKey'.",
+      title = "Put-'Content'-operation for a 'ContentKey'.",
       description =
-          "Add or replace (put) a 'Contents' object for a 'ContentsKey'. "
+          "Add or replace (put) a 'Content' object for a 'ContentKey'. "
               + "If the actual table type tracks the 'global state' of individual tables (Iceberg "
-              + "as of today), every 'Put'-operation must contain a non-null value for 'expectedContents'.")
+              + "as of today), every 'Put'-operation must contain a non-null value for 'expectedContent'.")
   @Value.Immutable
   @JsonSerialize(as = ImmutablePut.class)
   @JsonDeserialize(as = ImmutablePut.class)
   @JsonTypeName("PUT")
   interface Put extends Operation {
     @NotNull
-    Contents getContents();
+    Content getContent();
 
     @Nullable
-    Contents getExpectedContents();
+    Content getExpectedContent();
 
-    static Put of(ContentsKey key, Contents contents) {
-      return ImmutablePut.builder().key(key).contents(contents).build();
+    static Put of(ContentKey key, Content content) {
+      return ImmutablePut.builder().key(key).content(content).build();
     }
 
-    static Put of(ContentsKey key, Contents contents, Contents expectedContents) {
+    static Put of(ContentKey key, Content content, Content expectedContent) {
       return ImmutablePut.builder()
           .key(key)
-          .contents(contents)
-          .expectedContents(expectedContents)
+          .content(content)
+          .expectedContent(expectedContent)
           .build();
     }
   }
@@ -86,7 +86,7 @@ public interface Operation {
   @JsonTypeName("DELETE")
   interface Delete extends Operation {
 
-    static Delete of(ContentsKey key) {
+    static Delete of(ContentKey key) {
       return ImmutableDelete.builder().key(key).build();
     }
   }
@@ -97,7 +97,7 @@ public interface Operation {
   @JsonTypeName("UNCHANGED")
   interface Unchanged extends Operation {
 
-    static Unchanged of(ContentsKey key) {
+    static Unchanged of(ContentKey key) {
       return ImmutableUnchanged.builder().key(key).build();
     }
   }

@@ -22,7 +22,7 @@ import java.util.function.Supplier;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import org.projectnessie.cel.tools.ScriptException;
-import org.projectnessie.model.ContentsKey;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.server.config.QuarkusNessieAuthorizationConfig;
 import org.projectnessie.services.authz.AccessChecker;
 import org.projectnessie.services.authz.AccessContext;
@@ -103,23 +103,21 @@ public class CelAccessChecker implements AccessChecker {
 
   @Override
   public void canReadEntityValue(
-      AccessContext context, NamedRef ref, ContentsKey key, String contentsId)
+      AccessContext context, NamedRef ref, ContentKey key, String contentId)
       throws AccessControlException {
     canViewReference(context, ref);
     canPerformOpOnPath(context, ref, key, AuthorizationRuleType.READ_ENTITY_VALUE);
   }
 
   @Override
-  public void canUpdateEntity(
-      AccessContext context, NamedRef ref, ContentsKey key, String contentsId)
+  public void canUpdateEntity(AccessContext context, NamedRef ref, ContentKey key, String contentId)
       throws AccessControlException {
     canViewReference(context, ref);
     canPerformOpOnPath(context, ref, key, AuthorizationRuleType.UPDATE_ENTITY);
   }
 
   @Override
-  public void canDeleteEntity(
-      AccessContext context, NamedRef ref, ContentsKey key, String contentsId)
+  public void canDeleteEntity(AccessContext context, NamedRef ref, ContentKey key, String contentId)
       throws AccessControlException {
     canViewReference(context, ref);
     canPerformOpOnPath(context, ref, key, AuthorizationRuleType.DELETE_ENTITY);
@@ -147,7 +145,7 @@ public class CelAccessChecker implements AccessChecker {
   }
 
   private void canPerformOpOnPath(
-      AccessContext context, NamedRef ref, ContentsKey contentsKey, AuthorizationRuleType type) {
+      AccessContext context, NamedRef ref, ContentKey contentKey, AuthorizationRuleType type) {
     if (!config.enabled()) {
       return;
     }
@@ -157,7 +155,7 @@ public class CelAccessChecker implements AccessChecker {
             "ref",
             ref.getName(),
             "path",
-            contentsKey.toPathString(),
+            contentKey.toPathString(),
             "role",
             roleName,
             "op",
@@ -167,7 +165,7 @@ public class CelAccessChecker implements AccessChecker {
         () ->
             String.format(
                 "'%s' is not allowed for role '%s' on content '%s'",
-                type, roleName, contentsKey.toPathString());
+                type, roleName, contentKey.toPathString());
 
     canPerformOp(arguments, errorMsgSupplier);
   }

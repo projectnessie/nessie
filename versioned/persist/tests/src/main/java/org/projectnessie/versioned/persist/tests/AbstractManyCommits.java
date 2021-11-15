@@ -35,9 +35,9 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
-import org.projectnessie.versioned.persist.adapter.ContentsAndState;
-import org.projectnessie.versioned.persist.adapter.ContentsId;
-import org.projectnessie.versioned.persist.adapter.ContentsIdAndBytes;
+import org.projectnessie.versioned.persist.adapter.ContentAndState;
+import org.projectnessie.versioned.persist.adapter.ContentId;
+import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
@@ -65,7 +65,7 @@ public abstract class AbstractManyCommits {
 
     Hash[] commits = new Hash[numCommits];
 
-    ContentsId fixed = ContentsId.of("FIXED");
+    ContentId fixed = ContentId.of("FIXED");
 
     for (int i = 0; i < numCommits; i++) {
       Key key = Key.of("many", "commits", Integer.toString(numCommits));
@@ -88,11 +88,11 @@ public abstract class AbstractManyCommits {
       Hash hash = databaseAdapter.commit(commit.build());
       commits[i] = hash;
 
-      try (Stream<ContentsIdAndBytes> globals =
-          databaseAdapter.globalContents(Collections.singleton(fixed), bs -> (byte) 0)) {
+      try (Stream<ContentIdAndBytes> globals =
+          databaseAdapter.globalContent(Collections.singleton(fixed), bs -> (byte) 0)) {
         assertThat(globals)
             .containsExactly(
-                ContentsIdAndBytes.of(
+                ContentIdAndBytes.of(
                     fixed,
                     (byte) 0,
                     ByteString.copyFromUtf8("state for #" + i + " of " + numCommits)));
@@ -132,13 +132,13 @@ public abstract class AbstractManyCommits {
     }
 
     try {
-      Map<Key, ContentsAndState<ByteString>> values =
+      Map<Key, ContentAndState<ByteString>> values =
           databaseAdapter.values(
               commit, Collections.singletonList(key), KeyFilterPredicate.ALLOW_ALL);
       ByteString expectValue = ByteString.copyFromUtf8("value for #" + i + " of " + numCommits);
       ByteString expectState =
           ByteString.copyFromUtf8("state for #" + (numCommits - 1) + " of " + numCommits);
-      ContentsAndState<ByteString> expect = ContentsAndState.of(expectValue, expectState);
+      ContentAndState<ByteString> expect = ContentAndState.of(expectValue, expectState);
       assertThat(values).containsExactly(Maps.immutableEntry(key, expect));
     } catch (ReferenceNotFoundException e) {
       throw new RuntimeException(e);

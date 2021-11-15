@@ -31,7 +31,7 @@ import org.projectnessie.model.Validation;
  * <p>For easier usage of this class, there is {@link CommitLogParams#builder()}, which allows
  * configuring/setting the different parameters.
  */
-public class CommitLogParams {
+public class CommitLogParams extends AbstractParams {
 
   @Nullable
   @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
@@ -50,16 +50,6 @@ public class CommitLogParams {
       examples = {@ExampleObject(ref = "nullHash"), @ExampleObject(ref = "hash")})
   @QueryParam("endHash")
   private String endHash;
-
-  @Parameter(
-      description = "maximum number of commit-log entries to return, just a hint for the server")
-  @QueryParam("max")
-  private Integer maxRecords;
-
-  @Parameter(
-      description = "pagination continuation token, as returned in the previous LogResponse.token")
-  @QueryParam("pageToken")
-  private String pageToken;
 
   @Parameter(
       description =
@@ -81,10 +71,9 @@ public class CommitLogParams {
       Integer maxRecords,
       String pageToken,
       String queryExpression) {
+    super(maxRecords, pageToken);
     this.startHash = startHash;
     this.endHash = endHash;
-    this.maxRecords = maxRecords;
-    this.pageToken = pageToken;
     this.queryExpression = queryExpression;
   }
 
@@ -107,14 +96,6 @@ public class CommitLogParams {
     return endHash;
   }
 
-  public Integer maxRecords() {
-    return maxRecords;
-  }
-
-  public String pageToken() {
-    return pageToken;
-  }
-
   public String queryExpression() {
     return queryExpression;
   }
@@ -132,8 +113,8 @@ public class CommitLogParams {
     return new StringJoiner(", ", CommitLogParams.class.getSimpleName() + "[", "]")
         .add("startHash='" + startHash + "'")
         .add("endHash='" + endHash + "'")
-        .add("maxRecords=" + maxRecords)
-        .add("pageToken='" + pageToken + "'")
+        .add("maxRecords=" + maxRecords())
+        .add("pageToken='" + pageToken() + "'")
         .add("queryExpression='" + queryExpression + "'")
         .toString();
   }
@@ -149,22 +130,20 @@ public class CommitLogParams {
     CommitLogParams that = (CommitLogParams) o;
     return Objects.equals(startHash, that.startHash)
         && Objects.equals(endHash, that.endHash)
-        && Objects.equals(maxRecords, that.maxRecords)
-        && Objects.equals(pageToken, that.pageToken)
+        && Objects.equals(maxRecords(), that.maxRecords())
+        && Objects.equals(pageToken(), that.pageToken())
         && Objects.equals(queryExpression, that.queryExpression);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(startHash, endHash, maxRecords, pageToken, queryExpression);
+    return Objects.hash(startHash, endHash, maxRecords(), pageToken(), queryExpression);
   }
 
-  public static class Builder {
+  public static class Builder extends AbstractParams.Builder<Builder> {
 
     private String startHash;
     private String endHash;
-    private Integer maxRecords;
-    private String pageToken;
     private String queryExpression;
 
     private Builder() {}
@@ -179,16 +158,6 @@ public class CommitLogParams {
       return this;
     }
 
-    public Builder maxRecords(Integer maxRecords) {
-      this.maxRecords = maxRecords;
-      return this;
-    }
-
-    public Builder pageToken(String pageToken) {
-      this.pageToken = pageToken;
-      return this;
-    }
-
     public Builder expression(String queryExpression) {
       this.queryExpression = queryExpression;
       return this;
@@ -197,8 +166,8 @@ public class CommitLogParams {
     public Builder from(CommitLogParams params) {
       return startHash(params.startHash)
           .endHash(params.endHash)
-          .maxRecords(params.maxRecords)
-          .pageToken(params.pageToken)
+          .maxRecords(params.maxRecords())
+          .pageToken(params.pageToken())
           .expression(params.queryExpression);
     }
 

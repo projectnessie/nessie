@@ -56,7 +56,7 @@ object NessieUtils {
       return findReferenceFromHash(branch, hash, nessieClient)
     }
 
-    //todo we are assuming always in UTC. ignoring tz set by spark etc
+    // todo we are assuming always in UTC. ignoring tz set by spark etc
     val timestamp = tsOrHash
       .map(x => x.replaceAll("`", ""))
       .map(x => {

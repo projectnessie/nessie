@@ -27,7 +27,7 @@ import org.projectnessie.error.{
 }
 import org.projectnessie.model.{
   CommitMeta,
-  ContentsKey,
+  ContentKey,
   DeltaLakeTable,
   ImmutableDeltaLakeTable,
   Reference,
@@ -359,13 +359,13 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
     }
   }
 
-  def pathToKey(path: Path): ContentsKey = {
+  def pathToKey(path: Path): ContentKey = {
     pathToKey(path.toUri.getPath)
   }
 
-  def pathToKey(path: String): ContentsKey = {
+  def pathToKey(path: String): ContentKey = {
     val parts = path.split("/").toList
-    ContentsKey.of(parts.asJava)
+    ContentKey.of(parts.asJava)
   }
 
   def numCheckpointParts(path: Path): Option[Int] = {
@@ -468,8 +468,8 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
 
   }
 
-  //this is annoying, Delta requires at least one delta file even though everything is contained in the checkpoint.
-  //We add on a useless delta file here if and only if only checkpoints are required
+  // this is annoying, Delta requires at least one delta file even though everything is contained in the checkpoint.
+  // We add on a useless delta file here if and only if only checkpoints are required
   private def emptyCheckpoint(
       version: Long,
       logFileMeta: LogFileMeta
@@ -487,7 +487,7 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
 
   private def getTable(path: Path, branch: String): Option[DeltaLakeTable] = {
     val key = pathToKey(path)
-    Try(api.getContents.key(key).refName(branch).get().get(key))
+    Try(api.getContent.key(key).refName(branch).get().get(key))
       .filter(x => x != null && x.isInstanceOf[DeltaLakeTable])
       .map(_.asInstanceOf[DeltaLakeTable])
       .toOption

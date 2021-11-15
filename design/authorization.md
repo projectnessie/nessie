@@ -61,9 +61,9 @@ More concretely, interface would look like this:
       void canReadEntries(AccessContext context, NamedRef ref) throws AccessControlException;
       void canListCommitLog(AccessContext context, NamedRef ref) throws AccessControlException;
       void canCommitChangeAgainstReference(AccessContext context, NamedRef ref) throws AccessControlException;
-      void canReadEntityValue(AccessContext context, NamedRef ref, ContentsKey key, String contentsId) throws AccessControlException;
-      void canUpdateEntity(AccessContext context, NamedRef ref, ContentsKey key, String contentsId) throws AccessControlException;
-      void canDeleteEntity(AccessContext context, NamedRef ref, ContentsKey key, String contentsId) throws AccessControlException;
+      void canReadEntityValue(AccessContext context, NamedRef ref, ContentKey key, String contentId) throws AccessControlException;
+      void canUpdateEntity(AccessContext context, NamedRef ref, ContentKey key, String contentId) throws AccessControlException;
+      void canDeleteEntity(AccessContext context, NamedRef ref, ContentKey key, String contentId) throws AccessControlException;
     }
 
 The `AccessContext` object passed as argument contains information regarding the overall context of the operation and will be created by the server itself:
@@ -90,7 +90,7 @@ An implementation of the `AccessChecker` interface could be written with the fol
 * Rule definitions are of the form `nessie.server.authorization.rules.<ruleId>="<rule_expression>"`
 * The `ref` refers to a string representing a branch/tag name
 * The `role` refers to the user's role and can be any string
-* The `path` refers to the Key for the contents of an object and can be any string
+* The `path` refers to the Key for the content of an object and can be any string
 * The `op` variable in the `<rule_expression>` can be any of:
   * `VIEW_REFERENCE`
   * `CREATE_REFERENCE`

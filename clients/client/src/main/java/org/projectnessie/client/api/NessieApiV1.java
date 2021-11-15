@@ -30,7 +30,7 @@ public interface NessieApiV1 extends NessieApi {
   /** Get details for the default reference. */
   Branch getDefaultBranch() throws NessieNotFoundException;
 
-  GetContentsBuilder getContents();
+  GetContentBuilder getContent();
 
   /** Get all references. */
   GetAllReferencesBuilder getAllReferences();

@@ -38,7 +38,7 @@ import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.WithHash;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
-import org.projectnessie.versioned.persist.adapter.ContentsId;
+import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.Difference;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt;
@@ -170,7 +170,7 @@ public abstract class AbstractDatabaseAdapterTest {
                 .addPuts(
                     KeyWithBytes.of(
                         Key.of("foo"),
-                        ContentsId.of("contentsId"),
+                        ContentId.of("contentId"),
                         (byte) 0,
                         ByteString.copyFromUtf8("hello")))
                 .build());
@@ -195,7 +195,7 @@ public abstract class AbstractDatabaseAdapterTest {
                                 .addPuts(
                                     KeyWithBytes.of(
                                         Key.of("bar"),
-                                        ContentsId.of("contentsId-no-no"),
+                                        ContentId.of("contentId-no-no"),
                                         (byte) 0,
                                         ByteString.copyFromUtf8("hello")))
                                 .build()))
@@ -237,7 +237,7 @@ public abstract class AbstractDatabaseAdapterTest {
                   .addPuts(
                       KeyWithBytes.of(
                           Key.of("bar", Integer.toString(i)),
-                          ContentsId.of("contentsId-" + i),
+                          ContentId.of("contentId-" + i),
                           (byte) 0,
                           ByteString.copyFromUtf8("hello " + i)))
                   .build());
@@ -276,7 +276,7 @@ public abstract class AbstractDatabaseAdapterTest {
         commit.addPuts(
             KeyWithBytes.of(
                 Key.of("key", Integer.toString(k)),
-                ContentsId.of("C" + k),
+                ContentId.of("C" + k),
                 (byte) 0,
                 ByteString.copyFromUtf8("value " + i + " for " + k)));
       }
@@ -377,6 +377,26 @@ public abstract class AbstractDatabaseAdapterTest {
   }
 
   @Test
+  void nonExistentKeyPrefixTest(
+      @NessieDbAdapter(initializeRepo = false)
+          @NessieDbAdapterConfigItem(name = "key.prefix", value = "non-existent")
+          DatabaseAdapter nonExistent) {
+    assertAll(
+        () -> {
+          try (Stream<WithHash<NamedRef>> r = nonExistent.namedRefs()) {
+            assertThat(r).isEmpty();
+          }
+        },
+        () ->
+            assertThatThrownBy(
+                    () -> nonExistent.hashOnReference(BranchName.of("main"), Optional.empty()))
+                .isInstanceOf(ReferenceNotFoundException.class),
+        () ->
+            assertThatThrownBy(() -> nonExistent.toHash(BranchName.of("main")))
+                .isInstanceOf(ReferenceNotFoundException.class));
+  }
+
+  @Test
   void keyPrefixBasic(
       @NessieDbAdapter @NessieDbAdapterConfigItem(name = "key.prefix", value = "foo")
           DatabaseAdapter foo,
@@ -396,7 +416,7 @@ public abstract class AbstractDatabaseAdapterTest {
             .commitMetaSerialized(fooCommitMeta)
             .addPuts(
                 KeyWithBytes.of(
-                    Key.of("foo"), ContentsId.of("foo"), (byte) 0, ByteString.copyFromUtf8("foo")))
+                    Key.of("foo"), ContentId.of("foo"), (byte) 0, ByteString.copyFromUtf8("foo")))
             .build());
     bar.commit(
         ImmutableCommitAttempt.builder()
@@ -404,7 +424,7 @@ public abstract class AbstractDatabaseAdapterTest {
             .commitMetaSerialized(barCommitMeta)
             .addPuts(
                 KeyWithBytes.of(
-                    Key.of("bar"), ContentsId.of("bar"), (byte) 0, ByteString.copyFromUtf8("bar")))
+                    Key.of("bar"), ContentId.of("bar"), (byte) 0, ByteString.copyFromUtf8("bar")))
             .build());
 
     Hash fooMain = foo.toHash(main);

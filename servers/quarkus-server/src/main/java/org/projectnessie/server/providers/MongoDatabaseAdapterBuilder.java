@@ -24,11 +24,11 @@ import io.quarkus.mongodb.runtime.MongoClients;
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.projectnessie.server.config.QuarkusVersionStoreAdvancedConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.mongodb.MongoClientConfig;
 import org.projectnessie.versioned.persist.mongodb.MongoDatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.mongodb.MongoDatabaseClient;
+import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 
 /** Version store factory for the MongoDB Database Adapter. */
 @StoreType(MONGO)
@@ -38,7 +38,7 @@ public class MongoDatabaseAdapterBuilder implements DatabaseAdapterBuilder {
   @ConfigProperty(name = "quarkus.mongodb.database")
   String databaseName;
 
-  @Inject QuarkusVersionStoreAdvancedConfig config;
+  @Inject NonTransactionalDatabaseAdapterConfig config;
 
   @Override
   public DatabaseAdapter newDatabaseAdapter() {

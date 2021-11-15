@@ -26,7 +26,7 @@ import org.immutables.value.Value;
 @JsonSerialize(as = ImmutableSqlView.class)
 @JsonDeserialize(as = ImmutableSqlView.class)
 @JsonTypeName("VIEW")
-public abstract class SqlView extends Contents {
+public abstract class SqlView extends Content {
 
   public enum Dialect {
     HIVE,

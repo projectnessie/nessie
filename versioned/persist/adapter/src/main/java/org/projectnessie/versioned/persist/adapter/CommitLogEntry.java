@@ -38,7 +38,7 @@ public interface CommitLogEntry {
 
   /**
    * List of all {@code Put} operations, with their keys, content-types and serialized {@code
-   * Contents}.
+   * Content}.
    */
   List<KeyWithBytes> getPuts();
 

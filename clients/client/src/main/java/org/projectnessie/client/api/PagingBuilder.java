@@ -17,7 +17,7 @@ package org.projectnessie.client.api;
 
 import org.projectnessie.model.EntriesResponse;
 
-public interface PagingBuilder<R extends PagingBuilder<R>> extends OnReferenceBuilder<R> {
+public interface PagingBuilder<R extends PagingBuilder<R>> {
 
   /** Recommended: specify the maximum number of records to return. */
   R maxRecords(int maxRecords);
@@ -27,7 +27,4 @@ public interface PagingBuilder<R extends PagingBuilder<R>> extends OnReferenceBu
    * otherwise don't call this method.
    */
   R pageToken(String pageToken);
-
-  /** Required: the <a href="https://github.com/projectnessie/cel-java">CEL</a> script. */
-  R queryExpression(String queryExpression);
 }

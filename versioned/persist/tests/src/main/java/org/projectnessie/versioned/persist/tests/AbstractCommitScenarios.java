@@ -36,8 +36,8 @@ import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
-import org.projectnessie.versioned.persist.adapter.ContentsAndState;
-import org.projectnessie.versioned.persist.adapter.ContentsId;
+import org.projectnessie.versioned.persist.adapter.ContentAndState;
+import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
@@ -127,7 +127,7 @@ public abstract class AbstractCommitScenarios {
    * Test whether a "table rename operation" works as expected.
    *
    * <p>A "table rename" is effectively a remove-operation plus a put-operation with a different key
-   * but the same contents-id.
+   * but the same content-id.
    *
    * <p>Parameterized to force operations to cross/not-cross the number of commits between "full key
    * lists" and whether global-state shall be used.
@@ -140,7 +140,7 @@ public abstract class AbstractCommitScenarios {
     Key dummyKey = Key.of("dummy");
     Key oldKey = Key.of("hello", "table");
     Key newKey = Key.of("new", "name");
-    ContentsId contentsId = ContentsId.of("id-42");
+    ContentId contentId = ContentId.of("id-42");
 
     IntFunction<Hash> performDummyCommit =
         i -> {
@@ -170,13 +170,13 @@ public abstract class AbstractCommitScenarios {
             .addPuts(
                 KeyWithBytes.of(
                     oldKey,
-                    contentsId,
+                    contentId,
                     (byte) 0,
-                    ByteString.copyFromUtf8("initial commit contents")));
+                    ByteString.copyFromUtf8("initial commit content")));
     if (param.globalState) {
       commit
-          .putGlobal(contentsId, ByteString.copyFromUtf8("0"))
-          .putExpectedStates(contentsId, Optional.empty());
+          .putGlobal(contentId, ByteString.copyFromUtf8("0"))
+          .putExpectedStates(contentId, Optional.empty());
     }
     Hash hashInitial = databaseAdapter.commit(commit.build());
 
@@ -192,14 +192,11 @@ public abstract class AbstractCommitScenarios {
             .addDeletes(oldKey)
             .addPuts(
                 KeyWithBytes.of(
-                    newKey,
-                    contentsId,
-                    (byte) 0,
-                    ByteString.copyFromUtf8("rename commit contents")));
+                    newKey, contentId, (byte) 0, ByteString.copyFromUtf8("rename commit content")));
     if (param.globalState) {
       commit
-          .putGlobal(contentsId, ByteString.copyFromUtf8("0"))
-          .putExpectedStates(contentsId, Optional.of(ByteString.copyFromUtf8("0")));
+          .putGlobal(contentId, ByteString.copyFromUtf8("0"))
+          .putExpectedStates(contentId, Optional.of(ByteString.copyFromUtf8("0")));
     }
     Hash hashRename = databaseAdapter.commit(commit.build());
 
@@ -215,8 +212,8 @@ public abstract class AbstractCommitScenarios {
             .addDeletes(newKey);
     if (param.globalState) {
       commit
-          .putGlobal(contentsId, ByteString.copyFromUtf8("0"))
-          .putExpectedStates(contentsId, Optional.of(ByteString.copyFromUtf8("0")));
+          .putGlobal(contentId, ByteString.copyFromUtf8("0"))
+          .putExpectedStates(contentId, Optional.of(ByteString.copyFromUtf8("0")));
     }
     Hash hashDelete = databaseAdapter.commit(commit.build());
 
@@ -238,7 +235,7 @@ public abstract class AbstractCommitScenarios {
         renameCommitVerify(
             Stream.concat(Stream.of(hashInitial), beforeRename.stream()),
             expectedCommitCount,
-            keys -> assertThat(keys).containsExactly(KeyWithType.of(oldKey, contentsId, (byte) 0)));
+            keys -> assertThat(keys).containsExactly(KeyWithType.of(oldKey, contentId, (byte) 0)));
 
     // Verify that the commits since the rename-operation and before the delete-operation return the
     // _new_ key
@@ -246,7 +243,7 @@ public abstract class AbstractCommitScenarios {
         renameCommitVerify(
             Stream.concat(Stream.of(hashRename), beforeDelete.stream()),
             expectedCommitCount,
-            keys -> assertThat(keys).containsExactly(KeyWithType.of(newKey, contentsId, (byte) 0)));
+            keys -> assertThat(keys).containsExactly(KeyWithType.of(newKey, contentId, (byte) 0)));
 
     // Verify that the commits since the delete-operation return _no_ keys
     expectedCommitCount =
@@ -298,16 +295,16 @@ public abstract class AbstractCommitScenarios {
           .addPuts(
               KeyWithBytes.of(
                   key,
-                  ContentsId.of("id-" + i),
+                  ContentId.of("id-" + i),
                   (byte) 0,
-                  ByteString.copyFromUtf8("initial commit contents")))
-          .putGlobal(ContentsId.of("id-" + i), ByteString.copyFromUtf8("0"))
-          .putExpectedStates(ContentsId.of("id-" + i), Optional.empty());
+                  ByteString.copyFromUtf8("initial commit content")))
+          .putGlobal(ContentId.of("id-" + i), ByteString.copyFromUtf8("0"))
+          .putExpectedStates(ContentId.of("id-" + i), Optional.empty());
     }
     Hash head = databaseAdapter.commit(commit.build());
 
     for (int commitNum = 0; commitNum < 3; commitNum++) {
-      Map<Key, ContentsAndState<ByteString>> values =
+      Map<Key, ContentAndState<ByteString>> values =
           databaseAdapter.values(
               databaseAdapter.toHash(branch), keys, KeyFilterPredicate.ALLOW_ALL);
       commit =
@@ -322,12 +319,12 @@ public abstract class AbstractCommitScenarios {
             .addPuts(
                 KeyWithBytes.of(
                     keys.get(i),
-                    ContentsId.of("id-" + i),
+                    ContentId.of("id-" + i),
                     (byte) 0,
                     ByteString.copyFromUtf8("branch value")))
-            .putGlobal(ContentsId.of("id-" + i), ByteString.copyFromUtf8(newGlobalState))
+            .putGlobal(ContentId.of("id-" + i), ByteString.copyFromUtf8(newGlobalState))
             .putExpectedStates(
-                ContentsId.of("id-" + i), Optional.of(ByteString.copyFromUtf8(currentState)));
+                ContentId.of("id-" + i), Optional.of(ByteString.copyFromUtf8(currentState)));
       }
 
       Hash newHead = databaseAdapter.commit(commit.build());

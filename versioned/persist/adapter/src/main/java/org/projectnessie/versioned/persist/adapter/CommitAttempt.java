@@ -43,22 +43,22 @@ public interface CommitAttempt {
   }
 
   /**
-   * Mapping of contents-ids to expected global contents-state (think: Iceberg table-metadata),
-   * coming from the "expected-state" property of a {@code PutGlobal} commit operation.
+   * Mapping of content-ids to expected global content-state (think: Iceberg table-metadata), coming
+   * from the "expected-state" property of a {@code PutGlobal} commit operation.
    */
-  Map<ContentsId, Optional<ByteString>> getExpectedStates();
+  Map<ContentId, Optional<ByteString>> getExpectedStates();
 
   /**
    * List of all {@code Put} operations, with their keys, content-types and serialized {@code
-   * Contents}.
+   * Content}.
    */
   List<KeyWithBytes> getPuts();
 
   /**
-   * Mapping of contents-ids to the new contents-state (think: Iceberg table-metadata), coming from
-   * the "contents" property of a {@code PutGlobal} commit operation.
+   * Mapping of content-ids to the new content-state (think: Iceberg table-metadata), coming from
+   * the "content" property of a {@code PutGlobal} commit operation.
    */
-  Map<ContentsId, ByteString> getGlobal();
+  Map<ContentId, ByteString> getGlobal();
 
   /** List of "unchanged" keys, from {@code Unchanged} commit operations. */
   List<Key> getUnchanged();

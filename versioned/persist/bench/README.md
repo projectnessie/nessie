@@ -4,7 +4,7 @@
 
 The JMH based microbenchmarks exist to get an idea of the potential commit-performance of a
 database-adapter with a specific configuration. These microbenchmarks do neither validate
-linearizability nor the commit-contents-model, but focus on the pure "commit performance" to find
+linearizability nor the commit-content-model, but focus on the pure "commit performance" to find
 bottlenecks.
 
 ## Usage

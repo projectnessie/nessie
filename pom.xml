@@ -21,7 +21,7 @@
 
   <groupId>org.projectnessie</groupId>
   <artifactId>nessie</artifactId>
-  <version>0.12.2-SNAPSHOT</version>
+  <version>0.14.1-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Nessie</name>
@@ -119,7 +119,7 @@
   <scm>
     <connection>scm:git:https://github.com/projectnessie/nessie</connection>
     <developerConnection>scm:git:https://github.com/projectnessie/nessie</developerConnection>
-    <url>https://github.com/projectnessie/nessie/tree/${project.scm.tag}</url>
+    <url>https://github.com/projectnessie/nessie</url>
     <tag>main</tag>
   </scm>
   <issueManagement>
@@ -145,9 +145,9 @@
     <quarkus.native.builder-image>quay.io/quarkus/ubi-quarkus-native-image:21.3-java11</quarkus.native.builder-image>
 
     <!-- Version properties -->
-    <antlr.version>4.8</antlr.version>
+    <antlr.version>4.9.3</antlr.version>
     <assertj.version>3.21.0</assertj.version>
-    <awssdk.version>2.17.73</awssdk.version>
+    <awssdk.version>2.17.81</awssdk.version>
     <bouncycastle.version>1.66</bouncycastle.version>
     <cel.version>0.2.2</cel.version>
     <!-- to fix circular dependencies with NessieClient, certain projects need to use the same Nessie version as Iceberg/Delta has -->
@@ -160,7 +160,7 @@
     <gatling.version>3.6.1</gatling.version>
     <guava.version>31.0.1-jre</guava.version>
     <hadoop.version>3.3.1</hadoop.version>
-    <iceberg.version>0.12.0</iceberg.version>
+    <iceberg.version>0.12.1</iceberg.version>
     <immutables.version>2.8.9-ea-1</immutables.version>
     <jackson.version>2.13.0</jackson.version>
     <javax.version>4.0.1</javax.version>
@@ -171,14 +171,15 @@
     <jmh.version>1.33</jmh.version>
     <jsr305.version>3.0.2</jsr305.version>
     <junit.version>5.8.1</junit.version>
-    <logback.version>1.2.6</logback.version>
+    <logback.version>1.2.7</logback.version>
     <mockito.version>4.0.0</mockito.version>
     <nessie.version>${project.version}</nessie.version>
     <openapi.version>2.0</openapi.version>
+    <picocli.version>4.6.2</picocli.version>
     <prometheus.version>0.9.0</prometheus.version>
     <protobuf.version>3.19.1</protobuf.version>
-    <quarkus.version>2.4.0.Final</quarkus.version>
-    <reactor.version>2020.0.12</reactor.version>
+    <quarkus.version>2.4.2.Final</quarkus.version>
+    <reactor.version>2020.0.13</reactor.version>
     <rocksdb.version>6.25.3</rocksdb.version>
     <scala2.12.version>2.12.13</scala2.12.version>
     <scala2.13.version>2.13.7</scala2.13.version>
@@ -644,7 +645,7 @@
         <plugin>
           <groupId>com.diffplug.spotless</groupId>
           <artifactId>spotless-maven-plugin</artifactId>
-          <version>2.17.3</version>
+          <version>2.17.4</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -760,7 +761,7 @@
         <plugin>
           <groupId>org.owasp</groupId>
           <artifactId>dependency-check-maven</artifactId>
-          <version>6.4.1</version>
+          <version>6.5.0</version>
         </plugin>
       </plugins>
     </pluginManagement>

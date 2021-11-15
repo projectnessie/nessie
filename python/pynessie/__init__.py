@@ -24,7 +24,7 @@ from .conf import build_config
 
 __author__ = """Project Nessie"""
 __email__ = "nessie-release-builder@dremio.com"
-__version__ = "0.12.2"
+__version__ = "0.14.1"
 
 
 def get_config(config_dir: str = None, args: dict = None) -> confuse.Configuration:
@@ -44,7 +44,7 @@ def init(config_dir: str = None, config_dict: dict = None) -> NessieClient:
     >>> client = init('/my/config/dir')
     """
     if config_dict is None:
-        config_dict = dict()
+        config_dict = {}
     config = get_config(config_dir, args=config_dict)
     return _connect(config)
 

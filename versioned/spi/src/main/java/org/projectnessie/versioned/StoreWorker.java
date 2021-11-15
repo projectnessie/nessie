@@ -21,30 +21,28 @@ import java.util.Optional;
 /**
  * A set of helpers that users of a VersionStore must implement.
  *
- * @param <CONTENTS> The value type saved in the VersionStore.
+ * @param <CONTENT> The value type saved in the VersionStore.
  * @param <COMMIT_METADATA> The commit metadata type saved in the VersionStore.
  */
-public interface StoreWorker<CONTENTS, COMMIT_METADATA, CONTENTS_TYPE extends Enum<CONTENTS_TYPE>> {
+public interface StoreWorker<CONTENT, COMMIT_METADATA, CONTENT_TYPE extends Enum<CONTENT_TYPE>> {
 
-  /**
-   * Returns the serialized representation of the on-reference part of the given contents-object.
-   */
-  ByteString toStoreOnReferenceState(CONTENTS contents);
+  /** Returns the serialized representation of the on-reference part of the given content-object. */
+  ByteString toStoreOnReferenceState(CONTENT content);
 
-  ByteString toStoreGlobalState(CONTENTS contents);
+  ByteString toStoreGlobalState(CONTENT content);
 
-  CONTENTS valueFromStore(ByteString onReferenceValue, Optional<ByteString> globalState);
+  CONTENT valueFromStore(ByteString onReferenceValue, Optional<ByteString> globalState);
 
-  String getId(CONTENTS contents);
+  String getId(CONTENT content);
 
-  Byte getPayload(CONTENTS contents);
+  Byte getPayload(CONTENT content);
 
-  boolean requiresGlobalState(CONTENTS contents);
+  boolean requiresGlobalState(CONTENT content);
 
-  CONTENTS_TYPE getType(Byte payload);
+  CONTENT_TYPE getType(Byte payload);
 
-  default CONTENTS_TYPE getType(CONTENTS contents) {
-    return getType(getPayload(contents));
+  default CONTENT_TYPE getType(CONTENT content) {
+    return getType(getPayload(content));
   }
 
   Serializer<COMMIT_METADATA> getMetadataSerializer();

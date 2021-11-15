@@ -18,16 +18,16 @@ package org.projectnessie.versioned.persist.adapter;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.Key;
 
-/** Composite of key, contents-id, contents-type. */
+/** Composite of key, content-id, content-type. */
 @Value.Immutable(lazyhash = true) // this type is used as a map-key in an expensive test
 public interface KeyWithType {
   Key getKey();
 
-  ContentsId getContentsId();
+  ContentId getContentId();
 
   byte getType();
 
-  static KeyWithType of(Key key, ContentsId contentsId, byte type) {
-    return ImmutableKeyWithType.builder().key(key).type(type).contentsId(contentsId).build();
+  static KeyWithType of(Key key, ContentId contentId, byte type) {
+    return ImmutableKeyWithType.builder().key(key).type(type).contentId(contentId).build();
   }
 }

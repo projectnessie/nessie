@@ -1,5 +1,5 @@
 
-UI Commands
+CLI Commands
 ===========
 
 Available Commands
@@ -57,9 +57,9 @@ Perform a cherry-pick operation. This takes the list of commits ``HASHES`` and a
 
 .. include:: cherry-pick.rst
 
-Contents Command
+Content Command
 ----------------
 
-View and list contents.
+View, list content, and commit changes.
 
-.. include:: contents.rst
+.. include:: content.rst

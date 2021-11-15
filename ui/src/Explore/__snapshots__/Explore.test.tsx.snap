@@ -26,7 +26,7 @@ exports[`Explore renders 2`] = `
         class="explore__wrapper card"
       >
         <div
-          class="tableHead nav card-header-pills nav-pills"
+          class="tableHead nav nav-pills"
         >
           <div
             class="tableHead__leftContentWrapper"
@@ -37,11 +37,10 @@ exports[`Explore renders 2`] = `
             >
               <a
                 aria-expanded="false"
-                aria-haspopup="true"
                 class="dropdown-toggle nav-link"
-                href="#"
                 id="nav-dropdown"
                 role="button"
+                tabindex="0"
               >
                 main
               </a>
@@ -51,8 +50,8 @@ exports[`Explore renders 2`] = `
             >
               <a
                 class="nav-link"
-                href="#"
                 role="button"
+                tabindex="0"
               >
                 <svg
                   aria-hidden="true"
@@ -72,8 +71,8 @@ exports[`Explore renders 2`] = `
             >
               <a
                 class="nav-link"
-                href="#"
                 role="button"
+                tabindex="0"
               >
                 <svg
                   aria-hidden="true"
@@ -169,7 +168,7 @@ exports[`Explore renders with slug 2`] = `
         class="explore__wrapper card"
       >
         <div
-          class="tableHead nav card-header-pills nav-pills"
+          class="tableHead nav nav-pills"
         >
           <div
             class="tableHead__leftContentWrapper"
@@ -180,11 +179,10 @@ exports[`Explore renders with slug 2`] = `
             >
               <a
                 aria-expanded="false"
-                aria-haspopup="true"
                 class="dropdown-toggle nav-link"
-                href="#"
                 id="nav-dropdown"
                 role="button"
+                tabindex="0"
               >
                 main
               </a>
@@ -194,8 +192,8 @@ exports[`Explore renders with slug 2`] = `
             >
               <a
                 class="nav-link"
-                href="#"
                 role="button"
+                tabindex="0"
               >
                 <svg
                   aria-hidden="true"
@@ -215,8 +213,8 @@ exports[`Explore renders with slug 2`] = `
             >
               <a
                 class="nav-link"
-                href="#"
                 role="button"
+                tabindex="0"
               >
                 <svg
                   aria-hidden="true"

@@ -16,7 +16,7 @@
 
 import pytest
 
-from .conftest import _cli
+from .conftest import execute_cli_command
 
 
 # Note: tests in this file use custom VCR files for error server responses.
@@ -28,7 +28,7 @@ from .conftest import _cli
 @pytest.mark.vcr
 def test_server_error_html() -> None:
     """Test the handling of 500 responses with HTML payload (unexpected, but possible)."""
-    result = _cli(["--json", "remote", "show"], ret_val=1)
+    result = execute_cli_command(["--json", "remote", "show"], ret_val=1)
     assert "Internal Server Error" in result
     assert "500" in result
 
@@ -36,6 +36,6 @@ def test_server_error_html() -> None:
 @pytest.mark.vcr
 def test_server_error_json() -> None:
     """Test the handling of 500 responses with JSON payload."""
-    result = _cli(["--json", "remote", "show"], ret_val=1)
+    result = execute_cli_command(["--json", "remote", "show"], ret_val=1)
     assert "Default branch isn't a branch" in result
     assert "500" in result

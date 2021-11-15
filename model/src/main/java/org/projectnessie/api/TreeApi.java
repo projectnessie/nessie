@@ -15,13 +15,13 @@
  */
 package org.projectnessie.api;
 
-import java.util.List;
 import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.params.EntriesParams;
+import org.projectnessie.api.params.ReferencesParams;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -30,6 +30,7 @@ import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Merge;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
+import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.Transplant;
 import org.projectnessie.model.Validation;
 
@@ -39,8 +40,12 @@ public interface TreeApi {
   // the API version number reported by NessieConfiguration.getMaxSupportedApiVersion()
   // should be increased as well.
 
-  /** Get all references. */
-  List<Reference> getAllReferences();
+  /**
+   * Get all references.
+   *
+   * @return
+   */
+  ReferencesResponse getAllReferences(ReferencesParams params);
 
   /** Get details for the default reference. */
   Branch getDefaultBranch() throws NessieNotFoundException;

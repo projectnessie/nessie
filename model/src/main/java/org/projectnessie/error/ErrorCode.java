@@ -28,7 +28,7 @@ public enum ErrorCode {
   UNKNOWN(null),
   REFERENCE_NOT_FOUND(NessieReferenceNotFoundException::new),
   REFERENCE_ALREADY_EXISTS(NessieReferenceAlreadyExistsException::new),
-  CONTENTS_NOT_FOUND(NessieContentsNotFoundException::new),
+  CONTENT_NOT_FOUND(NessieContentNotFoundException::new),
   REFERENCE_CONFLICT(NessieReferenceConflictException::new),
   ;
 

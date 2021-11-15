@@ -15,6 +15,8 @@
 # limitations under the License.
 #
 
+"""Branch and tag common functions."""
+
 from typing import Optional
 
 import click
@@ -54,7 +56,7 @@ def handle_branch_tag(
     """
     if list_references or (not list_references and not delete_reference and not ref_name and not base_ref):
         return _handle_list(nessie, json, verbose, is_branch, ref_name)
-    elif delete_reference:
+    if delete_reference:
         if not hash_on_ref:
             hash_on_ref = nessie.get_reference(ref_name).hash_ or "fail"
         getattr(nessie, "delete_{}".format("branch" if is_branch else "tag"))(ref_name, hash_on_ref)
@@ -80,7 +82,7 @@ def handle_branch_tag(
 
 
 def _handle_list(nessie: NessieClient, json: bool, verbose: bool, is_branch: bool, ref_name: str) -> str:
-    results = nessie.list_references()
+    results = nessie.list_references().references
     kept_results = [ref for ref in results if isinstance(ref, (Branch if is_branch else Tag))]
     if ref_name:
         kept_results = [i for i in kept_results if i.name == ref_name]

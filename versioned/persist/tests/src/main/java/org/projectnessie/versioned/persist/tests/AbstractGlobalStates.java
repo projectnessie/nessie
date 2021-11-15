@@ -39,9 +39,9 @@ import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.ReferenceConflictException;
-import org.projectnessie.versioned.persist.adapter.ContentsId;
-import org.projectnessie.versioned.persist.adapter.ContentsIdAndBytes;
-import org.projectnessie.versioned.persist.adapter.ContentsIdWithType;
+import org.projectnessie.versioned.persist.adapter.ContentId;
+import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
+import org.projectnessie.versioned.persist.adapter.ContentIdWithType;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
@@ -49,7 +49,7 @@ import org.projectnessie.versioned.persist.adapter.KeyWithType;
 
 /**
  * Verifies handling of global-states in the database-adapters using various combinations of number
- * of keys/contents-ids, number of branches, commits per branch, and a commit-probability, which is
+ * of keys/content-ids, number of branches, commits per branch, and a commit-probability, which is
  * necessary to keep the heap-pressure due to the tracked state within reasonable bounds.
  */
 public abstract class AbstractGlobalStates {
@@ -175,14 +175,14 @@ public abstract class AbstractGlobalStates {
                             () ->
                                 databaseAdapter.create(
                                     b, databaseAdapter.toHash(BranchName.of("main"))))));
-    Map<ContentsId, ByteString> currentStates = new HashMap<>();
+    Map<ContentId, ByteString> currentStates = new HashMap<>();
     Set<Key> keys =
         IntStream.range(0, param.tables)
             .mapToObj(i -> Key.of("table", Integer.toString(i)))
             .collect(Collectors.toSet());
-    Set<ContentsId> usedContentIds = new HashSet<>();
+    Set<ContentId> usedContentIds = new HashSet<>();
 
-    Map<ContentsId, ByteString> expectedGlobalStates = new HashMap<>();
+    Map<ContentId, ByteString> expectedGlobalStates = new HashMap<>();
     Map<KeyWithType, List<ByteString>> expectedContents = new HashMap<>();
 
     for (int commit = 0; commit < param.commitsPerBranch; commit++) {
@@ -200,23 +200,23 @@ public abstract class AbstractGlobalStates {
               || ThreadLocalRandom.current().nextDouble(0d, 1d) <= param.tableCommitProbability) {
             String state = "state-commit-" + commit + "+" + key;
             String value = "value-commit-" + commit + "+" + key;
-            ContentsId contentsId = ContentsId.of(key.toString() + "-" + branch.getName());
+            ContentId contentId = ContentId.of(key.toString() + "-" + branch.getName());
             ByteString put = ByteString.copyFromUtf8(value);
             ByteString global = ByteString.copyFromUtf8(state);
 
             commitAttempt
-                .putExpectedStates(contentsId, Optional.ofNullable(currentStates.get(contentsId)))
-                .putGlobal(contentsId, global)
-                .addPuts(KeyWithBytes.of(key, contentsId, (byte) 0, put));
+                .putExpectedStates(contentId, Optional.ofNullable(currentStates.get(contentId)))
+                .putGlobal(contentId, global)
+                .addPuts(KeyWithBytes.of(key, contentId, (byte) 0, put));
 
-            expectedGlobalStates.put(contentsId, global);
+            expectedGlobalStates.put(contentId, global);
 
             expectedContents
-                .computeIfAbsent(KeyWithType.of(key, contentsId, (byte) 0), k -> new ArrayList<>())
+                .computeIfAbsent(KeyWithType.of(key, contentId, (byte) 0), k -> new ArrayList<>())
                 .add(put);
 
-            usedContentIds.add(contentsId);
-            currentStates.put(contentsId, global);
+            usedContentIds.add(contentId);
+            currentStates.put(contentId, global);
           }
         }
 
@@ -227,28 +227,28 @@ public abstract class AbstractGlobalStates {
       }
     }
 
-    // verify that all global-state keys (== Key + contents-id) are returned (in any order)
-    try (Stream<ContentsIdWithType> globalKeys = databaseAdapter.globalKeys(x -> 0)) {
-      assertThat(globalKeys.map(ContentsIdWithType::getContentsId))
+    // verify that all global-state keys (== Key + content-id) are returned (in any order)
+    try (Stream<ContentIdWithType> globalKeys = databaseAdapter.globalKeys(x -> 0)) {
+      assertThat(globalKeys.map(ContentIdWithType::getContentId))
           .containsExactlyInAnyOrderElementsOf(expectedGlobalStates.keySet());
     }
 
-    try (Stream<ContentsIdAndBytes> allStates =
-        databaseAdapter.globalContents(expectedGlobalStates.keySet(), s -> 0)) {
-      List<ContentsIdAndBytes> all = allStates.collect(Collectors.toList());
+    try (Stream<ContentIdAndBytes> allStates =
+        databaseAdapter.globalContent(expectedGlobalStates.keySet(), s -> 0)) {
+      List<ContentIdAndBytes> all = allStates.collect(Collectors.toList());
 
       // verify that the global-state-log returns all keys (in any order)
-      assertThat(all.stream().map(ContentsIdAndBytes::getContentsId).distinct())
+      assertThat(all.stream().map(ContentIdAndBytes::getContentId).distinct())
           .containsExactlyInAnyOrderElementsOf(usedContentIds);
 
-      // verify that the global-state-log returns all contents-ids (in any order)
-      assertThat(all.stream().map(ContentsIdAndBytes::getContentsId).distinct())
+      // verify that the global-state-log returns all content-ids (in any order)
+      assertThat(all.stream().map(ContentIdAndBytes::getContentId).distinct())
           .containsExactlyInAnyOrderElementsOf(currentStates.keySet());
 
       Collection<ByteString> allExpected = expectedGlobalStates.values();
 
       // verify that the global-state-log returns all state-values
-      assertThat(all.stream().map(ContentsIdAndBytes::getValue))
+      assertThat(all.stream().map(ContentIdAndBytes::getValue))
           .containsExactlyInAnyOrderElementsOf(allExpected);
     }
   }
@@ -266,10 +266,10 @@ public abstract class AbstractGlobalStates {
             .addPuts(
                 KeyWithBytes.of(
                     Key.of("my", "table", "num0"),
-                    ContentsId.of("id-0"),
+                    ContentId.of("id-0"),
                     (byte) 0,
                     ByteString.copyFromUtf8("there")))
-            .putGlobal(ContentsId.of("id-0"), ByteString.copyFromUtf8("global"))
+            .putGlobal(ContentId.of("id-0"), ByteString.copyFromUtf8("global"))
             .build());
 
     assertThatThrownBy(
@@ -282,11 +282,11 @@ public abstract class AbstractGlobalStates {
                         .addPuts(
                             KeyWithBytes.of(
                                 Key.of("my", "table", "num0"),
-                                ContentsId.of("id-0"),
+                                ContentId.of("id-0"),
                                 (byte) 0,
                                 ByteString.copyFromUtf8("no no")))
-                        .putGlobal(ContentsId.of("id-0"), ByteString.copyFromUtf8("no no"))
-                        .putExpectedStates(ContentsId.of("id-0"), Optional.empty())
+                        .putGlobal(ContentId.of("id-0"), ByteString.copyFromUtf8("no no"))
+                        .putExpectedStates(ContentId.of("id-0"), Optional.empty())
                         .build()))
         .isInstanceOf(ReferenceConflictException.class)
         .hasMessageContaining(
@@ -301,14 +301,14 @@ public abstract class AbstractGlobalStates {
                         .addPuts(
                             KeyWithBytes.of(
                                 Key.of("my", "table", "num0"),
-                                ContentsId.of("id-0"),
+                                ContentId.of("id-0"),
                                 (byte) 0,
                                 ByteString.copyFromUtf8("no no")))
-                        .putGlobal(ContentsId.of("id-0"), ByteString.copyFromUtf8("DUPLICATE"))
-                        .putExpectedStates(ContentsId.of("id-0"), Optional.empty())
+                        .putGlobal(ContentId.of("id-0"), ByteString.copyFromUtf8("DUPLICATE"))
+                        .putExpectedStates(ContentId.of("id-0"), Optional.empty())
                         .build()))
         .isInstanceOf(ReferenceConflictException.class)
-        .hasMessageContaining("Global-state for contents-id 'id-0' already exists.");
+        .hasMessageContaining("Global-state for content-id 'id-0' already exists.");
 
     assertThatThrownBy(
             () ->
@@ -319,15 +319,15 @@ public abstract class AbstractGlobalStates {
                         .addPuts(
                             KeyWithBytes.of(
                                 Key.of("my", "table", "num0"),
-                                ContentsId.of("id-0"),
+                                ContentId.of("id-0"),
                                 (byte) 0,
                                 ByteString.copyFromUtf8("no no")))
-                        .putGlobal(ContentsId.of("id-0"), ByteString.copyFromUtf8("DUPLICATE"))
+                        .putGlobal(ContentId.of("id-0"), ByteString.copyFromUtf8("DUPLICATE"))
                         .putExpectedStates(
-                            ContentsId.of("id-0"), Optional.of(ByteString.copyFromUtf8("NOT THIS")))
+                            ContentId.of("id-0"), Optional.of(ByteString.copyFromUtf8("NOT THIS")))
                         .build()))
         .isInstanceOf(ReferenceConflictException.class)
-        .hasMessageContaining("Mismatch in global-state for contents-id 'id-0'.");
+        .hasMessageContaining("Mismatch in global-state for content-id 'id-0'.");
 
     assertThatThrownBy(
             () ->
@@ -339,15 +339,15 @@ public abstract class AbstractGlobalStates {
                         .addPuts(
                             KeyWithBytes.of(
                                 Key.of("my", "table", "num0"),
-                                ContentsId.of("id-NOPE"),
+                                ContentId.of("id-NOPE"),
                                 (byte) 0,
                                 ByteString.copyFromUtf8("no no")))
-                        .putGlobal(ContentsId.of("id-NOPE"), ByteString.copyFromUtf8("DUPLICATE"))
+                        .putGlobal(ContentId.of("id-NOPE"), ByteString.copyFromUtf8("DUPLICATE"))
                         .putExpectedStates(
-                            ContentsId.of("id-NOPE"),
+                            ContentId.of("id-NOPE"),
                             Optional.of(ByteString.copyFromUtf8("NOT THIS")))
                         .build()))
         .isInstanceOf(ReferenceConflictException.class)
-        .hasMessageContaining("No current global-state for contents-id 'id-NOPE'.");
+        .hasMessageContaining("No current global-state for content-id 'id-NOPE'.");
   }
 }

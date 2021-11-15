@@ -27,7 +27,7 @@ from .client import NessieClient
 from .commands import branch_
 from .commands import cherry_pick
 from .commands import config
-from .commands import contents
+from .commands import content
 from .commands import log
 from .commands import merge
 from .commands import remote
@@ -42,7 +42,7 @@ def _print_version(ctx: Any, param: Any, value: Any) -> None:
     ctx.exit()
 
 
-@click.group()
+@click.group("nessie")
 @click.option("--json", is_flag=True, help="write output in json format.")
 @click.option("-v", "--verbose", is_flag=True, help="Verbose output.")
 @click.option("--endpoint", help="Optional endpoint, if different from config file.")
@@ -61,8 +61,7 @@ def cli(ctx: click.core.Context, json: bool, verbose: bool, endpoint: str, auth_
         if auth_token:
             cfg_map["auth.type"] = "bearer"
             cfg_map["auth.token"] = auth_token
-        config = build_config(cfg_map)
-        nessie = NessieClient(config)
+        nessie = NessieClient(build_config(cfg_map))
         ctx.obj = ContextObject(nessie, verbose, json)
     except confuse.exceptions.ConfigTypeError as e:
         raise click.ClickException(str(e)) from e
@@ -75,7 +74,7 @@ cli.add_command(branch_)
 cli.add_command(tag)
 cli.add_command(merge)
 cli.add_command(cherry_pick)
-cli.add_command(contents)
+cli.add_command(content)
 
 
 if __name__ == "__main__":

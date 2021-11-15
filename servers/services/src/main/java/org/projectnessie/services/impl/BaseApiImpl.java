@@ -22,7 +22,7 @@ import javax.annotation.Nullable;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.Contents;
+import org.projectnessie.model.Content;
 import org.projectnessie.services.authz.AccessChecker;
 import org.projectnessie.services.authz.ServerAccessContext;
 import org.projectnessie.services.config.ServerConfig;
@@ -35,13 +35,13 @@ import org.projectnessie.versioned.WithHash;
 
 abstract class BaseApiImpl {
   private final ServerConfig config;
-  private final VersionStore<Contents, CommitMeta, Contents.Type> store;
+  private final VersionStore<Content, CommitMeta, Content.Type> store;
   private final AccessChecker accessChecker;
   private final Principal principal;
 
   protected BaseApiImpl(
       ServerConfig config,
-      VersionStore<Contents, CommitMeta, Contents.Type> store,
+      VersionStore<Content, CommitMeta, Content.Type> store,
       AccessChecker accessChecker,
       Principal principal) {
     this.config = config;
@@ -92,7 +92,7 @@ abstract class BaseApiImpl {
     return config;
   }
 
-  protected VersionStore<Contents, CommitMeta, Contents.Type> getStore() {
+  protected VersionStore<Content, CommitMeta, Content.Type> getStore() {
     return store;
   }
 

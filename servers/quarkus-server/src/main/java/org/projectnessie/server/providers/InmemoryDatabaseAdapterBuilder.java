@@ -19,16 +19,16 @@ import static org.projectnessie.server.config.VersionStoreConfig.VersionStoreTyp
 
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
-import org.projectnessie.server.config.QuarkusVersionStoreAdvancedConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.inmem.InmemoryDatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.inmem.InmemoryStore;
+import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 
 /** In-memory version store factory. */
 @StoreType(INMEMORY)
 @Dependent
 public class InmemoryDatabaseAdapterBuilder implements DatabaseAdapterBuilder {
-  @Inject QuarkusVersionStoreAdvancedConfig config;
+  @Inject NonTransactionalDatabaseAdapterConfig config;
 
   @Override
   public DatabaseAdapter newDatabaseAdapter() {

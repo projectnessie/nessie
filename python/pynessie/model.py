@@ -15,6 +15,7 @@
 # limitations under the License.
 #
 """Nessie Data objects."""
+import re
 from datetime import datetime
 from typing import List
 from typing import Optional
@@ -26,42 +27,51 @@ from marshmallow_oneofschema import OneOfSchema
 
 
 @attr.dataclass
-class Contents:
-    """Dataclass for Nessie Contents."""
+class Content:
+    """Dataclass for Nessie Content."""
 
     id: str = desert.ib(fields.Str())
 
-    def requires_expected_state(self: "Contents") -> bool:
-        """Checks whether this Contents object requires the "expected" state to be provided for Put operations."""
+    @staticmethod
+    def requires_expected_state() -> bool:
+        """Checks whether this Content object requires the "expected" state to be provided for Put operations."""
         return False
 
-    def pretty_print(self: "Contents") -> str:
+    def pretty_print(self: "Content") -> str:
         """Print out for cli."""
         pass
 
 
 @attr.dataclass
-class IcebergTable(Contents):
-    """Dataclass for Nessie Contents."""
+class IcebergTable(Content):
+    """Dataclass for Nessie Content."""
 
     metadata_location: str = desert.ib(fields.Str(data_key="metadataLocation"))
-    id_generators: str = desert.ib(fields.Str(data_key="idGenerators"))
+    snapshot_id: int = desert.ib(fields.Int(data_key="snapshotId"))
+    schema_id: int = desert.ib(fields.Int(data_key="schemaId"))
+    spec_id: int = desert.ib(fields.Int(data_key="specId"))
+    sort_order_id: int = desert.ib(fields.Int(data_key="sortOrderId"))
 
-    def requires_expected_state(self: "IcebergTable") -> bool:
+    @staticmethod
+    def requires_expected_state() -> bool:
         """Returns True - expected state should be provided for Put operations on Iceberg tables."""
         return True
 
     def pretty_print(self: "IcebergTable") -> str:
         """Print out for cli."""
-        return "Iceberg table:\n\tmetadata-location:{}\n\tid-generators:{}".format(self.metadata_location, self.id_generators)
+        return (
+            f"Iceberg table:\n\tmetadata-location: {self.metadata_location}\n\tsnapshot-id: {self.snapshot_id}"
+            f"\n\tschema-id: {self.schema_id}"
+            f"\n\tpartition-spec-id: {self.spec_id}\n\tdefault-sort-order-id: {self.sort_order_id}"
+        )
 
 
 IcebergTableSchema = desert.schema_class(IcebergTable)
 
 
 @attr.dataclass
-class DeltaLakeTable(Contents):
-    """Dataclass for Nessie Contents."""
+class DeltaLakeTable(Content):
+    """Dataclass for Nessie Content."""
 
     last_checkpoint: str = desert.ib(fields.Str(data_key="lastCheckpoint"))
     checkpoint_location_history: List[str] = desert.ib(fields.List(fields.Str(), data_key="checkpointLocationHistory"))
@@ -80,7 +90,7 @@ DeltaLakeTableSchema = desert.schema_class(DeltaLakeTable)
 
 
 @attr.dataclass
-class SqlView(Contents):
+class SqlView(Content):
     """Dataclass for Nessie SQL View."""
 
     dialect: str = desert.ib(fields.Str())
@@ -94,7 +104,7 @@ class SqlView(Contents):
 SqlViewSchema = desert.schema_class(SqlView)
 
 
-class ContentsSchema(OneOfSchema):
+class ContentSchema(OneOfSchema):
     """Schema for Nessie Content."""
 
     type_schemas = {
@@ -103,41 +113,73 @@ class ContentsSchema(OneOfSchema):
         "VIEW": SqlViewSchema,
     }
 
-    def get_obj_type(self: "ContentsSchema", obj: Contents) -> str:
+    def get_obj_type(self: "ContentSchema", obj: Content) -> str:
         """Returns the object type based on its class."""
         if isinstance(obj, IcebergTable):
             return "ICEBERG_TABLE"
-        elif isinstance(obj, DeltaLakeTable):
+        if isinstance(obj, DeltaLakeTable):
             return "DELTA_LAKE_TABLE"
-        elif isinstance(obj, SqlView):
+        if isinstance(obj, SqlView):
             return "VIEW"
-        else:
-            raise Exception("Unknown object type: {}".format(obj.__class__.__name__))
+
+        raise Exception("Unknown object type: {}".format(obj.__class__.__name__))
 
 
 @attr.dataclass
-class ContentsKey:
-    """ContentsKey."""
+class ContentKey:
+    """ContentKey."""
 
     elements: List[str] = desert.ib(fields.List(fields.Str))
 
+    def to_string(self: "ContentKey") -> str:
+        """Convert this key to friendly CLI string."""
+        # false positives in pylint
+        # pylint: disable=E1133
+        return ".".join(f'"{i}"' if "." in i else i for i in self.elements)
 
-ContentsKeySchema = desert.schema_class(ContentsKey)
+    def to_path_string(self: "ContentKey") -> str:
+        """Convert this key to a url encoded path string."""
+        # false positives in pylint
+        # pylint: disable=E1133
+        return ".".join(i.replace(".", "\00") if i else "" for i in self.elements)
+
+    @staticmethod
+    def from_path_string(key: str) -> "ContentKey":
+        """Convert from path encoded string to normal string."""
+        return ContentKey([i for i in ContentKey._split_key_based_on_regex(key) if i])
+
+    @staticmethod
+    def _split_key_based_on_regex(raw_key: str) -> List[str]:
+        # Find all occurrences of strings between double quotes
+        # E.g: a.b."c.d"
+        regex = re.compile('"[^"]*"')
+
+        # Replace any dot that is inside double quotes with null char '\00' and remove the double quotes
+        key_with_null = regex.sub(lambda x: x.group(0).replace(".", "\00").replace('"', ""), raw_key)
+
+        # Split based on the dot
+        splitted_key = key_with_null.split(".")
+
+        # Return back the splitted elements and make sure to change back '/0' to '.'
+        return [i.replace("\00", ".") for i in splitted_key]
+
+
+ContentKeySchema = desert.schema_class(ContentKey)
 
 
 @attr.dataclass
 class Operation:
     """Single Commit Operation."""
 
-    key: ContentsKey = desert.ib(fields.Nested(ContentsKeySchema))
+    key: ContentKey = desert.ib(fields.Nested(ContentKeySchema))
 
 
 @attr.dataclass
 class Put(Operation):
     """Single Commit Operation."""
 
-    contents: Contents = desert.ib(fields.Nested(ContentsSchema))
-    expectedContents: Optional[Contents] = attr.ib(default=None, metadata=desert.metadata(fields.Nested(ContentsSchema)))
+    content: Content = desert.ib(fields.Nested(ContentSchema))
+    expectedContent: Optional[Content] = attr.ib(default=None, metadata=desert.metadata(fields.Nested(ContentSchema)))
 
 
 PutOperationSchema = desert.schema_class(Put)
@@ -176,12 +218,12 @@ class OperationsSchema(OneOfSchema):
         """Returns the object type based on its class."""
         if isinstance(obj, Put):
             return "PUT"
-        elif isinstance(obj, Unchanged):
+        if isinstance(obj, Unchanged):
             return "UNCHANGED"
-        elif isinstance(obj, Delete):
+        if isinstance(obj, Delete):
             return "DELETE"
-        else:
-            raise Exception("Unknown object type: {}".format(obj.__class__.__name__))
+
+        raise Exception("Unknown object type: {}".format(obj.__class__.__name__))
 
 
 @attr.dataclass
@@ -224,10 +266,22 @@ class ReferenceSchema(OneOfSchema):
         """Returns the object type based on its class."""
         if isinstance(obj, Branch):
             return "BRANCH"
-        elif isinstance(obj, Tag):
+        if isinstance(obj, Tag):
             return "TAG"
-        else:
-            raise Exception("Unknown object type: {}".format(obj.__class__.__name__))
+
+        raise Exception("Unknown object type: {}".format(obj.__class__.__name__))
+
+
+@attr.dataclass
+class ReferencesResponse:
+    """Dataclass for References."""
+
+    references: List[Reference] = desert.ib(fields.List(fields.Nested(ReferenceSchema())))
+    has_more: bool = attr.ib(default=False, metadata=desert.metadata(fields.Bool(allow_none=True, data_key="hasMore")))
+    token: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True)))
+
+
+ReferencesResponseSchema = desert.schema_class(ReferencesResponse)
 
 
 @attr.dataclass
@@ -322,4 +376,4 @@ class MultiContents:
     operations: List[Operation] = desert.ib(fields.List(fields.Nested(OperationsSchema())))
 
 
-MultiContentsSchema = desert.schema_class(MultiContents)
+MultiContentSchema = desert.schema_class(MultiContents)

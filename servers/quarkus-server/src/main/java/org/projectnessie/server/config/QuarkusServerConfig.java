@@ -15,19 +15,24 @@
  */
 package org.projectnessie.server.config;
 
-import io.quarkus.arc.config.ConfigProperties;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
+import io.quarkus.runtime.annotations.StaticInitSafe;
+import io.smallrye.config.ConfigMapping;
+import io.smallrye.config.WithDefault;
+import io.smallrye.config.WithName;
 import org.projectnessie.services.config.ServerConfig;
 
 /** Nessie server config for Quarkus. */
-@ConfigProperties(prefix = "nessie.server")
+@StaticInitSafe
+@ConfigMapping(prefix = "nessie.server")
 public interface QuarkusServerConfig extends ServerConfig {
 
-  @ConfigProperty(name = "default-branch", defaultValue = "main")
   @Override
+  @WithName("default-branch")
+  @WithDefault("main")
   String getDefaultBranch();
 
-  @ConfigProperty(name = "send-stacktrace-to-client", defaultValue = "false")
   @Override
+  @WithName("send-stacktrace-to-client")
+  @WithDefault("false")
   boolean sendStacktraceToClient();
 }

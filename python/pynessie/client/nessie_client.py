@@ -19,7 +19,6 @@
 from typing import Any
 from typing import cast
 from typing import Generator
-from typing import List
 from typing import Optional
 
 import confuse
@@ -32,17 +31,18 @@ from ._endpoints import commit
 from ._endpoints import create_reference
 from ._endpoints import delete_branch
 from ._endpoints import delete_tag
+from ._endpoints import get_content
 from ._endpoints import get_default_branch
 from ._endpoints import get_reference
-from ._endpoints import get_table
 from ._endpoints import list_logs
 from ._endpoints import list_tables
 from ._endpoints import merge
 from ..auth import setup_auth
 from ..model import Branch
 from ..model import CommitMeta
-from ..model import Contents
-from ..model import ContentsSchema
+from ..model import Content
+from ..model import ContentKey
+from ..model import ContentSchema
 from ..model import Entries
 from ..model import EntriesSchema
 from ..model import LogResponse
@@ -50,17 +50,18 @@ from ..model import LogResponseSchema
 from ..model import Merge
 from ..model import MergeSchema
 from ..model import MultiContents
-from ..model import MultiContentsSchema
+from ..model import MultiContentSchema
 from ..model import Operation
 from ..model import Reference
 from ..model import ReferenceSchema
+from ..model import ReferencesResponse
+from ..model import ReferencesResponseSchema
 from ..model import Tag
 from ..model import Transplant
 from ..model import TransplantSchema
-from ..utils import format_key
 
 
-class NessieClient(object):
+class NessieClient:
     """Base Nessie Client."""
 
     def __init__(self: "NessieClient", config: confuse.Configuration) -> None:
@@ -75,13 +76,13 @@ class NessieClient(object):
         except confuse.exceptions.NotFoundError:
             self._base_branch = None
 
-    def list_references(self: "NessieClient") -> List[Reference]:
+    def list_references(self: "NessieClient") -> ReferencesResponse:
         """Fetch all known references.
 
         :return: list of Nessie References
         """
         references = all_references(self._base_url, self._auth, self._ssl_verify)
-        return [ReferenceSchema().load(ref) for ref in references]
+        return ReferencesResponseSchema().load(references)
 
     def get_reference(self: "NessieClient", name: Optional[str]) -> Reference:
         """Fetch a ref.
@@ -157,17 +158,15 @@ class NessieClient(object):
             list_tables(self._base_url, self._auth, ref, hash_on_ref, max_result_hint, page_token, query_expression, self._ssl_verify)
         )
 
-    def get_values(self: "NessieClient", ref: str, *tables: str, hash_on_ref: Optional[str] = None) -> Generator[Contents, Any, None]:
-        """Fetch a table from a known ref.
+    def get_content(self: "NessieClient", ref: str, content_key: ContentKey, hash_on_ref: Optional[str] = None) -> Content:
+        """Fetch a content from a known ref.
 
         :param ref: name of ref
         :param hash_on_ref: hash on reference
-        :param tables: tables to fetch
-        :return: Nessie Table
+        :param content_key: content key to fetch
+        :return: A single content
         """
-        return (
-            ContentsSchema().load(get_table(self._base_url, self._auth, ref, format_key(i), hash_on_ref, self._ssl_verify)) for i in tables
-        )
+        return ContentSchema().load(get_content(self._base_url, self._auth, ref, content_key, hash_on_ref, self._ssl_verify))
 
     def commit(
         self: "NessieClient", branch: str, old_hash: str, reason: Optional[str] = None, author: Optional[str] = None, *ops: Operation
@@ -176,7 +175,7 @@ class NessieClient(object):
         meta = CommitMeta(message=reason if reason else "")
         if author:
             meta.author = author
-        ref_obj = commit(self._base_url, self._auth, branch, MultiContentsSchema().dumps(MultiContents(meta, list(ops))), old_hash)
+        ref_obj = commit(self._base_url, self._auth, branch, MultiContentSchema().dumps(MultiContents(meta, list(ops))), old_hash)
         return cast(Branch, ReferenceSchema().load(ref_obj))
 
     def assign_branch(self: "NessieClient", branch: str, to_ref: str, to_ref_hash: str = None, old_hash: Optional[str] = None) -> None:
@@ -228,7 +227,7 @@ class NessieClient(object):
         """
         page_token = filtering_args.get("pageToken", None)
 
-        def fetch_logs(max: Optional[int], token: Optional[str] = page_token) -> LogResponse:
+        def fetch_logs(max_records: Optional[int], token: Optional[str] = page_token) -> LogResponse:
             if token:
                 filtering_args["pageToken"] = token
 
@@ -238,13 +237,13 @@ class NessieClient(object):
                 hash_on_ref=hash_on_ref,
                 ref=start_ref,
                 ssl_verify=self._ssl_verify,
-                max_records=max,
+                max_records=max_records,
                 **filtering_args
             )
             log_schema = LogResponseSchema().load(fetched_logs)
             return log_schema
 
-        log_schema = fetch_logs(max=max_records)
+        log_schema = fetch_logs(max_records=max_records)
 
         def generator(log_schema: LogResponse, max_records: Optional[int]) -> Generator[CommitMeta, Any, None]:
             while True:
@@ -257,10 +256,14 @@ class NessieClient(object):
                             break
                 if not log_schema.has_more or (max_records is not None and max_records <= 0):
                     break
-                log_schema = fetch_logs(max=max_records, token=log_schema.token)
+                log_schema = fetch_logs(max_records=max_records, token=log_schema.token)
 
         return generator(log_schema, max_records)
 
     def get_default_branch(self: "NessieClient") -> str:
         """Fetch default branch either from config if specified or from the server."""
         return self._base_branch if self._base_branch else self.get_reference(None).name
+
+    def get_base_url(self: "NessieClient") -> str:
+        """Return Nessie server configured base URL."""
+        return self._base_url

@@ -63,10 +63,10 @@ components:
         hash: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
         name: "exampleTag"
 
-    ContentsKeyGet:
+    ContentKeyGet:
       value: "example.key"
 
-    ContentsKey:
+    ContentKey:
       value:
         elements:
           - example
@@ -97,7 +97,7 @@ components:
     multiGetResponse:
       value:
         contents:
-          - contents:
+          - content:
               type: ICEBERG_TABLE
               metadataLocation: "/path/to/metadata/"
               uuid: b874b5d5-f926-4eed-9be7-b2380d9810c0
@@ -154,7 +154,7 @@ components:
               elements:
                 - example
                 - key
-            contents:
+            content:
               type: ICEBERG_TABLE
               uuid: "b874b5d5-f926-4eed-9be7-b2380d9810c0"
               metadataLocation: "/path/to/metadata/"

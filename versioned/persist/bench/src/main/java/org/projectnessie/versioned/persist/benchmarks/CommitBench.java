@@ -81,7 +81,7 @@ public class CommitBench {
     DatabaseAdapter databaseAdapter;
     PersistVersionStore<String, String, StringStoreWorker.TestEnum> versionStore;
     List<Key> keys;
-    Map<Key, String> contentsIds;
+    Map<Key, String> contentIds;
     BranchName branch = BranchName.of("main");
 
     @Setup
@@ -99,14 +99,14 @@ public class CommitBench {
         keys.add(key);
       }
 
-      contentsIds =
+      contentIds =
           keys.stream().collect(Collectors.toMap(k -> k, k -> UUID.randomUUID().toString()));
 
       versionStore.commit(
           branch,
           Optional.empty(),
           "initial commit meta",
-          initialOperations(this, keys, contentsIds));
+          initialOperations(this, keys, contentIds));
     }
 
     private DatabaseAdapter adapterByName() {
@@ -172,7 +172,7 @@ public class CommitBench {
   public static class ThreadParam {
     BranchName branch;
     List<Key> keys;
-    Map<Key, String> contentsIds;
+    Map<Key, String> contentIds;
 
     @Setup
     public void createBranch(BenchmarkParam bp) throws Exception {
@@ -184,14 +184,14 @@ public class CommitBench {
         keys.add(key);
       }
 
-      contentsIds = new HashMap<>(bp.contentsIds);
-      keys.forEach(k -> contentsIds.put(k, UUID.randomUUID().toString()));
+      contentIds = new HashMap<>(bp.contentIds);
+      keys.forEach(k -> contentIds.put(k, UUID.randomUUID().toString()));
 
       bp.versionStore.commit(
           bp.branch,
           Optional.empty(),
           "initial commit meta " + Thread.currentThread().getId(),
-          initialOperations(bp, keys, contentsIds));
+          initialOperations(bp, keys, contentIds));
 
       Hash hash = bp.versionStore.toHash(bp.branch);
 
@@ -201,50 +201,50 @@ public class CommitBench {
 
   @Benchmark
   public void singleBranchSharedKeys(BenchmarkParam bp) throws Exception {
-    doCommit(bp, bp.branch, bp.keys, bp.contentsIds);
+    doCommit(bp, bp.branch, bp.keys, bp.contentIds);
   }
 
   @Benchmark
   public void branchPerThreadSharedKeys(BenchmarkParam bp, ThreadParam tp) throws Exception {
-    doCommit(bp, tp.branch, bp.keys, bp.contentsIds);
+    doCommit(bp, tp.branch, bp.keys, bp.contentIds);
   }
 
   @Benchmark
   public void singleBranchUnsharedKeys(BenchmarkParam bp, ThreadParam tp) throws Exception {
-    doCommit(bp, bp.branch, tp.keys, tp.contentsIds);
+    doCommit(bp, bp.branch, tp.keys, tp.contentIds);
   }
 
   @Benchmark
   public void branchPerThreadUnsharedKeys(BenchmarkParam bp, ThreadParam tp) throws Exception {
-    doCommit(bp, tp.branch, tp.keys, tp.contentsIds);
+    doCommit(bp, tp.branch, tp.keys, tp.contentIds);
   }
 
   private void doCommit(
-      BenchmarkParam bp, BranchName branch, List<Key> keys, Map<Key, String> contentsIds)
+      BenchmarkParam bp, BranchName branch, List<Key> keys, Map<Key, String> contentIds)
       throws Exception {
-    Map<Key, String> contents = bp.versionStore.getValues(branch, keys);
+    Map<Key, String> contentByKey = bp.versionStore.getValues(branch, keys);
 
     try {
       List<Operation<String>> operations = new ArrayList<>(bp.tablesPerCommit);
       for (int i = 0; i < bp.tablesPerCommit; i++) {
         Key key = keys.get(i);
-        String value = contents.get(key);
+        String value = contentByKey.get(key);
         if (value == null) {
           throw new RuntimeException("no value for key " + key + " in " + branch);
         }
         String currentState = value.split("\\|")[0];
         String newGlobalState = Integer.toString(Integer.parseInt(currentState) + 1);
-        String contentsId = contentsIds.get(key);
+        String contentId = contentIds.get(key);
         operations.add(
             Put.of(
                 key,
                 // Must add randomness here, otherwise concurrent threads will compute the same
-                // hashes, because parent, "contents", key are a all the same.
+                // hashes, because parent, "content", key are all the same.
                 StringStoreWorker.withStateAndId(
                     newGlobalState,
                     "commit value " + ThreadLocalRandom.current().nextLong(),
-                    contentsId),
-                StringStoreWorker.withStateAndId(currentState, "foo", contentsId)));
+                    contentId),
+                StringStoreWorker.withStateAndId(currentState, "foo", contentId)));
       }
 
       bp.versionStore.commit(branch, Optional.empty(), "commit meta data", operations);
@@ -258,13 +258,12 @@ public class CommitBench {
   }
 
   static List<Operation<String>> initialOperations(
-      BenchmarkParam bp, List<Key> keys, Map<Key, String> contentsIds) {
+      BenchmarkParam bp, List<Key> keys, Map<Key, String> contentIds) {
     List<Operation<String>> operations = new ArrayList<>(bp.tablesPerCommit);
     for (Key key : keys) {
-      String contentsId = contentsIds.get(key);
+      String contentId = contentIds.get(key);
       operations.add(
-          Put.of(
-              key, StringStoreWorker.withStateAndId("0", "initial commit contents", contentsId)));
+          Put.of(key, StringStoreWorker.withStateAndId("0", "initial commit content", contentId)));
     }
     return operations;
   }

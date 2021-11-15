@@ -17,7 +17,7 @@
 assertpy==1.1
 bump2version==1.0.1
 codecov==2.1.12
-coverage==6.1.1
+coverage==6.1.2
 flake8==4.0.1
 pip==21.3.1
 pytest==6.2.5
@@ -26,9 +26,9 @@ pytest-mock==3.6.1
 pytest-mypy==0.8.1
 pytest-recording==0.12.0
 pytest-runner==5.3.1
-Sphinx==4.2.0
+Sphinx==4.3.0
 sphinx-autodoc-typehints==1.12.0
 tox==3.24.4
-twine==3.4.2
+twine==3.6.0
 watchdog==2.1.6
 wheel==0.37.0

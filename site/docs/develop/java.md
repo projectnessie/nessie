@@ -128,11 +128,11 @@ config.getVersion();
 
 ### Committing
 
-Creates a new commit by adding metadata for an `IcebergTable` under the specified `ContentsKey` instance represented by `key` and deletes content represented by `key2`
+Creates a new commit by adding metadata for an `IcebergTable` under the specified `ContentKey` instance represented by `key` and deletes content represented by `key2`
 
 ```java
-ContentsKey key = ContentsKey.of("table.name.space", "name");
-ContentsKey key2 = ContentsKey.of("other.name.space", "name2");
+ContentKey key = ContentKey.of("table.name.space", "name");
+ContentKey key2 = ContentKey.of("other.name.space", "name2");
 IcebergTable icebergTable = IcebergTable.of("path1", 42L);
 api.commitMultipleOperations()
     .branchName(branch)
@@ -143,22 +143,22 @@ api.commitMultipleOperations()
     .commit();
 ```
 
-### Fetching Contents
+### Fetching Content
 
-Fetches the contents for a single `ContentsKey`
+Fetches the content for a single `ContentKey`
 ```java
-ContentsKey key = ContentsKey.of("table.name.space", "name");
-Map<ContentsKey, Contents> map = api.getContents().key(key).refName("dev").get();
+ContentKey key = ContentKey.of("table.name.space", "name");
+Map<ContentKey, Content> map = api.getContent().key(key).refName("dev").get();
 ```
 
-Fetches the contents for multiple `ContentsKey` instances
+Fetches the content for multiple `ContentKey` instances
 ```java
-List<ContentsKey> keys =
+List<ContentKey> keys =
   Arrays.asList(
-  ContentsKey.of("table.name.space", "name1"),
-  ContentsKey.of("table.name.space", "name2"),
-  ContentsKey.of("table.name.space", "name3"));
-Map<ContentsKey, Contents> allContents = api.getContents().keys(keys).refName("dev").get();
+  ContentKey.of("table.name.space", "name1"),
+  ContentKey.of("table.name.space", "name2"),
+  ContentKey.of("table.name.space", "name3"));
+Map<ContentKey, Content> allContent = api.getContent().keys(keys).refName("dev").get();
 ```
 
 

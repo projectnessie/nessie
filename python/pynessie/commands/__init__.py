@@ -20,10 +20,10 @@
 from .branch import branch_
 from .cherry_pick import cherry_pick
 from .config import config
-from .contents import contents
+from .content import content
 from .log import log
 from .merge import merge
 from .remote import remote
 from .tag import tag
 
-__all__ = ["remote", "tag", "branch_", "cherry_pick", "config", "log", "merge", "contents"]
+__all__ = ["remote", "tag", "branch_", "cherry_pick", "config", "log", "merge", "content"]
