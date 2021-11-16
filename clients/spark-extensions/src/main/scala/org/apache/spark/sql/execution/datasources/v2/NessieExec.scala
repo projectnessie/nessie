@@ -16,21 +16,21 @@
 package org.apache.spark.sql.execution.datasources.v2
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
-import org.projectnessie.client.NessieClient
+import org.projectnessie.client.api.NessieApiV1
 
 abstract class NessieExec(
     currentCatalog: CatalogPlugin,
     catalog: Option[String]
 ) extends V2CommandExec {
 
-  protected def runInternal(nessieClient: NessieClient): Seq[InternalRow]
+  protected def runInternal(api: NessieApiV1): Seq[InternalRow]
 
   override protected def run(): Seq[InternalRow] = {
-    val nessieClient = NessieUtils.nessieClient(currentCatalog, catalog);
+    val api = NessieUtils.nessieAPI(currentCatalog, catalog);
     try {
-      runInternal(nessieClient)
+      runInternal(api)
     } finally {
-      nessieClient.close()
+      api.close()
     }
   }
 }
