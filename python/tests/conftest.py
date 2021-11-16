@@ -156,7 +156,10 @@ def _clean_nessie_session_marker(request: "FixtureRequest", record_mode: str) ->
             # if we have record_mode set in @pytest.mark.vcr annotation, we test that first
             test_record_mode = vcr_marker.kwargs["record_mode"]
 
-            if test_record_mode is None or test_record_mode == "none":
+            if test_record_mode is None:
+                raise RuntimeError("record_mode can't be None or empty if set.")
+
+            if test_record_mode == "none":
                 return
 
         try:
