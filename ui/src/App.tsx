@@ -40,6 +40,7 @@ const App: React.FunctionComponent = () => {
       <Switch>
         <Route exact path="/notfound" component={NotFound} />
         <Route path="/tree/:slug*" component={Explore} />
+        <Route path="/content/:slug*" component={Explore} />
         <Route exact path="/" component={Explore} />
       </Switch>
     </div>

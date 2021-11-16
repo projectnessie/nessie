@@ -187,7 +187,11 @@ const Explore = (): React.ReactElement => {
           {path.length > 0 && path[0] === routeSlugs.commits ? (
             <CommitLog currentRef={currentRef} path={path} />
           ) : (
-            <TableListing currentRef={currentRef} path={path} />
+            <TableListing
+              currentRef={currentRef}
+              path={path}
+              branches={branches.branches}
+            />
           )}
         </Card>
       </Container>

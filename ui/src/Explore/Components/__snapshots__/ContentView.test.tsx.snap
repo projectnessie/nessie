@@ -1,0 +1,327 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Render DeltaLake Content 1`] = `
+<DocumentFragment>
+  <div
+    class="ContentView"
+  >
+    <div
+      class="ContentView__contentWrapper"
+    >
+      <div>
+        <span>
+          Type: 
+        </span>
+        <span
+          class="ml-2"
+        >
+           DELTA_LAKE_TABLE
+        </span>
+      </div>
+      <div>
+        <span>
+          Metadata Location History:
+        </span>
+        <ul>
+          <li
+            class="ml-4"
+          >
+            /path/to/delta/_delta_log/00000000000000000020.log
+          </li>
+          <li
+            class="ml-4"
+          >
+            /path/to/delta/_delta_log/00000000000000000010.log
+          </li>
+        </ul>
+      </div>
+      <div>
+        <span>
+          Checkpoint History:
+        </span>
+        <ul>
+          <li
+            class="ml-4"
+          >
+            /path/to/delta/_delta_log/00000000000000000010.checkpoint.parquet
+          </li>
+          <li
+            class="ml-4"
+          >
+            /path/to/delta/_delta_log/00000000000000000020.checkpoint.parquet
+          </li>
+        </ul>
+      </div>
+      <div>
+        <span>
+          Last Checkpoint:
+        </span>
+        <span
+          class="ml-2"
+        >
+          /path/to/delta/_delta_log/_last_checkpoint
+        </span>
+      </div>
+    </div>
+    <div
+      class="ContentView__imagetWrapper"
+    >
+      <img
+        alt="IcebergTable"
+        height="180"
+        src="/delta.png"
+        width="180"
+      />
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Render DeltaLake Content 2`] = `
+<DocumentFragment>
+  <div
+    class="ContentView"
+  >
+    <div
+      class="ContentView__contentWrapper"
+    >
+      <div>
+        <span>
+          Type: 
+        </span>
+        <span
+          class="ml-2"
+        >
+           DELTA_LAKE_TABLE
+        </span>
+      </div>
+      <div>
+        <span>
+          Metadata Location History:
+        </span>
+        <ul>
+          <li
+            class="ml-4"
+          >
+            /path/to/delta/_delta_log/00000000000000000020.log
+          </li>
+          <li
+            class="ml-4"
+          >
+            /path/to/delta/_delta_log/00000000000000000010.log
+          </li>
+        </ul>
+      </div>
+      <div>
+        <span>
+          Checkpoint History:
+        </span>
+        <ul>
+          <li
+            class="ml-4"
+          >
+            /path/to/delta/_delta_log/00000000000000000010.checkpoint.parquet
+          </li>
+          <li
+            class="ml-4"
+          >
+            /path/to/delta/_delta_log/00000000000000000020.checkpoint.parquet
+          </li>
+        </ul>
+      </div>
+      <div>
+        <span>
+          Last Checkpoint:
+        </span>
+        <span
+          class="ml-2"
+        >
+          /path/to/delta/_delta_log/_last_checkpoint
+        </span>
+      </div>
+    </div>
+    <div
+      class="ContentView__imagetWrapper"
+    >
+      <img
+        alt="IcebergTable"
+        height="180"
+        src="/delta.png"
+        width="180"
+      />
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Render Iceberg Content 1`] = `
+<DocumentFragment>
+  <div
+    class="ContentView"
+  >
+    <div
+      class="ContentView__contentWrapper"
+    >
+      <div>
+        <span>
+          Type: 
+        </span>
+        <span
+          class="ml-2"
+        >
+           ICEBERG_TABLE
+        </span>
+      </div>
+      <div>
+        <span>
+          Metadata Path:
+        </span>
+        <span
+          class="ml-2"
+        >
+          /path/to/metadata/
+        </span>
+      </div>
+    </div>
+    <div
+      class="ContentView__imagetWrapper"
+    >
+      <img
+        alt="IcebergTable"
+        height="180"
+        src="/iceberg.png"
+        width="180"
+      />
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Render Iceberg Content 2`] = `
+<DocumentFragment>
+  <div
+    class="ContentView"
+  >
+    <div
+      class="ContentView__contentWrapper"
+    >
+      <div>
+        <span>
+          Type: 
+        </span>
+        <span
+          class="ml-2"
+        >
+           ICEBERG_TABLE
+        </span>
+      </div>
+      <div>
+        <span>
+          Metadata Path:
+        </span>
+        <span
+          class="ml-2"
+        >
+          /path/to/metadata/
+        </span>
+      </div>
+    </div>
+    <div
+      class="ContentView__imagetWrapper"
+    >
+      <img
+        alt="IcebergTable"
+        height="180"
+        src="/iceberg.png"
+        width="180"
+      />
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Render SQL View Content 1`] = `
+<DocumentFragment>
+  <div
+    class="ContentView"
+  >
+    <div
+      class="ContentView__contentWrapper"
+    >
+      <div>
+        <span>
+          Type: 
+        </span>
+        <span
+          class="ml-2"
+        >
+           VIEW
+        </span>
+      </div>
+      <div>
+        <span>
+          Sql Text:
+        </span>
+        <span
+          class="ml-2"
+        >
+          CREATE VIEW test.v AS SELECT * FROM t
+        </span>
+      </div>
+      <div>
+        <span>
+          Dialect:
+        </span>
+        <span
+          class="ml-2"
+        >
+          HIVE
+        </span>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Render SQL View Content 2`] = `
+<DocumentFragment>
+  <div
+    class="ContentView"
+  >
+    <div
+      class="ContentView__contentWrapper"
+    >
+      <div>
+        <span>
+          Type: 
+        </span>
+        <span
+          class="ml-2"
+        >
+           VIEW
+        </span>
+      </div>
+      <div>
+        <span>
+          Sql Text:
+        </span>
+        <span
+          class="ml-2"
+        >
+          CREATE VIEW test.v AS SELECT * FROM t
+        </span>
+      </div>
+      <div>
+        <span>
+          Dialect:
+        </span>
+        <span
+          class="ml-2"
+        >
+          HIVE
+        </span>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;

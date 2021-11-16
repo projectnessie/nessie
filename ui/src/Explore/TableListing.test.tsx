@@ -35,7 +35,7 @@ it("TableListing renders", async () => {
 
   const { getByText, asFragment } = render(
     <BrowserRouter>
-      <TableListing currentRef={"main"} />
+      <TableListing currentRef={"main"} branches={tree} />
     </BrowserRouter>
   );
   expect(asFragment()).toMatchSnapshot();
@@ -63,7 +63,7 @@ it("TableListing renders object", async () => {
   const { getByText, asFragment } = render(
     <React.StrictMode>
       <BrowserRouter>
-        <TableListing currentRef={"main"} />
+        <TableListing currentRef={"main"} branches={tree} />
       </BrowserRouter>
     </React.StrictMode>
   );
@@ -74,7 +74,7 @@ it("TableListing renders object", async () => {
   expect(asFragment()).toMatchSnapshot();
   expect(screen.getByText("b").closest("a")).toHaveAttribute(
     "href",
-    "/contents/main/b"
+    "/content/main/b"
   );
 });
 
@@ -101,3 +101,15 @@ it("TableListing redirects on an invalid ref", async () => {
   scope.done();
   expect(history.location.pathname).toEqual("/notfound");
 });
+const tree = [
+  {
+    type: "BRANCH",
+    name: "main",
+    hash: "6090dfaebc75b1ef94ea691dee3d43e08f6b1d60eb9b6286a1df49c8a8fe8f36",
+  },
+  {
+    type: "BRANCH",
+    name: "dev",
+    hash: "b53925421f56fb8d1522e12f69d1fb939eaba71d110bf9b8b91516d06e6ff8d0",
+  },
+];
