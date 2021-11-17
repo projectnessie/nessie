@@ -142,22 +142,23 @@ def _sort_json(value: str) -> str:
 def _reformat_body(obj: dict) -> None:
     """Sorts JSON objects embedded in HTTP payload by their keys."""
     body = obj["body"]
-    length = None
-    if isinstance(body, str):
-        sorted_json = _sort_json(body)
-        length = len(sorted_json)
-        obj["body"] = sorted_json
-    elif isinstance(body, dict):
-        sorted_json = _sort_json(body["string"])
-        length = len(sorted_json)
-        body["string"] = sorted_json
+    sorted_json = None
+    if body:
+        if isinstance(body, str):
+            sorted_json = _sort_json(body)
+            obj["body"] = sorted_json
+        elif isinstance(body, dict):
+            sorted_json = _sort_json(body["string"])
+            body["string"] = sorted_json
+        else:
+            raise RuntimeError("Unexpected cassette structure")
 
     # Adjust content length if changed
-    if length:
+    if sorted_json:
         headers = obj["headers"]
         for k in headers:
             if k.lower() == "content-length":  # might have different case in cassettes
-                headers[k] = [str(length)]  # one-element list
+                headers[k] = [str(len(sorted_json))]  # one-element list
                 break
 
 
