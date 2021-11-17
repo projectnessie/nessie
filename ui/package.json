@@ -82,7 +82,7 @@
   "proxy": "http://localhost:19120",
   "devDependencies": {
     "@babel/core": "^7.16.0",
-    "@openapitools/openapi-generator-cli": "^2.4.15",
+    "@openapitools/openapi-generator-cli": "^2.4.16",
     "@pmmmwh/react-refresh-webpack-plugin": "0.5.1",
     "@testing-library/jest-dom": "^5.15.0",
     "@testing-library/react": "^12.1.2",
