@@ -164,14 +164,17 @@ def _reformat_body(obj: dict) -> None:
 class _NessieSortingSerializer:
     @staticmethod
     def deserialize(cassette_string: str) -> Any:
+        """Delegates to the default yaml cassette serializer."""
         return yamlserializer.deserialize(cassette_string)
 
     @staticmethod
     def serialize(cassette_dict: dict) -> str:
+        """Reformats JSON payloads in requests and responses.
+
+        This is to avoid spurious changes in cassette yaml files under source control.
+        """
         if "interactions" in cassette_dict:
             for i in cassette_dict["interactions"]:
-                # Reformat JSON payloads in requests and responses to avoid spurious changes
-                # in cassette yaml files under source control.
                 _reformat_body(i["request"])
                 _reformat_body(i["response"])
 
@@ -187,7 +190,7 @@ def pytest_recording_configure(config: Config, vcr: VCR) -> None:
 
 @pytest.fixture(scope="module")
 def vcr_config() -> dict:
-    """VCR config that adds a cus tom before_record_request callback."""
+    """VCR config that adds a custom before_record_request callback."""
     nessie_test_config.cleanup = False
     return {
         "before_record_request": before_record_cb,
