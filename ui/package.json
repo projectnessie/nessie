@@ -33,7 +33,7 @@
     "postcss-flexbugs-fixes": "5.0.2",
     "postcss-loader": "4.3.0",
     "postcss-normalize": "10.0.1",
-    "postcss-preset-env": "6.7.0",
+    "postcss-preset-env": "7.0.0",
     "postcss-safe-parser": "6.0.0",
     "pretty-ms": "^7.0.1",
     "prompts": "2.4.2",
