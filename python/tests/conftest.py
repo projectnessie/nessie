@@ -24,12 +24,16 @@ from typing import Optional
 
 import attr
 import pytest
+import simplejson
+from _pytest.config import Config
 from _pytest.fixtures import FixtureRequest
 from assertpy import assert_that
 from click.testing import CliRunner
 from click.testing import Result
 from pytest import Session
+from vcr.config import VCR
 from vcr.request import Request
+from vcr.serializers import yamlserializer
 
 from pynessie import cli
 from pynessie.model import Content, ContentSchema, ReferenceSchema
@@ -125,9 +129,65 @@ def before_record_cb(request: Request) -> Optional[Request]:
     return request
 
 
+def _sort_json(value: str) -> str:
+    """Parses JSON and serializes it again with a fixed key order."""
+    try:
+        json = simplejson.loads(value)
+        sorted_json = simplejson.dumps(json, sort_keys=True)
+        return sorted_json
+    except ValueError:
+        return value
+
+
+def _reformat_body(obj: dict) -> None:
+    """Sorts JSON objects embedded in HTTP payload by their keys."""
+    body = obj["body"]
+    length = None
+    if isinstance(body, str):
+        sorted_json = _sort_json(body)
+        length = len(sorted_json)
+        obj["body"] = sorted_json
+    elif isinstance(body, dict):
+        sorted_json = _sort_json(body["string"])
+        length = len(sorted_json)
+        body["string"] = sorted_json
+
+    # Adjust content length if changed
+    if length:
+        headers = obj["headers"]
+        for k in headers:
+            if k.lower() == "content-length":  # might have different case in cassettes
+                headers[k] = [str(length)]  # one-element list
+                break
+
+
+class _NessieSortingSerializer:
+    @staticmethod
+    def deserialize(cassette_string: str) -> Any:
+        return yamlserializer.deserialize(cassette_string)
+
+    @staticmethod
+    def serialize(cassette_dict: dict) -> str:
+        if "interactions" in cassette_dict:
+            for i in cassette_dict["interactions"]:
+                # Reformat JSON payloads in requests and responses to avoid spurious changes
+                # in cassette yaml files under source control.
+                _reformat_body(i["request"])
+                _reformat_body(i["response"])
+
+        return yamlserializer.serialize(cassette_dict)
+
+
+def pytest_recording_configure(config: Config, vcr: VCR) -> None:
+    """Callback invoked by pytest_recording. We register a custom VCR serializer here."""
+    ser_name = "nessie_sorted_json"
+    vcr.register_serializer(ser_name, _NessieSortingSerializer())
+    vcr.serializer = ser_name
+
+
 @pytest.fixture(scope="module")
 def vcr_config() -> dict:
-    """VCR config that adds a custom before_record_request callback."""
+    """VCR config that adds a cus tom before_record_request callback."""
     nessie_test_config.cleanup = False
     return {
         "before_record_request": before_record_cb,
