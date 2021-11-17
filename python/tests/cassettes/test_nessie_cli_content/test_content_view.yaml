@@ -155,7 +155,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/branch/contents_view_dev/commit?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
-      string: '{"hash": "f4cf6256de4dafe5e03dc7d33464f39288bbe829f38a42e1a8d7f9c437fdcefa",
+      string: '{"hash": "6dd7836bd5351cc08104042e53219073e623f75e904d248612b7f4b64a591725",
         "name": "contents_view_dev", "type": "BRANCH"}'
     headers:
       Content-Type:
@@ -181,7 +181,7 @@ interactions:
   response:
     body:
       string: '{"hasMore": false, "references": [{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-        "name": "main", "type": "BRANCH"}, {"hash": "f4cf6256de4dafe5e03dc7d33464f39288bbe829f38a42e1a8d7f9c437fdcefa",
+        "name": "main", "type": "BRANCH"}, {"hash": "6dd7836bd5351cc08104042e53219073e623f75e904d248612b7f4b64a591725",
         "name": "contents_view_dev", "type": "BRANCH"}], "token": null}'
     headers:
       Content-Type:
@@ -238,10 +238,10 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/contents_view_dev/commit?expectedHash=f4cf6256de4dafe5e03dc7d33464f39288bbe829f38a42e1a8d7f9c437fdcefa
+    uri: http://localhost:19120/api/v1/trees/branch/contents_view_dev/commit?expectedHash=6dd7836bd5351cc08104042e53219073e623f75e904d248612b7f4b64a591725
   response:
     body:
-      string: '{"hash": "cefebcf08f4be2936b15e0bdf5ac73a1903f3b5d0d997c299a089fe16a3a35d4",
+      string: '{"hash": "e39bfc535da4921c7df5544daff5a60aee048adc06e6c01915cab48a72e891ad",
         "name": "contents_view_dev", "type": "BRANCH"}'
     headers:
       Content-Type:
@@ -267,7 +267,7 @@ interactions:
   response:
     body:
       string: '{"hasMore": false, "references": [{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-        "name": "main", "type": "BRANCH"}, {"hash": "cefebcf08f4be2936b15e0bdf5ac73a1903f3b5d0d997c299a089fe16a3a35d4",
+        "name": "main", "type": "BRANCH"}, {"hash": "e39bfc535da4921c7df5544daff5a60aee048adc06e6c01915cab48a72e891ad",
         "name": "contents_view_dev", "type": "BRANCH"}], "token": null}'
     headers:
       Content-Type:
@@ -323,10 +323,10 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/contents_view_dev/commit?expectedHash=cefebcf08f4be2936b15e0bdf5ac73a1903f3b5d0d997c299a089fe16a3a35d4
+    uri: http://localhost:19120/api/v1/trees/branch/contents_view_dev/commit?expectedHash=e39bfc535da4921c7df5544daff5a60aee048adc06e6c01915cab48a72e891ad
   response:
     body:
-      string: '{"hash": "b4cb5c6299b35a064efc4a32b17b30cce7d13f5674335ef08b7a6fda4bc97b52",
+      string: '{"hash": "efb623fbd451452240a2daf3f7dcb0408ba999f18248f7ad9ee470c1233d20c4",
         "name": "contents_view_dev", "type": "BRANCH"}'
     headers:
       Content-Type:
