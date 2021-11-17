@@ -148,8 +148,20 @@ def _clean_nessie_session_marker(request: "FixtureRequest", record_mode: str) ->
     if record_mode is None or record_mode == "none":
         return
 
-    # Clean the server state for tests that have the @pytest.mark.clean_nessie_session annotation
-    if request.node.get_closest_marker("vcr"):
+    vcr_marker = request.node.get_closest_marker("vcr")
+
+    # Clean the server state for tests that have the @pytest.mark.vcr annotation
+    if vcr_marker:
+        if "record_mode" in vcr_marker.kwargs:
+            # if we have record_mode set in @pytest.mark.vcr annotation, we test that first
+            test_record_mode = vcr_marker.kwargs["record_mode"]
+
+            if test_record_mode is None:
+                raise RuntimeError("record_mode can't be None or empty if set.")
+
+            if test_record_mode == "none":
+                return
+
         try:
             nessie_test_config.cleanup = True
             reset_nessie_server_state()

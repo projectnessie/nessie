@@ -25,7 +25,7 @@ from .conftest import execute_cli_command
 # manually.
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(record_mode="none")
 def test_server_error_html() -> None:
     """Test the handling of 500 responses with HTML payload (unexpected, but possible)."""
     result = execute_cli_command(["--json", "remote", "show"], ret_val=1)
@@ -33,7 +33,7 @@ def test_server_error_html() -> None:
     assert "500" in result
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(record_mode="none")
 def test_server_error_json() -> None:
     """Test the handling of 500 responses with JSON payload."""
     result = execute_cli_command(["--json", "remote", "show"], ret_val=1)
