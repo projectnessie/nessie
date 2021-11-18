@@ -14,12 +14,13 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}"
+      string: '{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "main", "type": "BRANCH"}'
     headers:
       Content-Type:
       - application/json
       content-length:
-      - '121'
+      - '110'
     status:
       code: 200
       message: OK
@@ -38,12 +39,13 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/main
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}"
+      string: '{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "main", "type": "BRANCH"}'
     headers:
       Content-Type:
       - application/json
       content-length:
-      - '121'
+      - '110'
     status:
       code: 200
       message: OK
@@ -67,13 +69,13 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree?sourceRefName=main
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"content_commit_with_edited_data_dev\",\n
-        \ \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}"
+      string: '{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "content_commit_with_edited_data_dev", "type": "BRANCH"}'
     headers:
       Content-Type:
       - application/json
       content-length:
-      - '152'
+      - '141'
     status:
       code: 200
       message: OK
@@ -92,16 +94,15 @@ interactions:
     uri: http://localhost:19120/api/v1/trees
   response:
     body:
-      string: "{\n  \"token\" : null,\n  \"references\" : [ {\n    \"type\" : \"BRANCH\",\n
-        \   \"name\" : \"main\",\n    \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n
-        \ }, {\n    \"type\" : \"BRANCH\",\n    \"name\" : \"content_commit_with_edited_data_dev\",\n
-        \   \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n
-        \ } ],\n  \"hasMore\" : false\n}"
+      string: '{"hasMore": false, "references": [{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "main", "type": "BRANCH"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "content_commit_with_edited_data_dev", "type": "BRANCH"}], "token":
+        null}'
     headers:
       Content-Type:
       - application/json
       content-length:
-      - '355'
+      - '304'
     status:
       code: 200
       message: OK
@@ -120,24 +121,24 @@ interactions:
     uri: http://localhost:19120/api/v1/contents/this.is.iceberg.foo?ref=content_commit_with_edited_data_dev
   response:
     body:
-      string: "{\n  \"status\" : 404,\n  \"reason\" : \"Not Found\",\n  \"message\"
-        : \"Could not find content for key 'this.is.iceberg.foo' in reference 'content_commit_with_edited_data_dev'.\",\n
-        \ \"errorCode\" : \"CONTENT_NOT_FOUND\",\n  \"serverStackTrace\" : null\n}"
+      string: '{"errorCode": "CONTENT_NOT_FOUND", "message": "Could not find content
+        for key ''this.is.iceberg.foo'' in reference ''content_commit_with_edited_data_dev''.",
+        "reason": "Not Found", "serverStackTrace": null, "status": 404}'
     headers:
       Content-Type:
       - application/json
       content-length:
-      - '234'
+      - '217'
     status:
       code: 404
       message: Not Found
 - request:
-    body: '{"commitMeta": {"hash": null, "authorTime": null, "signedOffBy": null,
-      "message": "test message", "commitTime": null, "properties": null, "committer":
-      null, "author": "nessie test"}, "operations": [{"expectedContent": null, "key":
-      {"elements": ["this", "is", "iceberg", "foo"]}, "content": {"specId": 42, "id":
-      "test_content_commit_with_edited_data", "schemaId": 42, "snapshotId": 42, "sortOrderId":
-      42, "metadataLocation": "/a/b/c", "type": "ICEBERG_TABLE"}, "type": "PUT"}]}'
+    body: '{"commitMeta": {"author": "nessie test", "authorTime": null, "commitTime":
+      null, "committer": null, "hash": null, "message": "test message", "properties":
+      null, "signedOffBy": null}, "operations": [{"content": {"id": "test_content_commit_with_edited_data",
+      "metadataLocation": "/a/b/c", "schemaId": 42, "snapshotId": 42, "sortOrderId":
+      42, "specId": 42, "type": "ICEBERG_TABLE"}, "expectedContent": null, "key":
+      {"elements": ["this", "is", "iceberg", "foo"]}, "type": "PUT"}]}'
     headers:
       Accept:
       - '*/*'
@@ -155,13 +156,13 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/branch/content_commit_with_edited_data_dev/commit?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"content_commit_with_edited_data_dev\",\n
-        \ \"hash\" : \"d3d536ff8d0aa48697216120d8a641b47b588b5d0b94edf9c65eb0e11e1eb5d1\"\n}"
+      string: '{"hash": "c24799676bb1013677707777629d97beeffe56440cd8c00541f6cb466bea321c",
+        "name": "content_commit_with_edited_data_dev", "type": "BRANCH"}'
     headers:
       Content-Type:
       - application/json
       content-length:
-      - '152'
+      - '141'
     status:
       code: 200
       message: OK
@@ -180,14 +181,13 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/content_commit_with_edited_data_dev/entries?query_expression=entry.contentType+in+%5B%27ICEBERG_TABLE%27%5D
   response:
     body:
-      string: "{\n  \"token\" : null,\n  \"entries\" : [ {\n    \"type\" : \"ICEBERG_TABLE\",\n
-        \   \"name\" : {\n      \"elements\" : [ \"this\", \"is\", \"iceberg\", \"foo\"
-        ]\n    }\n  } ],\n  \"hasMore\" : false\n}"
+      string: '{"entries": [{"name": {"elements": ["this", "is", "iceberg", "foo"]},
+        "type": "ICEBERG_TABLE"}], "hasMore": false, "token": null}'
     headers:
       Content-Type:
       - application/json
       content-length:
-      - '171'
+      - '129'
     status:
       code: 200
       message: OK
@@ -206,16 +206,15 @@ interactions:
     uri: http://localhost:19120/api/v1/trees
   response:
     body:
-      string: "{\n  \"token\" : null,\n  \"references\" : [ {\n    \"type\" : \"BRANCH\",\n
-        \   \"name\" : \"main\",\n    \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n
-        \ }, {\n    \"type\" : \"BRANCH\",\n    \"name\" : \"content_commit_with_edited_data_dev\",\n
-        \   \"hash\" : \"d3d536ff8d0aa48697216120d8a641b47b588b5d0b94edf9c65eb0e11e1eb5d1\"\n
-        \ } ],\n  \"hasMore\" : false\n}"
+      string: '{"hasMore": false, "references": [{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "main", "type": "BRANCH"}, {"hash": "c24799676bb1013677707777629d97beeffe56440cd8c00541f6cb466bea321c",
+        "name": "content_commit_with_edited_data_dev", "type": "BRANCH"}], "token":
+        null}'
     headers:
       Content-Type:
       - application/json
       content-length:
-      - '355'
+      - '304'
     status:
       code: 200
       message: OK
@@ -234,14 +233,14 @@ interactions:
     uri: http://localhost:19120/api/v1/contents/this.is.iceberg.foo?ref=content_commit_with_edited_data_dev
   response:
     body:
-      string: "{\n  \"type\" : \"ICEBERG_TABLE\",\n  \"id\" : \"test_content_commit_with_edited_data\",\n
-        \ \"metadataLocation\" : \"/a/b/c\",\n  \"snapshotId\" : 42,\n  \"schemaId\"
-        : 42,\n  \"specId\" : 42,\n  \"sortOrderId\" : 42\n}"
+      string: '{"id": "test_content_commit_with_edited_data", "metadataLocation":
+        "/a/b/c", "schemaId": 42, "snapshotId": 42, "sortOrderId": 42, "specId": 42,
+        "type": "ICEBERG_TABLE"}'
     headers:
       Content-Type:
       - application/json
       content-length:
-      - '191'
+      - '168'
     status:
       code: 200
       message: OK
@@ -260,16 +259,16 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/content_commit_with_edited_data_dev/log
   response:
     body:
-      string: "{\n  \"token\" : null,\n  \"operations\" : [ {\n    \"hash\" : \"d3d536ff8d0aa48697216120d8a641b47b588b5d0b94edf9c65eb0e11e1eb5d1\",\n
-        \   \"committer\" : \"\",\n    \"author\" : \"nessie test\",\n    \"signedOffBy\"
-        : null,\n    \"message\" : \"test message\",\n    \"commitTime\" : \"2021-11-11T14:54:00.346928Z\",\n
-        \   \"authorTime\" : \"2021-11-11T14:54:00.346928Z\",\n    \"properties\"
-        : { }\n  } ],\n  \"hasMore\" : false\n}"
+      string: '{"hasMore": false, "operations": [{"author": "nessie test", "authorTime":
+        "2021-11-17T19:04:18.672511Z", "commitTime": "2021-11-17T19:04:18.672511Z",
+        "committer": "", "hash": "c24799676bb1013677707777629d97beeffe56440cd8c00541f6cb466bea321c",
+        "message": "test message", "properties": {}, "signedOffBy": null}], "token":
+        null}'
     headers:
       Content-Type:
       - application/json
       content-length:
-      - '383'
+      - '325'
     status:
       code: 200
       message: OK
@@ -288,16 +287,15 @@ interactions:
     uri: http://localhost:19120/api/v1/trees
   response:
     body:
-      string: "{\n  \"token\" : null,\n  \"references\" : [ {\n    \"type\" : \"BRANCH\",\n
-        \   \"name\" : \"main\",\n    \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n
-        \ }, {\n    \"type\" : \"BRANCH\",\n    \"name\" : \"content_commit_with_edited_data_dev\",\n
-        \   \"hash\" : \"d3d536ff8d0aa48697216120d8a641b47b588b5d0b94edf9c65eb0e11e1eb5d1\"\n
-        \ } ],\n  \"hasMore\" : false\n}"
+      string: '{"hasMore": false, "references": [{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "main", "type": "BRANCH"}, {"hash": "c24799676bb1013677707777629d97beeffe56440cd8c00541f6cb466bea321c",
+        "name": "content_commit_with_edited_data_dev", "type": "BRANCH"}], "token":
+        null}'
     headers:
       Content-Type:
       - application/json
       content-length:
-      - '355'
+      - '304'
     status:
       code: 200
       message: OK
@@ -316,27 +314,26 @@ interactions:
     uri: http://localhost:19120/api/v1/contents/this.is.iceberg.foo?ref=content_commit_with_edited_data_dev
   response:
     body:
-      string: "{\n  \"type\" : \"ICEBERG_TABLE\",\n  \"id\" : \"test_content_commit_with_edited_data\",\n
-        \ \"metadataLocation\" : \"/a/b/c\",\n  \"snapshotId\" : 42,\n  \"schemaId\"
-        : 42,\n  \"specId\" : 42,\n  \"sortOrderId\" : 42\n}"
+      string: '{"id": "test_content_commit_with_edited_data", "metadataLocation":
+        "/a/b/c", "schemaId": 42, "snapshotId": 42, "sortOrderId": 42, "specId": 42,
+        "type": "ICEBERG_TABLE"}'
     headers:
       Content-Type:
       - application/json
       content-length:
-      - '191'
+      - '168'
     status:
       code: 200
       message: OK
 - request:
-    body: '{"commitMeta": {"hash": null, "authorTime": null, "signedOffBy": null,
-      "message": "test message", "commitTime": null, "properties": null, "committer":
-      null, "author": "nessie test"}, "operations": [{"expectedContent": {"specId":
-      42, "id": "test_content_commit_with_edited_data", "schemaId": 42, "snapshotId":
-      42, "sortOrderId": 42, "metadataLocation": "/a/b/c", "type": "ICEBERG_TABLE"},
-      "key": {"elements": ["this", "is", "iceberg", "foo"]}, "content": {"specId":
-      42, "id": "test_content_commit_with_edited_data", "schemaId": 42, "snapshotId":
-      42, "sortOrderId": 42, "metadataLocation": "/d/e/f", "type": "ICEBERG_TABLE"},
-      "type": "PUT"}]}'
+    body: '{"commitMeta": {"author": "nessie test", "authorTime": null, "commitTime":
+      null, "committer": null, "hash": null, "message": "test message", "properties":
+      null, "signedOffBy": null}, "operations": [{"content": {"id": "test_content_commit_with_edited_data",
+      "metadataLocation": "/d/e/f", "schemaId": 42, "snapshotId": 42, "sortOrderId":
+      42, "specId": 42, "type": "ICEBERG_TABLE"}, "expectedContent": {"id": "test_content_commit_with_edited_data",
+      "metadataLocation": "/a/b/c", "schemaId": 42, "snapshotId": 42, "sortOrderId":
+      42, "specId": 42, "type": "ICEBERG_TABLE"}, "key": {"elements": ["this", "is",
+      "iceberg", "foo"]}, "type": "PUT"}]}'
     headers:
       Accept:
       - '*/*'
@@ -351,16 +348,16 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/content_commit_with_edited_data_dev/commit?expectedHash=d3d536ff8d0aa48697216120d8a641b47b588b5d0b94edf9c65eb0e11e1eb5d1
+    uri: http://localhost:19120/api/v1/trees/branch/content_commit_with_edited_data_dev/commit?expectedHash=c24799676bb1013677707777629d97beeffe56440cd8c00541f6cb466bea321c
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"content_commit_with_edited_data_dev\",\n
-        \ \"hash\" : \"ff6835d1693a896f4d772eda76f692decb04d84d48d46586dbf5ec2d1bb80437\"\n}"
+      string: '{"hash": "72251d96f792b92809840b335037049222749c18885a2e563bf36ad0e83c3b92",
+        "name": "content_commit_with_edited_data_dev", "type": "BRANCH"}'
     headers:
       Content-Type:
       - application/json
       content-length:
-      - '152'
+      - '141'
     status:
       code: 200
       message: OK
@@ -379,14 +376,13 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/content_commit_with_edited_data_dev/entries?query_expression=entry.contentType+in+%5B%27ICEBERG_TABLE%27%5D
   response:
     body:
-      string: "{\n  \"token\" : null,\n  \"entries\" : [ {\n    \"type\" : \"ICEBERG_TABLE\",\n
-        \   \"name\" : {\n      \"elements\" : [ \"this\", \"is\", \"iceberg\", \"foo\"
-        ]\n    }\n  } ],\n  \"hasMore\" : false\n}"
+      string: '{"entries": [{"name": {"elements": ["this", "is", "iceberg", "foo"]},
+        "type": "ICEBERG_TABLE"}], "hasMore": false, "token": null}'
     headers:
       Content-Type:
       - application/json
       content-length:
-      - '171'
+      - '129'
     status:
       code: 200
       message: OK
@@ -405,14 +401,14 @@ interactions:
     uri: http://localhost:19120/api/v1/contents/this.is.iceberg.foo?ref=content_commit_with_edited_data_dev
   response:
     body:
-      string: "{\n  \"type\" : \"ICEBERG_TABLE\",\n  \"id\" : \"test_content_commit_with_edited_data\",\n
-        \ \"metadataLocation\" : \"/d/e/f\",\n  \"snapshotId\" : 42,\n  \"schemaId\"
-        : 42,\n  \"specId\" : 42,\n  \"sortOrderId\" : 42\n}"
+      string: '{"id": "test_content_commit_with_edited_data", "metadataLocation":
+        "/d/e/f", "schemaId": 42, "snapshotId": 42, "sortOrderId": 42, "specId": 42,
+        "type": "ICEBERG_TABLE"}'
     headers:
       Content-Type:
       - application/json
       content-length:
-      - '191'
+      - '168'
     status:
       code: 200
       message: OK
