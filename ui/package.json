@@ -41,7 +41,7 @@
     "react": "^16.14.0",
     "react-app-polyfill": "^2.0.0",
     "react-bootstrap": "^2.0.2",
-    "react-dev-utils": "^11.0.3",
+    "react-dev-utils": "^11.0.4",
     "react-dom": "^16.14.0",
     "react-refresh": "^0.10.0",
     "react-router-dom": "^5.3.0",
@@ -56,7 +56,11 @@
     "webpack": "4.46.0",
     "yup": "^0.32.11"
   },
+  "resolutions": {
+    "immer": "9.0.6"
+  },
   "scripts": {
+    "preinstall": "npm-force-resolutions",
     "start": "node scripts/start.js",
     "build": "node scripts/build.js",
     "test": "node scripts/test.js",
@@ -120,6 +124,7 @@
     "lint-staged": "^12.0.2",
     "mini-css-extract-plugin": "1.6.2",
     "nock": "^13.2.1",
+    "npm-force-resolutions": "^0.0.10",
     "optimize-css-assets-webpack-plugin": "6.0.1",
     "pnp-webpack-plugin": "1.7.0",
     "prettier": "^2.4.1",
