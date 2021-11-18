@@ -50,7 +50,7 @@
     "rxjs": "^7.4.0",
     "semver": "7.3.5",
     "style-loader": "2.0.0",
-    "typescript": "^4.4.4",
+    "typescript": "^4.5.2",
     "typescript-logging": "^1.0.0",
     "url-loader": "4.1.1",
     "webpack": "4.46.0",
