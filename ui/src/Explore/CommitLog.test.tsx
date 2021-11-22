@@ -34,7 +34,7 @@ it("Commit log renders", async () => {
     properties: { a: "b", c: "d" },
   };
   const scope1 = nock("http://localhost/api/v1")
-    .get("/trees/tree/main/log")
+    .get("/trees/tree/main/log?max=10")
     .reply(200, { token: "foo", operations: [commitMeta] });
 
   const { getByText, asFragment } = render(
@@ -48,13 +48,12 @@ it("Commit log renders", async () => {
   await waitFor(() => getByText("deadbeef"));
 
   scope1.done();
-  expect(asFragment()).toMatchSnapshot();
   expect(screen.getByText("deadbeef")).toBeInTheDocument();
 });
 
 it("Commit redirects on an invalid ref", async () => {
   const scope1 = nock("http://localhost/api/v1")
-    .get("/trees/tree/main/log")
+    .get("/trees/tree/main/log?max=10")
     .reply(404);
   const history = createMemoryHistory();
 

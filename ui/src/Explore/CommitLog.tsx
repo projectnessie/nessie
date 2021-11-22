@@ -18,11 +18,11 @@ import { Button, Card, Nav } from "react-bootstrap";
 import moment from "moment";
 import React, { useEffect, useState, Fragment } from "react";
 import { useParams, useHistory, useLocation, Redirect } from "react-router-dom";
-import { api, CommitMeta } from "../utils";
+import { api, CommitMeta, LogResponse } from "../utils";
 import { factory } from "../ConfigLog4j";
 import CodeIcon from "@material-ui/icons/Code";
 import "./CommitLog.css";
-import { Icon, Tooltip } from "@material-ui/core";
+import { Icon, Tooltip, TablePagination } from "@material-ui/core";
 import ExploreLink from "./ExploreLink";
 import { routeSlugs } from "./Constants";
 import { EmptyMessageView } from "./Components";
@@ -31,13 +31,16 @@ import { Location, History } from "history";
 
 const log = factory.getLogger("api.CommitHeader");
 
-const fetchLog = (ref: string): Promise<void | CommitMeta[] | undefined> => {
+const fetchLog = (
+  ref: string,
+  max: number,
+  pageToken = ""
+): Promise<void | LogResponse | undefined> => {
+  const params = pageToken ? { ref, max, pageToken } : { ref, max };
   return api()
-    .getCommitLog({ ref })
+    .getCommitLog(params)
     .then((data) => {
-      return data.operations && data.operations.length > 0
-        ? data.operations
-        : [];
+      return data;
     })
     .catch((t) => log.error("CommitLog", t));
 };
@@ -63,14 +66,45 @@ const CommitLog = (props: {
   const [showCommitDetails, setShowCommitDetails] = useState(false);
   const [commitDetails, setCommitDetails] = useState<CommitMeta | undefined>();
   const [isRefNotFound, setRefNotFound] = useState(false);
+  const [hasMoreLog, setHasMoreLog] = useState<LogResponse["hasMore"]>(false);
+  const [paginationToken, setPaginationToken] =
+    useState<LogResponse["token"]>();
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+
   const location = useLocation() as Location;
   const history = useHistory() as History;
+
+  const fetchMoreLog = async (isResetData = false) => {
+    const pageToken = isResetData ? "" : paginationToken;
+    const fetchLogResults = await fetchLog(currentRef, rowsPerPage, pageToken);
+    if (fetchLogResults) {
+      const { hasMore, token } = fetchLogResults;
+      const operations =
+        fetchLogResults.operations && fetchLogResults.operations.length > 0
+          ? fetchLogResults.operations
+          : [];
+      const dataList = isResetData ? operations : logList.concat(operations);
+      setLogList(dataList);
+      setRefNotFound(false);
+      setHasMoreLog(hasMore);
+      setPaginationToken(token);
+    }
+  };
   useEffect(() => {
     const logs = async () => {
-      const fetchLogResults = await fetchLog(currentRef);
+      const fetchLogResults = await fetchLog(currentRef, rowsPerPage);
       if (fetchLogResults) {
-        setLogList(fetchLogResults);
+        const { hasMore, token } = fetchLogResults;
+        const operations =
+          fetchLogResults.operations && fetchLogResults.operations.length > 0
+            ? fetchLogResults.operations
+            : [];
+        setLogList(operations);
         setRefNotFound(false);
+        setHasMoreLog(hasMore);
+        setPaginationToken(token);
+        setPage(0);
       }
       setRefNotFound(fetchLogResults === undefined);
       if (showCommitDetails) {
@@ -82,7 +116,7 @@ const CommitLog = (props: {
       }
     };
     void logs();
-  }, [currentRef]);
+  }, [currentRef, rowsPerPage]);
 
   useEffect(() => {
     if (slug && !isRefNotFound) {
@@ -97,7 +131,7 @@ const CommitLog = (props: {
     return <Redirect to="/notfound" />;
   }
 
-  if (!logList || (logList.length === 1 && !logList[0].hash)) {
+  if (!logList || logList.length === 0 || !logList[0].hash) {
     return <EmptyMessageView />;
   }
 
@@ -169,15 +203,50 @@ const CommitLog = (props: {
     );
   };
 
+  const handleChangePage = (
+    event: React.MouseEvent<HTMLButtonElement> | null,
+    newPage: number
+  ) => {
+    setPage(newPage);
+    if (hasMoreLog) {
+      void fetchMoreLog();
+    }
+  };
+
+  const handleChangeRowsPerPage = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  const paginator = () => (
+    <TablePagination
+      component="div"
+      count={!hasMoreLog ? logList.length : -1}
+      page={page}
+      onPageChange={handleChangePage}
+      rowsPerPage={rowsPerPage}
+      onRowsPerPageChange={handleChangeRowsPerPage}
+      SelectProps={{
+        id: "commitLogRowPerPageSelect",
+        labelId: "commitLogRowPerPageSelectLabel",
+      }}
+    />
+  );
+
   return (
     <Card className={"commitLog"}>
       {!showCommitDetails ? (
-        logList.map((item, index) => {
-          return commitList(item, index);
-        })
+        logList
+          .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+          .map((item, index) => {
+            return commitList(item, index);
+          })
       ) : (
         <CommitDetails commitDetails={commitDetails} currentRef={currentRef} />
       )}
+      {paginator()}
     </Card>
   );
 };
