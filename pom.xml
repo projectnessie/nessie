@@ -158,6 +158,7 @@
     <flapdoodle.version>3.1.4</flapdoodle.version>
     <gatling.maven.version>3.1.2</gatling.maven.version>
     <gatling.version>3.6.1</gatling.version>
+    <google-java-format.version>1.13.0</google-java-format.version>
     <guava.version>31.0.1-jre</guava.version>
     <hadoop.version>3.3.1</hadoop.version>
     <iceberg.version>0.12.1</iceberg.version>
@@ -514,6 +515,11 @@
         <groupId>javax.ws.rs</groupId>
         <artifactId>javax.ws.rs-api</artifactId>
         <version>${javax.ws.rs.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.googlejavaformat</groupId>
+        <artifactId>google-java-format</artifactId>
+        <version>${google-java-format.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -1337,7 +1343,7 @@ limitations under the License.
               </formats>
               <java>
                 <google-java-format>
-                  <version>1.11.0</version>
+                  <version>${google-java-format.version}</version>
                 </google-java-format>
                 <licenseHeader>
                   <file>${maven.multiModuleProjectDirectory}/codestyle/copyright-header-java.txt</file>
