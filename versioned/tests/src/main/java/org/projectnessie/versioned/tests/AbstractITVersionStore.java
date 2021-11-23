@@ -40,13 +40,14 @@ import org.junit.jupiter.api.Test;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Diff;
+import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
-import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.Ref;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
+import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.StringStoreWorker;
 import org.projectnessie.versioned.TagName;
@@ -147,15 +148,16 @@ public abstract class AbstractITVersionStore {
     final Hash otherCreateHash = store().create(anotherAnotherBranch, Optional.of(commitHash));
     assertEquals(commitHash, otherCreateHash);
 
-    List<WithHash<NamedRef>> namedRefs;
-    try (Stream<WithHash<NamedRef>> str = store().getNamedRefs().filter(this::filterMainBranch)) {
+    List<ReferenceInfo<String>> namedRefs;
+    try (Stream<ReferenceInfo<String>> str =
+        store().getNamedRefs(GetNamedRefsParams.DEFAULT).filter(this::filterMainBranch)) {
       namedRefs = str.collect(Collectors.toList());
     }
     assertThat(namedRefs)
         .containsExactlyInAnyOrder(
-            WithHash.of(hash, branch),
-            WithHash.of(commitHash, anotherBranch),
-            WithHash.of(commitHash, anotherAnotherBranch));
+            ReferenceInfo.of(hash, branch),
+            ReferenceInfo.of(commitHash, anotherBranch),
+            ReferenceInfo.of(commitHash, anotherAnotherBranch));
 
     assertThat(commitsList(branch)).isEmpty();
     assertThat(commitsList(anotherBranch)).hasSize(1);
@@ -170,15 +172,16 @@ public abstract class AbstractITVersionStore {
 
     store().delete(branch, Optional.of(hash));
     assertThrows(ReferenceNotFoundException.class, () -> store().toHash(branch));
-    try (Stream<WithHash<NamedRef>> str = store().getNamedRefs().filter(this::filterMainBranch)) {
+    try (Stream<ReferenceInfo<String>> str =
+        store().getNamedRefs(GetNamedRefsParams.DEFAULT).filter(this::filterMainBranch)) {
       assertThat(str).hasSize(2); // bar + baz
     }
     assertThrows(ReferenceNotFoundException.class, () -> store().delete(branch, Optional.of(hash)));
   }
 
   /** Exclude {@code main} branch in tests. */
-  private boolean filterMainBranch(WithHash<NamedRef> r) {
-    return !r.getValue().getName().equals("main");
+  private boolean filterMainBranch(ReferenceInfo<String> r) {
+    return !r.getNamedRef().getName().equals("main");
   }
 
   @Test
@@ -268,15 +271,16 @@ public abstract class AbstractITVersionStore {
     assertThat(store().toHash(tag)).isEqualTo(initialHash);
     assertThat(store().toHash(anotherTag)).isEqualTo(commitHash);
 
-    List<WithHash<NamedRef>> namedRefs;
-    try (Stream<WithHash<NamedRef>> str = store().getNamedRefs().filter(this::filterMainBranch)) {
+    List<ReferenceInfo<String>> namedRefs;
+    try (Stream<ReferenceInfo<String>> str =
+        store().getNamedRefs(GetNamedRefsParams.DEFAULT).filter(this::filterMainBranch)) {
       namedRefs = str.collect(Collectors.toList());
     }
     assertThat(namedRefs)
         .containsExactlyInAnyOrder(
-            WithHash.of(commitHash, branch),
-            WithHash.of(initialHash, tag),
-            WithHash.of(commitHash, anotherTag));
+            ReferenceInfo.of(commitHash, branch),
+            ReferenceInfo.of(initialHash, tag),
+            ReferenceInfo.of(commitHash, anotherTag));
 
     assertThat(commitsList(tag)).isEmpty();
     assertThat(commitsList(initialHash)).isEmpty(); // empty commit should not be listed
@@ -286,7 +290,8 @@ public abstract class AbstractITVersionStore {
 
     store().delete(tag, Optional.of(initialHash));
     assertThrows(ReferenceNotFoundException.class, () -> store().toHash(tag));
-    try (Stream<WithHash<NamedRef>> str = store().getNamedRefs().filter(this::filterMainBranch)) {
+    try (Stream<ReferenceInfo<String>> str =
+        store().getNamedRefs(GetNamedRefsParams.DEFAULT).filter(this::filterMainBranch)) {
       assertThat(str).hasSize(2); // foo + another-tag
     }
     assertThrows(
@@ -328,7 +333,8 @@ public abstract class AbstractITVersionStore {
         ReferenceConflictException.class, () -> store().delete(branch, Optional.of(initialHash)));
     store().delete(branch, Optional.of(anotherCommitHash));
     assertThrows(ReferenceNotFoundException.class, () -> store().toHash(branch));
-    try (Stream<WithHash<NamedRef>> str = store().getNamedRefs().filter(this::filterMainBranch)) {
+    try (Stream<ReferenceInfo<String>> str =
+        store().getNamedRefs(GetNamedRefsParams.DEFAULT).filter(this::filterMainBranch)) {
       assertThat(str).isEmpty();
     }
     assertThrows(

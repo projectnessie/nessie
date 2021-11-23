@@ -15,6 +15,7 @@
  */
 package org.projectnessie.server.error;
 
+import java.util.stream.Stream;
 import javax.enterprise.context.RequestScoped;
 import javax.validation.ConstraintDeclarationException;
 import javax.validation.ConstraintDefinitionException;
@@ -36,6 +37,9 @@ import org.mockito.Mockito;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.versioned.BackendLimitExceededException;
+import org.projectnessie.versioned.GetNamedRefsParams;
+import org.projectnessie.versioned.ReferenceInfo;
+import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.StringStoreWorker;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.store.PersistVersionStore;
@@ -119,7 +123,8 @@ public class ErrorTestService {
   @Path("unhandledExceptionInTvsStore/{exception}")
   @GET
   @Consumes(MediaType.APPLICATION_JSON)
-  public String unhandledExceptionInTvsStore(@PathParam("exception") String exception) {
+  public String unhandledExceptionInTvsStore(@PathParam("exception") String exception)
+      throws ReferenceNotFoundException {
     Exception ex;
     switch (exception) {
       case "runtime":
@@ -133,11 +138,13 @@ public class ErrorTestService {
     }
 
     DatabaseAdapter databaseAdapter = Mockito.mock(DatabaseAdapter.class);
-    Mockito.when(databaseAdapter.namedRefs()).thenThrow(ex);
+    Mockito.when(databaseAdapter.namedRefs(Mockito.any())).thenThrow(ex);
 
     PersistVersionStore<String, String, StringStoreWorker.TestEnum> tvs =
         new PersistVersionStore<>(databaseAdapter, StringStoreWorker.INSTANCE);
-    tvs.getNamedRefs().forEach(ref -> {});
+    try (Stream<ReferenceInfo<String>> refs = tvs.getNamedRefs(GetNamedRefsParams.DEFAULT)) {
+      refs.forEach(ref -> {});
+    }
     return "we should not get here";
   }
 }

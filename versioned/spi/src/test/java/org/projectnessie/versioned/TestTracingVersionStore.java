@@ -174,7 +174,9 @@ class TestTracingVersionStore {
                 new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>(
                         "GetNamedRefs", runtimeThrows)
                     .function(
-                        VersionStore::getNamedRefs,
+                        stringStringDummyEnumVersionStore ->
+                            stringStringDummyEnumVersionStore.getNamedRefs(
+                                GetNamedRefsParams.DEFAULT),
                         () ->
                             Stream.of(
                                 WithHash.of(Hash.of("cafebabe"), BranchName.of("foo")),

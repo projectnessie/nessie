@@ -30,6 +30,7 @@ import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.p
 import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.protoToKeyList;
 import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.toProto;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.UnsafeByteOperations;
@@ -54,16 +55,17 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
+import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.ReferenceRetryFailureException;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.VersionStoreException;
-import org.projectnessie.versioned.WithHash;
 import org.projectnessie.versioned.persist.adapter.CommitAttempt;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentAndState;
@@ -146,9 +148,31 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
-  public Stream<WithHash<NamedRef>> namedRefs() {
+  public Stream<ReferenceInfo<ByteString>> namedRefs(GetNamedRefsParams params)
+      throws ReferenceNotFoundException {
+    Preconditions.checkNotNull(params, "Parameter for GetNamedRefsParams must not be null.");
+    Preconditions.checkArgument(
+        params.isRetrieveTags() || params.isRetrieveBranches(),
+        "Must retrieve branches or tags or both.");
+
     Connection conn = borrowConnection();
-    return fetchNamedRefs(conn).onClose(() -> releaseConnection(conn));
+    boolean failed = true;
+    try {
+
+      Hash defaultBranchHead = namedRefsDefaultBranchHead(conn, params);
+
+      Stream<ReferenceInfo<ByteString>> refs = fetchNamedRefs(conn);
+
+      refs = namedRefsFilterAndEnhance(conn, params, defaultBranchHead, refs);
+
+      failed = false;
+
+      return refs.onClose(() -> releaseConnection(conn));
+    } finally {
+      if (failed) {
+        releaseConnection(conn);
+      }
+    }
   }
 
   @Override
@@ -630,7 +654,7 @@ public abstract class TxDatabaseAdapter
     }
   }
 
-  protected Stream<WithHash<NamedRef>> fetchNamedRefs(Connection conn) {
+  protected Stream<ReferenceInfo<ByteString>> fetchNamedRefs(Connection conn) {
     return JdbcSelectSpliterator.buildStream(
         conn,
         SqlStatements.SELECT_NAMED_REFERENCES,
@@ -642,7 +666,7 @@ public abstract class TxDatabaseAdapter
 
           NamedRef namedRef = namedRefFromRow(type, ref);
           if (namedRef != null) {
-            return WithHash.of(head, namedRef);
+            return ReferenceInfo.of(head, namedRef);
           }
           return null;
         });
@@ -728,6 +752,20 @@ public abstract class TxDatabaseAdapter
       throw new IllegalArgumentException();
     }
     return refType;
+  }
+
+  /**
+   * Retrieves the hash of the default branch specified in {@link
+   * GetNamedRefsParams#getBaseReference()}, if the retrieve options in {@link GetNamedRefsParams}
+   * require it.
+   */
+  private Hash namedRefsDefaultBranchHead(Connection conn, GetNamedRefsParams params)
+      throws ReferenceNotFoundException {
+    if (params.isComputeAheadBehind() || params.isComputeCommonAncestor()) {
+      Preconditions.checkNotNull(params.getBaseReference(), "Base reference name missing.");
+      return fetchNamedRefHead(conn, params.getBaseReference());
+    }
+    return null;
   }
 
   /**

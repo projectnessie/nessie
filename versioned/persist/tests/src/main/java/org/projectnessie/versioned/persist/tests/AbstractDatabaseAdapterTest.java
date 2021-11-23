@@ -29,14 +29,15 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
+import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.TagName;
-import org.projectnessie.versioned.WithHash;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
@@ -107,8 +108,9 @@ public abstract class AbstractDatabaseAdapterTest {
   private void createNamedRef(NamedRef create, NamedRef opposite) throws Exception {
     BranchName branch = BranchName.of("main");
 
-    try (Stream<WithHash<NamedRef>> refs = databaseAdapter.namedRefs()) {
-      assertThat(refs.map(WithHash::getValue)).containsExactlyInAnyOrder(branch);
+    try (Stream<ReferenceInfo<ByteString>> refs =
+        databaseAdapter.namedRefs(GetNamedRefsParams.DEFAULT)) {
+      assertThat(refs.map(ReferenceInfo::getNamedRef)).containsExactlyInAnyOrder(branch);
     }
 
     Hash mainHash = databaseAdapter.toHash(branch);
@@ -119,8 +121,9 @@ public abstract class AbstractDatabaseAdapterTest {
     Hash createHash = databaseAdapter.create(create, databaseAdapter.toHash(branch));
     assertThat(createHash).isEqualTo(mainHash);
 
-    try (Stream<WithHash<NamedRef>> refs = databaseAdapter.namedRefs()) {
-      assertThat(refs.map(WithHash::getValue)).containsExactlyInAnyOrder(branch, create);
+    try (Stream<ReferenceInfo<ByteString>> refs =
+        databaseAdapter.namedRefs(GetNamedRefsParams.DEFAULT)) {
+      assertThat(refs.map(ReferenceInfo::getNamedRef)).containsExactlyInAnyOrder(branch, create);
     }
 
     assertThatThrownBy(() -> databaseAdapter.create(create, databaseAdapter.toHash(branch)))
@@ -148,8 +151,9 @@ public abstract class AbstractDatabaseAdapterTest {
     assertThatThrownBy(() -> databaseAdapter.toHash(create))
         .isInstanceOf(ReferenceNotFoundException.class);
 
-    try (Stream<WithHash<NamedRef>> refs = databaseAdapter.namedRefs()) {
-      assertThat(refs.map(WithHash::getValue)).containsExactlyInAnyOrder(branch);
+    try (Stream<ReferenceInfo<ByteString>> refs =
+        databaseAdapter.namedRefs(GetNamedRefsParams.DEFAULT)) {
+      assertThat(refs.map(ReferenceInfo::getNamedRef)).containsExactlyInAnyOrder(branch);
     }
   }
 
@@ -376,6 +380,13 @@ public abstract class AbstractDatabaseAdapterTest {
     }
   }
 
+  @Nested
+  public class GetNamedReferences extends AbstractGetNamedReferences {
+    GetNamedReferences() {
+      super(databaseAdapter);
+    }
+  }
+
   @Test
   void nonExistentKeyPrefixTest(
       @NessieDbAdapter(initializeRepo = false)
@@ -383,7 +394,8 @@ public abstract class AbstractDatabaseAdapterTest {
           DatabaseAdapter nonExistent) {
     assertAll(
         () -> {
-          try (Stream<WithHash<NamedRef>> r = nonExistent.namedRefs()) {
+          try (Stream<ReferenceInfo<ByteString>> r =
+              nonExistent.namedRefs(GetNamedRefsParams.DEFAULT)) {
             assertThat(r).isEmpty();
           }
         },
@@ -437,13 +449,16 @@ public abstract class AbstractDatabaseAdapterTest {
     assertThat(barMain).isNotEqualTo(fooMain).isEqualTo(barBranch);
 
     // Verify that key-prefix "foo" only sees "its" main-branch and foo-branch
-    assertThat(foo.namedRefs())
-        .containsExactlyInAnyOrder(
-            WithHash.of(fooMain, main), WithHash.of(fooBranch, fooBranchName));
-    assertThat(bar.namedRefs())
-        .containsExactlyInAnyOrder(
-            WithHash.of(barMain, main), WithHash.of(barBranch, barBranchName));
-
+    try (Stream<ReferenceInfo<ByteString>> refs = foo.namedRefs(GetNamedRefsParams.DEFAULT)) {
+      assertThat(refs)
+          .containsExactlyInAnyOrder(
+              ReferenceInfo.of(fooMain, main), ReferenceInfo.of(fooBranch, fooBranchName));
+    }
+    try (Stream<ReferenceInfo<ByteString>> refs = bar.namedRefs(GetNamedRefsParams.DEFAULT)) {
+      assertThat(refs)
+          .containsExactlyInAnyOrder(
+              ReferenceInfo.of(barMain, main), ReferenceInfo.of(barBranch, barBranchName));
+    }
     assertThatThrownBy(() -> foo.commitLog(barBranch))
         .isInstanceOf(ReferenceNotFoundException.class);
     assertThatThrownBy(() -> bar.commitLog(fooBranch))

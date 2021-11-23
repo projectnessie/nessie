@@ -40,6 +40,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.Spliterators.AbstractSpliterator;
 import java.util.concurrent.TimeUnit;
@@ -52,11 +53,15 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Diff;
+import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceConflictException;
+import org.projectnessie.versioned.ReferenceInfo;
+import org.projectnessie.versioned.ReferenceInfo.CommitsAheadBehind;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.persist.adapter.CommitAttempt;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentAndState;
@@ -383,6 +388,106 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
   }
 
   /**
+   * Common functionality to filter and enhance based on the given {@link GetNamedRefsParams}.
+   *
+   * @param ctx database-adapter context
+   * @param params defines which kind of references and which additional information shall be
+   *     retrieved
+   * @param defaultBranchHead prerequisite, the hash of the default branch's HEAD commit (depending
+   *     on the database-adapter implementation). If {@code null}, {@link
+   *     #namedRefsWithDefaultBranchRelatedInfo(Object, Stream, GetNamedRefsParams, Hash)} will not
+   *     add additional default-branch related information (common ancestor and commits
+   *     behind/ahead).
+   * @param refs current {@link Stream} of {@link ReferenceInfo} to be enhanced.
+   * @return filtered/enhanced stream based on {@code refs}.
+   */
+  protected Stream<ReferenceInfo<ByteString>> namedRefsFilterAndEnhance(
+      OP_CONTEXT ctx,
+      GetNamedRefsParams params,
+      Hash defaultBranchHead,
+      Stream<ReferenceInfo<ByteString>> refs) {
+    refs = namedRefsMaybeFilter(params, refs);
+
+    refs = namedRefsWithDefaultBranchRelatedInfo(ctx, refs, params, defaultBranchHead);
+
+    if (params.isRetrieveCommitMetaForHead()) {
+      refs = refs.map(r -> namedReferenceWithCommitMeta(ctx, r));
+    }
+
+    return refs;
+  }
+
+  /** Applies the reference type filter (tags or branches) to the Java stream. */
+  protected Stream<ReferenceInfo<ByteString>> namedRefsMaybeFilter(
+      GetNamedRefsParams params, Stream<ReferenceInfo<ByteString>> refs) {
+    if (params.isRetrieveBranches() && params.isRetrieveTags()) {
+      // No filtering necessary, if all named-reference types (tags and branches) are being fetched.
+      return refs;
+    }
+    return refs.filter(
+        ref ->
+            (params.isRetrieveBranches() && ref.getNamedRef() instanceof BranchName)
+                || (params.isRetrieveTags() && ref.getNamedRef() instanceof TagName));
+  }
+
+  /**
+   * Returns an updated {@link ReferenceInfo} with the commit-meta of the reference's HEAD commit.
+   */
+  protected ReferenceInfo<ByteString> namedReferenceWithCommitMeta(
+      OP_CONTEXT ctx, ReferenceInfo<ByteString> ref) {
+    CommitLogEntry logEntry = fetchFromCommitLog(ctx, ref.getHash());
+    return logEntry != null ? ref.withHeadCommitMeta(logEntry.getMetadata()) : ref;
+  }
+
+  /**
+   * If necessary based on the given {@link GetNamedRefsParams}, updates the returned {@link
+   * ReferenceInfo}s with the common-ancestor of the named reference and the default branch and the
+   * number of commits behind/ahead compared to the default branch.
+   *
+   * <p>The common ancestor and/or information of commits behind/ahead is meaningless ({@code null})
+   * for the default branch. Both fields are also {@code null} if the named reference points to the
+   * {@link #noAncestorHash()} (beginning of time).
+   */
+  protected Stream<ReferenceInfo<ByteString>> namedRefsWithDefaultBranchRelatedInfo(
+      OP_CONTEXT ctx,
+      Stream<ReferenceInfo<ByteString>> refs,
+      GetNamedRefsParams params,
+      Hash defaultBranchHead) {
+    if (defaultBranchHead == null) {
+      // No enhancement of common ancestor and/or commits behind/ahead.
+      return refs;
+    }
+    CommonAncestorState commonAncestorState =
+        new CommonAncestorState(ctx, defaultBranchHead, params.isComputeAheadBehind());
+    return refs.map(
+        ref -> {
+          if (ref.getNamedRef().equals(params.getBaseReference())) {
+            return ref;
+          }
+
+          ReferenceInfo<ByteString> updated =
+              findCommonAncestor(
+                  ctx,
+                  ref.getHash(),
+                  commonAncestorState,
+                  (diffOnFrom, hash) -> {
+                    ReferenceInfo<ByteString> newRef = ref;
+                    if (params.isComputeCommonAncestor()) {
+                      newRef = newRef.withCommonAncestor(hash);
+                    }
+                    if (params.isComputeAheadBehind()) {
+                      int behind = commonAncestorState.indexOf(hash);
+                      CommitsAheadBehind aheadBehind = CommitsAheadBehind.of(diffOnFrom, behind);
+                      newRef = newRef.withAheadBehind(aheadBehind);
+                    }
+                    return newRef;
+                  });
+
+          return updated != null ? updated : ref;
+        });
+  }
+
+  /**
    * Convenience for {@link #hashOnRef(Object, Hash, NamedRef, Optional, Consumer) hashOnRef(ctx,
    * knownHead, ref.getReference(), ref.getHashOnReference(), null)}.
    */
@@ -459,8 +564,14 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
   /** Reads from the commit-log starting at the given commit-log-hash. */
   protected Stream<CommitLogEntry> readCommitLogStream(OP_CONTEXT ctx, Hash initialHash)
       throws ReferenceNotFoundException {
+    Spliterator<CommitLogEntry> split = readCommitLog(ctx, initialHash);
+    return StreamSupport.stream(split, false);
+  }
+
+  protected Spliterator<CommitLogEntry> readCommitLog(OP_CONTEXT ctx, Hash initialHash)
+      throws ReferenceNotFoundException {
     if (NO_ANCESTOR.equals(initialHash)) {
-      return Stream.empty();
+      return Spliterators.emptySpliterator();
     }
     CommitLogEntry initial = fetchFromCommitLog(ctx, initialHash);
     if (initial == null) {
@@ -474,7 +585,12 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
    * commit-log-entry hashes}, which can be taken from {@link CommitLogEntry#getParents()}, thus no
    * need to perform a read-operation against every hash.
    */
-  private Stream<Hash> readCommitLogHashesStream(OP_CONTEXT ctx, Hash initialHash) {
+  protected Stream<Hash> readCommitLogHashesStream(OP_CONTEXT ctx, Hash initialHash) {
+    Spliterator<Hash> split = readCommitLogHashes(ctx, initialHash);
+    return StreamSupport.stream(split, false);
+  }
+
+  protected Spliterator<Hash> readCommitLogHashes(OP_CONTEXT ctx, Hash initialHash) {
     return logFetcher(
         ctx,
         initialHash,
@@ -493,46 +609,44 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
    * {@link #readCommitLogStream(Object, Hash)} or the similar implementation for the global-log for
    * non-transactional adapters.
    */
-  protected <T> Stream<T> logFetcher(
+  protected <T> Spliterator<T> logFetcher(
       OP_CONTEXT ctx,
       T initial,
       BiFunction<OP_CONTEXT, List<Hash>, List<T>> fetcher,
       Function<T, List<Hash>> nextPage) {
-    AbstractSpliterator<T> split =
-        new AbstractSpliterator<T>(Long.MAX_VALUE, 0) {
-          private Iterator<T> currentBatch;
-          private boolean eof;
-          private T previous;
+    return new AbstractSpliterator<T>(Long.MAX_VALUE, 0) {
+      private Iterator<T> currentBatch;
+      private boolean eof;
+      private T previous;
 
-          @Override
-          public boolean tryAdvance(Consumer<? super T> consumer) {
-            if (eof) {
-              return false;
-            } else if (currentBatch == null) {
-              currentBatch = Collections.singletonList(initial).iterator();
-            } else if (!currentBatch.hasNext()) {
-              if (previous == null) {
-                eof = true;
-                return false;
-              }
-              List<Hash> page = nextPage.apply(previous);
-              previous = null;
-              if (!page.isEmpty()) {
-                currentBatch = fetcher.apply(ctx, page).iterator();
-              } else {
-                eof = true;
-                return false;
-              }
-            }
-            T v = currentBatch.next();
-            if (v != null) {
-              consumer.accept(v);
-              previous = v;
-            }
-            return true;
+      @Override
+      public boolean tryAdvance(Consumer<? super T> consumer) {
+        if (eof) {
+          return false;
+        } else if (currentBatch == null) {
+          currentBatch = Collections.singletonList(initial).iterator();
+        } else if (!currentBatch.hasNext()) {
+          if (previous == null) {
+            eof = true;
+            return false;
           }
-        };
-    return StreamSupport.stream(split, false);
+          List<Hash> page = nextPage.apply(previous);
+          previous = null;
+          if (!page.isEmpty()) {
+            currentBatch = fetcher.apply(ctx, page).iterator();
+          } else {
+            eof = true;
+            return false;
+          }
+        }
+        T v = currentBatch.next();
+        if (v != null) {
+          consumer.accept(v);
+          previous = v;
+        }
+        return true;
+      }
+    };
   }
 
   /**
@@ -929,6 +1043,37 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     return sinceSeen[0];
   }
 
+  protected final class CommonAncestorState {
+    final Iterator<Hash> toLog;
+    final List<Hash> toCommitHashesList;
+    final Set<Hash> toCommitHashes = new HashSet<>();
+
+    public CommonAncestorState(OP_CONTEXT ctx, Hash toHead, boolean trackCount) {
+      this.toLog = Spliterators.iterator(readCommitLogHashes(ctx, toHead));
+      this.toCommitHashesList = trackCount ? new ArrayList<>() : null;
+    }
+
+    boolean fetchNext() {
+      if (toLog.hasNext()) {
+        Hash hash = toLog.next();
+        toCommitHashes.add(hash);
+        if (toCommitHashesList != null) {
+          toCommitHashesList.add(hash);
+        }
+        return true;
+      }
+      return false;
+    }
+
+    public boolean contains(Hash candidate) {
+      return toCommitHashes.contains(candidate);
+    }
+
+    public int indexOf(Hash hash) {
+      return toCommitHashesList.indexOf(hash);
+    }
+  }
+
   /**
    * Finds the common-ancestor of two commit-log-entries. If no common-ancestor is found, throws a
    * {@link ReferenceConflictException} or. Otherwise this method returns the hash of the
@@ -941,17 +1086,27 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     //  max number of "to"-commits to fetch, max number of "from"-commits to fetch,
     //  both impact the cost (CPU, memory, I/O) of a merge operation.
 
-    Iterator<Hash> toLog =
-        Spliterators.iterator(readCommitLogHashesStream(ctx, toHead).spliterator());
-    Iterator<Hash> fromLog =
-        Spliterators.iterator(readCommitLogHashesStream(ctx, from).spliterator());
-    Set<Hash> toCommitHashes = new HashSet<>();
+    CommonAncestorState commonAncestorState = new CommonAncestorState(ctx, toHead, false);
+
+    Hash commonAncestorHash =
+        findCommonAncestor(ctx, from, commonAncestorState, (dist, hash) -> hash);
+    if (commonAncestorHash == null) {
+      throw new ReferenceConflictException(
+          String.format(
+              "No common ancestor found for merge of '%s' into branch '%s'",
+              from, toBranch.getName()));
+    }
+    return commonAncestorHash;
+  }
+
+  protected <R> R findCommonAncestor(
+      OP_CONTEXT ctx, Hash from, CommonAncestorState state, BiFunction<Integer, Hash, R> result) {
+    Iterator<Hash> fromLog = Spliterators.iterator(readCommitLogHashes(ctx, from));
     List<Hash> fromCommitHashes = new ArrayList<>();
     while (true) {
       boolean anyFetched = false;
       for (int i = 0; i < config.getParentsPerCommit(); i++) {
-        if (toLog.hasNext()) {
-          toCommitHashes.add(toLog.next());
+        if (state.fetchNext()) {
           anyFetched = true;
         }
         if (fromLog.hasNext()) {
@@ -960,15 +1115,13 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
         }
       }
       if (!anyFetched) {
-        throw new ReferenceConflictException(
-            String.format(
-                "No common ancestor found for merge of '%s' into branch '%s'",
-                from, toBranch.getName()));
+        return null;
       }
 
-      for (Hash f : fromCommitHashes) {
-        if (toCommitHashes.contains(f)) {
-          return f;
+      for (int diffOnFrom = 0; diffOnFrom < fromCommitHashes.size(); diffOnFrom++) {
+        Hash f = fromCommitHashes.get(diffOnFrom);
+        if (state.contains(f)) {
+          return result.apply(diffOnFrom, f);
         }
       }
     }

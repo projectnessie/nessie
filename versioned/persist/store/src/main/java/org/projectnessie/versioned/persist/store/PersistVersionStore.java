@@ -27,6 +27,7 @@ import javax.annotation.Nonnull;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Diff;
+import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.NamedRef;
@@ -35,6 +36,7 @@ import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.Ref;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
+import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.TagName;
@@ -193,8 +195,17 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
   }
 
   @Override
-  public Stream<WithHash<NamedRef>> getNamedRefs() {
-    return databaseAdapter.namedRefs();
+  public Stream<ReferenceInfo<METADATA>> getNamedRefs(GetNamedRefsParams params)
+      throws ReferenceNotFoundException {
+    return databaseAdapter
+        .namedRefs(params)
+        .map(
+            namedRef ->
+                namedRef.withUpdatedCommitMeta(deserializeMetadata(namedRef.getHeadCommitMeta())));
+  }
+
+  private METADATA deserializeMetadata(ByteString commitMeta) {
+    return commitMeta != null ? storeWorker.getMetadataSerializer().fromBytes(commitMeta) : null;
   }
 
   @Override
@@ -202,10 +213,7 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
     Hash hash = ref instanceof NamedRef ? toHash((NamedRef) ref) : (Hash) ref;
     Stream<CommitLogEntry> stream = databaseAdapter.commitLog(hash);
 
-    return stream.map(
-        e ->
-            WithHash.of(
-                e.getHash(), storeWorker.getMetadataSerializer().fromBytes(e.getMetadata())));
+    return stream.map(e -> WithHash.of(e.getHash(), deserializeMetadata(e.getMetadata())));
   }
 
   @Override

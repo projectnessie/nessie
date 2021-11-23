@@ -174,8 +174,9 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
   }
 
   @Override
-  public Stream<WithHash<NamedRef>> getNamedRefs() {
-    return callStream("GetNamedRefs", b -> {}, delegate::getNamedRefs);
+  public Stream<ReferenceInfo<METADATA>> getNamedRefs(GetNamedRefsParams params)
+      throws ReferenceNotFoundException {
+    return callStreamWithOneException("GetNamedRefs", b -> {}, () -> delegate.getNamedRefs(params));
   }
 
   @Override

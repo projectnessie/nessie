@@ -25,13 +25,14 @@ import java.util.function.ToIntFunction;
 import java.util.stream.Stream;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Diff;
+import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
+import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
-import org.projectnessie.versioned.WithHash;
 
 /**
  * Database-Adapter interface that encapsulates all database related logic, ab abstraction between a
@@ -180,9 +181,12 @@ public interface DatabaseAdapter {
   /**
    * Get all named references including their current HEAD.
    *
-   * @return stream with all named references including their current HEAD.
+   * @param params options that control which information shall be returned in each {@link
+   *     ReferenceInfo}, see {@link ReferenceInfo} for details.
+   * @return stream with all named references.
    */
-  Stream<WithHash<NamedRef>> namedRefs();
+  Stream<ReferenceInfo<ByteString>> namedRefs(GetNamedRefsParams params)
+      throws ReferenceNotFoundException;
 
   /**
    * Create a new named reference.
