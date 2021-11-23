@@ -42,8 +42,9 @@ public interface PaginatedResponse {
    * <p>Paging tokens are opaque and the structure may change without prior notice even in patch
    * releases.
    *
-   * @return paging-token for the next invocation of an API function, if {@link #isHasMore()} is
-   *     {@code true}. Undefined, if {@link #isHasMore()} is {@code false}.
+   * @return paging continuation token for the next invocation of an API function taking a subclass
+   *     of {@link org.projectnessie.api.params.AbstractParams}, if {@link #isHasMore()} is {@code
+   *     true}. Undefined, if {@link #isHasMore()} is {@code false}.
    */
   @Nullable
   @Size(min = 1)

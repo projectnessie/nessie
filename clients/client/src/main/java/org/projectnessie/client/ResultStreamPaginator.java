@@ -26,7 +26,7 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.PaginatedResponse;
 
 /**
- * Internal helper class to implement paging for a result stream.
+ * Internal helper class to implement continuation token driven paging for a result stream.
  *
  * @param <R> REST result page type
  * @param <E> entry type
@@ -40,7 +40,7 @@ final class ResultStreamPaginator<R extends PaginatedResponse, E> {
      *
      * @param ref reference
      * @param pageSize page size
-     * @param token paging token
+     * @param token paging continuation token
      * @return response object
      * @throws NessieNotFoundException if the ref does not exist
      */
