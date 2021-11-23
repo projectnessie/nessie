@@ -246,7 +246,7 @@ const CommitLog = (props: {
       ) : (
         <CommitDetails commitDetails={commitDetails} currentRef={currentRef} />
       )}
-      {paginator()}
+      {!showCommitDetails && paginator()}
     </Card>
   );
 };
