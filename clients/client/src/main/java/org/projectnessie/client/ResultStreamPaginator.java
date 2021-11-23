@@ -40,11 +40,11 @@ final class ResultStreamPaginator<R extends PaginatedResponse, E> {
      *
      * @param ref reference
      * @param pageSize page size
-     * @param token paging continuation token
+     * @param pagingToken paging continuation token
      * @return response object
      * @throws NessieNotFoundException if the ref does not exist
      */
-    R fetch(String ref, Integer pageSize, String token) throws NessieNotFoundException;
+    R fetch(String ref, Integer pageSize, String pagingToken) throws NessieNotFoundException;
   }
 
   private final Function<R, List<E>> entriesFromResponse;
