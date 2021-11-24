@@ -84,7 +84,7 @@
     "@babel/core": "^7.16.0",
     "@openapitools/openapi-generator-cli": "^2.4.18",
     "@pmmmwh/react-refresh-webpack-plugin": "0.5.2",
-    "@testing-library/jest-dom": "^5.15.0",
+    "@testing-library/jest-dom": "^5.15.1",
     "@testing-library/react": "^12.1.2",
     "@testing-library/user-event": "^13.5.0",
     "@typescript-eslint/eslint-plugin": "^4.33.0",
