@@ -17,10 +17,13 @@ package org.projectnessie.api.params;
 
 import java.util.Objects;
 import java.util.StringJoiner;
+import javax.ws.rs.QueryParam;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.projectnessie.api.http.HttpTreeApi;
 
 /**
- * The purpose of this class is to include optional parameters that can be passed to {@code
- * HttpTreeApi#getEntries(String, EntriesParams)}.
+ * The purpose of this class is to include optional parameters that can be passed to {@link
+ * HttpTreeApi#getAllReferences(ReferencesParams)}
  *
  * <p>For easier usage of this class, there is {@link ReferencesParams#builder()}, which allows
  * configuring/setting the different parameters.
@@ -29,12 +32,29 @@ public class ReferencesParams extends AbstractParams {
 
   public ReferencesParams() {}
 
-  private ReferencesParams(Integer maxRecords, String pageToken) {
+  @Parameter(
+      description =
+          "If set to true, will fetch additional metadata for branches, such as number of commits ahead/behind or the common ancestor in relation to the default branch, and the commit metadata for the HEAD commit.\n\n"
+              + "A returned Branch instance will then have a map of 'metadataProperties' with the following keys:\n\n"
+              + "- numCommitsAhead (number of commits ahead of the default branch)\n\n"
+              + "- numCommitsBehind (number of commits behind the default branch)\n\n"
+              + "- headCommitMeta (the commit metadata of the HEAD commit)\n\n"
+              + "- commonAncestorHash (the hash of the common ancestor in relation to the default branch).\n\n"
+              + "Note that computing & fetching additional metadata might be computationally expensive on the server-side, so this flag should be used with care.")
+  @QueryParam("fetchAdditionalInfo")
+  private boolean fetchAdditionalInfo;
+
+  public boolean isFetchAdditionalInfo() {
+    return fetchAdditionalInfo;
+  }
+
+  private ReferencesParams(Integer maxRecords, String pageToken, boolean fetchAdditionalInfo) {
     super(maxRecords, pageToken);
+    this.fetchAdditionalInfo = fetchAdditionalInfo;
   }
 
   private ReferencesParams(Builder builder) {
-    this(builder.maxRecords, builder.pageToken);
+    this(builder.maxRecords, builder.pageToken, builder.fetchAdditionalInfo);
   }
 
   public static ReferencesParams.Builder builder() {
@@ -50,6 +70,7 @@ public class ReferencesParams extends AbstractParams {
     return new StringJoiner(", ", ReferencesParams.class.getSimpleName() + "[", "]")
         .add("maxRecords=" + maxRecords())
         .add("pageToken='" + pageToken() + "'")
+        .add("fetchAdditionalInfo=" + fetchAdditionalInfo)
         .toString();
   }
 
@@ -63,20 +84,30 @@ public class ReferencesParams extends AbstractParams {
     }
     ReferencesParams that = (ReferencesParams) o;
     return Objects.equals(maxRecords(), that.maxRecords())
-        && Objects.equals(pageToken(), that.pageToken());
+        && Objects.equals(pageToken(), that.pageToken())
+        && Objects.equals(fetchAdditionalInfo, that.fetchAdditionalInfo);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(maxRecords(), pageToken());
+    return Objects.hash(maxRecords(), pageToken(), fetchAdditionalInfo);
   }
 
   public static class Builder extends AbstractParams.Builder<Builder> {
 
     private Builder() {}
 
+    private boolean fetchAdditionalInfo = false;
+
     public ReferencesParams.Builder from(ReferencesParams params) {
-      return maxRecords(params.maxRecords()).pageToken(params.pageToken());
+      return maxRecords(params.maxRecords())
+          .pageToken(params.pageToken())
+          .fetchAdditionalInfo(params.fetchAdditionalInfo);
+    }
+
+    public Builder fetchAdditionalInfo(boolean fetchAdditionalInfo) {
+      this.fetchAdditionalInfo = fetchAdditionalInfo;
+      return this;
     }
 
     private void validate() {}

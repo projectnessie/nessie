@@ -43,12 +43,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
+import org.assertj.core.api.Assertions;
 import org.assertj.core.api.Assumptions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -1781,6 +1783,73 @@ public abstract class AbstractTestRest {
     api.assignTag().hash(testTagRef.getHash()).tagName(testTag).assignTo(main).assign();
     testTagRef = api.getReference().refName(testTag).get();
     assertThat(testTagRef.getHash()).isEqualTo(main.getHash());
+  }
+
+  @Test
+  public void testBranchesHaveMetadataProperties() throws BaseNessieClientServerException {
+    String branchPrefix = "branchesHaveMetadataProperties";
+    int numBranches = 5;
+    int commitsPerBranch = 10;
+
+    for (int i = 0; i < numBranches; i++) {
+      Reference r = api.createReference().reference(Branch.of(branchPrefix + i, null)).create();
+      String currentHash = r.getHash();
+      createCommits(r, 1, commitsPerBranch, currentHash);
+    }
+    // not fetching additional metadata
+    List<Reference> references = api.getAllReferences().get().getReferences();
+    Optional<Reference> main =
+        references.stream().filter(r -> r.getName().equals("main")).findFirst();
+    assertThat(main).isPresent();
+
+    assertThat(
+            references.stream()
+                .filter(r -> r.getName().startsWith(branchPrefix))
+                .map(r -> (Branch) r))
+        .hasSize(numBranches)
+        .allSatisfy(branch -> assertThat(branch.metadataProperties()).isEmpty());
+
+    // fetching additional metadata for each branch
+    references = api.getAllReferences().fetchAdditionalInfo(true).get().getReferences();
+    assertThat(
+            references.stream()
+                .filter(r -> r.getName().startsWith(branchPrefix))
+                .map(r -> (Branch) r))
+        .hasSize(numBranches)
+        .allSatisfy(
+            branch -> {
+              Map<String, Object> metadataProperties = branch.metadataProperties();
+              assertThat(metadataProperties).isNotEmpty();
+              List<CommitMeta> commits =
+                  api.getCommitLog().refName(branch.getName()).maxRecords(1).get().getOperations();
+              assertThat(commits).hasSize(1);
+              CommitMeta commitMeta = commits.get(0);
+
+              assertThat(metadataProperties)
+                  .hasFieldOrProperty(Branch.NUM_COMMITS_AHEAD)
+                  .extracting(Branch.NUM_COMMITS_AHEAD)
+                  .isEqualTo(commitsPerBranch);
+              assertThat(metadataProperties)
+                  .hasFieldOrProperty(Branch.NUM_COMMITS_BEHIND)
+                  .extracting(Branch.NUM_COMMITS_BEHIND)
+                  .isEqualTo(0);
+              assertThat(metadataProperties)
+                  .hasFieldOrProperty(Branch.HEAD_COMMIT_META)
+                  .extracting(Branch.HEAD_COMMIT_META)
+                  .asInstanceOf(Assertions.MAP)
+                  .containsEntry("hash", commitMeta.getHash())
+                  .containsEntry("committer", commitMeta.getCommitter())
+                  .containsEntry("author", commitMeta.getAuthor())
+                  .containsEntry("commitTime", commitMeta.getCommitTime().toString())
+                  .containsEntry("authorTime", commitMeta.getAuthorTime().toString())
+                  .containsEntry("message", commitMeta.getMessage())
+                  .containsEntry("properties", commitMeta.getProperties())
+                  .containsEntry("signedOffBy", commitMeta.getSignedOffBy());
+              assertThat(metadataProperties)
+                  .hasFieldOrProperty(Branch.COMMON_ANCESTOR_HASH)
+                  .extracting(Branch.COMMON_ANCESTOR_HASH)
+                  .isEqualTo(main.get().getHash());
+            });
   }
 
   protected void unwrap(Executable exec) throws Throwable {

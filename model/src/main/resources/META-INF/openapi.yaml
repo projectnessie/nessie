@@ -189,3 +189,50 @@ components:
           - type: BRANCH
             hash: "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d"
             name: "main"
+    referencesResponseWithMetadata:
+      value:
+        token: null
+        hasMore: false
+        references:
+          - type: BRANCH
+            hash: "84c57a20c5e956af4af40f3cc34ecc8a9028b9586da135c79011b1867aa3191d"
+            name: "main"
+            metadataProperties:
+              headCommitMeta:
+                hash: "84c57a20c5e956af4af40f3cc34ecc8a9028b9586da135c79011b1867aa3191d"
+                committer: ""
+                author: "nessie-author"
+                signedOffBy: null
+                message: "update table"
+                commitTime: "2021-11-26T08:01:13.855974Z"
+                authorTime: "2021-11-26T08:01:13.852826Z"
+                properties: {}
+          - type: BRANCH
+            hash: "da086850076827d2989c8ee1d7fd22f152f525d46a0441f2b22ad8119c0bbbe5"
+            name: "dev"
+            metadataProperties:
+              numCommitsAhead: 1
+              numCommitsBehind: 2
+              commonAncestorHash: "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d"
+              headCommitMeta:
+                hash: "da086850076827d2989c8ee1d7fd22f152f525d46a0441f2b22ad8119c0bbbe5"
+                committer: ""
+                author: "nessie-author"
+                signedOffBy: null
+                message: "update table X"
+                commitTime: "2021-11-26T08:01:13.834397Z"
+                authorTime: "2021-11-26T08:01:13.831371Z"
+                properties: {}
+          - type: BRANCH
+            hash: "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d"
+            name: "dev2"
+            metadataProperties:
+              numCommitsAhead: 0
+              numCommitsBehind: 2
+              commonAncestorHash: "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d"
+          - type: TAG
+            hash: "a682bfdcd5d357b5c964ef07e2eef61fabba42cb8effa8d62357df45a6cc0371"
+            name: "testTag1"
+          - type: TAG
+            hash: "da086850076827d2989c8ee1d7fd22f152f525d46a0441f2b22ad8119c0bbbe5"
+            name: "testTag2"

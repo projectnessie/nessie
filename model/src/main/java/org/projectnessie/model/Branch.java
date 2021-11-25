@@ -17,9 +17,13 @@ package org.projectnessie.model;
 
 import static org.projectnessie.model.Validation.validateReferenceName;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import java.util.Collections;
+import java.util.Map;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
@@ -31,6 +35,10 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ImmutableBranch.class)
 @JsonTypeName("BRANCH")
 public interface Branch extends Reference {
+  String NUM_COMMITS_AHEAD = "numCommitsAhead";
+  String NUM_COMMITS_BEHIND = "numCommitsBehind";
+  String HEAD_COMMIT_META = "headCommitMeta";
+  String COMMON_ANCESTOR_HASH = "commonAncestorHash";
 
   /**
    * Validation rule using {@link org.projectnessie.model.Validation#validateReferenceName(String)}.
@@ -46,5 +54,27 @@ public interface Branch extends Reference {
 
   static Branch of(String name, String hash) {
     return builder().name(name).hash(hash).build();
+  }
+
+  /**
+   * Returns a map of metadata properties that describe this branch. Note that these properties
+   * <b>can be added</b> by the server when a {@link Branch} instance is returned. A returned {@link
+   * Branch} instance can then have the following keys:
+   *
+   * <ul>
+   *   <li>{@value Branch#NUM_COMMITS_AHEAD}: number of commits ahead of the default branch
+   *   <li>{@value Branch#NUM_COMMITS_BEHIND}: number of commits behind the default branch
+   *   <li>{@value Branch#HEAD_COMMIT_META}: the commit metadata of the HEAD commit
+   *   <li>{@value Branch#COMMON_ANCESTOR_HASH}: the hash of the common ancestor in relation to the
+   *       default branch.
+   * </ul>
+   *
+   * @return A map of metadata properties that describe this branch. Note that these properties
+   *     <b>can be added</b> by the server when a {@link Branch} instance is returned.
+   */
+  @Value.Default
+  @JsonInclude(Include.NON_EMPTY)
+  default Map<String, Object> metadataProperties() {
+    return Collections.emptyMap();
   }
 }
