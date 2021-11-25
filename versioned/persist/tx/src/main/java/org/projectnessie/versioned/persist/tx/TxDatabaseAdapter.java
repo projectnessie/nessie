@@ -148,6 +148,29 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
+  public ReferenceInfo<ByteString> namedRef(NamedRef ref, GetNamedRefsParams params)
+      throws ReferenceNotFoundException {
+    Preconditions.checkNotNull(params, "Parameter for GetNamedRefsParams must not be null");
+    Preconditions.checkArgument(
+        (params.isRetrieveTags() && ref instanceof TagName)
+            || (params.isRetrieveBranches() && ref instanceof BranchName),
+        "Must retrieve branches or tags or both, and match the type of the requested reference.");
+
+    Connection conn = borrowConnection();
+    try {
+      Hash refHead = fetchNamedRefHead(conn, ref);
+      Hash defaultBranchHead = namedRefsDefaultBranchHead(conn, params);
+
+      Stream<ReferenceInfo<ByteString>> refs = Stream.of(ReferenceInfo.of(refHead, ref));
+
+      return namedRefsFilterAndEnhance(conn, params, defaultBranchHead, refs)
+          .findFirst()
+          .orElseThrow(() -> referenceNotFound(ref));
+    } finally {
+      releaseConnection(conn);
+    }
+  }
+
   public Stream<ReferenceInfo<ByteString>> namedRefs(GetNamedRefsParams params)
       throws ReferenceNotFoundException {
     Preconditions.checkNotNull(params, "Parameter for GetNamedRefsParams must not be null.");

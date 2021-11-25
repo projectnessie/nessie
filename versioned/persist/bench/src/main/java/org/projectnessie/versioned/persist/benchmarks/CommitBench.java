@@ -40,6 +40,7 @@ import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.Operation;
@@ -193,7 +194,7 @@ public class CommitBench {
           "initial commit meta " + Thread.currentThread().getId(),
           initialOperations(bp, keys, contentIds));
 
-      Hash hash = bp.versionStore.toHash(bp.branch);
+      Hash hash = bp.versionStore.getNamedRef(bp.branch, GetNamedRefsParams.DEFAULT).getHash();
 
       bp.versionStore.create(branch, Optional.of(hash));
     }

@@ -87,13 +87,6 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
   }
 
   @Override
-  @Nonnull
-  public Hash toHash(@Nonnull NamedRef ref) throws ReferenceNotFoundException {
-    return callWithOneException(
-        "ToHash", b -> b.withTag(TAG_REF, safeRefName(ref)), () -> delegate.toHash(ref));
-  }
-
-  @Override
   public WithHash<Ref> toRef(@Nonnull String refOfUnknownType) throws ReferenceNotFoundException {
     return callWithOneException(
         "ToRef", b -> b.withTag(TAG_REF, refOfUnknownType), () -> delegate.toRef(refOfUnknownType));
@@ -171,6 +164,15 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
         "Delete",
         b -> b.withTag(TAG_REF, safeToString(ref)).withTag(TAG_HASH, safeToString(hash)),
         () -> delegate.delete(ref, hash));
+  }
+
+  @Override
+  public ReferenceInfo<METADATA> getNamedRef(NamedRef ref, GetNamedRefsParams params)
+      throws ReferenceNotFoundException {
+    return callWithOneException(
+        "GetNamedRef",
+        b -> b.withTag(TAG_REF, safeRefName(ref)),
+        () -> delegate.getNamedRef(ref, params));
   }
 
   @Override

@@ -76,21 +76,15 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
     return databaseAdapter.noAncestorHash();
   }
 
-  @Nonnull
-  @Override
-  public Hash toHash(@Nonnull NamedRef ref) throws ReferenceNotFoundException {
-    return databaseAdapter.toHash(ref);
-  }
-
   @Override
   public WithHash<Ref> toRef(@Nonnull String refOfUnknownType) throws ReferenceNotFoundException {
     try {
       BranchName t = BranchName.of(refOfUnknownType);
-      Hash h = toHash(t);
+      Hash h = getNamedRef(t, GetNamedRefsParams.DEFAULT).getHash();
       return WithHash.of(h, t);
     } catch (ReferenceNotFoundException e) {
       TagName t = TagName.of(refOfUnknownType);
-      Hash h = toHash(t);
+      Hash h = getNamedRef(t, GetNamedRefsParams.DEFAULT).getHash();
       return WithHash.of(h, t);
     }
   }
@@ -194,6 +188,14 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
     databaseAdapter.delete(ref, hash);
   }
 
+  @Nonnull
+  @Override
+  public ReferenceInfo<METADATA> getNamedRef(@Nonnull NamedRef ref, GetNamedRefsParams params)
+      throws ReferenceNotFoundException {
+    ReferenceInfo<ByteString> namedRef = databaseAdapter.namedRef(ref, params);
+    return namedRef.withUpdatedCommitMeta(deserializeMetadata(namedRef.getHeadCommitMeta()));
+  }
+
   @Override
   public Stream<ReferenceInfo<METADATA>> getNamedRefs(GetNamedRefsParams params)
       throws ReferenceNotFoundException {
@@ -210,7 +212,10 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
 
   @Override
   public Stream<WithHash<METADATA>> getCommits(Ref ref) throws ReferenceNotFoundException {
-    Hash hash = ref instanceof NamedRef ? toHash((NamedRef) ref) : (Hash) ref;
+    Hash hash =
+        ref instanceof NamedRef
+            ? getNamedRef((NamedRef) ref, GetNamedRefsParams.DEFAULT).getHash()
+            : (Hash) ref;
     Stream<CommitLogEntry> stream = databaseAdapter.commitLog(hash);
 
     return stream.map(e -> WithHash.of(e.getHash(), deserializeMetadata(e.getMetadata())));
@@ -218,7 +223,10 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
 
   @Override
   public Stream<WithType<Key, CONTENT_TYPE>> getKeys(Ref ref) throws ReferenceNotFoundException {
-    Hash hash = ref instanceof NamedRef ? toHash((NamedRef) ref) : (Hash) ref;
+    Hash hash =
+        ref instanceof NamedRef
+            ? getNamedRef((NamedRef) ref, GetNamedRefsParams.DEFAULT).getHash()
+            : (Hash) ref;
     return databaseAdapter
         .keys(hash, KeyFilterPredicate.ALLOW_ALL)
         .map(kt -> WithType.of(storeWorker.getType(kt.getType()), kt.getKey()));
@@ -232,7 +240,10 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
   @Override
   public Map<Key, CONTENT> getValues(Ref ref, Collection<Key> keys)
       throws ReferenceNotFoundException {
-    Hash hash = ref instanceof NamedRef ? toHash((NamedRef) ref) : (Hash) ref;
+    Hash hash =
+        ref instanceof NamedRef
+            ? getNamedRef((NamedRef) ref, GetNamedRefsParams.DEFAULT).getHash()
+            : (Hash) ref;
     return databaseAdapter.values(hash, keys, KeyFilterPredicate.ALLOW_ALL).entrySet().stream()
         .collect(Collectors.toMap(Map.Entry::getKey, e -> mapContentAndState(e.getValue())));
   }
@@ -243,8 +254,14 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
 
   @Override
   public Stream<Diff<CONTENT>> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException {
-    Hash fromHash = from instanceof NamedRef ? toHash((NamedRef) from) : (Hash) from;
-    Hash toHash = to instanceof NamedRef ? toHash((NamedRef) to) : (Hash) to;
+    Hash fromHash =
+        from instanceof NamedRef
+            ? getNamedRef((NamedRef) from, GetNamedRefsParams.DEFAULT).getHash()
+            : (Hash) from;
+    Hash toHash =
+        to instanceof NamedRef
+            ? getNamedRef((NamedRef) to, GetNamedRefsParams.DEFAULT).getHash()
+            : (Hash) to;
     return databaseAdapter
         .diff(fromHash, toHash, KeyFilterPredicate.ALLOW_ALL)
         .map(

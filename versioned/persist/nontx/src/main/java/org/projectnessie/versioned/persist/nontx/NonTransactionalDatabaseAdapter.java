@@ -118,6 +118,31 @@ public abstract class NonTransactionalDatabaseAdapter<
   }
 
   @Override
+  public ReferenceInfo<ByteString> namedRef(NamedRef ref, GetNamedRefsParams params)
+      throws ReferenceNotFoundException {
+    Preconditions.checkNotNull(params, "Parameter for GetNamedRefsParams must not be null");
+    Preconditions.checkArgument(
+        (params.isRetrieveTags() && ref instanceof TagName)
+            || (params.isRetrieveBranches() && ref instanceof BranchName),
+        "Must retrieve branches or tags or both, and match the type of the requested reference.");
+
+    GlobalStatePointer pointer = fetchGlobalPointer(NON_TRANSACTIONAL_OPERATION_CONTEXT);
+    if (pointer == null) {
+      throw referenceNotFound(ref);
+    }
+
+    Hash refHead = branchHead(pointer, ref);
+    Hash defaultBranchHead = namedRefsDefaultBranchHead(params, pointer);
+
+    Stream<ReferenceInfo<ByteString>> refs = Stream.of(ReferenceInfo.of(refHead, ref));
+
+    return namedRefsFilterAndEnhance(
+            NON_TRANSACTIONAL_OPERATION_CONTEXT, params, defaultBranchHead, refs)
+        .findFirst()
+        .orElseThrow(() -> referenceNotFound(ref));
+  }
+
+  @Override
   public Stream<ReferenceInfo<ByteString>> namedRefs(GetNamedRefsParams params)
       throws ReferenceNotFoundException {
     Preconditions.checkNotNull(params, "Parameter for GetNamedRefsParams must not be null.");

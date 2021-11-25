@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.ReferenceConflictException;
@@ -51,9 +52,14 @@ public abstract class AbstractMergeTransplant {
 
     BranchName branch = BranchName.of("branch");
     BranchName branch2 = BranchName.of("branch2");
-    databaseAdapter.create(branch2, databaseAdapter.toHash(branch));
+    databaseAdapter.create(
+        branch2, databaseAdapter.namedRef(branch, GetNamedRefsParams.DEFAULT).getHash());
     assertThatThrownBy(
-            () -> databaseAdapter.merge(databaseAdapter.toHash(branch), branch2, Optional.empty()))
+            () ->
+                databaseAdapter.merge(
+                    databaseAdapter.namedRef(branch, GetNamedRefsParams.DEFAULT).getHash(),
+                    branch2,
+                    Optional.empty()))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageStartingWith("No hashes to merge from '");
   }
@@ -70,7 +76,7 @@ public abstract class AbstractMergeTransplant {
 
     // no conflict, when transplanting the commits from against the current HEAD of the
     // conflict-branch
-    Hash noConflictHead = databaseAdapter.toHash(conflict);
+    Hash noConflictHead = databaseAdapter.namedRef(conflict, GetNamedRefsParams.DEFAULT).getHash();
     databaseAdapter.transplant(conflict, Optional.of(noConflictHead), Arrays.asList(commits));
 
     // again, no conflict (same as above, just again)
@@ -98,7 +104,8 @@ public abstract class AbstractMergeTransplant {
     BranchName branch = BranchName.of("branch");
     BranchName conflict = BranchName.of("conflict");
 
-    databaseAdapter.create(branch, databaseAdapter.toHash(main));
+    databaseAdapter.create(
+        branch, databaseAdapter.namedRef(main, GetNamedRefsParams.DEFAULT).getHash());
 
     Hash[] commits = new Hash[3];
     for (int i = 0; i < commits.length; i++) {
@@ -119,19 +126,23 @@ public abstract class AbstractMergeTransplant {
 
     for (int i = 0; i < commits.length; i++) {
       BranchName target = BranchName.of("transplant-" + i);
-      databaseAdapter.create(target, databaseAdapter.toHash(main));
+      databaseAdapter.create(
+          target, databaseAdapter.namedRef(main, GetNamedRefsParams.DEFAULT).getHash());
 
       mergeOrTransplant.apply(target, Optional.empty(), branch, commits, i);
 
       try (Stream<CommitLogEntry> targetLog =
-          databaseAdapter.commitLog(databaseAdapter.toHash(target))) {
+          databaseAdapter.commitLog(
+              databaseAdapter.namedRef(target, GetNamedRefsParams.DEFAULT).getHash())) {
         assertThat(targetLog).hasSize(i + 1);
       }
     }
 
     // prepare conflict for keys 0 + 1
 
-    Hash conflictBase = databaseAdapter.create(conflict, databaseAdapter.toHash(main));
+    Hash conflictBase =
+        databaseAdapter.create(
+            conflict, databaseAdapter.namedRef(main, GetNamedRefsParams.DEFAULT).getHash());
     ImmutableCommitAttempt.Builder commit =
         ImmutableCommitAttempt.builder()
             .commitToBranch(conflict)

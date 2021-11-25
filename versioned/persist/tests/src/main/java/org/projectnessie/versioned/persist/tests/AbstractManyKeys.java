@@ -29,6 +29,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.persist.adapter.ContentId;
@@ -117,7 +118,7 @@ public abstract class AbstractManyKeys {
       databaseAdapter.commit(commit.build());
     }
 
-    Hash mainHead = databaseAdapter.toHash(main);
+    Hash mainHead = databaseAdapter.namedRef(main, GetNamedRefsParams.DEFAULT).getHash();
     try (Stream<KeyWithType> keys = databaseAdapter.keys(mainHead, KeyFilterPredicate.ALLOW_ALL)) {
       List<Key> fetchedKeys = keys.map(KeyWithType::getKey).collect(Collectors.toList());
 

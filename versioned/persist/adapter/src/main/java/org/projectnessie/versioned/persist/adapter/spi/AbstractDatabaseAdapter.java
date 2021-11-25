@@ -116,11 +116,6 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
   }
 
   @Override
-  public Hash toHash(NamedRef ref) throws ReferenceNotFoundException {
-    return hashOnReference(ref, Optional.empty());
-  }
-
-  @Override
   public Hash noAncestorHash() {
     return NO_ANCESTOR;
   }

@@ -193,7 +193,7 @@ public abstract class AbstractVersionStoreTest extends AbstractITVersionStore {
           commitHash = store().commit(branch, Optional.of(hashKnownByUser), msg, ops);
         } catch (ReferenceConflictException inconsistentValueException) {
           if (param.allowInconsistentValueException) {
-            hashKnownByUser = store().toHash(branch);
+            hashKnownByUser = store().getNamedRef(branch, GetNamedRefsParams.DEFAULT).getHash();
             commitHash = store().commit(branch, Optional.of(hashKnownByUser), msg, ops);
           } else {
             throw inconsistentValueException;
@@ -530,7 +530,9 @@ public abstract class AbstractVersionStoreTest extends AbstractITVersionStore {
                     s.transplant(
                         BranchName.of("this-one-should-not-exist"),
                         Optional.empty(),
-                        singletonList(s.toHash(BranchName.of("main"))))),
+                        singletonList(
+                            s.getNamedRef(BranchName.of("main"), GetNamedRefsParams.DEFAULT)
+                                .getHash()))),
         new ReferenceNotFoundFunction("transplant/hash/empty")
             .msg(
                 "Could not find commit '12341234123412341234123412341234123412341234' in reference 'main'.")

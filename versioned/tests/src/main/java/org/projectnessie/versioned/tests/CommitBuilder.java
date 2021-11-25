@@ -21,6 +21,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.Assertions;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Delete;
+import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.Operation;
@@ -167,9 +168,12 @@ public class CommitBuilder<ValueT, MetadataT, EnumT extends Enum<EnumT>> {
    */
   public Hash toBranch(BranchName branchName)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    Optional<Hash> reference = fromLatest ? Optional.of(store.toHash(branchName)) : referenceHash;
+    Optional<Hash> reference =
+        fromLatest
+            ? Optional.of(store.getNamedRef(branchName, GetNamedRefsParams.DEFAULT).getHash())
+            : referenceHash;
     Hash commitHash = store.commit(branchName, reference, metadata, operations);
-    Hash storeHash = store.toHash(branchName);
+    Hash storeHash = store.getNamedRef(branchName, GetNamedRefsParams.DEFAULT).getHash();
     Assertions.assertEquals(storeHash, commitHash);
     return commitHash;
   }

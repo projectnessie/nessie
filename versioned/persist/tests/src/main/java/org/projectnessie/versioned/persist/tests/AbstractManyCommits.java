@@ -31,6 +31,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.ReferenceNotFoundException;
@@ -61,7 +62,9 @@ public abstract class AbstractManyCommits {
   // Note: 1000 commits is quite the max that in-JVM H2 database can handle
   void manyCommits(int numCommits) throws Exception {
     BranchName branch = BranchName.of("manyCommits-" + numCommits);
-    databaseAdapter.create(branch, databaseAdapter.toHash(BranchName.of("main")));
+    databaseAdapter.create(
+        branch,
+        databaseAdapter.namedRef(BranchName.of("main"), GetNamedRefsParams.DEFAULT).getHash());
 
     Hash[] commits = new Hash[numCommits];
 
@@ -99,7 +102,9 @@ public abstract class AbstractManyCommits {
       }
     }
 
-    try (Stream<CommitLogEntry> log = databaseAdapter.commitLog(databaseAdapter.toHash(branch))) {
+    try (Stream<CommitLogEntry> log =
+        databaseAdapter.commitLog(
+            databaseAdapter.namedRef(branch, GetNamedRefsParams.DEFAULT).getHash())) {
       assertThat(log.count()).isEqualTo(numCommits);
     }
 
