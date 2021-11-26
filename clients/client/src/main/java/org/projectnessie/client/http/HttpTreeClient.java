@@ -20,6 +20,7 @@ import javax.validation.constraints.NotNull;
 import org.projectnessie.api.http.HttpTreeApi;
 import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.params.EntriesParams;
+import org.projectnessie.api.params.GetReferenceParams;
 import org.projectnessie.api.params.ReferencesParams;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -64,11 +65,13 @@ class HttpTreeClient implements HttpTreeApi {
   }
 
   @Override
-  public Reference getReferenceByName(@NotNull String refName) throws NessieNotFoundException {
+  public Reference getReferenceByName(@NotNull GetReferenceParams params)
+      throws NessieNotFoundException {
     return client
         .newRequest()
         .path("trees/tree/{ref}")
-        .resolveTemplate("ref", refName)
+        .queryParam("fetchAdditionalInfo", Boolean.toString(params.isFetchAdditionalInfo()))
+        .resolveTemplate("ref", params.getRefName())
         .get()
         .readEntity(Reference.class);
   }

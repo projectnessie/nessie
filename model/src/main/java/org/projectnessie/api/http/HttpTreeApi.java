@@ -37,6 +37,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.params.EntriesParams;
+import org.projectnessie.api.params.GetReferenceParams;
 import org.projectnessie.api.params.ReferencesParams;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -155,13 +156,7 @@ public interface HttpTreeApi extends TreeApi {
     @APIResponse(responseCode = "403", description = "Not allowed to view the given reference"),
     @APIResponse(responseCode = "404", description = "Ref not found")
   })
-  Reference getReferenceByName(
-      @Parameter(
-              description = "name of ref to fetch",
-              examples = {@ExampleObject(ref = "ref")})
-          @PathParam("ref")
-          String refName)
-      throws NessieNotFoundException;
+  Reference getReferenceByName(@BeanParam GetReferenceParams params) throws NessieNotFoundException;
 
   @Override
   @GET

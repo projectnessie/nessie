@@ -17,18 +17,25 @@ package org.projectnessie.api.params;
 
 import java.util.Objects;
 import java.util.StringJoiner;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
+import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
-import org.projectnessie.api.http.HttpTreeApi;
+import org.projectnessie.model.Validation;
 
-/**
- * The purpose of this class is to include optional parameters that can be passed to {@link
- * HttpTreeApi#getAllReferences(ReferencesParams)}
- *
- * <p>For easier usage of this class, there is {@link ReferencesParams#builder()}, which allows
- * configuring/setting the different parameters.
- */
-public class ReferencesParams extends AbstractParams {
+public class GetReferenceParams {
+
+  @Parameter(
+      description = "name of ref to fetch",
+      examples = {@ExampleObject(ref = "ref")})
+  @PathParam("ref")
+  @NotNull
+  @Pattern(
+      regexp = Validation.REF_NAME_OR_HASH_REGEX,
+      message = Validation.REF_NAME_OR_HASH_MESSAGE)
+  private String refName;
 
   @Parameter(
       description =
@@ -42,36 +49,31 @@ public class ReferencesParams extends AbstractParams {
   @QueryParam("fetchAdditionalInfo")
   private boolean fetchAdditionalInfo;
 
-  public ReferencesParams() {}
+  public GetReferenceParams() {}
 
-  private ReferencesParams(Integer maxRecords, String pageToken, boolean fetchAdditionalInfo) {
-    super(maxRecords, pageToken);
+  private GetReferenceParams(String refName, boolean fetchAdditionalInfo) {
+    this.refName = refName;
     this.fetchAdditionalInfo = fetchAdditionalInfo;
   }
 
-  private ReferencesParams(Builder builder) {
-    this(builder.maxRecords, builder.pageToken, builder.fetchAdditionalInfo);
+  private GetReferenceParams(Builder builder) {
+    this(builder.refName, builder.fetchAdditionalInfo);
   }
 
   public boolean isFetchAdditionalInfo() {
     return fetchAdditionalInfo;
   }
 
-  public static ReferencesParams.Builder builder() {
-    return new ReferencesParams.Builder();
+  public String getRefName() {
+    return refName;
   }
 
-  public static ReferencesParams empty() {
-    return new ReferencesParams.Builder().build();
+  public static GetReferenceParams.Builder builder() {
+    return new GetReferenceParams.Builder();
   }
 
-  @Override
-  public String toString() {
-    return new StringJoiner(", ", ReferencesParams.class.getSimpleName() + "[", "]")
-        .add("maxRecords=" + maxRecords())
-        .add("pageToken='" + pageToken() + "'")
-        .add("fetchAdditionalInfo=" + fetchAdditionalInfo)
-        .toString();
+  public static GetReferenceParams empty() {
+    return new GetReferenceParams.Builder().build();
   }
 
   @Override
@@ -82,27 +84,32 @@ public class ReferencesParams extends AbstractParams {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    ReferencesParams that = (ReferencesParams) o;
-    return Objects.equals(maxRecords(), that.maxRecords())
-        && Objects.equals(pageToken(), that.pageToken())
-        && Objects.equals(fetchAdditionalInfo, that.fetchAdditionalInfo);
+    GetReferenceParams that = (GetReferenceParams) o;
+    return fetchAdditionalInfo == that.fetchAdditionalInfo && Objects.equals(refName, that.refName);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(maxRecords(), pageToken(), fetchAdditionalInfo);
+    return Objects.hash(refName, fetchAdditionalInfo);
   }
 
-  public static class Builder extends AbstractParams.Builder<Builder> {
+  @Override
+  public String toString() {
+    return new StringJoiner(", ", GetReferenceParams.class.getSimpleName() + "[", "]")
+        .add("refName='" + refName + "'")
+        .add("fetchAdditionalInfo=" + fetchAdditionalInfo)
+        .toString();
+  }
+
+  public static class Builder {
+    private String refName;
+    private boolean fetchAdditionalInfo;
 
     private Builder() {}
 
-    private boolean fetchAdditionalInfo = false;
-
-    public ReferencesParams.Builder from(ReferencesParams params) {
-      return maxRecords(params.maxRecords())
-          .pageToken(params.pageToken())
-          .fetchAdditionalInfo(params.fetchAdditionalInfo);
+    public Builder refName(String refName) {
+      this.refName = refName;
+      return this;
     }
 
     public Builder fetchAdditionalInfo(boolean fetchAdditionalInfo) {
@@ -112,9 +119,9 @@ public class ReferencesParams extends AbstractParams {
 
     private void validate() {}
 
-    public ReferencesParams build() {
+    public GetReferenceParams build() {
       validate();
-      return new ReferencesParams(this);
+      return new GetReferenceParams(this);
     }
   }
 }

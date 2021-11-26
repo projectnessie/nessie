@@ -23,6 +23,7 @@ import java.security.Principal;
 import javax.annotation.Nullable;
 import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.params.EntriesParams;
+import org.projectnessie.api.params.GetReferenceParams;
 import org.projectnessie.api.params.ReferencesParams;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -81,8 +82,8 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
   }
 
   @Override
-  public Reference getReferenceByName(String refName) throws NessieNotFoundException {
-    Reference ref = super.getReferenceByName(refName);
+  public Reference getReferenceByName(GetReferenceParams params) throws NessieNotFoundException {
+    Reference ref = super.getReferenceByName(params);
     if (ref instanceof Branch) {
       getAccessChecker().canViewReference(createAccessContext(), BranchName.of(ref.getName()));
     } else if (ref instanceof Tag) {

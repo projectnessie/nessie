@@ -41,6 +41,7 @@ import java.util.stream.StreamSupport;
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.params.EntriesParams;
+import org.projectnessie.api.params.GetReferenceParams;
 import org.projectnessie.api.params.ReferencesParams;
 import org.projectnessie.cel.tools.Script;
 import org.projectnessie.cel.tools.ScriptException;
@@ -103,15 +104,8 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   public ReferencesResponse getAllReferences(ReferencesParams params) {
     Preconditions.checkArgument(params.pageToken() == null, "Paging not supported");
     ImmutableReferencesResponse.Builder resp = ReferencesResponse.builder();
-    GetNamedRefsParams p =
-        params.isFetchAdditionalInfo()
-            ? GetNamedRefsParams.builder()
-                .baseReference(BranchName.of(this.getConfig().getDefaultBranch()))
-                .branchRetrieveOptions(RetrieveOptions.BASE_REFERENCE_RELATED_AND_COMMIT_META)
-                .tagRetrieveOptions(RetrieveOptions.COMMIT_META)
-                .build()
-            : GetNamedRefsParams.DEFAULT;
-    try (Stream<ReferenceInfo<CommitMeta>> str = getStore().getNamedRefs(p)) {
+    try (Stream<ReferenceInfo<CommitMeta>> str =
+        getStore().getNamedRefs(getGetNamedRefsParams(params.isFetchAdditionalInfo()))) {
       str.map(TreeApiImpl::makeNamedRef).forEach(resp::addReferences);
     } catch (ReferenceNotFoundException e) {
       throw new IllegalArgumentException(
@@ -121,10 +115,24 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     return resp.build();
   }
 
+  private GetNamedRefsParams getGetNamedRefsParams(boolean fetchAdditionalInfo) {
+    return fetchAdditionalInfo
+        ? GetNamedRefsParams.builder()
+            .baseReference(BranchName.of(this.getConfig().getDefaultBranch()))
+            .branchRetrieveOptions(RetrieveOptions.BASE_REFERENCE_RELATED_AND_COMMIT_META)
+            .tagRetrieveOptions(RetrieveOptions.COMMIT_META)
+            .build()
+        : GetNamedRefsParams.DEFAULT;
+  }
+
   @Override
-  public Reference getReferenceByName(String refName) throws NessieNotFoundException {
+  public Reference getReferenceByName(GetReferenceParams params) throws NessieNotFoundException {
     try {
-      return makeRef(getStore().toRef(refName));
+      return makeRef(
+          getStore()
+              .getNamedRef(
+                  toNamedRef(getStore().toRef(params.getRefName())),
+                  getGetNamedRefsParams(params.isFetchAdditionalInfo())));
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }
@@ -165,7 +173,9 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
 
   @Override
   public Branch getDefaultBranch() throws NessieNotFoundException {
-    Reference r = getReferenceByName(getConfig().getDefaultBranch());
+    Reference r =
+        getReferenceByName(
+            GetReferenceParams.builder().refName(getConfig().getDefaultBranch()).build());
     if (!(r instanceof Branch)) {
       throw new IllegalStateException("Default branch isn't a branch");
     }
@@ -555,6 +565,17 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
           .name(((NamedRef) ref).getName())
           .hash(refWithHash.getHash().asString())
           .build();
+    } else {
+      throw new UnsupportedOperationException("only converting tags or branches"); // todo
+    }
+  }
+
+  private static NamedRef toNamedRef(WithHash<? extends Ref> refWithHash) {
+    Ref ref = refWithHash.getValue();
+    if (ref instanceof TagName) {
+      return (TagName) ref;
+    } else if (ref instanceof BranchName) {
+      return (BranchName) ref;
     } else {
       throw new UnsupportedOperationException("only converting tags or branches"); // todo
     }

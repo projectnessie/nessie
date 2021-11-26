@@ -23,6 +23,7 @@ import org.projectnessie.api.TreeApi;
 import org.projectnessie.api.http.HttpTreeApi;
 import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.params.EntriesParams;
+import org.projectnessie.api.params.GetReferenceParams;
 import org.projectnessie.api.params.ReferencesParams;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -96,8 +97,8 @@ public class RestTreeResource implements HttpTreeApi {
   }
 
   @Override
-  public Reference getReferenceByName(String refName) throws NessieNotFoundException {
-    return resource().getReferenceByName(refName);
+  public Reference getReferenceByName(GetReferenceParams params) throws NessieNotFoundException {
+    return resource().getReferenceByName(params);
   }
 
   @Override

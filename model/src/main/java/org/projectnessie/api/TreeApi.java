@@ -21,6 +21,7 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.params.EntriesParams;
+import org.projectnessie.api.params.GetReferenceParams;
 import org.projectnessie.api.params.ReferencesParams;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -43,7 +44,7 @@ public interface TreeApi {
   /**
    * Get all references.
    *
-   * @return
+   * @return A {@link ReferencesResponse} instance containing all references.
    */
   ReferencesResponse getAllReferences(ReferencesParams params);
 
@@ -73,13 +74,7 @@ public interface TreeApi {
       throws NessieNotFoundException, NessieConflictException;
 
   /** Get details of a particular ref, if it exists. */
-  Reference getReferenceByName(
-      @Valid
-          @NotNull
-          @Pattern(
-              regexp = Validation.REF_NAME_OR_HASH_REGEX,
-              message = Validation.REF_NAME_OR_HASH_MESSAGE)
-          String refName)
+  Reference getReferenceByName(@Valid @NotNull GetReferenceParams params)
       throws NessieNotFoundException;
 
   /**

@@ -34,5 +34,14 @@ public interface GetReferenceBuilder {
               message = Validation.REF_NAME_OR_HASH_MESSAGE)
           String refName);
 
+  /**
+   * Will fetch additional metadata about {@link org.projectnessie.model.Branch} instances, such as
+   * number of commits ahead/behind or the common ancestor in relation to the default branch, and
+   * the commit metadata for the HEAD commit.
+   *
+   * @return {@link GetReferenceBuilder}
+   */
+  GetReferenceBuilder fetchAdditionalInfo(boolean fetchAdditionalInfo);
+
   Reference get() throws NessieNotFoundException;
 }
