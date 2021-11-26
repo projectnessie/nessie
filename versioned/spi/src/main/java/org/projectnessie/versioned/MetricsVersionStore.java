@@ -75,12 +75,6 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
   }
 
   @Override
-  @Nonnull
-  public Hash toHash(@Nonnull NamedRef ref) throws ReferenceNotFoundException {
-    return delegate1Ex("tohash", () -> delegate.toHash(ref));
-  }
-
-  @Override
   public WithHash<Ref> toRef(@Nonnull String refOfUnknownType) throws ReferenceNotFoundException {
     return delegate1Ex("toref", () -> delegate.toRef(refOfUnknownType));
   }
@@ -130,6 +124,12 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
       throws ReferenceNotFoundException, ReferenceConflictException {
     this.<ReferenceNotFoundException, ReferenceConflictException>delegate2Ex(
         "delete", () -> delegate.delete(ref, hash));
+  }
+
+  @Override
+  public ReferenceInfo<METADATA> getNamedRef(NamedRef ref, GetNamedRefsParams params)
+      throws ReferenceNotFoundException {
+    return delegate1Ex("getnamedref", () -> delegate.getNamedRef(ref, params));
   }
 
   @Override

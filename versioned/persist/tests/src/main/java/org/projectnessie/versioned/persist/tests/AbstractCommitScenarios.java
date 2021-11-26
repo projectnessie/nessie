@@ -31,6 +31,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.ReferenceConflictException;
@@ -306,7 +307,9 @@ public abstract class AbstractCommitScenarios {
     for (int commitNum = 0; commitNum < 3; commitNum++) {
       Map<Key, ContentAndState<ByteString>> values =
           databaseAdapter.values(
-              databaseAdapter.toHash(branch), keys, KeyFilterPredicate.ALLOW_ALL);
+              databaseAdapter.namedRef(branch, GetNamedRefsParams.DEFAULT).getHash(),
+              keys,
+              KeyFilterPredicate.ALLOW_ALL);
       commit =
           ImmutableCommitAttempt.builder()
               .commitToBranch(branch)

@@ -76,18 +76,6 @@ public interface DatabaseAdapter {
       throws ReferenceNotFoundException;
 
   /**
-   * Resolve the current HEAD of the given named-reference.
-   *
-   * <p>This is actually a convenience for {@link #hashOnReference(NamedRef, Optional)
-   * hashOnReference(ref, Optional.empty()}.
-   *
-   * @param ref named reference to resolve
-   * @return current HEAD of {@code ref}
-   * @throws ReferenceNotFoundException if the named reference {@code ref} does not exist.
-   */
-  Hash toHash(NamedRef ref) throws ReferenceNotFoundException;
-
-  /**
    * Retrieve the reference-local and global state for the given keys for the specified commit.
    *
    * @param commit commit to retrieve the values for.
@@ -177,6 +165,21 @@ public interface DatabaseAdapter {
    */
   Hash merge(Hash from, BranchName toBranch, Optional<Hash> expectedHead)
       throws ReferenceNotFoundException, ReferenceConflictException;
+
+  /**
+   * Resolve the current HEAD of the given named-reference and optionally additional information.
+   *
+   * <p>This is actually a convenience for {@link #hashOnReference(NamedRef, Optional)
+   * hashOnReference(ref, Optional.empty()}.
+   *
+   * @param ref named reference to resolve
+   * @param params options that control which information shall be returned in {@link
+   *     ReferenceInfo}, see {@link GetNamedRefsParams} for details.
+   * @return current HEAD of {@code ref}
+   * @throws ReferenceNotFoundException if the named reference {@code ref} does not exist.
+   */
+  ReferenceInfo<ByteString> namedRef(NamedRef ref, GetNamedRefsParams params)
+      throws ReferenceNotFoundException;
 
   /**
    * Get all named references including their current HEAD.

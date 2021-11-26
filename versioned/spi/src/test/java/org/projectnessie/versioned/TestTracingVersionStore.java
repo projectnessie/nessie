@@ -82,10 +82,13 @@ class TestTracingVersionStore {
         versionStoreFunctions =
             Stream.of(
                 new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>(
-                        "ToHash", refNotFoundThrows)
+                        "GetNamedRef", refNotFoundThrows)
                     .tag("nessie.version-store.ref", "mock-branch")
                     .function(
-                        vs -> vs.toHash(BranchName.of("mock-branch")), () -> Hash.of("cafebabe")),
+                        vs ->
+                            vs.getNamedRef(
+                                BranchName.of("mock-branch"), GetNamedRefsParams.DEFAULT),
+                        () -> ReferenceInfo.of(Hash.of("cafebabe"), BranchName.of("mock-branch"))),
                 new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>(
                         "ToRef", refNotFoundThrows)
                     .tag("nessie.version-store.ref", "mock-branch")

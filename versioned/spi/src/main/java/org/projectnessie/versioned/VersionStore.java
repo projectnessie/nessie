@@ -63,20 +63,6 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
   Hash noAncestorHash();
 
   /**
-   * Provide the current hash for the given NamedRef.
-   *
-   * <p>This is a functionally equivalent to {@link #hashOnReference(NamedRef, Optional)
-   * hashOnReference(ref, Optional.empty())}.
-   *
-   * @param ref The Branch or Tag to lookup.
-   * @return The current hash for that ref.
-   * @throws NullPointerException if {@code ref} is {@code null}.
-   * @throws ReferenceNotFoundException if the reference cannot be found
-   */
-  @Nonnull
-  Hash toHash(@Nonnull NamedRef ref) throws ReferenceNotFoundException;
-
-  /**
    * Determine what kind of ref a string is and convert it into the appropriate type (along with the
    * current associated hash).
    *
@@ -207,6 +193,23 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    */
   void delete(NamedRef ref, Optional<Hash> hash)
       throws ReferenceNotFoundException, ReferenceConflictException;
+
+  /**
+   * Resolve the given {@link NamedRef} and return information about it, which at least contains the
+   * current HEAD commit hash plus, optionally, additional information.
+   *
+   * <p>This is a functionally equivalent to {@link #hashOnReference(NamedRef, Optional)
+   * hashOnReference(ref, Optional.empty())}.
+   *
+   * @param ref The branch or tag to lookup.
+   * @param params options that control which information shall be returned in {@link
+   *     ReferenceInfo}, see {@link GetNamedRefsParams} for details.
+   * @return Requested information about the requested reference.
+   * @throws NullPointerException if {@code ref} is {@code null}.
+   * @throws ReferenceNotFoundException if the reference cannot be found
+   */
+  ReferenceInfo<METADATA> getNamedRef(NamedRef ref, GetNamedRefsParams params)
+      throws ReferenceNotFoundException;
 
   /**
    * List named refs.
