@@ -213,9 +213,12 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    *
    * <p><em>IMPORTANT NOTE:</em> The returned {@link Stream} <em>must be closed</em>!
    *
+   * @param params options that control which information shall be returned in each {@link
+   *     ReferenceInfo}, see {@link ReferenceInfo} for details.
    * @return All refs and their associated hashes.
    */
-  Stream<WithHash<NamedRef>> getNamedRefs();
+  Stream<ReferenceInfo<METADATA>> getNamedRefs(GetNamedRefsParams params)
+      throws ReferenceNotFoundException;
 
   /**
    * Get a stream of all ancestor commits to a provided ref.

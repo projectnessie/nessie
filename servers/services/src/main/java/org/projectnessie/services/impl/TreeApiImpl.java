@@ -67,6 +67,7 @@ import org.projectnessie.services.authz.AccessChecker;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Delete;
+import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.NamedRef;
@@ -74,6 +75,7 @@ import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.Ref;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
+import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.Unchanged;
@@ -96,8 +98,12 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   public ReferencesResponse getAllReferences(ReferencesParams params) {
     Preconditions.checkArgument(params.pageToken() == null, "Paging not supported");
     ImmutableReferencesResponse.Builder resp = ReferencesResponse.builder();
-    try (Stream<WithHash<NamedRef>> str = getStore().getNamedRefs()) {
+    try (Stream<ReferenceInfo<CommitMeta>> str =
+        getStore().getNamedRefs(GetNamedRefsParams.DEFAULT)) {
       str.map(TreeApiImpl::makeNamedRef).forEach(resp::addReferences);
+    } catch (ReferenceNotFoundException e) {
+      // TODO for Eduard ;)
+      //  doesn't happen with GetNamedRefsParams.DEFAULT
     }
     return resp.build();
   }
@@ -481,8 +487,25 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     return ContentKey.of(key.getElements());
   }
 
-  private static Reference makeNamedRef(WithHash<NamedRef> refWithHash) {
+  private static Reference makeNamedRef(ReferenceInfo<CommitMeta> refWithHash) {
     return makeRef(refWithHash);
+  }
+
+  private static Reference makeRef(ReferenceInfo<CommitMeta> refWithHash) {
+    NamedRef ref = refWithHash.getNamedRef();
+    if (ref instanceof TagName) {
+      return ImmutableTag.builder()
+          .name(ref.getName())
+          .hash(refWithHash.getHash().asString())
+          .build();
+    } else if (ref instanceof BranchName) {
+      return ImmutableBranch.builder()
+          .name(ref.getName())
+          .hash(refWithHash.getHash().asString())
+          .build();
+    } else {
+      throw new UnsupportedOperationException("only converting tags or branches"); // todo
+    }
   }
 
   private static Reference makeRef(WithHash<? extends Ref> refWithHash) {

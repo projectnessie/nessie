@@ -133,8 +133,9 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
   }
 
   @Override
-  public Stream<WithHash<NamedRef>> getNamedRefs() {
-    return delegateStream("getnamedrefs", delegate::getNamedRefs);
+  public Stream<ReferenceInfo<METADATA>> getNamedRefs(GetNamedRefsParams params)
+      throws ReferenceNotFoundException {
+    return delegateStream1Ex("getnamedrefs", () -> delegate.getNamedRefs(params));
   }
 
   @Override

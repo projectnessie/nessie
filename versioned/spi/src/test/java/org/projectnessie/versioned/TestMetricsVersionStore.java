@@ -156,7 +156,8 @@ class TestMetricsVersionStore {
                 refNotFoundThrows),
             new VersionStoreInvocation<>(
                 "getnamedrefs",
-                VersionStore::getNamedRefs,
+                stringStringDummyEnumVersionStore ->
+                    stringStringDummyEnumVersionStore.getNamedRefs(GetNamedRefsParams.DEFAULT),
                 () ->
                     Stream.of(
                         WithHash.of(Hash.of("cafebabe"), BranchName.of("foo")),

@@ -31,6 +31,7 @@ import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUti
 import static org.projectnessie.versioned.persist.adapter.spi.TryLoopState.newTryLoopState;
 import static org.projectnessie.versioned.persist.nontx.NonTransactionalOperationContext.NON_TRANSACTIONAL_OPERATION_CONTEXT;
 
+import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 import java.util.Collection;
 import java.util.Collections;
@@ -39,21 +40,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
+import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.VersionStoreException;
-import org.projectnessie.versioned.WithHash;
 import org.projectnessie.versioned.persist.adapter.CommitAttempt;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentAndState;
@@ -114,17 +118,30 @@ public abstract class NonTransactionalDatabaseAdapter<
   }
 
   @Override
-  public Stream<WithHash<NamedRef>> namedRefs() {
+  public Stream<ReferenceInfo<ByteString>> namedRefs(GetNamedRefsParams params)
+      throws ReferenceNotFoundException {
+    Preconditions.checkNotNull(params, "Parameter for GetNamedRefsParams must not be null.");
+    Preconditions.checkArgument(
+        params.isRetrieveTags() || params.isRetrieveBranches(),
+        "Must retrieve branches or tags or both.");
+
     GlobalStatePointer pointer = fetchGlobalPointer(NON_TRANSACTIONAL_OPERATION_CONTEXT);
     if (pointer == null) {
       return Stream.empty();
     }
-    return pointer.getNamedReferencesMap().entrySet().stream()
-        .map(
-            r ->
-                WithHash.of(
-                    Hash.of(r.getValue().getHash()),
-                    toNamedRef(r.getValue().getType(), r.getKey())));
+
+    Hash defaultBranchHead = namedRefsDefaultBranchHead(params, pointer);
+
+    Stream<ReferenceInfo<ByteString>> refs =
+        pointer.getNamedReferencesMap().entrySet().stream()
+            .map(
+                r ->
+                    ReferenceInfo.of(
+                        Hash.of(r.getValue().getHash()),
+                        toNamedRef(r.getValue().getType(), r.getKey())));
+
+    return namedRefsFilterAndEnhance(
+        NON_TRANSACTIONAL_OPERATION_CONTEXT, params, defaultBranchHead, refs);
   }
 
   @Override
@@ -703,6 +720,20 @@ public abstract class NonTransactionalDatabaseAdapter<
   }
 
   /**
+   * Retrieves the hash of the default branch specified in {@link
+   * GetNamedRefsParams#getBaseReference()}, if the retrieve options in {@link GetNamedRefsParams}
+   * require it.
+   */
+  private Hash namedRefsDefaultBranchHead(GetNamedRefsParams params, GlobalStatePointer pointer)
+      throws ReferenceNotFoundException {
+    if (params.isComputeAheadBehind() || params.isComputeCommonAncestor()) {
+      Preconditions.checkNotNull(params.getBaseReference(), "Base reference name missing.");
+      return branchHead(pointer, params.getBaseReference());
+    }
+    return null;
+  }
+
+  /**
    * Load the current global-state-pointer.
    *
    * @return the current global points if set, or {@code null} if not set.
@@ -742,11 +773,13 @@ public abstract class NonTransactionalDatabaseAdapter<
           new ReferenceNotFoundException(
               String.format("Global log entry '%s' not does not exist.", initialId.asString())));
     }
-    return logFetcher(
-        ctx,
-        initial,
-        this::fetchPageFromGlobalLog,
-        e -> e.getParentsList().stream().map(Hash::of).collect(Collectors.toList()));
+    Spliterator<GlobalStateLogEntry> split =
+        logFetcher(
+            ctx,
+            initial,
+            this::fetchPageFromGlobalLog,
+            e -> e.getParentsList().stream().map(Hash::of).collect(Collectors.toList()));
+    return StreamSupport.stream(split, false);
   }
 
   /**
