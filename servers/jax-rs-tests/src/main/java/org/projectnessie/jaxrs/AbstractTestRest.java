@@ -1321,7 +1321,8 @@ public abstract class AbstractTestRest {
             assertThatThrownBy(() -> api.getReference().refName(invalidBranchName).get())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining("getReferenceByName.refName: " + REF_NAME_OR_HASH_MESSAGE),
+                .hasMessageContaining(
+                    "getReferenceByName.params.refName: " + REF_NAME_OR_HASH_MESSAGE),
         () ->
             assertThatThrownBy(
                     () ->
@@ -1816,40 +1817,68 @@ public abstract class AbstractTestRest {
                 .filter(r -> r.getName().startsWith(branchPrefix))
                 .map(r -> (Branch) r))
         .hasSize(numBranches)
-        .allSatisfy(
-            branch -> {
-              Map<String, Object> metadataProperties = branch.metadataProperties();
-              assertThat(metadataProperties).isNotEmpty();
-              List<CommitMeta> commits =
-                  api.getCommitLog().refName(branch.getName()).maxRecords(1).get().getOperations();
-              assertThat(commits).hasSize(1);
-              CommitMeta commitMeta = commits.get(0);
+        .allSatisfy(branch -> verifyMetadataProperties(commitsPerBranch, 0, branch, main.get()));
+  }
 
-              assertThat(metadataProperties)
-                  .hasFieldOrProperty(Branch.NUM_COMMITS_AHEAD)
-                  .extracting(Branch.NUM_COMMITS_AHEAD)
-                  .isEqualTo(commitsPerBranch);
-              assertThat(metadataProperties)
-                  .hasFieldOrProperty(Branch.NUM_COMMITS_BEHIND)
-                  .extracting(Branch.NUM_COMMITS_BEHIND)
-                  .isEqualTo(0);
-              assertThat(metadataProperties)
-                  .hasFieldOrProperty(Branch.HEAD_COMMIT_META)
-                  .extracting(Branch.HEAD_COMMIT_META)
-                  .asInstanceOf(Assertions.MAP)
-                  .containsEntry("hash", commitMeta.getHash())
-                  .containsEntry("committer", commitMeta.getCommitter())
-                  .containsEntry("author", commitMeta.getAuthor())
-                  .containsEntry("commitTime", commitMeta.getCommitTime().toString())
-                  .containsEntry("authorTime", commitMeta.getAuthorTime().toString())
-                  .containsEntry("message", commitMeta.getMessage())
-                  .containsEntry("properties", commitMeta.getProperties())
-                  .containsEntry("signedOffBy", commitMeta.getSignedOffBy());
-              assertThat(metadataProperties)
-                  .hasFieldOrProperty(Branch.COMMON_ANCESTOR_HASH)
-                  .extracting(Branch.COMMON_ANCESTOR_HASH)
-                  .isEqualTo(main.get().getHash());
-            });
+  @Test
+  public void testSingleBranchHasMetadataProperties() throws BaseNessieClientServerException {
+    String branchName = "singleBranchHasMetadataProperties";
+    int numCommits = 10;
+
+    Reference r = api.createReference().reference(Branch.of(branchName, null)).create();
+    String currentHash = r.getHash();
+    createCommits(r, 1, numCommits, currentHash);
+
+    // not fetching additional metadata for a single branch
+    Reference ref = api.getReference().refName(branchName).get();
+    assertThat(ref).isNotNull().isInstanceOf(Branch.class);
+    assertThat(((Branch) ref).metadataProperties()).isEmpty();
+
+    // fetching additional metadata for a single branch
+    ref = api.getReference().refName(branchName).fetchAdditionalInfo(true).get();
+    assertThat(ref).isNotNull().isInstanceOf(Branch.class);
+
+    verifyMetadataProperties(numCommits, 0, (Branch) ref, api.getReference().refName("main").get());
+  }
+
+  private void verifyMetadataProperties(
+      int expectedCommitsAhead, int expectedCommitsBehind, Branch branch, Reference reference)
+      throws NessieNotFoundException {
+    List<CommitMeta> commits =
+        api.getCommitLog().refName(branch.getName()).maxRecords(1).get().getOperations();
+    assertThat(commits).hasSize(1);
+    CommitMeta commitMeta = commits.get(0);
+
+    Map<String, Object> metadataProperties = branch.metadataProperties();
+    assertThat(metadataProperties).isNotEmpty();
+
+    assertThat(metadataProperties)
+        .hasFieldOrProperty(Branch.NUM_COMMITS_AHEAD)
+        .extracting(Branch.NUM_COMMITS_AHEAD)
+        .isEqualTo(expectedCommitsAhead);
+
+    assertThat(metadataProperties)
+        .hasFieldOrProperty(Branch.NUM_COMMITS_BEHIND)
+        .extracting(Branch.NUM_COMMITS_BEHIND)
+        .isEqualTo(expectedCommitsBehind);
+
+    assertThat(metadataProperties)
+        .hasFieldOrProperty(Branch.HEAD_COMMIT_META)
+        .extracting(Branch.HEAD_COMMIT_META)
+        .asInstanceOf(Assertions.MAP)
+        .containsEntry("hash", commitMeta.getHash())
+        .containsEntry("committer", commitMeta.getCommitter())
+        .containsEntry("author", commitMeta.getAuthor())
+        .containsEntry("commitTime", commitMeta.getCommitTime().toString())
+        .containsEntry("authorTime", commitMeta.getAuthorTime().toString())
+        .containsEntry("message", commitMeta.getMessage())
+        .containsEntry("properties", commitMeta.getProperties())
+        .containsEntry("signedOffBy", commitMeta.getSignedOffBy());
+
+    assertThat(metadataProperties)
+        .hasFieldOrProperty(Branch.COMMON_ANCESTOR_HASH)
+        .extracting(Branch.COMMON_ANCESTOR_HASH)
+        .isEqualTo(reference.getHash());
   }
 
   protected void unwrap(Executable exec) throws Throwable {

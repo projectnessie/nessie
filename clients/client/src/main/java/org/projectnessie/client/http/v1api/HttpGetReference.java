@@ -15,14 +15,14 @@
  */
 package org.projectnessie.client.http.v1api;
 
+import org.projectnessie.api.params.GetReferenceParams;
 import org.projectnessie.client.api.GetReferenceBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Reference;
 
 final class HttpGetReference extends BaseHttpRequest implements GetReferenceBuilder {
-
-  private String refName;
+  private GetReferenceParams.Builder builder = GetReferenceParams.builder();
 
   HttpGetReference(NessieApiClient client) {
     super(client);
@@ -30,12 +30,18 @@ final class HttpGetReference extends BaseHttpRequest implements GetReferenceBuil
 
   @Override
   public GetReferenceBuilder refName(String refName) {
-    this.refName = refName;
+    builder.refName(refName);
+    return this;
+  }
+
+  @Override
+  public GetReferenceBuilder fetchAdditionalInfo(boolean fetchAdditionalInfo) {
+    builder.fetchAdditionalInfo(fetchAdditionalInfo);
     return this;
   }
 
   @Override
   public Reference get() throws NessieNotFoundException {
-    return client.getTreeApi().getReferenceByName(refName);
+    return client.getTreeApi().getReferenceByName(builder.build());
   }
 }
