@@ -39,12 +39,15 @@ const CommitDetails = (props: {
       committer,
       commitTime,
     } = commitDetails;
-    const additionalProperties = Object.keys(properties)
-      .map((data) => [data, properties[data]])
-      .map(([k, v]) => `${k}: ${v}`)
-      .join(";");
-    const propertiesArr = additionalProperties.split(";");
-
+    const additionalProperties =
+      properties &&
+      Object.keys(properties)
+        .map((data) => [data, properties[data]])
+        .map(([k, v]) => `${k}: ${v}`)
+        .join(";");
+    const propertiesArr = additionalProperties
+      ? additionalProperties.split(";")
+      : [];
     const authorHoursDiff = moment().diff(moment(authorTime), "hours");
     const commitHoursDiff = moment().diff(moment(commitTime), "hours");
 
