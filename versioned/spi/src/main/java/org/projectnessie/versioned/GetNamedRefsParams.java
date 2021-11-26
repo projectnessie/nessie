@@ -33,46 +33,83 @@ public interface GetNamedRefsParams {
 
   /**
    * Named reference to use as the base for the computation of {@link
-   * ReferenceInfo#getAheadBehind()}. If this parameter is not {@code null}, the branch must exist.
+   * ReferenceInfo#getAheadBehind()}. If this parameter is not {@code null}, the given reference
+   * must exist.
    *
    * @return name of the base reference. Can be {@code null}, if not needed.
    */
   @Nullable
   NamedRef getBaseReference();
 
-  /**
-   * Whether to compute {@link ReferenceInfo#getAheadBehind()}, requires a non-{@code null} {@link
-   * #getBaseReference()}, defaults to {@code false}.
-   */
-  @Value.Default
-  default boolean isComputeAheadBehind() {
-    return false;
-  }
-
-  /** Whether to identify the common ancestor on the default branch. */
-  @Value.Default
-  default boolean isComputeCommonAncestor() {
-    return false;
-  }
-
-  /**
-   * Whether to retrieve the commit-meta information of each reference's HEAD commit in {@link
-   * ReferenceInfo#getHeadCommitMeta()}, defaults to {@code false}.
-   */
-  @Value.Default
-  default boolean isRetrieveCommitMetaForHead() {
-    return false;
-  }
-
   /** Whether to retrieve branches, defaults to {@code true}. */
   @Value.Default
-  default boolean isRetrieveBranches() {
-    return true;
+  default RetrieveOptions getBranchRetrieveOptions() {
+    return RetrieveOptions.BARE;
   }
 
   /** Whether to retrieve tags, defaults to {@code true}. */
   @Value.Default
-  default boolean isRetrieveTags() {
-    return true;
+  default RetrieveOptions getTagRetrieveOptions() {
+    return RetrieveOptions.BARE;
+  }
+
+  @Value.Immutable
+  interface RetrieveOptions {
+
+    /** Constant to not retrieve any information (omit tags or branches). */
+    RetrieveOptions OMIT = RetrieveOptions.builder().isRetrieve(false).build();
+
+    /** Constant to retrieve only the HEAD commit hash. */
+    RetrieveOptions BARE = RetrieveOptions.builder().build();
+
+    /** Constant to retrieve the HEAD commit hash plus the commit-meta of the HEAD commit. */
+    RetrieveOptions COMMIT_META =
+        RetrieveOptions.builder().isRetrieveCommitMetaForHead(true).build();
+
+    /**
+     * Constant to retrieve the HEAD commit hash, the commit-meta of the HEAD commit, the
+     * common-ancestor to the base reference and the commits ahead and behind relative to the base
+     * reference.
+     */
+    RetrieveOptions BASE_REFERENCE_RELATED_AND_COMMIT_META =
+        RetrieveOptions.builder()
+            .isComputeAheadBehind(true)
+            .isComputeCommonAncestor(true)
+            .isRetrieveCommitMetaForHead(true)
+            .build();
+
+    static ImmutableRetrieveOptions.Builder builder() {
+      return ImmutableRetrieveOptions.builder();
+    }
+
+    /** Whether to retrieve the reference information at all, defaults to {@code true}. */
+    @Value.Default
+    default boolean isRetrieve() {
+      return true;
+    }
+
+    /**
+     * Whether to compute {@link ReferenceInfo#getAheadBehind()}, requires a non-{@code null} {@link
+     * #getBaseReference()}, defaults to {@code false}.
+     */
+    @Value.Default
+    default boolean isComputeAheadBehind() {
+      return false;
+    }
+
+    /** Whether to identify the common ancestor on the default branch, defaults to {@code false}. */
+    @Value.Default
+    default boolean isComputeCommonAncestor() {
+      return false;
+    }
+
+    /**
+     * Whether to retrieve the commit-meta information of each reference's HEAD commit in {@link
+     * ReferenceInfo#getHeadCommitMeta()}, defaults to {@code false}.
+     */
+    @Value.Default
+    default boolean isRetrieveCommitMetaForHead() {
+      return false;
+    }
   }
 }

@@ -122,8 +122,7 @@ public abstract class NonTransactionalDatabaseAdapter<
       throws ReferenceNotFoundException {
     Preconditions.checkNotNull(params, "Parameter for GetNamedRefsParams must not be null");
     Preconditions.checkArgument(
-        (params.isRetrieveTags() && ref instanceof TagName)
-            || (params.isRetrieveBranches() && ref instanceof BranchName),
+        namedRefsRetrieveOptionsForReference(params, ref).isRetrieve(),
         "Must retrieve branches or tags or both, and match the type of the requested reference.");
 
     GlobalStatePointer pointer = fetchGlobalPointer(NON_TRANSACTIONAL_OPERATION_CONTEXT);
@@ -147,8 +146,7 @@ public abstract class NonTransactionalDatabaseAdapter<
       throws ReferenceNotFoundException {
     Preconditions.checkNotNull(params, "Parameter for GetNamedRefsParams must not be null.");
     Preconditions.checkArgument(
-        params.isRetrieveTags() || params.isRetrieveBranches(),
-        "Must retrieve branches or tags or both.");
+        namedRefsAnyRetrieves(params), "Must retrieve branches or tags or both.");
 
     GlobalStatePointer pointer = fetchGlobalPointer(NON_TRANSACTIONAL_OPERATION_CONTEXT);
     if (pointer == null) {
@@ -751,7 +749,7 @@ public abstract class NonTransactionalDatabaseAdapter<
    */
   private Hash namedRefsDefaultBranchHead(GetNamedRefsParams params, GlobalStatePointer pointer)
       throws ReferenceNotFoundException {
-    if (params.isComputeAheadBehind() || params.isComputeCommonAncestor()) {
+    if (namedRefsRequiresBaseReference(params)) {
       Preconditions.checkNotNull(params.getBaseReference(), "Base reference name missing.");
       return branchHead(pointer, params.getBaseReference());
     }
