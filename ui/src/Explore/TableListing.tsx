@@ -134,7 +134,7 @@ const TableListing = ({
       }
       setRefNotFound(fetched === undefined);
     };
-    if (keys?.length === 0 || path.length < 2) void keysFn();
+    if (keys?.length === 0 || !isContentPath) void keysFn();
     setShowContent(isContentPath);
   }, [currentRef, path]);
 
