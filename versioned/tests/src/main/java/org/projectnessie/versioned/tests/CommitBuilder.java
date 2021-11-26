@@ -168,9 +168,12 @@ public class CommitBuilder<ValueT, MetadataT, EnumT extends Enum<EnumT>> {
    */
   public Hash toBranch(BranchName branchName)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    Hash storeHash = store.getNamedRef(branchName, GetNamedRefsParams.DEFAULT).getHash();
-    Optional<Hash> reference = fromLatest ? Optional.of(storeHash) : referenceHash;
+    Optional<Hash> reference =
+        fromLatest
+            ? Optional.of(store.getNamedRef(branchName, GetNamedRefsParams.DEFAULT).getHash())
+            : referenceHash;
     Hash commitHash = store.commit(branchName, reference, metadata, operations);
+    Hash storeHash = store.getNamedRef(branchName, GetNamedRefsParams.DEFAULT).getHash();
     Assertions.assertEquals(storeHash, commitHash);
     return commitHash;
   }
