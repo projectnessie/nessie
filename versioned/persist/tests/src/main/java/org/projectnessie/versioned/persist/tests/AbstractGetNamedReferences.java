@@ -29,6 +29,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.GetNamedRefsParams;
+import org.projectnessie.versioned.GetNamedRefsParams.RetrieveOptions;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableReferenceInfo;
 import org.projectnessie.versioned.Key;
@@ -48,6 +49,13 @@ public abstract class AbstractGetNamedReferences {
   private static final Key SOME_KEY = Key.of("a", "b", "c");
   private static final String SOME_CONTENT_ID = "abc";
   private final DatabaseAdapter databaseAdapter;
+
+  static RetrieveOptions COMPUTE_AHEAD_BEHIND =
+      RetrieveOptions.builder().isComputeAheadBehind(true).build();
+  static RetrieveOptions COMPUTE_COMMON_ANCESTOR =
+      RetrieveOptions.builder().isComputeAheadBehind(true).build();
+  static RetrieveOptions COMPUTE_ALL =
+      RetrieveOptions.builder().isComputeAheadBehind(true).isComputeCommonAncestor(true).build();
 
   protected AbstractGetNamedReferences(DatabaseAdapter databaseAdapter) {
     this.databaseAdapter = databaseAdapter;
@@ -76,14 +84,9 @@ public abstract class AbstractGetNamedReferences {
             assertThatThrownBy(
                     () ->
                         databaseAdapter.namedRefs(
-                            GetNamedRefsParams.builder().isComputeAheadBehind(true).build()))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("Base reference name missing."),
-        () ->
-            assertThatThrownBy(
-                    () ->
-                        databaseAdapter.namedRefs(
-                            GetNamedRefsParams.builder().isComputeCommonAncestor(true).build()))
+                            GetNamedRefsParams.builder()
+                                .branchRetrieveOptions(COMPUTE_AHEAD_BEHIND)
+                                .build()))
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("Base reference name missing."),
         () ->
@@ -91,7 +94,35 @@ public abstract class AbstractGetNamedReferences {
                     () ->
                         databaseAdapter.namedRefs(
                             GetNamedRefsParams.builder()
-                                .isComputeAheadBehind(true)
+                                .tagRetrieveOptions(COMPUTE_AHEAD_BEHIND)
+                                .build()))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("Base reference name missing."),
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        databaseAdapter.namedRefs(
+                            GetNamedRefsParams.builder()
+                                .branchRetrieveOptions(COMPUTE_COMMON_ANCESTOR)
+                                .build()))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("Base reference name missing."),
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        databaseAdapter.namedRefs(
+                            GetNamedRefsParams.builder()
+                                .tagRetrieveOptions(COMPUTE_COMMON_ANCESTOR)
+                                .build()))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("Base reference name missing."),
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        databaseAdapter.namedRefs(
+                            GetNamedRefsParams.builder()
+                                .branchRetrieveOptions(COMPUTE_AHEAD_BEHIND)
+                                .tagRetrieveOptions(COMPUTE_AHEAD_BEHIND)
                                 .baseReference(BranchName.of("no-no-no"))
                                 .build()))
                 .isInstanceOf(ReferenceNotFoundException.class)
@@ -101,7 +132,8 @@ public abstract class AbstractGetNamedReferences {
                     () ->
                         databaseAdapter.namedRefs(
                             GetNamedRefsParams.builder()
-                                .isComputeAheadBehind(true)
+                                .branchRetrieveOptions(COMPUTE_AHEAD_BEHIND)
+                                .tagRetrieveOptions(COMPUTE_AHEAD_BEHIND)
                                 .baseReference(TagName.of("blah-no"))
                                 .build()))
                 .isInstanceOf(ReferenceNotFoundException.class)
@@ -111,8 +143,8 @@ public abstract class AbstractGetNamedReferences {
                     () ->
                         databaseAdapter.namedRefs(
                             GetNamedRefsParams.builder()
-                                .isRetrieveBranches(false)
-                                .isRetrieveTags(false)
+                                .branchRetrieveOptions(RetrieveOptions.OMIT)
+                                .tagRetrieveOptions(RetrieveOptions.OMIT)
                                 .build()))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Must retrieve branches or tags or both."));
@@ -142,15 +174,9 @@ public abstract class AbstractGetNamedReferences {
                     () ->
                         databaseAdapter.namedRef(
                             parameterValidation,
-                            GetNamedRefsParams.builder().isComputeAheadBehind(true).build()))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("Base reference name missing."),
-        () ->
-            assertThatThrownBy(
-                    () ->
-                        databaseAdapter.namedRef(
-                            parameterValidation,
-                            GetNamedRefsParams.builder().isComputeCommonAncestor(true).build()))
+                            GetNamedRefsParams.builder()
+                                .branchRetrieveOptions(COMPUTE_AHEAD_BEHIND)
+                                .build()))
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("Base reference name missing."),
         () ->
@@ -159,7 +185,38 @@ public abstract class AbstractGetNamedReferences {
                         databaseAdapter.namedRef(
                             parameterValidation,
                             GetNamedRefsParams.builder()
-                                .isComputeAheadBehind(true)
+                                .tagRetrieveOptions(COMPUTE_AHEAD_BEHIND)
+                                .build()))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("Base reference name missing."),
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        databaseAdapter.namedRef(
+                            parameterValidation,
+                            GetNamedRefsParams.builder()
+                                .branchRetrieveOptions(COMPUTE_COMMON_ANCESTOR)
+                                .build()))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("Base reference name missing."),
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        databaseAdapter.namedRef(
+                            parameterValidation,
+                            GetNamedRefsParams.builder()
+                                .tagRetrieveOptions(COMPUTE_COMMON_ANCESTOR)
+                                .build()))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("Base reference name missing."),
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        databaseAdapter.namedRef(
+                            parameterValidation,
+                            GetNamedRefsParams.builder()
+                                .branchRetrieveOptions(COMPUTE_AHEAD_BEHIND)
+                                .tagRetrieveOptions(COMPUTE_AHEAD_BEHIND)
                                 .baseReference(BranchName.of("no-no-no"))
                                 .build()))
                 .isInstanceOf(ReferenceNotFoundException.class)
@@ -170,7 +227,8 @@ public abstract class AbstractGetNamedReferences {
                         databaseAdapter.namedRef(
                             parameterValidation,
                             GetNamedRefsParams.builder()
-                                .isComputeAheadBehind(true)
+                                .branchRetrieveOptions(COMPUTE_AHEAD_BEHIND)
+                                .tagRetrieveOptions(COMPUTE_AHEAD_BEHIND)
                                 .baseReference(TagName.of("blah-no"))
                                 .build()))
                 .isInstanceOf(ReferenceNotFoundException.class)
@@ -181,8 +239,8 @@ public abstract class AbstractGetNamedReferences {
                         databaseAdapter.namedRef(
                             parameterValidation,
                             GetNamedRefsParams.builder()
-                                .isRetrieveBranches(false)
-                                .isRetrieveTags(false)
+                                .branchRetrieveOptions(RetrieveOptions.OMIT)
+                                .tagRetrieveOptions(RetrieveOptions.OMIT)
                                 .build()))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage(
@@ -192,7 +250,9 @@ public abstract class AbstractGetNamedReferences {
                     () ->
                         databaseAdapter.namedRef(
                             parameterValidation,
-                            GetNamedRefsParams.builder().isRetrieveBranches(false).build()))
+                            GetNamedRefsParams.builder()
+                                .branchRetrieveOptions(RetrieveOptions.OMIT)
+                                .build()))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage(
                     "Must retrieve branches or tags or both, and match the type of the requested reference."),
@@ -201,7 +261,9 @@ public abstract class AbstractGetNamedReferences {
                     () ->
                         databaseAdapter.namedRef(
                             parameterValidationTag,
-                            GetNamedRefsParams.builder().isRetrieveTags(false).build()))
+                            GetNamedRefsParams.builder()
+                                .tagRetrieveOptions(RetrieveOptions.OMIT)
+                                .build()))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage(
                     "Must retrieve branches or tags or both, and match the type of the requested reference."));
@@ -362,35 +424,97 @@ public abstract class AbstractGetNamedReferences {
         () -> verifyReferences(GetNamedRefsParams.builder().build(), references),
         () ->
             verifyReferences(
-                GetNamedRefsParams.builder().isRetrieveCommitMetaForHead(true).build(), references),
+                GetNamedRefsParams.builder()
+                    .branchRetrieveOptions(RetrieveOptions.COMMIT_META)
+                    .tagRetrieveOptions(RetrieveOptions.COMMIT_META)
+                    .build(),
+                references),
         () ->
             verifyReferences(
                 GetNamedRefsParams.builder()
-                    .baseReference(BranchName.of(MAIN_BRANCH))
-                    .isComputeCommonAncestor(true)
+                    .branchRetrieveOptions(RetrieveOptions.COMMIT_META)
+                    .build(),
+                references),
+        () ->
+            verifyReferences(
+                GetNamedRefsParams.builder()
+                    .tagRetrieveOptions(RetrieveOptions.COMMIT_META)
                     .build(),
                 references),
         () ->
             verifyReferences(
                 GetNamedRefsParams.builder()
                     .baseReference(BranchName.of(MAIN_BRANCH))
-                    .isComputeAheadBehind(true)
+                    .branchRetrieveOptions(COMPUTE_COMMON_ANCESTOR)
+                    .tagRetrieveOptions(COMPUTE_COMMON_ANCESTOR)
                     .build(),
                 references),
         () ->
             verifyReferences(
                 GetNamedRefsParams.builder()
                     .baseReference(BranchName.of(MAIN_BRANCH))
-                    .isComputeAheadBehind(true)
-                    .isComputeCommonAncestor(true)
+                    .branchRetrieveOptions(COMPUTE_COMMON_ANCESTOR)
                     .build(),
                 references),
         () ->
             verifyReferences(
-                GetNamedRefsParams.builder().isRetrieveBranches(false).build(), references),
+                GetNamedRefsParams.builder()
+                    .baseReference(BranchName.of(MAIN_BRANCH))
+                    .tagRetrieveOptions(COMPUTE_COMMON_ANCESTOR)
+                    .build(),
+                references),
         () ->
             verifyReferences(
-                GetNamedRefsParams.builder().isRetrieveTags(false).build(), references));
+                GetNamedRefsParams.builder()
+                    .baseReference(BranchName.of(MAIN_BRANCH))
+                    .branchRetrieveOptions(COMPUTE_AHEAD_BEHIND)
+                    .tagRetrieveOptions(COMPUTE_AHEAD_BEHIND)
+                    .build(),
+                references),
+        () ->
+            verifyReferences(
+                GetNamedRefsParams.builder()
+                    .baseReference(BranchName.of(MAIN_BRANCH))
+                    .branchRetrieveOptions(COMPUTE_AHEAD_BEHIND)
+                    .build(),
+                references),
+        () ->
+            verifyReferences(
+                GetNamedRefsParams.builder()
+                    .baseReference(BranchName.of(MAIN_BRANCH))
+                    .tagRetrieveOptions(COMPUTE_AHEAD_BEHIND)
+                    .build(),
+                references),
+        () ->
+            verifyReferences(
+                GetNamedRefsParams.builder()
+                    .baseReference(BranchName.of(MAIN_BRANCH))
+                    .branchRetrieveOptions(COMPUTE_ALL)
+                    .tagRetrieveOptions(COMPUTE_ALL)
+                    .build(),
+                references),
+        () ->
+            verifyReferences(
+                GetNamedRefsParams.builder()
+                    .baseReference(BranchName.of(MAIN_BRANCH))
+                    .tagRetrieveOptions(COMPUTE_ALL)
+                    .build(),
+                references),
+        () ->
+            verifyReferences(
+                GetNamedRefsParams.builder()
+                    .baseReference(BranchName.of(MAIN_BRANCH))
+                    .branchRetrieveOptions(COMPUTE_ALL)
+                    .build(),
+                references),
+        () ->
+            verifyReferences(
+                GetNamedRefsParams.builder().branchRetrieveOptions(RetrieveOptions.OMIT).build(),
+                references),
+        () ->
+            verifyReferences(
+                GetNamedRefsParams.builder().tagRetrieveOptions(RetrieveOptions.OMIT).build(),
+                references));
   }
 
   private void verifyReferences(GetNamedRefsParams params, ExpectedNamedReference... references)
@@ -451,23 +575,30 @@ public abstract class AbstractGetNamedReferences {
     }
 
     ReferenceInfo<ByteString> expected(GetNamedRefsParams params) {
-      if (!params.isRetrieveTags() && (ref instanceof TagName)) {
+      RetrieveOptions opts;
+      if (ref instanceof TagName) {
+        opts = params.getTagRetrieveOptions();
+      } else if (ref instanceof BranchName) {
+        opts = params.getBranchRetrieveOptions();
+      } else {
+        throw new IllegalArgumentException("" + ref);
+      }
+
+      if (!opts.isRetrieve()) {
         return null;
       }
-      if (!params.isRetrieveBranches() && (ref instanceof BranchName)) {
-        return null;
-      }
+
       ImmutableReferenceInfo.Builder<ByteString> builder =
           ReferenceInfo.<ByteString>builder().namedRef(ref).hash(hash);
       if (!ref.equals(params.getBaseReference())) {
-        if (params.isComputeAheadBehind()) {
+        if (opts.isComputeAheadBehind()) {
           builder.aheadBehind(aheadBehind);
         }
-        if (params.isComputeCommonAncestor()) {
+        if (opts.isComputeCommonAncestor()) {
           builder.commonAncestor(commonAncestor);
         }
       }
-      if (params.isRetrieveCommitMetaForHead()) {
+      if (opts.isRetrieveCommitMetaForHead()) {
         builder.headCommitMeta(commitMeta);
       }
       return builder.build();

@@ -152,8 +152,7 @@ public abstract class TxDatabaseAdapter
       throws ReferenceNotFoundException {
     Preconditions.checkNotNull(params, "Parameter for GetNamedRefsParams must not be null");
     Preconditions.checkArgument(
-        (params.isRetrieveTags() && ref instanceof TagName)
-            || (params.isRetrieveBranches() && ref instanceof BranchName),
+        namedRefsRetrieveOptionsForReference(params, ref).isRetrieve(),
         "Must retrieve branches or tags or both, and match the type of the requested reference.");
 
     Connection conn = borrowConnection();
@@ -175,8 +174,7 @@ public abstract class TxDatabaseAdapter
       throws ReferenceNotFoundException {
     Preconditions.checkNotNull(params, "Parameter for GetNamedRefsParams must not be null.");
     Preconditions.checkArgument(
-        params.isRetrieveTags() || params.isRetrieveBranches(),
-        "Must retrieve branches or tags or both.");
+        namedRefsAnyRetrieves(params), "Must retrieve branches or tags or both.");
 
     Connection conn = borrowConnection();
     boolean failed = true;
@@ -784,7 +782,7 @@ public abstract class TxDatabaseAdapter
    */
   private Hash namedRefsDefaultBranchHead(Connection conn, GetNamedRefsParams params)
       throws ReferenceNotFoundException {
-    if (params.isComputeAheadBehind() || params.isComputeCommonAncestor()) {
+    if (namedRefsRequiresBaseReference(params)) {
       Preconditions.checkNotNull(params.getBaseReference(), "Base reference name missing.");
       return fetchNamedRefHead(conn, params.getBaseReference());
     }

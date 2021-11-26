@@ -54,6 +54,7 @@ import java.util.stream.StreamSupport;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.GetNamedRefsParams;
+import org.projectnessie.versioned.GetNamedRefsParams.RetrieveOptions;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.NamedRef;
@@ -390,7 +391,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
    *     retrieved
    * @param defaultBranchHead prerequisite, the hash of the default branch's HEAD commit (depending
    *     on the database-adapter implementation). If {@code null}, {@link
-   *     #namedRefsWithDefaultBranchRelatedInfo(Object, Stream, GetNamedRefsParams, Hash)} will not
+   *     #namedRefsWithDefaultBranchRelatedInfo(Object, GetNamedRefsParams, Stream, Hash)} will not
    *     add additional default-branch related information (common ancestor and commits
    *     behind/ahead).
    * @param refs current {@link Stream} of {@link ReferenceInfo} to be enhanced.
@@ -403,35 +404,68 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       Stream<ReferenceInfo<ByteString>> refs) {
     refs = namedRefsMaybeFilter(params, refs);
 
-    refs = namedRefsWithDefaultBranchRelatedInfo(ctx, refs, params, defaultBranchHead);
+    refs = namedRefsWithDefaultBranchRelatedInfo(ctx, params, refs, defaultBranchHead);
 
-    if (params.isRetrieveCommitMetaForHead()) {
-      refs = refs.map(r -> namedReferenceWithCommitMeta(ctx, r));
-    }
+    refs = namedReferenceWithCommitMeta(ctx, params, refs);
 
     return refs;
   }
 
   /** Applies the reference type filter (tags or branches) to the Java stream. */
-  protected Stream<ReferenceInfo<ByteString>> namedRefsMaybeFilter(
+  protected static Stream<ReferenceInfo<ByteString>> namedRefsMaybeFilter(
       GetNamedRefsParams params, Stream<ReferenceInfo<ByteString>> refs) {
-    if (params.isRetrieveBranches() && params.isRetrieveTags()) {
+    if (params.getBranchRetrieveOptions().isRetrieve()
+        && params.getTagRetrieveOptions().isRetrieve()) {
       // No filtering necessary, if all named-reference types (tags and branches) are being fetched.
       return refs;
     }
-    return refs.filter(
-        ref ->
-            (params.isRetrieveBranches() && ref.getNamedRef() instanceof BranchName)
-                || (params.isRetrieveTags() && ref.getNamedRef() instanceof TagName));
+    return refs.filter(ref -> namedRefsRetrieveOptionsForReference(params, ref).isRetrieve());
+  }
+
+  protected static boolean namedRefsRequiresBaseReference(GetNamedRefsParams params) {
+    return namedRefsRequiresBaseReference(params.getBranchRetrieveOptions())
+        || namedRefsRequiresBaseReference(params.getTagRetrieveOptions());
+  }
+
+  protected static boolean namedRefsRequiresBaseReference(
+      GetNamedRefsParams.RetrieveOptions retrieveOptions) {
+    return retrieveOptions.isComputeAheadBehind() || retrieveOptions.isComputeCommonAncestor();
+  }
+
+  protected static boolean namedRefsAnyRetrieves(GetNamedRefsParams params) {
+    return params.getBranchRetrieveOptions().isRetrieve()
+        || params.getTagRetrieveOptions().isRetrieve();
+  }
+
+  protected static GetNamedRefsParams.RetrieveOptions namedRefsRetrieveOptionsForReference(
+      GetNamedRefsParams params, ReferenceInfo<ByteString> ref) {
+    return namedRefsRetrieveOptionsForReference(params, ref.getNamedRef());
+  }
+
+  protected static GetNamedRefsParams.RetrieveOptions namedRefsRetrieveOptionsForReference(
+      GetNamedRefsParams params, NamedRef ref) {
+    if (ref instanceof BranchName) {
+      return params.getBranchRetrieveOptions();
+    }
+    if (ref instanceof TagName) {
+      return params.getTagRetrieveOptions();
+    }
+    throw new IllegalArgumentException("ref must be either BranchName or TabName, but is " + ref);
   }
 
   /**
    * Returns an updated {@link ReferenceInfo} with the commit-meta of the reference's HEAD commit.
    */
-  protected ReferenceInfo<ByteString> namedReferenceWithCommitMeta(
-      OP_CONTEXT ctx, ReferenceInfo<ByteString> ref) {
-    CommitLogEntry logEntry = fetchFromCommitLog(ctx, ref.getHash());
-    return logEntry != null ? ref.withHeadCommitMeta(logEntry.getMetadata()) : ref;
+  protected Stream<ReferenceInfo<ByteString>> namedReferenceWithCommitMeta(
+      OP_CONTEXT ctx, GetNamedRefsParams params, Stream<ReferenceInfo<ByteString>> refs) {
+    return refs.map(
+        ref -> {
+          if (!namedRefsRetrieveOptionsForReference(params, ref).isRetrieveCommitMetaForHead()) {
+            return ref;
+          }
+          CommitLogEntry logEntry = fetchFromCommitLog(ctx, ref.getHash());
+          return logEntry != null ? ref.withHeadCommitMeta(logEntry.getMetadata()) : ref;
+        });
   }
 
   /**
@@ -445,38 +479,49 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
    */
   protected Stream<ReferenceInfo<ByteString>> namedRefsWithDefaultBranchRelatedInfo(
       OP_CONTEXT ctx,
-      Stream<ReferenceInfo<ByteString>> refs,
       GetNamedRefsParams params,
+      Stream<ReferenceInfo<ByteString>> refs,
       Hash defaultBranchHead) {
     if (defaultBranchHead == null) {
       // No enhancement of common ancestor and/or commits behind/ahead.
       return refs;
     }
+
     CommonAncestorState commonAncestorState =
-        new CommonAncestorState(ctx, defaultBranchHead, params.isComputeAheadBehind());
+        new CommonAncestorState(
+            ctx,
+            defaultBranchHead,
+            params.getBranchRetrieveOptions().isComputeAheadBehind()
+                || params.getTagRetrieveOptions().isComputeAheadBehind());
+
     return refs.map(
         ref -> {
           if (ref.getNamedRef().equals(params.getBaseReference())) {
             return ref;
           }
 
+          RetrieveOptions retrieveOptions = namedRefsRetrieveOptionsForReference(params, ref);
+
           ReferenceInfo<ByteString> updated =
-              findCommonAncestor(
-                  ctx,
-                  ref.getHash(),
-                  commonAncestorState,
-                  (diffOnFrom, hash) -> {
-                    ReferenceInfo<ByteString> newRef = ref;
-                    if (params.isComputeCommonAncestor()) {
-                      newRef = newRef.withCommonAncestor(hash);
-                    }
-                    if (params.isComputeAheadBehind()) {
-                      int behind = commonAncestorState.indexOf(hash);
-                      CommitsAheadBehind aheadBehind = CommitsAheadBehind.of(diffOnFrom, behind);
-                      newRef = newRef.withAheadBehind(aheadBehind);
-                    }
-                    return newRef;
-                  });
+              namedRefsRequiresBaseReference(retrieveOptions)
+                  ? findCommonAncestor(
+                      ctx,
+                      ref.getHash(),
+                      commonAncestorState,
+                      (diffOnFrom, hash) -> {
+                        ReferenceInfo<ByteString> newRef = ref;
+                        if (retrieveOptions.isComputeCommonAncestor()) {
+                          newRef = newRef.withCommonAncestor(hash);
+                        }
+                        if (retrieveOptions.isComputeAheadBehind()) {
+                          int behind = commonAncestorState.indexOf(hash);
+                          CommitsAheadBehind aheadBehind =
+                              CommitsAheadBehind.of(diffOnFrom, behind);
+                          newRef = newRef.withAheadBehind(aheadBehind);
+                        }
+                        return newRef;
+                      })
+                  : null;
 
           return updated != null ? updated : ref;
         });
