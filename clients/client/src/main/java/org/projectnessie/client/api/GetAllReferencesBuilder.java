@@ -23,5 +23,20 @@ import org.projectnessie.model.ReferencesResponse;
  * @since {@link NessieApiV1}
  */
 public interface GetAllReferencesBuilder extends PagingBuilder<GetAllReferencesBuilder> {
+
+  /**
+   * Will fetch additional metadata about {@link org.projectnessie.model.Branch} instances, such as
+   * number of commits ahead/behind or the common ancestor in relation to the default branch, and
+   * the commit metadata for the HEAD commit.
+   *
+   * @return {@link GetAllReferencesBuilder}
+   */
+  GetAllReferencesBuilder fetchAdditionalInfo(boolean fetchAdditionalInfo);
+
+  /**
+   * Fetches all references and returns them in a {@link ReferencesResponse} instance.
+   *
+   * @return Fetches all references and returns them in a {@link ReferencesResponse} instance.
+   */
   ReferencesResponse get();
 }

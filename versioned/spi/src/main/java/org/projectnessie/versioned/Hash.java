@@ -116,7 +116,7 @@ public final class Hash implements Ref {
   }
 
   @Override
-  public final String toString() {
+  public String toString() {
     return "Hash " + asString();
   }
 }

@@ -15,6 +15,10 @@
  */
 package org.projectnessie.services.impl;
 
+import static org.projectnessie.model.Branch.COMMON_ANCESTOR_HASH;
+import static org.projectnessie.model.Branch.HEAD_COMMIT_META;
+import static org.projectnessie.model.Branch.NUM_COMMITS_AHEAD;
+import static org.projectnessie.model.Branch.NUM_COMMITS_BEHIND;
 import static org.projectnessie.services.cel.CELUtil.COMMIT_LOG_DECLARATIONS;
 import static org.projectnessie.services.cel.CELUtil.COMMIT_LOG_TYPES;
 import static org.projectnessie.services.cel.CELUtil.CONTAINER;
@@ -27,6 +31,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import java.security.Principal;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -51,7 +56,6 @@ import org.projectnessie.model.Content.Type;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.ImmutableBranch;
-import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableLogResponse;
 import org.projectnessie.model.ImmutableReferencesResponse;
 import org.projectnessie.model.ImmutableTag;
@@ -98,12 +102,21 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   public ReferencesResponse getAllReferences(ReferencesParams params) {
     Preconditions.checkArgument(params.pageToken() == null, "Paging not supported");
     ImmutableReferencesResponse.Builder resp = ReferencesResponse.builder();
-    try (Stream<ReferenceInfo<CommitMeta>> str =
-        getStore().getNamedRefs(GetNamedRefsParams.DEFAULT)) {
+    GetNamedRefsParams p =
+        params.isFetchAdditionalInfo()
+            ? GetNamedRefsParams.builder()
+                .baseReference(BranchName.of(this.getConfig().getDefaultBranch()))
+                .isComputeAheadBehind(true)
+                .isRetrieveCommitMetaForHead(true)
+                .isComputeCommonAncestor(true)
+                .build()
+            : GetNamedRefsParams.DEFAULT;
+    try (Stream<ReferenceInfo<CommitMeta>> str = getStore().getNamedRefs(p)) {
       str.map(TreeApiImpl::makeNamedRef).forEach(resp::addReferences);
     } catch (ReferenceNotFoundException e) {
-      // TODO for Eduard ;)
-      //  doesn't happen with GetNamedRefsParams.DEFAULT
+      throw new IllegalArgumentException(
+          String.format(
+              "Could not find default branch '%s'.", this.getConfig().getDefaultBranch()));
     }
     return resp.build();
   }
@@ -198,11 +211,11 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
             .getHash();
 
     try (Stream<WithHash<CommitMeta>> commits = getStore().getCommits(endRef)) {
-      Stream<ImmutableCommitMeta> s =
+      Stream<CommitMeta> s =
           StreamSupport.stream(
               StreamUtil.takeUntilIncl(
                   commits
-                      .map(cwh -> cwh.getValue().toBuilder().hash(cwh.getHash().asString()).build())
+                      .map(cwh -> addHashToCommitMeta(cwh.getHash(), cwh.getValue()))
                       .spliterator(),
                   x -> x.getHash().equals(params.startHash())),
               false);
@@ -221,6 +234,10 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     }
   }
 
+  private static CommitMeta addHashToCommitMeta(Hash hash, CommitMeta commitMeta) {
+    return commitMeta.toBuilder().hash(hash.asString()).build();
+  }
+
   /**
    * Applies different filters to the {@link Stream} of commits based on the query expression.
    *
@@ -228,8 +245,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
    * @param queryExpression The query expression to filter by
    * @return A potentially filtered {@link Stream} of commits based on the query expression
    */
-  private Stream<ImmutableCommitMeta> filterCommitLog(
-      Stream<ImmutableCommitMeta> commits, String queryExpression) {
+  private Stream<CommitMeta> filterCommitLog(Stream<CommitMeta> commits, String queryExpression) {
     if (Strings.isNullOrEmpty(queryExpression)) {
       return commits;
     }
@@ -502,10 +518,29 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
       return ImmutableBranch.builder()
           .name(ref.getName())
           .hash(refWithHash.getHash().asString())
+          .metadataProperties(extractMetadataProperties(refWithHash))
           .build();
     } else {
       throw new UnsupportedOperationException("only converting tags or branches"); // todo
     }
+  }
+
+  private static Map<String, Object> extractMetadataProperties(
+      ReferenceInfo<CommitMeta> refWithHash) {
+    Map<String, Object> metadataProperties = new HashMap<>();
+    if (null != refWithHash.getAheadBehind()) {
+      metadataProperties.put(NUM_COMMITS_AHEAD, refWithHash.getAheadBehind().getAhead());
+      metadataProperties.put(NUM_COMMITS_BEHIND, refWithHash.getAheadBehind().getBehind());
+    }
+    if (null != refWithHash.getHeadCommitMeta()) {
+      metadataProperties.put(
+          HEAD_COMMIT_META,
+          addHashToCommitMeta(refWithHash.getHash(), refWithHash.getHeadCommitMeta()));
+    }
+    if (null != refWithHash.getCommonAncestor()) {
+      metadataProperties.put(COMMON_ANCESTOR_HASH, refWithHash.getCommonAncestor().asString());
+    }
+    return metadataProperties;
   }
 
   private static Reference makeRef(WithHash<? extends Ref> refWithHash) {

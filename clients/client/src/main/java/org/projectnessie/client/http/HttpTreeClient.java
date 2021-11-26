@@ -47,6 +47,7 @@ class HttpTreeClient implements HttpTreeApi {
         .path("trees")
         .queryParam("max", params.maxRecords() != null ? params.maxRecords().toString() : null)
         .queryParam("pageToken", params.pageToken())
+        .queryParam("fetchAdditionalInfo", Boolean.toString(params.isFetchAdditionalInfo()))
         .get()
         .readEntity(ReferencesResponse.class);
   }
