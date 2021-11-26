@@ -72,6 +72,7 @@ import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.GetNamedRefsParams;
+import org.projectnessie.versioned.GetNamedRefsParams.RetrieveOptions;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.NamedRef;
@@ -106,9 +107,8 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
         params.isFetchAdditionalInfo()
             ? GetNamedRefsParams.builder()
                 .baseReference(BranchName.of(this.getConfig().getDefaultBranch()))
-                .isComputeAheadBehind(true)
-                .isRetrieveCommitMetaForHead(true)
-                .isComputeCommonAncestor(true)
+                .branchRetrieveOptions(RetrieveOptions.BASE_REFERENCE_RELATED_AND_COMMIT_META)
+                .tagRetrieveOptions(RetrieveOptions.COMMIT_META)
                 .build()
             : GetNamedRefsParams.DEFAULT;
     try (Stream<ReferenceInfo<CommitMeta>> str = getStore().getNamedRefs(p)) {
