@@ -195,7 +195,8 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**
-   * Provide the current hash for the given NamedRef.
+   * Resolve the given {@link NamedRef} and return information about it, which at least contains the
+   * current HEAD commit hash plus, optionally, additional information.
    *
    * <p>This is a functionally equivalent to {@link #hashOnReference(NamedRef, Optional)
    * hashOnReference(ref, Optional.empty())}.
