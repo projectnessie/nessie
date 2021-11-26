@@ -197,8 +197,8 @@ components:
           - type: BRANCH
             hash: "84c57a20c5e956af4af40f3cc34ecc8a9028b9586da135c79011b1867aa3191d"
             name: "main"
-            metadataProperties:
-              headCommitMeta:
+            metadata:
+              commitMetaOfHEAD:
                 hash: "84c57a20c5e956af4af40f3cc34ecc8a9028b9586da135c79011b1867aa3191d"
                 committer: ""
                 author: "nessie-author"
@@ -210,11 +210,11 @@ components:
           - type: BRANCH
             hash: "da086850076827d2989c8ee1d7fd22f152f525d46a0441f2b22ad8119c0bbbe5"
             name: "dev"
-            metadataProperties:
+            metadata:
               numCommitsAhead: 1
               numCommitsBehind: 2
               commonAncestorHash: "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d"
-              headCommitMeta:
+              commitMetaOfHEAD:
                 hash: "da086850076827d2989c8ee1d7fd22f152f525d46a0441f2b22ad8119c0bbbe5"
                 committer: ""
                 author: "nessie-author"
@@ -226,7 +226,7 @@ components:
           - type: BRANCH
             hash: "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d"
             name: "dev2"
-            metadataProperties:
+            metadata:
               numCommitsAhead: 0
               numCommitsBehind: 2
               commonAncestorHash: "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d"

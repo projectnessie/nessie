@@ -25,9 +25,9 @@ import org.projectnessie.model.ReferencesResponse;
 public interface GetAllReferencesBuilder extends PagingBuilder<GetAllReferencesBuilder> {
 
   /**
-   * Will fetch additional metadata about {@link org.projectnessie.model.Branch} instances, such as
-   * number of commits ahead/behind or the common ancestor in relation to the default branch, and
-   * the commit metadata for the HEAD commit.
+   * Will fetch additional metadata about {@link org.projectnessie.model.Branch} / {@link
+   * org.projectnessie.model.Tag} instances, such as number of commits ahead/behind or the common
+   * ancestor in relation to the default branch, and the commit metadata for the HEAD commit.
    *
    * @return {@link GetAllReferencesBuilder}
    */

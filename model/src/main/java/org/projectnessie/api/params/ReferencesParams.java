@@ -32,11 +32,11 @@ public class ReferencesParams extends AbstractParams {
 
   @Parameter(
       description =
-          "If set to true, will fetch additional metadata for branches, such as number of commits ahead/behind or the common ancestor in relation to the default branch, and the commit metadata for the HEAD commit.\n\n"
-              + "A returned Branch instance will then have a map of 'metadataProperties' with the following keys:\n\n"
+          "If set to true, will fetch additional metadata for references.\n\n"
+              + "A returned Branch instance will then have the following information:\n\n"
               + "- numCommitsAhead (number of commits ahead of the default branch)\n\n"
               + "- numCommitsBehind (number of commits behind the default branch)\n\n"
-              + "- headCommitMeta (the commit metadata of the HEAD commit)\n\n"
+              + "- commitMetaOfHEAD (the commit metadata of the HEAD commit)\n\n"
               + "- commonAncestorHash (the hash of the common ancestor in relation to the default branch).\n\n"
               + "Note that computing & fetching additional metadata might be computationally expensive on the server-side, so this flag should be used with care.")
   @QueryParam("fetchAdditionalInfo")
