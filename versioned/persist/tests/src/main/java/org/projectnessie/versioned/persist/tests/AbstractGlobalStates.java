@@ -36,7 +36,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.versioned.BranchName;
-import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.ReferenceConflictException;
@@ -176,9 +175,8 @@ public abstract class AbstractGlobalStates {
                             () ->
                                 databaseAdapter.create(
                                     b,
-                                    databaseAdapter
-                                        .namedRef(BranchName.of("main"), GetNamedRefsParams.DEFAULT)
-                                        .getHash()))));
+                                    databaseAdapter.hashOnReference(
+                                        BranchName.of("main"), Optional.empty())))));
     Map<ContentId, ByteString> currentStates = new HashMap<>();
     Set<Key> keys =
         IntStream.range(0, param.tables)
@@ -261,7 +259,7 @@ public abstract class AbstractGlobalStates {
   void commitCheckGlobalStateMismatches() throws Exception {
     BranchName branch = BranchName.of("main");
 
-    Hash branchInitial = databaseAdapter.namedRef(branch, GetNamedRefsParams.DEFAULT).getHash();
+    Hash branchInitial = databaseAdapter.hashOnReference(branch, Optional.empty());
 
     databaseAdapter.commit(
         ImmutableCommitAttempt.builder()

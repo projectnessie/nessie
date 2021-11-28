@@ -113,14 +113,13 @@ public abstract class AbstractDatabaseAdapterTest {
       assertThat(refs.map(ReferenceInfo::getNamedRef)).containsExactlyInAnyOrder(branch);
     }
 
-    Hash mainHash = databaseAdapter.namedRef(branch, GetNamedRefsParams.DEFAULT).getHash();
+    Hash mainHash = databaseAdapter.hashOnReference(branch, Optional.empty());
 
-    assertThatThrownBy(() -> databaseAdapter.namedRef(create, GetNamedRefsParams.DEFAULT).getHash())
+    assertThatThrownBy(() -> databaseAdapter.hashOnReference(create, Optional.empty()))
         .isInstanceOf(ReferenceNotFoundException.class);
 
     Hash createHash =
-        databaseAdapter.create(
-            create, databaseAdapter.namedRef(branch, GetNamedRefsParams.DEFAULT).getHash());
+        databaseAdapter.create(create, databaseAdapter.hashOnReference(branch, Optional.empty()));
     assertThat(createHash).isEqualTo(mainHash);
 
     try (Stream<ReferenceInfo<ByteString>> refs =
@@ -131,20 +130,18 @@ public abstract class AbstractDatabaseAdapterTest {
     assertThatThrownBy(
             () ->
                 databaseAdapter.create(
-                    create, databaseAdapter.namedRef(branch, GetNamedRefsParams.DEFAULT).getHash()))
+                    create, databaseAdapter.hashOnReference(branch, Optional.empty())))
         .isInstanceOf(ReferenceAlreadyExistsException.class);
 
-    assertThat(databaseAdapter.namedRef(create, GetNamedRefsParams.DEFAULT).getHash())
-        .isEqualTo(createHash);
-    assertThatThrownBy(
-            () -> databaseAdapter.namedRef(opposite, GetNamedRefsParams.DEFAULT).getHash())
+    assertThat(databaseAdapter.hashOnReference(create, Optional.empty())).isEqualTo(createHash);
+    assertThatThrownBy(() -> databaseAdapter.hashOnReference(opposite, Optional.empty()))
         .isInstanceOf(ReferenceNotFoundException.class);
 
     assertThatThrownBy(
             () ->
                 databaseAdapter.create(
                     BranchName.of(create.getName()),
-                    databaseAdapter.namedRef(branch, GetNamedRefsParams.DEFAULT).getHash()))
+                    databaseAdapter.hashOnReference(branch, Optional.empty())))
         .isInstanceOf(ReferenceAlreadyExistsException.class);
 
     assertThatThrownBy(
@@ -156,7 +153,7 @@ public abstract class AbstractDatabaseAdapterTest {
 
     databaseAdapter.delete(create, Optional.of(createHash));
 
-    assertThatThrownBy(() -> databaseAdapter.namedRef(create, GetNamedRefsParams.DEFAULT).getHash())
+    assertThatThrownBy(() -> databaseAdapter.hashOnReference(create, Optional.empty()))
         .isInstanceOf(ReferenceNotFoundException.class);
 
     try (Stream<ReferenceInfo<ByteString>> refs =
@@ -171,11 +168,9 @@ public abstract class AbstractDatabaseAdapterTest {
     BranchName unreachable = BranchName.of("unreachable");
     BranchName helper = BranchName.of("helper");
 
-    databaseAdapter.create(
-        unreachable, databaseAdapter.namedRef(main, GetNamedRefsParams.DEFAULT).getHash());
+    databaseAdapter.create(unreachable, databaseAdapter.hashOnReference(main, Optional.empty()));
     Hash helperHead =
-        databaseAdapter.create(
-            helper, databaseAdapter.namedRef(main, GetNamedRefsParams.DEFAULT).getHash());
+        databaseAdapter.create(helper, databaseAdapter.hashOnReference(main, Optional.empty()));
 
     Hash unreachableHead =
         databaseAdapter.commit(
@@ -225,7 +220,7 @@ public abstract class AbstractDatabaseAdapterTest {
                         databaseAdapter.assign(
                             helper,
                             Optional.of(unreachableHead),
-                            databaseAdapter.namedRef(main, GetNamedRefsParams.DEFAULT).getHash()))
+                            databaseAdapter.hashOnReference(main, Optional.empty())))
                 .isInstanceOf(ReferenceConflictException.class)
                 .hasMessage(
                     String.format(
@@ -239,12 +234,10 @@ public abstract class AbstractDatabaseAdapterTest {
     TagName tag = TagName.of("tag");
     TagName branch = TagName.of("branch");
 
-    databaseAdapter.create(
-        branch, databaseAdapter.namedRef(main, GetNamedRefsParams.DEFAULT).getHash());
-    databaseAdapter.create(
-        tag, databaseAdapter.namedRef(main, GetNamedRefsParams.DEFAULT).getHash());
+    databaseAdapter.create(branch, databaseAdapter.hashOnReference(main, Optional.empty()));
+    databaseAdapter.create(tag, databaseAdapter.hashOnReference(main, Optional.empty()));
 
-    Hash beginning = databaseAdapter.namedRef(main, GetNamedRefsParams.DEFAULT).getHash();
+    Hash beginning = databaseAdapter.hashOnReference(main, Optional.empty());
 
     Hash[] commits = new Hash[3];
     for (int i = 0; i < commits.length; i++) {
@@ -266,8 +259,8 @@ public abstract class AbstractDatabaseAdapterTest {
     for (Hash commit : commits) {
       assertThat(
               Arrays.asList(
-                  databaseAdapter.namedRef(branch, GetNamedRefsParams.DEFAULT).getHash(),
-                  databaseAdapter.namedRef(tag, GetNamedRefsParams.DEFAULT).getHash()))
+                  databaseAdapter.hashOnReference(branch, Optional.empty()),
+                  databaseAdapter.hashOnReference(tag, Optional.empty())))
           .containsExactly(expect, expect);
 
       databaseAdapter.assign(tag, Optional.of(expect), commit);
@@ -279,8 +272,8 @@ public abstract class AbstractDatabaseAdapterTest {
 
     assertThat(
             Arrays.asList(
-                databaseAdapter.namedRef(branch, GetNamedRefsParams.DEFAULT).getHash(),
-                databaseAdapter.namedRef(tag, GetNamedRefsParams.DEFAULT).getHash()))
+                databaseAdapter.hashOnReference(branch, Optional.empty()),
+                databaseAdapter.hashOnReference(tag, Optional.empty())))
         .containsExactly(commits[commits.length - 1], commits[commits.length - 1]);
   }
 
@@ -290,8 +283,7 @@ public abstract class AbstractDatabaseAdapterTest {
     BranchName branch = BranchName.of("branch");
 
     Hash initialHash =
-        databaseAdapter.create(
-            branch, databaseAdapter.namedRef(main, GetNamedRefsParams.DEFAULT).getHash());
+        databaseAdapter.create(branch, databaseAdapter.hashOnReference(main, Optional.empty()));
 
     Hash[] commits = new Hash[3];
     for (int i = 0; i < commits.length; i++) {
@@ -312,7 +304,7 @@ public abstract class AbstractDatabaseAdapterTest {
 
     try (Stream<Difference> diff =
         databaseAdapter.diff(
-            databaseAdapter.namedRef(main, GetNamedRefsParams.DEFAULT).getHash(),
+            databaseAdapter.hashOnReference(main, Optional.empty()),
             databaseAdapter.hashOnReference(branch, Optional.of(initialHash)),
             KeyFilterPredicate.ALLOW_ALL)) {
       assertThat(diff).isEmpty();
@@ -321,7 +313,7 @@ public abstract class AbstractDatabaseAdapterTest {
     for (int i = 0; i < commits.length; i++) {
       try (Stream<Difference> diff =
           databaseAdapter.diff(
-              databaseAdapter.namedRef(main, GetNamedRefsParams.DEFAULT).getHash(),
+              databaseAdapter.hashOnReference(main, Optional.empty()),
               databaseAdapter.hashOnReference(branch, Optional.of(commits[i])),
               KeyFilterPredicate.ALLOW_ALL)) {
         int c = i;
@@ -343,7 +335,7 @@ public abstract class AbstractDatabaseAdapterTest {
       try (Stream<Difference> diff =
           databaseAdapter.diff(
               databaseAdapter.hashOnReference(branch, Optional.of(commits[i])),
-              databaseAdapter.namedRef(main, GetNamedRefsParams.DEFAULT).getHash(),
+              databaseAdapter.hashOnReference(main, Optional.empty()),
               KeyFilterPredicate.ALLOW_ALL)) {
         int c = i;
         assertThat(diff)
@@ -386,14 +378,14 @@ public abstract class AbstractDatabaseAdapterTest {
   @Test
   void recreateDefaultBranch() throws Exception {
     BranchName main = BranchName.of("main");
-    Hash mainHead = databaseAdapter.namedRef(main, GetNamedRefsParams.DEFAULT).getHash();
+    Hash mainHead = databaseAdapter.hashOnReference(main, Optional.empty());
     databaseAdapter.delete(main, Optional.of(mainHead));
 
-    assertThatThrownBy(() -> databaseAdapter.namedRef(main, GetNamedRefsParams.DEFAULT).getHash())
+    assertThatThrownBy(() -> databaseAdapter.hashOnReference(main, Optional.empty()))
         .isInstanceOf(ReferenceNotFoundException.class);
 
     databaseAdapter.create(main, null);
-    databaseAdapter.namedRef(main, GetNamedRefsParams.DEFAULT).getHash();
+    databaseAdapter.hashOnReference(main, Optional.empty());
   }
 
   @Nested
@@ -466,8 +458,8 @@ public abstract class AbstractDatabaseAdapterTest {
                     Key.of("bar"), ContentId.of("bar"), (byte) 0, ByteString.copyFromUtf8("bar")))
             .build());
 
-    Hash fooMain = foo.namedRef(main, GetNamedRefsParams.DEFAULT).getHash();
-    Hash barMain = bar.namedRef(main, GetNamedRefsParams.DEFAULT).getHash();
+    Hash fooMain = foo.hashOnReference(main, Optional.empty());
+    Hash barMain = bar.hashOnReference(main, Optional.empty());
 
     Hash fooBranch = foo.create(fooBranchName, fooMain);
     Hash barBranch = bar.create(barBranchName, barMain);
