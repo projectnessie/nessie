@@ -49,4 +49,7 @@ public interface ReferenceMetadata {
 
   @Nullable
   String commonAncestorHash();
+
+  @Nullable
+  Long numTotalCommits();
 }

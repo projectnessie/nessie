@@ -548,6 +548,10 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
       builder.commitMetaOfHEAD(
           addHashToCommitMeta(refWithHash.getHash(), refWithHash.getHeadCommitMeta()));
     }
+    if (0L != refWithHash.getCommitSeq()) {
+      found = true;
+      builder.numTotalCommits(refWithHash.getCommitSeq());
+    }
     if (null != refWithHash.getCommonAncestor()) {
       found = true;
       builder.commonAncestorHash(refWithHash.getCommonAncestor().asString());

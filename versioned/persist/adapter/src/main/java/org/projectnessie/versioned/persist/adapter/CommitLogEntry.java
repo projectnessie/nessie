@@ -30,6 +30,12 @@ public interface CommitLogEntry {
 
   Hash getHash();
 
+  /**
+   * Monotonically increasing counter representing the number of commits since the "beginning of
+   * time.
+   */
+  long getCommitSeq();
+
   /** Zero, one or more parent-entry hashes of this commit, nearest parent first. */
   List<Hash> getParents();
 
@@ -70,6 +76,7 @@ public interface CommitLogEntry {
   static CommitLogEntry of(
       long createdTime,
       Hash hash,
+      long commitSeq,
       List<Hash> parents,
       ByteString metadata,
       List<KeyWithBytes> puts,
@@ -80,6 +87,7 @@ public interface CommitLogEntry {
     return ImmutableCommitLogEntry.builder()
         .createdTime(createdTime)
         .hash(hash)
+        .commitSeq(commitSeq)
         .parents(parents)
         .metadata(metadata)
         .puts(puts)

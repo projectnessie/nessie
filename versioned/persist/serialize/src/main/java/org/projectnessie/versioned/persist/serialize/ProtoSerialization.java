@@ -35,6 +35,7 @@ public class ProtoSerialization {
         AdapterTypes.CommitLogEntry.newBuilder()
             .setCreatedTime(entry.getCreatedTime())
             .setHash(entry.getHash().asBytes())
+            .setCommitSeq(entry.getCommitSeq())
             .setMetadata(entry.getMetadata())
             .setKeyListDistance(entry.getKeyListDistance());
 
@@ -81,6 +82,7 @@ public class ProtoSerialization {
         ImmutableCommitLogEntry.builder()
             .createdTime(proto.getCreatedTime())
             .hash(Hash.of(proto.getHash()))
+            .commitSeq(proto.getCommitSeq())
             .metadata(proto.getMetadata())
             .keyListDistance(proto.getKeyListDistance());
 

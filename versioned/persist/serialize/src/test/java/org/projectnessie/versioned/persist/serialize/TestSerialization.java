@@ -310,6 +310,10 @@ class TestSerialization {
     return Key.of("some" + r.nextInt(10000), "other" + r.nextInt(10000));
   }
 
+  public static long randomLong() {
+    return ThreadLocalRandom.current().nextLong(0, Long.MAX_VALUE);
+  }
+
   public static Hash randomHash() {
     return Hash.of(randomBytes(16));
   }
@@ -359,6 +363,7 @@ class TestSerialization {
     return CommitLogEntry.of(
         System.nanoTime() / 1000L,
         randomHash(),
+        randomLong(),
         Arrays.asList(
             randomHash(),
             randomHash(),
