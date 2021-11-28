@@ -99,7 +99,7 @@ class TestMetricsVersionStore {
         Stream.of(
             new VersionStoreInvocation<>(
                 "getnamedref",
-                vs -> vs.getNamedRef(BranchName.of("mock-branch"), GetNamedRefsParams.DEFAULT),
+                vs -> vs.getNamedRef("mock-branch", GetNamedRefsParams.DEFAULT),
                 () -> ReferenceInfo.of(Hash.of("cafebabe"), BranchName.of("mock-branch")),
                 refNotFoundThrows),
             new VersionStoreInvocation<>(

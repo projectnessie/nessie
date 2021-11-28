@@ -40,6 +40,9 @@ public final class SqlStatements {
       String.format(
           "SELECT hash FROM %s WHERE key_prefix = ? AND ref = ? AND ref_type = ?",
           TABLE_NAMED_REFERENCES);
+  public static final String SELECT_NAMED_REFERENCE_ANY =
+      String.format(
+          "SELECT ref_type, hash FROM %s WHERE key_prefix = ? AND ref = ?", TABLE_NAMED_REFERENCES);
   public static final String CREATE_TABLE_NAMED_REFERENCES =
       String.format(
           "CREATE TABLE %s (\n"

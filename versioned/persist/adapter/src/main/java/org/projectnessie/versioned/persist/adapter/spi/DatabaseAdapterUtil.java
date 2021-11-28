@@ -72,9 +72,12 @@ public final class DatabaseAdapterUtil {
             "Could not find commit '%s' in reference '%s'.", hash.asString(), ref.getName()));
   }
 
+  public static ReferenceNotFoundException referenceNotFound(String ref) {
+    return new ReferenceNotFoundException(String.format("Named reference '%s' not found", ref));
+  }
+
   public static ReferenceNotFoundException referenceNotFound(NamedRef ref) {
-    return new ReferenceNotFoundException(
-        String.format("Named reference '%s' not found", ref.getName()));
+    return referenceNotFound(ref.getName());
   }
 
   public static ReferenceNotFoundException referenceNotFound(Hash hash) {

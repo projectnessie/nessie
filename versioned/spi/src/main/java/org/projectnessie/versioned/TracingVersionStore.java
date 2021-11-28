@@ -167,12 +167,10 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
   }
 
   @Override
-  public ReferenceInfo<METADATA> getNamedRef(NamedRef ref, GetNamedRefsParams params)
+  public ReferenceInfo<METADATA> getNamedRef(String ref, GetNamedRefsParams params)
       throws ReferenceNotFoundException {
     return callWithOneException(
-        "GetNamedRef",
-        b -> b.withTag(TAG_REF, safeRefName(ref)),
-        () -> delegate.getNamedRef(ref, params));
+        "GetNamedRef", b -> b.withTag(TAG_REF, ref), () -> delegate.getNamedRef(ref, params));
   }
 
   @Override

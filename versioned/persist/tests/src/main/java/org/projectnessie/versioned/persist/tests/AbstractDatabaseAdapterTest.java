@@ -419,11 +419,7 @@ public abstract class AbstractDatabaseAdapterTest {
                     () -> nonExistent.hashOnReference(BranchName.of("main"), Optional.empty()))
                 .isInstanceOf(ReferenceNotFoundException.class),
         () ->
-            assertThatThrownBy(
-                    () ->
-                        nonExistent
-                            .namedRef(BranchName.of("main"), GetNamedRefsParams.DEFAULT)
-                            .getHash())
+            assertThatThrownBy(() -> nonExistent.namedRef("main", GetNamedRefsParams.DEFAULT))
                 .isInstanceOf(ReferenceNotFoundException.class));
   }
 

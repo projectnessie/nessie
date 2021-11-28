@@ -39,7 +39,6 @@ import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.StoreWorker;
-import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
@@ -78,15 +77,8 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
 
   @Override
   public WithHash<Ref> toRef(@Nonnull String refOfUnknownType) throws ReferenceNotFoundException {
-    try {
-      BranchName t = BranchName.of(refOfUnknownType);
-      Hash h = getNamedRef(t, GetNamedRefsParams.DEFAULT).getHash();
-      return WithHash.of(h, t);
-    } catch (ReferenceNotFoundException e) {
-      TagName t = TagName.of(refOfUnknownType);
-      Hash h = getNamedRef(t, GetNamedRefsParams.DEFAULT).getHash();
-      return WithHash.of(h, t);
-    }
+    ReferenceInfo<METADATA> refInfo = getNamedRef(refOfUnknownType, GetNamedRefsParams.DEFAULT);
+    return WithHash.of(refInfo.getHash(), refInfo.getNamedRef());
   }
 
   @Override
@@ -190,7 +182,7 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
 
   @Nonnull
   @Override
-  public ReferenceInfo<METADATA> getNamedRef(@Nonnull NamedRef ref, GetNamedRefsParams params)
+  public ReferenceInfo<METADATA> getNamedRef(@Nonnull String ref, GetNamedRefsParams params)
       throws ReferenceNotFoundException {
     ReferenceInfo<ByteString> namedRef = databaseAdapter.namedRef(ref, params);
     return namedRef.withUpdatedCommitMeta(deserializeMetadata(namedRef.getHeadCommitMeta()));
@@ -212,10 +204,7 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
 
   @Override
   public Stream<WithHash<METADATA>> getCommits(Ref ref) throws ReferenceNotFoundException {
-    Hash hash =
-        ref instanceof NamedRef
-            ? getNamedRef((NamedRef) ref, GetNamedRefsParams.DEFAULT).getHash()
-            : (Hash) ref;
+    Hash hash = refToHash(ref);
     Stream<CommitLogEntry> stream = databaseAdapter.commitLog(hash);
 
     return stream.map(e -> WithHash.of(e.getHash(), deserializeMetadata(e.getMetadata())));
@@ -223,10 +212,7 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
 
   @Override
   public Stream<WithType<Key, CONTENT_TYPE>> getKeys(Ref ref) throws ReferenceNotFoundException {
-    Hash hash =
-        ref instanceof NamedRef
-            ? getNamedRef((NamedRef) ref, GetNamedRefsParams.DEFAULT).getHash()
-            : (Hash) ref;
+    Hash hash = refToHash(ref);
     return databaseAdapter
         .keys(hash, KeyFilterPredicate.ALLOW_ALL)
         .map(kt -> WithType.of(storeWorker.getType(kt.getType()), kt.getKey()));
@@ -240,10 +226,7 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
   @Override
   public Map<Key, CONTENT> getValues(Ref ref, Collection<Key> keys)
       throws ReferenceNotFoundException {
-    Hash hash =
-        ref instanceof NamedRef
-            ? getNamedRef((NamedRef) ref, GetNamedRefsParams.DEFAULT).getHash()
-            : (Hash) ref;
+    Hash hash = refToHash(ref);
     return databaseAdapter.values(hash, keys, KeyFilterPredicate.ALLOW_ALL).entrySet().stream()
         .collect(Collectors.toMap(Map.Entry::getKey, e -> mapContentAndState(e.getValue())));
   }
@@ -254,14 +237,8 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
 
   @Override
   public Stream<Diff<CONTENT>> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException {
-    Hash fromHash =
-        from instanceof NamedRef
-            ? getNamedRef((NamedRef) from, GetNamedRefsParams.DEFAULT).getHash()
-            : (Hash) from;
-    Hash toHash =
-        to instanceof NamedRef
-            ? getNamedRef((NamedRef) to, GetNamedRefsParams.DEFAULT).getHash()
-            : (Hash) to;
+    Hash fromHash = refToHash(from);
+    Hash toHash = refToHash(to);
     return databaseAdapter
         .diff(fromHash, toHash, KeyFilterPredicate.ALLOW_ALL)
         .map(
@@ -270,5 +247,15 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
                     d.getKey(),
                     d.getFromValue().map(v -> storeWorker.valueFromStore(v, d.getGlobal())),
                     d.getToValue().map(v -> storeWorker.valueFromStore(v, d.getGlobal()))));
+  }
+
+  private Hash refToHash(Ref ref) throws ReferenceNotFoundException {
+    if (ref instanceof NamedRef) {
+      return hashOnReference((NamedRef) ref, Optional.empty());
+    }
+    if (ref instanceof Hash) {
+      return (Hash) ref;
+    }
+    throw new IllegalArgumentException(String.format("Unsupported reference '%s'", ref));
   }
 }

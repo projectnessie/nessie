@@ -164,14 +164,14 @@ public abstract class AbstractGetNamedReferences {
 
     assertAll(
         () ->
-            assertThatThrownBy(() -> databaseAdapter.namedRef(main, null))
+            assertThatThrownBy(() -> databaseAdapter.namedRef(main.getName(), null))
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("Parameter for GetNamedRefsParams must not be null"),
         () ->
             assertThatThrownBy(
                     () ->
                         databaseAdapter.namedRef(
-                            parameterValidation,
+                            parameterValidation.getName(),
                             GetNamedRefsParams.builder()
                                 .branchRetrieveOptions(COMPUTE_AHEAD_BEHIND)
                                 .build()))
@@ -181,7 +181,7 @@ public abstract class AbstractGetNamedReferences {
             assertThatThrownBy(
                     () ->
                         databaseAdapter.namedRef(
-                            parameterValidation,
+                            parameterValidation.getName(),
                             GetNamedRefsParams.builder()
                                 .tagRetrieveOptions(COMPUTE_AHEAD_BEHIND)
                                 .build()))
@@ -191,7 +191,7 @@ public abstract class AbstractGetNamedReferences {
             assertThatThrownBy(
                     () ->
                         databaseAdapter.namedRef(
-                            parameterValidation,
+                            parameterValidation.getName(),
                             GetNamedRefsParams.builder()
                                 .branchRetrieveOptions(COMPUTE_COMMON_ANCESTOR)
                                 .build()))
@@ -201,7 +201,7 @@ public abstract class AbstractGetNamedReferences {
             assertThatThrownBy(
                     () ->
                         databaseAdapter.namedRef(
-                            parameterValidation,
+                            parameterValidation.getName(),
                             GetNamedRefsParams.builder()
                                 .tagRetrieveOptions(COMPUTE_COMMON_ANCESTOR)
                                 .build()))
@@ -211,7 +211,7 @@ public abstract class AbstractGetNamedReferences {
             assertThatThrownBy(
                     () ->
                         databaseAdapter.namedRef(
-                            parameterValidation,
+                            parameterValidation.getName(),
                             GetNamedRefsParams.builder()
                                 .branchRetrieveOptions(COMPUTE_AHEAD_BEHIND)
                                 .tagRetrieveOptions(COMPUTE_AHEAD_BEHIND)
@@ -223,7 +223,7 @@ public abstract class AbstractGetNamedReferences {
             assertThatThrownBy(
                     () ->
                         databaseAdapter.namedRef(
-                            parameterValidation,
+                            parameterValidation.getName(),
                             GetNamedRefsParams.builder()
                                 .branchRetrieveOptions(COMPUTE_AHEAD_BEHIND)
                                 .tagRetrieveOptions(COMPUTE_AHEAD_BEHIND)
@@ -235,36 +235,13 @@ public abstract class AbstractGetNamedReferences {
             assertThatThrownBy(
                     () ->
                         databaseAdapter.namedRef(
-                            parameterValidation,
-                            GetNamedRefsParams.builder()
-                                .branchRetrieveOptions(RetrieveOptions.OMIT)
-                                .tagRetrieveOptions(RetrieveOptions.OMIT)
-                                .build()))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage(
-                    "Must retrieve branches or tags or both, and match the type of the requested reference."),
-        () ->
-            assertThatThrownBy(
-                    () ->
-                        databaseAdapter.namedRef(
-                            parameterValidation,
-                            GetNamedRefsParams.builder()
-                                .branchRetrieveOptions(RetrieveOptions.OMIT)
-                                .build()))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage(
-                    "Must retrieve branches or tags or both, and match the type of the requested reference."),
-        () ->
-            assertThatThrownBy(
-                    () ->
-                        databaseAdapter.namedRef(
-                            parameterValidationTag,
+                            parameterValidationTag.getName(),
                             GetNamedRefsParams.builder()
                                 .tagRetrieveOptions(RetrieveOptions.OMIT)
                                 .build()))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(ReferenceNotFoundException.class)
                 .hasMessage(
-                    "Must retrieve branches or tags or both, and match the type of the requested reference."));
+                    "Named reference '" + parameterValidationTag.getName() + "' not found"));
   }
 
   @Test
@@ -529,7 +506,8 @@ public abstract class AbstractGetNamedReferences {
     }
 
     for (ReferenceInfo<ByteString> expected : expectedRefs) {
-      assertThat(databaseAdapter.namedRef(expected.getNamedRef(), params)).isEqualTo(expected);
+      assertThat(databaseAdapter.namedRef(expected.getNamedRef().getName(), params))
+          .isEqualTo(expected);
     }
 
     List<NamedRef> failureRefs =
@@ -546,7 +524,7 @@ public abstract class AbstractGetNamedReferences {
             .collect(Collectors.toList());
 
     for (NamedRef ref : failureRefs) {
-      assertThatThrownBy(() -> databaseAdapter.namedRef(ref, params));
+      assertThatThrownBy(() -> databaseAdapter.namedRef(ref.getName(), params));
     }
   }
 

@@ -148,19 +148,16 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
-  public ReferenceInfo<ByteString> namedRef(NamedRef ref, GetNamedRefsParams params)
+  public ReferenceInfo<ByteString> namedRef(String ref, GetNamedRefsParams params)
       throws ReferenceNotFoundException {
     Preconditions.checkNotNull(params, "Parameter for GetNamedRefsParams must not be null");
-    Preconditions.checkArgument(
-        namedRefsRetrieveOptionsForReference(params, ref).isRetrieve(),
-        "Must retrieve branches or tags or both, and match the type of the requested reference.");
 
     Connection conn = borrowConnection();
     try {
-      Hash refHead = fetchNamedRefHead(conn, ref);
+      ReferenceInfo<ByteString> refInfo = fetchNamedRef(conn, ref);
       Hash defaultBranchHead = namedRefsDefaultBranchHead(conn, params);
 
-      Stream<ReferenceInfo<ByteString>> refs = Stream.of(ReferenceInfo.of(refHead, ref));
+      Stream<ReferenceInfo<ByteString>> refs = Stream.of(refInfo);
 
       return namedRefsFilterAndEnhance(conn, params, defaultBranchHead, refs)
           .findFirst()
@@ -728,6 +725,24 @@ public abstract class TxDatabaseAdapter
       try (ResultSet rs = ps.executeQuery()) {
         if (rs.next()) {
           return Hash.of(rs.getString(1));
+        }
+        throw referenceNotFound(ref);
+      }
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  protected ReferenceInfo<ByteString> fetchNamedRef(Connection c, String ref)
+      throws ReferenceNotFoundException {
+    try (PreparedStatement ps = c.prepareStatement(SqlStatements.SELECT_NAMED_REFERENCE_ANY)) {
+      ps.setString(1, config.getKeyPrefix());
+      ps.setString(2, ref);
+      try (ResultSet rs = ps.executeQuery()) {
+        if (rs.next()) {
+          Hash hash = Hash.of(rs.getString(2));
+          NamedRef namedRef = namedRefFromRow(rs.getString(1), ref);
+          return ReferenceInfo.of(hash, namedRef);
         }
         throw referenceNotFound(ref);
       }
