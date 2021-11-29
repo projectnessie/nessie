@@ -45,6 +45,7 @@ public class GetReferenceParams {
               + "- numCommitsBehind (number of commits behind the default branch)\n\n"
               + "- commitMetaOfHEAD (the commit metadata of the HEAD commit)\n\n"
               + "- commonAncestorHash (the hash of the common ancestor in relation to the default branch).\n\n"
+              + "A returned Tag instance will only contain the 'commitMetaOfHEAD' field.\n\n"
               + "Note that computing & fetching additional metadata might be computationally expensive on the server-side, so this flag should be used with care.")
   @QueryParam("fetchAdditionalInfo")
   private boolean fetchAdditionalInfo;

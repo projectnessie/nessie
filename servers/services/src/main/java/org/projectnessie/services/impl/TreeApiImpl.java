@@ -521,6 +521,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
       return ImmutableTag.builder()
           .name(ref.getName())
           .hash(refWithHash.getHash().asString())
+          .metadata(extractReferenceMetadata(refWithHash))
           .build();
     } else if (ref instanceof BranchName) {
       return ImmutableBranch.builder()
