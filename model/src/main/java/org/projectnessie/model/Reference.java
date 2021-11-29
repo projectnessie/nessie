@@ -43,7 +43,8 @@ import org.immutables.value.Value;
     // Smallrye does neither support JsonFormat nor javax.validation.constraints.Pattern :(
     properties = {
       @SchemaProperty(name = "name", pattern = Validation.REF_NAME_REGEX),
-      @SchemaProperty(name = "hash", pattern = Validation.HASH_REGEX)
+      @SchemaProperty(name = "hash", pattern = Validation.HASH_REGEX),
+      @SchemaProperty(name = "metadata", nullable = true)
     })
 @JsonSubTypes({@Type(Branch.class), @Type(Tag.class)})
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")

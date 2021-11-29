@@ -25,7 +25,7 @@ import org.immutables.value.Value;
 
 @Schema(
     type = SchemaType.OBJECT,
-    title = "Additional metadata for a 'Reference'.",
+    title = "ReferenceMetadata",
     description =
         "Only returned by the server when explicitly requested by the client and contains the following information:\n\n"
             + "- numCommitsAhead (number of commits ahead of the default branch)\n\n"
