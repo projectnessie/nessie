@@ -29,6 +29,7 @@ import java.security.Principal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -235,8 +236,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
                   if (commit.getParentHash() != null) {
                     logEntry.parentCommitHash(commit.getParentHash().asString());
                   }
-                  commit
-                      .getOperations()
+                  Objects.requireNonNull(commit.getOperations())
                       .forEach(
                           op -> {
                             ContentKey key = ContentKey.of(op.getKey().getElements());
@@ -256,7 +256,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
           StreamSupport.stream(
               StreamUtil.takeUntilIncl(
                   logEntries.spliterator(),
-                  x -> x.getCommitMeta().getHash().equals(params.startHash())),
+                  x -> Objects.equals(x.getCommitMeta().getHash(), params.startHash())),
               false);
 
       List<LogEntry> items =
