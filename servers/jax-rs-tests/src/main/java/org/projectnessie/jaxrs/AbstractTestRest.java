@@ -1828,11 +1828,14 @@ public abstract class AbstractTestRest {
                 .filter(r -> r.getName().startsWith(branchPrefix))
                 .map(r -> (Branch) r))
         .hasSize(numBranches)
-        .allSatisfy(branch -> verifyMetadataProperties(commitsPerBranch, 0, branch, main.get()));
+        .allSatisfy(
+            branch ->
+                verifyMetadataProperties(
+                    commitsPerBranch, 0, branch, main.get(), commitsPerBranch));
 
     assertThat(references.stream().filter(r -> r.getName().startsWith(tagPrefix)).map(r -> (Tag) r))
         .hasSize(numBranches)
-        .allSatisfy(tag -> verifyMetadataProperties(tag));
+        .allSatisfy(this::verifyMetadataProperties);
   }
 
   @Test
@@ -1861,7 +1864,8 @@ public abstract class AbstractTestRest {
     // fetching additional metadata for a single branch
     ref = api.getReference().refName(branchName).fetchAdditionalInfo(true).get();
     assertThat(ref).isNotNull().isInstanceOf(Branch.class);
-    verifyMetadataProperties(numCommits, 0, (Branch) ref, api.getReference().refName("main").get());
+    verifyMetadataProperties(
+        numCommits, 0, (Branch) ref, api.getReference().refName("main").get(), numCommits);
 
     // fetching additional metadata for a single tag
     ref = api.getReference().refName(tagName).fetchAdditionalInfo(true).get();
@@ -1870,7 +1874,11 @@ public abstract class AbstractTestRest {
   }
 
   private void verifyMetadataProperties(
-      int expectedCommitsAhead, int expectedCommitsBehind, Branch branch, Reference reference)
+      int expectedCommitsAhead,
+      int expectedCommitsBehind,
+      Branch branch,
+      Reference reference,
+      long expectedCommits)
       throws NessieNotFoundException {
     List<CommitMeta> commits =
         api.getCommitLog().refName(branch.getName()).maxRecords(1).get().getOperations();
@@ -1883,6 +1891,7 @@ public abstract class AbstractTestRest {
     assertThat(referenceMetadata.numCommitsBehind()).isEqualTo(expectedCommitsBehind);
     assertThat(referenceMetadata.commitMetaOfHEAD()).isEqualTo(commitMeta);
     assertThat(referenceMetadata.commonAncestorHash()).isEqualTo(reference.getHash());
+    assertThat(referenceMetadata.numTotalCommits()).isEqualTo(expectedCommits);
   }
 
   private void verifyMetadataProperties(Tag tag) throws NessieNotFoundException {
@@ -1897,6 +1906,7 @@ public abstract class AbstractTestRest {
     assertThat(referenceMetadata.numCommitsBehind()).isNull();
     assertThat(referenceMetadata.commitMetaOfHEAD()).isEqualTo(commitMeta);
     assertThat(referenceMetadata.commonAncestorHash()).isNull();
+    assertThat(referenceMetadata.numTotalCommits()).isEqualTo(10);
   }
 
   protected void unwrap(Executable exec) throws Throwable {

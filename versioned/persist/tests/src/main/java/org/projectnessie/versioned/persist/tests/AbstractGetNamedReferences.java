@@ -267,9 +267,9 @@ public abstract class AbstractGetNamedReferences {
     databaseAdapter.create(tag, hash);
 
     verifyReferences(
-        new ExpectedNamedReference(main, mainHash, 0, 0, hash, null),
-        new ExpectedNamedReference(branch, branchHash, 0, 0, hash, null),
-        new ExpectedNamedReference(tag, hash, 0, 0, hash, null));
+        new ExpectedNamedReference(main, 0L, mainHash, 0, 0, hash, null),
+        new ExpectedNamedReference(branch, 0L, branchHash, 0, 0, hash, null),
+        new ExpectedNamedReference(tag, 0L, hash, 0, 0, hash, null));
 
     // Add 100 commits to 'main'
 
@@ -280,9 +280,9 @@ public abstract class AbstractGetNamedReferences {
     // Expect a commit-metadata for 'main', branch+tag are then 100 commits behind.
 
     verifyReferences(
-        new ExpectedNamedReference(main, mainHash, 0, 0, hash, commitMetaFor(main, 100)),
-        new ExpectedNamedReference(branch, branchHash, 0, 100, hash, null),
-        new ExpectedNamedReference(tag, hash, 0, 100, hash, null));
+        new ExpectedNamedReference(main, 100, mainHash, 0, 0, hash, commitMetaFor(main, 100)),
+        new ExpectedNamedReference(branch, 0, branchHash, 0, 100, hash, null),
+        new ExpectedNamedReference(tag, 0, hash, 0, 100, hash, null));
 
     // Add 42 commits to branch
 
@@ -293,9 +293,10 @@ public abstract class AbstractGetNamedReferences {
     // same expectations as above, but branch is now also 42 commits ahead
 
     verifyReferences(
-        new ExpectedNamedReference(main, mainHash, 0, 0, hash, commitMetaFor(main, 100)),
-        new ExpectedNamedReference(branch, branchHash, 42, 100, hash, commitMetaFor(branch, 42)),
-        new ExpectedNamedReference(tag, hash, 0, 100, hash, null));
+        new ExpectedNamedReference(main, 100, mainHash, 0, 0, hash, commitMetaFor(main, 100)),
+        new ExpectedNamedReference(
+            branch, 42, branchHash, 42, 100, hash, commitMetaFor(branch, 42)),
+        new ExpectedNamedReference(tag, 0, hash, 0, 100, hash, null));
 
     // create a branch2 + tag2 from 'main'
 
@@ -307,11 +308,13 @@ public abstract class AbstractGetNamedReferences {
     // - common ancestor of branch2 + tag2 is the 100th commit on 'main'
 
     verifyReferences(
-        new ExpectedNamedReference(main, mainHash, 0, 0, hash, commitMetaFor(main, 100)),
-        new ExpectedNamedReference(branch, branchHash, 42, 100, hash, commitMetaFor(branch, 42)),
-        new ExpectedNamedReference(tag, hash, 0, 100, hash, null),
-        new ExpectedNamedReference(branch2, branch2Hash, 0, 0, main100, commitMetaFor(main, 100)),
-        new ExpectedNamedReference(tag2, tag2Hash, 0, 0, main100, commitMetaFor(main, 100)));
+        new ExpectedNamedReference(main, 100, mainHash, 0, 0, hash, commitMetaFor(main, 100)),
+        new ExpectedNamedReference(
+            branch, 42, branchHash, 42, 100, hash, commitMetaFor(branch, 42)),
+        new ExpectedNamedReference(tag, 0, hash, 0, 100, hash, null),
+        new ExpectedNamedReference(
+            branch2, 100, branch2Hash, 0, 0, main100, commitMetaFor(main, 100)),
+        new ExpectedNamedReference(tag2, 100, tag2Hash, 0, 0, main100, commitMetaFor(main, 100)));
 
     // add 900 commits to 'main'
 
@@ -323,11 +326,13 @@ public abstract class AbstractGetNamedReferences {
     // - branch + tag are now 100+900 = 1000 commits behind
 
     verifyReferences(
-        new ExpectedNamedReference(main, mainHash, 0, 0, hash, commitMetaFor(main, 1000)),
-        new ExpectedNamedReference(branch, branchHash, 42, 1000, hash, commitMetaFor(branch, 42)),
-        new ExpectedNamedReference(tag, hash, 0, 1000, hash, null),
-        new ExpectedNamedReference(branch2, branch2Hash, 0, 900, main100, commitMetaFor(main, 100)),
-        new ExpectedNamedReference(tag2, tag2Hash, 0, 900, main100, commitMetaFor(main, 100)));
+        new ExpectedNamedReference(main, 1000, mainHash, 0, 0, hash, commitMetaFor(main, 1000)),
+        new ExpectedNamedReference(
+            branch, 42, branchHash, 42, 1000, hash, commitMetaFor(branch, 42)),
+        new ExpectedNamedReference(tag, 0, hash, 0, 1000, hash, null),
+        new ExpectedNamedReference(
+            branch2, 100, branch2Hash, 0, 900, main100, commitMetaFor(main, 100)),
+        new ExpectedNamedReference(tag2, 100, tag2Hash, 0, 900, main100, commitMetaFor(main, 100)));
 
     // add 42 commits to branch2
 
@@ -339,12 +344,13 @@ public abstract class AbstractGetNamedReferences {
     // - branch2 is now also 42 commits ahead
 
     verifyReferences(
-        new ExpectedNamedReference(main, mainHash, 0, 0, hash, commitMetaFor(main, 1000)),
-        new ExpectedNamedReference(branch, branchHash, 42, 1000, hash, commitMetaFor(branch, 42)),
-        new ExpectedNamedReference(tag, hash, 0, 1000, hash, null),
+        new ExpectedNamedReference(main, 1000, mainHash, 0, 0, hash, commitMetaFor(main, 1000)),
         new ExpectedNamedReference(
-            branch2, branch2Hash, 42, 900, main100, commitMetaFor(branch2, 42)),
-        new ExpectedNamedReference(tag2, tag2Hash, 0, 900, main100, commitMetaFor(main, 100)));
+            branch, 42, branchHash, 42, 1000, hash, commitMetaFor(branch, 42)),
+        new ExpectedNamedReference(tag, 0, hash, 0, 1000, hash, null),
+        new ExpectedNamedReference(
+            branch2, 142, branch2Hash, 42, 900, main100, commitMetaFor(branch2, 42)),
+        new ExpectedNamedReference(tag2, 100, tag2Hash, 0, 900, main100, commitMetaFor(main, 100)));
 
     // Create branch2+tag3 at branch2
 
@@ -363,15 +369,17 @@ public abstract class AbstractGetNamedReferences {
     // - branch3 is 84 commits ahead
 
     verifyReferences(
-        new ExpectedNamedReference(main, mainHash, 0, 0, hash, commitMetaFor(main, 1000)),
-        new ExpectedNamedReference(branch, branchHash, 42, 1000, hash, commitMetaFor(branch, 42)),
-        new ExpectedNamedReference(tag, hash, 0, 1000, hash, null),
+        new ExpectedNamedReference(main, 1000, mainHash, 0, 0, hash, commitMetaFor(main, 1000)),
         new ExpectedNamedReference(
-            branch2, branch2Hash, 42, 900, main100, commitMetaFor(branch2, 42)),
-        new ExpectedNamedReference(tag2, tag2Hash, 0, 900, main100, commitMetaFor(main, 100)),
+            branch, 42, branchHash, 42, 1000, hash, commitMetaFor(branch, 42)),
+        new ExpectedNamedReference(tag, 0, hash, 0, 1000, hash, null),
         new ExpectedNamedReference(
-            branch3, branch3Hash, 84, 900, main100, commitMetaFor(branch3, 42)),
-        new ExpectedNamedReference(tag3, tag3Hash, 42, 900, main100, commitMetaFor(branch2, 42)));
+            branch2, 142, branch2Hash, 42, 900, main100, commitMetaFor(branch2, 42)),
+        new ExpectedNamedReference(tag2, 100, tag2Hash, 0, 900, main100, commitMetaFor(main, 100)),
+        new ExpectedNamedReference(
+            branch3, 184, branch3Hash, 84, 900, main100, commitMetaFor(branch3, 42)),
+        new ExpectedNamedReference(
+            tag3, 142, tag3Hash, 42, 900, main100, commitMetaFor(branch2, 42)));
   }
 
   private ByteString commitMetaFor(NamedRef ref, int num) {
@@ -530,6 +538,7 @@ public abstract class AbstractGetNamedReferences {
 
   static class ExpectedNamedReference {
     final NamedRef ref;
+    final long commitSeq;
     final Hash hash;
     final CommitsAheadBehind aheadBehind;
     final Hash commonAncestor;
@@ -537,12 +546,14 @@ public abstract class AbstractGetNamedReferences {
 
     ExpectedNamedReference(
         NamedRef ref,
+        long commitSeq,
         Hash hash,
         int ahead,
         int behind,
         Hash commonAncestor,
         ByteString commitMeta) {
       this.ref = ref;
+      this.commitSeq = commitSeq;
       this.hash = hash;
       this.aheadBehind = CommitsAheadBehind.of(ahead, behind);
       this.commonAncestor = commonAncestor;
@@ -574,7 +585,7 @@ public abstract class AbstractGetNamedReferences {
         }
       }
       if (opts.isRetrieveCommitMetaForHead()) {
-        builder.headCommitMeta(commitMeta);
+        builder.headCommitMeta(commitMeta).commitSeq(commitSeq);
       }
       return builder.build();
     }

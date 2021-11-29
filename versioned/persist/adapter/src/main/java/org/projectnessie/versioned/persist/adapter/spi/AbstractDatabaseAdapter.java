@@ -56,6 +56,7 @@ import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.GetNamedRefsParams.RetrieveOptions;
 import org.projectnessie.versioned.Hash;
+import org.projectnessie.versioned.ImmutableReferenceInfo;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceConflictException;
@@ -165,9 +166,13 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     int parentsPerCommit = config.getParentsPerCommit();
     List<Hash> newParents = new ArrayList<>(parentsPerCommit);
     newParents.add(branchHead);
+    long commitSeq;
     if (currentBranchEntry != null) {
       List<Hash> p = currentBranchEntry.getParents();
       newParents.addAll(p.subList(0, Math.min(p.size(), parentsPerCommit - 1)));
+      commitSeq = currentBranchEntry.getCommitSeq() + 1;
+    } else {
+      commitSeq = 1;
     }
 
     CommitLogEntry newBranchCommit =
@@ -175,6 +180,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
             ctx,
             timeInMicros,
             newParents,
+            commitSeq,
             commitAttempt.getCommitMetaSerialized(),
             commitAttempt.getPuts(),
             commitAttempt.getDeletes(),
@@ -464,7 +470,14 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
             return ref;
           }
           CommitLogEntry logEntry = fetchFromCommitLog(ctx, ref.getHash());
-          return logEntry != null ? ref.withHeadCommitMeta(logEntry.getMetadata()) : ref;
+          if (logEntry == null) {
+            return ref;
+          }
+          return ImmutableReferenceInfo.<ByteString>builder()
+              .from(ref)
+              .headCommitMeta(logEntry.getMetadata())
+              .commitSeq(logEntry.getCommitSeq())
+              .build();
         });
   }
 
@@ -698,6 +711,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       OP_CONTEXT ctx,
       long timeInMicros,
       List<Hash> parentHashes,
+      long commitSeq,
       ByteString commitMeta,
       List<KeyWithBytes> puts,
       List<Key> deletes,
@@ -712,6 +726,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
         CommitLogEntry.of(
             timeInMicros,
             commitHash,
+            commitSeq,
             parentHashes,
             commitMeta,
             puts,
@@ -1223,14 +1238,18 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
 
     List<Hash> parents = new ArrayList<>(parentsPerCommit);
     CommitLogEntry targetHeadCommit = fetchFromCommitLog(ctx, targetHead);
+    long commitSeq;
     if (targetHeadCommit != null) {
       parents.addAll(targetHeadCommit.getParents());
+      commitSeq = targetHeadCommit.getCommitSeq() + 1;
+    } else {
+      commitSeq = 1L;
     }
 
     int keyListDistance = targetHeadCommit != null ? targetHeadCommit.getKeyListDistance() : 0;
 
     // Rewrite commits to transplant and store those in 'commitsToTransplantReverse'
-    for (int i = commitsChronological.size() - 1; i >= 0; i--) {
+    for (int i = commitsChronological.size() - 1; i >= 0; i--, commitSeq++) {
       CommitLogEntry sourceCommit = commitsChronological.get(i);
 
       while (parents.size() > parentsPerCommit - 1) {
@@ -1247,6 +1266,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
               ctx,
               timeInMicros,
               parents,
+              commitSeq,
               sourceCommit.getMetadata(),
               sourceCommit.getPuts(),
               sourceCommit.getDeletes(),

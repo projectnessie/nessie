@@ -214,6 +214,7 @@ components:
               numCommitsAhead: 1
               numCommitsBehind: 2
               commonAncestorHash: "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d"
+              numTotalCommits: 42
               commitMetaOfHEAD:
                 hash: "da086850076827d2989c8ee1d7fd22f152f525d46a0441f2b22ad8119c0bbbe5"
                 committer: ""
@@ -237,6 +238,7 @@ components:
               numCommitsAhead: null
               numCommitsBehind: null
               commonAncestorHash: null
+              numTotalCommits: 42
               commitMetaOfHEAD:
                 hash: "a682bfdcd5d357b5c964ef07e2eef61fabba42cb8effa8d62357df45a6cc0371"
                 committer: ""
@@ -253,6 +255,7 @@ components:
               numCommitsAhead: null
               numCommitsBehind: null
               commonAncestorHash: null
+              numTotalCommits: 42
               commitMetaOfHEAD:
                 hash: "da086850076827d2989c8ee1d7fd22f152f525d46a0441f2b22ad8119c0bbbe5"
                 committer: ""

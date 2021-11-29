@@ -24,6 +24,11 @@ public interface ReferenceInfo<METADATA> {
 
   Hash getHash();
 
+  @Value.Default
+  default long getCommitSeq() {
+    return 0L;
+  }
+
   @Nullable
   Hash getCommonAncestor();
 
