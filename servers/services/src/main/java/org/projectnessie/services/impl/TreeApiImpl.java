@@ -105,7 +105,8 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     ImmutableReferencesResponse.Builder resp = ReferencesResponse.builder();
     try (Stream<ReferenceInfo<CommitMeta>> str =
         getStore().getNamedRefs(getGetNamedRefsParams(params.isFetchAdditionalInfo()))) {
-      str.map(TreeApiImpl::makeNamedRef).forEach(resp::addReferences);
+      str.map(refInfo -> TreeApiImpl.makeReference(refInfo, params.isFetchAdditionalInfo()))
+          .forEach(resp::addReferences);
     } catch (ReferenceNotFoundException e) {
       throw new IllegalArgumentException(
           String.format(
@@ -127,10 +128,11 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   @Override
   public Reference getReferenceByName(GetReferenceParams params) throws NessieNotFoundException {
     try {
-      return makeRef(
+      return makeReference(
           getStore()
               .getNamedRef(
-                  params.getRefName(), getGetNamedRefsParams(params.isFetchAdditionalInfo())));
+                  params.getRefName(), getGetNamedRefsParams(params.isFetchAdditionalInfo())),
+          params.isFetchAdditionalInfo());
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }
@@ -511,24 +513,23 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     return ContentKey.of(key.getElements());
   }
 
-  private static Reference makeNamedRef(ReferenceInfo<CommitMeta> refWithHash) {
-    return makeRef(refWithHash);
-  }
-
-  private static Reference makeRef(ReferenceInfo<CommitMeta> refWithHash) {
+  private static Reference makeReference(
+      ReferenceInfo<CommitMeta> refWithHash, boolean fetchAdditionalInfo) {
     NamedRef ref = refWithHash.getNamedRef();
     if (ref instanceof TagName) {
-      return ImmutableTag.builder()
-          .name(ref.getName())
-          .hash(refWithHash.getHash().asString())
-          .metadata(extractReferenceMetadata(refWithHash))
-          .build();
+      ImmutableTag.Builder builder =
+          ImmutableTag.builder().name(ref.getName()).hash(refWithHash.getHash().asString());
+      if (fetchAdditionalInfo) {
+        builder.metadata(extractReferenceMetadata(refWithHash));
+      }
+      return builder.build();
     } else if (ref instanceof BranchName) {
-      return ImmutableBranch.builder()
-          .name(ref.getName())
-          .hash(refWithHash.getHash().asString())
-          .metadata(extractReferenceMetadata(refWithHash))
-          .build();
+      ImmutableBranch.Builder builder =
+          ImmutableBranch.builder().name(ref.getName()).hash(refWithHash.getHash().asString());
+      if (fetchAdditionalInfo) {
+        builder.metadata(extractReferenceMetadata(refWithHash));
+      }
+      return builder.build();
     } else {
       throw new UnsupportedOperationException("only converting tags or branches"); // todo
     }
@@ -560,34 +561,6 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
       return null;
     }
     return builder.build();
-  }
-
-  private static Reference makeRef(WithHash<? extends Ref> refWithHash) {
-    Ref ref = refWithHash.getValue();
-    if (ref instanceof TagName) {
-      return ImmutableTag.builder()
-          .name(((NamedRef) ref).getName())
-          .hash(refWithHash.getHash().asString())
-          .build();
-    } else if (ref instanceof BranchName) {
-      return ImmutableBranch.builder()
-          .name(((NamedRef) ref).getName())
-          .hash(refWithHash.getHash().asString())
-          .build();
-    } else {
-      throw new UnsupportedOperationException("only converting tags or branches"); // todo
-    }
-  }
-
-  private static NamedRef toNamedRef(WithHash<? extends Ref> refWithHash) {
-    Ref ref = refWithHash.getValue();
-    if (ref instanceof TagName) {
-      return (TagName) ref;
-    } else if (ref instanceof BranchName) {
-      return (BranchName) ref;
-    } else {
-      throw new UnsupportedOperationException("only converting tags or branches"); // todo
-    }
   }
 
   protected static org.projectnessie.versioned.Operation<Content> toOp(Operation o) {
