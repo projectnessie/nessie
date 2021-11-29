@@ -485,6 +485,29 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
+  public Optional<ContentIdAndBytes> globalContent(
+      ContentId contentId, ToIntFunction<ByteString> contentTypeExtractor) {
+    Connection conn = borrowConnection();
+    try {
+      try (PreparedStatement ps =
+          conn.prepareStatement(String.format(SqlStatements.SELECT_GLOBAL_STATE_MANY, "?"))) {
+        ps.setString(1, config.getKeyPrefix());
+        ps.setString(2, contentId.getId());
+        try (ResultSet rs = ps.executeQuery()) {
+          if (rs.next()) {
+            return Optional.of(globalContentFromRow(contentTypeExtractor, rs));
+          }
+        }
+      }
+      return Optional.empty();
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    } finally {
+      releaseConnection(conn);
+    }
+  }
+
+  @Override
   public Stream<ContentIdAndBytes> globalContent(
       Set<ContentId> keys, ToIntFunction<ByteString> contentTypeExtractor) {
     // 1. Fetch the global states,
@@ -504,18 +527,24 @@ public abstract class TxDatabaseAdapter
               }
             },
             (rs) -> {
-              ContentId cid = ContentId.of(rs.getString(1));
-              ByteString value = UnsafeByteOperations.unsafeWrap(rs.getBytes(2));
-              byte type = (byte) contentTypeExtractor.applyAsInt(value);
-              if (!keys.contains(cid)) {
+              ContentIdAndBytes global = globalContentFromRow(contentTypeExtractor, rs);
+              if (!keys.contains(global.getContentId())) {
                 // 1.1. filter the requested keys + content-ids
                 return null;
               }
 
               // 1.2. extract the current state from the GLOBAL_STATE table
-              return ContentIdAndBytes.of(cid, type, value);
+              return global;
             })
         .onClose(() -> releaseConnection(conn));
+  }
+
+  private ContentIdAndBytes globalContentFromRow(
+      ToIntFunction<ByteString> contentTypeExtractor, ResultSet rs) throws SQLException {
+    ContentId cid = ContentId.of(rs.getString(1));
+    ByteString value = UnsafeByteOperations.unsafeWrap(rs.getBytes(2));
+    byte type = (byte) contentTypeExtractor.applyAsInt(value);
+    return ContentIdAndBytes.of(cid, type, value);
   }
 
   // /////////////////////////////////////////////////////////////////////////////////////////////

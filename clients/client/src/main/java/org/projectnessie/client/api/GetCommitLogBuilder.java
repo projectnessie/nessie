@@ -30,6 +30,14 @@ public interface GetCommitLogBuilder
     extends QueryBuilder<GetCommitLogBuilder>,
         PagingBuilder<GetCommitLogBuilder>,
         OnReferenceBuilder<GetCommitLogBuilder> {
+
+  /**
+   * Will fetch additional metadata about each commit like operations in a commit and parent hash.
+   *
+   * @return {@link GetAllReferencesBuilder}
+   */
+  GetCommitLogBuilder fetchAdditionalInfo(boolean fetchAdditionalInfo);
+
   GetCommitLogBuilder untilHash(
       @Nullable @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String untilHash);

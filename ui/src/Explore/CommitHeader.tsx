@@ -17,34 +17,34 @@
 import { Card } from "react-bootstrap";
 import prettyMilliseconds from "pretty-ms";
 import React, { useEffect, useState } from "react";
-import { api, CommitMeta } from "../utils";
+import { api, LogEntry } from "../utils";
 import { factory } from "../ConfigLog4j";
 
 const log = factory.getLogger("api.CommitHeader");
 
-const fetchLog = (
-  currentRef: string
-): Promise<void | CommitMeta | undefined> => {
+const fetchLog = (currentRef: string): Promise<void | LogEntry | undefined> => {
   return api()
     .getCommitLog({ ref: currentRef })
     .then((data) => {
-      if (data.operations && data.operations.length > 0) {
-        return data.operations[0];
+      if (data.logEntries && data.logEntries.length > 0) {
+        return data.logEntries[0];
       }
     })
     .catch((t) => log.error("CommitLog", t));
 };
 
 const CommitHeader = (props: { currentRef: string }): React.ReactElement => {
-  const [currentLog, setLog] = useState<CommitMeta>({
-    author: undefined,
-    authorTime: undefined,
-    commitTime: undefined,
-    committer: undefined,
-    hash: undefined,
-    message: "",
-    properties: {},
-    signedOffBy: undefined,
+  const [currentLog, setLog] = useState<LogEntry>({
+    commitMeta: {
+      author: undefined,
+      authorTime: undefined,
+      commitTime: undefined,
+      committer: undefined,
+      hash: undefined,
+      message: "",
+      properties: {},
+      signedOffBy: undefined,
+    },
   });
   useEffect(() => {
     const logs = async () => {
@@ -57,27 +57,29 @@ const CommitHeader = (props: { currentRef: string }): React.ReactElement => {
     void logs();
   }, [props.currentRef]);
 
-  if (!currentLog || !currentLog.hash) {
+  if (!currentLog || !currentLog.commitMeta.hash) {
     return <Card.Header />;
   }
-  const properties = Object.keys(currentLog.properties)
-    .map((data) => [data, currentLog.properties[data]])
+  const properties = Object.keys(currentLog.commitMeta.properties)
+    .map((data) => [data, currentLog.commitMeta.properties[data]])
     .map(([k, v]) => `${k}=${v}`)
     .join("; ");
   return (
     <Card.Header>
       <span className={"float-left"}>
         <span className="font-weight-bold">
-          {currentLog.committer ?? currentLog.author}
+          {currentLog.commitMeta.committer ?? currentLog.commitMeta.author}
         </span>
-        <span>{currentLog.message + " " + properties}</span>
+        <span>{currentLog.commitMeta.message + " " + properties}</span>
       </span>
       <span className={"float-right"}>
-        <span className="font-italic">{currentLog.hash?.slice(0, 8)}</span>
+        <span className="font-italic">
+          {currentLog.commitMeta.hash?.slice(0, 8)}
+        </span>
         <span className={"pl-3"}>
           {prettyMilliseconds(
             new Date().getTime() -
-              (currentLog.commitTime ?? new Date(0)).getTime(),
+              (currentLog.commitMeta.commitTime ?? new Date(0)).getTime(),
             { compact: true }
           )}
         </span>

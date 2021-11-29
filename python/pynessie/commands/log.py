@@ -26,7 +26,7 @@ from dateutil.tz import tzlocal
 
 from ..cli_common_context import ContextObject, MutuallyExclusiveOption
 from ..decorators import error_handler, pass_client, validate_reference
-from ..model import CommitMeta, CommitMetaSchema
+from ..model import CommitMetaSchema, LogEntry, LogEntrySchema
 from ..utils import build_query_expression_for_commit_log_flags
 
 
@@ -68,6 +68,15 @@ from ..utils import build_query_expression_for_commit_log_flags
     "commit.committer=='nessie_committer'\n"
     "timestamp(commit.commitTime) > timestamp('2021-06-21T10:39:17.977922Z')\n",
 )
+@click.option(
+    "-x",
+    "--extended",
+    "fetch_additional_info",
+    is_flag=True,
+    help="Retrieve all available information for the commit entries. "
+    "This option will also return the operations for each commit and the parent hash. "
+    "The schema of the JSON output will then produce a list of LogEntrySchema, otherwise a list of CommitMetaSchema.",
+)
 @pass_client
 @error_handler
 @validate_reference
@@ -81,6 +90,7 @@ def log(  # noqa: C901
     committer: List[str],
     revision_range: str,
     query_expression: str,
+    fetch_additional_info: bool,
 ) -> None:
     """Show commit log.
 
@@ -124,25 +134,37 @@ def log(  # noqa: C901
         filtering_args["query_expression"] = expr
 
     # TODO: limiting by path is not yet supported.
-    log_result = ctx.nessie.get_log(start_ref=ref, max_records=number, **filtering_args)
+    log_result = ctx.nessie.get_log(start_ref=ref, max_records=number, fetch_additional_info=fetch_additional_info, **filtering_args)
     if ctx.json:
-        click.echo(CommitMetaSchema().dumps(log_result, many=True))
+        if fetch_additional_info:
+            click.echo(LogEntrySchema().dumps(log_result, many=True))
+        else:
+            commit_metas = [entry.commit_meta for entry in log_result]
+            click.echo(CommitMetaSchema().dumps(commit_metas, many=True))
     else:
-        click.echo_via_pager(_format_log_result(x, ref, index) for index, x in enumerate(log_result))
+        click.echo_via_pager(_format_log_result(x, ref, index, fetch_additional_info) for index, x in enumerate(log_result))
 
 
-def _format_log_result(x: CommitMeta, ref: str, index: int) -> str:
-    result = _format_commit_log_string(x.hash_, ref, index)
-    result += click.style("Author: {}\n".format(x.author))
-    result += click.style("Date: {}\n".format(_format_time(x.commitTime)))
-    result += click.style("\n\t{}\n\n".format(x.message))
+def _format_log_result(x: LogEntry, ref: str, index: int, fetch_additional_info: bool) -> str:
+    result = _format_commit_log_string(x.commit_meta.hash_, ref, index)
+    result += click.style(f"Author: {x.commit_meta.author}\n")
+    result += click.style(f"Date: {_format_time(x.commit_meta.commitTime)}\n")
+    if fetch_additional_info:
+        result += click.style(f"Parent: {x.parent_commit_hash}\n")
+        result += click.style("Operations:\n")
+        if not x.operations or len(x.operations) == 0:
+            result += click.style("  (None)\n")
+        else:
+            for operation in x.operations:
+                result += click.style(f"  {operation.pretty_print()}\n")
+    result += click.style(f"\n\t{x.commit_meta.message}\n\n")
     return result
 
 
 def _format_commit_log_string(commit_hash: str, ref: str, index: int) -> str:
-    result = click.style("commit {}".format(commit_hash), fg="yellow")
+    result = click.style(f"commit {commit_hash}", fg="yellow")
     if index == 0:
-        result += click.style(" ({})\n".format(ref), fg="green")
+        result += click.style(f" ({ref})\n", fg="green")
     else:
         result += "\n"
     return result

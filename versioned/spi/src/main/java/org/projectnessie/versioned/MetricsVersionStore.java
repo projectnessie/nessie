@@ -139,8 +139,9 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
   }
 
   @Override
-  public Stream<WithHash<METADATA>> getCommits(Ref ref) throws ReferenceNotFoundException {
-    return delegateStream1Ex("getcommits", () -> delegate.getCommits(ref));
+  public Stream<Commit<METADATA, VALUE>> getCommits(Ref ref, boolean fetchAdditionalInfo)
+      throws ReferenceNotFoundException {
+    return delegateStream1Ex("getcommits", () -> delegate.getCommits(ref, fetchAdditionalInfo));
   }
 
   @Override

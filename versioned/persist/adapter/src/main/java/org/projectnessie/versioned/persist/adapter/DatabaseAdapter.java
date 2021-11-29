@@ -267,4 +267,14 @@ public interface DatabaseAdapter {
    */
   Stream<ContentIdAndBytes> globalContent(
       Set<ContentId> keys, ToIntFunction<ByteString> contentTypeExtractor);
+
+  /**
+   * Retrieves the global content for the given contents-id.
+   *
+   * @param contentId contents-id to retrieve the global content for
+   * @param contentTypeExtractor function to extract the content-type
+   * @return global content, if present or an empty optional, never {@code null}.
+   */
+  Optional<ContentIdAndBytes> globalContent(
+      ContentId contentId, ToIntFunction<ByteString> contentTypeExtractor);
 }

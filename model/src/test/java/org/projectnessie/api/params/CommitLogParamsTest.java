@@ -17,6 +17,7 @@ package org.projectnessie.api.params;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
 
 public class CommitLogParamsTest {
@@ -28,30 +29,53 @@ public class CommitLogParamsTest {
     String endHash = "00000";
     String pageToken = "aabbcc";
     String queryExpression = "some_expression";
-    CommitLogParams params =
-        CommitLogParams.builder()
-            .expression(queryExpression)
-            .maxRecords(maxRecords)
-            .pageToken(pageToken)
-            .startHash(startHash)
-            .endHash(endHash)
-            .build();
+    boolean fetchAdditionalInfo = true;
 
-    assertThat(params.pageToken()).isEqualTo(pageToken);
-    assertThat(params.maxRecords()).isEqualTo(maxRecords);
-    assertThat(params.queryExpression()).isEqualTo(queryExpression);
-    assertThat(params.startHash()).isEqualTo(startHash);
-    assertThat(params.endHash()).isEqualTo(endHash);
+    Supplier<CommitLogParams> generator =
+        () ->
+            CommitLogParams.builder()
+                .expression(queryExpression)
+                .maxRecords(maxRecords)
+                .pageToken(pageToken)
+                .startHash(startHash)
+                .endHash(endHash)
+                .fetchAdditionalInfo(fetchAdditionalInfo)
+                .build();
+
+    verify(
+        maxRecords, startHash, endHash, pageToken, queryExpression, fetchAdditionalInfo, generator);
   }
 
   @Test
   public void testEmpty() {
-    CommitLogParams params = CommitLogParams.empty();
-    assertThat(params).isNotNull();
-    assertThat(params.maxRecords()).isNull();
-    assertThat(params.pageToken()).isNull();
-    assertThat(params.queryExpression()).isNull();
-    assertThat(params.startHash()).isNull();
-    assertThat(params.endHash()).isNull();
+    verify(null, null, null, null, null, false, CommitLogParams::empty);
+  }
+
+  private void verify(
+      Integer maxRecords,
+      String startHash,
+      String endHash,
+      String pageToken,
+      String queryExpression,
+      boolean fetchAdditionalInfo,
+      Supplier<CommitLogParams> generator) {
+    assertThat(generator.get())
+        .isEqualTo(generator.get())
+        .extracting(
+            CommitLogParams::pageToken,
+            CommitLogParams::maxRecords,
+            CommitLogParams::queryExpression,
+            CommitLogParams::startHash,
+            CommitLogParams::endHash,
+            CommitLogParams::isFetchAdditionalInfo,
+            CommitLogParams::hashCode)
+        .containsExactly(
+            pageToken,
+            maxRecords,
+            queryExpression,
+            startHash,
+            endHash,
+            fetchAdditionalInfo,
+            generator.get().hashCode());
   }
 }

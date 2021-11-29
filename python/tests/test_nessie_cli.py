@@ -17,6 +17,7 @@
 #
 """Tests for `pynessie` package."""
 import itertools
+from typing import List
 
 import confuse
 import pytest
@@ -25,9 +26,14 @@ from assertpy import assert_that
 
 from pynessie import __version__
 from pynessie.model import Branch
+from pynessie.model import CommitMeta
+from pynessie.model import CommitMetaSchema
+from pynessie.model import ContentKey
 from pynessie.model import ContentSchema
 from pynessie.model import EntrySchema
 from pynessie.model import IcebergTable
+from pynessie.model import LogEntry
+from pynessie.model import LogEntrySchema
 from pynessie.model import ReferenceSchema
 from .conftest import execute_cli_command, make_commit
 
@@ -89,10 +95,24 @@ def test_log() -> None:
     table = _new_table("test_log_dev")
     make_commit("log.foo.dev", table, "dev_test_log", author="nessie_user1")
     table = _new_table("test_log")
-    make_commit("log.foo.bar", table, "main", author="nessie_user1")
+    make_commit("log.foo.bar", table, "main", author="nessie_user1", message="commit to main")
     tables = ContentSchema().loads(execute_cli_command(["--json", "content", "view", "log.foo.bar"]), many=True)
     assert len(tables) == 1
     assert tables[0] == table
+
+    ext_logs: List[LogEntry] = LogEntrySchema().loads(execute_cli_command(["--json", "log", "-x"]), many=True)
+    assert (
+        len(ext_logs) == 1
+        and ext_logs[0].commit_meta.message == "commit to main"
+        and ext_logs[0].commit_meta.author == "nessie_user1"
+        and ext_logs[0].parent_commit_hash is not None
+        and len(ext_logs[0].operations) == 1
+        and ext_logs[0].operations[0].key == ContentKey.from_path_string("log.foo.bar")
+    )
+
+    simple_logs: List[CommitMeta] = CommitMetaSchema().loads(execute_cli_command(["--json", "log"]), many=True)
+    assert len(simple_logs) == 1 and simple_logs[0].message == "commit to main" and simple_logs[0].author == "nessie_user1"
+
     logs = simplejson.loads(execute_cli_command(["--json", "log"]))
     assert len(logs) == 1
     logs = simplejson.loads(execute_cli_command(["--json", "log", "--revision-range", logs[0]["hash"]]))

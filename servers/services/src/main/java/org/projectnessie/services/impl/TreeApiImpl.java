@@ -53,12 +53,13 @@ import org.projectnessie.model.Content.Type;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.ImmutableBranch;
+import org.projectnessie.model.ImmutableLogEntry;
 import org.projectnessie.model.ImmutableLogResponse;
 import org.projectnessie.model.ImmutableReferenceMetadata;
-import org.projectnessie.model.ImmutableReferenceMetadata.Builder;
 import org.projectnessie.model.ImmutableReferencesResponse;
 import org.projectnessie.model.ImmutableTag;
 import org.projectnessie.model.LogResponse;
+import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.Merge;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Operations;
@@ -70,6 +71,7 @@ import org.projectnessie.model.Transplant;
 import org.projectnessie.services.authz.AccessChecker;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.GetNamedRefsParams.RetrieveOptions;
@@ -220,25 +222,56 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
                 namedRef, null == params.pageToken() ? params.endHash() : params.pageToken())
             .getHash();
 
-    try (Stream<WithHash<CommitMeta>> commits = getStore().getCommits(endRef)) {
-      Stream<CommitMeta> s =
+    try (Stream<Commit<CommitMeta, Content>> commits =
+        getStore().getCommits(endRef, params.isFetchAdditionalInfo())) {
+      Stream<LogEntry> logEntries =
+          commits.map(
+              commit -> {
+                CommitMeta commitMetaWithHash =
+                    addHashToCommitMeta(commit.getHash(), commit.getCommitMeta());
+                ImmutableLogEntry.Builder logEntry = LogEntry.builder();
+                logEntry.commitMeta(commitMetaWithHash);
+                if (params.isFetchAdditionalInfo()) {
+                  if (commit.getParentHash() != null) {
+                    logEntry.parentCommitHash(commit.getParentHash().asString());
+                  }
+                  commit
+                      .getOperations()
+                      .forEach(
+                          op -> {
+                            ContentKey key = ContentKey.of(op.getKey().getElements());
+                            if (op instanceof Put) {
+                              Content content = ((Put<Content>) op).getValue();
+                              logEntry.addOperations(Operation.Put.of(key, content));
+                            }
+                            if (op instanceof Delete) {
+                              logEntry.addOperations(Operation.Delete.of(key));
+                            }
+                          });
+                }
+                return logEntry.build();
+              });
+
+      logEntries =
           StreamSupport.stream(
               StreamUtil.takeUntilIncl(
-                  commits
-                      .map(cwh -> addHashToCommitMeta(cwh.getHash(), cwh.getValue()))
-                      .spliterator(),
-                  x -> x.getHash().equals(params.startHash())),
+                  logEntries.spliterator(),
+                  x -> x.getCommitMeta().getHash().equals(params.startHash())),
               false);
-      List<CommitMeta> items =
-          filterCommitLog(s, params.queryExpression()).limit(max + 1).collect(Collectors.toList());
+
+      List<LogEntry> items =
+          filterCommitLog(logEntries, params.queryExpression())
+              .limit(max + 1)
+              .collect(Collectors.toList());
+
       if (items.size() == max + 1) {
         return ImmutableLogResponse.builder()
-            .addAllOperations(items.subList(0, max))
+            .addAllLogEntries(items.subList(0, max))
             .isHasMore(true)
-            .token(items.get(max).getHash())
+            .token(items.get(max).getCommitMeta().getHash())
             .build();
       }
-      return ImmutableLogResponse.builder().addAllOperations(items).build();
+      return ImmutableLogResponse.builder().addAllLogEntries(items).build();
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }
@@ -251,13 +284,13 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   /**
    * Applies different filters to the {@link Stream} of commits based on the query expression.
    *
-   * @param commits The commit log that different filters will be applied to
+   * @param logEntries The commit log that different filters will be applied to
    * @param queryExpression The query expression to filter by
    * @return A potentially filtered {@link Stream} of commits based on the query expression
    */
-  private Stream<CommitMeta> filterCommitLog(Stream<CommitMeta> commits, String queryExpression) {
+  private Stream<LogEntry> filterCommitLog(Stream<LogEntry> logEntries, String queryExpression) {
     if (Strings.isNullOrEmpty(queryExpression)) {
-      return commits;
+      return logEntries;
     }
 
     final Script script;
@@ -272,10 +305,11 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     } catch (ScriptException e) {
       throw new IllegalArgumentException(e);
     }
-    return commits.filter(
-        commit -> {
+    return logEntries.filter(
+        logEntry -> {
           try {
-            return script.execute(Boolean.class, ImmutableMap.of("commit", commit));
+            return script.execute(
+                Boolean.class, ImmutableMap.of("commit", logEntry.getCommitMeta()));
           } catch (ScriptException e) {
             throw new RuntimeException(e);
           }
@@ -537,7 +571,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
 
   @Nullable
   private static ReferenceMetadata extractReferenceMetadata(ReferenceInfo<CommitMeta> refWithHash) {
-    Builder builder = ImmutableReferenceMetadata.builder();
+    ImmutableReferenceMetadata.Builder builder = ImmutableReferenceMetadata.builder();
     boolean found = false;
     if (null != refWithHash.getAheadBehind()) {
       found = true;

@@ -39,6 +39,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
@@ -207,7 +208,7 @@ public abstract class AbstractVersionStoreTest extends AbstractITVersionStore {
     }
 
     // Verify that all commits are there and that the order of the commits is correct
-    List<String> committedValues = commitsList(branch, s -> s.map(WithHash::getValue));
+    List<String> committedValues = commitsList(branch, s -> s.map(Commit::getCommitMeta), false);
     Collections.reverse(expectedValues);
     assertEquals(expectedValues, committedValues);
   }
@@ -420,13 +421,14 @@ public abstract class AbstractVersionStoreTest extends AbstractITVersionStore {
         // getCommits()
         new ReferenceNotFoundFunction("getCommits/branch")
             .msg("Named reference 'this-one-should-not-exist' not found")
-            .function(s -> s.getCommits(BranchName.of("this-one-should-not-exist"))),
+            .function(s -> s.getCommits(BranchName.of("this-one-should-not-exist"), false)),
         new ReferenceNotFoundFunction("getCommits/tag")
             .msg("Named reference 'this-one-should-not-exist' not found")
-            .function(s -> s.getCommits(TagName.of("this-one-should-not-exist"))),
+            .function(s -> s.getCommits(TagName.of("this-one-should-not-exist"), false)),
         new ReferenceNotFoundFunction("getCommits/hash")
             .msg("Commit '12341234123412341234123412341234123412341234' not found")
-            .function(s -> s.getCommits(Hash.of("12341234123412341234123412341234123412341234"))),
+            .function(
+                s -> s.getCommits(Hash.of("12341234123412341234123412341234123412341234"), false)),
         // getValue()
         new ReferenceNotFoundFunction("getValue/branch")
             .msg("Named reference 'this-one-should-not-exist' not found")
@@ -586,7 +588,7 @@ public abstract class AbstractVersionStoreTest extends AbstractITVersionStore {
           ReferenceConflictException {
     BranchName main = BranchName.of("main");
     WithHash<Ref> mainRef = store.toRef(main.getName());
-    assertThat(store().getCommits(main)).isEmpty();
+    assertThat(store().getCommits(main, false)).isEmpty();
     try (Stream<ReferenceInfo<String>> refs = store().getNamedRefs(GetNamedRefsParams.DEFAULT)) {
       assertThat(refs).extracting(r -> r.getNamedRef().getName()).containsExactly(main.getName());
     }

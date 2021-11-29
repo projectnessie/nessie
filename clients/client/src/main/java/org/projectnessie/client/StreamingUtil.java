@@ -26,6 +26,7 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.LogResponse;
+import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferencesResponse;
 
@@ -92,7 +93,7 @@ public final class StreamingUtil {
    * @param ref a named reference (branch or tag name) or a commit-hash
    * @return stream of {@link CommitMeta} objects
    */
-  public static Stream<CommitMeta> getCommitLogStream(
+  public static Stream<LogEntry> getCommitLogStream(
       @NotNull NessieApiV1 api,
       @NotNull String ref,
       @Nullable String hashOnRef,
@@ -101,7 +102,7 @@ public final class StreamingUtil {
       OptionalInt maxRecords)
       throws NessieNotFoundException {
     return new ResultStreamPaginator<>(
-            LogResponse::getOperations,
+            LogResponse::getLogEntries,
             (reference, pageSize, token) ->
                 builderWithPaging(api.getCommitLog(), pageSize, token)
                     .refName(reference)

@@ -45,6 +45,7 @@ from ..model import ContentKey
 from ..model import ContentSchema
 from ..model import Entries
 from ..model import EntriesSchema
+from ..model import LogEntry
 from ..model import LogResponse
 from ..model import LogResponseSchema
 from ..model import Merge
@@ -215,8 +216,13 @@ class NessieClient:
         cherry_pick(self._base_url, self._auth, branch, transplant_json, old_hash, self._ssl_verify)
 
     def get_log(
-        self: "NessieClient", start_ref: str, hash_on_ref: Optional[str] = None, max_records: Optional[int] = None, **filtering_args: Any
-    ) -> Generator[CommitMeta, Any, None]:
+        self: "NessieClient",
+        start_ref: str,
+        hash_on_ref: Optional[str] = None,
+        max_records: Optional[int] = None,
+        fetch_additional_info: bool = False,
+        **filtering_args: Any
+    ) -> Generator[LogEntry, Any, None]:
         """Fetch all logs starting at start_ref.
 
         start_ref can be any ref.
@@ -227,7 +233,7 @@ class NessieClient:
         """
         page_token = filtering_args.get("pageToken", None)
 
-        def fetch_logs(max_records: Optional[int], token: Optional[str] = page_token) -> LogResponse:
+        def fetch_logs(fetch_max: Optional[int], token: Optional[str] = page_token) -> LogResponse:
             if token:
                 filtering_args["pageToken"] = token
 
@@ -237,28 +243,29 @@ class NessieClient:
                 hash_on_ref=hash_on_ref,
                 ref=start_ref,
                 ssl_verify=self._ssl_verify,
-                max_records=max_records,
+                max_records=fetch_max,
+                fetch_additional_info=fetch_additional_info,
                 **filtering_args
             )
-            log_schema = LogResponseSchema().load(fetched_logs)
-            return log_schema
+            parsed_logs = LogResponseSchema().load(fetched_logs)
+            return parsed_logs
 
-        log_schema = fetch_logs(max_records=max_records)
+        log_response = fetch_logs(fetch_max=max_records)
 
-        def generator(log_schema: LogResponse, max_records: Optional[int]) -> Generator[CommitMeta, Any, None]:
+        def generator(logs: LogResponse, fetch_max: Optional[int]) -> Generator[LogEntry, Any, None]:
             while True:
-                for log in log_schema.operations:
+                for log in logs.log_entries:
                     yield log
-                    if max_records is not None:
-                        max_records -= 1
-                        if max_records <= 0:
+                    if fetch_max is not None:
+                        fetch_max -= 1
+                        if fetch_max <= 0:
                             # yield only the requierd number of results, if server returns more records than expected.
                             break
-                if not log_schema.has_more or (max_records is not None and max_records <= 0):
+                if not logs.has_more or (fetch_max is not None and fetch_max <= 0):
                     break
-                log_schema = fetch_logs(max_records=max_records, token=log_schema.token)
+                logs = fetch_logs(fetch_max=fetch_max, token=logs.token)
 
-        return generator(log_schema, max_records)
+        return generator(log_response, max_records)
 
     def get_default_branch(self: "NessieClient") -> str:
         """Fetch default branch either from config if specified or from the server."""

@@ -18,17 +18,22 @@ package org.projectnessie.versioned.persist.store;
 import com.google.protobuf.ByteString;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
+import org.projectnessie.versioned.ImmutableCommit;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.Operation;
@@ -46,6 +51,7 @@ import org.projectnessie.versioned.WithType;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentAndState;
 import org.projectnessie.versioned.persist.adapter.ContentId;
+import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
@@ -203,11 +209,66 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
   }
 
   @Override
-  public Stream<WithHash<METADATA>> getCommits(Ref ref) throws ReferenceNotFoundException {
+  public Stream<Commit<METADATA, CONTENT>> getCommits(Ref ref, boolean fetchAdditionalInfo)
+      throws ReferenceNotFoundException {
     Hash hash = refToHash(ref);
     Stream<CommitLogEntry> stream = databaseAdapter.commitLog(hash);
 
-    return stream.map(e -> WithHash.of(e.getHash(), deserializeMetadata(e.getMetadata())));
+    BiConsumer<ImmutableCommit.Builder<METADATA, CONTENT>, CommitLogEntry> enhancer =
+        enhancerForCommitLog(fetchAdditionalInfo);
+
+    return stream.map(
+        e -> {
+          ImmutableCommit.Builder<METADATA, CONTENT> commit =
+              Commit.<METADATA, CONTENT>builder()
+                  .hash(e.getHash())
+                  .commitMeta(deserializeMetadata(e.getMetadata()));
+          enhancer.accept(commit, e);
+          return commit.build();
+        });
+  }
+
+  /**
+   * Utility function for {@link #getCommits(Ref, boolean)} to optionally enhance the returned
+   * {@link Commit} instances with the parent hash and operations per commit.
+   */
+  private BiConsumer<ImmutableCommit.Builder<METADATA, CONTENT>, CommitLogEntry>
+      enhancerForCommitLog(boolean fetchAdditionalInfo) {
+    if (!fetchAdditionalInfo) {
+      return (a, b) -> {};
+    }
+
+    // Memoize already retrieved global-content
+    Map<ContentId, Optional<ByteString>> globalContents = new HashMap<>();
+    BiFunction<ContentId, Byte, Optional<ByteString>> getGlobalContents =
+        (contentId, type) -> {
+          if (!storeWorker.requiresGlobalState(storeWorker.getType(type))) {
+            return Optional.empty();
+          }
+          return globalContents.computeIfAbsent(
+              contentId,
+              cid ->
+                  databaseAdapter
+                      .globalContent(contentId, bytes -> type)
+                      .map(ContentIdAndBytes::getValue));
+        };
+
+    return (commitBuilder, logEntry) -> {
+      if (!logEntry.getParents().isEmpty()) {
+        commitBuilder.parentHash(logEntry.getParents().get(0));
+      }
+      logEntry.getDeletes().forEach(delete -> commitBuilder.addOperations(Delete.of(delete)));
+      logEntry
+          .getPuts()
+          .forEach(
+              put ->
+                  commitBuilder.addOperations(
+                      Put.of(
+                          put.getKey(),
+                          storeWorker.valueFromStore(
+                              put.getValue(),
+                              getGlobalContents.apply(put.getContentId(), put.getType())))));
+    };
   }
 
   @Override

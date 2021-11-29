@@ -155,7 +155,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/branch/contents_commit_delete_dev/commit?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
-      string: '{"hash": "f814e1e92b6921d6b3ac56d468ec562e97133557e439726e6fee5ed2fa39e1f1",
+      string: '{"hash": "66dc01a40d8bcb5cd9310905e2bdc2f09e757283953c28abee454199a17a5fca",
         "name": "contents_commit_delete_dev", "type": "BRANCH"}'
     headers:
       Content-Type:
@@ -206,7 +206,7 @@ interactions:
   response:
     body:
       string: '{"hasMore": false, "references": [{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-        "name": "main", "type": "BRANCH"}, {"hash": "f814e1e92b6921d6b3ac56d468ec562e97133557e439726e6fee5ed2fa39e1f1",
+        "name": "main", "type": "BRANCH"}, {"hash": "66dc01a40d8bcb5cd9310905e2bdc2f09e757283953c28abee454199a17a5fca",
         "name": "contents_commit_delete_dev", "type": "BRANCH"}], "token": null}'
     headers:
       Content-Type:
@@ -235,10 +235,10 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/contents_commit_delete_dev/commit?expectedHash=f814e1e92b6921d6b3ac56d468ec562e97133557e439726e6fee5ed2fa39e1f1
+    uri: http://localhost:19120/api/v1/trees/branch/contents_commit_delete_dev/commit?expectedHash=66dc01a40d8bcb5cd9310905e2bdc2f09e757283953c28abee454199a17a5fca
   response:
     body:
-      string: '{"hash": "cd4bbbd6f5bb422c05ae02afe30150ad26a791de4248c7a3204afef9b36fc1a2",
+      string: '{"hash": "5285ad6444b088a58ce9c0358311784445af6ce86963198aa5df65f67fc4a187",
         "name": "contents_commit_delete_dev", "type": "BRANCH"}'
     headers:
       Content-Type:

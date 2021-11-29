@@ -17,12 +17,12 @@
 import { Card } from "react-bootstrap";
 import moment from "moment";
 import React, { Fragment } from "react";
-import { CommitMeta } from "../utils";
+import { LogEntry } from "../utils";
 import "./CommitDetails.css";
 import { EmptyMessageView } from "./Components";
 
 const CommitDetails = (props: {
-  commitDetails: CommitMeta | undefined;
+  commitDetails: LogEntry | undefined;
   currentRef: string;
 }): React.ReactElement => {
   const { commitDetails, currentRef } = props;
@@ -38,7 +38,7 @@ const CommitDetails = (props: {
       hash,
       committer,
       commitTime,
-    } = commitDetails;
+    } = commitDetails.commitMeta;
     const additionalProperties =
       properties &&
       Object.keys(properties)

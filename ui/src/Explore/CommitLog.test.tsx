@@ -25,17 +25,19 @@ import { createMemoryHistory } from "history";
 it("Commit log renders", async () => {
   const now = new Date();
   now.setDate(now.getDate() - 1);
-  const commitMeta = {
-    hash: "deadbeef",
-    author: "bob",
-    commitTime: now,
-    committer: "sally",
-    message: "commitMessage",
-    properties: { a: "b", c: "d" },
+  const logEntry = {
+    commitMeta: {
+      hash: "deadbeef",
+      author: "bob",
+      commitTime: now,
+      committer: "sally",
+      message: "commitMessage",
+      properties: { a: "b", c: "d" },
+    },
   };
   const scope1 = nock("http://localhost/api/v1")
     .get("/trees/tree/main/log?max=10")
-    .reply(200, { token: "foo", operations: [commitMeta] });
+    .reply(200, { token: "foo", logEntries: [logEntry] });
 
   const { getByText, asFragment } = render(
     <React.StrictMode>

@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -32,12 +33,14 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.GetNamedRefsParams;
@@ -118,7 +121,7 @@ public abstract class AbstractITVersionStore {
     }
 
     // Verify that all commits are there and that the order of the commits is correct
-    List<String> committedValues = commitsList(branch, s -> s.map(WithHash::getValue));
+    List<String> committedValues = commitsList(branch, s -> s.map(Commit::getCommitMeta), false);
     Collections.reverse(expectedValues);
     assertEquals(expectedValues, committedValues);
   }
@@ -159,11 +162,11 @@ public abstract class AbstractITVersionStore {
             ReferenceInfo.of(commitHash, anotherBranch),
             ReferenceInfo.of(commitHash, anotherAnotherBranch));
 
-    assertThat(commitsList(branch)).isEmpty();
-    assertThat(commitsList(anotherBranch)).hasSize(1);
-    assertThat(commitsList(anotherAnotherBranch)).hasSize(1);
-    assertThat(commitsList(hash)).isEmpty(); // empty commit should not be listed
-    assertThat(commitsList(commitHash)).hasSize(1); // empty commit should not be listed
+    assertThat(commitsList(branch, false)).isEmpty();
+    assertThat(commitsList(anotherBranch, false)).hasSize(1);
+    assertThat(commitsList(anotherAnotherBranch, false)).hasSize(1);
+    assertThat(commitsList(hash, false)).isEmpty(); // empty commit should not be listed
+    assertThat(commitsList(commitHash, false)).hasSize(1); // empty commit should not be listed
 
     assertThrows(
         ReferenceAlreadyExistsException.class, () -> store().create(branch, Optional.empty()));
@@ -206,9 +209,9 @@ public abstract class AbstractITVersionStore {
     }
     Collections.reverse(messages);
 
-    List<String> justTwo = commitsList(branch, s -> s.limit(2).map(WithHash::getValue));
+    List<String> justTwo = commitsList(branch, s -> s.limit(2).map(Commit::getCommitMeta), false);
     assertEquals(messages.subList(0, 2), justTwo);
-    List<String> justTen = commitsList(branch, s -> s.limit(10).map(WithHash::getValue));
+    List<String> justTen = commitsList(branch, s -> s.limit(10).map(Commit::getCommitMeta), false);
     assertEquals(messages.subList(0, 10), justTen);
 
     int pageSize = 10;
@@ -218,12 +221,12 @@ public abstract class AbstractITVersionStore {
 
     Hash lastHash = null;
     for (int offset = 0; ; ) {
-      List<WithHash<String>> logPage =
-          commitsList(lastHash == null ? branch : lastHash, s -> s.limit(pageSize));
+      List<Commit<String, String>> logPage =
+          commitsList(lastHash == null ? branch : lastHash, s -> s.limit(pageSize), false);
 
       assertEquals(
           messages.subList(offset, Math.min(offset + pageSize, commits)),
-          logPage.stream().map(WithHash::getValue).collect(Collectors.toList()));
+          logPage.stream().map(Commit::getCommitMeta).collect(Collectors.toList()));
 
       lastHash = logPage.get(logPage.size() - 1).getHash();
 
@@ -231,10 +234,10 @@ public abstract class AbstractITVersionStore {
       if (offset >= commits) {
         // The "next after last page" should always return just a single commit, that's basically
         // the "end of commit-log"-condition.
-        logPage = commitsList(lastHash, s -> s.limit(pageSize));
+        logPage = commitsList(lastHash, s -> s.limit(pageSize), false);
         assertEquals(
             Collections.singletonList(messages.get(commits - 1)),
-            logPage.stream().map(WithHash::getValue).collect(Collectors.toList()));
+            logPage.stream().map(Commit::getCommitMeta).collect(Collectors.toList()));
         break;
       }
     }
@@ -283,11 +286,11 @@ public abstract class AbstractITVersionStore {
             ReferenceInfo.of(initialHash, tag),
             ReferenceInfo.of(commitHash, anotherTag));
 
-    assertThat(commitsList(tag)).isEmpty();
-    assertThat(commitsList(initialHash)).isEmpty(); // empty commit should not be listed
+    assertThat(commitsList(tag, false)).isEmpty();
+    assertThat(commitsList(initialHash, false)).isEmpty(); // empty commit should not be listed
 
-    assertThat(commitsList(anotherTag)).hasSize(1);
-    assertThat(commitsList(commitHash)).hasSize(1); // empty commit should not be listed
+    assertThat(commitsList(anotherTag, false)).hasSize(1);
+    assertThat(commitsList(commitHash, false)).hasSize(1); // empty commit should not be listed
 
     store().delete(tag, Optional.of(initialHash));
     assertThrows(
@@ -325,11 +328,9 @@ public abstract class AbstractITVersionStore {
     store().commit(branch, Optional.of(initialHash), "Another commit", Collections.emptyList());
     final Hash anotherCommitHash = store().hashOnReference(branch, Optional.empty());
 
-    assertThat(commitsList(branch))
-        .contains(
-            WithHash.of(anotherCommitHash, "Another commit"),
-            WithHash.of(commitHash, "Some commit"));
-    assertThat(commitsList(commitHash)).contains(WithHash.of(commitHash, "Some commit"));
+    assertThat(commitsList(branch, false))
+        .contains(commit(anotherCommitHash, "Another commit"), commit(commitHash, "Some commit"));
+    assertThat(commitsList(commitHash, false)).contains(commit(commitHash, "Some commit"));
 
     assertThrows(
         ReferenceConflictException.class, () -> store().delete(branch, Optional.of(initialHash)));
@@ -376,11 +377,11 @@ public abstract class AbstractITVersionStore {
     final Hash thirdCommit =
         commit("Third Commit").put("t2", "v2_2").unchanged("t4").toBranch(branch);
 
-    assertThat(commitsList(branch))
+    assertThat(commitsList(branch, false))
         .contains(
-            WithHash.of(thirdCommit, "Third Commit"),
-            WithHash.of(secondCommit, "Second Commit"),
-            WithHash.of(initialCommit, "Initial Commit"));
+            commit(thirdCommit, "Third Commit"),
+            commit(secondCommit, "Second Commit"),
+            commit(initialCommit, "Initial Commit"));
 
     try (Stream<Key> keys = store().getKeys(branch).map(WithType::getValue)) {
       assertThat(keys).containsExactlyInAnyOrder(Key.of("t1"), Key.of("t2"), Key.of("t4"));
@@ -468,14 +469,14 @@ public abstract class AbstractITVersionStore {
     final Hash newT2Commit =
         commit("New T2 Commit").fromReference(t2Commit).put("t2", "new_v2_1").toBranch(branch);
 
-    assertThat(commitsList(branch))
+    assertThat(commitsList(branch, false))
         .contains(
-            WithHash.of(newT2Commit, "New T2 Commit"),
-            WithHash.of(extraCommit, "Extra Commit"),
-            WithHash.of(t3Commit, "T3 Commit"),
-            WithHash.of(t2Commit, "T2 Commit"),
-            WithHash.of(t1Commit, "T1 Commit"),
-            WithHash.of(initialCommit, "Initial Commit"));
+            commit(newT2Commit, "New T2 Commit"),
+            commit(extraCommit, "Extra Commit"),
+            commit(t3Commit, "T3 Commit"),
+            commit(t2Commit, "T2 Commit"),
+            commit(t1Commit, "T1 Commit"),
+            commit(initialCommit, "Initial Commit"));
 
     try (Stream<Key> keys = store().getKeys(branch).map(WithType::getValue)) {
       assertThat(keys).containsExactlyInAnyOrder(Key.of("t1"), Key.of("t2"), Key.of("t3"));
@@ -773,15 +774,15 @@ public abstract class AbstractITVersionStore {
         ReferenceNotFoundException.class,
         () -> store().assign(TagName.of("tag1"), Optional.of(commit), Hash.of("1234567890abcdef")));
 
-    assertThat(commitsList(branch))
-        .contains(WithHash.of(anotherCommit, "Another commit"), WithHash.of(commit, "Some commit"));
+    assertThat(commitsList(branch, false))
+        .contains(commit(anotherCommit, "Another commit"), commit(commit, "Some commit"));
 
-    assertThat(commitsList(BranchName.of("bar"))).contains(WithHash.of(commit, "Some commit"));
+    assertThat(commitsList(BranchName.of("bar"), false)).contains(commit(commit, "Some commit"));
 
-    assertThat(commitsList(TagName.of("tag1"))).contains(WithHash.of(commit, "Some commit"));
+    assertThat(commitsList(TagName.of("tag1"), false)).contains(commit(commit, "Some commit"));
 
-    assertThat(commitsList(TagName.of("tag2")))
-        .contains(WithHash.of(anotherCommit, "Another commit"), WithHash.of(commit, "Some commit"));
+    assertThat(commitsList(TagName.of("tag2"), false))
+        .contains(commit(anotherCommit, "Another commit"), commit(commit, "Some commit"));
   }
 
   @Nested
@@ -1091,13 +1092,13 @@ public abstract class AbstractITVersionStore {
                   Key.of("t4"), "v4_1",
                   Key.of("t5"), "v5_1"));
 
-      final List<WithHash<String>> commits = commitsList(newBranch);
+      final List<Commit<String, String>> commits = commitsList(newBranch, false);
       assertThat(commits).hasSize(5);
       assertThat(commits.get(4).getHash()).isEqualTo(initialHash);
       assertThat(commits.get(3).getHash()).isEqualTo(newCommit);
-      assertThat(commits.get(2).getValue()).isEqualTo("First Commit");
-      assertThat(commits.get(1).getValue()).isEqualTo("Second Commit");
-      assertThat(commits.get(0).getValue()).isEqualTo("Third Commit");
+      assertThat(commits.get(2).getCommitMeta()).isEqualTo("First Commit");
+      assertThat(commits.get(1).getCommitMeta()).isEqualTo("Second Commit");
+      assertThat(commits.get(0).getCommitMeta()).isEqualTo("Third Commit");
     }
 
     @Test
@@ -1139,13 +1140,13 @@ public abstract class AbstractITVersionStore {
                   Key.of("t4"), "v4_1",
                   Key.of("t5"), "v5_1"));
 
-      final List<WithHash<String>> commits = commitsList(newBranch);
+      final List<Commit<String, String>> commits = commitsList(newBranch, false);
       assertThat(commits).hasSize(5);
       assertThat(commits.get(4).getHash()).isEqualTo(initialHash);
       assertThat(commits.get(3).getHash()).isEqualTo(firstCommit);
       assertThat(commits.get(2).getHash()).isEqualTo(newCommit);
-      assertThat(commits.get(1).getValue()).isEqualTo("Second Commit");
-      assertThat(commits.get(0).getValue()).isEqualTo("Third Commit");
+      assertThat(commits.get(1).getCommitMeta()).isEqualTo("Second Commit");
+      assertThat(commits.get(0).getCommitMeta()).isEqualTo("Third Commit");
     }
 
     @Test
@@ -1279,6 +1280,68 @@ public abstract class AbstractITVersionStore {
     assertTrue(firstToFirst.isEmpty());
   }
 
+  @Test
+  public void commitLogExtendedNoGlobalState() throws Exception {
+    BranchName branch = BranchName.of("commitLogExtended");
+    Hash firstParent = store().create(branch, Optional.empty());
+
+    int numCommits = 10;
+
+    List<Hash> hashes =
+        IntStream.rangeClosed(1, numCommits)
+            .mapToObj(
+                i -> {
+                  try {
+                    return commit("Commit #" + i)
+                        .put("k" + i, StringStoreWorker.withId("v" + i, "c" + i))
+                        .put("key" + i, StringStoreWorker.withId("value" + i, "cid" + i))
+                        .delete("delete" + i)
+                        .toBranch(branch);
+                  } catch (Exception e) {
+                    throw new RuntimeException(e);
+                  }
+                })
+            .collect(Collectors.toList());
+    List<Hash> parentHashes =
+        Stream.concat(Stream.of(firstParent), hashes.subList(0, 9).stream())
+            .collect(Collectors.toList());
+
+    assertThat(Lists.reverse(commitsList(branch, false)))
+        .allSatisfy(
+            c -> {
+              assertThat(c.getOperations()).isNull();
+              assertThat(c.getParentHash()).isNull();
+            })
+        .extracting(Commit::getHash)
+        .containsExactlyElementsOf(hashes);
+
+    List<Commit<String, String>> commits = Lists.reverse(commitsList(branch, true));
+    assertThat(IntStream.rangeClosed(1, numCommits))
+        .allSatisfy(
+            i -> {
+              Commit<String, String> c = commits.get(i - 1);
+              assertThat(c)
+                  .extracting(
+                      Commit::getCommitMeta,
+                      Commit::getHash,
+                      Commit::getParentHash,
+                      Commit::getOperations)
+                  .containsExactly(
+                      "Commit #" + i,
+                      hashes.get(i - 1),
+                      parentHashes.get(i - 1),
+                      Arrays.asList(
+                          Delete.of(Key.of("delete" + i)),
+                          Put.of(
+                              Key.of("k" + i),
+                              StringStoreWorker.withStateAndId("v" + i, "v" + i, "c" + i)),
+                          Put.of(
+                              Key.of("key" + i),
+                              StringStoreWorker.withStateAndId(
+                                  "value" + i, "value" + i, "cid" + i))));
+            });
+  }
+
   protected CommitBuilder<String, String, StringStoreWorker.TestEnum> forceCommit(String message) {
     return new CommitBuilder<>(store()).withMetadata(message);
   }
@@ -1299,15 +1362,22 @@ public abstract class AbstractITVersionStore {
     return Unchanged.of(Key.of(key));
   }
 
-  protected List<WithHash<String>> commitsList(Ref ref) throws ReferenceNotFoundException {
-    return commitsList(ref, Function.identity());
+  protected List<Commit<String, String>> commitsList(Ref ref, boolean fetchAdditionalInfo)
+      throws ReferenceNotFoundException {
+    return commitsList(ref, Function.identity(), fetchAdditionalInfo);
   }
 
   protected <T> List<T> commitsList(
-      Ref ref, Function<Stream<WithHash<String>>, Stream<T>> streamFunction)
+      Ref ref,
+      Function<Stream<Commit<String, String>>, Stream<T>> streamFunction,
+      boolean fetchAdditionalInfo)
       throws ReferenceNotFoundException {
-    try (Stream<WithHash<String>> s = store().getCommits(ref)) {
+    try (Stream<Commit<String, String>> s = store().getCommits(ref, fetchAdditionalInfo)) {
       return streamFunction.apply(s).collect(Collectors.toList());
     }
+  }
+
+  protected static Commit<String, String> commit(Hash hash, String commitMeta) {
+    return Commit.<String, String>builder().hash(hash).commitMeta(commitMeta).build();
   }
 }

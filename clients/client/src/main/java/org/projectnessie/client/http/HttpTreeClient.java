@@ -138,6 +138,7 @@ class HttpTreeClient implements HttpTreeApi {
         .queryParam("query_expression", params.queryExpression())
         .queryParam("startHash", params.startHash())
         .queryParam("endHash", params.endHash())
+        .queryParam("fetchAdditionalInfo", params.isFetchAdditionalInfo() ? "true" : null)
         .get()
         .readEntity(LogResponse.class);
   }

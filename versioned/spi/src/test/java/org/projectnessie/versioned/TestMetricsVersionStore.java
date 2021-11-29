@@ -143,11 +143,11 @@ class TestMetricsVersionStore {
                 refNotFoundAndRefConflictThrows),
             new VersionStoreInvocation<>(
                 "getcommits",
-                vs -> vs.getCommits(BranchName.of("mock-branch")),
+                vs -> vs.getCommits(BranchName.of("mock-branch"), false),
                 () ->
                     Stream.of(
-                        WithHash.of(Hash.of("cafebabe"), "log#1"),
-                        WithHash.of(Hash.of("deadbeef"), "log#2")),
+                        Commit.builder().hash(Hash.of("cafebabe")).commitMeta("log#1").build(),
+                        Commit.builder().hash(Hash.of("deadbeef")).commitMeta("log#2").build()),
                 refNotFoundThrows),
             new VersionStoreInvocation<>(
                 "getkeys",

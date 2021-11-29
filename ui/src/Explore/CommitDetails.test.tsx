@@ -22,20 +22,22 @@ import CommitDetails from "./CommitDetails";
 it("Commit details renders", async () => {
   const now = new Date();
   now.setDate(now.getDate() - 1);
-  const commitMeta = {
-    hash: "deadbeef",
-    author: "bob",
-    commitTime: now,
-    authorTime: now,
-    committer: "sally",
-    message: "commitMessage",
-    properties: { a: "b", c: "d" },
+  const logEntry = {
+    commitMeta: {
+      hash: "deadbeef",
+      author: "bob",
+      commitTime: now,
+      authorTime: now,
+      committer: "sally",
+      message: "commitMessage",
+      properties: { a: "b", c: "d" },
+    },
   };
 
   const { getByText, asFragment } = render(
     <React.StrictMode>
       <BrowserRouter>
-        <CommitDetails currentRef={"main"} commitDetails={commitMeta} />
+        <CommitDetails currentRef={"main"} commitDetails={logEntry} />
       </BrowserRouter>
     </React.StrictMode>
   );
