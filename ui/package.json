@@ -29,7 +29,7 @@
     "identity-obj-proxy": "3.0.0",
     "moment": "^2.29.1",
     "package.json": "^2.0.1",
-    "postcss": "8.4.1",
+    "postcss": "8.4.4",
     "postcss-flexbugs-fixes": "5.0.2",
     "postcss-loader": "4.3.0",
     "postcss-normalize": "10.0.1",
