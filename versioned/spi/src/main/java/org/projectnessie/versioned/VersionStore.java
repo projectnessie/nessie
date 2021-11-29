@@ -208,7 +208,7 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @throws NullPointerException if {@code ref} is {@code null}.
    * @throws ReferenceNotFoundException if the reference cannot be found
    */
-  ReferenceInfo<METADATA> getNamedRef(NamedRef ref, GetNamedRefsParams params)
+  ReferenceInfo<METADATA> getNamedRef(String ref, GetNamedRefsParams params)
       throws ReferenceNotFoundException;
 
   /**

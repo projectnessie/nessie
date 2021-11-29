@@ -127,7 +127,7 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
   }
 
   @Override
-  public ReferenceInfo<METADATA> getNamedRef(NamedRef ref, GetNamedRefsParams params)
+  public ReferenceInfo<METADATA> getNamedRef(String ref, GetNamedRefsParams params)
       throws ReferenceNotFoundException {
     return delegate1Ex("getnamedref", () -> delegate.getNamedRef(ref, params));
   }

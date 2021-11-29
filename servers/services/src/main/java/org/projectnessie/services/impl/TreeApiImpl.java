@@ -130,8 +130,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
       return makeRef(
           getStore()
               .getNamedRef(
-                  toNamedRef(getStore().toRef(params.getRefName())),
-                  getGetNamedRefsParams(params.isFetchAdditionalInfo())));
+                  params.getRefName(), getGetNamedRefsParams(params.isFetchAdditionalInfo())));
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }

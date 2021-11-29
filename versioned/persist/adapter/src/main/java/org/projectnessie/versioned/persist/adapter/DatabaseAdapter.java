@@ -178,7 +178,7 @@ public interface DatabaseAdapter {
    * @return current HEAD of {@code ref}
    * @throws ReferenceNotFoundException if the named reference {@code ref} does not exist.
    */
-  ReferenceInfo<ByteString> namedRef(NamedRef ref, GetNamedRefsParams params)
+  ReferenceInfo<ByteString> namedRef(String ref, GetNamedRefsParams params)
       throws ReferenceNotFoundException;
 
   /**
