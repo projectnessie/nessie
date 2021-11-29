@@ -41,7 +41,6 @@ import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.versioned.BranchName;
-import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.ReferenceConflictException;
@@ -167,9 +166,7 @@ public abstract class AbstractConcurrency {
                   List<ByteString> currentStates =
                       databaseAdapter
                           .values(
-                              databaseAdapter
-                                  .namedRef(branch, GetNamedRefsParams.DEFAULT)
-                                  .getHash(),
+                              databaseAdapter.hashOnReference(branch, Optional.empty()),
                               keys,
                               KeyFilterPredicate.ALLOW_ALL)
                           .values()
@@ -222,8 +219,7 @@ public abstract class AbstractConcurrency {
       for (Entry<BranchName, Set<Key>> branchKeys : keysPerBranch.entrySet()) {
         BranchName branch = branchKeys.getKey();
         databaseAdapter.create(
-            branch,
-            databaseAdapter.namedRef(BranchName.of("main"), GetNamedRefsParams.DEFAULT).getHash());
+            branch, databaseAdapter.hashOnReference(BranchName.of("main"), Optional.empty()));
         ImmutableCommitAttempt.Builder commitAttempt =
             ImmutableCommitAttempt.builder()
                 .commitToBranch(branchKeys.getKey())
@@ -255,7 +251,7 @@ public abstract class AbstractConcurrency {
 
       for (Entry<BranchName, Set<Key>> branchKeys : keysPerBranch.entrySet()) {
         BranchName branch = branchKeys.getKey();
-        Hash hash = databaseAdapter.namedRef(branch, GetNamedRefsParams.DEFAULT).getHash();
+        Hash hash = databaseAdapter.hashOnReference(branch, Optional.empty());
         Map<Key, ByteString> onRef = onRefStates.get(branch);
         ArrayList<Key> keys = new ArrayList<>(branchKeys.getValue());
         Map<Key, ContentAndState<ByteString>> values =

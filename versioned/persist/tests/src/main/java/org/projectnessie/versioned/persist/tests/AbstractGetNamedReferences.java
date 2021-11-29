@@ -69,8 +69,7 @@ public abstract class AbstractGetNamedReferences {
 
     Hash hash = databaseAdapter.noAncestorHash();
 
-    assertThat(databaseAdapter.namedRef(main, GetNamedRefsParams.DEFAULT).getHash())
-        .isEqualTo(hash);
+    assertThat(databaseAdapter.hashOnReference(main, Optional.empty())).isEqualTo(hash);
 
     databaseAdapter.create(parameterValidation, hash);
     databaseAdapter.create(parameterValidationTag, hash);
@@ -158,8 +157,7 @@ public abstract class AbstractGetNamedReferences {
 
     Hash hash = databaseAdapter.noAncestorHash();
 
-    assertThat(databaseAdapter.namedRef(main, GetNamedRefsParams.DEFAULT).getHash())
-        .isEqualTo(hash);
+    assertThat(databaseAdapter.hashOnReference(main, Optional.empty())).isEqualTo(hash);
 
     databaseAdapter.create(parameterValidation, hash);
     databaseAdapter.create(parameterValidationTag, hash);
@@ -283,8 +281,7 @@ public abstract class AbstractGetNamedReferences {
     Hash mainHash = hash;
     Hash branchHash = hash;
 
-    assertThat(databaseAdapter.namedRef(main, GetNamedRefsParams.DEFAULT).getHash())
-        .isEqualTo(hash);
+    assertThat(databaseAdapter.hashOnReference(main, Optional.empty())).isEqualTo(hash);
 
     // Have 'main' + a branch + a tag
     //  all point to the "no ancestor" hash (aka "beginning of time")
