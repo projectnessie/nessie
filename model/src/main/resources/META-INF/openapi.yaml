@@ -233,6 +233,32 @@ components:
           - type: TAG
             hash: "a682bfdcd5d357b5c964ef07e2eef61fabba42cb8effa8d62357df45a6cc0371"
             name: "testTag1"
+            metadata:
+              numCommitsAhead: null
+              numCommitsBehind: null
+              commonAncestorHash: null
+              commitMetaOfHEAD:
+                hash: "a682bfdcd5d357b5c964ef07e2eef61fabba42cb8effa8d62357df45a6cc0371"
+                committer: ""
+                author: "nessie-author"
+                signedOffBy: null
+                message: "update table Y"
+                commitTime: "2021-11-23T08:01:14.834397Z"
+                authorTime: "2021-11-23T08:01:14.831371Z"
+                properties: {}
           - type: TAG
             hash: "da086850076827d2989c8ee1d7fd22f152f525d46a0441f2b22ad8119c0bbbe5"
             name: "testTag2"
+            metadata:
+              numCommitsAhead: null
+              numCommitsBehind: null
+              commonAncestorHash: null
+              commitMetaOfHEAD:
+                hash: "da086850076827d2989c8ee1d7fd22f152f525d46a0441f2b22ad8119c0bbbe5"
+                committer: ""
+                author: "nessie-author"
+                signedOffBy: null
+                message: "update table X"
+                commitTime: "2021-11-26T08:01:13.834397Z"
+                authorTime: "2021-11-26T08:01:13.831371Z"
+                properties: {}

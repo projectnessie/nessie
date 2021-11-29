@@ -570,7 +570,7 @@ public abstract class AbstractTestRest {
     }
   }
 
-  protected void createCommits(
+  protected String createCommits(
       Reference branch, int numAuthors, int commitsPerAuthor, String currentHash)
       throws BaseNessieClientServerException {
     for (int j = 0; j < numAuthors; j++) {
@@ -594,6 +594,7 @@ public abstract class AbstractTestRest {
         currentHash = nextHash;
       }
     }
+    return currentHash;
   }
 
   @Test
@@ -1787,15 +1788,21 @@ public abstract class AbstractTestRest {
   }
 
   @Test
-  public void testBranchesHaveMetadataProperties() throws BaseNessieClientServerException {
+  public void testReferencesHaveMetadataProperties() throws BaseNessieClientServerException {
     String branchPrefix = "branchesHaveMetadataProperties";
+    String tagPrefix = "tagsHaveMetadataProperties";
     int numBranches = 5;
     int commitsPerBranch = 10;
 
     for (int i = 0; i < numBranches; i++) {
       Reference r = api.createReference().reference(Branch.of(branchPrefix + i, null)).create();
       String currentHash = r.getHash();
-      createCommits(r, 1, commitsPerBranch, currentHash);
+      currentHash = createCommits(r, 1, commitsPerBranch, currentHash);
+
+      api.createReference()
+          .reference(Tag.of(tagPrefix + i, currentHash))
+          .sourceRefName(r.getName())
+          .create();
     }
     // not fetching additional metadata
     List<Reference> references = api.getAllReferences().get().getReferences();
@@ -1810,7 +1817,11 @@ public abstract class AbstractTestRest {
         .hasSize(numBranches)
         .allSatisfy(branch -> assertThat(branch.metadata()).isNull());
 
-    // fetching additional metadata for each branch
+    assertThat(references.stream().filter(r -> r.getName().startsWith(tagPrefix)).map(r -> (Tag) r))
+        .hasSize(numBranches)
+        .allSatisfy(tag -> assertThat(tag.metadata()).isNull());
+
+    // fetching additional metadata for each reference
     references = api.getAllReferences().fetchAdditionalInfo(true).get().getReferences();
     assertThat(
             references.stream()
@@ -1818,27 +1829,44 @@ public abstract class AbstractTestRest {
                 .map(r -> (Branch) r))
         .hasSize(numBranches)
         .allSatisfy(branch -> verifyMetadataProperties(commitsPerBranch, 0, branch, main.get()));
+
+    assertThat(references.stream().filter(r -> r.getName().startsWith(tagPrefix)).map(r -> (Tag) r))
+        .hasSize(numBranches)
+        .allSatisfy(tag -> verifyMetadataProperties(tag));
   }
 
   @Test
-  public void testSingleBranchHasMetadataProperties() throws BaseNessieClientServerException {
+  public void testSingleReferenceHasMetadataProperties() throws BaseNessieClientServerException {
     String branchName = "singleBranchHasMetadataProperties";
+    String tagName = "singleTagHasMetadataProperties";
     int numCommits = 10;
 
     Reference r = api.createReference().reference(Branch.of(branchName, null)).create();
     String currentHash = r.getHash();
-    createCommits(r, 1, numCommits, currentHash);
+    currentHash = createCommits(r, 1, numCommits, currentHash);
+    api.createReference()
+        .reference(Tag.of(tagName, currentHash))
+        .sourceRefName(r.getName())
+        .create();
 
     // not fetching additional metadata for a single branch
     Reference ref = api.getReference().refName(branchName).get();
     assertThat(ref).isNotNull().isInstanceOf(Branch.class);
-    assertThat(((Branch) ref).metadata()).isNull();
+    assertThat(ref).isNotNull().isInstanceOf(Branch.class).extracting("metadata").isNull();
+
+    // not fetching additional metadata for a single tag
+    ref = api.getReference().refName(tagName).get();
+    assertThat(ref).isNotNull().isInstanceOf(Tag.class).extracting("metadata").isNull();
 
     // fetching additional metadata for a single branch
     ref = api.getReference().refName(branchName).fetchAdditionalInfo(true).get();
     assertThat(ref).isNotNull().isInstanceOf(Branch.class);
-
     verifyMetadataProperties(numCommits, 0, (Branch) ref, api.getReference().refName("main").get());
+
+    // fetching additional metadata for a single tag
+    ref = api.getReference().refName(tagName).fetchAdditionalInfo(true).get();
+    assertThat(ref).isNotNull().isInstanceOf(Tag.class);
+    verifyMetadataProperties((Tag) ref);
   }
 
   private void verifyMetadataProperties(
@@ -1855,6 +1883,20 @@ public abstract class AbstractTestRest {
     assertThat(referenceMetadata.numCommitsBehind()).isEqualTo(expectedCommitsBehind);
     assertThat(referenceMetadata.commitMetaOfHEAD()).isEqualTo(commitMeta);
     assertThat(referenceMetadata.commonAncestorHash()).isEqualTo(reference.getHash());
+  }
+
+  private void verifyMetadataProperties(Tag tag) throws NessieNotFoundException {
+    List<CommitMeta> commits =
+        api.getCommitLog().refName(tag.getName()).maxRecords(1).get().getOperations();
+    assertThat(commits).hasSize(1);
+    CommitMeta commitMeta = commits.get(0);
+
+    ReferenceMetadata referenceMetadata = tag.metadata();
+    assertThat(referenceMetadata).isNotNull();
+    assertThat(referenceMetadata.numCommitsAhead()).isNull();
+    assertThat(referenceMetadata.numCommitsBehind()).isNull();
+    assertThat(referenceMetadata.commitMetaOfHEAD()).isEqualTo(commitMeta);
+    assertThat(referenceMetadata.commonAncestorHash()).isNull();
   }
 
   protected void unwrap(Executable exec) throws Throwable {
