@@ -17,6 +17,8 @@ package org.projectnessie.model;
 
 import static org.projectnessie.model.Validation.validateHash;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -46,7 +48,7 @@ import org.immutables.value.Value;
 @JsonSubTypes({@Type(Branch.class), @Type(Tag.class)})
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 public interface Reference extends Base {
-  /** Human readable reference name. */
+  /** Human-readable reference name. */
   @NotBlank
   @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
   String getName();
@@ -56,10 +58,7 @@ public interface Reference extends Base {
   @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
   String getHash();
 
-  /**
-   * Validation rule using {@link org.projectnessie.model.Validation#validateHash(String)}
-   * (String)}.
-   */
+  /** Validation rule using {@link org.projectnessie.model.Validation#validateHash(String)}. */
   @Value.Check
   default void checkHash() {
     String hash = getHash();
@@ -67,4 +66,17 @@ public interface Reference extends Base {
       validateHash(hash);
     }
   }
+
+  /**
+   * Returns a {@link ReferenceMetadata} instance that contains additional metadata about this
+   * reference. Note that this is <b>only added</b> by the server when <b>explicitly</b> requested
+   * by the client.
+   *
+   * @return A {@link ReferenceMetadata} instance that contains additional metadata about this
+   *     reference. Note that this is <b>only added</b> by the server when <b>explicitly</b>
+   *     requested by the client.
+   */
+  @JsonInclude(Include.NON_NULL)
+  @Nullable
+  ReferenceMetadata metadata();
 }

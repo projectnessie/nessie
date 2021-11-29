@@ -15,36 +15,38 @@
  */
 package org.projectnessie.model;
 
-import static org.projectnessie.model.Validation.validateReferenceName;
-
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import javax.annotation.Nullable;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
 
-/** API representation of a Nessie Branch. This object is akin to a Ref in Git terminology. */
+@Schema(
+    type = SchemaType.OBJECT,
+    title = "Additional metadata for a 'Reference'.",
+    description =
+        "Only returned by the server when explicitly requested by the client and contains the following information:\n\n"
+            + "- numCommitsAhead (number of commits ahead of the default branch)\n\n"
+            + "- numCommitsBehind (number of commits behind the default branch)\n\n"
+            + "- commitMetaOfHEAD (the commit metadata of the HEAD commit)\n\n"
+            + "- commonAncestorHash (the hash of the common ancestor in relation to the default branch).\n\n")
 @Value.Immutable
-@Schema(type = SchemaType.OBJECT, title = "Branch")
-@JsonSerialize(as = ImmutableBranch.class)
-@JsonDeserialize(as = ImmutableBranch.class)
-@JsonTypeName("BRANCH")
-public interface Branch extends Reference {
+@JsonSerialize(as = ImmutableReferenceMetadata.class)
+@JsonDeserialize(as = ImmutableReferenceMetadata.class)
+@JsonTypeName("REFERENCE_METADATA")
+public interface ReferenceMetadata {
 
-  /**
-   * Validation rule using {@link org.projectnessie.model.Validation#validateReferenceName(String)}.
-   */
-  @Value.Check
-  default void checkName() {
-    validateReferenceName(getName());
-  }
+  @Nullable
+  Integer numCommitsAhead();
 
-  static ImmutableBranch.Builder builder() {
-    return ImmutableBranch.builder();
-  }
+  @Nullable
+  Integer numCommitsBehind();
 
-  static Branch of(String name, String hash) {
-    return builder().name(name).hash(hash).build();
-  }
+  @Nullable
+  CommitMeta commitMetaOfHEAD();
+
+  @Nullable
+  String commonAncestorHash();
 }

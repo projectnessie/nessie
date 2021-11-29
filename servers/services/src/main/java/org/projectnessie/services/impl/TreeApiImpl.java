@@ -15,10 +15,6 @@
  */
 package org.projectnessie.services.impl;
 
-import static org.projectnessie.model.Branch.COMMON_ANCESTOR_HASH;
-import static org.projectnessie.model.Branch.HEAD_COMMIT_META;
-import static org.projectnessie.model.Branch.NUM_COMMITS_AHEAD;
-import static org.projectnessie.model.Branch.NUM_COMMITS_BEHIND;
 import static org.projectnessie.services.cel.CELUtil.COMMIT_LOG_DECLARATIONS;
 import static org.projectnessie.services.cel.CELUtil.COMMIT_LOG_TYPES;
 import static org.projectnessie.services.cel.CELUtil.CONTAINER;
@@ -31,13 +27,13 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import java.security.Principal;
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import javax.annotation.Nullable;
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.params.EntriesParams;
@@ -58,6 +54,8 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.ImmutableBranch;
 import org.projectnessie.model.ImmutableLogResponse;
+import org.projectnessie.model.ImmutableReferenceMetadata;
+import org.projectnessie.model.ImmutableReferenceMetadata.Builder;
 import org.projectnessie.model.ImmutableReferencesResponse;
 import org.projectnessie.model.ImmutableTag;
 import org.projectnessie.model.LogResponse;
@@ -65,6 +63,7 @@ import org.projectnessie.model.Merge;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
+import org.projectnessie.model.ReferenceMetadata;
 import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.Tag;
 import org.projectnessie.model.Transplant;
@@ -528,29 +527,35 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
       return ImmutableBranch.builder()
           .name(ref.getName())
           .hash(refWithHash.getHash().asString())
-          .metadataProperties(extractMetadataProperties(refWithHash))
+          .metadata(extractReferenceMetadata(refWithHash))
           .build();
     } else {
       throw new UnsupportedOperationException("only converting tags or branches"); // todo
     }
   }
 
-  private static Map<String, Object> extractMetadataProperties(
-      ReferenceInfo<CommitMeta> refWithHash) {
-    Map<String, Object> metadataProperties = new HashMap<>();
+  @Nullable
+  private static ReferenceMetadata extractReferenceMetadata(ReferenceInfo<CommitMeta> refWithHash) {
+    Builder builder = ImmutableReferenceMetadata.builder();
+    boolean found = false;
     if (null != refWithHash.getAheadBehind()) {
-      metadataProperties.put(NUM_COMMITS_AHEAD, refWithHash.getAheadBehind().getAhead());
-      metadataProperties.put(NUM_COMMITS_BEHIND, refWithHash.getAheadBehind().getBehind());
+      found = true;
+      builder.numCommitsAhead(refWithHash.getAheadBehind().getAhead());
+      builder.numCommitsBehind(refWithHash.getAheadBehind().getBehind());
     }
     if (null != refWithHash.getHeadCommitMeta()) {
-      metadataProperties.put(
-          HEAD_COMMIT_META,
+      found = true;
+      builder.commitMetaOfHEAD(
           addHashToCommitMeta(refWithHash.getHash(), refWithHash.getHeadCommitMeta()));
     }
     if (null != refWithHash.getCommonAncestor()) {
-      metadataProperties.put(COMMON_ANCESTOR_HASH, refWithHash.getCommonAncestor().asString());
+      found = true;
+      builder.commonAncestorHash(refWithHash.getCommonAncestor().asString());
     }
-    return metadataProperties;
+    if (!found) {
+      return null;
+    }
+    return builder.build();
   }
 
   private static Reference makeRef(WithHash<? extends Ref> refWithHash) {

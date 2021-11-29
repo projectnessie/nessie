@@ -50,7 +50,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
-import org.assertj.core.api.Assertions;
 import org.assertj.core.api.Assumptions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -89,6 +88,7 @@ import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Operation.Unchanged;
 import org.projectnessie.model.Reference;
+import org.projectnessie.model.ReferenceMetadata;
 import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.SqlView;
 import org.projectnessie.model.SqlView.Dialect;
@@ -1808,7 +1808,7 @@ public abstract class AbstractTestRest {
                 .filter(r -> r.getName().startsWith(branchPrefix))
                 .map(r -> (Branch) r))
         .hasSize(numBranches)
-        .allSatisfy(branch -> assertThat(branch.metadataProperties()).isEmpty());
+        .allSatisfy(branch -> assertThat(branch.metadata()).isNull());
 
     // fetching additional metadata for each branch
     references = api.getAllReferences().fetchAdditionalInfo(true).get().getReferences();
@@ -1832,7 +1832,7 @@ public abstract class AbstractTestRest {
     // not fetching additional metadata for a single branch
     Reference ref = api.getReference().refName(branchName).get();
     assertThat(ref).isNotNull().isInstanceOf(Branch.class);
-    assertThat(((Branch) ref).metadataProperties()).isEmpty();
+    assertThat(((Branch) ref).metadata()).isNull();
 
     // fetching additional metadata for a single branch
     ref = api.getReference().refName(branchName).fetchAdditionalInfo(true).get();
@@ -1849,36 +1849,12 @@ public abstract class AbstractTestRest {
     assertThat(commits).hasSize(1);
     CommitMeta commitMeta = commits.get(0);
 
-    Map<String, Object> metadataProperties = branch.metadataProperties();
-    assertThat(metadataProperties).isNotEmpty();
-
-    assertThat(metadataProperties)
-        .hasFieldOrProperty(Branch.NUM_COMMITS_AHEAD)
-        .extracting(Branch.NUM_COMMITS_AHEAD)
-        .isEqualTo(expectedCommitsAhead);
-
-    assertThat(metadataProperties)
-        .hasFieldOrProperty(Branch.NUM_COMMITS_BEHIND)
-        .extracting(Branch.NUM_COMMITS_BEHIND)
-        .isEqualTo(expectedCommitsBehind);
-
-    assertThat(metadataProperties)
-        .hasFieldOrProperty(Branch.HEAD_COMMIT_META)
-        .extracting(Branch.HEAD_COMMIT_META)
-        .asInstanceOf(Assertions.MAP)
-        .containsEntry("hash", commitMeta.getHash())
-        .containsEntry("committer", commitMeta.getCommitter())
-        .containsEntry("author", commitMeta.getAuthor())
-        .containsEntry("commitTime", commitMeta.getCommitTime().toString())
-        .containsEntry("authorTime", commitMeta.getAuthorTime().toString())
-        .containsEntry("message", commitMeta.getMessage())
-        .containsEntry("properties", commitMeta.getProperties())
-        .containsEntry("signedOffBy", commitMeta.getSignedOffBy());
-
-    assertThat(metadataProperties)
-        .hasFieldOrProperty(Branch.COMMON_ANCESTOR_HASH)
-        .extracting(Branch.COMMON_ANCESTOR_HASH)
-        .isEqualTo(reference.getHash());
+    ReferenceMetadata referenceMetadata = branch.metadata();
+    assertThat(referenceMetadata).isNotNull();
+    assertThat(referenceMetadata.numCommitsAhead()).isEqualTo(expectedCommitsAhead);
+    assertThat(referenceMetadata.numCommitsBehind()).isEqualTo(expectedCommitsBehind);
+    assertThat(referenceMetadata.commitMetaOfHEAD()).isEqualTo(commitMeta);
+    assertThat(referenceMetadata.commonAncestorHash()).isEqualTo(reference.getHash());
   }
 
   protected void unwrap(Executable exec) throws Throwable {
