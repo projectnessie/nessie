@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.function.ToIntFunction;
 import java.util.stream.Stream;
 import org.projectnessie.versioned.BranchName;
@@ -186,9 +187,11 @@ public interface DatabaseAdapter {
    *
    * @param params options that control which information shall be returned in each {@link
    *     ReferenceInfo}, see {@link ReferenceInfo} for details.
+   * @param referenceFilter optional filter predicate to include/exclude references from the result
    * @return stream with all named references.
    */
-  Stream<ReferenceInfo<ByteString>> namedRefs(GetNamedRefsParams params)
+  Stream<ReferenceInfo<ByteString>> namedRefs(
+      GetNamedRefsParams params, Predicate<NamedRef> referenceFilter)
       throws ReferenceNotFoundException;
 
   /**

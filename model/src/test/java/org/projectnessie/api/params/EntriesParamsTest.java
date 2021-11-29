@@ -28,6 +28,7 @@ public class EntriesParamsTest {
     String hash = "1234567890123456";
     String pageToken = "aabbcc";
     String queryExpression = "some_expression";
+    String filter = "some_filter";
     EntriesParams params =
         EntriesParams.builder()
             .maxRecords(maxRecords)
@@ -35,12 +36,14 @@ public class EntriesParamsTest {
             .expression(queryExpression)
             .hashOnRef(hash)
             .namespaceDepth(namespaceDepth)
+            .filter(filter)
             .build();
 
     assertThat(params.pageToken()).isEqualTo(pageToken);
     assertThat(params.maxRecords()).isEqualTo(maxRecords);
     assertThat(params.namespaceDepth()).isEqualTo(namespaceDepth);
     assertThat(params.queryExpression()).isEqualTo(queryExpression);
+    assertThat(params.filter()).isEqualTo(filter);
     assertThat(params.hashOnRef()).isEqualTo(hash);
   }
 
@@ -52,6 +55,7 @@ public class EntriesParamsTest {
     assertThat(params.pageToken()).isNull();
     assertThat(params.queryExpression()).isNull();
     assertThat(params.namespaceDepth()).isNull();
+    assertThat(params.filter()).isNull();
     assertThat(params.hashOnRef()).isNull();
   }
 }

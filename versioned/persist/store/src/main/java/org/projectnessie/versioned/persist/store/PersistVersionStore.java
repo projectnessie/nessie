@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
@@ -195,10 +196,11 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
   }
 
   @Override
-  public Stream<ReferenceInfo<METADATA>> getNamedRefs(GetNamedRefsParams params)
+  public Stream<ReferenceInfo<METADATA>> getNamedRefs(
+      GetNamedRefsParams params, Predicate<NamedRef> namedRefFilter)
       throws ReferenceNotFoundException {
     return databaseAdapter
-        .namedRefs(params)
+        .namedRefs(params, namedRefFilter)
         .map(
             namedRef ->
                 namedRef.withUpdatedCommitMeta(deserializeMetadata(namedRef.getHeadCommitMeta())));
@@ -272,10 +274,15 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
   }
 
   @Override
-  public Stream<WithType<Key, CONTENT_TYPE>> getKeys(Ref ref) throws ReferenceNotFoundException {
+  public Stream<WithType<Key, CONTENT_TYPE>> getKeys(Ref ref, Predicate<Key> keyFilter)
+      throws ReferenceNotFoundException {
     Hash hash = refToHash(ref);
+    KeyFilterPredicate keyFilterPredicate =
+        keyFilter == null
+            ? KeyFilterPredicate.ALLOW_ALL
+            : (key, contentId, type) -> keyFilter.test(key);
     return databaseAdapter
-        .keys(hash, KeyFilterPredicate.ALLOW_ALL)
+        .keys(hash, keyFilterPredicate)
         .map(kt -> WithType.of(storeWorker.getType(kt.getType()), kt.getKey()));
   }
 

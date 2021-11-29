@@ -47,6 +47,12 @@ final class HttpGetAllReferences extends BaseHttpRequest implements GetAllRefere
   }
 
   @Override
+  public GetAllReferencesBuilder filter(String filter) {
+    params.filter(filter);
+    return this;
+  }
+
+  @Override
   public ReferencesResponse get() {
     return client.getTreeApi().getAllReferences(params.build());
   }

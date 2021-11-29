@@ -27,10 +27,12 @@ public class ReferencesParamsTest {
         ReferencesParams.builder()
             .maxRecords(23)
             .pageToken("abc")
+            .filter("filter")
             .fetchAdditionalInfo(true)
             .build();
     assertThat(params.maxRecords()).isEqualTo(23);
     assertThat(params.pageToken()).isEqualTo("abc");
+    assertThat(params.filter()).isEqualTo("filter");
     assertThat(params.isFetchAdditionalInfo()).isTrue();
   }
 
@@ -40,6 +42,7 @@ public class ReferencesParamsTest {
     assertThat(params).isNotNull();
     assertThat(params.isFetchAdditionalInfo()).isFalse();
     assertThat(params.pageToken()).isNull();
+    assertThat(params.filter()).isNull();
     assertThat(params.maxRecords()).isNull();
   }
 }

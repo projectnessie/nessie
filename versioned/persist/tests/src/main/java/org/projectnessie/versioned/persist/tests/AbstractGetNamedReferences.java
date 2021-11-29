@@ -21,9 +21,11 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 
 import com.google.protobuf.ByteString;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
@@ -76,7 +78,7 @@ public abstract class AbstractGetNamedReferences {
 
     assertAll(
         () ->
-            assertThatThrownBy(() -> databaseAdapter.namedRefs(null))
+            assertThatThrownBy(() -> databaseAdapter.namedRefs(null, null))
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("Parameter for GetNamedRefsParams must not be null."),
         () ->
@@ -85,7 +87,8 @@ public abstract class AbstractGetNamedReferences {
                         databaseAdapter.namedRefs(
                             GetNamedRefsParams.builder()
                                 .branchRetrieveOptions(COMPUTE_AHEAD_BEHIND)
-                                .build()))
+                                .build(),
+                            null))
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("Base reference name missing."),
         () ->
@@ -94,7 +97,8 @@ public abstract class AbstractGetNamedReferences {
                         databaseAdapter.namedRefs(
                             GetNamedRefsParams.builder()
                                 .tagRetrieveOptions(COMPUTE_AHEAD_BEHIND)
-                                .build()))
+                                .build(),
+                            null))
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("Base reference name missing."),
         () ->
@@ -103,7 +107,8 @@ public abstract class AbstractGetNamedReferences {
                         databaseAdapter.namedRefs(
                             GetNamedRefsParams.builder()
                                 .branchRetrieveOptions(COMPUTE_COMMON_ANCESTOR)
-                                .build()))
+                                .build(),
+                            null))
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("Base reference name missing."),
         () ->
@@ -112,7 +117,8 @@ public abstract class AbstractGetNamedReferences {
                         databaseAdapter.namedRefs(
                             GetNamedRefsParams.builder()
                                 .tagRetrieveOptions(COMPUTE_COMMON_ANCESTOR)
-                                .build()))
+                                .build(),
+                            null))
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("Base reference name missing."),
         () ->
@@ -123,7 +129,8 @@ public abstract class AbstractGetNamedReferences {
                                 .branchRetrieveOptions(COMPUTE_AHEAD_BEHIND)
                                 .tagRetrieveOptions(COMPUTE_AHEAD_BEHIND)
                                 .baseReference(BranchName.of("no-no-no"))
-                                .build()))
+                                .build(),
+                            null))
                 .isInstanceOf(ReferenceNotFoundException.class)
                 .hasMessage("Named reference 'no-no-no' not found"),
         () ->
@@ -134,7 +141,8 @@ public abstract class AbstractGetNamedReferences {
                                 .branchRetrieveOptions(COMPUTE_AHEAD_BEHIND)
                                 .tagRetrieveOptions(COMPUTE_AHEAD_BEHIND)
                                 .baseReference(TagName.of("blah-no"))
-                                .build()))
+                                .build(),
+                            null))
                 .isInstanceOf(ReferenceNotFoundException.class)
                 .hasMessage("Named reference 'blah-no' not found"),
         () ->
@@ -144,7 +152,8 @@ public abstract class AbstractGetNamedReferences {
                             GetNamedRefsParams.builder()
                                 .branchRetrieveOptions(RetrieveOptions.OMIT)
                                 .tagRetrieveOptions(RetrieveOptions.OMIT)
-                                .build()))
+                                .build(),
+                            null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Must retrieve branches or tags or both."));
   }
@@ -242,6 +251,33 @@ public abstract class AbstractGetNamedReferences {
                 .isInstanceOf(ReferenceNotFoundException.class)
                 .hasMessage(
                     "Named reference '" + parameterValidationTag.getName() + "' not found"));
+  }
+
+  @Test
+  public void getNamedReferencesFilter() throws Exception {
+    Set<String> refNames =
+        new HashSet<>(Arrays.asList("foo-bar", "abcdef", "123.456", "hello-foo"));
+    Hash hash = databaseAdapter.hashOnReference(BranchName.of("main"), Optional.empty());
+    for (String refName : refNames) {
+      databaseAdapter.create(BranchName.of(refName), hash);
+    }
+
+    assertAll(
+        () -> verifyReferencesFilter("b", "foo-bar", "abcdef"),
+        () -> verifyReferencesFilter("foo", "foo-bar", "hello-foo"),
+        () -> verifyReferencesFilter("456", "123.456"),
+        () -> verifyReferencesFilter("no-no"));
+  }
+
+  protected void verifyReferencesFilter(String filter, String... expected) throws Exception {
+    try (Stream<ReferenceInfo<ByteString>> refs =
+        databaseAdapter.namedRefs(
+            GetNamedRefsParams.DEFAULT, ref -> ref.getName().contains(filter))) {
+      assertThat(refs)
+          .map(ReferenceInfo::getNamedRef)
+          .map(NamedRef::getName)
+          .containsExactlyInAnyOrder(expected);
+    }
   }
 
   @Test
@@ -507,7 +543,7 @@ public abstract class AbstractGetNamedReferences {
             .filter(Objects::nonNull)
             .collect(Collectors.toList());
 
-    try (Stream<ReferenceInfo<ByteString>> refs = databaseAdapter.namedRefs(params)) {
+    try (Stream<ReferenceInfo<ByteString>> refs = databaseAdapter.namedRefs(params, null)) {
       assertThat(refs)
           .describedAs("GetNamedRefsParams=%s - references=%s", params, references)
           .containsExactlyInAnyOrderElementsOf(expectedRefs);

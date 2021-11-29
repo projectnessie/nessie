@@ -30,5 +30,12 @@ public interface GetEntriesBuilder
 
   GetEntriesBuilder namespaceDepth(Integer namespaceDepth);
 
+  /**
+   * Only return entries with keys that match the given filter.
+   *
+   * @param filter key filter.
+   */
+  GetEntriesBuilder filter(String filter);
+
   EntriesResponse get() throws NessieNotFoundException;
 }

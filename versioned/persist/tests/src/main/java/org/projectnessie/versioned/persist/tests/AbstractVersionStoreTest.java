@@ -465,13 +465,14 @@ public abstract class AbstractVersionStoreTest extends AbstractITVersionStore {
         // getKeys()
         new ReferenceNotFoundFunction("getKeys/branch")
             .msg("Named reference 'this-one-should-not-exist' not found")
-            .function(s -> s.getKeys(BranchName.of("this-one-should-not-exist"))),
+            .function(s -> s.getKeys(BranchName.of("this-one-should-not-exist"), null)),
         new ReferenceNotFoundFunction("getKeys/tag")
             .msg("Named reference 'this-one-should-not-exist' not found")
-            .function(s -> s.getKeys(TagName.of("this-one-should-not-exist"))),
+            .function(s -> s.getKeys(TagName.of("this-one-should-not-exist"), null)),
         new ReferenceNotFoundFunction("getKeys/hash")
             .msg("Commit '12341234123412341234123412341234123412341234' not found")
-            .function(s -> s.getKeys(Hash.of("12341234123412341234123412341234123412341234"))),
+            .function(
+                s -> s.getKeys(Hash.of("12341234123412341234123412341234123412341234"), null)),
         // assign()
         new ReferenceNotFoundFunction("assign/branch/ok")
             .msg("Named reference 'this-one-should-not-exist' not found")
@@ -589,7 +590,8 @@ public abstract class AbstractVersionStoreTest extends AbstractITVersionStore {
     BranchName main = BranchName.of("main");
     WithHash<Ref> mainRef = store.toRef(main.getName());
     assertThat(store().getCommits(main, false)).isEmpty();
-    try (Stream<ReferenceInfo<String>> refs = store().getNamedRefs(GetNamedRefsParams.DEFAULT)) {
+    try (Stream<ReferenceInfo<String>> refs =
+        store().getNamedRefs(GetNamedRefsParams.DEFAULT, null)) {
       assertThat(refs).extracting(r -> r.getNamedRef().getName()).containsExactly(main.getName());
     }
 

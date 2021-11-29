@@ -42,6 +42,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
@@ -135,7 +136,8 @@ public abstract class NonTransactionalDatabaseAdapter<
   }
 
   @Override
-  public Stream<ReferenceInfo<ByteString>> namedRefs(GetNamedRefsParams params)
+  public Stream<ReferenceInfo<ByteString>> namedRefs(
+      GetNamedRefsParams params, Predicate<NamedRef> referenceFilter)
       throws ReferenceNotFoundException {
     Preconditions.checkNotNull(params, "Parameter for GetNamedRefsParams must not be null.");
     Preconditions.checkArgument(
@@ -155,6 +157,10 @@ public abstract class NonTransactionalDatabaseAdapter<
                     ReferenceInfo.of(
                         Hash.of(r.getValue().getHash()),
                         toNamedRef(r.getValue().getType(), r.getKey())));
+
+    if (referenceFilter != null) {
+      refs = refs.filter(r -> referenceFilter.test(r.getNamedRef()));
+    }
 
     return namedRefsFilterAndEnhance(
         NON_TRANSACTIONAL_OPERATION_CONTEXT, params, defaultBranchHead, refs);

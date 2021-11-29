@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.persist.tests;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import com.google.protobuf.ByteString;
 import java.util.Arrays;
@@ -27,6 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.versioned.BranchName;
@@ -132,6 +134,60 @@ public abstract class AbstractManyKeys {
       assertThat(fetchedKeysStrings)
           .hasSize(allKeysStrings.size())
           .containsExactlyInAnyOrderElementsOf(allKeysStrings);
+    }
+  }
+
+  @Test
+  public void getKeysFilter() throws Exception {
+    BranchName branch = BranchName.of("getKeysFilter");
+    databaseAdapter.create(
+        branch, databaseAdapter.hashOnReference(BranchName.of("main"), Optional.empty()));
+
+    Hash hash =
+        databaseAdapter.commit(
+            ImmutableCommitAttempt.builder()
+                .commitToBranch(branch)
+                .addPuts(
+                    KeyWithBytes.of(
+                        Key.of("foo", "bar"),
+                        ContentId.of("foo-bar"),
+                        (byte) 0,
+                        ByteString.copyFromUtf8("foo-bar")))
+                .addPuts(
+                    KeyWithBytes.of(
+                        Key.of("abcdef"),
+                        ContentId.of("abcdef"),
+                        (byte) 0,
+                        ByteString.copyFromUtf8("abcdef")))
+                .addPuts(
+                    KeyWithBytes.of(
+                        Key.of("123", "456"),
+                        ContentId.of("123-456"),
+                        (byte) 0,
+                        ByteString.copyFromUtf8("123456")))
+                .addPuts(
+                    KeyWithBytes.of(
+                        Key.of("hello", "foo"),
+                        ContentId.of("hello-foo"),
+                        (byte) 0,
+                        ByteString.copyFromUtf8("hello-foo")))
+                .commitMetaSerialized(ByteString.copyFromUtf8("meep"))
+                .build());
+
+    assertAll(
+        () -> verifyKeysFilter(hash, "a", "foo.bar", "abcdef"),
+        () -> verifyKeysFilter(hash, "foo", "foo.bar", "hello.foo"),
+        () -> verifyKeysFilter(hash, "456", "123.456"),
+        () -> verifyKeysFilter(hash, "no-no"));
+  }
+
+  protected void verifyKeysFilter(Hash hash, String filter, String... expected) throws Exception {
+    try (Stream<KeyWithType> keys =
+        databaseAdapter.keys(hash, (key, cid, type) -> key.toString().contains(filter))) {
+      assertThat(keys)
+          .map(KeyWithType::getKey)
+          .map(Key::toString)
+          .containsExactlyInAnyOrder(expected);
     }
   }
 }

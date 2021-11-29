@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
@@ -174,9 +175,11 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
   }
 
   @Override
-  public Stream<ReferenceInfo<METADATA>> getNamedRefs(GetNamedRefsParams params)
+  public Stream<ReferenceInfo<METADATA>> getNamedRefs(
+      GetNamedRefsParams params, Predicate<NamedRef> namedRefFilter)
       throws ReferenceNotFoundException {
-    return callStreamWithOneException("GetNamedRefs", b -> {}, () -> delegate.getNamedRefs(params));
+    return callStreamWithOneException(
+        "GetNamedRefs", b -> {}, () -> delegate.getNamedRefs(params, namedRefFilter));
   }
 
   @Override
@@ -189,9 +192,12 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
   }
 
   @Override
-  public Stream<WithType<Key, VALUE_TYPE>> getKeys(Ref ref) throws ReferenceNotFoundException {
+  public Stream<WithType<Key, VALUE_TYPE>> getKeys(Ref ref, Predicate<Key> keyFilter)
+      throws ReferenceNotFoundException {
     return callStreamWithOneException(
-        "GetKeys", b -> b.withTag(TAG_REF, safeToString(ref)), () -> delegate.getKeys(ref));
+        "GetKeys",
+        b -> b.withTag(TAG_REF, safeToString(ref)),
+        () -> delegate.getKeys(ref, keyFilter));
   }
 
   @Override

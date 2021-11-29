@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
@@ -133,9 +134,10 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
   }
 
   @Override
-  public Stream<ReferenceInfo<METADATA>> getNamedRefs(GetNamedRefsParams params)
+  public Stream<ReferenceInfo<METADATA>> getNamedRefs(
+      GetNamedRefsParams params, Predicate<NamedRef> namedRefFilter)
       throws ReferenceNotFoundException {
-    return delegateStream1Ex("getnamedrefs", () -> delegate.getNamedRefs(params));
+    return delegateStream1Ex("getnamedrefs", () -> delegate.getNamedRefs(params, namedRefFilter));
   }
 
   @Override
@@ -145,8 +147,9 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
   }
 
   @Override
-  public Stream<WithType<Key, VALUE_TYPE>> getKeys(Ref ref) throws ReferenceNotFoundException {
-    return delegateStream1Ex("getkeys", () -> delegate.getKeys(ref));
+  public Stream<WithType<Key, VALUE_TYPE>> getKeys(Ref ref, Predicate<Key> keyFilter)
+      throws ReferenceNotFoundException {
+    return delegateStream1Ex("getkeys", () -> delegate.getKeys(ref, keyFilter));
   }
 
   @Override

@@ -151,13 +151,14 @@ class TestMetricsVersionStore {
                 refNotFoundThrows),
             new VersionStoreInvocation<>(
                 "getkeys",
-                vs -> vs.getKeys(Hash.of("cafe4242")),
+                vs -> vs.getKeys(Hash.of("cafe4242"), null),
                 () -> Stream.of(Key.of("hello", "world")),
                 refNotFoundThrows),
             new VersionStoreInvocation<>(
                 "getnamedrefs",
                 stringStringDummyEnumVersionStore ->
-                    stringStringDummyEnumVersionStore.getNamedRefs(GetNamedRefsParams.DEFAULT),
+                    stringStringDummyEnumVersionStore.getNamedRefs(
+                        GetNamedRefsParams.DEFAULT, null),
                 () ->
                     Stream.of(
                         WithHash.of(Hash.of("cafebabe"), BranchName.of("foo")),

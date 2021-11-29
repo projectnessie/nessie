@@ -15,6 +15,8 @@
  */
 package org.projectnessie.server.error;
 
+import static org.mockito.ArgumentMatchers.any;
+
 import java.util.stream.Stream;
 import javax.enterprise.context.RequestScoped;
 import javax.validation.ConstraintDeclarationException;
@@ -138,11 +140,11 @@ public class ErrorTestService {
     }
 
     DatabaseAdapter databaseAdapter = Mockito.mock(DatabaseAdapter.class);
-    Mockito.when(databaseAdapter.namedRefs(Mockito.any())).thenThrow(ex);
+    Mockito.when(databaseAdapter.namedRefs(any(), any())).thenThrow(ex);
 
     PersistVersionStore<String, String, StringStoreWorker.TestEnum> tvs =
         new PersistVersionStore<>(databaseAdapter, StringStoreWorker.INSTANCE);
-    try (Stream<ReferenceInfo<String>> refs = tvs.getNamedRefs(GetNamedRefsParams.DEFAULT)) {
+    try (Stream<ReferenceInfo<String>> refs = tvs.getNamedRefs(GetNamedRefsParams.DEFAULT, null)) {
       refs.forEach(ref -> {});
     }
     return "we should not get here";

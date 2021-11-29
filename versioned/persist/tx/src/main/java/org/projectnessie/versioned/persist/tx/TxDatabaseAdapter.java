@@ -49,6 +49,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
@@ -167,7 +168,8 @@ public abstract class TxDatabaseAdapter
     }
   }
 
-  public Stream<ReferenceInfo<ByteString>> namedRefs(GetNamedRefsParams params)
+  public Stream<ReferenceInfo<ByteString>> namedRefs(
+      GetNamedRefsParams params, Predicate<NamedRef> referenceFilter)
       throws ReferenceNotFoundException {
     Preconditions.checkNotNull(params, "Parameter for GetNamedRefsParams must not be null.");
     Preconditions.checkArgument(
@@ -180,6 +182,10 @@ public abstract class TxDatabaseAdapter
       Hash defaultBranchHead = namedRefsDefaultBranchHead(conn, params);
 
       Stream<ReferenceInfo<ByteString>> refs = fetchNamedRefs(conn);
+
+      if (referenceFilter != null) {
+        refs = refs.filter(ri -> referenceFilter.test(ri.getNamedRef()));
+      }
 
       refs = namedRefsFilterAndEnhance(conn, params, defaultBranchHead, refs);
 

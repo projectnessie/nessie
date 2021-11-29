@@ -176,14 +176,14 @@ class TestTracingVersionStore {
                         "GetKeys", refNotFoundThrows)
                     .tag("nessie.version-store.ref", "Hash cafe4242")
                     .function(
-                        vs -> vs.getKeys(Hash.of("cafe4242")),
+                        vs -> vs.getKeys(Hash.of("cafe4242"), null),
                         () -> Stream.of(Key.of("hello", "world"))),
                 new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>(
                         "GetNamedRefs", runtimeThrows)
                     .function(
                         stringStringDummyEnumVersionStore ->
                             stringStringDummyEnumVersionStore.getNamedRefs(
-                                GetNamedRefsParams.DEFAULT),
+                                GetNamedRefsParams.DEFAULT, null),
                         () ->
                             Stream.of(
                                 WithHash.of(Hash.of("cafebabe"), BranchName.of("foo")),

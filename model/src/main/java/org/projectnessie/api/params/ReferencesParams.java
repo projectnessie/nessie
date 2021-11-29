@@ -17,6 +17,7 @@ package org.projectnessie.api.params;
 
 import java.util.Objects;
 import java.util.StringJoiner;
+import javax.annotation.Nullable;
 import javax.ws.rs.QueryParam;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.projectnessie.api.http.HttpTreeApi;
@@ -44,19 +45,30 @@ public class ReferencesParams extends AbstractParams {
   @QueryParam("fetchAdditionalInfo")
   private boolean fetchAdditionalInfo;
 
+  @Parameter(description = "If present, only return references that match the given filter.")
+  @QueryParam("filter")
+  private String filter;
+
   public ReferencesParams() {}
 
-  private ReferencesParams(Integer maxRecords, String pageToken, boolean fetchAdditionalInfo) {
+  private ReferencesParams(
+      Integer maxRecords, String pageToken, boolean fetchAdditionalInfo, String filter) {
     super(maxRecords, pageToken);
     this.fetchAdditionalInfo = fetchAdditionalInfo;
+    this.filter = filter;
   }
 
   private ReferencesParams(Builder builder) {
-    this(builder.maxRecords, builder.pageToken, builder.fetchAdditionalInfo);
+    this(builder.maxRecords, builder.pageToken, builder.fetchAdditionalInfo, builder.filter);
   }
 
   public boolean isFetchAdditionalInfo() {
     return fetchAdditionalInfo;
+  }
+
+  @Nullable
+  public String filter() {
+    return filter;
   }
 
   public static ReferencesParams.Builder builder() {
@@ -73,6 +85,7 @@ public class ReferencesParams extends AbstractParams {
         .add("maxRecords=" + maxRecords())
         .add("pageToken='" + pageToken() + "'")
         .add("fetchAdditionalInfo=" + fetchAdditionalInfo)
+        .add("filter=" + filter)
         .toString();
   }
 
@@ -87,12 +100,13 @@ public class ReferencesParams extends AbstractParams {
     ReferencesParams that = (ReferencesParams) o;
     return Objects.equals(maxRecords(), that.maxRecords())
         && Objects.equals(pageToken(), that.pageToken())
-        && Objects.equals(fetchAdditionalInfo, that.fetchAdditionalInfo);
+        && Objects.equals(fetchAdditionalInfo, that.fetchAdditionalInfo)
+        && Objects.equals(filter, that.filter);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(maxRecords(), pageToken(), fetchAdditionalInfo);
+    return Objects.hash(maxRecords(), pageToken(), fetchAdditionalInfo, filter);
   }
 
   public static class Builder extends AbstractParams.Builder<Builder> {
@@ -100,15 +114,22 @@ public class ReferencesParams extends AbstractParams {
     private Builder() {}
 
     private boolean fetchAdditionalInfo = false;
+    private String filter;
 
     public ReferencesParams.Builder from(ReferencesParams params) {
       return maxRecords(params.maxRecords())
           .pageToken(params.pageToken())
-          .fetchAdditionalInfo(params.fetchAdditionalInfo);
+          .fetchAdditionalInfo(params.fetchAdditionalInfo)
+          .filter(params.filter);
     }
 
     public Builder fetchAdditionalInfo(boolean fetchAdditionalInfo) {
       this.fetchAdditionalInfo = fetchAdditionalInfo;
+      return this;
+    }
+
+    public Builder filter(String filter) {
+      this.filter = filter;
       return this;
     }
 

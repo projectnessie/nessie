@@ -49,6 +49,7 @@ class HttpTreeClient implements HttpTreeApi {
         .queryParam("max", params.maxRecords() != null ? params.maxRecords().toString() : null)
         .queryParam("pageToken", params.pageToken())
         .queryParam("fetchAdditionalInfo", Boolean.toString(params.isFetchAdditionalInfo()))
+        .queryParam("filter", params.filter())
         .get()
         .readEntity(ReferencesResponse.class);
   }
@@ -184,6 +185,7 @@ class HttpTreeClient implements HttpTreeApi {
         .queryParam(
             "namespaceDepth",
             params.namespaceDepth() == null ? null : String.valueOf(params.namespaceDepth()))
+        .queryParam("filter", params.filter())
         .get()
         .readEntity(EntriesResponse.class);
   }

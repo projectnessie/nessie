@@ -34,6 +34,13 @@ public interface GetAllReferencesBuilder extends PagingBuilder<GetAllReferencesB
   GetAllReferencesBuilder fetchAdditionalInfo(boolean fetchAdditionalInfo);
 
   /**
+   * Only return references with a name that matches the given filter.
+   *
+   * @param filter reference name filter.
+   */
+  GetAllReferencesBuilder filter(String filter);
+
+  /**
    * Fetches all references and returns them in a {@link ReferencesResponse} instance.
    *
    * @return Fetches all references and returns them in a {@link ReferencesResponse} instance.

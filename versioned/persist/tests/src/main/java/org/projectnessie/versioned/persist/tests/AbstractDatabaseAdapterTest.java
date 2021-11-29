@@ -109,7 +109,7 @@ public abstract class AbstractDatabaseAdapterTest {
     BranchName branch = BranchName.of("main");
 
     try (Stream<ReferenceInfo<ByteString>> refs =
-        databaseAdapter.namedRefs(GetNamedRefsParams.DEFAULT)) {
+        databaseAdapter.namedRefs(GetNamedRefsParams.DEFAULT, null)) {
       assertThat(refs.map(ReferenceInfo::getNamedRef)).containsExactlyInAnyOrder(branch);
     }
 
@@ -123,7 +123,7 @@ public abstract class AbstractDatabaseAdapterTest {
     assertThat(createHash).isEqualTo(mainHash);
 
     try (Stream<ReferenceInfo<ByteString>> refs =
-        databaseAdapter.namedRefs(GetNamedRefsParams.DEFAULT)) {
+        databaseAdapter.namedRefs(GetNamedRefsParams.DEFAULT, null)) {
       assertThat(refs.map(ReferenceInfo::getNamedRef)).containsExactlyInAnyOrder(branch, create);
     }
 
@@ -157,7 +157,7 @@ public abstract class AbstractDatabaseAdapterTest {
         .isInstanceOf(ReferenceNotFoundException.class);
 
     try (Stream<ReferenceInfo<ByteString>> refs =
-        databaseAdapter.namedRefs(GetNamedRefsParams.DEFAULT)) {
+        databaseAdapter.namedRefs(GetNamedRefsParams.DEFAULT, null)) {
       assertThat(refs.map(ReferenceInfo::getNamedRef)).containsExactlyInAnyOrder(branch);
     }
   }
@@ -410,7 +410,7 @@ public abstract class AbstractDatabaseAdapterTest {
     assertAll(
         () -> {
           try (Stream<ReferenceInfo<ByteString>> r =
-              nonExistent.namedRefs(GetNamedRefsParams.DEFAULT)) {
+              nonExistent.namedRefs(GetNamedRefsParams.DEFAULT, null)) {
             assertThat(r).isEmpty();
           }
         },
@@ -464,12 +464,12 @@ public abstract class AbstractDatabaseAdapterTest {
     assertThat(barMain).isNotEqualTo(fooMain).isEqualTo(barBranch);
 
     // Verify that key-prefix "foo" only sees "its" main-branch and foo-branch
-    try (Stream<ReferenceInfo<ByteString>> refs = foo.namedRefs(GetNamedRefsParams.DEFAULT)) {
+    try (Stream<ReferenceInfo<ByteString>> refs = foo.namedRefs(GetNamedRefsParams.DEFAULT, null)) {
       assertThat(refs)
           .containsExactlyInAnyOrder(
               ReferenceInfo.of(fooMain, main), ReferenceInfo.of(fooBranch, fooBranchName));
     }
-    try (Stream<ReferenceInfo<ByteString>> refs = bar.namedRefs(GetNamedRefsParams.DEFAULT)) {
+    try (Stream<ReferenceInfo<ByteString>> refs = bar.namedRefs(GetNamedRefsParams.DEFAULT, null)) {
       assertThat(refs)
           .containsExactlyInAnyOrder(
               ReferenceInfo.of(barMain, main), ReferenceInfo.of(barBranch, barBranchName));

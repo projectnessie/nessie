@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -107,7 +108,10 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     Preconditions.checkArgument(params.pageToken() == null, "Paging not supported");
     ImmutableReferencesResponse.Builder resp = ReferencesResponse.builder();
     try (Stream<ReferenceInfo<CommitMeta>> str =
-        getStore().getNamedRefs(getGetNamedRefsParams(params.isFetchAdditionalInfo()))) {
+        getStore()
+            .getNamedRefs(
+                getGetNamedRefsParams(params.isFetchAdditionalInfo()),
+                buildNamedRefFilter(params.filter()))) {
       str.map(refInfo -> TreeApiImpl.makeReference(refInfo, params.isFetchAdditionalInfo()))
           .forEach(resp::addReferences);
     } catch (ReferenceNotFoundException e) {
@@ -116,6 +120,13 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
               "Could not find default branch '%s'.", this.getConfig().getDefaultBranch()));
     }
     return resp.build();
+  }
+
+  protected Predicate<NamedRef> buildNamedRefFilter(String pattern) {
+    if (pattern == null) {
+      return null;
+    }
+    return ref -> ref.getName().contains(pattern);
   }
 
   private GetNamedRefsParams getGetNamedRefsParams(boolean fetchAdditionalInfo) {
@@ -366,7 +377,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
       List<EntriesResponse.Entry> entries;
       try (Stream<EntriesResponse.Entry> entryStream =
           getStore()
-              .getKeys(refWithHash.getHash())
+              .getKeys(refWithHash.getHash(), buildKeyFilter(params.filter()))
               .map(
                   key ->
                       EntriesResponse.Entry.builder()
@@ -388,6 +399,13 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }
+  }
+
+  protected Predicate<Key> buildKeyFilter(String pattern) {
+    if (pattern == null) {
+      return null;
+    }
+    return key -> key.toString().contains(pattern);
   }
 
   private EntriesResponse.Entry truncate(EntriesResponse.Entry entry, Integer depth) {

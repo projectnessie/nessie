@@ -153,7 +153,7 @@ public abstract class AbstractITVersionStore {
 
     List<ReferenceInfo<String>> namedRefs;
     try (Stream<ReferenceInfo<String>> str =
-        store().getNamedRefs(GetNamedRefsParams.DEFAULT).filter(this::filterMainBranch)) {
+        store().getNamedRefs(GetNamedRefsParams.DEFAULT, null).filter(this::filterMainBranch)) {
       namedRefs = str.collect(Collectors.toList());
     }
     assertThat(namedRefs)
@@ -177,7 +177,7 @@ public abstract class AbstractITVersionStore {
     assertThrows(
         ReferenceNotFoundException.class, () -> store().hashOnReference(branch, Optional.empty()));
     try (Stream<ReferenceInfo<String>> str =
-        store().getNamedRefs(GetNamedRefsParams.DEFAULT).filter(this::filterMainBranch)) {
+        store().getNamedRefs(GetNamedRefsParams.DEFAULT, null).filter(this::filterMainBranch)) {
       assertThat(str).hasSize(2); // bar + baz
     }
     assertThrows(ReferenceNotFoundException.class, () -> store().delete(branch, Optional.of(hash)));
@@ -277,7 +277,7 @@ public abstract class AbstractITVersionStore {
 
     List<ReferenceInfo<String>> namedRefs;
     try (Stream<ReferenceInfo<String>> str =
-        store().getNamedRefs(GetNamedRefsParams.DEFAULT).filter(this::filterMainBranch)) {
+        store().getNamedRefs(GetNamedRefsParams.DEFAULT, null).filter(this::filterMainBranch)) {
       namedRefs = str.collect(Collectors.toList());
     }
     assertThat(namedRefs)
@@ -296,7 +296,7 @@ public abstract class AbstractITVersionStore {
     assertThrows(
         ReferenceNotFoundException.class, () -> store().hashOnReference(tag, Optional.empty()));
     try (Stream<ReferenceInfo<String>> str =
-        store().getNamedRefs(GetNamedRefsParams.DEFAULT).filter(this::filterMainBranch)) {
+        store().getNamedRefs(GetNamedRefsParams.DEFAULT, null).filter(this::filterMainBranch)) {
       assertThat(str).hasSize(2); // foo + another-tag
     }
     assertThrows(
@@ -338,7 +338,7 @@ public abstract class AbstractITVersionStore {
     assertThrows(
         ReferenceNotFoundException.class, () -> store().hashOnReference(branch, Optional.empty()));
     try (Stream<ReferenceInfo<String>> str =
-        store().getNamedRefs(GetNamedRefsParams.DEFAULT).filter(this::filterMainBranch)) {
+        store().getNamedRefs(GetNamedRefsParams.DEFAULT, null).filter(this::filterMainBranch)) {
       assertThat(str).isEmpty();
     }
     assertThrows(
@@ -383,15 +383,15 @@ public abstract class AbstractITVersionStore {
             commit(secondCommit, "Second Commit"),
             commit(initialCommit, "Initial Commit"));
 
-    try (Stream<Key> keys = store().getKeys(branch).map(WithType::getValue)) {
+    try (Stream<Key> keys = store().getKeys(branch, null).map(WithType::getValue)) {
       assertThat(keys).containsExactlyInAnyOrder(Key.of("t1"), Key.of("t2"), Key.of("t4"));
     }
 
-    try (Stream<Key> keys = store().getKeys(secondCommit).map(WithType::getValue)) {
+    try (Stream<Key> keys = store().getKeys(secondCommit, null).map(WithType::getValue)) {
       assertThat(keys).containsExactlyInAnyOrder(Key.of("t1"), Key.of("t4"));
     }
 
-    try (Stream<Key> keys = store().getKeys(initialCommit).map(WithType::getValue)) {
+    try (Stream<Key> keys = store().getKeys(initialCommit, null).map(WithType::getValue)) {
       assertThat(keys).containsExactlyInAnyOrder(Key.of("t1"), Key.of("t2"), Key.of("t3"));
     }
 
@@ -478,7 +478,7 @@ public abstract class AbstractITVersionStore {
             commit(t1Commit, "T1 Commit"),
             commit(initialCommit, "Initial Commit"));
 
-    try (Stream<Key> keys = store().getKeys(branch).map(WithType::getValue)) {
+    try (Stream<Key> keys = store().getKeys(branch, null).map(WithType::getValue)) {
       assertThat(keys).containsExactlyInAnyOrder(Key.of("t1"), Key.of("t2"), Key.of("t3"));
     }
 

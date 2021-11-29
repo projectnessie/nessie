@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.ThreadSafe;
@@ -218,9 +219,11 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    *
    * @param params options that control which information shall be returned in each {@link
    *     ReferenceInfo}, see {@link ReferenceInfo} for details.
+   * @param namedRefFilter optional filter predicate to include/exclude references from the result
    * @return All refs and their associated hashes.
    */
-  Stream<ReferenceInfo<METADATA>> getNamedRefs(GetNamedRefsParams params)
+  Stream<ReferenceInfo<METADATA>> getNamedRefs(
+      GetNamedRefsParams params, Predicate<NamedRef> namedRefFilter)
       throws ReferenceNotFoundException;
 
   /**
@@ -238,10 +241,12 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * Get a stream of all available keys for the given ref.
    *
    * @param ref The ref to get keys for.
+   * @param keyFilter optional filter predicate to include/exclude keys from the result
    * @return The stream of keys available for this ref.
    * @throws ReferenceNotFoundException if {@code ref} is not present in the store
    */
-  Stream<WithType<Key, VALUE_TYPE>> getKeys(Ref ref) throws ReferenceNotFoundException;
+  Stream<WithType<Key, VALUE_TYPE>> getKeys(Ref ref, Predicate<Key> keyFilter)
+      throws ReferenceNotFoundException;
 
   /**
    * Get the value for a provided ref.

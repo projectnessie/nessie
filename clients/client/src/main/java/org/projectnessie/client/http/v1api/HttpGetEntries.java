@@ -55,6 +55,12 @@ final class HttpGetEntries extends BaseHttpOnReferenceRequest<GetEntriesBuilder>
   }
 
   @Override
+  public GetEntriesBuilder filter(String filter) {
+    params.filter(filter);
+    return this;
+  }
+
+  @Override
   public EntriesResponse get() throws NessieNotFoundException {
     params.hashOnRef(hashOnRef);
     return client.getTreeApi().getEntries(refName, params.build());

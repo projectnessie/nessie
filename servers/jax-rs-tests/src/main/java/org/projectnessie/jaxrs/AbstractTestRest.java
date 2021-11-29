@@ -42,17 +42,20 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import org.assertj.core.api.Assumptions;
+import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -176,10 +179,30 @@ public abstract class AbstractTestRest {
   }
 
   @Test
-  public void getAllReferences() {
+  public void getAllReferences() throws Exception {
     ReferencesResponse references = api.getAllReferences().get();
     assertThat(references.getReferences())
         .anySatisfy(r -> assertThat(r.getName()).isEqualTo("main"));
+
+    Set<String> refNames =
+        new HashSet<>(Arrays.asList("foo-bar", "abcdef", "r123.456", "hello-foo"));
+    for (String refName : refNames) {
+      api.createReference().reference(Branch.of(refName, null)).sourceRefName("main").create();
+    }
+
+    assertAll(
+        () -> verifyReferencesFilter("b", "foo-bar", "abcdef"),
+        () -> verifyReferencesFilter("foo", "foo-bar", "hello-foo"),
+        () -> verifyReferencesFilter("456", "r123.456"),
+        () -> verifyReferencesFilter("no-no"));
+  }
+
+  protected void verifyReferencesFilter(String filter, String... expected) {
+    assertThat(api.getAllReferences().filter(filter).get())
+        .extracting(ReferencesResponse::getReferences)
+        .asInstanceOf(InstanceOfAssertFactories.list(Reference.class))
+        .map(Reference::getName)
+        .containsExactlyInAnyOrder(expected);
   }
 
   @Test
@@ -1053,6 +1076,60 @@ public abstract class AbstractTestRest {
             .get()
             .getEntries();
     assertThat(entries).containsExactlyInAnyOrderElementsOf(expected);
+  }
+
+  @Test
+  public void filterEntries() throws BaseNessieClientServerException {
+    Branch branch = createBranch("filterEntries");
+    ContentKey first = ContentKey.of("a", "b", "c", "firstTable");
+    ContentKey second = ContentKey.of("a", "b", "c", "secondTable");
+    ContentKey third = ContentKey.of("a", "thirdTable");
+    ContentKey fourth = ContentKey.of("a", "fourthTable");
+    api.commitMultipleOperations()
+        .branch(branch)
+        .operation(Put.of(first, IcebergTable.of("path1", 42, 42, 42, 42)))
+        .commitMeta(CommitMeta.fromMessage("commit 1"))
+        .commit();
+    api.commitMultipleOperations()
+        .branch(branch)
+        .operation(Put.of(second, IcebergTable.of("path2", 42, 42, 42, 42)))
+        .commitMeta(CommitMeta.fromMessage("commit 2"))
+        .commit();
+    api.commitMultipleOperations()
+        .branch(branch)
+        .operation(Put.of(third, IcebergTable.of("path3", 42, 42, 42, 42)))
+        .commitMeta(CommitMeta.fromMessage("commit 3"))
+        .commit();
+    api.commitMultipleOperations()
+        .branch(branch)
+        .operation(Put.of(fourth, IcebergTable.of("path4", 42, 42, 42, 42)))
+        .commitMeta(CommitMeta.fromMessage("commit 4"))
+        .commit();
+
+    List<Entry> entries = api.getEntries().refName(branch.getName()).get().getEntries();
+    assertThat(entries).isNotNull().hasSize(4);
+
+    entries = api.getEntries().refName(branch.getName()).get().getEntries();
+    assertThat(entries).isNotNull().hasSize(4);
+
+    entries = api.getEntries().refName(branch.getName()).filter("a.b").get().getEntries();
+    assertThat(entries).hasSize(2);
+    entries.forEach(e -> assertThat(e.getName().getNamespace().name()).startsWith("a.b"));
+
+    entries = api.getEntries().refName(branch.getName()).filter("a").get().getEntries();
+    assertThat(entries).hasSize(4);
+    entries.forEach(e -> assertThat(e.getName().getNamespace().name()).startsWith("a"));
+
+    entries = api.getEntries().refName(branch.getName()).filter("c.firstTable").get().getEntries();
+    assertThat(entries).hasSize(1);
+
+    entries = api.getEntries().refName(branch.getName()).filter("fourthTable").get().getEntries();
+    assertThat(entries).hasSize(1);
+
+    api.deleteBranch()
+        .branchName(branch.getName())
+        .hash(api.getReference().refName(branch.getName()).get().getHash())
+        .delete();
   }
 
   @Test
