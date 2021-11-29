@@ -31,7 +31,8 @@ import org.immutables.value.Value;
             + "- numCommitsAhead (number of commits ahead of the default branch)\n\n"
             + "- numCommitsBehind (number of commits behind the default branch)\n\n"
             + "- commitMetaOfHEAD (the commit metadata of the HEAD commit)\n\n"
-            + "- commonAncestorHash (the hash of the common ancestor in relation to the default branch).\n\n")
+            + "- commonAncestorHash (the hash of the common ancestor in relation to the default branch).\n\n"
+            + "- numTotalCommits (the total number of commits in this reference).\n\n")
 @Value.Immutable
 @JsonSerialize(as = ImmutableReferenceMetadata.class)
 @JsonDeserialize(as = ImmutableReferenceMetadata.class)

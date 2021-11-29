@@ -1906,6 +1906,7 @@ public abstract class AbstractTestRest {
     assertThat(referenceMetadata.numCommitsBehind()).isNull();
     assertThat(referenceMetadata.commitMetaOfHEAD()).isEqualTo(commitMeta);
     assertThat(referenceMetadata.commonAncestorHash()).isNull();
+    assertThat(referenceMetadata.numTotalCommits()).isEqualTo(10);
   }
 
   protected void unwrap(Executable exec) throws Throwable {
