@@ -28,8 +28,8 @@ const fetchLog = (
   return api()
     .getCommitLog({ ref: currentRef })
     .then((data) => {
-      if (data.operations && data.operations.length > 0) {
-        return data.operations[0];
+      if (data.commits && data.commits.length > 0) {
+        return data.commits[0];
       }
     })
     .catch((t) => log.error("CommitLog", t));

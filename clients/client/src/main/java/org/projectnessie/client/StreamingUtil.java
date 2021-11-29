@@ -101,7 +101,7 @@ public final class StreamingUtil {
       OptionalInt maxRecords)
       throws NessieNotFoundException {
     return new ResultStreamPaginator<>(
-            LogResponse::getOperations,
+            LogResponse::getCommits,
             (reference, pageSize, token) ->
                 builderWithPaging(api.getCommitLog(), pageSize, token)
                     .refName(reference)

@@ -252,12 +252,12 @@ class TestAuthorizationRules extends BaseClientAuthTest {
   private void getCommitLog(String branchName, String role, boolean shouldFail)
       throws NessieNotFoundException {
     if (shouldFail) {
-      assertThatThrownBy(() -> api().getCommitLog().refName(branchName).get().getOperations())
+      assertThatThrownBy(() -> api().getCommitLog().refName(branchName).get().getCommits())
           .isInstanceOf(NessieForbiddenException.class)
           .hasMessageContaining(
               String.format("'LIST_COMMIT_LOG' is not allowed for role '%s' on reference", role));
     } else {
-      List<CommitMeta> commits = api().getCommitLog().refName(branchName).get().getOperations();
+      List<CommitMeta> commits = api().getCommitLog().refName(branchName).get().getCommits();
       assertThat(commits).isNotEmpty();
     }
   }

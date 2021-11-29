@@ -80,11 +80,11 @@ const CommitLog = (props: {
     const fetchLogResults = await fetchLog(currentRef, rowsPerPage, pageToken);
     if (fetchLogResults) {
       const { hasMore, token } = fetchLogResults;
-      const operations =
-        fetchLogResults.operations && fetchLogResults.operations.length > 0
-          ? fetchLogResults.operations
+      const commits =
+        fetchLogResults.commits && fetchLogResults.commits.length > 0
+          ? fetchLogResults.commits
           : [];
-      const dataList = isResetData ? operations : logList.concat(operations);
+      const dataList = isResetData ? commits : logList.concat(commits);
       setLogList(dataList);
       setRefNotFound(false);
       setHasMoreLog(hasMore);
@@ -96,11 +96,11 @@ const CommitLog = (props: {
       const fetchLogResults = await fetchLog(currentRef, rowsPerPage);
       if (fetchLogResults) {
         const { hasMore, token } = fetchLogResults;
-        const operations =
-          fetchLogResults.operations && fetchLogResults.operations.length > 0
-            ? fetchLogResults.operations
+        const commits =
+          fetchLogResults.commits && fetchLogResults.commits.length > 0
+            ? fetchLogResults.commits
             : [];
-        setLogList(operations);
+        setLogList(commits);
         setRefNotFound(false);
         setHasMoreLog(hasMore);
         setPaginationToken(token);

@@ -211,7 +211,7 @@ public abstract class AbstractResteasyTest {
 
     LogResponse log =
         rest().get("trees/tree/test/log").then().statusCode(200).extract().as(LogResponse.class);
-    Assertions.assertEquals(3, log.getOperations().size());
+    Assertions.assertEquals(3, log.getCommits().size());
 
     Branch b1 = rest().get("trees/tree/test").as(Branch.class);
     rest()
@@ -334,10 +334,9 @@ public abstract class AbstractResteasyTest {
             .statusCode(200)
             .extract()
             .as(LogResponse.class);
-    assertThat(log.getOperations()).hasSize(numCommits);
-    Instant firstCommitTime =
-        log.getOperations().get(log.getOperations().size() - 1).getCommitTime();
-    Instant lastCommitTime = log.getOperations().get(0).getCommitTime();
+    assertThat(log.getCommits()).hasSize(numCommits);
+    Instant firstCommitTime = log.getCommits().get(log.getCommits().size() - 1).getCommitTime();
+    Instant lastCommitTime = log.getCommits().get(0).getCommitTime();
     assertThat(firstCommitTime).isNotNull();
     assertThat(lastCommitTime).isNotNull();
 
@@ -350,8 +349,8 @@ public abstract class AbstractResteasyTest {
             .statusCode(200)
             .extract()
             .as(LogResponse.class);
-    assertThat(log.getOperations()).hasSize(1);
-    assertThat(log.getOperations().get(0).getAuthor()).isEqualTo(author);
+    assertThat(log.getCommits()).hasSize(1);
+    assertThat(log.getCommits().get(0).getAuthor()).isEqualTo(author);
 
     log =
         rest()
@@ -363,9 +362,8 @@ public abstract class AbstractResteasyTest {
             .statusCode(200)
             .extract()
             .as(LogResponse.class);
-    assertThat(log.getOperations()).hasSize(numCommits - 1);
-    log.getOperations()
-        .forEach(commit -> assertThat(commit.getCommitTime()).isAfter(firstCommitTime));
+    assertThat(log.getCommits()).hasSize(numCommits - 1);
+    log.getCommits().forEach(commit -> assertThat(commit.getCommitTime()).isAfter(firstCommitTime));
 
     log =
         rest()
@@ -377,9 +375,8 @@ public abstract class AbstractResteasyTest {
             .statusCode(200)
             .extract()
             .as(LogResponse.class);
-    assertThat(log.getOperations()).hasSize(numCommits - 1);
-    log.getOperations()
-        .forEach(commit -> assertThat(commit.getCommitTime()).isBefore(lastCommitTime));
+    assertThat(log.getCommits()).hasSize(numCommits - 1);
+    log.getCommits().forEach(commit -> assertThat(commit.getCommitTime()).isBefore(lastCommitTime));
 
     log =
         rest()
@@ -393,8 +390,8 @@ public abstract class AbstractResteasyTest {
             .statusCode(200)
             .extract()
             .as(LogResponse.class);
-    assertThat(log.getOperations()).hasSize(1);
-    assertThat(log.getOperations().get(0).getCommitTime())
+    assertThat(log.getCommits()).hasSize(1);
+    assertThat(log.getCommits().get(0).getCommitTime())
         .isBefore(lastCommitTime)
         .isAfter(firstCommitTime);
   }

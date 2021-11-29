@@ -338,7 +338,7 @@ CommitMetaSchema = desert.schema_class(CommitMeta)
 class LogResponse:
     """Dataclass for Log Response."""
 
-    operations: List[CommitMeta] = desert.ib(fields.List(fields.Nested(CommitMetaSchema())))
+    commits: List[CommitMeta] = desert.ib(fields.List(fields.Nested(CommitMetaSchema())))
     has_more: bool = attr.ib(default=False, metadata=desert.metadata(fields.Bool(allow_none=True, data_key="hasMore")))
     token: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True)))
 

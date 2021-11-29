@@ -231,12 +231,12 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
           filterCommitLog(s, params.queryExpression()).limit(max + 1).collect(Collectors.toList());
       if (items.size() == max + 1) {
         return ImmutableLogResponse.builder()
-            .addAllOperations(items.subList(0, max))
+            .addAllCommits(items.subList(0, max))
             .isHasMore(true)
             .token(items.get(max).getHash())
             .build();
       }
-      return ImmutableLogResponse.builder().addAllOperations(items).build();
+      return ImmutableLogResponse.builder().addAllCommits(items).build();
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }

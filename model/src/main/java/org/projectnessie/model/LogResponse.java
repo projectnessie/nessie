@@ -30,5 +30,5 @@ import org.immutables.value.Value;
 public interface LogResponse extends PaginatedResponse {
 
   @NotNull
-  List<CommitMeta> getOperations();
+  List<CommitMeta> getCommits();
 }

@@ -98,9 +98,8 @@ public class TestModelObjectsSerialization {
                 .addNoQuotes("hasMore", true)),
         new Case(
             ImmutableLogResponse.builder()
-                .addOperations()
                 .token(HASH)
-                .addOperations(
+                .addCommits(
                     ImmutableCommitMeta.builder()
                         .commitTime(now)
                         .author("author@example.com")

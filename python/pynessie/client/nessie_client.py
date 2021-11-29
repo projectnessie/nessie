@@ -247,7 +247,7 @@ class NessieClient:
 
         def generator(log_schema: LogResponse, max_records: Optional[int]) -> Generator[CommitMeta, Any, None]:
             while True:
-                for log in log_schema.operations:
+                for log in log_schema.commits:
                     yield log
                     if max_records is not None:
                         max_records -= 1
