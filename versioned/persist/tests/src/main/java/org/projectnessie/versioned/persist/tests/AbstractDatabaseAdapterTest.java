@@ -403,9 +403,9 @@ public abstract class AbstractDatabaseAdapterTest {
   }
 
   @Test
-  void nonExistentKeyPrefixTest(
+  void nonExistentRepository(
       @NessieDbAdapter(initializeRepo = false)
-          @NessieDbAdapterConfigItem(name = "key.prefix", value = "non-existent")
+          @NessieDbAdapterConfigItem(name = "repository.id", value = "non-existent")
           DatabaseAdapter nonExistent) {
     assertAll(
         () -> {
@@ -424,10 +424,10 @@ public abstract class AbstractDatabaseAdapterTest {
   }
 
   @Test
-  void keyPrefixBasic(
-      @NessieDbAdapter @NessieDbAdapterConfigItem(name = "key.prefix", value = "foo")
+  void multipleRepositories(
+      @NessieDbAdapter @NessieDbAdapterConfigItem(name = "repository.id", value = "foo")
           DatabaseAdapter foo,
-      @NessieDbAdapter @NessieDbAdapterConfigItem(name = "key.prefix", value = "bar")
+      @NessieDbAdapter @NessieDbAdapterConfigItem(name = "repository.id", value = "bar")
           DatabaseAdapter bar)
       throws Exception {
 

@@ -363,7 +363,7 @@ public abstract class TxDatabaseAdapter
 
             try (PreparedStatement ps =
                 conn.prepareStatement(SqlStatements.DELETE_NAMED_REFERENCE)) {
-              ps.setString(1, config.getKeyPrefix());
+              ps.setString(1, config.getRepositoryId());
               ps.setString(2, reference.getName());
               ps.setString(3, pointer.asString());
               if (ps.executeUpdate() == 1) {
@@ -436,23 +436,23 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
-  public void reinitializeRepo(String defaultBranchName) {
+  public void eraseRepo() {
     Connection conn = borrowConnection();
     try {
       try (PreparedStatement ps = conn.prepareStatement(SqlStatements.DELETE_NAMED_REFERENCE_ALL)) {
-        ps.setString(1, config.getKeyPrefix());
+        ps.setString(1, config.getRepositoryId());
         ps.executeUpdate();
       }
       try (PreparedStatement ps = conn.prepareStatement(SqlStatements.DELETE_GLOBAL_STATE_ALL)) {
-        ps.setString(1, config.getKeyPrefix());
+        ps.setString(1, config.getRepositoryId());
         ps.executeUpdate();
       }
       try (PreparedStatement ps = conn.prepareStatement(SqlStatements.DELETE_COMMIT_LOG_ALL)) {
-        ps.setString(1, config.getKeyPrefix());
+        ps.setString(1, config.getRepositoryId());
         ps.executeUpdate();
       }
       try (PreparedStatement ps = conn.prepareStatement(SqlStatements.DELETE_KEY_LIST_ALL)) {
-        ps.setString(1, config.getKeyPrefix());
+        ps.setString(1, config.getRepositoryId());
         ps.executeUpdate();
       }
 
@@ -462,8 +462,6 @@ public abstract class TxDatabaseAdapter
     } finally {
       releaseConnection(conn);
     }
-
-    initializeRepo(defaultBranchName);
   }
 
   @Override
@@ -472,7 +470,7 @@ public abstract class TxDatabaseAdapter
     return JdbcSelectSpliterator.buildStream(
             conn,
             SqlStatements.SELECT_GLOBAL_STATE_ALL,
-            ps -> ps.setString(1, config.getKeyPrefix()),
+            ps -> ps.setString(1, config.getRepositoryId()),
             (rs) -> {
               ContentId contentId = ContentId.of(rs.getString(1));
               byte[] value = rs.getBytes(2);
@@ -491,7 +489,7 @@ public abstract class TxDatabaseAdapter
     try {
       try (PreparedStatement ps =
           conn.prepareStatement(String.format(SqlStatements.SELECT_GLOBAL_STATE_MANY, "?"))) {
-        ps.setString(1, config.getKeyPrefix());
+        ps.setString(1, config.getRepositoryId());
         ps.setString(2, contentId.getId());
         try (ResultSet rs = ps.executeQuery()) {
           if (rs.next()) {
@@ -520,7 +518,7 @@ public abstract class TxDatabaseAdapter
             conn,
             sqlForManyPlaceholders(SqlStatements.SELECT_GLOBAL_STATE_MANY_WITH_LOGS, keys.size()),
             ps -> {
-              ps.setString(1, config.getKeyPrefix());
+              ps.setString(1, config.getRepositoryId());
               int i = 2;
               for (ContentId key : keys) {
                 ps.setString(i++, key.getId());
@@ -705,7 +703,7 @@ public abstract class TxDatabaseAdapter
     return JdbcSelectSpliterator.buildStream(
         conn,
         SqlStatements.SELECT_NAMED_REFERENCES,
-        ps -> ps.setString(1, config.getKeyPrefix()),
+        ps -> ps.setString(1, config.getRepositoryId()),
         (rs) -> {
           String type = rs.getString(1);
           String ref = rs.getString(2);
@@ -732,7 +730,7 @@ public abstract class TxDatabaseAdapter
   /** Similar to {@link #fetchNamedRefHead(Connection, NamedRef)}, but just checks for existence. */
   protected boolean checkNamedRefExistence(Connection c, String refName) {
     try (PreparedStatement ps = c.prepareStatement(SqlStatements.SELECT_NAMED_REFERENCE_NAME)) {
-      ps.setString(1, config.getKeyPrefix());
+      ps.setString(1, config.getRepositoryId());
       ps.setString(2, refName);
       try (ResultSet rs = ps.executeQuery()) {
         return rs.next();
@@ -748,7 +746,7 @@ public abstract class TxDatabaseAdapter
    */
   protected Hash fetchNamedRefHead(Connection c, NamedRef ref) throws ReferenceNotFoundException {
     try (PreparedStatement ps = c.prepareStatement(SqlStatements.SELECT_NAMED_REFERENCE)) {
-      ps.setString(1, config.getKeyPrefix());
+      ps.setString(1, config.getRepositoryId());
       ps.setString(2, ref.getName());
       ps.setString(3, referenceTypeDiscriminator(ref));
       try (ResultSet rs = ps.executeQuery()) {
@@ -765,7 +763,7 @@ public abstract class TxDatabaseAdapter
   protected ReferenceInfo<ByteString> fetchNamedRef(Connection c, String ref)
       throws ReferenceNotFoundException {
     try (PreparedStatement ps = c.prepareStatement(SqlStatements.SELECT_NAMED_REFERENCE_ANY)) {
-      ps.setString(1, config.getKeyPrefix());
+      ps.setString(1, config.getRepositoryId());
       ps.setString(2, ref);
       try (ResultSet rs = ps.executeQuery()) {
         if (rs.next()) {
@@ -794,7 +792,7 @@ public abstract class TxDatabaseAdapter
   protected void insertNewReference(Connection conn, NamedRef ref, Hash hash)
       throws ReferenceAlreadyExistsException, SQLException {
     try (PreparedStatement ps = conn.prepareStatement(SqlStatements.INSERT_NAMED_REFERENCE)) {
-      ps.setString(1, config.getKeyPrefix());
+      ps.setString(1, config.getRepositoryId());
       ps.setString(2, ref.getName());
       ps.setString(3, referenceTypeDiscriminator(ref));
       ps.setString(4, hash.asString());
@@ -874,7 +872,7 @@ public abstract class TxDatabaseAdapter
 
       // 1.2. SELECT returns all already existing rows --> UPDATE
 
-      psSelect.setString(1, config.getKeyPrefix());
+      psSelect.setString(1, config.getRepositoryId());
       int i = 2;
       for (ContentId cid : commitAttempt.getGlobal().keySet()) {
         psSelect.setString(i++, cid.getId());
@@ -912,7 +910,7 @@ public abstract class TxDatabaseAdapter
           ps.setBytes(1, newStateBytes);
           ps.setString(2, newHash);
           ps.setLong(3, newCreatedAt);
-          ps.setString(4, config.getKeyPrefix());
+          ps.setString(4, config.getRepositoryId());
           ps.setString(5, contentId.getId());
           if (!expected.isEmpty()) {
             // Only perform a conditional update, if the client asked us to do so...
@@ -948,7 +946,7 @@ public abstract class TxDatabaseAdapter
                       "No contentId in CommitAttempt.keyToContent content-id '%s'", contentId));
             }
 
-            psInsert.setString(1, config.getKeyPrefix());
+            psInsert.setString(1, config.getRepositoryId());
             psInsert.setString(2, contentId.getId());
             psInsert.setString(3, newHash);
             psInsert.setBytes(4, newGlobBytes);
@@ -976,7 +974,7 @@ public abstract class TxDatabaseAdapter
     String sql = sqlForManyPlaceholders(SqlStatements.SELECT_GLOBAL_STATE_MANY, contentIds.size());
 
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
-      ps.setString(1, config.getKeyPrefix());
+      ps.setString(1, config.getRepositoryId());
       int i = 2;
       for (ContentId cid : contentIds) {
         ps.setString(i++, cid.getId());
@@ -1002,7 +1000,7 @@ public abstract class TxDatabaseAdapter
   @Override
   protected CommitLogEntry fetchFromCommitLog(Connection c, Hash hash) {
     try (PreparedStatement ps = c.prepareStatement(SqlStatements.SELECT_COMMIT_LOG)) {
-      ps.setString(1, config.getKeyPrefix());
+      ps.setString(1, config.getRepositoryId());
       ps.setString(2, hash.asString());
       try (ResultSet rs = ps.executeQuery()) {
         return rs.next() ? protoToCommitLogEntry(rs.getBytes(1)) : null;
@@ -1017,7 +1015,7 @@ public abstract class TxDatabaseAdapter
     String sql = sqlForManyPlaceholders(SqlStatements.SELECT_COMMIT_LOG_MANY, hashes.size());
 
     try (PreparedStatement ps = c.prepareStatement(sql)) {
-      ps.setString(1, config.getKeyPrefix());
+      ps.setString(1, config.getRepositoryId());
       for (int i = 0; i < hashes.size(); i++) {
         ps.setString(2 + i, hashes.get(i).asString());
       }
@@ -1039,7 +1037,7 @@ public abstract class TxDatabaseAdapter
   protected void writeIndividualCommit(Connection c, CommitLogEntry entry)
       throws ReferenceConflictException {
     try (PreparedStatement ps = c.prepareStatement(SqlStatements.INSERT_COMMIT_LOG)) {
-      ps.setString(1, config.getKeyPrefix());
+      ps.setString(1, config.getRepositoryId());
       ps.setString(2, entry.getHash().asString());
       ps.setBytes(3, toProto(entry).toByteArray());
       ps.executeUpdate();
@@ -1088,7 +1086,7 @@ public abstract class TxDatabaseAdapter
     int cnt = 0;
     try (PreparedStatement ps = c.prepareStatement(sqlInsert)) {
       for (T e : entries) {
-        ps.setString(1, config.getKeyPrefix());
+        ps.setString(1, config.getRepositoryId());
         ps.setString(2, idRetriever.apply(e));
         ps.setBytes(3, serializer.apply(e));
         ps.addBatch();
@@ -1123,7 +1121,7 @@ public abstract class TxDatabaseAdapter
         c,
         sqlForManyPlaceholders(SqlStatements.SELECT_KEY_LIST_MANY, keyListsIds.size()),
         ps -> {
-          ps.setString(1, config.getKeyPrefix());
+          ps.setString(1, config.getRepositoryId());
           int i = 2;
           for (Hash id : keyListsIds) {
             ps.setString(i++, id.asString());
@@ -1206,7 +1204,7 @@ public abstract class TxDatabaseAdapter
       Connection conn, NamedRef ref, Hash expectedHead, Hash newHead) {
     try (PreparedStatement ps = conn.prepareStatement(SqlStatements.UPDATE_NAMED_REFERENCE)) {
       ps.setString(1, newHead.asString());
-      ps.setString(2, config.getKeyPrefix());
+      ps.setString(2, config.getRepositoryId());
       ps.setString(3, ref.getName());
       ps.setString(4, expectedHead.asString());
       return ps.executeUpdate() == 1 ? newHead : null;

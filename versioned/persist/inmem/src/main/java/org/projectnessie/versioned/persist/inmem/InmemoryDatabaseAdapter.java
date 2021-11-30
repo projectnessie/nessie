@@ -50,7 +50,7 @@ public class InmemoryDatabaseAdapter
       NonTransactionalDatabaseAdapterConfig config, InmemoryStore store) {
     super(config);
 
-    this.keyPrefix = ByteString.copyFromUtf8(config.getKeyPrefix() + ':');
+    this.keyPrefix = ByteString.copyFromUtf8(config.getRepositoryId() + ':');
 
     Objects.requireNonNull(
         store, "Requires a non-null InmemoryStore from InmemoryDatabaseAdapterConfig");
@@ -67,9 +67,8 @@ public class InmemoryDatabaseAdapter
   }
 
   @Override
-  public void reinitializeRepo(String defaultBranchName) {
+  public void eraseRepo() {
     store.reinitializeRepo(keyPrefix);
-    super.initializeRepo(defaultBranchName);
   }
 
   @Override

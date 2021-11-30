@@ -35,10 +35,14 @@ import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 
 /**
- * Database-Adapter interface that encapsulates all database related logic, ab abstraction between a
+ * Database-Adapter interface that encapsulates all database related logic, an abstraction between a
  * {@link org.projectnessie.versioned.VersionStore} implementation and a variety of different
  * databases that share common core implementations for example for the commit/merge/transplant
  * operations.
+ *
+ * <p>One or more adapter instances may use the same storage (database instance / schema). In this
+ * case adapter instances usually differ by their {@link DatabaseAdapterConfig#getRepositoryId()
+ * repository ID} configuration parameters.
  *
  * <p>Database-adapters treat the actual "Nessie content" and "Nessie commit metadata" as an opaque
  * value ("BLOB") without interpreting the content. Database-adapter must persist serialized values
@@ -57,8 +61,16 @@ public interface DatabaseAdapter {
   /** Ensures that mandatory data is present in the repository, does not change an existing repo. */
   void initializeRepo(String defaultBranchName);
 
-  /** Forces a repository to be re-initialized. */
-  void reinitializeRepo(String defaultBranchName);
+  /**
+   * Forces all repository data managed by this adapter instance to be deleted.
+   *
+   * <p>This includes all data for the configured {@link DatabaseAdapterConfig#getRepositoryId()
+   * repository ID}.
+   *
+   * <p>After erasing a repository {@link #initializeRepo(String)} may be called to reinitialize the
+   * minimal required data structures for the same repository ID.
+   */
+  void eraseRepo();
 
   /** Get the {@link Hash} for "beginning of time". */
   Hash noAncestorHash();

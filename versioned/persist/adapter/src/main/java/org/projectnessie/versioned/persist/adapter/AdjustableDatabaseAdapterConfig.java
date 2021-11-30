@@ -19,7 +19,7 @@ import java.time.Clock;
 
 public interface AdjustableDatabaseAdapterConfig extends DatabaseAdapterConfig {
 
-  AdjustableDatabaseAdapterConfig withKeyPrefix(String keyPrefix);
+  AdjustableDatabaseAdapterConfig withRepositoryId(String repositoryId);
 
   AdjustableDatabaseAdapterConfig withParentsPerCommit(int parentsPerCommit);
 

@@ -88,7 +88,8 @@ public class CommitBench {
     public void init() throws Exception {
       databaseAdapter = adapterByName();
 
-      databaseAdapter.reinitializeRepo(branch.getName());
+      databaseAdapter.eraseRepo();
+      databaseAdapter.initializeRepo(branch.getName());
 
       versionStore = new PersistVersionStore<>(databaseAdapter, StringStoreWorker.INSTANCE);
 
