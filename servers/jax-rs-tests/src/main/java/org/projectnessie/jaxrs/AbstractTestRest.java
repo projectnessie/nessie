@@ -139,7 +139,19 @@ public abstract class AbstractTestRest {
   }
 
   @AfterEach
-  public void tearDown() {
+  public void tearDown() throws Exception {
+    Branch defaultBranch = api.getDefaultBranch();
+    for (Reference ref : api.getAllReferences().get().getReferences()) {
+      if (ref.getName().equals(defaultBranch.getName())) {
+        continue;
+      }
+      if (ref instanceof Branch) {
+        api.deleteBranch().branch((Branch) ref).delete();
+      } else if (ref instanceof Tag) {
+        api.deleteTag().tag((Tag) ref).delete();
+      }
+    }
+
     api.close();
   }
 
@@ -351,9 +363,6 @@ public abstract class AbstractTestRest {
         .fromRefName(branchName)
         .fromHash(newHash)
         .merge();
-
-    api.deleteTag().tagName(tagName).hash(newHash).delete();
-    api.deleteBranch().branchName(branchName).hash(newHash).delete();
   }
 
   @Test
@@ -854,10 +863,6 @@ public abstract class AbstractTestRest {
         .containsEntry(a, ta)
         .containsEntry(b, tb)
         .doesNotContainKey(ContentKey.of("noexist"));
-    api.deleteBranch()
-        .branchName(branch.getName())
-        .hash(api.getReference().refName(branch.getName()).get().getHash())
-        .delete();
   }
 
   public static final class ContentAndOperationType {
@@ -1048,11 +1053,6 @@ public abstract class AbstractTestRest {
             .get()
             .getEntries();
     assertThat(entries).containsExactlyInAnyOrderElementsOf(expected);
-
-    api.deleteBranch()
-        .branchName(branch.getName())
-        .hash(api.getReference().refName(branch.getName()).get().getHash())
-        .delete();
   }
 
   @Test
@@ -1229,11 +1229,6 @@ public abstract class AbstractTestRest {
     assertThat(entries.get(0))
         .matches(e -> e.getType().equals(Type.ICEBERG_TABLE))
         .matches(e -> e.getName().equals(ContentKey.of("a", "boo", "fifthTable")));
-
-    api.deleteBranch()
-        .branchName(branch.getName())
-        .hash(api.getReference().refName(branch.getName()).get().getHash())
-        .delete();
   }
 
   @Test
@@ -1263,10 +1258,6 @@ public abstract class AbstractTestRest {
 
     assertThat(api.getContent().key(k).refName(branch.getName()).get()).containsEntry(k, ta);
     assertEquals(ta, api.getContent().key(k).refName(branch.getName()).get().get(k));
-    api.deleteBranch()
-        .branchName(branch.getName())
-        .hash(api.getReference().refName(branch.getName()).get().getHash())
-        .delete();
   }
 
   @Test
