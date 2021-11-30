@@ -95,6 +95,7 @@ public interface HttpTreeApi extends TreeApi {
 
   @Override
   @POST
+  @Produces(MediaType.APPLICATION_JSON)
   @Path("tree")
   @Operation(
       summary = "Create a new reference",
@@ -485,6 +486,7 @@ public interface HttpTreeApi extends TreeApi {
   @Override
   @POST
   @Path("branch/{branchName}/commit")
+  @Produces(MediaType.APPLICATION_JSON)
   @Consumes(MediaType.APPLICATION_JSON)
   @Operation(
       summary =
