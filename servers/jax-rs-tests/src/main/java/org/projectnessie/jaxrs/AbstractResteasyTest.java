@@ -31,6 +31,8 @@ import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.DiffResponse;
+import org.projectnessie.model.DiffResponse.DiffEntry;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableBranch;
 import org.projectnessie.model.ImmutableOperations;
@@ -265,6 +267,22 @@ public abstract class AbstractResteasyTest {
         .as(Branch.class);
   }
 
+  private Branch commit(ContentKey contentKey, Content content, Branch branch, String author) {
+    Operations contents =
+        ImmutableOperations.builder()
+            .addOperations(Put.of(contentKey, content))
+            .commitMeta(CommitMeta.builder().author(author).message("").build())
+            .build();
+    return rest()
+        .body(contents)
+        .queryParam("expectedHash", branch.getHash())
+        .post("trees/branch/{branch}/commit", branch.getName())
+        .then()
+        .statusCode(200)
+        .extract()
+        .as(Branch.class);
+  }
+
   private Branch getBranch(String name) {
     return rest().get("trees/tree/{name}", name).then().statusCode(200).extract().as(Branch.class);
   }
@@ -419,5 +437,32 @@ public abstract class AbstractResteasyTest {
             .as(Content.class);
 
     assertThat(content).isEqualTo(table);
+  }
+
+  @Test
+  public void testGetDiff() {
+    Branch fromBranch = makeBranch("getdiff-test-from");
+    Branch toBranch = makeBranch("getdiff-test-to");
+    IcebergTable fromTable = IcebergTable.of("content-table", 42, 42, 42, 42);
+    IcebergTable toTable = IcebergTable.of("content-table", 43, 43, 43, 43);
+
+    ContentKey contentKey = ContentKey.of("key1");
+    commit(contentKey, fromTable, fromBranch, "diffAuthor");
+    commit(contentKey, toTable, toBranch, "diffAuthor2");
+
+    DiffResponse diffResponse =
+        rest()
+            .get(String.format("diffs/%s...%s", fromBranch.getName(), toBranch.getName()))
+            .then()
+            .statusCode(200)
+            .extract()
+            .as(DiffResponse.class);
+
+    assertThat(diffResponse).isNotNull();
+    assertThat(diffResponse.diffs()).hasSize(1);
+    DiffEntry diff = diffResponse.diffs().get(0);
+    assertThat(diff.key()).isEqualTo(contentKey);
+    assertThat(diff.from()).isEqualTo(fromTable);
+    assertThat(diff.to()).isEqualTo(toTable);
   }
 }

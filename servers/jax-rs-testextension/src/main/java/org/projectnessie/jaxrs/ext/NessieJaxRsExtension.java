@@ -38,6 +38,7 @@ import org.projectnessie.services.rest.NessieJaxRsJsonMappingExceptionMapper;
 import org.projectnessie.services.rest.NessieJaxRsJsonParseExceptionMapper;
 import org.projectnessie.services.rest.RestConfigResource;
 import org.projectnessie.services.rest.RestContentResource;
+import org.projectnessie.services.rest.RestDiffResource;
 import org.projectnessie.services.rest.RestTreeResource;
 import org.projectnessie.services.rest.ValidationExceptionMapper;
 import org.projectnessie.versioned.PersistVersionStoreExtension;
@@ -83,6 +84,7 @@ public class NessieJaxRsExtension implements BeforeAllCallback, AfterAllCallback
             config.register(RestConfigResource.class);
             config.register(RestTreeResource.class);
             config.register(RestContentResource.class);
+            config.register(RestDiffResource.class);
             config.register(ConfigApiImpl.class);
             config.register(ContentKeyParamConverterProvider.class);
             config.register(InstantParamConverterProvider.class);

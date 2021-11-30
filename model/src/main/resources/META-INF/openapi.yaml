@@ -222,6 +222,7 @@ components:
           - type: BRANCH
             hash: "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d"
             name: "main"
+
     referencesResponseWithMetadata:
       value:
         token: null
@@ -298,3 +299,27 @@ components:
                 commitTime: "2021-11-26T08:01:13.834397Z"
                 authorTime: "2021-11-26T08:01:13.831371Z"
                 properties: {}
+
+    diffResponse:
+      value:
+        diffs:
+          - key:
+              elements:
+                 - example
+                 - key
+            from:
+              type: ICEBERG_TABLE
+              id: "f350b391-f492-41eb-9959-730a8c49f01e"
+              metadataLocation: "/path/to/metadata/"
+              snapshotId: 23
+              schemaId: 15
+              specId: 15
+              sortOrderId: 15
+            to:
+              type: ICEBERG_TABLE
+              id: "dec31d0a-7d4b-4534-8c24-24f08eda33b2"
+              metadataLocation: "/path/to/metadata/"
+              snapshotId: 24
+              schemaId: 16
+              specId: 16
+              sortOrderId: 16

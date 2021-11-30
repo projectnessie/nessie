@@ -99,4 +99,7 @@ public interface NessieApiV1 extends NessieApi {
   MergeReferenceBuilder mergeRefIntoBranch();
 
   CommitMultipleOperationsBuilder commitMultipleOperations();
+
+  /** Retrieve a diff between two references. */
+  GetDiffBuilder getDiff();
 }

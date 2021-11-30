@@ -19,24 +19,23 @@ import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.SecurityContext;
-import org.projectnessie.api.ContentApi;
-import org.projectnessie.api.http.HttpContentApi;
+import org.projectnessie.api.DiffApi;
+import org.projectnessie.api.http.HttpDiffApi;
+import org.projectnessie.api.params.DiffParams;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.Content.Type;
-import org.projectnessie.model.ContentKey;
-import org.projectnessie.model.GetMultipleContentsRequest;
-import org.projectnessie.model.GetMultipleContentsResponse;
+import org.projectnessie.model.DiffResponse;
 import org.projectnessie.services.authz.AccessChecker;
 import org.projectnessie.services.config.ServerConfig;
-import org.projectnessie.services.impl.ContentApiImplWithAuthorization;
+import org.projectnessie.services.impl.DiffApiImplWithAuthorization;
 import org.projectnessie.versioned.VersionStore;
 
-/** REST endpoint for the content-API. */
+/** REST endpoint for the diff-API. */
 @RequestScoped
-public class RestContentResource implements HttpContentApi {
-  // Cannot extend the ContentApiImplWithAuthz class, because then CDI gets confused
+public class RestDiffResource implements HttpDiffApi {
+  // Cannot extend the DiffApiImplWithAuthz class, because then CDI gets confused
   // about which interface to use - either HttpContentApi or the plain ContentApi. This can lead
   // to various symptoms: complaints about varying validation-constraints in HttpTreeApi + TreeAPi,
   // empty resources (no REST methods defined) and potentially other.
@@ -48,12 +47,12 @@ public class RestContentResource implements HttpContentApi {
   @Context SecurityContext securityContext;
 
   // Mandated by CDI 2.0
-  public RestContentResource() {
+  public RestDiffResource() {
     this(null, null, null);
   }
 
   @Inject
-  public RestContentResource(
+  public RestDiffResource(
       ServerConfig config,
       VersionStore<Content, CommitMeta, Type> store,
       AccessChecker accessChecker) {
@@ -62,8 +61,8 @@ public class RestContentResource implements HttpContentApi {
     this.accessChecker = accessChecker;
   }
 
-  private ContentApi resource() {
-    return new ContentApiImplWithAuthorization(
+  private DiffApi resource() {
+    return new DiffApiImplWithAuthorization(
         config,
         store,
         accessChecker,
@@ -71,15 +70,7 @@ public class RestContentResource implements HttpContentApi {
   }
 
   @Override
-  public Content getContent(ContentKey key, String ref, String hashOnRef)
-      throws NessieNotFoundException {
-    return resource().getContent(key, ref, hashOnRef);
-  }
-
-  @Override
-  public GetMultipleContentsResponse getMultipleContents(
-      String ref, String hashOnRef, GetMultipleContentsRequest request)
-      throws NessieNotFoundException {
-    return resource().getMultipleContents(ref, hashOnRef, request);
+  public DiffResponse getDiff(DiffParams params) throws NessieNotFoundException {
+    return resource().getDiff(params);
   }
 }
