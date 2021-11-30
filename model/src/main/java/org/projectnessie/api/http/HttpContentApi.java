@@ -93,6 +93,7 @@ public interface HttpContentApi extends ContentApi {
 
   @Override
   @POST
+  @Produces(MediaType.APPLICATION_JSON)
   @Consumes(MediaType.APPLICATION_JSON)
   @Operation(
       summary = "Get multiple objects' content.",
