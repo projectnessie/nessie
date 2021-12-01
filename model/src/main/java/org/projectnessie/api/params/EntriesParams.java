@@ -41,6 +41,7 @@ public class EntriesParams extends AbstractParams {
   @QueryParam("hashOnRef")
   private String hashOnRef;
 
+  @Nullable
   @Parameter(
       description =
           "If set > 0 will filter the results to only return namespaces/tables to the depth of namespaceDepth. If not set or <=0 has no effect\n"
@@ -48,6 +49,7 @@ public class EntriesParams extends AbstractParams {
   @QueryParam("namespaceDepth")
   private Integer namespaceDepth;
 
+  @Nullable
   @Parameter(
       description =
           "A Common Expression Language (CEL) expression. An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n"
