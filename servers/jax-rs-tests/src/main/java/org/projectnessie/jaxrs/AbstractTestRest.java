@@ -366,6 +366,96 @@ public abstract class AbstractTestRest {
   }
 
   @Test
+  public void filterReferences() throws BaseNessieClientServerException {
+    Branch b1 =
+        getApi()
+            .commitMultipleOperations()
+            .branch(createBranch("refs.branch.1"))
+            .commitMeta(CommitMeta.fromMessage("some awkward message"))
+            .operation(
+                Put.of(
+                    ContentKey.of("hello.world.BaseTable"),
+                    SqlView.of(SqlView.Dialect.SPARK, "SELECT ALL THE THINGS")))
+            .commit();
+    Branch b2 =
+        getApi()
+            .commitMultipleOperations()
+            .branch(createBranch("other-development"))
+            .commitMeta(CommitMeta.fromMessage("invent awesome things"))
+            .operation(
+                Put.of(
+                    ContentKey.of("cool.stuff.Caresian"),
+                    SqlView.of(SqlView.Dialect.SPARK, "CARTESIAN JOINS ARE AWESOME")))
+            .commit();
+    Branch b3 =
+        getApi()
+            .commitMultipleOperations()
+            .branch(createBranch("archive"))
+            .commitMeta(CommitMeta.fromMessage("boring old stuff"))
+            .operation(
+                Put.of(
+                    ContentKey.of("super.old.Numbers"),
+                    SqlView.of(SqlView.Dialect.SPARK, "AGGREGATE EVERYTHING")))
+            .commit();
+    Tag t1 =
+        (Tag)
+            getApi()
+                .createReference()
+                .reference(Tag.of("my-tag", b2.getHash()))
+                .sourceRefName(b2.getName())
+                .create();
+
+    assertThat(
+            getApi()
+                .getAllReferences()
+                .queryExpression("ref.name == 'other-development'")
+                .get()
+                .getReferences())
+        .hasSize(1)
+        .allSatisfy(
+            ref ->
+                assertThat(ref)
+                    .isInstanceOf(Branch.class)
+                    .extracting(Reference::getName, Reference::getHash)
+                    .containsExactly(b2.getName(), b2.getHash()));
+    assertThat(
+            getApi().getAllReferences().queryExpression("refType == 'TAG'").get().getReferences())
+        .allSatisfy(ref -> assertThat(ref).isInstanceOf(Tag.class));
+    assertThat(
+            getApi()
+                .getAllReferences()
+                .queryExpression("refType == 'BRANCH'")
+                .get()
+                .getReferences())
+        .allSatisfy(ref -> assertThat(ref).isInstanceOf(Branch.class));
+    assertThat(
+            getApi()
+                .getAllReferences()
+                .queryExpression("has(refMeta.numTotalCommits) && refMeta.numTotalCommits < 0")
+                .get()
+                .getReferences())
+        .isEmpty();
+    assertThat(
+            getApi()
+                .getAllReferences()
+                .fetchAdditionalInfo(true)
+                .queryExpression("commit.message == 'invent awesome things'")
+                .get()
+                .getReferences())
+        .hasSize(2)
+        .allSatisfy(ref -> assertThat(ref.getName()).isIn(b2.getName(), t1.getName()));
+    assertThat(
+            getApi()
+                .getAllReferences()
+                .fetchAdditionalInfo(true)
+                .queryExpression("refType == 'TAG' && commit.message == 'invent awesome things'")
+                .get()
+                .getReferences())
+        .hasSize(1)
+        .allSatisfy(ref -> assertThat(ref.getName()).isEqualTo(t1.getName()));
+  }
+
+  @Test
   public void filterCommitLogByAuthor() throws BaseNessieClientServerException {
     Branch branch = createBranch("filterCommitLogByAuthor");
 
@@ -1833,11 +1923,11 @@ public abstract class AbstractTestRest {
                 .filter(r -> r.getName().startsWith(branchPrefix))
                 .map(r -> (Branch) r))
         .hasSize(numBranches)
-        .allSatisfy(branch -> assertThat(branch.metadata()).isNull());
+        .allSatisfy(branch -> assertThat(branch.getMetadata()).isNull());
 
     assertThat(references.stream().filter(r -> r.getName().startsWith(tagPrefix)).map(r -> (Tag) r))
         .hasSize(numBranches)
-        .allSatisfy(tag -> assertThat(tag.metadata()).isNull());
+        .allSatisfy(tag -> assertThat(tag.getMetadata()).isNull());
 
     // fetching additional metadata for each reference
     references = api.getAllReferences().fetchAdditionalInfo(true).get().getReferences();
@@ -1903,13 +1993,13 @@ public abstract class AbstractTestRest {
     assertThat(commits).hasSize(1);
     CommitMeta commitMeta = commits.get(0).getCommitMeta();
 
-    ReferenceMetadata referenceMetadata = branch.metadata();
+    ReferenceMetadata referenceMetadata = branch.getMetadata();
     assertThat(referenceMetadata).isNotNull();
-    assertThat(referenceMetadata.numCommitsAhead()).isEqualTo(expectedCommitsAhead);
-    assertThat(referenceMetadata.numCommitsBehind()).isEqualTo(expectedCommitsBehind);
-    assertThat(referenceMetadata.commitMetaOfHEAD()).isEqualTo(commitMeta);
-    assertThat(referenceMetadata.commonAncestorHash()).isEqualTo(reference.getHash());
-    assertThat(referenceMetadata.numTotalCommits()).isEqualTo(expectedCommits);
+    assertThat(referenceMetadata.getNumCommitsAhead()).isEqualTo(expectedCommitsAhead);
+    assertThat(referenceMetadata.getNumCommitsBehind()).isEqualTo(expectedCommitsBehind);
+    assertThat(referenceMetadata.getCommitMetaOfHEAD()).isEqualTo(commitMeta);
+    assertThat(referenceMetadata.getCommonAncestorHash()).isEqualTo(reference.getHash());
+    assertThat(referenceMetadata.getNumTotalCommits()).isEqualTo(expectedCommits);
   }
 
   private void verifyMetadataProperties(Tag tag) throws NessieNotFoundException {
@@ -1918,13 +2008,13 @@ public abstract class AbstractTestRest {
     assertThat(commits).hasSize(1);
     CommitMeta commitMeta = commits.get(0).getCommitMeta();
 
-    ReferenceMetadata referenceMetadata = tag.metadata();
+    ReferenceMetadata referenceMetadata = tag.getMetadata();
     assertThat(referenceMetadata).isNotNull();
-    assertThat(referenceMetadata.numCommitsAhead()).isNull();
-    assertThat(referenceMetadata.numCommitsBehind()).isNull();
-    assertThat(referenceMetadata.commitMetaOfHEAD()).isEqualTo(commitMeta);
-    assertThat(referenceMetadata.commonAncestorHash()).isNull();
-    assertThat(referenceMetadata.numTotalCommits()).isEqualTo(10);
+    assertThat(referenceMetadata.getNumCommitsAhead()).isNull();
+    assertThat(referenceMetadata.getNumCommitsBehind()).isNull();
+    assertThat(referenceMetadata.getCommitMetaOfHEAD()).isEqualTo(commitMeta);
+    assertThat(referenceMetadata.getCommonAncestorHash()).isNull();
+    assertThat(referenceMetadata.getNumTotalCommits()).isEqualTo(10);
   }
 
   @Test

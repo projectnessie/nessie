@@ -17,7 +17,9 @@ package org.projectnessie.api.params;
 
 import java.util.Objects;
 import java.util.StringJoiner;
+import javax.annotation.Nullable;
 import javax.ws.rs.QueryParam;
+import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.projectnessie.api.http.HttpTreeApi;
 
@@ -44,19 +46,47 @@ public class ReferencesParams extends AbstractParams {
   @QueryParam("fetchAdditionalInfo")
   private boolean fetchAdditionalInfo;
 
+  @Parameter(
+      description =
+          "A Common Expression Language (CEL) expression. An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n"
+              + "Usable variables within the expression are:\n\n"
+              + "- ref (Reference) describes the reference, with fields name (String), hash (String), metadata (ReferenceMetadata)\n\n"
+              + "- metadata (ReferenceMetadata) shortcut to ref.metadata, never null, but possibly empty\n\n"
+              + "- commit (CommitMeta) - shortcut to ref.metadata.commitMetaOfHEAD, never null, but possibly empty\n\n"
+              + "- refType (String) - the reference type, either BRANCH or TAG\n\n"
+              + "Note that the expression can only test attributes metadata and commit, if 'fetchAdditionalInfo' is true.",
+      examples = {
+        @ExampleObject(ref = "expr_by_refType"),
+        @ExampleObject(ref = "expr_by_ref_name"),
+        @ExampleObject(ref = "expr_by_ref_commit")
+      })
+  @QueryParam("query_expression")
+  @Nullable
+  private String queryExpression;
+
   public ReferencesParams() {}
 
-  private ReferencesParams(Integer maxRecords, String pageToken, boolean fetchAdditionalInfo) {
+  private ReferencesParams(
+      Integer maxRecords, String pageToken, boolean fetchAdditionalInfo, String queryExpression) {
     super(maxRecords, pageToken);
     this.fetchAdditionalInfo = fetchAdditionalInfo;
+    this.queryExpression = queryExpression;
   }
 
   private ReferencesParams(Builder builder) {
-    this(builder.maxRecords, builder.pageToken, builder.fetchAdditionalInfo);
+    this(
+        builder.maxRecords,
+        builder.pageToken,
+        builder.fetchAdditionalInfo,
+        builder.queryExpression);
   }
 
   public boolean isFetchAdditionalInfo() {
     return fetchAdditionalInfo;
+  }
+
+  public String queryExpression() {
+    return queryExpression;
   }
 
   public static ReferencesParams.Builder builder() {
@@ -73,6 +103,7 @@ public class ReferencesParams extends AbstractParams {
         .add("maxRecords=" + maxRecords())
         .add("pageToken='" + pageToken() + "'")
         .add("fetchAdditionalInfo=" + fetchAdditionalInfo)
+        .add("queryExpression=" + queryExpression)
         .toString();
   }
 
@@ -87,28 +118,36 @@ public class ReferencesParams extends AbstractParams {
     ReferencesParams that = (ReferencesParams) o;
     return Objects.equals(maxRecords(), that.maxRecords())
         && Objects.equals(pageToken(), that.pageToken())
-        && Objects.equals(fetchAdditionalInfo, that.fetchAdditionalInfo);
+        && Objects.equals(fetchAdditionalInfo, that.fetchAdditionalInfo)
+        && Objects.equals(queryExpression, that.queryExpression);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(maxRecords(), pageToken(), fetchAdditionalInfo);
+    return Objects.hash(maxRecords(), pageToken(), fetchAdditionalInfo, queryExpression);
   }
 
   public static class Builder extends AbstractParams.Builder<Builder> {
 
     private Builder() {}
 
-    private boolean fetchAdditionalInfo = false;
+    private boolean fetchAdditionalInfo;
+    private String queryExpression;
 
     public ReferencesParams.Builder from(ReferencesParams params) {
       return maxRecords(params.maxRecords())
           .pageToken(params.pageToken())
-          .fetchAdditionalInfo(params.fetchAdditionalInfo);
+          .fetchAdditionalInfo(params.fetchAdditionalInfo)
+          .expression(params.queryExpression);
     }
 
     public Builder fetchAdditionalInfo(boolean fetchAdditionalInfo) {
       this.fetchAdditionalInfo = fetchAdditionalInfo;
+      return this;
+    }
+
+    public Builder expression(String queryExpression) {
+      this.queryExpression = queryExpression;
       return this;
     }
 

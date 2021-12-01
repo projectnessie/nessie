@@ -43,4 +43,7 @@ public abstract class SqlView extends Content {
 
   // Schema getSchema();
 
+  public static SqlView of(Dialect dialect, String sqlText) {
+    return ImmutableSqlView.builder().dialect(dialect).sqlText(sqlText).build();
+  }
 }

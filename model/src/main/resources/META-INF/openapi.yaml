@@ -90,6 +90,12 @@ components:
       value: "commit.committer=='nessie_committer'"
     expr_by_commitTime:
       value: "timestamp(commit.commitTime) > timestamp('2021-05-31T08:23:15Z')"
+    expr_by_refType:
+      value: "refType == 'Branch'"
+    expr_by_ref_name:
+      value: "ref.name == 'my-tag-or-branch'"
+    expr_by_ref_commit:
+      value: "commit.message == 'invent awesome things'"
 
     commitMessage:
       value: "Example Commit Message"

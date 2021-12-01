@@ -22,7 +22,8 @@ import org.projectnessie.model.ReferencesResponse;
  *
  * @since {@link NessieApiV1}
  */
-public interface GetAllReferencesBuilder extends PagingBuilder<GetAllReferencesBuilder> {
+public interface GetAllReferencesBuilder
+    extends QueryBuilder<GetAllReferencesBuilder>, PagingBuilder<GetAllReferencesBuilder> {
 
   /**
    * Will fetch additional metadata about {@link org.projectnessie.model.Branch} / {@link
