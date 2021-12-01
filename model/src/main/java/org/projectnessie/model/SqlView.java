@@ -41,6 +41,11 @@ public abstract class SqlView extends Content {
   @NotNull
   public abstract Dialect getDialect();
 
+  @Override
+  public Type getType() {
+    return Type.VIEW;
+  }
+
   // Schema getSchema();
 
   public static SqlView of(Dialect dialect, String sqlText) {

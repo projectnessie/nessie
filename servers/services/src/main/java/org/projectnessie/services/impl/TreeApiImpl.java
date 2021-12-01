@@ -26,6 +26,7 @@ import static org.projectnessie.services.cel.CELUtil.VAR_COMMIT;
 import static org.projectnessie.services.cel.CELUtil.VAR_CONTENT_TYPE;
 import static org.projectnessie.services.cel.CELUtil.VAR_ENTRY;
 import static org.projectnessie.services.cel.CELUtil.VAR_NAMESPACE;
+import static org.projectnessie.services.cel.CELUtil.VAR_OPERATIONS;
 import static org.projectnessie.services.cel.CELUtil.VAR_REF;
 import static org.projectnessie.services.cel.CELUtil.VAR_REF_META;
 import static org.projectnessie.services.cel.CELUtil.VAR_REF_TYPE;
@@ -36,6 +37,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import java.security.Principal;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -380,8 +382,17 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     return logEntries.filter(
         logEntry -> {
           try {
+            List<Operation> operations = logEntry.getOperations();
+            if (operations == null) {
+              operations = Collections.emptyList();
+            }
+            // ContentKey has some @JsonIgnore attributes, which would otherwise not be accessible.
+            List<Object> operationsForCel =
+                operations.stream().map(CELUtil::forCel).collect(Collectors.toList());
             return script.execute(
-                Boolean.class, ImmutableMap.of(VAR_COMMIT, logEntry.getCommitMeta()));
+                Boolean.class,
+                ImmutableMap.of(
+                    VAR_COMMIT, logEntry.getCommitMeta(), VAR_OPERATIONS, operationsForCel));
           } catch (ScriptException e) {
             throw new RuntimeException(e);
           }

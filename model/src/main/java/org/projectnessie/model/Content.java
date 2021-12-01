@@ -15,6 +15,7 @@
  */
 package org.projectnessie.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -58,6 +59,10 @@ public abstract class Content {
   public String getId() {
     return UUID.randomUUID().toString();
   }
+
+  @Value.Redacted
+  @JsonIgnore
+  public abstract Type getType();
 
   /**
    * Unwrap object if possible, otherwise throw.

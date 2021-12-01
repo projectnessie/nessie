@@ -37,4 +37,9 @@ public abstract class DeltaLakeTable extends Content {
 
   @Nullable
   public abstract String getLastCheckpoint();
+
+  @Override
+  public Type getType() {
+    return Type.DELTA_LAKE_TABLE;
+  }
 }

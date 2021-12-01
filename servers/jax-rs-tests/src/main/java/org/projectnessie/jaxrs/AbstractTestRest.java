@@ -456,6 +456,67 @@ public abstract class AbstractTestRest {
   }
 
   @Test
+  public void filterCommitLogOperations() throws BaseNessieClientServerException {
+    Branch branch = createBranch("filterCommitLogOperations");
+
+    branch =
+        getApi()
+            .commitMultipleOperations()
+            .branch(branch)
+            .commitMeta(CommitMeta.fromMessage("some awkward message"))
+            .operation(
+                Put.of(
+                    ContentKey.of("hello", "world", "BaseTable"),
+                    SqlView.of(SqlView.Dialect.SPARK, "SELECT ALL THE THINGS")))
+            .operation(
+                Put.of(
+                    ContentKey.of("dlrow", "olleh", "BaseTable"),
+                    SqlView.of(SqlView.Dialect.SPARK, "SELECT ALL THE THINGS")))
+            .commit();
+
+    assertThat(
+            api.getCommitLog()
+                .refName(branch.getName())
+                .fetchAdditionalInfo(true)
+                .queryExpression("operations.exists(op, op.type == 'PUT')")
+                .get()
+                .getLogEntries())
+        .hasSize(1);
+    assertThat(
+            api.getCommitLog()
+                .refName(branch.getName())
+                .fetchAdditionalInfo(true)
+                .queryExpression("operations.exists(op, op.key.startsWith('hello.world.'))")
+                .get()
+                .getLogEntries())
+        .hasSize(1);
+    assertThat(
+            api.getCommitLog()
+                .refName(branch.getName())
+                .fetchAdditionalInfo(true)
+                .queryExpression("operations.exists(op, op.key.startsWith('not.there.'))")
+                .get()
+                .getLogEntries())
+        .isEmpty();
+    assertThat(
+            api.getCommitLog()
+                .refName(branch.getName())
+                .fetchAdditionalInfo(true)
+                .queryExpression("operations.exists(op, op.name == 'BaseTable')")
+                .get()
+                .getLogEntries())
+        .hasSize(1);
+    assertThat(
+            api.getCommitLog()
+                .refName(branch.getName())
+                .fetchAdditionalInfo(true)
+                .queryExpression("operations.exists(op, op.name == 'ThereIsNoSuchTable')")
+                .get()
+                .getLogEntries())
+        .isEmpty();
+  }
+
+  @Test
   public void filterCommitLogByAuthor() throws BaseNessieClientServerException {
     Branch branch = createBranch("filterCommitLogByAuthor");
 
