@@ -15,6 +15,8 @@
  */
 package org.projectnessie.api;
 
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import org.projectnessie.api.params.DiffParams;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.DiffResponse;
@@ -27,5 +29,5 @@ public interface DiffApi {
    * @param params The {@link DiffParams} that includes the parameters for this API call.
    * @return A list of diff values that show the difference between two given references.
    */
-  DiffResponse getDiff(DiffParams params) throws NessieNotFoundException;
+  DiffResponse getDiff(@Valid @NotNull DiffParams params) throws NessieNotFoundException;
 }

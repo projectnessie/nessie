@@ -15,7 +15,6 @@
  */
 package org.projectnessie.api.http;
 
-import javax.validation.Valid;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -28,13 +27,14 @@ import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.projectnessie.api.DiffApi;
 import org.projectnessie.api.params.DiffParams;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.DiffResponse;
 
 @Consumes(value = MediaType.APPLICATION_JSON)
 @Path("diffs")
-public interface HttpDiffApi {
+public interface HttpDiffApi extends DiffApi {
 
   @GET
   @Produces(MediaType.APPLICATION_JSON)
@@ -56,5 +56,5 @@ public interface HttpDiffApi {
     @APIResponse(responseCode = "403", description = "Not allowed to view the given fromRef/toRef"),
     @APIResponse(responseCode = "404", description = "fromRef/toRef not found"),
   })
-  DiffResponse getDiff(@BeanParam @Valid DiffParams params) throws NessieNotFoundException;
+  DiffResponse getDiff(@BeanParam DiffParams params) throws NessieNotFoundException;
 }
