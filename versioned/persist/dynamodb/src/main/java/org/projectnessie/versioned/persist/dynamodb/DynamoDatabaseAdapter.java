@@ -84,7 +84,7 @@ public class DynamoDatabaseAdapter
 
     client = c;
 
-    String keyPrefix = config.getKeyPrefix();
+    String keyPrefix = config.getRepositoryId();
     if (keyPrefix.indexOf(PREFIX_SEPARATOR) >= 0) {
       throw new IllegalArgumentException("Invalid key prefix: " + keyPrefix);
     }
@@ -113,7 +113,7 @@ public class DynamoDatabaseAdapter
   }
 
   @Override
-  public void reinitializeRepo(String defaultBranchName) {
+  public void eraseRepo() {
     client.client.deleteItem(
         b -> b.tableName(TABLE_GLOBAL_POINTER).key(globalPointerKeyMap).build());
 
@@ -136,8 +136,6 @@ public class DynamoDatabaseAdapter
                                                     .key(
                                                         Collections.singletonMap(
                                                             KEY_NAME, key))))));
-
-    super.initializeRepo(defaultBranchName);
   }
 
   private <T> T loadById(String table, Hash id, Parser<T> parser) {

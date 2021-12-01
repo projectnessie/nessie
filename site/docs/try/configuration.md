@@ -71,7 +71,7 @@ The following configurations are advanced configurations to configure how Nessie
 
 | Property                                                      | Default values      | Type     | Description                                                         |
 | -----------------------------------------------               | ------------------- | -------- |-------------------------------------------------------------------- |
-| `nessie.version.store.advanced.key-prefix`                     |                     | `String` | Sets prefix for all primary-keys.  |
+| `nessie.version.store.advanced.repository-id`                  |                     | `String` | Sets Nessie repository ID (optional). This ID can be used to distinguish multiple Nessie repositories that reside in the same storage instance.  |
 | `nessie.version.store.advanced.parent-per-commit`              | `20`                | `int`    | Sets the number of parent-commit-hashes stored in Nessie store.  |
 | `nessie.version.store.advanced.key-list-distance`              | `20`                | `int`    | Sets the number "reachable" or "known" keys for each `CommitLogEntry`.   |
 | `nessie.version.store.advanced.max-key-list-size`              | `250_000`           | `int`    | Sets the maximum size of a database object/row. This parameter is respected for `CommitLogEntry` and `KeyList`. This value must not be "on the edge" - means: it must leave enough room for a somewhat large-ish list   |

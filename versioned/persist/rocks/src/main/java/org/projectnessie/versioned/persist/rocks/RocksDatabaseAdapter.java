@@ -62,8 +62,8 @@ public class RocksDatabaseAdapter
       NonTransactionalDatabaseAdapterConfig config, RocksDbInstance dbInstance) {
     super(config);
 
-    this.keyPrefix = ByteString.copyFromUtf8(config.getKeyPrefix() + ':');
-    this.globalPointerKey = ByteString.copyFromUtf8(config.getKeyPrefix()).toByteArray();
+    this.keyPrefix = ByteString.copyFromUtf8(config.getRepositoryId() + ':');
+    this.globalPointerKey = ByteString.copyFromUtf8(config.getRepositoryId()).toByteArray();
 
     // get the externally configured RocksDbInstance
     Objects.requireNonNull(
@@ -86,13 +86,12 @@ public class RocksDatabaseAdapter
   }
 
   @Override
-  public void reinitializeRepo(String defaultBranchName) {
+  public void eraseRepo() {
     try {
       db.delete(dbInstance.getCfGlobalPointer(), globalPointerKey());
     } catch (RocksDBException e) {
       throw new RuntimeException(e);
     }
-    super.initializeRepo(defaultBranchName);
   }
 
   @Override

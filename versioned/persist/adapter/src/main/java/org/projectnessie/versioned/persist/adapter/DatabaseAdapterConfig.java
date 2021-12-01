@@ -27,7 +27,7 @@ import org.immutables.value.Value;
  */
 public interface DatabaseAdapterConfig {
 
-  String DEFAULT_KEY_PREFIX = "";
+  String DEFAULT_REPOSITORY_ID = "";
   int DEFAULT_PARENTS_PER_COMMIT = 20;
   int DEFAULT_KEY_LIST_DISTANCE = 20;
   int DEFAULT_MAX_KEY_LIST_SIZE = 250_000;
@@ -35,12 +35,18 @@ public interface DatabaseAdapterConfig {
   int DEFAULT_COMMIT_RETRIES = Integer.MAX_VALUE;
 
   /**
-   * Prefix for all primary-keys used by a {@link
-   * org.projectnessie.versioned.persist.adapter.DatabaseAdapter} instance.
+   * A free-form string that identifies a particular Nessie storage repository.
+   *
+   * <p>When remote (shared) storage is used, multiple Nessie repositories may co-exist in the same
+   * database (and in the same schema). In that case this configuration parameter can be used to
+   * distinguish those repositories.
+   *
+   * <p>All {@link org.projectnessie.versioned.persist.adapter.DatabaseAdapter} implementations must
+   * respect this parameter.
    */
   @Value.Default
-  default String getKeyPrefix() {
-    return DEFAULT_KEY_PREFIX;
+  default String getRepositoryId() {
+    return DEFAULT_REPOSITORY_ID;
   }
 
   /**

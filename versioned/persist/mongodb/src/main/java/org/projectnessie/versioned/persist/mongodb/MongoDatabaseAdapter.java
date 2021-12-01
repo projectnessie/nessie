@@ -60,13 +60,13 @@ public class MongoDatabaseAdapter
     extends NonTransactionalDatabaseAdapter<NonTransactionalDatabaseAdapterConfig> {
 
   private static final String ID_PROPERTY_NAME = "_id";
-  private static final String ID_PREFIX_NAME = "prefix";
+  private static final String ID_REPO_NAME = "repo";
   private static final String ID_HASH_NAME = "hash";
-  private static final String ID_PREFIX_PATH = ID_PROPERTY_NAME + "." + ID_PREFIX_NAME;
+  private static final String ID_REPO_PATH = ID_PROPERTY_NAME + "." + ID_REPO_NAME;
   private static final String DATA_PROPERTY_NAME = "data";
   private static final String GLOBAL_ID_PROPERTY_NAME = "globalId";
 
-  private final String keyPrefix;
+  private final String repositoryId;
   private final String globalPointerKey;
 
   private final MongoDatabaseClient client;
@@ -78,27 +78,25 @@ public class MongoDatabaseAdapter
     Objects.requireNonNull(client, "MongoDatabaseClient cannot be null");
     this.client = client;
 
-    this.keyPrefix = config.getKeyPrefix();
-    Objects.requireNonNull(keyPrefix, "Key prefix cannot be null");
+    this.repositoryId = config.getRepositoryId();
+    Objects.requireNonNull(repositoryId, "Repository ID cannot be null");
 
-    globalPointerKey = keyPrefix;
+    globalPointerKey = repositoryId;
   }
 
   @Override
-  public void reinitializeRepo(String defaultBranchName) {
+  public void eraseRepo() {
     client.getGlobalPointers().deleteMany(Filters.eq(globalPointerKey));
-    Bson idPrefixFilter = Filters.eq(ID_PREFIX_PATH, keyPrefix);
+    Bson idPrefixFilter = Filters.eq(ID_REPO_PATH, repositoryId);
     client.getGlobalLog().deleteMany(idPrefixFilter);
     client.getCommitLog().deleteMany(idPrefixFilter);
     client.getKeyLists().deleteMany(idPrefixFilter);
-
-    super.initializeRepo(defaultBranchName);
   }
 
   private Document toId(Hash id) {
     Document idDoc = new Document();
     // Note: the order of `put` calls matters
-    idDoc.put(ID_PREFIX_NAME, keyPrefix);
+    idDoc.put(ID_REPO_NAME, repositoryId);
     idDoc.put(ID_HASH_NAME, id.asString());
     return idDoc;
   }
@@ -269,10 +267,11 @@ public class MongoDatabaseAdapter
   private Hash idAsHash(Document doc) {
     Document id = doc.get(ID_PROPERTY_NAME, Document.class);
 
-    String prefix = id.getString(ID_PREFIX_NAME);
-    if (!keyPrefix.equals(prefix)) {
+    String repo = id.getString(ID_REPO_NAME);
+    if (!repositoryId.equals(repo)) {
       throw new IllegalStateException(
-          String.format("Key prefix mismatch for id '%s' (expected prefix: '%s')", id, keyPrefix));
+          String.format(
+              "Repository mismatch for id '%s' (expected repository ID: '%s')", id, repositoryId));
     }
 
     String hash = id.getString(ID_HASH_NAME);

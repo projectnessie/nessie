@@ -69,7 +69,8 @@ public class NessieJaxRsExtension implements BeforeAllCallback, AfterAllCallback
         PersistVersionStoreExtension.forDatabaseAdapter(
             () -> {
               DatabaseAdapter databaseAdapter = databaseAdapterSupplier.get();
-              databaseAdapter.reinitializeRepo(SERVER_CONFIG.getDefaultBranch());
+              databaseAdapter.eraseRepo();
+              databaseAdapter.initializeRepo(SERVER_CONFIG.getDefaultBranch());
               return databaseAdapter;
             }));
     weld.addExtension(new AccessCheckerExtension());

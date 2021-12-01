@@ -108,7 +108,8 @@ public class DatabaseAdapterExtension
   }
 
   private static void reinit(DatabaseAdapter adapter) {
-    adapter.reinitializeRepo("main");
+    adapter.eraseRepo();
+    adapter.initializeRepo("main");
   }
 
   @Override

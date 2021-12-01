@@ -41,13 +41,13 @@ import org.projectnessie.versioned.persist.tx.TxDatabaseAdapterConfig;
 public interface QuarkusVersionStoreAdvancedConfig
     extends NonTransactionalDatabaseAdapterConfig, TxDatabaseAdapterConfig {
 
-  @WithName("key-prefix")
-  @WithDefault(DEFAULT_KEY_PREFIX)
+  @WithName("repository-id")
+  @WithDefault(DEFAULT_REPOSITORY_ID)
   // Use TrimmedStringConverter for the "key-prefix" property because it can be an empty string,
   // but the default converter will turn empty strings into `null`.
   @WithConverter(TrimmedStringConverter.class)
   @Override
-  String getKeyPrefix();
+  String getRepositoryId();
 
   @WithName("parent-per-commit")
   @WithDefault("" + DEFAULT_PARENTS_PER_COMMIT)
