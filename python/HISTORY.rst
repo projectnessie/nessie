@@ -2,6 +2,11 @@
 History
 =======
 
+0.15.0 (2021-12-01)
+-------------------
+
+* Enhance commit log to optionally return original commit operations
+
 0.14.0 (2021-11-12)
 -------------------
 
