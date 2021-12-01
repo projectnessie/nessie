@@ -1,5 +1,13 @@
 # Releases
 
+## 0.15.0 Release (December 01, 2021)
+
+* Enhance commit log to optionally return original commit operations
+* Optionally return commits ahead/behind, HEAD commit-meta, commit count,
+  common ancestor for named references
+* Add missing REST endpoint to retrieve diff between two references
+* Web UI improvements
+
 ## 0.14.0 Release (November 12, 2021)
 
 * Updated `IcebergTable` to track more information
