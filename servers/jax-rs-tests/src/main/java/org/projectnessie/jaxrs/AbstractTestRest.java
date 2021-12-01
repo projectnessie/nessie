@@ -1415,7 +1415,13 @@ public abstract class AbstractTestRest {
                             .get())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(".ref: " + REF_NAME_MESSAGE));
+                .hasMessageContaining(".ref: " + REF_NAME_MESSAGE),
+        () ->
+            assertThatThrownBy(
+                    () -> api.getDiff().fromRefName(invalidBranchName).toRefName("main").get())
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining(".fromRef: " + REF_NAME_MESSAGE));
   }
 
   @ParameterizedTest
@@ -2004,6 +2010,82 @@ public abstract class AbstractTestRest {
                           Put.of(
                               ContentKey.of("key" + i),
                               IcebergTable.of("meta" + i, i, i, i, i, "cid" + i))));
+            });
+  }
+
+  @Test
+  public void testDiff() throws BaseNessieClientServerException {
+    int commitsPerBranch = 10;
+
+    Reference fromRef =
+        api.createReference().reference(Branch.of("testDiffFromRef", null)).create();
+    Reference toRef = api.createReference().reference(Branch.of("testDiffToRef", null)).create();
+    String toRefHash = createCommits(toRef, 1, commitsPerBranch, toRef.getHash());
+
+    // we only committed to toRef, the "from" diff should be null
+    assertThat(
+            api.getDiff().fromRefName(fromRef.getName()).toRefName(toRef.getName()).get().diffs())
+        .hasSize(commitsPerBranch)
+        .allSatisfy(
+            diff -> {
+              assertThat(diff.key()).isNotNull();
+              assertThat(diff.from()).isNull();
+              assertThat(diff.to()).isNotNull();
+            });
+
+    // after committing to fromRef, "from/to" diffs should both have data
+    createCommits(fromRef, 1, commitsPerBranch, fromRef.getHash());
+
+    assertThat(
+            api.getDiff().fromRefName(fromRef.getName()).toRefName(toRef.getName()).get().diffs())
+        .hasSize(commitsPerBranch)
+        .allSatisfy(
+            diff -> {
+              assertThat(diff.key()).isNotNull();
+              assertThat(diff.from()).isNotNull();
+              assertThat(diff.to()).isNotNull();
+
+              // we only have a diff on the ID
+              assertThat(diff.from().getId()).isNotEqualTo(diff.to().getId());
+              Optional<IcebergTable> fromTable = diff.from().unwrap(IcebergTable.class);
+              assertThat(fromTable).isPresent();
+              Optional<IcebergTable> toTable = diff.to().unwrap(IcebergTable.class);
+              assertThat(toTable).isPresent();
+
+              assertThat(fromTable.get().getMetadataLocation())
+                  .isEqualTo(toTable.get().getMetadataLocation());
+              assertThat(fromTable.get().getSchemaId()).isEqualTo(toTable.get().getSchemaId());
+              assertThat(fromTable.get().getSnapshotId()).isEqualTo(toTable.get().getSnapshotId());
+              assertThat(fromTable.get().getSortOrderId())
+                  .isEqualTo(toTable.get().getSortOrderId());
+              assertThat(fromTable.get().getSpecId()).isEqualTo(toTable.get().getSpecId());
+            });
+
+    List<ContentKey> keys =
+        IntStream.rangeClosed(0, commitsPerBranch)
+            .mapToObj(i -> ContentKey.of("table" + i))
+            .collect(Collectors.toList());
+    // request all keys and delete the tables for them on toRef
+    Map<ContentKey, Content> map = api.getContent().refName(toRef.getName()).keys(keys).get();
+    for (Map.Entry<ContentKey, Content> entry : map.entrySet()) {
+      toRef =
+          api.commitMultipleOperations()
+              .branchName(toRef.getName())
+              .hash(toRefHash)
+              .commitMeta(CommitMeta.fromMessage("delete"))
+              .operation(Delete.of(entry.getKey()))
+              .commit();
+    }
+
+    // now that we deleted all tables on toRef, the diff for "to" should be null
+    assertThat(
+            api.getDiff().fromRefName(fromRef.getName()).toRefName(toRef.getName()).get().diffs())
+        .hasSize(commitsPerBranch)
+        .allSatisfy(
+            diff -> {
+              assertThat(diff.key()).isNotNull();
+              assertThat(diff.from()).isNotNull();
+              assertThat(diff.to()).isNull();
             });
   }
 

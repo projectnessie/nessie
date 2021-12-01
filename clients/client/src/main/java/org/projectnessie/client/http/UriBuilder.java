@@ -95,7 +95,22 @@ class UriBuilder {
       // important note: this assumes an entire path component is the template. So /a/{b}/c will
       // work but /a/b{b}/c will not.
       Arrays.stream(uri.toString().split("/"))
-          .map(p -> encode((templates.containsKey(p)) ? templates.remove(p) : p))
+          .map(
+              p -> {
+                if (templates.containsKey(p)) {
+                  return encode(templates.remove(p));
+                } else if (p.contains("...")) {
+                  String[] diffs = p.split("\\.\\.\\.");
+                  if (diffs.length == 2) {
+                    if (templates.containsKey(diffs[0]) && templates.containsKey(diffs[1])) {
+                      String from = encode(templates.remove(diffs[0]));
+                      String to = encode(templates.remove(diffs[1]));
+                      return String.format("%s...%s", from, to);
+                    }
+                  }
+                }
+                return encode(p);
+              })
           .forEach(
               x -> {
                 if ('/' != uriBuilder.charAt(uriBuilder.length() - 1)) {

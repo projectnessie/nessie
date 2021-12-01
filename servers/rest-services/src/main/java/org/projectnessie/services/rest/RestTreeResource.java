@@ -46,7 +46,7 @@ import org.projectnessie.versioned.VersionStore;
 /** REST endpoint for the tree-API. */
 @RequestScoped
 public class RestTreeResource implements HttpTreeApi {
-  // Cannot extend the TreeApiImplWithAuthn class, because then CDI gets confused
+  // Cannot extend the TreeApiImplWithAuthz class, because then CDI gets confused
   // about which interface to use - either HttpTreeApi or the plain TreeApi. This can lead
   // to various symptoms: complaints about varying validation-constraints in HttpTreeApi + TreeAPi,
   // empty resources (no REST methods defined) and potentially other.
