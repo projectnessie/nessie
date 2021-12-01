@@ -1,5 +1,9 @@
 # Releases
 
+## 0.15.1 Release (December 01, 2021)
+
+* Fix wrongly placed validation annotation
+
 ## 0.15.0 Release (December 01, 2021)
 
 * Enhance commit log to optionally return original commit operations
