@@ -15,6 +15,7 @@
  */
 package org.projectnessie.api.params;
 
+import javax.annotation.Nullable;
 import javax.ws.rs.QueryParam;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 
@@ -22,6 +23,7 @@ public abstract class AbstractParams {
 
   @Parameter(description = "maximum number of entries to return, just a hint for the server")
   @QueryParam("max")
+  @Nullable
   private Integer maxRecords;
 
   @Parameter(
@@ -29,6 +31,7 @@ public abstract class AbstractParams {
           "paging continuation token, as returned in the previous value of the field 'token' in "
               + "the corresponding 'EntriesResponse' or 'LogResponse' or 'ReferencesResponse'.")
   @QueryParam("pageToken")
+  @Nullable
   private String pageToken;
 
   protected AbstractParams() {}

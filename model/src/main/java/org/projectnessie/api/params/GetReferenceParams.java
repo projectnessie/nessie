@@ -74,10 +74,6 @@ public class GetReferenceParams {
     return new GetReferenceParams.Builder();
   }
 
-  public static GetReferenceParams empty() {
-    return new GetReferenceParams.Builder().build();
-  }
-
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -119,7 +115,9 @@ public class GetReferenceParams {
       return this;
     }
 
-    private void validate() {}
+    private void validate() {
+      Objects.requireNonNull(refName, "refName must be non-null");
+    }
 
     public GetReferenceParams build() {
       validate();

@@ -16,6 +16,7 @@
 package org.projectnessie.api.params;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.junit.jupiter.api.Test;
 
@@ -30,10 +31,13 @@ public class GetReferenceParamsTest {
   }
 
   @Test
-  public void testEmpty() {
-    GetReferenceParams params = GetReferenceParams.empty();
-    assertThat(params).isNotNull();
-    assertThat(params.isFetchAdditionalInfo()).isFalse();
-    assertThat(params.getRefName()).isNull();
+  public void testValidation() {
+    assertThatThrownBy(() -> GetReferenceParams.builder().build())
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("refName must be non-null");
+
+    assertThatThrownBy(() -> GetReferenceParams.builder().refName(null).build())
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("refName must be non-null");
   }
 }
