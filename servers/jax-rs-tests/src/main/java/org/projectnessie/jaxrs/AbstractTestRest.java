@@ -1955,6 +1955,7 @@ public abstract class AbstractTestRest {
                                 ContentKey.of("key" + i),
                                 IcebergTable.of("meta" + i, i, i, i, i, "cid" + i)))
                         .operation(Delete.of(ContentKey.of("delete" + i)))
+                        .operation(Unchanged.of(ContentKey.of("key" + i)))
                         .commitMeta(CommitMeta.fromMessage("Commit #" + i))
                         .branchName(branch)
                         .hash(head)
@@ -2087,6 +2088,29 @@ public abstract class AbstractTestRest {
               assertThat(diff.from()).isNotNull();
               assertThat(diff.to()).isNull();
             });
+  }
+
+  @Test
+  public void commitLogExtendedForUnchangedOperation() throws Exception {
+    String branch = "commitLogExtendedUnchanged";
+    api.createReference()
+        .sourceRefName("main")
+        .reference(Branch.of(branch, null))
+        .create()
+        .getHash();
+    String head = api.getReference().refName(branch).get().getHash();
+    api.commitMultipleOperations()
+        .operation(Unchanged.of(ContentKey.of("key1")))
+        .commitMeta(CommitMeta.fromMessage("Commit #1"))
+        .branchName(branch)
+        .hash(head)
+        .commit();
+
+    List<LogEntry> logEntries =
+        api.getCommitLog().fetchAdditionalInfo(true).refName(branch).get().getLogEntries();
+    assertThat(logEntries.size()).isEqualTo(1);
+    assertThat(logEntries.get(0).getCommitMeta().getMessage()).contains("Commit #1");
+    assertThat(logEntries.get(0).getOperations()).isNull();
   }
 
   protected void unwrap(Executable exec) throws Throwable {
