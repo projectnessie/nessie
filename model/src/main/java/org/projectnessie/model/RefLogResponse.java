@@ -41,6 +41,20 @@ public interface RefLogResponse extends PaginatedResponse {
       return ImmutableRefLogResponseEntry.builder();
     }
 
+    // maps to getRefType() output.
+    // Correspond to the enum names in RefLogEntry.RefType of persist.proto file.
+    String BRANCH = "Branch";
+    String TAG = "Tag";
+
+    // maps to getOperation() output.
+    // Correspond to the enum names in RefLogEntry.Operation of persist.proto file.
+    String CREATE_REFERENCE = "CREATE_REFERENCE";
+    String COMMIT = "COMMIT";
+    String DELETE_REFERENCE = "DELETE_REFERENCE";
+    String ASSIGN_REFERENCE = "ASSIGN_REFERENCE";
+    String MERGE = "MERGE";
+    String TRANSPLANT = "TRANSPLANT";
+
     /** Reflog id of the current entry. */
     @NotNull
     String getRefLogId();
