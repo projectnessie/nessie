@@ -53,12 +53,18 @@ public class CommitLogParams extends AbstractParams {
 
   @Parameter(
       description =
-          "A Common Expression Language (CEL) expression. An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n"
-              + "Usable variables within the expression are 'commit.author' (string) / 'commit.committer' (string) / 'commit.commitTime' (timestamp) / 'commit.hash' (string) / 'commit.message' (string) / 'commit.properties' (map)",
+          "A Common Expression Language (CEL) expression. An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n\n"
+              + "Usable variables within the expression are:\n\n"
+              + "- 'commit' with fields 'author' (string), 'committer' (string), 'commitTime' (timestamp), 'hash' (string), ',message' (string), 'properties' (map)\n\n"
+              + "- 'operations' (list), each operation has the fields 'type' (string, either 'PUT' or 'DELETE'), 'key' (string, namespace + table name), 'keyElements' (list of strings), 'namespace' (string), 'namespaceElements' (list of strings) and 'name' (string, the \"simple\" table name)\n\n"
+              + "Note that the expression can only test against 'operations', if 'fetchAdditionalInfo' is true.\n\n"
+              + "Hint: when filtering commits, you can determine whether commits are \"missing\" (filtered) by checking whether 'LogEntry.parentCommitHash' is different from the hash of the previous commit in the log response.",
       examples = {
         @ExampleObject(ref = "expr_by_commit_author"),
         @ExampleObject(ref = "expr_by_commit_committer"),
-        @ExampleObject(ref = "expr_by_commitTime")
+        @ExampleObject(ref = "expr_by_commitTime"),
+        @ExampleObject(ref = "expr_by_commit_operations_table_name"),
+        @ExampleObject(ref = "expr_by_commit_operations_type")
       })
   @QueryParam("query_expression")
   private String queryExpression;

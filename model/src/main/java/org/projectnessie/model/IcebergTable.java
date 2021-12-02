@@ -71,6 +71,11 @@ public abstract class IcebergTable extends Content {
 
   public abstract int getSortOrderId();
 
+  @Override
+  public Type getType() {
+    return Type.ICEBERG_TABLE;
+  }
+
   public static IcebergTable of(
       String metadataLocation, long snapshotId, int schemaId, int specId, int sortOrderId) {
     return ImmutableIcebergTable.builder()
