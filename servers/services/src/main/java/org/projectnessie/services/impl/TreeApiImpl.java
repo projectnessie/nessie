@@ -308,18 +308,21 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
                   if (commit.getParentHash() != null) {
                     logEntry.parentCommitHash(commit.getParentHash().asString());
                   }
-                  Objects.requireNonNull(commit.getOperations())
-                      .forEach(
-                          op -> {
-                            ContentKey key = ContentKey.of(op.getKey().getElements());
-                            if (op instanceof Put) {
-                              Content content = ((Put<Content>) op).getValue();
-                              logEntry.addOperations(Operation.Put.of(key, content));
-                            }
-                            if (op instanceof Delete) {
-                              logEntry.addOperations(Operation.Delete.of(key));
-                            }
-                          });
+                  if (commit.getOperations() != null) {
+                    commit
+                        .getOperations()
+                        .forEach(
+                            op -> {
+                              ContentKey key = ContentKey.of(op.getKey().getElements());
+                              if (op instanceof Put) {
+                                Content content = ((Put<Content>) op).getValue();
+                                logEntry.addOperations(Operation.Put.of(key, content));
+                              }
+                              if (op instanceof Delete) {
+                                logEntry.addOperations(Operation.Delete.of(key));
+                              }
+                            });
+                  }
                 }
                 return logEntry.build();
               });
