@@ -19,6 +19,7 @@ import java.util.OptionalInt;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
+import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.api.PagingBuilder;
 import org.projectnessie.error.NessieNotFoundException;
@@ -100,12 +101,14 @@ public final class StreamingUtil {
       @Nullable String hashOnRef,
       @Nullable String untilHash,
       @Nullable String filter,
-      OptionalInt maxRecords)
+      OptionalInt maxRecords,
+      boolean fetchAdditionalInfo)
       throws NessieNotFoundException {
+    FetchOption fetchOption = fetchAdditionalInfo ? FetchOption.ALL : FetchOption.MINIMAL;
     return new ResultStreamPaginator<>(
             LogResponse::getLogEntries,
             (reference, pageSize, token) ->
-                builderWithPaging(api.getCommitLog(), pageSize, token)
+                builderWithPaging(api.getCommitLog().fetch(fetchOption), pageSize, token)
                     .refName(reference)
                     .hashOnRef(hashOnRef)
                     .filter(filter)

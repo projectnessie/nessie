@@ -112,6 +112,7 @@
     <module>model</module>
     <module>clients</module>
     <module>versioned</module>
+    <module>gc</module>
     <module>servers</module>
     <module>tools</module>
   </modules>

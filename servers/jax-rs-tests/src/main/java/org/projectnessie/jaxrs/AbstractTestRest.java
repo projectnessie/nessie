@@ -790,7 +790,7 @@ public abstract class AbstractTestRest {
             .collect(Collectors.toList());
     List<CommitMeta> completeLog =
         StreamingUtil.getCommitLogStream(
-                api, branch.getName(), null, null, null, OptionalInt.of(pageSizeHint))
+                api, branch.getName(), null, null, null, OptionalInt.of(pageSizeHint), false)
             .map(LogEntry::getCommitMeta)
             .collect(Collectors.toList());
     assertThat(completeLog.stream().map(CommitMeta::getMessage))
@@ -827,7 +827,7 @@ public abstract class AbstractTestRest {
 
     List<CommitMeta> completeLog =
         StreamingUtil.getCommitLogStream(
-                api, branch.getName(), null, null, null, OptionalInt.of(pageSizeHint))
+                api, branch.getName(), null, null, null, OptionalInt.of(pageSizeHint), false)
             .map(LogEntry::getCommitMeta)
             .collect(Collectors.toList());
     assertEquals(
