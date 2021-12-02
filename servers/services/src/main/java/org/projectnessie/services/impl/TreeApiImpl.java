@@ -19,7 +19,16 @@ import static org.projectnessie.services.cel.CELUtil.COMMIT_LOG_DECLARATIONS;
 import static org.projectnessie.services.cel.CELUtil.COMMIT_LOG_TYPES;
 import static org.projectnessie.services.cel.CELUtil.CONTAINER;
 import static org.projectnessie.services.cel.CELUtil.ENTRIES_DECLARATIONS;
+import static org.projectnessie.services.cel.CELUtil.REFERENCES_DECLARATIONS;
+import static org.projectnessie.services.cel.CELUtil.REFERENCES_TYPES;
 import static org.projectnessie.services.cel.CELUtil.SCRIPT_HOST;
+import static org.projectnessie.services.cel.CELUtil.VAR_COMMIT;
+import static org.projectnessie.services.cel.CELUtil.VAR_CONTENT_TYPE;
+import static org.projectnessie.services.cel.CELUtil.VAR_ENTRY;
+import static org.projectnessie.services.cel.CELUtil.VAR_NAMESPACE;
+import static org.projectnessie.services.cel.CELUtil.VAR_REF;
+import static org.projectnessie.services.cel.CELUtil.VAR_REF_META;
+import static org.projectnessie.services.cel.CELUtil.VAR_REF_TYPE;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
@@ -70,6 +79,7 @@ import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.Tag;
 import org.projectnessie.model.Transplant;
 import org.projectnessie.services.authz.AccessChecker;
+import org.projectnessie.services.cel.CELUtil;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
@@ -108,8 +118,10 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     ImmutableReferencesResponse.Builder resp = ReferencesResponse.builder();
     try (Stream<ReferenceInfo<CommitMeta>> str =
         getStore().getNamedRefs(getGetNamedRefsParams(params.isFetchAdditionalInfo()))) {
-      str.map(refInfo -> TreeApiImpl.makeReference(refInfo, params.isFetchAdditionalInfo()))
-          .forEach(resp::addReferences);
+      Stream<Reference> unfiltered =
+          str.map(refInfo -> TreeApiImpl.makeReference(refInfo, params.isFetchAdditionalInfo()));
+      Stream<Reference> filtered = filterReferences(unfiltered, params.queryExpression());
+      filtered.forEach(resp::addReferences);
     } catch (ReferenceNotFoundException e) {
       throw new IllegalArgumentException(
           String.format(
@@ -126,6 +138,66 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
             .tagRetrieveOptions(RetrieveOptions.COMMIT_META)
             .build()
         : GetNamedRefsParams.DEFAULT;
+  }
+
+  /**
+   * Applies different filters to the {@link Stream} of references on the query expression.
+   *
+   * @param references The references that different filters will be applied to
+   * @param queryExpression The query expression to filter by
+   * @return A potentially filtered {@link Stream} of commits based on the query expression
+   */
+  private Stream<Reference> filterReferences(Stream<Reference> references, String queryExpression) {
+    if (Strings.isNullOrEmpty(queryExpression)) {
+      return references;
+    }
+
+    final Script script;
+    try {
+      script =
+          SCRIPT_HOST
+              .buildScript(queryExpression)
+              .withContainer(CONTAINER)
+              .withDeclarations(REFERENCES_DECLARATIONS)
+              .withTypes(REFERENCES_TYPES)
+              .build();
+    } catch (ScriptException e) {
+      throw new IllegalArgumentException(e);
+    }
+    return references.filter(
+        reference -> {
+          try {
+            ReferenceMetadata refMeta = reference.getMetadata();
+            if (refMeta == null) {
+              refMeta = CELUtil.EMPTY_REFERENCE_METADATA;
+            }
+            CommitMeta commit = refMeta.getCommitMetaOfHEAD();
+            if (commit == null) {
+              commit = CELUtil.EMPTY_COMMIT_META;
+            }
+            String refType;
+            if (reference instanceof Branch) {
+              refType = "BRANCH";
+            } else if (reference instanceof Tag) {
+              refType = "TAG";
+            } else {
+              refType = "REFERENCE";
+            }
+            return script.execute(
+                Boolean.class,
+                ImmutableMap.of(
+                    VAR_REF,
+                    reference,
+                    VAR_REF_TYPE,
+                    refType,
+                    VAR_COMMIT,
+                    commit,
+                    VAR_REF_META,
+                    refMeta));
+          } catch (ScriptException e) {
+            throw new RuntimeException(e);
+          }
+        });
   }
 
   @Override
@@ -309,7 +381,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
         logEntry -> {
           try {
             return script.execute(
-                Boolean.class, ImmutableMap.of("commit", logEntry.getCommitMeta()));
+                Boolean.class, ImmutableMap.of(VAR_COMMIT, logEntry.getCommitMeta()));
           } catch (ScriptException e) {
             throw new RuntimeException(e);
           }
@@ -430,11 +502,11 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
           // Eventually we should just be able to do "script.execute(Boolean.class, entry)"
           Map<String, Object> arguments =
               ImmutableMap.of(
-                  "entry",
+                  VAR_ENTRY,
                   ImmutableMap.of(
-                      "namespace",
+                      VAR_NAMESPACE,
                       entry.getName().getNamespace().name(),
-                      "contentType",
+                      VAR_CONTENT_TYPE,
                       entry.getType().name()));
 
           try {

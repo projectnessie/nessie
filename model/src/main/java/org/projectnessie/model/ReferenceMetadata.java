@@ -40,17 +40,17 @@ import org.immutables.value.Value;
 public interface ReferenceMetadata {
 
   @Nullable
-  Integer numCommitsAhead();
+  Integer getNumCommitsAhead();
 
   @Nullable
-  Integer numCommitsBehind();
+  Integer getNumCommitsBehind();
 
   @Nullable
-  CommitMeta commitMetaOfHEAD();
+  CommitMeta getCommitMetaOfHEAD();
 
   @Nullable
-  String commonAncestorHash();
+  String getCommonAncestorHash();
 
   @Nullable
-  Long numTotalCommits();
+  Long getNumTotalCommits();
 }

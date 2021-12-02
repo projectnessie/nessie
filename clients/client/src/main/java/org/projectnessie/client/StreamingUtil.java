@@ -44,12 +44,15 @@ public final class StreamingUtil {
    * @return stream of {@link Reference} objects
    */
   public static Stream<Reference> getAllReferencesStream(
-      @NotNull NessieApiV1 api, OptionalInt maxRecords) throws NessieNotFoundException {
+      @NotNull NessieApiV1 api, OptionalInt maxRecords, @Nullable String queryExpression)
+      throws NessieNotFoundException {
 
     return new ResultStreamPaginator<>(
             ReferencesResponse::getReferences,
             (r, pageSize, token) ->
-                builderWithPaging(api.getAllReferences(), pageSize, token).get())
+                builderWithPaging(
+                        api.getAllReferences().queryExpression(queryExpression), pageSize, token)
+                    .get())
         .generateStream(null, maxRecords);
   }
 

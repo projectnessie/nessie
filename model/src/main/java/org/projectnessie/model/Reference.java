@@ -79,5 +79,5 @@ public interface Reference extends Base {
    */
   @JsonInclude(Include.NON_NULL)
   @Nullable
-  ReferenceMetadata metadata();
+  ReferenceMetadata getMetadata();
 }
