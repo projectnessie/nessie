@@ -17,6 +17,7 @@ package org.projectnessie.server.relect;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import org.projectnessie.error.NessieError;
+import org.projectnessie.services.cel.CELUtil;
 
 /**
  * This class tracks classes explicitly registered for "reflection" during Quarkus Server native
@@ -24,5 +25,6 @@ import org.projectnessie.error.NessieError;
  *
  * <p>In particular, this list is about Nessie model classes.
  */
-@RegisterForReflection(targets = NessieError.class)
+@RegisterForReflection(
+    targets = {NessieError.class, CELUtil.OperationForCel.class, CELUtil.ContentForCel.class})
 public abstract class ModelReflections {}
