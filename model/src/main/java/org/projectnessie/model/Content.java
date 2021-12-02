@@ -60,6 +60,12 @@ public abstract class Content {
     return UUID.randomUUID().toString();
   }
 
+  /**
+   * Returns the {@link Type} enum constant for this content object.
+   *
+   * <p>The name of the returned enum value should match the JSON type name used for serializing the
+   * content object.
+   */
   @Value.Redacted
   @JsonIgnore
   public abstract Type getType();

@@ -97,7 +97,7 @@ components:
     expr_by_commit_operations_type:
       value: "operations.exists(op, op.type == 'PUT')"
     expr_by_refType:
-      value: "refType == 'Branch'"
+      value: "refType == 'BRANCH'"
     expr_by_ref_name:
       value: "ref.name == 'my-tag-or-branch'"
     expr_by_ref_commit:
