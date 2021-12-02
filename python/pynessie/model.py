@@ -239,11 +239,45 @@ class OperationsSchema(OneOfSchema):
 
 
 @attr.dataclass
+class CommitMeta:
+    """Dataclass for commit metadata."""
+
+    hash_: str = desert.ib(fields.Str(data_key="hash"), default=None)
+    commitTime: datetime = desert.ib(fields.DateTime(), default=None)
+    authorTime: datetime = desert.ib(fields.DateTime(), default=None)
+    committer: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True)))
+    author: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True)))
+    signedOffBy: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True)))
+    message: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True)))
+    properties: dict = desert.ib(fields.Dict(), default=None)
+
+
+CommitMetaSchema = desert.schema_class(CommitMeta)
+
+
+@attr.dataclass
+class ReferenceMetadata:
+    """Dataclass for Nessie ReferenceMetadata."""
+
+    commit_meta_of_head: CommitMeta = desert.ib(fields.Nested(CommitMetaSchema, data_key="commitMetaOfHEAD", allow_none=True))
+    num_commits_ahead: int = attr.ib(default=None, metadata=desert.metadata(fields.Int(allow_none=True, data_key="numCommitsAhead")))
+    num_commits_behind: int = attr.ib(default=None, metadata=desert.metadata(fields.Int(allow_none=True, data_key="numCommitsBehind")))
+    common_ancestor_hash: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True, data_key="commonAncestorHash")))
+    num_total_commits: str = attr.ib(default=None, metadata=desert.metadata(fields.Int(allow_none=True, data_key="numTotalCommits")))
+
+
+ReferenceMetadataSchema = desert.schema_class(ReferenceMetadata)
+
+
+@attr.dataclass
 class Reference:
     """Dataclass for Nessie Reference."""
 
     name: str = desert.ib(fields.Str())
     hash_: Optional[str] = attr.ib(default=None, metadata=desert.metadata(fields.Str(data_key="hash", allow_none=True)))
+    metadata: Optional[ReferenceMetadata] = attr.ib(
+        default=None, metadata=desert.metadata(fields.Nested(ReferenceMetadataSchema, allow_none=True, data_key="metadata"))
+    )
 
 
 @attr.dataclass
@@ -327,23 +361,6 @@ class Entries:
 
 
 EntriesSchema = desert.schema_class(Entries)
-
-
-@attr.dataclass
-class CommitMeta:
-    """Dataclass for commit metadata."""
-
-    hash_: str = desert.ib(fields.Str(data_key="hash"), default=None)
-    commitTime: datetime = desert.ib(fields.DateTime(), default=None)
-    authorTime: datetime = desert.ib(fields.DateTime(), default=None)
-    committer: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True)))
-    author: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True)))
-    signedOffBy: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True)))
-    message: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True)))
-    properties: dict = desert.ib(fields.Dict(), default=None)
-
-
-CommitMetaSchema = desert.schema_class(CommitMeta)
 
 
 @attr.dataclass

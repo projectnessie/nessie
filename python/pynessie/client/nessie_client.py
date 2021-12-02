@@ -77,12 +77,12 @@ class NessieClient:
         except confuse.exceptions.NotFoundError:
             self._base_branch = None
 
-    def list_references(self: "NessieClient") -> ReferencesResponse:
+    def list_references(self: "NessieClient", fetch_additional_info: bool = False) -> ReferencesResponse:
         """Fetch all known references.
 
         :return: list of Nessie References
         """
-        references = all_references(self._base_url, self._auth, self._ssl_verify)
+        references = all_references(self._base_url, self._auth, self._ssl_verify, fetch_additional_info)
         return ReferencesResponseSchema().load(references)
 
     def get_reference(self: "NessieClient", name: Optional[str]) -> Reference:

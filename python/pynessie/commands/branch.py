@@ -40,6 +40,14 @@ from ..decorators import error_handler, pass_client
     "expected_hash",
     help="Expected hash. Only perform the action if the branch currently points to the hash specified by this option.",
 )
+@click.option(
+    "-x",
+    "--extended",
+    "fetch_additional_info",
+    is_flag=True,
+    help="Retrieve additional metadata for a branch, such as number of commits ahead/behind, "
+    "info about the HEAD commit, number of total commits, or the common ancestor hash.",
+)
 @click.argument("branch", nargs=1, required=False)
 @click.argument("base_ref", nargs=1, required=False)
 @pass_client
@@ -53,6 +61,7 @@ def branch_(
     branch: str,
     base_ref: str,
     expected_hash: str,
+    fetch_additional_info: bool,
 ) -> None:
     """Branch operations.
 
@@ -84,7 +93,7 @@ def branch_(
 
     """
     results = handle_branch_tag(
-        ctx.nessie, is_list, delete, branch, hash_on_ref, base_ref, True, ctx.json, force, ctx.verbose, expected_hash
+        ctx.nessie, is_list, delete, branch, hash_on_ref, base_ref, True, ctx.json, force, ctx.verbose, fetch_additional_info, expected_hash
     )
     if ctx.json:
         click.echo(results)

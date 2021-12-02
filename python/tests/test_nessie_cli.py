@@ -183,6 +183,19 @@ def test_branch() -> None:
     assert_that(references.name).is_equal_to("etl")
     references = simplejson.loads(execute_cli_command(["--json", "branch", "-l", "foo"]))
     assert len(references) == 0
+
+    table = _new_table("test_branch_metadata")
+    make_commit("test.branch.metadata", table, "dev", author="nessie_user1")
+
+    branch = ReferenceSchema().loads(execute_cli_command(["--json", "branch", "-l", "dev", "--extended"]))
+    ref_metadata = branch.metadata
+    assert_that(ref_metadata).is_not_none()
+    assert_that(ref_metadata.num_commits_ahead).is_equal_to(1)
+    assert_that(ref_metadata.num_commits_behind).is_equal_to(0)
+    assert_that(ref_metadata.num_total_commits).is_equal_to(1)
+    assert_that(ref_metadata.common_ancestor_hash).is_not_empty()
+    assert_that(ref_metadata.commit_meta_of_head).is_not_none()
+
     execute_cli_command(["branch", "-d", "etl"])
     execute_cli_command(["branch", "-d", "dev"])
     references = ReferenceSchema().loads(execute_cli_command(["--json", "branch"]), many=True)
@@ -212,6 +225,19 @@ def test_tag() -> None:
     tags = {i.name: i.hash_ for i in ReferenceSchema().loads(execute_cli_command(["--json", "tag"]), many=True)}
     branches = {i.name: i.hash_ for i in ReferenceSchema().loads(execute_cli_command(["--json", "branch"]), many=True)}
     assert tags["v1.0"] == branches["main"]
+
+    execute_cli_command(["branch", "metadata_branch", "main"])
+    table = _new_table("test_tag_metadata")
+    make_commit("test.tag.metadata", table, "metadata_branch", author="nessie_user1")
+    execute_cli_command(["tag", "metadata_tag", "metadata_branch"])
+    ref = ReferenceSchema().loads(execute_cli_command(["--json", "tag", "-l", "metadata_tag", "--extended"]))
+    ref_metadata = ref.metadata
+    assert_that(ref_metadata).is_not_none()
+    assert_that(ref_metadata.num_commits_ahead).is_none()
+    assert_that(ref_metadata.num_commits_behind).is_none()
+    assert_that(ref_metadata.num_total_commits).is_equal_to(1)
+    assert_that(ref_metadata.common_ancestor_hash).is_none()
+    assert_that(ref_metadata.commit_meta_of_head).is_not_none()
 
 
 @pytest.mark.vcr
