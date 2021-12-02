@@ -51,7 +51,7 @@ interactions:
       message: OK
 - request:
     body: '{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-      "name": "contents_commit_delete_dev", "type": "BRANCH"}'
+      "metadata": null, "name": "contents_commit_delete_dev", "type": "BRANCH"}'
     headers:
       Accept:
       - '*/*'
@@ -60,7 +60,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '132'
+      - '150'
       Content-Type:
       - application/json
       User-Agent:
@@ -155,7 +155,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/branch/contents_commit_delete_dev/commit?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
-      string: '{"hash": "66dc01a40d8bcb5cd9310905e2bdc2f09e757283953c28abee454199a17a5fca",
+      string: '{"hash": "9d18773566aecfa8df8af3fd305ad83fc842ab84b260a58cf5a587dd86f16513",
         "name": "contents_commit_delete_dev", "type": "BRANCH"}'
     headers:
       Content-Type:
@@ -206,7 +206,7 @@ interactions:
   response:
     body:
       string: '{"hasMore": false, "references": [{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-        "name": "main", "type": "BRANCH"}, {"hash": "66dc01a40d8bcb5cd9310905e2bdc2f09e757283953c28abee454199a17a5fca",
+        "name": "main", "type": "BRANCH"}, {"hash": "9d18773566aecfa8df8af3fd305ad83fc842ab84b260a58cf5a587dd86f16513",
         "name": "contents_commit_delete_dev", "type": "BRANCH"}], "token": null}'
     headers:
       Content-Type:
@@ -235,10 +235,10 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/contents_commit_delete_dev/commit?expectedHash=66dc01a40d8bcb5cd9310905e2bdc2f09e757283953c28abee454199a17a5fca
+    uri: http://localhost:19120/api/v1/trees/branch/contents_commit_delete_dev/commit?expectedHash=9d18773566aecfa8df8af3fd305ad83fc842ab84b260a58cf5a587dd86f16513
   response:
     body:
-      string: '{"hash": "5285ad6444b088a58ce9c0358311784445af6ce86963198aa5df65f67fc4a187",
+      string: '{"hash": "45a11472bd961c4fe361b4c8cfef3983f26b6a1c8a0d98e2f4a6064678c06888",
         "name": "contents_commit_delete_dev", "type": "BRANCH"}'
     headers:
       Content-Type:

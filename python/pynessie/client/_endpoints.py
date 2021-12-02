@@ -84,15 +84,19 @@ def _check_error(r: requests.models.Response) -> Union[dict, list]:
     raise _create_exception(parsed_response, r.status_code, reason, r.url)
 
 
-def all_references(base_url: str, auth: Optional[AuthBase], ssl_verify: bool = True) -> dict:
+def all_references(base_url: str, auth: Optional[AuthBase], ssl_verify: bool = True, fetch_additional_info: bool = False) -> dict:
     """Fetch all known references.
 
     :param base_url: base Nessie url
     :param auth: Authentication settings
     :param ssl_verify: ignore ssl errors if False
+    :param fetch_additional_info: indicates whether additional metadata should be fetched
     :return: json list of Nessie references
     """
-    return cast(dict, _get(base_url + "/trees", auth, ssl_verify=ssl_verify))
+    params = {}
+    if fetch_additional_info:
+        params["fetchAdditionalInfo"] = "true"
+    return cast(dict, _get(base_url + "/trees", auth, ssl_verify=ssl_verify, params=params))
 
 
 def get_reference(base_url: str, auth: Optional[AuthBase], ref: str, ssl_verify: bool = True) -> dict:

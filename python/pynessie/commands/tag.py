@@ -40,12 +40,28 @@ from ..decorators import error_handler, pass_client
     "expected_hash",
     help="Expected hash. Only perform the action if the tag currently points to the hash specified by this option.",
 )
+@click.option(
+    "-x",
+    "--extended",
+    "fetch_additional_info",
+    is_flag=True,
+    help="Retrieve additional metadata for a tag, such as number of commits ahead/behind, "
+    "info about the HEAD commit, number of total commits, or the common ancestor hash.",
+)
 @click.argument("tag_name", nargs=1, required=False)
 @click.argument("base_ref", nargs=1, required=False)
 @pass_client
 @error_handler
 def tag(
-    ctx: ContextObject, is_list: bool, force: bool, hash_on_ref: str, delete: bool, tag_name: str, base_ref: str, expected_hash: str
+    ctx: ContextObject,
+    is_list: bool,
+    force: bool,
+    hash_on_ref: str,
+    delete: bool,
+    tag_name: str,
+    base_ref: str,
+    expected_hash: str,
+    fetch_additional_info: bool,
 ) -> None:
     """Tag operations.
 
@@ -77,7 +93,18 @@ def tag(
 
     """
     results = handle_branch_tag(
-        ctx.nessie, is_list, delete, tag_name, hash_on_ref, base_ref, False, ctx.json, force, ctx.verbose, expected_hash
+        ctx.nessie,
+        is_list,
+        delete,
+        tag_name,
+        hash_on_ref,
+        base_ref,
+        False,
+        ctx.json,
+        force,
+        ctx.verbose,
+        fetch_additional_info,
+        expected_hash,
     )
     if ctx.json:
         click.echo(results)
