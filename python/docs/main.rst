@@ -19,6 +19,7 @@
      cherry-pick  Cherry-pick HASHES onto another branch.
      config       Set and view config.
      content      View, list content, and commit changes.
+     diff         Show diff between two given references.
      log          Show commit log.
      merge        Merge FROM_REF into another branch.
      remote       Set and view remote endpoint.

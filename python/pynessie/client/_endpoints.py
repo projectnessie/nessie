@@ -206,7 +206,7 @@ def list_logs(
     ssl_verify: bool = True,
     max_records: Optional[int] = None,
     fetch_additional_info: bool = False,
-    **filtering_args: Any
+    **filtering_args: Any,
 ) -> dict:
     """Fetch a list of all logs from a known starting reference.
 
@@ -340,3 +340,16 @@ def commit(
     url = "/trees/branch/{}/commit".format(branch)
     params = {"expectedHash": expected_hash}
     return cast(dict, _post(base_url + url, auth, json=operations, ssl_verify=ssl_verify, params=params))
+
+
+def get_diff(base_url: str, auth: Optional[AuthBase], from_ref: str, to_ref: str, ssl_verify: bool = True) -> dict:
+    """Fetch the diff for two given references.
+
+    :param base_url: base Nessie url
+    :param auth: Authentication settings
+    :param from_ref: the starting ref for the diff
+    :param to_ref:  the ending ref for the diff
+    :param ssl_verify: ignore ssl errors if False
+    :return: json dict of a Diff
+    """
+    return cast(dict, _get(f"{base_url}/diffs/{from_ref}...{to_ref}", auth, ssl_verify=ssl_verify))

@@ -42,6 +42,10 @@
                              of the given source-reference.
      -c, --condition TEXT    Expected hash. Only perform the action if the branch
                              currently points to the hash specified by this option.
+     -x, --extended          Retrieve additional metadata for a branch, such as
+                             number of commits ahead/behind, info about the HEAD
+                             commit, number of total commits, or the common
+                             ancestor hash.
      --help                  Show this message and exit.
    
    
