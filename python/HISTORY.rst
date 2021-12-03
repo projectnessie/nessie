@@ -2,6 +2,12 @@
 History
 =======
 
+0.16.0 (2021-12-03)
+-------------------
+
+* Add -x flag to fetch additional metadata for branches/tags
+* Add diff command to show the diff between two references
+
 0.15.1 (2021-12-01)
 -------------------
 

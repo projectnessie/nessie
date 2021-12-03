@@ -1,5 +1,12 @@
 # Releases
 
+## 0.16.0 Release (December 03, 2021)
+
+* Mark optional fields as @Nullable / add validation for required fields in param classes
+* Add CEL-filter to get-all-references
+* Fix NPE for unchanged operation for fetching commit log with additional metadata
+* Allow CEL-filtering on optional operations in get-commit-log
+
 ## 0.15.1 Release (December 01, 2021)
 
 * Fix wrongly placed validation annotation
