@@ -418,3 +418,35 @@ class MultiContents:
 
 
 MultiContentSchema = desert.schema_class(MultiContents)
+
+
+@attr.dataclass
+class DiffEntry:
+    """Dataclass for a Diff."""
+
+    content_key: ContentKey = desert.ib(fields.Nested(ContentKeySchema, data_key="key"))
+    from_content: Content = desert.ib(fields.Nested(ContentSchema, default=None, data_key="from", allow_none=True))
+    to_content: Content = desert.ib(fields.Nested(ContentSchema, default=None, data_key="to", allow_none=True))
+
+    def pretty_print(self: "DiffEntry") -> str:
+        """Print out for cli."""
+        # pylint: disable=E1101
+        from_output = f"{self.from_content.pretty_print()}" if self.from_content else ""
+        to_output = f"{self.to_content.pretty_print()}" if self.to_content else ""
+        return (
+            f"ContentKey: {self.content_key.to_path_string()}\nFROM:\n\t{from_output}\nTO:\n{to_output}"
+            f"\n----------------------------------------"
+        )
+
+
+DiffEntrySchema = desert.schema_class(DiffEntry)
+
+
+@attr.dataclass
+class DiffResponse:
+    """Dataclass for a DiffResponse."""
+
+    diffs: List[DiffEntry] = desert.ib(fields.List(fields.Nested(DiffEntrySchema(), data_key="diffs")))
+
+
+DiffResponseSchema = desert.schema_class(DiffResponse)

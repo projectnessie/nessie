@@ -28,6 +28,7 @@ from .commands import branch_
 from .commands import cherry_pick
 from .commands import config
 from .commands import content
+from .commands import diff
 from .commands import log
 from .commands import merge
 from .commands import remote
@@ -75,6 +76,7 @@ cli.add_command(tag)
 cli.add_command(merge)
 cli.add_command(cherry_pick)
 cli.add_command(content)
+cli.add_command(diff)
 
 
 if __name__ == "__main__":

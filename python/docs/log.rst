@@ -62,6 +62,12 @@
                                      commit.committer=='nessie_committer'
                                      timestamp(commit.commitTime) >
                                      timestamp('2021-06-21T10:39:17.977922Z')
+     -x, --extended                  Retrieve all available information for the
+                                     commit entries. This option will also return
+                                     the operations for each commit and the parent
+                                     hash. The schema of the JSON output will then
+                                     produce a list of LogEntrySchema, otherwise a
+                                     list of CommitMetaSchema.
      --help                          Show this message and exit.
    
    

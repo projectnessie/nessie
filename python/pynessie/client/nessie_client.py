@@ -33,6 +33,7 @@ from ._endpoints import delete_branch
 from ._endpoints import delete_tag
 from ._endpoints import get_content
 from ._endpoints import get_default_branch
+from ._endpoints import get_diff
 from ._endpoints import get_reference
 from ._endpoints import list_logs
 from ._endpoints import list_tables
@@ -43,6 +44,8 @@ from ..model import CommitMeta
 from ..model import Content
 from ..model import ContentKey
 from ..model import ContentSchema
+from ..model import DiffResponse
+from ..model import DiffResponseSchema
 from ..model import Entries
 from ..model import EntriesSchema
 from ..model import LogEntry
@@ -274,3 +277,14 @@ class NessieClient:
     def get_base_url(self: "NessieClient") -> str:
         """Return Nessie server configured base URL."""
         return self._base_url
+
+    def get_diff(
+        self: "NessieClient",
+        from_ref: str,
+        to_ref: str,
+    ) -> DiffResponse:
+        """Retrieve the diff between from_ref and to_ref.
+
+        from_ref / to_ref can be any ref.
+        """
+        return DiffResponseSchema().load(get_diff(self._base_url, self._auth, from_ref, to_ref, self._ssl_verify))

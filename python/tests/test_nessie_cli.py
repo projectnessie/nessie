@@ -30,6 +30,7 @@ from pynessie.model import CommitMeta
 from pynessie.model import CommitMetaSchema
 from pynessie.model import ContentKey
 from pynessie.model import ContentSchema
+from pynessie.model import DiffResponseSchema
 from pynessie.model import EntrySchema
 from pynessie.model import IcebergTable
 from pynessie.model import LogEntry
@@ -285,3 +286,23 @@ def test_transplant() -> None:
 
     logs = simplejson.loads(execute_cli_command(["--json", "log"]))
     assert len(logs) == 2  # two commits were transplanted into an empty `main`
+
+
+@pytest.mark.vcr
+def test_diff() -> None:
+    """Test log and log filtering."""
+    diff = DiffResponseSchema().loads(execute_cli_command(["--json", "diff", "main", "main"]))
+    assert_that(diff).is_not_none()
+    assert_that(diff.diffs).is_empty()
+    branch = "dev_test_diff"
+    execute_cli_command(["branch", branch])
+    table = _new_table(branch)
+    content_key = "diff.foo.dev"
+    make_commit(content_key, table, branch, author="nessie_user1")
+    diff = DiffResponseSchema().loads(execute_cli_command(["--json", "diff", "main", branch]))
+    assert_that(diff).is_not_none()
+    assert_that(diff.diffs).is_length(1)
+    diff_entry = diff.diffs[0]
+    assert_that(diff_entry.content_key).is_equal_to(ContentKey.from_path_string(content_key))
+    assert_that(diff_entry.from_content).is_none()
+    assert_that(diff_entry.to_content).is_equal_to(table)
