@@ -39,6 +39,8 @@ import org.projectnessie.client.http.HttpClient.Method;
 /** Class to hold an ongoing HTTP request and its parameters/filters. */
 public class HttpRequest {
 
+  public static final String HEADER_ACCEPT = "Accept";
+
   private final UriBuilder uriBuilder;
   private final ObjectMapper mapper;
   private final int readTimeoutMillis;
@@ -111,8 +113,8 @@ public class HttpRequest {
       RequestContext context = new RequestContext(headers, uri, method, body);
       ResponseContext responseContext = new ResponseContextImpl(con);
       try {
+        putHeader(HEADER_ACCEPT, accept, headers);
         requestFilters.forEach(a -> a.filter(context));
-        putHeader("Accept", accept, headers);
         headers.entrySet().stream()
             .flatMap(e -> e.getValue().stream().map(x -> new SimpleImmutableEntry<>(e.getKey(), x)))
             .forEach(x -> con.setRequestProperty(x.getKey(), x.getValue()));
