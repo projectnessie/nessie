@@ -122,7 +122,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
         getStore().getNamedRefs(getGetNamedRefsParams(params.isFetchAdditionalInfo()))) {
       Stream<Reference> unfiltered =
           str.map(refInfo -> TreeApiImpl.makeReference(refInfo, params.isFetchAdditionalInfo()));
-      Stream<Reference> filtered = filterReferences(unfiltered, params.queryExpression());
+      Stream<Reference> filtered = filterReferences(unfiltered, params.filter());
       filtered.forEach(resp::addReferences);
     } catch (ReferenceNotFoundException e) {
       throw new IllegalArgumentException(
@@ -143,14 +143,14 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   }
 
   /**
-   * Applies different filters to the {@link Stream} of references on the query expression.
+   * Applies different filters to the {@link Stream} of references on the filter.
    *
    * @param references The references that different filters will be applied to
-   * @param queryExpression The query expression to filter by
-   * @return A potentially filtered {@link Stream} of commits based on the query expression
+   * @param filter The filter to filter by
+   * @return A potentially filtered {@link Stream} of commits based on the filter
    */
-  private Stream<Reference> filterReferences(Stream<Reference> references, String queryExpression) {
-    if (Strings.isNullOrEmpty(queryExpression)) {
+  private Stream<Reference> filterReferences(Stream<Reference> references, String filter) {
+    if (Strings.isNullOrEmpty(filter)) {
       return references;
     }
 
@@ -158,7 +158,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     try {
       script =
           SCRIPT_HOST
-              .buildScript(queryExpression)
+              .buildScript(filter)
               .withContainer(CONTAINER)
               .withDeclarations(REFERENCES_DECLARATIONS)
               .withTypes(REFERENCES_TYPES)
@@ -337,9 +337,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
               false);
 
       List<LogEntry> items =
-          filterCommitLog(logEntries, params.queryExpression())
-              .limit(max + 1)
-              .collect(Collectors.toList());
+          filterCommitLog(logEntries, params.filter()).limit(max + 1).collect(Collectors.toList());
 
       if (items.size() == max + 1) {
         return ImmutableLogResponse.builder()
@@ -359,14 +357,14 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   }
 
   /**
-   * Applies different filters to the {@link Stream} of commits based on the query expression.
+   * Applies different filters to the {@link Stream} of commits based on the filter.
    *
    * @param logEntries The commit log that different filters will be applied to
-   * @param queryExpression The query expression to filter by
-   * @return A potentially filtered {@link Stream} of commits based on the query expression
+   * @param filter The filter to filter by
+   * @return A potentially filtered {@link Stream} of commits based on the filter
    */
-  private Stream<LogEntry> filterCommitLog(Stream<LogEntry> logEntries, String queryExpression) {
-    if (Strings.isNullOrEmpty(queryExpression)) {
+  private Stream<LogEntry> filterCommitLog(Stream<LogEntry> logEntries, String filter) {
+    if (Strings.isNullOrEmpty(filter)) {
       return logEntries;
     }
 
@@ -374,7 +372,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     try {
       script =
           SCRIPT_HOST
-              .buildScript(queryExpression)
+              .buildScript(filter)
               .withContainer(CONTAINER)
               .withDeclarations(COMMIT_LOG_DECLARATIONS)
               .withTypes(COMMIT_LOG_TYPES)
@@ -459,8 +457,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
                           .name(fromKey(key.getValue()))
                           .type((Type) key.getType())
                           .build())) {
-        Stream<EntriesResponse.Entry> entriesStream =
-            filterEntries(entryStream, params.queryExpression());
+        Stream<EntriesResponse.Entry> entriesStream = filterEntries(entryStream, params.filter());
         if (params.namespaceDepth() != null && params.namespaceDepth() > 0) {
           entriesStream =
               entriesStream
@@ -486,15 +483,15 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   }
 
   /**
-   * Applies different filters to the {@link Stream} of entries based on the query expression.
+   * Applies different filters to the {@link Stream} of entries based on the filter.
    *
    * @param entries The entries that different filters will be applied to
-   * @param queryExpression The query expression to filter by
-   * @return A potentially filtered {@link Stream} of entries based on the query expression
+   * @param filter The filter to filter by
+   * @return A potentially filtered {@link Stream} of entries based on the filter
    */
   private Stream<EntriesResponse.Entry> filterEntries(
-      Stream<EntriesResponse.Entry> entries, String queryExpression) {
-    if (Strings.isNullOrEmpty(queryExpression)) {
+      Stream<EntriesResponse.Entry> entries, String filter) {
+    if (Strings.isNullOrEmpty(filter)) {
       return entries;
     }
 
@@ -502,7 +499,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     try {
       script =
           SCRIPT_HOST
-              .buildScript(queryExpression)
+              .buildScript(filter)
               .withContainer(CONTAINER)
               .withDeclarations(ENTRIES_DECLARATIONS)
               .build();

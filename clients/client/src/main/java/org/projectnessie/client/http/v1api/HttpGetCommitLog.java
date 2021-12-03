@@ -55,8 +55,8 @@ final class HttpGetCommitLog extends BaseHttpOnReferenceRequest<GetCommitLogBuil
   }
 
   @Override
-  public GetCommitLogBuilder queryExpression(String queryExpression) {
-    params.expression(queryExpression);
+  public GetCommitLogBuilder filter(String filter) {
+    params.filter(filter);
     return this;
   }
 

@@ -160,7 +160,7 @@ def test_log() -> None:
     logs = simplejson.loads(execute_cli_command(["--json", "log", "--committer", ""]))
     assert len(logs) == 2
     logs = simplejson.loads(
-        execute_cli_command(["--json", "log", "--query", "commit.author == 'nessie_user2' || commit.author == 'non_existing'"])
+        execute_cli_command(["--json", "log", "--filter", "commit.author == 'nessie_user2' || commit.author == 'non_existing'"])
     )
     assert len(logs) == 1
     logs = simplejson.loads(

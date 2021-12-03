@@ -16,78 +16,68 @@
 
 from assertpy import assert_that
 
-from pynessie.utils import build_query_expression_for_commit_log_flags
-from pynessie.utils import build_query_expression_for_contents_listing_flags
+from pynessie.utils import build_filter_for_commit_log_flags
+from pynessie.utils import build_filter_for_contents_listing_flags
 from pynessie.utils import parse_to_iso8601
 
 
-def test_building_empty_query_expression() -> None:
+def test_building_empty_filter() -> None:
     """Makes sure the expression building functions work with empty input."""
-    assert_that(
-        build_query_expression_for_commit_log_flags(query_expression="", authors=[], committers=[], since=None, until=None)
-    ).is_none()
+    assert_that(build_filter_for_commit_log_flags(query_filter="", authors=[], committers=[], since=None, until=None)).is_none()
 
-    assert_that(build_query_expression_for_contents_listing_flags(query_expression="", types=[])).is_none()
+    assert_that(build_filter_for_contents_listing_flags(query_filter="", types=[])).is_none()
 
 
-def test_building_query_expression_for_commit_log() -> None:
-    """Makes sure the expression building function for the commit log produces what we expect."""
+def test_building_filter_for_commit_log() -> None:
+    """Makes sure the filter building function for the commit log produces what we expect."""
     authors = []
     committers = []
     since = None
     until = None
     query_expr = ""
     assert_that(
-        build_query_expression_for_commit_log_flags(
-            query_expression="some_exclusive_query_expression", authors=authors, committers=committers, since=since, until=until
+        build_filter_for_commit_log_flags(
+            query_filter="some_exclusive_filter", authors=authors, committers=committers, since=since, until=until
         )
-    ).is_equal_to("some_exclusive_query_expression")
+    ).is_equal_to("some_exclusive_filter")
 
     assert_that(
-        build_query_expression_for_commit_log_flags(
-            query_expression="some_exclusive_query_expression", authors=["one"], committers=["two"], since=since, until=until
+        build_filter_for_commit_log_flags(
+            query_filter="some_exclusive_filter", authors=["one"], committers=["two"], since=since, until=until
         )
-    ).is_equal_to("some_exclusive_query_expression")
+    ).is_equal_to("some_exclusive_filter")
 
     assert_that(
-        build_query_expression_for_commit_log_flags(
-            query_expression=query_expr, authors=["one"], committers=committers, since=since, until=until
-        )
+        build_filter_for_commit_log_flags(query_filter=query_expr, authors=["one"], committers=committers, since=since, until=until)
     ).is_equal_to("commit.author=='one'")
 
     assert_that(
-        build_query_expression_for_commit_log_flags(
-            query_expression=query_expr, authors=["one", "two", "three"], committers=committers, since=since, until=until
+        build_filter_for_commit_log_flags(
+            query_filter=query_expr, authors=["one", "two", "three"], committers=committers, since=since, until=until
         )
     ).is_equal_to("(commit.author=='one' || commit.author=='two' || commit.author=='three')")
 
     assert_that(
-        build_query_expression_for_commit_log_flags(
-            query_expression=query_expr, authors=["one"], committers=["two"], since=since, until=until
-        )
+        build_filter_for_commit_log_flags(query_filter=query_expr, authors=["one"], committers=["two"], since=since, until=until)
     ).is_equal_to("(commit.author=='one' && commit.committer=='two')")
 
     assert_that(
-        build_query_expression_for_commit_log_flags(
-            query_expression=query_expr, authors=["one", "two"], committers=["two", "three"], since=since, until=until
+        build_filter_for_commit_log_flags(
+            query_filter=query_expr, authors=["one", "two"], committers=["two", "three"], since=since, until=until
         )
     ).is_equal_to("((commit.author=='one' || commit.author=='two') && (commit.committer=='two' || commit.committer=='three'))")
 
     assert_that(
-        build_query_expression_for_commit_log_flags(
-            query_expression=query_expr, authors=[], committers=[], since="2021-05-31T08:23:15Z", until=until
-        )
+        build_filter_for_commit_log_flags(query_filter=query_expr, authors=[], committers=[], since="2021-05-31T08:23:15Z", until=until)
     ).is_equal_to("timestamp(commit.commitTime) > timestamp('2021-05-31T08:23:15+00:00')")
 
     assert_that(
-        build_query_expression_for_commit_log_flags(
-            query_expression=query_expr, authors=[], committers=[], since="", until="2021-05-31T10:23:15Z"
-        )
+        build_filter_for_commit_log_flags(query_filter=query_expr, authors=[], committers=[], since="", until="2021-05-31T10:23:15Z")
     ).is_equal_to("timestamp(commit.commitTime) < timestamp('2021-05-31T10:23:15+00:00')")
 
     assert_that(
-        build_query_expression_for_commit_log_flags(
-            query_expression=query_expr, authors=[], committers=[], since="2021-05-31T08:23:15Z", until="2021-05-31T10:23:15Z"
+        build_filter_for_commit_log_flags(
+            query_filter=query_expr, authors=[], committers=[], since="2021-05-31T08:23:15Z", until="2021-05-31T10:23:15Z"
         )
     ).is_equal_to(
         "(timestamp(commit.commitTime) > timestamp('2021-05-31T08:23:15+00:00') "
@@ -95,8 +85,8 @@ def test_building_query_expression_for_commit_log() -> None:
     )
 
     assert_that(
-        build_query_expression_for_commit_log_flags(
-            query_expression=query_expr,
+        build_filter_for_commit_log_flags(
+            query_filter=query_expr,
             authors=["one", "two"],
             committers=["two", "three"],
             since="2021-05-31T08:23:15Z",
@@ -110,22 +100,20 @@ def test_building_query_expression_for_commit_log() -> None:
     )
 
 
-def test_building_query_expression_for_content_entries() -> None:
+def test_building_filter_for_content_entries() -> None:
     """Makes sure the expression building function for the content entries produces what we expect."""
-    assert_that(build_query_expression_for_contents_listing_flags(query_expression="exclusive_expr", types=[])).is_equal_to(
+    assert_that(build_filter_for_contents_listing_flags(query_filter="exclusive_expr", types=[])).is_equal_to("exclusive_expr")
+
+    assert_that(build_filter_for_contents_listing_flags(query_filter="exclusive_expr", types=["VIEW", "DELTA_LAKE_TABLE"])).is_equal_to(
         "exclusive_expr"
     )
 
-    assert_that(
-        build_query_expression_for_contents_listing_flags(query_expression="exclusive_expr", types=["VIEW", "DELTA_LAKE_TABLE"])
-    ).is_equal_to("exclusive_expr")
-
-    assert_that(build_query_expression_for_contents_listing_flags(query_expression="", types=["ICEBERG_TABLE"])).is_equal_to(
+    assert_that(build_filter_for_contents_listing_flags(query_filter="", types=["ICEBERG_TABLE"])).is_equal_to(
         "entry.contentType in ['ICEBERG_TABLE']"
     )
-    assert_that(
-        build_query_expression_for_contents_listing_flags(query_expression="", types=["ICEBERG_TABLE", "DELTA_LAKE_TABLE"])
-    ).is_equal_to("entry.contentType in ['ICEBERG_TABLE','DELTA_LAKE_TABLE']")
+    assert_that(build_filter_for_contents_listing_flags(query_filter="", types=["ICEBERG_TABLE", "DELTA_LAKE_TABLE"])).is_equal_to(
+        "entry.contentType in ['ICEBERG_TABLE','DELTA_LAKE_TABLE']"
+    )
 
 
 def test_date_parsing() -> None:

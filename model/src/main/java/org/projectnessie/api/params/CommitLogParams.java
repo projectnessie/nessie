@@ -66,8 +66,8 @@ public class CommitLogParams extends AbstractParams {
         @ExampleObject(ref = "expr_by_commit_operations_table_name"),
         @ExampleObject(ref = "expr_by_commit_operations_type")
       })
-  @QueryParam("query_expression")
-  private String queryExpression;
+  @QueryParam("filter")
+  private String filter;
 
   @Parameter(
       description =
@@ -86,12 +86,12 @@ public class CommitLogParams extends AbstractParams {
       String endHash,
       Integer maxRecords,
       String pageToken,
-      String queryExpression,
+      String filter,
       boolean fetchAdditionalInfo) {
     super(maxRecords, pageToken);
     this.startHash = startHash;
     this.endHash = endHash;
-    this.queryExpression = queryExpression;
+    this.filter = filter;
     this.fetchAdditionalInfo = fetchAdditionalInfo;
   }
 
@@ -101,7 +101,7 @@ public class CommitLogParams extends AbstractParams {
         builder.endHash,
         builder.maxRecords,
         builder.pageToken,
-        builder.queryExpression,
+        builder.filter,
         builder.fetchAdditionalInfo);
   }
 
@@ -115,8 +115,8 @@ public class CommitLogParams extends AbstractParams {
     return endHash;
   }
 
-  public String queryExpression() {
-    return queryExpression;
+  public String filter() {
+    return filter;
   }
 
   public static CommitLogParams.Builder builder() {
@@ -134,7 +134,7 @@ public class CommitLogParams extends AbstractParams {
         .add("endHash='" + endHash + "'")
         .add("maxRecords=" + maxRecords())
         .add("pageToken='" + pageToken() + "'")
-        .add("queryExpression='" + queryExpression + "'")
+        .add("filter='" + filter + "'")
         .add("fetchAdditionalInfo='" + fetchAdditionalInfo + "'")
         .toString();
   }
@@ -152,21 +152,20 @@ public class CommitLogParams extends AbstractParams {
         && Objects.equals(endHash, that.endHash)
         && Objects.equals(maxRecords(), that.maxRecords())
         && Objects.equals(pageToken(), that.pageToken())
-        && Objects.equals(queryExpression, that.queryExpression)
+        && Objects.equals(filter, that.filter)
         && Objects.equals(fetchAdditionalInfo, that.fetchAdditionalInfo);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(
-        startHash, endHash, maxRecords(), pageToken(), queryExpression, fetchAdditionalInfo);
+    return Objects.hash(startHash, endHash, maxRecords(), pageToken(), filter, fetchAdditionalInfo);
   }
 
   public static class Builder extends AbstractParams.Builder<Builder> {
 
     private String startHash;
     private String endHash;
-    private String queryExpression;
+    private String filter;
     private boolean fetchAdditionalInfo;
 
     private Builder() {}
@@ -181,8 +180,8 @@ public class CommitLogParams extends AbstractParams {
       return this;
     }
 
-    public Builder expression(String queryExpression) {
-      this.queryExpression = queryExpression;
+    public Builder filter(String filter) {
+      this.filter = filter;
       return this;
     }
 
@@ -196,7 +195,7 @@ public class CommitLogParams extends AbstractParams {
           .endHash(params.endHash)
           .maxRecords(params.maxRecords())
           .pageToken(params.pageToken())
-          .expression(params.queryExpression)
+          .filter(params.filter)
           .fetchAdditionalInfo(params.fetchAdditionalInfo);
     }
 

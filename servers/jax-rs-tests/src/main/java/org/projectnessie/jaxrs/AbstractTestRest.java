@@ -408,7 +408,7 @@ public abstract class AbstractTestRest {
     assertThat(
             getApi()
                 .getAllReferences()
-                .queryExpression("ref.name == 'other-development'")
+                .filter("ref.name == 'other-development'")
                 .get()
                 .getReferences())
         .hasSize(1)
@@ -418,20 +418,14 @@ public abstract class AbstractTestRest {
                     .isInstanceOf(Branch.class)
                     .extracting(Reference::getName, Reference::getHash)
                     .containsExactly(b2.getName(), b2.getHash()));
-    assertThat(
-            getApi().getAllReferences().queryExpression("refType == 'TAG'").get().getReferences())
+    assertThat(getApi().getAllReferences().filter("refType == 'TAG'").get().getReferences())
         .allSatisfy(ref -> assertThat(ref).isInstanceOf(Tag.class));
-    assertThat(
-            getApi()
-                .getAllReferences()
-                .queryExpression("refType == 'BRANCH'")
-                .get()
-                .getReferences())
+    assertThat(getApi().getAllReferences().filter("refType == 'BRANCH'").get().getReferences())
         .allSatisfy(ref -> assertThat(ref).isInstanceOf(Branch.class));
     assertThat(
             getApi()
                 .getAllReferences()
-                .queryExpression("has(refMeta.numTotalCommits) && refMeta.numTotalCommits < 0")
+                .filter("has(refMeta.numTotalCommits) && refMeta.numTotalCommits < 0")
                 .get()
                 .getReferences())
         .isEmpty();
@@ -439,7 +433,7 @@ public abstract class AbstractTestRest {
             getApi()
                 .getAllReferences()
                 .fetchAdditionalInfo(true)
-                .queryExpression("commit.message == 'invent awesome things'")
+                .filter("commit.message == 'invent awesome things'")
                 .get()
                 .getReferences())
         .hasSize(2)
@@ -448,7 +442,7 @@ public abstract class AbstractTestRest {
             getApi()
                 .getAllReferences()
                 .fetchAdditionalInfo(true)
-                .queryExpression("refType == 'TAG' && commit.message == 'invent awesome things'")
+                .filter("refType == 'TAG' && commit.message == 'invent awesome things'")
                 .get()
                 .getReferences())
         .hasSize(1)
@@ -478,7 +472,7 @@ public abstract class AbstractTestRest {
             api.getCommitLog()
                 .refName(branch.getName())
                 .fetchAdditionalInfo(true)
-                .queryExpression("operations.exists(op, op.type == 'PUT')")
+                .filter("operations.exists(op, op.type == 'PUT')")
                 .get()
                 .getLogEntries())
         .hasSize(1);
@@ -486,7 +480,7 @@ public abstract class AbstractTestRest {
             api.getCommitLog()
                 .refName(branch.getName())
                 .fetchAdditionalInfo(true)
-                .queryExpression("operations.exists(op, op.key.startsWith('hello.world.'))")
+                .filter("operations.exists(op, op.key.startsWith('hello.world.'))")
                 .get()
                 .getLogEntries())
         .hasSize(1);
@@ -494,7 +488,7 @@ public abstract class AbstractTestRest {
             api.getCommitLog()
                 .refName(branch.getName())
                 .fetchAdditionalInfo(true)
-                .queryExpression("operations.exists(op, op.key.startsWith('not.there.'))")
+                .filter("operations.exists(op, op.key.startsWith('not.there.'))")
                 .get()
                 .getLogEntries())
         .isEmpty();
@@ -502,7 +496,7 @@ public abstract class AbstractTestRest {
             api.getCommitLog()
                 .refName(branch.getName())
                 .fetchAdditionalInfo(true)
-                .queryExpression("operations.exists(op, op.name == 'BaseTable')")
+                .filter("operations.exists(op, op.name == 'BaseTable')")
                 .get()
                 .getLogEntries())
         .hasSize(1);
@@ -510,7 +504,7 @@ public abstract class AbstractTestRest {
             api.getCommitLog()
                 .refName(branch.getName())
                 .fetchAdditionalInfo(true)
-                .queryExpression("operations.exists(op, op.name == 'ThereIsNoSuchTable')")
+                .filter("operations.exists(op, op.name == 'ThereIsNoSuchTable')")
                 .get()
                 .getLogEntries())
         .isEmpty();
@@ -529,11 +523,7 @@ public abstract class AbstractTestRest {
     assertThat(log).isNotNull();
     assertThat(log.getLogEntries()).hasSize(numAuthors * commitsPerAuthor);
 
-    log =
-        api.getCommitLog()
-            .refName(branch.getName())
-            .queryExpression("commit.author == 'author-3'")
-            .get();
+    log = api.getCommitLog().refName(branch.getName()).filter("commit.author == 'author-3'").get();
     assertThat(log).isNotNull();
     assertThat(log.getLogEntries()).hasSize(commitsPerAuthor);
     log.getLogEntries()
@@ -542,8 +532,7 @@ public abstract class AbstractTestRest {
     log =
         api.getCommitLog()
             .refName(branch.getName())
-            .queryExpression(
-                "commit.author == 'author-3' && commit.committer == 'random-committer'")
+            .filter("commit.author == 'author-3' && commit.committer == 'random-committer'")
             .get();
     assertThat(log).isNotNull();
     assertThat(log.getLogEntries()).isEmpty();
@@ -551,7 +540,7 @@ public abstract class AbstractTestRest {
     log =
         api.getCommitLog()
             .refName(branch.getName())
-            .queryExpression("commit.author == 'author-3' && commit.committer == ''")
+            .filter("commit.author == 'author-3' && commit.committer == ''")
             .get();
     assertThat(log).isNotNull();
     assertThat(log.getLogEntries()).hasSize(commitsPerAuthor);
@@ -561,7 +550,7 @@ public abstract class AbstractTestRest {
     log =
         api.getCommitLog()
             .refName(branch.getName())
-            .queryExpression("commit.author in ['author-1', 'author-3', 'author-4']")
+            .filter("commit.author in ['author-1', 'author-3', 'author-4']")
             .get();
     assertThat(log).isNotNull();
     assertThat(log.getLogEntries()).hasSize(commitsPerAuthor * 3);
@@ -574,7 +563,7 @@ public abstract class AbstractTestRest {
     log =
         api.getCommitLog()
             .refName(branch.getName())
-            .queryExpression("!(commit.author in ['author-1', 'author-0'])")
+            .filter("!(commit.author in ['author-1', 'author-0'])")
             .get();
     assertThat(log).isNotNull();
     assertThat(log.getLogEntries()).hasSize(commitsPerAuthor * 3);
@@ -587,7 +576,7 @@ public abstract class AbstractTestRest {
     log =
         api.getCommitLog()
             .refName(branch.getName())
-            .queryExpression("commit.author.matches('au.*-(2|4)')")
+            .filter("commit.author.matches('au.*-(2|4)')")
             .get();
     assertThat(log).isNotNull();
     assertThat(log.getLogEntries()).hasSize(commitsPerAuthor * 2);
@@ -622,7 +611,7 @@ public abstract class AbstractTestRest {
     log =
         api.getCommitLog()
             .refName(branch.getName())
-            .queryExpression(
+            .filter(
                 String.format("timestamp(commit.commitTime) > timestamp('%s')", initialCommitTime))
             .get();
     assertThat(log).isNotNull();
@@ -635,8 +624,7 @@ public abstract class AbstractTestRest {
     log =
         api.getCommitLog()
             .refName(branch.getName())
-            .queryExpression(
-                String.format("timestamp(commit.commitTime) < timestamp('%s')", fiveMinLater))
+            .filter(String.format("timestamp(commit.commitTime) < timestamp('%s')", fiveMinLater))
             .get();
     assertThat(log).isNotNull();
     assertThat(log.getLogEntries()).hasSize(expectedTotalSize);
@@ -647,7 +635,7 @@ public abstract class AbstractTestRest {
     log =
         api.getCommitLog()
             .refName(branch.getName())
-            .queryExpression(
+            .filter(
                 String.format(
                     "timestamp(commit.commitTime) > timestamp('%s') && timestamp(commit.commitTime) < timestamp('%s')",
                     initialCommitTime, lastCommitTime))
@@ -664,8 +652,7 @@ public abstract class AbstractTestRest {
     log =
         api.getCommitLog()
             .refName(branch.getName())
-            .queryExpression(
-                String.format("timestamp(commit.commitTime) > timestamp('%s')", fiveMinLater))
+            .filter(String.format("timestamp(commit.commitTime) > timestamp('%s')", fiveMinLater))
             .get();
     assertThat(log).isNotNull();
     assertThat(log.getLogEntries()).isEmpty();
@@ -687,7 +674,7 @@ public abstract class AbstractTestRest {
     log =
         api.getCommitLog()
             .refName(branch.getName())
-            .queryExpression("commit.properties['prop1'] == 'val1'")
+            .filter("commit.properties['prop1'] == 'val1'")
             .get();
     assertThat(log).isNotNull();
     assertThat(log.getLogEntries()).hasSize(numAuthors * commitsPerAuthor);
@@ -699,7 +686,7 @@ public abstract class AbstractTestRest {
     log =
         api.getCommitLog()
             .refName(branch.getName())
-            .queryExpression("commit.properties['prop1'] == 'val3'")
+            .filter("commit.properties['prop1'] == 'val3'")
             .get();
     assertThat(log).isNotNull();
     assertThat(log.getLogEntries()).isEmpty();
@@ -956,16 +943,16 @@ public abstract class AbstractTestRest {
       throws NessieNotFoundException {
     String pageToken = null;
     for (int pos = 0; pos < commits; pos += pageSizeHint) {
-      String queryExpression = null;
+      String filter = null;
       if (null != filterByAuthor) {
-        queryExpression = String.format("commit.author=='%s'", filterByAuthor);
+        filter = String.format("commit.author=='%s'", filterByAuthor);
       }
       LogResponse response =
           api.getCommitLog()
               .refName(branchName)
               .maxRecords(pageSizeHint)
               .pageToken(pageToken)
-              .queryExpression(queryExpression)
+              .filter(filter)
               .get();
       if (pos + pageSizeHint <= commits) {
         assertTrue(response.isHasMore());
@@ -1184,7 +1171,7 @@ public abstract class AbstractTestRest {
     entries =
         api.getEntries()
             .refName(branch.getName())
-            .queryExpression("entry.contentType=='ICEBERG_TABLE'")
+            .filter("entry.contentType=='ICEBERG_TABLE'")
             .get()
             .getEntries();
     assertEquals(singletonList(expected.get(0)), entries);
@@ -1192,7 +1179,7 @@ public abstract class AbstractTestRest {
     entries =
         api.getEntries()
             .refName(branch.getName())
-            .queryExpression("entry.contentType=='VIEW'")
+            .filter("entry.contentType=='VIEW'")
             .get()
             .getEntries();
     assertEquals(singletonList(expected.get(1)), entries);
@@ -1200,7 +1187,7 @@ public abstract class AbstractTestRest {
     entries =
         api.getEntries()
             .refName(branch.getName())
-            .queryExpression("entry.contentType in ['ICEBERG_TABLE', 'VIEW']")
+            .filter("entry.contentType in ['ICEBERG_TABLE', 'VIEW']")
             .get()
             .getEntries();
     assertThat(entries).containsExactlyInAnyOrderElementsOf(expected);
@@ -1243,7 +1230,7 @@ public abstract class AbstractTestRest {
     entries =
         api.getEntries()
             .refName(branch.getName())
-            .queryExpression("entry.namespace.startsWith('a.b')")
+            .filter("entry.namespace.startsWith('a.b')")
             .get()
             .getEntries();
     assertThat(entries).hasSize(2);
@@ -1252,7 +1239,7 @@ public abstract class AbstractTestRest {
     entries =
         api.getEntries()
             .refName(branch.getName())
-            .queryExpression("entry.namespace.startsWith('a')")
+            .filter("entry.namespace.startsWith('a')")
             .get()
             .getEntries();
     assertThat(entries).hasSize(4);
@@ -1261,7 +1248,7 @@ public abstract class AbstractTestRest {
     entries =
         api.getEntries()
             .refName(branch.getName())
-            .queryExpression("entry.namespace.startsWith('a.b.c.firstTable')")
+            .filter("entry.namespace.startsWith('a.b.c.firstTable')")
             .get()
             .getEntries();
     assertThat(entries).isEmpty();
@@ -1269,7 +1256,7 @@ public abstract class AbstractTestRest {
     entries =
         api.getEntries()
             .refName(branch.getName())
-            .queryExpression("entry.namespace.startsWith('a.fourthTable')")
+            .filter("entry.namespace.startsWith('a.fourthTable')")
             .get()
             .getEntries();
     assertThat(entries).isEmpty();
@@ -1305,7 +1292,7 @@ public abstract class AbstractTestRest {
         api.getEntries()
             .refName(branch.getName())
             .namespaceDepth(0)
-            .queryExpression("entry.namespace.matches('a(\\\\.|$)')")
+            .filter("entry.namespace.matches('a(\\\\.|$)')")
             .get()
             .getEntries();
     assertThat(entries).isNotNull().hasSize(5);
@@ -1314,7 +1301,7 @@ public abstract class AbstractTestRest {
         api.getEntries()
             .refName(branch.getName())
             .namespaceDepth(1)
-            .queryExpression("entry.namespace.matches('a(\\\\.|$)')")
+            .filter("entry.namespace.matches('a(\\\\.|$)')")
             .get()
             .getEntries();
     assertThat(entries).hasSize(1);
@@ -1325,7 +1312,7 @@ public abstract class AbstractTestRest {
         api.getEntries()
             .refName(branch.getName())
             .namespaceDepth(2)
-            .queryExpression("entry.namespace.matches('a(\\\\.|$)')")
+            .filter("entry.namespace.matches('a(\\\\.|$)')")
             .get()
             .getEntries();
     assertThat(entries).hasSize(3);
@@ -1336,7 +1323,7 @@ public abstract class AbstractTestRest {
         api.getEntries()
             .refName(branch.getName())
             .namespaceDepth(3)
-            .queryExpression("entry.namespace.matches('a\\\\.b(\\\\.|$)')")
+            .filter("entry.namespace.matches('a\\\\.b(\\\\.|$)')")
             .get()
             .getEntries();
     assertThat(entries).hasSize(2);
@@ -1347,7 +1334,7 @@ public abstract class AbstractTestRest {
         api.getEntries()
             .refName(branch.getName())
             .namespaceDepth(4)
-            .queryExpression("entry.namespace.matches('a\\\\.b\\\\.c(\\\\.|$)')")
+            .filter("entry.namespace.matches('a\\\\.b\\\\.c(\\\\.|$)')")
             .get()
             .getEntries();
     assertThat(entries).hasSize(2);
@@ -1358,7 +1345,7 @@ public abstract class AbstractTestRest {
         api.getEntries()
             .refName(branch.getName())
             .namespaceDepth(5)
-            .queryExpression("entry.namespace.matches('(\\\\.|$)')")
+            .filter("entry.namespace.matches('(\\\\.|$)')")
             .get()
             .getEntries();
     assertThat(entries).isEmpty();
@@ -1367,7 +1354,7 @@ public abstract class AbstractTestRest {
         api.getEntries()
             .refName(branch.getName())
             .namespaceDepth(3)
-            .queryExpression("entry.namespace.matches('(\\\\.|$)')")
+            .filter("entry.namespace.matches('(\\\\.|$)')")
             .get()
             .getEntries();
     assertThat(entries).hasSize(3);
@@ -1384,13 +1371,11 @@ public abstract class AbstractTestRest {
 
   @Test
   public void checkCelScriptFailureReporting() {
-    assertThatThrownBy(
-            () -> api.getEntries().refName("main").queryExpression("invalid_script").get())
+    assertThatThrownBy(() -> api.getEntries().refName("main").filter("invalid_script").get())
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessageContaining("undeclared reference to 'invalid_script'");
 
-    assertThatThrownBy(
-            () -> api.getCommitLog().refName("main").queryExpression("invalid_script").get())
+    assertThatThrownBy(() -> api.getCommitLog().refName("main").filter("invalid_script").get())
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessageContaining("undeclared reference to 'invalid_script'");
   }

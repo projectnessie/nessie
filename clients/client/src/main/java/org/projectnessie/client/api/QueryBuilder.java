@@ -18,5 +18,5 @@ package org.projectnessie.client.api;
 public interface QueryBuilder<R extends QueryBuilder<R>> {
 
   /** Required: the <a href="https://github.com/projectnessie/cel-java">CEL</a> script. */
-  R queryExpression(String queryExpression);
+  R filter(String filter);
 }

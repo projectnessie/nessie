@@ -183,7 +183,7 @@ public interface HttpTreeApi extends TreeApi {
               + "It is wrong to assume that invoking this method with a very high 'maxRecords' value "
               + "will return all commit log entries.\n"
               + "\n"
-              + "The 'query_expression' parameter allows for advanced filtering capabilities using the Common Expression Language (CEL).\n"
+              + "The 'filter' parameter allows for advanced filtering capabilities using the Common Expression Language (CEL).\n"
               + "An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n"
               + "\n"
               + "The 'namespaceDepth' parameter returns only the ContentKey components up to the depth of 'namespaceDepth'.\n"
@@ -239,7 +239,7 @@ public interface HttpTreeApi extends TreeApi {
               + "It is wrong to assume that invoking this method with a very high 'maxRecords' value "
               + "will return all commit log entries.\n"
               + "\n"
-              + "The 'query_expression' parameter allows for advanced filtering capabilities using the Common Expression Language (CEL).\n"
+              + "The 'filter' parameter allows for advanced filtering capabilities using the Common Expression Language (CEL).\n"
               + "An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n")
   @APIResponses({
     @APIResponse(

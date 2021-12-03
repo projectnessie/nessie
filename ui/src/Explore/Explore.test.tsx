@@ -48,7 +48,7 @@ it("Explore renders", async () => {
   now.setDate(now.getDate() - 1);
   const scope1 = nock("http://localhost/api/v1")
     .get(
-      "/trees/tree/main/entries?namespaceDepth=1&query_expression=entry.namespace.matches(%27(%5C%5C.%7C%24)%27)"
+      "/trees/tree/main/entries?namespaceDepth=1&filter=entry.namespace.matches(%27(%5C%5C.%7C%24)%27)"
     )
     .reply(200, { token: "foo", entries: [entry] });
   const scope2 = nock("http://localhost/api/v1")
@@ -87,7 +87,7 @@ it("Explore renders with slug", async () => {
   now.setDate(now.getDate() - 1);
   const scope1 = nock("http://localhost/api/v1")
     .get(
-      "/trees/tree/main/entries?namespaceDepth=1&query_expression=entry.namespace.matches(%27(%5C%5C.%7C%24)%27)"
+      "/trees/tree/main/entries?namespaceDepth=1&filter=entry.namespace.matches(%27(%5C%5C.%7C%24)%27)"
     )
     .reply(200, { token: "foo", entries: [entry] });
   const scope2 = nock("http://localhost/api/v1")

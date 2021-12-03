@@ -43,8 +43,8 @@ final class HttpGetEntries extends BaseHttpOnReferenceRequest<GetEntriesBuilder>
   }
 
   @Override
-  public GetEntriesBuilder queryExpression(String queryExpression) {
-    params.expression(queryExpression);
+  public GetEntriesBuilder filter(String filter) {
+    params.filter(filter);
     return this;
   }
 

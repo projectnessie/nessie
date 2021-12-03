@@ -47,8 +47,8 @@ final class HttpGetAllReferences extends BaseHttpRequest implements GetAllRefere
   }
 
   @Override
-  public GetAllReferencesBuilder queryExpression(String queryExpression) {
-    params.expression(queryExpression);
+  public GetAllReferencesBuilder filter(String filter) {
+    params.filter(filter);
     return this;
   }
 

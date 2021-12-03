@@ -171,7 +171,7 @@ def list_tables(
     hash_on_ref: Optional[str] = None,
     max_result_hint: Optional[int] = None,
     page_token: Optional[str] = None,
-    query_expression: Optional[str] = None,
+    query_filter: Optional[str] = None,
     ssl_verify: bool = True,
 ) -> list:
     """Fetch a list of all tables from a known reference.
@@ -182,7 +182,7 @@ def list_tables(
     :param hash_on_ref: hash on reference
     :param max_result_hint: hint for the server, maximum number of results to return
     :param page_token: the token retrieved from a previous page returned for the same ref
-    :param query_expression: A CEL expression that allows advanced filtering capabilities
+    :param query_filter: A CEL expression that allows advanced filtering capabilities
     :param ssl_verify: ignore ssl errors if False
     :return: json list of Nessie table names
     """
@@ -193,8 +193,8 @@ def list_tables(
         params["hashOnRef"] = hash_on_ref
     if page_token:
         params["pageToken"] = page_token
-    if query_expression:
-        params["query_expression"] = query_expression
+    if query_filter:
+        params["filter"] = query_filter
     return cast(list, _get(base_url + "/trees/tree/{}/entries".format(ref), auth, ssl_verify=ssl_verify, params=params))
 
 
@@ -216,6 +216,7 @@ def list_logs(
     :param hash_on_ref: hash on reference
     :param max_records: maximum number of entries to return
     :param ssl_verify: ignore ssl errors if False
+    :param fetch_additional_info: indicates whether additional metadata should be fetched
     :param filtering_args: All of the args used to filter the log
     :return: json dict of Nessie logs
     """
