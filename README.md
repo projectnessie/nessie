@@ -12,6 +12,8 @@ Nessie supports Iceberg Tables, Delta Lake Tables and Sql Views.
 
 More information can be found at [projectnessie.org](https://projectnessie.org/).
 
+Nessie supports Iceberg Tables, Delta Lake Tables and Sql Views. Additionally, Nessie is focused on working with the widest range of tools possible, which can be seen in the [feature matrix](https://projectnessie.org/tools/#feature-matrix).
+
 ## Using Nessie
 
 You can quickly get started with Nessie by using our small, fast docker image.
