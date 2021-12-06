@@ -36,7 +36,7 @@ it("Commit log renders", async () => {
     },
   };
   const scope1 = nock("http://localhost/api/v1")
-    .get("/trees/tree/main/log?max=10")
+    .get("/trees/tree/main/log?maxRecords=10")
     .reply(200, { token: "foo", logEntries: [logEntry] });
 
   const { getByText, asFragment } = render(
@@ -55,7 +55,7 @@ it("Commit log renders", async () => {
 
 it("Commit redirects on an invalid ref", async () => {
   const scope1 = nock("http://localhost/api/v1")
-    .get("/trees/tree/main/log?max=10")
+    .get("/trees/tree/main/log?maxRecords=10")
     .reply(404);
   const history = createMemoryHistory();
 

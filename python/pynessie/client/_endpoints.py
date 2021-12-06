@@ -188,7 +188,7 @@ def list_tables(
     """
     params = {}
     if max_result_hint:
-        params["max"] = str(max_result_hint)
+        params["maxRecords"] = str(max_result_hint)
     if hash_on_ref:
         params["hashOnRef"] = hash_on_ref
     if page_token:
@@ -224,7 +224,7 @@ def list_logs(
     if hash_on_ref:
         params["hashOnRef"] = hash_on_ref
     if max_records:
-        params["max"] = max_records
+        params["maxRecords"] = max_records
     if fetch_additional_info:
         params["fetchAdditionalInfo"] = "true"
     return cast(dict, _get(base_url + "/trees/tree/{}/log".format(ref), auth, ssl_verify=ssl_verify, params=filtering_args))
