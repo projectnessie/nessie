@@ -59,8 +59,8 @@ public class EntriesParams extends AbstractParams {
         @ExampleObject(ref = "expr_by_contentType"),
         @ExampleObject(ref = "expr_by_namespace_and_contentType")
       })
-  @QueryParam("query_expression")
-  private String queryExpression;
+  @QueryParam("filter")
+  private String filter;
 
   public EntriesParams() {}
 
@@ -69,11 +69,11 @@ public class EntriesParams extends AbstractParams {
       Integer maxRecords,
       String pageToken,
       Integer namespaceDepth,
-      String queryExpression) {
+      String filter) {
     super(maxRecords, pageToken);
     this.hashOnRef = hashOnRef;
     this.namespaceDepth = namespaceDepth;
-    this.queryExpression = queryExpression;
+    this.filter = filter;
   }
 
   private EntriesParams(Builder builder) {
@@ -82,7 +82,7 @@ public class EntriesParams extends AbstractParams {
         builder.maxRecords,
         builder.pageToken,
         builder.namespaceDepth,
-        builder.queryExpression);
+        builder.filter);
   }
 
   public static EntriesParams.Builder builder() {
@@ -98,8 +98,8 @@ public class EntriesParams extends AbstractParams {
     return hashOnRef;
   }
 
-  public String queryExpression() {
-    return queryExpression;
+  public String filter() {
+    return filter;
   }
 
   public Integer namespaceDepth() {
@@ -112,7 +112,7 @@ public class EntriesParams extends AbstractParams {
         .add("hashOnRef='" + hashOnRef + "'")
         .add("maxRecords=" + maxRecords())
         .add("pageToken='" + pageToken() + "'")
-        .add("queryExpression='" + queryExpression + "'")
+        .add("filter='" + filter + "'")
         .add("namespaceDepth='" + namespaceDepth + "'")
         .toString();
   }
@@ -130,18 +130,18 @@ public class EntriesParams extends AbstractParams {
         && Objects.equals(maxRecords(), that.maxRecords())
         && Objects.equals(pageToken(), that.pageToken())
         && Objects.equals(namespaceDepth, that.namespaceDepth)
-        && Objects.equals(queryExpression, that.queryExpression);
+        && Objects.equals(filter, that.filter);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(hashOnRef, maxRecords(), pageToken(), namespaceDepth, queryExpression);
+    return Objects.hash(hashOnRef, maxRecords(), pageToken(), namespaceDepth, filter);
   }
 
   public static class Builder extends AbstractParams.Builder<Builder> {
 
     private String hashOnRef;
-    private String queryExpression;
+    private String filter;
     private Integer namespaceDepth;
 
     private Builder() {}
@@ -151,8 +151,8 @@ public class EntriesParams extends AbstractParams {
       return this;
     }
 
-    public EntriesParams.Builder expression(String queryExpression) {
-      this.queryExpression = queryExpression;
+    public EntriesParams.Builder filter(String filter) {
+      this.filter = filter;
       return this;
     }
 
@@ -166,7 +166,7 @@ public class EntriesParams extends AbstractParams {
           .maxRecords(params.maxRecords())
           .pageToken(params.pageToken())
           .namespaceDepth(params.namespaceDepth)
-          .expression(params.queryExpression);
+          .filter(params.filter);
     }
 
     private void validate() {}

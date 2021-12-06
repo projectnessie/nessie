@@ -25,7 +25,7 @@ import click
 from ...cli_common_context import ContextObject, MutuallyExclusiveOption
 from ...decorators import error_handler, pass_client, validate_reference
 from ...model import Entries, Entry, EntrySchema
-from ...utils import build_query_expression_for_contents_listing_flags
+from ...utils import build_filter_for_contents_listing_flags
 
 
 @click.command("list")
@@ -38,9 +38,8 @@ from ...utils import build_query_expression_for_contents_listing_flags
     multiple=True,
 )
 @click.option(
-    "--query",
-    "--query-expression",
-    "query_expression",
+    "--filter",
+    "query_filter",
     multiple=False,
     cls=MutuallyExclusiveOption,
     mutually_exclusive=["entity_type"],
@@ -54,7 +53,7 @@ from ...utils import build_query_expression_for_contents_listing_flags
 @pass_client
 @error_handler
 @validate_reference
-def list_(ctx: ContextObject, ref: str, query_expression: str, entity_types: List[str]) -> None:
+def list_(ctx: ContextObject, ref: str, query_filter: str, entity_types: List[str]) -> None:
     """List content.
 
     Examples:
@@ -64,12 +63,12 @@ def list_(ctx: ContextObject, ref: str, query_expression: str, entity_types: Lis
         nessie content list -r dev -t DELTA_LAKE_TABLE ->  List all contents in
     'dev' branch with type `DELTA_LAKE_TABLE`.
 
-        nessie content list -r dev --query "entry.namespace.startsWith('some.name.space')" -> List all contents in
+        nessie content list -r dev --filter "entry.namespace.startsWith('some.name.space')" -> List all contents in
     'dev' branch that start with 'some.name.space'
     """
     keys = ctx.nessie.list_keys(
         ref,
-        query_expression=build_query_expression_for_contents_listing_flags(query_expression, entity_types),
+        query_filter=build_filter_for_contents_listing_flags(query_filter, entity_types),
     )
     results = EntrySchema().dumps(_format_keys_json(keys), many=True) if ctx.json else _format_keys(keys)
     click.echo(results)

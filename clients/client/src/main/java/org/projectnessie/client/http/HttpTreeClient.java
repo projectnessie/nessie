@@ -49,7 +49,7 @@ class HttpTreeClient implements HttpTreeApi {
         .queryParam("max", params.maxRecords() != null ? params.maxRecords().toString() : null)
         .queryParam("pageToken", params.pageToken())
         .queryParam("fetchAdditionalInfo", Boolean.toString(params.isFetchAdditionalInfo()))
-        .queryParam("query_expression", params.queryExpression())
+        .queryParam("filter", params.filter())
         .get()
         .readEntity(ReferencesResponse.class);
   }
@@ -136,7 +136,7 @@ class HttpTreeClient implements HttpTreeApi {
     return builder
         .queryParam("max", params.maxRecords() != null ? params.maxRecords().toString() : null)
         .queryParam("pageToken", params.pageToken())
-        .queryParam("query_expression", params.queryExpression())
+        .queryParam("filter", params.filter())
         .queryParam("startHash", params.startHash())
         .queryParam("endHash", params.endHash())
         .queryParam("fetchAdditionalInfo", params.isFetchAdditionalInfo() ? "true" : null)
@@ -180,7 +180,7 @@ class HttpTreeClient implements HttpTreeApi {
     return builder
         .queryParam("max", params.maxRecords() != null ? params.maxRecords().toString() : null)
         .queryParam("pageToken", params.pageToken())
-        .queryParam("query_expression", params.queryExpression())
+        .queryParam("filter", params.filter())
         .queryParam("hashOnRef", params.hashOnRef())
         .queryParam(
             "namespaceDepth",

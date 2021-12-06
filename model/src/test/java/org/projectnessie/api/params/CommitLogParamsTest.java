@@ -28,13 +28,13 @@ public class CommitLogParamsTest {
     String startHash = "1234567890123456";
     String endHash = "00000";
     String pageToken = "aabbcc";
-    String queryExpression = "some_expression";
+    String filter = "some_expression";
     boolean fetchAdditionalInfo = true;
 
     Supplier<CommitLogParams> generator =
         () ->
             CommitLogParams.builder()
-                .expression(queryExpression)
+                .filter(filter)
                 .maxRecords(maxRecords)
                 .pageToken(pageToken)
                 .startHash(startHash)
@@ -42,8 +42,7 @@ public class CommitLogParamsTest {
                 .fetchAdditionalInfo(fetchAdditionalInfo)
                 .build();
 
-    verify(
-        maxRecords, startHash, endHash, pageToken, queryExpression, fetchAdditionalInfo, generator);
+    verify(maxRecords, startHash, endHash, pageToken, filter, fetchAdditionalInfo, generator);
   }
 
   @Test
@@ -56,7 +55,7 @@ public class CommitLogParamsTest {
       String startHash,
       String endHash,
       String pageToken,
-      String queryExpression,
+      String filter,
       boolean fetchAdditionalInfo,
       Supplier<CommitLogParams> generator) {
     assertThat(generator.get())
@@ -64,7 +63,7 @@ public class CommitLogParamsTest {
         .extracting(
             CommitLogParams::pageToken,
             CommitLogParams::maxRecords,
-            CommitLogParams::queryExpression,
+            CommitLogParams::filter,
             CommitLogParams::startHash,
             CommitLogParams::endHash,
             CommitLogParams::isFetchAdditionalInfo,
@@ -72,7 +71,7 @@ public class CommitLogParamsTest {
         .containsExactly(
             pageToken,
             maxRecords,
-            queryExpression,
+            filter,
             startHash,
             endHash,
             fetchAdditionalInfo,

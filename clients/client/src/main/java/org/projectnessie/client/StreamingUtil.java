@@ -44,15 +44,13 @@ public final class StreamingUtil {
    * @return stream of {@link Reference} objects
    */
   public static Stream<Reference> getAllReferencesStream(
-      @NotNull NessieApiV1 api, OptionalInt maxRecords, @Nullable String queryExpression)
+      @NotNull NessieApiV1 api, OptionalInt maxRecords, @Nullable String filter)
       throws NessieNotFoundException {
 
     return new ResultStreamPaginator<>(
             ReferencesResponse::getReferences,
             (r, pageSize, token) ->
-                builderWithPaging(
-                        api.getAllReferences().queryExpression(queryExpression), pageSize, token)
-                    .get())
+                builderWithPaging(api.getAllReferences().filter(filter), pageSize, token).get())
         .generateStream(null, maxRecords);
   }
 
@@ -70,7 +68,7 @@ public final class StreamingUtil {
       @NotNull NessieApiV1 api,
       @NotNull String ref,
       @Nullable String hashOnRef,
-      @Nullable String queryExpression,
+      @Nullable String filter,
       OptionalInt maxRecords)
       throws NessieNotFoundException {
 
@@ -80,7 +78,7 @@ public final class StreamingUtil {
                 builderWithPaging(api.getEntries(), pageSize, token)
                     .refName(ref1)
                     .hashOnRef(hashOnRef)
-                    .queryExpression(queryExpression)
+                    .filter(filter)
                     .get())
         .generateStream(ref, maxRecords);
   }
@@ -101,7 +99,7 @@ public final class StreamingUtil {
       @NotNull String ref,
       @Nullable String hashOnRef,
       @Nullable String untilHash,
-      @Nullable String queryExpression,
+      @Nullable String filter,
       OptionalInt maxRecords)
       throws NessieNotFoundException {
     return new ResultStreamPaginator<>(
@@ -110,7 +108,7 @@ public final class StreamingUtil {
                 builderWithPaging(api.getCommitLog(), pageSize, token)
                     .refName(reference)
                     .hashOnRef(hashOnRef)
-                    .queryExpression(queryExpression)
+                    .filter(filter)
                     .untilHash(untilHash)
                     .get())
         .generateStream(ref, maxRecords);

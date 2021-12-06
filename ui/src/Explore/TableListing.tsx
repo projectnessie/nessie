@@ -66,9 +66,7 @@ const fetchKeys = (
     .getEntries({
       ref,
       namespaceDepth: newPath.length + 1,
-      queryExpression: `entry.namespace.matches('${newPath.join(
-        "\\\\."
-      )}(\\\\.|$)')`,
+      filter: `entry.namespace.matches('${newPath.join("\\\\.")}(\\\\.|$)')`,
     })
     .then((data) => {
       return data.entries?.map((e) => entryToKey(e));

@@ -155,7 +155,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/branch/contents_list_dev/commit?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
-      string: '{"hash": "0fc4059ed6bda63989555c678480544d5f13e01b615d58915ce291977ac8f6d7",
+      string: '{"hash": "8d73e1c31814ebe50d5106223253e1dc0cfb60eda735055960f2249456ce4249",
         "name": "contents_list_dev", "type": "BRANCH"}'
     headers:
       Content-Type:
@@ -181,7 +181,7 @@ interactions:
   response:
     body:
       string: '{"hasMore": false, "references": [{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-        "name": "main", "type": "BRANCH"}, {"hash": "0fc4059ed6bda63989555c678480544d5f13e01b615d58915ce291977ac8f6d7",
+        "name": "main", "type": "BRANCH"}, {"hash": "8d73e1c31814ebe50d5106223253e1dc0cfb60eda735055960f2249456ce4249",
         "name": "contents_list_dev", "type": "BRANCH"}], "token": null}'
     headers:
       Content-Type:
@@ -238,10 +238,10 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/contents_list_dev/commit?expectedHash=0fc4059ed6bda63989555c678480544d5f13e01b615d58915ce291977ac8f6d7
+    uri: http://localhost:19120/api/v1/trees/branch/contents_list_dev/commit?expectedHash=8d73e1c31814ebe50d5106223253e1dc0cfb60eda735055960f2249456ce4249
   response:
     body:
-      string: '{"hash": "5a8c7c1393d2b6c83f462fe00e429900bd1ff5bdb6b4751f0f46a567530db7c9",
+      string: '{"hash": "63a7a678f742bdb21cdfce083c9b384948a141b4353961eb2fc064eaea18dca6",
         "name": "contents_list_dev", "type": "BRANCH"}'
     headers:
       Content-Type:
@@ -267,7 +267,7 @@ interactions:
   response:
     body:
       string: '{"hasMore": false, "references": [{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-        "name": "main", "type": "BRANCH"}, {"hash": "5a8c7c1393d2b6c83f462fe00e429900bd1ff5bdb6b4751f0f46a567530db7c9",
+        "name": "main", "type": "BRANCH"}, {"hash": "63a7a678f742bdb21cdfce083c9b384948a141b4353961eb2fc064eaea18dca6",
         "name": "contents_list_dev", "type": "BRANCH"}], "token": null}'
     headers:
       Content-Type:
@@ -323,10 +323,10 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/contents_list_dev/commit?expectedHash=5a8c7c1393d2b6c83f462fe00e429900bd1ff5bdb6b4751f0f46a567530db7c9
+    uri: http://localhost:19120/api/v1/trees/branch/contents_list_dev/commit?expectedHash=63a7a678f742bdb21cdfce083c9b384948a141b4353961eb2fc064eaea18dca6
   response:
     body:
-      string: '{"hash": "2df89ef71e71b5ecf3871fc76b7df8f0db37e6a5de17e7a8ba4536287e9aafd8",
+      string: '{"hash": "53089dbc4f9bfd3d653caff48d173f1d0c63ee3a090aac718b077c8b5bf8e916",
         "name": "contents_list_dev", "type": "BRANCH"}'
     headers:
       Content-Type:
@@ -348,7 +348,7 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: GET
-    uri: http://localhost:19120/api/v1/trees/tree/contents_list_dev/entries?query_expression=entry.contentType+in+%5B%27ICEBERG_TABLE%27%5D
+    uri: http://localhost:19120/api/v1/trees/tree/contents_list_dev/entries?filter=entry.contentType+in+%5B%27ICEBERG_TABLE%27%5D
   response:
     body:
       string: '{"entries": [{"name": {"elements": ["this", "is", "iceberg", "foo"]},
@@ -373,7 +373,7 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: GET
-    uri: http://localhost:19120/api/v1/trees/tree/contents_list_dev/entries?query_expression=entry.contentType+in+%5B%27DELTA_LAKE_TABLE%27%5D
+    uri: http://localhost:19120/api/v1/trees/tree/contents_list_dev/entries?filter=entry.contentType+in+%5B%27DELTA_LAKE_TABLE%27%5D
   response:
     body:
       string: '{"entries": [{"name": {"elements": ["this", "is", "delta", "bar"]},
@@ -398,7 +398,7 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: GET
-    uri: http://localhost:19120/api/v1/trees/tree/contents_list_dev/entries?query_expression=entry.contentType+%3D%3D+%27ICEBERG_TABLE%27
+    uri: http://localhost:19120/api/v1/trees/tree/contents_list_dev/entries?filter=entry.contentType+%3D%3D+%27ICEBERG_TABLE%27
   response:
     body:
       string: '{"entries": [{"name": {"elements": ["this", "is", "iceberg", "foo"]},
@@ -423,7 +423,7 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: GET
-    uri: http://localhost:19120/api/v1/trees/tree/contents_list_dev/entries?query_expression=entry.contentType+in+%5B%27ICEBERG_TABLE%27%2C+%27DELTA_LAKE_TABLE%27%5D
+    uri: http://localhost:19120/api/v1/trees/tree/contents_list_dev/entries?filter=entry.contentType+in+%5B%27ICEBERG_TABLE%27%2C+%27DELTA_LAKE_TABLE%27%5D
   response:
     body:
       string: '{"entries": [{"name": {"elements": ["this", "is", "delta", "bar"]},
@@ -449,7 +449,7 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: GET
-    uri: http://localhost:19120/api/v1/trees/tree/contents_list_dev/entries?query_expression=entry.namespace.startsWith%28%27this.is.del%27%29
+    uri: http://localhost:19120/api/v1/trees/tree/contents_list_dev/entries?filter=entry.namespace.startsWith%28%27this.is.del%27%29
   response:
     body:
       string: '{"entries": [{"name": {"elements": ["this", "is", "delta", "bar"]},
@@ -474,7 +474,7 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: GET
-    uri: http://localhost:19120/api/v1/trees/tree/contents_list_dev/entries?query_expression=entry.namespace.startsWith%28%27this.is%27%29
+    uri: http://localhost:19120/api/v1/trees/tree/contents_list_dev/entries?filter=entry.namespace.startsWith%28%27this.is%27%29
   response:
     body:
       string: '{"entries": [{"name": {"elements": ["this", "is", "sql", "baz"]}, "type":

@@ -17,12 +17,12 @@
 
 """Top-level package for Utility module."""
 
-from .expression_util import build_query_expression_for_commit_log_flags
-from .expression_util import build_query_expression_for_contents_listing_flags
+from .expression_util import build_filter_for_commit_log_flags
+from .expression_util import build_filter_for_contents_listing_flags
 from .expression_util import parse_to_iso8601
 
 __all__ = [
-    "build_query_expression_for_commit_log_flags",
-    "build_query_expression_for_contents_listing_flags",
+    "build_filter_for_commit_log_flags",
+    "build_filter_for_contents_listing_flags",
     "parse_to_iso8601",
 ]

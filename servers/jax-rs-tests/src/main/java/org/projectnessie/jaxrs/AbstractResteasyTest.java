@@ -362,7 +362,7 @@ public abstract class AbstractResteasyTest {
     String author = "author-1";
     log =
         rest()
-            .queryParam("query_expression", String.format("commit.author=='%s'", author))
+            .queryParam("filter", String.format("commit.author=='%s'", author))
             .get(String.format("trees/tree/%s/log", branchName))
             .then()
             .statusCode(200)
@@ -374,7 +374,7 @@ public abstract class AbstractResteasyTest {
     log =
         rest()
             .queryParam(
-                "query_expression",
+                "filter",
                 String.format("timestamp(commit.commitTime) > timestamp('%s')", firstCommitTime))
             .get(String.format("trees/tree/%s/log", branchName))
             .then()
@@ -389,7 +389,7 @@ public abstract class AbstractResteasyTest {
     log =
         rest()
             .queryParam(
-                "query_expression",
+                "filter",
                 String.format("timestamp(commit.commitTime) < timestamp('%s')", lastCommitTime))
             .get(String.format("trees/tree/%s/log", branchName))
             .then()
@@ -404,7 +404,7 @@ public abstract class AbstractResteasyTest {
     log =
         rest()
             .queryParam(
-                "query_expression",
+                "filter",
                 String.format(
                     "timestamp(commit.commitTime) > timestamp('%s') && timestamp(commit.commitTime) < timestamp('%s')",
                     firstCommitTime, lastCommitTime))

@@ -22,12 +22,12 @@ from typing import List, Optional
 from dateutil import parser
 
 
-def build_query_expression_for_commit_log_flags(
-    query_expression: str, authors: List[str], committers: List[str], since: Optional[str], until: Optional[str]
+def build_filter_for_commit_log_flags(
+    query_filter: str, authors: List[str], committers: List[str], since: Optional[str], until: Optional[str]
 ) -> Optional[str]:
     """Producs a CEL expression to be used for filtering the commit log based on the given filtering parameters."""
-    if query_expression:
-        return query_expression
+    if query_filter:
+        return query_filter
     expressions = []
 
     if authors:
@@ -45,10 +45,10 @@ def build_query_expression_for_commit_log_flags(
     return None
 
 
-def build_query_expression_for_contents_listing_flags(query_expression: str, types: List[str]) -> Optional[str]:
+def build_filter_for_contents_listing_flags(query_filter: str, types: List[str]) -> Optional[str]:
     """Producs a CEL expression to be used for filtering the content entries based on the given filtering parameters."""
-    if query_expression:
-        return query_expression
+    if query_filter:
+        return query_filter
 
     if types:
         return _expression_for_entries_by_types(types)

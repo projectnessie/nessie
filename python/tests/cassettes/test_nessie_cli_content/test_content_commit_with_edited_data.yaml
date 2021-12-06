@@ -156,7 +156,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/branch/content_commit_with_edited_data_dev/commit?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
-      string: '{"hash": "8e9682da829cacd47f51e0845f7997502823d632f63f3bf7f838c6ed2772e81d",
+      string: '{"hash": "5d228e915737fe3c79f3e8b6cc5a1f29e9bcba4da8b22f466a2d688aeddb2faa",
         "name": "content_commit_with_edited_data_dev", "type": "BRANCH"}'
     headers:
       Content-Type:
@@ -178,7 +178,7 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: GET
-    uri: http://localhost:19120/api/v1/trees/tree/content_commit_with_edited_data_dev/entries?query_expression=entry.contentType+in+%5B%27ICEBERG_TABLE%27%5D
+    uri: http://localhost:19120/api/v1/trees/tree/content_commit_with_edited_data_dev/entries?filter=entry.contentType+in+%5B%27ICEBERG_TABLE%27%5D
   response:
     body:
       string: '{"entries": [{"name": {"elements": ["this", "is", "iceberg", "foo"]},
@@ -207,7 +207,7 @@ interactions:
   response:
     body:
       string: '{"hasMore": false, "references": [{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-        "name": "main", "type": "BRANCH"}, {"hash": "8e9682da829cacd47f51e0845f7997502823d632f63f3bf7f838c6ed2772e81d",
+        "name": "main", "type": "BRANCH"}, {"hash": "5d228e915737fe3c79f3e8b6cc5a1f29e9bcba4da8b22f466a2d688aeddb2faa",
         "name": "content_commit_with_edited_data_dev", "type": "BRANCH"}], "token":
         null}'
     headers:
@@ -260,8 +260,8 @@ interactions:
   response:
     body:
       string: '{"hasMore": false, "logEntries": [{"commitMeta": {"author": "nessie
-        test", "authorTime": "2021-12-02T14:50:09.948672Z", "commitTime": "2021-12-02T14:50:09.948672Z",
-        "committer": "", "hash": "8e9682da829cacd47f51e0845f7997502823d632f63f3bf7f838c6ed2772e81d",
+        test", "authorTime": "2021-12-06T09:08:27.690068Z", "commitTime": "2021-12-06T09:08:27.690068Z",
+        "committer": "", "hash": "5d228e915737fe3c79f3e8b6cc5a1f29e9bcba4da8b22f466a2d688aeddb2faa",
         "message": "test message", "properties": {}, "signedOffBy": null}, "operations":
         null, "parentCommitHash": null}], "token": null}'
     headers:
@@ -288,7 +288,7 @@ interactions:
   response:
     body:
       string: '{"hasMore": false, "references": [{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-        "name": "main", "type": "BRANCH"}, {"hash": "8e9682da829cacd47f51e0845f7997502823d632f63f3bf7f838c6ed2772e81d",
+        "name": "main", "type": "BRANCH"}, {"hash": "5d228e915737fe3c79f3e8b6cc5a1f29e9bcba4da8b22f466a2d688aeddb2faa",
         "name": "content_commit_with_edited_data_dev", "type": "BRANCH"}], "token":
         null}'
     headers:
@@ -348,10 +348,10 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/content_commit_with_edited_data_dev/commit?expectedHash=8e9682da829cacd47f51e0845f7997502823d632f63f3bf7f838c6ed2772e81d
+    uri: http://localhost:19120/api/v1/trees/branch/content_commit_with_edited_data_dev/commit?expectedHash=5d228e915737fe3c79f3e8b6cc5a1f29e9bcba4da8b22f466a2d688aeddb2faa
   response:
     body:
-      string: '{"hash": "9ef4efc9f074a73684488b376db28b99b066e58bd4127893569342c1687b9730",
+      string: '{"hash": "eb8d75c04b4cd8beaabe39923b331f6c2b13428fbb6205cc8b87242e09741e79",
         "name": "content_commit_with_edited_data_dev", "type": "BRANCH"}'
     headers:
       Content-Type:
@@ -373,7 +373,7 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: GET
-    uri: http://localhost:19120/api/v1/trees/tree/content_commit_with_edited_data_dev/entries?query_expression=entry.contentType+in+%5B%27ICEBERG_TABLE%27%5D
+    uri: http://localhost:19120/api/v1/trees/tree/content_commit_with_edited_data_dev/entries?filter=entry.contentType+in+%5B%27ICEBERG_TABLE%27%5D
   response:
     body:
       string: '{"entries": [{"name": {"elements": ["this", "is", "iceberg", "foo"]},

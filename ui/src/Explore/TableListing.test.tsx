@@ -29,7 +29,7 @@ it("TableListing renders", async () => {
   };
   const scope = nock("http://localhost/api/v1")
     .get(
-      "/trees/tree/main/entries?namespaceDepth=1&query_expression=entry.namespace.matches(%27(%5C%5C.%7C%24)%27)"
+      "/trees/tree/main/entries?namespaceDepth=1&filter=entry.namespace.matches(%27(%5C%5C.%7C%24)%27)"
     )
     .reply(200, { token: "foo", entries: [entry] });
 
@@ -56,7 +56,7 @@ it("TableListing renders object", async () => {
   };
   const scope = nock("http://localhost/api/v1")
     .get(
-      "/trees/tree/main/entries?namespaceDepth=1&query_expression=entry.namespace.matches(%27(%5C%5C.%7C%24)%27)"
+      "/trees/tree/main/entries?namespaceDepth=1&filter=entry.namespace.matches(%27(%5C%5C.%7C%24)%27)"
     )
     .reply(200, { token: "foo", entries: [entry] });
 
@@ -82,7 +82,7 @@ it("TableListing redirects on an invalid ref", async () => {
   const history = createMemoryHistory();
   const scope = nock("http://localhost/api/v1")
     .get(
-      "/trees/tree/main/entries?namespaceDepth=1&query_expression=entry.namespace.matches(%27(%5C%5C.%7C%24)%27)"
+      "/trees/tree/main/entries?namespaceDepth=1&filter=entry.namespace.matches(%27(%5C%5C.%7C%24)%27)"
     )
     .reply(404);
 

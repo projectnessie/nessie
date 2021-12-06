@@ -27,7 +27,7 @@ from dateutil.tz import tzlocal
 from ..cli_common_context import ContextObject, MutuallyExclusiveOption
 from ..decorators import error_handler, pass_client, validate_reference
 from ..model import CommitMetaSchema, LogEntry, LogEntrySchema
-from ..utils import build_query_expression_for_commit_log_flags
+from ..utils import build_filter_for_commit_log_flags
 
 
 @click.command("log")
@@ -54,9 +54,8 @@ from ..utils import build_query_expression_for_commit_log_flags
     "is inclusive and '<start_hash>' is exclusive.",
 )
 @click.option(
-    "--query",
-    "--query-expression",
-    "query_expression",
+    "--filter",
+    "query_filter",
     multiple=False,
     cls=MutuallyExclusiveOption,
     mutually_exclusive=["author", "committer", "since", "until"],
@@ -89,7 +88,7 @@ def log(  # noqa: C901
     author: List[str],
     committer: List[str],
     revision_range: str,
-    query_expression: str,
+    query_filter: str,
     fetch_additional_info: bool,
 ) -> None:
     """Show commit log.
@@ -109,7 +108,7 @@ def log(  # noqa: C901
 
         nessie log --author nessie.user dev -> show commit logs for user 'nessie.user' in 'dev' branch
 
-        nessie log --query "commit.author == 'nessie_user2' || commit.author == 'non_existing'" dev ->
+        nessie log --filter "commit.author == 'nessie_user2' || commit.author == 'non_existing'" dev ->
     show commit logs using query in 'dev' branch
 
         nessie log --after "2019-01-01T00:00:00+00:00" --before "2021-01-01T00:00:00+00:00" dev ->
@@ -129,9 +128,9 @@ def log(  # noqa: C901
         filtering_args["startHash"] = start_hash
     if end_hash:
         filtering_args["endHash"] = end_hash
-    expr = build_query_expression_for_commit_log_flags(query_expression, author, committer, since, until)
+    expr = build_filter_for_commit_log_flags(query_filter, author, committer, since, until)
     if expr:
-        filtering_args["query_expression"] = expr
+        filtering_args["filter"] = expr
 
     # TODO: limiting by path is not yet supported.
     log_result = ctx.nessie.get_log(start_ref=ref, max_records=number, fetch_additional_info=fetch_additional_info, **filtering_args)

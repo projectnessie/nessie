@@ -87,26 +87,26 @@ def test_content_list() -> None:
     assert_that(tables).is_length(1)
     assert_that(tables[0].kind).is_equal_to("DELTA_LAKE_TABLE")
 
-    result = execute_cli_command(["--json", CONTENT_COMMAND, "list", "--ref", branch, "--query", "entry.contentType == 'ICEBERG_TABLE'"])
+    result = execute_cli_command(["--json", CONTENT_COMMAND, "list", "--ref", branch, "--filter", "entry.contentType == 'ICEBERG_TABLE'"])
     tables = EntrySchema().loads(result, many=True)
     assert_that(tables).is_length(1)
     assert_that(tables[0].kind).is_equal_to("ICEBERG_TABLE")
 
     result = execute_cli_command(
-        ["--json", CONTENT_COMMAND, "list", "--ref", branch, "--query", "entry.contentType in ['ICEBERG_TABLE', 'DELTA_LAKE_TABLE']"]
+        ["--json", CONTENT_COMMAND, "list", "--ref", branch, "--filter", "entry.contentType in ['ICEBERG_TABLE', 'DELTA_LAKE_TABLE']"]
     )
     tables = EntrySchema().loads(result, many=True)
     assert_that(tables).is_length(2)
     assert_that(set(t.kind for t in tables)).is_equal_to({"DELTA_LAKE_TABLE", "ICEBERG_TABLE"})
 
     result = execute_cli_command(
-        ["--json", CONTENT_COMMAND, "list", "--ref", branch, "--query", "entry.namespace.startsWith('this.is.del')"]
+        ["--json", CONTENT_COMMAND, "list", "--ref", branch, "--filter", "entry.namespace.startsWith('this.is.del')"]
     )
     tables = EntrySchema().loads(result, many=True)
     assert_that(tables).is_length(1)
     assert_that(tables[0].kind).is_equal_to("DELTA_LAKE_TABLE")
 
-    result = execute_cli_command(["--json", CONTENT_COMMAND, "list", "--ref", branch, "--query", "entry.namespace.startsWith('this.is')"])
+    result = execute_cli_command(["--json", CONTENT_COMMAND, "list", "--ref", branch, "--filter", "entry.namespace.startsWith('this.is')"])
     tables = EntrySchema().loads(result, many=True)
     assert_that(tables).is_length(3)
     assert_that(set(i.kind for i in tables)).is_equal_to({"ICEBERG_TABLE", "VIEW", "DELTA_LAKE_TABLE"})
