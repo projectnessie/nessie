@@ -27,4 +27,4 @@ types-python-dateutil
 types-PyYAML
 types-requests
 types-simplejson
-pylint==2.12.1
+pylint==2.12.2
