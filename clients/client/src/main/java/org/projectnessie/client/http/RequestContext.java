@@ -56,6 +56,10 @@ public class RequestContext {
     HttpRequest.putHeader(name, value, headers);
   }
 
+  public void removeHeader(String name) {
+    headers.remove(name);
+  }
+
   public URI getUri() {
     return uri;
   }
