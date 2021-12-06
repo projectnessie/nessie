@@ -37,7 +37,7 @@ def handle_branch_tag(
     json: bool,
     force: bool,
     verbose: bool,
-    fetch_additional_info: bool,
+    fetch_all: bool,
     expected_hash: Optional[str] = None,
 ) -> str:
     """Perform branch/tag actions.
@@ -53,11 +53,11 @@ def handle_branch_tag(
     :param json the --json option choice
     :param force the -f option choice
     :param verbose the -v option choice
-    :param fetch_additional_info the -x option to fetch additional metadata for a branch/tag
+    :param fetch_all the -x option to fetch additional metadata for a branch/tag
     :param expected_hash hash whose existence needs to be checked (on the server side) before performing the operation
     """
     if list_references or (not list_references and not delete_reference and not ref_name and not base_ref):
-        return _handle_list(nessie, json, verbose, is_branch, ref_name, fetch_additional_info)
+        return _handle_list(nessie, json, verbose, is_branch, ref_name, fetch_all)
     if delete_reference:
         if not hash_on_ref:
             hash_on_ref = nessie.get_reference(ref_name).hash_ or "fail"
@@ -83,14 +83,14 @@ def handle_branch_tag(
     return ""
 
 
-def _handle_list(nessie: NessieClient, json: bool, verbose: bool, is_branch: bool, ref_name: str, fetch_additional_info: bool) -> str:
-    results = nessie.list_references(fetch_additional_info=fetch_additional_info).references
+def _handle_list(nessie: NessieClient, json: bool, verbose: bool, is_branch: bool, ref_name: str, fetch_all: bool) -> str:
+    results = nessie.list_references(fetch_all=fetch_all).references
     kept_results = [ref for ref in results if isinstance(ref, (Branch if is_branch else Tag))]
     if ref_name:
         kept_results = [i for i in kept_results if i.name == ref_name]
     if json:
         return _handle_json_output(kept_results, ref_name)
-    return _handle_normal_output(kept_results, verbose, nessie.get_default_branch(), fetch_additional_info)
+    return _handle_normal_output(kept_results, verbose, nessie.get_default_branch(), fetch_all)
 
 
 def _handle_json_output(input_data: list, ref_name: str) -> str:

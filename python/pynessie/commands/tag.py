@@ -43,7 +43,7 @@ from ..decorators import error_handler, pass_client
 @click.option(
     "-x",
     "--extended",
-    "fetch_additional_info",
+    "fetch_all",
     is_flag=True,
     help="Retrieve additional metadata for a tag, such as number of commits ahead/behind, "
     "info about the HEAD commit, number of total commits, or the common ancestor hash.",
@@ -61,7 +61,7 @@ def tag(
     tag_name: str,
     base_ref: str,
     expected_hash: str,
-    fetch_additional_info: bool,
+    fetch_all: bool,
 ) -> None:
     """Tag operations.
 
@@ -103,7 +103,7 @@ def tag(
         ctx.json,
         force,
         ctx.verbose,
-        fetch_additional_info,
+        fetch_all,
         expected_hash,
     )
     if ctx.json:

@@ -17,6 +17,7 @@ package org.projectnessie.client.api;
 
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
+import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Validation;
@@ -40,8 +41,9 @@ public interface GetReferenceBuilder {
    * the commit metadata for the HEAD commit.
    *
    * @return {@link GetReferenceBuilder}
+   * @param fetchOption The option indicating how much info to fetch
    */
-  GetReferenceBuilder fetchAdditionalInfo(boolean fetchAdditionalInfo);
+  GetReferenceBuilder fetch(FetchOption fetchOption);
 
   Reference get() throws NessieNotFoundException;
 }

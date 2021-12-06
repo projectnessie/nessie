@@ -156,7 +156,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/branch/content_commit_with_edited_data_dev/commit?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
-      string: '{"hash": "5d228e915737fe3c79f3e8b6cc5a1f29e9bcba4da8b22f466a2d688aeddb2faa",
+      string: '{"hash": "778594ea5fb572090fc5a623c04fa591804c79b597e7db5b513fd618cfe0d197",
         "name": "content_commit_with_edited_data_dev", "type": "BRANCH"}'
     headers:
       Content-Type:
@@ -207,7 +207,7 @@ interactions:
   response:
     body:
       string: '{"hasMore": false, "references": [{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-        "name": "main", "type": "BRANCH"}, {"hash": "5d228e915737fe3c79f3e8b6cc5a1f29e9bcba4da8b22f466a2d688aeddb2faa",
+        "name": "main", "type": "BRANCH"}, {"hash": "778594ea5fb572090fc5a623c04fa591804c79b597e7db5b513fd618cfe0d197",
         "name": "content_commit_with_edited_data_dev", "type": "BRANCH"}], "token":
         null}'
     headers:
@@ -260,8 +260,8 @@ interactions:
   response:
     body:
       string: '{"hasMore": false, "logEntries": [{"commitMeta": {"author": "nessie
-        test", "authorTime": "2021-12-06T09:08:27.690068Z", "commitTime": "2021-12-06T09:08:27.690068Z",
-        "committer": "", "hash": "5d228e915737fe3c79f3e8b6cc5a1f29e9bcba4da8b22f466a2d688aeddb2faa",
+        test", "authorTime": "2021-12-07T10:04:05.024405Z", "commitTime": "2021-12-07T10:04:05.024405Z",
+        "committer": "", "hash": "778594ea5fb572090fc5a623c04fa591804c79b597e7db5b513fd618cfe0d197",
         "message": "test message", "properties": {}, "signedOffBy": null}, "operations":
         null, "parentCommitHash": null}], "token": null}'
     headers:
@@ -288,7 +288,7 @@ interactions:
   response:
     body:
       string: '{"hasMore": false, "references": [{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-        "name": "main", "type": "BRANCH"}, {"hash": "5d228e915737fe3c79f3e8b6cc5a1f29e9bcba4da8b22f466a2d688aeddb2faa",
+        "name": "main", "type": "BRANCH"}, {"hash": "778594ea5fb572090fc5a623c04fa591804c79b597e7db5b513fd618cfe0d197",
         "name": "content_commit_with_edited_data_dev", "type": "BRANCH"}], "token":
         null}'
     headers:
@@ -348,10 +348,10 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/content_commit_with_edited_data_dev/commit?expectedHash=5d228e915737fe3c79f3e8b6cc5a1f29e9bcba4da8b22f466a2d688aeddb2faa
+    uri: http://localhost:19120/api/v1/trees/branch/content_commit_with_edited_data_dev/commit?expectedHash=778594ea5fb572090fc5a623c04fa591804c79b597e7db5b513fd618cfe0d197
   response:
     body:
-      string: '{"hash": "eb8d75c04b4cd8beaabe39923b331f6c2b13428fbb6205cc8b87242e09741e79",
+      string: '{"hash": "b7f8cdf8e08fcd690ee0bbc89012b068f79a658a49410c4d285dcf09ee0b783a",
         "name": "content_commit_with_edited_data_dev", "type": "BRANCH"}'
     headers:
       Content-Type:

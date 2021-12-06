@@ -49,6 +49,7 @@ import javax.annotation.Nullable;
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.params.EntriesParams;
+import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.api.params.GetReferenceParams;
 import org.projectnessie.api.params.ReferencesParams;
 import org.projectnessie.cel.tools.Script;
@@ -118,10 +119,11 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   public ReferencesResponse getAllReferences(ReferencesParams params) {
     Preconditions.checkArgument(params.pageToken() == null, "Paging not supported");
     ImmutableReferencesResponse.Builder resp = ReferencesResponse.builder();
+    boolean fetchAll = FetchOption.isFetchAll(params.fetchOption());
     try (Stream<ReferenceInfo<CommitMeta>> str =
-        getStore().getNamedRefs(getGetNamedRefsParams(params.isFetchAdditionalInfo()))) {
+        getStore().getNamedRefs(getGetNamedRefsParams(fetchAll))) {
       Stream<Reference> unfiltered =
-          str.map(refInfo -> TreeApiImpl.makeReference(refInfo, params.isFetchAdditionalInfo()));
+          str.map(refInfo -> TreeApiImpl.makeReference(refInfo, fetchAll));
       Stream<Reference> filtered = filterReferences(unfiltered, params.filter());
       filtered.forEach(resp::addReferences);
     } catch (ReferenceNotFoundException e) {
@@ -132,8 +134,8 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     return resp.build();
   }
 
-  private GetNamedRefsParams getGetNamedRefsParams(boolean fetchAdditionalInfo) {
-    return fetchAdditionalInfo
+  private GetNamedRefsParams getGetNamedRefsParams(boolean fetchMetadata) {
+    return fetchMetadata
         ? GetNamedRefsParams.builder()
             .baseReference(BranchName.of(this.getConfig().getDefaultBranch()))
             .branchRetrieveOptions(RetrieveOptions.BASE_REFERENCE_RELATED_AND_COMMIT_META)
@@ -205,11 +207,9 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   @Override
   public Reference getReferenceByName(GetReferenceParams params) throws NessieNotFoundException {
     try {
+      boolean fetchAll = FetchOption.isFetchAll(params.fetchOption());
       return makeReference(
-          getStore()
-              .getNamedRef(
-                  params.getRefName(), getGetNamedRefsParams(params.isFetchAdditionalInfo())),
-          params.isFetchAdditionalInfo());
+          getStore().getNamedRef(params.getRefName(), getGetNamedRefsParams(fetchAll)), fetchAll);
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }
@@ -297,8 +297,8 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
                 namedRef, null == params.pageToken() ? params.endHash() : params.pageToken())
             .getHash();
 
-    try (Stream<Commit<CommitMeta, Content>> commits =
-        getStore().getCommits(endRef, params.isFetchAdditionalInfo())) {
+    boolean fetchAll = FetchOption.isFetchAll(params.fetchOption());
+    try (Stream<Commit<CommitMeta, Content>> commits = getStore().getCommits(endRef, fetchAll)) {
       Stream<LogEntry> logEntries =
           commits.map(
               commit -> {
@@ -306,7 +306,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
                     addHashToCommitMeta(commit.getHash(), commit.getCommitMeta());
                 ImmutableLogEntry.Builder logEntry = LogEntry.builder();
                 logEntry.commitMeta(commitMetaWithHash);
-                if (params.isFetchAdditionalInfo()) {
+                if (fetchAll) {
                   if (commit.getParentHash() != null) {
                     logEntry.parentCommitHash(commit.getParentHash().asString());
                   }
@@ -631,19 +631,19 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   }
 
   private static Reference makeReference(
-      ReferenceInfo<CommitMeta> refWithHash, boolean fetchAdditionalInfo) {
+      ReferenceInfo<CommitMeta> refWithHash, boolean fetchMetadata) {
     NamedRef ref = refWithHash.getNamedRef();
     if (ref instanceof TagName) {
       ImmutableTag.Builder builder =
           ImmutableTag.builder().name(ref.getName()).hash(refWithHash.getHash().asString());
-      if (fetchAdditionalInfo) {
+      if (fetchMetadata) {
         builder.metadata(extractReferenceMetadata(refWithHash));
       }
       return builder.build();
     } else if (ref instanceof BranchName) {
       ImmutableBranch.Builder builder =
           ImmutableBranch.builder().name(ref.getName()).hash(refWithHash.getHash().asString());
-      if (fetchAdditionalInfo) {
+      if (fetchMetadata) {
         builder.metadata(extractReferenceMetadata(refWithHash));
       }
       return builder.build();

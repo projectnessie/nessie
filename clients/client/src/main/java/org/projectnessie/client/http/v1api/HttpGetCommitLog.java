@@ -16,6 +16,7 @@
 package org.projectnessie.client.http.v1api;
 
 import org.projectnessie.api.params.CommitLogParams;
+import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.client.api.GetCommitLogBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieNotFoundException;
@@ -31,8 +32,8 @@ final class HttpGetCommitLog extends BaseHttpOnReferenceRequest<GetCommitLogBuil
   }
 
   @Override
-  public GetCommitLogBuilder fetchAdditionalInfo(boolean fetchAdditionalInfo) {
-    params.fetchAdditionalInfo(fetchAdditionalInfo);
+  public GetCommitLogBuilder fetch(FetchOption fetchOption) {
+    params.fetch(fetchOption);
     return this;
   }
 

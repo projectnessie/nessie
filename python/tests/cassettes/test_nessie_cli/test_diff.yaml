@@ -179,7 +179,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/branch/dev_test_diff/commit?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
-      string: '{"hash": "e4696775b36742d9483d62c7847694c526f328ad16846fa2dad1db3a16895568",
+      string: '{"hash": "e4aa6de033c499df09d907a2d71d36f99e52db277c07f5a6ded99e132af0bd4c",
         "name": "dev_test_diff", "type": "BRANCH"}'
     headers:
       Content-Type:

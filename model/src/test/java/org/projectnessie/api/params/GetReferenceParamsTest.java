@@ -25,9 +25,13 @@ public class GetReferenceParamsTest {
   @Test
   public void testBuilder() {
     GetReferenceParams params =
-        GetReferenceParams.builder().refName("xx").fetchAdditionalInfo(true).build();
+        GetReferenceParams.builder().refName("xx").fetch(FetchOption.ALL).build();
     assertThat(params.getRefName()).isEqualTo("xx");
-    assertThat(params.isFetchAdditionalInfo()).isTrue();
+    assertThat(params.fetchOption()).isEqualTo(FetchOption.ALL);
+
+    params = GetReferenceParams.builder().refName("xx").build();
+    assertThat(params.getRefName()).isEqualTo("xx");
+    assertThat(params.fetchOption()).isNull();
   }
 
   @Test

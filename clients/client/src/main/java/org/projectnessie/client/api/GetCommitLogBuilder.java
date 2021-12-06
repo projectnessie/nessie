@@ -17,6 +17,7 @@ package org.projectnessie.client.api;
 
 import javax.annotation.Nullable;
 import javax.validation.constraints.Pattern;
+import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Validation;
@@ -35,8 +36,9 @@ public interface GetCommitLogBuilder
    * Will fetch additional metadata about each commit like operations in a commit and parent hash.
    *
    * @return {@link GetAllReferencesBuilder}
+   * @param fetchOption The option indicating how much info to fetch
    */
-  GetCommitLogBuilder fetchAdditionalInfo(boolean fetchAdditionalInfo);
+  GetCommitLogBuilder fetch(FetchOption fetchOption);
 
   GetCommitLogBuilder untilHash(
       @Nullable @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)

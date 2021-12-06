@@ -29,7 +29,7 @@ public class CommitLogParamsTest {
     String endHash = "00000";
     String pageToken = "aabbcc";
     String filter = "some_expression";
-    boolean fetchAdditionalInfo = true;
+    FetchOption fetchOption = FetchOption.ALL;
 
     Supplier<CommitLogParams> generator =
         () ->
@@ -39,15 +39,15 @@ public class CommitLogParamsTest {
                 .pageToken(pageToken)
                 .startHash(startHash)
                 .endHash(endHash)
-                .fetchAdditionalInfo(fetchAdditionalInfo)
+                .fetch(fetchOption)
                 .build();
 
-    verify(maxRecords, startHash, endHash, pageToken, filter, fetchAdditionalInfo, generator);
+    verify(maxRecords, startHash, endHash, pageToken, filter, fetchOption, generator);
   }
 
   @Test
   public void testEmpty() {
-    verify(null, null, null, null, null, false, CommitLogParams::empty);
+    verify(null, null, null, null, null, null, CommitLogParams::empty);
   }
 
   private void verify(
@@ -56,7 +56,7 @@ public class CommitLogParamsTest {
       String endHash,
       String pageToken,
       String filter,
-      boolean fetchAdditionalInfo,
+      FetchOption fetchOption,
       Supplier<CommitLogParams> generator) {
     assertThat(generator.get())
         .isEqualTo(generator.get())
@@ -66,7 +66,7 @@ public class CommitLogParamsTest {
             CommitLogParams::filter,
             CommitLogParams::startHash,
             CommitLogParams::endHash,
-            CommitLogParams::isFetchAdditionalInfo,
+            CommitLogParams::fetchOption,
             CommitLogParams::hashCode)
         .containsExactly(
             pageToken,
@@ -74,7 +74,7 @@ public class CommitLogParamsTest {
             filter,
             startHash,
             endHash,
-            fetchAdditionalInfo,
+            fetchOption,
             generator.get().hashCode());
   }
 }

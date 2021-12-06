@@ -20,6 +20,7 @@ import javax.validation.constraints.NotNull;
 import org.projectnessie.api.http.HttpTreeApi;
 import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.params.EntriesParams;
+import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.api.params.GetReferenceParams;
 import org.projectnessie.api.params.ReferencesParams;
 import org.projectnessie.error.NessieConflictException;
@@ -49,7 +50,7 @@ class HttpTreeClient implements HttpTreeApi {
         .queryParam(
             "maxRecords", params.maxRecords() != null ? params.maxRecords().toString() : null)
         .queryParam("pageToken", params.pageToken())
-        .queryParam("fetchAdditionalInfo", Boolean.toString(params.isFetchAdditionalInfo()))
+        .queryParam("fetch", FetchOption.getFetchOptionName(params.fetchOption()))
         .queryParam("filter", params.filter())
         .get()
         .readEntity(ReferencesResponse.class);
@@ -72,7 +73,7 @@ class HttpTreeClient implements HttpTreeApi {
     return client
         .newRequest()
         .path("trees/tree/{ref}")
-        .queryParam("fetchAdditionalInfo", Boolean.toString(params.isFetchAdditionalInfo()))
+        .queryParam("fetch", FetchOption.getFetchOptionName(params.fetchOption()))
         .resolveTemplate("ref", params.getRefName())
         .get()
         .readEntity(Reference.class);
@@ -141,7 +142,7 @@ class HttpTreeClient implements HttpTreeApi {
         .queryParam("filter", params.filter())
         .queryParam("startHash", params.startHash())
         .queryParam("endHash", params.endHash())
-        .queryParam("fetchAdditionalInfo", params.isFetchAdditionalInfo() ? "true" : null)
+        .queryParam("fetch", FetchOption.getFetchOptionName(params.fetchOption()))
         .get()
         .readEntity(LogResponse.class);
   }

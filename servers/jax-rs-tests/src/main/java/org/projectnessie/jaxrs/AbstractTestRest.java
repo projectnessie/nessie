@@ -61,6 +61,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.client.StreamingUtil;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.client.api.NessieApiV1;
@@ -432,7 +433,7 @@ public abstract class AbstractTestRest {
     assertThat(
             getApi()
                 .getAllReferences()
-                .fetchAdditionalInfo(true)
+                .fetch(FetchOption.ALL)
                 .filter("commit.message == 'invent awesome things'")
                 .get()
                 .getReferences())
@@ -441,7 +442,7 @@ public abstract class AbstractTestRest {
     assertThat(
             getApi()
                 .getAllReferences()
-                .fetchAdditionalInfo(true)
+                .fetch(FetchOption.ALL)
                 .filter("refType == 'TAG' && commit.message == 'invent awesome things'")
                 .get()
                 .getReferences())
@@ -471,7 +472,7 @@ public abstract class AbstractTestRest {
     assertThat(
             api.getCommitLog()
                 .refName(branch.getName())
-                .fetchAdditionalInfo(true)
+                .fetch(FetchOption.ALL)
                 .filter("operations.exists(op, op.type == 'PUT')")
                 .get()
                 .getLogEntries())
@@ -479,7 +480,7 @@ public abstract class AbstractTestRest {
     assertThat(
             api.getCommitLog()
                 .refName(branch.getName())
-                .fetchAdditionalInfo(true)
+                .fetch(FetchOption.ALL)
                 .filter("operations.exists(op, op.key.startsWith('hello.world.'))")
                 .get()
                 .getLogEntries())
@@ -487,7 +488,7 @@ public abstract class AbstractTestRest {
     assertThat(
             api.getCommitLog()
                 .refName(branch.getName())
-                .fetchAdditionalInfo(true)
+                .fetch(FetchOption.ALL)
                 .filter("operations.exists(op, op.key.startsWith('not.there.'))")
                 .get()
                 .getLogEntries())
@@ -495,7 +496,7 @@ public abstract class AbstractTestRest {
     assertThat(
             api.getCommitLog()
                 .refName(branch.getName())
-                .fetchAdditionalInfo(true)
+                .fetch(FetchOption.ALL)
                 .filter("operations.exists(op, op.name == 'BaseTable')")
                 .get()
                 .getLogEntries())
@@ -503,7 +504,7 @@ public abstract class AbstractTestRest {
     assertThat(
             api.getCommitLog()
                 .refName(branch.getName())
-                .fetchAdditionalInfo(true)
+                .fetch(FetchOption.ALL)
                 .filter("operations.exists(op, op.name == 'ThereIsNoSuchTable')")
                 .get()
                 .getLogEntries())
@@ -1976,7 +1977,7 @@ public abstract class AbstractTestRest {
         .allSatisfy(tag -> assertThat(tag.getMetadata()).isNull());
 
     // fetching additional metadata for each reference
-    references = api.getAllReferences().fetchAdditionalInfo(true).get().getReferences();
+    references = api.getAllReferences().fetch(FetchOption.ALL).get().getReferences();
     assertThat(
             references.stream()
                 .filter(r -> r.getName().startsWith(branchPrefix))
@@ -2016,13 +2017,13 @@ public abstract class AbstractTestRest {
     assertThat(ref).isNotNull().isInstanceOf(Tag.class).extracting("metadata").isNull();
 
     // fetching additional metadata for a single branch
-    ref = api.getReference().refName(branchName).fetchAdditionalInfo(true).get();
+    ref = api.getReference().refName(branchName).fetch(FetchOption.ALL).get();
     assertThat(ref).isNotNull().isInstanceOf(Branch.class);
     verifyMetadataProperties(
         numCommits, 0, (Branch) ref, api.getReference().refName("main").get(), numCommits);
 
     // fetching additional metadata for a single tag
-    ref = api.getReference().refName(tagName).fetchAdditionalInfo(true).get();
+    ref = api.getReference().refName(tagName).fetch(FetchOption.ALL).get();
     assertThat(ref).isNotNull().isInstanceOf(Tag.class);
     verifyMetadataProperties((Tag) ref);
   }
@@ -2120,7 +2121,7 @@ public abstract class AbstractTestRest {
     List<LogEntry> commits =
         Lists.reverse(
             api.getCommitLog()
-                .fetchAdditionalInfo(true)
+                .fetch(FetchOption.ALL)
                 .untilHash(firstParent)
                 .refName(branch)
                 .get()
@@ -2255,7 +2256,7 @@ public abstract class AbstractTestRest {
         .commit();
 
     List<LogEntry> logEntries =
-        api.getCommitLog().fetchAdditionalInfo(true).refName(branch).get().getLogEntries();
+        api.getCommitLog().fetch(FetchOption.ALL).refName(branch).get().getLogEntries();
     assertThat(logEntries.size()).isEqualTo(1);
     assertThat(logEntries.get(0).getCommitMeta().getMessage()).contains("Commit #1");
     assertThat(logEntries.get(0).getOperations()).isNull();

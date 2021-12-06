@@ -15,6 +15,7 @@
  */
 package org.projectnessie.client.api;
 
+import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.model.ReferencesResponse;
 
 /**
@@ -31,8 +32,9 @@ public interface GetAllReferencesBuilder
    * ancestor in relation to the default branch, and the commit metadata for the HEAD commit.
    *
    * @return {@link GetAllReferencesBuilder}
+   * @param fetchOption The option indicating how much info to fetch
    */
-  GetAllReferencesBuilder fetchAdditionalInfo(boolean fetchAdditionalInfo);
+  GetAllReferencesBuilder fetch(FetchOption fetchOption);
 
   /**
    * Fetches all references and returns them in a {@link ReferencesResponse} instance.

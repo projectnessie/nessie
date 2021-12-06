@@ -57,7 +57,7 @@ public class CommitLogParams extends AbstractParams {
               + "Usable variables within the expression are:\n\n"
               + "- 'commit' with fields 'author' (string), 'committer' (string), 'commitTime' (timestamp), 'hash' (string), ',message' (string), 'properties' (map)\n\n"
               + "- 'operations' (list), each operation has the fields 'type' (string, either 'PUT' or 'DELETE'), 'key' (string, namespace + table name), 'keyElements' (list of strings), 'namespace' (string), 'namespaceElements' (list of strings) and 'name' (string, the \"simple\" table name)\n\n"
-              + "Note that the expression can only test against 'operations', if 'fetchAdditionalInfo' is true.\n\n"
+              + "Note that the expression can only test against 'operations', if 'fetch' is set to 'ALL'.\n\n"
               + "Hint: when filtering commits, you can determine whether commits are \"missing\" (filtered) by checking whether 'LogEntry.parentCommitHash' is different from the hash of the previous commit in the log response.",
       examples = {
         @ExampleObject(ref = "expr_by_commit_author"),
@@ -71,13 +71,10 @@ public class CommitLogParams extends AbstractParams {
 
   @Parameter(
       description =
-          "If set to true, will fetch additional metadata, parent commit hash and operations in a commit, for each commit.")
-  @QueryParam("fetchAdditionalInfo")
-  private boolean fetchAdditionalInfo;
-
-  public boolean isFetchAdditionalInfo() {
-    return fetchAdditionalInfo;
-  }
+          "Specify how much information to be returned. Will fetch additional metadata such as parent commit hash and operations in a commit, for each commit if set to 'ALL'.")
+  @QueryParam("fetch")
+  @Nullable
+  private FetchOption fetchOption;
 
   public CommitLogParams() {}
 
@@ -87,12 +84,12 @@ public class CommitLogParams extends AbstractParams {
       Integer maxRecords,
       String pageToken,
       String filter,
-      boolean fetchAdditionalInfo) {
+      FetchOption fetchOption) {
     super(maxRecords, pageToken);
     this.startHash = startHash;
     this.endHash = endHash;
     this.filter = filter;
-    this.fetchAdditionalInfo = fetchAdditionalInfo;
+    this.fetchOption = fetchOption;
   }
 
   private CommitLogParams(Builder builder) {
@@ -102,7 +99,7 @@ public class CommitLogParams extends AbstractParams {
         builder.maxRecords,
         builder.pageToken,
         builder.filter,
-        builder.fetchAdditionalInfo);
+        builder.fetchOption);
   }
 
   @Nullable
@@ -117,6 +114,10 @@ public class CommitLogParams extends AbstractParams {
 
   public String filter() {
     return filter;
+  }
+
+  public FetchOption fetchOption() {
+    return fetchOption;
   }
 
   public static CommitLogParams.Builder builder() {
@@ -135,7 +136,7 @@ public class CommitLogParams extends AbstractParams {
         .add("maxRecords=" + maxRecords())
         .add("pageToken='" + pageToken() + "'")
         .add("filter='" + filter + "'")
-        .add("fetchAdditionalInfo='" + fetchAdditionalInfo + "'")
+        .add("fetchOption='" + fetchOption + "'")
         .toString();
   }
 
@@ -153,12 +154,12 @@ public class CommitLogParams extends AbstractParams {
         && Objects.equals(maxRecords(), that.maxRecords())
         && Objects.equals(pageToken(), that.pageToken())
         && Objects.equals(filter, that.filter)
-        && Objects.equals(fetchAdditionalInfo, that.fetchAdditionalInfo);
+        && Objects.equals(fetchOption, that.fetchOption);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(startHash, endHash, maxRecords(), pageToken(), filter, fetchAdditionalInfo);
+    return Objects.hash(startHash, endHash, maxRecords(), pageToken(), filter, fetchOption);
   }
 
   public static class Builder extends AbstractParams.Builder<Builder> {
@@ -166,7 +167,7 @@ public class CommitLogParams extends AbstractParams {
     private String startHash;
     private String endHash;
     private String filter;
-    private boolean fetchAdditionalInfo;
+    private FetchOption fetchOption;
 
     private Builder() {}
 
@@ -185,8 +186,8 @@ public class CommitLogParams extends AbstractParams {
       return this;
     }
 
-    public Builder fetchAdditionalInfo(boolean fetchAdditionalInfo) {
-      this.fetchAdditionalInfo = fetchAdditionalInfo;
+    public Builder fetch(FetchOption fetchOption) {
+      this.fetchOption = fetchOption;
       return this;
     }
 
@@ -196,7 +197,7 @@ public class CommitLogParams extends AbstractParams {
           .maxRecords(params.maxRecords())
           .pageToken(params.pageToken())
           .filter(params.filter)
-          .fetchAdditionalInfo(params.fetchAdditionalInfo);
+          .fetch(params.fetchOption);
     }
 
     private void validate() {}
