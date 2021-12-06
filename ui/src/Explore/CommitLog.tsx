@@ -33,10 +33,12 @@ const log = factory.getLogger("api.CommitHeader");
 
 const fetchLog = (
   ref: string,
-  max: number,
+  maxRecords: number,
   pageToken = ""
 ): Promise<void | LogResponse | undefined> => {
-  const params = pageToken ? { ref, max, pageToken } : { ref, max };
+  const params = pageToken
+    ? { ref, maxRecords, pageToken }
+    : { ref, maxRecords };
   return api()
     .getCommitLog(params)
     .then((data) => {

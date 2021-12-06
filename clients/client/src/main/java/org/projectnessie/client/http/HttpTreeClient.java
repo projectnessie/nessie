@@ -46,7 +46,8 @@ class HttpTreeClient implements HttpTreeApi {
     return client
         .newRequest()
         .path("trees")
-        .queryParam("max", params.maxRecords() != null ? params.maxRecords().toString() : null)
+        .queryParam(
+            "maxRecords", params.maxRecords() != null ? params.maxRecords().toString() : null)
         .queryParam("pageToken", params.pageToken())
         .queryParam("fetchAdditionalInfo", Boolean.toString(params.isFetchAdditionalInfo()))
         .queryParam("filter", params.filter())
@@ -134,7 +135,8 @@ class HttpTreeClient implements HttpTreeApi {
     HttpRequest builder =
         client.newRequest().path("trees/tree/{ref}/log").resolveTemplate("ref", ref);
     return builder
-        .queryParam("max", params.maxRecords() != null ? params.maxRecords().toString() : null)
+        .queryParam(
+            "maxRecords", params.maxRecords() != null ? params.maxRecords().toString() : null)
         .queryParam("pageToken", params.pageToken())
         .queryParam("filter", params.filter())
         .queryParam("startHash", params.startHash())
@@ -178,7 +180,8 @@ class HttpTreeClient implements HttpTreeApi {
     HttpRequest builder =
         client.newRequest().path("trees/tree/{ref}/entries").resolveTemplate("ref", refName);
     return builder
-        .queryParam("max", params.maxRecords() != null ? params.maxRecords().toString() : null)
+        .queryParam(
+            "maxRecords", params.maxRecords() != null ? params.maxRecords().toString() : null)
         .queryParam("pageToken", params.pageToken())
         .queryParam("filter", params.filter())
         .queryParam("hashOnRef", params.hashOnRef())

@@ -155,7 +155,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/branch/dev/commit?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
-      string: '{"hash": "c94a00552e94a608f11f40c2c804c8c3996932f14a88ebfe5b4b6886c641de6b",
+      string: '{"hash": "4978836d638ade457210c44a7a3e434a4756c067f26870fe50744ff051817ac2",
         "name": "dev", "type": "BRANCH"}'
     headers:
       Content-Type:
@@ -181,7 +181,7 @@ interactions:
   response:
     body:
       string: '{"hasMore": false, "references": [{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-        "name": "main", "type": "BRANCH"}, {"hash": "c94a00552e94a608f11f40c2c804c8c3996932f14a88ebfe5b4b6886c641de6b",
+        "name": "main", "type": "BRANCH"}, {"hash": "4978836d638ade457210c44a7a3e434a4756c067f26870fe50744ff051817ac2",
         "name": "dev", "type": "BRANCH"}], "token": null}'
     headers:
       Content-Type:
@@ -231,7 +231,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/dev
   response:
     body:
-      string: '{"hash": "c94a00552e94a608f11f40c2c804c8c3996932f14a88ebfe5b4b6886c641de6b",
+      string: '{"hash": "4978836d638ade457210c44a7a3e434a4756c067f26870fe50744ff051817ac2",
         "name": "dev", "type": "BRANCH"}'
     headers:
       Content-Type:
@@ -242,7 +242,7 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"fromHash": "c94a00552e94a608f11f40c2c804c8c3996932f14a88ebfe5b4b6886c641de6b",
+    body: '{"fromHash": "4978836d638ade457210c44a7a3e434a4756c067f26870fe50744ff051817ac2",
       "fromRefName": "dev"}'
     headers:
       Accept:
@@ -281,8 +281,8 @@ interactions:
     uri: http://localhost:19120/api/v1/trees
   response:
     body:
-      string: '{"hasMore": false, "references": [{"hash": "c94a00552e94a608f11f40c2c804c8c3996932f14a88ebfe5b4b6886c641de6b",
-        "name": "main", "type": "BRANCH"}, {"hash": "c94a00552e94a608f11f40c2c804c8c3996932f14a88ebfe5b4b6886c641de6b",
+      string: '{"hasMore": false, "references": [{"hash": "4978836d638ade457210c44a7a3e434a4756c067f26870fe50744ff051817ac2",
+        "name": "main", "type": "BRANCH"}, {"hash": "4978836d638ade457210c44a7a3e434a4756c067f26870fe50744ff051817ac2",
         "name": "dev", "type": "BRANCH"}], "token": null}'
     headers:
       Content-Type:

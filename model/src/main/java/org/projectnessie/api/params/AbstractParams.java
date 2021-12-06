@@ -22,7 +22,7 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 public abstract class AbstractParams {
 
   @Parameter(description = "maximum number of entries to return, just a hint for the server")
-  @QueryParam("max")
+  @QueryParam("maxRecords")
   @Nullable
   private Integer maxRecords;
 
