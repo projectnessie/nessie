@@ -80,12 +80,12 @@ class NessieClient:
         except confuse.exceptions.NotFoundError:
             self._base_branch = None
 
-    def list_references(self: "NessieClient", fetch_additional_info: bool = False) -> ReferencesResponse:
+    def list_references(self: "NessieClient", fetch_all: bool = False) -> ReferencesResponse:
         """Fetch all known references.
 
         :return: list of Nessie References
         """
-        references = all_references(self._base_url, self._auth, self._ssl_verify, fetch_additional_info)
+        references = all_references(self._base_url, self._auth, self._ssl_verify, fetch_all)
         return ReferencesResponseSchema().load(references)
 
     def get_reference(self: "NessieClient", name: Optional[str]) -> Reference:
@@ -223,7 +223,7 @@ class NessieClient:
         start_ref: str,
         hash_on_ref: Optional[str] = None,
         max_records: Optional[int] = None,
-        fetch_additional_info: bool = False,
+        fetch_all: bool = False,
         **filtering_args: Any
     ) -> Generator[LogEntry, Any, None]:
         """Fetch all logs starting at start_ref.
@@ -247,7 +247,7 @@ class NessieClient:
                 ref=start_ref,
                 ssl_verify=self._ssl_verify,
                 max_records=fetch_max,
-                fetch_additional_info=fetch_additional_info,
+                fetch_all=fetch_all,
                 **filtering_args
             )
             parsed_logs = LogResponseSchema().load(fetched_logs)

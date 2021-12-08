@@ -17,6 +17,7 @@ package org.projectnessie.api.params;
 
 import java.util.Objects;
 import java.util.StringJoiner;
+import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import javax.ws.rs.PathParam;
@@ -39,7 +40,7 @@ public class GetReferenceParams {
 
   @Parameter(
       description =
-          "If set to true, will fetch additional metadata for references.\n\n"
+          "Specify how much information to be returned. Will fetch additional metadata for references if set to 'ALL'.\n\n"
               + "A returned Branch instance will have the following information:\n\n"
               + "- numCommitsAhead (number of commits ahead of the default branch)\n\n"
               + "- numCommitsBehind (number of commits behind the default branch)\n\n"
@@ -48,22 +49,23 @@ public class GetReferenceParams {
               + "- numTotalCommits (the total number of commits in this reference).\n\n"
               + "A returned Tag instance will only contain the 'commitMetaOfHEAD' and 'numTotalCommits' fields.\n\n"
               + "Note that computing & fetching additional metadata might be computationally expensive on the server-side, so this flag should be used with care.")
-  @QueryParam("fetchAdditionalInfo")
-  private boolean fetchAdditionalInfo;
+  @QueryParam("fetch")
+  @Nullable
+  private FetchOption fetchOption;
 
   public GetReferenceParams() {}
 
-  private GetReferenceParams(String refName, boolean fetchAdditionalInfo) {
+  private GetReferenceParams(String refName, FetchOption fetchOption) {
     this.refName = refName;
-    this.fetchAdditionalInfo = fetchAdditionalInfo;
+    this.fetchOption = fetchOption;
   }
 
   private GetReferenceParams(Builder builder) {
-    this(builder.refName, builder.fetchAdditionalInfo);
+    this(builder.refName, builder.fetchOption);
   }
 
-  public boolean isFetchAdditionalInfo() {
-    return fetchAdditionalInfo;
+  public FetchOption fetchOption() {
+    return fetchOption;
   }
 
   public String getRefName() {
@@ -83,25 +85,25 @@ public class GetReferenceParams {
       return false;
     }
     GetReferenceParams that = (GetReferenceParams) o;
-    return fetchAdditionalInfo == that.fetchAdditionalInfo && Objects.equals(refName, that.refName);
+    return fetchOption == that.fetchOption && Objects.equals(refName, that.refName);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(refName, fetchAdditionalInfo);
+    return Objects.hash(refName, fetchOption);
   }
 
   @Override
   public String toString() {
     return new StringJoiner(", ", GetReferenceParams.class.getSimpleName() + "[", "]")
         .add("refName='" + refName + "'")
-        .add("fetchAdditionalInfo=" + fetchAdditionalInfo)
+        .add("fetchOption=" + fetchOption)
         .toString();
   }
 
   public static class Builder {
     private String refName;
-    private boolean fetchAdditionalInfo;
+    private FetchOption fetchOption;
 
     private Builder() {}
 
@@ -110,8 +112,8 @@ public class GetReferenceParams {
       return this;
     }
 
-    public Builder fetchAdditionalInfo(boolean fetchAdditionalInfo) {
-      this.fetchAdditionalInfo = fetchAdditionalInfo;
+    public Builder fetch(FetchOption fetchOption) {
+      this.fetchOption = fetchOption;
       return this;
     }
 

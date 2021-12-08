@@ -15,6 +15,7 @@
  */
 package org.projectnessie.client.http.v1api;
 
+import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.api.params.ReferencesParams;
 import org.projectnessie.client.api.GetAllReferencesBuilder;
 import org.projectnessie.client.http.NessieApiClient;
@@ -41,8 +42,8 @@ final class HttpGetAllReferences extends BaseHttpRequest implements GetAllRefere
   }
 
   @Override
-  public GetAllReferencesBuilder fetchAdditionalInfo(boolean fetchAdditionalInfo) {
-    params.fetchAdditionalInfo(fetchAdditionalInfo);
+  public GetAllReferencesBuilder fetch(FetchOption fetchOption) {
+    params.fetch(fetchOption);
     return this;
   }
 

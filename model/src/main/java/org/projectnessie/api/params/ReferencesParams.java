@@ -34,7 +34,7 @@ public class ReferencesParams extends AbstractParams {
 
   @Parameter(
       description =
-          "If set to true, will fetch additional metadata for references.\n\n"
+          "Specify how much information to be returned. Will fetch additional metadata for references if set to 'ALL'.\n\n"
               + "A returned Branch instance will have the following information:\n\n"
               + "- numCommitsAhead (number of commits ahead of the default branch)\n\n"
               + "- numCommitsBehind (number of commits behind the default branch)\n\n"
@@ -43,8 +43,9 @@ public class ReferencesParams extends AbstractParams {
               + "- numTotalCommits (the total number of commits in this reference).\n\n"
               + "A returned Tag instance will only contain the 'commitMetaOfHEAD' and 'numTotalCommits' fields.\n\n"
               + "Note that computing & fetching additional metadata might be computationally expensive on the server-side, so this flag should be used with care.")
-  @QueryParam("fetchAdditionalInfo")
-  private boolean fetchAdditionalInfo;
+  @QueryParam("fetch")
+  @Nullable
+  private FetchOption fetchOption;
 
   @Parameter(
       description =
@@ -54,7 +55,7 @@ public class ReferencesParams extends AbstractParams {
               + "- metadata (ReferenceMetadata) shortcut to ref.metadata, never null, but possibly empty\n\n"
               + "- commit (CommitMeta) - shortcut to ref.metadata.commitMetaOfHEAD, never null, but possibly empty\n\n"
               + "- refType (String) - the reference type, either BRANCH or TAG\n\n"
-              + "Note that the expression can only test attributes metadata and commit, if 'fetchAdditionalInfo' is true.",
+              + "Note that the expression can only test attributes metadata and commit, if 'fetchOption' is set to 'ALL'.",
       examples = {
         @ExampleObject(ref = "expr_by_refType"),
         @ExampleObject(ref = "expr_by_ref_name"),
@@ -67,18 +68,18 @@ public class ReferencesParams extends AbstractParams {
   public ReferencesParams() {}
 
   private ReferencesParams(
-      Integer maxRecords, String pageToken, boolean fetchAdditionalInfo, String filter) {
+      Integer maxRecords, String pageToken, FetchOption fetchOption, String filter) {
     super(maxRecords, pageToken);
-    this.fetchAdditionalInfo = fetchAdditionalInfo;
+    this.fetchOption = fetchOption;
     this.filter = filter;
   }
 
   private ReferencesParams(Builder builder) {
-    this(builder.maxRecords, builder.pageToken, builder.fetchAdditionalInfo, builder.filter);
+    this(builder.maxRecords, builder.pageToken, builder.fetchOption, builder.filter);
   }
 
-  public boolean isFetchAdditionalInfo() {
-    return fetchAdditionalInfo;
+  public FetchOption fetchOption() {
+    return fetchOption;
   }
 
   public String filter() {
@@ -98,7 +99,7 @@ public class ReferencesParams extends AbstractParams {
     return new StringJoiner(", ", ReferencesParams.class.getSimpleName() + "[", "]")
         .add("maxRecords=" + maxRecords())
         .add("pageToken='" + pageToken() + "'")
-        .add("fetchAdditionalInfo=" + fetchAdditionalInfo)
+        .add("fetchOption=" + fetchOption)
         .add("filter=" + filter)
         .toString();
   }
@@ -114,31 +115,31 @@ public class ReferencesParams extends AbstractParams {
     ReferencesParams that = (ReferencesParams) o;
     return Objects.equals(maxRecords(), that.maxRecords())
         && Objects.equals(pageToken(), that.pageToken())
-        && Objects.equals(fetchAdditionalInfo, that.fetchAdditionalInfo)
+        && Objects.equals(fetchOption, that.fetchOption)
         && Objects.equals(filter, that.filter);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(maxRecords(), pageToken(), fetchAdditionalInfo, filter);
+    return Objects.hash(maxRecords(), pageToken(), fetchOption, filter);
   }
 
   public static class Builder extends AbstractParams.Builder<Builder> {
 
     private Builder() {}
 
-    private boolean fetchAdditionalInfo;
+    private FetchOption fetchOption;
     private String filter;
 
     public ReferencesParams.Builder from(ReferencesParams params) {
       return maxRecords(params.maxRecords())
           .pageToken(params.pageToken())
-          .fetchAdditionalInfo(params.fetchAdditionalInfo)
+          .fetch(params.fetchOption)
           .filter(params.filter);
     }
 
-    public Builder fetchAdditionalInfo(boolean fetchAdditionalInfo) {
-      this.fetchAdditionalInfo = fetchAdditionalInfo;
+    public Builder fetch(FetchOption fetchOption) {
+      this.fetchOption = fetchOption;
       return this;
     }
 

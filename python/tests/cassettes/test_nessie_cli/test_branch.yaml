@@ -343,7 +343,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/branch/dev/commit?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
-      string: '{"hash": "17d8d34692302031a9cbfd6c6b088300ed0053f07cd8e68e70d1eb2356718636",
+      string: '{"hash": "9ead6b7d053b9c5794006be7fbb671dd9ffcb313649b2b25bad9dcff6ae18203",
         "name": "dev", "type": "BRANCH"}'
     headers:
       Content-Type:
@@ -365,14 +365,14 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: GET
-    uri: http://localhost:19120/api/v1/trees?fetchAdditionalInfo=true
+    uri: http://localhost:19120/api/v1/trees?fetch=ALL
   response:
     body:
       string: '{"hasMore": false, "references": [{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-        "name": "main", "type": "BRANCH"}, {"hash": "17d8d34692302031a9cbfd6c6b088300ed0053f07cd8e68e70d1eb2356718636",
+        "name": "main", "type": "BRANCH"}, {"hash": "9ead6b7d053b9c5794006be7fbb671dd9ffcb313649b2b25bad9dcff6ae18203",
         "metadata": {"commitMetaOfHEAD": {"author": "nessie_user1", "authorTime":
-        "2021-12-06T14:35:20.537369Z", "commitTime": "2021-12-06T14:35:20.537369Z",
-        "committer": "", "hash": "17d8d34692302031a9cbfd6c6b088300ed0053f07cd8e68e70d1eb2356718636",
+        "2021-12-07T10:04:02.497243Z", "commitTime": "2021-12-07T10:04:02.497243Z",
+        "committer": "", "hash": "9ead6b7d053b9c5794006be7fbb671dd9ffcb313649b2b25bad9dcff6ae18203",
         "message": "test message", "properties": {}, "signedOffBy": null}, "commonAncestorHash":
         "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d", "numCommitsAhead":
         1, "numCommitsBehind": 0, "numTotalCommits": 1}, "name": "dev", "type": "BRANCH"},
@@ -450,7 +450,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/dev
   response:
     body:
-      string: '{"hash": "17d8d34692302031a9cbfd6c6b088300ed0053f07cd8e68e70d1eb2356718636",
+      string: '{"hash": "9ead6b7d053b9c5794006be7fbb671dd9ffcb313649b2b25bad9dcff6ae18203",
         "name": "dev", "type": "BRANCH"}'
     headers:
       Content-Type:
@@ -474,7 +474,7 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: DELETE
-    uri: http://localhost:19120/api/v1/trees/branch/dev?expectedHash=17d8d34692302031a9cbfd6c6b088300ed0053f07cd8e68e70d1eb2356718636
+    uri: http://localhost:19120/api/v1/trees/branch/dev?expectedHash=9ead6b7d053b9c5794006be7fbb671dd9ffcb313649b2b25bad9dcff6ae18203
   response:
     body:
       string: ''

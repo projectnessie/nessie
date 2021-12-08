@@ -624,7 +624,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/branch/metadata_branch/commit?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
-      string: '{"hash": "7ab886804fc4519135e2a990448228c25927009ebad2e70ccf7b430a3f3a33e6",
+      string: '{"hash": "e044af405a40bd363de23e29b9983470c01a328aabd72136e82b790bd6dbbf33",
         "name": "metadata_branch", "type": "BRANCH"}'
     headers:
       Content-Type:
@@ -649,7 +649,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/metadata_branch
   response:
     body:
-      string: '{"hash": "7ab886804fc4519135e2a990448228c25927009ebad2e70ccf7b430a3f3a33e6",
+      string: '{"hash": "e044af405a40bd363de23e29b9983470c01a328aabd72136e82b790bd6dbbf33",
         "name": "metadata_branch", "type": "BRANCH"}'
     headers:
       Content-Type:
@@ -660,7 +660,7 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"hash": "7ab886804fc4519135e2a990448228c25927009ebad2e70ccf7b430a3f3a33e6",
+    body: '{"hash": "e044af405a40bd363de23e29b9983470c01a328aabd72136e82b790bd6dbbf33",
       "metadata": null, "name": "metadata_tag", "type": "TAG"}'
     headers:
       Accept:
@@ -679,7 +679,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree?sourceRefName=metadata_branch
   response:
     body:
-      string: '{"hash": "7ab886804fc4519135e2a990448228c25927009ebad2e70ccf7b430a3f3a33e6",
+      string: '{"hash": "e044af405a40bd363de23e29b9983470c01a328aabd72136e82b790bd6dbbf33",
         "name": "metadata_tag", "type": "TAG"}'
     headers:
       Content-Type:
@@ -701,22 +701,22 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: GET
-    uri: http://localhost:19120/api/v1/trees?fetchAdditionalInfo=true
+    uri: http://localhost:19120/api/v1/trees?fetch=ALL
   response:
     body:
       string: '{"hasMore": false, "references": [{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
         "name": "main", "type": "BRANCH"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-        "name": "v1.0", "type": "TAG"}, {"hash": "7ab886804fc4519135e2a990448228c25927009ebad2e70ccf7b430a3f3a33e6",
+        "name": "v1.0", "type": "TAG"}, {"hash": "e044af405a40bd363de23e29b9983470c01a328aabd72136e82b790bd6dbbf33",
         "metadata": {"commitMetaOfHEAD": {"author": "nessie_user1", "authorTime":
-        "2021-12-06T14:35:20.932765Z", "commitTime": "2021-12-06T14:35:20.932765Z",
-        "committer": "", "hash": "7ab886804fc4519135e2a990448228c25927009ebad2e70ccf7b430a3f3a33e6",
+        "2021-12-07T10:04:02.900709Z", "commitTime": "2021-12-07T10:04:02.900709Z",
+        "committer": "", "hash": "e044af405a40bd363de23e29b9983470c01a328aabd72136e82b790bd6dbbf33",
         "message": "test message", "properties": {}, "signedOffBy": null}, "commonAncestorHash":
         "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d", "numCommitsAhead":
         1, "numCommitsBehind": 0, "numTotalCommits": 1}, "name": "metadata_branch",
-        "type": "BRANCH"}, {"hash": "7ab886804fc4519135e2a990448228c25927009ebad2e70ccf7b430a3f3a33e6",
+        "type": "BRANCH"}, {"hash": "e044af405a40bd363de23e29b9983470c01a328aabd72136e82b790bd6dbbf33",
         "metadata": {"commitMetaOfHEAD": {"author": "nessie_user1", "authorTime":
-        "2021-12-06T14:35:20.932765Z", "commitTime": "2021-12-06T14:35:20.932765Z",
-        "committer": "", "hash": "7ab886804fc4519135e2a990448228c25927009ebad2e70ccf7b430a3f3a33e6",
+        "2021-12-07T10:04:02.900709Z", "commitTime": "2021-12-07T10:04:02.900709Z",
+        "committer": "", "hash": "e044af405a40bd363de23e29b9983470c01a328aabd72136e82b790bd6dbbf33",
         "message": "test message", "properties": {}, "signedOffBy": null}, "commonAncestorHash":
         null, "numCommitsAhead": null, "numCommitsBehind": null, "numTotalCommits":
         1}, "name": "metadata_tag", "type": "TAG"}], "token": null}'
