@@ -11,7 +11,7 @@
     "@types/bootstrap": "^5.1.6",
     "@types/history": "^4.7.9",
     "@types/material-ui": "^0.21.12",
-    "@types/ramda": "^0.27.59",
+    "@types/ramda": "^0.27.60",
     "@types/react": "^17.0.37",
     "@types/react-bootstrap": "^0.32.28",
     "@types/react-dom": "^17.0.11",
