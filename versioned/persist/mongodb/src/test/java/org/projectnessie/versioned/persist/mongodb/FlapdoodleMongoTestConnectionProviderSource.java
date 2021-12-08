@@ -23,10 +23,12 @@ import de.flapdoodle.embed.mongo.MongodStarter;
 import de.flapdoodle.embed.mongo.config.Defaults;
 import de.flapdoodle.embed.mongo.config.MongodConfig;
 import de.flapdoodle.embed.mongo.config.Net;
+import de.flapdoodle.embed.mongo.config.Storage;
 import de.flapdoodle.embed.mongo.distribution.Version;
 import de.flapdoodle.embed.process.runtime.Network;
 import java.io.File;
-import java.nio.file.Paths;
+import java.io.IOException;
+import java.net.ServerSocket;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -35,7 +37,8 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public class FlapdoodleMongoTestConnectionProviderSource extends MongoTestConnectionProviderSource {
   private MongodExecutable mongo;
-  private File sockFile;
+
+  private File storageDir;
 
   @Override
   public void start() throws Exception {
@@ -46,30 +49,81 @@ public class FlapdoodleMongoTestConnectionProviderSource extends MongoTestConnec
     MongodStarter starter =
         MongodStarter.getInstance(Defaults.runtimeConfigFor(Command.MongoD).build());
 
-    sockFile =
-        File.createTempFile("flapdoodle-mongod-" + ThreadLocalRandom.current().nextLong(), ".sock");
-    assertThat(sockFile.delete()).isTrue();
-    String unixSocket = sockFile.getAbsolutePath();
+    long timeoutAt = System.currentTimeMillis() + 600_000;
+    int port;
+    while (true) {
+      assertThat(timeoutAt - System.currentTimeMillis())
+          .describedAs("Could not start mongod")
+          .isGreaterThan(0L);
 
-    MongodConfig mongodConfig =
-        MongodConfig.builder()
-            .version(Version.Main.PRODUCTION)
-            .net(new Net(0, Network.localhostIsIPv6()))
-            .putArgs("--bind_ip", unixSocket)
-            .build();
+      port = ThreadLocalRandom.current().nextInt(1024, 32768);
 
-    mongo = starter.prepare(mongodConfig);
-    mongo.start();
+      try {
+        new ServerSocket(port).close();
+      } catch (IOException e) {
+        // probably: port already in use
+        continue;
+      }
 
-    assertThat(Paths.get(unixSocket)).exists();
+      // Need to use "our own" storage directory, because flapdoodle doesn't clean up temporary
+      // files
+      // then the process failed to start.
+      if (storageDir == null) {
+        storageDir =
+            File.createTempFile("mongo-flapdoodle-" + ThreadLocalRandom.current().nextLong(), "");
+      }
+      deleteStorageDir();
+      assertThat(storageDir.mkdirs()).isTrue();
 
-    String connectionString = String.format("mongodb://%s", unixSocket.replaceAll("\\/", "%2f"));
+      MongodConfig mongodConfig =
+          MongodConfig.builder()
+              .version(Version.Main.PRODUCTION)
+              .replication(new Storage(storageDir.getAbsolutePath(), null, 0))
+              .net(new Net(port, Network.localhostIsIPv6()))
+              .build();
+
+      mongo = starter.prepare(mongodConfig);
+      try {
+        mongo.start();
+      } catch (Exception e) {
+        // Current flapdoodle version throws a RuntimeException, if the mongod process could not
+        // be started. Reason has already been logged.
+        mongo.stop();
+        continue;
+      }
+
+      break;
+    }
+
+    String connectionString = String.format("mongodb://localhost:%d", port);
     String databaseName = "test";
 
     configureConnectionProviderConfigFromDefaults(
         c -> c.withConnectionString(connectionString).withDatabaseName(databaseName));
 
     super.start();
+  }
+
+  private void deleteStorageDir() {
+    if (storageDir == null) {
+      return;
+    }
+    delTree(storageDir);
+  }
+
+  private void delTree(File f) {
+    if (f == null) {
+      return;
+    }
+    if (f.isDirectory()) {
+      File[] files = f.listFiles();
+      if (files != null) {
+        for (File file : files) {
+          delTree(file);
+        }
+      }
+    }
+    f.delete();
   }
 
   @Override
@@ -83,10 +137,7 @@ public class FlapdoodleMongoTestConnectionProviderSource extends MongoTestConnec
         }
       } finally {
         mongo = null;
-
-        if (!sockFile.delete()) {
-          sockFile.deleteOnExit();
-        }
+        deleteStorageDir();
       }
     }
   }

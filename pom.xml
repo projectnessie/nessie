@@ -156,8 +156,6 @@
     <dockerjava.version>3.2.12</dockerjava.version>
     <dynamodb.version>1.12.0</dynamodb.version>
     <flapdoodle.version>3.1.4</flapdoodle.version>
-    <!-- The version comes from the mongodb-driver-core artifact, bump with care -->
-    <mongo-driver.jnr.version>0.18</mongo-driver.jnr.version>
     <gatling.maven.version>4.0.1</gatling.maven.version>
     <gatling.version>3.7.2</gatling.version>
     <google-java-format.version>1.13.0</google-java-format.version>
@@ -444,12 +442,6 @@
         <groupId>de.flapdoodle.embed</groupId>
         <artifactId>de.flapdoodle.embed.mongo</artifactId>
         <version>${flapdoodle.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.github.jnr</groupId>
-        <artifactId>jnr-unixsocket</artifactId>
-        <!-- The version comes from the mongodb-driver-core artifact, bump with care -->
-        <version>${mongo-driver.jnr.version}</version>
       </dependency>
       <dependency>
         <groupId>io.projectreactor</groupId>
