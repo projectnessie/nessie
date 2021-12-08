@@ -39,7 +39,7 @@ import java.util.regex.Pattern;
 public class FlapdoodleMongoTestConnectionProviderSource extends MongoTestConnectionProviderSource {
   private static final Pattern LISTEN_ON_PORT_PATTERN =
       Pattern.compile(
-          ".*NETWORK ([^\\n]*) waiting for connections on port ([0-9]+)\\n.*",
+          ".*NETWORK([^\\n]*).*Waiting for connections.*\"port\":([0-9]+).*",
           Pattern.MULTILINE | Pattern.DOTALL);
 
   private final AtomicInteger port = new AtomicInteger();
