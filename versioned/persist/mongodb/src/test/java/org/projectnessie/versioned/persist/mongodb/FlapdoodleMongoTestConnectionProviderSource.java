@@ -22,28 +22,20 @@ import de.flapdoodle.embed.mongo.MongodExecutable;
 import de.flapdoodle.embed.mongo.MongodStarter;
 import de.flapdoodle.embed.mongo.config.Defaults;
 import de.flapdoodle.embed.mongo.config.MongodConfig;
-import de.flapdoodle.embed.mongo.config.MongodProcessOutputConfig;
 import de.flapdoodle.embed.mongo.config.Net;
 import de.flapdoodle.embed.mongo.distribution.Version;
-import de.flapdoodle.embed.process.config.io.ProcessOutput;
-import de.flapdoodle.embed.process.io.StreamProcessor;
 import de.flapdoodle.embed.process.runtime.Network;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.io.File;
+import java.nio.file.Paths;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * MongoDB test connection-provider source using a locally spawned MongoDB instance via
  * "flapdoodle".
  */
 public class FlapdoodleMongoTestConnectionProviderSource extends MongoTestConnectionProviderSource {
-  private static final Pattern LISTEN_ON_PORT_PATTERN =
-      Pattern.compile(
-          ".*NETWORK ([^\\n]*) waiting for connections on port ([0-9]+)\\n.*",
-          Pattern.MULTILINE | Pattern.DOTALL);
-
-  private final AtomicInteger port = new AtomicInteger();
   private MongodExecutable mongo;
+  private File sockFile;
 
   @Override
   public void start() throws Exception {
@@ -51,53 +43,27 @@ public class FlapdoodleMongoTestConnectionProviderSource extends MongoTestConnec
       throw new IllegalStateException("Already started");
     }
 
-    ProcessOutput defaultOutput = MongodProcessOutputConfig.getDefaultInstance(Command.MongoD);
-    StreamProcessor capturedStdout =
-        new StreamProcessor() {
-          private final StringBuilder buffer = new StringBuilder();
-
-          @Override
-          public void process(String block) {
-            if (port.get() == 0) {
-              buffer.append(block);
-              Matcher matcher = LISTEN_ON_PORT_PATTERN.matcher(buffer);
-              if (matcher.matches()) {
-                String portString = matcher.group(2);
-                port.set(Integer.parseInt(portString));
-              }
-            }
-            defaultOutput.output().process(block);
-          }
-
-          @Override
-          public void onProcessed() {
-            defaultOutput.output().onProcessed();
-          }
-        };
-
     MongodStarter starter =
-        MongodStarter.getInstance(
-            Defaults.runtimeConfigFor(Command.MongoD)
-                .processOutput(
-                    ProcessOutput.builder()
-                        .output(capturedStdout)
-                        .error(defaultOutput.error())
-                        .commands(defaultOutput.commands())
-                        .build())
-                .build());
+        MongodStarter.getInstance(Defaults.runtimeConfigFor(Command.MongoD).build());
+
+    sockFile =
+        File.createTempFile("flapdoodle-mongod-" + ThreadLocalRandom.current().nextLong(), ".sock");
+    assertThat(sockFile.delete()).isTrue();
+    String unixSocket = sockFile.getAbsolutePath();
 
     MongodConfig mongodConfig =
         MongodConfig.builder()
             .version(Version.Main.PRODUCTION)
             .net(new Net(0, Network.localhostIsIPv6()))
+            .putArgs("--bind_ip", unixSocket)
             .build();
 
     mongo = starter.prepare(mongodConfig);
     mongo.start();
 
-    assertThat(port).hasPositiveValue();
+    assertThat(Paths.get(unixSocket)).exists();
 
-    String connectionString = String.format("mongodb://localhost:%d", port.get());
+    String connectionString = String.format("mongodb://%s", unixSocket.replaceAll("\\/", "%2f"));
     String databaseName = "test";
 
     configureConnectionProviderConfigFromDefaults(
@@ -117,6 +83,10 @@ public class FlapdoodleMongoTestConnectionProviderSource extends MongoTestConnec
         }
       } finally {
         mongo = null;
+
+        if (!sockFile.delete()) {
+          sockFile.deleteOnExit();
+        }
       }
     }
   }
