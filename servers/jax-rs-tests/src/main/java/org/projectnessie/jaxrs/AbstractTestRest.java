@@ -2161,32 +2161,40 @@ public abstract class AbstractTestRest {
 
     // we only committed to toRef, the "from" diff should be null
     assertThat(
-            api.getDiff().fromRefName(fromRef.getName()).toRefName(toRef.getName()).get().diffs())
+            api.getDiff()
+                .fromRefName(fromRef.getName())
+                .toRefName(toRef.getName())
+                .get()
+                .getDiffs())
         .hasSize(commitsPerBranch)
         .allSatisfy(
             diff -> {
-              assertThat(diff.key()).isNotNull();
-              assertThat(diff.from()).isNull();
-              assertThat(diff.to()).isNotNull();
+              assertThat(diff.getKey()).isNotNull();
+              assertThat(diff.getFrom()).isNull();
+              assertThat(diff.getTo()).isNotNull();
             });
 
     // after committing to fromRef, "from/to" diffs should both have data
     createCommits(fromRef, 1, commitsPerBranch, fromRef.getHash());
 
     assertThat(
-            api.getDiff().fromRefName(fromRef.getName()).toRefName(toRef.getName()).get().diffs())
+            api.getDiff()
+                .fromRefName(fromRef.getName())
+                .toRefName(toRef.getName())
+                .get()
+                .getDiffs())
         .hasSize(commitsPerBranch)
         .allSatisfy(
             diff -> {
-              assertThat(diff.key()).isNotNull();
-              assertThat(diff.from()).isNotNull();
-              assertThat(diff.to()).isNotNull();
+              assertThat(diff.getKey()).isNotNull();
+              assertThat(diff.getFrom()).isNotNull();
+              assertThat(diff.getTo()).isNotNull();
 
               // we only have a diff on the ID
-              assertThat(diff.from().getId()).isNotEqualTo(diff.to().getId());
-              Optional<IcebergTable> fromTable = diff.from().unwrap(IcebergTable.class);
+              assertThat(diff.getFrom().getId()).isNotEqualTo(diff.getTo().getId());
+              Optional<IcebergTable> fromTable = diff.getFrom().unwrap(IcebergTable.class);
               assertThat(fromTable).isPresent();
-              Optional<IcebergTable> toTable = diff.to().unwrap(IcebergTable.class);
+              Optional<IcebergTable> toTable = diff.getTo().unwrap(IcebergTable.class);
               assertThat(toTable).isPresent();
 
               assertThat(fromTable.get().getMetadataLocation())
@@ -2216,13 +2224,17 @@ public abstract class AbstractTestRest {
 
     // now that we deleted all tables on toRef, the diff for "to" should be null
     assertThat(
-            api.getDiff().fromRefName(fromRef.getName()).toRefName(toRef.getName()).get().diffs())
+            api.getDiff()
+                .fromRefName(fromRef.getName())
+                .toRefName(toRef.getName())
+                .get()
+                .getDiffs())
         .hasSize(commitsPerBranch)
         .allSatisfy(
             diff -> {
-              assertThat(diff.key()).isNotNull();
-              assertThat(diff.from()).isNotNull();
-              assertThat(diff.to()).isNull();
+              assertThat(diff.getKey()).isNotNull();
+              assertThat(diff.getFrom()).isNotNull();
+              assertThat(diff.getTo()).isNull();
             });
   }
 

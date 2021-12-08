@@ -459,10 +459,10 @@ public abstract class AbstractResteasyTest {
             .as(DiffResponse.class);
 
     assertThat(diffResponse).isNotNull();
-    assertThat(diffResponse.diffs()).hasSize(1);
-    DiffEntry diff = diffResponse.diffs().get(0);
-    assertThat(diff.key()).isEqualTo(contentKey);
-    assertThat(diff.from()).isEqualTo(fromTable);
-    assertThat(diff.to()).isEqualTo(toTable);
+    assertThat(diffResponse.getDiffs()).hasSize(1);
+    DiffEntry diff = diffResponse.getDiffs().get(0);
+    assertThat(diff.getKey()).isEqualTo(contentKey);
+    assertThat(diff.getFrom()).isEqualTo(fromTable);
+    assertThat(diff.getTo()).isEqualTo(toTable);
   }
 }

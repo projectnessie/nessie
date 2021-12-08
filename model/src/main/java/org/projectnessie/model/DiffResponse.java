@@ -29,18 +29,18 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ImmutableDiffResponse.class)
 public interface DiffResponse {
 
-  List<DiffEntry> diffs();
+  List<DiffEntry> getDiffs();
 
   @Value.Immutable
   @JsonSerialize(as = ImmutableDiffEntry.class)
   @JsonDeserialize(as = ImmutableDiffEntry.class)
   interface DiffEntry {
-    ContentKey key();
+    ContentKey getKey();
 
     @Nullable
-    Content from();
+    Content getFrom();
 
     @Nullable
-    Content to();
+    Content getTo();
   }
 }
