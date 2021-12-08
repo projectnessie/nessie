@@ -1,5 +1,11 @@
 # Releases
 
+## 0.17.0 Release (December 08, 2021)
+
+* Rename 'query_expression' query param to 'filter'
+* Rename 'max' query param to 'maxRecords'
+* Rename 'fetchAdditionalInfo' query param to 'fetch' for better extensibility
+
 ## 0.16.0 Release (December 03, 2021)
 
 * Mark optional fields as @Nullable / add validation for required fields in param classes
