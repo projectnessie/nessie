@@ -28,22 +28,66 @@ import de.flapdoodle.embed.mongo.distribution.Version;
 import de.flapdoodle.embed.process.config.io.ProcessOutput;
 import de.flapdoodle.embed.process.io.StreamProcessor;
 import de.flapdoodle.embed.process.runtime.Network;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.assertj.core.util.VisibleForTesting;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * MongoDB test connection-provider source using a locally spawned MongoDB instance via
  * "flapdoodle".
  */
 public class FlapdoodleMongoTestConnectionProviderSource extends MongoTestConnectionProviderSource {
-  private static final Pattern LISTEN_ON_PORT_PATTERN =
+  private static final Logger LOGGER =
+      LoggerFactory.getLogger(FlapdoodleMongoTestConnectionProviderSource.class);
+
+  @VisibleForTesting
+  static final Pattern LISTEN_ON_PORT_PATTERN =
       Pattern.compile(
-          ".*NETWORK ([^\\n]*) waiting for connections on port ([0-9]+)\\n.*",
+          ".*NETWORK.*[Ww]aiting for connections[^\n]*port[^\n0-9]*([0-9]{2,})[^0-9].*",
           Pattern.MULTILINE | Pattern.DOTALL);
 
-  private final AtomicInteger port = new AtomicInteger();
   private MongodExecutable mongo;
+
+  @VisibleForTesting
+  static class PortExtractor implements StreamProcessor {
+    private final StringBuilder buffer = new StringBuilder();
+    private final StreamProcessor delegate;
+    private volatile int port;
+
+    PortExtractor(StreamProcessor delegate) {
+      this.delegate = delegate;
+    }
+
+    int getPort() {
+      return port;
+    }
+
+    @Override
+    public void process(String block) {
+      if (port == 0) {
+        try {
+          buffer.append(block);
+          Matcher matcher = LISTEN_ON_PORT_PATTERN.matcher(buffer);
+          if (matcher.matches()) {
+            String portString = matcher.group(1);
+            port = Integer.parseInt(portString);
+            LOGGER.info("Recognized port {} in mongod output", port);
+            buffer.setLength(0);
+          }
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
+      }
+      delegate.process(block);
+    }
+
+    @Override
+    public void onProcessed() {
+      delegate.onProcessed();
+    }
+  }
 
   @Override
   public void start() throws Exception {
@@ -52,35 +96,14 @@ public class FlapdoodleMongoTestConnectionProviderSource extends MongoTestConnec
     }
 
     ProcessOutput defaultOutput = MongodProcessOutputConfig.getDefaultInstance(Command.MongoD);
-    StreamProcessor capturedStdout =
-        new StreamProcessor() {
-          private final StringBuilder buffer = new StringBuilder();
-
-          @Override
-          public void process(String block) {
-            if (port.get() == 0) {
-              buffer.append(block);
-              Matcher matcher = LISTEN_ON_PORT_PATTERN.matcher(buffer);
-              if (matcher.matches()) {
-                String portString = matcher.group(2);
-                port.set(Integer.parseInt(portString));
-              }
-            }
-            defaultOutput.output().process(block);
-          }
-
-          @Override
-          public void onProcessed() {
-            defaultOutput.output().onProcessed();
-          }
-        };
+    PortExtractor portExtractor = new PortExtractor(defaultOutput.output());
 
     MongodStarter starter =
         MongodStarter.getInstance(
             Defaults.runtimeConfigFor(Command.MongoD)
                 .processOutput(
                     ProcessOutput.builder()
-                        .output(capturedStdout)
+                        .output(portExtractor)
                         .error(defaultOutput.error())
                         .commands(defaultOutput.commands())
                         .build())
@@ -95,10 +118,12 @@ public class FlapdoodleMongoTestConnectionProviderSource extends MongoTestConnec
     mongo = starter.prepare(mongodConfig);
     mongo.start();
 
-    assertThat(port).hasPositiveValue();
+    assertThat(portExtractor.getPort()).isGreaterThan(0);
 
-    String connectionString = String.format("mongodb://localhost:%d", port.get());
+    String connectionString = String.format("mongodb://localhost:%d", portExtractor.getPort());
     String databaseName = "test";
+
+    LOGGER.info("Constructed Mongo connection string '{}'", connectionString);
 
     configureConnectionProviderConfigFromDefaults(
         c -> c.withConnectionString(connectionString).withDatabaseName(databaseName));
