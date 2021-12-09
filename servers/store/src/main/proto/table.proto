@@ -26,8 +26,13 @@ message Content {
     IcebergRefState iceberg_ref_state = 2;
     SqlView sql_view = 3;
     DeltaLakeTable delta_lake_table = 4;
+    IcebergSnapshot iceberg_snapshot = 5;
+    IcebergTableSchema iceberg_schema = 6;
+    IcebergTableSpec iceberg_spec = 7;
+    IcebergTableSortOrder iceberg_sort_order = 8;
+    IcebergTableMetadata iceberg_metadata = 9;
   }
-  string id = 5;
+  string id = 10;
 }
 
 message IcebergMetadataPointer {
@@ -39,6 +44,70 @@ message IcebergRefState {
   int32 schema_id = 2;
   int32 spec_id = 3;
   int32 sort_order_id = 4;
+  string snapshot_hash = 5;
+  string schema_hash = 6;
+  string spec_hash = 7;
+  string sort_order_hash = 8;
+  string metadata_hash = 9;
+}
+
+message IcebergSnapshot {
+  int64 snapshot_id = 1;
+  int64 sequence_number = 2;
+  int64 parent_snapshot_id = 3;
+  int64 timestamp_millis = 4;
+  int32 schema_id = 5;
+  string operation = 6;
+  string manifest_list = 7;
+  repeated IcebergProperties summary = 8;
+}
+
+message IcebergTableSchema {
+  int32 schema_id = 1;
+  string schema = 2;
+}
+
+message IcebergTableSpec {
+  int32 spec_id = 1;
+  int32 last_assigned_field_id = 2;
+  string schema = 3;
+  repeated PartitionField fields = 4;
+}
+
+message IcebergTableSortOrder {
+  int32 sort_order_id = 1;
+  string schema = 2;
+  repeated SortField fields = 3;
+}
+
+message IcebergTableMetadata {
+  int32 format_version = 1;
+  int32 last_column_id = 2;
+  int64 last_sequence_number = 3;
+  int64 last_updated_millis = 4;
+  string uuid = 5;
+  string location = 6;
+  int32 last_assigned_partition_id = 7;
+  repeated IcebergProperties properties = 8;
+}
+
+message IcebergProperties {
+  string key = 1;
+  string value = 2;
+}
+
+message PartitionField {
+  int32 source_id = 1;
+  int32 field_id = 2;
+  string name = 3;
+  string transform = 4;
+}
+
+message SortField {
+  int32 source_id = 1;
+  int32 sort_direction = 2;
+  int32 null_order = 3;
+  string transform = 4;
 }
 
 message SqlView {

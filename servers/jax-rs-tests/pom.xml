@@ -94,5 +94,15 @@
       <artifactId>de.flapdoodle.embed.mongo</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.apache.iceberg</groupId>
+      <artifactId>iceberg-core</artifactId>
+      <version>${iceberg.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.projectnessie</groupId>
+      <artifactId>nessie-iceberg-metadata</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
 </project>

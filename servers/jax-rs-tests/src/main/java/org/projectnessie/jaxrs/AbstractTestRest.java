@@ -52,6 +52,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
+import org.apache.iceberg.CreateSnapshot;
+import org.apache.iceberg.TableMetadata;
 import org.assertj.core.api.Assumptions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -75,6 +77,7 @@ import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceAlreadyExistsException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
+import org.projectnessie.iceberg.parsers.IcebergMetadataParser;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
@@ -83,6 +86,7 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.IcebergTable;
+import org.projectnessie.model.IcebergTableMetadata;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
 import org.projectnessie.model.ImmutableSqlView;
 import org.projectnessie.model.LogResponse;
@@ -727,6 +731,33 @@ public abstract class AbstractTestRest {
       assertThat(ImmutableList.copyOf(entireLog.getLogEntries()).subList(i, j + 1))
           .containsExactlyElementsOf(log.getLogEntries());
     }
+  }
+
+  @Test
+  void testIcebergMetadata() throws BaseNessieClientServerException {
+    TableMetadata meta = CreateSnapshot.createMetadata();
+    Branch branch = createBranch("testIcebergMetadata");
+    String currentHash = branch.getHash();
+
+    api.commitMultipleOperations()
+        .branchName(branch.getName())
+        .hash(currentHash)
+        .commitMeta(
+            CommitMeta.builder()
+                .author("bob")
+                .message("committed-by-bob")
+                .properties(ImmutableMap.of("prop1", "val1", "prop2", "val2"))
+                .build())
+        .operation(Put.of(ContentKey.of("table"), IcebergMetadataParser.icebergToNessie(meta)))
+        .commit()
+        .getHash();
+    Map<ContentKey, Content> contents =
+        api.getContent().refName(branch.getName()).key(ContentKey.of("table")).get();
+    TableMetadata newMeta =
+        IcebergMetadataParser.nessieToIceberg(
+            null, (IcebergTableMetadata) contents.get(ContentKey.of("table")));
+    assertThat(newMeta.currentSnapshot()).isEqualTo(meta.currentSnapshot());
+    // todo more assertions...table metadata doesn't have equals :-(
   }
 
   protected String createCommits(

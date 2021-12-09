@@ -114,6 +114,7 @@
     <module>versioned</module>
     <module>servers</module>
     <module>tools</module>
+    <module>iceberg-metadata</module>
   </modules>
 
   <scm>

@@ -152,8 +152,8 @@
       <dependency>
         <groupId>org.projectnessie</groupId>
         <artifactId>nessie-versioned-persist-in-memory</artifactId>
-        <type>test-jar</type>
         <version>${project.version}</version>
+        <type>test-jar</type>
       </dependency>
       <dependency>
         <groupId>org.projectnessie</groupId>
@@ -163,8 +163,8 @@
       <dependency>
         <groupId>org.projectnessie</groupId>
         <artifactId>nessie-versioned-persist-rocks</artifactId>
-        <type>test-jar</type>
         <version>${project.version}</version>
+        <type>test-jar</type>
       </dependency>
       <dependency>
         <groupId>org.projectnessie</groupId>
@@ -174,8 +174,8 @@
       <dependency>
         <groupId>org.projectnessie</groupId>
         <artifactId>nessie-versioned-persist-mongodb</artifactId>
-        <type>test-jar</type>
         <version>${project.version}</version>
+        <type>test-jar</type>
       </dependency>
       <dependency>
         <groupId>org.projectnessie</groupId>
@@ -185,8 +185,8 @@
       <dependency>
         <groupId>org.projectnessie</groupId>
         <artifactId>nessie-versioned-persist-dynamodb</artifactId>
-        <type>test-jar</type>
         <version>${project.version}</version>
+        <type>test-jar</type>
       </dependency>
       <dependency>
         <groupId>org.projectnessie</groupId>
@@ -196,8 +196,8 @@
       <dependency>
         <groupId>org.projectnessie</groupId>
         <artifactId>nessie-versioned-persist-transactional</artifactId>
-        <type>test-jar</type>
         <version>${project.version}</version>
+        <type>test-jar</type>
       </dependency>
       <dependency>
         <groupId>org.projectnessie</groupId>

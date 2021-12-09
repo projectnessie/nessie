@@ -16,6 +16,9 @@
 package org.projectnessie.versioned;
 
 import com.google.protobuf.ByteString;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -30,6 +33,17 @@ public interface StoreWorker<CONTENT, COMMIT_METADATA, CONTENT_TYPE extends Enum
   ByteString toStoreOnReferenceState(CONTENT content);
 
   ByteString toStoreGlobalState(CONTENT content);
+
+  Map<String, ByteString> toStoreAuxiliaryGlobalState(CONTENT content);
+
+  default List<String> multiValueFromStoreIds(
+      ByteString onReferenceValue, Optional<ByteString> globalState) {
+    return new ArrayList<>();
+  }
+
+  default CONTENT multiValueFromStore(ByteString onReferenceValue, List<ByteString> globalState) {
+    return null;
+  }
 
   CONTENT valueFromStore(ByteString onReferenceValue, Optional<ByteString> globalState);
 

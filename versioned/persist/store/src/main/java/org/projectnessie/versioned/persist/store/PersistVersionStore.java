@@ -110,7 +110,6 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
                 storeWorker.getPayload(op.getValue()),
                 storeWorker.toStoreOnReferenceState(op.getValue())));
         if (storeWorker.requiresGlobalState(op.getValue())) {
-          ByteString newState = storeWorker.toStoreGlobalState(op.getValue());
           Optional<ByteString> expectedValue;
           if (op.getExpectedValue() != null) {
             if (storeWorker.getType(op.getValue()) != storeWorker.getType(op.getExpectedValue())) {
@@ -133,7 +132,16 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
             expectedValue = Optional.empty();
           }
           commitAttempt.putExpectedStates(contentId, expectedValue);
+          ByteString newState = storeWorker.toStoreGlobalState(op.getValue());
+          Map<String, ByteString> auxiliaryState =
+              storeWorker.toStoreAuxiliaryGlobalState(op.getValue());
+          databaseAdapter
+              .globalContent(
+                  auxiliaryState.keySet().stream().map(ContentId::of).collect(Collectors.toSet()),
+                  x -> 1)
+              .forEach(x -> auxiliaryState.remove(x.getContentId().getId()));
           commitAttempt.putGlobal(contentId, newState);
+          auxiliaryState.forEach((key, value) -> commitAttempt.putGlobal(ContentId.of(key), value));
         } else {
           if (op.getExpectedValue() != null) {
             throw new IllegalArgumentException(
@@ -319,7 +327,21 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
   }
 
   private CONTENT mapContentAndState(ContentAndState<ByteString> cs) {
-    return storeWorker.valueFromStore(cs.getRefState(), Optional.ofNullable(cs.getGlobalState()));
+    List<String> multiValue =
+        storeWorker.multiValueFromStoreIds(
+            cs.getRefState(), Optional.ofNullable(cs.getGlobalState()));
+    if (multiValue.isEmpty()) {
+      return storeWorker.valueFromStore(cs.getRefState(), Optional.ofNullable(cs.getGlobalState()));
+    }
+    List<ByteString> values =
+        databaseAdapter
+            .globalContent(
+                multiValue.stream().map(ContentId::of).collect(Collectors.toSet()), s -> 0)
+            .map(x -> x.getValue())
+            .collect(Collectors.toList());
+
+    values.add(cs.getGlobalState());
+    return storeWorker.multiValueFromStore(cs.getRefState(), values);
   }
 
   @Override

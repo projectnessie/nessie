@@ -15,17 +15,31 @@
  */
 package org.projectnessie.server.store;
 
+import static org.projectnessie.server.store.IcebergMetadataSerde.metadataToProto;
+import static org.projectnessie.server.store.IcebergMetadataSerde.schemaToProto;
+import static org.projectnessie.server.store.IcebergMetadataSerde.snapshotToProto;
+import static org.projectnessie.server.store.IcebergMetadataSerde.sortOrderToProto;
+import static org.projectnessie.server.store.IcebergMetadataSerde.specToProto;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.Content.Type;
 import org.projectnessie.model.DeltaLakeTable;
 import org.projectnessie.model.IcebergTable;
+import org.projectnessie.model.IcebergTableMetadata;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
 import org.projectnessie.model.ImmutableDeltaLakeTable.Builder;
@@ -34,6 +48,12 @@ import org.projectnessie.model.ImmutableSqlView;
 import org.projectnessie.model.SqlView;
 import org.projectnessie.model.SqlView.Dialect;
 import org.projectnessie.store.ObjectTypes;
+import org.projectnessie.store.ObjectTypes.Content.ObjectTypeCase;
+import org.projectnessie.store.ObjectTypes.IcebergRefState;
+import org.projectnessie.store.ObjectTypes.IcebergSnapshot;
+import org.projectnessie.store.ObjectTypes.IcebergTableSchema;
+import org.projectnessie.store.ObjectTypes.IcebergTableSortOrder;
+import org.projectnessie.store.ObjectTypes.IcebergTableSpec;
 import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.StoreWorker;
 
@@ -54,7 +74,20 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
               .setSpecId(state.getSpecId())
               .setSortOrderId(state.getSortOrderId());
       builder.setIcebergRefState(stateBuilder);
-
+    } else if (content instanceof IcebergTableMetadata) {
+      IcebergTableMetadata state = (IcebergTableMetadata) content;
+      ObjectTypes.IcebergRefState.Builder stateBuilder =
+          ObjectTypes.IcebergRefState.newBuilder()
+              .setSnapshotId(state.getSnapshotId())
+              .setSnapshotHash(snapshotToProto(state).getKey())
+              .setSchemaId(state.getSchemaId())
+              .setSchemaHash(schemaToProto(state).getKey())
+              .setSpecId(state.getSpecId())
+              .setSpecHash(specToProto(state).getKey())
+              .setSortOrderId(state.getSortOrderId())
+              .setSortOrderHash(sortOrderToProto(state).getKey())
+              .setMetadataHash(metadataToProto(state).getKey());
+      builder.setIcebergRefState(stateBuilder);
     } else if (content instanceof DeltaLakeTable) {
       ObjectTypes.DeltaLakeTable.Builder table =
           ObjectTypes.DeltaLakeTable.newBuilder()
@@ -90,11 +123,93 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
           ObjectTypes.IcebergMetadataPointer.newBuilder()
               .setMetadataLocation(state.getMetadataLocation());
       builder.setIcebergMetadataPointer(stateBuilder);
+    } else if (content instanceof IcebergTableMetadata) {
+      IcebergTableMetadata state = (IcebergTableMetadata) content;
+      ObjectTypes.IcebergMetadataPointer.Builder stateBuilder =
+          ObjectTypes.IcebergMetadataPointer.newBuilder()
+              .setMetadataLocation(state.getMetadataLocation());
+      builder.setIcebergMetadataPointer(stateBuilder);
     } else {
       throw new IllegalArgumentException("Unknown type " + content);
     }
 
     return builder.build().toByteString();
+  }
+
+  @Override
+  public Map<String, ByteString> toStoreAuxiliaryGlobalState(Content content) {
+    if (content instanceof IcebergTableMetadata) {
+      IcebergTableMetadata metadata = (IcebergTableMetadata) content;
+      ImmutableMap.Builder<String, ByteString> builder = ImmutableMap.builder();
+      builder.put(snapshotToProto(metadata));
+      builder.put(specToProto(metadata));
+      builder.put(schemaToProto(metadata));
+      builder.put(metadataToProto(metadata));
+      builder.put(sortOrderToProto(metadata));
+      return builder.build();
+    }
+    return ImmutableMap.of();
+  }
+
+  @Override
+  public List<String> multiValueFromStoreIds(
+      ByteString onReferenceValue, Optional<ByteString> globalState) {
+    ObjectTypes.Content content = parse(onReferenceValue);
+    Optional<ObjectTypes.Content> globalContent =
+        globalState.map(TableCommitMetaStoreWorker::parse);
+    if (content.getObjectTypeCase() == ObjectTypeCase.ICEBERG_REF_STATE) {
+      ObjectTypes.Content global =
+          globalContent.orElseThrow(TableCommitMetaStoreWorker::noIcebergMetadataPointer);
+      if (!global.hasIcebergMetadataPointer()) {
+        throw noIcebergMetadataPointer();
+      }
+      IcebergRefState refState = content.getIcebergRefState();
+      return ImmutableList.of(
+          refState.getSchemaHash(),
+          refState.getSnapshotHash(),
+          refState.getSpecHash(),
+          refState.getSortOrderHash(),
+          refState.getMetadataHash());
+    }
+    return new ArrayList<>();
+  }
+
+  @Override
+  public Content multiValueFromStore(ByteString onReferenceValue, List<ByteString> globalState) {
+    ObjectTypes.Content content = parse(onReferenceValue);
+    Map<String, ObjectTypes.Content> globalContent =
+        globalState.stream()
+            .map(TableCommitMetaStoreWorker::parse)
+            .collect(Collectors.toMap(ObjectTypes.Content::getId, Function.identity()));
+    if (content.getObjectTypeCase() == ObjectTypeCase.ICEBERG_REF_STATE) {
+      IcebergRefState refState = content.getIcebergRefState();
+      IcebergTableSchema schemaObject =
+          globalContent.remove(refState.getSchemaHash()).getIcebergSchema();
+      IcebergSnapshot snapshotObject =
+          globalContent.remove(refState.getSnapshotHash()).getIcebergSnapshot();
+      IcebergTableSpec specObject = globalContent.remove(refState.getSpecHash()).getIcebergSpec();
+      IcebergTableSortOrder sortObject =
+          globalContent.remove(refState.getSortOrderHash()).getIcebergSortOrder();
+      ObjectTypes.IcebergTableMetadata metadataObject =
+          globalContent.remove(refState.getMetadataHash()).getIcebergMetadata();
+
+      if (globalContent.size() != 1) {
+        throw noIcebergMetadataPointer();
+      }
+      ObjectTypes.Content global = globalContent.values().iterator().next();
+      if (!global.hasIcebergMetadataPointer()) {
+        throw noIcebergMetadataPointer();
+      }
+      return IcebergMetadataSerde.protoToMetadata(
+          schemaObject,
+          snapshotObject,
+          specObject,
+          sortObject,
+          metadataObject,
+          global.getIcebergMetadataPointer(),
+          refState);
+    }
+    throw new IllegalArgumentException("Unknown type " + content.getObjectTypeCase());
   }
 
   @Override
@@ -163,6 +278,8 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
       return (byte) Content.Type.DELTA_LAKE_TABLE.ordinal();
     } else if (content instanceof SqlView) {
       return (byte) Content.Type.VIEW.ordinal();
+    } else if (content instanceof IcebergTableMetadata) {
+      return (byte) Type.ICEBERG_METADATA.ordinal();
     } else {
       throw new IllegalArgumentException("Unknown type " + content);
     }
@@ -179,7 +296,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
 
   @Override
   public boolean requiresGlobalState(Content content) {
-    return content instanceof IcebergTable;
+    return content instanceof IcebergTable || content instanceof IcebergTableMetadata;
   }
 
   @Override

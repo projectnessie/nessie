@@ -17,7 +17,9 @@ package org.projectnessie.versioned;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
+import java.util.Map;
 import java.util.Optional;
 import org.projectnessie.versioned.StringStoreWorker.TestEnum;
 
@@ -72,6 +74,11 @@ public final class StringStoreWorker implements StoreWorker<String, String, Test
       content = content.substring(0, i) + cid;
     }
     return ByteString.copyFromUtf8(content);
+  }
+
+  @Override
+  public Map<String, ByteString> toStoreAuxiliaryGlobalState(String s) {
+    return ImmutableMap.of();
   }
 
   @Override
