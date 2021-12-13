@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.ToIntFunction;
 import java.util.stream.Stream;
 import org.projectnessie.versioned.BranchName;
@@ -145,6 +146,7 @@ public interface DatabaseAdapter {
    *     defaults to the named reference's HEAD.
    * @param expectedHead if present, {@code target}'s current HEAD must be equal to this value
    * @param sequenceToTransplant commits in {@code source} to cherry-pick onto {@code targetBranch}
+   * @param updateCommitMetadata function to rewrite the commit-metadata for copied commits
    * @return the hash of the last cherry-picked commit, in other words the new HEAD of the target
    *     branch
    * @throws ReferenceNotFoundException if either the named reference in {@code commitOnReference}
@@ -154,7 +156,10 @@ public interface DatabaseAdapter {
    *     expected hEAD
    */
   Hash transplant(
-      BranchName targetBranch, Optional<Hash> expectedHead, List<Hash> sequenceToTransplant)
+      BranchName targetBranch,
+      Optional<Hash> expectedHead,
+      List<Hash> sequenceToTransplant,
+      Function<ByteString, ByteString> updateCommitMetadata)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**
@@ -167,6 +172,7 @@ public interface DatabaseAdapter {
    * @param from commit-hash to start reading commits from.
    * @param toBranch target branch to commit to
    * @param expectedHead if present, {@code toBranch}'s current HEAD must be equal to this value
+   * @param updateCommitMetadata function to rewrite the commit-metadata for copied commits
    * @return the hash of the last cherry-picked commit, in other words the new HEAD of the target
    *     branch
    * @throws ReferenceNotFoundException if either the named reference in {@code toBranch} or the
@@ -175,7 +181,11 @@ public interface DatabaseAdapter {
    *     branch due to a conflicting change or if the expected hash of {@code toBranch} is not its
    *     expected hEAD
    */
-  Hash merge(Hash from, BranchName toBranch, Optional<Hash> expectedHead)
+  Hash merge(
+      Hash from,
+      BranchName toBranch,
+      Optional<Hash> expectedHead,
+      Function<ByteString, ByteString> updateCommitMetadata)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**

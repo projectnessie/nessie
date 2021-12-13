@@ -864,6 +864,15 @@ public abstract class AbstractTestRest {
             .commit();
     assertThat(committed2.getHash()).isNotNull();
 
+    int commitsToTransplant = 2;
+
+    LogResponse logBranch =
+        api.getCommitLog()
+            .refName(branch.getName())
+            .untilHash(branch.getHash())
+            .maxRecords(commitsToTransplant)
+            .get();
+
     api.commitMultipleOperations()
         .branchName(base.getName())
         .hash(base.getHash())
@@ -882,6 +891,18 @@ public abstract class AbstractTestRest {
             log.getLogEntries().stream().map(LogEntry::getCommitMeta).map(CommitMeta::getMessage))
         .containsExactly(
             "test-transplant-branch2", "test-transplant-branch1", "test-transplant-main");
+
+    // Verify that the commit-timestamp was updated
+    LogResponse logOfTransplanted =
+        api.getCommitLog().refName(base.getName()).maxRecords(commitsToTransplant).get();
+    assertThat(
+            logOfTransplanted.getLogEntries().stream()
+                .map(LogEntry::getCommitMeta)
+                .map(CommitMeta::getCommitTime))
+        .isNotEqualTo(
+            logBranch.getLogEntries().stream()
+                .map(LogEntry::getCommitMeta)
+                .map(CommitMeta::getCommitTime));
 
     assertThat(
             api.getEntries().refName(base.getName()).get().getEntries().stream()
@@ -915,6 +936,15 @@ public abstract class AbstractTestRest {
             .commit();
     assertThat(committed2.getHash()).isNotNull();
 
+    int commitsToMerge = 2;
+
+    LogResponse logBranch =
+        api.getCommitLog()
+            .refName(branch.getName())
+            .untilHash(branch.getHash())
+            .maxRecords(commitsToMerge)
+            .get();
+
     api.commitMultipleOperations()
         .branchName(base.getName())
         .hash(base.getHash())
@@ -928,6 +958,18 @@ public abstract class AbstractTestRest {
     assertThat(
             log.getLogEntries().stream().map(LogEntry::getCommitMeta).map(CommitMeta::getMessage))
         .containsExactly("test-merge-branch2", "test-merge-branch1", "test-merge-main");
+
+    // Verify that the commit-timestamp was updated
+    LogResponse logOfMerged =
+        api.getCommitLog().refName(base.getName()).maxRecords(commitsToMerge).get();
+    assertThat(
+            logOfMerged.getLogEntries().stream()
+                .map(LogEntry::getCommitMeta)
+                .map(CommitMeta::getCommitTime))
+        .isNotEqualTo(
+            logBranch.getLogEntries().stream()
+                .map(LogEntry::getCommitMeta)
+                .map(CommitMeta::getCommitTime));
 
     assertThat(
             api.getEntries().refName(base.getName()).get().getEntries().stream()

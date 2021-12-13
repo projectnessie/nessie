@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
@@ -92,17 +93,27 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
 
   @Override
   public void transplant(
-      BranchName targetBranch, Optional<Hash> referenceHash, List<Hash> sequenceToTransplant)
+      BranchName targetBranch,
+      Optional<Hash> referenceHash,
+      List<Hash> sequenceToTransplant,
+      Function<METADATA, METADATA> updateCommitMetadata)
       throws ReferenceNotFoundException, ReferenceConflictException {
     this.<ReferenceNotFoundException, ReferenceConflictException>delegate2Ex(
-        "transplant", () -> delegate.transplant(targetBranch, referenceHash, sequenceToTransplant));
+        "transplant",
+        () ->
+            delegate.transplant(
+                targetBranch, referenceHash, sequenceToTransplant, updateCommitMetadata));
   }
 
   @Override
-  public void merge(Hash fromHash, BranchName toBranch, Optional<Hash> expectedHash)
+  public void merge(
+      Hash fromHash,
+      BranchName toBranch,
+      Optional<Hash> expectedHash,
+      Function<METADATA, METADATA> updateCommitMetadata)
       throws ReferenceNotFoundException, ReferenceConflictException {
     this.<ReferenceNotFoundException, ReferenceConflictException>delegate2Ex(
-        "merge", () -> delegate.merge(fromHash, toBranch, expectedHash));
+        "merge", () -> delegate.merge(fromHash, toBranch, expectedHash, updateCommitMetadata));
   }
 
   @Override

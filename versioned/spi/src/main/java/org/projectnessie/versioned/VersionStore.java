@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.ThreadSafe;
@@ -111,13 +112,17 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @param referenceHash The hash to use as a reference for conflict detection. If not present, do
    *     not perform conflict detection
    * @param sequenceToTransplant The sequence of hashes to transplant.
+   * @param updateCommitMetadata
    * @throws ReferenceConflictException if {@code referenceHash} values do not match the stored
    *     values for {@code branch}
    * @throws ReferenceNotFoundException if {@code branch} or if any of the hashes from {@code
    *     sequenceToTransplant} is not present in the store.
    */
   void transplant(
-      BranchName targetBranch, Optional<Hash> referenceHash, List<Hash> sequenceToTransplant)
+      BranchName targetBranch,
+      Optional<Hash> referenceHash,
+      List<Hash> sequenceToTransplant,
+      Function<METADATA, METADATA> updateCommitMetadata)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**
@@ -138,12 +143,17 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @param fromHash The hash we are using to get additional commits
    * @param toBranch The branch that we are merging into
    * @param expectedHash The current head of the branch to validate before updating (optional).
+   * @param updateCommitMetadata
    * @throws ReferenceConflictException if {@code expectedBranchHash} doesn't match the stored hash
    *     for {@code toBranch}
    * @throws ReferenceNotFoundException if {@code toBranch} or {@code fromHash} is not present in
    *     the store.
    */
-  void merge(Hash fromHash, BranchName toBranch, Optional<Hash> expectedHash)
+  void merge(
+      Hash fromHash,
+      BranchName toBranch,
+      Optional<Hash> expectedHash,
+      Function<METADATA, METADATA> updateCommitMetadata)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**

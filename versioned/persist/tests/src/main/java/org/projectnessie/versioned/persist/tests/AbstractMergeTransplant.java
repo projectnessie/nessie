@@ -22,6 +22,10 @@ import com.google.protobuf.ByteString;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.versioned.BranchName;
@@ -45,9 +49,16 @@ public abstract class AbstractMergeTransplant {
 
   @Test
   void merge() throws Exception {
-    mergeTransplant(
-        (target, expectedHead, branch, commitHashes, i) ->
-            databaseAdapter.merge(commitHashes[i], target, expectedHead));
+    AtomicInteger unifier = new AtomicInteger();
+    Function<ByteString, ByteString> metadataUpdater =
+        commitMeta ->
+            ByteString.copyFromUtf8(
+                commitMeta.toStringUtf8() + " transplanted " + unifier.getAndIncrement());
+
+    Hash[] commits =
+        mergeTransplant(
+            (target, expectedHead, branch, commitHashes, i) ->
+                databaseAdapter.merge(commitHashes[i], target, expectedHead, metadataUpdater));
 
     BranchName branch = BranchName.of("branch");
     BranchName branch2 = BranchName.of("branch2");
@@ -57,31 +68,71 @@ public abstract class AbstractMergeTransplant {
                 databaseAdapter.merge(
                     databaseAdapter.hashOnReference(branch, Optional.empty()),
                     branch2,
-                    Optional.empty()))
+                    Optional.empty(),
+                    Function.identity()))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageStartingWith("No hashes to merge from '");
   }
 
   @Test
   void transplant() throws Exception {
+    AtomicInteger unifier = new AtomicInteger();
+    Function<ByteString, ByteString> metadataUpdater =
+        commitMeta ->
+            ByteString.copyFromUtf8(
+                commitMeta.toStringUtf8() + " transplanted " + unifier.getAndIncrement());
+
     Hash[] commits =
         mergeTransplant(
             (target, expectedHead, branch, commitHashes, i) ->
                 databaseAdapter.transplant(
-                    target, expectedHead, Arrays.asList(commitHashes).subList(0, i + 1)));
+                    target,
+                    expectedHead,
+                    Arrays.asList(commitHashes).subList(0, i + 1),
+                    metadataUpdater));
 
     BranchName conflict = BranchName.of("conflict");
 
     // no conflict, when transplanting the commits from against the current HEAD of the
     // conflict-branch
     Hash noConflictHead = databaseAdapter.hashOnReference(conflict, Optional.empty());
-    databaseAdapter.transplant(conflict, Optional.of(noConflictHead), Arrays.asList(commits));
+    Hash transplanted =
+        databaseAdapter.transplant(
+            conflict, Optional.of(noConflictHead), Arrays.asList(commits), metadataUpdater);
+    int offset = unifier.get();
+
+    try (Stream<CommitLogEntry> log =
+        databaseAdapter.commitLog(transplanted).limit(commits.length)) {
+      AtomicInteger testOffset = new AtomicInteger(offset);
+      assertThat(log.map(CommitLogEntry::getMetadata).map(ByteString::toStringUtf8))
+          .containsExactlyElementsOf(
+              IntStream.range(0, commits.length)
+                  .map(i -> commits.length - i - 1)
+                  .mapToObj(i -> "commit " + i + " transplanted " + testOffset.decrementAndGet())
+                  .collect(Collectors.toList()));
+    }
 
     // again, no conflict (same as above, just again)
-    databaseAdapter.transplant(conflict, Optional.empty(), Arrays.asList(commits));
+    transplanted =
+        databaseAdapter.transplant(
+            conflict, Optional.empty(), Arrays.asList(commits), metadataUpdater);
+    offset = unifier.get();
+
+    try (Stream<CommitLogEntry> log =
+        databaseAdapter.commitLog(transplanted).limit(commits.length)) {
+      AtomicInteger testOffset = new AtomicInteger(offset);
+      assertThat(log.map(CommitLogEntry::getMetadata).map(ByteString::toStringUtf8))
+          .containsExactlyElementsOf(
+              IntStream.range(0, commits.length)
+                  .map(i -> commits.length - i - 1)
+                  .mapToObj(i -> "commit " + i + " transplanted " + testOffset.decrementAndGet())
+                  .collect(Collectors.toList()));
+    }
 
     assertThatThrownBy(
-            () -> databaseAdapter.transplant(conflict, Optional.empty(), Collections.emptyList()))
+            () ->
+                databaseAdapter.transplant(
+                    conflict, Optional.empty(), Collections.emptyList(), Function.identity()))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("No hashes to transplant given.");
   }
