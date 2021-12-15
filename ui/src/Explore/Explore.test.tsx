@@ -28,6 +28,7 @@ const renderWithRouter = (component: React.ReactElement) => {
     initialEntries: ["/tree/main/a"],
   });
   // eslint-disable-next-line react/prop-types
+  // @ts-ignore
   const Wrapper = ({ children }) => (
     <Router history={history}>
       <Route path="/tree/:slug">{children}</Route>
