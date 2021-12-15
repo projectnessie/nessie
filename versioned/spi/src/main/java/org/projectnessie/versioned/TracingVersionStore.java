@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
@@ -110,7 +111,10 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
 
   @Override
   public void transplant(
-      BranchName targetBranch, Optional<Hash> referenceHash, List<Hash> sequenceToTransplant)
+      BranchName targetBranch,
+      Optional<Hash> referenceHash,
+      List<Hash> sequenceToTransplant,
+      Function<METADATA, METADATA> updateCommitMetadata)
       throws ReferenceNotFoundException, ReferenceConflictException {
     this.<ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
         "Transplant",
@@ -118,11 +122,17 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
             b.withTag(TAG_TARGET_BRANCH, safeRefName(targetBranch))
                 .withTag(TAG_HASH, safeToString(referenceHash))
                 .withTag(TAG_TRANSPLANTS, safeSize(sequenceToTransplant)),
-        () -> delegate.transplant(targetBranch, referenceHash, sequenceToTransplant));
+        () ->
+            delegate.transplant(
+                targetBranch, referenceHash, sequenceToTransplant, updateCommitMetadata));
   }
 
   @Override
-  public void merge(Hash fromHash, BranchName toBranch, Optional<Hash> expectedHash)
+  public void merge(
+      Hash fromHash,
+      BranchName toBranch,
+      Optional<Hash> expectedHash,
+      Function<METADATA, METADATA> updateCommitMetadata)
       throws ReferenceNotFoundException, ReferenceConflictException {
     this.<ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
         "Merge",
@@ -130,7 +140,7 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
             b.withTag(TAG_FROM_HASH, safeToString(fromHash))
                 .withTag(TAG_TO_BRANCH, safeRefName(toBranch))
                 .withTag(TAG_EXPECTED_HASH, safeToString(expectedHash)),
-        () -> delegate.merge(fromHash, toBranch, expectedHash));
+        () -> delegate.merge(fromHash, toBranch, expectedHash, updateCommitMetadata));
   }
 
   @Override

@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
@@ -150,22 +151,34 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
       }
     }
 
-    commitAttempt.commitMetaSerialized(storeWorker.getMetadataSerializer().toBytes(metadata));
+    commitAttempt.commitMetaSerialized(serializeMetadata(metadata));
 
     return databaseAdapter.commit(commitAttempt.build());
   }
 
   @Override
   public void transplant(
-      BranchName targetBranch, Optional<Hash> referenceHash, List<Hash> sequenceToTransplant)
+      BranchName targetBranch,
+      Optional<Hash> referenceHash,
+      List<Hash> sequenceToTransplant,
+      Function<METADATA, METADATA> updateCommitMetadata)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    databaseAdapter.transplant(targetBranch, referenceHash, sequenceToTransplant);
+    databaseAdapter.transplant(
+        targetBranch,
+        referenceHash,
+        sequenceToTransplant,
+        updateCommitMetadata(updateCommitMetadata));
   }
 
   @Override
-  public void merge(Hash fromHash, BranchName toBranch, Optional<Hash> expectedHash)
+  public void merge(
+      Hash fromHash,
+      BranchName toBranch,
+      Optional<Hash> expectedHash,
+      Function<METADATA, METADATA> updateCommitMetadata)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    databaseAdapter.merge(fromHash, toBranch, expectedHash);
+    databaseAdapter.merge(
+        fromHash, toBranch, expectedHash, updateCommitMetadata(updateCommitMetadata));
   }
 
   @Override
@@ -202,6 +215,19 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
         .map(
             namedRef ->
                 namedRef.withUpdatedCommitMeta(deserializeMetadata(namedRef.getHeadCommitMeta())));
+  }
+
+  private Function<ByteString, ByteString> updateCommitMetadata(
+      Function<METADATA, METADATA> updateCommitMetadata) {
+    return original -> {
+      METADATA commitMeta = deserializeMetadata(original);
+      METADATA updated = updateCommitMetadata.apply(commitMeta);
+      return serializeMetadata(updated);
+    };
+  }
+
+  private ByteString serializeMetadata(METADATA metadata) {
+    return metadata != null ? storeWorker.getMetadataSerializer().toBytes(metadata) : null;
   }
 
   private METADATA deserializeMetadata(ByteString commitMeta) {

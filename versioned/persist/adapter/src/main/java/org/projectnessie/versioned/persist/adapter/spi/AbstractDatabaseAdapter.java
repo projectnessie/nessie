@@ -200,6 +200,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
    * @param toHead current HEAD of {@code toBranch}
    * @param branchCommits consumer for the individual commits to merge
    * @param newKeyLists consumer for optimistically written {@link KeyListEntity}s
+   * @param rewriteMetadata function to rewrite the commit-metadata for copied commits
    * @return hash of the last commit-log-entry written to {@code toBranch}
    */
   protected Hash mergeAttempt(
@@ -210,7 +211,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       Optional<Hash> expectedHead,
       Hash toHead,
       Consumer<Hash> branchCommits,
-      Consumer<Hash> newKeyLists)
+      Consumer<Hash> newKeyLists,
+      Function<ByteString, ByteString> rewriteMetadata)
       throws ReferenceNotFoundException, ReferenceConflictException {
 
     validateHashExists(ctx, from);
@@ -248,7 +250,9 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
 
     // (no need to verify the global states during a transplant)
     // 6. re-apply commits in 'sequenceToTransplant' onto 'targetBranch'
-    toHead = copyCommits(ctx, timeInMicros, toHead, commitsToMergeChronological, newKeyLists);
+    toHead =
+        copyCommits(
+            ctx, timeInMicros, toHead, commitsToMergeChronological, newKeyLists, rewriteMetadata);
 
     // 7. Write commits
 
@@ -267,6 +271,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
    * @param sequenceToTransplant sequential list of commits to transplant from {@code source}
    * @param branchCommits consumer for the individual commits to merge
    * @param newKeyLists consumer for optimistically written {@link KeyListEntity}s
+   * @param rewriteMetadata function to rewrite the commit-metadata for copied commits
    * @return hash of the last commit-log-entry written to {@code targetBranch}
    */
   protected Hash transplantAttempt(
@@ -277,7 +282,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       Hash targetHead,
       List<Hash> sequenceToTransplant,
       Consumer<Hash> branchCommits,
-      Consumer<Hash> newKeyLists)
+      Consumer<Hash> newKeyLists,
+      Function<ByteString, ByteString> rewriteMetadata)
       throws ReferenceNotFoundException, ReferenceConflictException {
     if (sequenceToTransplant.isEmpty()) {
       throw new IllegalArgumentException("No hashes to transplant given.");
@@ -322,7 +328,13 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     // (no need to verify the global states during a transplant)
     // 6. re-apply commits in 'sequenceToTransplant' onto 'targetBranch'
     targetHead =
-        copyCommits(ctx, timeInMicros, targetHead, commitsToTransplantChronological, newKeyLists);
+        copyCommits(
+            ctx,
+            timeInMicros,
+            targetHead,
+            commitsToTransplantChronological,
+            newKeyLists,
+            rewriteMetadata);
 
     // 7. Write commits
 
@@ -1232,7 +1244,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       long timeInMicros,
       Hash targetHead,
       List<CommitLogEntry> commitsChronological,
-      Consumer<Hash> newKeyLists)
+      Consumer<Hash> newKeyLists,
+      Function<ByteString, ByteString> rewriteMetadata)
       throws ReferenceNotFoundException {
     int parentsPerCommit = config.getParentsPerCommit();
 
@@ -1261,13 +1274,15 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
         parents.add(0, targetHead);
       }
 
+      ByteString updatedMetadata = rewriteMetadata.apply(sourceCommit.getMetadata());
+
       CommitLogEntry newEntry =
           buildIndividualCommit(
               ctx,
               timeInMicros,
               parents,
               commitSeq,
-              sourceCommit.getMetadata(),
+              updatedMetadata,
               sourceCommit.getPuts(),
               sourceCommit.getDeletes(),
               keyListDistance,

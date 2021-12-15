@@ -52,6 +52,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 import java.util.function.ToLongFunction;
@@ -121,11 +122,19 @@ class TestMetricsVersionStore {
                 "transplant",
                 vs ->
                     vs.transplant(
-                        BranchName.of("mock-branch"), Optional.empty(), Collections.emptyList()),
+                        BranchName.of("mock-branch"),
+                        Optional.empty(),
+                        Collections.emptyList(),
+                        Function.identity()),
                 refNotFoundAndRefConflictThrows),
             new VersionStoreInvocation<>(
                 "merge",
-                vs -> vs.merge(Hash.of("42424242"), BranchName.of("mock-branch"), Optional.empty()),
+                vs ->
+                    vs.merge(
+                        Hash.of("42424242"),
+                        BranchName.of("mock-branch"),
+                        Optional.empty(),
+                        Function.identity()),
                 refNotFoundAndRefConflictThrows),
             new VersionStoreInvocation<>(
                 "assign",

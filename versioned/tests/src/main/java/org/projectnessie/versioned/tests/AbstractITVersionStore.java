@@ -828,7 +828,8 @@ public abstract class AbstractITVersionStore {
           .transplant(
               newBranch,
               Optional.of(initialHash),
-              Arrays.asList(firstCommit, secondCommit, thirdCommit));
+              Arrays.asList(firstCommit, secondCommit, thirdCommit),
+              Function.identity());
       assertThat(
               store()
                   .getValues(
@@ -851,7 +852,8 @@ public abstract class AbstractITVersionStore {
           .transplant(
               newBranch,
               Optional.of(initialHash),
-              Arrays.asList(firstCommit, secondCommit, thirdCommit));
+              Arrays.asList(firstCommit, secondCommit, thirdCommit),
+              Function.identity());
       assertThat(
               store()
                   .getValues(
@@ -879,7 +881,8 @@ public abstract class AbstractITVersionStore {
                   .transplant(
                       newBranch,
                       Optional.of(initialHash),
-                      Arrays.asList(firstCommit, secondCommit, thirdCommit)));
+                      Arrays.asList(firstCommit, secondCommit, thirdCommit),
+                      Function.identity()));
     }
 
     @Test
@@ -893,7 +896,8 @@ public abstract class AbstractITVersionStore {
           .transplant(
               newBranch,
               Optional.of(initialHash),
-              Arrays.asList(firstCommit, secondCommit, thirdCommit));
+              Arrays.asList(firstCommit, secondCommit, thirdCommit),
+              Function.identity());
       assertThat(
               store()
                   .getValues(
@@ -916,7 +920,8 @@ public abstract class AbstractITVersionStore {
                   .transplant(
                       newBranch,
                       Optional.of(initialHash),
-                      Arrays.asList(firstCommit, secondCommit, thirdCommit)));
+                      Arrays.asList(firstCommit, secondCommit, thirdCommit),
+                      Function.identity()));
     }
 
     @Test
@@ -930,7 +935,8 @@ public abstract class AbstractITVersionStore {
                   .transplant(
                       newBranch,
                       Optional.of(initialHash),
-                      Collections.singletonList(Hash.of("1234567890abcdef"))));
+                      Collections.singletonList(Hash.of("1234567890abcdef")),
+                      Function.identity()));
     }
 
     @Test
@@ -942,7 +948,10 @@ public abstract class AbstractITVersionStore {
 
       store()
           .transplant(
-              newBranch, Optional.empty(), Arrays.asList(firstCommit, secondCommit, thirdCommit));
+              newBranch,
+              Optional.empty(),
+              Arrays.asList(firstCommit, secondCommit, thirdCommit),
+              Function.identity());
       assertThat(
               store()
                   .getValues(
@@ -969,7 +978,8 @@ public abstract class AbstractITVersionStore {
                   .transplant(
                       newBranch,
                       Optional.empty(),
-                      Arrays.asList(secondCommit, firstCommit, thirdCommit)));
+                      Arrays.asList(secondCommit, firstCommit, thirdCommit),
+                      Function.identity()));
     }
 
     @Test
@@ -993,7 +1003,8 @@ public abstract class AbstractITVersionStore {
                   .transplant(
                       newBranch,
                       Optional.of(unrelatedCommit),
-                      Arrays.asList(firstCommit, secondCommit, thirdCommit)));
+                      Arrays.asList(firstCommit, secondCommit, thirdCommit),
+                      Function.identity()));
     }
 
     @Test
@@ -1004,7 +1015,10 @@ public abstract class AbstractITVersionStore {
 
       store()
           .transplant(
-              newBranch, Optional.of(initialHash), Arrays.asList(firstCommit, secondCommit));
+              newBranch,
+              Optional.of(initialHash),
+              Arrays.asList(firstCommit, secondCommit),
+              Function.identity());
       assertThat(
               store().getValues(newBranch, Arrays.asList(Key.of("t1"), Key.of("t4"), Key.of("t5"))))
           .containsExactlyInAnyOrderEntriesOf(
@@ -1057,7 +1071,7 @@ public abstract class AbstractITVersionStore {
       final BranchName newBranch = BranchName.of("bar_1");
       store().create(newBranch, Optional.of(initialHash));
 
-      store().merge(thirdCommit, newBranch, Optional.of(initialHash));
+      store().merge(thirdCommit, newBranch, Optional.of(initialHash), Function.identity());
       assertThat(
               store()
                   .getValues(
@@ -1078,7 +1092,7 @@ public abstract class AbstractITVersionStore {
       store().create(newBranch, Optional.of(initialHash));
       final Hash newCommit = commit("Unrelated commit").put("t5", "v5_1").toBranch(newBranch);
 
-      store().merge(thirdCommit, newBranch, Optional.empty());
+      store().merge(thirdCommit, newBranch, Optional.empty(), Function.identity());
       assertThat(
               store()
                   .getValues(
@@ -1111,11 +1125,21 @@ public abstract class AbstractITVersionStore {
       store()
           .commit(
               etl, Optional.empty(), "commit 1", Collections.singletonList(Put.of(key, "value1")));
-      store().merge(store().hashOnReference(etl, Optional.empty()), review, Optional.empty());
+      store()
+          .merge(
+              store().hashOnReference(etl, Optional.empty()),
+              review,
+              Optional.empty(),
+              Function.identity());
       store()
           .commit(
               etl, Optional.empty(), "commit 2", Collections.singletonList(Put.of(key, "value2")));
-      store().merge(store().hashOnReference(etl, Optional.empty()), review, Optional.empty());
+      store()
+          .merge(
+              store().hashOnReference(etl, Optional.empty()),
+              review,
+              Optional.empty(),
+              Function.identity());
       assertEquals(store().getValue(review, key), "value2");
     }
 
@@ -1126,7 +1150,7 @@ public abstract class AbstractITVersionStore {
 
       final Hash newCommit = commit("Unrelated commit").put("t5", "v5_1").toBranch(newBranch);
 
-      store().merge(thirdCommit, newBranch, Optional.empty());
+      store().merge(thirdCommit, newBranch, Optional.empty(), Function.identity());
       assertThat(
               store()
                   .getValues(
@@ -1178,7 +1202,7 @@ public abstract class AbstractITVersionStore {
                   "commit 4",
                   Collections.singletonList(Put.of(key2, "value4")));
 
-      assertThatThrownBy(() -> store().merge(barHash, foo, Optional.empty()))
+      assertThatThrownBy(() -> store().merge(barHash, foo, Optional.empty(), Function.identity()))
           .isInstanceOf(ReferenceConflictException.class)
           .hasMessageContaining("The following keys have been changed in conflict:")
           .hasMessageContaining(key1.toString())
@@ -1193,7 +1217,8 @@ public abstract class AbstractITVersionStore {
 
       assertThrows(
           ReferenceConflictException.class,
-          () -> store().merge(thirdCommit, newBranch, Optional.of(initialHash)));
+          () ->
+              store().merge(thirdCommit, newBranch, Optional.of(initialHash), Function.identity()));
     }
 
     @Test
@@ -1201,7 +1226,8 @@ public abstract class AbstractITVersionStore {
       final BranchName newBranch = BranchName.of("bar_5");
       assertThrows(
           ReferenceNotFoundException.class,
-          () -> store().merge(thirdCommit, newBranch, Optional.of(initialHash)));
+          () ->
+              store().merge(thirdCommit, newBranch, Optional.of(initialHash), Function.identity()));
     }
 
     @Test
@@ -1210,7 +1236,13 @@ public abstract class AbstractITVersionStore {
       store().create(newBranch, Optional.of(initialHash));
       assertThrows(
           ReferenceNotFoundException.class,
-          () -> store().merge(Hash.of("1234567890abcdef"), newBranch, Optional.of(initialHash)));
+          () ->
+              store()
+                  .merge(
+                      Hash.of("1234567890abcdef"),
+                      newBranch,
+                      Optional.of(initialHash),
+                      Function.identity()));
     }
   }
 

@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -66,6 +67,7 @@ import org.projectnessie.model.Content.Type;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.ImmutableBranch;
+import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableLogEntry;
 import org.projectnessie.model.ImmutableLogResponse;
 import org.projectnessie.model.ImmutableReferenceMetadata;
@@ -409,7 +411,12 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
       try (Stream<Hash> s = transplant.getHashesToTransplant().stream().map(Hash::of)) {
         transplants = s.collect(Collectors.toList());
       }
-      getStore().transplant(BranchName.of(branchName), toHash(hash, true), transplants);
+      getStore()
+          .transplant(
+              BranchName.of(branchName),
+              toHash(hash, true),
+              transplants,
+              rewriteCommitMetadataForMergeTransplant());
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
@@ -425,12 +432,18 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
           .merge(
               toHash(merge.getFromRefName(), merge.getFromHash()),
               BranchName.of(branchName),
-              toHash(hash, true));
+              toHash(hash, true),
+              rewriteCommitMetadataForMergeTransplant());
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
       throw new NessieReferenceConflictException(e.getMessage(), e);
     }
+  }
+
+  private Function<CommitMeta, CommitMeta> rewriteCommitMetadataForMergeTransplant() {
+    Instant now = Instant.now();
+    return commitMeta -> ImmutableCommitMeta.builder().from(commitMeta).commitTime(now).build();
   }
 
   @Override
