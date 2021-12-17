@@ -67,12 +67,32 @@ Apache Spark does **only** work with Java 11 (or 8), so all tests using Spark us
 to force Java 11 for the execution of those tests.
 
 ```bash
-export MAVEN_OPTS="--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED --add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED --add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED"
+export MAVEN_OPTS=\
+  "--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED " \
+  "--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED " \
+  "--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED " \
+  "--add-exports=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED " \
+  "--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED " \
+  "--add-exports=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED " \
+  "--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED " \
+  "--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED " \
+  "--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED " \
+  "--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED"
 ```
 
 If you are using [mvnd](https://github.com/mvndaemon/mvnd), update your `mvnd.properties` (user location: `~/.m2/mvnd.properties`):
 ```
-mvnd.jvmArgs = --add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED --add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED --add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED
+mvnd.jvmArgs = \
+  --add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED \
+  --add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED \
+  --add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED \
+  --add-exports=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED \
+  --add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED \
+  --add-exports=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED \
+  --add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED \
+  --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED \
+  --add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED \
+  --add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED
 ```
 
 ### Style guide
