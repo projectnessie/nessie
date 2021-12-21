@@ -30,6 +30,8 @@ import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.NamedRef;
+import org.projectnessie.versioned.RefLog;
+import org.projectnessie.versioned.RefLogNotFoundException;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceInfo;
@@ -299,4 +301,12 @@ public interface DatabaseAdapter {
    */
   Optional<ContentIdAndBytes> globalContent(
       ContentId contentId, ToIntFunction<ByteString> contentTypeExtractor);
+
+  /**
+   * Retrieve the refLog starting at the refLog referenced by {@code offset}.
+   *
+   * @return stream of {@link RefLog}s
+   * @param offset
+   */
+  Stream<RefLog> refLog(Hash offset) throws RefLogNotFoundException;
 }

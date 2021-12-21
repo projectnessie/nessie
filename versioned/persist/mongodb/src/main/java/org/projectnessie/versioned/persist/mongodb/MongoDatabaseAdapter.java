@@ -42,6 +42,7 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bson.types.Binary;
 import org.projectnessie.versioned.Hash;
+import org.projectnessie.versioned.RefLog;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.KeyList;
@@ -51,6 +52,7 @@ import org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapter;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalOperationContext;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
 import org.projectnessie.versioned.persist.serialize.ProtoSerialization;
@@ -91,6 +93,7 @@ public class MongoDatabaseAdapter
     client.getGlobalLog().deleteMany(idPrefixFilter);
     client.getCommitLog().deleteMany(idPrefixFilter);
     client.getKeyLists().deleteMany(idPrefixFilter);
+    client.getRefLog().deleteMany(idPrefixFilter);
   }
 
   private Document toId(Hash id) {
@@ -394,11 +397,13 @@ public class MongoDatabaseAdapter
       NonTransactionalOperationContext ctx,
       Hash globalId,
       Set<Hash> branchCommits,
-      Set<Hash> newKeyLists) {
+      Set<Hash> newKeyLists,
+      Hash refLogId) {
     client.getGlobalLog().deleteOne(Filters.eq(toId(globalId)));
 
     delete(client.getCommitLog(), branchCommits);
     delete(client.getKeyLists(), newKeyLists);
+    client.getRefLog().deleteOne(Filters.eq(toId(refLogId)));
   }
 
   @Override
@@ -415,5 +420,27 @@ public class MongoDatabaseAdapter
   protected List<GlobalStateLogEntry> fetchPageFromGlobalLog(
       NonTransactionalOperationContext ctx, List<Hash> hashes) {
     return fetchPage(client.getGlobalLog(), hashes, GlobalStateLogEntry::parseFrom);
+  }
+
+  @Override
+  protected void writeRefLog(NonTransactionalOperationContext ctx, AdapterTypes.RefLogEntry entry)
+      throws ReferenceConflictException {
+    Document id = toId(Hash.of(entry.getRefLogId()));
+    insert(client.getRefLog(), toDoc(id, entry.toByteArray()));
+  }
+
+  @Override
+  protected RefLog fetchFromRefLog(NonTransactionalOperationContext ctx, Hash refLogId) {
+    if (refLogId == null) {
+      // set the current head as refLogId
+      refLogId = Hash.of(fetchGlobalPointer(ctx).getRefLogId());
+    }
+    return loadById(client.getRefLog(), refLogId, ProtoSerialization::protoToRefLog);
+  }
+
+  @Override
+  protected List<RefLog> fetchPageFromRefLog(
+      NonTransactionalOperationContext ctx, List<Hash> hashes) {
+    return fetchPage(client.getRefLog(), hashes, ProtoSerialization::protoToRefLog);
   }
 }

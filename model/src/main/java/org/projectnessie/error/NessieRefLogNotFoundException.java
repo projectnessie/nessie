@@ -13,18 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.persist.dynamodb;
+package org.projectnessie.error;
 
-final class Tables {
+/** This exception is thrown when a requested reflog is not present in the store. */
+public class NessieRefLogNotFoundException extends NessieNotFoundException {
 
-  static final String TABLE_GLOBAL_POINTER = "global_pointer";
-  static final String TABLE_GLOBAL_LOG = "global_log";
-  static final String TABLE_COMMIT_LOG = "commit_log";
-  static final String TABLE_KEY_LISTS = "key_lists";
-  static final String TABLE_REF_LOG = "ref_log";
+  public NessieRefLogNotFoundException(String message) {
+    super(message);
+  }
 
-  static final String KEY_NAME = "key";
-  static final String VALUE_NAME = "val";
+  public NessieRefLogNotFoundException(String message, Throwable cause) {
+    super(message, cause);
+  }
 
-  private Tables() {}
+  public NessieRefLogNotFoundException(NessieError error) {
+    super(error);
+  }
+
+  @Override
+  public ErrorCode getErrorCode() {
+    return ErrorCode.REFLOG_NOT_FOUND;
+  }
 }

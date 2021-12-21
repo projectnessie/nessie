@@ -77,10 +77,34 @@ message GlobalStateLogEntry {
   repeated ContentIdWithBytes puts = 4;
 }
 
+message RefLogEntry {
+  bytes ref_log_id = 1;
+  bytes ref_name = 2;
+  enum RefType {
+    Branch = 0;
+    Tag = 1;
+  }
+  RefType ref_type = 3;
+  bytes commit_hash = 4;
+  repeated bytes parents = 5;
+  int64 operation_time = 6;
+  enum Operation {
+    CREATE_REFERENCE = 0;
+    COMMIT = 1;
+    DELETE_REFERENCE = 2;
+    ASSIGN_REFERENCE = 3;
+    MERGE = 4;
+    TRANSPLANT = 5;
+  }
+  Operation operation = 7;
+  repeated bytes source_hashes = 8;
+}
+
 // Used by non-transactional database-adapters
 message GlobalStatePointer {
   bytes global_id = 1;
   map<string, RefPointer> named_references = 2;
+  bytes ref_log_id = 3;
 }
 
 // Used by non-transactional database-adapters

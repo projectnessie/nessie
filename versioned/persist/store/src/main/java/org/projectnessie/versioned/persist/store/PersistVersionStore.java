@@ -40,6 +40,8 @@ import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.Operation;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.Ref;
+import org.projectnessie.versioned.RefLog;
+import org.projectnessie.versioned.RefLogNotFoundException;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceInfo;
@@ -344,5 +346,10 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
       return (Hash) ref;
     }
     throw new IllegalArgumentException(String.format("Unsupported reference '%s'", ref));
+  }
+
+  @Override
+  public Stream<RefLog> getRefLog(Hash refLogId) throws RefLogNotFoundException {
+    return databaseAdapter.refLog(refLogId);
   }
 }

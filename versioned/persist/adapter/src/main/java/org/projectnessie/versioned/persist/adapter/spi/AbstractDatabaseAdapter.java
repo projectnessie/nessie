@@ -59,6 +59,8 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableReferenceInfo;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.NamedRef;
+import org.projectnessie.versioned.RefLog;
+import org.projectnessie.versioned.RefLogNotFoundException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceInfo.CommitsAheadBehind;
@@ -670,9 +672,9 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
   }
 
   /**
-   * Constructs a {@link Stream} of entries for either the global-state-log or a commit-log. Use
-   * {@link #readCommitLogStream(Object, Hash)} or the similar implementation for the global-log for
-   * non-transactional adapters.
+   * Constructs a {@link Stream} of entries for either the global-state-log or a commit-log or a
+   * reflog entry. Use {@link #readCommitLogStream(Object, Hash)} or the similar implementation for
+   * the global-log or reflog entry for non-transactional adapters.
    */
   protected <T> Spliterator<T> logFetcher(
       OP_CONTEXT ctx,
@@ -1333,5 +1335,34 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
         }
       }
     }
+  }
+
+  /** Load the refLog entry for the given hash, return {@code null}, if not found. */
+  protected abstract RefLog fetchFromRefLog(OP_CONTEXT ctx, Hash refLogId);
+
+  /**
+   * Fetch multiple {@link RefLog refLog-entries} from the refLog. The returned list must have
+   * exactly as many elements as in the parameter {@code hashes}. Non-existing hashes are returned
+   * as {@code null}.
+   */
+  protected abstract List<RefLog> fetchPageFromRefLog(OP_CONTEXT ctx, List<Hash> hashes);
+
+  /** Reads from the refLog starting at the given refLog-hash. */
+  protected Stream<RefLog> readRefLogStream(OP_CONTEXT ctx, Hash initialHash)
+      throws RefLogNotFoundException {
+    Spliterator<RefLog> split = readRefLog(ctx, initialHash);
+    return StreamSupport.stream(split, false);
+  }
+
+  protected Spliterator<RefLog> readRefLog(OP_CONTEXT ctx, Hash initialHash)
+      throws RefLogNotFoundException {
+    if (NO_ANCESTOR.equals(initialHash)) {
+      return Spliterators.emptySpliterator();
+    }
+    RefLog initial = fetchFromRefLog(ctx, initialHash);
+    if (initial == null) {
+      throw RefLogNotFoundException.forRefLogId(initialHash.asString());
+    }
+    return logFetcher(ctx, initial, this::fetchPageFromRefLog, RefLog::getParents);
   }
 }

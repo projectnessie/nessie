@@ -20,6 +20,7 @@ import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_COMMIT_L
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_GLOBAL_LOG;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_GLOBAL_POINTER;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_KEY_LISTS;
+import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_REF_LOG;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.VALUE_NAME;
 import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.toProto;
 
@@ -38,6 +39,8 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import org.projectnessie.versioned.BackendLimitExceededException;
 import org.projectnessie.versioned.Hash;
+import org.projectnessie.versioned.RefLog;
+import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.KeyList;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
@@ -47,6 +50,7 @@ import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapter
 import org.projectnessie.versioned.persist.nontx.NonTransactionalOperationContext;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogEntry;
 import org.projectnessie.versioned.persist.serialize.ProtoSerialization;
 import org.projectnessie.versioned.persist.serialize.ProtoSerialization.Parser;
 import software.amazon.awssdk.core.SdkBytes;
@@ -117,7 +121,7 @@ public class DynamoDatabaseAdapter
     client.client.deleteItem(
         b -> b.tableName(TABLE_GLOBAL_POINTER).key(globalPointerKeyMap).build());
 
-    Stream.of(TABLE_GLOBAL_LOG, TABLE_GLOBAL_LOG, TABLE_KEY_LISTS)
+    Stream.of(TABLE_GLOBAL_LOG, TABLE_COMMIT_LOG, TABLE_KEY_LISTS, TABLE_REF_LOG)
         .forEach(
             table ->
                 client
@@ -274,7 +278,8 @@ public class DynamoDatabaseAdapter
       NonTransactionalOperationContext ctx,
       Hash globalId,
       Set<Hash> branchCommits,
-      Set<Hash> newKeyLists) {
+      Set<Hash> newKeyLists,
+      Hash refLogId) {
     Map<String, List<WriteRequest>> requestItems = new HashMap<>();
     if (!branchCommits.isEmpty()) {
       requestItems.put(TABLE_COMMIT_LOG, cleanupDeletes(branchCommits));
@@ -283,6 +288,7 @@ public class DynamoDatabaseAdapter
       requestItems.put(TABLE_KEY_LISTS, cleanupDeletes(newKeyLists));
     }
     requestItems.put(TABLE_GLOBAL_LOG, cleanupDeletes(Collections.singleton(globalId)));
+    requestItems.put(TABLE_REF_LOG, cleanupDeletes(Collections.singleton(refLogId)));
 
     client.client.batchWriteItem(b -> b.requestItems(requestItems));
   }
@@ -388,5 +394,26 @@ public class DynamoDatabaseAdapter
     }
     client.client.batchWriteItem(
         b -> b.requestItems(Collections.singletonMap(tableName, requests)));
+  }
+
+  @Override
+  protected void writeRefLog(NonTransactionalOperationContext ctx, RefLogEntry entry)
+      throws ReferenceConflictException {
+    insert(TABLE_REF_LOG, Hash.of(entry.getRefLogId()).asString(), entry.toByteArray());
+  }
+
+  @Override
+  protected RefLog fetchFromRefLog(NonTransactionalOperationContext ctx, Hash refLogId) {
+    if (refLogId == null) {
+      // set the current head as refLogId
+      refLogId = Hash.of(fetchGlobalPointer(ctx).getRefLogId());
+    }
+    return loadById(TABLE_REF_LOG, refLogId, ProtoSerialization::protoToRefLog);
+  }
+
+  @Override
+  protected List<RefLog> fetchPageFromRefLog(
+      NonTransactionalOperationContext ctx, List<Hash> hashes) {
+    return fetchPageResult(TABLE_REF_LOG, hashes, ProtoSerialization::protoToRefLog);
   }
 }

@@ -26,6 +26,7 @@ import org.projectnessie.client.api.GetCommitLogBuilder;
 import org.projectnessie.client.api.GetContentBuilder;
 import org.projectnessie.client.api.GetDiffBuilder;
 import org.projectnessie.client.api.GetEntriesBuilder;
+import org.projectnessie.client.api.GetRefLogBuilder;
 import org.projectnessie.client.api.GetReferenceBuilder;
 import org.projectnessie.client.api.MergeReferenceBuilder;
 import org.projectnessie.client.api.NessieApiV1;
@@ -126,5 +127,10 @@ public final class HttpApiV1 implements NessieApiV1 {
   @Override
   public GetDiffBuilder getDiff() {
     return new HttpGetDiff(client);
+  }
+
+  @Override
+  public GetRefLogBuilder getRefLog() {
+    return new HttpGetRefLog(client);
   }
 }

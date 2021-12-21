@@ -71,6 +71,9 @@ public class NessieAuthorizationTestProfile extends AuthenticationEnabledProfile
           .put(
               "nessie.server.authorization.rules.allow_commits_without_entity_changes",
               "op=='COMMIT_CHANGE_AGAINST_REFERENCE' && role=='test_user2' && ref.startsWith('allowedBranch')")
+          .put(
+              "nessie.server.authorization.rules.allow_listing_reflog",
+              "op=='VIEW_REFLOG' && role=='admin_user'")
           .build();
 
   @Override

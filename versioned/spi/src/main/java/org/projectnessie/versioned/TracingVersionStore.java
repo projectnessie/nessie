@@ -229,6 +229,11 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
         () -> delegate.getDiffs(from, to));
   }
 
+  @Override
+  public Stream<RefLog> getRefLog(Hash refLogId) throws RefLogNotFoundException {
+    return delegate.getRefLog(refLogId);
+  }
+
   private Span createSpan(String name, Consumer<SpanBuilder> spanBuilder) {
     Tracer tracer = GlobalTracer.get();
     String spanName = makeSpanName(name);
