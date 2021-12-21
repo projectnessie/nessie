@@ -20,6 +20,7 @@ import org.projectnessie.model.Branch;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.NessieConfiguration;
+import org.projectnessie.model.RefLogResponse;
 
 /** Interface for the Nessie V1 API implementation. */
 public interface NessieApiV1 extends NessieApi {
@@ -102,4 +103,24 @@ public interface NessieApiV1 extends NessieApi {
 
   /** Retrieve a diff between two references. */
   GetDiffBuilder getDiff();
+
+  /**
+   * Retrieve the reflog from the HEAD of the RefLog resource, potentially truncated by the backend.
+   *
+   * <p>Retrieves up to {@code maxRecords} refLog-entries starting at the HEAD of the RefLog
+   * resource. The backend <em>may</em> respect the given {@code max} records hint, but return less
+   * or more entries. Backends may also cap the returned entries at a hard-coded limit, the default
+   * REST server implementation has such a hard-coded limit.
+   *
+   * <p>Invoking {@code getRefLog()} does <em>not</em> guarantee to return all reflog entries,
+   * because the result can be truncated by the backend.
+   *
+   * <p>To implement paging, check {@link RefLogResponse#isHasMore() RefLogResponse.isHasMore()}
+   * and, if {@code true}, pass the value of {@link RefLogResponse#getToken()
+   * RefLogResponse.getToken()} in the next invocation of {@code getRefLog()} as the {@code
+   * pageToken} parameter.
+   *
+   * <p>See {@code org.projectnessie.client.StreamingUtil} in {@code nessie-client}.
+   */
+  GetRefLogBuilder getRefLog();
 }

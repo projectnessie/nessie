@@ -20,6 +20,7 @@ import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_COMMIT_L
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_GLOBAL_LOG;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_GLOBAL_POINTER;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_KEY_LISTS;
+import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_REF_LOG;
 
 import java.net.URI;
 import java.util.List;
@@ -86,7 +87,12 @@ public class DynamoDatabaseClient implements DatabaseConnectionProvider<DynamoCl
           "Must provide a Dynamo-client-configuration of type DefaultDynamoClientConfig or ProvidedDynamoClientConfig.");
     }
 
-    Stream.of(TABLE_GLOBAL_POINTER, TABLE_GLOBAL_LOG, TABLE_COMMIT_LOG, TABLE_KEY_LISTS)
+    Stream.of(
+            TABLE_GLOBAL_POINTER,
+            TABLE_GLOBAL_LOG,
+            TABLE_COMMIT_LOG,
+            TABLE_KEY_LISTS,
+            TABLE_REF_LOG)
         .forEach(this::createIfMissing);
   }
 

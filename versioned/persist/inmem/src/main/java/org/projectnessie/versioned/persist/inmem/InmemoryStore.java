@@ -30,6 +30,7 @@ public class InmemoryStore implements DatabaseConnectionProvider<InmemoryConfig>
   final ConcurrentMap<ByteString, ByteString> globalStateLog = new ConcurrentHashMap<>();
   final ConcurrentMap<ByteString, ByteString> commitLog = new ConcurrentHashMap<>();
   final ConcurrentMap<ByteString, ByteString> keyLists = new ConcurrentHashMap<>();
+  final ConcurrentMap<ByteString, ByteString> refLog = new ConcurrentHashMap<>();
 
   public InmemoryStore() {}
 
@@ -43,7 +44,7 @@ public class InmemoryStore implements DatabaseConnectionProvider<InmemoryConfig>
   public void close() {}
 
   void reinitializeRepo(ByteString keyPrefix) {
-    Stream.of(globalStatePointer, globalStateLog, commitLog, keyLists)
+    Stream.of(globalStatePointer, globalStateLog, commitLog, keyLists, refLog)
         .forEach(map -> map.keySet().removeIf(bytes -> bytes.startsWith(keyPrefix)));
   }
 }

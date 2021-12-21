@@ -176,6 +176,11 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
     return delegateStream1Ex("getdiffs", () -> delegate.getDiffs(from, to));
   }
 
+  @Override
+  public Stream<RefLog> getRefLog(Hash refLogId) throws RefLogNotFoundException {
+    return delegateStreamRefLogEx(() -> delegate.getRefLog(refLogId));
+  }
+
   private void measure(String requestName, Sample sample, Exception failure) {
     Timer timer =
         Timer.builder("nessie.versionstore.request")
@@ -213,6 +218,21 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
       throw e;
     } catch (RuntimeException e) {
       measure(requestName, sample, e);
+      throw e;
+    }
+  }
+
+  private <R> Stream<R> delegateStreamRefLogEx(
+      DelegateWith1<Stream<R>, RefLogNotFoundException> delegate) throws RefLogNotFoundException {
+    Sample sample = Timer.start(clock);
+    try {
+      return delegate.handle().onClose(() -> measure("getreflog", sample, null));
+    } catch (IllegalArgumentException | RefLogNotFoundException e) {
+      // IllegalArgumentException indicates a user-error, not a server error
+      measure("getreflog", sample, null);
+      throw e;
+    } catch (RuntimeException e) {
+      measure("getreflog", sample, e);
       throw e;
     }
   }

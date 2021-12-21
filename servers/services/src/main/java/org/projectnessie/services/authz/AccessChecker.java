@@ -139,4 +139,12 @@ public interface AccessChecker {
    */
   void canDeleteEntity(AccessContext context, NamedRef ref, ContentKey key, String contentId)
       throws AccessControlException;
+
+  /**
+   * Checks whether the given role/principal is allowed to view the reflog entries.
+   *
+   * @param context The context carrying the principal information.
+   * @throws AccessControlException When the permission to view the reflog entries is not granted.
+   */
+  void canViewRefLog(AccessContext context) throws AccessControlException;
 }

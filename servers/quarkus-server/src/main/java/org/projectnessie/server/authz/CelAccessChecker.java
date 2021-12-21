@@ -47,7 +47,8 @@ public class CelAccessChecker implements AccessChecker {
     COMMIT_CHANGE_AGAINST_REFERENCE,
     READ_ENTITY_VALUE,
     UPDATE_ENTITY,
-    DELETE_ENTITY;
+    DELETE_ENTITY,
+    VIEW_REFLOG;
   }
 
   @Inject
@@ -121,6 +122,22 @@ public class CelAccessChecker implements AccessChecker {
       throws AccessControlException {
     canViewReference(context, ref);
     canPerformOpOnPath(context, ref, key, AuthorizationRuleType.DELETE_ENTITY);
+  }
+
+  @Override
+  public void canViewRefLog(AccessContext context) throws AccessControlException {
+    if (!config.enabled()) {
+      return;
+    }
+    String roleName = getRoleName(context);
+    ImmutableMap<String, Object> arguments =
+        ImmutableMap.of("role", roleName, "op", AuthorizationRuleType.VIEW_REFLOG.name());
+
+    Supplier<String> errorMsgSupplier =
+        () ->
+            String.format(
+                "'%s' is not allowed for role '%s' ", AuthorizationRuleType.VIEW_REFLOG, roleName);
+    canPerformOp(arguments, errorMsgSupplier);
   }
 
   private String getRoleName(AccessContext context) {

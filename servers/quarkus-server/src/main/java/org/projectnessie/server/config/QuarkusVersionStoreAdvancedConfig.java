@@ -88,4 +88,9 @@ public interface QuarkusVersionStoreAdvancedConfig
   @WithDefault("" + DEFAULT_BATCH_SIZE)
   @Override
   int getBatchSize();
+
+  @WithName("parent-per-reflog-entry")
+  @WithDefault("" + DEFAULT_PARENTS_PER_REFLOG_ENTRY)
+  @Override
+  int getParentsPerRefLogEntry();
 }

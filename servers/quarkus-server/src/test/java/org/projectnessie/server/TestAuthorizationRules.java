@@ -40,6 +40,7 @@ import org.projectnessie.model.ImmutableOperations;
 import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
+import org.projectnessie.model.RefLogResponse;
 import org.projectnessie.model.Reference;
 import org.projectnessie.server.authz.NessieAuthorizationTestProfile;
 
@@ -92,6 +93,8 @@ class TestAuthorizationRules extends BaseClientAuthTest {
 
     branch = shouldFail ? branchWithInvalidHash : retrieveBranch(branchName, role, shouldFail);
     deleteBranch(branch, role, shouldFail);
+
+    getRefLog(role, !role.equals("admin_user"));
   }
 
   @Test
@@ -260,6 +263,17 @@ class TestAuthorizationRules extends BaseClientAuthTest {
     } else {
       List<LogEntry> commits = api().getCommitLog().refName(branchName).get().getLogEntries();
       assertThat(commits).isNotEmpty();
+    }
+  }
+
+  private void getRefLog(String role, boolean shouldFail) throws NessieNotFoundException {
+    if (shouldFail) {
+      assertThatThrownBy(() -> api().getRefLog().get().getLogEntries())
+          .isInstanceOf(NessieForbiddenException.class)
+          .hasMessageContaining(String.format("'VIEW_REFLOG' is not allowed for role '%s'", role));
+    } else {
+      List<RefLogResponse.RefLogResponseEntry> entries = api().getRefLog().get().getLogEntries();
+      assertThat(entries).isNotEmpty();
     }
   }
 

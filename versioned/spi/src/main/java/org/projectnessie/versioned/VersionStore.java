@@ -281,4 +281,12 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @return A stream of values that are different.
    */
   Stream<Diff<VALUE>> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException;
+
+  /**
+   * Get a stream of all reflog entries from the initial refLogId.
+   *
+   * @param refLogId initial reflog id to be used
+   * @return A stream of reflog entries.
+   */
+  Stream<RefLog> getRefLog(Hash refLogId) throws RefLogNotFoundException;
 }

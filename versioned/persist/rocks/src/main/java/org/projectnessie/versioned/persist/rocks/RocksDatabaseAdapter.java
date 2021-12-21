@@ -18,6 +18,7 @@ package org.projectnessie.versioned.persist.rocks;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.hashCollisionDetected;
 import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.protoToCommitLogEntry;
 import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.protoToKeyList;
+import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.protoToRefLog;
 import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.toProto;
 
 import com.google.protobuf.ByteString;
@@ -32,6 +33,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.projectnessie.versioned.Hash;
+import org.projectnessie.versioned.RefLog;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
@@ -39,6 +41,7 @@ import org.projectnessie.versioned.persist.adapter.KeyWithType;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapter;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalOperationContext;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
 import org.projectnessie.versioned.persist.serialize.ProtoSerialization;
@@ -198,7 +201,8 @@ public class RocksDatabaseAdapter
       NonTransactionalOperationContext ctx,
       Hash globalId,
       Set<Hash> branchCommits,
-      Set<Hash> newKeyLists) {
+      Set<Hash> newKeyLists,
+      Hash refLogId) {
     Lock lock = dbInstance.getLock().writeLock();
     lock.lock();
     try {
@@ -210,6 +214,7 @@ public class RocksDatabaseAdapter
       for (Hash h : newKeyLists) {
         batch.delete(dbInstance.getCfKeyList(), dbKey(h));
       }
+      batch.delete(dbInstance.getCfRefLog(), dbKey(refLogId));
       db.write(new WriteOptions(), batch);
     } catch (RocksDBException e) {
       throw new RuntimeException(e);
@@ -321,5 +326,43 @@ public class RocksDatabaseAdapter
   @Override
   protected int entitySize(KeyWithType entry) {
     return toProto(entry).getSerializedSize();
+  }
+
+  @Override
+  protected void writeRefLog(NonTransactionalOperationContext ctx, AdapterTypes.RefLogEntry entry)
+      throws ReferenceConflictException {
+    Lock lock = dbInstance.getLock().writeLock();
+    lock.lock();
+    try {
+      byte[] key = dbKey(entry.getRefLogId());
+      if (db.keyMayExist(key, new Holder<>())) {
+        throw hashCollisionDetected();
+      }
+      db.put(dbInstance.getCfRefLog(), key, entry.toByteArray());
+    } catch (RocksDBException e) {
+      throw new RuntimeException(e);
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  @Override
+  protected RefLog fetchFromRefLog(NonTransactionalOperationContext ctx, Hash refLogId) {
+    if (refLogId == null) {
+      // set the current head as refLogId
+      refLogId = Hash.of(fetchGlobalPointer(ctx).getRefLogId());
+    }
+    try {
+      byte[] v = db.get(dbInstance.getCfRefLog(), dbKey(refLogId));
+      return protoToRefLog(v);
+    } catch (RocksDBException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  protected List<RefLog> fetchPageFromRefLog(
+      NonTransactionalOperationContext ctx, List<Hash> hashes) {
+    return fetchPage(dbInstance.getCfRefLog(), hashes, ProtoSerialization::protoToRefLog);
   }
 }

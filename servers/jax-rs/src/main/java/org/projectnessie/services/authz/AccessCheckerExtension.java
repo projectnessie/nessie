@@ -15,6 +15,7 @@
  */
 package org.projectnessie.services.authz;
 
+import java.security.AccessControlException;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Default;
@@ -60,6 +61,9 @@ public class AccessCheckerExtension implements Extension {
         @Override
         public void canDeleteEntity(
             AccessContext context, NamedRef ref, ContentKey key, String contentId) {}
+
+        @Override
+        public void canViewRefLog(AccessContext context) throws AccessControlException {}
       };
 
   @SuppressWarnings("unused")

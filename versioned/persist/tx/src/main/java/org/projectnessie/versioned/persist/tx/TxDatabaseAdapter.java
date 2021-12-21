@@ -59,6 +59,7 @@ import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.NamedRef;
+import org.projectnessie.versioned.RefLog;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceInfo;
@@ -589,6 +590,12 @@ public abstract class TxDatabaseAdapter
   @Override
   protected int entitySize(KeyWithType entry) {
     return toProto(entry).getSerializedSize();
+  }
+
+  @Override
+  public Stream<RefLog> refLog(Hash offset) {
+    // TODO:
+    return null;
   }
 
   protected Connection borrowConnection() {
@@ -1224,6 +1231,18 @@ public abstract class TxDatabaseAdapter
       }
       throw new RuntimeException(e);
     }
+  }
+
+  @Override
+  protected RefLog fetchFromRefLog(Connection ctx, Hash refLogId) {
+    // TODO:
+    return null;
+  }
+
+  @Override
+  protected List<RefLog> fetchPageFromRefLog(Connection ctx, List<Hash> hashes) {
+    // TODO:
+    return null;
   }
 
   /**
