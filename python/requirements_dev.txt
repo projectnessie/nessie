@@ -28,7 +28,7 @@ pytest-recording==0.12.0
 pytest-runner==5.3.1
 Sphinx==4.3.2
 sphinx-autodoc-typehints==1.12.0
-tox==3.24.4
+tox==3.24.5
 twine==3.7.1
 watchdog==2.1.6
 wheel==0.37.1
