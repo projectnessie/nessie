@@ -116,7 +116,7 @@
     "jest-circus": "27.4.5",
     "jest-resolve": "27.4.5",
     "jest-watch-typeahead": "1.0.0",
-    "lint-staged": "^12.1.4",
+    "lint-staged": "^12.1.5",
     "mini-css-extract-plugin": "1.6.2",
     "nock": "^13.2.1",
     "optimize-css-assets-webpack-plugin": "6.0.1",
