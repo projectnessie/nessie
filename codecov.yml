@@ -16,8 +16,8 @@
 
 codecov:
   notify:
-    after_n_builds: 5
+    after_n_builds: 6
 comment:
-  after_n_builds: 5
+  after_n_builds: 6
 github_checks:
   annotations: false
