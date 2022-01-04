@@ -27,7 +27,9 @@ pytest-mypy==0.8.1
 pytest-recording==0.12.0
 pytest-runner==5.3.1
 Sphinx==4.3.2
-sphinx-autodoc-typehints==1.12.0
+# version-gate for sphinx-autodoc-typehints - 1.12.0 is the latest version that supports Python 3.6
+sphinx-autodoc-typehints==1.12.0 ; python_version < '3.7'
+sphinx-autodoc-typehints==1.13.0 ; python_version >= '3.7'
 tox==3.24.5
 twine==3.7.1
 watchdog==2.1.6
