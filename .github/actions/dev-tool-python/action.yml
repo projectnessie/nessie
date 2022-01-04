@@ -10,12 +10,8 @@ runs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ inputs.python-version }}
-    - uses: actions/cache@v2
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
+        cache: 'pip'
+        cache-dependency-path: '**/requirements*.txt'
     - name: Install dependencies
       shell: bash
       run: |
