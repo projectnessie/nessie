@@ -15,14 +15,27 @@
  */
 package org.projectnessie.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import java.util.List;
+import java.util.Map;
+import javax.annotation.Nullable;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.PositiveOrZero;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
+import org.projectnessie.model.iceberg.IcebergMetadataUpdate;
+import org.projectnessie.model.iceberg.IcebergPartitionSpec;
+import org.projectnessie.model.iceberg.IcebergSchema;
+import org.projectnessie.model.iceberg.IcebergSnapshot;
+import org.projectnessie.model.iceberg.IcebergSortOrder;
 
 /**
  * Represents the state of an Iceberg table in Nessie. An Iceberg table is globally identified via
@@ -40,20 +53,30 @@ import org.immutables.value.Value;
     type = SchemaType.OBJECT,
     title = "Iceberg table global state",
     description =
-        "Represents the global state of an Iceberg table in Nessie. An Iceberg table is globally "
+        "Represents the state of an Iceberg table in Nessie. An Iceberg table is globally "
             + "identified via its unique 'Content.id'.\n"
             + "\n"
             + "A Nessie commit-operation, performed via 'TreeApi.commitMultipleOperations',"
             + "for Iceberg consists of a 'Operation.Put' with an 'IcebergTable' as in the 'content' "
-            + "field and the previous value of 'IcebergTable' in the 'expectedContent' field.\n"
-            + "\n"
-            + "During a commit-operation, Nessie checks whether the known global state of the "
-            + "Iceberg table is compatible (think: equal) to 'Operation.Put.expectedContent'.")
+            + "field and the previous value of 'IcebergTable' in the 'expectedContent' field.")
 @Value.Immutable
 @JsonSerialize(as = ImmutableIcebergTable.class)
 @JsonDeserialize(as = ImmutableIcebergTable.class)
 @JsonTypeName("ICEBERG_TABLE")
 public abstract class IcebergTable extends Content {
+
+  public static final int MIN_SUPPORTED_FORMAT_VERSION = 2;
+  public static final int MAX_SUPPORTED_FORMAT_VERSION = 2;
+  public static final long INITIAL_SEQUENCE_NUMBER = 0;
+  public static final long INVALID_SEQUENCE_NUMBER = -1;
+  public static final int INITIAL_SPEC_ID = 0;
+  public static final int INITIAL_SORT_ORDER_ID = 1;
+  public static final long INITIAL_LAST_UPDATED_MILLIS = 0L;
+  //
+  public static final int INITIAL_LAST_COLUMN_ID = 0;
+  public static final int INITIAL_PARTITION_ID = 0;
+  public static final int INITIAL_SCHEMA_ID = 0;
+  public static final long DEFAULT_SNAPSHOT_ID = -1L;
 
   /**
    * Location where Iceberg stored its {@code TableMetadata} file. The location depends on the
@@ -63,12 +86,20 @@ public abstract class IcebergTable extends Content {
   @NotBlank
   public abstract String getMetadataLocation();
 
+  /** Corresponds to Iceberg's {@code currentSnapshotId}. */
+  @Min(DEFAULT_SNAPSHOT_ID)
   public abstract long getSnapshotId();
 
+  /** Corresponds to Iceberg's {@code currentSchemaId}. */
+  @Min(INITIAL_SCHEMA_ID)
   public abstract int getSchemaId();
 
+  /** Corresponds to Iceberg's {@code defaultSpecId}. */
+  @Min(INITIAL_SPEC_ID)
   public abstract int getSpecId();
 
+  /** Corresponds to Iceberg's {@code defaultSortOrderId}. */
+  @PositiveOrZero
   public abstract int getSortOrderId();
 
   @Override
@@ -76,9 +107,66 @@ public abstract class IcebergTable extends Content {
     return Type.ICEBERG_TABLE;
   }
 
+  @Nullable // for backwards compatibility
+  @JsonInclude(Include.NON_EMPTY)
+  public abstract String getLocation();
+
+  @Nullable // for backwards compatibility
+  @Min(MIN_SUPPORTED_FORMAT_VERSION)
+  @Max(MAX_SUPPORTED_FORMAT_VERSION)
+  @JsonInclude(Include.NON_NULL)
+  public abstract Integer getFormatVersion();
+
+  @Nullable // for backwards compatibility
+  @JsonInclude(Include.NON_NULL)
+  public abstract String getUuid();
+
+  @Nullable // for backwards compatibility
+  @Min(INVALID_SEQUENCE_NUMBER)
+  @JsonInclude(Include.NON_NULL)
+  public abstract Long getLastSequenceNumber();
+
+  @Nullable // for backwards compatibility
+  @JsonInclude(Include.NON_NULL)
+  public abstract Long getLastUpdatedMillis();
+
+  @Nullable // for backwards compatibility
+  @Min(INITIAL_LAST_COLUMN_ID)
+  @JsonInclude(Include.NON_NULL)
+  public abstract Integer getLastColumnId();
+
+  @Nullable // for backwards compatibility
+  @Min(INITIAL_PARTITION_ID)
+  @JsonInclude(Include.NON_NULL)
+  public abstract Integer getLastAssignedPartitionId();
+
+  @JsonInclude(Include.NON_EMPTY)
+  public abstract List<IcebergSchema> getSchemas();
+
+  // TODO We do need this list here - manifests record the partition spec
+  @JsonInclude(Include.NON_EMPTY)
+  public abstract List<IcebergPartitionSpec> getSpecs();
+
+  // TODO We do need this list here - manifests record the partition spec
+  @JsonInclude(Include.NON_EMPTY)
+  public abstract List<IcebergSortOrder> getSortOrders();
+
+  @JsonInclude(Include.NON_EMPTY)
+  public abstract List<IcebergSnapshot> getSnapshots();
+
+  @JsonInclude(Include.NON_EMPTY)
+  public abstract List<IcebergMetadataUpdate> getChanges();
+
+  @JsonInclude(Include.NON_EMPTY)
+  public abstract Map<String, String> getProperties();
+
+  public static ImmutableIcebergTable.Builder builder() {
+    return ImmutableIcebergTable.builder();
+  }
+
   public static IcebergTable of(
       String metadataLocation, long snapshotId, int schemaId, int specId, int sortOrderId) {
-    return ImmutableIcebergTable.builder()
+    return builder()
         .metadataLocation(metadataLocation)
         .snapshotId(snapshotId)
         .schemaId(schemaId)
@@ -94,7 +182,7 @@ public abstract class IcebergTable extends Content {
       int specId,
       int sortOrderId,
       String contentId) {
-    return ImmutableIcebergTable.builder()
+    return builder()
         .metadataLocation(metadataLocation)
         .snapshotId(snapshotId)
         .schemaId(schemaId)

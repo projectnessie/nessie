@@ -25,4 +25,8 @@ public interface HistoryEntry {
   long timestampMillis();
 
   int versionId();
+
+  static HistoryEntry of(long timestampMillis, int versionId) {
+    return new VersionLogEntry(timestampMillis, versionId);
+  }
 }

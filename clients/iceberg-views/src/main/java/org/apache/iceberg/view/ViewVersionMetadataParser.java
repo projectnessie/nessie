@@ -25,6 +25,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -71,6 +74,18 @@ public class ViewVersionMetadataParser {
     }
   }
 
+  public static String toJson(ViewVersionMetadata metadata) {
+    try {
+      StringWriter writer = new StringWriter();
+      JsonGenerator generator = JsonUtil.factory().createGenerator(writer);
+      toJson(metadata, generator);
+      generator.flush();
+      return writer.toString();
+    } catch (IOException e) {
+      throw new RuntimeIOException(e, "Failed to write json");
+    }
+  }
+
   public static void toJson(ViewVersionMetadata metadata, JsonGenerator generator)
       throws IOException {
     generator.writeStartObject();
@@ -107,6 +122,14 @@ public class ViewVersionMetadataParser {
       return fromJson(file, JsonUtil.mapper().readValue(is, JsonNode.class));
     } catch (IOException e) {
       throw new RuntimeIOException(e, "Failed to read file: %s", file);
+    }
+  }
+
+  public static ViewVersionMetadata fromJson(String json) {
+    try (Reader is = new StringReader(json)) {
+      return fromJson(null, JsonUtil.mapper().readValue(is, JsonNode.class));
+    } catch (IOException e) {
+      throw new RuntimeIOException(e, "Failed to parse JSON");
     }
   }
 

@@ -46,6 +46,11 @@
       </dependency>
       <dependency>
         <groupId>org.projectnessie</groupId>
+        <artifactId>nessie-iceberg</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.projectnessie</groupId>
         <artifactId>nessie-clients</artifactId>
         <version>${project.version}</version>
       </dependency>
