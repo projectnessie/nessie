@@ -184,6 +184,32 @@ public abstract class AbstractTestRest {
   }
 
   @Test
+  public void deleteReferences() throws NessieNotFoundException, NessieConflictException {
+    String mainHash = api.getReference().refName("main").get().getHash();
+
+    String tagName1 = "createReferences_tag1";
+    String tagName2 = "createReferences_tag2";
+    String branchName1 = "createReferences_branch1";
+    String branchName2 = "createReferences_branch2";
+
+    api.createReference().sourceRefName("main").reference(Tag.of(tagName1, mainHash)).create();
+    api.createReference().sourceRefName("main").reference(Tag.of(tagName2, mainHash)).create();
+    api.createReference()
+        .sourceRefName("main")
+        .reference(Branch.of(branchName1, mainHash))
+        .create();
+    api.createReference()
+        .sourceRefName("main")
+        .reference(Branch.of(branchName2, mainHash))
+        .create();
+
+    api.deleteTag().tagName(tagName1).delete();
+    api.deleteTag().tagName(tagName2).hash(mainHash).delete();
+    api.deleteBranch().branchName(branchName1).delete();
+    api.deleteBranch().branchName(branchName2).hash(mainHash).delete();
+  }
+
+  @Test
   public void createReferences() throws NessieNotFoundException {
     String mainHash = api.getReference().refName("main").get().getHash();
 

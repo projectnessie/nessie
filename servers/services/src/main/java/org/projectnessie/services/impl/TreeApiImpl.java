@@ -610,7 +610,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   protected void deleteReference(NamedRef ref, String hash)
       throws NessieConflictException, NessieNotFoundException {
     try {
-      getStore().delete(ref, toHash(hash, true));
+      getStore().delete(ref, toHash(hash, false));
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
