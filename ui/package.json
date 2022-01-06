@@ -112,7 +112,7 @@
     "fs-extra": "^10.0.0",
     "html-webpack-plugin": "4.5.2",
     "husky": "^7.0.4",
-    "jest": "27.4.6",
+    "jest": "27.4.7",
     "jest-circus": "27.4.6",
     "jest-resolve": "27.4.6",
     "jest-watch-typeahead": "1.0.0",
