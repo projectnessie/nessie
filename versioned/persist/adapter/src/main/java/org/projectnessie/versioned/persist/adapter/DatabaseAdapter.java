@@ -306,7 +306,7 @@ public interface DatabaseAdapter {
    * Retrieve the refLog starting at the refLog referenced by {@code offset}.
    *
    * @return stream of {@link RefLog}s
-   * @param offset
+   * @param offset initial reflog id to read from
    */
   Stream<RefLog> refLog(Hash offset) throws RefLogNotFoundException;
 }

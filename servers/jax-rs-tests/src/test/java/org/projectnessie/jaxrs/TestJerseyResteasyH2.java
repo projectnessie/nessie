@@ -22,10 +22,4 @@ import org.projectnessie.versioned.persist.tx.h2.H2TestConnectionProviderSource;
 
 @NessieDbAdapterName(H2DatabaseAdapterFactory.NAME)
 @NessieExternalDatabase(H2TestConnectionProviderSource.class)
-class TestJerseyResteasyH2 extends AbstractTestJerseyResteasy {
-
-  @Override
-  public void testGetRefLog() {
-    // TODO: enable when Txn store is supported for reflog
-  }
-}
+class TestJerseyResteasyH2 extends AbstractTestJerseyResteasy {}
