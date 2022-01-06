@@ -34,6 +34,7 @@ import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyWithType;
 import org.projectnessie.versioned.persist.adapter.RefLog;
+import org.projectnessie.versioned.persist.adapter.RepoDescription;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapter;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalOperationContext;
@@ -194,6 +195,22 @@ public class InmemoryDatabaseAdapter
               return serialized != null ? KeyListEntity.of(hash, protoToKeyList(serialized)) : null;
             })
         .filter(Objects::nonNull);
+  }
+
+  @Override
+  protected RepoDescription fetchRepositoryDescription(NonTransactionalOperationContext ctx) {
+    AtomicReference<RepoDescription> ref = store.repoDesc.get(dbKey(ByteString.EMPTY));
+    return ref != null ? ref.get() : null;
+  }
+
+  @Override
+  protected boolean tryUpdateRepositoryDescription(
+      NonTransactionalOperationContext ctx, RepoDescription expected, RepoDescription updateTo) {
+    if (expected == null) {
+      return store.repoDesc.putIfAbsent(dbKey(ByteString.EMPTY), new AtomicReference<>(updateTo))
+          == null;
+    }
+    return store.repoDesc.get(dbKey(ByteString.EMPTY)).compareAndSet(expected, updateTo);
   }
 
   @Override

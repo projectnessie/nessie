@@ -141,6 +141,10 @@ public final class DatabaseAdapterUtil {
         assignTo.asString());
   }
 
+  public static String repoDescUpdateConflictMessage(String err) {
+    return String.format("%s during update of the repository description", err);
+  }
+
   /**
    * Verifies that {@code expectedHead}, if present, is equal to {@code referenceCurrentHead}.
    * Throws a {@link ReferenceConflictException} if not.

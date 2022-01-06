@@ -122,3 +122,13 @@ message RefPointer {
   Type type = 1;
   bytes hash = 2;
 }
+
+message RepoProps {
+  int32 repo_version = 1;
+  repeated Entry properties = 2;
+}
+
+message Entry {
+  string key = 1;
+  string value = 2;
+}

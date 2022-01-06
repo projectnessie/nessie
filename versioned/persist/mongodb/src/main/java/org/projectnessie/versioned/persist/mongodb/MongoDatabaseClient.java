@@ -27,6 +27,7 @@ import org.projectnessie.versioned.persist.adapter.DatabaseConnectionProvider;
 
 public class MongoDatabaseClient implements DatabaseConnectionProvider<MongoClientConfig> {
 
+  private static final String REPO_DESC = "repo_desc";
   private static final String GLOBAL_POINTER = "global_pointer";
   private static final String GLOBAL_LOG = "global_log";
   private static final String COMMIT_LOG = "commit_log";
@@ -35,6 +36,7 @@ public class MongoDatabaseClient implements DatabaseConnectionProvider<MongoClie
 
   private MongoClientConfig config;
   private MongoClient managedClient;
+  private MongoCollection<Document> repoDesc;
   private MongoCollection<Document> globalPointers;
   private MongoCollection<Document> globalLog;
   private MongoCollection<Document> commitLog;
@@ -75,11 +77,16 @@ public class MongoDatabaseClient implements DatabaseConnectionProvider<MongoClie
     MongoDatabase database =
         mongoClient.getDatabase(
             Objects.requireNonNull(config.getDatabaseName(), "Database name must be set"));
+    repoDesc = database.getCollection(REPO_DESC);
     globalPointers = database.getCollection(GLOBAL_POINTER);
     globalLog = database.getCollection(GLOBAL_LOG);
     commitLog = database.getCollection(COMMIT_LOG);
     keyLists = database.getCollection(KEY_LIST);
     refLog = database.getCollection(REF_LOG);
+  }
+
+  public MongoCollection<Document> getRepoDesc() {
+    return repoDesc;
   }
 
   public MongoCollection<Document> getGlobalPointers() {

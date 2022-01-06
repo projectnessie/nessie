@@ -24,6 +24,7 @@ import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUti
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.randomHash;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.referenceAlreadyExists;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.referenceNotFound;
+import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.repoDescUpdateConflictMessage;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.takeUntilExcludeLast;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.takeUntilIncludeLast;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.transplantConflictMessage;
@@ -72,6 +73,7 @@ import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyWithType;
 import org.projectnessie.versioned.persist.adapter.RefLog;
+import org.projectnessie.versioned.persist.adapter.RepoDescription;
 import org.projectnessie.versioned.persist.adapter.spi.AbstractDatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.spi.TryLoopState;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.ContentIdWithBytes;
@@ -576,9 +578,49 @@ public abstract class NonTransactionalDatabaseAdapter<
         .filter(kct -> remaining.remove(kct.getContentId()));
   }
 
+  @Override
+  public RepoDescription fetchRepositoryDescription() {
+    NonTransactionalOperationContext ctx = NON_TRANSACTIONAL_OPERATION_CONTEXT;
+    RepoDescription current = fetchRepositoryDescription(ctx);
+    return current == null ? RepoDescription.DEFAULT : current;
+  }
+
+  @Override
+  public void updateRepositoryDescription(Function<RepoDescription, RepoDescription> updater)
+      throws ReferenceConflictException {
+    NonTransactionalOperationContext ctx = NON_TRANSACTIONAL_OPERATION_CONTEXT;
+
+    try (TryLoopState tryState =
+        newTryLoopState(() -> repoDescUpdateConflictMessage("Retry-failure"), config)) {
+      while (true) {
+        RepoDescription current = fetchRepositoryDescription(ctx);
+
+        RepoDescription updated =
+            updater.apply(current == null ? RepoDescription.DEFAULT : current);
+
+        if (updated == null) {
+          return;
+        }
+
+        if (tryUpdateRepositoryDescription(ctx, current, updated)) {
+          tryState.success(NO_ANCESTOR);
+          return;
+        }
+
+        tryState.retry();
+      }
+    }
+  }
+
   // /////////////////////////////////////////////////////////////////////////////////////////////
   // Non-Transactional DatabaseAdapter subclass API (protected)
   // /////////////////////////////////////////////////////////////////////////////////////////////
+
+  protected abstract RepoDescription fetchRepositoryDescription(
+      NonTransactionalOperationContext ctx);
+
+  protected abstract boolean tryUpdateRepositoryDescription(
+      NonTransactionalOperationContext ctx, RepoDescription expected, RepoDescription updateTo);
 
   /**
    * Produces an updated copy of {@code pointer}.

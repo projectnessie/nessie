@@ -17,6 +17,7 @@ package org.projectnessie.versioned.persist.serialize;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
+import java.util.TreeMap;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
@@ -26,12 +27,56 @@ import org.projectnessie.versioned.persist.adapter.ContentIdWithType;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ImmutableKeyList;
 import org.projectnessie.versioned.persist.adapter.ImmutableRefLog;
+import org.projectnessie.versioned.persist.adapter.ImmutableRepoDescription;
 import org.projectnessie.versioned.persist.adapter.KeyList;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.KeyWithType;
 import org.projectnessie.versioned.persist.adapter.RefLog;
+import org.projectnessie.versioned.persist.adapter.RepoDescription;
 
 public class ProtoSerialization {
+
+  public static AdapterTypes.RepoProps toProto(RepoDescription repoDescription) {
+    AdapterTypes.RepoProps.Builder proto =
+        AdapterTypes.RepoProps.newBuilder().setRepoVersion(repoDescription.getRepoVersion());
+    // Must be sorted
+    new TreeMap<>(repoDescription.getProperties())
+        .forEach(
+            (k, v) -> proto.addProperties(AdapterTypes.Entry.newBuilder().setKey(k).setValue(v)));
+    return proto.build();
+  }
+
+  public static RepoDescription protoToRepoDescription(ByteString bytes) {
+    if (bytes == null) {
+      return RepoDescription.DEFAULT;
+    }
+    try {
+      AdapterTypes.RepoProps proto = AdapterTypes.RepoProps.parseFrom(bytes);
+      return protoToRepoDescription(proto);
+    } catch (InvalidProtocolBufferException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public static RepoDescription protoToRepoDescription(byte[] bytes) {
+    if (bytes == null) {
+      return RepoDescription.DEFAULT;
+    }
+    try {
+      AdapterTypes.RepoProps proto = AdapterTypes.RepoProps.parseFrom(bytes);
+      return protoToRepoDescription(proto);
+    } catch (InvalidProtocolBufferException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public static RepoDescription protoToRepoDescription(AdapterTypes.RepoProps proto) {
+    ImmutableRepoDescription.Builder repoDesc =
+        RepoDescription.builder().repoVersion(proto.getRepoVersion());
+    proto.getPropertiesList().forEach(e -> repoDesc.putProperties(e.getKey(), e.getValue()));
+    return repoDesc.build();
+  }
+
   public static AdapterTypes.CommitLogEntry toProto(CommitLogEntry entry) {
     AdapterTypes.CommitLogEntry.Builder proto =
         AdapterTypes.CommitLogEntry.newBuilder()

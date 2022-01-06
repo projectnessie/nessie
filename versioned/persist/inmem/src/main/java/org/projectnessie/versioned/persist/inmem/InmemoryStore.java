@@ -21,10 +21,13 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import org.projectnessie.versioned.persist.adapter.DatabaseConnectionProvider;
+import org.projectnessie.versioned.persist.adapter.RepoDescription;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
 
 public class InmemoryStore implements DatabaseConnectionProvider<InmemoryConfig> {
 
+  final ConcurrentMap<ByteString, AtomicReference<RepoDescription>> repoDesc =
+      new ConcurrentHashMap<>();
   final ConcurrentMap<ByteString, AtomicReference<GlobalStatePointer>> globalStatePointer =
       new ConcurrentHashMap<>();
   final ConcurrentMap<ByteString, ByteString> globalStateLog = new ConcurrentHashMap<>();
@@ -44,7 +47,7 @@ public class InmemoryStore implements DatabaseConnectionProvider<InmemoryConfig>
   public void close() {}
 
   void reinitializeRepo(ByteString keyPrefix) {
-    Stream.of(globalStatePointer, globalStateLog, commitLog, keyLists, refLog)
+    Stream.of(repoDesc, globalStatePointer, globalStateLog, commitLog, keyLists, refLog)
         .forEach(map -> map.keySet().removeIf(bytes -> bytes.startsWith(keyPrefix)));
   }
 }
