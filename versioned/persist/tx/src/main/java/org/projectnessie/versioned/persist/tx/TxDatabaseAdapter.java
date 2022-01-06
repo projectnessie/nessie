@@ -21,6 +21,7 @@ import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUti
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.deleteConflictMessage;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.mergeConflictMessage;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.newHasher;
+import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.randomHash;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.referenceAlreadyExists;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.referenceNotFound;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.transplantConflictMessage;
@@ -28,6 +29,7 @@ import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUti
 import static org.projectnessie.versioned.persist.adapter.spi.TryLoopState.newTryLoopState;
 import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.protoToCommitLogEntry;
 import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.protoToKeyList;
+import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.protoToRefLog;
 import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.toProto;
 
 import com.google.common.base.Preconditions;
@@ -60,6 +62,7 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.RefLog;
+import org.projectnessie.versioned.RefLogNotFoundException;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceInfo;
@@ -79,6 +82,7 @@ import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyWithType;
 import org.projectnessie.versioned.persist.adapter.spi.AbstractDatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.spi.TryLoopState;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes;
 
 /**
  * Transactional/relational {@link AbstractDatabaseAdapter} implementation using JDBC primitives.
@@ -244,7 +248,22 @@ public abstract class TxDatabaseAdapter
                     h -> {},
                     h -> {},
                     updateCommitMetadata);
-            return tryMoveNamedReference(conn, toBranch, currentHead, toHead);
+            Hash resultHash = tryMoveNamedReference(conn, toBranch, currentHead, toHead);
+
+            Hash parentId = getRefLogHead(conn);
+            Hash newRefLogId =
+                writeRefLogEntry(
+                    conn,
+                    toBranch.getName(),
+                    AdapterTypes.RefLogEntry.RefType.Branch,
+                    parentId,
+                    toHead,
+                    AdapterTypes.RefLogEntry.Operation.MERGE,
+                    timeInMicros,
+                    Collections.singletonList(from));
+            updateRefLogHead(newRefLogId, parentId, conn);
+
+            return resultHash;
           },
           () -> mergeConflictMessage("Conflict", from, toBranch, expectedHead),
           () -> mergeConflictMessage("Retry-failure", from, toBranch, expectedHead));
@@ -282,7 +301,22 @@ public abstract class TxDatabaseAdapter
                     h -> {},
                     updateCommitMetadata);
 
-            return tryMoveNamedReference(conn, targetBranch, currentHead, targetHead);
+            Hash resultHash = tryMoveNamedReference(conn, targetBranch, currentHead, targetHead);
+
+            Hash parentId = getRefLogHead(conn);
+            Hash newRefLogId =
+                writeRefLogEntry(
+                    conn,
+                    targetBranch.getName(),
+                    AdapterTypes.RefLogEntry.RefType.Branch,
+                    parentId,
+                    targetHead,
+                    AdapterTypes.RefLogEntry.Operation.TRANSPLANT,
+                    timeInMicros,
+                    commits);
+            updateRefLogHead(newRefLogId, parentId, conn);
+
+            return resultHash;
           },
           () -> transplantConflictMessage("Conflict", targetBranch, expectedHead, commits),
           () -> transplantConflictMessage("Retry-failure", targetBranch, expectedHead, commits));
@@ -309,8 +343,24 @@ public abstract class TxDatabaseAdapter
 
             upsertGlobalStates(commitAttempt, conn, newBranchCommit.getCreatedTime());
 
-            return tryMoveNamedReference(
-                conn, commitAttempt.getCommitToBranch(), branchHead, newBranchCommit.getHash());
+            Hash resultHash =
+                tryMoveNamedReference(
+                    conn, commitAttempt.getCommitToBranch(), branchHead, newBranchCommit.getHash());
+
+            Hash parentId = getRefLogHead(conn);
+            Hash newRefLogId =
+                writeRefLogEntry(
+                    conn,
+                    commitAttempt.getCommitToBranch().getName(),
+                    AdapterTypes.RefLogEntry.RefType.Branch,
+                    parentId,
+                    newBranchCommit.getHash(),
+                    AdapterTypes.RefLogEntry.Operation.COMMIT,
+                    timeInMicros,
+                    Collections.emptyList());
+            updateRefLogHead(newRefLogId, parentId, conn);
+
+            return resultHash;
           },
           () ->
               commitConflictMessage(
@@ -351,6 +401,23 @@ public abstract class TxDatabaseAdapter
 
             insertNewReference(conn, ref, hash);
 
+            AdapterTypes.RefLogEntry.RefType refType =
+                ref instanceof TagName
+                    ? AdapterTypes.RefLogEntry.RefType.Tag
+                    : AdapterTypes.RefLogEntry.RefType.Branch;
+            Hash parentId = getRefLogHead(conn);
+            Hash newRefLogId =
+                writeRefLogEntry(
+                    conn,
+                    ref.getName(),
+                    refType,
+                    parentId,
+                    hash,
+                    AdapterTypes.RefLogEntry.Operation.CREATE_REFERENCE,
+                    commitTimeInMicros(),
+                    Collections.emptyList());
+            updateRefLogHead(newRefLogId, parentId, conn);
+
             return hash;
           },
           () -> createConflictMessage("Conflict", ref, target),
@@ -377,11 +444,29 @@ public abstract class TxDatabaseAdapter
               ps.setString(1, config.getRepositoryId());
               ps.setString(2, reference.getName());
               ps.setString(3, pointer.asString());
-              if (ps.executeUpdate() == 1) {
-                return pointer;
+              if (ps.executeUpdate() != 1) {
+                return null;
               }
-              return null;
             }
+
+            AdapterTypes.RefLogEntry.RefType refType =
+                reference instanceof TagName
+                    ? AdapterTypes.RefLogEntry.RefType.Tag
+                    : AdapterTypes.RefLogEntry.RefType.Branch;
+            Hash parentId = getRefLogHead(conn);
+            Hash newRefLogId =
+                writeRefLogEntry(
+                    conn,
+                    reference.getName(),
+                    refType,
+                    parentId,
+                    fetchNamedRefHead(conn, reference),
+                    AdapterTypes.RefLogEntry.Operation.DELETE_REFERENCE,
+                    commitTimeInMicros(),
+                    Collections.emptyList());
+            updateRefLogHead(newRefLogId, parentId, conn);
+
+            return pointer;
           },
           () -> deleteConflictMessage("Conflict", reference, expectedHead),
           () -> deleteConflictMessage("Retry-Failure", reference, expectedHead));
@@ -408,7 +493,25 @@ public abstract class TxDatabaseAdapter
               throw referenceNotFound(assignTo);
             }
 
-            return tryMoveNamedReference(conn, assignee, pointer, assignTo);
+            Hash resultHash = tryMoveNamedReference(conn, assignee, pointer, assignTo);
+            AdapterTypes.RefLogEntry.RefType refType =
+                assignee instanceof TagName
+                    ? AdapterTypes.RefLogEntry.RefType.Tag
+                    : AdapterTypes.RefLogEntry.RefType.Branch;
+            Hash parentId = getRefLogHead(conn);
+            Hash newRefLogId =
+                writeRefLogEntry(
+                    conn,
+                    assignee.getName(),
+                    refType,
+                    parentId,
+                    assignTo,
+                    AdapterTypes.RefLogEntry.Operation.ASSIGN_REFERENCE,
+                    commitTimeInMicros(),
+                    Collections.emptyList());
+            updateRefLogHead(newRefLogId, parentId, conn);
+
+            return resultHash;
           },
           () -> assignConflictMessage("Conflict", assignee, expectedHead, assignTo),
           () -> assignConflictMessage("Retry-Failure", assignee, expectedHead, assignTo));
@@ -437,6 +540,18 @@ public abstract class TxDatabaseAdapter
       if (!checkNamedRefExistence(conn, BranchName.of(defaultBranchName))) {
         insertNewReference(conn, BranchName.of(defaultBranchName), NO_ANCESTOR);
 
+        Hash newRefLogId =
+            writeRefLogEntry(
+                conn,
+                defaultBranchName,
+                AdapterTypes.RefLogEntry.RefType.Branch,
+                NO_ANCESTOR,
+                NO_ANCESTOR,
+                AdapterTypes.RefLogEntry.Operation.CREATE_REFERENCE,
+                commitTimeInMicros(),
+                Collections.emptyList());
+        insertRefLogHead(newRefLogId, conn);
+
         txCommit(conn);
       }
     } catch (Exception e) {
@@ -463,6 +578,14 @@ public abstract class TxDatabaseAdapter
         ps.executeUpdate();
       }
       try (PreparedStatement ps = conn.prepareStatement(SqlStatements.DELETE_KEY_LIST_ALL)) {
+        ps.setString(1, config.getRepositoryId());
+        ps.executeUpdate();
+      }
+      try (PreparedStatement ps = conn.prepareStatement(SqlStatements.DELETE_REF_LOG_ALL)) {
+        ps.setString(1, config.getRepositoryId());
+        ps.executeUpdate();
+      }
+      try (PreparedStatement ps = conn.prepareStatement(SqlStatements.DELETE_REF_LOG_HEAD_ALL)) {
         ps.setString(1, config.getRepositoryId());
         ps.executeUpdate();
       }
@@ -593,9 +716,18 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
-  public Stream<RefLog> refLog(Hash offset) {
-    // TODO:
-    return null;
+  public Stream<RefLog> refLog(Hash offset) throws RefLogNotFoundException {
+    Connection conn = borrowConnection();
+    boolean failed = true;
+    try {
+      Stream<RefLog> intLog = readRefLogStream(conn, offset);
+      failed = false;
+      return intLog.onClose(() -> releaseConnection(conn));
+    } finally {
+      if (failed) {
+        releaseConnection(conn);
+      }
+    }
   }
 
   protected Connection borrowConnection() {
@@ -1233,18 +1365,6 @@ public abstract class TxDatabaseAdapter
     }
   }
 
-  @Override
-  protected RefLog fetchFromRefLog(Connection ctx, Hash refLogId) {
-    // TODO:
-    return null;
-  }
-
-  @Override
-  protected List<RefLog> fetchPageFromRefLog(Connection ctx, List<Hash> hashes) {
-    // TODO:
-    return null;
-  }
-
   /**
    * Provides a map of table name to create-table-DDL. The DDL statements are processed by {@link
    * java.text.MessageFormat} to inject the parameters returned by {@link
@@ -1275,6 +1395,12 @@ public abstract class TxDatabaseAdapter
         .put(
             SqlStatements.TABLE_KEY_LIST,
             Collections.singletonList(SqlStatements.CREATE_TABLE_KEY_LIST))
+        .put(
+            SqlStatements.TABLE_REF_LOG,
+            Collections.singletonList(SqlStatements.CREATE_TABLE_REF_LOG))
+        .put(
+            SqlStatements.TABLE_REF_LOG_HEAD,
+            Collections.singletonList(SqlStatements.CREATE_TABLE_REF_LOG_HEAD))
         .build();
   }
 
@@ -1322,5 +1448,167 @@ public abstract class TxDatabaseAdapter
   /** Whether this implementation shall use bates for DDL operations to create tables. */
   protected boolean batchDDL() {
     return false;
+  }
+
+  protected Hash writeRefLogEntry(
+      Connection connection,
+      String refName,
+      AdapterTypes.RefLogEntry.RefType refType,
+      Hash parentRefLogId,
+      Hash commitHash,
+      AdapterTypes.RefLogEntry.Operation operation,
+      long timeInMicros,
+      List<Hash> sourceHashes)
+      throws ReferenceConflictException {
+
+    Hash currentRefLogId = randomHash();
+    RefLog parentEntry = fetchFromRefLog(connection, parentRefLogId);
+    AdapterTypes.RefLogEntry refLogEntry =
+        buildRefLogEntry(
+            refName,
+            refType,
+            parentRefLogId,
+            commitHash,
+            operation,
+            timeInMicros,
+            sourceHashes,
+            currentRefLogId,
+            parentEntry);
+
+    writeRefLog(connection, refLogEntry);
+
+    return currentRefLogId;
+  }
+
+  protected void writeRefLog(Connection connection, AdapterTypes.RefLogEntry entry)
+      throws ReferenceConflictException {
+    try (PreparedStatement ps = connection.prepareStatement(SqlStatements.INSERT_REF_LOG)) {
+      ps.setString(1, config.getRepositoryId());
+      ps.setString(2, Hash.of(entry.getRefLogId()).asString());
+      ps.setBytes(3, entry.toByteArray());
+      ps.executeUpdate();
+    } catch (SQLException e) {
+      if (isRetryTransaction(e)) {
+        throw new RetryTransactionException();
+      }
+      throwIfReferenceConflictException(
+          e, () -> String.format("Hash collision for '%s' in ref-log", entry.getRefLogId()));
+      throw new RuntimeException(e);
+    }
+  }
+
+  private AdapterTypes.RefLogEntry buildRefLogEntry(
+      String refName,
+      AdapterTypes.RefLogEntry.RefType refType,
+      Hash parentRefLogId,
+      Hash commitHash,
+      AdapterTypes.RefLogEntry.Operation operation,
+      long timeInMicros,
+      List<Hash> sourceHashes,
+      Hash currentRefLogId,
+      RefLog parentEntry) {
+    Stream<Hash> newParents = Stream.of(parentRefLogId);
+
+    if (parentEntry != null) {
+      newParents =
+          Stream.concat(
+              newParents,
+              parentEntry.getParents().stream().limit(config.getParentsPerRefLogEntry() - 1));
+    }
+
+    AdapterTypes.RefLogEntry.Builder entry =
+        AdapterTypes.RefLogEntry.newBuilder()
+            .setRefLogId(currentRefLogId.asBytes())
+            .setRefName(ByteString.copyFromUtf8(refName))
+            .setRefType(refType)
+            .setCommitHash(commitHash.asBytes())
+            .setOperationTime(timeInMicros)
+            .setOperation(operation);
+    sourceHashes.forEach(hash -> entry.addSourceHashes(hash.asBytes()));
+    newParents.forEach(p -> entry.addParents(p.asBytes()));
+    return entry.build();
+  }
+
+  protected void updateRefLogHead(Hash newRefLogId, Hash parentRefLogId, Connection conn)
+      throws SQLException {
+    PreparedStatement psUpdate = conn.prepareStatement(SqlStatements.UPDATE_REF_LOG_HEAD);
+    psUpdate.setString(1, newRefLogId.asString());
+    psUpdate.setString(2, config.getRepositoryId());
+    psUpdate.setString(3, parentRefLogId.asString());
+    if (psUpdate.executeUpdate() != 1) {
+      // No need to continue, just throw a legit constraint-violation that will be
+      // converted to a "proper ReferenceConflictException" later up in the stack.
+      throw newIntegrityConstraintViolationException();
+    }
+  }
+
+  protected void insertRefLogHead(Hash newRefLogId, Connection conn) throws SQLException {
+    PreparedStatement selectStatement = conn.prepareStatement(SqlStatements.SELECT_REF_LOG_HEAD);
+    selectStatement.setString(1, config.getRepositoryId());
+    // insert if the table is empty
+    if (!selectStatement.executeQuery().next()) {
+      PreparedStatement psUpdate = conn.prepareStatement(SqlStatements.INSERT_REF_LOG_HEAD);
+      psUpdate.setString(1, config.getRepositoryId());
+      psUpdate.setString(2, newRefLogId.asString());
+      if (psUpdate.executeUpdate() != 1) {
+        // No need to continue, just throw a legit constraint-violation that will be
+        // converted to a "proper ReferenceConflictException" later up in the stack.
+        throw newIntegrityConstraintViolationException();
+      }
+    }
+  }
+
+  protected Hash getRefLogHead(Connection conn) throws SQLException {
+    PreparedStatement psSelect = conn.prepareStatement(SqlStatements.SELECT_REF_LOG_HEAD);
+    psSelect.setString(1, config.getRepositoryId());
+    ResultSet resultSet = psSelect.executeQuery();
+    if (resultSet.next()) {
+      return Hash.of(resultSet.getString(1));
+    }
+    return null;
+  }
+
+  @Override
+  protected RefLog fetchFromRefLog(Connection connection, Hash refLogId) {
+    if (refLogId == null) {
+      // set the current head as refLogId
+      try {
+        refLogId = getRefLogHead(connection);
+      } catch (SQLException e) {
+        throw new RuntimeException(e);
+      }
+    }
+    try (PreparedStatement ps = connection.prepareStatement(SqlStatements.SELECT_REF_LOG)) {
+      ps.setString(1, config.getRepositoryId());
+      ps.setString(2, refLogId.asString());
+      try (ResultSet rs = ps.executeQuery()) {
+        return rs.next() ? protoToRefLog(rs.getBytes(1)) : null;
+      }
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  protected List<RefLog> fetchPageFromRefLog(Connection connection, List<Hash> hashes) {
+    String sql = sqlForManyPlaceholders(SqlStatements.SELECT_REF_LOG_MANY, hashes.size());
+
+    try (PreparedStatement ps = connection.prepareStatement(sql)) {
+      ps.setString(1, config.getRepositoryId());
+      for (int i = 0; i < hashes.size(); i++) {
+        ps.setString(2 + i, hashes.get(i).asString());
+      }
+
+      Map<Hash, RefLog> result = new HashMap<>(hashes.size() * 2);
+      try (ResultSet rs = ps.executeQuery()) {
+        while (rs.next()) {
+          RefLog entry = protoToRefLog(rs.getBytes(1));
+          result.put(Objects.requireNonNull(entry).getRefLogId(), entry);
+        }
+      }
+      return hashes.stream().map(result::get).collect(Collectors.toList());
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
   }
 }

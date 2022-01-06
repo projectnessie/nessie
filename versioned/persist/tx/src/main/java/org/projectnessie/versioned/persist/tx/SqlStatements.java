@@ -125,5 +125,43 @@ public final class SqlStatements {
               + ")",
           TABLE_KEY_LIST);
 
+  public static final String TABLE_REF_LOG = "ref_log";
+  public static final String INSERT_REF_LOG =
+      String.format("INSERT INTO %s (repo_id, hash, value) VALUES (?, ?, ?)", TABLE_REF_LOG);
+  public static final String DELETE_REF_LOG_ALL =
+      String.format("DELETE FROM %s WHERE repo_id = ?", TABLE_REF_LOG);
+  public static final String SELECT_REF_LOG =
+      String.format("SELECT value FROM %s WHERE repo_id = ? AND hash = ?", TABLE_REF_LOG);
+  public static final String SELECT_REF_LOG_MANY =
+      String.format("SELECT value FROM %s WHERE repo_id = ? AND hash IN (%%s)", TABLE_REF_LOG);
+  public static final String CREATE_TABLE_REF_LOG =
+      // here 'hash' is ref_log_id, 'value' is proto serialized RefLogEntry
+      String.format(
+          "CREATE TABLE %s (\n"
+              + "  repo_id {2},\n"
+              + "  hash {1},\n"
+              + "  value {0},\n"
+              + "  PRIMARY KEY (repo_id, hash)\n"
+              + ")",
+          TABLE_REF_LOG);
+
+  public static final String TABLE_REF_LOG_HEAD = "ref_log_head";
+  public static final String UPDATE_REF_LOG_HEAD =
+      String.format("UPDATE %s SET id = ? WHERE repo_id = ? AND id = ?", TABLE_REF_LOG_HEAD);
+  public static final String INSERT_REF_LOG_HEAD =
+      String.format("INSERT INTO %s (repo_id, id) VALUES (?, ?)", TABLE_REF_LOG_HEAD);
+  public static final String DELETE_REF_LOG_HEAD_ALL =
+      String.format("DELETE FROM %s WHERE repo_id = ?", TABLE_REF_LOG_HEAD);
+  public static final String SELECT_REF_LOG_HEAD =
+      String.format("SELECT id FROM %s WHERE repo_id = ?", TABLE_REF_LOG_HEAD);
+  public static final String CREATE_TABLE_REF_LOG_HEAD =
+      String.format(
+          "CREATE TABLE %s (\n"
+              + "  repo_id {2},\n"
+              + "  id {1},\n"
+              + "  PRIMARY KEY (repo_id, id)\n"
+              + ")",
+          TABLE_REF_LOG_HEAD);
+
   private SqlStatements() {}
 }
