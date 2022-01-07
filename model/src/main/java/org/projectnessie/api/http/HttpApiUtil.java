@@ -13,21 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.api;
+package org.projectnessie.api.http;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
-import org.projectnessie.error.NessieConflictException;
-import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.model.Branch;
 import org.projectnessie.model.Reference;
+import org.projectnessie.model.Tag;
+import org.projectnessie.model.Transaction;
 
-/**
- * Request builder for "assign branch".
- *
- * @since {@link NessieApiV1}
- */
-public interface AssignBranchBuilder extends OnBranchBuilder<AssignBranchBuilder> {
-  AssignBranchBuilder assignTo(@Valid @NotNull Reference assignTo);
+public final class HttpApiUtil {
+  private HttpApiUtil() {}
 
-  void assign() throws NessieNotFoundException, NessieConflictException;
+  public static String referenceTypeName(Reference reference) {
+    if (reference instanceof Transaction) {
+      return "transaction";
+    }
+    if (reference instanceof Branch) {
+      return "branch";
+    }
+    if (reference instanceof Tag) {
+      return "tag";
+    }
+    throw new IllegalArgumentException(String.format("Unsupported reference type '%s'", reference));
+  }
 }

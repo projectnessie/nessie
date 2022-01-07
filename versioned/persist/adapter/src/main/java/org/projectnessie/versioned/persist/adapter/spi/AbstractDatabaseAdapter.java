@@ -58,6 +58,7 @@ import org.projectnessie.versioned.GetNamedRefsParams.RetrieveOptions;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableReferenceInfo;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.NamedMutableRef;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.RefLogNotFoundException;
 import org.projectnessie.versioned.ReferenceConflictException;
@@ -65,6 +66,7 @@ import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceInfo.CommitsAheadBehind;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.TagName;
+import org.projectnessie.versioned.TransactionName;
 import org.projectnessie.versioned.persist.adapter.CommitAttempt;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentAndState;
@@ -209,7 +211,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       OP_CONTEXT ctx,
       long timeInMicros,
       Hash from,
-      BranchName toBranch,
+      NamedMutableRef toBranch,
       Optional<Hash> expectedHead,
       Hash toHead,
       Consumer<Hash> branchCommits,
@@ -279,7 +281,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
   protected Hash transplantAttempt(
       OP_CONTEXT ctx,
       long timeInMicros,
-      BranchName targetBranch,
+      NamedMutableRef targetBranch,
       Optional<Hash> expectedHead,
       Hash targetHead,
       List<Hash> sequenceToTransplant,
@@ -432,9 +434,14 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
   }
 
   /** Applies the reference type filter (tags or branches) to the Java stream. */
-  protected static Stream<ReferenceInfo<ByteString>> namedRefsMaybeFilter(
+  protected Stream<ReferenceInfo<ByteString>> namedRefsMaybeFilter(
       GetNamedRefsParams params, Stream<ReferenceInfo<ByteString>> refs) {
-    if (params.getBranchRetrieveOptions().isRetrieve()
+    if (params.getIncludeExpired() != null && !params.getIncludeExpired()) {
+      Instant now = config.getClock().instant();
+      refs = refs.filter(ref -> ref.getExpireAt() == null || ref.getExpireAt().compareTo(now) > 0);
+    }
+    if (params.getTransactionRetrieveOptions().isRetrieve()
+        && params.getBranchRetrieveOptions().isRetrieve()
         && params.getTagRetrieveOptions().isRetrieve()) {
       // No filtering necessary, if all named-reference types (tags and branches) are being fetched.
       return refs;
@@ -453,7 +460,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
   }
 
   protected static boolean namedRefsAnyRetrieves(GetNamedRefsParams params) {
-    return params.getBranchRetrieveOptions().isRetrieve()
+    return params.getTransactionRetrieveOptions().isRetrieve()
+        || params.getBranchRetrieveOptions().isRetrieve()
         || params.getTagRetrieveOptions().isRetrieve();
   }
 
@@ -464,6 +472,9 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
 
   protected static GetNamedRefsParams.RetrieveOptions namedRefsRetrieveOptionsForReference(
       GetNamedRefsParams params, NamedRef ref) {
+    if (ref instanceof TransactionName) {
+      return params.getTransactionRetrieveOptions();
+    }
     if (ref instanceof BranchName) {
       return params.getBranchRetrieveOptions();
     }
@@ -518,7 +529,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
         new CommonAncestorState(
             ctx,
             defaultBranchHead,
-            params.getBranchRetrieveOptions().isComputeAheadBehind()
+            params.getTransactionRetrieveOptions().isComputeAheadBehind()
+                || params.getBranchRetrieveOptions().isComputeAheadBehind()
                 || params.getTagRetrieveOptions().isComputeAheadBehind());
 
     return refs.map(

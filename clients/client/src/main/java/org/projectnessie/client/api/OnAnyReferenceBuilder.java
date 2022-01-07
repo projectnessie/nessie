@@ -15,14 +15,9 @@
  */
 package org.projectnessie.client.api;
 
-import org.projectnessie.error.NessieConflictException;
-import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.model.Reference;
 
-/**
- * Request builder for "delete tag".
- *
- * @since {@link NessieApiV1}
- */
-public interface DeleteTagBuilder extends OnTagBuilder<DeleteTagBuilder> {
-  void delete() throws NessieConflictException, NessieNotFoundException;
+/** Base interface for requests against a named reference, either a branch or tag. */
+public interface OnAnyReferenceBuilder<R extends OnAnyReferenceBuilder<R>> {
+  R reference(Reference reference);
 }

@@ -39,6 +39,7 @@ import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
 import org.projectnessie.model.ImmutableIcebergTable;
 import org.projectnessie.model.ImmutableSqlView;
+import org.projectnessie.model.MutableReference;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.SqlView.Dialect;
 import org.projectnessie.model.Tag;
@@ -142,11 +143,9 @@ public class GenerateContent extends AbstractCommand {
         // Create branch if it does not exist.
         defaultBranch = api.getDefaultBranch();
         defaultBranch =
-            (Branch)
-                api.createReference()
-                    .reference(Branch.of(defaultBranchName, defaultBranch.getHash()))
-                    .sourceRefName(defaultBranch.getName())
-                    .create();
+            api.createReference()
+                .sourceRefName(defaultBranch.getName())
+                .createAs(Branch.of(defaultBranchName, defaultBranch.getHash()));
       }
     }
 
@@ -161,7 +160,7 @@ public class GenerateContent extends AbstractCommand {
           .printf(
               "Creating branch '%s' from '%s' at %s%n",
               branch.getName(), defaultBranch.getName(), branch.getHash());
-      api.createReference().reference(branch).sourceRefName(defaultBranch.getName()).create();
+      api.createReference().sourceRefName(defaultBranch.getName()).createAs(branch);
       branches.add(newBranchName);
     }
 
@@ -187,7 +186,6 @@ public class GenerateContent extends AbstractCommand {
 
       CommitMultipleOperationsBuilder commit =
           api.commitMultipleOperations()
-              .branch(commitToBranch)
               .commitMeta(
                   CommitMeta.builder()
                       .message(
@@ -206,7 +204,7 @@ public class GenerateContent extends AbstractCommand {
       } else {
         commit.operation(Put.of(tableName, newContents));
       }
-      Branch newHead = commit.commit();
+      MutableReference newHead = commit.commitTo(commitToBranch);
 
       if (random.nextDouble() < newTagProbability) {
         Tag tag = Tag.of("new-tag-" + random.nextLong(), newHead.getHash());
@@ -214,7 +212,7 @@ public class GenerateContent extends AbstractCommand {
             .getOut()
             .printf(
                 "Creating tag '%s' from '%s' at %s%n", tag.getName(), branchName, tag.getHash());
-        api.createReference().reference(tag).sourceRefName(branchName).create();
+        api.createReference().sourceRefName(branchName).createAs(tag);
       }
 
       try {

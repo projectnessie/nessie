@@ -13,16 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.api;
+package org.projectnessie.versioned;
 
-import org.projectnessie.error.NessieConflictException;
-import org.projectnessie.error.NessieNotFoundException;
+import javax.annotation.Nonnull;
+import org.immutables.value.Value;
 
-/**
- * Request builder for "delete branch".
- *
- * @since {@link NessieApiV1}
- */
-public interface DeleteBranchBuilder extends OnBranchBuilder<DeleteBranchBuilder> {
-  void delete() throws NessieConflictException, NessieNotFoundException;
+/** A named reference representing a branch. */
+@Value.Immutable
+public interface TransactionName extends NamedMutableRef {
+
+  /**
+   * Create a new branch reference.
+   *
+   * @param name the branch name
+   * @return an instance of {@code BranchName} for the provided name
+   */
+  @Nonnull
+  static TransactionName of(@Nonnull String name) {
+    return ImmutableTransactionName.builder().name(name).build();
+  }
 }

@@ -15,6 +15,7 @@
  */
 package org.projectnessie.client.http.v1api;
 
+import java.time.Instant;
 import org.projectnessie.client.api.CreateReferenceBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieConflictException;
@@ -25,6 +26,8 @@ final class HttpCreateReference extends BaseHttpRequest implements CreateReferen
 
   private Reference reference;
   private String sourceRefName;
+  private Instant expireAt;
+  private Boolean transaction;
 
   HttpCreateReference(NessieApiClient client) {
     super(client);
@@ -43,7 +46,13 @@ final class HttpCreateReference extends BaseHttpRequest implements CreateReferen
   }
 
   @Override
+  public CreateReferenceBuilder expireAt(Instant expireAt) {
+    this.expireAt = expireAt;
+    return this;
+  }
+
+  @Override
   public Reference create() throws NessieNotFoundException, NessieConflictException {
-    return client.getTreeApi().createReference(sourceRefName, reference);
+    return client.getTreeApi().createReference(sourceRefName, reference, expireAt);
   }
 }

@@ -15,27 +15,31 @@
  */
 package org.projectnessie.client.http.v1api;
 
-import org.projectnessie.client.api.OnTagBuilder;
+import java.util.Objects;
+import org.projectnessie.api.http.HttpApiUtil;
+import org.projectnessie.client.api.OnAnyReferenceBuilder;
 import org.projectnessie.client.http.NessieApiClient;
+import org.projectnessie.model.Reference;
 
-abstract class BaseHttpOnTagRequest<R extends OnTagBuilder<R>> extends BaseHttpRequest
-    implements OnTagBuilder<R> {
-  protected String tagName;
-  protected String hash;
+abstract class BaseHttpOnAnyReferenceRequest<R extends OnAnyReferenceBuilder<R>>
+    extends BaseHttpRequest implements OnAnyReferenceBuilder<R> {
+  protected Reference reference;
 
-  BaseHttpOnTagRequest(NessieApiClient client) {
+  BaseHttpOnAnyReferenceRequest(NessieApiClient client) {
     super(client);
   }
 
-  @Override
-  public R tagName(String tagName) {
-    this.tagName = tagName;
-    return (R) this;
+  protected Reference reference() {
+    return Objects.requireNonNull(reference, "Reference not set on request");
+  }
+
+  protected String referenceTypeName() {
+    return HttpApiUtil.referenceTypeName(reference());
   }
 
   @Override
-  public R hash(String hash) {
-    this.hash = hash;
+  public R reference(Reference reference) {
+    this.reference = reference;
     return (R) this;
   }
 }

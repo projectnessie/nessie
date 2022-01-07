@@ -22,6 +22,8 @@ import java.util.regex.Pattern;
 /** Collection of validation rules. */
 public final class Validation {
   public static final String HASH_REGEX = "^[0-9a-fA-F]{16,64}$";
+  public static final String REF_TYPE_REGEX = "^(transaction|branch|tag)$";
+  public static final String MUTABLE_REF_TYPE_REGEX = "^(transaction|branch)$";
   public static final String REF_NAME_REGEX =
       "^[A-Za-z](((?![.][.])[A-Za-z0-9./_-])*[A-Za-z0-9._-])?$";
   public static final String REF_NAME_OR_HASH_REGEX =
@@ -35,8 +37,12 @@ public final class Validation {
   private static final String REF_RULE =
       "start with a letter, followed by letters, digits, a ./_- character, "
           + "not end with a slash, not contain ..";
+  private static final String TYPE_RULE = "be either 'transaction', 'branch' or 'tag'";
+  private static final String MUTABLE_TYPE_RULE = "be either 'transaction' or 'branch'";
 
   public static final String HASH_MESSAGE = "Hash must " + HASH_RULE;
+  public static final String REF_TYPE_MESSAGE = "Reference type must " + TYPE_RULE;
+  public static final String MUTABLE_REF_TYPE_MESSAGE = "Reference type must " + MUTABLE_TYPE_RULE;
   public static final String REF_NAME_MESSAGE = "Reference name must " + REF_RULE;
   public static final String REF_NAME_OR_HASH_MESSAGE =
       "Reference must be either a reference name or hash, " + REF_RULE + " or " + HASH_RULE;

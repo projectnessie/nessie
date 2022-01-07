@@ -79,16 +79,15 @@ class CommitToBranchSimulation extends Simulation {
                   contentId
                 )
               )
-            else Put.of(key, tableMeta);
+            else Put.of(key, tableMeta)
 
           val updatedBranch = client
             .commitMultipleOperations()
-            .branch(branch)
             .commitMeta(
               CommitMeta.fromMessage(s"test-commit $userId $commitNum")
             )
             .operation(op)
-            .commit()
+            .commitTo(branch)
 
           session.set("branch", updatedBranch)
         }
@@ -132,9 +131,7 @@ class CommitToBranchSimulation extends Simulation {
           // create the branch (errors will be ignored)
           val branch = client
             .createReference()
-            .reference(Branch.of(params.makeBranchName(session), null))
-            .create()
-            .asInstanceOf[Branch]
+            .createAs(Branch.of(params.makeBranchName(session), null))
           session.set("branch", branch)
         }
         // ignore any exception, handled in the following `doIf()`

@@ -60,8 +60,7 @@ class CreateManyBranchesSimulation extends Simulation {
           client
             .createReference()
             .sourceRefName(defaultBranch.getName)
-            .reference(Branch.of(branchName, defaultBranch.getHash))
-            .create()
+            .createAs(Branch.of(branchName, defaultBranch.getHash))
           session
         }
     )

@@ -20,6 +20,7 @@ import static org.projectnessie.model.Operation.Put;
 
 import java.security.AccessControlException;
 import java.security.Principal;
+import java.time.Instant;
 import javax.annotation.Nullable;
 import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.params.EntriesParams;
@@ -35,6 +36,7 @@ import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.ImmutableReferencesResponse;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Merge;
+import org.projectnessie.model.MutableReference;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferencesResponse;
@@ -42,7 +44,7 @@ import org.projectnessie.model.Transplant;
 import org.projectnessie.services.authz.AccessChecker;
 import org.projectnessie.services.authz.ServerAccessContext;
 import org.projectnessie.services.config.ServerConfig;
-import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.NamedMutableRef;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.VersionStore;
 
@@ -83,7 +85,8 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
   }
 
   @Override
-  public Reference createReference(@Nullable String sourceRefName, Reference reference)
+  public Reference createReference(
+      @Nullable String sourceRefName, Reference reference, @Nullable Instant expireAt)
       throws NessieNotFoundException, NessieConflictException {
     getAccessChecker().canCreateReference(createAccessContext(), RefUtil.toNamedRef(reference));
 
@@ -103,7 +106,7 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
         throw e;
       }
     }
-    return super.createReference(sourceRefName, reference);
+    return super.createReference(sourceRefName, reference, expireAt);
   }
 
   @Override
@@ -149,8 +152,12 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
   }
 
   @Override
-  public void transplantCommitsIntoBranch(
-      String branchName, String hash, String message, Transplant transplant)
+  public void transplantCommits(
+      String referenceType,
+      String referenceName,
+      String hash,
+      String message,
+      Transplant transplant)
       throws NessieNotFoundException, NessieConflictException {
     if (transplant.getHashesToTransplant().isEmpty()) {
       throw new IllegalArgumentException("No hashes given to transplant.");
@@ -166,38 +173,41 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
                         .getHashesToTransplant()
                         .get(transplant.getHashesToTransplant().size() - 1))
                 .getValue());
-    getAccessChecker().canCommitChangeAgainstReference(accessContext, BranchName.of(branchName));
-    super.transplantCommitsIntoBranch(branchName, hash, message, transplant);
+    getAccessChecker()
+        .canCommitChangeAgainstReference(accessContext, asNamedRef(referenceType, referenceName));
+    super.transplantCommits(referenceType, referenceName, hash, message, transplant);
   }
 
   @Override
-  public void mergeRefIntoBranch(String branchName, String hash, Merge merge)
+  public void mergeRef(String referenceType, String referenceName, String hash, Merge merge)
       throws NessieNotFoundException, NessieConflictException {
     ServerAccessContext accessContext = createAccessContext();
     getAccessChecker()
         .canViewReference(
             accessContext,
             namedRefWithHashOrThrow(merge.getFromRefName(), merge.getFromHash()).getValue());
-    getAccessChecker().canCommitChangeAgainstReference(accessContext, BranchName.of(branchName));
-    super.mergeRefIntoBranch(branchName, hash, merge);
+    getAccessChecker()
+        .canCommitChangeAgainstReference(accessContext, asNamedRef(referenceType, referenceName));
+    super.mergeRef(referenceType, referenceName, hash, merge);
   }
 
   @Override
-  public Branch commitMultipleOperations(String branch, String hash, Operations operations)
+  public MutableReference commitMultipleOperations(
+      String referenceType, String referenceName, String hash, Operations operations)
       throws NessieNotFoundException, NessieConflictException {
-    BranchName branchName = BranchName.of(branch);
+    NamedMutableRef ref = asMutableNamedRef(referenceType, referenceName);
     ServerAccessContext accessContext = createAccessContext();
-    getAccessChecker().canCommitChangeAgainstReference(accessContext, branchName);
+    getAccessChecker().canCommitChangeAgainstReference(accessContext, ref);
     operations
         .getOperations()
         .forEach(
             op -> {
               if (op instanceof Delete) {
-                getAccessChecker().canDeleteEntity(accessContext, branchName, op.getKey(), null);
+                getAccessChecker().canDeleteEntity(accessContext, ref, op.getKey(), null);
               } else if (op instanceof Put) {
-                getAccessChecker().canUpdateEntity(accessContext, branchName, op.getKey(), null);
+                getAccessChecker().canUpdateEntity(accessContext, ref, op.getKey(), null);
               }
             });
-    return super.commitMultipleOperations(branch, hash, operations);
+    return super.commitMultipleOperations(referenceType, referenceName, hash, operations);
   }
 }

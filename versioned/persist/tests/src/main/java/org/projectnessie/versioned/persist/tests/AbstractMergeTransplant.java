@@ -62,7 +62,8 @@ public abstract class AbstractMergeTransplant {
 
     BranchName branch = BranchName.of("branch");
     BranchName branch2 = BranchName.of("branch2");
-    databaseAdapter.create(branch2, databaseAdapter.hashOnReference(branch, Optional.empty()));
+    databaseAdapter.create(
+        branch2, databaseAdapter.hashOnReference(branch, Optional.empty()), null);
     assertThatThrownBy(
             () ->
                 databaseAdapter.merge(
@@ -153,7 +154,7 @@ public abstract class AbstractMergeTransplant {
     BranchName branch = BranchName.of("branch");
     BranchName conflict = BranchName.of("conflict");
 
-    databaseAdapter.create(branch, databaseAdapter.hashOnReference(main, Optional.empty()));
+    databaseAdapter.create(branch, databaseAdapter.hashOnReference(main, Optional.empty()), null);
 
     Hash[] commits = new Hash[3];
     for (int i = 0; i < commits.length; i++) {
@@ -174,7 +175,7 @@ public abstract class AbstractMergeTransplant {
 
     for (int i = 0; i < commits.length; i++) {
       BranchName target = BranchName.of("transplant-" + i);
-      databaseAdapter.create(target, databaseAdapter.hashOnReference(main, Optional.empty()));
+      databaseAdapter.create(target, databaseAdapter.hashOnReference(main, Optional.empty()), null);
 
       mergeOrTransplant.apply(target, Optional.empty(), branch, commits, i);
 
@@ -187,7 +188,8 @@ public abstract class AbstractMergeTransplant {
     // prepare conflict for keys 0 + 1
 
     Hash conflictBase =
-        databaseAdapter.create(conflict, databaseAdapter.hashOnReference(main, Optional.empty()));
+        databaseAdapter.create(
+            conflict, databaseAdapter.hashOnReference(main, Optional.empty()), null);
     ImmutableCommitAttempt.Builder commit =
         ImmutableCommitAttempt.builder()
             .commitToBranch(conflict)

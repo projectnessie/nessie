@@ -28,7 +28,8 @@ import org.projectnessie.model.Validation;
  *
  * @since {@link NessieApiV1}
  */
-public interface TransplantCommitsBuilder extends OnBranchBuilder<TransplantCommitsBuilder> {
+public interface TransplantCommitsBuilder
+    extends OnMutableReferenceBuilder<TransplantCommitsBuilder> {
   TransplantCommitsBuilder message(String message);
 
   TransplantCommitsBuilder fromRefName(

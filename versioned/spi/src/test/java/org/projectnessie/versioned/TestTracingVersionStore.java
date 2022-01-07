@@ -87,7 +87,9 @@ class TestTracingVersionStore {
                     .tag("nessie.version-store.ref", "mock-branch")
                     .function(
                         vs -> vs.getNamedRef("mock-branch", GetNamedRefsParams.DEFAULT),
-                        () -> ReferenceInfo.of(Hash.of("cafebabe"), BranchName.of("mock-branch"))),
+                        () ->
+                            ReferenceInfo.of(
+                                Hash.of("cafebabe"), BranchName.of("mock-branch"), null, null)),
                 new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>(
                         "ToRef", refNotFoundThrows)
                     .tag("nessie.version-store.ref", "mock-branch")
@@ -150,7 +152,9 @@ class TestTracingVersionStore {
                     .function(
                         vs ->
                             vs.create(
-                                BranchName.of("mock-branch"), Optional.of(Hash.of("cafebabe"))),
+                                BranchName.of("mock-branch"),
+                                Optional.of(Hash.of("cafebabe")),
+                                null),
                         () -> Hash.of("deadbeefcafebabe")),
                 new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>(
                         "Delete", refNotFoundAndRefConflictThrows)

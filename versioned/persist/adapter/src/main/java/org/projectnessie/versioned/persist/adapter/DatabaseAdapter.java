@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.persist.adapter;
 
 import com.google.protobuf.ByteString;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -24,11 +25,11 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
 import java.util.stream.Stream;
-import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.NamedMutableRef;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.RefLogNotFoundException;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
@@ -157,7 +158,7 @@ public interface DatabaseAdapter {
    *     expected hEAD
    */
   Hash transplant(
-      BranchName targetBranch,
+      NamedMutableRef targetBranch,
       Optional<Hash> expectedHead,
       List<Hash> sequenceToTransplant,
       Function<ByteString, ByteString> updateCommitMetadata)
@@ -184,7 +185,7 @@ public interface DatabaseAdapter {
    */
   Hash merge(
       Hash from,
-      BranchName toBranch,
+      NamedMutableRef toBranch,
       Optional<Hash> expectedHead,
       Function<ByteString, ByteString> updateCommitMetadata)
       throws ReferenceNotFoundException, ReferenceConflictException;
@@ -218,15 +219,18 @@ public interface DatabaseAdapter {
    * Create a new named reference.
    *
    * @param ref Named reference to create - either a {@link org.projectnessie.versioned.BranchName}
-   *     or {@link org.projectnessie.versioned.TagName}.
+   *     or {@link org.projectnessie.versioned.TransactionName} or {@link
+   *     org.projectnessie.versioned.TagName}.
    * @param target The already existing named reference with an optional hash on that branch. This
    *     parameter can be {@code null} for the edge case when the default branch is re-created after
    *     it has been dropped.
+   * @param expireAt optional, only for references of type transaction, the expire-at-timestamp to
+   *     record
    * @return the current HEAD of the created branch or tag
    * @throws ReferenceAlreadyExistsException if the reference {@code ref} already exists.
    * @throws ReferenceNotFoundException if {@code target} does not exist.
    */
-  Hash create(NamedRef ref, Hash target)
+  Hash create(NamedRef ref, Hash target, Instant expireAt)
       throws ReferenceAlreadyExistsException, ReferenceNotFoundException;
 
   /**

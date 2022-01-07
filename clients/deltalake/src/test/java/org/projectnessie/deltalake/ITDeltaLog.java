@@ -96,11 +96,10 @@ class ITDeltaLog extends AbstractSparkTest {
 
     Reference mainBranch = api.getReference().refName("main").get();
 
-    Reference devBranch =
+    Branch devBranch =
         api.createReference()
             .sourceRefName(mainBranch.getName())
-            .reference(Branch.of("testMultipleBranches", mainBranch.getHash()))
-            .create();
+            .createAs(Branch.of("testMultipleBranches", mainBranch.getHash()));
 
     spark.sparkContext().conf().set("spark.sql.catalog.spark_catalog.ref", devBranch.getName());
 
@@ -142,11 +141,10 @@ class ITDeltaLog extends AbstractSparkTest {
 
     Reference mainBranch = api.getReference().refName("main").get();
 
-    Reference devBranch =
+    Branch devBranch =
         api.createReference()
             .sourceRefName(mainBranch.getName())
-            .reference(Branch.of("testCommitRetry", mainBranch.getHash()))
-            .create();
+            .createAs(Branch.of("testCommitRetry", mainBranch.getHash()));
 
     spark.sparkContext().conf().set("spark.sql.catalog.spark_catalog.ref", devBranch.getName());
 
@@ -159,7 +157,7 @@ class ITDeltaLog extends AbstractSparkTest {
     Reference to = api.getReference().refName("main").get();
     Reference from = api.getReference().refName("testCommitRetry").get();
 
-    api.mergeRefIntoBranch().branch((Branch) to).fromRef(from).merge();
+    api.mergeRef().reference((Branch) to).fromRef(from).merge();
 
     spark.sparkContext().conf().set("spark.sql.catalog.spark_catalog.ref", "main");
 

@@ -15,6 +15,7 @@
  */
 package org.projectnessie.services.rest;
 
+import java.time.Instant;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.ws.rs.core.Context;
@@ -34,6 +35,7 @@ import org.projectnessie.model.Content.Type;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Merge;
+import org.projectnessie.model.MutableReference;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferencesResponse;
@@ -91,9 +93,9 @@ public class RestTreeResource implements HttpTreeApi {
   }
 
   @Override
-  public Reference createReference(String sourceRefName, Reference reference)
+  public Reference createReference(String sourceRefName, Reference reference, Instant expireAt)
       throws NessieNotFoundException, NessieConflictException {
-    return resource().createReference(sourceRefName, reference);
+    return resource().createReference(sourceRefName, reference, expireAt);
   }
 
   @Override
@@ -114,45 +116,39 @@ public class RestTreeResource implements HttpTreeApi {
   }
 
   @Override
-  public void assignTag(String tagName, String oldHash, Reference assignTo)
+  public void assignReference(
+      String referenceType, String referenceName, String oldHash, Reference assignTo)
       throws NessieNotFoundException, NessieConflictException {
-    resource().assignTag(tagName, oldHash, assignTo);
+    resource().assignReference(referenceType, referenceName, oldHash, assignTo);
   }
 
   @Override
-  public void deleteTag(String tagName, String hash)
+  public void deleteReference(String referenceType, String referenceName, String hash)
       throws NessieConflictException, NessieNotFoundException {
-    resource().deleteTag(tagName, hash);
+    resource().deleteReference(referenceType, referenceName, hash);
   }
 
   @Override
-  public void assignBranch(String branchName, String oldHash, Reference assignTo)
+  public void transplantCommits(
+      String referenceType,
+      String referenceName,
+      String hash,
+      String message,
+      Transplant transplant)
       throws NessieNotFoundException, NessieConflictException {
-    resource().assignBranch(branchName, oldHash, assignTo);
+    resource().transplantCommits(referenceType, referenceName, hash, message, transplant);
   }
 
   @Override
-  public void deleteBranch(String branchName, String hash)
-      throws NessieConflictException, NessieNotFoundException {
-    resource().deleteBranch(branchName, hash);
-  }
-
-  @Override
-  public void transplantCommitsIntoBranch(
-      String branchName, String hash, String message, Transplant transplant)
+  public void mergeRef(String referenceType, String referenceName, String hash, Merge merge)
       throws NessieNotFoundException, NessieConflictException {
-    resource().transplantCommitsIntoBranch(branchName, hash, message, transplant);
+    resource().mergeRef(referenceType, referenceName, hash, merge);
   }
 
   @Override
-  public void mergeRefIntoBranch(String branchName, String hash, Merge merge)
+  public MutableReference commitMultipleOperations(
+      String referenceType, String referenceName, String hash, Operations operations)
       throws NessieNotFoundException, NessieConflictException {
-    resource().mergeRefIntoBranch(branchName, hash, merge);
-  }
-
-  @Override
-  public Branch commitMultipleOperations(String branchName, String hash, Operations operations)
-      throws NessieNotFoundException, NessieConflictException {
-    return resource().commitMultipleOperations(branchName, hash, operations);
+    return resource().commitMultipleOperations(referenceType, referenceName, hash, operations);
   }
 }

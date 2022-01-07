@@ -15,6 +15,7 @@
  */
 package org.projectnessie.api;
 
+import java.time.Instant;
 import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -29,6 +30,7 @@ import org.projectnessie.model.Branch;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Merge;
+import org.projectnessie.model.MutableReference;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferencesResponse;
@@ -55,7 +57,8 @@ public interface TreeApi {
    * Create a new reference.
    *
    * <p>The type of {@code reference}, which can be either a {@link Branch} or {@link
-   * org.projectnessie.model.Tag}, determines the type of the reference to be created.
+   * org.projectnessie.model.Tag} or {@link org.projectnessie.model.Transaction}, determines the
+   * type of the reference to be created.
    *
    * <p>{@link Reference#getName()} defines the the name of the reference to be created, {@link
    * Reference#getHash()} is the hash of the created reference, the HEAD of the created reference.
@@ -70,7 +73,8 @@ public interface TreeApi {
           @Nullable
           @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           String sourceRefName,
-      @Valid @NotNull Reference reference)
+      @Valid @NotNull Reference reference,
+      @Valid @Nullable Instant expireAt)
       throws NessieNotFoundException, NessieConflictException;
 
   /** Get details of a particular ref, if it exists. */
@@ -128,54 +132,47 @@ public interface TreeApi {
       @Valid @NotNull CommitLogParams params)
       throws NessieNotFoundException;
 
-  /** Update a tag. */
-  void assignTag(
+  /** Update a reference's HEAD to point to a different commit. */
+  void assignReference(
+      @Valid
+          @NotNull
+          @Pattern(regexp = Validation.REF_TYPE_REGEX, message = Validation.REF_TYPE_MESSAGE)
+          String referenceType,
       @Valid
           @NotNull
           @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-          String tagName,
+          String referenceName,
       @Valid @NotNull @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String oldHash,
       @Valid @NotNull Reference assignTo)
       throws NessieNotFoundException, NessieConflictException;
 
-  /** Delete a tag. */
-  void deleteTag(
+  /** Delete a named reference. */
+  void deleteReference(
+      @Valid
+          @NotNull
+          @Pattern(regexp = Validation.REF_TYPE_REGEX, message = Validation.REF_TYPE_MESSAGE)
+          String referenceType,
       @Valid
           @NotNull
           @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-          String tagName,
-      @Valid @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
-          String hash)
-      throws NessieConflictException, NessieNotFoundException;
-
-  /** Update a branch. */
-  void assignBranch(
-      @Valid
-          @NotNull
-          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-          String branchName,
-      @Valid @NotNull @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
-          String oldHash,
-      @Valid @NotNull Reference assignTo)
-      throws NessieNotFoundException, NessieConflictException;
-
-  /** Delete a branch. */
-  void deleteBranch(
-      @Valid
-          @NotNull
-          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-          String branchName,
+          String referenceName,
       @Valid @NotNull @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String hash)
       throws NessieConflictException, NessieNotFoundException;
 
   /** cherry pick a set of commits into a branch. */
-  void transplantCommitsIntoBranch(
+  void transplantCommits(
+      @Valid
+          @NotNull
+          @Pattern(
+              regexp = Validation.MUTABLE_REF_TYPE_REGEX,
+              message = Validation.MUTABLE_REF_TYPE_MESSAGE)
+          String referenceType,
       @Valid
           @NotNull
           @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-          String branchName,
+          String referenceName,
       @Valid @NotNull @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String hash,
       @Valid String message,
@@ -183,11 +180,17 @@ public interface TreeApi {
       throws NessieNotFoundException, NessieConflictException;
 
   /** merge mergeRef onto ref. */
-  void mergeRefIntoBranch(
+  void mergeRef(
+      @Valid
+          @NotNull
+          @Pattern(
+              regexp = Validation.MUTABLE_REF_TYPE_REGEX,
+              message = Validation.MUTABLE_REF_TYPE_MESSAGE)
+          String referenceType,
       @Valid
           @NotNull
           @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-          String branchName,
+          String referenceName,
       @Valid @NotNull @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String hash,
       @Valid @NotNull Merge merge)
@@ -198,19 +201,26 @@ public interface TreeApi {
    * hash as its latest commit. The hash in the successful response contains the hash of the commit
    * that contains the operations of the invocation.
    *
-   * @param branchName Branch to change, defaults to default branch.
+   * @param referenceName Branch to change, defaults to default branch.
    * @param hash Expected hash of branch.
    * @param operations {@link Operations} to apply
-   * @return updated {@link Branch} objects with the hash of the new HEAD
+   * @return updated {@link Branch} or {@link org.projectnessie.model.Transaction} object with the
+   *     hash of the new HEAD
    * @throws NessieNotFoundException if {@code branchName} could not be found
    * @throws NessieConflictException if the operations could not be applied to some conflict, which
    *     is either caused by a conflicting commit or concurrent commits.
    */
-  Branch commitMultipleOperations(
+  MutableReference commitMultipleOperations(
+      @Valid
+          @NotNull
+          @Pattern(
+              regexp = Validation.MUTABLE_REF_TYPE_REGEX,
+              message = Validation.MUTABLE_REF_TYPE_MESSAGE)
+          String referenceType,
       @Valid
           @NotNull
           @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-          String branchName,
+          String referenceName,
       @Valid @NotNull @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String hash,
       @Valid @NotNull Operations operations)

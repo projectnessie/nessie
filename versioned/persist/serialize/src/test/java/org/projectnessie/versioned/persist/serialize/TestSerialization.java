@@ -16,6 +16,10 @@
 package org.projectnessie.versioned.persist.serialize;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.mutableRefToRefType;
+import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.refToRefType;
+import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.toNamedRef;
 import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.toProto;
 
 import com.google.protobuf.ByteString;
@@ -34,12 +38,19 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.NamedMutableRef;
+import org.projectnessie.versioned.NamedRef;
+import org.projectnessie.versioned.TagName;
+import org.projectnessie.versioned.TransactionName;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
@@ -55,6 +66,7 @@ import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePoi
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.NamedReference;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefPointer;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefType;
 
 /** (Re-)serialization tests using random data for relevant types. */
 class TestSerialization {
@@ -414,10 +426,7 @@ class TestSerialization {
       state.addNamedReferences(
           NamedReference.newBuilder()
               .setName(randomString(32))
-              .setRef(
-                  RefPointer.newBuilder()
-                      .setType(RefPointer.Type.Branch)
-                      .setHash(randomBytes(32))));
+              .setRef(RefPointer.newBuilder().setType(RefType.Branch).setHash(randomBytes(32))));
     }
     return state.build();
   }
@@ -512,9 +521,68 @@ class TestSerialization {
     }
     entry.setRefLogId(randomHash().asBytes());
     entry.setRefName(ByteString.copyFromUtf8("temp"));
-    entry.setRefType(RefLogEntry.RefType.Branch);
+    entry.setRefType(RefType.Branch);
     entry.setCommitHash(randomHash().asBytes());
     entry.setOperation(RefLogEntry.Operation.MERGE);
     return entry.build();
+  }
+
+  @SuppressWarnings({"ConstantConditions", "ResultOfMethodCallIgnored", "ObviousNullCheck"})
+  @Test
+  void testRefToRefType() {
+    assertThat(refToRefType(BranchName.of("foo"))).isEqualTo(RefType.Branch);
+    assertThat(refToRefType(TagName.of("foo"))).isEqualTo(RefType.Tag);
+    assertThat(refToRefType(TransactionName.of("foo"))).isEqualTo(RefType.Transaction);
+    assertThatThrownBy(
+            () ->
+                refToRefType(
+                    new NamedMutableRef() {
+                      @Nonnull
+                      @Override
+                      public String getName() {
+                        return "foo";
+                      }
+                    }))
+        .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(
+            () ->
+                refToRefType(
+                    new NamedRef() {
+                      @Nonnull
+                      @Override
+                      public String getName() {
+                        return "foo";
+                      }
+                    }))
+        .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> mutableRefToRefType(null))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @SuppressWarnings({"ConstantConditions", "ResultOfMethodCallIgnored", "ObviousNullCheck"})
+  @Test
+  void testMutableRefToRefType() {
+    assertThat(mutableRefToRefType(BranchName.of("foo"))).isEqualTo(RefType.Branch);
+    assertThat(mutableRefToRefType(TransactionName.of("foo"))).isEqualTo(RefType.Transaction);
+    assertThatThrownBy(
+            () ->
+                mutableRefToRefType(
+                    new NamedMutableRef() {
+                      @Nonnull
+                      @Override
+                      public String getName() {
+                        return "foo";
+                      }
+                    }))
+        .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> mutableRefToRefType(null))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  void testToNamedRef() {
+    assertThat(toNamedRef(RefType.Branch, "foo")).isEqualTo(BranchName.of("foo"));
+    assertThat(toNamedRef(RefType.Tag, "foo")).isEqualTo(TagName.of("foo"));
+    assertThat(toNamedRef(RefType.Transaction, "foo")).isEqualTo(TransactionName.of("foo"));
   }
 }

@@ -114,10 +114,9 @@ class TestAuthorizationRules extends BaseClientAuthTest {
             () ->
                 api()
                     .commitMultipleOperations()
-                    .branch(branch)
                     .commitMeta(CommitMeta.fromMessage("add stuff"))
                     .operation(Put.of(key, IcebergTable.of("foo", 42, 42, 42, 42, "cid-foo")))
-                    .commit())
+                    .commitTo(branch))
         .isInstanceOf(NessieForbiddenException.class)
         .hasMessageContaining(
             String.format(
@@ -132,10 +131,9 @@ class TestAuthorizationRules extends BaseClientAuthTest {
             () ->
                 api()
                     .commitMultipleOperations()
-                    .branch(b)
                     .commitMeta(CommitMeta.fromMessage("delete stuff"))
                     .operation(Delete.of(key))
-                    .commit())
+                    .commitTo(b))
         .isInstanceOf(NessieForbiddenException.class)
         .hasMessageContaining(
             String.format(
@@ -310,29 +308,28 @@ class TestAuthorizationRules extends BaseClientAuthTest {
   private void createBranch(Branch branch, String role, boolean shouldFail)
       throws BaseNessieClientServerException {
     if (shouldFail) {
-      assertThatThrownBy(
-              () -> api().createReference().sourceRefName("main").reference(branch).create())
+      assertThatThrownBy(() -> api().createReference().sourceRefName("main").createAs(branch))
           .isInstanceOf(NessieForbiddenException.class)
           .hasMessageContaining(
               String.format(
                   "'CREATE_REFERENCE' is not allowed for role '%s' on reference '%s'",
                   role, branch.getName()));
     } else {
-      api().createReference().sourceRefName("main").reference(branch).create();
+      api().createReference().sourceRefName("main").createAs(branch);
     }
   }
 
   private void deleteBranch(Branch branch, String role, boolean shouldFail)
       throws BaseNessieClientServerException {
     if (shouldFail) {
-      assertThatThrownBy(() -> api().deleteBranch().branch(branch).delete())
+      assertThatThrownBy(() -> api().deleteReference().reference(branch).delete())
           .isInstanceOf(NessieForbiddenException.class)
           .hasMessageContaining(
               String.format(
                   "'DELETE_REFERENCE' is not allowed for role '%s' on reference '%s'",
                   role, branch.getName()));
     } else {
-      api().deleteBranch().branch(branch).delete();
+      api().deleteReference().reference(branch).delete();
     }
   }
 
@@ -412,7 +409,7 @@ class TestAuthorizationRules extends BaseClientAuthTest {
     CommitMultipleOperationsBuilder commitOp =
         api()
             .commitMultipleOperations()
-            .branch(branch)
+            .reference(branch)
             .operation(put)
             .commitMeta(CommitMeta.fromMessage("add stuff"));
 
@@ -436,7 +433,7 @@ class TestAuthorizationRules extends BaseClientAuthTest {
     CommitMultipleOperationsBuilder commitOp =
         api()
             .commitMultipleOperations()
-            .branch(branch)
+            .reference(branch)
             .operation(delete)
             .commitMeta(CommitMeta.fromMessage("delete stuff"));
 

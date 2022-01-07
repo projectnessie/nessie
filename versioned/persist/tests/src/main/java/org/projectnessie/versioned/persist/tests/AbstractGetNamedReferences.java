@@ -38,6 +38,7 @@ import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceInfo.CommitsAheadBehind;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.TagName;
+import org.projectnessie.versioned.TransactionName;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt;
@@ -64,15 +65,10 @@ public abstract class AbstractGetNamedReferences {
   @Test
   public void parameterValidationNamedRefs() throws Exception {
     BranchName main = BranchName.of(MAIN_BRANCH);
-    BranchName parameterValidation = BranchName.of("parameterValidation");
-    TagName parameterValidationTag = TagName.of("parameterValidationTag");
 
     Hash hash = databaseAdapter.noAncestorHash();
 
     assertThat(databaseAdapter.hashOnReference(main, Optional.empty())).isEqualTo(hash);
-
-    databaseAdapter.create(parameterValidation, hash);
-    databaseAdapter.create(parameterValidationTag, hash);
 
     assertAll(
         () ->
@@ -152,26 +148,30 @@ public abstract class AbstractGetNamedReferences {
   @Test
   public void parameterValidationNamedRef() throws Exception {
     BranchName main = BranchName.of(MAIN_BRANCH);
-    BranchName parameterValidation = BranchName.of("parameterValidation");
+    TransactionName parameterValidationTransaction =
+        TransactionName.of("parameterValidationTransaction");
+    BranchName parameterValidationBranch = BranchName.of("parameterValidationBranch");
     TagName parameterValidationTag = TagName.of("parameterValidationTag");
 
     Hash hash = databaseAdapter.noAncestorHash();
 
     assertThat(databaseAdapter.hashOnReference(main, Optional.empty())).isEqualTo(hash);
 
-    databaseAdapter.create(parameterValidation, hash);
-    databaseAdapter.create(parameterValidationTag, hash);
+    databaseAdapter.create(parameterValidationTransaction, hash, null);
+    databaseAdapter.create(parameterValidationBranch, hash, null);
+    databaseAdapter.create(parameterValidationTag, hash, null);
 
     assertAll(
         () ->
             assertThatThrownBy(() -> databaseAdapter.namedRef(main.getName(), null))
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("Parameter for GetNamedRefsParams must not be null"),
+        // Transaction
         () ->
             assertThatThrownBy(
                     () ->
                         databaseAdapter.namedRef(
-                            parameterValidation.getName(),
+                            parameterValidationTransaction.getName(),
                             GetNamedRefsParams.builder()
                                 .branchRetrieveOptions(COMPUTE_AHEAD_BEHIND)
                                 .build()))
@@ -181,7 +181,7 @@ public abstract class AbstractGetNamedReferences {
             assertThatThrownBy(
                     () ->
                         databaseAdapter.namedRef(
-                            parameterValidation.getName(),
+                            parameterValidationTransaction.getName(),
                             GetNamedRefsParams.builder()
                                 .tagRetrieveOptions(COMPUTE_AHEAD_BEHIND)
                                 .build()))
@@ -191,7 +191,7 @@ public abstract class AbstractGetNamedReferences {
             assertThatThrownBy(
                     () ->
                         databaseAdapter.namedRef(
-                            parameterValidation.getName(),
+                            parameterValidationTransaction.getName(),
                             GetNamedRefsParams.builder()
                                 .branchRetrieveOptions(COMPUTE_COMMON_ANCESTOR)
                                 .build()))
@@ -201,7 +201,7 @@ public abstract class AbstractGetNamedReferences {
             assertThatThrownBy(
                     () ->
                         databaseAdapter.namedRef(
-                            parameterValidation.getName(),
+                            parameterValidationTransaction.getName(),
                             GetNamedRefsParams.builder()
                                 .tagRetrieveOptions(COMPUTE_COMMON_ANCESTOR)
                                 .build()))
@@ -211,7 +211,7 @@ public abstract class AbstractGetNamedReferences {
             assertThatThrownBy(
                     () ->
                         databaseAdapter.namedRef(
-                            parameterValidation.getName(),
+                            parameterValidationTransaction.getName(),
                             GetNamedRefsParams.builder()
                                 .branchRetrieveOptions(COMPUTE_AHEAD_BEHIND)
                                 .tagRetrieveOptions(COMPUTE_AHEAD_BEHIND)
@@ -223,7 +223,7 @@ public abstract class AbstractGetNamedReferences {
             assertThatThrownBy(
                     () ->
                         databaseAdapter.namedRef(
-                            parameterValidation.getName(),
+                            parameterValidationTransaction.getName(),
                             GetNamedRefsParams.builder()
                                 .branchRetrieveOptions(COMPUTE_AHEAD_BEHIND)
                                 .tagRetrieveOptions(COMPUTE_AHEAD_BEHIND)
@@ -231,6 +231,72 @@ public abstract class AbstractGetNamedReferences {
                                 .build()))
                 .isInstanceOf(ReferenceNotFoundException.class)
                 .hasMessage("Named reference 'blah-no' not found"),
+        // Branch
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        databaseAdapter.namedRef(
+                            parameterValidationBranch.getName(),
+                            GetNamedRefsParams.builder()
+                                .branchRetrieveOptions(COMPUTE_AHEAD_BEHIND)
+                                .build()))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("Base reference name missing."),
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        databaseAdapter.namedRef(
+                            parameterValidationBranch.getName(),
+                            GetNamedRefsParams.builder()
+                                .tagRetrieveOptions(COMPUTE_AHEAD_BEHIND)
+                                .build()))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("Base reference name missing."),
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        databaseAdapter.namedRef(
+                            parameterValidationBranch.getName(),
+                            GetNamedRefsParams.builder()
+                                .branchRetrieveOptions(COMPUTE_COMMON_ANCESTOR)
+                                .build()))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("Base reference name missing."),
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        databaseAdapter.namedRef(
+                            parameterValidationBranch.getName(),
+                            GetNamedRefsParams.builder()
+                                .tagRetrieveOptions(COMPUTE_COMMON_ANCESTOR)
+                                .build()))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("Base reference name missing."),
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        databaseAdapter.namedRef(
+                            parameterValidationBranch.getName(),
+                            GetNamedRefsParams.builder()
+                                .branchRetrieveOptions(COMPUTE_AHEAD_BEHIND)
+                                .tagRetrieveOptions(COMPUTE_AHEAD_BEHIND)
+                                .baseReference(BranchName.of("no-no-no"))
+                                .build()))
+                .isInstanceOf(ReferenceNotFoundException.class)
+                .hasMessage("Named reference 'no-no-no' not found"),
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        databaseAdapter.namedRef(
+                            parameterValidationBranch.getName(),
+                            GetNamedRefsParams.builder()
+                                .branchRetrieveOptions(COMPUTE_AHEAD_BEHIND)
+                                .tagRetrieveOptions(COMPUTE_AHEAD_BEHIND)
+                                .baseReference(TagName.of("blah-no"))
+                                .build()))
+                .isInstanceOf(ReferenceNotFoundException.class)
+                .hasMessage("Named reference 'blah-no' not found"),
+        // Tag
         () ->
             assertThatThrownBy(
                     () ->
@@ -263,8 +329,8 @@ public abstract class AbstractGetNamedReferences {
     // Have 'main' + a branch + a tag
     //  all point to the "no ancestor" hash (aka "beginning of time")
 
-    databaseAdapter.create(branch, hash);
-    databaseAdapter.create(tag, hash);
+    databaseAdapter.create(branch, hash, null);
+    databaseAdapter.create(tag, hash, null);
 
     verifyReferences(
         new ExpectedNamedReference(main, 0L, mainHash, 0, 0, hash, null),
@@ -301,8 +367,8 @@ public abstract class AbstractGetNamedReferences {
     // create a branch2 + tag2 from 'main'
 
     Hash main100 = mainHash;
-    Hash branch2Hash = databaseAdapter.create(branch2, main100);
-    Hash tag2Hash = databaseAdapter.create(tag2, main100);
+    Hash branch2Hash = databaseAdapter.create(branch2, main100, null);
+    Hash tag2Hash = databaseAdapter.create(tag2, main100, null);
 
     // same expectations as above, but include branch2 + tag2
     // - common ancestor of branch2 + tag2 is the 100th commit on 'main'
@@ -355,8 +421,8 @@ public abstract class AbstractGetNamedReferences {
     // Create branch2+tag3 at branch2
 
     Hash branch2plus42 = branch2Hash;
-    Hash branch3Hash = databaseAdapter.create(branch3, branch2plus42);
-    Hash tag3Hash = databaseAdapter.create(tag3, branch2plus42);
+    Hash branch3Hash = databaseAdapter.create(branch3, branch2plus42, null);
+    Hash tag3Hash = databaseAdapter.create(tag3, branch2plus42, null);
 
     // Add 42 commits to branch3
 
@@ -510,12 +576,21 @@ public abstract class AbstractGetNamedReferences {
     try (Stream<ReferenceInfo<ByteString>> refs = databaseAdapter.namedRefs(params)) {
       assertThat(refs)
           .describedAs("GetNamedRefsParams=%s - references=%s", params, references)
+          .satisfies(
+              refList ->
+                  assertThat(refList)
+                      .allSatisfy(
+                          ref ->
+                              assertThat(ref).extracting(ReferenceInfo::getCreatedAt).isNotNull()))
+          .map(AbstractDatabaseAdapterTest::removeCreatedAt)
           .containsExactlyInAnyOrderElementsOf(expectedRefs);
     }
 
     for (ReferenceInfo<ByteString> expected : expectedRefs) {
-      assertThat(databaseAdapter.namedRef(expected.getNamedRef().getName(), params))
-          .isEqualTo(expected);
+      ReferenceInfo<ByteString> r =
+          databaseAdapter.namedRef(expected.getNamedRef().getName(), params);
+      assertThat(r).extracting(ReferenceInfo::getCreatedAt).isNotNull();
+      assertThat(AbstractDatabaseAdapterTest.removeCreatedAt(r)).isEqualTo(expected);
     }
 
     List<NamedRef> failureRefs =

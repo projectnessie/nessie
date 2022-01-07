@@ -87,7 +87,7 @@ public abstract class AbstractITVersionStore {
     int numCommits = 50;
 
     Hash[] hashesKnownByUser = new Hash[numUsers];
-    Hash createHash = store().create(branch, Optional.empty());
+    Hash createHash = store().create(branch, Optional.empty(), null);
     Arrays.fill(hashesKnownByUser, createHash);
 
     List<String> expectedValues = new ArrayList<>();
@@ -138,17 +138,18 @@ public abstract class AbstractITVersionStore {
   @Test
   public void createAndDeleteBranch() throws Exception {
     final BranchName branch = BranchName.of("foo");
-    store().create(branch, Optional.empty());
+    store().create(branch, Optional.empty(), null);
     final Hash hash = store().hashOnReference(branch, Optional.empty());
     assertThat(hash).isNotNull();
 
     final BranchName anotherBranch = BranchName.of("bar");
-    final Hash createHash = store().create(anotherBranch, Optional.of(hash));
+    final Hash createHash = store().create(anotherBranch, Optional.of(hash), null);
     final Hash commitHash = commit("Some Commit").toBranch(anotherBranch);
     assertNotEquals(createHash, commitHash);
 
     final BranchName anotherAnotherBranch = BranchName.of("baz");
-    final Hash otherCreateHash = store().create(anotherAnotherBranch, Optional.of(commitHash));
+    final Hash otherCreateHash =
+        store().create(anotherAnotherBranch, Optional.of(commitHash), null);
     assertEquals(commitHash, otherCreateHash);
 
     List<ReferenceInfo<String>> namedRefs;
@@ -157,10 +158,16 @@ public abstract class AbstractITVersionStore {
       namedRefs = str.collect(Collectors.toList());
     }
     assertThat(namedRefs)
+        .satisfies(
+            refList ->
+                assertThat(refList)
+                    .allSatisfy(
+                        ref -> assertThat(ref).extracting(ReferenceInfo::getCreatedAt).isNotNull()))
+        .map(AbstractITVersionStore::removeCreatedAt)
         .containsExactlyInAnyOrder(
-            ReferenceInfo.of(hash, branch),
-            ReferenceInfo.of(commitHash, anotherBranch),
-            ReferenceInfo.of(commitHash, anotherAnotherBranch));
+            ReferenceInfo.of(hash, branch, null, null),
+            ReferenceInfo.of(commitHash, anotherBranch, null, null),
+            ReferenceInfo.of(commitHash, anotherAnotherBranch, null, null));
 
     assertThat(commitsList(branch, false)).isEmpty();
     assertThat(commitsList(anotherBranch, false)).hasSize(1);
@@ -169,9 +176,11 @@ public abstract class AbstractITVersionStore {
     assertThat(commitsList(commitHash, false)).hasSize(1); // empty commit should not be listed
 
     assertThrows(
-        ReferenceAlreadyExistsException.class, () -> store().create(branch, Optional.empty()));
+        ReferenceAlreadyExistsException.class,
+        () -> store().create(branch, Optional.empty(), null));
     assertThrows(
-        ReferenceAlreadyExistsException.class, () -> store().create(branch, Optional.of(hash)));
+        ReferenceAlreadyExistsException.class,
+        () -> store().create(branch, Optional.of(hash), null));
 
     store().delete(branch, Optional.of(hash));
     assertThrows(
@@ -191,7 +200,7 @@ public abstract class AbstractITVersionStore {
   @Test
   public void commitLogPaging() throws Exception {
     BranchName branch = BranchName.of("commitLogPaging");
-    Hash createHash = store().create(branch, Optional.empty());
+    Hash createHash = store().create(branch, Optional.empty(), null);
 
     int commits = 95; // this should be enough
     Hash[] commitHashes = new Hash[commits];
@@ -258,19 +267,20 @@ public abstract class AbstractITVersionStore {
   @Test
   public void createAndDeleteTag() throws Exception {
     final BranchName branch = BranchName.of("foo");
-    store().create(branch, Optional.empty());
+    store().create(branch, Optional.empty(), null);
 
     final Hash initialHash = store().hashOnReference(branch, Optional.empty());
     final Hash commitHash = commit("Some commit").toBranch(branch);
 
     final TagName tag = TagName.of("tag");
-    store().create(tag, Optional.of(initialHash));
+    store().create(tag, Optional.of(initialHash), null);
 
     final TagName anotherTag = TagName.of("another-tag");
-    store().create(anotherTag, Optional.of(commitHash));
+    store().create(anotherTag, Optional.of(commitHash), null);
 
     assertThrows(
-        ReferenceAlreadyExistsException.class, () -> store().create(tag, Optional.of(initialHash)));
+        ReferenceAlreadyExistsException.class,
+        () -> store().create(tag, Optional.of(initialHash), null));
 
     assertThat(store().hashOnReference(tag, Optional.empty())).isEqualTo(initialHash);
     assertThat(store().hashOnReference(anotherTag, Optional.empty())).isEqualTo(commitHash);
@@ -281,10 +291,16 @@ public abstract class AbstractITVersionStore {
       namedRefs = str.collect(Collectors.toList());
     }
     assertThat(namedRefs)
+        .satisfies(
+            refList ->
+                assertThat(refList)
+                    .allSatisfy(
+                        ref -> assertThat(ref).extracting(ReferenceInfo::getCreatedAt).isNotNull()))
+        .map(AbstractITVersionStore::removeCreatedAt)
         .containsExactlyInAnyOrder(
-            ReferenceInfo.of(commitHash, branch),
-            ReferenceInfo.of(initialHash, tag),
-            ReferenceInfo.of(commitHash, anotherTag));
+            ReferenceInfo.of(commitHash, branch, null, null),
+            ReferenceInfo.of(initialHash, tag, null, null),
+            ReferenceInfo.of(commitHash, anotherTag, null, null));
 
     assertThat(commitsList(tag, false)).isEmpty();
     assertThat(commitsList(initialHash, false)).isEmpty(); // empty commit should not be listed
@@ -315,7 +331,7 @@ public abstract class AbstractITVersionStore {
   public void commitToBranch() throws Exception {
     final BranchName branch = BranchName.of("foo");
 
-    final Hash createHash = store().create(branch, Optional.empty());
+    final Hash createHash = store().create(branch, Optional.empty(), null);
     final Hash initialHash = store().hashOnReference(branch, Optional.empty());
     assertEquals(createHash, initialHash);
 
@@ -357,7 +373,7 @@ public abstract class AbstractITVersionStore {
   public void commitSomeOperations() throws Exception {
     final BranchName branch = BranchName.of("foo");
 
-    store().create(branch, Optional.empty());
+    store().create(branch, Optional.empty(), null);
 
     final Hash initialCommit =
         commit("Initial Commit")
@@ -445,7 +461,7 @@ public abstract class AbstractITVersionStore {
   public void commitNonConflictingOperations() throws Exception {
     final BranchName branch = BranchName.of("foo");
 
-    store().create(branch, Optional.empty());
+    store().create(branch, Optional.empty(), null);
 
     final Hash initialCommit =
         commit("Initial Commit")
@@ -538,7 +554,7 @@ public abstract class AbstractITVersionStore {
   public void commitConflictingOperations() throws Exception {
     final BranchName branch = BranchName.of("foo");
 
-    store().create(branch, Optional.empty());
+    store().create(branch, Optional.empty(), null);
 
     final Hash initialCommit =
         commit("Initial Commit").put("t1", "v1_1").put("t2", "v2_1").toBranch(branch);
@@ -609,7 +625,7 @@ public abstract class AbstractITVersionStore {
   public void forceCommitConflictingOperations() throws Exception {
     final BranchName branch = BranchName.of("foo");
 
-    store().create(branch, Optional.empty());
+    store().create(branch, Optional.empty(), null);
 
     commit("Initial Commit").put("t1", "v1_1").put("t2", "v2_1").toBranch(branch);
 
@@ -658,7 +674,7 @@ public abstract class AbstractITVersionStore {
   @Test
   public void commitDuplicateValues() throws Exception {
     BranchName branch = BranchName.of("dupe-values");
-    store().create(branch, Optional.empty());
+    store().create(branch, Optional.empty(), null);
     store()
         .commit(
             branch,
@@ -691,7 +707,7 @@ public abstract class AbstractITVersionStore {
   public void commitWithUnknownReference()
       throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
     final BranchName branch = BranchName.of("foo");
-    store().create(branch, Optional.empty());
+    store().create(branch, Optional.empty(), null);
 
     assertThrows(
         ReferenceNotFoundException.class,
@@ -713,7 +729,7 @@ public abstract class AbstractITVersionStore {
       throws ReferenceNotFoundException, ReferenceConflictException,
           ReferenceAlreadyExistsException {
     final BranchName branch = BranchName.of("foo");
-    store().create(branch, Optional.empty());
+    store().create(branch, Optional.empty(), null);
 
     final Hash initialHash = store().hashOnReference(branch, Optional.empty());
     store().commit(branch, Optional.of(initialHash), "Some commit", Collections.emptyList());
@@ -721,7 +737,7 @@ public abstract class AbstractITVersionStore {
     final Hash commitHash = store().hashOnReference(branch, Optional.empty());
 
     final BranchName branch2 = BranchName.of("bar");
-    store().create(branch2, Optional.empty());
+    store().create(branch2, Optional.empty(), null);
 
     assertThrows(
         ReferenceNotFoundException.class,
@@ -735,7 +751,7 @@ public abstract class AbstractITVersionStore {
   public void getValueForEmptyBranch()
       throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
     BranchName branch = BranchName.of("empty-branch");
-    store().create(branch, Optional.empty());
+    store().create(branch, Optional.empty(), null);
     final Hash hash = store().hashOnReference(branch, Optional.empty());
 
     assertThat(store().getValue(hash, Key.of("arbitrary"))).isNull();
@@ -744,14 +760,14 @@ public abstract class AbstractITVersionStore {
   @Test
   public void assign() throws VersionStoreException {
     final BranchName branch = BranchName.of("foo");
-    store().create(branch, Optional.empty());
+    store().create(branch, Optional.empty(), null);
     final Hash initialHash = store().hashOnReference(branch, Optional.empty());
 
     final Hash commit = commit("Some commit").toBranch(branch);
-    store().create(BranchName.of("bar"), Optional.of(commit));
-    store().create(TagName.of("tag1"), Optional.of(commit));
-    store().create(TagName.of("tag2"), Optional.of(commit));
-    store().create(TagName.of("tag3"), Optional.of(commit));
+    store().create(BranchName.of("bar"), Optional.of(commit), null);
+    store().create(TagName.of("tag1"), Optional.of(commit), null);
+    store().create(TagName.of("tag2"), Optional.of(commit), null);
+    store().create(TagName.of("tag3"), Optional.of(commit), null);
 
     final Hash anotherCommit = commit("Another commit").toBranch(branch);
     store().assign(TagName.of("tag2"), Optional.of(commit), anotherCommit);
@@ -815,7 +831,7 @@ public abstract class AbstractITVersionStore {
     @BeforeEach
     protected void setupCommits() throws VersionStoreException {
       final BranchName branch = BranchName.of("foo");
-      store().create(branch, Optional.empty());
+      store().create(branch, Optional.empty(), null);
 
       initialHash = store().hashOnReference(branch, Optional.empty());
 
@@ -852,7 +868,7 @@ public abstract class AbstractITVersionStore {
     private void checkTransplantOnEmptyBranch(Function<String, String> commitMetaModify)
         throws VersionStoreException {
       final BranchName newBranch = BranchName.of("bar_1");
-      store().create(newBranch, Optional.empty());
+      store().create(newBranch, Optional.empty(), null);
 
       store()
           .transplant(
@@ -877,7 +893,7 @@ public abstract class AbstractITVersionStore {
     @Test
     protected void checkTransplantWithPreviousCommit() throws VersionStoreException {
       final BranchName newBranch = BranchName.of("bar_2");
-      store().create(newBranch, Optional.empty());
+      store().create(newBranch, Optional.empty(), null);
       commit("Unrelated commit").put("t5", "v5_1").toBranch(newBranch);
 
       store()
@@ -903,7 +919,7 @@ public abstract class AbstractITVersionStore {
     @Test
     protected void checkTransplantWitConflictingCommit() throws VersionStoreException {
       final BranchName newBranch = BranchName.of("bar_3");
-      store().create(newBranch, Optional.empty());
+      store().create(newBranch, Optional.empty(), null);
       commit("Another commit").put("t1", "v1_4").toBranch(newBranch);
 
       assertThrows(
@@ -920,7 +936,7 @@ public abstract class AbstractITVersionStore {
     @Test
     protected void checkTransplantWithDelete() throws VersionStoreException {
       final BranchName newBranch = BranchName.of("bar_4");
-      store().create(newBranch, Optional.empty());
+      store().create(newBranch, Optional.empty(), null);
       commit("Another commit").put("t1", "v1_4").toBranch(newBranch);
       commit("Another commit").delete("t1").toBranch(newBranch);
 
@@ -959,7 +975,7 @@ public abstract class AbstractITVersionStore {
     @Test
     protected void checkTransplantWithNonExistingCommit() throws VersionStoreException {
       final BranchName newBranch = BranchName.of("bar_6");
-      store().create(newBranch, Optional.empty());
+      store().create(newBranch, Optional.empty(), null);
       assertThrows(
           ReferenceNotFoundException.class,
           () ->
@@ -974,7 +990,7 @@ public abstract class AbstractITVersionStore {
     @Test
     protected void checkTransplantWithNoExpectedHash() throws VersionStoreException {
       final BranchName newBranch = BranchName.of("bar_7");
-      store().create(newBranch, Optional.empty());
+      store().create(newBranch, Optional.empty(), null);
       commit("Another commit").put("t5", "v5_1").toBranch(newBranch);
       commit("Another commit").put("t1", "v1_4").toBranch(newBranch);
 
@@ -1001,7 +1017,7 @@ public abstract class AbstractITVersionStore {
     @Test
     protected void checkTransplantWithCommitsInWrongOrder() throws VersionStoreException {
       final BranchName newBranch = BranchName.of("bar_8");
-      store().create(newBranch, Optional.empty());
+      store().create(newBranch, Optional.empty(), null);
 
       assertThrows(
           IllegalArgumentException.class,
@@ -1017,7 +1033,7 @@ public abstract class AbstractITVersionStore {
     @Test
     protected void checkInvalidBranchHash() throws VersionStoreException {
       final BranchName anotherBranch = BranchName.of("bar");
-      store().create(anotherBranch, Optional.empty());
+      store().create(anotherBranch, Optional.empty(), null);
       final Hash unrelatedCommit =
           commit("Another Commit")
               .put("t1", "v1_1")
@@ -1026,7 +1042,7 @@ public abstract class AbstractITVersionStore {
               .toBranch(anotherBranch);
 
       final BranchName newBranch = BranchName.of("bar_1");
-      store().create(newBranch, Optional.empty());
+      store().create(newBranch, Optional.empty(), null);
 
       assertThrows(
           ReferenceNotFoundException.class,
@@ -1042,7 +1058,7 @@ public abstract class AbstractITVersionStore {
     @Test
     protected void transplantBasic() throws VersionStoreException {
       final BranchName newBranch = BranchName.of("bar_2");
-      store().create(newBranch, Optional.empty());
+      store().create(newBranch, Optional.empty(), null);
       commit("Unrelated commit").put("t5", "v5_1").toBranch(newBranch);
 
       store()
@@ -1073,7 +1089,7 @@ public abstract class AbstractITVersionStore {
     @BeforeEach
     protected void setupCommits() throws VersionStoreException {
       final BranchName branch = BranchName.of("foo");
-      store().create(branch, Optional.empty());
+      store().create(branch, Optional.empty(), null);
 
       // The default common ancestor for all merge-tests.
       // The spec for 'VersionStore.merge' mentions "(...) until we arrive at a common ancestor",
@@ -1108,7 +1124,7 @@ public abstract class AbstractITVersionStore {
     @Test
     protected void mergeIntoEmptyBranch() throws VersionStoreException {
       final BranchName newBranch = BranchName.of("mergeIntoEmptyBranch");
-      store().create(newBranch, Optional.of(initialHash));
+      store().create(newBranch, Optional.of(initialHash), null);
 
       store().merge(thirdCommit, newBranch, Optional.of(initialHash), Function.identity());
       assertThat(
@@ -1131,7 +1147,7 @@ public abstract class AbstractITVersionStore {
     @Test
     protected void mergeIntoEmptyBranchModifying() throws VersionStoreException {
       final BranchName newBranch = BranchName.of("mergeIntoEmptyBranchModifying");
-      store().create(newBranch, Optional.of(initialHash));
+      store().create(newBranch, Optional.of(initialHash), null);
 
       store().merge(thirdCommit, newBranch, Optional.of(initialHash), this::merged);
       assertThat(
@@ -1154,7 +1170,7 @@ public abstract class AbstractITVersionStore {
     @Test
     protected void mergeIntoNonConflictingBranch() throws VersionStoreException {
       final BranchName newBranch = BranchName.of("bar_2");
-      store().create(newBranch, Optional.of(initialHash));
+      store().create(newBranch, Optional.of(initialHash), null);
       final Hash newCommit = commit("Unrelated commit").put("t5", "v5_1").toBranch(newBranch);
 
       store().merge(thirdCommit, newBranch, Optional.empty(), Function.identity());
@@ -1186,8 +1202,8 @@ public abstract class AbstractITVersionStore {
       final Key key = Key.of("t1");
       final BranchName etl = BranchName.of("etl");
       final BranchName review = BranchName.of("review");
-      store().create(etl, Optional.of(initialHash));
-      store().create(review, Optional.of(initialHash));
+      store().create(etl, Optional.of(initialHash), null);
+      store().create(review, Optional.of(initialHash), null);
       store()
           .commit(
               etl, Optional.empty(), "commit 1", Collections.singletonList(Put.of(key, "value1")));
@@ -1212,7 +1228,7 @@ public abstract class AbstractITVersionStore {
     @Test
     protected void mergeWithCommonAncestor() throws VersionStoreException {
       final BranchName newBranch = BranchName.of("bar_2");
-      store().create(newBranch, Optional.of(firstCommit));
+      store().create(newBranch, Optional.of(firstCommit), null);
 
       final Hash newCommit = commit("Unrelated commit").put("t5", "v5_1").toBranch(newBranch);
 
@@ -1243,8 +1259,8 @@ public abstract class AbstractITVersionStore {
     protected void mergeWithConflictingKeys() throws VersionStoreException {
       final BranchName foo = BranchName.of("foofoo");
       final BranchName bar = BranchName.of("barbar");
-      store().create(foo, Optional.of(this.initialHash));
-      store().create(bar, Optional.of(this.initialHash));
+      store().create(foo, Optional.of(this.initialHash), null);
+      store().create(bar, Optional.of(this.initialHash), null);
 
       // we're essentially modifying the same key on both branches and then merging one branch into
       // the other and expect a conflict
@@ -1278,7 +1294,7 @@ public abstract class AbstractITVersionStore {
     @Test
     protected void mergeIntoConflictingBranch() throws VersionStoreException {
       final BranchName newBranch = BranchName.of("bar_3");
-      store().create(newBranch, Optional.of(initialHash));
+      store().create(newBranch, Optional.of(initialHash), null);
       commit("Another commit").put("t1", "v1_4").toBranch(newBranch);
 
       assertThrows(
@@ -1299,7 +1315,7 @@ public abstract class AbstractITVersionStore {
     @Test
     protected void mergeIntoNonExistingReference() throws VersionStoreException {
       final BranchName newBranch = BranchName.of("bar_6");
-      store().create(newBranch, Optional.of(initialHash));
+      store().create(newBranch, Optional.of(initialHash), null);
       assertThrows(
           ReferenceNotFoundException.class,
           () ->
@@ -1315,7 +1331,7 @@ public abstract class AbstractITVersionStore {
   @Test
   void toRef() throws VersionStoreException {
     final BranchName branch = BranchName.of("toRef");
-    store().create(branch, Optional.empty());
+    store().create(branch, Optional.empty(), null);
     store().hashOnReference(branch, Optional.empty());
 
     final Hash firstCommit = commit("First Commit").toBranch(branch);
@@ -1325,8 +1341,8 @@ public abstract class AbstractITVersionStore {
     final Hash secondCommit = commit("Second Commit").toBranch(branch);
     final Hash thirdCommit = commit("Third Commit").toBranch(branch);
 
-    store().create(BranchName.of(thirdCommit.asString()), Optional.of(firstCommit));
-    store().create(TagName.of(secondCommit.asString()), Optional.of(firstCommit));
+    store().create(BranchName.of(thirdCommit.asString()), Optional.of(firstCommit), null);
+    store().create(TagName.of(secondCommit.asString()), Optional.of(firstCommit), null);
 
     assertThat(store().toRef(secondCommit.asString()))
         .isEqualTo(WithHash.of(firstCommit, TagName.of(secondCommit.asString())));
@@ -1342,7 +1358,7 @@ public abstract class AbstractITVersionStore {
   @Test
   protected void checkDiff() throws VersionStoreException {
     final BranchName branch = BranchName.of("checkDiff");
-    store().create(branch, Optional.empty());
+    store().create(branch, Optional.empty(), null);
     final Hash initial = store().hashOnReference(branch, Optional.empty());
 
     final Hash firstCommit =
@@ -1381,7 +1397,7 @@ public abstract class AbstractITVersionStore {
   @Test
   public void commitLogExtendedNoGlobalState() throws Exception {
     BranchName branch = BranchName.of("commitLogExtended");
-    Hash firstParent = store().create(branch, Optional.empty());
+    Hash firstParent = store().create(branch, Optional.empty(), null);
 
     int numCommits = 10;
 
@@ -1477,5 +1493,9 @@ public abstract class AbstractITVersionStore {
 
   protected static Commit<String, String> commit(Hash hash, String commitMeta) {
     return Commit.<String, String>builder().hash(hash).commitMeta(commitMeta).build();
+  }
+
+  protected static <T> ReferenceInfo<T> removeCreatedAt(ReferenceInfo<T> ref) {
+    return ReferenceInfo.<T>builder().from(ref).createdAt(null).build();
   }
 }

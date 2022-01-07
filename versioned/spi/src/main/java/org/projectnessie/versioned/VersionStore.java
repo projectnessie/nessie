@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -51,8 +52,8 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
   /**
    * Retrieve the hash for "no ancestor" (or "beginning of time"), which is a hash for which no
    * commit exists. "no ancestor" or "beginning of time" are the initial hash of the default branch
-   * and branches that are created via {@link #create(NamedRef, Optional)} without specifying the
-   * {@code targetHash}.
+   * and branches that are created via {@link #create(NamedRef, Optional, Instant)} without
+   * specifying the {@code targetHash}.
    *
    * <p>This "no ancestor" value is readable for all users, and it is a valid hash for every named
    * reference.
@@ -93,9 +94,10 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    *     values for {@code branch}
    * @throws ReferenceNotFoundException if {@code branch} is not present in the store
    * @throws NullPointerException if one of the argument is {@code null}
+   * @return new HEAD of the target branch
    */
   Hash commit(
-      @Nonnull BranchName branch,
+      @Nonnull NamedMutableRef branch,
       @Nonnull Optional<Hash> referenceHash,
       @Nonnull METADATA metadata,
       @Nonnull List<Operation<VALUE>> operations)
@@ -112,14 +114,14 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @param referenceHash The hash to use as a reference for conflict detection. If not present, do
    *     not perform conflict detection
    * @param sequenceToTransplant The sequence of hashes to transplant.
-   * @param updateCommitMetadata
+   * @param updateCommitMetadata function to update the commit metadata of each transplanted commit
    * @throws ReferenceConflictException if {@code referenceHash} values do not match the stored
    *     values for {@code branch}
    * @throws ReferenceNotFoundException if {@code branch} or if any of the hashes from {@code
    *     sequenceToTransplant} is not present in the store.
    */
   void transplant(
-      BranchName targetBranch,
+      NamedMutableRef targetBranch,
       Optional<Hash> referenceHash,
       List<Hash> sequenceToTransplant,
       Function<METADATA, METADATA> updateCommitMetadata)
@@ -143,7 +145,7 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @param fromHash The hash we are using to get additional commits
    * @param toBranch The branch that we are merging into
    * @param expectedHash The current head of the branch to validate before updating (optional).
-   * @param updateCommitMetadata
+   * @param updateCommitMetadata function to update the commit metadata of each merged commit
    * @throws ReferenceConflictException if {@code expectedBranchHash} doesn't match the stored hash
    *     for {@code toBranch}
    * @throws ReferenceNotFoundException if {@code toBranch} or {@code fromHash} is not present in
@@ -151,7 +153,7 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    */
   void merge(
       Hash fromHash,
-      BranchName toBranch,
+      NamedMutableRef toBranch,
       Optional<Hash> expectedHash,
       Function<METADATA, METADATA> updateCommitMetadata)
       throws ReferenceNotFoundException, ReferenceConflictException;
@@ -159,7 +161,7 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
   /**
    * Assign the NamedRef to point to a particular hash.
    *
-   * <p>{@code ref} should already exists. If {@code expectedHash} is not empty, its value is
+   * <p>{@code ref} should already exist. If {@code expectedHash} is not empty, its value is
    * compared with the current stored value for {@code ref} and an exception is thrown if values do
    * not match.
    *
@@ -182,11 +184,12 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @param ref The named ref we're assigning
    * @param targetHash The hash that this ref should refer to (optional). Otherwise will reference
    *     the beginning of time.
+   * @param expireAt
    * @throws ReferenceNotFoundException if {@code targetHash} is not empty and not present in the
    *     store
    * @throws ReferenceAlreadyExistsException if {@code ref} already exists
    */
-  Hash create(NamedRef ref, Optional<Hash> targetHash)
+  Hash create(NamedRef ref, Optional<Hash> targetHash, Instant expireAt)
       throws ReferenceNotFoundException, ReferenceAlreadyExistsException;
 
   /**

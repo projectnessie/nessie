@@ -24,30 +24,28 @@ import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
 
-/** API representation of a Nessie Tag. This object is akin to a Ref in Git terminology. */
+/** API representation of a Nessie Branch. This object is akin to a Ref in Git terminology. */
 @Value.Immutable
-@Schema(type = SchemaType.OBJECT, title = "Tag")
-@JsonSerialize(as = ImmutableTag.class)
-@JsonDeserialize(as = ImmutableTag.class)
-@JsonTypeName("TAG")
-public interface Tag extends Reference {
+@Schema(type = SchemaType.OBJECT, title = "Transaction")
+@JsonSerialize(as = ImmutableTransaction.class)
+@JsonDeserialize(as = ImmutableTransaction.class)
+@JsonTypeName("TRANSACTION")
+public interface Transaction extends MutableReference {
 
-  /**
-   * Validation rule using {@link org.projectnessie.model.Validation#validateReferenceName(String)}.
-   */
+  /** Validation rule using {@link Validation#validateReferenceName(String)}. */
   @Value.Check
   default void checkName() {
     validateReferenceName(getName());
   }
 
-  static ImmutableTag.Builder builder() {
-    return ImmutableTag.builder();
+  static ImmutableTransaction.Builder builder() {
+    return ImmutableTransaction.builder();
   }
 
-  static Tag of(String name, String hash) {
+  static Transaction of(String name, String hash) {
     return builder().name(name).hash(hash).build();
   }
 
   @Override
-  Tag withHash(String hash);
+  Transaction withHash(String hash);
 }

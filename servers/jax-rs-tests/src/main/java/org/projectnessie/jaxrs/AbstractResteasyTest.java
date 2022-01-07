@@ -17,16 +17,31 @@ package org.projectnessie.jaxrs;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.projectnessie.model.Validation.HASH_MESSAGE;
+import static org.projectnessie.model.Validation.REF_NAME_MESSAGE;
+import static org.projectnessie.model.Validation.REF_NAME_OR_HASH_MESSAGE;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.Instant;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.projectnessie.client.http.HttpClient;
+import org.projectnessie.client.http.HttpRequest;
+import org.projectnessie.client.rest.NessieBadRequestException;
+import org.projectnessie.client.rest.NessieHttpResponseFilter;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
@@ -35,8 +50,10 @@ import org.projectnessie.model.DiffResponse;
 import org.projectnessie.model.DiffResponse.DiffEntry;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableBranch;
+import org.projectnessie.model.ImmutableGetMultipleContentsRequest;
 import org.projectnessie.model.ImmutableOperations;
 import org.projectnessie.model.ImmutablePut;
+import org.projectnessie.model.ImmutableTransplant;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Operations;
@@ -46,8 +63,49 @@ import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.Tag;
 
 public abstract class AbstractResteasyTest {
+  public static final String COMMA_VALID_HASH_1 =
+      ",1234567890123456789012345678901234567890123456789012345678901234";
+  public static final String COMMA_VALID_HASH_2 = ",1234567890123456789012345678901234567890";
+  public static final String COMMA_VALID_HASH_3 = ",1234567890123456";
 
   protected static String basePath = "/api/v1/";
+
+  private static RequestSpecification rest() {
+    return given().when().basePath(basePath).contentType(ContentType.JSON);
+  }
+
+  private static HttpClient theClient;
+
+  private static HttpRequest client() {
+    HttpClient c = theClient;
+    if (c == null) {
+      ObjectMapper mapper = new ObjectMapper();
+      URI uri = URI.create(RestAssured.baseURI).resolve(basePath);
+      if (RestAssured.port != RestAssured.UNDEFINED_PORT) {
+        try {
+          uri =
+              new URI(
+                  uri.getScheme(),
+                  uri.getUserInfo(),
+                  uri.getHost(),
+                  RestAssured.port,
+                  uri.getPath(),
+                  uri.getQuery(),
+                  uri.getFragment());
+        } catch (URISyntaxException e) {
+          throw new RuntimeException(e);
+        }
+      }
+      c =
+          HttpClient.builder()
+              .setBaseUri(uri)
+              .setObjectMapper(mapper)
+              .addResponseFilter(new NessieHttpResponseFilter(mapper))
+              .build();
+      theClient = c;
+    }
+    return c.newRequest();
+  }
 
   @BeforeEach
   public void enableLogging() {
@@ -230,8 +288,9 @@ public abstract class AbstractResteasyTest {
         .statusCode(204);
   }
 
-  private static RequestSpecification rest() {
-    return given().when().basePath(basePath).contentType(ContentType.JSON);
+  @AfterAll
+  public static void tearDownClient() {
+    theClient = null;
   }
 
   private Branch commit(String contentId, Branch branch, String contentKey, String metadataUrl) {
@@ -493,5 +552,459 @@ public abstract class AbstractResteasyTest {
             .as(RefLogResponse.class);
     assertThat(refLogResponse1.getLogEntries().get(0).getRefLogId())
         .isEqualTo(refLogResponse.getLogEntries().get(1).getRefLogId());
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "x/" + COMMA_VALID_HASH_1,
+    "abc'" + COMMA_VALID_HASH_1,
+    ".foo" + COMMA_VALID_HASH_2,
+    "abc'def'..'blah" + COMMA_VALID_HASH_2,
+    "abc'de..blah" + COMMA_VALID_HASH_3,
+    "abc'de@{blah" + COMMA_VALID_HASH_3
+  })
+  public void invalidBranchNames(String invalidBranchName, String validHash) {
+    ContentKey key = ContentKey.of("x");
+    Tag tag = Tag.of("valid", validHash);
+
+    String opsCountMsg = ".operations.operations: size must be between 1 and 2147483647";
+
+    Branch defaultBranch = client().path("trees/tree").get().readEntity(Branch.class);
+
+    assertAll(
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        client()
+                            .resolveTemplate("referenceType", "branch")
+                            .resolveTemplate("referenceName", invalidBranchName)
+                            .queryParam("expectedHash", validHash)
+                            .path("trees/{referenceType}/{referenceName}/commit")
+                            .post(
+                                ImmutableOperations.builder()
+                                    .commitMeta(CommitMeta.fromMessage(""))
+                                    .build()))
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining(".referenceName: " + REF_NAME_MESSAGE)
+                .hasMessageContaining(opsCountMsg),
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        client()
+                            .resolveTemplate("referenceType", "branch")
+                            .resolveTemplate("referenceName", invalidBranchName)
+                            .queryParam("expectedHash", validHash)
+                            .path("trees/{referenceType}/{referenceName}")
+                            .delete())
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining("deleteReference.referenceName: " + REF_NAME_MESSAGE),
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        client()
+                            .resolveTemplate("referenceName", invalidBranchName)
+                            .queryParam("startHash", validHash)
+                            .path("trees/tree/{referenceName}/log")
+                            .get())
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining("getCommitLog.ref: " + REF_NAME_MESSAGE),
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        client()
+                            .resolveTemplate("referenceName", invalidBranchName)
+                            .queryParam("hashOnRef", validHash)
+                            .path("trees/tree/{referenceName}/entries")
+                            .get())
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining("getEntries.refName: " + REF_NAME_MESSAGE),
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        client()
+                            .resolveTemplate("referenceName", invalidBranchName)
+                            .path("trees/tree/{referenceName}")
+                            .get())
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining(
+                    "getReferenceByName.params.refName: " + REF_NAME_OR_HASH_MESSAGE),
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        client()
+                            .resolveTemplate("referenceType", "branch")
+                            .resolveTemplate("referenceName", invalidBranchName)
+                            .queryParam("expectedHash", validHash)
+                            .path("trees/{referenceType}/{referenceName}")
+                            .put(tag))
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining("assignReference.referenceName: " + REF_NAME_MESSAGE),
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        client()
+                            .resolveTemplate("referenceType", "branch")
+                            .resolveTemplate("referenceName", invalidBranchName)
+                            .queryParam("expectedHash", validHash)
+                            .path("trees/{referenceType}/{referenceName}/merge")
+                            .post(null))
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining("mergeRef.referenceName: " + REF_NAME_MESSAGE)
+                .hasMessageContaining("mergeRef.merge: must not be null"),
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        client()
+                            .resolveTemplate("referenceType", "tag")
+                            .resolveTemplate("referenceName", invalidBranchName)
+                            .queryParam("expectedHash", validHash)
+                            .path("trees/{referenceType}/{referenceName}")
+                            .delete())
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining("deleteReference.referenceName: " + REF_NAME_MESSAGE),
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        client()
+                            .resolveTemplate("referenceType", "branch")
+                            .resolveTemplate("referenceName", invalidBranchName)
+                            .queryParam("expectedHash", validHash)
+                            .path("trees/{referenceType}/{referenceName}/transplant")
+                            .post(
+                                ImmutableTransplant.builder()
+                                    .fromRefName("main")
+                                    .addHashesToTransplant(defaultBranch.getHash())
+                                    .build()))
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining("transplantCommits.referenceName: " + REF_NAME_MESSAGE),
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        client()
+                            .queryParam("ref", invalidBranchName)
+                            .queryParam("hashOnRef", validHash)
+                            .path("contents")
+                            .post(
+                                ImmutableGetMultipleContentsRequest.builder()
+                                    .addRequestedKeys(key)
+                                    .build()))
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining(".ref: " + REF_NAME_MESSAGE),
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        client()
+                            .queryParam("ref", invalidBranchName)
+                            .queryParam("hashOnRef", validHash)
+                            .path("contents")
+                            .post(
+                                ImmutableGetMultipleContentsRequest.builder()
+                                    .addRequestedKeys(key)
+                                    .build()))
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining(".ref: " + REF_NAME_MESSAGE),
+        () -> {
+          assertThatThrownBy(
+                  () ->
+                      client()
+                          .resolveTemplate("fromRef", invalidBranchName)
+                          .resolveTemplate("toRef", "main")
+                          .path("diffs/{fromRef}...{toRef}")
+                          .get())
+              .isInstanceOf(NessieBadRequestException.class)
+              .hasMessageContaining("Bad Request (HTTP/400):")
+              .hasMessageContaining(".fromRef: " + REF_NAME_MESSAGE);
+        },
+        () -> {
+          if (!invalidBranchName.startsWith(".")) {
+            assertThatThrownBy(
+                    () ->
+                        client()
+                            .resolveTemplate("fromRef", "main")
+                            .resolveTemplate("toRef", invalidBranchName)
+                            .path("diffs/{fromRef}...{toRef}")
+                            .get())
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining(".toRef: " + REF_NAME_MESSAGE);
+          }
+        });
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "abc'" + COMMA_VALID_HASH_1,
+    ".foo" + COMMA_VALID_HASH_2,
+    "abc'def'..'blah" + COMMA_VALID_HASH_2,
+    "abc'de..blah" + COMMA_VALID_HASH_3,
+    "abc'de@{blah" + COMMA_VALID_HASH_3
+  })
+  public void invalidHashes(String invalidHashIn, String validHash) {
+    // CsvSource maps an empty string as null
+    String invalidHash = invalidHashIn != null ? invalidHashIn : "";
+
+    String validBranchName = "hello";
+    ContentKey key = ContentKey.of("x");
+    Tag tag = Tag.of("valid", validHash);
+
+    String opsCountMsg = ".operations.operations: size must be between 1 and 2147483647";
+
+    Branch defaultBranch = client().path("trees/tree").get().readEntity(Branch.class);
+
+    assertAll(
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        client()
+                            .resolveTemplate("referenceType", "branch")
+                            .resolveTemplate("referenceName", validBranchName)
+                            .queryParam("expectedHash", invalidHash)
+                            .path("trees/{referenceType}/{referenceName}/commit")
+                            .post(
+                                ImmutableOperations.builder()
+                                    .commitMeta(CommitMeta.fromMessage(""))
+                                    .build()))
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining(".hash: " + HASH_MESSAGE)
+                .hasMessageContaining(opsCountMsg),
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        client()
+                            .resolveTemplate("referenceType", "branch")
+                            .resolveTemplate("referenceName", validBranchName)
+                            .queryParam("expectedHash", invalidHash)
+                            .path("trees/{referenceType}/{referenceName}")
+                            .delete())
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining("deleteReference.hash: " + HASH_MESSAGE),
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        client()
+                            .resolveTemplate("referenceType", "tag")
+                            .resolveTemplate("referenceName", validBranchName)
+                            .queryParam("expectedHash", invalidHash)
+                            .path("trees/{referenceType}/{referenceName}")
+                            .put(tag))
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining("assignReference.oldHash: " + HASH_MESSAGE),
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        client()
+                            .resolveTemplate("referenceType", "branch")
+                            .resolveTemplate("referenceName", validBranchName)
+                            .queryParam("expectedHash", invalidHash)
+                            .path("trees/{referenceType}/{referenceName}/merge")
+                            .post(null))
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining("mergeRef.merge: must not be null")
+                .hasMessageContaining("mergeRef.hash: " + HASH_MESSAGE),
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        client()
+                            .resolveTemplate("referenceType", "tag")
+                            .resolveTemplate("referenceName", validBranchName)
+                            .queryParam("expectedHash", invalidHash)
+                            .path("trees/{referenceType}/{referenceName}")
+                            .delete())
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining("deleteReference.hash: " + HASH_MESSAGE),
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        client()
+                            .resolveTemplate("referenceType", "branch")
+                            .resolveTemplate("referenceName", validBranchName)
+                            .queryParam("expectedHash", invalidHash)
+                            .path("trees/{referenceType}/{referenceName}/transplant")
+                            .post(
+                                ImmutableTransplant.builder()
+                                    .fromRefName("main")
+                                    .addHashesToTransplant(defaultBranch.getHash())
+                                    .build()))
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining("transplantCommits.hash: " + HASH_MESSAGE),
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        client()
+                            .queryParam("ref", invalidHash)
+                            .path("contents")
+                            .post(ImmutableGetMultipleContentsRequest.builder().build()))
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining(
+                    ".request.requestedKeys: size must be between 1 and 2147483647")
+                .hasMessageContaining(".ref: " + REF_NAME_MESSAGE),
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        client()
+                            .queryParam("ref", validBranchName)
+                            .queryParam("hashOnRef", invalidHash)
+                            .path("contents")
+                            .post(ImmutableGetMultipleContentsRequest.builder().build()))
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining(
+                    ".request.requestedKeys: size must be between 1 and 2147483647")
+                .hasMessageContaining(".hashOnRef: " + HASH_MESSAGE),
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        client()
+                            .queryParam("ref", validBranchName)
+                            .queryParam("hashOnRef", invalidHash)
+                            .path("contents")
+                            .post(
+                                ImmutableGetMultipleContentsRequest.builder()
+                                    .addRequestedKeys(key)
+                                    .build()))
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining(".hashOnRef: " + HASH_MESSAGE),
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        client()
+                            .resolveTemplate("referenceName", validBranchName)
+                            .queryParam("startHash", invalidHash)
+                            .path("trees/tree/{referenceName}/log")
+                            .get())
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining("getCommitLog.params.startHash: " + HASH_MESSAGE),
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        client()
+                            .resolveTemplate("referenceName", validBranchName)
+                            .queryParam("endHash", invalidHash)
+                            .path("trees/tree/{referenceName}/log")
+                            .get())
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining("getCommitLog.params.endHash: " + HASH_MESSAGE),
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        client()
+                            .resolveTemplate("referenceName", validBranchName)
+                            .queryParam("hashOnRef", invalidHash)
+                            .path("trees/tree/{referenceName}/entries")
+                            .get())
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining("getEntries.params.hashOnRef: " + HASH_MESSAGE));
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "" + COMMA_VALID_HASH_1,
+    "abc'" + COMMA_VALID_HASH_1,
+    ".foo" + COMMA_VALID_HASH_2,
+    "abc'def'..'blah" + COMMA_VALID_HASH_2,
+    "abc'de..blah" + COMMA_VALID_HASH_3,
+    "abc'de@{blah" + COMMA_VALID_HASH_3
+  })
+  public void invalidTags(String invalidTagNameIn, String validHash) {
+    // CsvSource maps an empty string as null
+    String invalidTagName = invalidTagNameIn != null ? invalidTagNameIn : "";
+
+    String validBranchName = "hello";
+    // Need the string-ified JSON representation of `Tag` here, because `Tag` itself performs
+    // validation.
+    String tag =
+        "{\"type\": \"TAG\", \"name\": \""
+            + invalidTagName
+            + "\", \"hash\": \""
+            + validHash
+            + "\"}";
+    String branch =
+        "{\"type\": \"BRANCH\", \"name\": \""
+            + invalidTagName
+            + "\", \"hash\": \""
+            + validHash
+            + "\"}";
+    String different =
+        "{\"type\": \"FOOBAR\", \"name\": \""
+            + invalidTagName
+            + "\", \"hash\": \""
+            + validHash
+            + "\"}";
+    assertAll(
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        client()
+                            .resolveTemplate("referenceType", "tag")
+                            .resolveTemplate("referenceName", validBranchName)
+                            .queryParam("expectedHash", validHash)
+                            .path("trees/{referenceType}/{referenceName}")
+                            .put(null))
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessage("Bad Request (HTTP/400): assignReference.assignTo: must not be null"),
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        client()
+                            .resolveTemplate("referenceType", "tag")
+                            .resolveTemplate("referenceName", validBranchName)
+                            .queryParam("expectedHash", validHash)
+                            .path("trees/{referenceType}/{referenceName}")
+                            .put(tag))
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageStartingWith(
+                    "Bad Request (HTTP/400): Cannot construct instance of "
+                        + "`org.projectnessie.model.ImmutableTag`, problem: "
+                        + REF_NAME_MESSAGE
+                        + " - but was: "
+                        + invalidTagName
+                        + "\n"),
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        client()
+                            .resolveTemplate("referenceType", "tag")
+                            .resolveTemplate("referenceName", validBranchName)
+                            .queryParam("expectedHash", validHash)
+                            .path("trees/{referenceType}/{referenceName}")
+                            .put(branch))
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageStartingWith("Bad Request (HTTP/400): Cannot construct instance of ")
+                .hasMessageContaining(REF_NAME_MESSAGE),
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        client()
+                            .resolveTemplate("referenceType", "tag")
+                            .resolveTemplate("referenceName", validBranchName)
+                            .queryParam("expectedHash", validHash)
+                            .path("trees/{referenceType}/{referenceName}")
+                            .put(different))
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageStartingWith(
+                    "Bad Request (HTTP/400): Could not resolve type id 'FOOBAR' as a subtype of "
+                        + "`org.projectnessie.model.Reference`: known type ids = ["));
   }
 }

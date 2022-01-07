@@ -33,6 +33,7 @@ import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
+import org.projectnessie.model.Reference;
 
 class AbstractTestBasicOperations {
 
@@ -52,7 +53,7 @@ class AbstractTestBasicOperations {
             .withUri("http://localhost:19121/api/v1")
             .build(NessieApiV1.class);
     if (branch != null) {
-      api.createReference().reference(Branch.of(branch, null)).sourceRefName("main").create();
+      api.createReference().sourceRefName("main").createAs(Branch.of(branch, null));
     }
   }
 
@@ -73,10 +74,9 @@ class AbstractTestBasicOperations {
     tryEndpointPass(
         () ->
             api.commitMultipleOperations()
-                .branch(branch)
                 .operation(Put.of(key, IcebergTable.of("foo", 42, 42, 42, 42, "cid-foo")))
                 .commitMeta(CommitMeta.fromMessage("empty message"))
-                .commit());
+                .commitTo(branch));
 
     Assertions.assertTrue(
         api.getContent()
@@ -89,17 +89,15 @@ class AbstractTestBasicOperations {
 
     Branch master = (Branch) api.getReference().refName("testx").get();
     Branch test = Branch.of("testy", master.getHash());
-    tryEndpointPass(
-        () -> api.createReference().sourceRefName(master.getName()).reference(test).create());
+    tryEndpointPass(() -> api.createReference().sourceRefName(master.getName()).createAs(test));
     Branch test2 = (Branch) api.getReference().refName("testy").get();
-    tryEndpointPass(() -> api.deleteBranch().branch(test2).delete());
+    tryEndpointPass(() -> api.deleteReference().reference(test2).delete());
     tryEndpointPass(
         () ->
             api.commitMultipleOperations()
-                .branch(master)
                 .operation(Delete.of(key))
                 .commitMeta(CommitMeta.fromMessage(""))
-                .commit());
+                .commitTo(master));
     assertThat(api.getContent().refName("testx").key(key).get()).isEmpty();
     tryEndpointPass(
         () -> {
@@ -108,10 +106,9 @@ class AbstractTestBasicOperations {
           // should actually fail, because the operations of the 1st commit above and this commit
           // have conflicts.
           api.commitMultipleOperations()
-              .branch(b)
               .operation(Put.of(key, IcebergTable.of("bar", 42, 42, 42, 42, "cid-bar")))
               .commitMeta(CommitMeta.fromMessage(""))
-              .commit();
+              .commitTo(b);
         });
   }
 
@@ -119,7 +116,7 @@ class AbstractTestBasicOperations {
   @TestSecurity(authorizationEnabled = false)
   void testUserCleanup() throws BaseNessieClientServerException {
     getCatalog(null);
-    Branch r = (Branch) api.getReference().refName("testx").get();
-    api.deleteBranch().branch(r).delete();
+    Reference r = api.getReference().refName("testx").get();
+    api.deleteReference().reference(r).delete();
   }
 }

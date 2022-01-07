@@ -196,7 +196,7 @@ public class CommitBench {
 
       Hash hash = bp.versionStore.hashOnReference(bp.branch, Optional.empty());
 
-      bp.versionStore.create(branch, Optional.of(hash));
+      bp.versionStore.create(branch, Optional.of(hash), null);
     }
   }
 

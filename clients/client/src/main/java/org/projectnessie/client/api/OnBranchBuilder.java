@@ -17,7 +17,7 @@ package org.projectnessie.client.api;
 
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
-import org.projectnessie.model.Branch;
+import org.projectnessie.model.MutableReference;
 import org.projectnessie.model.Validation;
 
 /** Base interface for requests against a branch. */
@@ -34,7 +34,7 @@ public interface OnBranchBuilder<R extends OnBranchBuilder<R>> {
    * Convenience for {@link #branchName(String) branchName(branch.getName())}{@code .}{@link
    * #hash(String) hash(branch.getHash())}.
    */
-  default R branch(Branch branch) {
+  default R branch(MutableReference branch) {
     return branchName(branch.getName()).hash(branch.getHash());
   }
 }

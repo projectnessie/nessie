@@ -54,6 +54,18 @@ final class HttpGetAllReferences extends BaseHttpRequest implements GetAllRefere
   }
 
   @Override
+  public GetAllReferencesBuilder includeExpired(Boolean includeExpired) {
+    params.includeExpired(includeExpired);
+    return this;
+  }
+
+  @Override
+  public GetAllReferencesBuilder includeTransactions(Boolean includeTransactions) {
+    params.includeTransactions(includeTransactions);
+    return this;
+  }
+
+  @Override
   public ReferencesResponse get() {
     return client.getTreeApi().getAllReferences(params.build());
   }

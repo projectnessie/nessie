@@ -25,6 +25,7 @@ import io.opentracing.Span;
 import io.opentracing.Tracer;
 import io.opentracing.Tracer.SpanBuilder;
 import io.opentracing.util.GlobalTracer;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -95,7 +96,7 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
 
   @Override
   public Hash commit(
-      @Nonnull BranchName branch,
+      @Nonnull NamedMutableRef branch,
       @Nonnull Optional<Hash> referenceHash,
       @Nonnull METADATA metadata,
       @Nonnull List<Operation<VALUE>> operations)
@@ -111,7 +112,7 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
 
   @Override
   public void transplant(
-      BranchName targetBranch,
+      NamedMutableRef targetBranch,
       Optional<Hash> referenceHash,
       List<Hash> sequenceToTransplant,
       Function<METADATA, METADATA> updateCommitMetadata)
@@ -130,7 +131,7 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
   @Override
   public void merge(
       Hash fromHash,
-      BranchName toBranch,
+      NamedMutableRef toBranch,
       Optional<Hash> expectedHash,
       Function<METADATA, METADATA> updateCommitMetadata)
       throws ReferenceNotFoundException, ReferenceConflictException {
@@ -156,7 +157,7 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
   }
 
   @Override
-  public Hash create(NamedRef ref, Optional<Hash> targetHash)
+  public Hash create(NamedRef ref, Optional<Hash> targetHash, Instant expireAt)
       throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
     return this
         .<Hash, ReferenceNotFoundException, ReferenceAlreadyExistsException>callWithTwoExceptions(
@@ -164,7 +165,7 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
             b ->
                 b.withTag(TAG_REF, safeToString(ref))
                     .withTag(TAG_TARGET_HASH, safeToString(targetHash)),
-            () -> delegate.create(ref, targetHash));
+            () -> delegate.create(ref, targetHash, expireAt));
   }
 
   @Override

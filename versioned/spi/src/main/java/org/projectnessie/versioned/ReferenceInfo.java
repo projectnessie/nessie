@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned;
 
+import java.time.Instant;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
@@ -23,6 +24,12 @@ public interface ReferenceInfo<METADATA> {
   NamedRef getNamedRef();
 
   Hash getHash();
+
+  @Nullable
+  Instant getCreatedAt();
+
+  @Nullable
+  Instant getExpireAt();
 
   @Value.Default
   default long getCommitSeq() {
@@ -55,8 +62,15 @@ public interface ReferenceInfo<METADATA> {
     return ImmutableReferenceInfo.builder();
   }
 
-  static <METADATA> ReferenceInfo<METADATA> of(Hash hash, NamedRef namedRef) {
-    return ReferenceInfo.<METADATA>builder().namedRef(namedRef).hash(hash).build();
+  static <METADATA> ReferenceInfo<METADATA> of(
+      Hash hash, NamedRef namedRef, Instant createdAt, Instant expireAt) {
+    ImmutableReferenceInfo.Builder<METADATA> b =
+        ReferenceInfo.<METADATA>builder().namedRef(namedRef).hash(hash);
+    if (createdAt != null) {
+      b.createdAt(createdAt);
+      b.expireAt(expireAt);
+    }
+    return b.build();
   }
 
   @Value.Immutable

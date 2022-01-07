@@ -28,9 +28,9 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.NamedMutableRef;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
@@ -59,6 +59,10 @@ public final class DatabaseAdapterUtil {
   @SuppressWarnings("UnstableApiUsage")
   public static void hashKey(Hasher hasher, Key k) {
     k.getElements().forEach(e -> hasher.putString(e, StandardCharsets.UTF_8));
+  }
+
+  public static IllegalArgumentException mustNotCommitToTag() {
+    return new IllegalArgumentException("Must not commit to a tag");
   }
 
   public static ReferenceConflictException hashCollisionDetected() {
@@ -90,7 +94,7 @@ public final class DatabaseAdapterUtil {
   }
 
   public static String mergeConflictMessage(
-      String err, Hash from, BranchName toBranch, Optional<Hash> expectedHead) {
+      String err, Hash from, NamedMutableRef toBranch, Optional<Hash> expectedHead) {
     return String.format(
         "%s during merge of '%s' into '%s%s' requiring a common ancestor",
         err,
@@ -101,7 +105,7 @@ public final class DatabaseAdapterUtil {
 
   public static String transplantConflictMessage(
       String err,
-      BranchName targetBranch,
+      NamedMutableRef targetBranch,
       Optional<Hash> expectedHead,
       List<Hash> sequenceToTransplant) {
     return String.format(
@@ -113,7 +117,7 @@ public final class DatabaseAdapterUtil {
   }
 
   public static String commitConflictMessage(
-      String err, BranchName commitTo, Optional<Hash> expectedHead) {
+      String err, NamedMutableRef commitTo, Optional<Hash> expectedHead) {
     return String.format(
         "%s during commit against '%s%s'",
         err, commitTo.getName(), expectedHead.map(h -> "@" + h.asString()).orElse(""));

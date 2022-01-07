@@ -15,12 +15,10 @@
  */
 package org.projectnessie.client.http.v1api;
 
-import org.projectnessie.client.api.AssignBranchBuilder;
-import org.projectnessie.client.api.AssignTagBuilder;
+import org.projectnessie.client.api.AssignReferenceBuilder;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.client.api.CreateReferenceBuilder;
-import org.projectnessie.client.api.DeleteBranchBuilder;
-import org.projectnessie.client.api.DeleteTagBuilder;
+import org.projectnessie.client.api.DeleteReferenceBuilder;
 import org.projectnessie.client.api.GetAllReferencesBuilder;
 import org.projectnessie.client.api.GetCommitLogBuilder;
 import org.projectnessie.client.api.GetContentBuilder;
@@ -90,32 +88,22 @@ public final class HttpApiV1 implements NessieApiV1 {
   }
 
   @Override
-  public AssignTagBuilder assignTag() {
-    return new HttpAssignTag(client);
+  public AssignReferenceBuilder assignReference() {
+    return new HttpAssignReference(client);
   }
 
   @Override
-  public DeleteTagBuilder deleteTag() {
-    return new HttpDeleteTag(client);
+  public DeleteReferenceBuilder deleteReference() {
+    return new HttpDeleteReference(client);
   }
 
   @Override
-  public AssignBranchBuilder assignBranch() {
-    return new HttpAssignBranch(client);
-  }
-
-  @Override
-  public DeleteBranchBuilder deleteBranch() {
-    return new HttpDeleteBranch(client);
-  }
-
-  @Override
-  public TransplantCommitsBuilder transplantCommitsIntoBranch() {
+  public TransplantCommitsBuilder transplantCommits() {
     return new HttpTransplantCommits(client);
   }
 
   @Override
-  public MergeReferenceBuilder mergeRefIntoBranch() {
+  public MergeReferenceBuilder mergeRef() {
     return new HttpMergeReference(client);
   }
 

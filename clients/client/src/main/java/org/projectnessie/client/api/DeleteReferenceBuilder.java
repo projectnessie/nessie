@@ -13,31 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.http.v1api;
+package org.projectnessie.client.api;
 
-import org.projectnessie.client.api.AssignTagBuilder;
-import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
-import org.projectnessie.model.Reference;
 
-final class HttpAssignTag extends BaseHttpOnTagRequest<AssignTagBuilder>
-    implements AssignTagBuilder {
-
-  private Reference assignTo;
-
-  HttpAssignTag(NessieApiClient client) {
-    super(client);
-  }
-
-  @Override
-  public AssignTagBuilder assignTo(Reference assignTo) {
-    this.assignTo = assignTo;
-    return this;
-  }
-
-  @Override
-  public void assign() throws NessieNotFoundException, NessieConflictException {
-    client.getTreeApi().assignTag(tagName, hash, assignTo);
-  }
+/**
+ * Request builder for "delete tag".
+ *
+ * @since {@link NessieApiV1}
+ */
+public interface DeleteReferenceBuilder extends OnAnyReferenceBuilder<DeleteReferenceBuilder> {
+  void delete() throws NessieConflictException, NessieNotFoundException;
 }

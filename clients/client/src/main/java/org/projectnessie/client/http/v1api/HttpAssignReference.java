@@ -15,28 +15,31 @@
  */
 package org.projectnessie.client.http.v1api;
 
-import org.projectnessie.client.api.AssignBranchBuilder;
+import org.projectnessie.client.api.AssignReferenceBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Reference;
 
-final class HttpAssignBranch extends BaseHttpOnBranchRequest<AssignBranchBuilder>
-    implements AssignBranchBuilder {
+final class HttpAssignReference extends BaseHttpOnAnyReferenceRequest<AssignReferenceBuilder>
+    implements AssignReferenceBuilder {
   private Reference assignTo;
 
-  HttpAssignBranch(NessieApiClient client) {
+  HttpAssignReference(NessieApiClient client) {
     super(client);
   }
 
   @Override
-  public AssignBranchBuilder assignTo(Reference assignTo) {
+  public AssignReferenceBuilder assignTo(Reference assignTo) {
     this.assignTo = assignTo;
     return this;
   }
 
   @Override
   public void assign() throws NessieNotFoundException, NessieConflictException {
-    client.getTreeApi().assignBranch(branchName, hash, assignTo);
+    client
+        .getTreeApi()
+        .assignReference(
+            referenceTypeName(), reference().getName(), reference().getHash(), assignTo);
   }
 }

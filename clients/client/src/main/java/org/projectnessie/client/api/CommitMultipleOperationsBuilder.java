@@ -18,8 +18,8 @@ package org.projectnessie.client.api;
 import java.util.List;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
-import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.MutableReference;
 import org.projectnessie.model.Operation;
 
 /**
@@ -28,7 +28,7 @@ import org.projectnessie.model.Operation;
  * @since {@link NessieApiV1}
  */
 public interface CommitMultipleOperationsBuilder
-    extends OnBranchBuilder<CommitMultipleOperationsBuilder> {
+    extends OnMutableReferenceBuilder<CommitMultipleOperationsBuilder> {
 
   CommitMultipleOperationsBuilder commitMeta(CommitMeta commitMeta);
 
@@ -36,5 +36,26 @@ public interface CommitMultipleOperationsBuilder
 
   CommitMultipleOperationsBuilder operation(Operation operation);
 
-  Branch commit() throws NessieNotFoundException, NessieConflictException;
+  /**
+   * Performs the commit operation(s) against the server. Prefer {@link #commitTo(MutableReference)}
+   * instead of {@link #reference(MutableReference)} plus this method.
+   *
+   * @return the reference with the committed operations, so with the updated commit hash.
+   */
+  MutableReference commit() throws NessieNotFoundException, NessieConflictException;
+
+  /**
+   * Convenience method to return the reference to commit to with the new HEAD of the target branch.
+   *
+   * @param branch the branch to commit to
+   * @param <T> reference type - either a {@link org.projectnessie.model.Branch} or {@link
+   *     org.projectnessie.model.Transaction}
+   * @return reference object pointing to the commit
+   */
+  default <T extends MutableReference> T commitTo(T branch)
+      throws NessieConflictException, NessieNotFoundException {
+    @SuppressWarnings("unchecked")
+    T newHead = (T) reference(branch).commit();
+    return newHead;
+  }
 }

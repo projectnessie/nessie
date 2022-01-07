@@ -21,7 +21,7 @@ import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.ImmutableMerge;
 
-final class HttpMergeReference extends BaseHttpOnBranchRequest<MergeReferenceBuilder>
+final class HttpMergeReference extends BaseHttpOnMutableReferenceRequest<MergeReferenceBuilder>
     implements MergeReferenceBuilder {
 
   private final ImmutableMerge.Builder merge = ImmutableMerge.builder();
@@ -44,6 +44,8 @@ final class HttpMergeReference extends BaseHttpOnBranchRequest<MergeReferenceBui
 
   @Override
   public void merge() throws NessieNotFoundException, NessieConflictException {
-    client.getTreeApi().mergeRefIntoBranch(branchName, hash, merge.build());
+    client
+        .getTreeApi()
+        .mergeRef(referenceTypeName(), reference().getName(), reference().getHash(), merge.build());
   }
 }

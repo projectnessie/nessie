@@ -19,10 +19,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Assertions;
-import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.NamedMutableRef;
 import org.projectnessie.versioned.Operation;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceConflictException;
@@ -154,7 +154,7 @@ public class CommitBuilder<ValueT, MetadataT, EnumT extends Enum<EnumT>> {
    * @param branchName the branch
    * @return the hash associated with the commit
    */
-  public Hash toBranch(BranchName branchName)
+  public Hash toBranch(NamedMutableRef branchName)
       throws ReferenceNotFoundException, ReferenceConflictException {
     Optional<Hash> reference =
         fromLatest

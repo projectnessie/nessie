@@ -20,13 +20,13 @@ import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
-import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ImmutableOperations;
+import org.projectnessie.model.MutableReference;
 import org.projectnessie.model.Operation;
 
 final class HttpCommitMultipleOperations
-    extends BaseHttpOnBranchRequest<CommitMultipleOperationsBuilder>
+    extends BaseHttpOnMutableReferenceRequest<CommitMultipleOperationsBuilder>
     implements CommitMultipleOperationsBuilder {
 
   private final ImmutableOperations.Builder operations = ImmutableOperations.builder();
@@ -54,7 +54,10 @@ final class HttpCommitMultipleOperations
   }
 
   @Override
-  public Branch commit() throws NessieNotFoundException, NessieConflictException {
-    return client.getTreeApi().commitMultipleOperations(branchName, hash, operations.build());
+  public MutableReference commit() throws NessieNotFoundException, NessieConflictException {
+    return client
+        .getTreeApi()
+        .commitMultipleOperations(
+            referenceTypeName(), reference().getName(), reference().getHash(), operations.build());
   }
 }

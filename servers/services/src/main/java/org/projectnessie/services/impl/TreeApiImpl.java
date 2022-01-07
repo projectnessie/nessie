@@ -39,6 +39,7 @@ import java.security.Principal;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -46,8 +47,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import javax.annotation.Nullable;
 import org.projectnessie.api.TreeApi;
+import org.projectnessie.api.http.HttpApiUtil;
 import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.api.params.FetchOption;
@@ -72,15 +73,17 @@ import org.projectnessie.model.ImmutableLogResponse;
 import org.projectnessie.model.ImmutableReferenceMetadata;
 import org.projectnessie.model.ImmutableReferencesResponse;
 import org.projectnessie.model.ImmutableTag;
+import org.projectnessie.model.ImmutableTransaction;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.Merge;
+import org.projectnessie.model.MutableReference;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferenceMetadata;
 import org.projectnessie.model.ReferencesResponse;
-import org.projectnessie.model.Tag;
+import org.projectnessie.model.Transaction;
 import org.projectnessie.model.Transplant;
 import org.projectnessie.services.authz.AccessChecker;
 import org.projectnessie.services.cel.CELUtil;
@@ -91,7 +94,9 @@ import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.GetNamedRefsParams.RetrieveOptions;
 import org.projectnessie.versioned.Hash;
+import org.projectnessie.versioned.ImmutableGetNamedRefsParams;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.NamedMutableRef;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.Ref;
@@ -100,6 +105,7 @@ import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.TagName;
+import org.projectnessie.versioned.TransactionName;
 import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
@@ -122,7 +128,10 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     ImmutableReferencesResponse.Builder resp = ReferencesResponse.builder();
     boolean fetchAll = FetchOption.isFetchAll(params.fetchOption());
     try (Stream<ReferenceInfo<CommitMeta>> str =
-        getStore().getNamedRefs(getGetNamedRefsParams(fetchAll))) {
+        getStore()
+            .getNamedRefs(
+                getGetNamedRefsParams(
+                    fetchAll, params.includeExpired(), params.includeTransactions()))) {
       Stream<Reference> unfiltered =
           str.map(refInfo -> TreeApiImpl.makeReference(refInfo, fetchAll));
       Stream<Reference> filtered = filterReferences(unfiltered, params.filter());
@@ -135,14 +144,22 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     return resp.build();
   }
 
-  private GetNamedRefsParams getGetNamedRefsParams(boolean fetchMetadata) {
-    return fetchMetadata
-        ? GetNamedRefsParams.builder()
-            .baseReference(BranchName.of(this.getConfig().getDefaultBranch()))
-            .branchRetrieveOptions(RetrieveOptions.BASE_REFERENCE_RELATED_AND_COMMIT_META)
-            .tagRetrieveOptions(RetrieveOptions.COMMIT_META)
-            .build()
-        : GetNamedRefsParams.DEFAULT;
+  private GetNamedRefsParams getGetNamedRefsParams(
+      boolean fetchAll, Boolean includeExpired, Boolean includeTransactions) {
+    ImmutableGetNamedRefsParams.Builder b = GetNamedRefsParams.builder();
+    if (fetchAll) {
+      b.baseReference(BranchName.of(this.getConfig().getDefaultBranch()))
+          .branchRetrieveOptions(RetrieveOptions.BASE_REFERENCE_RELATED_AND_COMMIT_META)
+          .tagRetrieveOptions(RetrieveOptions.COMMIT_META);
+      if (includeTransactions != null && includeTransactions) {
+        b.transactionRetrieveOptions(RetrieveOptions.BASE_REFERENCE_RELATED_AND_COMMIT_META);
+      }
+    } else {
+      if (includeTransactions != null && includeTransactions) {
+        b.transactionRetrieveOptions(RetrieveOptions.COMMIT_META);
+      }
+    }
+    return b.includeExpired(includeExpired).build();
   }
 
   /**
@@ -180,14 +197,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
             if (commit == null) {
               commit = CELUtil.EMPTY_COMMIT_META;
             }
-            String refType;
-            if (reference instanceof Branch) {
-              refType = "BRANCH";
-            } else if (reference instanceof Tag) {
-              refType = "TAG";
-            } else {
-              refType = "REFERENCE";
-            }
+            String refType = HttpApiUtil.referenceTypeName(reference).toUpperCase(Locale.ROOT);
             return script.execute(
                 Boolean.class,
                 ImmutableMap.of(
@@ -210,29 +220,38 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     try {
       boolean fetchAll = FetchOption.isFetchAll(params.fetchOption());
       return makeReference(
-          getStore().getNamedRef(params.getRefName(), getGetNamedRefsParams(fetchAll)), fetchAll);
+          getStore().getNamedRef(params.getRefName(), getGetNamedRefsParams(fetchAll, null, null)),
+          fetchAll);
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }
   }
 
   @Override
-  public Reference createReference(String sourceRefName, Reference reference)
+  public Reference createReference(String sourceRefName, Reference reference, Instant expireAt)
       throws NessieNotFoundException, NessieConflictException {
     NamedRef namedReference = RefUtil.toNamedRef(reference);
-    Hash hash = createReference(namedReference, reference.getHash());
-    return RefUtil.toReference(namedReference, hash);
-  }
-
-  private Hash createReference(NamedRef reference, String hash)
-      throws NessieNotFoundException, NessieReferenceAlreadyExistsException {
-    if (reference instanceof TagName && hash == null) {
-      throw new IllegalArgumentException(
-          "Tag-creation requires a target named-reference and hash.");
+    if (namedReference instanceof TransactionName) {
+      // noop
+    } else if (namedReference instanceof BranchName) {
+      if (expireAt != null) {
+        throw new IllegalArgumentException("Only transaction can have an expire timestamp");
+      }
+    } else if (namedReference instanceof TagName) {
+      if (expireAt != null) {
+        throw new IllegalArgumentException("Only transaction can have an expire timestamp");
+      }
+      if (reference.getHash() == null) {
+        throw new IllegalArgumentException(
+            "Tag-creation requires a target named-reference and hash.");
+      }
+    } else {
+      throw new IllegalArgumentException(String.format("Invalid reference '%s'", reference));
     }
 
     try {
-      return getStore().create(reference, toHash(hash, false));
+      Hash hash = getStore().create(namedReference, toHash(reference.getHash(), false), expireAt);
+      return reference.withHash(hash.asString());
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (ReferenceAlreadyExistsException e) {
@@ -251,28 +270,56 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     return (Branch) r;
   }
 
+  public static NamedRef asNamedRef(String referenceType, String referenceName) {
+    switch (referenceType) {
+      case "transaction":
+        return TransactionName.of(referenceName);
+      case "branch":
+        return BranchName.of(referenceName);
+      case "tag":
+        return TagName.of(referenceName);
+      default:
+        throw new IllegalArgumentException(
+            String.format("Invalid reference type '%s'", referenceType));
+    }
+  }
+
+  public static NamedMutableRef asMutableNamedRef(String referenceType, String referenceName) {
+    switch (referenceType) {
+      case "transaction":
+        return TransactionName.of(referenceName);
+      case "branch":
+        return BranchName.of(referenceName);
+      default:
+        throw new IllegalArgumentException(
+            String.format("Invalid reference type '%s'", referenceType));
+    }
+  }
+
+  public static MutableReference asMutableReference(
+      String referenceType, String referenceName, Hash hash) {
+    switch (referenceType) {
+      case "transaction":
+        return Transaction.of(referenceName, hash.asString());
+      case "branch":
+        return Branch.of(referenceName, hash.asString());
+      default:
+        throw new IllegalArgumentException(
+            String.format("Invalid reference type '%s'", referenceType));
+    }
+  }
+
   @Override
-  public void assignTag(String tagName, String expectedHash, Reference assignTo)
+  public void assignReference(
+      String referenceType, String referenceName, String expectedHash, Reference assignTo)
       throws NessieNotFoundException, NessieConflictException {
-    assignReference(TagName.of(tagName), expectedHash, assignTo);
+    assignReference(asNamedRef(referenceType, referenceName), expectedHash, assignTo);
   }
 
   @Override
-  public void deleteTag(String tagName, String hash)
+  public void deleteReference(String referenceType, String referenceName, String hash)
       throws NessieConflictException, NessieNotFoundException {
-    deleteReference(TagName.of(tagName), hash);
-  }
-
-  @Override
-  public void assignBranch(String branchName, String expectedHash, Reference assignTo)
-      throws NessieNotFoundException, NessieConflictException {
-    assignReference(BranchName.of(branchName), expectedHash, assignTo);
-  }
-
-  @Override
-  public void deleteBranch(String branchName, String hash)
-      throws NessieConflictException, NessieNotFoundException {
-    deleteReference(BranchName.of(branchName), hash);
+    deleteReference(asNamedRef(referenceType, referenceName), hash);
   }
 
   @Override
@@ -393,8 +440,12 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   }
 
   @Override
-  public void transplantCommitsIntoBranch(
-      String branchName, String hash, String message, Transplant transplant)
+  public void transplantCommits(
+      String referenceType,
+      String referenceName,
+      String hash,
+      String message,
+      Transplant transplant)
       throws NessieNotFoundException, NessieConflictException {
     try {
       List<Hash> transplants;
@@ -403,7 +454,10 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
       }
       getStore()
           .transplant(
-              BranchName.of(branchName), toHash(hash, true), transplants, commitMetaUpdate());
+              asMutableNamedRef(referenceType, referenceName),
+              toHash(hash, true),
+              transplants,
+              commitMetaUpdate());
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
@@ -412,13 +466,13 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   }
 
   @Override
-  public void mergeRefIntoBranch(String branchName, String hash, Merge merge)
+  public void mergeRef(String referenceType, String referenceName, String hash, Merge merge)
       throws NessieNotFoundException, NessieConflictException {
     try {
       getStore()
           .merge(
               toHash(merge.getFromRefName(), merge.getFromHash()),
-              BranchName.of(branchName),
+              asMutableNamedRef(referenceType, referenceName),
               toHash(hash, true),
               commitMetaUpdate());
     } catch (ReferenceNotFoundException e) {
@@ -524,29 +578,24 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   }
 
   @Override
-  public Branch commitMultipleOperations(String branch, String hash, Operations operations)
+  public MutableReference commitMultipleOperations(
+      String referenceType, String referenceName, String hash, Operations operations)
       throws NessieNotFoundException, NessieConflictException {
     List<org.projectnessie.versioned.Operation<Content>> ops =
         operations.getOperations().stream()
             .map(TreeApiImpl::toOp)
             .collect(ImmutableList.toImmutableList());
 
-    CommitMeta commitMeta = operations.getCommitMeta();
-    if (commitMeta.getCommitter() != null) {
-      throw new IllegalArgumentException(
-          "Cannot set the committer on the client side. It is set by the server.");
-    }
-
     try {
-      Hash newHash =
+      Hash newHead =
           getStore()
               .commit(
-                  BranchName.of(Optional.ofNullable(branch).orElse(getConfig().getDefaultBranch())),
+                  asMutableNamedRef(referenceType, referenceName),
                   Optional.ofNullable(hash).map(Hash::of),
-                  commitMetaUpdate().apply(commitMeta),
+                  commitMetaUpdate().apply(operations.getCommitMeta()),
                   ops);
 
-      return Branch.of(branch, newHash.asString());
+      return asMutableReference(referenceType, referenceName, newHead);
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
@@ -642,35 +691,39 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
         builder.metadata(extractReferenceMetadata(refWithHash));
       }
       return builder.build();
+    } else if (ref instanceof TransactionName) {
+      ImmutableTransaction.Builder builder =
+          ImmutableTransaction.builder().name(ref.getName()).hash(refWithHash.getHash().asString());
+      if (fetchMetadata) {
+        builder.metadata(extractReferenceMetadata(refWithHash));
+      }
+      return builder.build();
     } else {
-      throw new UnsupportedOperationException("only converting tags or branches"); // todo
+      throw new UnsupportedOperationException(String.format("Unknown reference type '%s'", ref));
     }
   }
 
-  @Nullable
   private static ReferenceMetadata extractReferenceMetadata(ReferenceInfo<CommitMeta> refWithHash) {
     ImmutableReferenceMetadata.Builder builder = ImmutableReferenceMetadata.builder();
-    boolean found = false;
+    if (refWithHash.getCreatedAt() != null) {
+      builder.createdAt(refWithHash.getCreatedAt());
+    }
+    if (refWithHash.getExpireAt() != null) {
+      builder.expireAt(refWithHash.getExpireAt());
+    }
     if (null != refWithHash.getAheadBehind()) {
-      found = true;
       builder.numCommitsAhead(refWithHash.getAheadBehind().getAhead());
       builder.numCommitsBehind(refWithHash.getAheadBehind().getBehind());
     }
     if (null != refWithHash.getHeadCommitMeta()) {
-      found = true;
       builder.commitMetaOfHEAD(
           addHashToCommitMeta(refWithHash.getHash(), refWithHash.getHeadCommitMeta()));
     }
     if (0L != refWithHash.getCommitSeq()) {
-      found = true;
       builder.numTotalCommits(refWithHash.getCommitSeq());
     }
     if (null != refWithHash.getCommonAncestor()) {
-      found = true;
       builder.commonAncestorHash(refWithHash.getCommonAncestor().asString());
-    }
-    if (!found) {
-      return null;
     }
     return builder.build();
   }

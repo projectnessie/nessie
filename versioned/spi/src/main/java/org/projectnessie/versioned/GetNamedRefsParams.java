@@ -41,13 +41,26 @@ public interface GetNamedRefsParams {
   @Nullable
   NamedRef getBaseReference();
 
-  /** Whether to retrieve branches, defaults to {@code true}. */
+  /**
+   * Flag whether to return expired branches and tags. The default behavior is to return expired
+   * references.
+   */
+  @Nullable
+  Boolean getIncludeExpired();
+
+  /** Whether and how to retrieve transactions, defaults to {@link RetrieveOptions#OMIT}. */
+  @Value.Default
+  default RetrieveOptions getTransactionRetrieveOptions() {
+    return RetrieveOptions.OMIT;
+  }
+
+  /** Whether and how to retrieve branches, defaults to {@link RetrieveOptions#BARE}. */
   @Value.Default
   default RetrieveOptions getBranchRetrieveOptions() {
     return RetrieveOptions.BARE;
   }
 
-  /** Whether to retrieve tags, defaults to {@code true}. */
+  /** Whether and how to retrieve tags, defaults to {@link RetrieveOptions#BARE}. */
   @Value.Default
   default RetrieveOptions getTagRetrieveOptions() {
     return RetrieveOptions.BARE;

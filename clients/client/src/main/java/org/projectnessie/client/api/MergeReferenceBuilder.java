@@ -27,7 +27,7 @@ import org.projectnessie.model.Validation;
  *
  * @since {@link NessieApiV1}
  */
-public interface MergeReferenceBuilder extends OnBranchBuilder<MergeReferenceBuilder> {
+public interface MergeReferenceBuilder extends OnMutableReferenceBuilder<MergeReferenceBuilder> {
   MergeReferenceBuilder fromHash(@NotBlank String fromHash);
 
   MergeReferenceBuilder fromRefName(

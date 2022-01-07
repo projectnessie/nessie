@@ -36,6 +36,7 @@ class TestValidation {
     validateReferenceNameOrHash(referenceName);
     Branch.of(referenceName, null);
     Tag.of(referenceName, null);
+    Transaction.of(referenceName, null);
   }
 
   @ParameterizedTest
@@ -63,6 +64,12 @@ class TestValidation {
         () ->
             assertEquals(
                 Validation.REF_NAME_MESSAGE + " - but was: " + referenceName,
+                assertThrows(
+                        IllegalArgumentException.class, () -> Transaction.of(referenceName, null))
+                    .getMessage()),
+        () ->
+            assertEquals(
+                Validation.REF_NAME_MESSAGE + " - but was: " + referenceName,
                 assertThrows(IllegalArgumentException.class, () -> Tag.of(referenceName, null))
                     .getMessage()));
   }
@@ -72,6 +79,7 @@ class TestValidation {
     assertAll(
         () -> assertThrows(NullPointerException.class, () -> validateReferenceName(null)),
         () -> assertThrows(NullPointerException.class, () -> Branch.of(null, null)),
+        () -> assertThrows(NullPointerException.class, () -> Transaction.of(null, null)),
         () -> assertThrows(NullPointerException.class, () -> Tag.of(null, null)));
   }
 
@@ -106,6 +114,12 @@ class TestValidation {
         () ->
             assertEquals(
                 Validation.HASH_MESSAGE + " - but was: " + hash,
+                assertThrows(
+                        IllegalArgumentException.class, () -> Transaction.of(referenceName, hash))
+                    .getMessage()),
+        () ->
+            assertEquals(
+                Validation.HASH_MESSAGE + " - but was: " + hash,
                 assertThrows(IllegalArgumentException.class, () -> Tag.of(referenceName, hash))
                     .getMessage()));
   }
@@ -121,6 +135,7 @@ class TestValidation {
     "abc/def,1122334455667788990011223344556677889900"
   })
   void validNamesAndHashes(String referenceName, String hash) {
+    Transaction.of(referenceName, hash);
     Branch.of(referenceName, hash);
     Tag.of(referenceName, hash);
   }
@@ -141,6 +156,12 @@ class TestValidation {
             assertEquals(
                 Validation.HASH_MESSAGE + " - but was: " + hash,
                 assertThrows(IllegalArgumentException.class, () -> Branch.of(referenceName, hash))
+                    .getMessage()),
+        () ->
+            assertEquals(
+                Validation.HASH_MESSAGE + " - but was: " + hash,
+                assertThrows(
+                        IllegalArgumentException.class, () -> Transaction.of(referenceName, hash))
                     .getMessage()),
         () ->
             assertEquals(

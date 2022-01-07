@@ -28,13 +28,18 @@ public interface GetAllReferencesBuilder
 
   /**
    * Will fetch additional metadata about {@link org.projectnessie.model.Branch} / {@link
-   * org.projectnessie.model.Tag} instances, such as number of commits ahead/behind or the common
-   * ancestor in relation to the default branch, and the commit metadata for the HEAD commit.
+   * org.projectnessie.model.Tag} / {@link org.projectnessie.model.Transaction} instances, such as
+   * number of commits ahead/behind or the common ancestor in relation to the default branch, and
+   * the commit metadata for the HEAD commit.
    *
    * @return {@link GetAllReferencesBuilder}
    * @param fetchOption The option indicating how much info to fetch
    */
   GetAllReferencesBuilder fetch(FetchOption fetchOption);
+
+  GetAllReferencesBuilder includeExpired(Boolean includeExpired);
+
+  GetAllReferencesBuilder includeTransactions(Boolean includeTransactions);
 
   /**
    * Fetches all references and returns them in a {@link ReferencesResponse} instance.

@@ -20,9 +20,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.immutables.value.Value;
-import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.NamedMutableRef;
 
 /**
  * API helper method to encapsulate parameters for {@link DatabaseAdapter#commit(CommitAttempt)}.
@@ -34,7 +34,7 @@ public interface CommitAttempt {
    * Branch to commit to. If {@link #getExpectedHead()} is present, the referenced branch's HEAD
    * must be equal to this hash.
    */
-  BranchName getCommitToBranch();
+  NamedMutableRef getCommitToBranch();
 
   /** Expected HEAD of {@link #getCommitToBranch()}. */
   @Value.Default

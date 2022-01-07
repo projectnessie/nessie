@@ -81,23 +81,17 @@ public interface NessieApiV1 extends NessieApi {
    */
   GetCommitLogBuilder getCommitLog();
 
-  /** Update a tag. */
-  AssignTagBuilder assignTag();
+  /** Update a transaction. */
+  AssignReferenceBuilder assignReference();
 
-  /** Delete a tag. */
-  DeleteTagBuilder deleteTag();
-
-  /** Update a branch. */
-  AssignBranchBuilder assignBranch();
-
-  /** Delete a branch. */
-  DeleteBranchBuilder deleteBranch();
+  /** Delete a transaction. */
+  DeleteReferenceBuilder deleteReference();
 
   /** cherry pick a set of commits into a branch. */
-  TransplantCommitsBuilder transplantCommitsIntoBranch();
+  TransplantCommitsBuilder transplantCommits();
 
   /** merge mergeRef onto ref. */
-  MergeReferenceBuilder mergeRefIntoBranch();
+  MergeReferenceBuilder mergeRef();
 
   CommitMultipleOperationsBuilder commitMultipleOperations();
 

@@ -32,6 +32,7 @@ import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.p
 import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.protoToKeyList;
 import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.protoToRefLog;
 import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.protoToRepoDescription;
+import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.refToRefType;
 import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.toProto;
 
 import com.google.common.base.Preconditions;
@@ -43,6 +44,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -62,6 +64,7 @@ import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.NamedMutableRef;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.RefLogNotFoundException;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
@@ -70,6 +73,7 @@ import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.ReferenceRetryFailureException;
 import org.projectnessie.versioned.TagName;
+import org.projectnessie.versioned.TransactionName;
 import org.projectnessie.versioned.VersionStoreException;
 import org.projectnessie.versioned.persist.adapter.CommitAttempt;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
@@ -86,6 +90,7 @@ import org.projectnessie.versioned.persist.adapter.RepoDescription;
 import org.projectnessie.versioned.persist.adapter.spi.AbstractDatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.spi.TryLoopState;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogEntry.Operation;
 
 /**
  * Transactional/relational {@link AbstractDatabaseAdapter} implementation using JDBC primitives.
@@ -100,6 +105,8 @@ public abstract class TxDatabaseAdapter
   protected static final String REF_TYPE_BRANCH = "b";
   /** Value for {@link SqlStatements#TABLE_NAMED_REFERENCES}.{@code ref_type} for a tag. */
   protected static final String REF_TYPE_TAG = "t";
+  /** Value for {@link SqlStatements#TABLE_NAMED_REFERENCES}.{@code ref_type} for a transaction. */
+  protected static final String REF_TYPE_TRANSACTION = "x";
 
   private final TxConnectionProvider<?> db;
 
@@ -220,7 +227,7 @@ public abstract class TxDatabaseAdapter
   @Override
   public Hash merge(
       Hash from,
-      BranchName toBranch,
+      NamedMutableRef toBranch,
       Optional<Hash> expectedHead,
       Function<ByteString, ByteString> updateCommitMetadata)
       throws ReferenceNotFoundException, ReferenceConflictException {
@@ -275,7 +282,7 @@ public abstract class TxDatabaseAdapter
   @SuppressWarnings("RedundantThrows")
   @Override
   public Hash transplant(
-      BranchName targetBranch,
+      NamedMutableRef targetBranch,
       Optional<Hash> expectedHead,
       List<Hash> commits,
       Function<ByteString, ByteString> updateCommitMetadata)
@@ -345,7 +352,7 @@ public abstract class TxDatabaseAdapter
                 timeInMicros,
                 newBranchCommit.getHash(),
                 commitAttempt.getCommitToBranch(),
-                AdapterTypes.RefLogEntry.Operation.COMMIT,
+                Operation.COMMIT,
                 Collections.emptyList());
 
             return resultHash;
@@ -367,7 +374,7 @@ public abstract class TxDatabaseAdapter
 
   @SuppressWarnings("RedundantThrows")
   @Override
-  public Hash create(NamedRef ref, Hash target)
+  public Hash create(NamedRef ref, Hash target, Instant expireAt)
       throws ReferenceAlreadyExistsException, ReferenceNotFoundException {
     try {
       return opLoop(
@@ -387,7 +394,7 @@ public abstract class TxDatabaseAdapter
 
             validateHashExists(conn, hash);
 
-            insertNewReference(conn, ref, hash);
+            insertNewReference(conn, ref, hash, expireAt);
 
             commitRefLog(
                 conn,
@@ -456,15 +463,15 @@ public abstract class TxDatabaseAdapter
           assignee,
           true,
           (conn, pointer) -> {
-            pointer = fetchNamedRefHead(conn, assignee);
+            Hash assigneeHead = fetchNamedRefHead(conn, assignee);
 
-            verifyExpectedHash(pointer, assignee, expectedHead);
+            verifyExpectedHash(assigneeHead, assignee, expectedHead);
 
             if (!NO_ANCESTOR.equals(assignTo) && fetchFromCommitLog(conn, assignTo) == null) {
               throw referenceNotFound(assignTo);
             }
 
-            Hash resultHash = tryMoveNamedReference(conn, assignee, pointer, assignTo);
+            Hash resultHash = tryMoveNamedReference(conn, assignee, assigneeHead, assignTo);
 
             commitRefLog(
                 conn,
@@ -503,7 +510,7 @@ public abstract class TxDatabaseAdapter
       if (!checkNamedRefExistence(conn, BranchName.of(defaultBranchName))) {
         // note: no need to initialize the repo-description
 
-        insertNewReference(conn, BranchName.of(defaultBranchName), NO_ANCESTOR);
+        insertNewReference(conn, BranchName.of(defaultBranchName), NO_ANCESTOR, null);
 
         Hash newRefLogId =
             writeRefLogEntry(
@@ -829,7 +836,11 @@ public abstract class TxDatabaseAdapter
 
           NamedRef namedRef = namedRefFromRow(type, ref);
           if (namedRef != null) {
-            return ReferenceInfo.of(head, namedRef);
+            long createdAt = rs.getLong(4);
+            long expiresAt = rs.getLong(5);
+            Instant createdInstant = createdAt != 0L ? Instant.ofEpochMilli(createdAt) : null;
+            Instant expiresInstant = expiresAt != 0L ? Instant.ofEpochMilli(expiresAt) : null;
+            return ReferenceInfo.of(head, namedRef, createdInstant, expiresInstant);
           }
           return null;
         });
@@ -878,6 +889,10 @@ public abstract class TxDatabaseAdapter
     }
   }
 
+  /**
+   * Retrieves the current HEAD for a reference, throws a {@link ReferenceNotFoundException}, it the
+   * reference does not exist.
+   */
   protected ReferenceInfo<ByteString> fetchNamedRef(Connection c, String ref)
       throws ReferenceNotFoundException {
     try (PreparedStatement ps = c.prepareStatement(SqlStatements.SELECT_NAMED_REFERENCE_ANY)) {
@@ -887,7 +902,11 @@ public abstract class TxDatabaseAdapter
         if (rs.next()) {
           Hash hash = Hash.of(rs.getString(2));
           NamedRef namedRef = namedRefFromRow(rs.getString(1), ref);
-          return ReferenceInfo.of(hash, namedRef);
+          long createdAt = rs.getLong(3);
+          long expiresAt = rs.getLong(4);
+          Instant createdInstant = createdAt != 0L ? Instant.ofEpochMilli(createdAt) : null;
+          Instant expiresInstant = expiresAt != 0L ? Instant.ofEpochMilli(expiresAt) : null;
+          return ReferenceInfo.of(hash, namedRef, createdInstant, expiresInstant);
         }
         throw referenceNotFound(ref);
       }
@@ -902,18 +921,22 @@ public abstract class TxDatabaseAdapter
         return BranchName.of(ref);
       case REF_TYPE_TAG:
         return TagName.of(ref);
+      case REF_TYPE_TRANSACTION:
+        return TransactionName.of(ref);
       default:
         return null;
     }
   }
 
-  protected void insertNewReference(Connection conn, NamedRef ref, Hash hash)
+  protected void insertNewReference(Connection conn, NamedRef ref, Hash hash, Instant expireAt)
       throws ReferenceAlreadyExistsException, SQLException {
     try (PreparedStatement ps = conn.prepareStatement(SqlStatements.INSERT_NAMED_REFERENCE)) {
       ps.setString(1, config.getRepositoryId());
       ps.setString(2, ref.getName());
       ps.setString(3, referenceTypeDiscriminator(ref));
       ps.setString(4, hash.asString());
+      ps.setLong(5, config.getClock().millis());
+      ps.setLong(6, expireAt != null ? expireAt.toEpochMilli() : 0L);
       ps.executeUpdate();
     } catch (SQLException e) {
       if (isIntegrityConstraintViolation(e)) {
@@ -927,6 +950,8 @@ public abstract class TxDatabaseAdapter
     String refType;
     if (ref instanceof BranchName) {
       refType = REF_TYPE_BRANCH;
+    } else if (ref instanceof TransactionName) {
+      refType = REF_TYPE_TRANSACTION;
     } else if (ref instanceof TagName) {
       refType = REF_TYPE_TAG;
     } else {
@@ -1059,9 +1084,7 @@ public abstract class TxDatabaseAdapter
             String newHash = newHasher().putBytes(newGlobBytes).hash().toString();
 
             if (contentId == null) {
-              throw new IllegalArgumentException(
-                  String.format(
-                      "No contentId in CommitAttempt.keyToContent content-id '%s'", contentId));
+              throw new IllegalArgumentException("Null contentId in CommitAttempt.keyToContent");
             }
 
             psInsert.setString(1, config.getRepositoryId());
@@ -1320,10 +1343,15 @@ public abstract class TxDatabaseAdapter
    */
   protected Hash tryMoveNamedReference(
       Connection conn, NamedRef ref, Hash expectedHead, Hash newHead) {
+    return tryMoveNamedReference(conn, ref.getName(), expectedHead, newHead);
+  }
+
+  protected Hash tryMoveNamedReference(
+      Connection conn, String ref, Hash expectedHead, Hash newHead) {
     try (PreparedStatement ps = conn.prepareStatement(SqlStatements.UPDATE_NAMED_REFERENCE)) {
       ps.setString(1, newHead.asString());
       ps.setString(2, config.getRepositoryId());
-      ps.setString(3, ref.getName());
+      ps.setString(3, ref);
       ps.setString(4, expectedHead.asString());
       return ps.executeUpdate() == 1 ? newHead : null;
     } catch (SQLException e) {
@@ -1466,7 +1494,7 @@ public abstract class TxDatabaseAdapter
   protected abstract Map<NessieSqlDataType, String> databaseSqlFormatParameters();
 
   /**
-   * Defines the types of Nessie data types used to map to SQL datatypes via {@link
+   * Defines the types of Nessie data types used to map to SQL data types via {@link
    * #databaseSqlFormatParameters()}. For example, the SQL datatype used to store a {@link #BLOB}
    * might be a {@code BLOB} in a specific database and {@code BYTEA} in another.
    *
@@ -1519,16 +1547,11 @@ public abstract class TxDatabaseAdapter
               parentEntry.getParents().stream().limit(config.getParentsPerRefLogEntry() - 1));
     }
 
-    AdapterTypes.RefLogEntry.RefType refType =
-        ref instanceof TagName
-            ? AdapterTypes.RefLogEntry.RefType.Tag
-            : AdapterTypes.RefLogEntry.RefType.Branch;
-
     AdapterTypes.RefLogEntry.Builder entry =
         AdapterTypes.RefLogEntry.newBuilder()
             .setRefLogId(randomHash().asBytes())
             .setRefName(ByteString.copyFromUtf8(ref.getName()))
-            .setRefType(refType)
+            .setRefType(refToRefType(ref))
             .setCommitHash(commitHash.asBytes())
             .setOperationTime(timeInMicros)
             .setOperation(operation);

@@ -46,22 +46,27 @@ public final class SqlStatements {
           TABLE_NAMED_REFERENCES);
   public static final String INSERT_NAMED_REFERENCE =
       String.format(
-          "INSERT INTO %s (repo_id, ref, ref_type, hash) VALUES (?, ?, ?, ?)",
+          "INSERT INTO %s (repo_id, ref, ref_type, hash, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?)",
           TABLE_NAMED_REFERENCES);
   public static final String DELETE_NAMED_REFERENCE =
       String.format(
           "DELETE FROM %s WHERE repo_id = ? AND ref = ? AND hash = ?", TABLE_NAMED_REFERENCES);
   public static final String SELECT_NAMED_REFERENCES =
-      String.format("SELECT ref_type, ref, hash FROM %s WHERE repo_id = ?", TABLE_NAMED_REFERENCES);
+      String.format(
+          "SELECT ref_type, ref, hash, created_at, expires_at FROM %s WHERE repo_id = ?",
+          TABLE_NAMED_REFERENCES);
   public static final String SELECT_NAMED_REFERENCE_NAME =
-      String.format("SELECT hash FROM %s WHERE repo_id = ? AND ref = ?", TABLE_NAMED_REFERENCES);
+      String.format(
+          "SELECT hash, created_at, expires_at FROM %s WHERE repo_id = ? AND ref = ?",
+          TABLE_NAMED_REFERENCES);
   public static final String SELECT_NAMED_REFERENCE =
       String.format(
-          "SELECT hash FROM %s WHERE repo_id = ? AND ref = ? AND ref_type = ?",
+          "SELECT hash, created_at, expires_at FROM %s WHERE repo_id = ? AND ref = ? AND ref_type = ?",
           TABLE_NAMED_REFERENCES);
   public static final String SELECT_NAMED_REFERENCE_ANY =
       String.format(
-          "SELECT ref_type, hash FROM %s WHERE repo_id = ? AND ref = ?", TABLE_NAMED_REFERENCES);
+          "SELECT ref_type, hash, created_at, expires_at FROM %s WHERE repo_id = ? AND ref = ?",
+          TABLE_NAMED_REFERENCES);
   public static final String CREATE_TABLE_NAMED_REFERENCES =
       String.format(
           "CREATE TABLE %s (\n"
@@ -69,6 +74,8 @@ public final class SqlStatements {
               + "  ref {4},\n"
               + "  ref_type {5},\n"
               + "  hash {1},\n"
+              + "  created_at {7},\n"
+              + "  expires_at {7},\n"
               + "  PRIMARY KEY (repo_id, ref)\n"
               + ")",
           TABLE_NAMED_REFERENCES);

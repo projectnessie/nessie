@@ -176,7 +176,8 @@ public abstract class AbstractGlobalStates {
                                 databaseAdapter.create(
                                     b,
                                     databaseAdapter.hashOnReference(
-                                        BranchName.of("main"), Optional.empty())))));
+                                        BranchName.of("main"), Optional.empty()),
+                                    null))));
     Map<ContentId, ByteString> currentStates = new HashMap<>();
     Set<Key> keys =
         IntStream.range(0, param.tables)

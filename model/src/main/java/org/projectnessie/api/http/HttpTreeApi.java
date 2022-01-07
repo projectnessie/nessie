@@ -15,6 +15,10 @@
  */
 package org.projectnessie.api.http;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import java.time.Instant;
+import javax.annotation.Nullable;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -42,9 +46,12 @@ import org.projectnessie.api.params.ReferencesParams;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
+import org.projectnessie.model.CommitMeta.InstantDeserializer;
+import org.projectnessie.model.CommitMeta.InstantSerializer;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Merge;
+import org.projectnessie.model.MutableReference;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferencesResponse;
@@ -100,7 +107,7 @@ public interface HttpTreeApi extends TreeApi {
   @Operation(
       summary = "Create a new reference",
       description =
-          "The type of 'refObj', which can be either a 'Branch' or 'Tag', determines "
+          "The type of 'refObj', which can be either a 'Transaction', 'Branch' or 'Tag', determines "
               + "the type of the reference to be created.\n"
               + "\n"
               + "'Reference.name' defines the the name of the reference to be created,"
@@ -134,7 +141,12 @@ public interface HttpTreeApi extends TreeApi {
                     mediaType = MediaType.APPLICATION_JSON,
                     examples = {@ExampleObject(ref = "refObjNew")})
               })
-          Reference reference)
+          Reference reference,
+      @Nullable
+          @JsonSerialize(using = InstantSerializer.class)
+          @JsonDeserialize(using = InstantDeserializer.class)
+          @QueryParam("expireAt")
+          Instant expireAt)
       throws NessieNotFoundException, NessieConflictException;
 
   @Override
@@ -169,7 +181,7 @@ public interface HttpTreeApi extends TreeApi {
           "Retrieves objects for a ref, potentially truncated by the backend.\n"
               + "\n"
               + "Retrieves up to 'maxRecords' entries for the "
-              + "given named reference (tag or branch) or the given hash. "
+              + "given named reference (tag or branch or transaction) or the given hash. "
               + "The backend may respect the given 'max' records hint, but return less or more entries. "
               + "Backends may also cap the returned entries at a hard-coded limit, the default "
               + "REST server implementation has such a hard-coded limit.\n"
@@ -225,7 +237,7 @@ public interface HttpTreeApi extends TreeApi {
           "Retrieve the commit log for a ref, potentially truncated by the backend.\n"
               + "\n"
               + "Retrieves up to 'maxRecords' commit-log-entries starting at the HEAD of the "
-              + "given named reference (tag or branch) or the given hash. "
+              + "given named reference (tag or branch or transaction) or the given hash. "
               + "The backend may respect the given 'max' records hint, but return less or more entries. "
               + "Backends may also cap the returned entries at a hard-coded limit, the default "
               + "REST server implementation has such a hard-coded limit.\n"
@@ -272,98 +284,40 @@ public interface HttpTreeApi extends TreeApi {
 
   @Override
   @PUT
-  @Path("tag/{tagName}")
+  @Path("{referenceType}/{referenceName}")
   @Operation(
-      summary = "Set a tag to a specific hash via a named-reference.",
+      summary = "Set a named reference to a specific hash via a named-reference.",
       description =
-          "This operation takes the name of the tag to reassign and the hash and the name of a "
+          "This operation takes the name of the named reference to reassign and the hash and the name of a "
               + "named-reference via which the caller has access to that hash.")
   @APIResponses({
     @APIResponse(responseCode = "204", description = "Assigned successfully"),
     @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
     @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
-    @APIResponse(responseCode = "403", description = "Not allowed to view or assign tag"),
-    @APIResponse(responseCode = "404", description = "One or more references don't exist"),
-    @APIResponse(responseCode = "412", description = "Update conflict")
-  })
-  void assignTag(
-      @Parameter(
-              description = "Tag name to reassign",
-              examples = {@ExampleObject(ref = "ref")})
-          @PathParam("tagName")
-          String tagName,
-      @Parameter(
-              description = "Expected previous hash of tag",
-              examples = {@ExampleObject(ref = "hash")})
-          @QueryParam("expectedHash")
-          String oldHash,
-      @RequestBody(
-              description =
-                  "Reference hash to which 'tagName' shall be assigned to. This must be either a "
-                      + "'Branch' or 'Tag' via which the hash is visible to the caller.",
-              content =
-                  @Content(
-                      mediaType = MediaType.APPLICATION_JSON,
-                      examples = {@ExampleObject(ref = "refObj"), @ExampleObject(ref = "tagObj")}))
-          Reference assignTo)
-      throws NessieNotFoundException, NessieConflictException;
-
-  @Override
-  @DELETE
-  @Path("tag/{tagName}")
-  @Operation(summary = "Delete a tag")
-  @APIResponses({
-    @APIResponse(responseCode = "204", description = "Deleted successfully."),
-    @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
-    @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
-    @APIResponse(responseCode = "403", description = "Not allowed to view or delete tag"),
-    @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
-    @APIResponse(responseCode = "409", description = "update conflict"),
-  })
-  void deleteTag(
-      @Parameter(
-              description = "Tag to delete",
-              examples = {@ExampleObject(ref = "ref")})
-          @PathParam("tagName")
-          String tagName,
-      @Parameter(
-              description = "Expected hash of tag",
-              examples = {@ExampleObject(ref = "hash")})
-          @QueryParam("expectedHash")
-          String hash)
-      throws NessieConflictException, NessieNotFoundException;
-
-  @Override
-  @PUT
-  @Path("branch/{branchName}")
-  @Operation(
-      summary = "Set a branch to a specific hash via a named-reference.",
-      description =
-          "This operation takes the name of the branch to reassign and the hash and the name of a "
-              + "named-reference via which the caller has access to that hash.")
-  @APIResponses({
-    @APIResponse(responseCode = "204", description = "Assigned successfully"),
-    @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
-    @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
-    @APIResponse(responseCode = "403", description = "Not allowed to view or assign branch"),
+    @APIResponse(responseCode = "403", description = "Not allowed to view or assign reference"),
     @APIResponse(responseCode = "404", description = "One or more references don't exist"),
     @APIResponse(responseCode = "409", description = "Update conflict")
   })
-  void assignBranch(
+  void assignReference(
       @Parameter(
-              description = "Tag name to reassign",
+              description = "Reference type to reassign",
               examples = {@ExampleObject(ref = "ref")})
-          @PathParam("branchName")
-          String branchName,
+          @PathParam("referenceType")
+          String referenceType,
       @Parameter(
-              description = "Expected previous hash of tag",
+              description = "Reference name to reassign",
+              examples = {@ExampleObject(ref = "ref")})
+          @PathParam("referenceName")
+          String referenceName,
+      @Parameter(
+              description = "Expected previous hash of reference",
               examples = {@ExampleObject(ref = "hash")})
           @QueryParam("expectedHash")
           String oldHash,
       @RequestBody(
               description =
-                  "Reference hash to which 'branchName' shall be assigned to. This must be either a "
-                      + "'Branch' or 'Tag' via which the hash is visible to the caller.",
+                  "Reference hash to which 'referenceName' shall be assigned to. This must be either a "
+                      + "'Transaction', 'Branch' or 'Tag' via which the hash is visible to the caller.",
               content =
                   @Content(
                       mediaType = MediaType.APPLICATION_JSON,
@@ -373,22 +327,27 @@ public interface HttpTreeApi extends TreeApi {
 
   @Override
   @DELETE
-  @Path("branch/{branchName}")
-  @Operation(summary = "Delete a branch endpoint")
+  @Path("{referenceType}/{referenceName}")
+  @Operation(summary = "Delete a reference endpoint")
   @APIResponses({
     @APIResponse(responseCode = "204", description = "Deleted successfully."),
     @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
     @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
-    @APIResponse(responseCode = "403", description = "Not allowed to view or delete branch"),
+    @APIResponse(responseCode = "403", description = "Not allowed to view or delete reference"),
     @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
     @APIResponse(responseCode = "409", description = "update conflict"),
   })
-  void deleteBranch(
+  void deleteReference(
       @Parameter(
-              description = "Branch to delete",
+              description = "Reference type to delete",
               examples = {@ExampleObject(ref = "ref")})
-          @PathParam("branchName")
-          String branchName,
+          @PathParam("referenceType")
+          String referenceType,
+      @Parameter(
+              description = "Reference name to delete",
+              examples = {@ExampleObject(ref = "ref")})
+          @PathParam("referenceName")
+          String referenceName,
       @Parameter(
               description = "Expected hash of tag",
               examples = {@ExampleObject(ref = "hash")})
@@ -398,9 +357,9 @@ public interface HttpTreeApi extends TreeApi {
 
   @Override
   @POST
-  @Path("branch/{branchName}/transplant")
+  @Path("{referenceType}/{referenceName}/transplant")
   @Operation(
-      summary = "Transplant commits from 'transplant' onto 'branchName'",
+      summary = "Transplant commits from 'transplant' onto 'referenceName'",
       description =
           "This is done as an atomic operation such that only the last of the sequence is ever "
               + "visible to concurrent readers/writers. The sequence to transplant must be "
@@ -415,12 +374,17 @@ public interface HttpTreeApi extends TreeApi {
     @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
     @APIResponse(responseCode = "409", description = "update conflict")
   })
-  void transplantCommitsIntoBranch(
+  void transplantCommits(
       @Parameter(
-              description = "Branch to transplant into",
+              description = "Reference type to delete",
               examples = {@ExampleObject(ref = "ref")})
-          @PathParam("branchName")
-          String branchName,
+          @PathParam("referenceType")
+          String referenceType,
+      @Parameter(
+              description = "Reference to transplant into",
+              examples = {@ExampleObject(ref = "ref")})
+          @PathParam("referenceName")
+          String referenceName,
       @Parameter(
               description = "Expected hash of tag.",
               examples = {@ExampleObject(ref = "hash")})
@@ -442,13 +406,13 @@ public interface HttpTreeApi extends TreeApi {
 
   @Override
   @POST
-  @Path("branch/{branchName}/merge")
+  @Path("{referenceType}/{referenceName}/merge")
   @Operation(
-      summary = "Merge commits from 'mergeRef' onto 'branchName'.",
+      summary = "Merge commits from 'mergeRef' onto 'referenceName'.",
       description =
-          "Merge items from an existing hash in 'mergeRef' into the requested branch. "
+          "Merge items from an existing hash in 'mergeRef' into the requested reference. "
               + "The merge is always a rebase + fast-forward merge and is only completed if the "
-              + "rebase is conflict free. The set of commits added to the branch will be all of "
+              + "rebase is conflict free. The set of commits added to the reference will be all of "
               + "those until we arrive at a common ancestor. Depending on the underlying "
               + "implementation, the number of commits allowed as part of this operation may be limited.")
   @APIResponses({
@@ -461,14 +425,19 @@ public interface HttpTreeApi extends TreeApi {
     @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
     @APIResponse(responseCode = "409", description = "update conflict")
   })
-  void mergeRefIntoBranch(
+  void mergeRef(
       @Parameter(
-              description = "Branch to merge into",
+              description = "Reference type to delete",
               examples = {@ExampleObject(ref = "ref")})
-          @PathParam("branchName")
-          String branchName,
+          @PathParam("referenceType")
+          String referenceType,
       @Parameter(
-              description = "Expected current HEAD of 'branchName'",
+              description = "Reference to merge into",
+              examples = {@ExampleObject(ref = "ref")})
+          @PathParam("referenceName")
+          String referenceName,
+      @Parameter(
+              description = "Expected current HEAD of 'referenceName'",
               examples = {@ExampleObject(ref = "hash")})
           @QueryParam("expectedHash")
           String hash,
@@ -485,12 +454,12 @@ public interface HttpTreeApi extends TreeApi {
 
   @Override
   @POST
-  @Path("branch/{branchName}/commit")
+  @Path("{referenceType}/{referenceName}/commit")
   @Produces(MediaType.APPLICATION_JSON)
   @Consumes(MediaType.APPLICATION_JSON)
   @Operation(
       summary =
-          "Commit multiple operations against the given branch expecting that branch to have "
+          "Commit multiple operations against the given reference expecting that reference to have "
               + "the given hash as its latest commit. The hash in the successful response contains the hash of the "
               + "commit that contains the operations of the invocation.")
   @APIResponses({
@@ -501,7 +470,7 @@ public interface HttpTreeApi extends TreeApi {
           @Content(
               mediaType = MediaType.APPLICATION_JSON,
               examples = {@ExampleObject(ref = "refObj")},
-              schema = @Schema(implementation = Branch.class))
+              schema = @Schema(implementation = Reference.class))
         }),
     @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
     @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
@@ -511,14 +480,19 @@ public interface HttpTreeApi extends TreeApi {
     @APIResponse(responseCode = "404", description = "Provided ref doesn't exists"),
     @APIResponse(responseCode = "409", description = "Update conflict")
   })
-  Branch commitMultipleOperations(
+  MutableReference commitMultipleOperations(
       @Parameter(
-              description = "Branch to change, defaults to default branch.",
+              description = "Reference type to commit to",
               examples = {@ExampleObject(ref = "ref")})
-          @PathParam("branchName")
-          String branchName,
+          @PathParam("referenceType")
+          String referenceType,
       @Parameter(
-              description = "Expected hash of branch.",
+              description = "Reference to commit to, defaults to default branch.",
+              examples = {@ExampleObject(ref = "ref")})
+          @PathParam("referenceName")
+          String referenceName,
+      @Parameter(
+              description = "Expected hash of reference.",
               examples = {@ExampleObject(ref = "hash")})
           @QueryParam("expectedHash")
           String hash,

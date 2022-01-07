@@ -47,6 +47,14 @@ public class ReferencesParams extends AbstractParams {
   @Nullable
   private FetchOption fetchOption;
 
+  @QueryParam("includeExpired")
+  @Nullable
+  private Boolean includeExpired;
+
+  @QueryParam("includeTransactions")
+  @Nullable
+  private Boolean includeTransactions;
+
   @Parameter(
       description =
           "A Common Expression Language (CEL) expression. An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n"
@@ -68,14 +76,27 @@ public class ReferencesParams extends AbstractParams {
   public ReferencesParams() {}
 
   private ReferencesParams(
-      Integer maxRecords, String pageToken, FetchOption fetchOption, String filter) {
+      Integer maxRecords,
+      String pageToken,
+      FetchOption fetchOption,
+      String filter,
+      Boolean includeExpired,
+      Boolean includeTransactions) {
     super(maxRecords, pageToken);
     this.fetchOption = fetchOption;
     this.filter = filter;
+    this.includeExpired = includeExpired;
+    this.includeTransactions = includeTransactions;
   }
 
   private ReferencesParams(Builder builder) {
-    this(builder.maxRecords, builder.pageToken, builder.fetchOption, builder.filter);
+    this(
+        builder.maxRecords,
+        builder.pageToken,
+        builder.fetchOption,
+        builder.filter,
+        builder.includeExpired,
+        builder.includeTransactions);
   }
 
   public FetchOption fetchOption() {
@@ -84,6 +105,14 @@ public class ReferencesParams extends AbstractParams {
 
   public String filter() {
     return filter;
+  }
+
+  public Boolean includeExpired() {
+    return includeExpired;
+  }
+
+  public Boolean includeTransactions() {
+    return includeTransactions;
   }
 
   public static ReferencesParams.Builder builder() {
@@ -101,6 +130,8 @@ public class ReferencesParams extends AbstractParams {
         .add("pageToken='" + pageToken() + "'")
         .add("fetchOption=" + fetchOption)
         .add("filter=" + filter)
+        .add("includeExpired=" + includeExpired)
+        .add("includeTransactions=" + includeTransactions)
         .toString();
   }
 
@@ -116,12 +147,15 @@ public class ReferencesParams extends AbstractParams {
     return Objects.equals(maxRecords(), that.maxRecords())
         && Objects.equals(pageToken(), that.pageToken())
         && Objects.equals(fetchOption, that.fetchOption)
-        && Objects.equals(filter, that.filter);
+        && Objects.equals(filter, that.filter)
+        && Objects.equals(includeExpired, that.includeExpired)
+        && Objects.equals(includeTransactions, that.includeTransactions);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(maxRecords(), pageToken(), fetchOption, filter);
+    return Objects.hash(
+        maxRecords(), pageToken(), fetchOption, filter, includeExpired, includeTransactions);
   }
 
   public static class Builder extends AbstractParams.Builder<Builder> {
@@ -130,6 +164,8 @@ public class ReferencesParams extends AbstractParams {
 
     private FetchOption fetchOption;
     private String filter;
+    private Boolean includeExpired;
+    private Boolean includeTransactions;
 
     public ReferencesParams.Builder from(ReferencesParams params) {
       return maxRecords(params.maxRecords())
@@ -145,6 +181,16 @@ public class ReferencesParams extends AbstractParams {
 
     public Builder filter(String filter) {
       this.filter = filter;
+      return this;
+    }
+
+    public Builder includeExpired(Boolean includeExpired) {
+      this.includeExpired = includeExpired;
+      return this;
+    }
+
+    public Builder includeTransactions(Boolean includeTransactions) {
+      this.includeTransactions = includeTransactions;
       return this;
     }
 

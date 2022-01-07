@@ -15,27 +15,31 @@
  */
 package org.projectnessie.client.http.v1api;
 
-import org.projectnessie.client.api.OnBranchBuilder;
+import java.util.Objects;
+import org.projectnessie.api.http.HttpApiUtil;
+import org.projectnessie.client.api.OnMutableReferenceBuilder;
 import org.projectnessie.client.http.NessieApiClient;
+import org.projectnessie.model.MutableReference;
 
-abstract class BaseHttpOnBranchRequest<R extends OnBranchBuilder<R>> extends BaseHttpRequest
-    implements OnBranchBuilder<R> {
-  protected String branchName;
-  protected String hash;
+abstract class BaseHttpOnMutableReferenceRequest<R extends OnMutableReferenceBuilder<R>>
+    extends BaseHttpRequest implements OnMutableReferenceBuilder<R> {
+  protected MutableReference reference;
 
-  BaseHttpOnBranchRequest(NessieApiClient client) {
+  BaseHttpOnMutableReferenceRequest(NessieApiClient client) {
     super(client);
   }
 
-  @Override
-  public R branchName(String branchName) {
-    this.branchName = branchName;
-    return (R) this;
+  protected MutableReference reference() {
+    return Objects.requireNonNull(reference, "Reference not set on request");
+  }
+
+  protected String referenceTypeName() {
+    return HttpApiUtil.referenceTypeName(reference());
   }
 
   @Override
-  public R hash(String hash) {
-    this.hash = hash;
+  public R reference(MutableReference reference) {
+    this.reference = reference;
     return (R) this;
   }
 }

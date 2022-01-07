@@ -21,6 +21,7 @@ import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUti
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.deleteConflictMessage;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.hashCollisionDetected;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.mergeConflictMessage;
+import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.mustNotCommitToTag;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.randomHash;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.referenceAlreadyExists;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.referenceNotFound;
@@ -31,9 +32,12 @@ import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUti
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.verifyExpectedHash;
 import static org.projectnessie.versioned.persist.adapter.spi.TryLoopState.newTryLoopState;
 import static org.projectnessie.versioned.persist.nontx.NonTransactionalOperationContext.NON_TRANSACTIONAL_OPERATION_CONTEXT;
+import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.mutableRefToRefType;
+import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.refToRefType;
 
 import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -50,17 +54,16 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.annotation.Nullable;
-import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.NamedMutableRef;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.RefLogNotFoundException;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
-import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.VersionStoreException;
 import org.projectnessie.versioned.persist.adapter.CommitAttempt;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
@@ -82,7 +85,7 @@ import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePoi
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.NamedReference;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefPointer;
-import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefPointer.Type;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefType;
 import org.projectnessie.versioned.persist.serialize.ProtoSerialization;
 
 /**
@@ -159,10 +162,18 @@ public abstract class NonTransactionalDatabaseAdapter<
     Stream<ReferenceInfo<ByteString>> refs =
         pointer.getNamedReferencesList().stream()
             .map(
-                r ->
-                    ReferenceInfo.of(
-                        Hash.of(r.getRef().getHash()),
-                        toNamedRef(r.getRef().getType(), r.getName())));
+                r -> {
+                  RefPointer ref = r.getRef();
+                  Instant createdInstant =
+                      ref.hasCreatedAt() ? Instant.ofEpochMilli(ref.getCreatedAt()) : null;
+                  Instant expiresInstant =
+                      ref.hasExpiresAt() ? Instant.ofEpochMilli(ref.getExpiresAt()) : null;
+                  return ReferenceInfo.of(
+                      Hash.of(ref.getHash()),
+                      ProtoSerialization.toNamedRef(ref.getType(), r.getName()),
+                      createdInstant,
+                      expiresInstant);
+                });
 
     return namedRefsFilterAndEnhance(
         NON_TRANSACTIONAL_OPERATION_CONTEXT, params, defaultBranchHead, refs);
@@ -177,7 +188,7 @@ public abstract class NonTransactionalDatabaseAdapter<
   @Override
   public Hash merge(
       Hash from,
-      BranchName toBranch,
+      NamedMutableRef toBranch,
       Optional<Hash> expectedHead,
       Function<ByteString, ByteString> updateCommitMetadata)
       throws ReferenceNotFoundException, ReferenceConflictException {
@@ -219,7 +230,7 @@ public abstract class NonTransactionalDatabaseAdapter<
                 writeRefLogEntry(
                     ctx,
                     toBranch.getName(),
-                    RefLogEntry.RefType.Branch,
+                    mutableRefToRefType(toBranch),
                     Hash.of(pointer.getRefLogId()),
                     toHead,
                     RefLogEntry.Operation.MERGE,
@@ -241,7 +252,7 @@ public abstract class NonTransactionalDatabaseAdapter<
   @SuppressWarnings("RedundantThrows")
   @Override
   public Hash transplant(
-      BranchName targetBranch,
+      NamedMutableRef targetBranch,
       Optional<Hash> expectedHead,
       List<Hash> sequenceToTransplant,
       Function<ByteString, ByteString> updateCommitMetadata)
@@ -275,7 +286,7 @@ public abstract class NonTransactionalDatabaseAdapter<
                 writeRefLogEntry(
                     ctx,
                     targetBranch.getName(),
-                    RefLogEntry.RefType.Branch,
+                    mutableRefToRefType(targetBranch),
                     Hash.of(pointer.getRefLogId()),
                     targetHead,
                     RefLogEntry.Operation.TRANSPLANT,
@@ -306,6 +317,10 @@ public abstract class NonTransactionalDatabaseAdapter<
           CasOpVariant.COMMIT,
           (ctx, pointer, x, newKeyLists) -> {
             Hash branchHead = branchHead(pointer, commitAttempt.getCommitToBranch());
+            RefType refType = mutableRefToRefType(commitAttempt.getCommitToBranch());
+            if (refType == RefType.Tag) {
+              throw mustNotCommitToTag();
+            }
 
             long timeInMicros = commitTimeInMicros();
 
@@ -325,7 +340,7 @@ public abstract class NonTransactionalDatabaseAdapter<
                 writeRefLogEntry(
                     ctx,
                     commitAttempt.getCommitToBranch().getName(),
-                    RefLogEntry.RefType.Branch,
+                    refType,
                     Hash.of(pointer.getRefLogId()),
                     newBranchCommit.getHash(),
                     RefLogEntry.Operation.COMMIT,
@@ -352,7 +367,7 @@ public abstract class NonTransactionalDatabaseAdapter<
   }
 
   @Override
-  public Hash create(NamedRef ref, Hash target)
+  public Hash create(NamedRef ref, Hash target, Instant expireAt)
       throws ReferenceAlreadyExistsException, ReferenceNotFoundException {
     try {
       return casOpLoop(
@@ -375,13 +390,11 @@ public abstract class NonTransactionalDatabaseAdapter<
             // Need a new empty global-log entry to be able to CAS
             Hash newGlobalHead = noopGlobalLogEntry(ctx, pointer);
 
-            RefLogEntry.RefType refType =
-                ref instanceof TagName ? RefLogEntry.RefType.Tag : RefLogEntry.RefType.Branch;
             Hash newRefLogId =
                 writeRefLogEntry(
                     ctx,
                     ref.getName(),
-                    refType,
+                    refToRefType(ref),
                     Hash.of(pointer.getRefLogId()),
                     hash,
                     RefLogEntry.Operation.CREATE_REFERENCE,
@@ -389,7 +402,17 @@ public abstract class NonTransactionalDatabaseAdapter<
                     Collections.emptyList());
 
             return updateGlobalStatePointer(
-                ref, pointer, hash, newGlobalHead, newRefLogId.asBytes());
+                ref,
+                pointer,
+                hash,
+                newGlobalHead,
+                newRefLogId.asBytes(),
+                r -> {
+                  r.setCreatedAt(config.getClock().millis());
+                  if (expireAt != null) {
+                    r.setExpiresAt(expireAt.toEpochMilli());
+                  }
+                });
           },
           () -> createConflictMessage("Retry-Failure", ref, target));
     } catch (ReferenceAlreadyExistsException | ReferenceNotFoundException | RuntimeException e) {
@@ -411,13 +434,11 @@ public abstract class NonTransactionalDatabaseAdapter<
             verifyExpectedHash(branchHead, reference, expectedHead);
             Hash newGlobalHead = noopGlobalLogEntry(ctx, pointer);
 
-            RefLogEntry.RefType refType =
-                reference instanceof TagName ? RefLogEntry.RefType.Tag : RefLogEntry.RefType.Branch;
             Hash newRefLogId =
                 writeRefLogEntry(
                     ctx,
                     reference.getName(),
-                    refType,
+                    refToRefType(reference),
                     Hash.of(pointer.getRefLogId()),
                     branchHead,
                     RefLogEntry.Operation.DELETE_REFERENCE,
@@ -449,13 +470,11 @@ public abstract class NonTransactionalDatabaseAdapter<
 
             Hash newGlobalHead = noopGlobalLogEntry(ctx, pointer);
 
-            RefLogEntry.RefType refType =
-                assignee instanceof TagName ? RefLogEntry.RefType.Tag : RefLogEntry.RefType.Branch;
             Hash newRefLogId =
                 writeRefLogEntry(
                     ctx,
                     assignee.getName(),
-                    refType,
+                    refToRefType(assignee),
                     Hash.of(pointer.getRefLogId()),
                     assignTo,
                     RefLogEntry.Operation.ASSIGN_REFERENCE,
@@ -493,7 +512,7 @@ public abstract class NonTransactionalDatabaseAdapter<
             writeRefLogEntry(
                 ctx,
                 defaultBranchName,
-                RefLogEntry.RefType.Branch,
+                RefType.Branch,
                 NO_ANCESTOR,
                 NO_ANCESTOR,
                 RefLogEntry.Operation.CREATE_REFERENCE,
@@ -512,8 +531,9 @@ public abstract class NonTransactionalDatabaseAdapter<
                       .setName(defaultBranchName)
                       .setRef(
                           RefPointer.newBuilder()
-                              .setType(Type.Branch)
-                              .setHash(NO_ANCESTOR.asBytes())))
+                              .setType(RefType.Branch)
+                              .setHash(NO_ANCESTOR.asBytes())
+                              .setCreatedAt(commitTimeInMicros())))
               .setRefLogId(newRefLogId.asBytes())
               .build());
     }
@@ -637,6 +657,16 @@ public abstract class NonTransactionalDatabaseAdapter<
       @Nullable Hash toHead,
       Hash newGlobalHead,
       ByteString newRefLogId) {
+    return updateGlobalStatePointer(target, pointer, toHead, newGlobalHead, newRefLogId, b -> {});
+  }
+
+  protected static GlobalStatePointer updateGlobalStatePointer(
+      NamedRef target,
+      GlobalStatePointer pointer,
+      @Nullable Hash toHead,
+      Hash newGlobalHead,
+      ByteString newRefLogId,
+      Consumer<RefPointer.Builder> refUpdater) {
 
     GlobalStatePointer.Builder newPointer =
         GlobalStatePointer.newBuilder()
@@ -645,13 +675,11 @@ public abstract class NonTransactionalDatabaseAdapter<
     String refName = target.getName();
     if (toHead != null) {
       // Most recently updated references first
+      RefPointer.Builder refBuilder =
+          RefPointer.newBuilder().setType(protoTypeForRef(target)).setHash(toHead.asBytes());
+      refUpdater.accept(refBuilder);
       newPointer.addNamedReferences(
-          NamedReference.newBuilder()
-              .setName(refName)
-              .setRef(
-                  RefPointer.newBuilder()
-                      .setType(protoTypeForRef(target))
-                      .setHash(toHead.asBytes())));
+          NamedReference.newBuilder().setName(refName).setRef(refBuilder));
     }
     pointer.getNamedReferencesList().stream()
         .filter(namedRef -> !refName.equals(namedRef.getName()))
@@ -759,8 +787,9 @@ public abstract class NonTransactionalDatabaseAdapter<
      */
     COMMIT(false, true),
     /**
-     * For {@link #create(NamedRef, Hash)} and {@link #assign(NamedRef, Optional, Hash)}, which only
-     * update the updates the HEAD of a named reference, but does not add a commit.
+     * For {@link org.projectnessie.versioned.persist.adapter.DatabaseAdapter#create(NamedRef, Hash,
+     * Instant)} and {@link #assign(NamedRef, Optional, Hash)}, which only update the updates the
+     * HEAD of a named reference, but does not add a commit.
      */
     REF_UPDATE(false, false),
     /** For {@link #delete(NamedRef, Optional)}, which delete the reference and does not. */
@@ -959,7 +988,13 @@ public abstract class NonTransactionalDatabaseAdapter<
     if (head == null) {
       throw referenceNotFound(ref);
     }
-    return ReferenceInfo.of(Hash.of(head.getHash()), toNamedRef(head.getType(), ref));
+    Instant createdInstant = head.hasCreatedAt() ? Instant.ofEpochMilli(head.getCreatedAt()) : null;
+    Instant expiresInstant = head.hasExpiresAt() ? Instant.ofEpochMilli(head.getExpiresAt()) : null;
+    return ReferenceInfo.of(
+        Hash.of(head.getHash()),
+        ProtoSerialization.toNamedRef(head.getType(), ref),
+        createdInstant,
+        expiresInstant);
   }
 
   /**
@@ -1039,7 +1074,7 @@ public abstract class NonTransactionalDatabaseAdapter<
   protected Hash writeRefLogEntry(
       NonTransactionalOperationContext ctx,
       String refName,
-      RefLogEntry.RefType refType,
+      RefType refType,
       Hash parentRefLogId,
       Hash commitHash,
       RefLogEntry.Operation operation,
@@ -1068,7 +1103,7 @@ public abstract class NonTransactionalDatabaseAdapter<
 
   private RefLogEntry buildRefLogEntry(
       String refName,
-      RefLogEntry.RefType refType,
+      RefType refType,
       Hash parentRefLogId,
       Hash commitHash,
       RefLogEntry.Operation operation,

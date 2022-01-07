@@ -80,10 +80,6 @@ message GlobalStateLogEntry {
 message RefLogEntry {
   bytes ref_log_id = 1;
   bytes ref_name = 2;
-  enum RefType {
-    Branch = 0;
-    Tag = 1;
-  }
   RefType ref_type = 3;
   bytes commit_hash = 4;
   repeated bytes parents = 5;
@@ -98,6 +94,12 @@ message RefLogEntry {
   }
   Operation operation = 7;
   repeated bytes source_hashes = 8;
+}
+
+enum RefType {
+  Branch = 0;
+  Tag = 1;
+  Transaction = 2;
 }
 
 // Used by non-transactional database-adapters
@@ -115,12 +117,10 @@ message NamedReference {
 
 // Used by non-transactional database-adapters
 message RefPointer {
-  enum Type {
-    Branch = 0;
-    Tag = 1;
-  }
-  Type type = 1;
+  RefType type = 1;
   bytes hash = 2;
+  optional int64 createdAt = 3;
+  optional int64 expiresAt = 4;
 }
 
 message RepoProps {

@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.persist.store;
 
 import com.google.protobuf.ByteString;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -28,7 +29,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
-import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Diff;
@@ -37,6 +37,7 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableCommit;
 import org.projectnessie.versioned.ImmutableRefLogDetails;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.NamedMutableRef;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.Operation;
 import org.projectnessie.versioned.Put;
@@ -94,7 +95,7 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
 
   @Override
   public Hash commit(
-      @Nonnull BranchName branch,
+      @Nonnull NamedMutableRef branch,
       @Nonnull Optional<Hash> expectedHead,
       @Nonnull METADATA metadata,
       @Nonnull List<Operation<CONTENT>> operations)
@@ -162,7 +163,7 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
 
   @Override
   public void transplant(
-      BranchName targetBranch,
+      NamedMutableRef targetBranch,
       Optional<Hash> referenceHash,
       List<Hash> sequenceToTransplant,
       Function<METADATA, METADATA> updateCommitMetadata)
@@ -177,7 +178,7 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
   @Override
   public void merge(
       Hash fromHash,
-      BranchName toBranch,
+      NamedMutableRef toBranch,
       Optional<Hash> expectedHash,
       Function<METADATA, METADATA> updateCommitMetadata)
       throws ReferenceNotFoundException, ReferenceConflictException {
@@ -192,9 +193,10 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
   }
 
   @Override
-  public Hash create(NamedRef ref, Optional<Hash> targetHash)
+  public Hash create(NamedRef ref, Optional<Hash> targetHash, Instant expireAt)
       throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
-    return databaseAdapter.create(ref, targetHash.orElseGet(databaseAdapter::noAncestorHash));
+    return databaseAdapter.create(
+        ref, targetHash.orElseGet(databaseAdapter::noAncestorHash), expireAt);
   }
 
   @Override

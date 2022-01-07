@@ -72,7 +72,7 @@ class ITDeltaLogBranches extends AbstractSparkTest {
       // pass ignore
     }
     if (ref != null) {
-      api.deleteBranch().branch((Branch) ref).delete();
+      api.deleteReference().reference(ref).delete();
     }
     try {
       api.close();
@@ -94,8 +94,7 @@ class ITDeltaLogBranches extends AbstractSparkTest {
     Branch sourceRef = api.getDefaultBranch();
     api.createReference()
         .sourceRefName(sourceRef.getName())
-        .reference(Branch.of("test", sourceRef.getHash()))
-        .create();
+        .createAs(Branch.of("test", sourceRef.getHash()));
     // add some more data to main
     targetTable.write().format("delta").mode("append").save(tempPath.getAbsolutePath());
 

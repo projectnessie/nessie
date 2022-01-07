@@ -15,6 +15,9 @@
  */
 package org.projectnessie.client.http;
 
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import org.projectnessie.api.http.HttpTreeApi;
@@ -29,6 +32,7 @@ import org.projectnessie.model.Branch;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Merge;
+import org.projectnessie.model.MutableReference;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferencesResponse;
@@ -52,17 +56,26 @@ class HttpTreeClient implements HttpTreeApi {
         .queryParam("pageToken", params.pageToken())
         .queryParam("fetch", FetchOption.getFetchOptionName(params.fetchOption()))
         .queryParam("filter", params.filter())
+        .queryParam(
+            "includeExpired",
+            params.includeExpired() != null ? params.includeExpired().toString() : null)
+        .queryParam(
+            "includeTransactions",
+            params.includeTransactions() != null ? params.includeTransactions().toString() : null)
         .get()
         .readEntity(ReferencesResponse.class);
   }
 
   @Override
-  public Reference createReference(String sourceRefName, @NotNull Reference reference)
+  public Reference createReference(
+      String sourceRefName, @NotNull Reference reference, @Nullable Instant expireAt)
       throws NessieNotFoundException, NessieConflictException {
     return client
         .newRequest()
         .path("trees/tree")
         .queryParam("sourceRefName", sourceRefName)
+        .queryParam(
+            "expireAt", expireAt != null ? DateTimeFormatter.ISO_INSTANT.format(expireAt) : null)
         .post(reference)
         .readEntity(Reference.class);
   }
@@ -80,47 +93,30 @@ class HttpTreeClient implements HttpTreeApi {
   }
 
   @Override
-  public void assignTag(
-      @NotNull String tagName, @NotNull String expectedHash, @NotNull Reference assignTo)
+  public void assignReference(
+      @NotNull String referenceType,
+      @NotNull String referenceName,
+      @NotNull String expectedHash,
+      @Valid @NotNull Reference assignTo)
       throws NessieNotFoundException, NessieConflictException {
     client
         .newRequest()
-        .path("trees/tag/{tagName}")
-        .resolveTemplate("tagName", tagName)
+        .path("trees/{referenceType}/{referenceName}")
+        .resolveTemplate("referenceType", referenceType)
+        .resolveTemplate("referenceName", referenceName)
         .queryParam("expectedHash", expectedHash)
         .put(assignTo);
   }
 
   @Override
-  public void deleteTag(@NotNull String tagName, @NotNull String expectedHash)
+  public void deleteReference(
+      @NotNull String referenceType, @NotNull String referenceName, @NotNull String expectedHash)
       throws NessieConflictException, NessieNotFoundException {
     client
         .newRequest()
-        .path("trees/tag/{tagName}")
-        .resolveTemplate("tagName", tagName)
-        .queryParam("expectedHash", expectedHash)
-        .delete();
-  }
-
-  @Override
-  public void assignBranch(
-      @NotNull String branchName, @NotNull String expectedHash, @NotNull Reference assignTo)
-      throws NessieNotFoundException, NessieConflictException {
-    client
-        .newRequest()
-        .path("trees/branch/{branchName}")
-        .resolveTemplate("branchName", branchName)
-        .queryParam("expectedHash", expectedHash)
-        .put(assignTo);
-  }
-
-  @Override
-  public void deleteBranch(@NotNull String branchName, @NotNull String expectedHash)
-      throws NessieConflictException, NessieNotFoundException {
-    client
-        .newRequest()
-        .path("trees/branch/{branchName}")
-        .resolveTemplate("branchName", branchName)
+        .path("trees/{referenceType}/{referenceName}")
+        .resolveTemplate("referenceType", referenceType)
+        .resolveTemplate("referenceName", referenceName)
         .queryParam("expectedHash", expectedHash)
         .delete();
   }
@@ -148,29 +144,35 @@ class HttpTreeClient implements HttpTreeApi {
   }
 
   @Override
-  public void transplantCommitsIntoBranch(
-      @NotNull String branchName,
+  public void transplantCommits(
+      @NotNull String referenceType,
+      @NotNull String referenceName,
       @NotNull String expectedHash,
       String message,
       @Valid Transplant transplant)
       throws NessieNotFoundException, NessieConflictException {
     client
         .newRequest()
-        .path("trees/branch/{branchName}/transplant")
-        .resolveTemplate("branchName", branchName)
+        .path("trees/{referenceType}/{referenceName}/transplant")
+        .resolveTemplate("referenceType", referenceType)
+        .resolveTemplate("referenceName", referenceName)
         .queryParam("expectedHash", expectedHash)
         .queryParam("message", message)
         .post(transplant);
   }
 
   @Override
-  public void mergeRefIntoBranch(
-      @NotNull String branchName, @NotNull String expectedHash, @NotNull @Valid Merge merge)
+  public void mergeRef(
+      @NotNull String referenceType,
+      @NotNull String referenceName,
+      @NotNull String expectedHash,
+      @NotNull @Valid Merge merge)
       throws NessieNotFoundException, NessieConflictException {
     client
         .newRequest()
-        .path("trees/branch/{branchName}/merge")
-        .resolveTemplate("branchName", branchName)
+        .path("trees/{referenceType}/{referenceName}/merge")
+        .resolveTemplate("referenceType", referenceType)
+        .resolveTemplate("referenceName", referenceName)
         .queryParam("expectedHash", expectedHash)
         .post(merge);
   }
@@ -194,15 +196,19 @@ class HttpTreeClient implements HttpTreeApi {
   }
 
   @Override
-  public Branch commitMultipleOperations(
-      String branch, @NotNull String expectedHash, @NotNull Operations operations)
+  public MutableReference commitMultipleOperations(
+      @NotNull String referenceType,
+      @NotNull String referenceName,
+      @NotNull String expectedHash,
+      @NotNull Operations operations)
       throws NessieNotFoundException, NessieConflictException {
     return client
         .newRequest()
-        .path("trees/branch/{branchName}/commit")
-        .resolveTemplate("branchName", branch)
+        .path("trees/{referenceType}/{referenceName}/commit")
+        .resolveTemplate("referenceType", referenceType)
+        .resolveTemplate("referenceName", referenceName)
         .queryParam("expectedHash", expectedHash)
         .post(operations)
-        .readEntity(Branch.class);
+        .readEntity(MutableReference.class);
   }
 }

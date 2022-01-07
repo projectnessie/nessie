@@ -30,7 +30,7 @@ import org.immutables.value.Value;
 @JsonSerialize(as = ImmutableBranch.class)
 @JsonDeserialize(as = ImmutableBranch.class)
 @JsonTypeName("BRANCH")
-public interface Branch extends Reference {
+public interface Branch extends MutableReference {
 
   /**
    * Validation rule using {@link org.projectnessie.model.Validation#validateReferenceName(String)}.
@@ -47,4 +47,7 @@ public interface Branch extends Reference {
   static Branch of(String name, String hash) {
     return builder().name(name).hash(hash).build();
   }
+
+  @Override
+  Branch withHash(String hash);
 }

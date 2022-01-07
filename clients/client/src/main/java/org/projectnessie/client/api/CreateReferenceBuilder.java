@@ -15,6 +15,7 @@
  */
 package org.projectnessie.client.api;
 
+import java.time.Instant;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
@@ -35,5 +36,29 @@ public interface CreateReferenceBuilder {
 
   CreateReferenceBuilder reference(@Valid @NotNull Reference reference);
 
+  CreateReferenceBuilder expireAt(@Valid @NotNull Instant expireAt);
+
+  /**
+   * Creates the reference as configured on this builder. Prefer {@link #createAs(Reference)}
+   * instead of {@link #reference(Reference)} plus this method.
+   *
+   * @return the reference with the committed operations, so with the updated commit hash.
+   */
   Reference create() throws NessieNotFoundException, NessieConflictException;
+
+  /**
+   * Convenience method to return the created reference with the new HEAD.
+   *
+   * @param reference the reference as it should be created
+   * @param <T> reference type - either a {@link org.projectnessie.model.Branch} or {@link
+   *     org.projectnessie.model.Transaction} or {@link org.projectnessie.model.Tag}
+   * @return reference object pointing to the commit
+   */
+  default <T extends Reference> T createAs(T reference)
+      throws NessieConflictException, NessieNotFoundException {
+    reference(reference);
+    @SuppressWarnings("unchecked")
+    T created = (T) create();
+    return created;
+  }
 }

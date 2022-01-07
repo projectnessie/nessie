@@ -30,6 +30,7 @@ import org.projectnessie.model.{
   ContentKey,
   DeltaLakeTable,
   ImmutableDeltaLakeTable,
+  MutableReference,
   Reference,
   TableReference
 }
@@ -103,7 +104,8 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
       val ref = Option(requestedRef)
         .map(api.getReference.refName(_).get())
         .getOrElse(api.getDefaultBranch)
-      val map: util.Map[String, Reference] = new util.HashMap[String, Reference]
+      val map: util.Map[String, Reference] =
+        new util.HashMap[String, Reference]
       map.put(requestedRef, ref)
       map
     } catch {
@@ -282,10 +284,12 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
     // if no expected-hash is given and the commit runs into a conflict, let the operation retry once
     var retries = if (hash == null) 1 else 0
     while (true) {
-      val targetRef = if (ref == null) configuredRef().getName else ref
-      val targetHash =
-        if (hash == null) referenceByName(targetRef).getHash else hash
-      val table = updateDeltaTable(path, targetRef, lastCheckpoint)
+      val tRef: Reference =
+        if (ref == null) configuredRef() else referenceByName(ref)
+      val commitToRef: Reference =
+        if (hash == null) tRef else tRef.withHash(hash)
+
+      val table = updateDeltaTable(path, commitToRef.getName, lastCheckpoint)
       val put = Put.of(pathToKey(path.getParent), table)
       val meta = CommitMeta
         .builder()
@@ -296,19 +300,17 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
       try {
         val updated: Reference =
           api.commitMultipleOperations
-            .branchName(targetRef)
-            .hash(targetHash)
             .operation(put)
             .commitMeta(meta)
-            .commit()
+            .commitTo(commitToRef.asInstanceOf[MutableReference])
         updateReference(
           if (updated != null) updated
-          else api.getReference.refName(targetRef).get()
+          else api.getReference.refName(commitToRef.getName).get()
         )
         return true
       } catch {
         case ex: NessieConflictException =>
-          refreshReference(targetRef)
+          refreshReference(commitToRef.getName)
           if (retries <= 0) {
             throw ex
           }

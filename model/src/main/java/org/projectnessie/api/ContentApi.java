@@ -35,7 +35,8 @@ public interface ContentApi {
 
   /**
    * This operation returns the {@link Content} for a {@link ContentKey} in a named-reference (a
-   * {@link org.projectnessie.model.Branch} or {@link org.projectnessie.model.Tag}).
+   * {@link org.projectnessie.model.Branch} or {@link org.projectnessie.model.Tag} or {@link
+   * org.projectnessie.model.Transaction}).
    *
    * <p>If the table-metadata is tracked globally (Iceberg), Nessie returns a {@link Content}
    * object, that contains the most up-to-date part for the globally tracked part (Iceberg:
@@ -61,7 +62,7 @@ public interface ContentApi {
    * Similar to {@link #getContent(ContentKey, String, String)}, but takes multiple {@link
    * ContentKey}s and returns the {@link Content} for the one or more {@link ContentKey}s in a
    * named-reference (a {@link org.projectnessie.model.Branch} or {@link
-   * org.projectnessie.model.Tag}).
+   * org.projectnessie.model.Tag}) or {@link org.projectnessie.model.Transaction}.
    *
    * <p>If the table-metadata is tracked globally (Iceberg), Nessie returns a {@link Content}
    * object, that contains the most up-to-date part for the globally tracked part (Iceberg:

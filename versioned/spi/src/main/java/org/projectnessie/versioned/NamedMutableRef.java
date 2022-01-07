@@ -13,21 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.api;
+package org.projectnessie.versioned;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
-import org.projectnessie.error.NessieConflictException;
-import org.projectnessie.error.NessieNotFoundException;
-import org.projectnessie.model.Reference;
-
-/**
- * Request builder for "assign tag".
- *
- * @since {@link NessieApiV1}
- */
-public interface AssignTagBuilder extends OnTagBuilder<AssignTagBuilder> {
-  AssignTagBuilder assignTo(@Valid @NotNull Reference assignTo);
-
-  void assign() throws NessieNotFoundException, NessieConflictException;
-}
+/** A ref that can be used to commit to, so a branch or transaction, but not a tag. */
+public interface NamedMutableRef extends NamedRef {}

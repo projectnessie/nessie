@@ -15,13 +15,18 @@
  */
 package org.projectnessie.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import java.time.Instant;
 import javax.annotation.Nullable;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
+import org.projectnessie.model.CommitMeta.InstantDeserializer;
+import org.projectnessie.model.CommitMeta.InstantSerializer;
 
 @Schema(
     type = SchemaType.OBJECT,
@@ -38,6 +43,18 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ImmutableReferenceMetadata.class)
 @JsonTypeName("REFERENCE_METADATA")
 public interface ReferenceMetadata {
+
+  @Nullable
+  @JsonInclude(Include.NON_NULL)
+  @JsonSerialize(using = InstantSerializer.class)
+  @JsonDeserialize(using = InstantDeserializer.class)
+  Instant getCreatedAt();
+
+  @Nullable
+  @JsonInclude(Include.NON_NULL)
+  @JsonSerialize(using = InstantSerializer.class)
+  @JsonDeserialize(using = InstantDeserializer.class)
+  Instant getExpireAt();
 
   @Nullable
   Integer getNumCommitsAhead();

@@ -25,10 +25,12 @@ import org.projectnessie.model.Branch;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferenceMetadata;
 import org.projectnessie.model.Tag;
+import org.projectnessie.model.Transaction;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.TagName;
+import org.projectnessie.versioned.TransactionName;
 
 class RefUtilTest {
 
@@ -37,9 +39,13 @@ class RefUtilTest {
 
   @Test
   void toNamedRef() {
+    assertThat(RefUtil.toNamedRef(Transaction.of(REF_NAME, HASH_VALUE)))
+      .isEqualTo(TransactionName.of(REF_NAME));
     assertThat(RefUtil.toNamedRef(Branch.of(REF_NAME, HASH_VALUE)))
         .isEqualTo(BranchName.of(REF_NAME));
     assertThat(RefUtil.toNamedRef(Tag.of(REF_NAME, HASH_VALUE))).isEqualTo(TagName.of(REF_NAME));
+    assertThat(RefUtil.toNamedRef(Transaction.of(REF_NAME, null)))
+      .isEqualTo(TransactionName.of(REF_NAME));
     assertThat(RefUtil.toNamedRef(Branch.of(REF_NAME, null))).isEqualTo(BranchName.of(REF_NAME));
     assertThat(RefUtil.toNamedRef(Tag.of(REF_NAME, null))).isEqualTo(TagName.of(REF_NAME));
   }
@@ -67,6 +73,11 @@ class RefUtilTest {
                       public ReferenceMetadata getMetadata() {
                         return null;
                       }
+
+                      @Override
+                      public Reference withHash(String hash) {
+                        return null;
+                      }
                     }))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageStartingWith(
@@ -75,10 +86,14 @@ class RefUtilTest {
 
   @Test
   void toReferenceString() {
+    assertThat(RefUtil.toReference(TransactionName.of(REF_NAME), HASH_VALUE))
+      .isEqualTo(Transaction.of(REF_NAME, HASH_VALUE));
     assertThat(RefUtil.toReference(BranchName.of(REF_NAME), HASH_VALUE))
         .isEqualTo(Branch.of(REF_NAME, HASH_VALUE));
     assertThat(RefUtil.toReference(TagName.of(REF_NAME), HASH_VALUE))
         .isEqualTo(Tag.of(REF_NAME, HASH_VALUE));
+    assertThat(RefUtil.toReference(TransactionName.of(REF_NAME), (String) null))
+      .isEqualTo(Transaction.of(REF_NAME, null));
     assertThat(RefUtil.toReference(BranchName.of(REF_NAME), (String) null))
         .isEqualTo(Branch.of(REF_NAME, null));
     assertThat(RefUtil.toReference(TagName.of(REF_NAME), (String) null))
@@ -87,10 +102,14 @@ class RefUtilTest {
 
   @Test
   void toReferenceHash() {
+    assertThat(RefUtil.toReference(TransactionName.of(REF_NAME), Hash.of(HASH_VALUE)))
+      .isEqualTo(Transaction.of(REF_NAME, HASH_VALUE));
     assertThat(RefUtil.toReference(BranchName.of(REF_NAME), Hash.of(HASH_VALUE)))
         .isEqualTo(Branch.of(REF_NAME, HASH_VALUE));
     assertThat(RefUtil.toReference(TagName.of(REF_NAME), Hash.of(HASH_VALUE)))
         .isEqualTo(Tag.of(REF_NAME, HASH_VALUE));
+    assertThat(RefUtil.toReference(TransactionName.of(REF_NAME), (Hash) null))
+      .isEqualTo(Transaction.of(REF_NAME, null));
     assertThat(RefUtil.toReference(BranchName.of(REF_NAME), (Hash) null))
         .isEqualTo(Branch.of(REF_NAME, null));
     assertThat(RefUtil.toReference(TagName.of(REF_NAME), (Hash) null))

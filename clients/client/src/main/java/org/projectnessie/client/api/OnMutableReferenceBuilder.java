@@ -13,23 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned;
+package org.projectnessie.client.api;
 
-import javax.annotation.Nonnull;
-import org.immutables.value.Value;
+import org.projectnessie.model.MutableReference;
 
-/** A named reference representing a branch. */
-@Value.Immutable
-public interface BranchName extends NamedMutableRef {
-
-  /**
-   * Create a new branch reference.
-   *
-   * @param name the branch name
-   * @return an instance of {@code BranchName} for the provided name
-   */
-  @Nonnull
-  static BranchName of(@Nonnull String name) {
-    return ImmutableBranchName.builder().name(name).build();
-  }
+/** Base interface for requests against a branch. */
+public interface OnMutableReferenceBuilder<R extends OnMutableReferenceBuilder<R>> {
+  R reference(MutableReference reference);
 }

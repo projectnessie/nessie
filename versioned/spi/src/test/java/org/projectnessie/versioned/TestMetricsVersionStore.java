@@ -101,7 +101,8 @@ class TestMetricsVersionStore {
             new VersionStoreInvocation<>(
                 "getnamedref",
                 vs -> vs.getNamedRef("mock-branch", GetNamedRefsParams.DEFAULT),
-                () -> ReferenceInfo.of(Hash.of("cafebabe"), BranchName.of("mock-branch")),
+                () ->
+                    ReferenceInfo.of(Hash.of("cafebabe"), BranchName.of("mock-branch"), null, null),
                 refNotFoundThrows),
             new VersionStoreInvocation<>(
                 "toref",
@@ -143,7 +144,8 @@ class TestMetricsVersionStore {
                 refNotFoundAndRefConflictThrows),
             new VersionStoreInvocation<>(
                 "create",
-                vs -> vs.create(BranchName.of("mock-branch"), Optional.of(Hash.of("cafebabe"))),
+                vs ->
+                    vs.create(BranchName.of("mock-branch"), Optional.of(Hash.of("cafebabe")), null),
                 () -> Hash.of("cafebabedeadbeef"),
                 refNotFoundAndRefAlreadyExistsThrows),
             new VersionStoreInvocation<>(

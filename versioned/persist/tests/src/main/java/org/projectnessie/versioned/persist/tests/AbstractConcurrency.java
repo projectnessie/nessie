@@ -219,7 +219,7 @@ public abstract class AbstractConcurrency {
       for (Entry<BranchName, Set<Key>> branchKeys : keysPerBranch.entrySet()) {
         BranchName branch = branchKeys.getKey();
         databaseAdapter.create(
-            branch, databaseAdapter.hashOnReference(BranchName.of("main"), Optional.empty()));
+            branch, databaseAdapter.hashOnReference(BranchName.of("main"), Optional.empty()), null);
         ImmutableCommitAttempt.Builder commitAttempt =
             ImmutableCommitAttempt.builder()
                 .commitToBranch(branchKeys.getKey())

@@ -18,8 +18,13 @@ package org.projectnessie.versioned.persist.serialize;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.TreeMap;
+import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.NamedMutableRef;
+import org.projectnessie.versioned.NamedRef;
+import org.projectnessie.versioned.TagName;
+import org.projectnessie.versioned.TransactionName;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
@@ -33,6 +38,7 @@ import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.KeyWithType;
 import org.projectnessie.versioned.persist.adapter.RefLog;
 import org.projectnessie.versioned.persist.adapter.RepoDescription;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefType;
 
 public class ProtoSerialization {
 
@@ -75,6 +81,47 @@ public class ProtoSerialization {
         RepoDescription.builder().repoVersion(proto.getRepoVersion());
     proto.getPropertiesList().forEach(e -> repoDesc.putProperties(e.getKey(), e.getValue()));
     return repoDesc.build();
+  }
+
+  /** Get the protobuf-enum-value for a named-reference. */
+  public static RefType refToRefType(NamedRef ref) {
+    if (ref instanceof TransactionName) {
+      return RefType.Transaction;
+    }
+    if (ref instanceof BranchName) {
+      return RefType.Branch;
+    }
+    if (ref instanceof TagName) {
+      return RefType.Tag;
+    }
+    throw new IllegalArgumentException("Unknown reference type: " + ref);
+  }
+
+  public static RefType mutableRefToRefType(NamedMutableRef ref) {
+    if (ref instanceof TransactionName) {
+      return RefType.Transaction;
+    }
+    if (ref instanceof BranchName) {
+      return RefType.Branch;
+    }
+    throw new IllegalArgumentException("Unknown mutable reference type: " + ref);
+  }
+
+  /**
+   * Transform the protobuf-enum-value for the named-reference-type plus the reference name into a
+   * {@link NamedRef}.
+   */
+  public static NamedRef toNamedRef(RefType type, String name) {
+    switch (type) {
+      case Branch:
+        return BranchName.of(name);
+      case Tag:
+        return TagName.of(name);
+      case Transaction:
+        return TransactionName.of(name);
+      default:
+        throw new IllegalArgumentException(type.name());
+    }
   }
 
   public static AdapterTypes.CommitLogEntry toProto(CommitLogEntry entry) {

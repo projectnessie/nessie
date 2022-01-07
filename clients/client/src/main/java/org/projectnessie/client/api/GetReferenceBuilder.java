@@ -36,9 +36,9 @@ public interface GetReferenceBuilder {
           String refName);
 
   /**
-   * Will fetch additional metadata about {@link org.projectnessie.model.Branch} instances, such as
-   * number of commits ahead/behind or the common ancestor in relation to the default branch, and
-   * the commit metadata for the HEAD commit.
+   * Will fetch additional metadata about {@link org.projectnessie.model.Reference}s, such as number
+   * of commits ahead/behind or the common ancestor in relation to the default branch, and the
+   * commit metadata for the HEAD commit.
    *
    * @return {@link GetReferenceBuilder}
    * @param fetchOption The option indicating how much info to fetch

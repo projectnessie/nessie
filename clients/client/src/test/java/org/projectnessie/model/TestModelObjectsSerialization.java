@@ -59,16 +59,27 @@ public class TestModelObjectsSerialization {
   static List<Case> goodCases() {
     final Instant now = Instant.now();
     final String branchName = "testBranch";
+    final String transactionName = "txn-123-456-789";
 
     return Arrays.asList(
         new Case(
             Branch.of(branchName, HASH),
             Branch.class,
-            Json.from("type", "BRANCH").add("name", "testBranch").add("hash", HASH)),
+            Json.from("type", "BRANCH").add("name", branchName).add("hash", HASH)),
         new Case(
             Branch.of(branchName, null),
             Branch.class,
-            Json.from("type", "BRANCH").add("name", "testBranch").addNoQuotes("hash", "null")),
+            Json.from("type", "BRANCH").add("name", branchName).addNoQuotes("hash", "null")),
+        new Case(
+            Transaction.of(transactionName, HASH),
+            Transaction.class,
+            Json.from("type", "TRANSACTION").add("name", transactionName).add("hash", HASH)),
+        new Case(
+            Transaction.of(transactionName, null),
+            Transaction.class,
+            Json.from("type", "TRANSACTION")
+                .add("name", transactionName)
+                .addNoQuotes("hash", "null")),
         new Case(
             Tag.of("tagname", HASH),
             Tag.class,
@@ -149,11 +160,19 @@ public class TestModelObjectsSerialization {
         new Case(
             Branch.class,
             Json.from("type", "BRANCH").add("name", "testBranch").add("hash", "invalidhash")),
+        new Case(
+            Transaction.class,
+            Json.from("type", "TRANSACTION").add("name", "testBranch").add("hash", "invalidhash")),
+        new Case(
+            Tag.class, Json.from("type", "TAG").add("name", "tagname").add("hash", "invalidhash")),
 
         // No name
         new Case(
             Branch.class,
             Json.from("type", "BRANCH").addNoQuotes("name", "null").add("hash", HASH)),
+        new Case(
+            Transaction.class,
+            Json.from("type", "TRANSACTION").addNoQuotes("name", "null").add("hash", HASH)),
         new Case(
             Transplant.class,
             Json.arr("hashesToTransplant", "invalidhash").addNoQuotes("fromRefName", "null")),
@@ -161,9 +180,7 @@ public class TestModelObjectsSerialization {
         // Invalid hash
         new Case(
             Transplant.class,
-            Json.arr("hashesToTransplant", "invalidhash").add("fromRefName", "testBranch")),
-        new Case(
-            Tag.class, Json.from("type", "TAG").add("name", "tagname").add("hash", "invalidhash")));
+            Json.arr("hashesToTransplant", "invalidhash").add("fromRefName", "testBranch")));
   }
 
   static class Case {

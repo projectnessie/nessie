@@ -157,7 +157,7 @@ public abstract class AbstractVersionStoreTest extends AbstractITVersionStore {
     int numCommits = 50;
 
     Hash[] hashesKnownByUser = new Hash[numUsers];
-    Hash createHash = store().create(branch, Optional.empty());
+    Hash createHash = store().create(branch, Optional.empty(), null);
     Arrays.fill(hashesKnownByUser, createHash);
 
     List<String> expectedValues = new ArrayList<>();
@@ -220,7 +220,7 @@ public abstract class AbstractVersionStoreTest extends AbstractITVersionStore {
     BranchName branch = BranchName.of("recreateTable-main");
     Key key = Key.of("recreateTable");
 
-    store().create(branch, Optional.empty());
+    store().create(branch, Optional.empty(), null);
     // commit just something to have a "real" common ancestor and not "beginning of time", which
     // means no-common-ancestor
     Hash ancestor =
@@ -296,7 +296,7 @@ public abstract class AbstractVersionStoreTest extends AbstractITVersionStore {
     Key key = Key.of("some", "table");
 
     BranchName branch0 = BranchName.of("globalStateDuplicateTable-main");
-    store().create(branch0, Optional.empty());
+    store().create(branch0, Optional.empty(), null);
     // commit just something to have a "real" common ancestor and not "beginning of time", which
     // means no-common-ancestor
     Hash ancestor =
@@ -312,8 +312,8 @@ public abstract class AbstractVersionStoreTest extends AbstractITVersionStore {
     // WITHOUT global-state, it is okay to work
     BranchName branch1 = BranchName.of("globalStateDuplicateTable-branch1");
     BranchName branch2 = BranchName.of("globalStateDuplicateTable-branch2");
-    assertThat(store().create(branch1, Optional.of(ancestor))).isEqualTo(ancestor);
-    assertThat(store().create(branch2, Optional.of(ancestor))).isEqualTo(ancestor);
+    assertThat(store().create(branch1, Optional.of(ancestor), null)).isEqualTo(ancestor);
+    assertThat(store().create(branch2, Optional.of(ancestor), null)).isEqualTo(ancestor);
 
     List<Operation<String>> putForBranch1;
     List<Operation<String>> putForBranch2;
@@ -504,7 +504,8 @@ public abstract class AbstractVersionStoreTest extends AbstractITVersionStore {
                 s ->
                     s.create(
                         BranchName.of("foo"),
-                        Optional.of(Hash.of("12341234123412341234123412341234123412341234")))),
+                        Optional.of(Hash.of("12341234123412341234123412341234123412341234")),
+                        null)),
         // commit()
         new ReferenceNotFoundFunction("commit/branch")
             .msg("Named reference 'this-one-should-not-exist' not found")
@@ -600,12 +601,12 @@ public abstract class AbstractVersionStoreTest extends AbstractITVersionStore {
     }
 
     BranchName testBranch = BranchName.of("testBranch");
-    Hash testBranchHash = store.create(testBranch, Optional.empty());
+    Hash testBranchHash = store.create(testBranch, Optional.empty(), null);
     store.assign(testBranch, Optional.of(testBranchHash), mainRef.getHash());
     assertThat(store.toRef(testBranch.getName()).getHash()).isEqualTo(mainRef.getHash());
 
     TagName testTag = TagName.of("testTag");
-    Hash testTagHash = store.create(testTag, Optional.empty());
+    Hash testTagHash = store.create(testTag, Optional.empty(), null);
     store.assign(testTag, Optional.of(testTagHash), mainRef.getHash());
     assertThat(store.toRef(testTag.getName()).getHash()).isEqualTo(mainRef.getHash());
   }

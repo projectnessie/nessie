@@ -62,7 +62,7 @@ public abstract class AbstractManyCommits {
   void manyCommits(int numCommits) throws Exception {
     BranchName branch = BranchName.of("manyCommits-" + numCommits);
     databaseAdapter.create(
-        branch, databaseAdapter.hashOnReference(BranchName.of("main"), Optional.empty()));
+        branch, databaseAdapter.hashOnReference(BranchName.of("main"), Optional.empty()), null);
 
     Hash[] commits = new Hash[numCommits];
 

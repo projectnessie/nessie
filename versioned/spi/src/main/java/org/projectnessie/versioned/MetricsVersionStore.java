@@ -22,6 +22,7 @@ import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.Timer.Sample;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -82,7 +83,7 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
 
   @Override
   public Hash commit(
-      @Nonnull BranchName branch,
+      @Nonnull NamedMutableRef branch,
       @Nonnull Optional<Hash> referenceHash,
       @Nonnull METADATA metadata,
       @Nonnull List<Operation<VALUE>> operations)
@@ -93,7 +94,7 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
 
   @Override
   public void transplant(
-      BranchName targetBranch,
+      NamedMutableRef targetBranch,
       Optional<Hash> referenceHash,
       List<Hash> sequenceToTransplant,
       Function<METADATA, METADATA> updateCommitMetadata)
@@ -108,7 +109,7 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
   @Override
   public void merge(
       Hash fromHash,
-      BranchName toBranch,
+      NamedMutableRef toBranch,
       Optional<Hash> expectedHash,
       Function<METADATA, METADATA> updateCommitMetadata)
       throws ReferenceNotFoundException, ReferenceConflictException {
@@ -124,10 +125,10 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
   }
 
   @Override
-  public Hash create(NamedRef ref, Optional<Hash> targetHash)
+  public Hash create(NamedRef ref, Optional<Hash> targetHash, Instant expireAt)
       throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
     return this.<Hash, ReferenceNotFoundException, ReferenceAlreadyExistsException>delegate2ExR(
-        "create", () -> delegate.create(ref, targetHash));
+        "create", () -> delegate.create(ref, targetHash, expireAt));
   }
 
   @Override

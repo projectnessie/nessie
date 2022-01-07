@@ -19,16 +19,21 @@ import java.util.Objects;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
+import org.projectnessie.model.Transaction;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.TagName;
+import org.projectnessie.versioned.TransactionName;
 
 public final class RefUtil {
   private RefUtil() {}
 
   public static NamedRef toNamedRef(Reference reference) {
     Objects.requireNonNull(reference, "reference must not be null");
+    if (reference instanceof Transaction) {
+      return TransactionName.of(reference.getName());
+    }
     if (reference instanceof Branch) {
       return BranchName.of(reference.getName());
     }
@@ -45,6 +50,9 @@ public final class RefUtil {
 
   public static Reference toReference(NamedRef namedRef, String hash) {
     Objects.requireNonNull(namedRef, "namedRef must not be null");
+    if (namedRef instanceof TransactionName) {
+      return Transaction.of(namedRef.getName(), hash);
+    }
     if (namedRef instanceof BranchName) {
       return Branch.of(namedRef.getName(), hash);
     }
