@@ -17,7 +17,6 @@ package org.projectnessie.versioned.persist.adapter;
 
 import java.time.Clock;
 import org.immutables.value.Value;
-import org.projectnessie.versioned.RefLog;
 
 /**
  * Base database-adapter configuration type.

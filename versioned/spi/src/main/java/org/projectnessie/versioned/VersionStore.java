@@ -288,5 +288,5 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @param refLogId initial reflog id to be used
    * @return A stream of reflog entries.
    */
-  Stream<RefLog> getRefLog(Hash refLogId) throws RefLogNotFoundException;
+  Stream<RefLogDetails> getRefLog(Hash refLogId) throws RefLogNotFoundException;
 }

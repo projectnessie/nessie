@@ -230,7 +230,7 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
   }
 
   @Override
-  public Stream<RefLog> getRefLog(Hash refLogId) throws RefLogNotFoundException {
+  public Stream<RefLogDetails> getRefLog(Hash refLogId) throws RefLogNotFoundException {
     return delegate.getRefLog(refLogId);
   }
 

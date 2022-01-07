@@ -18,18 +18,18 @@ package org.projectnessie.versioned.persist.serialize;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.ImmutableRefLog;
 import org.projectnessie.versioned.Key;
-import org.projectnessie.versioned.RefLog;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
 import org.projectnessie.versioned.persist.adapter.ContentIdWithType;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ImmutableKeyList;
+import org.projectnessie.versioned.persist.adapter.ImmutableRefLog;
 import org.projectnessie.versioned.persist.adapter.KeyList;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.KeyWithType;
+import org.projectnessie.versioned.persist.adapter.RefLog;
 
 public class ProtoSerialization {
   public static AdapterTypes.CommitLogEntry toProto(CommitLogEntry entry) {

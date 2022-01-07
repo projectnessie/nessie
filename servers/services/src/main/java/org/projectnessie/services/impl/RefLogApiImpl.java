@@ -34,7 +34,7 @@ import org.projectnessie.model.RefLogResponse;
 import org.projectnessie.services.authz.AccessChecker;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.RefLog;
+import org.projectnessie.versioned.RefLogDetails;
 import org.projectnessie.versioned.RefLogNotFoundException;
 import org.projectnessie.versioned.VersionStore;
 
@@ -63,7 +63,7 @@ public class RefLogApiImpl extends BaseApiImpl implements RefLogApi {
     }
     Hash endRef = null == params.pageToken() ? endHash : Hash.of(params.pageToken());
 
-    try (Stream<RefLog> entries = getStore().getRefLog(endRef)) {
+    try (Stream<RefLogDetails> entries = getStore().getRefLog(endRef)) {
       Stream<RefLogResponse.RefLogResponseEntry> logEntries =
           entries.map(
               entry -> {
@@ -76,7 +76,7 @@ public class RefLogApiImpl extends BaseApiImpl implements RefLogApi {
                     .commitHash(entry.getCommitHash().asString())
                     .operation(entry.getOperation())
                     .operationTime(entry.getOperationTime())
-                    .parentRefLogId(entry.getParents().get(0).asString());
+                    .parentRefLogId(entry.getParentRefLogId().asString());
                 entry.getSourceHashes().forEach(hash -> logEntry.addSourceHashes(hash.asString()));
                 return logEntry.build();
               });

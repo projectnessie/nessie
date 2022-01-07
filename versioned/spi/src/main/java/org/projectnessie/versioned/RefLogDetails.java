@@ -20,7 +20,7 @@ import org.immutables.value.Value;
 
 /** Represents a reflog-entry stored in the database. */
 @Value.Immutable
-public interface RefLog {
+public interface RefLogDetails {
 
   /** Reflog id of the current entry. */
   Hash getRefLogId();
@@ -35,7 +35,7 @@ public interface RefLog {
   Hash getCommitHash();
 
   /** Parent reflog id of the current entry. */
-  List<Hash> getParents();
+  Hash getParentRefLogId();
 
   /** Time in microseconds since epoch. */
   long getOperationTime();

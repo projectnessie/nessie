@@ -59,7 +59,6 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableReferenceInfo;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.NamedRef;
-import org.projectnessie.versioned.RefLog;
 import org.projectnessie.versioned.RefLogNotFoundException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceInfo;
@@ -80,6 +79,7 @@ import org.projectnessie.versioned.persist.adapter.KeyList;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.KeyWithType;
+import org.projectnessie.versioned.persist.adapter.RefLog;
 
 /**
  * Contains all the database-independent logic for a Database-adapter.

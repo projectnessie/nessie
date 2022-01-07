@@ -177,7 +177,7 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
   }
 
   @Override
-  public Stream<RefLog> getRefLog(Hash refLogId) throws RefLogNotFoundException {
+  public Stream<RefLogDetails> getRefLog(Hash refLogId) throws RefLogNotFoundException {
     return delegateStreamRefLogEx(() -> delegate.getRefLog(refLogId));
   }
 
