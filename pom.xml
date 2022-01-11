@@ -893,6 +893,7 @@ limitations under the License.
             <include>**/.mvn/**</include>
           </includes>
           <excludes>
+            <exclude>**/jvm.config</exclude>
             <exclude>**/*.java</exclude>
             <exclude>**/*.scala</exclude>
             <!-- default excludes (minus some items) from https://github.com/mycila/license-maven-plugin/blob/61f65ac65bfc38246a15fb84083796c5e3afb053/license-maven-plugin/src/main/java/com/mycila/maven/plugin/license/Default.java -->
