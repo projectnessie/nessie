@@ -36,6 +36,7 @@ from ._endpoints import get_default_branch
 from ._endpoints import get_diff
 from ._endpoints import get_reference
 from ._endpoints import list_logs
+from ._endpoints import list_reflog
 from ._endpoints import list_tables
 from ._endpoints import merge
 from ..auth import setup_auth
@@ -60,6 +61,9 @@ from ..model import Reference
 from ..model import ReferenceSchema
 from ..model import ReferencesResponse
 from ..model import ReferencesResponseSchema
+from ..model import ReflogEntry
+from ..model import ReflogResponse
+from ..model import ReflogResponseSchema
 from ..model import Tag
 from ..model import Transplant
 from ..model import TransplantSchema
@@ -262,7 +266,7 @@ class NessieClient:
                     if fetch_max is not None:
                         fetch_max -= 1
                         if fetch_max <= 0:
-                            # yield only the requierd number of results, if server returns more records than expected.
+                            # yield only the required number of results, if server returns more records than expected.
                             break
                 if not logs.has_more or (fetch_max is not None and fetch_max <= 0):
                     break
@@ -288,3 +292,34 @@ class NessieClient:
         from_ref / to_ref can be any ref.
         """
         return DiffResponseSchema().load(get_diff(self._base_url, self._auth, from_ref, to_ref, self._ssl_verify))
+
+    def get_reflog(self: "NessieClient", max_records: Optional[int] = None, **query_params: Any) -> Generator[ReflogEntry, Any, None]:
+        """Fetch all reflog starting from the head or from the specified range."""
+        page_token = query_params.get("pageToken", None)
+
+        def fetch_reflog(fetch_max: Optional[int], token: Optional[str] = page_token) -> ReflogResponse:
+            if token:
+                query_params["pageToken"] = token
+
+            fetched_reflog = list_reflog(
+                base_url=self._base_url, auth=self._auth, ssl_verify=self._ssl_verify, max_records=fetch_max, **query_params
+            )
+            parsed_logs = ReflogResponseSchema().load(fetched_reflog)
+            return parsed_logs
+
+        reflog_response = fetch_reflog(fetch_max=max_records)
+
+        def generator(logs: ReflogResponse, fetch_max: Optional[int]) -> Generator[ReflogEntry, Any, None]:
+            while True:
+                for log in logs.log_entries:
+                    yield log
+                    if fetch_max is not None:
+                        fetch_max -= 1
+                        if fetch_max <= 0:
+                            # yield only the required number of results, if server returns more records than expected.
+                            break
+                if not logs.has_more or (fetch_max is not None and fetch_max <= 0):
+                    break
+                logs = fetch_reflog(fetch_max=fetch_max, token=logs.token)
+
+        return generator(reflog_response, max_records)

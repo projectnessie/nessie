@@ -22,6 +22,7 @@
      diff         Show diff between two given references.
      log          Show commit log.
      merge        Merge FROM_REF into another branch.
+     reflog       Show reflog.
      remote       Set and view remote endpoint.
      tag          Tag operations.
    
