@@ -9,7 +9,7 @@
     "@material-ui/lab": "^4.0.0-alpha.60",
     "@svgr/webpack": "6.2.0",
     "@types/bootstrap": "^5.1.8",
-    "@types/history": "^4.7.9",
+    "@types/history": "^4.7.10",
     "@types/material-ui": "^0.21.12",
     "@types/ramda": "^0.27.62",
     "@types/react": "^17.0.38",
