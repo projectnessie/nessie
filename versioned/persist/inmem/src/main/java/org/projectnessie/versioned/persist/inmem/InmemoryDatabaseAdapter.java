@@ -33,11 +33,13 @@ import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyWithType;
+import org.projectnessie.versioned.persist.adapter.RefLog;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapter;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalOperationContext;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogEntry;
 import org.projectnessie.versioned.persist.serialize.ProtoSerialization;
 
 public class InmemoryDatabaseAdapter
@@ -125,10 +127,12 @@ public class InmemoryDatabaseAdapter
       NonTransactionalOperationContext ctx,
       Hash globalId,
       Set<Hash> branchCommits,
-      Set<Hash> newKeyLists) {
+      Set<Hash> newKeyLists,
+      Hash refLogId) {
     store.globalStateLog.remove(dbKey(globalId));
     branchCommits.forEach(h -> store.commitLog.remove(dbKey(h)));
     newKeyLists.forEach(h -> store.keyLists.remove(dbKey(h)));
+    store.refLog.remove(dbKey(refLogId));
   }
 
   @Override
@@ -200,5 +204,32 @@ public class InmemoryDatabaseAdapter
   @Override
   protected int entitySize(KeyWithType entry) {
     return toProto(entry).getSerializedSize();
+  }
+
+  @Override
+  protected void writeRefLog(NonTransactionalOperationContext ctx, RefLogEntry entry)
+      throws ReferenceConflictException {
+    if (store.refLog.putIfAbsent(dbKey(entry.getRefLogId()), entry.toByteString()) != null) {
+      throw new ReferenceConflictException(" RefLog Hash collision detected");
+    }
+  }
+
+  @Override
+  protected RefLog fetchFromRefLog(NonTransactionalOperationContext ctx, Hash refLogId) {
+    if (refLogId == null) {
+      // set the current head as refLogId
+      refLogId = Hash.of(fetchGlobalPointer(ctx).getRefLogId());
+    }
+    return ProtoSerialization.protoToRefLog(store.refLog.get(dbKey(refLogId)));
+  }
+
+  @Override
+  protected List<RefLog> fetchPageFromRefLog(
+      NonTransactionalOperationContext ctx, List<Hash> hashes) {
+    return hashes.stream()
+        .map(this::dbKey)
+        .map(store.refLog::get)
+        .map(ProtoSerialization::protoToRefLog)
+        .collect(Collectors.toList());
   }
 }

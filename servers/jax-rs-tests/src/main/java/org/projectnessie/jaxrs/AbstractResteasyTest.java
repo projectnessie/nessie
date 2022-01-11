@@ -40,6 +40,7 @@ import org.projectnessie.model.ImmutablePut;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Operations;
+import org.projectnessie.model.RefLogResponse;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.Tag;
@@ -464,5 +465,33 @@ public abstract class AbstractResteasyTest {
     assertThat(diff.getKey()).isEqualTo(contentKey);
     assertThat(diff.getFrom()).isEqualTo(fromTable);
     assertThat(diff.getTo()).isEqualTo(toTable);
+  }
+
+  @Test
+  public void testGetRefLog() {
+    Branch branch = makeBranch("branch-temp");
+    IcebergTable table = IcebergTable.of("content-table", 42, 42, 42, 42);
+
+    ContentKey contentKey = ContentKey.of("key1");
+    commit(contentKey, table, branch, "code");
+
+    RefLogResponse refLogResponse =
+        rest().get("reflogs").then().statusCode(200).extract().as(RefLogResponse.class);
+
+    assertThat(refLogResponse.getLogEntries().get(0).getOperation()).isEqualTo("COMMIT");
+    assertThat(refLogResponse.getLogEntries().get(0).getRefName()).isEqualTo("branch-temp");
+    assertThat(refLogResponse.getLogEntries().get(1).getOperation()).isEqualTo("CREATE_REFERENCE");
+    assertThat(refLogResponse.getLogEntries().get(1).getRefName()).isEqualTo("branch-temp");
+
+    RefLogResponse refLogResponse1 =
+        rest()
+            .queryParam("endHash", refLogResponse.getLogEntries().get(1).getRefLogId())
+            .get("reflogs")
+            .then()
+            .statusCode(200)
+            .extract()
+            .as(RefLogResponse.class);
+    assertThat(refLogResponse1.getLogEntries().get(0).getRefLogId())
+        .isEqualTo(refLogResponse.getLogEntries().get(1).getRefLogId());
   }
 }

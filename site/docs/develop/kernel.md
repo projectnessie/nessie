@@ -71,11 +71,14 @@ to retrieve information. There are these subclasses:
 ### Non-transactional key-value databases
 
 The data model for non-transactional key-value databases relies on a single _global-state-pointer_,
-which is technically a table with a single row pointing to the _current_ entry in the _global-log_
-and the "HEAD"s of all named references (branches and tags).
+which is technically a table with a single row pointing to the _current_ entry in the _global-log_,
+_current_ entry in the _ref-log_ and the "HEAD"s of all named references (branches and tags).
 
 The _global-log_ contains the changes of the _global-state_, like the location of Iceberg's
 table metadata.
+
+The _ref-log_ contains the history with details of operations 
+like COMMIT, MERGE, TRANSPLANT, CREATE_REFERENCE, DELETE_REFERENCE, ASSIGN_REFERENCE.
 
 The _commit-log_ contains the individual Nessie commits.
 
@@ -122,6 +125,9 @@ The data model for transactional databases defines tables for
   value of the _global-state_,
 * the _named-references_, which define the commit hash/id of the "HEAD" of each named reference,
 * the _commit-log_, which contains all commits
+* the _ref-log_ contains the history with details of operations
+  like COMMIT, MERGE, TRANSPLANT, CREATE_REFERENCE, DELETE_REFERENCE, ASSIGN_REFERENCE.
+* the _ref-log-head_ contains current head of the _ref_log_ entry.
 
 All commit, transplant and merge operations as well as other write operations like creating,
 reassigning or deleting a named reference work inside a so-called "operation loop", which is
@@ -197,7 +203,7 @@ the global pointer. If the CAS operation succeeds, the Nessie commit operation h
 CAS operation failed, all optimistically written rows are deleted and the whole Nessie commit is
 retried.
 
-The logical data model shared by all non-transactional database adapters consists of four entities:
+The logical data model shared by all non-transactional database adapters consists of five entities:
 
 * _Global-pointer_ a single "table row" that points to the current _global-state-log_ and all HEADs
   for all named references. Consistent updates are guaranteed via a CAS operation on this entity
@@ -208,6 +214,8 @@ The logical data model shared by all non-transactional database adapters consist
   global state (currently Apache Iceberg). The row keys are random IDs.
 * _Key-lists_ acts as an "overflow" for large key lists that do not fit entirely into a single
   commit log entry's embedded key list.
+* _Ref-log_ contains the history with details of operations
+    like COMMIT, MERGE, TRANSPLANT, CREATE_REFERENCE, DELETE_REFERENCE, ASSIGN_REFERENCE.
 
 ### Transactional
 
@@ -216,7 +224,7 @@ on [TxDatabaseAdapter](https://github.com/projectnessie/nessie/blob/main/version
 and currently only implement the database specific nuances in the SQL syntax and Nessie data type
 mappings.
 
-The data for transactional database adapters consists of four tables:
+The data for transactional database adapters consists of six tables:
 
 * _Named-references_ contains all named references and their current HEAD, the latter is used to
   guarantee consistent updates.
@@ -227,6 +235,9 @@ The data for transactional database adapters consists of four tables:
   as for non-transactional databases.
 * _Key-lists_ acts as an "overflow" for large key lists that do not fit entirely into a single
   commit log entry's embedded key list.
+* _Ref-log_ contains the history with details of operations
+  like COMMIT, MERGE, TRANSPLANT, CREATE_REFERENCE, DELETE_REFERENCE, ASSIGN_REFERENCE.
+* _Ref-log-head_ contains current head of the _ref_log_ entry.
 
 ## Performance
 

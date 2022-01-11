@@ -46,6 +46,7 @@ import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.KeyWithType;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefPointer;
 
 /** (Re-)serialization tests using random data for relevant types. */
@@ -100,6 +101,17 @@ class TestSerialization {
                   b -> {
                     try {
                       return GlobalStatePointer.parseFrom(b);
+                    } catch (InvalidProtocolBufferException e) {
+                      throw new RuntimeException(e);
+                    }
+                  }),
+              new SerializationParam(
+                  TestSerialization::createRefLogEntry,
+                  RefLogEntry.class,
+                  o -> ((RefLogEntry) o).toByteArray(),
+                  b -> {
+                    try {
+                      return RefLogEntry.parseFrom(b);
                     } catch (InvalidProtocolBufferException e) {
                       throw new RuntimeException(e);
                     }
@@ -429,5 +441,22 @@ class TestSerialization {
         ContentId.of(randomString(64)),
         (byte) ThreadLocalRandom.current().nextInt(0, 127),
         randomBytes(120));
+  }
+
+  static RefLogEntry createRefLogEntry() {
+    RefLogEntry.Builder entry =
+        RefLogEntry.newBuilder().setOperationTime(System.nanoTime() / 1000L);
+    for (int i = 0; i < 20; i++) {
+      entry.addParents(randomHash().asBytes());
+    }
+    for (int i = 0; i < 20; i++) {
+      entry.addSourceHashes(randomHash().asBytes());
+    }
+    entry.setRefLogId(randomHash().asBytes());
+    entry.setRefName(ByteString.copyFromUtf8("temp"));
+    entry.setRefType(RefLogEntry.RefType.Branch);
+    entry.setCommitHash(randomHash().asBytes());
+    entry.setOperation(RefLogEntry.Operation.MERGE);
+    return entry.build();
   }
 }

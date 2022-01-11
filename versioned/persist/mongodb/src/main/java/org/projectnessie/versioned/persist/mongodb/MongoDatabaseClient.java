@@ -31,6 +31,7 @@ public class MongoDatabaseClient implements DatabaseConnectionProvider<MongoClie
   private static final String GLOBAL_LOG = "global_log";
   private static final String COMMIT_LOG = "commit_log";
   private static final String KEY_LIST = "key_list";
+  private static final String REF_LOG = "ref_log";
 
   private MongoClientConfig config;
   private MongoClient managedClient;
@@ -38,6 +39,7 @@ public class MongoDatabaseClient implements DatabaseConnectionProvider<MongoClie
   private MongoCollection<Document> globalLog;
   private MongoCollection<Document> commitLog;
   private MongoCollection<Document> keyLists;
+  private MongoCollection<Document> refLog;
 
   @Override
   public void configure(MongoClientConfig config) {
@@ -77,6 +79,7 @@ public class MongoDatabaseClient implements DatabaseConnectionProvider<MongoClie
     globalLog = database.getCollection(GLOBAL_LOG);
     commitLog = database.getCollection(COMMIT_LOG);
     keyLists = database.getCollection(KEY_LIST);
+    refLog = database.getCollection(REF_LOG);
   }
 
   public MongoCollection<Document> getGlobalPointers() {
@@ -93,5 +96,9 @@ public class MongoDatabaseClient implements DatabaseConnectionProvider<MongoClie
 
   public MongoCollection<Document> getKeyLists() {
     return keyLists;
+  }
+
+  public MongoCollection<Document> getRefLog() {
+    return refLog;
   }
 }

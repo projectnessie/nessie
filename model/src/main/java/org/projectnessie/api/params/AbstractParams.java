@@ -29,7 +29,7 @@ public abstract class AbstractParams {
   @Parameter(
       description =
           "paging continuation token, as returned in the previous value of the field 'token' in "
-              + "the corresponding 'EntriesResponse' or 'LogResponse' or 'ReferencesResponse'.")
+              + "the corresponding 'EntriesResponse' or 'LogResponse' or 'ReferencesResponse' or 'RefLogResponse'.")
   @QueryParam("pageToken")
   @Nullable
   private String pageToken;

@@ -25,9 +25,11 @@ import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
 import org.projectnessie.versioned.persist.adapter.ContentIdWithType;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ImmutableKeyList;
+import org.projectnessie.versioned.persist.adapter.ImmutableRefLog;
 import org.projectnessie.versioned.persist.adapter.KeyList;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.KeyWithType;
+import org.projectnessie.versioned.persist.adapter.RefLog;
 
 public class ProtoSerialization {
   public static AdapterTypes.CommitLogEntry toProto(CommitLogEntry entry) {
@@ -191,6 +193,44 @@ public class ProtoSerialization {
 
   public static AdapterTypes.Key keyToProto(Key key) {
     return AdapterTypes.Key.newBuilder().addAllElement(key.getElements()).build();
+  }
+
+  public static RefLog protoToRefLog(ByteString serialized) {
+    try {
+      if (serialized == null) {
+        return null;
+      }
+      AdapterTypes.RefLogEntry proto = AdapterTypes.RefLogEntry.parseFrom(serialized);
+      return protoToRefLog(proto);
+    } catch (InvalidProtocolBufferException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public static RefLog protoToRefLog(byte[] bytes) {
+    try {
+      if (bytes == null) {
+        return null;
+      }
+      AdapterTypes.RefLogEntry proto = AdapterTypes.RefLogEntry.parseFrom(bytes);
+      return protoToRefLog(proto);
+    } catch (InvalidProtocolBufferException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private static RefLog protoToRefLog(AdapterTypes.RefLogEntry proto) {
+    ImmutableRefLog.Builder entry =
+        ImmutableRefLog.builder()
+            .refLogId(Hash.of(proto.getRefLogId()))
+            .refName(proto.getRefName().toStringUtf8())
+            .refType(proto.getRefType().name())
+            .commitHash(Hash.of(proto.getCommitHash()))
+            .operationTime(proto.getOperationTime())
+            .operation(proto.getOperation().name());
+    proto.getParentsList().forEach(parentId -> entry.addParents(Hash.of(parentId)));
+    proto.getSourceHashesList().forEach(hash -> entry.addSourceHashes(Hash.of(hash)));
+    return entry.build();
   }
 
   public static Key protoToKey(AdapterTypes.Key key) {

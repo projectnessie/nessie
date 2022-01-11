@@ -45,6 +45,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Function;
@@ -73,6 +74,7 @@ import org.projectnessie.client.rest.NessieHttpResponseFilter;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.error.NessieRefLogNotFoundException;
 import org.projectnessie.error.NessieReferenceAlreadyExistsException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.Branch;
@@ -91,6 +93,7 @@ import org.projectnessie.model.Operation;
 import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Operation.Unchanged;
+import org.projectnessie.model.RefLogResponse;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferenceMetadata;
 import org.projectnessie.model.ReferencesResponse;
@@ -2317,5 +2320,149 @@ public abstract class AbstractTestRest {
 
       throw targetException;
     }
+  }
+
+  @Test
+  public void testReflog() throws BaseNessieClientServerException {
+    String tagName = "tag1_test_reflog";
+    String branch1 = "branch1_test_reflog";
+    String branch2 = "branch2_test_reflog";
+    String branch3 = "branch3_test_reflog";
+    String root = "ref_name_test_reflog";
+    // reflog 1: creating the default branch0
+    Branch branch0 = createBranch(root);
+    // reflog 2: create tag1
+    Reference createdTag =
+        api.createReference()
+            .sourceRefName(branch0.getName())
+            .reference(Tag.of(tagName, branch0.getHash()))
+            .create();
+    // reflog 3: create branch1
+    Reference createdBranch1 =
+        api.createReference()
+            .sourceRefName(branch0.getName())
+            .reference(Branch.of(branch1, branch0.getHash()))
+            .create();
+    // reflog 4: create branch2
+    Reference createdBranch2 =
+        api.createReference()
+            .sourceRefName(branch0.getName())
+            .reference(Branch.of(branch2, branch0.getHash()))
+            .create();
+    // reflog 5: create branch2
+    Branch createdBranch3 =
+        (Branch)
+            api.createReference()
+                .sourceRefName(branch0.getName())
+                .reference(Branch.of(branch3, branch0.getHash()))
+                .create();
+    // reflog 6: commit on default branch0
+    IcebergTable meta = IcebergTable.of("meep", 42, 42, 42, 42);
+    branch0 =
+        api.commitMultipleOperations()
+            .branchName(branch0.getName())
+            .hash(branch0.getHash())
+            .commitMeta(
+                CommitMeta.builder()
+                    .message("dummy commit log")
+                    .properties(ImmutableMap.of("prop1", "val1", "prop2", "val2"))
+                    .build())
+            .operation(Operation.Put.of(ContentKey.of("meep"), meta))
+            .commit();
+    // reflog 7: assign tag
+    api.assignTag().tagName(tagName).hash(createdTag.getHash()).assignTo(branch0).assign();
+    // reflog 8: assign ref
+    api.assignBranch()
+        .branchName(branch1)
+        .hash(createdBranch1.getHash())
+        .assignTo(branch0)
+        .assign();
+    // reflog 9: merge
+    api.mergeRefIntoBranch()
+        .branchName(branch2)
+        .hash(createdBranch2.getHash())
+        .fromRefName(branch1)
+        .fromHash(branch0.getHash())
+        .merge();
+    // reflog 10: transplant
+    api.transplantCommitsIntoBranch()
+        .hashesToTransplant(ImmutableList.of(Objects.requireNonNull(branch0.getHash())))
+        .fromRefName(branch1)
+        .branch(createdBranch3)
+        .transplant();
+    // reflog 11: delete branch
+    api.deleteBranch().branchName(branch1).hash(branch0.getHash()).delete();
+    // reflog 12: delete tag
+    api.deleteTag().tagName(tagName).hash(branch0.getHash()).delete();
+
+    RefLogResponse refLogResponse = api.getRefLog().get();
+    // verify reflog entries
+    assertThat(refLogResponse.getLogEntries().get(0).getOperation()).isEqualTo("DELETE_REFERENCE");
+    assertThat(refLogResponse.getLogEntries().get(0).getRefName()).isEqualTo(tagName);
+    assertThat(refLogResponse.getLogEntries().get(1).getOperation()).isEqualTo("DELETE_REFERENCE");
+    assertThat(refLogResponse.getLogEntries().get(1).getRefName()).isEqualTo(branch1);
+    assertThat(refLogResponse.getLogEntries().get(2).getOperation()).isEqualTo("TRANSPLANT");
+    assertThat(refLogResponse.getLogEntries().get(2).getRefName()).isEqualTo(branch3);
+    assertThat(refLogResponse.getLogEntries().get(2).getSourceHashes().size()).isEqualTo(1);
+    assertThat(refLogResponse.getLogEntries().get(3).getOperation()).isEqualTo("MERGE");
+    assertThat(refLogResponse.getLogEntries().get(3).getRefName()).isEqualTo(branch2);
+    assertThat(refLogResponse.getLogEntries().get(3).getSourceHashes().size()).isEqualTo(1);
+    assertThat(refLogResponse.getLogEntries().get(4).getOperation()).isEqualTo("ASSIGN_REFERENCE");
+    assertThat(refLogResponse.getLogEntries().get(4).getRefName()).isEqualTo(branch1);
+    assertThat(refLogResponse.getLogEntries().get(4).getSourceHashes().size()).isEqualTo(0);
+    assertThat(refLogResponse.getLogEntries().get(5).getOperation()).isEqualTo("ASSIGN_REFERENCE");
+    assertThat(refLogResponse.getLogEntries().get(5).getRefName()).isEqualTo(tagName);
+    assertThat(refLogResponse.getLogEntries().get(6).getOperation()).isEqualTo("COMMIT");
+    assertThat(refLogResponse.getLogEntries().get(6).getRefName()).isEqualTo(root);
+    assertThat(refLogResponse.getLogEntries().get(7).getOperation()).isEqualTo("CREATE_REFERENCE");
+    assertThat(refLogResponse.getLogEntries().get(7).getRefName()).isEqualTo(branch3);
+    assertThat(refLogResponse.getLogEntries().get(8).getOperation()).isEqualTo("CREATE_REFERENCE");
+    assertThat(refLogResponse.getLogEntries().get(8).getRefName()).isEqualTo(branch2);
+    assertThat(refLogResponse.getLogEntries().get(9).getOperation()).isEqualTo("CREATE_REFERENCE");
+    assertThat(refLogResponse.getLogEntries().get(9).getRefName()).isEqualTo(branch1);
+    assertThat(refLogResponse.getLogEntries().get(10).getOperation()).isEqualTo("CREATE_REFERENCE");
+    assertThat(refLogResponse.getLogEntries().get(10).getRefName()).isEqualTo(tagName);
+    assertThat(refLogResponse.getLogEntries().get(11).getOperation()).isEqualTo("CREATE_REFERENCE");
+    assertThat(refLogResponse.getLogEntries().get(11).getRefName()).isEqualTo(root);
+    // verify pagination (limit and token)
+    RefLogResponse refLogResponse1 = api.getRefLog().maxRecords(2).get();
+    assertThat(refLogResponse1.getLogEntries().size()).isEqualTo(2);
+    assertThat(refLogResponse1.getLogEntries().get(0).getRefLogId())
+        .isEqualTo(refLogResponse.getLogEntries().get(0).getRefLogId());
+    assertThat(refLogResponse1.getLogEntries().get(1).getRefLogId())
+        .isEqualTo(refLogResponse.getLogEntries().get(1).getRefLogId());
+    assertThat(refLogResponse1.isHasMore()).isTrue();
+    RefLogResponse refLogResponse2 = api.getRefLog().pageToken(refLogResponse1.getToken()).get();
+    // should start from the token.
+    assertThat(refLogResponse2.getLogEntries().get(0).getRefLogId())
+        .isEqualTo(refLogResponse1.getToken());
+    // verify startHash and endHash
+    RefLogResponse refLogResponse3 =
+        api.getRefLog().fromHash(refLogResponse.getLogEntries().get(10).getRefLogId()).get();
+    assertThat(refLogResponse3.getLogEntries().get(0).getRefLogId())
+        .isEqualTo(refLogResponse.getLogEntries().get(10).getRefLogId());
+    RefLogResponse refLogResponse4 =
+        api.getRefLog()
+            .fromHash(refLogResponse.getLogEntries().get(3).getRefLogId())
+            .untilHash(refLogResponse.getLogEntries().get(5).getRefLogId())
+            .get();
+    assertThat(refLogResponse4.getLogEntries().size()).isEqualTo(3);
+    assertThat(refLogResponse4.getLogEntries().get(0).getRefLogId())
+        .isEqualTo(refLogResponse.getLogEntries().get(3).getRefLogId());
+    assertThat(refLogResponse4.getLogEntries().get(2).getRefLogId())
+        .isEqualTo(refLogResponse.getLogEntries().get(5).getRefLogId());
+
+    // use invalid reflog id f1234d75178d892a133a410355a5a990cf75d2f33eba25d575943d4df632f3a4
+    // computed using Hash.of(
+    //    UnsafeByteOperations.unsafeWrap(newHasher().putString("invalid",
+    // StandardCharsets.UTF_8).hash().asBytes()));
+    assertThatThrownBy(
+            () ->
+                api.getRefLog()
+                    .fromHash("f1234d75178d892a133a410355a5a990cf75d2f33eba25d575943d4df632f3a4")
+                    .get())
+        .isInstanceOf(NessieRefLogNotFoundException.class)
+        .hasMessageContaining(
+            "RefLog entry for 'f1234d75178d892a133a410355a5a990cf75d2f33eba25d575943d4df632f3a4' does not exist");
   }
 }

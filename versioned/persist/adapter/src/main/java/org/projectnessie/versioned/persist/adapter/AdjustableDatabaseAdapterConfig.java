@@ -32,4 +32,6 @@ public interface AdjustableDatabaseAdapterConfig extends DatabaseAdapterConfig {
   AdjustableDatabaseAdapterConfig withCommitRetries(int commitRetries);
 
   AdjustableDatabaseAdapterConfig withClock(Clock clock);
+
+  AdjustableDatabaseAdapterConfig withParentsPerRefLogEntry(int parentsPerEntry);
 }

@@ -30,6 +30,7 @@ public enum ErrorCode {
   REFERENCE_ALREADY_EXISTS(NessieReferenceAlreadyExistsException::new),
   CONTENT_NOT_FOUND(NessieContentNotFoundException::new),
   REFERENCE_CONFLICT(NessieReferenceConflictException::new),
+  REFLOG_NOT_FOUND(NessieRefLogNotFoundException::new),
   ;
 
   private final Function<NessieError, ? extends BaseNessieClientServerException> exceptionBuilder;

@@ -64,6 +64,7 @@ More concretely, interface would look like this:
       void canReadEntityValue(AccessContext context, NamedRef ref, ContentKey key, String contentId) throws AccessControlException;
       void canUpdateEntity(AccessContext context, NamedRef ref, ContentKey key, String contentId) throws AccessControlException;
       void canDeleteEntity(AccessContext context, NamedRef ref, ContentKey key, String contentId) throws AccessControlException;
+      void canViewRefLog(AccessContext context) throws AccessControlException;
     }
 
 The `AccessContext` object passed as argument contains information regarding the overall context of the operation and will be created by the server itself:
@@ -102,6 +103,7 @@ An implementation of the `AccessChecker` interface could be written with the fol
   * `READ_ENTITY_VALUE`
   * `UPDATE_ENTITY`
   * `DELETE_ENTITY`
+  * `VIEW_REFLOG`
 * Note that in order to be able to do something on a branch/tag (such as `LIST_COMMIT_LOG` / `READ_ENTRIES`), one needs to have the `VIEW_REFERENCE` permission for the given branch/tag.
 
 Some example rules are shown below:
@@ -112,6 +114,7 @@ nessie.server.authorization.rules.allow_branch_creation="op=='CREATE_REFERENCE' 
 nessie.server.authorization.rules.allow_branch_deletion="op=='DELETE_REFERENCE' && role.startsWith('test_user') && ref.startsWith('allowedBranch')"
 nessie.server.authorization.rules.allow_updating_entity="op=='UPDATE_ENTITY' && role=='test_user' && path.startsWith('allowed.')"
 nessie.server.authorization.rules.allow_deleting_entity="op=='DELETE_ENTITY' && role=='test_user' && path.startsWith('allowed.')"
+nessie.server.authorization.rules.allow_listing_reflog="op=='VIEW_REFLOG' && role=='admin_user'"
 ```
 
 > Written with [StackEdit](https://stackedit.io/).

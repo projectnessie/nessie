@@ -33,6 +33,7 @@ public interface DatabaseAdapterConfig {
   int DEFAULT_MAX_KEY_LIST_SIZE = 250_000;
   int DEFAULT_COMMIT_TIMEOUT = 500;
   int DEFAULT_COMMIT_RETRIES = Integer.MAX_VALUE;
+  int DEFAULT_PARENTS_PER_REFLOG_ENTRY = 20;
 
   /**
    * A free-form string that identifies a particular Nessie storage repository.
@@ -126,5 +127,14 @@ public interface DatabaseAdapterConfig {
   @Value.Default
   default Clock getClock() {
     return Clock.systemUTC();
+  }
+
+  /**
+   * The number of Ancestor (reflogId, commitHash) stored in {@link RefLog#getParents()}. Defaults
+   * to {@value #DEFAULT_PARENTS_PER_REFLOG_ENTRY}.
+   */
+  @Value.Default
+  default int getParentsPerRefLogEntry() {
+    return DEFAULT_PARENTS_PER_REFLOG_ENTRY;
   }
 }

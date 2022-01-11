@@ -35,11 +35,14 @@ import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableCommit;
+import org.projectnessie.versioned.ImmutableRefLogDetails;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.Operation;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.Ref;
+import org.projectnessie.versioned.RefLogDetails;
+import org.projectnessie.versioned.RefLogNotFoundException;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceInfo;
@@ -57,6 +60,7 @@ import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
+import org.projectnessie.versioned.persist.adapter.RefLog;
 
 public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CONTENT_TYPE>>
     implements VersionStore<CONTENT, METADATA, CONTENT_TYPE> {
@@ -344,5 +348,22 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
       return (Hash) ref;
     }
     throw new IllegalArgumentException(String.format("Unsupported reference '%s'", ref));
+  }
+
+  @Override
+  public Stream<RefLogDetails> getRefLog(Hash refLogId) throws RefLogNotFoundException {
+    Stream<RefLog> refLogStream = databaseAdapter.refLog(refLogId);
+    return refLogStream.map(
+        e ->
+            ImmutableRefLogDetails.builder()
+                .refLogId(e.getRefLogId())
+                .refName(e.getRefName())
+                .refType(e.getRefType())
+                .commitHash(e.getCommitHash())
+                .parentRefLogId(e.getParents().get(0))
+                .operationTime(e.getOperationTime())
+                .operation(e.getOperation())
+                .sourceHashes(e.getSourceHashes())
+                .build());
   }
 }
