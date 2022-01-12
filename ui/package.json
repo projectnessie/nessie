@@ -21,7 +21,7 @@
     "bootstrap": "^5.1.3",
     "camelcase": "^6.3.0",
     "css-loader": "5.2.7",
-    "dotenv": "10.0.0",
+    "dotenv": "11.0.0",
     "dotenv-expand": "5.1.0",
     "formik": "^2.2.9",
     "history": "^5.2.0",
