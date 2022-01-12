@@ -15,12 +15,15 @@
  */
 package org.projectnessie.client.http;
 
+import static org.projectnessie.client.NessieConfigConstants.CONF_CONNECT_TIMEOUT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_TRACING;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URI;
+import static org.projectnessie.client.NessieConfigConstants.CONF_READ_TIMEOUT;
 
 import java.net.URI;
 import java.util.Objects;
 import java.util.function.Function;
+import javax.net.ssl.SSLContext;
 import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.NessieConfigConstants;
 import org.projectnessie.client.api.NessieApi;
@@ -33,13 +36,9 @@ import org.projectnessie.client.http.v1api.HttpApiV1;
  */
 public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder> {
 
-  private URI uri;
+  private final HttpClient.Builder builder = HttpClient.builder();
   private HttpAuthentication authentication;
   private boolean tracing;
-  private int readTimeoutMillis =
-      Integer.parseInt(System.getProperty("sun.net.client.defaultReadTimeout", "25000"));
-  private int connectionTimeoutMillis =
-      Integer.parseInt(System.getProperty("sun.net.client.defaultConnectionTimeout", "5000"));
 
   protected HttpClientBuilder() {}
 
@@ -72,15 +71,24 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
   public HttpClientBuilder fromConfig(Function<String, String> configuration) {
     String uri = configuration.apply(CONF_NESSIE_URI);
     if (uri != null) {
-      this.uri = URI.create(uri);
+      withUri(URI.create(uri));
     }
 
     withAuthenticationFromConfig(configuration);
 
-    String tracing = configuration.apply(CONF_NESSIE_TRACING);
-    if (tracing != null) {
-      this.tracing = Boolean.parseBoolean(tracing);
+    String s = configuration.apply(CONF_NESSIE_TRACING);
+    if (s != null) {
+      withTracing(Boolean.parseBoolean(s));
     }
+    s = configuration.apply(CONF_CONNECT_TIMEOUT);
+    if (s != null) {
+      withConnectionTimeout(Integer.parseInt(s));
+    }
+    s = configuration.apply(CONF_READ_TIMEOUT);
+    if (s != null) {
+      withReadTimeout(Integer.parseInt(s));
+    }
+
     return this;
   }
 
@@ -107,7 +115,7 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
    */
   @Override
   public HttpClientBuilder withUri(URI uri) {
-    this.uri = uri;
+    builder.setBaseUri(uri);
     return this;
   }
 
@@ -141,7 +149,7 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
    * @return {@code this}
    */
   public HttpClientBuilder withReadTimeout(int readTimeoutMillis) {
-    this.readTimeoutMillis = readTimeoutMillis;
+    builder.setReadTimeoutMillis(readTimeoutMillis);
     return this;
   }
 
@@ -153,7 +161,18 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
    * @return {@code this}
    */
   public HttpClientBuilder withConnectionTimeout(int connectionTimeoutMillis) {
-    this.connectionTimeoutMillis = connectionTimeoutMillis;
+    builder.setConnectionTimeoutMillis(connectionTimeoutMillis);
+    return this;
+  }
+
+  /**
+   * Set the SSL context for this client.
+   *
+   * @param sslContext the SSL context to use
+   * @return {@code this}
+   */
+  public HttpClientBuilder withSSLContext(SSLContext sslContext) {
+    builder.setSslContext(sslContext);
     return this;
   }
 
@@ -161,9 +180,7 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
   @Override
   public <API extends NessieApi> API build(Class<API> apiVersion) {
     Objects.requireNonNull(apiVersion, "API version class must be non-null");
-    NessieHttpClient client =
-        new NessieHttpClient(
-            uri, authentication, tracing, readTimeoutMillis, connectionTimeoutMillis);
+    NessieHttpClient client = new NessieHttpClient(authentication, tracing, builder);
 
     if (apiVersion.isAssignableFrom(HttpApiV1.class)) {
       return (API) new HttpApiV1(client);

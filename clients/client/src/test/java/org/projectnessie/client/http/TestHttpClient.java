@@ -15,17 +15,21 @@
  */
 package org.projectnessie.client.http;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.sun.net.httpserver.HttpHandler;
 import java.io.IOError;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -92,8 +96,12 @@ public class TestHttpClient {
     HttpHandler handler =
         h -> {
           Assertions.assertEquals("PUT", h.getRequestMethod());
-          Object bean = MAPPER.readerFor(ExampleBean.class).readValue(h.getRequestBody());
-          Assertions.assertEquals(inputBean, bean);
+          assertThat(h.getRequestHeaders())
+              .containsEntry("Content-Encoding", Collections.singletonList("gzip"));
+          try (InputStream in = h.getRequestBody()) {
+            Object bean = MAPPER.readerFor(ExampleBean.class).readValue(in);
+            Assertions.assertEquals(inputBean, bean);
+          }
           h.sendResponseHeaders(200, 0);
         };
     try (TestServer server = new TestServer(handler)) {
@@ -107,8 +115,12 @@ public class TestHttpClient {
     HttpHandler handler =
         h -> {
           Assertions.assertEquals("POST", h.getRequestMethod());
-          Object bean = MAPPER.readerFor(ExampleBean.class).readValue(h.getRequestBody());
-          Assertions.assertEquals(inputBean, bean);
+          assertThat(h.getRequestHeaders())
+              .containsEntry("Content-Encoding", Collections.singletonList("gzip"));
+          try (InputStream in = h.getRequestBody()) {
+            Object bean = MAPPER.readerFor(ExampleBean.class).readValue(in);
+            Assertions.assertEquals(inputBean, bean);
+          }
           h.sendResponseHeaders(200, 0);
         };
     try (TestServer server = new TestServer(handler)) {
@@ -252,36 +264,33 @@ public class TestHttpClient {
           h.sendResponseHeaders(200, 0);
         };
     try (TestServer server = new TestServer(handler)) {
-      HttpClient client =
+      HttpClient.Builder client =
           HttpClient.builder()
               .setBaseUri(URI.create("http://localhost:" + server.getAddress().getPort()))
-              .setObjectMapper(MAPPER)
-              .build();
-      client.register(
-          (RequestFilter)
-              context -> {
-                requestFilterCalled.set(true);
-                Set<String> headers = new HashSet<>();
-                headers.add("y");
-                context.getHeaders().put("x", headers);
-                context.addResponseCallback(
-                    (responseContext, failure) -> {
-                      responseContextGotCallback.set(responseContext);
-                      Assertions.assertNull(failure);
-                    });
-              });
-      client.register(
-          (ResponseFilter)
-              con -> {
-                try {
-                  Assertions.assertEquals(Status.OK, con.getResponseCode());
-                  responseFilterCalled.set(true);
-                  responseContextGotFilter.set(con);
-                } catch (IOException e) {
-                  throw new IOError(e);
-                }
-              });
-      client.newRequest().get();
+              .setObjectMapper(MAPPER);
+      client.addRequestFilter(
+          context -> {
+            requestFilterCalled.set(true);
+            Set<String> headers = new HashSet<>();
+            headers.add("y");
+            context.getHeaders().put("x", headers);
+            context.addResponseCallback(
+                (responseContext, failure) -> {
+                  responseContextGotCallback.set(responseContext);
+                  Assertions.assertNull(failure);
+                });
+          });
+      client.addResponseFilter(
+          con -> {
+            try {
+              Assertions.assertEquals(Status.OK, con.getResponseCode());
+              responseFilterCalled.set(true);
+              responseContextGotFilter.set(con);
+            } catch (IOException e) {
+              throw new IOError(e);
+            }
+          });
+      client.build().newRequest().get();
       Assertions.assertNotNull(responseContextGotFilter.get());
       Assertions.assertSame(responseContextGotFilter.get(), responseContextGotCallback.get());
       Assertions.assertTrue(responseFilterCalled.get());

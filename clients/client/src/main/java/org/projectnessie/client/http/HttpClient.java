@@ -20,7 +20,6 @@ import java.net.URI;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import javax.net.ssl.SSLContext;
 
 /**
@@ -31,13 +30,7 @@ import javax.net.ssl.SSLContext;
  */
 public class HttpClient {
 
-  private final URI baseUri;
-  private final ObjectMapper mapper;
-  private final SSLContext sslContext;
-  private final int readTimeoutMillis;
-  private final int connectionTimeoutMillis;
-  private final List<RequestFilter> requestFilters = new ArrayList<>();
-  private final List<ResponseFilter> responseFilters = new ArrayList<>();
+  private final HttpRuntimeConfig config;
 
   public enum Method {
     GET,
@@ -49,64 +42,25 @@ public class HttpClient {
   /**
    * Construct an HTTP client with a universal Accept header.
    *
-   * @param baseUri uri base eg https://example.com
-   * @param readTimeoutMillis timeout to wait for response from server, in milliseconds
-   * @param connectionTimeoutMillis timeout to wait to connecto to server, in milliseconds
+   * @param config http client configuration
    */
-  private HttpClient(
-      URI baseUri,
-      ObjectMapper mapper,
-      SSLContext sslContext,
-      int readTimeoutMillis,
-      int connectionTimeoutMillis) {
-    this.baseUri = Objects.requireNonNull(baseUri);
-    this.mapper = mapper;
-    this.sslContext = sslContext;
-    this.readTimeoutMillis = readTimeoutMillis;
-    this.connectionTimeoutMillis = connectionTimeoutMillis;
-    if (!"http".equals(baseUri.getScheme()) && !"https".equals(baseUri.getScheme())) {
-      throw new IllegalArgumentException(
-          String.format(
-              "Cannot start http client. %s must be a valid http or https address", baseUri));
-    }
-  }
-
-  /**
-   * Register a request filter. This filter will be run before the request starts and can modify eg
-   * headers.
-   */
-  public void register(RequestFilter filter) {
-    requestFilters.add(filter);
-  }
-
-  /**
-   * Register a response filter. This filter will be run after the request finishes and can for
-   * example handle error states.
-   */
-  public void register(ResponseFilter filter) {
-    responseFilters.add(filter);
+  private HttpClient(HttpRuntimeConfig config) {
+    this.config = config;
   }
 
   public HttpRequest newRequest() {
-    return new HttpRequest(
-        baseUri,
-        mapper,
-        requestFilters,
-        responseFilters,
-        sslContext,
-        readTimeoutMillis,
-        connectionTimeoutMillis);
+    return new HttpRequest(config);
   }
 
-  public static HttpClientBuilder builder() {
-    return new HttpClientBuilder();
+  public static Builder builder() {
+    return new Builder();
   }
 
   public URI getBaseUri() {
-    return baseUri;
+    return config.getBaseUri();
   }
 
-  public static class HttpClientBuilder {
+  public static class Builder {
     private URI baseUri;
     private ObjectMapper mapper;
     private SSLContext sslContext;
@@ -114,51 +68,55 @@ public class HttpClient {
         Integer.parseInt(System.getProperty("sun.net.client.defaultReadTimeout", "25000"));
     private int connectionTimeoutMillis =
         Integer.parseInt(System.getProperty("sun.net.client.defaultConnectionTimeout", "5000"));
+    private final List<RequestFilter> requestFilters = new ArrayList<>();
+    private final List<ResponseFilter> responseFilters = new ArrayList<>();
 
-    private HttpClientBuilder() {}
+    private Builder() {}
 
     public URI getBaseUri() {
       return baseUri;
     }
 
-    public HttpClientBuilder setBaseUri(URI baseUri) {
+    public Builder setBaseUri(URI baseUri) {
       this.baseUri = baseUri;
       return this;
     }
 
-    public ObjectMapper getMapper() {
-      return mapper;
-    }
-
-    public HttpClientBuilder setObjectMapper(ObjectMapper mapper) {
+    public Builder setObjectMapper(ObjectMapper mapper) {
       this.mapper = mapper;
       return this;
     }
 
-    public SSLContext getSslContext() {
-      return sslContext;
-    }
-
-    public HttpClientBuilder setSslContext(SSLContext sslContext) {
+    public Builder setSslContext(SSLContext sslContext) {
       this.sslContext = sslContext;
       return this;
     }
 
-    public int getReadTimeoutMillis() {
-      return readTimeoutMillis;
-    }
-
-    public HttpClientBuilder setReadTimeoutMillis(int readTimeoutMillis) {
+    public Builder setReadTimeoutMillis(int readTimeoutMillis) {
       this.readTimeoutMillis = readTimeoutMillis;
       return this;
     }
 
-    public int getConnectionTimeoutMillis() {
-      return connectionTimeoutMillis;
+    public Builder setConnectionTimeoutMillis(int connectionTimeoutMillis) {
+      this.connectionTimeoutMillis = connectionTimeoutMillis;
+      return this;
     }
 
-    public HttpClientBuilder setConnectionTimeoutMillis(int connectionTimeoutMillis) {
-      this.connectionTimeoutMillis = connectionTimeoutMillis;
+    /**
+     * Register a request filter. This filter will be run before the request starts and can modify
+     * eg headers.
+     */
+    public Builder addRequestFilter(RequestFilter filter) {
+      requestFilters.add(filter);
+      return this;
+    }
+
+    /**
+     * Register a response filter. This filter will be run after the request finishes and can for
+     * example handle error states.
+     */
+    public Builder addResponseFilter(ResponseFilter filter) {
+      responseFilters.add(filter);
       return this;
     }
 
@@ -177,7 +135,14 @@ public class HttpClient {
         }
       }
       return new HttpClient(
-          baseUri, mapper, sslContext, readTimeoutMillis, connectionTimeoutMillis);
+          new HttpRuntimeConfig(
+              baseUri,
+              mapper,
+              readTimeoutMillis,
+              connectionTimeoutMillis,
+              sslContext,
+              requestFilters,
+              responseFilters));
     }
   }
 }

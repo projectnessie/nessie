@@ -39,6 +39,7 @@ import org.projectnessie.api.http.HttpContentApi;
 import org.projectnessie.api.http.HttpDiffApi;
 import org.projectnessie.api.http.HttpRefLogApi;
 import org.projectnessie.api.http.HttpTreeApi;
+import org.projectnessie.client.http.HttpClient.Builder;
 import org.projectnessie.client.rest.NessieHttpResponseFilter;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -54,33 +55,28 @@ public class NessieHttpClient extends NessieApiClient {
 
   /**
    * Create new HTTP Nessie client. All REST api endpoints are mapped here. This client should
-   * support any jaxrs implementation
+   * support any JAX-RS implementation
    *
-   * @param uri URL for the nessie client (eg http://localhost:19120/api/v1)
    * @param authentication authenticator to use
-   * @param readTimeout time in milliseconds to wait for a response from the server
-   * @param connectionTimeoutMillis time in milliseconds to wait to connect to the server
+   * @param enableTracing whether to enable tracing
+   * @param clientBuilder the client-builder to use
    */
   NessieHttpClient(
-      URI uri,
-      HttpAuthentication authentication,
-      boolean enableTracing,
-      int readTimeout,
-      int connectionTimeoutMillis) {
-    this(
-        HttpClient.builder()
-            .setBaseUri(uri)
-            .setObjectMapper(MAPPER)
-            .setReadTimeoutMillis(readTimeout)
-            .setConnectionTimeoutMillis(connectionTimeoutMillis)
-            .build());
+      HttpAuthentication authentication, boolean enableTracing, HttpClient.Builder clientBuilder) {
+    this(buildClient(authentication, enableTracing, clientBuilder));
+  }
+
+  private static HttpClient buildClient(
+      HttpAuthentication authentication, boolean enableTracing, Builder clientBuilder) {
+    clientBuilder.setObjectMapper(MAPPER);
     if (enableTracing) {
-      addTracing(client);
+      addTracing(clientBuilder);
     }
     if (authentication != null) {
-      authentication.applyToHttpClient(client);
+      authentication.applyToHttpClient(clientBuilder);
     }
-    client.register(new NessieHttpResponseFilter(MAPPER));
+    clientBuilder.addResponseFilter(new NessieHttpResponseFilter(MAPPER));
+    return clientBuilder.build();
   }
 
   private NessieHttpClient(HttpClient client) {
@@ -93,48 +89,47 @@ public class NessieHttpClient extends NessieApiClient {
     this.client = client;
   }
 
-  private static void addTracing(HttpClient httpClient) {
+  private static void addTracing(HttpClient.Builder httpClient) {
     // It's safe to reference `GlobalTracer` here even without the required dependencies available
     // at runtime, as long as tracing is not enabled. I.e. as long as tracing is not enabled, this
     // method will not be called and the JVM won't try to load + initialize `GlobalTracer`.
     Tracer tracer = GlobalTracer.get();
     if (tracer != null) {
-      httpClient.register(
-          (RequestFilter)
-              context -> {
-                Span span = tracer.activeSpan();
-                if (span != null) {
-                  Span inner = tracer.buildSpan("Nessie-HTTP").start();
-                  Scope scope = tracer.activateSpan(inner);
-                  context.addResponseCallback(
-                      (responseContext, exception) -> {
-                        if (responseContext != null) {
-                          try {
-                            inner.setTag(
-                                "http.status_code", responseContext.getResponseCode().getCode());
-                          } catch (IOException e) {
-                            // There's not much we can (and probably should) do here.
-                          }
-                        }
-                        if (exception != null) {
-                          Map<String, String> log = new HashMap<>();
-                          log.put(Fields.EVENT, Tags.ERROR.getKey());
-                          log.put(Fields.ERROR_OBJECT, exception.toString());
-                          Tags.ERROR.set(inner.log(log), true);
-                        }
-                        scope.close();
-                      });
+      httpClient.addRequestFilter(
+          context -> {
+            Span span = tracer.activeSpan();
+            if (span != null) {
+              Span inner = tracer.buildSpan("Nessie-HTTP").start();
+              Scope scope = tracer.activateSpan(inner);
+              context.addResponseCallback(
+                  (responseContext, exception) -> {
+                    if (responseContext != null) {
+                      try {
+                        inner.setTag(
+                            "http.status_code", responseContext.getResponseCode().getCode());
+                      } catch (IOException e) {
+                        // There's not much we can (and probably should) do here.
+                      }
+                    }
+                    if (exception != null) {
+                      Map<String, String> log = new HashMap<>();
+                      log.put(Fields.EVENT, Tags.ERROR.getKey());
+                      log.put(Fields.ERROR_OBJECT, exception.toString());
+                      Tags.ERROR.set(inner.log(log), true);
+                    }
+                    scope.close();
+                  });
 
-                  inner
-                      .setTag("http.uri", context.getUri().toString())
-                      .setTag("http.method", context.getMethod().name());
+              inner
+                  .setTag("http.uri", context.getUri().toString())
+                  .setTag("http.method", context.getMethod().name());
 
-                  HashMap<String, String> headerMap = new HashMap<>();
-                  TextMap httpHeadersCarrier = new TextMapAdapter(headerMap);
-                  tracer.inject(inner.context(), Builtin.HTTP_HEADERS, httpHeadersCarrier);
-                  headerMap.forEach(context::putHeader);
-                }
-              });
+              HashMap<String, String> headerMap = new HashMap<>();
+              TextMap httpHeadersCarrier = new TextMapAdapter(headerMap);
+              tracer.inject(inner.context(), Builtin.HTTP_HEADERS, httpHeadersCarrier);
+              headerMap.forEach(context::putHeader);
+            }
+          });
     }
   }
 
@@ -148,8 +143,8 @@ public class NessieHttpClient extends NessieApiClient {
   }
 
   /**
-   * This will rewrite exceptions so they are correctly thrown by the api classes. (since the filter
-   * will cause them to be wrapped in {@link javax.ws.rs.client.ResponseProcessingException})
+   * This will rewrite exceptions, so they are correctly thrown by the api classes. (since the
+   * filter will cause them to be wrapped in {@link javax.ws.rs.client.ResponseProcessingException})
    */
   private static class ExceptionRewriter implements InvocationHandler {
 

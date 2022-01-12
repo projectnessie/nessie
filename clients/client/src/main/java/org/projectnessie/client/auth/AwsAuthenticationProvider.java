@@ -99,8 +99,8 @@ public class AwsAuthenticationProvider implements NessieAuthenticationProvider {
     }
 
     @Override
-    public void applyToHttpClient(HttpClient client) {
-      client.register(new AwsHttpAuthenticationFilter(region, awsCredentialsProvider));
+    public void applyToHttpClient(HttpClient.Builder client) {
+      client.addRequestFilter(new AwsHttpAuthenticationFilter(region, awsCredentialsProvider));
     }
   }
 

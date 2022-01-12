@@ -15,7 +15,6 @@
  */
 package org.projectnessie.client.http;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import java.io.IOException;
@@ -52,10 +51,6 @@ public class HttpResponse {
   }
 
   public <V> V readEntity(Class<V> clazz) {
-    return readEntity(mapper.readerFor(clazz));
-  }
-
-  public <V> V readEntity(TypeReference<V> clazz) {
     return readEntity(mapper.readerFor(clazz));
   }
 }

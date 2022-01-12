@@ -18,6 +18,15 @@ package org.projectnessie.client.http;
 import java.util.Objects;
 
 public final class HttpUtils {
+
+  public static final String GZIP = "gzip";
+  public static final String DEFLATE = "deflate";
+  public static final String ACCEPT_ENCODING = GZIP + ";q=1.0, " + DEFLATE + ";q=0.9";
+  public static final String HEADER_ACCEPT = "Accept";
+  public static final String HEADER_ACCEPT_ENCODING = "Accept-Encoding";
+  public static final String HEADER_CONTENT_ENCODING = "Content-Encoding";
+  public static final String HEADER_CONTENT_TYPE = "Content-Type";
+
   private HttpUtils() {}
 
   /**
