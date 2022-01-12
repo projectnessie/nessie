@@ -74,6 +74,12 @@ public final class NessieConfigConstants {
    * timeout.
    */
   public static final String CONF_CONNECT_TIMEOUT = "nessie.transport.connect-timeout";
+  /**
+   * Config property name ("{@value #CONF_NESSIE_DISABLE_COMPRESSION}") whether to disable
+   * compression on the network layer.
+   */
+  public static final String CONF_NESSIE_DISABLE_COMPRESSION =
+      "nessie.transport.disable-compression";
 
   private NessieConfigConstants() {
     // empty

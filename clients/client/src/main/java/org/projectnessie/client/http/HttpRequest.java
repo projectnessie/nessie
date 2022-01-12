@@ -15,7 +15,11 @@
  */
 package org.projectnessie.client.http;
 
+import static org.projectnessie.client.http.HttpUtils.ACCEPT_ENCODING;
+import static org.projectnessie.client.http.HttpUtils.GZIP;
 import static org.projectnessie.client.http.HttpUtils.HEADER_ACCEPT;
+import static org.projectnessie.client.http.HttpUtils.HEADER_ACCEPT_ENCODING;
+import static org.projectnessie.client.http.HttpUtils.HEADER_CONTENT_ENCODING;
 import static org.projectnessie.client.http.HttpUtils.HEADER_CONTENT_TYPE;
 
 import com.fasterxml.jackson.core.JsonGenerationException;
@@ -35,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.zip.GZIPOutputStream;
 import javax.net.ssl.HttpsURLConnection;
 import org.projectnessie.client.http.HttpClient.Method;
 
@@ -108,6 +113,13 @@ public class HttpRequest {
 
         boolean doesOutput = postOrPut && body != null;
 
+        if (!config.isDisableCompression()) {
+          putHeader(HEADER_ACCEPT_ENCODING, ACCEPT_ENCODING, headers);
+          if (doesOutput) {
+            putHeader(HEADER_CONTENT_ENCODING, GZIP, headers);
+          }
+        }
+
         config.getRequestFilters().forEach(a -> a.filter(context));
         headers.entrySet().stream()
             .flatMap(e -> e.getValue().stream().map(x -> new SimpleImmutableEntry<>(e.getKey(), x)))
@@ -117,7 +129,12 @@ public class HttpRequest {
         if (doesOutput) {
           con.setDoOutput(true);
 
-          try (OutputStream out = con.getOutputStream()) {
+          OutputStream out = con.getOutputStream();
+          try {
+            if (!config.isDisableCompression()) {
+              out = new GZIPOutputStream(out);
+            }
+
             Class<?> bodyType = body.getClass();
             if (bodyType != String.class) {
               config.getMapper().writerFor(bodyType).writeValue(out, body);
@@ -125,6 +142,8 @@ public class HttpRequest {
               // This is mostly used for testing bad/broken JSON
               out.write(((String) body).getBytes(StandardCharsets.UTF_8));
             }
+          } finally {
+            out.close();
           }
         }
         con.connect();

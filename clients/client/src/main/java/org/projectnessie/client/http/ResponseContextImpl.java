@@ -15,9 +15,15 @@
  */
 package org.projectnessie.client.http;
 
+import static org.projectnessie.client.http.HttpUtils.DEFLATE;
+import static org.projectnessie.client.http.HttpUtils.GZIP;
+import static org.projectnessie.client.http.HttpUtils.HEADER_CONTENT_ENCODING;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.InflaterInputStream;
 
 class ResponseContextImpl implements ResponseContext {
 
@@ -34,11 +40,22 @@ class ResponseContextImpl implements ResponseContext {
 
   @Override
   public InputStream getInputStream() throws IOException {
-    return connection.getInputStream();
+    return maybeDecompress(connection.getInputStream());
   }
 
   @Override
   public InputStream getErrorStream() throws IOException {
-    return connection.getErrorStream();
+    return maybeDecompress(connection.getErrorStream());
+  }
+
+  private InputStream maybeDecompress(InputStream inputStream) throws IOException {
+    String contentEncoding = connection.getHeaderField(HEADER_CONTENT_ENCODING);
+    if (GZIP.equals(contentEncoding)) {
+      return new GZIPInputStream(inputStream);
+    } else if (DEFLATE.equals(contentEncoding)) {
+      return new InflaterInputStream(inputStream);
+    } else {
+      return inputStream;
+    }
   }
 }

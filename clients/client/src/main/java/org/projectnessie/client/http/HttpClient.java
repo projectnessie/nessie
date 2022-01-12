@@ -68,6 +68,7 @@ public class HttpClient {
         Integer.parseInt(System.getProperty("sun.net.client.defaultReadTimeout", "25000"));
     private int connectionTimeoutMillis =
         Integer.parseInt(System.getProperty("sun.net.client.defaultConnectionTimeout", "5000"));
+    private boolean disableCompression;
     private final List<RequestFilter> requestFilters = new ArrayList<>();
     private final List<ResponseFilter> responseFilters = new ArrayList<>();
 
@@ -79,6 +80,11 @@ public class HttpClient {
 
     public Builder setBaseUri(URI baseUri) {
       this.baseUri = baseUri;
+      return this;
+    }
+
+    public Builder setDisableCompression(boolean disableCompression) {
+      this.disableCompression = disableCompression;
       return this;
     }
 
@@ -140,6 +146,7 @@ public class HttpClient {
               mapper,
               readTimeoutMillis,
               connectionTimeoutMillis,
+              disableCompression,
               sslContext,
               requestFilters,
               responseFilters));
