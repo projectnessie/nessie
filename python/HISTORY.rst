@@ -2,6 +2,13 @@
 History
 =======
 
+0.18.0 (2022-01-13)
+-------------------
+
+* Add new reflog command to the CLI
+* Add support for Python 3.10
+* Drop support for Python 3.6
+
 0.17.0 (2021-12-08)
 -------------------
 

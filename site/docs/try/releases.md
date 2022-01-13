@@ -1,5 +1,13 @@
 # Releases
 
+## 0.18.0 Release (January 13, 2022)
+
+* Add reflog support
+* Uses commit-timestamp "now" for merged/transplanted commits
+* Add new reflog command to the CLI
+* Add support for Python 3.10
+* Drop support for Python 3.6
+
 ## 0.17.0 Release (December 08, 2021)
 
 * Rename 'query_expression' query param to 'filter'
