@@ -27,15 +27,18 @@ class ResponseContextImpl implements ResponseContext {
     this.connection = connection;
   }
 
+  @Override
   public Status getResponseCode() throws IOException {
     return Status.fromCode(connection.getResponseCode());
   }
 
+  @Override
   public InputStream getInputStream() throws IOException {
     return connection.getInputStream();
   }
 
-  public InputStream getErrorStream() {
+  @Override
+  public InputStream getErrorStream() throws IOException {
     return connection.getErrorStream();
   }
 }

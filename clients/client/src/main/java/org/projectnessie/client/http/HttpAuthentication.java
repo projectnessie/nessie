@@ -28,5 +28,5 @@ public interface HttpAuthentication extends NessieAuthentication {
    *
    * @param client client to configure
    */
-  void applyToHttpClient(HttpClient client);
+  void applyToHttpClient(HttpClient.Builder client);
 }

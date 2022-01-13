@@ -55,8 +55,12 @@ class TestNessieError {
         new ObjectMapper()
             .enable(SerializationFeature.INDENT_OUTPUT)
             .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
-    client = HttpClient.builder().setBaseUri(URI.create(baseURI)).setObjectMapper(mapper).build();
-    client.register(new NessieHttpResponseFilter(mapper));
+    client =
+        HttpClient.builder()
+            .setBaseUri(URI.create(baseURI))
+            .setObjectMapper(mapper)
+            .addResponseFilter(new NessieHttpResponseFilter(mapper))
+            .build();
   }
 
   @Test

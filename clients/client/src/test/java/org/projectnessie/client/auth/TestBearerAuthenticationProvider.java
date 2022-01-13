@@ -74,7 +74,7 @@ class TestBearerAuthenticationProvider {
     // Intercept the call to HttpClient.register(RequestFilter) and extract the RequestFilter for
     // our test
     RequestFilter[] authFilter = new RequestFilter[1];
-    HttpClient client = Mockito.mock(HttpClient.class);
+    HttpClient.Builder client = Mockito.mock(HttpClient.Builder.class);
     Mockito.doAnswer(
             invocationOnMock -> {
               Object[] args = invocationOnMock.getArguments();
@@ -84,7 +84,7 @@ class TestBearerAuthenticationProvider {
               return null;
             })
         .when(client)
-        .register((RequestFilter) Mockito.any());
+        .addRequestFilter(Mockito.any());
     httpAuthentication.applyToHttpClient(client);
 
     // Check that the registered RequestFilter works as expected (sets the right HTTP header)

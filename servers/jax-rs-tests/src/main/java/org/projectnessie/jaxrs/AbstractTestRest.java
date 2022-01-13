@@ -127,15 +127,15 @@ public abstract class AbstractTestRest {
         new ObjectMapper()
             .enable(SerializationFeature.INDENT_OUTPUT)
             .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
-    HttpClient httpClient = HttpClient.builder().setBaseUri(uri).setObjectMapper(mapper).build();
-    httpClient.register(new NessieHttpResponseFilter(mapper));
+    HttpClient.Builder httpClient = HttpClient.builder().setBaseUri(uri).setObjectMapper(mapper);
+    httpClient.addResponseFilter(new NessieHttpResponseFilter(mapper));
 
     init(api, httpClient);
   }
 
-  protected void init(NessieApiV1 api, @Nullable HttpClient httpClient) {
+  protected void init(NessieApiV1 api, @Nullable HttpClient.Builder httpClient) {
     this.api = api;
-    this.httpClient = httpClient;
+    this.httpClient = httpClient != null ? httpClient.build() : null;
   }
 
   @BeforeEach

@@ -65,6 +65,15 @@ public final class NessieConfigConstants {
    * false}.
    */
   public static final String CONF_NESSIE_TRACING = "nessie.tracing";
+  /**
+   * Config property name ("{@value #CONF_READ_TIMEOUT}") for the network transport read-timeout.
+   */
+  public static final String CONF_READ_TIMEOUT = "nessie.transport.read-timeout";
+  /**
+   * Config property name ("{@value #CONF_CONNECT_TIMEOUT}") for the network transport connect
+   * timeout.
+   */
+  public static final String CONF_CONNECT_TIMEOUT = "nessie.transport.connect-timeout";
 
   private NessieConfigConstants() {
     // empty

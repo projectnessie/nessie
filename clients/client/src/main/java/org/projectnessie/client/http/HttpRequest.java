@@ -15,10 +15,13 @@
  */
 package org.projectnessie.client.http;
 
+import static org.projectnessie.client.http.HttpUtils.HEADER_ACCEPT;
+import static org.projectnessie.client.http.HttpUtils.HEADER_CONTENT_TYPE;
+
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
@@ -33,40 +36,20 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
 import org.projectnessie.client.http.HttpClient.Method;
 
 /** Class to hold an ongoing HTTP request and its parameters/filters. */
 public class HttpRequest {
 
-  public static final String HEADER_ACCEPT = "Accept";
-
+  private final HttpRuntimeConfig config;
   private final UriBuilder uriBuilder;
-  private final ObjectMapper mapper;
-  private final int readTimeoutMillis;
-  private final int connectionTimeoutMillis;
   private final Map<String, Set<String>> headers = new HashMap<>();
-  private final List<RequestFilter> requestFilters;
-  private final List<ResponseFilter> responseFilters;
-  private SSLContext sslContext;
   private String contentsType = "application/json; charset=utf-8";
   private String accept = "application/json; charset=utf-8";
 
-  HttpRequest(
-      URI baseUri,
-      ObjectMapper mapper,
-      List<RequestFilter> requestFilters,
-      List<ResponseFilter> responseFilters,
-      SSLContext context,
-      int readTimeoutMillis,
-      int connectionTimeoutMillis) {
-    this.uriBuilder = new UriBuilder(baseUri);
-    this.mapper = mapper;
-    this.readTimeoutMillis = readTimeoutMillis;
-    this.connectionTimeoutMillis = connectionTimeoutMillis;
-    this.requestFilters = requestFilters;
-    this.responseFilters = responseFilters;
-    this.sslContext = context;
+  HttpRequest(HttpRuntimeConfig config) {
+    this.uriBuilder = new UriBuilder(config.getBaseUri());
+    this.config = config;
   }
 
   static void putHeader(String key, String value, Map<String, Set<String>> headers) {
@@ -105,32 +88,42 @@ public class HttpRequest {
     try {
       URI uri = uriBuilder.build();
       HttpURLConnection con = (HttpURLConnection) uri.toURL().openConnection();
-      con.setReadTimeout(readTimeoutMillis);
-      con.setConnectTimeout(connectionTimeoutMillis);
+      con.setReadTimeout(config.getReadTimeoutMillis());
+      con.setConnectTimeout(config.getConnectionTimeoutMillis());
       if (con instanceof HttpsURLConnection) {
-        ((HttpsURLConnection) con).setSSLSocketFactory(sslContext.getSocketFactory());
+        ((HttpsURLConnection) con).setSSLSocketFactory(config.getSslContext().getSocketFactory());
       }
       RequestContext context = new RequestContext(headers, uri, method, body);
       ResponseContext responseContext = new ResponseContextImpl(con);
       try {
         putHeader(HEADER_ACCEPT, accept, headers);
-        requestFilters.forEach(a -> a.filter(context));
+
+        boolean postOrPut = method.equals(Method.PUT) || method.equals(Method.POST);
+
+        if (postOrPut) {
+          // Need to set the Content-Type even if body==null, otherwise the server responds with
+          // RESTEASY003065: Cannot consume content type
+          putHeader(HEADER_CONTENT_TYPE, contentsType, headers);
+        }
+
+        boolean doesOutput = postOrPut && body != null;
+
+        config.getRequestFilters().forEach(a -> a.filter(context));
         headers.entrySet().stream()
             .flatMap(e -> e.getValue().stream().map(x -> new SimpleImmutableEntry<>(e.getKey(), x)))
             .forEach(x -> con.setRequestProperty(x.getKey(), x.getValue()));
         con.setRequestMethod(method.name());
-        if (method.equals(Method.PUT) || method.equals(Method.POST)) {
-          // Need to set the Content-Type even if body==null, otherwise the server responds with
-          // RESTEASY003065: Cannot consume content type
-          con.setRequestProperty("Content-Type", contentsType);
-          if (body != null) {
-            con.setDoOutput(true);
+
+        if (doesOutput) {
+          con.setDoOutput(true);
+
+          try (OutputStream out = con.getOutputStream()) {
             Class<?> bodyType = body.getClass();
             if (bodyType != String.class) {
-              mapper.writerFor(bodyType).writeValue(con.getOutputStream(), body);
+              config.getMapper().writerFor(bodyType).writeValue(out, body);
             } else {
               // This is mostly used for testing bad/broken JSON
-              con.getOutputStream().write(((String) body).getBytes(StandardCharsets.UTF_8));
+              out.write(((String) body).getBytes(StandardCharsets.UTF_8));
             }
           }
         }
@@ -149,9 +142,9 @@ public class HttpRequest {
         throw e;
       }
 
-      responseFilters.forEach(responseFilter -> responseFilter.filter(responseContext));
+      config.getResponseFilters().forEach(responseFilter -> responseFilter.filter(responseContext));
 
-      return new HttpResponse(responseContext, mapper);
+      return new HttpResponse(responseContext, config.getMapper());
     } catch (ProtocolException e) {
       throw new HttpClientException(
           String.format("Cannot perform request. Invalid protocol %s", method), e);
@@ -167,16 +160,11 @@ public class HttpRequest {
       throw new HttpClientReadTimeoutException(
           String.format(
               "Cannot finish request. Timeout while waiting for response with a timeout of %ds",
-              readTimeoutMillis / 1000),
+              config.getReadTimeoutMillis() / 1000),
           e);
     } catch (IOException e) {
       throw new HttpClientException(e);
     }
-  }
-
-  public HttpRequest setSslContext(SSLContext context) {
-    this.sslContext = context;
-    return this;
   }
 
   public HttpResponse get() throws HttpClientException {
