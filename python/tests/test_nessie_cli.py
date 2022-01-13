@@ -36,6 +36,8 @@ from pynessie.model import IcebergTable
 from pynessie.model import LogEntry
 from pynessie.model import LogEntrySchema
 from pynessie.model import ReferenceSchema
+from pynessie.model import ReflogEntry
+from pynessie.model import ReflogEntrySchema
 from .conftest import execute_cli_command, make_commit
 
 
@@ -306,3 +308,47 @@ def test_diff() -> None:
     assert_that(diff_entry.content_key).is_equal_to(ContentKey.from_path_string(content_key))
     assert_that(diff_entry.from_content).is_none()
     assert_that(diff_entry.to_content).is_equal_to(table)
+
+
+@pytest.mark.vcr
+def test_reflog() -> None:
+    """Test reflog."""
+    expected_entries = []
+    execute_cli_command(["branch", "dev_test_reflog1"])
+    expected_entries.append(("dev_test_reflog1", "CREATE_REFERENCE"))
+    #
+    table = _new_table("dev_test_reflog1")
+    content_key = "reflog.foo.dev"
+    make_commit(content_key, table, "dev_test_reflog1", author="nessie_user1")
+    expected_entries.append(("dev_test_reflog1", "COMMIT"))
+    #
+    execute_cli_command(["tag", "dev_test_reflog2"])
+    expected_entries.append(("dev_test_reflog2", "CREATE_REFERENCE"))
+    #
+    execute_cli_command(["branch", "-d", "dev_test_reflog1"])
+    expected_entries.append(("dev_test_reflog1", "DELETE_REFERENCE"))
+    #
+    execute_cli_command(["tag", "-d", "dev_test_reflog2"])
+    expected_entries.append(("dev_test_reflog2", "DELETE_REFERENCE"))
+    #
+    response_entries: List[ReflogEntry] = ReflogEntrySchema().loads(execute_cli_command(["--json", "reflog"]), many=True)
+    # latest entry in the reflog will be the head of reflog. Hence reverse the expected list
+    expected_entries.reverse()
+    # validate the entries
+    assert_that(response_entries[0:5]).extracting("ref_name", "operation").is_equal_to(expected_entries)
+    # test pagination
+    response_entries_1: List[ReflogEntry] = ReflogEntrySchema().loads(execute_cli_command(["--json", "reflog", "-n", 2]), many=True)
+    assert_that(response_entries[0:2]).is_equal_to(response_entries_1)
+    # test start hash (closer to the head)
+    response_entries_2: List[ReflogEntry] = ReflogEntrySchema().loads(
+        execute_cli_command(["--json", "reflog", "--revision-range", response_entries[2].reflog_id]), many=True
+    )
+    assert_that(response_entries[2:5]).is_equal_to(response_entries_2[0:3])
+    # test range from 2 to 3 (both inclusive)
+    response_entries_3: List[ReflogEntry] = ReflogEntrySchema().loads(
+        execute_cli_command(
+            ["--json", "reflog", "--revision-range", "{}..{}".format(response_entries[3].reflog_id, response_entries[2].reflog_id)]
+        ),
+        many=True,
+    )
+    assert_that(response_entries[2:4]).is_equal_to(response_entries_3[0:2])

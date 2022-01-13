@@ -31,6 +31,7 @@ from .commands import content
 from .commands import diff
 from .commands import log
 from .commands import merge
+from .commands import reflog
 from .commands import remote
 from .commands import tag
 from .conf import build_config
@@ -77,6 +78,7 @@ cli.add_command(merge)
 cli.add_command(cherry_pick)
 cli.add_command(content)
 cli.add_command(diff)
+cli.add_command(reflog)
 
 
 if __name__ == "__main__":

@@ -24,7 +24,8 @@ from .content import content
 from .diff import diff
 from .log import log
 from .merge import merge
+from .reflog import reflog
 from .remote import remote
 from .tag import tag
 
-__all__ = ["remote", "tag", "branch_", "cherry_pick", "config", "log", "merge", "content", "diff"]
+__all__ = ["remote", "tag", "branch_", "cherry_pick", "config", "log", "merge", "content", "diff", "reflog"]

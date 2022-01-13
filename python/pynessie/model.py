@@ -450,3 +450,32 @@ class DiffResponse:
 
 
 DiffResponseSchema = desert.schema_class(DiffResponse)
+
+
+@attr.dataclass
+class ReflogEntry:
+    """Dataclass for reflog entries."""
+
+    reflog_id: str = attr.ib(metadata=desert.metadata(fields.Str(data_key="refLogId")))
+    ref_name: str = attr.ib(metadata=desert.metadata(fields.Str(data_key="refName")))
+    ref_type: str = attr.ib(metadata=desert.metadata(fields.Str(data_key="refType")))
+    commit_hash: str = attr.ib(metadata=desert.metadata(fields.Str(data_key="commitHash")))
+    parent_reflog_id: str = attr.ib(metadata=desert.metadata(fields.Str(data_key="parentRefLogId")))
+    operation_time: int = attr.ib(metadata=desert.metadata(fields.Int(data_key="operationTime")))
+    operation: str = attr.ib(metadata=desert.metadata(fields.Str(data_key="operation")))
+    source_hashes: List[str] = attr.ib(metadata=desert.metadata(fields.List(fields.Str(), data_key="sourceHashes")))
+
+
+ReflogEntrySchema = desert.schema_class(ReflogEntry)
+
+
+@attr.dataclass
+class ReflogResponse:
+    """Dataclass for reflog Response."""
+
+    log_entries: List[ReflogEntry] = desert.ib(fields.List(fields.Nested(ReflogEntrySchema()), data_key="logEntries"))
+    has_more: bool = attr.ib(default=False, metadata=desert.metadata(fields.Bool(allow_none=True, data_key="hasMore")))
+    token: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True)))
+
+
+ReflogResponseSchema = desert.schema_class(ReflogResponse)
