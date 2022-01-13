@@ -20,7 +20,10 @@ import static org.projectnessie.services.config.ServerConfigExtension.SERVER_CON
 import java.net.URI;
 import java.util.function.Supplier;
 import javax.ws.rs.core.Application;
+import org.glassfish.jersey.message.DeflateEncoder;
+import org.glassfish.jersey.message.GZipEncoder;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.server.filter.EncodingFilter;
 import org.glassfish.jersey.test.JerseyTest;
 import org.jboss.weld.environment.se.Weld;
 import org.jboss.weld.environment.se.WeldContainer;
@@ -95,6 +98,9 @@ public class NessieJaxRsExtension implements BeforeAllCallback, AfterAllCallback
             config.register(NessieExceptionMapper.class);
             config.register(NessieJaxRsJsonParseExceptionMapper.class, 10);
             config.register(NessieJaxRsJsonMappingExceptionMapper.class, 10);
+            config.register(EncodingFilter.class);
+            config.register(GZipEncoder.class);
+            config.register(DeflateEncoder.class);
             return config;
           }
         };

@@ -16,6 +16,7 @@
 package org.projectnessie.client.http;
 
 import static org.projectnessie.client.NessieConfigConstants.CONF_CONNECT_TIMEOUT;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_DISABLE_COMPRESSION;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_TRACING;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URI;
 import static org.projectnessie.client.NessieConfigConstants.CONF_READ_TIMEOUT;
@@ -87,6 +88,10 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
     s = configuration.apply(CONF_READ_TIMEOUT);
     if (s != null) {
       withReadTimeout(Integer.parseInt(s));
+    }
+    s = configuration.apply(CONF_NESSIE_DISABLE_COMPRESSION);
+    if (s != null) {
+      withDisableCompression(Boolean.parseBoolean(s));
     }
 
     return this;
@@ -162,6 +167,17 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
    */
   public HttpClientBuilder withConnectionTimeout(int connectionTimeoutMillis) {
     builder.setConnectionTimeoutMillis(connectionTimeoutMillis);
+    return this;
+  }
+
+  /**
+   * Set whether the compression shall be disabled or not.
+   *
+   * @param disableCompression whether the compression shall be disabled or not.
+   * @return {@code this}
+   */
+  public HttpClientBuilder withDisableCompression(boolean disableCompression) {
+    builder.setDisableCompression(disableCompression);
     return this;
   }
 

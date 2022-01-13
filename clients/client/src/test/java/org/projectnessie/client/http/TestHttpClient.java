@@ -36,6 +36,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.zip.GZIPInputStream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.util.TestServer;
@@ -47,15 +48,21 @@ public class TestHttpClient {
   private static final Instant NOW = Instant.now();
 
   private static HttpRequest get(InetSocketAddress address) {
-    return get(address, 15000, 15000);
+    return get(address, false);
   }
 
-  private static HttpRequest get(InetSocketAddress address, int connectTimeout, int readTimeout) {
+  private static HttpRequest get(InetSocketAddress address, boolean disableCompression) {
+    return get(address, 15000, 15000, disableCompression);
+  }
+
+  private static HttpRequest get(
+      InetSocketAddress address, int connectTimeout, int readTimeout, boolean disableCompression) {
     return HttpClient.builder()
         .setBaseUri(URI.create("http://localhost:" + address.getPort()))
         .setObjectMapper(MAPPER)
         .setConnectionTimeoutMillis(connectTimeout)
         .setReadTimeoutMillis(readTimeout)
+        .setDisableCompression(disableCompression)
         .build()
         .newRequest();
   }
@@ -85,7 +92,7 @@ public class TestHttpClient {
         HttpClientReadTimeoutException.class,
         () -> {
           try (TestServer server = new TestServer(handler)) {
-            get(server.getAddress(), 15000, 1).get().readEntity(ExampleBean.class);
+            get(server.getAddress(), 15000, 1, true).get().readEntity(ExampleBean.class);
           }
         });
   }
@@ -98,7 +105,7 @@ public class TestHttpClient {
           Assertions.assertEquals("PUT", h.getRequestMethod());
           assertThat(h.getRequestHeaders())
               .containsEntry("Content-Encoding", Collections.singletonList("gzip"));
-          try (InputStream in = h.getRequestBody()) {
+          try (InputStream in = new GZIPInputStream(h.getRequestBody())) {
             Object bean = MAPPER.readerFor(ExampleBean.class).readValue(in);
             Assertions.assertEquals(inputBean, bean);
           }
@@ -117,7 +124,7 @@ public class TestHttpClient {
           Assertions.assertEquals("POST", h.getRequestMethod());
           assertThat(h.getRequestHeaders())
               .containsEntry("Content-Encoding", Collections.singletonList("gzip"));
-          try (InputStream in = h.getRequestBody()) {
+          try (InputStream in = new GZIPInputStream(h.getRequestBody())) {
             Object bean = MAPPER.readerFor(ExampleBean.class).readValue(in);
             Assertions.assertEquals(inputBean, bean);
           }
@@ -125,6 +132,42 @@ public class TestHttpClient {
         };
     try (TestServer server = new TestServer(handler)) {
       get(server.getAddress()).post(inputBean);
+    }
+  }
+
+  @Test
+  void testPutNoCompression() throws Exception {
+    ExampleBean inputBean = new ExampleBean("x", 1, NOW);
+    HttpHandler handler =
+        h -> {
+          Assertions.assertEquals("PUT", h.getRequestMethod());
+          assertThat(h.getRequestHeaders()).doesNotContainKeys("Content-Encoding");
+          try (InputStream in = h.getRequestBody()) {
+            Object bean = MAPPER.readerFor(ExampleBean.class).readValue(in);
+            Assertions.assertEquals(inputBean, bean);
+          }
+          h.sendResponseHeaders(200, 0);
+        };
+    try (TestServer server = new TestServer(handler)) {
+      get(server.getAddress(), true).put(inputBean);
+    }
+  }
+
+  @Test
+  void testPostNoCompression() throws Exception {
+    ExampleBean inputBean = new ExampleBean("x", 1, NOW);
+    HttpHandler handler =
+        h -> {
+          Assertions.assertEquals("POST", h.getRequestMethod());
+          assertThat(h.getRequestHeaders()).doesNotContainKeys("Content-Encoding");
+          try (InputStream in = h.getRequestBody()) {
+            Object bean = MAPPER.readerFor(ExampleBean.class).readValue(in);
+            Assertions.assertEquals(inputBean, bean);
+          }
+          h.sendResponseHeaders(200, 0);
+        };
+    try (TestServer server = new TestServer(handler)) {
+      get(server.getAddress(), true).post(inputBean);
     }
   }
 

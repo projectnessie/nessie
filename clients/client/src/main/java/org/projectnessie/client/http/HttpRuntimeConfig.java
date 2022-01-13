@@ -27,6 +27,7 @@ final class HttpRuntimeConfig {
   private final ObjectMapper mapper;
   private final int readTimeoutMillis;
   private final int connectionTimeoutMillis;
+  private final boolean disableCompression;
   private final SSLContext sslContext;
   private final List<RequestFilter> requestFilters;
   private final List<ResponseFilter> responseFilters;
@@ -36,6 +37,7 @@ final class HttpRuntimeConfig {
       ObjectMapper mapper,
       int readTimeoutMillis,
       int connectionTimeoutMillis,
+      boolean disableCompression,
       SSLContext sslContext,
       List<RequestFilter> requestFilters,
       List<ResponseFilter> responseFilters) {
@@ -48,6 +50,7 @@ final class HttpRuntimeConfig {
     this.mapper = mapper;
     this.readTimeoutMillis = readTimeoutMillis;
     this.connectionTimeoutMillis = connectionTimeoutMillis;
+    this.disableCompression = disableCompression;
     this.sslContext = sslContext;
     this.requestFilters = requestFilters;
     this.responseFilters = responseFilters;
@@ -67,6 +70,10 @@ final class HttpRuntimeConfig {
 
   int getConnectionTimeoutMillis() {
     return connectionTimeoutMillis;
+  }
+
+  boolean isDisableCompression() {
+    return disableCompression;
   }
 
   SSLContext getSslContext() {
