@@ -17,7 +17,6 @@ package org.projectnessie.jaxrs.ext;
 
 import static org.projectnessie.services.config.ServerConfigExtension.SERVER_CONFIG;
 
-import java.net.URI;
 import java.util.function.Supplier;
 import javax.ws.rs.core.Application;
 import org.glassfish.jersey.message.DeflateEncoder;
@@ -26,10 +25,13 @@ import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.filter.EncodingFilter;
 import org.glassfish.jersey.test.JerseyTest;
 import org.jboss.weld.environment.se.Weld;
-import org.jboss.weld.environment.se.WeldContainer;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.ExtensionContext.Store.CloseableResource;
+import org.junit.jupiter.api.extension.ParameterContext;
+import org.junit.jupiter.api.extension.ParameterResolutionException;
+import org.junit.jupiter.api.extension.ParameterResolver;
 import org.projectnessie.services.authz.AccessCheckerExtension;
 import org.projectnessie.services.config.ServerConfigExtension;
 import org.projectnessie.services.impl.ConfigApiImpl;
@@ -49,11 +51,12 @@ import org.projectnessie.versioned.PersistVersionStoreExtension;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 
 /** A JUnit 5 extension that starts up Weld/JerseyTest. */
-public class NessieJaxRsExtension implements BeforeAllCallback, AfterAllCallback {
+public class NessieJaxRsExtension
+    implements BeforeAllCallback, AfterAllCallback, ParameterResolver {
+  private static final ExtensionContext.Namespace NAMESPACE =
+      ExtensionContext.Namespace.create(NessieJaxRsExtension.class);
 
   private final Supplier<DatabaseAdapter> databaseAdapterSupplier;
-  private Weld weld;
-  private JerseyTest jerseyTest;
 
   public NessieJaxRsExtension() {
     throw new UnsupportedOperationException();
@@ -64,64 +67,101 @@ public class NessieJaxRsExtension implements BeforeAllCallback, AfterAllCallback
   }
 
   @Override
-  public void beforeAll(ExtensionContext extensionContext) throws Exception {
-    weld = new Weld();
-    // Let Weld scan all the resources to discover injection points and dependencies
-    weld.addPackages(true, TreeApiImpl.class);
-    // Inject external beans
-    weld.addExtension(new ServerConfigExtension());
-    weld.addExtension(
-        PersistVersionStoreExtension.forDatabaseAdapter(
-            () -> {
-              DatabaseAdapter databaseAdapter = databaseAdapterSupplier.get();
-              databaseAdapter.eraseRepo();
-              databaseAdapter.initializeRepo(SERVER_CONFIG.getDefaultBranch());
-              return databaseAdapter;
-            }));
-    weld.addExtension(new AccessCheckerExtension());
-    final WeldContainer container = weld.initialize();
-
-    jerseyTest =
-        new JerseyTest() {
-          @Override
-          protected Application configure() {
-            ResourceConfig config = new ResourceConfig();
-            config.register(RestConfigResource.class);
-            config.register(RestTreeResource.class);
-            config.register(RestContentResource.class);
-            config.register(RestDiffResource.class);
-            config.register(RestRefLogResource.class);
-            config.register(ConfigApiImpl.class);
-            config.register(ContentKeyParamConverterProvider.class);
-            config.register(InstantParamConverterProvider.class);
-            config.register(ValidationExceptionMapper.class, 10);
-            config.register(NessieExceptionMapper.class);
-            config.register(NessieJaxRsJsonParseExceptionMapper.class, 10);
-            config.register(NessieJaxRsJsonMappingExceptionMapper.class, 10);
-            config.register(EncodingFilter.class);
-            config.register(GZipEncoder.class);
-            config.register(DeflateEncoder.class);
-            return config;
-          }
-        };
-
-    jerseyTest.setUp();
+  public void beforeAll(ExtensionContext extensionContext) {
+    // Put EnvHolder into the top-most context handled by this exception. Nested contexts will reuse
+    // the same value to minimize Jersey restarts. EnvHolder will initialize on first use and close
+    // when its owner context is destroyed.
+    // Note: we also use EnvHolder.class as a key to the map of stored values.
+    extensionContext
+        .getStore(NAMESPACE)
+        .getOrComputeIfAbsent(
+            EnvHolder.class,
+            key -> {
+              try {
+                return new EnvHolder(databaseAdapterSupplier);
+              } catch (Exception e) {
+                throw new IllegalStateException(e);
+              }
+            });
   }
 
   @Override
-  public void afterAll(ExtensionContext extensionContext) throws Exception {
-    if (null != jerseyTest) {
-      jerseyTest.tearDown();
-    }
-    if (null != weld) {
-      weld.shutdown();
-    }
+  public void afterAll(ExtensionContext extensionContext) {
+    // NOP - EnvHolder will be closed by JUnit5
   }
 
-  public URI getURI() {
-    if (null == jerseyTest) {
-      return null;
+  @Override
+  public boolean supportsParameter(
+      ParameterContext parameterContext, ExtensionContext extensionContext)
+      throws ParameterResolutionException {
+    return parameterContext.isAnnotated(NessieUri.class);
+  }
+
+  @Override
+  public Object resolveParameter(
+      ParameterContext parameterContext, ExtensionContext extensionContext)
+      throws ParameterResolutionException {
+    EnvHolder env = extensionContext.getStore(NAMESPACE).get(EnvHolder.class, EnvHolder.class);
+    if (env == null) {
+      throw new ParameterResolutionException(
+          "Nessie JaxRs env. is not initialized in " + extensionContext.getUniqueId());
     }
-    return jerseyTest.target().getUri();
+
+    return env.jerseyTest.target().getUri();
+  }
+
+  private static class EnvHolder implements CloseableResource {
+    private final Weld weld;
+    private final JerseyTest jerseyTest;
+
+    public EnvHolder(Supplier<DatabaseAdapter> databaseAdapterSupplier) throws Exception {
+      weld = new Weld();
+      // Let Weld scan all the resources to discover injection points and dependencies
+      weld.addPackages(true, TreeApiImpl.class);
+      // Inject external beans
+      weld.addExtension(new ServerConfigExtension());
+      weld.addExtension(
+          PersistVersionStoreExtension.forDatabaseAdapter(
+              () -> {
+                DatabaseAdapter databaseAdapter = databaseAdapterSupplier.get();
+                databaseAdapter.eraseRepo();
+                databaseAdapter.initializeRepo(SERVER_CONFIG.getDefaultBranch());
+                return databaseAdapter;
+              }));
+      weld.addExtension(new AccessCheckerExtension());
+      weld.initialize();
+
+      jerseyTest =
+          new JerseyTest() {
+            @Override
+            protected Application configure() {
+              ResourceConfig config = new ResourceConfig();
+              config.register(RestConfigResource.class);
+              config.register(RestTreeResource.class);
+              config.register(RestContentResource.class);
+              config.register(RestDiffResource.class);
+              config.register(RestRefLogResource.class);
+              config.register(ConfigApiImpl.class);
+              config.register(ContentKeyParamConverterProvider.class);
+              config.register(InstantParamConverterProvider.class);
+              config.register(ValidationExceptionMapper.class, 10);
+              config.register(NessieExceptionMapper.class);
+              config.register(NessieJaxRsJsonParseExceptionMapper.class, 10);
+              config.register(NessieJaxRsJsonMappingExceptionMapper.class, 10);
+              config.register(EncodingFilter.class);
+              config.register(GZipEncoder.class);
+              config.register(DeflateEncoder.class);
+              return config;
+            }
+          };
+
+      jerseyTest.setUp();
+    }
+
+    @Override
+    public void close() throws Throwable {
+      jerseyTest.tearDown();
+      weld.shutdown();
+    }
   }
 }
