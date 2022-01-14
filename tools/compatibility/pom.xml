@@ -25,14 +25,15 @@
     <version>0.18.1-SNAPSHOT</version>
   </parent>
 
-  <artifactId>nessie-tools</artifactId>
+  <artifactId>nessie-compatibility</artifactId>
   <packaging>pom</packaging>
 
-  <name>Nessie - Tools</name>
+  <name>Nessie - Backward Compatibility - Parent</name>
 
   <modules>
-    <module>apprunner-maven-plugin</module>
-    <module>content-generator</module>
-    <module>compatibility</module>
+    <module>common</module>
+    <module>nessie-jersey</module>
+    <module>client-compatibility</module>
+    <module>server-compatibility</module>
   </modules>
 </project>
