@@ -188,7 +188,7 @@
     <scala2.12.version>2.12.13</scala2.12.version>
     <scala2.13.version>2.13.8</scala2.13.version>
     <serverless.version>1.5</serverless.version>
-    <slf4j.version>1.7.32</slf4j.version>
+    <slf4j.version>1.7.33</slf4j.version>
     <spark3.jackson.version>2.13.1</spark3.jackson.version>
     <spark3.version>3.1.2</spark3.version>
     <sqlite.version>1.0.392</sqlite.version>
