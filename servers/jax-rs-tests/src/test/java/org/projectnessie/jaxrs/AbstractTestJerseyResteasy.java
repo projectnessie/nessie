@@ -18,10 +18,12 @@ package org.projectnessie.jaxrs;
 import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
+import java.net.URI;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.projectnessie.jaxrs.ext.NessieJaxRsExtension;
+import org.projectnessie.jaxrs.ext.NessieUri;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.tests.extension.DatabaseAdapterExtension;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapter;
@@ -35,9 +37,9 @@ abstract class AbstractTestJerseyResteasy extends AbstractResteasyTest {
   static NessieJaxRsExtension server = new NessieJaxRsExtension(() -> databaseAdapter);
 
   @BeforeAll
-  static void setup() {
-    RestAssured.baseURI = server.getURI().toString();
-    RestAssured.port = server.getURI().getPort();
+  static void setup(@NessieUri URI uri) {
+    RestAssured.baseURI = uri.toString();
+    RestAssured.port = uri.getPort();
     RestAssured.requestSpecification =
         new RequestSpecBuilder()
             .setContentType(ContentType.JSON)
