@@ -37,7 +37,7 @@
     "postcss-safe-parser": "6.0.0",
     "pretty-ms": "^7.0.1",
     "prompts": "2.4.2",
-    "ramda": "^0.27.2",
+    "ramda": "^0.28.0",
     "react": "^16.14.0",
     "react-app-polyfill": "^3.0.0",
     "react-bootstrap": "^2.1.1",
