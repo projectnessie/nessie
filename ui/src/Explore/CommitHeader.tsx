@@ -30,7 +30,7 @@ const fetchLog = (currentRef: string): Promise<void | LogEntry | undefined> => {
         return data.logEntries[0];
       }
     })
-    .catch((t) => log.error("CommitLog", t));
+    .catch((t) => log.error("CommitLog", t as undefined));
 };
 
 const CommitHeader = (props: { currentRef: string }): React.ReactElement => {

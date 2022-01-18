@@ -44,7 +44,7 @@ const fetchLog = (
     .then((data) => {
       return data;
     })
-    .catch((t) => log.error("CommitLog", t));
+    .catch((t) => log.error("CommitLog", t as undefined));
 };
 
 const CommitLog = (props: {
