@@ -159,7 +159,7 @@
     <errorprone-slf4j.version>0.1.4</errorprone-slf4j.version>
     <flapdoodle.version>3.1.4</flapdoodle.version>
     <gatling.maven.version>4.1.1</gatling.maven.version>
-    <gatling.version>3.7.3</gatling.version>
+    <gatling.version>3.7.4</gatling.version>
     <google-error-prone.version>2.10.0</google-error-prone.version>
     <google-java-format.version>1.13.0</google-java-format.version>
     <guava.version>31.0.1-jre</guava.version>
