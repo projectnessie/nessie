@@ -15,12 +15,22 @@
  */
 
 import React from "react";
-import { BrowserRouter, Router } from "react-router-dom";
+import {
+  BrowserRouter,
+  MemoryRouter,
+  Route,
+  Routes,
+  useLocation,
+} from "react-router-dom";
 import { render, screen, waitFor } from "@testing-library/react";
 import TableListing from "./TableListing";
 // tslint:disable-next-line:no-implicit-dependencies
 import nock from "nock";
-import { createMemoryHistory } from "history";
+
+const ShowPath = () => {
+  const { pathname, search, hash } = useLocation();
+  return <pre>{JSON.stringify({ pathname, search, hash })}</pre>;
+};
 
 it("TableListing renders", async () => {
   const entry = {
@@ -79,7 +89,6 @@ it("TableListing renders object", async () => {
 });
 
 it("TableListing redirects on an invalid ref", async () => {
-  const history = createMemoryHistory();
   const scope = nock("http://localhost/api/v1")
     .get(
       "/trees/tree/main/entries?namespaceDepth=1&filter=entry.namespace.matches(%27(%5C%5C.%7C%24)%27)"
@@ -87,9 +96,12 @@ it("TableListing redirects on an invalid ref", async () => {
     .reply(404);
 
   const { getByText, asFragment } = render(
-    <Router history={history}>
-      <TableListing currentRef={"main"} />
-    </Router>
+    <MemoryRouter>
+      <Routes>
+        <Route path="/" element={<TableListing currentRef={"main"} />} />
+        <Route path={"/notfound"} element={<ShowPath />} />
+      </Routes>
+    </MemoryRouter>
   );
   expect(asFragment()).toMatchSnapshot();
   await waitFor(() =>
@@ -99,7 +111,13 @@ it("TableListing redirects on an invalid ref", async () => {
   );
 
   scope.done();
-  expect(history.location.pathname).toEqual("/notfound");
+  expect(asFragment()).toMatchInlineSnapshot(`
+    <DocumentFragment>
+      <pre>
+        {"pathname":"/notfound","search":"","hash":""}
+      </pre>
+    </DocumentFragment>
+  `);
 });
 const tree = [
   {

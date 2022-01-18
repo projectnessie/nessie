@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import React from "react";
-import { Route, Switch } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import Explore from "./Explore/Explore";
 import { Nav, Navbar } from "react-bootstrap";
 import NotFound from "./Explore/NotFound";
@@ -37,12 +37,12 @@ const App: React.FunctionComponent = () => {
           <Nav.Link href="/">Tables</Nav.Link>
         </Nav>
       </Navbar>
-      <Switch>
-        <Route exact path="/notfound" component={NotFound} />
-        <Route path="/tree/:slug*" component={Explore} />
-        <Route path="/content/:slug*" component={Explore} />
-        <Route exact path="/" component={Explore} />
-      </Switch>
+      <Routes>
+        <Route path="/notfound" element={NotFound} />
+        <Route path="/tree/:slug*" element={Explore} />
+        <Route path="/content/:slug*" element={Explore} />
+        <Route path="/" element={Explore} />
+      </Routes>
     </div>
   );
 };

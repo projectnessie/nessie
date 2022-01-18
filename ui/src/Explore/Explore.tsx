@@ -74,7 +74,7 @@ const parseSlug = (
   branches: Branch[],
   tags: Tag[]
 ): Slug => {
-  if (!slug || slug.split("/").length === 0) {
+  if (!slug || slug.length === 0 || slug.split("/").length === 0) {
     return { currentRef: defaultBranch, path: [] };
   }
 
@@ -162,7 +162,7 @@ const Explore = (): React.ReactElement => {
       return;
     }
     const newSlug = updateRef(
-      slug,
+      slug ? slug : "",
       defaultBranch,
       branches.branches,
       branches.tags
