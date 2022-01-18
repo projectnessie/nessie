@@ -109,6 +109,7 @@
     "eslint-plugin-unicorn": "^40.1.0",
     "eslint-webpack-plugin": "^2.6.0",
     "file-loader": "6.2.0",
+    "follow-redirects": ">=1.14.7",
     "fs-extra": "^10.0.0",
     "html-webpack-plugin": "4.5.2",
     "husky": "^7.0.4",
