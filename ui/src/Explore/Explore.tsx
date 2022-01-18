@@ -34,7 +34,7 @@ const fetchDefaultBranch = (): Promise<string | void> => {
         return data.name;
       }
     })
-    .catch((t) => log.error("DefaultBranch", t));
+    .catch((t) => log.error("DefaultBranch", t as undefined));
 };
 
 const loadBranchesAndTags = (): Promise<Reference[] | void> => {
@@ -43,7 +43,7 @@ const loadBranchesAndTags = (): Promise<Reference[] | void> => {
     .then((data) => {
       return data.references.sort(btCompare);
     })
-    .catch((t) => log.error("AllReferences", t));
+    .catch((t) => log.error("AllReferences", t as undefined));
 };
 
 const btCompare = (a: Branch, b: Branch): number => {

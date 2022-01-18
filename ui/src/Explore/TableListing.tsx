@@ -71,7 +71,7 @@ const fetchKeys = (
     .then((data) => {
       return data.entries?.map((e) => entryToKey(e));
     })
-    .catch((e) => log.error("Entries", e));
+    .catch((e) => log.error("Entries", e as undefined));
 };
 
 const entryToKey = (entry: Entry): Key => {
@@ -96,7 +96,7 @@ const fetchContent = (
     .then((data) => {
       return data;
     })
-    .catch((e) => log.error("getMultipleContents", e));
+    .catch((e) => log.error("getMultipleContents", e as undefined));
 };
 
 interface Key {
