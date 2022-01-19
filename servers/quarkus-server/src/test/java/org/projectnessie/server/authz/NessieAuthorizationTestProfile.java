@@ -74,6 +74,12 @@ public class NessieAuthorizationTestProfile extends AuthenticationEnabledProfile
           .put(
               "nessie.server.authorization.rules.allow_listing_reflog",
               "op=='VIEW_REFLOG' && role=='admin_user'")
+          .put(
+              "nessie.server.authorization.rules.allow_creation_user1",
+              "op=='CREATE_REFERENCE' && role=='user1' && ref.matches('.*')")
+          .put(
+              "nessie.server.authorization.rules.allow_view_merge_delete_user1",
+              "op in ['VIEW_REFERENCE', 'ASSIGN_REFERENCE_TO_HASH', 'COMMIT_CHANGE_AGAINST_REFERENCE', 'DELETE_REFERENCE'] && role=='user1' && (ref.startsWith('allowedBranch') || ref == 'main')")
           .build();
 
   @Override
