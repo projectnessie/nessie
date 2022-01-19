@@ -131,7 +131,15 @@ public class CelAccessChecker implements AccessChecker {
     }
     String roleName = getRoleName(context);
     ImmutableMap<String, Object> arguments =
-        ImmutableMap.of("role", roleName, "op", AuthorizationRuleType.VIEW_REFLOG.name());
+        ImmutableMap.of(
+            "role",
+            roleName,
+            "op",
+            AuthorizationRuleType.VIEW_REFLOG.name(),
+            "path",
+            "",
+            "ref",
+            "");
 
     Supplier<String> errorMsgSupplier =
         () ->
@@ -151,7 +159,7 @@ public class CelAccessChecker implements AccessChecker {
     }
     String roleName = getRoleName(context);
     ImmutableMap<String, Object> arguments =
-        ImmutableMap.of("ref", ref.getName(), "role", roleName, "op", type.name());
+        ImmutableMap.of("ref", ref.getName(), "role", roleName, "op", type.name(), "path", "");
 
     Supplier<String> errorMsgSupplier =
         () ->
