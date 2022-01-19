@@ -15,12 +15,22 @@
  */
 
 import React from "react";
-import { BrowserRouter, Router } from "react-router-dom";
+import {
+  BrowserRouter,
+  MemoryRouter,
+  Routes,
+  Route,
+  useLocation,
+} from "react-router-dom";
 import { render, screen, waitFor } from "@testing-library/react";
 import CommitLog from "./CommitLog";
 // tslint:disable-next-line:no-implicit-dependencies
 import nock from "nock";
-import { createMemoryHistory } from "history";
+
+const ShowPath = () => {
+  const { pathname, search, hash } = useLocation();
+  return <pre>{JSON.stringify({ pathname, search, hash })}</pre>;
+};
 
 it("Commit log renders", async () => {
   const now = new Date();
@@ -57,12 +67,17 @@ it("Commit redirects on an invalid ref", async () => {
   const scope1 = nock("http://localhost/api/v1")
     .get("/trees/tree/main/log?maxRecords=10")
     .reply(404);
-  const history = createMemoryHistory();
 
   const { getByText, asFragment } = render(
-    <Router history={history}>
-      <CommitLog currentRef={"main"} path={["main"]} />
-    </Router>
+    <MemoryRouter initialEntries={["/tree/main"]}>
+      <Routes>
+        <Route
+          path="/tree/*"
+          element={<CommitLog currentRef={"main"} path={["main"]} />}
+        />
+        <Route path={"/notfound"} element={<ShowPath />} />
+      </Routes>
+    </MemoryRouter>
   );
   expect(asFragment()).toMatchSnapshot();
   await waitFor(() =>
@@ -72,5 +87,11 @@ it("Commit redirects on an invalid ref", async () => {
   );
 
   scope1.done();
-  expect(history.location.pathname).toEqual("/notfound");
+  expect(asFragment()).toMatchInlineSnapshot(`
+    <DocumentFragment>
+      <pre>
+        {"pathname":"/notfound","search":"","hash":""}
+      </pre>
+    </DocumentFragment>
+  `);
 });

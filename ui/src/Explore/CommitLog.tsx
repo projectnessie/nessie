@@ -17,7 +17,12 @@
 import { Button, Card, Nav } from "react-bootstrap";
 import moment from "moment";
 import React, { useEffect, useState, Fragment } from "react";
-import { useParams, useHistory, useLocation, Redirect } from "react-router-dom";
+import {
+  useParams,
+  useNavigate,
+  useLocation,
+  Navigate,
+} from "react-router-dom";
 import { api, LogEntry, LogResponse } from "../utils";
 import { factory } from "../ConfigLog4j";
 import CodeIcon from "@material-ui/icons/Code";
@@ -27,7 +32,6 @@ import ExploreLink from "./ExploreLink";
 import { routeSlugs } from "./Constants";
 import { EmptyMessageView } from "./Components";
 import CommitDetails from "./CommitDetails";
-import { Location, History } from "history";
 
 const log = factory.getLogger("api.CommitHeader");
 
@@ -44,7 +48,11 @@ const fetchLog = (
     .then((data) => {
       return data;
     })
-    .catch((t) => log.error("CommitLog", t as undefined));
+    .catch((t: Response) => {
+      if (t.status !== 404) {
+        log.error(`CommitLog ${JSON.stringify(t)}`);
+      }
+    });
 };
 
 const CommitLog = (props: {
@@ -76,8 +84,8 @@ const CommitLog = (props: {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
-  const location = useLocation() as Location;
-  const history = useHistory() as History;
+  const location = useLocation();
+  const history = useNavigate();
 
   const fetchMoreLog = async (isResetData = false) => {
     const pageToken = isResetData ? "" : paginationToken;
@@ -116,7 +124,7 @@ const CommitLog = (props: {
           0,
           location.pathname.lastIndexOf("/")
         );
-        history.push(listPath);
+        history(listPath);
       }
     };
     void logs();
@@ -134,7 +142,7 @@ const CommitLog = (props: {
   }, [slug, logList]);
 
   if (isRefNotFound) {
-    return <Redirect to="/notfound" />;
+    return <Navigate to="/notfound" />;
   }
 
   if (!logList || logList.length === 0 || !logList[0].commitMeta.hash) {

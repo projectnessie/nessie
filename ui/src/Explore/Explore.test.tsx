@@ -15,27 +15,22 @@
  */
 
 import React from "react";
-import { BrowserRouter, Route, Router } from "react-router-dom";
+import { BrowserRouter, Route, Routes, MemoryRouter } from "react-router-dom";
 import { render, screen, waitFor } from "@testing-library/react";
 import Explore from "./Explore";
 // tslint:disable-next-line:no-implicit-dependencies
 import nock from "nock";
-import { createMemoryHistory } from "history";
 
-// noinspection TypeScriptValidateTypes
 const renderWithRouter = (component: React.ReactElement) => {
-  const history = createMemoryHistory({
-    initialEntries: ["/tree/main/a"],
-  });
-  // eslint-disable-next-line react/prop-types
-  const Wrapper = ({ children }: { children: any }) => (
-    <Router history={history}>
-      <Route path="/tree/:slug">{children}</Route>
-    </Router>
+  const Wrapper = ({ children }: { children: React.ReactElement }) => (
+    <MemoryRouter initialEntries={["/tree/main/a"]}>
+      <Routes>
+        <Route path="/tree/*" element={children} />
+      </Routes>
+    </MemoryRouter>
   );
   return {
     ...render(component, { wrapper: Wrapper }),
-    history,
   };
 };
 

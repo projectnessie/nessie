@@ -29,9 +29,8 @@ import {
 } from "../utils";
 import { factory } from "../ConfigLog4j";
 import { ContentView, EmptyMessageView } from "./Components";
-import { useHistory, Redirect, useLocation } from "react-router-dom";
+import { useNavigate, Navigate, useLocation } from "react-router-dom";
 import { routeSlugs } from "./Constants";
-import { Location, History } from "history";
 
 const log = factory.getLogger("api.TableListing");
 
@@ -71,7 +70,11 @@ const fetchKeys = (
     .then((data) => {
       return data.entries?.map((e) => entryToKey(e));
     })
-    .catch((e) => log.error("Entries", e as undefined));
+    .catch((e: Response) => {
+      if (e.status !== 404) {
+        log.error(`Entries ${JSON.stringify(e)}`);
+      }
+    });
 };
 
 const entryToKey = (entry: Entry): Key => {
@@ -96,7 +99,7 @@ const fetchContent = (
     .then((data) => {
       return data;
     })
-    .catch((e) => log.error("getMultipleContents", e as undefined));
+    .catch((e) => log.error(`getMultipleContents ${JSON.stringify(e)}`));
 };
 
 interface Key {
@@ -120,8 +123,8 @@ const TableListing = ({
   const [isRefNotFound, setRefNotFound] = useState(false);
   const [showContent, setShowContent] = useState(false);
   const [content, setcontent] = useState<Content>();
-  const location = useLocation() as Location;
-  const history = useHistory() as History;
+  const location = useLocation();
+  const history = useNavigate();
   useEffect(() => {
     const modifiedPath = location.pathname && location.pathname.split("/")[1];
     const isContentPath = modifiedPath === routeSlugs.content;
@@ -165,12 +168,12 @@ const TableListing = ({
   useEffect(() => {
     if (showContent) {
       const listPath = location.pathname.split("/", 3).join("/");
-      history.push(listPath);
+      history(listPath);
     }
   }, [currentRef]);
 
   return isRefNotFound ? (
-    <Redirect to="/notfound" />
+    <Navigate to="/notfound" />
   ) : (
     <Card>
       {!showContent ? (
