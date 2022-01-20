@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
+import org.projectnessie.versioned.ContentAttachment;
 import org.projectnessie.versioned.Key;
 
 /** API helper method to encapsulate parameters for {@link DatabaseAdapter#commit(CommitParams)}. */
@@ -41,10 +42,14 @@ public interface CommitParams extends ToBranchParams {
   List<KeyWithBytes> getPuts();
 
   /**
-   * Mapping of content-ids to the new content-state (think: Iceberg table-metadata), coming from
-   * the "content" property of a {@code PutGlobal} commit operation.
+   * Mapping of content-ids to the new content-state (think: Iceberg table-metadata), the global
+   * state coming from the "content" object of a {@link org.projectnessie.versioned.Put} commit
+   * operation.
    */
   Map<ContentId, ByteString> getGlobal();
+
+  /** The content attachments for the put operations. */
+  List<ContentAttachment> getAttachments();
 
   /** List of "unchanged" keys, from {@code Unchanged} commit operations. */
   List<Key> getUnchanged();

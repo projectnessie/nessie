@@ -16,7 +16,10 @@
 package org.projectnessie.versioned;
 
 import com.google.protobuf.ByteString;
-import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 /**
  * A set of helpers that users of a VersionStore must implement.
@@ -31,7 +34,12 @@ public interface StoreWorker<CONTENT, COMMIT_METADATA, CONTENT_TYPE extends Enum
 
   ByteString toStoreGlobalState(CONTENT content);
 
-  CONTENT valueFromStore(ByteString onReferenceValue, Optional<ByteString> globalState);
+  void toStoreAttachments(CONTENT content, Consumer<ContentAttachment> attachmentConsumer);
+
+  CONTENT valueFromStore(
+      ByteString onReferenceValue,
+      Supplier<ByteString> globalState,
+      Function<Stream<ContentAttachmentKey>, Stream<ContentAttachment>> attachmentsRetriever);
 
   String getId(CONTENT content);
 
@@ -46,6 +54,16 @@ public interface StoreWorker<CONTENT, COMMIT_METADATA, CONTENT_TYPE extends Enum
   }
 
   boolean requiresGlobalState(Enum<CONTENT_TYPE> contentType);
+
+  default boolean requiresPerContentState(ByteString content) {
+    return requiresPerContentState(getType(content));
+  }
+
+  default boolean requiresPerContentState(CONTENT content) {
+    return requiresPerContentState(getType(content));
+  }
+
+  boolean requiresPerContentState(Enum<CONTENT_TYPE> contentType);
 
   CONTENT_TYPE getType(ByteString onRefContent);
 

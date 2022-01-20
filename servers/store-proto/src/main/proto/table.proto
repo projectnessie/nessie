@@ -22,31 +22,106 @@ option java_generate_equals_and_hash = true;
 
 message Content {
   oneof object_type {
+    // Deprecated: Old Iceberg table & view global state
     IcebergMetadataPointer iceberg_metadata_pointer = 1;
+    // Deprecated: Old Iceberg model - table metadata IDs
     IcebergRefState iceberg_ref_state = 2;
+    // Deprecated: Old Iceberg model - view metadata IDs
     IcebergViewState iceberg_view_state = 3;
+
+    // Delta Lake information
     DeltaLakeTable delta_lake_table = 4;
     Namespace namespace = 6;
   }
   string id = 5;
 }
 
+// TODO For the new Iceberg model:
+//  * separate table with former global state, that holds:
+//    "last_*" properties + "snapshot_ids" / "version_ids"
+//  * update that table on commit
+//  * successful CAS on that new table doesn't matter, at
+//    worst, we "lose" a value
+
+// TODO Upgrade path from IcebergRefState/IcebergViewState --> IcebergTableOnRefState/IcebergViewOnRefState
+//  * Need a way to fill the new structures from the old state
+//  * Client behavior / reads:
+//    * w/ old model - current code path, unchanged
+//    * w/ new model - new code path
+//  * Client behavior / writes:
+//    * reads old model - send the new model + all known snapshot-IDs/version-IDs
+//    * reads new model - just send the new model
+//    * Nessie server validates the changes and rejects incompatible updates like
+//      * last-XYZ in update <= current last-XYZ
+//      * already used snapshot-ID / version-ID
+//  * GC related:
+//    * ability to remove known snapshot-IDs / version-IDs
+//    * ability to remove schemas
+
+// "old" model, w/ table/view-metadata via FileIO for Iceberg tables + views
 message IcebergMetadataPointer {
   string metadata_location = 1;
 }
 
+// Deprecated Iceberg model, w/ table-metadata via FileIO
 message IcebergRefState {
   int64 snapshot_id = 1;
   int32 schema_id = 2;
   int32 spec_id = 3;
   int32 sort_order_id = 4;
+
+  optional string metadata_location = 5;
+
+  optional string uuid = 6;
+  int64 last_updated_millis = 7;
+  map<string, string> properties = 8;
+
+  // Following four "child" objects are Stored as a content-attachment with
+  // the following attachment-key-attributes:
+  // * content-id --> Nessie content ID
+  // * object-type --> "schemas" / "specs" / "sort_orders" / "snapshots"
+  // * object-id --> the value of 4 fields below
+  // Read/updated using bulk read/write operations via DatabaseAdapter.
+  // The content attachments contain lists of the schemas/specs/sort-orders/snapshots.
+
+  // The attachment-object-id that holds the list of partition-specs
+  // for this on-ref state.
+  string specs_list_key = 9;
+  // The attachment-object-id that holds the list of sort-orders
+  // for this on-ref state.
+  string sort_orders_list_key = 10;
+  // The attachment-object-id that holds the list of schemas
+  // for this on-ref state.
+  string schemas_list_key = 11;
+  // The attachment-object-id that holds the list of snapshots
+  // for this on-ref state.
+  string snapshots_list_key = 12;
 }
 
+// Deprecated Iceberg model, w/ view-metadata via FileIO
 message IcebergViewState {
   int32 version_id = 1;
   int32 schema_id = 2;
   string sql_text = 3;
   string dialect = 4;
+
+  optional string metadata_location = 5;
+
+  optional string uuid = 6;
+  map<string, string> properties = 7;
+  map<string, string> summary = 8;
+  string session_catalog = 9;
+  repeated string session_namespace = 10;
+}
+
+enum IcebergPerContentType {
+  UNKNOWN = 0;
+  MAIN = 1;
+  SNAPSHOT = 2;
+  SCHEMA = 3;
+  PARTITION_SPEC = 4;
+  SORT_ORDER = 5;
+  VERSION = 6;
 }
 
 message DeltaLakeTable {

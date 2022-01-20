@@ -297,6 +297,14 @@ public interface DatabaseAdapter {
   Map<String, Map<String, String>> repoMaintenance(RepoMaintenanceParams repoMaintenanceParams);
 
   /**
+   * Retrieves the per-content-state for the given contents-id.
+   *
+   * @param contentId contents-id to retrieve the global content for
+   * @return global content, if present or an empty optional, never {@code null}.
+   */
+  Optional<ContentIdAndBytes> perContent(ContentId contentId);
+
+  /**
    * Retrieve the refLog starting at the refLog referenced by {@code offset}.
    *
    * @return stream of {@link RefLog}s

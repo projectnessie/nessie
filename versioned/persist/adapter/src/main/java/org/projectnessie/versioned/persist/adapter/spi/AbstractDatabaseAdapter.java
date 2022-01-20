@@ -60,6 +60,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.annotation.Nonnull;
 import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.ContentAttachment;
 import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.GetNamedRefsParams.RetrieveOptions;
@@ -489,7 +490,9 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
                       fromVal != null
                           ? fromVal.getGlobalState()
                           : (toVal != null ? toVal.getGlobalState() : null));
-              return Difference.of(k, g, f, t);
+              List<ContentAttachment> fa = fromVal != null ? fromVal.getPerContentState() : null;
+              List<ContentAttachment> ta = toVal != null ? toVal.getPerContentState() : null;
+              return Difference.of(k, g, f, t, fa, ta);
             })
         .filter(Objects::nonNull);
   }
@@ -1197,6 +1200,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     Map<Key, ByteString> nonGlobal = new HashMap<>();
     Map<Key, ContentId> keyToContentIds = new HashMap<>();
     Set<ContentId> contentIdsForGlobal = new HashSet<>();
+    Set<ContentId> contentIdsForPerContent = new HashSet<>();
 
     Consumer<CommitLogEntry> commitLogEntryHandler =
         entry -> {
@@ -1214,6 +1218,9 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
             }
             nonGlobal.put(put.getKey(), put.getValue());
             keyToContentIds.put(put.getKey(), put.getContentId());
+            if (storeWorker.requiresPerContentState(put.getValue())) {
+              contentIdsForPerContent.add(put.getContentId());
+            }
             if (storeWorker.requiresGlobalState(put.getValue())) {
               contentIdsForGlobal.add(put.getContentId());
             }
@@ -1279,13 +1286,15 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
 
     Map<ContentId, ByteString> globals = fetchGlobalStates(ctx, contentIdsForGlobal);
 
+    Map<ContentId, ByteString> perContent = fetchPerContentState(ctx, contentIdsForPerContent);
+
     return nonGlobal.entrySet().stream()
         .collect(
             Collectors.toMap(
                 Entry::getKey,
                 e ->
                     ContentAndState.of(
-                        e.getValue(), globals.get(keyToContentIds.get(e.getKey())))));
+                        e.getValue(), globals.get(keyToContentIds.get(e.getKey())), null)));
   }
 
   /**
@@ -1315,6 +1324,16 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
   }
 
   protected abstract Stream<KeyListEntity> doFetchKeyLists(OP_CONTEXT ctx, List<Hash> keyListsIds);
+
+  /**
+   * Fetches the per-content-state information for the given content-ids.
+   *
+   * @param ctx technical context
+   * @param contentIds the content-ids to fetch
+   * @return map of content-id to state
+   */
+  protected abstract Map<ContentId, ByteString> fetchPerContentState(
+      OP_CONTEXT ctx, Set<ContentId> contentIds) throws ReferenceNotFoundException;
 
   /**
    * Write a new commit-entry, the given commit entry is to be persisted as is. All values of the

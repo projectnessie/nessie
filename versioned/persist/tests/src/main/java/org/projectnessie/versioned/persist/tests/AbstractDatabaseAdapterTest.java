@@ -359,7 +359,9 @@ public abstract class AbstractDatabaseAdapterTest {
                               Optional.empty(),
                               Optional.empty(),
                               Optional.of(
-                                  SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(content)));
+                                  SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(content)),
+                              null,
+                              null);
                         })
                     .collect(Collectors.toList()));
       }
@@ -387,7 +389,9 @@ public abstract class AbstractDatabaseAdapterTest {
                               Optional.empty(),
                               Optional.of(
                                   SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(content)),
-                              Optional.empty());
+                              Optional.empty(),
+                              null,
+                              null);
                         })
                     .collect(Collectors.toList()));
       }
@@ -419,7 +423,9 @@ public abstract class AbstractDatabaseAdapterTest {
                               Key.of("key", Integer.toString(k)),
                               Optional.empty(),
                               Optional.of(SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(from)),
-                              Optional.of(SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(to)));
+                              Optional.of(SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(to)),
+                              null,
+                              null);
                         })
                     .collect(Collectors.toList()));
       }

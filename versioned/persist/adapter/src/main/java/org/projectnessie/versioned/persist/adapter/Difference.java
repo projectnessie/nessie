@@ -16,8 +16,10 @@
 package org.projectnessie.versioned.persist.adapter;
 
 import com.google.protobuf.ByteString;
+import java.util.List;
 import java.util.Optional;
 import org.immutables.value.Value;
+import org.projectnessie.versioned.ContentAttachment;
 import org.projectnessie.versioned.Key;
 
 @Value.Immutable
@@ -31,13 +33,25 @@ public interface Difference {
 
   Optional<ByteString> getToValue();
 
+  List<ContentAttachment> getFromAttachments();
+
+  List<ContentAttachment> getToAttachments();
+
   static Difference of(
-      Key key, Optional<ByteString> global, Optional<ByteString> from, Optional<ByteString> to) {
-    return ImmutableDifference.builder()
-        .key(key)
-        .global(global)
-        .fromValue(from)
-        .toValue(to)
-        .build();
+      Key key,
+      Optional<ByteString> global,
+      Optional<ByteString> from,
+      Optional<ByteString> to,
+      List<ContentAttachment> fromAttachments,
+      List<ContentAttachment> toAttachments) {
+    ImmutableDifference.Builder diff =
+        ImmutableDifference.builder().key(key).global(global).fromValue(from).toValue(to);
+    if (fromAttachments != null) {
+      diff.fromAttachments(fromAttachments);
+    }
+    if (toAttachments != null) {
+      diff.toAttachments(toAttachments);
+    }
+    return diff.build();
   }
 }

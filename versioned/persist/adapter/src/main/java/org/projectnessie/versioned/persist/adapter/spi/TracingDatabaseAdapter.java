@@ -281,4 +281,11 @@ public final class TracingDatabaseAdapter implements DatabaseAdapter {
       delegate.deleteAttachments(keys);
     }
   }
+
+  @Override
+  public Optional<ContentIdAndBytes> perContent(ContentId contentId) {
+    try (Traced ignore = trace("perContent").tag(TAG_CONTENT_ID, contentId.getId())) {
+      return delegate.perContent(contentId);
+    }
+  }
 }

@@ -15,6 +15,8 @@
  */
 package org.projectnessie.server.store;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.ByteString;
@@ -23,9 +25,7 @@ import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -49,28 +49,29 @@ class TestStoreWorker {
   @ParameterizedTest
   @MethodSource("provideDeserialization")
   void testDeserialization(Map.Entry<ByteString, Content> entry) {
-    Content actual = worker.valueFromStore(entry.getKey(), Optional.empty());
-    Assertions.assertEquals(entry.getValue(), actual);
+    Content actual = worker.valueFromStore(entry.getKey(), () -> null, x -> Stream.empty());
+    assertThat(actual).isEqualTo(entry.getValue());
   }
 
   @ParameterizedTest
   @MethodSource("provideDeserialization")
   void testSerialization(Map.Entry<ByteString, Content> entry) {
     ByteString actual = worker.toStoreOnReferenceState(entry.getValue());
-    Assertions.assertEquals(entry.getKey(), actual);
+    assertThat(actual).isEqualTo(entry.getKey());
   }
 
   @ParameterizedTest
   @MethodSource("provideDeserialization")
   void testSerde(Map.Entry<ByteString, Content> entry) {
     ByteString actualBytes = worker.toStoreOnReferenceState(entry.getValue());
-    Assertions.assertEquals(entry.getValue(), worker.valueFromStore(actualBytes, Optional.empty()));
-    Content actualContent = worker.valueFromStore(entry.getKey(), Optional.empty());
-    Assertions.assertEquals(entry.getKey(), worker.toStoreOnReferenceState(actualContent));
+    assertThat(worker.valueFromStore(actualBytes, () -> null, x -> Stream.empty()))
+        .isEqualTo(entry.getValue());
+    Content actualContent = worker.valueFromStore(entry.getKey(), () -> null, x -> Stream.empty());
+    assertThat(worker.toStoreOnReferenceState(actualContent)).isEqualTo(entry.getKey());
   }
 
   @Test
-  void testSerdeIceberg() {
+  void testSerdeIcebergTable() {
     String path = "foo/bar";
     IcebergTable table = IcebergTable.of(path, 42, 43, 44, 45, ID);
 
@@ -94,11 +95,12 @@ class TestStoreWorker {
     ByteString tableGlobalBytes = worker.toStoreGlobalState(table);
     ByteString snapshotBytes = worker.toStoreOnReferenceState(table);
 
-    Assertions.assertEquals(protoTableGlobal.toByteString(), tableGlobalBytes);
-    Assertions.assertEquals(protoOnRef.toByteString(), snapshotBytes);
+    assertThat(tableGlobalBytes).isEqualTo(protoTableGlobal.toByteString());
+    assertThat(snapshotBytes).isEqualTo(protoOnRef.toByteString());
 
-    Content deserialized = worker.valueFromStore(snapshotBytes, Optional.of(tableGlobalBytes));
-    Assertions.assertEquals(table, deserialized);
+    Content deserialized =
+        worker.valueFromStore(snapshotBytes, () -> tableGlobalBytes, x -> Stream.empty());
+    assertThat(deserialized).isEqualTo(table);
   }
 
   @Test
@@ -128,11 +130,12 @@ class TestStoreWorker {
     ByteString tableGlobalBytes = worker.toStoreGlobalState(view);
     ByteString snapshotBytes = worker.toStoreOnReferenceState(view);
 
-    Assertions.assertEquals(protoTableGlobal.toByteString(), tableGlobalBytes);
-    Assertions.assertEquals(protoOnRef.toByteString(), snapshotBytes);
+    assertThat(tableGlobalBytes).isEqualTo(protoTableGlobal.toByteString());
+    assertThat(snapshotBytes).isEqualTo(protoOnRef.toByteString());
 
-    Content deserialized = worker.valueFromStore(snapshotBytes, Optional.of(tableGlobalBytes));
-    Assertions.assertEquals(view, deserialized);
+    Content deserialized =
+        worker.valueFromStore(snapshotBytes, () -> tableGlobalBytes, x -> Stream.empty());
+    assertThat(deserialized).isEqualTo(view);
   }
 
   @Test
@@ -149,13 +152,13 @@ class TestStoreWorker {
 
     ByteString expectedBytes = ByteString.copyFrom(MAPPER.writeValueAsBytes(expectedCommit));
     CommitMeta actualCommit = worker.getMetadataSerializer().fromBytes(expectedBytes);
-    Assertions.assertEquals(expectedCommit, actualCommit);
+    assertThat(actualCommit).isEqualTo(expectedCommit);
     ByteString actualBytes = worker.getMetadataSerializer().toBytes(expectedCommit);
-    Assertions.assertEquals(expectedBytes, actualBytes);
+    assertThat(actualBytes).isEqualTo(expectedBytes);
     actualBytes = worker.getMetadataSerializer().toBytes(expectedCommit);
-    Assertions.assertEquals(expectedCommit, worker.getMetadataSerializer().fromBytes(actualBytes));
+    assertThat(worker.getMetadataSerializer().fromBytes(actualBytes)).isEqualTo(expectedCommit);
     actualCommit = worker.getMetadataSerializer().fromBytes(expectedBytes);
-    Assertions.assertEquals(expectedBytes, worker.getMetadataSerializer().toBytes(actualCommit));
+    assertThat(worker.getMetadataSerializer().toBytes(actualCommit)).isEqualTo(expectedBytes);
   }
 
   private static Stream<Map.Entry<ByteString, Content>> provideDeserialization() {

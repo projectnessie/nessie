@@ -643,6 +643,11 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
+  public Optional<ContentIdAndBytes> perContent(ContentId contentId) {
+    throw new UnsupportedOperationException("IMPLEMENT ME");
+  }
+
+  @Override
   public Stream<RefLog> refLog(Hash offset) throws RefLogNotFoundException {
     ConnectionWrapper conn = borrowConnection();
     boolean failed = true;
@@ -1148,6 +1153,16 @@ public abstract class TxDatabaseAdapter
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  @Override
+  protected Map<ContentId, ByteString> fetchPerContentState(
+      ConnectionWrapper ctx, Set<ContentId> contentIds) throws ReferenceNotFoundException {
+    if (contentIds.isEmpty()) {
+      return Collections.emptyMap();
+    }
+
+    throw new UnsupportedOperationException("IMPLEMENT ME");
   }
 
   @Override

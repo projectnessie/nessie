@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
@@ -118,7 +118,25 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
                 contentId,
                 storeWorker.getPayload(op.getValue()),
                 storeWorker.toStoreOnReferenceState(op.getValue())));
-        if (storeWorker.requiresGlobalState(op.getValue())) {
+        if (storeWorker.requiresPerContentState(op.getValue())) {
+          storeWorker.toStoreAttachments(op.getValue(), commitAttempt::addAttachments);
+
+          // TODO tasks here (better: in the DB-adapter):
+          //  - fetch current information
+          //    - verify that change is compatible
+          //    - try update of the relevant values (e.g. last-sequence-number, last-column-id,
+          //  snapshot-id does not yet exist, ...)
+          //  - split into
+          //    - on-ref state
+          //    - per-content state
+          //    - various blobs (schema, snapshot, etc)
+
+          throw new UnsupportedOperationException("IMPLEMENT ME");
+
+        } else if (storeWorker.requiresGlobalState(op.getValue())) {
+          // TODO add validation that per-content-state does not exist
+          //  --> throw if per-content-state already exists
+
           ByteString newState = storeWorker.toStoreGlobalState(op.getValue());
           Optional<ByteString> expectedValue;
           if (op.getExpectedValue() != null) {
@@ -319,16 +337,19 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
     }
 
     // Memoize already retrieved global-content
-    Map<ContentId, Optional<ByteString>> globalContents = new HashMap<>();
-    BiFunction<ContentId, Byte, Optional<ByteString>> getGlobalContents =
-        (contentId, type) -> {
-          if (!storeWorker.requiresGlobalState(storeWorker.getType(type))) {
-            return Optional.empty();
-          }
-          return globalContents.computeIfAbsent(
-              contentId,
-              cid -> databaseAdapter.globalContent(contentId).map(ContentIdAndBytes::getValue));
-        };
+    Map<ContentId, ByteString> globalContents = new HashMap<>();
+    Function<KeyWithBytes, ByteString> getGlobalContents =
+        (put) ->
+            globalContents.computeIfAbsent(
+                put.getContentId(),
+                cid ->
+                    databaseAdapter
+                        .globalContent(put.getContentId())
+                        .map(ContentIdAndBytes::getValue)
+                        .orElse(null));
+
+    // Memoize already retrieved per-content-state
+    Map<ContentId, Optional<ByteString>> perContents = new HashMap<>();
 
     return (commitBuilder, logEntry) -> {
       if (!logEntry.getParents().isEmpty()) {
@@ -344,7 +365,8 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
                           put.getKey(),
                           storeWorker.valueFromStore(
                               put.getValue(),
-                              getGlobalContents.apply(put.getContentId(), put.getType())))));
+                              () -> getGlobalContents.apply(put),
+                              databaseAdapter::getAttachments))));
     };
   }
 
@@ -375,7 +397,10 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
   }
 
   private CONTENT mapContentAndState(ContentAndState<ByteString> cs) {
-    return storeWorker.valueFromStore(cs.getRefState(), Optional.ofNullable(cs.getGlobalState()));
+    return storeWorker.valueFromStore(
+        cs.getRefState(),
+        cs::getGlobalState,
+        x -> cs.getPerContentState() != null ? cs.getPerContentState().stream() : Stream.empty());
   }
 
   @Override
@@ -388,8 +413,20 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
             d ->
                 Diff.of(
                     d.getKey(),
-                    d.getFromValue().map(v -> storeWorker.valueFromStore(v, d.getGlobal())),
-                    d.getToValue().map(v -> storeWorker.valueFromStore(v, d.getGlobal()))));
+                    d.getFromValue()
+                        .map(
+                            v ->
+                                storeWorker.valueFromStore(
+                                    v,
+                                    () -> d.getGlobal().orElse(null),
+                                    databaseAdapter::getAttachments)),
+                    d.getToValue()
+                        .map(
+                            v ->
+                                storeWorker.valueFromStore(
+                                    v,
+                                    () -> d.getGlobal().orElse(null),
+                                    databaseAdapter::getAttachments))));
   }
 
   private Hash refToHash(Ref ref) throws ReferenceNotFoundException {

@@ -19,10 +19,17 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.projectnessie.versioned.testworker.CommitMessage.commitMessage;
 import static org.projectnessie.versioned.testworker.OnRefOnly.onRef;
+import static org.projectnessie.versioned.testworker.WithAttachmentsContent.withAttachments;
 import static org.projectnessie.versioned.testworker.WithGlobalStateContent.withGlobal;
 
 import com.google.protobuf.ByteString;
-import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.projectnessie.versioned.ContentAttachment;
+import org.projectnessie.versioned.ContentAttachmentKey;
 import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.testworker.BaseContent.Type;
@@ -60,6 +67,9 @@ public final class SimpleStoreWorker
       case WITH_GLOBAL_STATE:
         value = ((WithGlobalStateContent) content).getOnRef();
         break;
+      case WITH_PER_CONTENT_STATE:
+        value = ((WithAttachmentsContent) content).getOnRef();
+        break;
       default:
         throw new IllegalArgumentException("" + content);
     }
@@ -75,7 +85,20 @@ public final class SimpleStoreWorker
   }
 
   @Override
-  public BaseContent valueFromStore(ByteString onReferenceValue, Optional<ByteString> globalState) {
+  public void toStoreAttachments(
+      BaseContent content, Consumer<ContentAttachment> attachmentConsumer) {
+    if (content instanceof WithAttachmentsContent) {
+      ((WithAttachmentsContent) content).getPerContent().forEach(attachmentConsumer);
+    } else {
+      throw new IllegalArgumentException();
+    }
+  }
+
+  @Override
+  public BaseContent valueFromStore(
+      ByteString onReferenceValue,
+      Supplier<ByteString> globalState,
+      Function<Stream<ContentAttachmentKey>, Stream<ContentAttachment>> attachmentsRetriever) {
     String serialized = onReferenceValue.toStringUtf8();
 
     int i = serialized.indexOf(':');
@@ -88,13 +111,19 @@ public final class SimpleStoreWorker
     i = serialized.indexOf(':');
     String onRef = serialized.substring(i + 1);
 
+    ByteString global = globalState.get();
     switch (type) {
       case ON_REF_ONLY:
-        assertThat(globalState).isEmpty();
+        assertThat(global).isNull();
         return onRef(onRef, contentId);
       case WITH_GLOBAL_STATE:
-        assertThat(globalState).isNotEmpty();
-        return withGlobal(globalState.get().toStringUtf8(), onRef, contentId);
+        assertThat(global).isNotNull();
+        return withGlobal(global.toStringUtf8(), onRef, contentId);
+      case WITH_PER_CONTENT_STATE:
+        Stream<ContentAttachmentKey> keys = Stream.empty();
+        Stream<ContentAttachment> attachments = attachmentsRetriever.apply(keys);
+        assertThat(attachments).isNotEmpty();
+        return withAttachments(attachments.collect(Collectors.toList()), onRef, contentId);
       default:
         throw new IllegalArgumentException("" + onReferenceValue);
     }
@@ -131,12 +160,20 @@ public final class SimpleStoreWorker
     if (content instanceof WithGlobalStateContent) {
       return BaseContent.Type.WITH_GLOBAL_STATE;
     }
+    if (content instanceof WithAttachmentsContent) {
+      return BaseContent.Type.WITH_PER_CONTENT_STATE;
+    }
     throw new IllegalArgumentException("" + content);
   }
 
   @Override
   public boolean requiresGlobalState(Enum<BaseContent.Type> type) {
     return type == BaseContent.Type.WITH_GLOBAL_STATE;
+  }
+
+  @Override
+  public boolean requiresPerContentState(Enum<BaseContent.Type> type) {
+    return type == BaseContent.Type.WITH_PER_CONTENT_STATE;
   }
 
   @Override

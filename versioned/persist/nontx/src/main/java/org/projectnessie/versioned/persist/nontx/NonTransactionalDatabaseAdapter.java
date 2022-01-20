@@ -569,6 +569,11 @@ public abstract class NonTransactionalDatabaseAdapter<
   }
 
   @Override
+  public Optional<ContentIdAndBytes> perContent(ContentId contentId) {
+    throw new UnsupportedOperationException("IMPLEMENT ME");
+  }
+
+  @Override
   public RepoDescription fetchRepositoryDescription() {
     NonTransactionalOperationContext ctx = NON_TRANSACTIONAL_OPERATION_CONTEXT;
     RepoDescription current = fetchRepositoryDescription(ctx);
@@ -1151,6 +1156,17 @@ public abstract class NonTransactionalDatabaseAdapter<
         .collect(
             Collectors.toMap(
                 e -> ContentId.of(e.getContentId().getId()), ContentIdWithBytes::getValue));
+  }
+
+  @Override
+  protected Map<ContentId, ByteString> fetchPerContentState(
+      NonTransactionalOperationContext ctx, Set<ContentId> contentIds)
+      throws ReferenceNotFoundException {
+    if (contentIds.isEmpty()) {
+      return Collections.emptyMap();
+    }
+
+    throw new UnsupportedOperationException("IMPLEMENT ME");
   }
 
   /** Reads from the global-state-log starting at the given global-state-log-ID. */

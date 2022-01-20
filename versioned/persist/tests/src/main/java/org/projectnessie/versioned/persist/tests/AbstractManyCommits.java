@@ -160,7 +160,7 @@ public abstract class AbstractManyCommits {
 
       ByteString expectValue = SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(expected);
       ByteString expectState = SimpleStoreWorker.INSTANCE.toStoreGlobalState(expected);
-      ContentAndState<ByteString> expect = ContentAndState.of(expectValue, expectState);
+      ContentAndState<ByteString> expect = ContentAndState.of(expectValue, expectState, null);
       assertThat(values).containsExactly(Maps.immutableEntry(key, expect));
     } catch (ReferenceNotFoundException e) {
       throw new RuntimeException(e);

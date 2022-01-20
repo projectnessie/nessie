@@ -15,9 +15,11 @@
  */
 package org.projectnessie.versioned.persist.adapter;
 
+import java.util.List;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.immutables.value.Value.Immutable;
+import org.projectnessie.versioned.ContentAttachment;
 
 /** Composite for the per-named-reference and global state for a content key. */
 @Immutable
@@ -34,13 +36,24 @@ public interface ContentAndState<CONTENT> {
   @Nullable
   CONTENT getGlobalState();
 
+  /** Per-content state for a content key, when all metadata is stored in Nessie. */
+  @Nullable
+  List<ContentAttachment> getPerContentState();
+
   @Nonnull
   static <CONTENT> ContentAndState<CONTENT> of(
-      @Nonnull CONTENT refState, @Nonnull CONTENT globalState) {
-    return ImmutableContentAndState.<CONTENT>builder()
-        .refState(refState)
-        .globalState(globalState)
-        .build();
+      @Nonnull CONTENT refState,
+      @Nullable CONTENT globalState,
+      @Nullable List<ContentAttachment> perContentState) {
+    ImmutableContentAndState.Builder<CONTENT> b =
+        ImmutableContentAndState.<CONTENT>builder().refState(refState);
+    if (globalState != null) {
+      b.globalState(globalState);
+    }
+    if (perContentState != null) {
+      b.perContentState(perContentState);
+    }
+    return b.build();
   }
 
   @Nonnull
