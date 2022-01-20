@@ -18,7 +18,11 @@ package org.projectnessie.versioned.persist.adapter.serialize;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.TreeMap;
+import org.projectnessie.versioned.ContentAttachment;
+import org.projectnessie.versioned.ContentAttachment.Compression;
+import org.projectnessie.versioned.ContentAttachmentKey;
 import org.projectnessie.versioned.Hash;
+import org.projectnessie.versioned.ImmutableContentAttachment;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentId;
@@ -33,6 +37,8 @@ import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.RefLog;
 import org.projectnessie.versioned.persist.adapter.RepoDescription;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.AttachmentKey;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.AttachmentValue;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RepoProps;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RepoProps.Builder;
 
@@ -285,6 +291,112 @@ public class ProtoSerialization {
 
   public static Key protoToKey(AdapterTypes.Key key) {
     return Key.of(key.getElementList().toArray(new String[0]));
+  }
+
+  public static AttachmentKey toProtoKey(ContentAttachmentKey contentAttachmentKey) {
+    return AttachmentKey.newBuilder()
+        .setContentId(
+            AdapterTypes.ContentId.newBuilder().setId(contentAttachmentKey.getContentId()))
+        .setObjectId(contentAttachmentKey.getObjectId())
+        .setObjectType(contentAttachmentKey.getObjectType())
+        .build();
+  }
+
+  public static AttachmentKey toProtoKey(ContentAttachment contentAttachment) {
+    ContentAttachmentKey key = contentAttachment.getKey();
+    return AttachmentKey.newBuilder()
+        .setContentId(AdapterTypes.ContentId.newBuilder().setId(key.getContentId()))
+        .setObjectType(key.getObjectType())
+        .setObjectId(key.getObjectId())
+        .build();
+  }
+
+  public static AttachmentValue toProtoValue(ContentAttachment contentAttachment) {
+    AttachmentValue.Compression c;
+    switch (contentAttachment.getCompression()) {
+      case NONE:
+        c = AttachmentValue.Compression.NONE;
+        break;
+      case DEFLATE:
+        c = AttachmentValue.Compression.DEFLATE;
+        break;
+      case GZIP:
+        c = AttachmentValue.Compression.Gzip;
+        break;
+      default:
+        throw new IllegalArgumentException(
+            "Unsupported compression " + contentAttachment.getCompression());
+    }
+    AttachmentValue.Builder builder =
+        AttachmentValue.newBuilder().setCompression(c).setData(contentAttachment.getData());
+    if (contentAttachment.getVersion() != null) {
+      builder.setVersion(contentAttachment.getVersion());
+    }
+    return builder.build();
+  }
+
+  public static ContentAttachmentKey attachmentKey(AttachmentKey key) {
+    return ContentAttachmentKey.of(
+        key.getContentId().getId(), key.getObjectType(), key.getObjectId());
+  }
+
+  public static ContentAttachment attachmentContent(AttachmentKey key, AttachmentValue value) {
+    return attachmentContent(attachmentKey(key), value);
+  }
+
+  public static ContentAttachment attachmentContent(
+      ContentAttachmentKey key, AttachmentValue value) {
+    return attachmentContent(ContentAttachment.builder().key(key), value);
+  }
+
+  private static ContentAttachment attachmentContent(
+      ImmutableContentAttachment.Builder builder, AttachmentValue value) {
+    Compression c = compressionFromAttachmentValue(value);
+    builder.compression(c).data(value.getData());
+    if (value.hasVersion()) {
+      builder.version(value.getVersion());
+    }
+    return builder.build();
+  }
+
+  private static Compression compressionFromAttachmentValue(AttachmentValue value) {
+    Compression c;
+    switch (value.getCompression()) {
+      case NONE:
+        c = Compression.NONE;
+        break;
+      case DEFLATE:
+        c = Compression.DEFLATE;
+        break;
+      case Gzip:
+        c = Compression.GZIP;
+        break;
+      default:
+        throw new IllegalArgumentException("Unsupported compression " + value.getCompression());
+    }
+    return c;
+  }
+
+  public static String attachmentKeyAsString(ContentAttachmentKey key) {
+    return String.format("%s::%s::%s", key.getContentId(), key.getObjectType(), key.getObjectId());
+  }
+
+  public static String attachmentKeyAsString(AttachmentKey key) {
+    return String.format(
+        "%s::%s::%s", key.getContentId().getId(), key.getObjectType(), key.getObjectId());
+  }
+
+  public static AttachmentKey attachmentKeyFromString(String key) {
+    int i = key.indexOf("::");
+    String cid = key.substring(0, i);
+    int j = key.indexOf("::", i + 2);
+    String objType = key.substring(i + 2, j);
+    String objId = key.substring(j + 2);
+    return AttachmentKey.newBuilder()
+        .setContentId(AdapterTypes.ContentId.newBuilder().setId(cid))
+        .setObjectType(objType)
+        .setObjectId(objId)
+        .build();
   }
 
   /** Functional interface for the various {@code protoToABC()} methods above. */

@@ -15,8 +15,11 @@
  */
 package org.projectnessie.versioned.persist.dynamodb;
 
+import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.attachmentKeyAsString;
+import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.attachmentKeyFromString;
 import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.toProto;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.KEY_NAME;
+import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_ATTACHMENTS;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_COMMIT_LOG;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_GLOBAL_LOG;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_GLOBAL_POINTER;
@@ -24,9 +27,11 @@ import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_KEY_LIST
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_REF_LOG;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_REPO_DESC;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.VALUE_NAME;
+import static org.projectnessie.versioned.persist.dynamodb.Tables.VERSION_NAME;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -34,7 +39,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -55,6 +62,8 @@ import org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapter;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalOperationContext;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.AttachmentKey;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.AttachmentValue;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogEntry;
@@ -64,12 +73,14 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValueUpdate;
 import software.amazon.awssdk.services.dynamodb.model.BatchGetItemResponse;
 import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
+import software.amazon.awssdk.services.dynamodb.model.DeleteItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.ExpectedAttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.GetItemResponse;
 import software.amazon.awssdk.services.dynamodb.model.KeysAndAttributes;
 import software.amazon.awssdk.services.dynamodb.model.LimitExceededException;
 import software.amazon.awssdk.services.dynamodb.model.ProvisionedThroughputExceededException;
 import software.amazon.awssdk.services.dynamodb.model.RequestLimitExceededException;
+import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.WriteRequest;
 
 public class DynamoDatabaseAdapter
@@ -128,7 +139,7 @@ public class DynamoDatabaseAdapter
     client.client.deleteItem(
         b -> b.tableName(TABLE_GLOBAL_POINTER).key(globalPointerKeyMap).build());
 
-    Stream.of(TABLE_GLOBAL_LOG, TABLE_COMMIT_LOG, TABLE_KEY_LISTS, TABLE_REF_LOG)
+    Stream.of(TABLE_GLOBAL_LOG, TABLE_COMMIT_LOG, TABLE_KEY_LISTS, TABLE_REF_LOG, TABLE_ATTACHMENTS)
         .forEach(
             table ->
                 client
@@ -237,8 +248,9 @@ public class DynamoDatabaseAdapter
     batchWrite(
         TABLE_COMMIT_LOG,
         entries,
-        CommitLogEntry::getHash,
-        e -> ProtoSerialization.toProto(e).toByteArray());
+        e -> e.getHash().asString(),
+        e -> ProtoSerialization.toProto(e).toByteArray(),
+        e -> Collections.emptyMap());
   }
 
   @Override
@@ -247,8 +259,9 @@ public class DynamoDatabaseAdapter
     batchWrite(
         TABLE_KEY_LISTS,
         newKeyListEntities,
-        KeyListEntity::getId,
-        e -> ProtoSerialization.toProto(e.getKeys()).toByteArray());
+        e -> e.getId().asString(),
+        e -> ProtoSerialization.toProto(e.getKeys()).toByteArray(),
+        e -> Collections.emptyMap());
   }
 
   @Override
@@ -402,9 +415,23 @@ public class DynamoDatabaseAdapter
   }
 
   private <T> Map<Hash, T> fetchPage(String table, List<Hash> hashes, Parser<T> parser) {
-    List<Map<String, AttributeValue>> keys =
-        hashes.stream()
-            .map(h -> keyPrefix + h.asString())
+    return fetchPageGeneric(table, hashes, Hash::asString, Hash::of, parser);
+  }
+
+  private <K, T> Map<K, T> fetchPageGeneric(
+      String table,
+      List<K> keys,
+      Function<K, String> keyAsString,
+      Function<String, K> stringAsKey,
+      Parser<T> parser) {
+    if (keys.isEmpty()) {
+      return Collections.emptyMap();
+    }
+
+    List<Map<String, AttributeValue>> keysMaps =
+        keys.stream()
+            .map(keyAsString)
+            .map(k -> keyPrefix + k)
             .map(k -> AttributeValue.builder().s(k).build())
             .map(k -> Collections.singletonMap(KEY_NAME, k))
             .collect(Collectors.toList());
@@ -412,7 +439,10 @@ public class DynamoDatabaseAdapter
     Map<String, KeysAndAttributes> requestItems =
         Collections.singletonMap(
             table,
-            KeysAndAttributes.builder().attributesToGet(KEY_NAME, VALUE_NAME).keys(keys).build());
+            KeysAndAttributes.builder()
+                .attributesToGet(KEY_NAME, VALUE_NAME)
+                .keys(keysMaps)
+                .build());
 
     BatchGetItemResponse response = client.client.batchGetItem(b -> b.requestItems(requestItems));
     if (!response.hasResponses()) {
@@ -428,7 +458,7 @@ public class DynamoDatabaseAdapter
     return items.stream()
         .collect(
             Collectors.toMap(
-                m -> Hash.of(m.get(KEY_NAME).s().substring(keyPrefix.length())),
+                m -> stringAsKey.apply(m.get(KEY_NAME).s().substring(keyPrefix.length())),
                 m -> {
                   try {
                     return parser.parse(m.get(VALUE_NAME).b().asByteArray());
@@ -446,7 +476,11 @@ public class DynamoDatabaseAdapter
   }
 
   private <T> void batchWrite(
-      String tableName, List<T> entries, Function<T, Hash> id, Function<T, byte[]> serializer) {
+      String tableName,
+      List<T> entries,
+      Function<T, String> id,
+      Function<T, byte[]> serializer,
+      Function<T, Map<String, AttributeValue>> itemEnhancer) {
     if (entries.isEmpty()) {
       return;
     }
@@ -454,11 +488,12 @@ public class DynamoDatabaseAdapter
     List<WriteRequest> requests = new ArrayList<>();
     for (T entry : entries) {
       Map<String, AttributeValue> item = new HashMap<>();
-      String key = keyPrefix + id.apply(entry).asString();
+      String key = keyPrefix + id.apply(entry);
       item.put(KEY_NAME, AttributeValue.builder().s(key).build());
       item.put(
           VALUE_NAME,
           AttributeValue.builder().b(SdkBytes.fromByteArray(serializer.apply(entry))).build());
+      item.putAll(itemEnhancer.apply(entry));
 
       if (requests.size() == DYNAMO_BATCH_WRITE_MAX_REQUESTS) {
         client.client.batchWriteItem(
@@ -492,5 +527,102 @@ public class DynamoDatabaseAdapter
   protected List<RefLog> doFetchPageFromRefLog(
       NonTransactionalOperationContext ctx, List<Hash> hashes) {
     return fetchPageResult(TABLE_REF_LOG, hashes, ProtoSerialization::protoToRefLog);
+  }
+
+  @Override
+  protected void writeAttachments(Stream<Entry<AttachmentKey, AttachmentValue>> attachments) {
+    batchWrite(
+        TABLE_ATTACHMENTS,
+        attachments.collect(Collectors.toList()),
+        e -> attachmentKeyAsString(e.getKey()),
+        e -> e.getValue().toByteArray(),
+        e -> {
+          AttachmentValue v = e.getValue();
+          if (!v.hasVersion()) {
+            return Collections.emptyMap();
+          }
+          return Collections.singletonMap(
+              VERSION_NAME, AttributeValue.builder().s(v.getVersion()).build());
+        });
+  }
+
+  @Override
+  protected boolean consistentWriteAttachment(
+      AttachmentKey key, AttachmentValue value, Optional<String> expectedVersion) {
+
+    AttributeValue newValueBytes =
+        AttributeValue.builder().b(SdkBytes.fromByteArray(value.toByteArray())).build();
+    AttributeValue newVersion = AttributeValue.builder().s(value.getVersion()).build();
+    Map<String, AttributeValue> keyMap =
+        Collections.singletonMap(
+            KEY_NAME, AttributeValue.builder().s(keyPrefix + attachmentKeyAsString(key)).build());
+
+    UpdateItemRequest.Builder b =
+        UpdateItemRequest.builder()
+            .tableName(TABLE_ATTACHMENTS)
+            .key(keyMap)
+            .attributeUpdates(
+                ImmutableMap.of(
+                    VERSION_NAME,
+                    AttributeValueUpdate.builder()
+                        .action(AttributeAction.PUT)
+                        .value(newVersion)
+                        .build(),
+                    VALUE_NAME,
+                    AttributeValueUpdate.builder()
+                        .action(AttributeAction.PUT)
+                        .value(newValueBytes)
+                        .build()));
+
+    if (expectedVersion.isPresent()) {
+      AttributeValue expectedVersionValue =
+          AttributeValue.builder().s(expectedVersion.get()).build();
+
+      b =
+          b.expected(
+              Collections.singletonMap(
+                  VERSION_NAME,
+                  ExpectedAttributeValue.builder().value(expectedVersionValue).build()));
+    } else {
+      b =
+          b.expected(
+              Collections.singletonMap(
+                  KEY_NAME, ExpectedAttributeValue.builder().exists(false).build()));
+    }
+
+    try {
+      client.client.updateItem(b.build());
+      return true;
+    } catch (ConditionalCheckFailedException e) {
+      return false;
+    }
+  }
+
+  @Override
+  protected Stream<Entry<AttachmentKey, AttachmentValue>> fetchAttachments(
+      Stream<AttachmentKey> keys) {
+    Map<String, AttachmentValue> fetched =
+        fetchPageGeneric(
+            TABLE_ATTACHMENTS,
+            keys.map(ProtoSerialization::attachmentKeyAsString).collect(Collectors.toList()),
+            Function.identity(),
+            Function.identity(),
+            AttachmentValue::parseFrom);
+    return fetched.entrySet().stream()
+        .map(e -> Maps.immutableEntry(attachmentKeyFromString(e.getKey()), e.getValue()));
+  }
+
+  @Override
+  protected void purgeAttachments(Stream<AttachmentKey> keys) {
+    keys.forEach(
+        k -> {
+          String key = keyPrefix + attachmentKeyAsString(k);
+          AttributeValue dbKey = AttributeValue.builder().s(key).build();
+          client.client.deleteItem(
+              DeleteItemRequest.builder()
+                  .tableName(TABLE_ATTACHMENTS)
+                  .key(Collections.singletonMap(KEY_NAME, dbKey))
+                  .build());
+        });
   }
 }

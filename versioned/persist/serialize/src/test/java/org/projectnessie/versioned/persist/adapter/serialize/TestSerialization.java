@@ -17,6 +17,8 @@ package org.projectnessie.versioned.persist.adapter.serialize;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.toProto;
+import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.toProtoKey;
+import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.toProtoValue;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -36,8 +38,12 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.projectnessie.versioned.ContentAttachment;
+import org.projectnessie.versioned.ContentAttachment.Compression;
+import org.projectnessie.versioned.ContentAttachmentKey;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
@@ -50,6 +56,8 @@ import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.RepoDescription;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.AttachmentKey;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.AttachmentValue;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.NamedReference;
@@ -317,20 +325,40 @@ class TestSerialization {
                 throw new RuntimeException(e);
               }
             }));
+    params.add(
+        new TypeSerialization<>(
+            ContentAttachmentKey.class,
+            AdapterTypes.AttachmentKey.class,
+            TestSerialization::createBinaryKey,
+            ProtoSerialization::toProtoKey,
+            v -> {
+              try {
+                return AdapterTypes.AttachmentKey.parseFrom(v);
+              } catch (InvalidProtocolBufferException e) {
+                throw new RuntimeException(e);
+              }
+            },
+            v -> {
+              try {
+                return ProtoSerialization.attachmentKey(AdapterTypes.AttachmentKey.parseFrom(v));
+              } catch (InvalidProtocolBufferException e) {
+                throw new RuntimeException(e);
+              }
+            }));
     return params;
   }
 
   @ParameterizedTest
   @MethodSource("typeSerialization")
   public <A, P extends MessageLite> void typeSerialization(TypeSerialization<A, P> param) {
-    for (int i = 0; i < 500; i++) {
+    for (int i = 0; i < 50; i++) {
       A entry = param.generator.get();
 
       P proto = param.toProto.apply(entry);
       byte[] serialized = proto.toByteArray();
       P deserialized = param.parseProto.apply(serialized);
 
-      assertThat(proto).isEqualTo(deserialized);
+      assertThat(deserialized).isEqualTo(proto);
 
       A deserializedEntry = param.parseApi.apply(serialized);
       assertThat(entry).isEqualTo(deserializedEntry);
@@ -362,6 +390,41 @@ class TestSerialization {
     assertThat(repoProps.getPropertiesList()).containsExactlyElementsOf(expected);
   }
 
+  @Test
+  public void attachmentContentSerialization() throws Exception {
+    for (int i = 0; i < 500; i++) {
+      ContentAttachment entry = createBinaryContent();
+
+      AttachmentKey attachmentKey = toProtoKey(entry);
+      AttachmentValue attachmentValue = toProtoValue(entry);
+      byte[] serializedKey = attachmentKey.toByteArray();
+      byte[] serializedValue = attachmentValue.toByteArray();
+      ContentAttachment deserialized =
+          ProtoSerialization.attachmentContent(
+              AdapterTypes.AttachmentKey.parseFrom(serializedKey),
+              AdapterTypes.AttachmentValue.parseFrom(serializedValue));
+
+      assertThat(deserialized).isEqualTo(entry);
+    }
+  }
+
+  @Test
+  public void attachmentKeyAsString() {
+    AttachmentKey attachmentKey =
+        AttachmentKey.newBuilder()
+            .setContentId(AdapterTypes.ContentId.newBuilder().setId("content-id").build())
+            .setObjectType("object-type")
+            .setObjectId("object-id")
+            .build();
+    String str = ProtoSerialization.attachmentKeyAsString(attachmentKey);
+
+    assertThat(str).isEqualTo("content-id::object-type::object-id");
+
+    AttachmentKey fromStr = ProtoSerialization.attachmentKeyFromString(str);
+
+    assertThat(fromStr).isEqualTo(attachmentKey);
+  }
+
   public static ContentId randomId() {
     return ContentId.of(UUID.randomUUID().toString());
   }
@@ -391,6 +454,19 @@ class TestSerialization {
       sb.append((char) ThreadLocalRandom.current().nextInt(32, 126));
     }
     return sb.toString();
+  }
+
+  private static ContentAttachmentKey createBinaryKey() {
+    return ContentAttachmentKey.of(randomId().getId(), randomString(5), randomString(8));
+  }
+
+  private static ContentAttachment createBinaryContent() {
+    return ContentAttachment.builder()
+        .key(createBinaryKey())
+        .compression(
+            Compression.values()[ThreadLocalRandom.current().nextInt(Compression.values().length)])
+        .data(randomBytes(30))
+        .build();
   }
 
   static GlobalStateLogEntry createGlobalEntry() {

@@ -15,6 +15,8 @@
  */
 package org.projectnessie.versioned.persist.nontx;
 
+import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.attachmentContent;
+import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.toProtoKey;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.assignConflictMessage;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.commitConflictMessage;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.createConflictMessage;
@@ -35,6 +37,7 @@ import static org.projectnessie.versioned.persist.nontx.NonTransactionalOperatio
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -55,6 +58,8 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.annotation.Nullable;
 import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.ContentAttachment;
+import org.projectnessie.versioned.ContentAttachmentKey;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
@@ -87,6 +92,8 @@ import org.projectnessie.versioned.persist.adapter.spi.AbstractDatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.spi.Traced;
 import org.projectnessie.versioned.persist.adapter.spi.TryLoopState;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.AttachmentKey;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.AttachmentValue;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.ContentIdWithBytes;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry.Builder;
@@ -613,6 +620,31 @@ public abstract class NonTransactionalDatabaseAdapter<
   @Override
   public void assertCleanStateForTests() {
     // nothing to do
+  }
+
+  @Override
+  public Stream<ContentAttachment> getAttachments(Stream<ContentAttachmentKey> keys) {
+    return fetchAttachments(keys.map(ProtoSerialization::toProtoKey))
+        .map(e -> attachmentContent(e.getKey(), e.getValue()));
+  }
+
+  @Override
+  public void putAttachments(Stream<ContentAttachment> attachments) {
+    writeAttachments(
+        attachments.map(
+            b -> Maps.immutableEntry(toProtoKey(b), ProtoSerialization.toProtoValue(b))));
+  }
+
+  @Override
+  public boolean consistentPutAttachment(
+      ContentAttachment attachment, Optional<String> expectedVersion) {
+    return consistentWriteAttachment(
+        toProtoKey(attachment), ProtoSerialization.toProtoValue(attachment), expectedVersion);
+  }
+
+  @Override
+  public void deleteAttachments(Stream<ContentAttachmentKey> keys) {
+    purgeAttachments(keys.map(ProtoSerialization::toProtoKey));
   }
 
   // /////////////////////////////////////////////////////////////////////////////////////////////
@@ -1488,4 +1520,15 @@ public abstract class NonTransactionalDatabaseAdapter<
   public Stream<RefLog> refLog(Hash offset) throws RefLogNotFoundException {
     return readRefLogStream(NON_TRANSACTIONAL_OPERATION_CONTEXT, offset);
   }
+
+  protected abstract void writeAttachments(
+      Stream<Map.Entry<AttachmentKey, AttachmentValue>> attachments);
+
+  protected abstract boolean consistentWriteAttachment(
+      AttachmentKey key, AttachmentValue value, Optional<String> expectedVersion);
+
+  protected abstract Stream<Map.Entry<AttachmentKey, AttachmentValue>> fetchAttachments(
+      Stream<AttachmentKey> keys);
+
+  protected abstract void purgeAttachments(Stream<AttachmentKey> keys);
 }

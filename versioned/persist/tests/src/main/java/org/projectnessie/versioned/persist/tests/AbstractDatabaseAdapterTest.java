@@ -110,6 +110,13 @@ public abstract class AbstractDatabaseAdapterTest {
     }
   }
 
+  @Nested
+  public class Binary extends AbstractBinary {
+    Binary() {
+      super(databaseAdapter);
+    }
+  }
+
   @Test
   void createBranch() throws Exception {
     BranchName create = BranchName.of("createBranch");

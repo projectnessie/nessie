@@ -140,3 +140,20 @@ message Entry {
   string key = 1;
   string value = 2;
 }
+
+message AttachmentKey {
+  ContentId content_id = 1;
+  string object_type = 2;
+  string object_id = 3;
+}
+
+message AttachmentValue {
+  enum Compression {
+    NONE = 0;
+    DEFLATE = 1;
+    Gzip = 2;
+  }
+  Compression compression = 1;
+  bytes data = 2;
+  optional string version = 3;
+}

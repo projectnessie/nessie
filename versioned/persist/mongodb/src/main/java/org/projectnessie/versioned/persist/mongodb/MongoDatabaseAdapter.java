@@ -15,9 +15,12 @@
  */
 package org.projectnessie.versioned.persist.mongodb;
 
+import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.attachmentKeyAsString;
+import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.attachmentKeyFromString;
 import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.protoToKeyList;
 import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.toProto;
 
+import com.google.common.collect.Maps;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.mongodb.ErrorCategory;
 import com.mongodb.MongoWriteException;
@@ -33,7 +36,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -57,6 +62,8 @@ import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapter
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalOperationContext;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.AttachmentKey;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.AttachmentValue;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RepoProps;
@@ -70,6 +77,7 @@ public class MongoDatabaseAdapter
   private static final String ID_REPO_PATH = ID_PROPERTY_NAME + "." + ID_REPO_NAME;
   private static final String DATA_PROPERTY_NAME = "data";
   private static final String GLOBAL_ID_PROPERTY_NAME = "globalId";
+  private static final String VALUE_VERSION_PROPERTY_NAME = "version";
 
   private final String repositoryId;
   private final String globalPointerKey;
@@ -99,18 +107,27 @@ public class MongoDatabaseAdapter
     client.getCommitLog().deleteMany(idPrefixFilter);
     client.getKeyLists().deleteMany(idPrefixFilter);
     client.getRefLog().deleteMany(idPrefixFilter);
+    client.getAttachments().deleteMany(idPrefixFilter);
   }
 
   private Document toId(Hash id) {
+    return toId(id.asString());
+  }
+
+  private Document toId(String id) {
     Document idDoc = new Document();
     // Note: the order of `put` calls matters
     idDoc.put(ID_REPO_NAME, repositoryId);
-    idDoc.put(ID_HASH_NAME, id.asString());
+    idDoc.put(ID_HASH_NAME, id);
     return idDoc;
   }
 
-  private List<Document> toIds(Collection<Hash> ids) {
-    return ids.stream().map(this::toId).collect(Collectors.toList());
+  private List<Document> toIds(Stream<String> ids) {
+    return ids.map(this::toId).collect(Collectors.toList());
+  }
+
+  private Document toDoc(String id, byte[] data) {
+    return toDoc(toId(id), data);
   }
 
   private Document toDoc(Hash id, byte[] data) {
@@ -160,9 +177,7 @@ public class MongoDatabaseAdapter
       throw writeException;
     }
 
-    if (!result.wasAcknowledged()) {
-      throw new IllegalStateException("Unacknowledged write to " + collection.getNamespace());
-    }
+    verifyAcknowledged(result, collection);
   }
 
   private static void insert(MongoCollection<Document> collection, List<Document> docs)
@@ -185,17 +200,16 @@ public class MongoDatabaseAdapter
       throw writeException;
     }
 
-    if (!result.wasAcknowledged()) {
-      throw new IllegalStateException("Unacknowledged write to " + collection.getNamespace());
-    }
+    verifyAcknowledged(result, collection);
   }
 
   private void delete(MongoCollection<Document> collection, Collection<Hash> ids) {
-    DeleteResult result = collection.deleteMany(Filters.in(ID_PROPERTY_NAME, toIds(ids)));
+    delete(collection, ids.stream().map(Hash::asString));
+  }
 
-    if (!result.wasAcknowledged()) {
-      throw new IllegalStateException("Unacknowledged write to " + collection.getNamespace());
-    }
+  private void delete(MongoCollection<Document> collection, Stream<String> ids) {
+    DeleteResult result = collection.deleteMany(Filters.in(ID_PROPERTY_NAME, toIds(ids)));
+    verifyAcknowledged(result, collection);
   }
 
   private <ID> byte[] loadById(MongoCollection<Document> collection, ID id) {
@@ -229,26 +243,32 @@ public class MongoDatabaseAdapter
     }
   }
 
+  private <T> List<T> fetchMappedPage(
+      MongoCollection<Document> collection, List<Hash> hashes, Function<Document, T> mapper) {
+    return fetchMappedPageGeneric(
+        collection, hashes.stream().map(Hash::asString).collect(Collectors.toList()), mapper);
+  }
+
   /**
    * Fetches a collection of documents by hash and returns them in the order of hashes requested.
    *
    * <p>Note: unknown hashes will correspond to {@code null} elements in the result list.
    */
-  private <T> List<T> fetchMappedPage(
-      MongoCollection<Document> collection, List<Hash> hashes, Function<Document, T> mapper) {
-    List<Document> ids = hashes.stream().map(this::toId).collect(Collectors.toList());
+  private <T> List<T> fetchMappedPageGeneric(
+      MongoCollection<Document> collection, List<String> idList, Function<Document, T> mapper) {
+    List<Document> ids = idList.stream().map(this::toId).collect(Collectors.toList());
     FindIterable<Document> docs =
-        collection.find(Filters.in(ID_PROPERTY_NAME, ids)).limit(hashes.size());
+        collection.find(Filters.in(ID_PROPERTY_NAME, ids)).limit(idList.size());
 
-    HashMap<Hash, Document> loaded = new HashMap<>(hashes.size() * 4 / 3 + 1, 0.75f);
+    HashMap<String, Document> loaded = new HashMap<>(idList.size() * 4 / 3 + 1, 0.75f);
     for (Document doc : docs) {
-      loaded.put(idAsHash(doc), doc);
+      loaded.put(idAsString(doc), doc);
     }
 
-    List<T> result = new ArrayList<>(hashes.size());
-    for (Hash hash : hashes) {
+    List<T> result = new ArrayList<>(idList.size());
+    for (String id : idList) {
       T element = null;
-      Document document = loaded.get(hash);
+      Document document = loaded.get(id);
       if (document != null) {
         element = mapper.apply(document);
       }
@@ -280,6 +300,10 @@ public class MongoDatabaseAdapter
   }
 
   private Hash idAsHash(Document doc) {
+    return Hash.of(idAsString(doc));
+  }
+
+  private String idAsString(Document doc) {
     Document id = doc.get(ID_PROPERTY_NAME, Document.class);
 
     String repo = id.getString(ID_REPO_NAME);
@@ -289,8 +313,7 @@ public class MongoDatabaseAdapter
               "Repository mismatch for id '%s' (expected repository ID: '%s')", id, repositoryId));
     }
 
-    String hash = id.getString(ID_HASH_NAME);
-    return Hash.of(hash);
+    return id.getString(ID_HASH_NAME);
   }
 
   private static byte[] data(Document doc) {
@@ -324,12 +347,17 @@ public class MongoDatabaseAdapter
                   Filters.and(
                       Filters.eq(globalPointerKey), Filters.eq(DATA_PROPERTY_NAME, expectedBytes)),
                   doc);
-      return result.wasAcknowledged()
-          && result.getMatchedCount() == 1
-          && result.getModifiedCount() == 1;
+      return verifySuccessfulUpdate(result, client.getRepoDesc());
     } else {
-      InsertOneResult result = client.getRepoDesc().insertOne(doc);
-      return result.wasAcknowledged();
+      try {
+        return client.getRepoDesc().insertOne(doc).wasAcknowledged();
+      } catch (MongoWriteException writeException) {
+        ErrorCategory category = writeException.getError().getCategory();
+        if (ErrorCategory.DUPLICATE_KEY.equals(category)) {
+          return false;
+        }
+        throw writeException;
+      }
     }
   }
 
@@ -407,10 +435,7 @@ public class MongoDatabaseAdapter
                 new Document("$set", doc),
                 new UpdateOptions().upsert(true));
 
-    if (!result.wasAcknowledged()) {
-      throw new IllegalStateException(
-          "Unacknowledged write to " + client.getGlobalPointers().getNamespace());
-    }
+    verifyAcknowledged(result, client.getGlobalPointers());
   }
 
   @Override
@@ -430,9 +455,7 @@ public class MongoDatabaseAdapter
                     Filters.eq(GLOBAL_ID_PROPERTY_NAME, expectedGlobalId)),
                 doc);
 
-    return result.wasAcknowledged()
-        && result.getMatchedCount() == 1
-        && result.getModifiedCount() == 1;
+    return verifySuccessfulUpdate(result, client.getGlobalPointers());
   }
 
   @Override
@@ -492,5 +515,118 @@ public class MongoDatabaseAdapter
   protected List<RefLog> doFetchPageFromRefLog(
       NonTransactionalOperationContext ctx, List<Hash> hashes) {
     return fetchPage(client.getRefLog(), hashes, ProtoSerialization::protoToRefLog);
+  }
+
+  @Override
+  protected void writeAttachments(Stream<Entry<AttachmentKey, AttachmentValue>> attachments) {
+    attachments
+        .map(
+            e -> {
+              AttachmentValue value = e.getValue();
+              Document doc = toDoc(attachmentKeyAsString(e.getKey()), value.toByteArray());
+              if (value.hasVersion()) {
+                doc.put(VALUE_VERSION_PROPERTY_NAME, value.getVersion());
+              }
+              return doc;
+            })
+        .forEach(
+            doc ->
+                verifyAcknowledged(
+                    client
+                        .getAttachments()
+                        .updateOne(
+                            Filters.eq(doc.get(ID_PROPERTY_NAME)),
+                            new Document("$set", doc),
+                            new UpdateOptions().upsert(true)),
+                    client.getAttachments()));
+  }
+
+  @Override
+  protected boolean consistentWriteAttachment(
+      AttachmentKey key, AttachmentValue value, Optional<String> expectedVersion) {
+    Document doc = toDoc(attachmentKeyAsString(key), value.toByteArray());
+    doc.put(VALUE_VERSION_PROPERTY_NAME, value.getVersion());
+
+    Document id = doc.get(ID_PROPERTY_NAME, Document.class);
+
+    if (expectedVersion.isPresent()) {
+      UpdateResult r =
+          client
+              .getAttachments()
+              .updateOne(
+                  Filters.and(
+                      Filters.eq(id),
+                      Filters.eq(VALUE_VERSION_PROPERTY_NAME, expectedVersion.get())),
+                  new Document("$set", doc));
+      return verifySuccessfulUpdate(r, client.getAttachments());
+    } else {
+      try {
+        return client.getAttachments().insertOne(doc).wasAcknowledged();
+      } catch (MongoWriteException writeException) {
+        ErrorCategory category = writeException.getError().getCategory();
+        if (ErrorCategory.DUPLICATE_KEY.equals(category)) {
+          return false;
+        }
+        throw writeException;
+      }
+    }
+  }
+
+  @Override
+  protected Stream<Entry<AttachmentKey, AttachmentValue>> fetchAttachments(
+      Stream<AttachmentKey> keys) {
+    return fetchMappedPageGeneric(
+            client.getAttachments(),
+            keys.map(ProtoSerialization::attachmentKeyAsString).collect(Collectors.toList()),
+            d -> {
+              AttachmentKey k = attachmentKeyFromString(idAsString(d));
+              AttachmentValue v;
+              try {
+                v = AttachmentValue.parseFrom(data(d));
+              } catch (InvalidProtocolBufferException e) {
+                throw new RuntimeException(e);
+              }
+              return Maps.immutableEntry(k, v);
+            })
+        .stream()
+        .filter(Objects::nonNull);
+  }
+
+  @Override
+  protected void purgeAttachments(Stream<AttachmentKey> keys) {
+    delete(client.getAttachments(), keys.map(ProtoSerialization::attachmentKeyAsString));
+  }
+
+  private static boolean verifySuccessfulUpdate(
+      UpdateResult result, MongoCollection<Document> mongoCollection) {
+    verifyAcknowledged(result, mongoCollection);
+    return result.getMatchedCount() == 1 && result.getModifiedCount() == 1;
+  }
+
+  private static void verifyAcknowledged(
+      InsertOneResult result, MongoCollection<Document> mongoCollection) {
+    verifyAcknowledged(result.wasAcknowledged(), mongoCollection);
+  }
+
+  private static void verifyAcknowledged(
+      InsertManyResult result, MongoCollection<Document> mongoCollection) {
+    verifyAcknowledged(result.wasAcknowledged(), mongoCollection);
+  }
+
+  private static void verifyAcknowledged(
+      UpdateResult result, MongoCollection<Document> mongoCollection) {
+    verifyAcknowledged(result.wasAcknowledged(), mongoCollection);
+  }
+
+  private static void verifyAcknowledged(
+      DeleteResult result, MongoCollection<Document> mongoCollection) {
+    verifyAcknowledged(result.wasAcknowledged(), mongoCollection);
+  }
+
+  private static void verifyAcknowledged(
+      boolean acknowledged, MongoCollection<Document> mongoCollection) {
+    if (!acknowledged) {
+      throw new IllegalStateException("Unacknowledged write to " + mongoCollection.getNamespace());
+    }
   }
 }

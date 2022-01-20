@@ -23,6 +23,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import org.projectnessie.versioned.ContentAttachment;
+import org.projectnessie.versioned.ContentAttachmentKey;
 import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
@@ -301,6 +303,40 @@ public interface DatabaseAdapter {
    * @param offset initial reflog id to read from
    */
   Stream<RefLog> refLog(Hash offset) throws RefLogNotFoundException;
+
+  /**
+   * Retrieve the content attachments identified via {@code keys}. Attachments that do not exist are
+   * not returned.
+   */
+  Stream<ContentAttachment> getAttachments(Stream<ContentAttachmentKey> keys);
+
+  /**
+   * Consistent put-attachment operation.
+   *
+   * <p>Either a "put-if-absent", if {@code expectedHash} is empty or a compare-and-swap based on
+   * the value of {@code expectedHash}. * *
+   *
+   * <p>Note: this method uses conditional put operations, unlike {@link #putAttachments(Stream)}.
+   * Should not use this method and {@link #putAttachments(Stream)} for the same keys.
+   *
+   * @param attachment the attachment to write
+   * @param expectedVersion indicator for put-if-absent or the expected value on an existing item
+   */
+  boolean consistentPutAttachment(ContentAttachment attachment, Optional<String> expectedVersion);
+
+  /**
+   * Bulk-write the given content attachments.
+   *
+   * <p>Note: this method uses unconditional put operations, unlike {@link
+   * #consistentPutAttachment(ContentAttachment, Optional)}. Should not use this method and {@link
+   * #consistentPutAttachment(ContentAttachment, Optional)} for the same keys.
+   *
+   * @param attachments
+   */
+  void putAttachments(Stream<ContentAttachment> attachments);
+
+  /** Unconditionally delete the content attachments identified via {@code keys}. */
+  void deleteAttachments(Stream<ContentAttachmentKey> keys);
 
   @VisibleForTesting
   void assertCleanStateForTests();

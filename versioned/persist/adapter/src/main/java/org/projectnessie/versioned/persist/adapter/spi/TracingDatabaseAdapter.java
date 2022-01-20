@@ -24,6 +24,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import org.projectnessie.versioned.ContentAttachment;
+import org.projectnessie.versioned.ContentAttachmentKey;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
@@ -246,7 +248,37 @@ public final class TracingDatabaseAdapter implements DatabaseAdapter {
   }
 
   @Override
+  public Stream<ContentAttachment> getAttachments(Stream<ContentAttachmentKey> keys) {
+    try (Traced ignore = trace("getAttachments.stream")) {
+      return delegate.getAttachments(keys);
+    }
+  }
+
+  @Override
   public void assertCleanStateForTests() {
     delegate.assertCleanStateForTests();
+  }
+
+  @Override
+  public boolean consistentPutAttachment(
+      ContentAttachment attachment, Optional<String> expectedVersion) {
+    try (Traced ignore =
+        trace("consistentPutAttachment").tag(TAG_CONTENT_ID, attachment.getKey().getContentId())) {
+      return delegate.consistentPutAttachment(attachment, expectedVersion);
+    }
+  }
+
+  @Override
+  public void putAttachments(Stream<ContentAttachment> attachments) {
+    try (Traced ignore = trace("putAttachments")) {
+      delegate.putAttachments(attachments);
+    }
+  }
+
+  @Override
+  public void deleteAttachments(Stream<ContentAttachmentKey> keys) {
+    try (Traced ignore = trace("deleteAttachments")) {
+      delegate.deleteAttachments(keys);
+    }
   }
 }

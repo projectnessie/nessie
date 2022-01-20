@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.persist.dynamodb;
 
 import static org.projectnessie.versioned.persist.dynamodb.Tables.KEY_NAME;
+import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_ATTACHMENTS;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_COMMIT_LOG;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_GLOBAL_LOG;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_GLOBAL_POINTER;
@@ -94,7 +95,8 @@ public class DynamoDatabaseClient implements DatabaseConnectionProvider<DynamoCl
             TABLE_GLOBAL_LOG,
             TABLE_COMMIT_LOG,
             TABLE_KEY_LISTS,
-            TABLE_REF_LOG)
+            TABLE_REF_LOG,
+            TABLE_ATTACHMENTS)
         .forEach(this::createIfMissing);
   }
 

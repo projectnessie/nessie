@@ -185,5 +185,29 @@ public final class SqlStatements {
               + ")",
           TABLE_REF_LOG_HEAD);
 
+  public static final String TABLE_ATTACHMENTS = "atts";
+  public static final String INSERT_ATTACHMENT =
+      String.format(
+          "INSERT INTO %s (repo_id, id, value, ver) VALUES (?, ?, ?, ?)", TABLE_ATTACHMENTS);
+  public static final String UPDATE_ATTACHMENT =
+      String.format(
+          "UPDATE %s SET value = ?, ver = ? WHERE repo_id = ? AND id = ? AND ver = ?",
+          TABLE_ATTACHMENTS);
+  public static final String DELETE_ATTACHMENTS =
+      String.format("DELETE FROM %s WHERE repo_id = ? AND id IN (%%s)", TABLE_ATTACHMENTS);
+  public static final String SELECT_ATTACHMENTS =
+      String.format(
+          "SELECT id, value FROM %s WHERE repo_id = ? AND id IN (%%s)", TABLE_ATTACHMENTS);
+  public static final String CREATE_TABLE_ATTACHMENTS =
+      String.format(
+          "CREATE TABLE %s (\n"
+              + "  repo_id {2},\n"
+              + "  id {3},\n"
+              + "  value {0},\n"
+              + "  ver {1},\n"
+              + "  PRIMARY KEY (repo_id, id)\n"
+              + ")",
+          TABLE_ATTACHMENTS);
+
   private SqlStatements() {}
 }

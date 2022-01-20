@@ -52,10 +52,17 @@ public class RocksDbInstance implements DatabaseConnectionProvider<RocksDbConfig
   public static final String CF_COMMIT_LOG = "commit_log";
   public static final String CF_KEY_LIST = "key_list";
   public static final String CF_REF_LOG = "ref_log";
+  public static final String CF_ATTACHMENTS = "attachments";
 
   public static final List<String> CF_ALL =
       Arrays.asList(
-          CF_REPO_PROPS, CF_GLOBAL_POINTER, CF_GLOBAL_LOG, CF_COMMIT_LOG, CF_KEY_LIST, CF_REF_LOG);
+          CF_REPO_PROPS,
+          CF_GLOBAL_POINTER,
+          CF_GLOBAL_LOG,
+          CF_COMMIT_LOG,
+          CF_KEY_LIST,
+          CF_REF_LOG,
+          CF_ATTACHMENTS);
 
   private ColumnFamilyHandle cfRepoProps;
   private ColumnFamilyHandle cfGlobalPointer;
@@ -63,6 +70,7 @@ public class RocksDbInstance implements DatabaseConnectionProvider<RocksDbConfig
   private ColumnFamilyHandle cfCommitLog;
   private ColumnFamilyHandle cfKeyList;
   private ColumnFamilyHandle cfRefLog;
+  private ColumnFamilyHandle cfAttachments;
 
   private final ReadWriteLock lock = new StampedLock().asReadWriteLock();
 
@@ -129,6 +137,7 @@ public class RocksDbInstance implements DatabaseConnectionProvider<RocksDbConfig
         cfCommitLog = columnFamilyHandleMap.get(CF_COMMIT_LOG);
         cfKeyList = columnFamilyHandleMap.get(CF_KEY_LIST);
         cfRefLog = columnFamilyHandleMap.get(CF_REF_LOG);
+        cfAttachments = columnFamilyHandleMap.get(CF_ATTACHMENTS);
       } catch (RocksDBException e) {
         throw new RuntimeException("RocksDB failed to start", e);
       }
@@ -165,5 +174,9 @@ public class RocksDbInstance implements DatabaseConnectionProvider<RocksDbConfig
 
   public ColumnFamilyHandle getCfRefLog() {
     return cfRefLog;
+  }
+
+  public ColumnFamilyHandle getCfAttachments() {
+    return cfAttachments;
   }
 }

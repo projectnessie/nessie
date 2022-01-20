@@ -20,11 +20,14 @@ import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSeriali
 import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.toProto;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.hashCollisionDetected;
 
+import com.google.common.collect.Maps;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -41,6 +44,8 @@ import org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapter;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalOperationContext;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.AttachmentKey;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.AttachmentValue;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogEntry;
@@ -260,5 +265,80 @@ public class InmemoryDatabaseAdapter
         .map(store.refLog::get)
         .map(ProtoSerialization::protoToRefLog)
         .collect(Collectors.toList());
+  }
+
+  @Override
+  protected void writeAttachments(Stream<Entry<AttachmentKey, AttachmentValue>> attachments) {
+    attachments.forEach(
+        e -> store.attachments.put(dbKey(e.getKey().toByteString()), e.getValue().toByteString()));
+  }
+
+  // This "sentinel" exception never "escapes" to the call site.
+  private static final IllegalStateException CONSISTENT_WRITE_ATTACHMENT_CONFLICT =
+      new IllegalStateException("consistentWriteAttachment conflict sentinel");
+
+  @Override
+  protected boolean consistentWriteAttachment(
+      AttachmentKey key, AttachmentValue value, Optional<String> expectedVersion) {
+    try {
+      store.attachments.compute(
+          dbKey(key.toByteString()),
+          (k, current) -> {
+            if (expectedVersion.isPresent()) {
+              if (current != null) {
+                try {
+                  AttachmentValue currentValue = AttachmentValue.parseFrom(current);
+                  if (currentValue.hasVersion()
+                      && currentValue.getVersion().equals(expectedVersion.get())) {
+                    return value.toByteString();
+                  }
+                } catch (InvalidProtocolBufferException e) {
+                  throw new RuntimeException(e);
+                }
+              }
+              // consistent-update failed, key not present or hash!=expected, throw this "sentinel"
+              // that's handled below
+              throw CONSISTENT_WRITE_ATTACHMENT_CONFLICT;
+            } else {
+              if (current != null) {
+                // consistent-update failed, key already present, throw this "sentinel" that's
+                // handled below
+                throw CONSISTENT_WRITE_ATTACHMENT_CONFLICT;
+              }
+              return value.toByteString();
+            }
+          });
+    } catch (IllegalStateException x) {
+      // Catch ISE to report consistent-update failure
+      if (CONSISTENT_WRITE_ATTACHMENT_CONFLICT == x) {
+        return false;
+      }
+      // ISE
+      throw x;
+    }
+    return true;
+  }
+
+  @Override
+  protected Stream<Entry<AttachmentKey, AttachmentValue>> fetchAttachments(
+      Stream<AttachmentKey> keys) {
+    return keys.map(
+            k -> {
+              ByteString v = store.attachments.get(dbKey(k.toByteString()));
+              if (v == null) {
+                return null;
+              }
+              try {
+                return Maps.immutableEntry(k, AttachmentValue.parseFrom(v));
+              } catch (InvalidProtocolBufferException e) {
+                throw new RuntimeException(e);
+              }
+            })
+        .filter(Objects::nonNull);
+  }
+
+  @Override
+  protected void purgeAttachments(Stream<AttachmentKey> keys) {
+    keys.map(AttachmentKey::toByteString).map(this::dbKey).forEach(store.attachments::remove);
   }
 }

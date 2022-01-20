@@ -23,9 +23,11 @@ final class Tables {
   static final String TABLE_COMMIT_LOG = "commit_log";
   static final String TABLE_KEY_LISTS = "key_lists";
   static final String TABLE_REF_LOG = "ref_log";
+  static final String TABLE_ATTACHMENTS = "attachments";
 
   static final String KEY_NAME = "key";
   static final String VALUE_NAME = "val";
+  static final String VERSION_NAME = "ver";
 
   private Tables() {}
 }
