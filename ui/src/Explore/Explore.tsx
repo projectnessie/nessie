@@ -70,11 +70,15 @@ interface Slug {
 
 const parseSlug = (
   slug: string,
+  branch: string,
   defaultBranch: string,
   branches: Branch[],
   tags: Tag[]
 ): Slug => {
   if (!slug || slug.length === 0 || slug.split("/").length === 0) {
+    return { currentRef: defaultBranch, path: [] };
+  }
+  if (!branch || branch.length === 0) {
     return { currentRef: defaultBranch, path: [] };
   }
 
@@ -87,7 +91,7 @@ const parseSlug = (
     if (b.name.length <= sub.length) {
       return;
     }
-    if (slug.toLowerCase().startsWith(b.name.toLowerCase())) {
+    if (branch.toLowerCase().startsWith(b.name.toLowerCase())) {
       sub = b.name ?? "";
     }
   };
@@ -99,16 +103,14 @@ const parseSlug = (
     sub = slug.split("/")[0];
   }
 
-  const path = slug
-    .slice(sub.length)
-    .split("/")
-    .filter((i) => i);
+  const path = slug.split("/").filter((i) => i);
 
   return { currentRef: sub, path };
 };
 
 const updateRef = (
   slug: string,
+  branch: string,
   defaultBranch: string,
   branches: Branch[],
   tags: Tag[]
@@ -117,7 +119,7 @@ const updateRef = (
     return;
   }
 
-  return parseSlug(slug, defaultBranch, branches, tags);
+  return parseSlug(slug, branch, defaultBranch, branches, tags);
 };
 
 interface IBranchState {
@@ -126,7 +128,7 @@ interface IBranchState {
 }
 
 const Explore = (): React.ReactElement => {
-  const { slug } = useParams<{ slug: string }>();
+  const { branch, "*": slug } = useParams<{ branch: string; "*": string }>();
   const [defaultBranch, setDefaultBranch] = useState<string>("main");
   const [branches, setBranches] = useState<IBranchState>({
     branches: [],
@@ -162,7 +164,8 @@ const Explore = (): React.ReactElement => {
       return;
     }
     const newSlug = updateRef(
-      slug ? slug : "",
+      slug as string,
+      branch as string,
       defaultBranch,
       branches.branches,
       branches.tags
@@ -171,7 +174,7 @@ const Explore = (): React.ReactElement => {
       setCurrentRef(newSlug.currentRef);
       setPath(newSlug.path);
     }
-  }, [slug, defaultBranch, branches]);
+  }, [branch, slug, defaultBranch, branches]);
 
   return currentRef ? (
     <div>

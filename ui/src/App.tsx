@@ -38,10 +38,10 @@ const App: React.FunctionComponent = () => {
         </Nav>
       </Navbar>
       <Routes>
-        <Route path="/notfound" element={NotFound} />
-        <Route path="/tree/:slug*" element={Explore} />
-        <Route path="/content/:slug*" element={Explore} />
-        <Route path="/" element={Explore} />
+        <Route path="/notfound" element={<NotFound />} />
+        <Route path="/tree/:branch/*" element={<Explore />} />
+        <Route path="/content/:branch/*" element={<Explore />} />
+        <Route path="/" element={<Explore />} />
       </Routes>
     </div>
   );
