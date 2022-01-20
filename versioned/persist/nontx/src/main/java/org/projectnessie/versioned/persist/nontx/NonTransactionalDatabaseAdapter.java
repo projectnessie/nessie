@@ -48,6 +48,7 @@ import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import javax.annotation.Nullable;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
@@ -76,6 +77,7 @@ import org.projectnessie.versioned.persist.adapter.spi.TryLoopState;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.ContentIdWithBytes;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.NamedReference;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefPointer;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefPointer.Type;
@@ -153,12 +155,12 @@ public abstract class NonTransactionalDatabaseAdapter<
     Hash defaultBranchHead = namedRefsDefaultBranchHead(params, pointer);
 
     Stream<ReferenceInfo<ByteString>> refs =
-        pointer.getNamedReferencesMap().entrySet().stream()
+        pointer.getNamedReferencesList().stream()
             .map(
                 r ->
                     ReferenceInfo.of(
-                        Hash.of(r.getValue().getHash()),
-                        toNamedRef(r.getValue().getType(), r.getKey())));
+                        Hash.of(r.getRef().getHash()),
+                        toNamedRef(r.getRef().getType(), r.getName())));
 
     return namedRefsFilterAndEnhance(
         NON_TRANSACTIONAL_OPERATION_CONTEXT, params, defaultBranchHead, refs);
@@ -355,7 +357,7 @@ public abstract class NonTransactionalDatabaseAdapter<
           ref,
           CasOpVariant.REF_UPDATE,
           (ctx, pointer, branchCommits, newKeyLists) -> {
-            if (pointer.getNamedReferencesMap().containsKey(ref.getName())) {
+            if (refFromGlobalState(pointer, ref.getName()) != null) {
               throw referenceAlreadyExists(ref);
             }
 
@@ -420,12 +422,8 @@ public abstract class NonTransactionalDatabaseAdapter<
                     commitTimeInMicros(),
                     Collections.emptyList());
 
-            GlobalStatePointer.Builder newPointer =
-                GlobalStatePointer.newBuilder().setGlobalId(newGlobalHead.asBytes());
-            newPointer.putAllNamedReferences(pointer.getNamedReferencesMap());
-            newPointer.removeNamedReferences(reference.getName());
-            newPointer.setRefLogId(newRefLogId.asBytes());
-            return newPointer.build();
+            return updateGlobalStatePointer(
+                reference, pointer, null, newGlobalHead, newRefLogId.asBytes());
           },
           () -> deleteConflictMessage("Retry-Failure", reference, expectedHead));
     } catch (ReferenceNotFoundException | ReferenceConflictException | RuntimeException e) {
@@ -507,12 +505,13 @@ public abstract class NonTransactionalDatabaseAdapter<
           ctx,
           GlobalStatePointer.newBuilder()
               .setGlobalId(globalHead.asBytes())
-              .putNamedReferences(
-                  defaultBranchName,
-                  RefPointer.newBuilder()
-                      .setType(RefPointer.Type.Branch)
-                      .setHash(NO_ANCESTOR.asBytes())
-                      .build())
+              .addNamedReferences(
+                  NamedReference.newBuilder()
+                      .setName(defaultBranchName)
+                      .setRef(
+                          RefPointer.newBuilder()
+                              .setType(Type.Branch)
+                              .setHash(NO_ANCESTOR.asBytes())))
               .setRefLogId(newRefLogId.asBytes())
               .build());
     }
@@ -581,28 +580,55 @@ public abstract class NonTransactionalDatabaseAdapter<
   // Non-Transactional DatabaseAdapter subclass API (protected)
   // /////////////////////////////////////////////////////////////////////////////////////////////
 
-  protected GlobalStatePointer updateGlobalStatePointer(
+  /**
+   * Produces an updated copy of {@code pointer}.
+   *
+   * <p>Any previous appearance of {@code target.getName()} in the list of named references is
+   * removed. If {@code toHead} is not null, {@code target} it will appear as the first element in
+   * the list of named references. In other words, a reference to be deleted will be removed from
+   * the list of named references, an updated (or created) reference will appear as the first
+   * element of the list of named references.
+   */
+  protected static GlobalStatePointer updateGlobalStatePointer(
       NamedRef target,
       GlobalStatePointer pointer,
-      Hash toHead,
+      @Nullable Hash toHead,
       Hash newGlobalHead,
       ByteString newRefLogId) {
+
     GlobalStatePointer.Builder newPointer =
-        GlobalStatePointer.newBuilder().setGlobalId(newGlobalHead.asBytes());
-
-    newPointer.putAllNamedReferences(pointer.getNamedReferencesMap());
-
-    newPointer.putNamedReferences(
-        target.getName(),
-        RefPointer.newBuilder().setType(protoTypeForRef(target)).setHash(toHead.asBytes()).build());
-
-    newPointer.setRefLogId(newRefLogId);
-
+        GlobalStatePointer.newBuilder()
+            .setGlobalId(newGlobalHead.asBytes())
+            .setRefLogId(newRefLogId);
+    String refName = target.getName();
+    if (toHead != null) {
+      // Most recently updated references first
+      newPointer.addNamedReferences(
+          NamedReference.newBuilder()
+              .setName(refName)
+              .setRef(
+                  RefPointer.newBuilder()
+                      .setType(protoTypeForRef(target))
+                      .setHash(toHead.asBytes())));
+    }
+    pointer.getNamedReferencesList().stream()
+        .filter(namedRef -> !refName.equals(namedRef.getName()))
+        .forEach(newPointer::addNamedReferences);
     return newPointer.build();
   }
 
+  /** Retrieves the {@link RefPointer} for a reference name, returns {@code null} if not found. */
+  protected static RefPointer refFromGlobalState(GlobalStatePointer pointer, String refName) {
+    for (NamedReference namedReference : pointer.getNamedReferencesList()) {
+      if (namedReference.getName().equals(refName)) {
+        return namedReference.getRef();
+      }
+    }
+    return null;
+  }
+
   /** Get the protobuf-enum-value for a named-reference. */
-  protected Type protoTypeForRef(NamedRef target) {
+  protected static Type protoTypeForRef(NamedRef target) {
     Type type;
     if (target instanceof BranchName) {
       type = Type.Branch;
@@ -875,7 +901,7 @@ public abstract class NonTransactionalDatabaseAdapter<
     if (pointer == null) {
       throw referenceNotFound(ref);
     }
-    RefPointer branchHead = pointer.getNamedReferencesMap().get(ref.getName());
+    RefPointer branchHead = refFromGlobalState(pointer, ref.getName());
     if (branchHead == null || !ref.equals(toNamedRef(branchHead.getType(), ref.getName()))) {
       throw referenceNotFound(ref);
     }
@@ -887,7 +913,7 @@ public abstract class NonTransactionalDatabaseAdapter<
     if (pointer == null) {
       throw referenceNotFound(ref);
     }
-    RefPointer head = pointer.getNamedReferencesMap().get(ref);
+    RefPointer head = refFromGlobalState(pointer, ref);
     if (head == null) {
       throw referenceNotFound(ref);
     }
