@@ -123,7 +123,7 @@ public class CELUtil {
   /**
    * 'Mirrors' Nessie model objects for CEL.
    *
-   * @param model Ńessie model object
+   * @param model Nessie model object
    * @return object suitable for CEL expressions
    */
   public static Object forCel(Object model) {

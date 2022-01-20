@@ -21,8 +21,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import io.quarkus.test.security.TestSecurity;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -35,8 +37,6 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.IcebergTable;
-import org.projectnessie.model.ImmutableDelete;
-import org.projectnessie.model.ImmutableOperations;
 import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
@@ -128,12 +128,6 @@ class TestAuthorizationRules extends BaseClientAuthTest {
 
     final Branch b = retrieveBranch(branchName, role, false);
 
-    ImmutableOperations deleteOps =
-        ImmutableOperations.builder()
-            .addOperations(ImmutableDelete.builder().key(key).build())
-            .commitMeta(CommitMeta.fromMessage("delete stuff"))
-            .build();
-
     assertThatThrownBy(
             () ->
                 api()
@@ -147,6 +141,141 @@ class TestAuthorizationRules extends BaseClientAuthTest {
             String.format(
                 "'DELETE_ENTITY' is not allowed for role '%s' on content '%s'",
                 role, key.toPathString()));
+
+    deleteBranch(branch, role, false);
+  }
+
+  @Test
+  @TestSecurity(user = "admin_user")
+  void testCanReadTargetBranchDuringAssign() throws BaseNessieClientServerException {
+    String role = "admin_user";
+    String branchName = "adminCanReadWhenAssigning";
+    String targetBranchName = "targetBranchForAssign";
+    createBranch(Branch.of(branchName, null), role, false);
+    Branch branch = retrieveBranch(branchName, role, false);
+
+    createBranch(Branch.of(targetBranchName, null), role, false);
+    Branch targetBranch = retrieveBranch(targetBranchName, role, false);
+
+    addContent(
+        targetBranch,
+        Put.of(
+            ContentKey.of("allowed", "x"),
+            IcebergTable.of("foo", 42, 42, 42, 42, UUID.randomUUID().toString())),
+        role,
+        false);
+    targetBranch = retrieveBranch(targetBranchName, role, false);
+
+    api().assignBranch().branch(branch).assignTo(targetBranch).assign();
+    branch = retrieveBranch(branchName, role, false);
+    assertThat(branch.getHash()).isEqualTo(targetBranch.getHash());
+  }
+
+  @Test
+  @TestSecurity(user = "admin_user")
+  void testCanReadTargetBranchDuringMerge() throws BaseNessieClientServerException {
+    String role = "admin_user";
+    String branchName = "adminCanReadWhenMerging";
+    String targetBranchName = "targetBranchForMerge";
+    createBranch(Branch.of(branchName, null), role, false);
+    Branch branch = retrieveBranch(branchName, role, false);
+
+    createBranch(Branch.of(targetBranchName, null), role, false);
+    Branch targetBranch = retrieveBranch(targetBranchName, role, false);
+
+    addContent(
+        branch,
+        Put.of(
+            ContentKey.of("allowed", "x"),
+            IcebergTable.of("foo", 42, 42, 42, 42, UUID.randomUUID().toString())),
+        role,
+        false);
+    branch = retrieveBranch(branchName, role, false);
+
+    api().mergeRefIntoBranch().fromRef(branch).branch(targetBranch).merge();
+
+    assertThat(api().getCommitLog().reference(targetBranch).get().getLogEntries()).isNotEmpty();
+  }
+
+  @Test
+  @TestSecurity(user = "admin_user")
+  void testCanReadTargetBranchDuringTransplant() throws BaseNessieClientServerException {
+    String role = "admin_user";
+    String branchName = "adminCanReadWhenTransplanting";
+    String targetBranchName = "targetBranchForTransplant";
+    createBranch(Branch.of(branchName, null), role, false);
+    Branch branch = retrieveBranch(branchName, role, false);
+
+    createBranch(Branch.of(targetBranchName, null), role, false);
+    Branch targetBranch = retrieveBranch(targetBranchName, role, false);
+
+    addContent(
+        branch,
+        Put.of(
+            ContentKey.of("allowed", "x"),
+            IcebergTable.of("foo", 42, 42, 42, 42, UUID.randomUUID().toString())),
+        role,
+        false);
+    branch = retrieveBranch(branchName, role, false);
+
+    api()
+        .transplantCommitsIntoBranch()
+        .fromRefName(branch.getName())
+        .hashesToTransplant(
+            api().getCommitLog().reference(branch).get().getLogEntries().stream()
+                .map(e -> e.getCommitMeta().getHash())
+                .collect(Collectors.toList()))
+        .branch(targetBranch)
+        .transplant();
+
+    assertThat(api().getCommitLog().reference(targetBranch).get().getLogEntries()).isNotEmpty();
+  }
+
+  @Test
+  @TestSecurity(user = "user1")
+  void testCannotReadTargetBranch() throws BaseNessieClientServerException {
+    String role = "user1";
+    String branchName = "allowedBranchForUser1";
+    createBranch(Branch.of(branchName, null), role, false);
+    String disallowedBranch = "disallowedBranchForUser1";
+    createBranch(Branch.of(disallowedBranch, null), role, false);
+
+    final Branch branch = retrieveBranch(branchName, role, false);
+
+    String errorMessage =
+        String.format(
+            "'VIEW_REFERENCE' is not allowed for role '%s' on reference '%s'",
+            role, disallowedBranch);
+    assertThatThrownBy(
+            () ->
+                api()
+                    .assignBranch()
+                    .branch(branch)
+                    .assignTo(Branch.of(disallowedBranch, branch.getHash()))
+                    .assign())
+        .isInstanceOf(NessieForbiddenException.class)
+        .hasMessageContaining(errorMessage);
+
+    assertThatThrownBy(
+            () ->
+                api()
+                    .mergeRefIntoBranch()
+                    .fromRef(branch)
+                    .branch((Branch.of(disallowedBranch, branch.getHash())))
+                    .merge())
+        .isInstanceOf(NessieForbiddenException.class)
+        .hasMessageContaining(errorMessage);
+
+    assertThatThrownBy(
+            () ->
+                api()
+                    .transplantCommitsIntoBranch()
+                    .hashesToTransplant(Arrays.asList(branch.getHash()))
+                    .fromRefName(branch.getName())
+                    .branch((Branch.of(disallowedBranch, branch.getHash())))
+                    .transplant())
+        .isInstanceOf(NessieForbiddenException.class)
+        .hasMessageContaining(errorMessage);
 
     deleteBranch(branch, role, false);
   }

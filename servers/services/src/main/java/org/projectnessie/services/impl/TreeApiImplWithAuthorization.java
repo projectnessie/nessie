@@ -124,9 +124,12 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
   @Override
   protected void assignReference(NamedRef ref, String oldHash, Reference assignTo)
       throws NessieNotFoundException, NessieConflictException {
-    namedRefWithHashOrThrow(assignTo.getName(), assignTo.getHash());
-
-    getAccessChecker().canAssignRefToHash(createAccessContext(), ref);
+    ServerAccessContext accessContext = createAccessContext();
+    getAccessChecker()
+        .canViewReference(
+            accessContext,
+            namedRefWithHashOrThrow(assignTo.getName(), assignTo.getHash()).getValue());
+    getAccessChecker().canAssignRefToHash(accessContext, ref);
     super.assignReference(ref, oldHash, assignTo);
   }
 
@@ -168,19 +171,29 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
       throw new IllegalArgumentException("No hashes given to transplant.");
     }
 
-    namedRefWithHashOrThrow(
-        transplant.getFromRefName(),
-        transplant.getHashesToTransplant().get(transplant.getHashesToTransplant().size() - 1));
+    ServerAccessContext accessContext = createAccessContext();
     getAccessChecker()
-        .canCommitChangeAgainstReference(createAccessContext(), BranchName.of(branchName));
+        .canViewReference(
+            accessContext,
+            namedRefWithHashOrThrow(
+                    transplant.getFromRefName(),
+                    transplant
+                        .getHashesToTransplant()
+                        .get(transplant.getHashesToTransplant().size() - 1))
+                .getValue());
+    getAccessChecker().canCommitChangeAgainstReference(accessContext, BranchName.of(branchName));
     super.transplantCommitsIntoBranch(branchName, hash, message, transplant);
   }
 
   @Override
   public void mergeRefIntoBranch(String branchName, String hash, Merge merge)
       throws NessieNotFoundException, NessieConflictException {
+    ServerAccessContext accessContext = createAccessContext();
     getAccessChecker()
-        .canCommitChangeAgainstReference(createAccessContext(), BranchName.of(branchName));
+        .canViewReference(
+            accessContext,
+            namedRefWithHashOrThrow(merge.getFromRefName(), merge.getFromHash()).getValue());
+    getAccessChecker().canCommitChangeAgainstReference(accessContext, BranchName.of(branchName));
     super.mergeRefIntoBranch(branchName, hash, merge);
   }
 
