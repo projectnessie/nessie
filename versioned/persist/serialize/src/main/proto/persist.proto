@@ -103,8 +103,14 @@ message RefLogEntry {
 // Used by non-transactional database-adapters
 message GlobalStatePointer {
   bytes global_id = 1;
-  map<string, RefPointer> named_references = 2;
+  // most recently updated named reference appears first
+  repeated NamedReference named_references = 2;
   bytes ref_log_id = 3;
+}
+
+message NamedReference {
+  string name = 1;
+  RefPointer ref = 2;
 }
 
 // Used by non-transactional database-adapters

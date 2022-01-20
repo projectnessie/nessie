@@ -46,6 +46,7 @@ import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.KeyWithType;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.NamedReference;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefPointer;
 
@@ -364,9 +365,13 @@ class TestSerialization {
   static GlobalStatePointer createGlobalState() {
     GlobalStatePointer.Builder state = GlobalStatePointer.newBuilder().setGlobalId(randomBytes(32));
     for (int i = 0; i < 50; i++) {
-      state.putNamedReferences(
-          randomString(32),
-          RefPointer.newBuilder().setType(RefPointer.Type.Branch).setHash(randomBytes(32)).build());
+      state.addNamedReferences(
+          NamedReference.newBuilder()
+              .setName(randomString(32))
+              .setRef(
+                  RefPointer.newBuilder()
+                      .setType(RefPointer.Type.Branch)
+                      .setHash(randomBytes(32))));
     }
     return state.build();
   }
