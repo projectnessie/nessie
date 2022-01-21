@@ -48,6 +48,7 @@ import org.projectnessie.versioned.persist.adapter.KeyList;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyWithType;
 import org.projectnessie.versioned.persist.adapter.RefLog;
+import org.projectnessie.versioned.persist.adapter.RepoDescription;
 import org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapter;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
@@ -55,6 +56,7 @@ import org.projectnessie.versioned.persist.nontx.NonTransactionalOperationContex
 import org.projectnessie.versioned.persist.serialize.AdapterTypes;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.RepoProps;
 import org.projectnessie.versioned.persist.serialize.ProtoSerialization;
 import org.projectnessie.versioned.persist.serialize.ProtoSerialization.Parser;
 
@@ -124,6 +126,13 @@ public class MongoDatabaseAdapter
     doc.put(ID_PROPERTY_NAME, globalPointerKey);
     doc.put(DATA_PROPERTY_NAME, pointer.toByteArray());
     doc.put(GLOBAL_ID_PROPERTY_NAME, pointer.getGlobalId().toByteArray());
+    return doc;
+  }
+
+  private Document toDoc(RepoProps pointer) {
+    Document doc = new Document();
+    doc.put(ID_PROPERTY_NAME, globalPointerKey);
+    doc.put(DATA_PROPERTY_NAME, pointer.toByteArray());
     return doc;
   }
 
@@ -289,6 +298,36 @@ public class MongoDatabaseAdapter
   protected List<CommitLogEntry> fetchPageFromCommitLog(
       NonTransactionalOperationContext ctx, List<Hash> hashes) {
     return fetchPage(client.getCommitLog(), hashes, ProtoSerialization::protoToCommitLogEntry);
+  }
+
+  @Override
+  protected RepoDescription fetchRepositoryDescription(NonTransactionalOperationContext ctx) {
+    return loadById(
+        client.getRepoDesc(), globalPointerKey, ProtoSerialization::protoToRepoDescription);
+  }
+
+  @Override
+  protected boolean tryUpdateRepositoryDescription(
+      NonTransactionalOperationContext ctx, RepoDescription expected, RepoDescription updateTo) {
+    Document doc = toDoc(toProto(updateTo));
+
+    if (expected != null) {
+      byte[] expectedBytes = toProto(expected).toByteArray();
+
+      UpdateResult result =
+          client
+              .getRepoDesc()
+              .replaceOne(
+                  Filters.and(
+                      Filters.eq(globalPointerKey), Filters.eq(DATA_PROPERTY_NAME, expectedBytes)),
+                  doc);
+      return result.wasAcknowledged()
+          && result.getMatchedCount() == 1
+          && result.getModifiedCount() == 1;
+    } else {
+      InsertOneResult result = client.getRepoDesc().insertOne(doc);
+      return result.wasAcknowledged();
+    }
   }
 
   @Override

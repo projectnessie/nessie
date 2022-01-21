@@ -59,6 +59,13 @@ public abstract class AbstractDatabaseAdapterTest {
   @NessieDbAdapter protected static DatabaseAdapter databaseAdapter;
 
   @Nested
+  public class RepoDescription extends AbstractRepoDescription {
+    RepoDescription() {
+      super(databaseAdapter);
+    }
+  }
+
+  @Nested
   public class GlobalStates extends AbstractGlobalStates {
     GlobalStates() {
       super(databaseAdapter);

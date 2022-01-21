@@ -24,12 +24,14 @@ import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUti
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.randomHash;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.referenceAlreadyExists;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.referenceNotFound;
+import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.repoDescUpdateConflictMessage;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.transplantConflictMessage;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.verifyExpectedHash;
 import static org.projectnessie.versioned.persist.adapter.spi.TryLoopState.newTryLoopState;
 import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.protoToCommitLogEntry;
 import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.protoToKeyList;
 import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.protoToRefLog;
+import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.protoToRepoDescription;
 import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.toProto;
 
 import com.google.common.base.Preconditions;
@@ -80,6 +82,7 @@ import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyWithType;
 import org.projectnessie.versioned.persist.adapter.RefLog;
+import org.projectnessie.versioned.persist.adapter.RepoDescription;
 import org.projectnessie.versioned.persist.adapter.spi.AbstractDatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.spi.TryLoopState;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes;
@@ -498,6 +501,8 @@ public abstract class TxDatabaseAdapter
     Connection conn = borrowConnection();
     try {
       if (!checkNamedRefExistence(conn, BranchName.of(defaultBranchName))) {
+        // note: no need to initialize the repo-description
+
         insertNewReference(conn, BranchName.of(defaultBranchName), NO_ANCESTOR);
 
         Hash newRefLogId =
@@ -545,6 +550,11 @@ public abstract class TxDatabaseAdapter
         ps.executeUpdate();
       }
       try (PreparedStatement ps = conn.prepareStatement(SqlStatements.DELETE_REF_LOG_HEAD_ALL)) {
+        ps.setString(1, config.getRepositoryId());
+        ps.executeUpdate();
+      }
+      try (PreparedStatement ps =
+          conn.prepareStatement(SqlStatements.DELETE_REPO_DESCRIPTIONE_ALL)) {
         ps.setString(1, config.getRepositoryId());
         ps.executeUpdate();
       }
@@ -1324,6 +1334,86 @@ public abstract class TxDatabaseAdapter
     }
   }
 
+  @Override
+  public RepoDescription fetchRepositoryDescription() {
+    Connection conn = borrowConnection();
+    try {
+      return fetchRepositoryDescription(conn);
+    } finally {
+      releaseConnection(conn);
+    }
+  }
+
+  private RepoDescription fetchRepositoryDescription(Connection conn) {
+    try {
+      return protoToRepoDescription(fetchRepositoryDescriptionInternal(conn));
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private byte[] fetchRepositoryDescriptionInternal(Connection conn) throws SQLException {
+    try (PreparedStatement ps = conn.prepareStatement(SqlStatements.SELECT_REPO_DESCRIPTION)) {
+      ps.setString(1, config.getRepositoryId());
+      try (ResultSet rs = ps.executeQuery()) {
+        if (rs.next()) {
+          return rs.getBytes(1);
+        }
+      }
+
+      return null;
+    }
+  }
+
+  @Override
+  public void updateRepositoryDescription(Function<RepoDescription, RepoDescription> updater)
+      throws ReferenceConflictException {
+
+    try {
+      opLoop(
+          null,
+          true,
+          (conn, x) -> {
+            byte[] currentBytes = fetchRepositoryDescriptionInternal(conn);
+
+            RepoDescription current = protoToRepoDescription(currentBytes);
+            RepoDescription updated = updater.apply(current);
+
+            if (updated != null) {
+              if (currentBytes == null) {
+                try (PreparedStatement ps =
+                    conn.prepareStatement(SqlStatements.INSERT_REPO_DESCRIPTION)) {
+                  ps.setString(1, config.getRepositoryId());
+                  ps.setBytes(2, toProto(updated).toByteArray());
+                  if (ps.executeUpdate() == 0) {
+                    return null;
+                  }
+                }
+              } else {
+                try (PreparedStatement ps =
+                    conn.prepareStatement(SqlStatements.UPDATE_REPO_DESCRIPTION)) {
+                  ps.setBytes(1, toProto(updated).toByteArray());
+                  ps.setString(2, config.getRepositoryId());
+                  ps.setBytes(3, currentBytes);
+                  if (ps.executeUpdate() == 0) {
+                    return null;
+                  }
+                }
+              }
+            }
+
+            return NO_ANCESTOR;
+          },
+          () -> repoDescUpdateConflictMessage("Conflict"),
+          () -> repoDescUpdateConflictMessage("Retry-failure"));
+
+    } catch (ReferenceConflictException | RuntimeException e) {
+      throw e;
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   /**
    * Provides a map of table name to create-table-DDL. The DDL statements are processed by {@link
    * java.text.MessageFormat} to inject the parameters returned by {@link
@@ -1342,6 +1432,9 @@ public abstract class TxDatabaseAdapter
    */
   protected Map<String, List<String>> allCreateTableDDL() {
     return ImmutableMap.<String, List<String>>builder()
+        .put(
+            SqlStatements.TABLE_REPO_DESCRIPTION,
+            Collections.singletonList(SqlStatements.CREATE_TABLE_REPO_DESCRIPTION))
         .put(
             SqlStatements.TABLE_GLOBAL_STATE,
             Collections.singletonList(SqlStatements.CREATE_TABLE_GLOBAL_STATE))

@@ -17,6 +17,26 @@ package org.projectnessie.versioned.persist.tx;
 
 public final class SqlStatements {
 
+  public static final String TABLE_REPO_DESCRIPTION = "repo_desc";
+  public static final String DELETE_REPO_DESCRIPTIONE_ALL =
+      String.format("DELETE FROM %s WHERE repo_id = ?", TABLE_REPO_DESCRIPTION);
+  public static final String UPDATE_REPO_DESCRIPTION =
+      String.format(
+          "UPDATE %s SET repo_desc = ? WHERE repo_id = ? AND repo_desc = ?",
+          TABLE_REPO_DESCRIPTION);
+  public static final String INSERT_REPO_DESCRIPTION =
+      String.format("INSERT INTO %s (repo_id, repo_desc) VALUES (?, ?)", TABLE_REPO_DESCRIPTION);
+  public static final String SELECT_REPO_DESCRIPTION =
+      String.format("SELECT repo_desc FROM %s WHERE repo_id = ?", TABLE_REPO_DESCRIPTION);
+  public static final String CREATE_TABLE_REPO_DESCRIPTION =
+      String.format(
+          "CREATE TABLE %s (\n"
+              + "  repo_id {2},\n"
+              + "  repo_desc {0},\n"
+              + "  PRIMARY KEY (repo_id)\n"
+              + ")",
+          TABLE_REPO_DESCRIPTION);
+
   public static final String TABLE_NAMED_REFERENCES = "named_refs";
   public static final String DELETE_NAMED_REFERENCE_ALL =
       String.format("DELETE FROM %s WHERE repo_id = ?", TABLE_NAMED_REFERENCES);

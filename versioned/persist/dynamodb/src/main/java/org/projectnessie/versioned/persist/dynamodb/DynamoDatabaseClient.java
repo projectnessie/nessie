@@ -21,6 +21,7 @@ import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_GLOBAL_L
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_GLOBAL_POINTER;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_KEY_LISTS;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_REF_LOG;
+import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_REPO_DESC;
 
 import java.net.URI;
 import java.util.List;
@@ -88,6 +89,7 @@ public class DynamoDatabaseClient implements DatabaseConnectionProvider<DynamoCl
     }
 
     Stream.of(
+            TABLE_REPO_DESC,
             TABLE_GLOBAL_POINTER,
             TABLE_GLOBAL_LOG,
             TABLE_COMMIT_LOG,

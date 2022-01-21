@@ -13,19 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.persist.dynamodb;
+package org.projectnessie.versioned.persist.adapter;
 
-final class Tables {
+import java.util.Map;
+import org.immutables.value.Value;
 
-  static final String TABLE_REPO_DESC = "repo_desc";
-  static final String TABLE_GLOBAL_POINTER = "global_pointer";
-  static final String TABLE_GLOBAL_LOG = "global_log";
-  static final String TABLE_COMMIT_LOG = "commit_log";
-  static final String TABLE_KEY_LISTS = "key_lists";
-  static final String TABLE_REF_LOG = "ref_log";
+/** Keeps track of the logical state of a Nessie repository. */
+@Value.Immutable
+public interface RepoDescription {
+  RepoDescription DEFAULT = builder().repoVersion(0).build();
 
-  static final String KEY_NAME = "key";
-  static final String VALUE_NAME = "val";
+  /** A logical version number describing the logical data model. */
+  int getRepoVersion();
 
-  private Tables() {}
+  /** Map of properties for a Nessie repository. */
+  Map<String, String> getProperties();
+
+  static ImmutableRepoDescription.Builder builder() {
+    return ImmutableRepoDescription.builder();
+  }
 }

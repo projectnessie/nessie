@@ -272,6 +272,21 @@ public interface DatabaseAdapter {
   Stream<Difference> diff(Hash from, Hash to, KeyFilterPredicate keyFilter)
       throws ReferenceNotFoundException;
 
+  /** Fetches the current version and descriptive attributes of the repository. */
+  RepoDescription fetchRepositoryDescription();
+
+  /**
+   * Updates the repository description. Takes a function that receives the current repository
+   * description and returns the updated description.
+   *
+   * @param updater updater function, the input argument is never {@code null}, if {@code updater}
+   *     return {@code null}, the update will be aborted
+   * @throws ReferenceConflictException thrown if the repository description could not be updated
+   *     due to other concurrent updates
+   */
+  void updateRepositoryDescription(Function<RepoDescription, RepoDescription> updater)
+      throws ReferenceConflictException;
+
   // NOTE: the following is NOT a "proposed" API, just an idea of how the supporting functions
   // for Nessie-GC need to look like.
 

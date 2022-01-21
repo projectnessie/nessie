@@ -24,7 +24,9 @@ import com.google.protobuf.MessageLite;
 import com.google.protobuf.UnsafeByteOperations;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
@@ -33,6 +35,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.versioned.Hash;
@@ -41,9 +44,12 @@ import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
 import org.projectnessie.versioned.persist.adapter.ContentIdWithType;
+import org.projectnessie.versioned.persist.adapter.ImmutableRepoDescription;
+import org.projectnessie.versioned.persist.adapter.ImmutableRepoDescription.Builder;
 import org.projectnessie.versioned.persist.adapter.KeyList;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.KeyWithType;
+import org.projectnessie.versioned.persist.adapter.RepoDescription;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.NamedReference;
@@ -198,6 +204,21 @@ class TestSerialization {
     List<TypeSerialization> params = new ArrayList<>();
     params.add(
         new TypeSerialization<>(
+            RepoDescription.class,
+            AdapterTypes.RepoProps.class,
+            TestSerialization::createRepoDescription,
+            ProtoSerialization::toProto,
+            v -> {
+              try {
+                return AdapterTypes.RepoProps.parseFrom(v);
+              } catch (InvalidProtocolBufferException e) {
+                throw new RuntimeException(e);
+              }
+            },
+            ProtoSerialization::protoToRepoDescription));
+
+    params.add(
+        new TypeSerialization<>(
             CommitLogEntry.class,
             AdapterTypes.CommitLogEntry.class,
             TestSerialization::createEntry,
@@ -314,6 +335,31 @@ class TestSerialization {
     }
   }
 
+  @RepeatedTest(50)
+  public void stableOrderOfRepoDescProps() {
+    ImmutableRepoDescription.Builder repoDescription = RepoDescription.builder().repoVersion(42);
+    Map<String, String> props = new HashMap<>();
+    for (int i = 0; i < 20; i++) {
+      String key = randomString(50);
+      String value = randomString(50);
+      props.put(key, value);
+      repoDescription.putProperties(key, value);
+    }
+    AdapterTypes.RepoProps repoProps = toProto(repoDescription.build());
+
+    List<AdapterTypes.Entry> expected =
+        props.entrySet().stream()
+            .sorted(Map.Entry.comparingByKey())
+            .map(
+                e ->
+                    AdapterTypes.Entry.newBuilder()
+                        .setKey(e.getKey())
+                        .setValue(e.getValue())
+                        .build())
+            .collect(Collectors.toList());
+    assertThat(repoProps.getPropertiesList()).containsExactlyElementsOf(expected);
+  }
+
   public static ContentId randomId() {
     return ContentId.of(UUID.randomUUID().toString());
   }
@@ -374,6 +420,13 @@ class TestSerialization {
                       .setHash(randomBytes(32))));
     }
     return state.build();
+  }
+
+  static RepoDescription createRepoDescription() {
+    Builder builder = RepoDescription.builder().repoVersion(ThreadLocalRandom.current().nextInt());
+    IntStream.range(0, ThreadLocalRandom.current().nextInt(20))
+        .forEach(i -> builder.putProperties("key" + i, randomString(20)));
+    return builder.build();
   }
 
   static CommitLogEntry createEntry() {

@@ -19,11 +19,13 @@ import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUti
 import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.protoToCommitLogEntry;
 import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.protoToKeyList;
 import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.protoToRefLog;
+import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.protoToRepoDescription;
 import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.toProto;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -38,6 +40,7 @@ import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyWithType;
 import org.projectnessie.versioned.persist.adapter.RefLog;
+import org.projectnessie.versioned.persist.adapter.RepoDescription;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapter;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalOperationContext;
@@ -315,6 +318,37 @@ public class RocksDatabaseAdapter
               });
     } catch (RocksDBException e) {
       throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  protected RepoDescription fetchRepositoryDescription(NonTransactionalOperationContext ctx) {
+    try {
+      byte[] bytes = db.get(dbInstance.getCfRepoProps(), globalPointerKey());
+      return bytes != null ? protoToRepoDescription(bytes) : null;
+    } catch (RocksDBException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  protected boolean tryUpdateRepositoryDescription(
+      NonTransactionalOperationContext ctx, RepoDescription expected, RepoDescription updateTo) {
+    Lock lock = dbInstance.getLock().writeLock();
+    lock.lock();
+    try {
+      byte[] bytes = db.get(dbInstance.getCfRepoProps(), globalPointerKey());
+      byte[] updatedBytes = toProto(updateTo).toByteArray();
+      if ((bytes == null && expected == null)
+          || (bytes != null && Arrays.equals(bytes, toProto(expected).toByteArray()))) {
+        db.put(dbInstance.getCfRepoProps(), globalPointerKey(), updatedBytes);
+        return true;
+      }
+      return false;
+    } catch (RocksDBException e) {
+      throw new RuntimeException(e);
+    } finally {
+      lock.unlock();
     }
   }
 

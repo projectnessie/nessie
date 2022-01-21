@@ -21,10 +21,12 @@ import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_GLOBAL_L
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_GLOBAL_POINTER;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_KEY_LISTS;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_REF_LOG;
+import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_REPO_DESC;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.VALUE_NAME;
 import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.toProto;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -45,6 +47,7 @@ import org.projectnessie.versioned.persist.adapter.KeyList;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyWithType;
 import org.projectnessie.versioned.persist.adapter.RefLog;
+import org.projectnessie.versioned.persist.adapter.RepoDescription;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapter;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalOperationContext;
@@ -307,6 +310,52 @@ public class DynamoDatabaseAdapter
               .build());
     }
     return requests;
+  }
+
+  @Override
+  protected RepoDescription fetchRepositoryDescription(NonTransactionalOperationContext ctx) {
+    return loadById(TABLE_REPO_DESC, "", ProtoSerialization::protoToRepoDescription);
+  }
+
+  @Override
+  protected boolean tryUpdateRepositoryDescription(
+      NonTransactionalOperationContext ctx, RepoDescription expected, RepoDescription updateTo) {
+    AttributeValue updateToBytes =
+        AttributeValue.builder().b(SdkBytes.fromByteArray(toProto(updateTo).toByteArray())).build();
+    try {
+      if (expected != null) {
+        AttributeValue expectedBytes =
+            AttributeValue.builder()
+                .b(SdkBytes.fromByteArray(toProto(expected).toByteArray()))
+                .build();
+        client.client.updateItem(
+            b ->
+                b.tableName(TABLE_REPO_DESC)
+                    .key(globalPointerKeyMap)
+                    .expected(
+                        Collections.singletonMap(
+                            VALUE_NAME,
+                            ExpectedAttributeValue.builder().value(expectedBytes).build()))
+                    .attributeUpdates(
+                        Collections.singletonMap(
+                            VALUE_NAME,
+                            AttributeValueUpdate.builder()
+                                .action(AttributeAction.PUT)
+                                .value(updateToBytes)
+                                .build())));
+      } else {
+        client.client.putItem(
+            b ->
+                b.tableName(TABLE_REPO_DESC)
+                    .item(
+                        ImmutableMap.of(
+                            KEY_NAME, globalPointerKeyMap.get(KEY_NAME), VALUE_NAME, updateToBytes))
+                    .conditionExpression(String.format("attribute_not_exists(%s)", VALUE_NAME)));
+      }
+      return true;
+    } catch (ConditionalCheckFailedException e) {
+      return false;
+    }
   }
 
   @Override
