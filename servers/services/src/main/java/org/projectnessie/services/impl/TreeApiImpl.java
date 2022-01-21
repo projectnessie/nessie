@@ -67,7 +67,6 @@ import org.projectnessie.model.Content.Type;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.ImmutableBranch;
-import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableLogEntry;
 import org.projectnessie.model.ImmutableLogResponse;
 import org.projectnessie.model.ImmutableReferenceMetadata;
@@ -413,10 +412,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
       }
       getStore()
           .transplant(
-              BranchName.of(branchName),
-              toHash(hash, true),
-              transplants,
-              rewriteCommitMetadataForMergeTransplant());
+              BranchName.of(branchName), toHash(hash, true), transplants, commitMetaUpdate());
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
@@ -433,17 +429,12 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
               toHash(merge.getFromRefName(), merge.getFromHash()),
               BranchName.of(branchName),
               toHash(hash, true),
-              rewriteCommitMetadataForMergeTransplant());
+              commitMetaUpdate());
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
       throw new NessieReferenceConflictException(e.getMessage(), e);
     }
-  }
-
-  private Function<CommitMeta, CommitMeta> rewriteCommitMetadataForMergeTransplant() {
-    Instant now = Instant.now();
-    return commitMeta -> ImmutableCommitMeta.builder().from(commitMeta).commitTime(now).build();
   }
 
   @Override
@@ -548,23 +539,23 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
         operations.getOperations().stream()
             .map(TreeApiImpl::toOp)
             .collect(ImmutableList.toImmutableList());
-    String newHash = doOps(branch, hash, operations.getCommitMeta(), ops).asString();
-    return Branch.of(branch, newHash);
-  }
 
-  protected Hash doOps(
-      String branch,
-      String hash,
-      CommitMeta commitMeta,
-      List<org.projectnessie.versioned.Operation<Content>> operations)
-      throws NessieConflictException, NessieNotFoundException {
+    CommitMeta commitMeta = operations.getCommitMeta();
+    if (commitMeta.getCommitter() != null) {
+      throw new IllegalArgumentException(
+          "Cannot set the committer on the client side. It is set by the server.");
+    }
+
     try {
-      return getStore()
-          .commit(
-              BranchName.of(Optional.ofNullable(branch).orElse(getConfig().getDefaultBranch())),
-              Optional.ofNullable(hash).map(Hash::of),
-              meta(getPrincipal(), commitMeta),
-              operations);
+      Hash newHash =
+          getStore()
+              .commit(
+                  BranchName.of(Optional.ofNullable(branch).orElse(getConfig().getDefaultBranch())),
+                  Optional.ofNullable(hash).map(Hash::of),
+                  commitMetaUpdate().apply(commitMeta),
+                  ops);
+
+      return Branch.of(branch, newHash.asString());
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
@@ -572,19 +563,19 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     }
   }
 
-  private static CommitMeta meta(Principal principal, CommitMeta commitMeta) {
-    if (commitMeta.getCommitter() != null) {
-      throw new IllegalArgumentException(
-          "Cannot set the committer on the client side. It is set by the server.");
-    }
+  private Function<CommitMeta, CommitMeta> commitMetaUpdate() {
+    // Used for setting contextual commit properties during new and merge/transplant commits.
+    // WARNING: ONLY SET PROPERTIES, WHICH APPLY COMMONLY TO ALL COMMIT TYPES.
+    Principal principal = getPrincipal();
     String committer = principal == null ? "" : principal.getName();
     Instant now = Instant.now();
-    return commitMeta.toBuilder()
-        .committer(committer)
-        .commitTime(now)
-        .author(commitMeta.getAuthor() == null ? committer : commitMeta.getAuthor())
-        .authorTime(commitMeta.getAuthorTime() == null ? now : commitMeta.getAuthorTime())
-        .build();
+    return commitMeta ->
+        commitMeta.toBuilder()
+            .committer(committer)
+            .commitTime(now)
+            .author(commitMeta.getAuthor() == null ? committer : commitMeta.getAuthor())
+            .authorTime(commitMeta.getAuthorTime() == null ? now : commitMeta.getAuthorTime())
+            .build();
   }
 
   private Hash toHash(String referenceName, String hashOnReference)

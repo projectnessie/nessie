@@ -785,6 +785,19 @@ public abstract class AbstractITVersionStore {
         .contains(commit(anotherCommit, "Another commit"), commit(commit, "Some commit"));
   }
 
+  static void assertCommitMeta(
+      List<Commit<String, String>> current,
+      List<Commit<String, String>> expected,
+      Function<String, String> commitMetaModifier) {
+    assertThat(current)
+        .map(Commit::getCommitMeta)
+        .containsExactlyElementsOf(
+            expected.stream()
+                .map(Commit::getCommitMeta)
+                .map(commitMetaModifier)
+                .collect(Collectors.toList()));
+  }
+
   @Nested
   @DisplayName("when transplanting")
   protected class WhenTransplanting {
@@ -793,6 +806,11 @@ public abstract class AbstractITVersionStore {
     private Hash firstCommit;
     private Hash secondCommit;
     private Hash thirdCommit;
+    private List<Commit<String, String>> commits;
+
+    String transplanted(String commitMeta) {
+      return commitMeta + ", transplanted";
+    }
 
     @BeforeEach
     protected void setupCommits() throws VersionStoreException {
@@ -817,10 +835,22 @@ public abstract class AbstractITVersionStore {
               .toBranch(branch);
 
       thirdCommit = commit("Third Commit").put("t2", "v2_2").unchanged("t4").toBranch(branch);
+
+      commits = commitsList(branch, false);
     }
 
     @Test
     protected void checkTransplantOnEmptyBranch() throws VersionStoreException {
+      checkTransplantOnEmptyBranch(Function.identity());
+    }
+
+    @Test
+    protected void checkTransplantOnEmptyBranchModify() throws VersionStoreException {
+      checkTransplantOnEmptyBranch(this::transplanted);
+    }
+
+    private void checkTransplantOnEmptyBranch(Function<String, String> commitMetaModify)
+        throws VersionStoreException {
       final BranchName newBranch = BranchName.of("bar_1");
       store().create(newBranch, Optional.empty());
 
@@ -829,7 +859,7 @@ public abstract class AbstractITVersionStore {
               newBranch,
               Optional.of(initialHash),
               Arrays.asList(firstCommit, secondCommit, thirdCommit),
-              Function.identity());
+              commitMetaModify);
       assertThat(
               store()
                   .getValues(
@@ -840,6 +870,8 @@ public abstract class AbstractITVersionStore {
                   Key.of("t1"), "v1_2",
                   Key.of("t2"), "v2_2",
                   Key.of("t4"), "v4_1"));
+
+      assertCommitMeta(commitsList(newBranch, false).subList(0, 3), commits, commitMetaModify);
     }
 
     @Test
@@ -1036,6 +1068,7 @@ public abstract class AbstractITVersionStore {
     private Hash firstCommit;
     private Hash secondCommit;
     private Hash thirdCommit;
+    private List<Commit<String, String>> commits;
 
     @BeforeEach
     protected void setupCommits() throws VersionStoreException {
@@ -1064,11 +1097,17 @@ public abstract class AbstractITVersionStore {
               .put("t4", "v4_1")
               .toBranch(branch);
       thirdCommit = commit("Third Commit").put("t2", "v2_2").unchanged("t4").toBranch(branch);
+
+      commits = commitsList(branch, false).subList(0, 3);
+    }
+
+    private String merged(String commitMeta) {
+      return commitMeta + ", merged";
     }
 
     @Test
     protected void mergeIntoEmptyBranch() throws VersionStoreException {
-      final BranchName newBranch = BranchName.of("bar_1");
+      final BranchName newBranch = BranchName.of("mergeIntoEmptyBranch");
       store().create(newBranch, Optional.of(initialHash));
 
       store().merge(thirdCommit, newBranch, Optional.of(initialHash), Function.identity());
@@ -1083,7 +1122,33 @@ public abstract class AbstractITVersionStore {
                   Key.of("t2"), "v2_2",
                   Key.of("t4"), "v4_1"));
 
+      // not modifying commit meta, will just "fast forward"
       assertThat(store().hashOnReference(newBranch, Optional.empty())).isEqualTo(thirdCommit);
+
+      assertCommitMeta(commitsList(newBranch, false).subList(0, 3), commits, Function.identity());
+    }
+
+    @Test
+    protected void mergeIntoEmptyBranchModifying() throws VersionStoreException {
+      final BranchName newBranch = BranchName.of("mergeIntoEmptyBranchModifying");
+      store().create(newBranch, Optional.of(initialHash));
+
+      store().merge(thirdCommit, newBranch, Optional.of(initialHash), this::merged);
+      assertThat(
+              store()
+                  .getValues(
+                      newBranch,
+                      Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"))))
+          .containsExactlyInAnyOrderEntriesOf(
+              ImmutableMap.of(
+                  Key.of("t1"), "v1_2",
+                  Key.of("t2"), "v2_2",
+                  Key.of("t4"), "v4_1"));
+
+      // modify the commit meta, will generate new commits and therefore new commit hashes
+      assertThat(store().hashOnReference(newBranch, Optional.empty())).isNotEqualTo(thirdCommit);
+
+      assertCommitMeta(commitsList(newBranch, false).subList(0, 3), commits, this::merged);
     }
 
     @Test
@@ -1107,12 +1172,13 @@ public abstract class AbstractITVersionStore {
                   Key.of("t5"), "v5_1"));
 
       final List<Commit<String, String>> commits = commitsList(newBranch, false);
-      assertThat(commits).hasSize(5);
-      assertThat(commits.get(4).getHash()).isEqualTo(initialHash);
-      assertThat(commits.get(3).getHash()).isEqualTo(newCommit);
-      assertThat(commits.get(2).getCommitMeta()).isEqualTo("First Commit");
-      assertThat(commits.get(1).getCommitMeta()).isEqualTo("Second Commit");
-      assertThat(commits.get(0).getCommitMeta()).isEqualTo("Third Commit");
+      assertThat(commits)
+          .satisfiesExactly(
+              c0 -> assertThat(c0).extracting(Commit::getCommitMeta).isEqualTo("Third Commit"),
+              c1 -> assertThat(c1).extracting(Commit::getCommitMeta).isEqualTo("Second Commit"),
+              c2 -> assertThat(c2).extracting(Commit::getCommitMeta).isEqualTo("First Commit"),
+              c3 -> assertThat(c3).extracting(Commit::getHash).isEqualTo(newCommit),
+              c4 -> assertThat(c4).extracting(Commit::getHash).isEqualTo(initialHash));
     }
 
     @Test
