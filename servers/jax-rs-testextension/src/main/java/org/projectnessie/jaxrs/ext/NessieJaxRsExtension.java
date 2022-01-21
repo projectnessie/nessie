@@ -17,16 +17,20 @@ package org.projectnessie.jaxrs.ext;
 
 import static org.projectnessie.services.config.ServerConfigExtension.SERVER_CONFIG;
 
+import java.util.function.Consumer;
 import java.util.function.Supplier;
+import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.core.Application;
+import javax.ws.rs.core.SecurityContext;
 import org.glassfish.jersey.message.DeflateEncoder;
 import org.glassfish.jersey.message.GZipEncoder;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.filter.EncodingFilter;
 import org.glassfish.jersey.test.JerseyTest;
 import org.jboss.weld.environment.se.Weld;
-import org.junit.jupiter.api.extension.AfterAllCallback;
+import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ExtensionContext.Store.CloseableResource;
 import org.junit.jupiter.api.extension.ParameterContext;
@@ -52,7 +56,7 @@ import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 
 /** A JUnit 5 extension that starts up Weld/JerseyTest. */
 public class NessieJaxRsExtension
-    implements BeforeAllCallback, AfterAllCallback, ParameterResolver {
+    implements BeforeAllCallback, BeforeEachCallback, AfterEachCallback, ParameterResolver {
   private static final ExtensionContext.Namespace NAMESPACE =
       ExtensionContext.Namespace.create(NessieJaxRsExtension.class);
 
@@ -86,15 +90,23 @@ public class NessieJaxRsExtension
   }
 
   @Override
-  public void afterAll(ExtensionContext extensionContext) {
-    // NOP - EnvHolder will be closed by JUnit5
+  public void afterEach(ExtensionContext extensionContext) throws Exception {
+    EnvHolder env = extensionContext.getStore(NAMESPACE).get(EnvHolder.class, EnvHolder.class);
+    env.resetSecurityContext();
+  }
+
+  @Override
+  public void beforeEach(ExtensionContext extensionContext) throws Exception {
+    EnvHolder env = extensionContext.getStore(NAMESPACE).get(EnvHolder.class, EnvHolder.class);
+    env.resetSecurityContext();
   }
 
   @Override
   public boolean supportsParameter(
       ParameterContext parameterContext, ExtensionContext extensionContext)
       throws ParameterResolutionException {
-    return parameterContext.isAnnotated(NessieUri.class);
+    return parameterContext.isAnnotated(NessieUri.class)
+        || parameterContext.isAnnotated(NessieSecurityContext.class);
   }
 
   @Override
@@ -107,12 +119,33 @@ public class NessieJaxRsExtension
           "Nessie JaxRs env. is not initialized in " + extensionContext.getUniqueId());
     }
 
-    return env.jerseyTest.target().getUri();
+    if (parameterContext.isAnnotated(NessieUri.class)) {
+      return env.jerseyTest.target().getUri();
+    }
+
+    if (parameterContext.isAnnotated(NessieSecurityContext.class)) {
+      return (Consumer<SecurityContext>) env::setSecurityContext;
+    }
+
+    throw new ParameterResolutionException(
+        "Unsupported annotation on parameter "
+            + parameterContext.getParameter()
+            + " on "
+            + parameterContext.getTarget());
   }
 
   private static class EnvHolder implements CloseableResource {
     private final Weld weld;
     private final JerseyTest jerseyTest;
+    private SecurityContext securityContext;
+
+    void resetSecurityContext() {
+      this.securityContext = null;
+    }
+
+    void setSecurityContext(SecurityContext securityContext) {
+      this.securityContext = securityContext;
+    }
 
     public EnvHolder(Supplier<DatabaseAdapter> databaseAdapterSupplier) throws Exception {
       weld = new Weld();
@@ -151,6 +184,13 @@ public class NessieJaxRsExtension
               config.register(EncodingFilter.class);
               config.register(GZipEncoder.class);
               config.register(DeflateEncoder.class);
+              config.register(
+                  (ContainerRequestFilter)
+                      requestContext -> {
+                        if (securityContext != null) {
+                          requestContext.setSecurityContext(securityContext);
+                        }
+                      });
               return config;
             }
           };

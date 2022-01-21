@@ -834,7 +834,7 @@ public abstract class AbstractTestRest {
         completeLog.stream().map(CommitMeta::getMessage).collect(Collectors.toList()), allMessages);
   }
 
-  private Branch createBranch(String name) throws BaseNessieClientServerException {
+  protected Branch createBranch(String name) throws BaseNessieClientServerException {
     Branch main = api.getDefaultBranch();
     Branch branch = Branch.of(name, main.getHash());
     Reference created = api.createReference().sourceRefName("main").reference(branch).create();
