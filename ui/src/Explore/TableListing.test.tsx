@@ -38,9 +38,7 @@ it("TableListing renders", async () => {
     type: "UNKNOWN",
   };
   const scope = nock("http://localhost/api/v1")
-    .get(
-      "/trees/tree/main/entries?namespaceDepth=1&filter=entry.namespace.matches(%27(%5C%5C.%7C%24)%27)"
-    )
+    .get("/trees/tree/main/entries?namespaceDepth=1")
     .reply(200, { token: "foo", entries: [entry] });
 
   const { getByText, asFragment } = render(
@@ -65,9 +63,7 @@ it("TableListing renders object", async () => {
     type: "TABLE",
   };
   const scope = nock("http://localhost/api/v1")
-    .get(
-      "/trees/tree/main/entries?namespaceDepth=1&filter=entry.namespace.matches(%27(%5C%5C.%7C%24)%27)"
-    )
+    .get("/trees/tree/main/entries?namespaceDepth=1")
     .reply(200, { token: "foo", entries: [entry] });
 
   const { getByText, asFragment } = render(
@@ -90,9 +86,7 @@ it("TableListing renders object", async () => {
 
 it("TableListing redirects on an invalid ref", async () => {
   const scope = nock("http://localhost/api/v1")
-    .get(
-      "/trees/tree/main/entries?namespaceDepth=1&filter=entry.namespace.matches(%27(%5C%5C.%7C%24)%27)"
-    )
+    .get("/trees/tree/main/entries?namespaceDepth=1")
     .reply(404);
 
   const { getByText, asFragment } = render(

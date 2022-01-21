@@ -61,11 +61,15 @@ const fetchKeys = (
   showContent: boolean
 ): Promise<void | Key[] | undefined> => {
   const newPath = showContent ? Array(path[0]) : path;
+  const filter =
+    newPath.length > 0
+      ? `entry.namespace.matches('^${newPath.join("\\\\.")}(\\\\.|$)')`
+      : undefined;
   return api()
     .getEntries({
       ref,
       namespaceDepth: newPath.length + 1,
-      filter: `entry.namespace.matches('${newPath.join("\\\\.")}(\\\\.|$)')`,
+      filter,
     })
     .then((data) => {
       return data.entries?.map((e) => entryToKey(e));
