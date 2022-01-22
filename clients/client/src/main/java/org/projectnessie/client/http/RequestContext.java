@@ -18,16 +18,14 @@ package org.projectnessie.client.http;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.BiConsumer;
 import org.projectnessie.client.http.HttpClient.Method;
 
 /** Context containing all important info about a request. */
 public class RequestContext {
 
-  private final Map<String, Set<String>> headers;
+  private final HttpHeaders headers;
   private final URI uri;
   private final Method method;
   private final Object body;
@@ -41,19 +39,19 @@ public class RequestContext {
    * @param method verb to be used
    * @param body optional body of request
    */
-  public RequestContext(Map<String, Set<String>> headers, URI uri, Method method, Object body) {
+  public RequestContext(HttpHeaders headers, URI uri, Method method, Object body) {
     this.headers = headers;
     this.uri = uri;
     this.method = method;
     this.body = body;
   }
 
-  public Map<String, Set<String>> getHeaders() {
-    return headers;
+  public void putHeader(String name, String value) {
+    headers.put(name, value);
   }
 
-  public void putHeader(String name, String value) {
-    HttpRequest.putHeader(name, value, headers);
+  public boolean containsHeader(String name) {
+    return headers.contains(name);
   }
 
   public void removeHeader(String name) {
