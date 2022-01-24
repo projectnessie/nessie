@@ -34,6 +34,7 @@
     <module>client</module>
     <module>tests</module>
     <module>spark-antlr-grammar</module>
+    <module>iceberg-views</module>
   </modules>
 
   <profiles>
