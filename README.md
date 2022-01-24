@@ -80,6 +80,22 @@ cd nessie
 ./mvnw clean install
 ```
 
+### Compatibility
+
+Nessie Iceberg's integration is compatible with Iceberg as in the following table:
+
+| Nessie version  | Iceberg version       | Spark version          | Hive version   | Flink version |
+| --------------- | --------------------- | ---------------------- | ---------------|---------------|
+| 0.18.0          | 0.13.0(yet to release)| 3.0.X, 3.1.X           | 2.3.9          | 1.12.1        |
+| 0.9.2           | 0.12.1, 0.12.0        | 3.0.X, 3.1.X           | 2.3.9          | 1.12.1        |
+
+Nessie Delta Lake's integration is compatible with Delta Lake as in the following table:
+
+| Nessie version  | Delta Lake version                         | Spark version | 
+| --------------- | -------------------------------------------|---------------| 
+| 0.18.0          | [Custom](#delta-lake-artifacts)            | 3.1.X         | 
+| 0.9.2           | [Custom](#delta-lake-artifacts)            | 3.1.X         | 
+
 #### Delta Lake artifacts
 
 Nessie required some minor changes to Delta for full support of branching and history. These changes are currently being integrated into the [mainline repo](https://github.com/delta-io/delta). Until these have been merged we have provided custom builds in [our fork](https://github.com/projectnessie/delta) which can be downloaded from a separate maven repository. 
