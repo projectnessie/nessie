@@ -38,6 +38,6 @@ final class HttpAssignTag extends BaseHttpOnTagRequest<AssignTagBuilder>
 
   @Override
   public void assign() throws NessieNotFoundException, NessieConflictException {
-    client.getTreeApi().assignTag(tagName, hash, assignTo);
+    client.getTreeApi().assignReference(Reference.ReferenceType.TAG, tagName, hash, assignTo);
   }
 }

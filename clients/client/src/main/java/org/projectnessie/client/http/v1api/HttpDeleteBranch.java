@@ -19,6 +19,7 @@ import org.projectnessie.client.api.DeleteBranchBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.model.Reference;
 
 final class HttpDeleteBranch extends BaseHttpOnBranchRequest<DeleteBranchBuilder>
     implements DeleteBranchBuilder {
@@ -28,6 +29,6 @@ final class HttpDeleteBranch extends BaseHttpOnBranchRequest<DeleteBranchBuilder
 
   @Override
   public void delete() throws NessieConflictException, NessieNotFoundException {
-    client.getTreeApi().deleteBranch(branchName, hash);
+    client.getTreeApi().deleteReference(Reference.ReferenceType.BRANCH, branchName, hash);
   }
 }

@@ -40,6 +40,11 @@ public interface Tag extends Reference {
     validateReferenceName(getName());
   }
 
+  @Override
+  default ReferenceType getType() {
+    return ReferenceType.TAG;
+  }
+
   static ImmutableTag.Builder builder() {
     return ImmutableTag.builder();
   }

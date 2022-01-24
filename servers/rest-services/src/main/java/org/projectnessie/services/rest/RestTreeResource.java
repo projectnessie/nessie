@@ -114,27 +114,20 @@ public class RestTreeResource implements HttpTreeApi {
   }
 
   @Override
-  public void assignTag(String tagName, String oldHash, Reference assignTo)
+  public void assignReference(
+      Reference.ReferenceType referenceType,
+      String referenceName,
+      String oldHash,
+      Reference assignTo)
       throws NessieNotFoundException, NessieConflictException {
-    resource().assignTag(tagName, oldHash, assignTo);
+    resource().assignReference(referenceType, referenceName, oldHash, assignTo);
   }
 
   @Override
-  public void deleteTag(String tagName, String hash)
+  public void deleteReference(
+      Reference.ReferenceType referenceType, String referenceName, String hash)
       throws NessieConflictException, NessieNotFoundException {
-    resource().deleteTag(tagName, hash);
-  }
-
-  @Override
-  public void assignBranch(String branchName, String oldHash, Reference assignTo)
-      throws NessieNotFoundException, NessieConflictException {
-    resource().assignBranch(branchName, oldHash, assignTo);
-  }
-
-  @Override
-  public void deleteBranch(String branchName, String hash)
-      throws NessieConflictException, NessieNotFoundException {
-    resource().deleteBranch(branchName, hash);
+    resource().deleteReference(referenceType, referenceName, hash);
   }
 
   @Override

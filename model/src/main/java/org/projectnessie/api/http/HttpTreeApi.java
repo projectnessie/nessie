@@ -272,98 +272,40 @@ public interface HttpTreeApi extends TreeApi {
 
   @Override
   @PUT
-  @Path("tag/{tagName}")
+  @Path("{referenceType}/{referenceName}")
   @Operation(
-      summary = "Set a tag to a specific hash via a named-reference.",
+      summary = "Set a named reference to a specific hash via a named-reference.",
       description =
-          "This operation takes the name of the tag to reassign and the hash and the name of a "
+          "This operation takes the name of the named reference to reassign and the hash and the name of a "
               + "named-reference via which the caller has access to that hash.")
   @APIResponses({
     @APIResponse(responseCode = "204", description = "Assigned successfully"),
     @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
     @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
-    @APIResponse(responseCode = "403", description = "Not allowed to view or assign tag"),
-    @APIResponse(responseCode = "404", description = "One or more references don't exist"),
-    @APIResponse(responseCode = "412", description = "Update conflict")
-  })
-  void assignTag(
-      @Parameter(
-              description = "Tag name to reassign",
-              examples = {@ExampleObject(ref = "ref")})
-          @PathParam("tagName")
-          String tagName,
-      @Parameter(
-              description = "Expected previous hash of tag",
-              examples = {@ExampleObject(ref = "hash")})
-          @QueryParam("expectedHash")
-          String oldHash,
-      @RequestBody(
-              description =
-                  "Reference hash to which 'tagName' shall be assigned to. This must be either a "
-                      + "'Branch' or 'Tag' via which the hash is visible to the caller.",
-              content =
-                  @Content(
-                      mediaType = MediaType.APPLICATION_JSON,
-                      examples = {@ExampleObject(ref = "refObj"), @ExampleObject(ref = "tagObj")}))
-          Reference assignTo)
-      throws NessieNotFoundException, NessieConflictException;
-
-  @Override
-  @DELETE
-  @Path("tag/{tagName}")
-  @Operation(summary = "Delete a tag")
-  @APIResponses({
-    @APIResponse(responseCode = "204", description = "Deleted successfully."),
-    @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
-    @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
-    @APIResponse(responseCode = "403", description = "Not allowed to view or delete tag"),
-    @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
-    @APIResponse(responseCode = "409", description = "update conflict"),
-  })
-  void deleteTag(
-      @Parameter(
-              description = "Tag to delete",
-              examples = {@ExampleObject(ref = "ref")})
-          @PathParam("tagName")
-          String tagName,
-      @Parameter(
-              description = "Expected hash of tag",
-              examples = {@ExampleObject(ref = "hash")})
-          @QueryParam("expectedHash")
-          String hash)
-      throws NessieConflictException, NessieNotFoundException;
-
-  @Override
-  @PUT
-  @Path("branch/{branchName}")
-  @Operation(
-      summary = "Set a branch to a specific hash via a named-reference.",
-      description =
-          "This operation takes the name of the branch to reassign and the hash and the name of a "
-              + "named-reference via which the caller has access to that hash.")
-  @APIResponses({
-    @APIResponse(responseCode = "204", description = "Assigned successfully"),
-    @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
-    @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
-    @APIResponse(responseCode = "403", description = "Not allowed to view or assign branch"),
+    @APIResponse(responseCode = "403", description = "Not allowed to view or assign reference"),
     @APIResponse(responseCode = "404", description = "One or more references don't exist"),
     @APIResponse(responseCode = "409", description = "Update conflict")
   })
-  void assignBranch(
+  void assignReference(
       @Parameter(
-              description = "Tag name to reassign",
+              description = "Reference type to reassign",
+              examples = {@ExampleObject(ref = "referenceType")})
+          @PathParam("referenceType")
+          Reference.ReferenceType referenceType,
+      @Parameter(
+              description = "Reference name to reassign",
               examples = {@ExampleObject(ref = "ref")})
-          @PathParam("branchName")
-          String branchName,
+          @PathParam("referenceName")
+          String referenceName,
       @Parameter(
-              description = "Expected previous hash of tag",
+              description = "Expected previous hash of reference",
               examples = {@ExampleObject(ref = "hash")})
           @QueryParam("expectedHash")
           String oldHash,
       @RequestBody(
               description =
-                  "Reference hash to which 'branchName' shall be assigned to. This must be either a "
-                      + "'Branch' or 'Tag' via which the hash is visible to the caller.",
+                  "Reference hash to which 'referenceName' shall be assigned to. This must be either a "
+                      + "'Transaction', 'Branch' or 'Tag' via which the hash is visible to the caller.",
               content =
                   @Content(
                       mediaType = MediaType.APPLICATION_JSON,
@@ -373,22 +315,27 @@ public interface HttpTreeApi extends TreeApi {
 
   @Override
   @DELETE
-  @Path("branch/{branchName}")
-  @Operation(summary = "Delete a branch endpoint")
+  @Path("{referenceType}/{referenceName}")
+  @Operation(summary = "Delete a reference endpoint")
   @APIResponses({
     @APIResponse(responseCode = "204", description = "Deleted successfully."),
     @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
     @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
-    @APIResponse(responseCode = "403", description = "Not allowed to view or delete branch"),
+    @APIResponse(responseCode = "403", description = "Not allowed to view or delete reference"),
     @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
     @APIResponse(responseCode = "409", description = "update conflict"),
   })
-  void deleteBranch(
+  void deleteReference(
       @Parameter(
-              description = "Branch to delete",
+              description = "Reference type to delete",
+              examples = {@ExampleObject(ref = "referenceType")})
+          @PathParam("referenceType")
+          Reference.ReferenceType referenceType,
+      @Parameter(
+              description = "Reference name to delete",
               examples = {@ExampleObject(ref = "ref")})
-          @PathParam("branchName")
-          String branchName,
+          @PathParam("referenceName")
+          String referenceName,
       @Parameter(
               description = "Expected hash of tag",
               examples = {@ExampleObject(ref = "hash")})

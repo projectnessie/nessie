@@ -67,10 +67,30 @@ class RefUtilTest {
                       public ReferenceMetadata getMetadata() {
                         return null;
                       }
+
+                      @Override
+                      public ReferenceType getType() {
+                        return null;
+                      }
                     }))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageStartingWith(
             "Unsupported reference 'org.projectnessie.services.impl.RefUtilTest");
+  }
+
+  @Test
+  void toNamedRefTyped() {
+    assertThat(RefUtil.toNamedRef(Reference.ReferenceType.BRANCH, REF_NAME))
+        .isEqualTo(BranchName.of(REF_NAME));
+    assertThat(RefUtil.toNamedRef(Reference.ReferenceType.TAG, REF_NAME))
+        .isEqualTo(TagName.of(REF_NAME));
+  }
+
+  @Test
+  void toNamedRefTypedErrors() {
+    assertThatThrownBy(() -> RefUtil.toNamedRef(null, null))
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("referenceType must not be null");
   }
 
   @Test

@@ -40,6 +40,11 @@ public interface Branch extends Reference {
     validateReferenceName(getName());
   }
 
+  @Override
+  default ReferenceType getType() {
+    return ReferenceType.BRANCH;
+  }
+
   static ImmutableBranch.Builder builder() {
     return ImmutableBranch.builder();
   }

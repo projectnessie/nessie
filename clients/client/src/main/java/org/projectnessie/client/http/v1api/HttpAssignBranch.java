@@ -37,6 +37,6 @@ final class HttpAssignBranch extends BaseHttpOnBranchRequest<AssignBranchBuilder
 
   @Override
   public void assign() throws NessieNotFoundException, NessieConflictException {
-    client.getTreeApi().assignBranch(branchName, hash, assignTo);
+    client.getTreeApi().assignReference(Reference.ReferenceType.BRANCH, branchName, hash, assignTo);
   }
 }

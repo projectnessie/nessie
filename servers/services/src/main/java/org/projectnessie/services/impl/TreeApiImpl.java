@@ -30,6 +30,7 @@ import static org.projectnessie.services.cel.CELUtil.VAR_OPERATIONS;
 import static org.projectnessie.services.cel.CELUtil.VAR_REF;
 import static org.projectnessie.services.cel.CELUtil.VAR_REF_META;
 import static org.projectnessie.services.cel.CELUtil.VAR_REF_TYPE;
+import static org.projectnessie.services.impl.RefUtil.toNamedRef;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
@@ -80,7 +81,6 @@ import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferenceMetadata;
 import org.projectnessie.model.ReferencesResponse;
-import org.projectnessie.model.Tag;
 import org.projectnessie.model.Transplant;
 import org.projectnessie.services.authz.AccessChecker;
 import org.projectnessie.services.cel.CELUtil;
@@ -180,21 +180,13 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
             if (commit == null) {
               commit = CELUtil.EMPTY_COMMIT_META;
             }
-            String refType;
-            if (reference instanceof Branch) {
-              refType = "BRANCH";
-            } else if (reference instanceof Tag) {
-              refType = "TAG";
-            } else {
-              refType = "REFERENCE";
-            }
             return script.execute(
                 Boolean.class,
                 ImmutableMap.of(
                     VAR_REF,
                     reference,
                     VAR_REF_TYPE,
-                    refType,
+                    reference.getType().name(),
                     VAR_COMMIT,
                     commit,
                     VAR_REF_META,
@@ -219,20 +211,15 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   @Override
   public Reference createReference(String sourceRefName, Reference reference)
       throws NessieNotFoundException, NessieConflictException {
-    NamedRef namedReference = RefUtil.toNamedRef(reference);
-    Hash hash = createReference(namedReference, reference.getHash());
-    return RefUtil.toReference(namedReference, hash);
-  }
-
-  private Hash createReference(NamedRef reference, String hash)
-      throws NessieNotFoundException, NessieReferenceAlreadyExistsException {
-    if (reference instanceof TagName && hash == null) {
+    NamedRef namedReference = toNamedRef(reference);
+    if (reference.getType() == Reference.ReferenceType.TAG && reference.getHash() == null) {
       throw new IllegalArgumentException(
           "Tag-creation requires a target named-reference and hash.");
     }
 
     try {
-      return getStore().create(reference, toHash(hash, false));
+      Hash hash = getStore().create(namedReference, toHash(reference.getHash(), false));
+      return RefUtil.toReference(namedReference, hash);
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (ReferenceAlreadyExistsException e) {
@@ -252,27 +239,20 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   }
 
   @Override
-  public void assignTag(String tagName, String expectedHash, Reference assignTo)
+  public void assignReference(
+      Reference.ReferenceType referenceType,
+      String referenceName,
+      String expectedHash,
+      Reference assignTo)
       throws NessieNotFoundException, NessieConflictException {
-    assignReference(TagName.of(tagName), expectedHash, assignTo);
+    assignReference(toNamedRef(referenceType, referenceName), expectedHash, assignTo);
   }
 
   @Override
-  public void deleteTag(String tagName, String hash)
+  public void deleteReference(
+      Reference.ReferenceType referenceType, String referenceName, String hash)
       throws NessieConflictException, NessieNotFoundException {
-    deleteReference(TagName.of(tagName), hash);
-  }
-
-  @Override
-  public void assignBranch(String branchName, String expectedHash, Reference assignTo)
-      throws NessieNotFoundException, NessieConflictException {
-    assignReference(BranchName.of(branchName), expectedHash, assignTo);
-  }
-
-  @Override
-  public void deleteBranch(String branchName, String hash)
-      throws NessieConflictException, NessieNotFoundException {
-    deleteReference(BranchName.of(branchName), hash);
+    deleteReference(toNamedRef(referenceType, referenceName), hash);
   }
 
   @Override
