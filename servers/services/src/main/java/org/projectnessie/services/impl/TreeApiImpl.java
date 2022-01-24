@@ -219,18 +219,9 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   @Override
   public Reference createReference(String sourceRefName, Reference reference)
       throws NessieNotFoundException, NessieConflictException {
-    NamedRef namedReference;
-    if (reference instanceof Branch) {
-      namedReference = BranchName.of(reference.getName());
-      Hash hash = createReference(namedReference, reference.getHash());
-      return Branch.of(reference.getName(), hash.asString());
-    } else if (reference instanceof Tag) {
-      namedReference = TagName.of(reference.getName());
-      Hash hash = createReference(namedReference, reference.getHash());
-      return Tag.of(reference.getName(), hash.asString());
-    } else {
-      throw new IllegalArgumentException("Only tag and branch references can be created.");
-    }
+    NamedRef namedReference = RefUtil.toNamedRef(reference);
+    Hash hash = createReference(namedReference, reference.getHash());
+    return RefUtil.toReference(namedReference, hash);
   }
 
   private Hash createReference(NamedRef reference, String hash)

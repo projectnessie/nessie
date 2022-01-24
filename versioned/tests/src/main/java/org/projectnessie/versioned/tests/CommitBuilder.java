@@ -151,17 +151,6 @@ public class CommitBuilder<ValueT, MetadataT, EnumT extends Enum<EnumT>> {
   /**
    * Pushes the commit to the branch.
    *
-   * @param branchName the branch name
-   * @return the hash associated with the commit
-   */
-  public Hash toBranch(String branchName)
-      throws ReferenceNotFoundException, ReferenceConflictException {
-    return toBranch(BranchName.of(branchName));
-  }
-
-  /**
-   * Pushes the commit to the branch.
-   *
    * @param branchName the branch
    * @return the hash associated with the commit
    */

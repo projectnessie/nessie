@@ -38,14 +38,12 @@ import org.projectnessie.model.Merge;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferencesResponse;
-import org.projectnessie.model.Tag;
 import org.projectnessie.model.Transplant;
 import org.projectnessie.services.authz.AccessChecker;
 import org.projectnessie.services.authz.ServerAccessContext;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.NamedRef;
-import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.VersionStore;
 
 /** Does authorization checks (if enabled) on the {@link TreeApiImpl}. */
@@ -67,11 +65,7 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
         .filter(
             ref -> {
               try {
-                if (ref instanceof Branch) {
-                  getAccessChecker().canViewReference(accessContext, BranchName.of(ref.getName()));
-                } else if (ref instanceof Tag) {
-                  getAccessChecker().canViewReference(accessContext, TagName.of(ref.getName()));
-                }
+                getAccessChecker().canViewReference(accessContext, RefUtil.toNamedRef(ref));
                 return true;
               } catch (AccessControlException e) {
                 return false;
@@ -84,23 +78,14 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
   @Override
   public Reference getReferenceByName(GetReferenceParams params) throws NessieNotFoundException {
     Reference ref = super.getReferenceByName(params);
-    if (ref instanceof Branch) {
-      getAccessChecker().canViewReference(createAccessContext(), BranchName.of(ref.getName()));
-    } else if (ref instanceof Tag) {
-      getAccessChecker().canViewReference(createAccessContext(), TagName.of(ref.getName()));
-    }
+    getAccessChecker().canViewReference(createAccessContext(), RefUtil.toNamedRef(ref));
     return ref;
   }
 
   @Override
   public Reference createReference(@Nullable String sourceRefName, Reference reference)
       throws NessieNotFoundException, NessieConflictException {
-    if (reference instanceof Branch) {
-      getAccessChecker()
-          .canCreateReference(createAccessContext(), BranchName.of(reference.getName()));
-    } else if (reference instanceof Tag) {
-      getAccessChecker().canCreateReference(createAccessContext(), TagName.of(reference.getName()));
-    }
+    getAccessChecker().canCreateReference(createAccessContext(), RefUtil.toNamedRef(reference));
 
     try {
       getAccessChecker()
