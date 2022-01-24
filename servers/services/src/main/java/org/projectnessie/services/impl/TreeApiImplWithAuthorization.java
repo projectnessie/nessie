@@ -138,13 +138,10 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
   @Override
   public LogResponse getCommitLog(String namedRef, CommitLogParams params)
       throws NessieNotFoundException {
-    if (null == params.pageToken()) {
-      // we should only allow named references when no paging is defined
-      getAccessChecker()
-          .canListCommitLog(
-              createAccessContext(),
-              namedRefWithHashOrThrow(namedRef, params.endHash()).getValue());
-    }
+    String checkHash = params.pageToken() == null ? params.endHash() : params.pageToken();
+    getAccessChecker()
+        .canListCommitLog(
+            createAccessContext(), namedRefWithHashOrThrow(namedRef, checkHash).getValue());
     return super.getCommitLog(namedRef, params);
   }
 
