@@ -13,3 +13,6 @@ The [nessie-demos](https://github.com/projectnessie/nessie-demos) repository con
 For people who are interested in trying out all nessie features, they can use
 the docker images published with each release and setup the server by following
 the instructions available [here](docker.md)
+
+!!! note
+    Please refer the [compatibility matrix](https://github.com/projectnessie/nessie/blob/main/README.md#compatibility) to find the compatible versions to try out manually.   
