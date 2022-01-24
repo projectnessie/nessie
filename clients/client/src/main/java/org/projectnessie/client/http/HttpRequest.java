@@ -32,12 +32,7 @@ import java.net.ProtocolException;
 import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.util.AbstractMap.SimpleImmutableEntry;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.zip.GZIPOutputStream;
 import javax.net.ssl.HttpsURLConnection;
@@ -48,20 +43,13 @@ public class HttpRequest {
 
   private final HttpRuntimeConfig config;
   private final UriBuilder uriBuilder;
-  private final Map<String, Set<String>> headers = new HashMap<>();
+  private final HttpHeaders headers = new HttpHeaders();
   private String contentsType = "application/json; charset=utf-8";
   private String accept = "application/json; charset=utf-8";
 
   HttpRequest(HttpRuntimeConfig config) {
     this.uriBuilder = new UriBuilder(config.getBaseUri());
     this.config = config;
-  }
-
-  static void putHeader(String key, String value, Map<String, Set<String>> headers) {
-    if (!headers.containsKey(key)) {
-      headers.put(key, new HashSet<>());
-    }
-    headers.get(key).add(value);
   }
 
   public HttpRequest contentsType(String contentsType) {
@@ -85,7 +73,7 @@ public class HttpRequest {
   }
 
   public HttpRequest header(String name, String value) {
-    putHeader(name, value, headers);
+    headers.put(name, value);
     return this;
   }
 
@@ -101,29 +89,27 @@ public class HttpRequest {
       RequestContext context = new RequestContext(headers, uri, method, body);
       ResponseContext responseContext = new ResponseContextImpl(con);
       try {
-        putHeader(HEADER_ACCEPT, accept, headers);
+        headers.put(HEADER_ACCEPT, accept);
 
         boolean postOrPut = method.equals(Method.PUT) || method.equals(Method.POST);
 
         if (postOrPut) {
           // Need to set the Content-Type even if body==null, otherwise the server responds with
           // RESTEASY003065: Cannot consume content type
-          putHeader(HEADER_CONTENT_TYPE, contentsType, headers);
+          headers.put(HEADER_CONTENT_TYPE, contentsType);
         }
 
         boolean doesOutput = postOrPut && body != null;
 
         if (!config.isDisableCompression()) {
-          putHeader(HEADER_ACCEPT_ENCODING, ACCEPT_ENCODING, headers);
+          headers.put(HEADER_ACCEPT_ENCODING, ACCEPT_ENCODING);
           if (doesOutput) {
-            putHeader(HEADER_CONTENT_ENCODING, GZIP, headers);
+            headers.put(HEADER_CONTENT_ENCODING, GZIP);
           }
         }
 
         config.getRequestFilters().forEach(a -> a.filter(context));
-        headers.entrySet().stream()
-            .flatMap(e -> e.getValue().stream().map(x -> new SimpleImmutableEntry<>(e.getKey(), x)))
-            .forEach(x -> con.setRequestProperty(x.getKey(), x.getValue()));
+        headers.applyTo(con);
         con.setRequestMethod(method.name());
 
         if (doesOutput) {

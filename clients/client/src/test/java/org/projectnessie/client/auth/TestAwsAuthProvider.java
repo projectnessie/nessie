@@ -26,9 +26,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -38,6 +36,7 @@ import org.projectnessie.client.NessieConfigConstants;
 import org.projectnessie.client.http.HttpAuthentication;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpClient.Method;
+import org.projectnessie.client.http.HttpHeaders;
 import org.projectnessie.client.http.RequestContext;
 import org.projectnessie.client.http.RequestFilter;
 import software.amazon.awssdk.core.SdkSystemSetting;
@@ -186,12 +185,12 @@ class TestAwsAuthProvider {
 
     assertThat(authFilter[0]).isInstanceOf(RequestFilter.class);
 
-    Map<String, Set<String>> map = new HashMap<>();
+    HttpHeaders headers = new HttpHeaders();
     RequestContext context =
-        new RequestContext(map, URI.create("http://localhost/"), Method.GET, null);
+        new RequestContext(headers, URI.create("http://localhost/"), Method.GET, null);
     authFilter[0].filter(context);
 
-    assertThat(map)
+    assertThat(headers.asMap())
         .containsKey("Authorization")
         .containsKey("X-Amz-Date")
         .extracting("Authorization", InstanceOfAssertFactories.iterable(String.class))

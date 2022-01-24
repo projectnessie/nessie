@@ -314,9 +314,7 @@ public class TestHttpClient {
       client.addRequestFilter(
           context -> {
             requestFilterCalled.set(true);
-            Set<String> headers = new HashSet<>();
-            headers.add("y");
-            context.getHeaders().put("x", headers);
+            context.putHeader("x", "y");
             context.addResponseCallback(
                 (responseContext, failure) -> {
                   responseContextGotCallback.set(responseContext);

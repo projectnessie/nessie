@@ -21,15 +21,14 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_AUTH_TOKEN;
 
 import com.google.common.collect.ImmutableMap;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.projectnessie.client.NessieConfigConstants;
 import org.projectnessie.client.http.HttpAuthentication;
 import org.projectnessie.client.http.HttpClient;
+import org.projectnessie.client.http.HttpHeaders;
 import org.projectnessie.client.http.RequestContext;
 import org.projectnessie.client.http.RequestFilter;
 
@@ -91,11 +90,11 @@ class TestBearerAuthenticationProvider {
 
     assertThat(authFilter[0]).isInstanceOf(RequestFilter.class);
 
-    Map<String, Set<String>> map = new HashMap<>();
-    RequestContext context = new RequestContext(map, null, null, null);
+    HttpHeaders headers = new HttpHeaders();
+    RequestContext context = new RequestContext(headers, null, null, null);
     authFilter[0].filter(context);
 
-    assertThat(map)
+    assertThat(headers.asMap())
         .containsKey("Authorization")
         .extracting("Authorization", InstanceOfAssertFactories.iterable(String.class))
         .containsExactly("Bearer token123");

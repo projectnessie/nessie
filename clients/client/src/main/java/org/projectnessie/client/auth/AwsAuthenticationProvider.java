@@ -160,7 +160,7 @@ public class AwsAuthenticationProvider implements NessieAuthenticationProvider {
                   .build());
       for (Map.Entry<String, List<String>> entry :
           modifiedRequest.toBuilder().headers().entrySet()) {
-        if (context.getHeaders().containsKey(entry.getKey())) {
+        if (context.containsHeader(entry.getKey())) {
           continue;
         }
         entry.getValue().forEach(a -> context.putHeader(entry.getKey(), a));
