@@ -35,7 +35,6 @@ import org.projectnessie.versioned.StringStoreWorker.TestEnum;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStoreException;
-import org.projectnessie.versioned.WithHash;
 
 public abstract class AbstractReferences extends AbstractNestedVersionStore {
   protected AbstractReferences(VersionStore<String, String, TestEnum> store) {
@@ -160,14 +159,16 @@ public abstract class AbstractReferences extends AbstractNestedVersionStore {
   }
 
   @Test
-  void toRef() throws VersionStoreException {
+  void getNamedRef() throws VersionStoreException {
     final BranchName branch = BranchName.of("toRef");
     store().create(branch, Optional.empty());
     store().hashOnReference(branch, Optional.empty());
 
     final Hash firstCommit = commit("First Commit").toBranch(branch);
 
-    assertThat(store().toRef(branch.getName())).isEqualTo(WithHash.of(firstCommit, branch));
+    assertThat(store().getNamedRef(branch.getName(), GetNamedRefsParams.DEFAULT))
+        .extracting(ReferenceInfo::getHash, ReferenceInfo::getNamedRef)
+        .containsExactly(firstCommit, branch);
 
     final Hash secondCommit = commit("Second Commit").toBranch(branch);
     final Hash thirdCommit = commit("Third Commit").toBranch(branch);
@@ -175,14 +176,20 @@ public abstract class AbstractReferences extends AbstractNestedVersionStore {
     store().create(BranchName.of(thirdCommit.asString()), Optional.of(firstCommit));
     store().create(TagName.of(secondCommit.asString()), Optional.of(firstCommit));
 
-    assertThat(store().toRef(secondCommit.asString()))
-        .isEqualTo(WithHash.of(firstCommit, TagName.of(secondCommit.asString())));
-    assertThat(store().toRef(thirdCommit.asString()))
-        .isEqualTo(WithHash.of(firstCommit, BranchName.of(thirdCommit.asString())));
+    assertThat(store().getNamedRef(secondCommit.asString(), GetNamedRefsParams.DEFAULT))
+        .extracting(ReferenceInfo::getHash, ReferenceInfo::getNamedRef)
+        .containsExactly(firstCommit, TagName.of(secondCommit.asString()));
+    assertThat(store().getNamedRef(thirdCommit.asString(), GetNamedRefsParams.DEFAULT))
+        .extracting(ReferenceInfo::getHash, ReferenceInfo::getNamedRef)
+        .containsExactly(firstCommit, BranchName.of(thirdCommit.asString()));
     // Is it correct to allow a reference with the sentinel reference?
     // assertThat(store().toRef(initialCommit.asString()), is(WithHash.of(initialCommit,
     // initialCommit)));
-    assertThrows(ReferenceNotFoundException.class, () -> store().toRef("unknown-ref"));
-    assertThrows(ReferenceNotFoundException.class, () -> store().toRef("1234567890abcdef"));
+    assertThrows(
+        ReferenceNotFoundException.class,
+        () -> store().getNamedRef("unknown-ref", GetNamedRefsParams.DEFAULT));
+    assertThrows(
+        ReferenceNotFoundException.class,
+        () -> store().getNamedRef("1234567890abcdef", GetNamedRefsParams.DEFAULT));
   }
 }

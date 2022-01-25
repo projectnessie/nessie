@@ -104,11 +104,6 @@ class TestMetricsVersionStore {
                 () -> ReferenceInfo.of(Hash.of("cafebabe"), BranchName.of("mock-branch")),
                 refNotFoundThrows),
             new VersionStoreInvocation<>(
-                "toref",
-                vs -> vs.toRef("mock-branch"),
-                () -> WithHash.of(Hash.of("deadbeefcafebabe"), BranchName.of("mock-branch")),
-                refNotFoundThrows),
-            new VersionStoreInvocation<>(
                 "commit",
                 vs ->
                     vs.commit(

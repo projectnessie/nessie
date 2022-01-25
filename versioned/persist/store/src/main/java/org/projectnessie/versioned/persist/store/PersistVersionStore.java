@@ -50,7 +50,6 @@ import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
-import org.projectnessie.versioned.WithHash;
 import org.projectnessie.versioned.WithType;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentAndState;
@@ -84,12 +83,6 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
   @Override
   public Hash noAncestorHash() {
     return databaseAdapter.noAncestorHash();
-  }
-
-  @Override
-  public WithHash<Ref> toRef(@Nonnull String refOfUnknownType) throws ReferenceNotFoundException {
-    ReferenceInfo<METADATA> refInfo = getNamedRef(refOfUnknownType, GetNamedRefsParams.DEFAULT);
-    return WithHash.of(refInfo.getHash(), refInfo.getNamedRef());
   }
 
   @Override

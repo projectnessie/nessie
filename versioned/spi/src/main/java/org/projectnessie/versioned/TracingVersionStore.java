@@ -88,12 +88,6 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
   }
 
   @Override
-  public WithHash<Ref> toRef(@Nonnull String refOfUnknownType) throws ReferenceNotFoundException {
-    return callWithOneException(
-        "ToRef", b -> b.withTag(TAG_REF, refOfUnknownType), () -> delegate.toRef(refOfUnknownType));
-  }
-
-  @Override
   public Hash commit(
       @Nonnull BranchName branch,
       @Nonnull Optional<Hash> referenceHash,

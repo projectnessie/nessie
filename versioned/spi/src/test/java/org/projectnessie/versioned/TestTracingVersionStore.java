@@ -89,13 +89,6 @@ class TestTracingVersionStore {
                         vs -> vs.getNamedRef("mock-branch", GetNamedRefsParams.DEFAULT),
                         () -> ReferenceInfo.of(Hash.of("cafebabe"), BranchName.of("mock-branch"))),
                 new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>(
-                        "ToRef", refNotFoundThrows)
-                    .tag("nessie.version-store.ref", "mock-branch")
-                    .function(
-                        vs -> vs.toRef("mock-branch"),
-                        () ->
-                            WithHash.of(Hash.of("deadbeefcafebabe"), BranchName.of("mock-branch"))),
-                new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>(
                         "Commit", refNotFoundAndRefConflictThrows)
                     .tag("nessie.version-store.branch", "mock-branch")
                     .tag("nessie.version-store.num-ops", 0)

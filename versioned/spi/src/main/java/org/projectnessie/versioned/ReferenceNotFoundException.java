@@ -15,11 +15,6 @@
  */
 package org.projectnessie.versioned;
 
-import static java.lang.String.format;
-import static java.util.Objects.requireNonNull;
-
-import javax.annotation.Nonnull;
-
 /** Exception thrown when a reference is not present in the store. */
 public class ReferenceNotFoundException extends VersionStoreException {
   private static final long serialVersionUID = -4231207387427624751L;
@@ -30,43 +25,5 @@ public class ReferenceNotFoundException extends VersionStoreException {
 
   public ReferenceNotFoundException(String message, Throwable cause) {
     super(message, cause);
-  }
-
-  /**
-   * Create a {@code ReferenceNotFoundException} instance with an accurate message based on the
-   * provided reference.
-   *
-   * @param ref the reference not found in the store
-   * @return a {@code ReferenceNotFoundException} instance
-   * @throws NullPointerException if {@code ref} is {@code null}.
-   */
-  @Nonnull
-  public static ReferenceNotFoundException forReference(@Nonnull Ref ref) {
-    requireNonNull(ref);
-
-    final String message;
-    if (ref instanceof BranchName) {
-      message = format("Branch '%s' does not exist", ((BranchName) ref).getName());
-    } else if (ref instanceof TagName) {
-      message = format("Tag '%s' does not exist", ((TagName) ref).getName());
-    } else if (ref instanceof Hash) {
-      message = format("Hash '%s' does not exist", ((Hash) ref).asString());
-    } else {
-      return forReference(ref.toString());
-    }
-    return new ReferenceNotFoundException(message);
-  }
-
-  /**
-   * Create a {@code ReferenceNotFoundException} instance based on the provided reference.
-   *
-   * @param ref the reference string not found in the store
-   * @return a {@code ReferenceNotFoundException} instance
-   * @throws NullPointerException if {@code ref} is {@code null}.
-   */
-  @Nonnull
-  public static ReferenceNotFoundException forReference(@Nonnull String ref) {
-    requireNonNull(ref);
-    return new ReferenceNotFoundException(format("Ref '%s' does not exist", ref));
   }
 }
