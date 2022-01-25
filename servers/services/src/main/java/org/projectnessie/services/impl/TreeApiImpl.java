@@ -403,7 +403,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
       }
       getStore()
           .transplant(
-              BranchName.of(branchName), toHash(hash, true), transplants, commitMetaUpdate());
+              BranchName.of(branchName), toHash(hash, true), transplants, commitMetaUpdate(false));
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
@@ -420,7 +420,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
               toHash(merge.getFromRefName(), merge.getFromHash()),
               BranchName.of(branchName),
               toHash(hash, true),
-              commitMetaUpdate());
+              commitMetaUpdate(false));
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
@@ -543,7 +543,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
               .commit(
                   BranchName.of(Optional.ofNullable(branch).orElse(getConfig().getDefaultBranch())),
                   Optional.ofNullable(hash).map(Hash::of),
-                  commitMetaUpdate().apply(commitMeta),
+                  commitMetaUpdate(true).apply(commitMeta),
                   ops);
 
       return Branch.of(branch, newHash.asString());
@@ -554,16 +554,21 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     }
   }
 
-  private Function<CommitMeta, CommitMeta> commitMetaUpdate() {
+  private Function<CommitMeta, CommitMeta> commitMetaUpdate(boolean isCommitOperation) {
     // Used for setting contextual commit properties during new and merge/transplant commits.
     // WARNING: ONLY SET PROPERTIES, WHICH APPLY COMMONLY TO ALL COMMIT TYPES.
     Principal principal = getPrincipal();
     String committer = principal == null ? "" : principal.getName();
     Instant now = Instant.now();
+    // In case of the commit operation, use the commit time from the commit meta if set.
+    // Merge and transplant should reset the commit time to now.
     return commitMeta ->
         commitMeta.toBuilder()
             .committer(committer)
-            .commitTime(now)
+            .commitTime(
+                (commitMeta.getCommitTime() != null && isCommitOperation)
+                    ? commitMeta.getCommitTime()
+                    : now)
             .author(commitMeta.getAuthor() == null ? committer : commitMeta.getAuthor())
             .authorTime(commitMeta.getAuthorTime() == null ? now : commitMeta.getAuthorTime())
             .build();

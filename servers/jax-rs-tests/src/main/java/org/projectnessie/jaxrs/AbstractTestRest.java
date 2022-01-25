@@ -86,6 +86,7 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.IcebergTable;
+import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
 import org.projectnessie.model.ImmutableSqlView;
 import org.projectnessie.model.LogResponse;
@@ -342,14 +343,25 @@ public abstract class AbstractTestRest {
     // Need to have at least one op, otherwise all following operations (assignTag/Branch, merge,
     // delete) will fail
     meta = IcebergTable.of("foo", 42, 42, 42, 42);
+    Instant instant = Instant.ofEpochSecond(500);
+    ImmutableCommitMeta commitMeta =
+        ImmutableCommitMeta.builder()
+            .commitTime(instant)
+            .authorTime(instant)
+            .author("")
+            .message("One dummy op")
+            .build();
     api.commitMultipleOperations()
         .branchName(branchName)
         .hash(branchHash)
         .operation(Put.of(ContentKey.of("some-key"), meta))
-        .commitMeta(CommitMeta.fromMessage("One dummy op"))
+        .commitMeta(commitMeta)
         .commit();
     log = api.getCommitLog().refName(branchName).get();
-    String newHash = log.getLogEntries().get(0).getCommitMeta().getHash();
+    CommitMeta resultCommitMeta = log.getLogEntries().get(0).getCommitMeta();
+    String newHash = resultCommitMeta.getHash();
+    assertThat(resultCommitMeta.getCommitTime()).isEqualTo(instant);
+    assertThat(resultCommitMeta.getAuthorTime()).isEqualTo(instant);
 
     api.assignTag()
         .tagName(tagName)
