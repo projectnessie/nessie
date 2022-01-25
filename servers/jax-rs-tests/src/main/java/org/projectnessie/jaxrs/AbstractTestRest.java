@@ -196,7 +196,9 @@ public abstract class AbstractTestRest {
         "cafebabedeadbeef",
         "a234567890123456",
         "CAFEBABEDEADBEEF",
-        "A234567890123456"
+        "A234567890123456",
+        "caffee20",
+        "caffee2022"
       })
   public void forbiddenReferenceNames(String refName) throws NessieNotFoundException {
     String mainHash = api.getReference().refName("main").get().getHash();
