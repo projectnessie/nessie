@@ -24,7 +24,9 @@ import org.projectnessie.model.Content.Type;
 import org.projectnessie.model.DiffResponse;
 import org.projectnessie.services.authz.AccessChecker;
 import org.projectnessie.services.config.ServerConfig;
+import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.WithHash;
 
 /** Does authorization checks (if enabled) on the {@link DiffApiImpl}. */
 public class DiffApiImplWithAuthorization extends DiffApiImpl {
@@ -39,12 +41,11 @@ public class DiffApiImplWithAuthorization extends DiffApiImpl {
 
   @Override
   public DiffResponse getDiff(DiffParams params) throws NessieNotFoundException {
-    getAccessChecker()
-        .canViewReference(
-            createAccessContext(), namedRefWithHashOrThrow(params.getFromRef(), null).getValue());
-    getAccessChecker()
-        .canViewReference(
-            createAccessContext(), namedRefWithHashOrThrow(params.getToRef(), null).getValue());
-    return super.getDiff(params);
+    WithHash<NamedRef> from =
+        namedRefWithHashOrThrow(params.getFromRef(), params.getFromHashOnRef());
+    WithHash<NamedRef> to = namedRefWithHashOrThrow(params.getToRef(), params.getToHashOnRef());
+    getAccessChecker().canViewReference(createAccessContext(), from.getValue());
+    getAccessChecker().canViewReference(createAccessContext(), to.getValue());
+    return getDiff(from.getHash(), to.getHash());
   }
 }

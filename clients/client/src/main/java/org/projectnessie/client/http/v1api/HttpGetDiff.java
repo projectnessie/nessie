@@ -36,8 +36,20 @@ final class HttpGetDiff extends BaseHttpRequest implements GetDiffBuilder {
   }
 
   @Override
+  public GetDiffBuilder fromHashOnRef(String fromHashOnRef) {
+    builder.fromHashOnRef(fromHashOnRef);
+    return this;
+  }
+
+  @Override
   public GetDiffBuilder toRefName(String toRefName) {
     builder.toRef(toRefName);
+    return this;
+  }
+
+  @Override
+  public GetDiffBuilder toHashOnRef(String toHashOnRef) {
+    builder.toHashOnRef(toHashOnRef);
     return this;
   }
 

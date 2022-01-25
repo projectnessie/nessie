@@ -25,11 +25,14 @@ import java.util.regex.Pattern;
 
 /** Collection of validation rules. */
 public final class Validation {
-  public static final String HASH_REGEX = "^[0-9a-fA-F]{8,64}$";
-  public static final String REF_NAME_REGEX =
-      "^[A-Za-z](((?![.][.])[A-Za-z0-9./_-])*[A-Za-z0-9._-])?$";
+
+  public static final String HASH_RAW_REGEX = "[0-9a-fA-F]{8,64}";
+  public static final String HASH_REGEX = "^" + HASH_RAW_REGEX + "$";
+  public static final String REF_NAME_RAW_REGEX =
+      "[A-Za-z](((?![.][.])[A-Za-z0-9./_-])*[A-Za-z0-9._-])";
+  public static final String REF_NAME_REGEX = "^" + REF_NAME_RAW_REGEX + "?$";
   public static final String REF_NAME_OR_HASH_REGEX =
-      "^(([0-9a-fA-F]{8,64})|([A-Za-z](((?![.][.])[A-Za-z0-9./_-])*[A-Za-z0-9._-])?))$";
+      "^((" + HASH_RAW_REGEX + ")|(" + REF_NAME_RAW_REGEX + "?))$";
 
   public static final Pattern HASH_PATTERN = Pattern.compile(HASH_REGEX);
   public static final Pattern REF_NAME_PATTERN = Pattern.compile(REF_NAME_REGEX);
