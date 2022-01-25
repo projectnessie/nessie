@@ -15,7 +15,11 @@
  */
 package org.projectnessie.model;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -40,6 +44,10 @@ public final class Validation {
   public static final String REF_NAME_MESSAGE = "Reference name must " + REF_RULE;
   public static final String REF_NAME_OR_HASH_MESSAGE =
       "Reference must be either a reference name or hash, " + REF_RULE + " or " + HASH_RULE;
+  public static final String FORBIDDEN_REF_NAME_MESSAGE =
+      "Reference name mut not be HEAD, BARE or a potential commit ID representation.";
+  public static final Set<String> FORBIDDEN_REF_NAMES =
+      Collections.unmodifiableSet(new HashSet<>(Arrays.asList("HEAD", "BARE")));
 
   private Validation() {
     // empty
@@ -84,7 +92,7 @@ public final class Validation {
    *
    * @param referenceName the reference name string to test.
    */
-  public static String validateReferenceName(String referenceName) {
+  public static String validateReferenceName(String referenceName) throws IllegalArgumentException {
     if (isValidReferenceName(referenceName)) {
       return referenceName;
     }
@@ -98,7 +106,7 @@ public final class Validation {
    *
    * @param referenceName the reference name string to test.
    */
-  public static String validateHash(String referenceName) {
+  public static String validateHash(String referenceName) throws IllegalArgumentException {
     if (isValidHash(referenceName)) {
       return referenceName;
     }
@@ -112,10 +120,35 @@ public final class Validation {
    *
    * @param ref the reference name string to test.
    */
-  public static String validateReferenceNameOrHash(String ref) {
+  public static String validateReferenceNameOrHash(String ref) throws IllegalArgumentException {
     if (isValidReferenceNameOrHash(ref)) {
       return ref;
     }
     throw new IllegalArgumentException(REF_NAME_OR_HASH_MESSAGE + " - but was: " + ref);
+  }
+
+  /**
+   * Checks whether {@code ref} represents a forbidden reference name ({@code HEAD} or {@code BARE})
+   * or could represent a commit-ID.
+   *
+   * @param ref reference name to check
+   * @return {@code true}, if forbidden
+   */
+  public static boolean isForbiddenReferenceName(String ref) {
+    return FORBIDDEN_REF_NAMES.contains(ref) || HASH_PATTERN.matcher(ref).matches();
+  }
+
+  /**
+   * Throws an {@link IllegalArgumentException} if {@code ref} represents a forbidden reference
+   * name, see {@link #isForbiddenReferenceName(String)}.
+   *
+   * @param ref reference name to check
+   * @return {@code ref}
+   */
+  public static String validateForbiddenReferenceName(String ref) throws IllegalArgumentException {
+    if (isForbiddenReferenceName(ref)) {
+      throw new IllegalArgumentException(FORBIDDEN_REF_NAME_MESSAGE + " - but was " + ref);
+    }
+    return ref;
   }
 }

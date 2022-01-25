@@ -82,6 +82,7 @@ import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferenceMetadata;
 import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.Transplant;
+import org.projectnessie.model.Validation;
 import org.projectnessie.services.authz.AccessChecker;
 import org.projectnessie.services.cel.CELUtil;
 import org.projectnessie.services.config.ServerConfig;
@@ -211,6 +212,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   @Override
   public Reference createReference(String sourceRefName, Reference reference)
       throws NessieNotFoundException, NessieConflictException {
+    Validation.validateForbiddenReferenceName(reference.getName());
     NamedRef namedReference = toNamedRef(reference);
     if (reference.getType() == Reference.ReferenceType.TAG && reference.getHash() == null) {
       throw new IllegalArgumentException(

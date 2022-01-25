@@ -101,6 +101,7 @@ import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.SqlView;
 import org.projectnessie.model.SqlView.Dialect;
 import org.projectnessie.model.Tag;
+import org.projectnessie.model.Validation;
 
 public abstract class AbstractTestRest {
   public static final String COMMA_VALID_HASH_1 =
@@ -185,6 +186,33 @@ public abstract class AbstractTestRest {
     ReferencesResponse references = api.getAllReferences().get();
     assertThat(references.getReferences())
         .anySatisfy(r -> assertThat(r.getName()).isEqualTo("main"));
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "HEAD",
+        "BARE",
+        "cafebabedeadbeef",
+        "a234567890123456",
+        "CAFEBABEDEADBEEF",
+        "A234567890123456"
+      })
+  public void forbiddenReferenceNames(String refName) throws NessieNotFoundException {
+    String mainHash = api.getReference().refName("main").get().getHash();
+
+    assertThat(
+            Stream.of(
+                Branch.of(refName, null),
+                Tag.of(refName, null),
+                Branch.of(refName, mainHash),
+                Tag.of(refName, mainHash)))
+        .allSatisfy(
+            ref ->
+                assertThatThrownBy(
+                        () -> api.createReference().sourceRefName("main").reference(ref).create())
+                    .isInstanceOf(NessieBadRequestException.class)
+                    .hasMessageContaining(Validation.FORBIDDEN_REF_NAME_MESSAGE));
   }
 
   @Test
