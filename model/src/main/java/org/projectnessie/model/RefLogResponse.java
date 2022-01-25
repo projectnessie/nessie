@@ -70,8 +70,8 @@ public interface RefLogResponse extends PaginatedResponse {
     String getOperation();
 
     /**
-     * Single hash in case of MERGE. One or more hashes in case of TRANSPLANT. Empty list for other
-     * operations.
+     * Single hash in case of MERGE or ASSIGN. One or more hashes in case of TRANSPLANT. Empty list
+     * for other operations.
      */
     @NotNull
     List<String> getSourceHashes();

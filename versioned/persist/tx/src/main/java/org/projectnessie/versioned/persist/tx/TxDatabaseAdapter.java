@@ -455,16 +455,16 @@ public abstract class TxDatabaseAdapter
       opLoop(
           assignee,
           true,
-          (conn, pointer) -> {
-            pointer = fetchNamedRefHead(conn, assignee);
+          (conn, assigneeHead) -> {
+            assigneeHead = fetchNamedRefHead(conn, assignee);
 
-            verifyExpectedHash(pointer, assignee, expectedHead);
+            verifyExpectedHash(assigneeHead, assignee, expectedHead);
 
             if (!NO_ANCESTOR.equals(assignTo) && fetchFromCommitLog(conn, assignTo) == null) {
               throw referenceNotFound(assignTo);
             }
 
-            Hash resultHash = tryMoveNamedReference(conn, assignee, pointer, assignTo);
+            Hash resultHash = tryMoveNamedReference(conn, assignee, assigneeHead, assignTo);
 
             commitRefLog(
                 conn,
@@ -472,7 +472,7 @@ public abstract class TxDatabaseAdapter
                 assignTo,
                 assignee,
                 AdapterTypes.RefLogEntry.Operation.ASSIGN_REFERENCE,
-                Collections.emptyList());
+                Collections.singletonList(assigneeHead));
 
             return resultHash;
           },
