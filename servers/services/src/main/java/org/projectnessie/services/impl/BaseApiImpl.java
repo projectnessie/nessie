@@ -16,6 +16,7 @@
 package org.projectnessie.services.impl;
 
 import java.security.Principal;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import javax.annotation.Nullable;
@@ -26,6 +27,7 @@ import org.projectnessie.model.Content;
 import org.projectnessie.services.authz.AccessChecker;
 import org.projectnessie.services.authz.ServerAccessContext;
 import org.projectnessie.services.config.ServerConfig;
+import org.projectnessie.versioned.DetachedRef;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.NamedRef;
@@ -56,6 +58,13 @@ abstract class BaseApiImpl {
     if (null == namedRef) {
       namedRef = config.getDefaultBranch();
     }
+
+    if (DetachedRef.REF_NAME.equals(namedRef)) {
+      Objects.requireNonNull(
+          hashOnRef, String.format("hashOnRef must not be null for '%s'", DetachedRef.REF_NAME));
+      return WithHash.of(Hash.of(hashOnRef), DetachedRef.INSTANCE);
+    }
+
     WithHash<NamedRef> namedRefWithHash;
     try {
       ReferenceInfo<CommitMeta> ref = getStore().getNamedRef(namedRef, GetNamedRefsParams.DEFAULT);

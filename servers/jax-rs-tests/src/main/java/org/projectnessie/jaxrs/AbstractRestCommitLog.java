@@ -32,10 +32,13 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.OptionalInt;
+import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.client.StreamingUtil;
 import org.projectnessie.error.BaseNessieClientServerException;
@@ -50,6 +53,7 @@ import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Operation.Unchanged;
+import org.projectnessie.model.Reference;
 
 /** See {@link AbstractTestRest} for details about and reason for the inheritance model. */
 public abstract class AbstractRestCommitLog extends AbstractRestAssign {
@@ -435,8 +439,9 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
         completeLog.stream().map(CommitMeta::getMessage).collect(Collectors.toList()), allMessages);
   }
 
-  @Test
-  public void commitLogExtended() throws Exception {
+  @ParameterizedTest
+  @EnumSource(ReferenceMode.class)
+  public void commitLogExtended(ReferenceMode refMode) throws Exception {
     String branch = "commitLogExtended";
     String firstParent =
         getApi()
@@ -447,6 +452,10 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
             .getHash();
 
     int numCommits = 10;
+
+    // Hack for tests running via Quarkus :(
+    IntFunction<String> c1 = i -> refMode.name() + "-c1-" + i;
+    IntFunction<String> c2 = i -> refMode.name() + "-c2-" + i;
 
     List<String> hashes =
         IntStream.rangeClosed(1, numCommits)
@@ -459,11 +468,11 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
                         .operation(
                             Put.of(
                                 ContentKey.of("k" + i),
-                                IcebergTable.of("m" + i, i, i, i, i, "c" + i)))
+                                IcebergTable.of("m" + i, i, i, i, i, c1.apply(i))))
                         .operation(
                             Put.of(
                                 ContentKey.of("key" + i),
-                                IcebergTable.of("meta" + i, i, i, i, i, "cid" + i)))
+                                IcebergTable.of("meta" + i, i, i, i, i, c2.apply(i))))
                         .operation(Delete.of(ContentKey.of("delete" + i)))
                         .operation(Unchanged.of(ContentKey.of("key" + i)))
                         .commitMeta(CommitMeta.fromMessage("Commit #" + i))
@@ -480,12 +489,14 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
         Stream.concat(Stream.of(firstParent), hashes.subList(0, 9).stream())
             .collect(Collectors.toList());
 
+    Reference branchRef = getApi().getReference().refName(branch).get();
+
     assertThat(
             Lists.reverse(
                 getApi()
                     .getCommitLog()
                     .untilHash(firstParent)
-                    .refName(branch)
+                    .reference(refMode.transform(branchRef))
                     .get()
                     .getLogEntries()))
         .allSatisfy(
@@ -501,8 +512,8 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
             getApi()
                 .getCommitLog()
                 .fetch(FetchOption.ALL)
+                .reference(refMode.transform(branchRef))
                 .untilHash(firstParent)
-                .refName(branch)
                 .get()
                 .getLogEntries());
     assertThat(IntStream.rangeClosed(1, numCommits))
@@ -523,10 +534,10 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
                           Delete.of(ContentKey.of("delete" + i)),
                           Put.of(
                               ContentKey.of("k" + i),
-                              IcebergTable.of("m" + i, i, i, i, i, "c" + i)),
+                              IcebergTable.of("m" + i, i, i, i, i, c1.apply(i))),
                           Put.of(
                               ContentKey.of("key" + i),
-                              IcebergTable.of("meta" + i, i, i, i, i, "cid" + i))));
+                              IcebergTable.of("meta" + i, i, i, i, i, c2.apply(i)))));
             });
   }
 

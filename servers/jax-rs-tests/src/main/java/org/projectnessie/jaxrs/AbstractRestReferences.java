@@ -75,7 +75,7 @@ public abstract class AbstractRestReferences extends AbstractRestMisc {
   @ValueSource(
       strings = {
         "HEAD",
-        "BARE",
+        "DETACHED",
         "cafebabedeadbeef",
         "a234567890123456",
         "CAFEBABEDEADBEEF",

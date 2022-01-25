@@ -23,9 +23,11 @@ import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.Detached;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
+import org.projectnessie.model.Tag;
 
 /** See {@link AbstractTestRest} for details about and reason for the inheritance model. */
 public abstract class AbstractRest {
@@ -65,5 +67,54 @@ public abstract class AbstractRest {
     Reference created = getApi().createReference().sourceRefName("main").reference(branch).create();
     assertThat(created).isEqualTo(branch);
     return branch;
+  }
+
+  /**
+   * Used by parameterized tests to return the {@value Detached#REF_NAME}, if {@code
+   * withDetachedCommit} is {@code true} or the {@link Reference#getName() reference name} from the
+   * given {@code ref}.
+   */
+  protected static String maybeAsDetachedName(boolean withDetachedCommit, Reference ref) {
+    return withDetachedCommit ? Detached.REF_NAME : ref.getName();
+  }
+
+  /**
+   * Enum intended to be used a test method parameter to transform a {@link Reference} in multiple
+   * ways.
+   */
+  enum ReferenceMode {
+    /** Removes the {@link Reference#getHash()} from the reference. */
+    NAME_ONLY {
+      @Override
+      Reference transform(Reference ref) {
+        switch (ref.getType()) {
+          case TAG:
+            return Tag.of(ref.getName(), null);
+          case BRANCH:
+            return Branch.of(ref.getName(), null);
+          default:
+            throw new IllegalArgumentException(ref.toString());
+        }
+      }
+    },
+    /** Keep the reference unchanged. */
+    UNCHANGED {
+      @Override
+      Reference transform(Reference ref) {
+        return ref;
+      }
+    },
+    /**
+     * Make the reference a {@link Detached} with its {@link Detached#getHash()} using the hash of
+     * the given reference.
+     */
+    DETACHED {
+      @Override
+      Reference transform(Reference ref) {
+        return Detached.of(ref.getHash());
+      }
+    };
+
+    abstract Reference transform(Reference ref);
   }
 }

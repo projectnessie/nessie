@@ -17,12 +17,15 @@ package org.projectnessie.jaxrs;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import org.junit.jupiter.api.Test;
+import java.util.stream.Stream;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
@@ -35,8 +38,19 @@ import org.projectnessie.model.Reference;
 
 /** See {@link AbstractTestRest} for details about and reason for the inheritance model. */
 public abstract class AbstractRestDiff extends AbstractRestContents {
-  @Test
-  public void testDiff() throws BaseNessieClientServerException {
+
+  public static Stream<Object[]> diffRefModes() {
+    return Arrays.stream(ReferenceMode.values())
+        .flatMap(
+            refModeFrom ->
+                Arrays.stream(ReferenceMode.values())
+                    .map(refModeTo -> new Object[] {refModeFrom, refModeTo}));
+  }
+
+  @ParameterizedTest
+  @MethodSource("diffRefModes")
+  public void testDiff(ReferenceMode refModeFrom, ReferenceMode refModeTo)
+      throws BaseNessieClientServerException {
     int commitsPerBranch = 10;
 
     Reference fromRef =
@@ -50,8 +64,8 @@ public abstract class AbstractRestDiff extends AbstractRestContents {
     List<DiffEntry> diffOnRefHeadResponse =
         getApi()
             .getDiff()
-            .fromRefName(fromRef.getName())
-            .toRefName(toRef.getName())
+            .fromRef(refModeFrom.transform(fromRef))
+            .toRef(refModeTo.transform(toRef))
             .get()
             .getDiffs();
 
@@ -66,8 +80,6 @@ public abstract class AbstractRestDiff extends AbstractRestContents {
             });
 
     // Some combinations with explicit fromHashOnRef/toHashOnRef
-    assertThat(getApi().getDiff().fromRef(fromRef).toRef(toRef).get().getDiffs())
-        .isEqualTo(diffOnRefHeadResponse);
     assertThat(
             getApi()
                 .getDiff()
@@ -75,74 +87,34 @@ public abstract class AbstractRestDiff extends AbstractRestContents {
                 .fromHashOnRef(fromRef.getHash())
                 .toRefName(toRef.getName())
                 .toHashOnRef(toRef.getHash())
-                .get()
-                .getDiffs())
-        .isEqualTo(diffOnRefHeadResponse);
-    assertThat(
-            getApi()
-                .getDiff()
-                .fromRefName(fromRef.getName())
-                .fromHashOnRef(fromRef.getHash())
-                .toRefName(toRef.getName())
-                .get()
-                .getDiffs())
-        .isEqualTo(diffOnRefHeadResponse);
-    assertThat(
-            getApi()
-                .getDiff()
-                .fromRefName(fromRef.getName())
-                .toRefName(toRef.getName())
-                .toHashOnRef(toRef.getHash())
-                .get()
-                .getDiffs())
-        .isEqualTo(diffOnRefHeadResponse);
-    assertThat(
-            getApi()
-                .getDiff()
-                .fromRefName(fromRef.getName())
-                .toRef(Branch.of(toRef.getName(), null))
                 .get()
                 .getDiffs())
         .isEqualTo(diffOnRefHeadResponse);
 
     // Comparing the from-reference with the to-reference @ from-reference-HEAD must yield an empty
     // result
-    assertThat(
-            getApi()
-                .getDiff()
-                .fromRef(fromRef)
-                .toRefName(toRef.getName())
-                .toHashOnRef(fromRef.getHash())
-                .get()
-                .getDiffs())
-        .isEmpty();
-    assertThat(
-            getApi()
-                .getDiff()
-                .fromRefName(fromRef.getName())
-                .toRefName(toRef.getName())
-                .toHashOnRef(fromRef.getHash())
-                .get()
-                .getDiffs())
-        .isEmpty();
-    assertThat(
-            getApi()
-                .getDiff()
-                .fromRef(Branch.of(fromRef.getName(), null))
-                .toRefName(toRef.getName())
-                .toHashOnRef(fromRef.getHash())
-                .get()
-                .getDiffs())
-        .isEmpty();
+    if (refModeTo != ReferenceMode.NAME_ONLY) {
+      Branch toRefAtFrom = Branch.of(toRef.getName(), fromRef.getHash());
+      assertThat(
+              getApi()
+                  .getDiff()
+                  .fromRef(refModeFrom.transform(fromRef))
+                  .toRef(refModeTo.transform(toRefAtFrom))
+                  .get()
+                  .getDiffs())
+          .isEmpty();
+    }
 
     // after committing to fromRef, "from/to" diffs should both have data
-    createCommits(fromRef, 1, commitsPerBranch, fromRef.getHash());
+    fromRef =
+        Branch.of(
+            fromRef.getName(), createCommits(fromRef, 1, commitsPerBranch, fromRef.getHash()));
 
     assertThat(
             getApi()
                 .getDiff()
-                .fromRefName(fromRef.getName())
-                .toRefName(toRef.getName())
+                .fromRef(refModeFrom.transform(fromRef))
+                .toRef(refModeTo.transform(toRef))
                 .get()
                 .getDiffs())
         .hasSize(commitsPerBranch)
@@ -189,8 +161,8 @@ public abstract class AbstractRestDiff extends AbstractRestContents {
     assertThat(
             getApi()
                 .getDiff()
-                .fromRefName(fromRef.getName())
-                .toRefName(toRef.getName())
+                .fromRef(refModeFrom.transform(fromRef))
+                .toRef(refModeTo.transform(toRef))
                 .get()
                 .getDiffs())
         .hasSize(commitsPerBranch)

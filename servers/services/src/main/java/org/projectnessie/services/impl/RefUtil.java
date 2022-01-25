@@ -17,9 +17,11 @@ package org.projectnessie.services.impl;
 
 import java.util.Objects;
 import org.projectnessie.model.Branch;
+import org.projectnessie.model.Detached;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
 import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.DetachedRef;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.TagName;
@@ -34,6 +36,9 @@ public final class RefUtil {
     }
     if (reference instanceof Tag) {
       return TagName.of(reference.getName());
+    }
+    if (reference instanceof Detached) {
+      return DetachedRef.INSTANCE;
     }
     throw new IllegalArgumentException(String.format("Unsupported reference '%s'", reference));
   }
@@ -63,6 +68,10 @@ public final class RefUtil {
     }
     if (namedRef instanceof TagName) {
       return Tag.of(namedRef.getName(), hash);
+    }
+    if (namedRef instanceof DetachedRef) {
+      return Detached.of(
+          Objects.requireNonNull(hash, "hash must not be null for detached references"));
     }
     throw new IllegalArgumentException(String.format("Unsupported named reference '%s'", namedRef));
   }

@@ -17,7 +17,8 @@ package org.projectnessie.jaxrs;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.LogResponse;
@@ -28,8 +29,10 @@ import org.projectnessie.model.Tag;
 public abstract class AbstractRestAssign extends AbstractRest {
 
   /** Assigning a branch/tag to a fresh main without any commits didn't work in 0.9.2 */
-  @Test
-  public void testAssignRefToFreshMain() throws BaseNessieClientServerException {
+  @ParameterizedTest
+  @EnumSource(ReferenceMode.class)
+  public void testAssignRefToFreshMain(ReferenceMode refMode)
+      throws BaseNessieClientServerException {
     Reference main = getApi().getReference().refName("main").get();
     // make sure main doesn't have any commits
     LogResponse log = getApi().getCommitLog().refName(main.getName()).get();
@@ -48,7 +51,12 @@ public abstract class AbstractRestAssign extends AbstractRest {
             .reference(Tag.of(testTag, main.getHash()))
             .create();
     assertThat(testTagRef.getHash()).isNotNull();
-    getApi().assignTag().hash(testTagRef.getHash()).tagName(testTag).assignTo(main).assign();
+    getApi()
+        .assignTag()
+        .hash(testTagRef.getHash())
+        .tagName(testTag)
+        .assignTo(refMode.transform(main))
+        .assign();
     testTagRef = getApi().getReference().refName(testTag).get();
     assertThat(testTagRef.getHash()).isEqualTo(main.getHash());
   }
