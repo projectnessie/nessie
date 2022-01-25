@@ -2468,5 +2468,14 @@ public abstract class AbstractTestRest {
         .isInstanceOf(NessieRefLogNotFoundException.class)
         .hasMessageContaining(
             "RefLog entry for 'f1234d75178d892a133a410355a5a990cf75d2f33eba25d575943d4df632f3a4' does not exist");
+    // verify source hashes for assign reference
+    assertThat(refLogResponse.getLogEntries().get(4).getSourceHashes())
+        .isEqualTo(Collections.singletonList(createdBranch1.getHash()));
+    // verify source hashes for merge
+    assertThat(refLogResponse.getLogEntries().get(3).getSourceHashes())
+        .isEqualTo(Collections.singletonList(branch0.getHash()));
+    // verify source hashes for transplant
+    assertThat(refLogResponse.getLogEntries().get(2).getSourceHashes())
+        .isEqualTo(Collections.singletonList(branch0.getHash()));
   }
 }

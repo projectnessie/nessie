@@ -443,7 +443,8 @@ public abstract class NonTransactionalDatabaseAdapter<
           assignee,
           CasOpVariant.REF_UPDATE,
           (ctx, pointer, branchCommits, newKeyLists) -> {
-            verifyExpectedHash(branchHead(pointer, assignee), assignee, expectedHead);
+            Hash beforeAssign = branchHead(pointer, assignee);
+            verifyExpectedHash(beforeAssign, assignee, expectedHead);
 
             validateHashExists(ctx, assignTo);
 
@@ -460,7 +461,7 @@ public abstract class NonTransactionalDatabaseAdapter<
                     assignTo,
                     RefLogEntry.Operation.ASSIGN_REFERENCE,
                     commitTimeInMicros(),
-                    Collections.emptyList());
+                    Collections.singletonList(beforeAssign));
 
             return updateGlobalStatePointer(
                 assignee, pointer, assignTo, newGlobalHead, newRefLogId.asBytes());
