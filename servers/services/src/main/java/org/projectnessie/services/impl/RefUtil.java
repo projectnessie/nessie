@@ -38,6 +38,19 @@ public final class RefUtil {
     throw new IllegalArgumentException(String.format("Unsupported reference '%s'", reference));
   }
 
+  public static NamedRef toNamedRef(Reference.ReferenceType referenceType, String referenceName) {
+    Objects.requireNonNull(referenceType, "referenceType must not be null");
+    switch (referenceType) {
+      case BRANCH:
+        return BranchName.of(referenceName);
+      case TAG:
+        return TagName.of(referenceName);
+      default:
+        throw new IllegalArgumentException(
+            String.format("Invalid reference type '%s'", referenceType));
+    }
+  }
+
   public static Reference toReference(NamedRef namedRef, Hash hash) {
     Objects.requireNonNull(namedRef, "namedRef must not be null");
     return toReference(namedRef, hash != null ? hash.asString() : null);

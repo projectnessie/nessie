@@ -128,44 +128,25 @@ public interface TreeApi {
       @Valid @NotNull CommitLogParams params)
       throws NessieNotFoundException;
 
-  /** Update a tag. */
-  void assignTag(
+  /** Update a reference's HEAD to point to a different commit. */
+  void assignReference(
+      @Valid @NotNull Reference.ReferenceType referenceType,
       @Valid
           @NotNull
           @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-          String tagName,
+          String referenceName,
       @Valid @NotNull @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String oldHash,
       @Valid @NotNull Reference assignTo)
       throws NessieNotFoundException, NessieConflictException;
 
-  /** Delete a tag. */
-  void deleteTag(
+  /** Delete a named reference. */
+  void deleteReference(
+      @Valid @NotNull Reference.ReferenceType referenceType,
       @Valid
           @NotNull
           @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-          String tagName,
-      @Valid @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
-          String hash)
-      throws NessieConflictException, NessieNotFoundException;
-
-  /** Update a branch. */
-  void assignBranch(
-      @Valid
-          @NotNull
-          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-          String branchName,
-      @Valid @NotNull @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
-          String oldHash,
-      @Valid @NotNull Reference assignTo)
-      throws NessieNotFoundException, NessieConflictException;
-
-  /** Delete a branch. */
-  void deleteBranch(
-      @Valid
-          @NotNull
-          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-          String branchName,
+          String referenceName,
       @Valid @NotNull @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String hash)
       throws NessieConflictException, NessieNotFoundException;

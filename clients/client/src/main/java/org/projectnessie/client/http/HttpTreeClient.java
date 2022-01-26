@@ -15,6 +15,7 @@
  */
 package org.projectnessie.client.http;
 
+import java.util.Locale;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import org.projectnessie.api.http.HttpTreeApi;
@@ -80,47 +81,32 @@ class HttpTreeClient implements HttpTreeApi {
   }
 
   @Override
-  public void assignTag(
-      @NotNull String tagName, @NotNull String expectedHash, @NotNull Reference assignTo)
+  public void assignReference(
+      @NotNull Reference.ReferenceType referenceType,
+      @NotNull String referenceName,
+      @NotNull String expectedHash,
+      @Valid @NotNull Reference assignTo)
       throws NessieNotFoundException, NessieConflictException {
     client
         .newRequest()
-        .path("trees/tag/{tagName}")
-        .resolveTemplate("tagName", tagName)
+        .path("trees/{referenceType}/{referenceName}")
+        .resolveTemplate("referenceType", referenceType.name().toLowerCase(Locale.ROOT))
+        .resolveTemplate("referenceName", referenceName)
         .queryParam("expectedHash", expectedHash)
         .put(assignTo);
   }
 
   @Override
-  public void deleteTag(@NotNull String tagName, @NotNull String expectedHash)
+  public void deleteReference(
+      @NotNull Reference.ReferenceType referenceType,
+      @NotNull String referenceName,
+      @NotNull String expectedHash)
       throws NessieConflictException, NessieNotFoundException {
     client
         .newRequest()
-        .path("trees/tag/{tagName}")
-        .resolveTemplate("tagName", tagName)
-        .queryParam("expectedHash", expectedHash)
-        .delete();
-  }
-
-  @Override
-  public void assignBranch(
-      @NotNull String branchName, @NotNull String expectedHash, @NotNull Reference assignTo)
-      throws NessieNotFoundException, NessieConflictException {
-    client
-        .newRequest()
-        .path("trees/branch/{branchName}")
-        .resolveTemplate("branchName", branchName)
-        .queryParam("expectedHash", expectedHash)
-        .put(assignTo);
-  }
-
-  @Override
-  public void deleteBranch(@NotNull String branchName, @NotNull String expectedHash)
-      throws NessieConflictException, NessieNotFoundException {
-    client
-        .newRequest()
-        .path("trees/branch/{branchName}")
-        .resolveTemplate("branchName", branchName)
+        .path("trees/{referenceType}/{referenceName}")
+        .resolveTemplate("referenceType", referenceType.name().toLowerCase(Locale.ROOT))
+        .resolveTemplate("referenceName", referenceName)
         .queryParam("expectedHash", expectedHash)
         .delete();
   }

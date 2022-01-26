@@ -17,6 +17,7 @@ package org.projectnessie.model;
 
 import static org.projectnessie.model.Validation.validateHash;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -80,4 +81,15 @@ public interface Reference extends Base {
   @JsonInclude(Include.NON_NULL)
   @Nullable
   ReferenceMetadata getMetadata();
+
+  @JsonIgnore
+  @Value.Redacted
+  ReferenceType getType();
+
+  /** The reference type as an enum. */
+  @Schema(enumeration = {"branch", "tag"}) // Required to have lower-case values in OpenAPI
+  enum ReferenceType {
+    BRANCH,
+    TAG
+  }
 }

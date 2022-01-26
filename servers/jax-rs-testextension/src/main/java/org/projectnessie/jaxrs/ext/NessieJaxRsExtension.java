@@ -45,6 +45,7 @@ import org.projectnessie.services.rest.InstantParamConverterProvider;
 import org.projectnessie.services.rest.NessieExceptionMapper;
 import org.projectnessie.services.rest.NessieJaxRsJsonMappingExceptionMapper;
 import org.projectnessie.services.rest.NessieJaxRsJsonParseExceptionMapper;
+import org.projectnessie.services.rest.ReferenceTypeParamConverterProvider;
 import org.projectnessie.services.rest.RestConfigResource;
 import org.projectnessie.services.rest.RestContentResource;
 import org.projectnessie.services.rest.RestDiffResource;
@@ -176,6 +177,7 @@ public class NessieJaxRsExtension
               config.register(RestRefLogResource.class);
               config.register(ConfigApiImpl.class);
               config.register(ContentKeyParamConverterProvider.class);
+              config.register(ReferenceTypeParamConverterProvider.class);
               config.register(InstantParamConverterProvider.class);
               config.register(ValidationExceptionMapper.class, 10);
               config.register(NessieExceptionMapper.class);
