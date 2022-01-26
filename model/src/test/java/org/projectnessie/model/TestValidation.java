@@ -15,9 +15,14 @@
  */
 package org.projectnessie.model;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatNoException;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.projectnessie.model.Validation.isForbiddenReferenceName;
+import static org.projectnessie.model.Validation.validateForbiddenReferenceName;
 import static org.projectnessie.model.Validation.validateHash;
 import static org.projectnessie.model.Validation.validateReferenceName;
 import static org.projectnessie.model.Validation.validateReferenceNameOrHash;
@@ -36,6 +41,9 @@ class TestValidation {
     validateReferenceNameOrHash(referenceName);
     Branch.of(referenceName, null);
     Tag.of(referenceName, null);
+
+    assertThat(isForbiddenReferenceName(referenceName)).isFalse();
+    assertThatNoException().isThrownBy(() -> validateForbiddenReferenceName(referenceName));
   }
 
   @ParameterizedTest
@@ -76,16 +84,33 @@ class TestValidation {
   }
 
   @ParameterizedTest
+  @ValueSource(strings = {"BARE", "HEAD"})
+  // Note: hashes validated in validHashes()
+  void forbiddenReferenceNames(String refName) {
+    assertThat(isForbiddenReferenceName(refName)).isTrue();
+    assertThatThrownBy(() -> validateForbiddenReferenceName(refName))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageStartingWith(Validation.FORBIDDEN_REF_NAME_MESSAGE);
+  }
+
+  @ParameterizedTest
   @ValueSource(
       strings = {
         "1122334455667788990011223344556677889900112233445566778899001122",
         "abcDEF4242424242424242424242BEEF00DEAD42112233445566778899001122",
         "0011223344556677",
-        "11223344556677889900"
+        "11223344556677889900",
+        "cafebabedeadbeef",
+        "CAFEBABEDEADBEEF"
       })
   void validHashes(String hash) {
     validateHash(hash);
     validateReferenceNameOrHash(hash);
+
+    assertThat(isForbiddenReferenceName(hash)).isTrue();
+    assertThatThrownBy(() -> validateForbiddenReferenceName(hash))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageStartingWith(Validation.FORBIDDEN_REF_NAME_MESSAGE);
   }
 
   @ParameterizedTest
