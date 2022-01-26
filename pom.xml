@@ -1421,6 +1421,12 @@ limitations under the License.
       </modules>
     </profile>
     <profile>
+      <id>withoutITs</id>
+      <properties>
+        <skipITs>true</skipITs>
+      </properties>
+    </profile>
+    <profile>
       <id>build-quickly</id>
       <activation>
         <property>

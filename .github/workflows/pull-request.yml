@@ -45,11 +45,20 @@ jobs:
     - name: Setup Java, Maven, Gradle
       uses: ./.github/actions/dev-tool-java
 
+    - name: Config
+      run: |
+        if [[ "${{ contains(github.event.pull_request.labels.*.name, 'pr-with-ITs') }}" == "false" ]]; then
+          echo "Skipping integration tests"
+        fi
+
     - name: Build with Maven
       env:
         SPARK_LOCAL_IP: localhost
       run: |
-        ./mvnw -B install javadoc:javadoc-no-fork --file pom.xml -Pcode-coverage -Dtest.log.level=WARN
+        if [[ "${{ contains(github.event.pull_request.labels.*.name, 'pr-with-ITs') }}" == "false" ]]; then
+          ITS="-PwithoutITs"
+        fi
+        ./mvnw -B install javadoc:javadoc-no-fork --file pom.xml -Pcode-coverage -Dtest.log.level=WARN ${ITS}
 
     - name: Build with Gradle
       run: ./gradlew --rerun-tasks --no-daemon --info build
