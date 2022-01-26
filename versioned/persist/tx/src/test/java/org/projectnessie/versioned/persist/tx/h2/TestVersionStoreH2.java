@@ -15,10 +15,10 @@
  */
 package org.projectnessie.versioned.persist.tx.h2;
 
-import org.projectnessie.versioned.persist.tests.AbstractVersionStoreTest;
+import org.projectnessie.versioned.persist.tests.AbstractDatabaseAdapterVersionStoreTest;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterName;
 import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
 @NessieDbAdapterName(H2DatabaseAdapterFactory.NAME)
 @NessieExternalDatabase(H2TestConnectionProviderSource.class)
-class TestVersionStoreH2 extends AbstractVersionStoreTest {}
+class TestVersionStoreH2 extends AbstractDatabaseAdapterVersionStoreTest {}
