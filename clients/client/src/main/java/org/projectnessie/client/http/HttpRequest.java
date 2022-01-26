@@ -78,8 +78,8 @@ public class HttpRequest {
   }
 
   private HttpResponse executeRequest(Method method, Object body) throws HttpClientException {
+    URI uri = uriBuilder.build();
     try {
-      URI uri = uriBuilder.build();
       HttpURLConnection con = (HttpURLConnection) uri.toURL().openConnection();
       con.setReadTimeout(config.getReadTimeoutMillis());
       con.setConnectTimeout(config.getConnectionTimeoutMillis());
@@ -152,23 +152,28 @@ public class HttpRequest {
       return new HttpResponse(responseContext, config.getMapper());
     } catch (ProtocolException e) {
       throw new HttpClientException(
-          String.format("Cannot perform request. Invalid protocol %s", method), e);
+          String.format("Cannot perform request against '%s'. Invalid protocol %s", uri, method),
+          e);
     } catch (JsonGenerationException | JsonMappingException e) {
       throw new HttpClientException(
           String.format(
-              "Cannot serialize body of request. Unable to serialize %s", body.getClass()),
+              "Cannot serialize body of %s request against '%s'. Unable to serialize %s",
+              method, uri, body.getClass()),
           e);
     } catch (MalformedURLException e) {
       throw new HttpClientException(
-          String.format("Cannot perform request. Malformed Url for %s", uriBuilder.build()), e);
+          String.format(
+              "Cannot perform %s request. Malformed Url for %s", method, uriBuilder.build()),
+          e);
     } catch (SocketTimeoutException e) {
       throw new HttpClientReadTimeoutException(
           String.format(
-              "Cannot finish request. Timeout while waiting for response with a timeout of %ds",
-              config.getReadTimeoutMillis() / 1000),
+              "Cannot finish %s request against '%s'. Timeout while waiting for response with a timeout of %ds",
+              method, uri, config.getReadTimeoutMillis() / 1000),
           e);
     } catch (IOException e) {
-      throw new HttpClientException(e);
+      throw new HttpClientException(
+          String.format("Failed to execute %s request against '%s'.", method, uri), e);
     }
   }
 
