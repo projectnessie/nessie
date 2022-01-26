@@ -27,6 +27,7 @@ import org.glassfish.jersey.message.GZipEncoder;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.filter.EncodingFilter;
 import org.glassfish.jersey.test.JerseyTest;
+import org.glassfish.jersey.test.TestProperties;
 import org.jboss.weld.environment.se.Weld;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
@@ -193,6 +194,11 @@ public class NessieJaxRsExtension
                           requestContext.setSecurityContext(securityContext);
                         }
                       });
+
+              // Use a dynamically allocated port, not a static default (80/443) or statically
+              // configured port.
+              set(TestProperties.CONTAINER_PORT, "0");
+
               return config;
             }
           };

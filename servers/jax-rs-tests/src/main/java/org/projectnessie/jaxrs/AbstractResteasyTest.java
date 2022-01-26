@@ -231,7 +231,11 @@ public abstract class AbstractResteasyTest {
   }
 
   private static RequestSpecification rest() {
-    return given().when().basePath(basePath).contentType(ContentType.JSON);
+    return given()
+        .when()
+        .baseUri(RestAssured.baseURI)
+        .basePath(basePath)
+        .contentType(ContentType.JSON);
   }
 
   private Branch commit(String contentId, Branch branch, String contentKey, String metadataUrl) {
