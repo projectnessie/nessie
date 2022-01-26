@@ -194,6 +194,8 @@ class TestAuthorizationRules extends BaseClientAuthTest {
 
     api().mergeRefIntoBranch().fromRef(branch).branch(targetBranch).merge();
 
+    targetBranch = retrieveBranch(targetBranch.getName(), role, false);
+
     assertThat(api().getCommitLog().reference(targetBranch).get().getLogEntries()).isNotEmpty();
   }
 
@@ -227,6 +229,8 @@ class TestAuthorizationRules extends BaseClientAuthTest {
                 .collect(Collectors.toList()))
         .branch(targetBranch)
         .transplant();
+
+    targetBranch = retrieveBranch(targetBranch.getName(), role, false);
 
     assertThat(api().getCommitLog().reference(targetBranch).get().getLogEntries()).isNotEmpty();
   }

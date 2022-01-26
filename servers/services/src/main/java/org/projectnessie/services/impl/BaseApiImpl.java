@@ -69,8 +69,13 @@ abstract class BaseApiImpl {
     }
 
     try {
-      if (null == hashOnRef || store.noAncestorHash().asString().equals(hashOnRef)) {
+      if (null == hashOnRef) {
         return namedRefWithHash;
+      }
+      if (store.noAncestorHash().asString().equals(hashOnRef)) {
+        // hashOnRef might point to "no ancestor hash", but the actual HEAD of the reference is not
+        // necessarily the same, so construct a new instance to return.
+        return WithHash.of(store.noAncestorHash(), namedRefWithHash.getValue());
       }
 
       // the version store already gave us the hash on namedRef, so we can skip checking whether the

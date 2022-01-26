@@ -429,7 +429,7 @@ public abstract class AbstractResteasyTest {
     Branch branch = makeBranch("content-test");
     IcebergTable table = IcebergTable.of("content-table1", 42, 42, 42, 42);
 
-    commit(table.getId(), branch, "key1", table.getMetadataLocation());
+    branch = commit(table.getId(), branch, "key1", table.getMetadataLocation());
 
     Content content =
         rest()
