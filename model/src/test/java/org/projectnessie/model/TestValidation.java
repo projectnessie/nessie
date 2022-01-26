@@ -101,7 +101,10 @@ class TestValidation {
         "0011223344556677",
         "11223344556677889900",
         "cafebabedeadbeef",
-        "CAFEBABEDEADBEEF"
+        "CAFEBABEDEADBEEF",
+        "caffee20",
+        "20caffee",
+        "20caff22"
       })
   void validHashes(String hash) {
     validateHash(hash);
@@ -143,7 +146,9 @@ class TestValidation {
     "a_b-,1122334455667788990011221122334455667788990011223344556677889900",
     "a_-c,1122334455667788",
     "a_-c,112233445566778899001122",
-    "abc/def,1122334455667788990011223344556677889900"
+    "abc/def,1122334455667788990011223344556677889900",
+    "coffee20,1122334455667788990011223344556677889900",
+    "coffee2go,1122334455667788990011223344556677889900"
   })
   void validNamesAndHashes(String referenceName, String hash) {
     Branch.of(referenceName, hash);

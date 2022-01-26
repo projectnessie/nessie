@@ -25,17 +25,17 @@ import java.util.regex.Pattern;
 
 /** Collection of validation rules. */
 public final class Validation {
-  public static final String HASH_REGEX = "^[0-9a-fA-F]{16,64}$";
+  public static final String HASH_REGEX = "^[0-9a-fA-F]{8,64}$";
   public static final String REF_NAME_REGEX =
       "^[A-Za-z](((?![.][.])[A-Za-z0-9./_-])*[A-Za-z0-9._-])?$";
   public static final String REF_NAME_OR_HASH_REGEX =
-      "^(([0-9a-fA-F]{16,64})|([A-Za-z](((?![.][.])[A-Za-z0-9./_-])*[A-Za-z0-9._-])?))$";
+      "^(([0-9a-fA-F]{8,64})|([A-Za-z](((?![.][.])[A-Za-z0-9./_-])*[A-Za-z0-9._-])?))$";
 
   public static final Pattern HASH_PATTERN = Pattern.compile(HASH_REGEX);
   public static final Pattern REF_NAME_PATTERN = Pattern.compile(REF_NAME_REGEX);
   public static final Pattern REF_NAME_OR_HASH_PATTERN = Pattern.compile(REF_NAME_OR_HASH_REGEX);
 
-  private static final String HASH_RULE = "consist of the hex representation of 8-32 bytes";
+  private static final String HASH_RULE = "consist of the hex representation of 4-32 bytes";
   private static final String REF_RULE =
       "start with a letter, followed by letters, digits, a ./_- character, "
           + "not end with a slash, not contain ..";
@@ -60,7 +60,7 @@ public final class Validation {
    */
   public static boolean isValidReferenceName(String referenceName) {
     Objects.requireNonNull(referenceName, "referenceName must not be null");
-    Matcher matcher = Validation.REF_NAME_PATTERN.matcher(referenceName);
+    Matcher matcher = REF_NAME_PATTERN.matcher(referenceName);
     return matcher.matches();
   }
 
@@ -71,7 +71,7 @@ public final class Validation {
    */
   public static boolean isValidHash(String hash) {
     Objects.requireNonNull(hash, "hash must not be null");
-    Matcher matcher = Validation.HASH_PATTERN.matcher(hash);
+    Matcher matcher = HASH_PATTERN.matcher(hash);
     return matcher.matches();
   }
 
@@ -81,7 +81,7 @@ public final class Validation {
    */
   public static boolean isValidReferenceNameOrHash(String ref) {
     Objects.requireNonNull(ref, "reference (name or hash) must not be null");
-    Matcher matcher = Validation.REF_NAME_OR_HASH_PATTERN.matcher(ref);
+    Matcher matcher = REF_NAME_OR_HASH_PATTERN.matcher(ref);
     return matcher.matches();
   }
 
