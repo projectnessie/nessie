@@ -23,10 +23,8 @@ import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
-import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.rest.NessieBadRequestException;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -36,11 +34,7 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.LogResponse;
 
-public abstract class AbstractRestInvalidRefs extends AbstractRest {
-  protected AbstractRestInvalidRefs(Supplier<NessieApiV1> api) {
-    super(api);
-  }
-
+public abstract class AbstractRestInvalidRefs extends AbstractRestEntries {
   @Test
   public void testInvalidNamedRefs() {
     ContentKey key = ContentKey.of("x");

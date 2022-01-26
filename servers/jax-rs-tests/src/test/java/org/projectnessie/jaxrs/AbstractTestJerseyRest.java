@@ -18,7 +18,6 @@ package org.projectnessie.jaxrs;
 import java.net.URI;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.projectnessie.jaxrs.ext.NessieJaxRsExtension;
@@ -28,7 +27,7 @@ import org.projectnessie.versioned.persist.tests.extension.DatabaseAdapterExtens
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapter;
 
 @ExtendWith(DatabaseAdapterExtension.class)
-abstract class AbstractTestJerseyRest extends AbstractTestRest {
+abstract class AbstractTestJerseyRest extends AbstractRestSecurityContext {
 
   @NessieDbAdapter static DatabaseAdapter databaseAdapter;
 
@@ -47,12 +46,5 @@ abstract class AbstractTestJerseyRest extends AbstractTestRest {
   @BeforeEach
   public void setUp() {
     init(nessieUri);
-  }
-
-  @Nested
-  public class WithSecurityContext extends AbstractRestSecurityContext {
-    public WithSecurityContext() {
-      super(AbstractTestJerseyRest.this::getApi);
-    }
   }
 }

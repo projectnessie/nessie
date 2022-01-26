@@ -18,7 +18,6 @@ package org.projectnessie.jaxrs;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.ImmutableMap;
-import java.util.function.Supplier;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.model.Branch;
@@ -29,15 +28,7 @@ import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
 
 public abstract class AbstractRest {
-  private final Supplier<NessieApiV1> api;
-
-  public AbstractRest(Supplier<NessieApiV1> api) {
-    this.api = api;
-  }
-
-  protected NessieApiV1 getApi() {
-    return api.get();
-  }
+  protected abstract NessieApiV1 getApi();
 
   protected String createCommits(
       Reference branch, int numAuthors, int commitsPerAuthor, String currentHash)

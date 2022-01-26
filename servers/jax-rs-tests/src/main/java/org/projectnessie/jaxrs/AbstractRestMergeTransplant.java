@@ -18,9 +18,7 @@ package org.projectnessie.jaxrs;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.ImmutableList;
-import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
-import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
@@ -30,11 +28,7 @@ import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.Operation.Put;
 
-public abstract class AbstractRestMergeTransplant extends AbstractRest {
-  protected AbstractRestMergeTransplant(Supplier<NessieApiV1> api) {
-    super(api);
-  }
-
+public abstract class AbstractRestMergeTransplant extends AbstractRestInvalidWithHttp {
   @Test
   public void transplant() throws BaseNessieClientServerException {
     Branch base = createBranch("transplant-base");

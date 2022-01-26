@@ -17,9 +17,7 @@ package org.projectnessie.jaxrs;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
-import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.LogResponse;
@@ -27,9 +25,6 @@ import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
 
 public abstract class AbstractRestAssign extends AbstractRest {
-  protected AbstractRestAssign(Supplier<NessieApiV1> api) {
-    super(api);
-  }
 
   /** Assigning a branch/tag to a fresh main without any commits didn't work in 0.9.2 */
   @Test

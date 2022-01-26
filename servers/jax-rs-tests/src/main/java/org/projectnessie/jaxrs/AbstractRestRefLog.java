@@ -24,10 +24,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Supplier;
 import org.assertj.core.groups.Tuple;
 import org.junit.jupiter.api.Test;
-import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieRefLogNotFoundException;
 import org.projectnessie.model.Branch;
@@ -39,11 +37,7 @@ import org.projectnessie.model.RefLogResponse;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
 
-public abstract class AbstractRestRefLog extends AbstractRest {
-  protected AbstractRestRefLog(Supplier<NessieApiV1> api) {
-    super(api);
-  }
-
+public abstract class AbstractRestRefLog extends AbstractRestReferences {
   @Test
   public void testReflog() throws BaseNessieClientServerException {
     String tagName = "tag1_test_reflog";

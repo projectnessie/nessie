@@ -25,14 +25,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.api.params.FetchOption;
-import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.rest.NessieBadRequestException;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -53,11 +51,7 @@ import org.projectnessie.model.SqlView;
 import org.projectnessie.model.Tag;
 import org.projectnessie.model.Validation;
 
-public abstract class AbstractRestReferences extends AbstractRest {
-  protected AbstractRestReferences(Supplier<NessieApiV1> api) {
-    super(api);
-  }
-
+public abstract class AbstractRestReferences extends AbstractRestMisc {
   @Test
   public void createRecreateDefaultBranch() throws BaseNessieClientServerException {
     getApi().deleteBranch().branch(getApi().getDefaultBranch()).delete();
@@ -479,7 +473,7 @@ public abstract class AbstractRestReferences extends AbstractRest {
     verifyMetadataProperties((Tag) ref);
   }
 
-  protected void verifyMetadataProperties(
+  void verifyMetadataProperties(
       int expectedCommitsAhead,
       int expectedCommitsBehind,
       Branch branch,
@@ -500,7 +494,7 @@ public abstract class AbstractRestReferences extends AbstractRest {
     assertThat(referenceMetadata.getNumTotalCommits()).isEqualTo(expectedCommits);
   }
 
-  protected void verifyMetadataProperties(Tag tag) throws NessieNotFoundException {
+  void verifyMetadataProperties(Tag tag) throws NessieNotFoundException {
     List<LogEntry> commits =
         getApi().getCommitLog().refName(tag.getName()).maxRecords(1).get().getLogEntries();
     assertThat(commits).hasSize(1);

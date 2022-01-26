@@ -22,7 +22,6 @@ import java.util.Locale;
 import javax.annotation.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Nested;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpClientBuilder;
@@ -31,7 +30,7 @@ import org.projectnessie.model.Branch;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
 
-public abstract class AbstractTestRest {
+public abstract class AbstractTestRest extends AbstractRestRefLog {
 
   private NessieApiV1 api;
   private HttpClient httpClient;
@@ -85,84 +84,13 @@ public abstract class AbstractTestRest {
     api.close();
   }
 
+  @Override
   public NessieApiV1 getApi() {
     return api;
   }
 
-  @Nested
-  public class References extends AbstractRestReferences {
-    public References() {
-      super(AbstractTestRest.this::getApi);
-    }
-  }
-
-  @Nested
-  public class CommitLog extends AbstractRestCommitLog {
-    public CommitLog() {
-      super(AbstractTestRest.this::getApi);
-    }
-  }
-
-  @Nested
-  public class Entries extends AbstractRestEntries {
-    public Entries() {
-      super(AbstractTestRest.this::getApi);
-    }
-  }
-
-  @Nested
-  public class MergeTransplant extends AbstractRestMergeTransplant {
-    public MergeTransplant() {
-      super(AbstractTestRest.this::getApi);
-    }
-  }
-
-  @Nested
-  public class Assign extends AbstractRestAssign {
-    public Assign() {
-      super(AbstractTestRest.this::getApi);
-    }
-  }
-
-  @Nested
-  public class InvalidRefs extends AbstractRestInvalidRefs {
-    public InvalidRefs() {
-      super(AbstractTestRest.this::getApi);
-    }
-  }
-
-  @Nested
-  public class InvalidWithHttp extends AbstractRestInvalidWithHttp {
-    public InvalidWithHttp() {
-      super(AbstractTestRest.this::getApi, () -> AbstractTestRest.this.httpClient);
-    }
-  }
-
-  @Nested
-  public class Contents extends AbstractRestContents {
-    public Contents() {
-      super(AbstractTestRest.this::getApi);
-    }
-  }
-
-  @Nested
-  public class Misc extends AbstractRestMisc {
-    public Misc() {
-      super(AbstractTestRest.this::getApi);
-    }
-  }
-
-  @Nested
-  public class RefLog extends AbstractRestRefLog {
-    public RefLog() {
-      super(AbstractTestRest.this::getApi);
-    }
-  }
-
-  @Nested
-  public class Diff extends AbstractRestDiff {
-    public Diff() {
-      super(AbstractTestRest.this::getApi);
-    }
+  @Override
+  public HttpClient getHttpClient() {
+    return httpClient;
   }
 }

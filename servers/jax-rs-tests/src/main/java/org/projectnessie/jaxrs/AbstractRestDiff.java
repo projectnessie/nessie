@@ -20,11 +20,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
-import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
@@ -34,11 +32,7 @@ import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Reference;
 
-public abstract class AbstractRestDiff extends AbstractRest {
-  protected AbstractRestDiff(Supplier<NessieApiV1> api) {
-    super(api);
-  }
-
+public abstract class AbstractRestDiff extends AbstractRestContents {
   @Test
   public void testDiff() throws BaseNessieClientServerException {
     int commitsPerBranch = 10;

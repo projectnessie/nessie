@@ -19,9 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
-import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.rest.NessieBadRequestException;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieReferenceAlreadyExistsException;
@@ -32,10 +30,7 @@ import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Operation.Unchanged;
 
-public abstract class AbstractRestMisc extends AbstractRest {
-  protected AbstractRestMisc(Supplier<NessieApiV1> api) {
-    super(api);
-  }
+public abstract class AbstractRestMisc extends AbstractRestMergeTransplant {
 
   @Test
   public void testSupportedApiVersions() {

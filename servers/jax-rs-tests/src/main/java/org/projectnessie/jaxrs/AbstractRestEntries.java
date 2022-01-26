@@ -22,9 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;
-import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
-import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
@@ -37,11 +35,7 @@ import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.SqlView;
 import org.projectnessie.model.SqlView.Dialect;
 
-public abstract class AbstractRestEntries extends AbstractRest {
-  protected AbstractRestEntries(Supplier<NessieApiV1> api) {
-    super(api);
-  }
-
+public abstract class AbstractRestEntries extends AbstractRestDiff {
   @Test
   public void filterEntriesByType() throws BaseNessieClientServerException {
     Branch branch = createBranch("filterTypes");

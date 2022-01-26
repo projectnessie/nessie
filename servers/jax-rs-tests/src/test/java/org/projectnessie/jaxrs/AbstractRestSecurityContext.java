@@ -21,10 +21,8 @@ import static org.assertj.core.groups.Tuple.tuple;
 import java.security.Principal;
 import java.util.Arrays;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 import javax.ws.rs.core.SecurityContext;
 import org.junit.jupiter.api.Test;
-import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.jaxrs.ext.NessieSecurityContext;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
@@ -33,11 +31,7 @@ import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.Operation.Put;
 
-public abstract class AbstractRestSecurityContext extends AbstractRest {
-  protected AbstractRestSecurityContext(Supplier<NessieApiV1> api) {
-    super(api);
-  }
-
+public abstract class AbstractRestSecurityContext extends AbstractTestRest {
   static SecurityContext securityContext(String principalName) {
     Principal principal = () -> principalName;
 

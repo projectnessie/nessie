@@ -32,14 +32,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.OptionalInt;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.client.StreamingUtil;
-import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -53,10 +51,7 @@ import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Operation.Unchanged;
 import org.projectnessie.model.SqlView;
 
-public abstract class AbstractRestCommitLog extends AbstractRest {
-  protected AbstractRestCommitLog(Supplier<NessieApiV1> api) {
-    super(api);
-  }
+public abstract class AbstractRestCommitLog extends AbstractRestAssign {
 
   @Test
   public void filterCommitLogOperations() throws BaseNessieClientServerException {
@@ -559,7 +554,7 @@ public abstract class AbstractRestCommitLog extends AbstractRest {
     assertThat(logEntries.get(0).getOperations()).isNull();
   }
 
-  protected void verifyPaging(
+  void verifyPaging(
       String branchName,
       int commits,
       int pageSizeHint,

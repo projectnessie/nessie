@@ -21,14 +21,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
-import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
@@ -45,10 +43,7 @@ import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Operation.Unchanged;
 import org.projectnessie.model.SqlView.Dialect;
 
-public abstract class AbstractRestContents extends AbstractRest {
-  protected AbstractRestContents(Supplier<NessieApiV1> api) {
-    super(api);
-  }
+public abstract class AbstractRestContents extends AbstractRestCommitLog {
 
   public static final class ContentAndOperationType {
     final Type type;

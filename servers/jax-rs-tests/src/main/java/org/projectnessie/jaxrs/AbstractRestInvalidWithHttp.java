@@ -22,12 +22,10 @@ import static org.projectnessie.model.Validation.HASH_MESSAGE;
 import static org.projectnessie.model.Validation.REF_NAME_MESSAGE;
 import static org.projectnessie.model.Validation.REF_NAME_OR_HASH_MESSAGE;
 
-import java.util.function.Supplier;
 import org.assertj.core.api.Assumptions;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpClientException;
 import org.projectnessie.client.rest.NessieBadRequestException;
@@ -37,23 +35,13 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Tag;
 
-public abstract class AbstractRestInvalidWithHttp extends AbstractRest {
+public abstract class AbstractRestInvalidWithHttp extends AbstractRestInvalidRefs {
   public static final String COMMA_VALID_HASH_1 =
       ",1234567890123456789012345678901234567890123456789012345678901234";
   public static final String COMMA_VALID_HASH_2 = ",1234567890123456789012345678901234567890";
   public static final String COMMA_VALID_HASH_3 = ",1234567890123456";
 
-  protected final Supplier<HttpClient> httpClient;
-
-  protected AbstractRestInvalidWithHttp(
-      Supplier<NessieApiV1> api, Supplier<HttpClient> httpClient) {
-    super(api);
-    this.httpClient = httpClient;
-  }
-
-  protected HttpClient getHttpClient() {
-    return httpClient.get();
-  }
+  protected abstract HttpClient getHttpClient();
 
   @ParameterizedTest
   @CsvSource({
@@ -474,7 +462,7 @@ public abstract class AbstractRestInvalidWithHttp extends AbstractRest {
                         + "`org.projectnessie.model.Reference`: known type ids = ["));
   }
 
-  protected void unwrap(Executable exec) throws Throwable {
+  void unwrap(Executable exec) throws Throwable {
     try {
       exec.execute();
     } catch (Throwable targetException) {
