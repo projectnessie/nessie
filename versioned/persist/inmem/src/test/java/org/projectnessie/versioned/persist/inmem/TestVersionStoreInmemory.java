@@ -15,8 +15,8 @@
  */
 package org.projectnessie.versioned.persist.inmem;
 
-import org.projectnessie.versioned.persist.tests.AbstractVersionStoreTest;
+import org.projectnessie.versioned.persist.tests.AbstractDatabaseAdapterVersionStoreTest;
 import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
 @NessieExternalDatabase(InmemoryTestConnectionProviderSource.class)
-class TestVersionStoreInmemory extends AbstractVersionStoreTest {}
+class TestVersionStoreInmemory extends AbstractDatabaseAdapterVersionStoreTest {}

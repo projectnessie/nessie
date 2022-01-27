@@ -16,11 +16,11 @@
 package org.projectnessie.versioned.persist.tx.postgres;
 
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
-import org.projectnessie.versioned.persist.tests.AbstractVersionStoreTest;
+import org.projectnessie.versioned.persist.tests.AbstractDatabaseAdapterVersionStoreTest;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterName;
 import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
 @EnabledIfSystemProperty(named = "it.nessie.dbs", matches = ".*postgres.*")
 @NessieDbAdapterName(PostgresDatabaseAdapterFactory.NAME)
 @NessieExternalDatabase(PostgresTestConnectionProviderSource.class)
-class ITVersionStorePostgres extends AbstractVersionStoreTest {}
+class ITVersionStorePostgres extends AbstractDatabaseAdapterVersionStoreTest {}

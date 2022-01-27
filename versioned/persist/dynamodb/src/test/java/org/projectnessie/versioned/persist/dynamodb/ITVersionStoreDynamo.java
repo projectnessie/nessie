@@ -15,8 +15,8 @@
  */
 package org.projectnessie.versioned.persist.dynamodb;
 
-import org.projectnessie.versioned.persist.tests.AbstractVersionStoreTest;
+import org.projectnessie.versioned.persist.tests.AbstractDatabaseAdapterVersionStoreTest;
 import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
 @NessieExternalDatabase(LocalDynamoTestConnectionProviderSource.class)
-class ITVersionStoreDynamo extends AbstractVersionStoreTest {}
+class ITVersionStoreDynamo extends AbstractDatabaseAdapterVersionStoreTest {}
