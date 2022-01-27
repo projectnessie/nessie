@@ -18,7 +18,6 @@ package org.projectnessie.client.http;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -67,8 +66,7 @@ class UriBuilder {
   }
 
   UriBuilder resolveTemplate(String name, String value) {
-    templateValues.put(
-        String.format("{%s}", HttpUtils.checkNonNullTrim(name)), HttpUtils.checkNonNullTrim(value));
+    templateValues.put(HttpUtils.checkNonNullTrim(name), HttpUtils.checkNonNullTrim(value));
     return this;
   }
 
@@ -81,7 +79,6 @@ class UriBuilder {
     }
   }
 
-  @SuppressWarnings("ResultOfMethodCallIgnored")
   URI build() throws HttpClientException {
     StringBuilder uriBuilder = new StringBuilder();
     uriBuilder.append(baseUri);
@@ -92,32 +89,35 @@ class UriBuilder {
 
     if (uri.length() > 0) {
       Map<String, String> templates = new HashMap<>(templateValues);
-      // important note: this assumes an entire path component is the template. So /a/{b}/c will
-      // work but /a/b{b}/c will not.
-      Arrays.stream(uri.toString().split("/"))
-          .map(
-              p -> {
-                if (templates.containsKey(p)) {
-                  return encode(templates.remove(p));
-                } else if (p.contains("...")) {
-                  String[] diffs = p.split("\\.\\.\\.");
-                  if (diffs.length == 2) {
-                    if (templates.containsKey(diffs[0]) && templates.containsKey(diffs[1])) {
-                      String from = encode(templates.remove(diffs[0]));
-                      String to = encode(templates.remove(diffs[1]));
-                      return String.format("%s...%s", from, to);
-                    }
-                  }
-                }
-                return encode(p);
-              })
-          .forEach(
-              x -> {
-                if ('/' != uriBuilder.charAt(uriBuilder.length() - 1)) {
-                  uriBuilder.append('/');
-                }
-                uriBuilder.append(x);
-              });
+
+      StringBuilder pathElement = new StringBuilder();
+      StringBuilder name = new StringBuilder();
+      int l = uri.length();
+      for (int i = 0; i < l; i++) {
+        char c = uri.charAt(i);
+        if (c == '/') {
+          uriBuilder.append(encode(pathElement.toString()));
+          pathElement.setLength(0);
+          uriBuilder.append('/');
+        } else if (c == '{') {
+          for (i++; i < l; i++) {
+            c = uri.charAt(i);
+            if (c == '}') {
+              break;
+            }
+            name.append(c);
+          }
+          String value = templates.remove(name.toString());
+          if (value != null) {
+            pathElement.append(value);
+          }
+          name.setLength(0);
+        } else {
+          pathElement.append(c);
+        }
+      }
+
+      uriBuilder.append(encode(pathElement.toString()));
 
       checkEmpty(templates, uri);
 
