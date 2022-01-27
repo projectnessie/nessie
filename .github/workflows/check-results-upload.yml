@@ -56,29 +56,29 @@ jobs:
         echo ::set-output name=result::${COMMIT_STATUS}
 
     - name: Set up JDK 11
-      if: steps.check_status.output.result == 'OK'
+      if: steps.check_status.outputs.result == 'OK'
       uses: actions/setup-java@v1
       with:
         java-version: 11
 
     - name: Create simlog-dir
-      if: steps.check_status.output.result == 'OK'
+      if: steps.check_status.outputs.result == 'OK'
       run: mkdir -p ${SIMULATION_LOG_DIR}
 
     - name: Download gatling-report jar
-      if: steps.check_status.output.result == 'OK'
+      if: steps.check_status.outputs.result == 'OK'
       run: |
         # Jar built from https://github.com/snazy/gatling-report/tree/gatling-3.5-rebased @ b3806d1f0cb6e9f6806fa7ade1fd57d7e383387d
         curl -s -o ${GATLING_REPORT_JAR} ${PUBLIC_BASE}/lib/${GATLING_REPORT_JAR}
 
     - name: Download Gatling simulation-logs from PR CI run
-      if: steps.check_status.output.result == 'OK' && github.event.workflow_run.event == 'pull_request'
+      if: steps.check_status.outputs.result == 'OK' && github.event.workflow_run.event == 'pull_request'
       run: |
         cd ${SIMULATION_LOG_DIR}
         gh run download ${REF_RUN_ID} --repo projectnessie/nessie -n gatling-logs
 
     - name: Download Gatling simulation-logs from the last 20 main CI runs
-      if: steps.check_status.output.result == 'OK' && github.event.workflow_run.event == 'push'
+      if: steps.check_status.outputs.result == 'OK' && github.event.workflow_run.event == 'push'
       # TODO this should download the simulation-log for the "current" SHA and the simulation-logs for the preceding commits - not just blindly the most recent N commits
       run: |
         cd ${SIMULATION_LOG_DIR}
@@ -87,7 +87,7 @@ jobs:
         done
 
     - name: Generate Gatling reports
-      if: steps.check_status.output.result == 'OK'
+      if: steps.check_status.outputs.result == 'OK'
       # The forked https://github.com/snazy/gatling-report has support to generate "consolidated" reports.
       # It can read logs from different simulations and group those by name and each group will be reported
       # individually. The goal of a combined report (HTML + YAML) is to generate a single HTML/YAML file.
@@ -101,19 +101,19 @@ jobs:
         java -jar ${GATLING_REPORT_JAR} ${SIMULATION_LOG_DIR}/*/simulation.log -o ${REPORT_DIR} -c -y -f -n report.yaml
 
     - name: GH Auth
-      if: steps.check_status.output.result == 'OK'
+      if: steps.check_status.outputs.result == 'OK'
       run: echo ${{ secrets.CI_REPORTS_TOKEN }} | gh auth login --with-token
 
     - name: Upload reports
-      if: steps.check_status.output.result == 'OK'
+      if: steps.check_status.outputs.result == 'OK'
       run: |
         gh api -X PUT repos/${CI_REPORTS_REPO}/contents/${WEB_DIR}/report.html -f message="${EVENT} ${BRANCH} ${SHA} Gatling report html" -f content=$(base64 -w0 ${REPORT_DIR}/report.html)
         gh api -X PUT repos/${CI_REPORTS_REPO}/contents/${WEB_DIR}/report.yaml -f message="${EVENT} ${BRANCH} ${SHA} Gatling report yaml" -f content=$(base64 -w0 ${REPORT_DIR}/report.yaml)
 
     - name: GH Auth
-      if: steps.check_status.output.result == 'OK'
+      if: steps.check_status.outputs.result == 'OK'
       run: echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token
 
     - name: Update commit-status
-      if: steps.check_status.output.result == 'OK'
+      if: steps.check_status.outputs.result == 'OK'
       run: gh api -X POST repos/projectnessie/nessie/statuses/${SHA} -f target_url=${PUBLIC_BASE}/${WEB_DIR}/report.html -f state=success -f context='Gatling Report'
