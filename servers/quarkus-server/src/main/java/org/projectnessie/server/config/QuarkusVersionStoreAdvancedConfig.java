@@ -17,7 +17,6 @@ package org.projectnessie.server.config;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.quarkus.runtime.annotations.StaticInitSafe;
-import io.quarkus.runtime.configuration.TrimmedStringConverter;
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithConverter;
 import io.smallrye.config.WithDefault;
@@ -37,15 +36,15 @@ import org.projectnessie.versioned.persist.tx.TxDatabaseAdapterConfig;
  */
 @StaticInitSafe
 @ConfigMapping(prefix = "nessie.version.store.advanced")
-@RegisterForReflection(targets = TrimmedStringConverter.class)
+@RegisterForReflection(targets = RepoIdConverter.class)
 public interface QuarkusVersionStoreAdvancedConfig
     extends NonTransactionalDatabaseAdapterConfig, TxDatabaseAdapterConfig {
 
   @WithName("repository-id")
   @WithDefault(DEFAULT_REPOSITORY_ID)
-  // Use TrimmedStringConverter for the "key-prefix" property because it can be an empty string,
+  // Use RepoIdConverter for the "key-prefix" property because it can be an empty string,
   // but the default converter will turn empty strings into `null`.
-  @WithConverter(TrimmedStringConverter.class)
+  @WithConverter(RepoIdConverter.class)
   @Override
   String getRepositoryId();
 
