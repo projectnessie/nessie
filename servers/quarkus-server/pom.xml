@@ -279,6 +279,8 @@
               <filesets>
                 <fileset>
                   <directory>${project.build.directory}/rocksdb-test</directory>
+                  <directory>${project.build.directory}/rocksdb-it</directory>
+                  <directory>${project.build.directory}/rocksdb-native</directory>
                 </fileset>
               </filesets>
             </configuration>
@@ -294,6 +296,8 @@
               <filesets>
                 <fileset>
                   <directory>${project.build.directory}/rocksdb-test</directory>
+                  <directory>${project.build.directory}/rocksdb-it</directory>
+                  <directory>${project.build.directory}/rocksdb-native</directory>
                 </fileset>
               </filesets>
             </configuration>
@@ -328,7 +332,7 @@
                 <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                 <quarkus.log.level>${test.log.level}</quarkus.log.level>
                 <quarkus.log.console.level>${test.log.level}</quarkus.log.console.level>
-                <nessie.version.store.rocks.db-path>${project.build.directory}/rocksdb-test</nessie.version.store.rocks.db-path>
+                <nessie.version.store.rocks.db-path>${project.build.directory}/rocksdb-it</nessie.version.store.rocks.db-path>
               </systemPropertyVariables>
               <excludes>
                 <exclude>**/ITNative*</exclude>
@@ -393,7 +397,7 @@
                     <QUARKUS_SMALLRYE_JWT_ENABLED>true</QUARKUS_SMALLRYE_JWT_ENABLED>
                     <HTTP_ACCESS_LOG_LEVEL>${test.log.level}</HTTP_ACCESS_LOG_LEVEL>
                     <NESSIE_VERSION_STORE_TYPE>ROCKS</NESSIE_VERSION_STORE_TYPE>
-                    <NESSIE_VERSION_STORE_ROCKS_DB_PATH>${project.build.directory}/rocksdb-test</NESSIE_VERSION_STORE_ROCKS_DB_PATH>
+                    <NESSIE_VERSION_STORE_ROCKS_DB_PATH>${project.build.directory}/rocksdb-native</NESSIE_VERSION_STORE_ROCKS_DB_PATH>
                   </environmentVariables>
                   <systemPropertyVariables>
                     <native.image.path>${project.build.directory}/${project.build.finalName}-runner</native.image.path>
