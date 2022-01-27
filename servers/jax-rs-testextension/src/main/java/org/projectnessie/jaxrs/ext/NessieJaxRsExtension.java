@@ -37,6 +37,7 @@ import org.junit.jupiter.api.extension.ExtensionContext.Store.CloseableResource;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
+import org.projectnessie.services.authz.AccessChecker;
 import org.projectnessie.services.authz.AccessCheckerExtension;
 import org.projectnessie.services.config.ServerConfigExtension;
 import org.projectnessie.services.impl.ConfigApiImpl;
@@ -94,13 +95,13 @@ public class NessieJaxRsExtension
   @Override
   public void afterEach(ExtensionContext extensionContext) throws Exception {
     EnvHolder env = extensionContext.getStore(NAMESPACE).get(EnvHolder.class, EnvHolder.class);
-    env.resetSecurityContext();
+    env.reset();
   }
 
   @Override
   public void beforeEach(ExtensionContext extensionContext) throws Exception {
     EnvHolder env = extensionContext.getStore(NAMESPACE).get(EnvHolder.class, EnvHolder.class);
-    env.resetSecurityContext();
+    env.reset();
   }
 
   @Override
@@ -108,7 +109,8 @@ public class NessieJaxRsExtension
       ParameterContext parameterContext, ExtensionContext extensionContext)
       throws ParameterResolutionException {
     return parameterContext.isAnnotated(NessieUri.class)
-        || parameterContext.isAnnotated(NessieSecurityContext.class);
+        || parameterContext.isAnnotated(NessieSecurityContext.class)
+        || parameterContext.isAnnotated(NessieAccessChecker.class);
   }
 
   @Override
@@ -129,6 +131,10 @@ public class NessieJaxRsExtension
       return (Consumer<SecurityContext>) env::setSecurityContext;
     }
 
+    if (parameterContext.isAnnotated(NessieAccessChecker.class)) {
+      return (Consumer<AccessChecker>) env::setAccessChecker;
+    }
+
     throw new ParameterResolutionException(
         "Unsupported annotation on parameter "
             + parameterContext.getParameter()
@@ -140,13 +146,19 @@ public class NessieJaxRsExtension
     private final Weld weld;
     private final JerseyTest jerseyTest;
     private SecurityContext securityContext;
+    private AccessChecker accessChecker;
 
-    void resetSecurityContext() {
+    void reset() {
       this.securityContext = null;
+      this.accessChecker = null;
     }
 
     void setSecurityContext(SecurityContext securityContext) {
       this.securityContext = securityContext;
+    }
+
+    void setAccessChecker(AccessChecker accessChecker) {
+      this.accessChecker = accessChecker;
     }
 
     public EnvHolder(Supplier<DatabaseAdapter> databaseAdapterSupplier) throws Exception {
@@ -163,7 +175,7 @@ public class NessieJaxRsExtension
                 databaseAdapter.initializeRepo(SERVER_CONFIG.getDefaultBranch());
                 return databaseAdapter;
               }));
-      weld.addExtension(new AccessCheckerExtension());
+      weld.addExtension(new AccessCheckerExtension().setAccessCheckerSupplier(() -> accessChecker));
       weld.initialize();
 
       jerseyTest =
