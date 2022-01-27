@@ -20,7 +20,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.projectnessie.model.Validation.HASH_MESSAGE;
 import static org.projectnessie.model.Validation.REF_NAME_MESSAGE;
-import static org.projectnessie.model.Validation.REF_NAME_OR_HASH_MESSAGE;
 
 import org.assertj.core.api.Assumptions;
 import org.junit.jupiter.api.function.Executable;
@@ -106,7 +105,7 @@ public abstract class AbstractRestInvalidWithHttp extends AbstractRestInvalidRef
             assertThatThrownBy(() -> getApi().getReference().refName(invalidBranchName).get())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(REF_NAME_OR_HASH_MESSAGE),
+                .hasMessageContaining(REF_NAME_MESSAGE),
         () ->
             assertThatThrownBy(
                     () ->
