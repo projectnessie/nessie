@@ -51,6 +51,7 @@ import org.projectnessie.model.SqlView;
 import org.projectnessie.model.Tag;
 import org.projectnessie.model.Validation;
 
+/** See {@link AbstractTestRest} for details about and reason for the inheritance model. */
 public abstract class AbstractRestReferences extends AbstractRestMisc {
   @Test
   public void createRecreateDefaultBranch() throws BaseNessieClientServerException {

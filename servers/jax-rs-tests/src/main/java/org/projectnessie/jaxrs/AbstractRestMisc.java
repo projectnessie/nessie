@@ -30,6 +30,7 @@ import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Operation.Unchanged;
 
+/** See {@link AbstractTestRest} for details about and reason for the inheritance model. */
 public abstract class AbstractRestMisc extends AbstractRestMergeTransplant {
 
   @Test

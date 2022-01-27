@@ -26,6 +26,7 @@ import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.tests.extension.DatabaseAdapterExtension;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapter;
 
+/** See {@link AbstractTestRest} for details about and reason for the inheritance model. */
 @ExtendWith(DatabaseAdapterExtension.class)
 abstract class AbstractTestJerseyRest extends AbstractRestSecurityContext {
 

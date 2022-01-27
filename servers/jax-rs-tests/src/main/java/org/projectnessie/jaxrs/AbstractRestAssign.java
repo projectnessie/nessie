@@ -24,6 +24,7 @@ import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
 
+/** See {@link AbstractTestRest} for details about and reason for the inheritance model. */
 public abstract class AbstractRestAssign extends AbstractRest {
 
   /** Assigning a branch/tag to a fresh main without any commits didn't work in 0.9.2 */

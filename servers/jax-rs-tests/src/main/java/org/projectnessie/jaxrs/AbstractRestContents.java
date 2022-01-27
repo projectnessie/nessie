@@ -43,6 +43,7 @@ import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Operation.Unchanged;
 import org.projectnessie.model.SqlView.Dialect;
 
+/** See {@link AbstractTestRest} for details about and reason for the inheritance model. */
 public abstract class AbstractRestContents extends AbstractRestCommitLog {
 
   public static final class ContentAndOperationType {

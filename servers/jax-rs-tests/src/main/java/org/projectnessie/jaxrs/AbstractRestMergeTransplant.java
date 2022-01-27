@@ -28,6 +28,7 @@ import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.Operation.Put;
 
+/** See {@link AbstractTestRest} for details about and reason for the inheritance model. */
 public abstract class AbstractRestMergeTransplant extends AbstractRestInvalidWithHttp {
   @Test
   public void transplant() throws BaseNessieClientServerException {

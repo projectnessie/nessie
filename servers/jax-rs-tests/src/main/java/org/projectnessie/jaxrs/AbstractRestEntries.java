@@ -35,6 +35,7 @@ import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.SqlView;
 import org.projectnessie.model.SqlView.Dialect;
 
+/** See {@link AbstractTestRest} for details about and reason for the inheritance model. */
 public abstract class AbstractRestEntries extends AbstractRestDiff {
   @Test
   public void filterEntriesByType() throws BaseNessieClientServerException {

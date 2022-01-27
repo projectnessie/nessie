@@ -37,6 +37,7 @@ import org.projectnessie.model.RefLogResponse;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
 
+/** See {@link AbstractTestRest} for details about and reason for the inheritance model. */
 public abstract class AbstractRestRefLog extends AbstractRestReferences {
   @Test
   public void testReflog() throws BaseNessieClientServerException {

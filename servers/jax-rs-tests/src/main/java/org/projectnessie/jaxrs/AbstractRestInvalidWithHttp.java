@@ -35,6 +35,7 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Tag;
 
+/** See {@link AbstractTestRest} for details about and reason for the inheritance model. */
 public abstract class AbstractRestInvalidWithHttp extends AbstractRestInvalidRefs {
   public static final String COMMA_VALID_HASH_1 =
       ",1234567890123456789012345678901234567890123456789012345678901234";

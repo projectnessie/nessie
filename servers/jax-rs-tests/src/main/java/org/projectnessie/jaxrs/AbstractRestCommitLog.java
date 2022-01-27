@@ -51,6 +51,7 @@ import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Operation.Unchanged;
 import org.projectnessie.model.SqlView;
 
+/** See {@link AbstractTestRest} for details about and reason for the inheritance model. */
 public abstract class AbstractRestCommitLog extends AbstractRestAssign {
 
   @Test

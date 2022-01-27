@@ -34,6 +34,7 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.LogResponse;
 
+/** See {@link AbstractTestRest} for details about and reason for the inheritance model. */
 public abstract class AbstractRestInvalidRefs extends AbstractRestEntries {
   @Test
   public void testInvalidNamedRefs() {

@@ -27,6 +27,7 @@ import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
 
+/** See {@link AbstractTestRest} for details about and reason for the inheritance model. */
 public abstract class AbstractRest {
   protected abstract NessieApiV1 getApi();
 

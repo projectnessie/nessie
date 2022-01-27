@@ -32,6 +32,7 @@ import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Reference;
 
+/** See {@link AbstractTestRest} for details about and reason for the inheritance model. */
 public abstract class AbstractRestDiff extends AbstractRestContents {
   @Test
   public void testDiff() throws BaseNessieClientServerException {
