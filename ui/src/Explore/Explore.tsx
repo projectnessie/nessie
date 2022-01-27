@@ -46,21 +46,18 @@ const loadBranchesAndTags = (): Promise<Reference[] | void> => {
     .catch((t) => log.error("AllReferences", t as undefined));
 };
 
-const btCompare = (a: Branch, b: Branch): number => {
-  if (!a.name) {
-    return !b.name ? 0 : 1;
-  } else if (!b.name) {
-    return -1;
+const refName = (a: Reference): string => {
+  const t = a.type;
+  switch (t) {
+    case "BRANCH":
+      return a.name;
+    case "TAG":
+      return a.name;
   }
+};
 
-  if (a.name < b.name) {
-    return -1;
-  }
-  if (a.name > b.name) {
-    return 1;
-  }
-
-  return 0;
+const btCompare = (a: Reference, b: Reference): number => {
+  return refName(a).localeCompare(refName(b));
 };
 
 interface Slug {
