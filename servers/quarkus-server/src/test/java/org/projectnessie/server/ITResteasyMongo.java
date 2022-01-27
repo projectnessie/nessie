@@ -18,8 +18,8 @@ package org.projectnessie.server;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import org.projectnessie.jaxrs.AbstractResteasyTest;
-import org.projectnessie.server.profiles.QuarkusTestProfileDynamo;
+import org.projectnessie.server.profiles.QuarkusTestProfileMongo;
 
 @QuarkusTest
-@TestProfile(QuarkusTestProfileDynamo.class)
-public class TestResteasyDynamo extends AbstractResteasyTest {}
+@TestProfile(QuarkusTestProfileMongo.class)
+public class ITResteasyMongo extends AbstractResteasyTest {}

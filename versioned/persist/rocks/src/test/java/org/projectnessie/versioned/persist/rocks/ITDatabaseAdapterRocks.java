@@ -13,13 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.jaxrs;
+package org.projectnessie.versioned.persist.rocks;
 
-import org.projectnessie.versioned.persist.dynamodb.DynamoDatabaseAdapterFactory;
-import org.projectnessie.versioned.persist.dynamodb.LocalDynamoTestConnectionProviderSource;
-import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterName;
+import org.projectnessie.versioned.persist.tests.AbstractDatabaseAdapterTest;
 import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
-@NessieDbAdapterName(DynamoDatabaseAdapterFactory.NAME)
-@NessieExternalDatabase(LocalDynamoTestConnectionProviderSource.class)
-class TestJerseyRestDynamo extends AbstractTestJerseyRest {}
+@NessieExternalDatabase(RocksTestConnectionProviderSource.class)
+class ITDatabaseAdapterRocks extends AbstractDatabaseAdapterTest {}

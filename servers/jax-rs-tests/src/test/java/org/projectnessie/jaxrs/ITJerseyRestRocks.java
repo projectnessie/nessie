@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.server;
+package org.projectnessie.jaxrs;
 
-import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.TestProfile;
-import org.projectnessie.jaxrs.AbstractResteasyTest;
-import org.projectnessie.server.profiles.QuarkusTestProfileRocks;
+import org.projectnessie.versioned.persist.rocks.RocksDatabaseAdapterFactory;
+import org.projectnessie.versioned.persist.rocks.RocksTestConnectionProviderSource;
+import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterName;
+import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
-@QuarkusTest
-@TestProfile(QuarkusTestProfileRocks.class)
-public class TestResteasyRocks extends AbstractResteasyTest {}
+@NessieDbAdapterName(RocksDatabaseAdapterFactory.NAME)
+@NessieExternalDatabase(RocksTestConnectionProviderSource.class)
+class ITJerseyRestRocks extends AbstractTestJerseyRest {}
