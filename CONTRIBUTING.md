@@ -31,6 +31,15 @@ on the new feature or improvement.
 
 ## Code changes
 
+### Maven tips
+
+A `./mvnw clean install` runs basically "everything" except release/deployment stuff. This is often
+not necessary. Some tips:
+
+* `./mvnw -Dquickly` Just compiles code, no tests, does not build code under `ui/` and `perftest/`.
+* `./mvnw -DskipTests` Compiles everything, runs no tests.
+* `./mvnw -DskipITs` Compiles everything, runs unit tests, but no integration tests.
+
 ### Development process
 
 The development process doesn't contain many surprises. As most projects on github anyone can contribute by

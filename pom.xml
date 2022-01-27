@@ -1437,5 +1437,17 @@ limitations under the License.
         <defaultGoal>clean install</defaultGoal>
       </build>
     </profile>
+    <profile>
+      <id>skipOnSkipTests</id>
+      <activation>
+        <property>
+          <name>skipTests</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <properties>
+        <skipITs>true</skipITs>
+      </properties>
+    </profile>
   </profiles>
 </project>

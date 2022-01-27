@@ -167,7 +167,7 @@
         <artifactId>nessie-apprunner-maven-plugin</artifactId>
         <version>${project.version}</version>
         <configuration>
-          <skip>${skipTests}</skip>
+          <skip>${skipITs}</skip>
           <appArtifactId>org.projectnessie:nessie-quarkus:${project.version}</appArtifactId>
           <systemProperties>
             <!-- disable devservices to stop Quarkus from starting Mongo via testcontainers -->
