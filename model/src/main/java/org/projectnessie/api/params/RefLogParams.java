@@ -52,16 +52,31 @@ public class RefLogParams extends AbstractParams {
   @QueryParam("endHash")
   private String endHash;
 
+  @Nullable
+  @Parameter(
+      description =
+          "A Common Expression Language (CEL) expression. An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n\n"
+              + "Usable variables within the expression are:\n\n"
+              + "- 'reflog' with fields 'refLogId' (string), 'refName' (string), 'commitHash' (string), 'parentRefLogId' "
+              + "(string), ',operation' (string), 'operationTime' (long)\n\n"
+              + "Hint: when filtering entries, you can determine whether entries are \"missing\" (filtered) by "
+              + "checking whether 'ReflogResponseEntry.parentRefLogId' is different from the hash of the previous "
+              + "reflog in the log response.")
+  @QueryParam("filter")
+  private String filter;
+
   public RefLogParams() {}
 
-  private RefLogParams(String startHash, String endHash, Integer maxRecords, String pageToken) {
+  private RefLogParams(
+      String startHash, String endHash, Integer maxRecords, String pageToken, String filter) {
     super(maxRecords, pageToken);
     this.startHash = startHash;
     this.endHash = endHash;
+    this.filter = filter;
   }
 
   private RefLogParams(Builder builder) {
-    this(builder.startHash, builder.endHash, builder.maxRecords, builder.pageToken);
+    this(builder.startHash, builder.endHash, builder.maxRecords, builder.pageToken, builder.filter);
   }
 
   @Nullable
@@ -72,6 +87,11 @@ public class RefLogParams extends AbstractParams {
   @Nullable
   public String endHash() {
     return endHash;
+  }
+
+  @Nullable
+  public String filter() {
+    return filter;
   }
 
   public static RefLogParams.Builder builder() {
@@ -87,6 +107,7 @@ public class RefLogParams extends AbstractParams {
     return new StringJoiner(", ", RefLogParams.class.getSimpleName() + "[", "]")
         .add("startHash='" + startHash + "'")
         .add("endHash='" + endHash + "'")
+        .add("filter='" + filter + "'")
         .add("maxRecords=" + maxRecords())
         .add("pageToken='" + pageToken() + "'")
         .toString();
@@ -103,19 +124,21 @@ public class RefLogParams extends AbstractParams {
     RefLogParams that = (RefLogParams) o;
     return Objects.equals(startHash, that.startHash)
         && Objects.equals(endHash, that.endHash)
+        && Objects.equals(filter, that.filter)
         && Objects.equals(maxRecords(), that.maxRecords())
         && Objects.equals(pageToken(), that.pageToken());
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(startHash, endHash, maxRecords(), pageToken());
+    return Objects.hash(startHash, endHash, filter, maxRecords(), pageToken());
   }
 
   public static class Builder extends AbstractParams.Builder<Builder> {
 
     private String startHash;
     private String endHash;
+    private String filter;
 
     private Builder() {}
 
@@ -129,9 +152,15 @@ public class RefLogParams extends AbstractParams {
       return this;
     }
 
+    public Builder filter(String filter) {
+      this.filter = filter;
+      return this;
+    }
+
     public Builder from(RefLogParams params) {
       return startHash(params.startHash)
           .endHash(params.endHash)
+          .filter(params.filter)
           .maxRecords(params.maxRecords())
           .pageToken(params.pageToken());
     }

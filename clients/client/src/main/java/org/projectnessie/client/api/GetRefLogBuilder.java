@@ -26,7 +26,8 @@ import org.projectnessie.model.Validation;
  *
  * @since {@link NessieApiV1}
  */
-public interface GetRefLogBuilder extends PagingBuilder<GetRefLogBuilder> {
+public interface GetRefLogBuilder
+    extends PagingBuilder<GetRefLogBuilder>, QueryBuilder<GetRefLogBuilder> {
 
   /**
    * Hash of the reflog (inclusive) to start from (in chronological sense), the 'far' end of the

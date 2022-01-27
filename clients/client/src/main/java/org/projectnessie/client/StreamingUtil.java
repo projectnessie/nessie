@@ -27,6 +27,7 @@ import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.LogResponse.LogEntry;
+import org.projectnessie.model.RefLogResponse;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferencesResponse;
 
@@ -112,6 +113,34 @@ public final class StreamingUtil {
                     .untilHash(untilHash)
                     .get())
         .generateStream(ref, maxRecords);
+  }
+
+  /**
+   * Default implementation to return a stream of reflog entries, functionally equivalent to calling
+   * {@link NessieApiV1#getRefLog()} with manual paging.
+   *
+   * <p>The {@link Stream} returned by {@code getReflogStream(OptionalInt.empty())}, if not limited,
+   * returns all reflog entries.
+   *
+   * @param api The {@link NessieApiV1} to use
+   * @return stream of {@link RefLogResponse.RefLogResponseEntry} objects
+   */
+  public static Stream<RefLogResponse.RefLogResponseEntry> getReflogStream(
+      @NotNull NessieApiV1 api,
+      @Nullable String fromHash,
+      @Nullable String untilHash,
+      @Nullable String filter,
+      OptionalInt maxRecords)
+      throws NessieNotFoundException {
+    return new ResultStreamPaginator<>(
+            RefLogResponse::getLogEntries,
+            (reference, pageSize, token) ->
+                builderWithPaging(api.getRefLog(), pageSize, token)
+                    .fromHash(fromHash)
+                    .untilHash(untilHash)
+                    .filter(filter)
+                    .get())
+        .generateStream(null, maxRecords);
   }
 
   private static <B extends PagingBuilder<B>> B builderWithPaging(
