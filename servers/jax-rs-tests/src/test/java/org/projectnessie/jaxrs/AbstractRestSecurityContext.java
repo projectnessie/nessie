@@ -116,6 +116,8 @@ public abstract class AbstractRestSecurityContext extends AbstractTestRest {
 
     getApi().mergeRefIntoBranch().fromRef(withSecurityContext).branch(merge).merge();
 
+    merge = (Branch) getApi().getReference().refName(merge.getName()).get();
+
     assertThat(getApi().getCommitLog().reference(merge).maxRecords(2).get().getLogEntries())
         .extracting(LogEntry::getCommitMeta)
         .extracting(CommitMeta::getCommitter, CommitMeta::getAuthor, CommitMeta::getMessage)
@@ -132,6 +134,8 @@ public abstract class AbstractRestSecurityContext extends AbstractTestRest {
             Arrays.asList(noSecurityContext.getHash(), withSecurityContext.getHash()))
         .branch(transplant)
         .transplant();
+
+    transplant = (Branch) getApi().getReference().refName(transplant.getName()).get();
 
     assertThat(getApi().getCommitLog().reference(transplant).maxRecords(2).get().getLogEntries())
         .extracting(LogEntry::getCommitMeta)
