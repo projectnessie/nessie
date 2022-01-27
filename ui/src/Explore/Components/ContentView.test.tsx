@@ -20,7 +20,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import ContentView from "./ContentView";
 // tslint:disable-next-line:no-implicit-dependencies
 import nock from "nock";
-import { Content, Dialect } from "../../utils";
+import { Content } from "../../utils";
 
 it("Render Iceberg Content", async () => {
   const scope = nock("http://localhost/api/v1")
@@ -30,7 +30,7 @@ it("Render Iceberg Content", async () => {
     .reply(200, { contentList });
   const { getByAltText, asFragment } = render(
     <BrowserRouter>
-      <ContentView tableContent={iceBergContent} />
+      <ContentView tableContent={icebergTableContent} />
     </BrowserRouter>
   );
   expect(asFragment()).toMatchSnapshot();
@@ -53,7 +53,7 @@ it("Render DeltaLake Content", async () => {
     .reply(200, { contentList });
   const { getByAltText, asFragment } = render(
     <BrowserRouter>
-      <ContentView tableContent={detlaLakeContent} />
+      <ContentView tableContent={deltaLakeContent} />
     </BrowserRouter>
   );
   expect(asFragment()).toMatchSnapshot();
@@ -68,7 +68,7 @@ it("Render DeltaLake Content", async () => {
   );
 });
 
-it("Render SQL View Content", async () => {
+it("Render Iceberg View Content", async () => {
   const scope = nock("http://localhost/api/v1")
     .get(
       "/contents?hashOnRef=55cc2e40cbe2eed190f3987c53ffc34643d5cfa5ef878392d88b2eb4137e92e4&ref=dev"
@@ -76,19 +76,19 @@ it("Render SQL View Content", async () => {
     .reply(200, { contentList });
   const { getByText, asFragment } = render(
     <BrowserRouter>
-      <ContentView tableContent={sqlViewContent} />
+      <ContentView tableContent={icebergViewContent} />
     </BrowserRouter>
   );
   expect(asFragment()).toMatchSnapshot();
-  await waitFor(() => getByText("VIEW"));
+  await waitFor(() => getByText("ICEBERG_VIEW"));
   setTimeout(() => {
     scope.done();
   }, 5000);
   expect(asFragment()).toMatchSnapshot();
-  expect(screen.getByText("VIEW")).toBeInTheDocument();
+  expect(screen.getByText("ICEBERG_VIEW")).toBeInTheDocument();
 });
 
-const iceBergContent: Content = {
+const icebergTableContent: Content = {
   type: "ICEBERG_TABLE",
   id: "5d8bdfec-96d7-44f6-8770-1ffcf09e044d",
   metadataLocation: "/path/to/metadata/",
@@ -98,7 +98,17 @@ const iceBergContent: Content = {
   sortOrderId: 1,
 };
 
-const detlaLakeContent: Content = {
+const icebergViewContent: Content = {
+  type: "ICEBERG_VIEW",
+  id: "ae63654e-e692-49b2-8cd6-21e0d980893c",
+  metadataLocation: "/path/to/view_metadata/",
+  versionId: 1,
+  schemaId: 123,
+  sqlText: "CREATE VIEW test.v AS SELECT * FROM t",
+  dialect: "Hive",
+};
+
+const deltaLakeContent: Content = {
   type: "DELTA_LAKE_TABLE",
   id: "da62c210-ffa1-4fbe-b63e-fa8978ecef1c",
   metadataLocationHistory: [
@@ -112,32 +122,25 @@ const detlaLakeContent: Content = {
   lastCheckpoint: "/path/to/delta/_delta_log/_last_checkpoint",
 };
 
-const sqlViewContent: Content = {
-  type: "VIEW",
-  id: "ae63654e-e692-49b2-8cd6-21e0d980893c",
-  sqlText: "CREATE VIEW test.v AS SELECT * FROM t",
-  dialect: Dialect.Hive,
-};
-
 const contentList = {
   contents: [
     {
       key: {
         elements: ["table2", "key"],
       },
-      content: iceBergContent,
+      content: icebergTableContent,
     },
     {
       key: {
         elements: ["delatalake", "key"],
       },
-      content: detlaLakeContent,
+      content: deltaLakeContent,
     },
     {
       key: {
         elements: ["example", "key"],
       },
-      content: sqlViewContent,
+      content: icebergViewContent,
     },
   ],
 };

@@ -8,11 +8,9 @@
 
 Project Nessie is a Transactional Catalog for Data Lakes with Git-like semantics.
 
-Nessie supports Iceberg Tables, Delta Lake Tables and Sql Views.
-
 More information can be found at [projectnessie.org](https://projectnessie.org/).
 
-Nessie supports Iceberg Tables, Delta Lake Tables and Sql Views. Additionally, Nessie is focused on working with the widest range of tools possible, which can be seen in the [feature matrix](https://projectnessie.org/tools/#feature-matrix).
+Nessie supports Iceberg Tables/Views and Delta Lake Tables. Additionally, Nessie is focused on working with the widest range of tools possible, which can be seen in the [feature matrix](https://projectnessie.org/tools/#feature-matrix).
 
 ## Using Nessie
 

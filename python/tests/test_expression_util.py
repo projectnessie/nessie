@@ -104,9 +104,9 @@ def test_building_filter_for_content_entries() -> None:
     """Makes sure the expression building function for the content entries produces what we expect."""
     assert_that(build_filter_for_contents_listing_flags(query_filter="exclusive_expr", types=[])).is_equal_to("exclusive_expr")
 
-    assert_that(build_filter_for_contents_listing_flags(query_filter="exclusive_expr", types=["VIEW", "DELTA_LAKE_TABLE"])).is_equal_to(
-        "exclusive_expr"
-    )
+    assert_that(
+        build_filter_for_contents_listing_flags(query_filter="exclusive_expr", types=["ICEBERG_VIEW", "DELTA_LAKE_TABLE"])
+    ).is_equal_to("exclusive_expr")
 
     assert_that(build_filter_for_contents_listing_flags(query_filter="", types=["ICEBERG_TABLE"])).is_equal_to(
         "entry.contentType in ['ICEBERG_TABLE']"

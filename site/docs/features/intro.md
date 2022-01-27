@@ -6,7 +6,7 @@ table formats with version control techniques:
 
 * Apache Iceberg Tables ([more](../tables/iceberg.md))
 * Delta Lake Tables ([more](../tables/deltalake.md))
-* SQL Views ([more](../tables/views.md))
+* Apache Iceberg Views ([more](../tables/views.md))
 
 ## Basic Concepts
 

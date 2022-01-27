@@ -40,7 +40,7 @@ Generate commits
                                commit.
       --type=<contentType>   Content-types to generate. Defaults to
                                ICEBERG_TABLE. Possible values: ICEBERG_TABLE,
-                               DELTA_LAKE_TABLE, VIEW
+                               ICEBERG_VIEW, DELTA_LAKE_TABLE
   -u, --uri=<uri>            Nessie API endpoint URI, defaults to http:
                                //localhost:19120/api/v1.
   -V, --version              Print version information and exit.

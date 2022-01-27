@@ -36,11 +36,11 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
+import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
 import org.projectnessie.model.ImmutableIcebergTable;
-import org.projectnessie.model.ImmutableSqlView;
+import org.projectnessie.model.ImmutableIcebergView;
 import org.projectnessie.model.Operation.Put;
-import org.projectnessie.model.SqlView.Dialect;
 import org.projectnessie.model.Tag;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Model.CommandSpec;
@@ -96,7 +96,7 @@ public class GenerateContent extends AbstractCommand {
       defaultValue = "ICEBERG_TABLE",
       description =
           "Content-types to generate. Defaults to ICEBERG_TABLE. Possible values: "
-              + "ICEBERG_TABLE, DELTA_LAKE_TABLE, VIEW")
+              + "ICEBERG_TABLE, ICEBERG_VIEW, DELTA_LAKE_TABLE")
   private Content.Type contentType;
 
   @Spec private CommandSpec spec;
@@ -201,7 +201,7 @@ public class GenerateContent extends AbstractCommand {
                       .author(System.getProperty("user.name"))
                       .authorTime(Instant.now())
                       .build());
-      if (newContents instanceof IcebergTable) {
+      if (newContents instanceof IcebergTable || newContents instanceof IcebergView) {
         commit.operation(Put.of(tableName, newContents, tableContents));
       } else {
         commit.operation(Put.of(tableName, newContents));
@@ -256,10 +256,13 @@ public class GenerateContent extends AbstractCommand {
           deltaBuilder.id(currentContents.getId());
         }
         return deltaBuilder.build();
-      case VIEW:
-        ImmutableSqlView.Builder viewBuilder =
-            ImmutableSqlView.builder()
-                .dialect(Dialect.values()[random.nextInt(Dialect.values().length)])
+      case ICEBERG_VIEW:
+        ImmutableIcebergView.Builder viewBuilder =
+            ImmutableIcebergView.builder()
+                .metadataLocation("metadata " + random.nextLong())
+                .versionId(random.nextInt())
+                .schemaId(random.nextInt())
+                .dialect("Spark-" + random.nextInt())
                 .sqlText("SELECT blah FROM meh;");
         if (currentContents != null) {
           viewBuilder.id(currentContents.getId());

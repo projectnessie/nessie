@@ -24,7 +24,7 @@ message Content {
   oneof object_type {
     IcebergMetadataPointer iceberg_metadata_pointer = 1;
     IcebergRefState iceberg_ref_state = 2;
-    SqlView sql_view = 3;
+    IcebergViewState iceberg_view_state = 3;
     DeltaLakeTable delta_lake_table = 4;
   }
   string id = 5;
@@ -41,9 +41,11 @@ message IcebergRefState {
   int32 sort_order_id = 4;
 }
 
-message SqlView {
-  string sql_text = 1;
-  string dialect = 2;
+message IcebergViewState {
+  int32 version_id = 1;
+  int32 schema_id = 2;
+  string sql_text = 3;
+  string dialect = 4;
 }
 
 message DeltaLakeTable {

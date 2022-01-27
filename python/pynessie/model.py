@@ -90,18 +90,23 @@ DeltaLakeTableSchema = desert.schema_class(DeltaLakeTable)
 
 
 @attr.dataclass
-class SqlView(Content):
-    """Dataclass for Nessie SQL View."""
+class IcebergView(Content):
+    """Dataclass for Nessie Iceberg View."""
 
+    metadata_location: str = desert.ib(fields.Str(data_key="metadataLocation"))
+    version_id: int = desert.ib(fields.Int(data_key="versionId"))
+    schema_id: int = desert.ib(fields.Int(data_key="schemaId"))
     dialect: str = desert.ib(fields.Str())
     sql_text: str = desert.ib(fields.Str(data_key="sqlText"))
 
-    def pretty_print(self: "SqlView") -> str:
+    def pretty_print(self: "IcebergView") -> str:
         """Print out for cli."""
-        return "SqlView:\n\tDialect: {}\n\tSql: {}".format(self.dialect, self.sql_text)  # todo use a sql parser to pretty print this
+        return "IcebergView:\n\tmetadata-location: {}\n\tversion-id: {}\n\tschema-id: {}\n\tDialect: {}\n\tSql: {}".format(
+            self.metadata_location, self.version_id, self.schema_id, self.dialect, self.sql_text
+        )  # todo use a sql parser to pretty print this
 
 
-SqlViewSchema = desert.schema_class(SqlView)
+IcebergViewSchema = desert.schema_class(IcebergView)
 
 
 class ContentSchema(OneOfSchema):
@@ -110,7 +115,7 @@ class ContentSchema(OneOfSchema):
     type_schemas = {
         "ICEBERG_TABLE": IcebergTableSchema,
         "DELTA_LAKE_TABLE": DeltaLakeTableSchema,
-        "VIEW": SqlViewSchema,
+        "ICEBERG_VIEW": IcebergViewSchema,
     }
 
     def get_obj_type(self: "ContentSchema", obj: Content) -> str:
@@ -119,8 +124,8 @@ class ContentSchema(OneOfSchema):
             return "ICEBERG_TABLE"
         if isinstance(obj, DeltaLakeTable):
             return "DELTA_LAKE_TABLE"
-        if isinstance(obj, SqlView):
-            return "VIEW"
+        if isinstance(obj, IcebergView):
+            return "ICEBERG_VIEW"
 
         raise Exception("Unknown object type: {}".format(obj.__class__.__name__))
 

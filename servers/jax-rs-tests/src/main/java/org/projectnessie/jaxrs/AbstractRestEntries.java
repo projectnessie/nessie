@@ -30,10 +30,8 @@ import org.projectnessie.model.Content.Type;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.IcebergTable;
-import org.projectnessie.model.ImmutableSqlView;
+import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.Operation.Put;
-import org.projectnessie.model.SqlView;
-import org.projectnessie.model.SqlView.Dialect;
 
 /** See {@link AbstractTestRest} for details about and reason for the inheritance model. */
 public abstract class AbstractRestEntries extends AbstractRestDiff {
@@ -43,8 +41,7 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
     ContentKey a = ContentKey.of("a");
     ContentKey b = ContentKey.of("b");
     IcebergTable tam = IcebergTable.of("path1", 42, 42, 42, 42);
-    SqlView tb =
-        ImmutableSqlView.builder().sqlText("select * from table").dialect(Dialect.DREMIO).build();
+    IcebergView tb = IcebergView.of("pathx", 1, 1, "select * from table", "Dremio");
     getApi()
         .commitMultipleOperations()
         .branch(branch)
@@ -61,7 +58,7 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
     List<Entry> expected =
         asList(
             Entry.builder().name(a).type(Type.ICEBERG_TABLE).build(),
-            Entry.builder().name(b).type(Type.VIEW).build());
+            Entry.builder().name(b).type(Type.ICEBERG_VIEW).build());
     assertThat(entries).containsExactlyInAnyOrderElementsOf(expected);
 
     entries =
@@ -77,7 +74,7 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
         getApi()
             .getEntries()
             .refName(branch.getName())
-            .filter("entry.contentType=='VIEW'")
+            .filter("entry.contentType=='ICEBERG_VIEW'")
             .get()
             .getEntries();
     assertEquals(singletonList(expected.get(1)), entries);
@@ -86,7 +83,7 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
         getApi()
             .getEntries()
             .refName(branch.getName())
-            .filter("entry.contentType in ['ICEBERG_TABLE', 'VIEW']")
+            .filter("entry.contentType in ['ICEBERG_TABLE', 'ICEBERG_VIEW']")
             .get()
             .getEntries();
     assertThat(entries).containsExactlyInAnyOrderElementsOf(expected);

@@ -16,7 +16,12 @@
 
 import React, { Fragment } from "react";
 import "./ContentView.css";
-import { Content, DeltaLakeTable, IcebergTable, SqlView } from "../../utils";
+import {
+  Content,
+  DeltaLakeTable,
+  IcebergTable,
+  IcebergView,
+} from "../../utils";
 import { EmptyMessageView } from ".";
 
 const ContentView = (props: { tableContent: Content }): React.ReactElement => {
@@ -40,7 +45,7 @@ const ContentView = (props: { tableContent: Content }): React.ReactElement => {
       <div className={"ContentView"}>
         <div className={"ContentView__contentWrapper"}>
           <div>
-            <span>Type: </span>
+            <span>Type:</span>
             <span className={"ml-2"}> {tableContent.type}</span>
           </div>
           {metadataLocationHistory && (
@@ -83,18 +88,18 @@ const ContentView = (props: { tableContent: Content }): React.ReactElement => {
     );
   };
 
-  const renderIcebergView = (icebergContent: IcebergTable) => {
+  const renderIcebergTableView = (icebergContent: IcebergTable) => {
     const { metadataLocation } = icebergContent;
     return (
       <div className={"ContentView"}>
         <div className={"ContentView__contentWrapper"}>
           <div>
-            <span>Type: </span>
+            <span>Type:</span>
             <span className={"ml-2"}> {tableContent.type}</span>
           </div>
           {metadataLocation && (
             <div>
-              <span>Metadata Path:</span>
+              <span>Metadata Location:</span>
               <span className={"ml-2"}>{metadataLocation}</span>
             </div>
           )}
@@ -104,15 +109,34 @@ const ContentView = (props: { tableContent: Content }): React.ReactElement => {
     );
   };
 
-  const renderView = (sqlViewContent: SqlView) => {
-    const { sqlText, dialect } = sqlViewContent;
+  const renderIcebergView = (icebergViewContent: IcebergView) => {
+    const { metadataLocation, versionId, schemaId, sqlText, dialect } =
+      icebergViewContent;
     return (
       <div className={"ContentView"}>
         <div className={"ContentView__contentWrapper"}>
           <div>
-            <span>Type: </span>
+            <span>Type:</span>
             <span className={"ml-2"}> {tableContent.type}</span>
           </div>
+          {metadataLocation && (
+            <div>
+              <span>Metadata Location:</span>
+              <span className={"ml-2"}>{metadataLocation}</span>
+            </div>
+          )}
+          {versionId && (
+            <div>
+              <span>Version ID:</span>
+              <span className={"ml-2"}>{versionId}</span>
+            </div>
+          )}
+          {schemaId && (
+            <div>
+              <span>Schema ID:</span>
+              <span className={"ml-2"}>{schemaId}</span>
+            </div>
+          )}
           {sqlText && (
             <div>
               <span>Sql Text:</span>
@@ -126,6 +150,7 @@ const ContentView = (props: { tableContent: Content }): React.ReactElement => {
             </div>
           )}
         </div>
+        {imageView("/iceberg.png")}
       </div>
     );
   };
@@ -140,10 +165,10 @@ const ContentView = (props: { tableContent: Content }): React.ReactElement => {
         return renderDeltaView(tableContent);
       }
       case "ICEBERG_TABLE": {
-        return renderIcebergView(tableContent);
+        return renderIcebergTableView(tableContent);
       }
-      case "VIEW": {
-        return renderView(tableContent);
+      case "ICEBERG_VIEW": {
+        return renderIcebergView(tableContent);
       }
       default: {
         return renderInvalidView();

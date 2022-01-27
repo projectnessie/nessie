@@ -10,7 +10,7 @@ exports[`Render DeltaLake Content 1`] = `
     >
       <div>
         <span>
-          Type: 
+          Type:
         </span>
         <span
           class="ml-2"
@@ -87,7 +87,7 @@ exports[`Render DeltaLake Content 2`] = `
     >
       <div>
         <span>
-          Type: 
+          Type:
         </span>
         <span
           class="ml-2"
@@ -164,7 +164,7 @@ exports[`Render Iceberg Content 1`] = `
     >
       <div>
         <span>
-          Type: 
+          Type:
         </span>
         <span
           class="ml-2"
@@ -174,7 +174,7 @@ exports[`Render Iceberg Content 1`] = `
       </div>
       <div>
         <span>
-          Metadata Path:
+          Metadata Location:
         </span>
         <span
           class="ml-2"
@@ -207,7 +207,7 @@ exports[`Render Iceberg Content 2`] = `
     >
       <div>
         <span>
-          Type: 
+          Type:
         </span>
         <span
           class="ml-2"
@@ -217,7 +217,7 @@ exports[`Render Iceberg Content 2`] = `
       </div>
       <div>
         <span>
-          Metadata Path:
+          Metadata Location:
         </span>
         <span
           class="ml-2"
@@ -240,7 +240,7 @@ exports[`Render Iceberg Content 2`] = `
 </DocumentFragment>
 `;
 
-exports[`Render SQL View Content 1`] = `
+exports[`Render Iceberg View Content 1`] = `
 <DocumentFragment>
   <div
     class="ContentView"
@@ -250,12 +250,42 @@ exports[`Render SQL View Content 1`] = `
     >
       <div>
         <span>
-          Type: 
+          Type:
         </span>
         <span
           class="ml-2"
         >
-           VIEW
+           ICEBERG_VIEW
+        </span>
+      </div>
+      <div>
+        <span>
+          Metadata Location:
+        </span>
+        <span
+          class="ml-2"
+        >
+          /path/to/view_metadata/
+        </span>
+      </div>
+      <div>
+        <span>
+          Version ID:
+        </span>
+        <span
+          class="ml-2"
+        >
+          1
+        </span>
+      </div>
+      <div>
+        <span>
+          Schema ID:
+        </span>
+        <span
+          class="ml-2"
+        >
+          123
         </span>
       </div>
       <div>
@@ -275,15 +305,25 @@ exports[`Render SQL View Content 1`] = `
         <span
           class="ml-2"
         >
-          HIVE
+          Hive
         </span>
       </div>
+    </div>
+    <div
+      class="ContentView__imagetWrapper"
+    >
+      <img
+        alt="IcebergTable"
+        height="180"
+        src="/iceberg.png"
+        width="180"
+      />
     </div>
   </div>
 </DocumentFragment>
 `;
 
-exports[`Render SQL View Content 2`] = `
+exports[`Render Iceberg View Content 2`] = `
 <DocumentFragment>
   <div
     class="ContentView"
@@ -293,12 +333,42 @@ exports[`Render SQL View Content 2`] = `
     >
       <div>
         <span>
-          Type: 
+          Type:
         </span>
         <span
           class="ml-2"
         >
-           VIEW
+           ICEBERG_VIEW
+        </span>
+      </div>
+      <div>
+        <span>
+          Metadata Location:
+        </span>
+        <span
+          class="ml-2"
+        >
+          /path/to/view_metadata/
+        </span>
+      </div>
+      <div>
+        <span>
+          Version ID:
+        </span>
+        <span
+          class="ml-2"
+        >
+          1
+        </span>
+      </div>
+      <div>
+        <span>
+          Schema ID:
+        </span>
+        <span
+          class="ml-2"
+        >
+          123
         </span>
       </div>
       <div>
@@ -318,9 +388,19 @@ exports[`Render SQL View Content 2`] = `
         <span
           class="ml-2"
         >
-          HIVE
+          Hive
         </span>
       </div>
+    </div>
+    <div
+      class="ContentView__imagetWrapper"
+    >
+      <img
+        alt="IcebergTable"
+        height="180"
+        src="/iceberg.png"
+        width="180"
+      />
     </div>
   </div>
 </DocumentFragment>

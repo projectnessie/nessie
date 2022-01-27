@@ -44,12 +44,12 @@ import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
+import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Operation.Unchanged;
-import org.projectnessie.model.SqlView;
 
 /** See {@link AbstractTestRest} for details about and reason for the inheritance model. */
 public abstract class AbstractRestCommitLog extends AbstractRestAssign {
@@ -66,11 +66,11 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
             .operation(
                 Put.of(
                     ContentKey.of("hello", "world", "BaseTable"),
-                    SqlView.of(SqlView.Dialect.SPARK, "SELECT ALL THE THINGS")))
+                    IcebergView.of("path1", 1, 1, "Spark", "SELECT ALL THE THINGS")))
             .operation(
                 Put.of(
                     ContentKey.of("dlrow", "olleh", "BaseTable"),
-                    SqlView.of(SqlView.Dialect.SPARK, "SELECT ALL THE THINGS")))
+                    IcebergView.of("path2", 1, 1, "Spark", "SELECT ALL THE THINGS")))
             .commit();
 
     assertThat(
