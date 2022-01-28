@@ -131,8 +131,12 @@ jobs:
         fi
         ./mvnw -B install --file pom.xml ${PROFILES} ${BUILD_ARGS} -pl servers/quarkus-server
 
+        # Add version to the openapi file name
+        cp model/target/classes/META-INF/openapi/openapi.yaml model/target/nessie-openapi-${RELEASE_VERSION}.yaml
+
         echo ::set-output name=QUARKUS_NATIVE_BINARY::servers/quarkus-server/target/nessie-quarkus-${RELEASE_VERSION}-runner
         echo ::set-output name=QUARKUS_UBER_JAR::servers/quarkus-server/target/nessie-quarkus-${RELEASE_VERSION}-runner.jar
+        echo ::set-output name=NESSIE_OPENAPI::model/target/nessie-openapi-${RELEASE_VERSION}.yaml
 
     # Deploys Gradle plugin. Build and test steps were already ran in previous steps
     - name: Publish Gradle Plugin for release
@@ -283,6 +287,13 @@ jobs:
       run: |
         QUARKUS_NATIVE_BINARY="${{ steps.build_maven.outputs.QUARKUS_NATIVE_BINARY }}"
         QUARKUS_UBER_JAR="${{ steps.build_maven.outputs.QUARKUS_UBER_JAR }}"
+        NESSIE_OPENAPI="${{ steps.build_maven.outputs.NESSIE_OPENAPI }}"
         NESSIE_HELM_CHART="${{ steps.nessie_helm.outputs.NESSIE_HELM_CHART }}"
         echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token
-        gh release create ${GIT_TAG} --notes-file ${{ steps.prep_release.outputs.NOTES_FILE }} --title "Nessie ${RELEASE_VERSION}" "${QUARKUS_NATIVE_BINARY}" "${QUARKUS_UBER_JAR}" "${NESSIE_HELM_CHART}"
+        gh release create ${GIT_TAG} \
+          --notes-file ${{ steps.prep_release.outputs.NOTES_FILE }} \
+          --title "Nessie ${RELEASE_VERSION}" \
+          "${QUARKUS_NATIVE_BINARY}" \
+          "${QUARKUS_UBER_JAR}" \
+          "${NESSIE_OPENAPI}" \
+          "${NESSIE_HELM_CHART}"
