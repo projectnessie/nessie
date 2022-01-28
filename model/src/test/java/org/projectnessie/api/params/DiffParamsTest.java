@@ -24,9 +24,36 @@ public class DiffParamsTest {
 
   @Test
   public void testBuilder() {
-    DiffParams params = DiffParams.builder().fromRef("from").toRef("to").build();
-    assertThat(params.getFromRef()).isEqualTo("from");
-    assertThat(params.getToRef()).isEqualTo("to");
+    DiffParams params =
+        DiffParams.builder()
+            .fromRef("from")
+            .fromHashOnRef("fromHash")
+            .toRef("to")
+            .toHashOnRef("toHash")
+            .build();
+    assertThat(params)
+        .extracting(
+            DiffParams::getFromRef,
+            DiffParams::getFromHashOnRef,
+            DiffParams::getToRef,
+            DiffParams::getToHashOnRef)
+        .containsExactly("from", "fromHash", "to", "toHash");
+    params = DiffParams.builder().fromRef("from").toRef("to").toHashOnRef("toHash").build();
+    assertThat(params)
+        .extracting(
+            DiffParams::getFromRef,
+            DiffParams::getFromHashOnRef,
+            DiffParams::getToRef,
+            DiffParams::getToHashOnRef)
+        .containsExactly("from", null, "to", "toHash");
+    params = DiffParams.builder().fromRef("from").toRef("to").build();
+    assertThat(params)
+        .extracting(
+            DiffParams::getFromRef,
+            DiffParams::getFromHashOnRef,
+            DiffParams::getToRef,
+            DiffParams::getToHashOnRef)
+        .containsExactly("from", null, "to", null);
   }
 
   @Test

@@ -25,11 +25,14 @@ import java.util.regex.Pattern;
 
 /** Collection of validation rules. */
 public final class Validation {
-  public static final String HASH_REGEX = "^[0-9a-fA-F]{8,64}$";
-  public static final String REF_NAME_REGEX =
-      "^[A-Za-z](((?![.][.])[A-Za-z0-9./_-])*[A-Za-z0-9._-])?$";
+
+  public static final String HASH_RAW_REGEX = "[0-9a-fA-F]{8,64}";
+  public static final String HASH_REGEX = "^" + HASH_RAW_REGEX + "$";
+  public static final String REF_NAME_RAW_REGEX =
+      "[A-Za-z](((?![.][.])[A-Za-z0-9./_-])*[A-Za-z0-9_-])?";
+  public static final String REF_NAME_REGEX = "^" + REF_NAME_RAW_REGEX + "$";
   public static final String REF_NAME_OR_HASH_REGEX =
-      "^(([0-9a-fA-F]{8,64})|([A-Za-z](((?![.][.])[A-Za-z0-9./_-])*[A-Za-z0-9._-])?))$";
+      "^((" + HASH_RAW_REGEX + ")|(" + REF_NAME_RAW_REGEX + "))$";
 
   public static final Pattern HASH_PATTERN = Pattern.compile(HASH_REGEX);
   public static final Pattern REF_NAME_PATTERN = Pattern.compile(REF_NAME_REGEX);
@@ -37,8 +40,8 @@ public final class Validation {
 
   private static final String HASH_RULE = "consist of the hex representation of 4-32 bytes";
   private static final String REF_RULE =
-      "start with a letter, followed by letters, digits, a ./_- character, "
-          + "not end with a slash, not contain ..";
+      "start with a letter, followed by letters, digits, one of the ./_- characters, "
+          + "not end with a slash or dot, not contain '..'";
 
   public static final String HASH_MESSAGE = "Hash must " + HASH_RULE;
   public static final String REF_NAME_MESSAGE = "Reference name must " + REF_RULE;

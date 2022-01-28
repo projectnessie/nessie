@@ -31,8 +31,11 @@ import org.projectnessie.model.ImmutableDiffResponse.Builder;
 import org.projectnessie.services.authz.AccessChecker;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.Diff;
+import org.projectnessie.versioned.Hash;
+import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.WithHash;
 
 public class DiffApiImpl extends BaseApiImpl implements DiffApi {
 
@@ -46,13 +49,16 @@ public class DiffApiImpl extends BaseApiImpl implements DiffApi {
 
   @Override
   public DiffResponse getDiff(DiffParams params) throws NessieNotFoundException {
+    WithHash<NamedRef> from =
+        namedRefWithHashOrThrow(params.getFromRef(), params.getFromHashOnRef());
+    WithHash<NamedRef> to = namedRefWithHashOrThrow(params.getToRef(), params.getToHashOnRef());
+    return getDiff(from.getHash(), to.getHash());
+  }
+
+  protected DiffResponse getDiff(Hash from, Hash to) throws NessieNotFoundException {
     Builder builder = ImmutableDiffResponse.builder();
     try {
-      try (Stream<Diff<Content>> diffs =
-          getStore()
-              .getDiffs(
-                  getStore().toRef(params.getFromRef()).getValue(),
-                  getStore().toRef(params.getToRef()).getValue())) {
+      try (Stream<Diff<Content>> diffs = getStore().getDiffs(from, to)) {
         diffs
             .map(
                 diff ->

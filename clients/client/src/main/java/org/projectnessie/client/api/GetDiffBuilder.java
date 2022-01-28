@@ -17,6 +17,7 @@ package org.projectnessie.client.api;
 
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.DiffResponse;
+import org.projectnessie.model.Reference;
 
 /**
  * Request builder for retrieving a diff between two references.
@@ -27,7 +28,27 @@ public interface GetDiffBuilder {
 
   GetDiffBuilder fromRefName(String fromRefName);
 
+  GetDiffBuilder fromHashOnRef(String fromHashOnRef);
+
+  default GetDiffBuilder fromRef(Reference fromRef) {
+    GetDiffBuilder r = fromRefName(fromRef.getName());
+    if (fromRef.getHash() != null) {
+      r = r.fromHashOnRef(fromRef.getHash());
+    }
+    return r;
+  }
+
   GetDiffBuilder toRefName(String toRefName);
+
+  GetDiffBuilder toHashOnRef(String toHashOnRef);
+
+  default GetDiffBuilder toRef(Reference toRef) {
+    GetDiffBuilder r = toRefName(toRef.getName());
+    if (toRef.getHash() != null) {
+      r = r.toHashOnRef(toRef.getHash());
+    }
+    return r;
+  }
 
   DiffResponse get() throws NessieNotFoundException;
 }

@@ -28,6 +28,7 @@ import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.DiffResponse.DiffEntry;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Reference;
@@ -44,14 +45,18 @@ public abstract class AbstractRestDiff extends AbstractRestContents {
         getApi().createReference().reference(Branch.of("testDiffToRef", null)).create();
     String toRefHash = createCommits(toRef, 1, commitsPerBranch, toRef.getHash());
 
+    toRef = Branch.of(toRef.getName(), toRefHash);
+
+    List<DiffEntry> diffOnRefHeadResponse =
+        getApi()
+            .getDiff()
+            .fromRefName(fromRef.getName())
+            .toRefName(toRef.getName())
+            .get()
+            .getDiffs();
+
     // we only committed to toRef, the "from" diff should be null
-    assertThat(
-            getApi()
-                .getDiff()
-                .fromRefName(fromRef.getName())
-                .toRefName(toRef.getName())
-                .get()
-                .getDiffs())
+    assertThat(diffOnRefHeadResponse)
         .hasSize(commitsPerBranch)
         .allSatisfy(
             diff -> {
@@ -59,6 +64,76 @@ public abstract class AbstractRestDiff extends AbstractRestContents {
               assertThat(diff.getFrom()).isNull();
               assertThat(diff.getTo()).isNotNull();
             });
+
+    // Some combinations with explicit fromHashOnRef/toHashOnRef
+    assertThat(getApi().getDiff().fromRef(fromRef).toRef(toRef).get().getDiffs())
+        .isEqualTo(diffOnRefHeadResponse);
+    assertThat(
+            getApi()
+                .getDiff()
+                .fromRefName(fromRef.getName())
+                .fromHashOnRef(fromRef.getHash())
+                .toRefName(toRef.getName())
+                .toHashOnRef(toRef.getHash())
+                .get()
+                .getDiffs())
+        .isEqualTo(diffOnRefHeadResponse);
+    assertThat(
+            getApi()
+                .getDiff()
+                .fromRefName(fromRef.getName())
+                .fromHashOnRef(fromRef.getHash())
+                .toRefName(toRef.getName())
+                .get()
+                .getDiffs())
+        .isEqualTo(diffOnRefHeadResponse);
+    assertThat(
+            getApi()
+                .getDiff()
+                .fromRefName(fromRef.getName())
+                .toRefName(toRef.getName())
+                .toHashOnRef(toRef.getHash())
+                .get()
+                .getDiffs())
+        .isEqualTo(diffOnRefHeadResponse);
+    assertThat(
+            getApi()
+                .getDiff()
+                .fromRefName(fromRef.getName())
+                .toRef(Branch.of(toRef.getName(), null))
+                .get()
+                .getDiffs())
+        .isEqualTo(diffOnRefHeadResponse);
+
+    // Comparing the from-reference with the to-reference @ from-reference-HEAD must yield an empty
+    // result
+    assertThat(
+            getApi()
+                .getDiff()
+                .fromRef(fromRef)
+                .toRefName(toRef.getName())
+                .toHashOnRef(fromRef.getHash())
+                .get()
+                .getDiffs())
+        .isEmpty();
+    assertThat(
+            getApi()
+                .getDiff()
+                .fromRefName(fromRef.getName())
+                .toRefName(toRef.getName())
+                .toHashOnRef(fromRef.getHash())
+                .get()
+                .getDiffs())
+        .isEmpty();
+    assertThat(
+            getApi()
+                .getDiff()
+                .fromRef(Branch.of(fromRef.getName(), null))
+                .toRefName(toRef.getName())
+                .toHashOnRef(fromRef.getHash())
+                .get()
+                .getDiffs())
+        .isEmpty();
 
     // after committing to fromRef, "from/to" diffs should both have data
     createCommits(fromRef, 1, commitsPerBranch, fromRef.getHash());

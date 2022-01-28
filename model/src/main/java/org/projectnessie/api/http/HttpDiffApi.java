@@ -38,8 +38,20 @@ public interface HttpDiffApi extends DiffApi {
 
   @GET
   @Produces(MediaType.APPLICATION_JSON)
-  @Path("{fromRef}...{toRef}")
-  @Operation(summary = "Get a diff for two given references")
+  @Path(
+      "{fromRef : [^*]+}{f : [*]?}{fromHashOnRef : ([^.]*)?}...{toRef : [^*]+}{t : [*]?}{toHashOnRef : ([^.]*)?}")
+  @Operation(
+      summary = "Get a diff for two given references",
+      description =
+          "The URL pattern is basically 'from' and 'to' separated by '...' (three dots). "
+              + "'from' and 'to' must start with a reference name, optionally followed by hash on "
+              + "that reference, the hash prefixed with the'*' character.\n"
+              + "\n"
+              + "Examples: \n"
+              + "  diffs/main...myBranch\n"
+              + "  diffs/main...myBranch*1234567890123456\n"
+              + "  diffs/main*1234567890123456...myBranch\n"
+              + "  diffs/main*1234567890123456...myBranch*1234567890123456\n")
   @APIResponses({
     @APIResponse(
         responseCode = "200",

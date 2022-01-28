@@ -33,9 +33,14 @@ class HttpDiffClient implements HttpDiffApi {
   public DiffResponse getDiff(@NotNull DiffParams params) throws NessieNotFoundException {
     return client
         .newRequest()
-        .path("diffs/{fromRef}...{toRef}")
+        .path("diffs/{fromRef}{fromHashOnRef}...{toRef}{toHashOnRef}")
         .resolveTemplate("fromRef", params.getFromRef())
         .resolveTemplate("toRef", params.getToRef())
+        .resolveTemplate(
+            "fromHashOnRef",
+            params.getFromHashOnRef() != null ? "*" + params.getFromHashOnRef() : "")
+        .resolveTemplate(
+            "toHashOnRef", params.getToHashOnRef() != null ? "*" + params.getToHashOnRef() : "")
         .get()
         .readEntity(DiffResponse.class);
   }
