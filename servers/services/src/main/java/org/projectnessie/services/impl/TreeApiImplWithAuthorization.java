@@ -139,9 +139,17 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
   public LogResponse getCommitLog(String namedRef, CommitLogParams params)
       throws NessieNotFoundException {
     String checkHash = params.pageToken() == null ? params.endHash() : params.pageToken();
-    getAccessChecker()
-        .canListCommitLog(
-            createAccessContext(), namedRefWithHashOrThrow(namedRef, checkHash).getValue());
+    NamedRef validatedNamedRef;
+    try {
+      getAccessChecker().canViewRefLog(createAccessContext());
+      // when the user can access reflog,
+      // allow them to bypass the validation to fetch commits from dead reference.
+      validatedNamedRef = BranchName.of(namedRef);
+    } catch (AccessControlException ex) {
+      // validate the named reference with hash
+      validatedNamedRef = namedRefWithHashOrThrow(namedRef, checkHash).getValue();
+    }
+    getAccessChecker().canListCommitLog(createAccessContext(), validatedNamedRef);
     return super.getCommitLog(namedRef, params);
   }
 

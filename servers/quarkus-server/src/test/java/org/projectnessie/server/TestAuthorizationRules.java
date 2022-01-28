@@ -32,6 +32,7 @@ import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.client.rest.NessieForbiddenException;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
@@ -95,6 +96,12 @@ class TestAuthorizationRules extends BaseClientAuthTest {
     deleteBranch(branch, role, shouldFail);
 
     getRefLog(role, !role.equals("admin_user"));
+
+    if (!shouldFail) {
+      // branch is deleted for sure as shouldFail is false. So, try fetching the commit log.
+      // only admin_user is configured to view reflog and fetch dead commits with hash.
+      getCommitLogFromHashOnDeletedReference(branch, !role.equals("admin_user"));
+    }
   }
 
   @Test
@@ -407,6 +414,31 @@ class TestAuthorizationRules extends BaseClientAuthTest {
     } else {
       List<RefLogResponse.RefLogResponseEntry> entries = api().getRefLog().get().getLogEntries();
       assertThat(entries).isNotEmpty();
+    }
+  }
+
+  private void getCommitLogFromHashOnDeletedReference(Branch branch, boolean shouldFail)
+      throws NessieNotFoundException {
+    if (shouldFail) {
+      assertThatThrownBy(
+              () ->
+                  api()
+                      .getCommitLog()
+                      .refName(branch.getName())
+                      .hashOnRef(branch.getHash())
+                      .get()
+                      .getLogEntries())
+          .isInstanceOf(NessieReferenceNotFoundException.class)
+          .hasMessageContaining(String.format("Named reference '%s' not found", branch.getName()));
+    } else {
+      List<LogEntry> commits =
+          api()
+              .getCommitLog()
+              .refName(branch.getName())
+              .hashOnRef(branch.getHash())
+              .get()
+              .getLogEntries();
+      assertThat(commits).isNotEmpty();
     }
   }
 

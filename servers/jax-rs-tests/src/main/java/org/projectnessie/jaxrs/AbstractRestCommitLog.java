@@ -16,6 +16,7 @@
 package org.projectnessie.jaxrs;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -31,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.OptionalInt;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -40,6 +42,7 @@ import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.client.StreamingUtil;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
@@ -598,5 +601,39 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
         break;
       }
     }
+  }
+
+  @Test
+  public void fetchDeadCommitLogWithHash() throws BaseNessieClientServerException {
+    Branch branch = createBranch("fetchDeadCommitLog");
+    // commit on branch
+    IcebergTable tableMeta = IcebergTable.of("some-file", 42, 42, 42, 42);
+    final Branch branchAfterCommit =
+        getApi()
+            .commitMultipleOperations()
+            .branchName(branch.getName())
+            .hash(branch.getHash())
+            .commitMeta(CommitMeta.fromMessage("msg"))
+            .operation(Put.of(ContentKey.of("tableZ"), tableMeta))
+            .commit();
+    // delete the reference
+    getApi().deleteBranch().branch(branchAfterCommit).delete();
+    // fetch commit log from dead reference with hash (should be success)
+    LogResponse logResponse =
+        getApi()
+            .getCommitLog()
+            .refName(branchAfterCommit.getName())
+            .hashOnRef(branchAfterCommit.getHash())
+            .fetch(FetchOption.ALL)
+            .get();
+    assertThat(
+            Objects.requireNonNull(logResponse.getLogEntries().get(0).getOperations())
+                .get(0)
+                .getKey())
+        .isEqualTo(ContentKey.of("tableZ"));
+    // fetch commit log from dead reference without hash (this operation should fail)
+    assertThatThrownBy(() -> getApi().getCommitLog().refName(branchAfterCommit.getName()).get())
+        .isInstanceOf(NessieReferenceNotFoundException.class)
+        .hasMessageContaining("Named reference 'fetchDeadCommitLog' not found");
   }
 }

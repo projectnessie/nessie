@@ -266,10 +266,14 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
             MAX_COMMIT_LOG_ENTRIES);
 
     // we should only allow named references when no paging is defined
-    Ref endRef =
-        namedRefWithHashOrThrow(
-                namedRef, null == params.pageToken() ? params.endHash() : params.pageToken())
-            .getHash();
+    String hash = null == params.pageToken() ? params.endHash() : params.pageToken();
+    Ref endRef;
+    if (hash == null) {
+      endRef = namedRefWithHashOrThrow(namedRef, null).getHash();
+    } else {
+      // TreeApiImplWithAuthorization already validated by calling namedRefWithHashOrThrow
+      endRef = Hash.of(hash);
+    }
 
     boolean fetchAll = FetchOption.isFetchAll(params.fetchOption());
     try (Stream<Commit<CommitMeta, Content>> commits = getStore().getCommits(endRef, fetchAll)) {

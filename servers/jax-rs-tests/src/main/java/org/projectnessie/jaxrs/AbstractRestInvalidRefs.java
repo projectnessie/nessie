@@ -118,9 +118,7 @@ public abstract class AbstractRestInvalidRefs extends AbstractRestEntries {
     assertThatThrownBy(
             () -> getApi().getCommitLog().refName(branch.getName()).hashOnRef(invalidHash).get())
         .isInstanceOf(NessieNotFoundException.class)
-        .hasMessageContaining(
-            String.format(
-                "Could not find commit '%s' in reference '%s'.", invalidHash, branch.getName()));
+        .hasMessageContaining(String.format("Commit '%s' not found", invalidHash));
 
     assertThatThrownBy(
             () -> getApi().getEntries().refName(branch.getName()).hashOnRef(invalidHash).get())
