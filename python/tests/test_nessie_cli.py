@@ -268,9 +268,12 @@ def test_merge() -> None:
     ref = ReferenceSchema().loads(execute_cli_command(["--json", "branch", "-l", "main"]), many=False)
     main_hash = ref.hash_
     execute_cli_command(["merge", "dev", "-c", main_hash])
-    branches = ReferenceSchema().loads(execute_cli_command(["--json", "branch"]), many=True)
-    refs = {i.name: i.hash_ for i in branches}
-    assert refs["main"] == refs["dev"]
+    logs = simplejson.loads(execute_cli_command(["--json", "log"]))
+    # we don't check for equality of hashes here because a merge
+    # produces a different commit hash on the target branch
+    assert len(logs) == 1
+    logs = simplejson.loads(execute_cli_command(["--json", "log", "dev"]))
+    assert len(logs) == 1
 
 
 @pytest.mark.vcr
