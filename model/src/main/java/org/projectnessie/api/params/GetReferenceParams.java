@@ -33,9 +33,7 @@ public class GetReferenceParams {
       examples = {@ExampleObject(ref = "ref")})
   @PathParam("ref")
   @NotNull
-  @Pattern(
-      regexp = Validation.REF_NAME_OR_HASH_REGEX,
-      message = Validation.REF_NAME_OR_HASH_MESSAGE)
+  @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
   private String refName;
 
   @Parameter(
