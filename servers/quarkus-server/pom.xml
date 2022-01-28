@@ -279,6 +279,8 @@
               <filesets>
                 <fileset>
                   <directory>${project.build.directory}/rocksdb-test</directory>
+                  <directory>${project.build.directory}/rocksdb-it</directory>
+                  <directory>${project.build.directory}/rocksdb-native</directory>
                 </fileset>
               </filesets>
             </configuration>
@@ -294,6 +296,8 @@
               <filesets>
                 <fileset>
                   <directory>${project.build.directory}/rocksdb-test</directory>
+                  <directory>${project.build.directory}/rocksdb-it</directory>
+                  <directory>${project.build.directory}/rocksdb-native</directory>
                 </fileset>
               </filesets>
             </configuration>
@@ -311,6 +315,31 @@
             <nessie.version.store.rocks.db-path>${project.build.directory}/rocksdb-test</nessie.version.store.rocks.db-path>
           </systemPropertyVariables>
         </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>quarkus-java</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <systemPropertyVariables>
+                <maven.home>${maven.home}</maven.home>
+                <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+                <quarkus.log.level>${test.log.level}</quarkus.log.level>
+                <quarkus.log.console.level>${test.log.level}</quarkus.log.console.level>
+                <nessie.version.store.rocks.db-path>${project.build.directory}/rocksdb-it</nessie.version.store.rocks.db-path>
+              </systemPropertyVariables>
+              <excludes>
+                <exclude>**/ITNative*</exclude>
+              </excludes>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>io.quarkus</groupId>
@@ -356,6 +385,7 @@
             <artifactId>maven-failsafe-plugin</artifactId>
             <executions>
               <execution>
+                <id>quarkus-native</id>
                 <goals>
                   <goal>integration-test</goal>
                   <goal>verify</goal>
@@ -367,11 +397,14 @@
                     <QUARKUS_SMALLRYE_JWT_ENABLED>true</QUARKUS_SMALLRYE_JWT_ENABLED>
                     <HTTP_ACCESS_LOG_LEVEL>${test.log.level}</HTTP_ACCESS_LOG_LEVEL>
                     <NESSIE_VERSION_STORE_TYPE>ROCKS</NESSIE_VERSION_STORE_TYPE>
-                    <NESSIE_VERSION_STORE_ROCKS_DB_PATH>${project.build.directory}/rocksdb-test</NESSIE_VERSION_STORE_ROCKS_DB_PATH>
+                    <NESSIE_VERSION_STORE_ROCKS_DB_PATH>${project.build.directory}/rocksdb-native</NESSIE_VERSION_STORE_ROCKS_DB_PATH>
                   </environmentVariables>
                   <systemPropertyVariables>
                     <native.image.path>${project.build.directory}/${project.build.finalName}-runner</native.image.path>
                   </systemPropertyVariables>
+                  <includes>
+                    <include>**/ITNative*</include>
+                  </includes>
                 </configuration>
               </execution>
             </executions>

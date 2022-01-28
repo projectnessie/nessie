@@ -13,10 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.persist.mongodb;
+package org.projectnessie.server;
 
-import org.projectnessie.versioned.persist.tests.AbstractDatabaseAdapterTest;
-import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
+import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.TestProfile;
+import org.projectnessie.jaxrs.AbstractResteasyTest;
+import org.projectnessie.server.profiles.QuarkusTestProfileDynamo;
 
-@NessieExternalDatabase(FlapdoodleMongoTestConnectionProviderSource.class)
-public class TestDatabaseAdapterMongo extends AbstractDatabaseAdapterTest {}
+@QuarkusTest
+@TestProfile(QuarkusTestProfileDynamo.class)
+public class ITResteasyDynamo extends AbstractResteasyTest {}

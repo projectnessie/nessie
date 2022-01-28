@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.persist.rocks;
+package org.projectnessie.versioned.persist.mongodb;
 
 import org.projectnessie.versioned.persist.tests.AbstractDatabaseAdapterTest;
 import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
-@NessieExternalDatabase(RocksTestConnectionProviderSource.class)
-class TestDatabaseAdapterRocks extends AbstractDatabaseAdapterTest {}
+@NessieExternalDatabase(FlapdoodleMongoTestConnectionProviderSource.class)
+public class ITDatabaseAdapterMongo extends AbstractDatabaseAdapterTest {}

@@ -13,13 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.jaxrs;
+package org.projectnessie.versioned.persist.mongodb;
 
-import org.projectnessie.versioned.persist.mongodb.FlapdoodleMongoTestConnectionProviderSource;
-import org.projectnessie.versioned.persist.mongodb.MongoDatabaseAdapterFactory;
-import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterName;
+import org.projectnessie.versioned.persist.tests.AbstractDatabaseAdapterVersionStoreTest;
 import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
-@NessieDbAdapterName(MongoDatabaseAdapterFactory.NAME)
 @NessieExternalDatabase(FlapdoodleMongoTestConnectionProviderSource.class)
-class TestJerseyRestMongo extends AbstractTestJerseyRest {}
+class ITVersionStoreMongo extends AbstractDatabaseAdapterVersionStoreTest {}
