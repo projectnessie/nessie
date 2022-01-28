@@ -18,12 +18,12 @@ package org.projectnessie.jaxrs;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 
-import java.security.Principal;
 import java.util.Arrays;
 import java.util.function.Consumer;
 import javax.ws.rs.core.SecurityContext;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.jaxrs.ext.NessieSecurityContext;
+import org.projectnessie.jaxrs.ext.PrincipalSecurityContext;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
@@ -33,32 +33,6 @@ import org.projectnessie.model.Operation.Put;
 
 /** See {@link AbstractTestRest} for details about and reason for the inheritance model. */
 public abstract class AbstractRestSecurityContext extends AbstractTestRest {
-  static SecurityContext securityContext(String principalName) {
-    Principal principal = () -> principalName;
-
-    return new SecurityContext() {
-      @Override
-      public Principal getUserPrincipal() {
-        return principal;
-      }
-
-      @Override
-      public boolean isUserInRole(String role) {
-        return false;
-      }
-
-      @Override
-      public boolean isSecure() {
-        return false;
-      }
-
-      @Override
-      public String getAuthenticationScheme() {
-        return null;
-      }
-    };
-  }
-
   @Test
   public void committerAndAuthor(
       @NessieSecurityContext Consumer<SecurityContext> securityContextConsumer) throws Exception {
@@ -87,7 +61,7 @@ public abstract class AbstractRestSecurityContext extends AbstractTestRest {
         .extracting(CommitMeta::getCommitter, CommitMeta::getAuthor, CommitMeta::getMessage)
         .containsExactly(tuple("", "", "no security context"));
 
-    securityContextConsumer.accept(securityContext("ThatNessieGuy"));
+    securityContextConsumer.accept(PrincipalSecurityContext.forName("ThatNessieGuy"));
 
     Branch withSecurityContext =
         getApi()
@@ -110,7 +84,7 @@ public abstract class AbstractRestSecurityContext extends AbstractTestRest {
             tuple("ThatNessieGuy", "ThatNessieGuy", "with security"),
             tuple("", "", "no security context"));
 
-    securityContextConsumer.accept(securityContext("NessieHerself"));
+    securityContextConsumer.accept(PrincipalSecurityContext.forName("NessieHerself"));
 
     // Merge
 
