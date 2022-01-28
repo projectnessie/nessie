@@ -21,6 +21,7 @@ runs:
         flags: java
         files: |
           code-coverage/target/site/jacoco-aggregate-all/jacoco.xml
+          tools/apprunner-gradle-plugin/build/reports/jacoco/codeCoverageReport/codeCoverageReport.xml
     - uses: codecov/codecov-action@v1
       with:
         flags: javascript
