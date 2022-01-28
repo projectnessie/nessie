@@ -73,7 +73,7 @@ class TestUriBuilder {
     assertEquals(
         String.format(
             "Cannot build uri. Not all template keys (%s) were used in uri %s",
-            "{no}", "{my-var}/something/{in}/here"),
+            "no", "{my-var}/something/{in}/here"),
         assertThrows(HttpClientException.class, bulder1::build).getMessage());
   }
 
@@ -83,6 +83,20 @@ class TestUriBuilder {
 
     builder = builder.path("some spaces in here");
     assertEquals("http://localhost/foo/bar/some%20spaces%20in%20here", builder.build().toString());
+  }
+
+  @Test
+  void adjacentTemplates() {
+    UriBuilder builder =
+        new UriBuilder(URI.create("http://localhost/foo/bar/"))
+            .path("{foo}{bar}..{woof}{meow}..{meep}{moo}")
+            .resolveTemplate("foo", "baz")
+            .resolveTemplate("bar", "")
+            .resolveTemplate("woof", "dog/")
+            .resolveTemplate("meow", "cat")
+            .resolveTemplate("meep", "bird")
+            .resolveTemplate("moo", "cow");
+    assertEquals("http://localhost/foo/bar/baz..dog%2Fcat..birdcow", builder.build().toString());
   }
 
   @Test
