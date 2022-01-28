@@ -42,6 +42,12 @@ final class HttpGetRefLog extends BaseHttpRequest implements GetRefLogBuilder {
   }
 
   @Override
+  public GetRefLogBuilder filter(String filter) {
+    params.filter(filter);
+    return this;
+  }
+
+  @Override
   public GetRefLogBuilder maxRecords(int maxRecords) {
     params.maxRecords(maxRecords);
     return this;

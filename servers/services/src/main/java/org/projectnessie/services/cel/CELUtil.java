@@ -29,6 +29,7 @@ import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
+import org.projectnessie.model.RefLogResponse;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferenceMetadata;
 
@@ -50,6 +51,7 @@ public class CELUtil {
   public static final String VAR_ROLE = "role";
   public static final String VAR_OP = "op";
   public static final String VAR_OPERATIONS = "operations";
+  public static final String VAR_REFLOG = "reflog";
 
   public static final List<Decl> REFERENCES_DECLARATIONS =
       ImmutableList.of(
@@ -81,12 +83,20 @@ public class CELUtil {
   public static final List<Object> COMMIT_LOG_TYPES =
       ImmutableList.of(CommitMeta.class, OperationForCel.class, ContentKey.class, Namespace.class);
 
+  public static final List<Object> REFLOG_TYPES =
+      ImmutableList.of(RefLogResponse.RefLogResponseEntry.class);
+
   public static final List<Object> REFERENCES_TYPES =
       ImmutableList.of(CommitMeta.class, ReferenceMetadata.class, Reference.class);
 
   public static final CommitMeta EMPTY_COMMIT_META = CommitMeta.fromMessage("");
   public static final ReferenceMetadata EMPTY_REFERENCE_METADATA =
       ImmutableReferenceMetadata.builder().commitMetaOfHEAD(EMPTY_COMMIT_META).build();
+
+  public static final List<Decl> REFLOG_DECLARATIONS =
+      ImmutableList.of(
+          Decls.newVar(
+              VAR_REFLOG, Decls.newObjectType(RefLogResponse.RefLogResponseEntry.class.getName())));
 
   /**
    * 'Mirrored' interface wrapping a {@link Operation} for CEL to have convenience fields for CEL

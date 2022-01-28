@@ -24,8 +24,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.OptionalInt;
+import java.util.stream.Collectors;
 import org.assertj.core.groups.Tuple;
 import org.junit.jupiter.api.Test;
+import org.projectnessie.client.StreamingUtil;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieRefLogNotFoundException;
 import org.projectnessie.model.Branch;
@@ -204,5 +207,21 @@ public abstract class AbstractRestRefLog extends AbstractRestReferences {
     // verify source hashes for transplant
     assertThat(refLogResponse.getLogEntries().get(2).getSourceHashes())
         .isEqualTo(Collections.singletonList(branch0.getHash()));
+    // test filter with stream
+    List<RefLogResponse.RefLogResponseEntry> filteredResult =
+        StreamingUtil.getReflogStream(
+                getApi(),
+                null,
+                null,
+                "reflog.operation == 'ASSIGN_REFERENCE' "
+                    + "&& reflog.refName == 'tag1_test_reflog'",
+                OptionalInt.empty())
+            .collect(Collectors.toList());
+    assertThat(filteredResult.size()).isEqualTo(1);
+    assertThat(filteredResult.get(0))
+        .extracting(
+            RefLogResponse.RefLogResponseEntry::getRefName,
+            RefLogResponse.RefLogResponseEntry::getOperation)
+        .isEqualTo(expectedEntries.get(5).toList());
   }
 }

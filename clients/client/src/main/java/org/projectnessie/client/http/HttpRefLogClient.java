@@ -38,6 +38,7 @@ class HttpRefLogClient implements HttpRefLogApi {
         .queryParam("pageToken", params.pageToken())
         .queryParam("startHash", params.startHash())
         .queryParam("endHash", params.endHash())
+        .queryParam("filter", params.filter())
         .get()
         .readEntity(RefLogResponse.class);
   }

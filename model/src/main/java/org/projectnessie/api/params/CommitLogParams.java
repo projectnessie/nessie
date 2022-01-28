@@ -51,6 +51,7 @@ public class CommitLogParams extends AbstractParams {
   @QueryParam("endHash")
   private String endHash;
 
+  @Nullable
   @Parameter(
       description =
           "A Common Expression Language (CEL) expression. An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n\n"

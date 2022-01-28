@@ -15,6 +15,14 @@
  */
 package org.projectnessie.services.impl;
 
+import static org.projectnessie.services.cel.CELUtil.CONTAINER;
+import static org.projectnessie.services.cel.CELUtil.REFLOG_DECLARATIONS;
+import static org.projectnessie.services.cel.CELUtil.REFLOG_TYPES;
+import static org.projectnessie.services.cel.CELUtil.SCRIPT_HOST;
+import static org.projectnessie.services.cel.CELUtil.VAR_REFLOG;
+
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableMap;
 import java.security.Principal;
 import java.util.List;
 import java.util.Objects;
@@ -23,6 +31,8 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.projectnessie.api.RefLogApi;
 import org.projectnessie.api.params.RefLogParams;
+import org.projectnessie.cel.tools.Script;
+import org.projectnessie.cel.tools.ScriptException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieRefLogNotFoundException;
 import org.projectnessie.model.CommitMeta;
@@ -89,7 +99,7 @@ public class RefLogApiImpl extends BaseApiImpl implements RefLogApi {
               false);
 
       List<RefLogResponse.RefLogResponseEntry> items =
-          logEntries.limit(max + 1).collect(Collectors.toList());
+          filterRefLog(logEntries, params.filter()).limit(max + 1).collect(Collectors.toList());
 
       if (items.size() == max + 1) {
         return ImmutableRefLogResponse.builder()
@@ -102,5 +112,40 @@ public class RefLogApiImpl extends BaseApiImpl implements RefLogApi {
     } catch (RefLogNotFoundException e) {
       throw new NessieRefLogNotFoundException(e.getMessage(), e);
     }
+  }
+
+  /**
+   * Applies different filters to the {@link Stream} of reflog entries based on the filter.
+   *
+   * @param logEntries The reflog that different filters will be applied to
+   * @param filter The filter to filter by
+   * @return A potentially filtered {@link Stream} of reflog entries based on the filter
+   */
+  private Stream<RefLogResponse.RefLogResponseEntry> filterRefLog(
+      Stream<RefLogResponse.RefLogResponseEntry> logEntries, String filter) {
+    if (Strings.isNullOrEmpty(filter)) {
+      return logEntries;
+    }
+
+    final Script script;
+    try {
+      script =
+          SCRIPT_HOST
+              .buildScript(filter)
+              .withContainer(CONTAINER)
+              .withDeclarations(REFLOG_DECLARATIONS)
+              .withTypes(REFLOG_TYPES)
+              .build();
+    } catch (ScriptException e) {
+      throw new IllegalArgumentException(e);
+    }
+    return logEntries.filter(
+        logEntry -> {
+          try {
+            return script.execute(Boolean.class, ImmutableMap.of(VAR_REFLOG, logEntry));
+          } catch (ScriptException e) {
+            throw new RuntimeException(e);
+          }
+        });
   }
 }
