@@ -9,7 +9,7 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - python-requests/2.26.0
+      - python-requests/2.27.1
     method: GET
     uri: http://localhost:19120/api/v1/diffs/main...main
   response:
@@ -33,7 +33,32 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - python-requests/2.26.0
+      - python-requests/2.27.1
+    method: GET
+    uri: http://localhost:19120/api/v1/trees
+  response:
+    body:
+      string: '{"hasMore": false, "references": [{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "main", "type": "BRANCH"}], "token": null}'
+    headers:
+      Content-Type:
+      - application/json
+      content-length:
+      - '161'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.27.1
     method: GET
     uri: http://localhost:19120/api/v1/trees/tree
   response:
@@ -58,7 +83,7 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - python-requests/2.26.0
+      - python-requests/2.27.1
     method: GET
     uri: http://localhost:19120/api/v1/trees/tree/main
   response:
@@ -88,7 +113,7 @@ interactions:
       Content-Type:
       - application/json
       User-Agent:
-      - python-requests/2.26.0
+      - python-requests/2.27.1
     method: POST
     uri: http://localhost:19120/api/v1/trees/tree?sourceRefName=main
   response:
@@ -113,14 +138,14 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - python-requests/2.26.0
+      - python-requests/2.27.1
     method: GET
     uri: http://localhost:19120/api/v1/trees
   response:
     body:
       string: '{"hasMore": false, "references": [{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-        "name": "main", "type": "BRANCH"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-        "name": "dev_test_diff", "type": "BRANCH"}], "token": null}'
+        "name": "dev_test_diff", "type": "BRANCH"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "main", "type": "BRANCH"}], "token": null}'
     headers:
       Content-Type:
       - application/json
@@ -139,7 +164,7 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - python-requests/2.26.0
+      - python-requests/2.27.1
     method: GET
     uri: http://localhost:19120/api/v1/contents/diff.foo.dev?ref=dev_test_diff
   response:
@@ -174,12 +199,12 @@ interactions:
       Content-Type:
       - application/json
       User-Agent:
-      - python-requests/2.26.0
+      - python-requests/2.27.1
     method: POST
     uri: http://localhost:19120/api/v1/trees/branch/dev_test_diff/commit?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
-      string: '{"hash": "e4aa6de033c499df09d907a2d71d36f99e52db277c07f5a6ded99e132af0bd4c",
+      string: '{"hash": "68d49014deee149e6f2ec7aa953ec5cacf3c404d057247aecba1a1497f839af8",
         "name": "dev_test_diff", "type": "BRANCH"}'
     headers:
       Content-Type:
@@ -199,9 +224,113 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - python-requests/2.26.0
+      - python-requests/2.27.1
+    method: GET
+    uri: http://localhost:19120/api/v1/trees
+  response:
+    body:
+      string: '{"hasMore": false, "references": [{"hash": "68d49014deee149e6f2ec7aa953ec5cacf3c404d057247aecba1a1497f839af8",
+        "name": "dev_test_diff", "type": "BRANCH"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "main", "type": "BRANCH"}], "token": null}'
+    headers:
+      Content-Type:
+      - application/json
+      content-length:
+      - '282'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.27.1
     method: GET
     uri: http://localhost:19120/api/v1/diffs/main...dev_test_diff
+  response:
+    body:
+      string: '{"diffs": [{"from": null, "key": {"elements": ["diff", "foo", "dev"]},
+        "to": {"id": "dev_test_diff", "metadataLocation": "/a/b/c", "schemaId": 43,
+        "snapshotId": 42, "sortOrderId": 45, "specId": 44, "type": "ICEBERG_TABLE"}}]}'
+    headers:
+      Content-Type:
+      - application/json
+      content-length:
+      - '225'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.27.1
+    method: GET
+    uri: http://localhost:19120/api/v1/diffs/DETACHED*2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d...DETACHED*68d49014deee149e6f2ec7aa953ec5cacf3c404d057247aecba1a1497f839af8
+  response:
+    body:
+      string: '{"diffs": [{"from": null, "key": {"elements": ["diff", "foo", "dev"]},
+        "to": {"id": "dev_test_diff", "metadataLocation": "/a/b/c", "schemaId": 43,
+        "snapshotId": 42, "sortOrderId": 45, "specId": 44, "type": "ICEBERG_TABLE"}}]}'
+    headers:
+      Content-Type:
+      - application/json
+      content-length:
+      - '225'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.27.1
+    method: GET
+    uri: http://localhost:19120/api/v1/diffs/DETACHED*2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d...DETACHED*68d49014deee149e6f2ec7aa953ec5cacf3c404d057247aecba1a1497f839af8
+  response:
+    body:
+      string: '{"diffs": [{"from": null, "key": {"elements": ["diff", "foo", "dev"]},
+        "to": {"id": "dev_test_diff", "metadataLocation": "/a/b/c", "schemaId": 43,
+        "snapshotId": 42, "sortOrderId": 45, "specId": 44, "type": "ICEBERG_TABLE"}}]}'
+    headers:
+      Content-Type:
+      - application/json
+      content-length:
+      - '225'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.27.1
+    method: GET
+    uri: http://localhost:19120/api/v1/diffs/main*2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d...dev_test_diff*68d49014deee149e6f2ec7aa953ec5cacf3c404d057247aecba1a1497f839af8
   response:
     body:
       string: '{"diffs": [{"from": null, "key": {"elements": ["diff", "foo", "dev"]},

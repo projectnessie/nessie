@@ -86,6 +86,9 @@ def branch_(
         nessie branch -o 12345678abcdef new_branch main -> create a branch named 'new_branch' at hash 12345678abcdef
     on reference named 'main'
 
+        nessie branch new_branch main@12345678abcdef -> create a branch named 'new_branch' at hash 12345678abcdef
+    on reference named 'main', alternate syntax for the above
+
         nessie branch -f existing_branch main -> assign branch named 'existing_branch' to head of reference named 'main'
 
         nessie branch -o 12345678abcdef -f existing_branch main -> assign branch named 'existing_branch' to hash 12345678abcdef

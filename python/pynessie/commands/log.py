@@ -20,13 +20,15 @@
 import datetime
 from typing import Any
 from typing import List
+from typing import Optional
+from typing import Tuple
 
 import click
 from dateutil.tz import tzlocal
 
 from ..cli_common_context import ContextObject, MutuallyExclusiveOption
 from ..decorators import error_handler, pass_client, validate_reference
-from ..model import CommitMetaSchema, LogEntry, LogEntrySchema
+from ..model import CommitMetaSchema, LogEntry, LogEntrySchema, split_into_reference_and_hash
 from ..utils import build_filter_for_commit_log_flags
 
 
@@ -99,7 +101,11 @@ def log(  # noqa: C901
 
         nessie log -> show commit logs using the configured default branch
 
-        nessie log dev -> show commit logs for 'dev' branch
+        nessie log 1234567890abcdef -> show commit logs starting at commit 1234567890abcdef
+
+        nessie log dev -> show commit logs for 'dev' branch, starting at the most recent (HEAD) commit of 'dev'
+
+        nessie log dev@1234567890abcdef -> show commit logs for 'dev' branch, starting at commit 1234567890abcdef in 'dev'
 
         nessie log -n 5 dev -> show commit logs for 'dev' branch limited by 5 commits
 
@@ -115,13 +121,7 @@ def log(  # noqa: C901
     show commit logs between "2019-01-01T00:00:00+00:00" and "2021-01-01T00:00:00+00:00" in 'dev' branch
 
     """
-    start_hash = None
-    end_hash = None
-    if revision_range:
-        if ".." in revision_range:
-            start_hash, end_hash = revision_range.split("..")
-        else:
-            end_hash = revision_range
+    ref, start_hash, end_hash = _log_ref_and_hashes(ref, revision_range)
 
     filtering_args: Any = {}
     if start_hash:
@@ -142,6 +142,29 @@ def log(  # noqa: C901
             click.echo(CommitMetaSchema().dumps(commit_metas, many=True))
     else:
         click.echo_via_pager(_format_log_result(x, ref, index, fetch_all) for index, x in enumerate(log_result))
+
+
+def _log_ref_and_hashes(ref: str, revision_range: str) -> Tuple[str, Optional[str], Optional[str]]:
+    start_hash = None
+    ref, end_hash = split_into_reference_and_hash(ref)
+    if revision_range:
+        if ".." in revision_range:
+            start_hash, end_hash_range = revision_range.split("..")
+            if len(start_hash) == 0:
+                start_hash = None
+            if len(end_hash_range) > 0:
+                if end_hash and end_hash != end_hash_range:
+                    raise click.exceptions.BadOptionUsage(
+                        "revision_range", "end-hash provided via 'ref' argument and 'revision-range', use only one of those"
+                    )
+                end_hash = end_hash_range
+        elif end_hash and end_hash != revision_range:
+            raise click.exceptions.BadOptionUsage(
+                "revision_range", "end-hash provided via 'ref' argument and 'revision-range', use only one of those"
+            )
+        else:
+            end_hash = revision_range
+    return ref, start_hash, end_hash
 
 
 def _format_log_result(x: LogEntry, ref: str, index: int, fetch_all: bool) -> str:

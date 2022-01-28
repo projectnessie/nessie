@@ -84,6 +84,12 @@ def _run(args: List[str], input_data: Optional[str] = None, ret_val: int = 0) ->
     return result
 
 
+def ref_hash(ref: str) -> str:
+    """Get the hash for a reference."""
+    refs = ReferenceSchema().loads(execute_cli_command(["--json", "branch", "-l"]), many=True)
+    return next(i.hash_ for i in refs if i.name == ref)
+
+
 def make_commit(
     key: str, table: Content, branch: str, head_hash: str = None, message: str = "test message", author: str = "nessie test"
 ) -> None:

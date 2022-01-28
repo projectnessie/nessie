@@ -45,6 +45,8 @@ from ..model import CommitMeta
 from ..model import Content
 from ..model import ContentKey
 from ..model import ContentSchema
+from ..model import Detached
+from ..model import DETACHED_REFERENCE_NAME
 from ..model import DiffResponse
 from ..model import DiffResponseSchema
 from ..model import Entries
@@ -64,6 +66,7 @@ from ..model import ReferencesResponseSchema
 from ..model import ReflogEntry
 from ..model import ReflogResponse
 from ..model import ReflogResponseSchema
+from ..model import split_into_reference_and_hash
 from ..model import Tag
 from ..model import Transplant
 from ..model import TransplantSchema
@@ -162,8 +165,15 @@ class NessieClient:
         :param query_filter: A CEL expression that allows advanced filtering capabilities
         :return: list of Nessie table names
         """
+        ref_name, ref_hash = split_into_reference_and_hash(ref)
+        if hash_on_ref:
+            if ref_hash and ref_hash != hash_on_ref:
+                raise Exception("Must not specify hash-on-ref using 'name@hash' and explicit hash-on-ref argument, use only one of those")
+        else:
+            hash_on_ref = ref_hash
+
         return EntriesSchema().load(
-            list_tables(self._base_url, self._auth, ref, hash_on_ref, max_result_hint, page_token, query_filter, self._ssl_verify)
+            list_tables(self._base_url, self._auth, ref_name, hash_on_ref, max_result_hint, page_token, query_filter, self._ssl_verify)
         )
 
     def get_content(self: "NessieClient", ref: str, content_key: ContentKey, hash_on_ref: Optional[str] = None) -> Content:
@@ -174,7 +184,14 @@ class NessieClient:
         :param content_key: content key to fetch
         :return: A single content
         """
-        return ContentSchema().load(get_content(self._base_url, self._auth, ref, content_key, hash_on_ref, self._ssl_verify))
+        ref_name, ref_hash = split_into_reference_and_hash(ref)
+        if hash_on_ref:
+            if ref_hash and ref_hash != hash_on_ref:
+                raise Exception("Must not specify hash-on-ref using 'name@hash' and explicit hash-on-ref argument, use only one of those")
+        else:
+            hash_on_ref = ref_hash
+
+        return ContentSchema().load(get_content(self._base_url, self._auth, ref_name, content_key, hash_on_ref, self._ssl_verify))
 
     def commit(
         self: "NessieClient", branch: str, old_hash: str, reason: Optional[str] = None, author: Optional[str] = None, *ops: Operation
@@ -186,12 +203,32 @@ class NessieClient:
         ref_obj = commit(self._base_url, self._auth, branch, MultiContentSchema().dumps(MultiContents(meta, list(ops))), old_hash)
         return cast(Branch, ReferenceSchema().load(ref_obj))
 
+    def _assign_to(self: "NessieClient", to_ref: str, to_ref_hash: str = None) -> Reference:
+        ref_name, ref_hash = split_into_reference_and_hash(to_ref)
+
+        if ref_hash and to_ref_hash and ref_hash != to_ref_hash:
+            raise Exception(
+                "Must not specify hash on to-ref using 'name@hash' and via explicit to-ref-hash argument, use only one of those"
+            )
+
+        if not ref_hash:
+            ref_hash = to_ref_hash
+
+        if ref_name == DETACHED_REFERENCE_NAME:
+            return Detached(DETACHED_REFERENCE_NAME, ref_hash)
+
+        ref = self.get_reference(ref_name)
+        if ref_hash:
+            ref.hash_ = ref_hash
+
+        return ref
+
     def assign_branch(self: "NessieClient", branch: str, to_ref: str, to_ref_hash: str = None, old_hash: Optional[str] = None) -> None:
         """Assign a hash to a branch."""
         if not old_hash:
             old_hash = self.get_reference(branch).hash_
         assert old_hash is not None
-        ref_json = ReferenceSchema().dumps(Branch(to_ref, to_ref_hash) if to_ref_hash else Branch(to_ref))
+        ref_json = ReferenceSchema().dumps(self._assign_to(to_ref, to_ref_hash))
         assign_branch(self._base_url, self._auth, branch, ref_json, old_hash, self._ssl_verify)
 
     def assign_tag(self: "NessieClient", tag: str, to_ref: str, to_ref_hash: str = None, old_hash: Optional[str] = None) -> None:
@@ -199,18 +236,30 @@ class NessieClient:
         if not old_hash:
             old_hash = self.get_reference(tag).hash_
         assert old_hash is not None
-        ref_json = ReferenceSchema().dumps(Tag(to_ref, to_ref_hash) if to_ref_hash else Tag(to_ref))
+        ref_json = ReferenceSchema().dumps(self._assign_to(to_ref, to_ref_hash))
         assign_tag(self._base_url, self._auth, tag, ref_json, old_hash, self._ssl_verify)
 
     def merge(
         self: "NessieClient", from_ref: str, onto_branch: str, from_hash: Optional[str] = None, old_hash: Optional[str] = None
     ) -> None:
         """Merge a branch into another branch."""
+        onto_branch, old_hash_ref = split_into_reference_and_hash(onto_branch)
         if not old_hash:
-            old_hash = self.get_reference(onto_branch).hash_
+            old_hash = old_hash_ref if old_hash_ref else self.get_reference(onto_branch).hash_
+        elif old_hash_ref:
+            if old_hash_ref and old_hash_ref != old_hash:
+                raise Exception("Must not specify hash on from-ref using 'name@hash' and via explicit hash argument, use only one of those")
+            old_hash = old_hash_ref
         assert old_hash is not None
+
+        from_ref, from_hash_ref = split_into_reference_and_hash(from_ref)
         if not from_hash:
-            from_hash = self.get_reference(from_ref).hash_
+            from_hash = from_hash_ref if from_hash_ref else self.get_reference(from_ref).hash_
+        elif from_hash_ref:
+            if from_hash_ref and from_hash_ref != from_hash:
+                raise Exception("Must not specify hash on from-ref using 'name@hash' and via explicit hash argument, use only one of those")
+            from_hash = from_hash_ref
+
         merge_json = MergeSchema().dump(Merge(from_ref, str(from_hash)))
         merge(self._base_url, self._auth, onto_branch, merge_json, old_hash, self._ssl_verify)
 
@@ -283,15 +332,15 @@ class NessieClient:
         return self._base_url
 
     def get_diff(
-        self: "NessieClient",
-        from_ref: str,
-        to_ref: str,
+        self: "NessieClient", from_ref: str, to_ref: str, from_hash_on_ref: Optional[str] = None, to_hash_on_ref: Optional[str] = None
     ) -> DiffResponse:
         """Retrieve the diff between from_ref and to_ref.
 
         from_ref / to_ref can be any ref.
         """
-        return DiffResponseSchema().load(get_diff(self._base_url, self._auth, from_ref, to_ref, self._ssl_verify))
+        return DiffResponseSchema().load(
+            get_diff(self._base_url, self._auth, from_ref, to_ref, from_hash_on_ref, to_hash_on_ref, self._ssl_verify)
+        )
 
     def get_reflog(self: "NessieClient", max_records: Optional[int] = None, **query_params: Any) -> Generator[ReflogEntry, Any, None]:
         """Fetch all reflog starting from the head or from the specified range."""
