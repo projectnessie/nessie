@@ -37,6 +37,9 @@ jobs:
   java:
     name: Java/Maven
     runs-on: ubuntu-latest
+    env:
+      BASE_BRANCH_NAME: pull-request-base-ref
+      PR_BRANCH_NAME: pull-request-ref
 
     steps:
     - uses: actions/checkout@v2
@@ -45,11 +48,57 @@ jobs:
     - name: Setup Java, Maven, Gradle
       uses: ./.github/actions/dev-tool-java
 
+    - name: Fetch base branch + PR branch
+      run: |
+        # GITHUB_REF contains refs/pull/1234/merge, which points to a merge-commit, but we want
+        # the head-commit of the PR as refs/pull/1234/head
+        PR_REF=${GITHUB_REF/%merge/head}
+
+        echo ""
+        echo ""
+        echo "=== Fetching ${GITHUB_BASE_REF} and ${PR_REF}"
+        echo ""
+        git fetch --no-tags origin \
+          ${GITHUB_BASE_REF}:${BASE_BRANCH_NAME} \
+          ${PR_REF}:${PR_BRANCH_NAME}
+
+        echo ""
+        echo ""
+        echo "=== HEAD of ${GITHUB_BASE_REF}"
+        echo ""
+        git log -n1 ${BASE_BRANCH_NAME}
+
+        echo ""
+        echo ""
+        echo "=== HEAD of ${PR_REF}"
+        echo ""
+        git log -n1 ${PR_BRANCH_NAME}
+
+        # Just log the merge-base (common ancestor)
+        MERGE_BASE=$(git merge-base ${BASE_BRANCH_NAME} ${PR_BRANCH_NAME})
+
+        echo ""
+        echo ""
+        echo "=== Log of PR branch up to merge-base"
+        echo ""
+        git log ${MERGE_BASE}..${PR_BRANCH_NAME}
+
+        echo ""
+        echo ""
+        echo "=== Diff of PR branch up to merge-base"
+        echo ""
+        git diff --name-only ${MERGE_BASE}..${PR_BRANCH_NAME}
+
     - name: Build with Maven
       env:
         SPARK_LOCAL_IP: localhost
       run: |
-        ./mvnw -B install javadoc:javadoc-no-fork --file pom.xml -Pcode-coverage -Dtest.log.level=WARN
+        ./mvnw -B install javadoc:javadoc-no-fork --file pom.xml \
+          -Pcode-coverage \
+          -Dtest.log.level=WARN \
+          -Dgib.disable=false \
+          -Dgib.baseBranch=refs/heads/${PR_BRANCH_NAME} \
+          -Dgib.referenceBranch=refs/heads/${BASE_BRANCH_NAME}
 
     - name: Build with Gradle
       run: ./gradlew --rerun-tasks --no-daemon --info build

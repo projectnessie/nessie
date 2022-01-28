@@ -198,6 +198,13 @@
     <surefire.version>3.0.0-M5</surefire.version>
     <testcontainers.version>1.16.3</testcontainers.version>
     <weld.version>3.1.8.Final</weld.version>
+
+    <!-- gitflow-incremental-builder, disabled by default -->
+    <gib.disable>true</gib.disable>
+    <gib.referenceBranch>refs/remotes/origin/main</gib.referenceBranch>
+    <gib.buildAll>true</gib.buildAll>
+    <gib.untracked>false</gib.untracked>
+    <gib.skipTestsForUpstreamModules>true</gib.skipTestsForUpstreamModules>
   </properties>
 
   <dependencyManagement>
@@ -1164,6 +1171,13 @@ limitations under the License.
         <version>${gatling.maven.version}</version>
       </plugin>
     </plugins>
+    <extensions>
+      <extension>
+        <groupId>com.vackosar.gitflowincrementalbuilder</groupId>
+        <artifactId>gitflow-incremental-builder</artifactId>
+        <version>3.14.5</version>
+      </extension>
+    </extensions>
   </build>
 
   <profiles>
