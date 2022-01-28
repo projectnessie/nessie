@@ -158,33 +158,48 @@ public abstract class AbstractReferences extends AbstractNestedVersionStore {
         ReferenceNotFoundException.class, () -> store().delete(tag, Optional.of(initialHash)));
   }
 
+  /**
+   * Rudimentary test for {@link VersionStore#getNamedRef(String, GetNamedRefsParams)}. Better tests
+   * in {@code AbstractGetNamedReferences} in {@code :nessie-versioned-persist-tests}.
+   */
   @Test
   void getNamedRef() throws VersionStoreException {
-    final BranchName branch = BranchName.of("toRef");
-    store().create(branch, Optional.empty());
-    store().hashOnReference(branch, Optional.empty());
+    final BranchName branch = BranchName.of("getNamedRef");
+    Hash hashFromCreate = store().create(branch, Optional.empty());
+    assertThat(store().hashOnReference(branch, Optional.empty())).isEqualTo(hashFromCreate);
 
-    final Hash firstCommit = commit("First Commit").toBranch(branch);
+    final Hash firstCommitHash = commit("First Commit").toBranch(branch);
 
     assertThat(store().getNamedRef(branch.getName(), GetNamedRefsParams.DEFAULT))
         .extracting(ReferenceInfo::getHash, ReferenceInfo::getNamedRef)
-        .containsExactly(firstCommit, branch);
+        .containsExactly(firstCommitHash, branch);
 
-    final Hash secondCommit = commit("Second Commit").toBranch(branch);
-    final Hash thirdCommit = commit("Third Commit").toBranch(branch);
+    final Hash secondCommitHash = commit("Second Commit").toBranch(branch);
+    final Hash thirdCommitHash = commit("Third Commit").toBranch(branch);
 
-    store().create(BranchName.of(thirdCommit.asString()), Optional.of(firstCommit));
-    store().create(TagName.of(secondCommit.asString()), Optional.of(firstCommit));
+    BranchName branchName = BranchName.of("getNamedRef_branch_" + secondCommitHash.asString());
+    TagName tagName = TagName.of("getNamedRef_tag_" + thirdCommitHash.asString());
 
-    assertThat(store().getNamedRef(secondCommit.asString(), GetNamedRefsParams.DEFAULT))
+    store().create(branchName, Optional.of(secondCommitHash));
+    store().create(tagName, Optional.of(thirdCommitHash));
+
+    // Verifies that the result of "getNamedRef" for the branch created at "firstCommitHash" is
+    // correct
+    assertThat(store().getNamedRef(branchName.getName(), GetNamedRefsParams.DEFAULT))
         .extracting(ReferenceInfo::getHash, ReferenceInfo::getNamedRef)
-        .containsExactly(firstCommit, TagName.of(secondCommit.asString()));
-    assertThat(store().getNamedRef(thirdCommit.asString(), GetNamedRefsParams.DEFAULT))
+        .containsExactly(secondCommitHash, branchName);
+
+    // Verifies that the result of "getNamedRef" for the tag created at "firstCommitHash" is correct
+    assertThat(store().getNamedRef(tagName.getName(), GetNamedRefsParams.DEFAULT))
         .extracting(ReferenceInfo::getHash, ReferenceInfo::getNamedRef)
-        .containsExactly(firstCommit, BranchName.of(thirdCommit.asString()));
-    // Is it correct to allow a reference with the sentinel reference?
-    // assertThat(store().toRef(initialCommit.asString()), is(WithHash.of(initialCommit,
-    // initialCommit)));
+        .containsExactly(thirdCommitHash, tagName);
+
+    // Verifies that the result of "getNamedRef" for the branch created at "firstCommitHash" is
+    // correct
+    assertThat(store().getNamedRef(branchName.getName(), GetNamedRefsParams.DEFAULT))
+        .extracting(ReferenceInfo::getHash, ReferenceInfo::getNamedRef)
+        .containsExactly(secondCommitHash, branchName);
+
     assertThrows(
         ReferenceNotFoundException.class,
         () -> store().getNamedRef("unknown-ref", GetNamedRefsParams.DEFAULT));
