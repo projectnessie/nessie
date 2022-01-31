@@ -84,7 +84,7 @@ class TestValidation {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {"BARE", "HEAD"})
+  @ValueSource(strings = {"DETACHED", "HEAD", "detached", "head", "dEtAcHeD", "hEaD"})
   // Note: hashes validated in validHashes()
   void forbiddenReferenceNames(String refName) {
     assertThat(isForbiddenReferenceName(refName)).isTrue();

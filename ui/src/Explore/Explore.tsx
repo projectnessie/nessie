@@ -49,6 +49,8 @@ const loadBranchesAndTags = (): Promise<Reference[] | void> => {
 const refName = (a: Reference): string => {
   const t = a.type;
   switch (t) {
+    case "DETACHED":
+      return a.hash;
     case "BRANCH":
       return a.name;
     case "TAG":

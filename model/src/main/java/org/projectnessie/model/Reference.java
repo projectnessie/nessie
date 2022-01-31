@@ -35,10 +35,11 @@ import org.immutables.value.Value;
 @Schema(
     type = SchemaType.OBJECT,
     title = "Reference",
-    oneOf = {Branch.class, Tag.class},
+    oneOf = {Branch.class, Tag.class, Detached.class},
     discriminatorMapping = {
       @DiscriminatorMapping(value = "TAG", schema = Tag.class),
       @DiscriminatorMapping(value = "BRANCH", schema = Branch.class),
+      @DiscriminatorMapping(value = "DETACHED", schema = Detached.class)
     },
     discriminatorProperty = "type",
     // Smallrye does neither support JsonFormat nor javax.validation.constraints.Pattern :(
@@ -47,7 +48,7 @@ import org.immutables.value.Value;
       @SchemaProperty(name = "hash", pattern = Validation.HASH_REGEX),
       @SchemaProperty(name = "metadata", nullable = true)
     })
-@JsonSubTypes({@Type(Branch.class), @Type(Tag.class)})
+@JsonSubTypes({@Type(Branch.class), @Type(Tag.class), @Type(Detached.class)})
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 public interface Reference extends Base {
   /** Human-readable reference name. */
@@ -56,7 +57,6 @@ public interface Reference extends Base {
   String getName();
 
   /** backend system id. Usually the 32-byte hash of the commit this reference points to. */
-  @Nullable
   @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
   String getHash();
 

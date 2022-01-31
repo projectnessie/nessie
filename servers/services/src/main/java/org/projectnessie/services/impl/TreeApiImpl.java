@@ -66,6 +66,7 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.Content.Type;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.Detached;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.ImmutableBranch;
 import org.projectnessie.model.ImmutableLogEntry;
@@ -553,6 +554,9 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
 
   private Hash toHash(String referenceName, String hashOnReference)
       throws ReferenceNotFoundException {
+    if (Detached.REF_NAME.equals(referenceName)) {
+      return Hash.of(hashOnReference);
+    }
     if (hashOnReference == null) {
       return getStore().getNamedRef(referenceName, GetNamedRefsParams.DEFAULT).getHash();
     }

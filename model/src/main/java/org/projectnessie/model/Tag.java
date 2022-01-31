@@ -20,6 +20,7 @@ import static org.projectnessie.model.Validation.validateReferenceName;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import javax.annotation.Nullable;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
@@ -31,6 +32,10 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ImmutableTag.class)
 @JsonTypeName("TAG")
 public interface Tag extends Reference {
+
+  @Override
+  @Nullable
+  String getHash();
 
   /**
    * Validation rule using {@link org.projectnessie.model.Validation#validateReferenceName(String)}.

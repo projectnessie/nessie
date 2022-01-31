@@ -22,7 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
@@ -35,8 +36,10 @@ import org.projectnessie.model.Operation.Put;
 
 /** See {@link AbstractTestRest} for details about and reason for the inheritance model. */
 public abstract class AbstractRestEntries extends AbstractRestDiff {
-  @Test
-  public void filterEntriesByType() throws BaseNessieClientServerException {
+
+  @ParameterizedTest
+  @EnumSource(ReferenceMode.class)
+  public void filterEntriesByType(ReferenceMode refMode) throws BaseNessieClientServerException {
     Branch branch = createBranch("filterTypes");
     ContentKey a = ContentKey.of("a");
     ContentKey b = ContentKey.of("b");
@@ -48,13 +51,15 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
         .operation(Put.of(a, tam))
         .commitMeta(CommitMeta.fromMessage("commit 1"))
         .commit();
-    getApi()
-        .commitMultipleOperations()
-        .branch(branch)
-        .operation(Put.of(b, tb))
-        .commitMeta(CommitMeta.fromMessage("commit 2"))
-        .commit();
-    List<Entry> entries = getApi().getEntries().refName(branch.getName()).get().getEntries();
+    branch =
+        getApi()
+            .commitMultipleOperations()
+            .branch(branch)
+            .operation(Put.of(b, tb))
+            .commitMeta(CommitMeta.fromMessage("commit 2"))
+            .commit();
+    List<Entry> entries =
+        getApi().getEntries().reference(refMode.transform(branch)).get().getEntries();
     List<Entry> expected =
         asList(
             Entry.builder().name(a).type(Type.ICEBERG_TABLE).build(),
@@ -64,7 +69,7 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
     entries =
         getApi()
             .getEntries()
-            .refName(branch.getName())
+            .reference(refMode.transform(branch))
             .filter("entry.contentType=='ICEBERG_TABLE'")
             .get()
             .getEntries();
@@ -73,7 +78,7 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
     entries =
         getApi()
             .getEntries()
-            .refName(branch.getName())
+            .reference(refMode.transform(branch))
             .filter("entry.contentType=='ICEBERG_VIEW'")
             .get()
             .getEntries();
@@ -82,15 +87,17 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
     entries =
         getApi()
             .getEntries()
-            .refName(branch.getName())
+            .reference(refMode.transform(branch))
             .filter("entry.contentType in ['ICEBERG_TABLE', 'ICEBERG_VIEW']")
             .get()
             .getEntries();
     assertThat(entries).containsExactlyInAnyOrderElementsOf(expected);
   }
 
-  @Test
-  public void filterEntriesByNamespace() throws BaseNessieClientServerException {
+  @ParameterizedTest
+  @EnumSource(ReferenceMode.class)
+  public void filterEntriesByNamespace(ReferenceMode refMode)
+      throws BaseNessieClientServerException {
     Branch branch = createBranch("filterEntriesByNamespace");
     ContentKey first = ContentKey.of("a", "b", "c", "firstTable");
     ContentKey second = ContentKey.of("a", "b", "c", "secondTable");
@@ -114,23 +121,25 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
         .operation(Put.of(third, IcebergTable.of("path3", 42, 42, 42, 42)))
         .commitMeta(CommitMeta.fromMessage("commit 3"))
         .commit();
-    getApi()
-        .commitMultipleOperations()
-        .branch(branch)
-        .operation(Put.of(fourth, IcebergTable.of("path4", 42, 42, 42, 42)))
-        .commitMeta(CommitMeta.fromMessage("commit 4"))
-        .commit();
+    branch =
+        getApi()
+            .commitMultipleOperations()
+            .branch(branch)
+            .operation(Put.of(fourth, IcebergTable.of("path4", 42, 42, 42, 42)))
+            .commitMeta(CommitMeta.fromMessage("commit 4"))
+            .commit();
 
-    List<Entry> entries = getApi().getEntries().refName(branch.getName()).get().getEntries();
+    List<Entry> entries =
+        getApi().getEntries().reference(refMode.transform(branch)).get().getEntries();
     assertThat(entries).isNotNull().hasSize(4);
 
-    entries = getApi().getEntries().refName(branch.getName()).get().getEntries();
+    entries = getApi().getEntries().reference(refMode.transform(branch)).get().getEntries();
     assertThat(entries).isNotNull().hasSize(4);
 
     entries =
         getApi()
             .getEntries()
-            .refName(branch.getName())
+            .reference(refMode.transform(branch))
             .filter("entry.namespace.startsWith('a.b')")
             .get()
             .getEntries();
@@ -140,7 +149,7 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
     entries =
         getApi()
             .getEntries()
-            .refName(branch.getName())
+            .reference(refMode.transform(branch))
             .filter("entry.namespace.startsWith('a')")
             .get()
             .getEntries();
@@ -150,7 +159,7 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
     entries =
         getApi()
             .getEntries()
-            .refName(branch.getName())
+            .reference(refMode.transform(branch))
             .filter("entry.namespace.startsWith('a.b.c.firstTable')")
             .get()
             .getEntries();
@@ -159,7 +168,7 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
     entries =
         getApi()
             .getEntries()
-            .refName(branch.getName())
+            .reference(refMode.transform(branch))
             .filter("entry.namespace.startsWith('a.fourthTable')")
             .get()
             .getEntries();
@@ -172,8 +181,10 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
         .delete();
   }
 
-  @Test
-  public void filterEntriesByNamespaceAndPrefixDepth() throws BaseNessieClientServerException {
+  @ParameterizedTest
+  @EnumSource(ReferenceMode.class)
+  public void filterEntriesByNamespaceAndPrefixDepth(ReferenceMode refMode)
+      throws BaseNessieClientServerException {
     Branch branch = createBranch("filterEntriesByNamespaceAndPrefixDepth");
     ContentKey first = ContentKey.of("a", "b", "c", "firstTable");
     ContentKey second = ContentKey.of("a", "b", "c", "secondTable");
@@ -189,15 +200,21 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
           .commitMeta(CommitMeta.fromMessage("commit " + i))
           .commit();
     }
+    branch = (Branch) getApi().getReference().refName(branch.getName()).get();
 
     List<Entry> entries =
-        getApi().getEntries().refName(branch.getName()).namespaceDepth(0).get().getEntries();
+        getApi()
+            .getEntries()
+            .reference(refMode.transform(branch))
+            .namespaceDepth(0)
+            .get()
+            .getEntries();
     assertThat(entries).isNotNull().hasSize(5);
 
     entries =
         getApi()
             .getEntries()
-            .refName(branch.getName())
+            .reference(refMode.transform(branch))
             .namespaceDepth(0)
             .filter("entry.namespace.matches('a(\\\\.|$)')")
             .get()
@@ -207,7 +224,7 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
     entries =
         getApi()
             .getEntries()
-            .refName(branch.getName())
+            .reference(refMode.transform(branch))
             .namespaceDepth(1)
             .filter("entry.namespace.matches('a(\\\\.|$)')")
             .get()
@@ -219,7 +236,7 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
     entries =
         getApi()
             .getEntries()
-            .refName(branch.getName())
+            .reference(refMode.transform(branch))
             .namespaceDepth(2)
             .filter("entry.namespace.matches('a(\\\\.|$)')")
             .get()
@@ -231,7 +248,7 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
     entries =
         getApi()
             .getEntries()
-            .refName(branch.getName())
+            .reference(refMode.transform(branch))
             .namespaceDepth(3)
             .filter("entry.namespace.matches('a\\\\.b(\\\\.|$)')")
             .get()
@@ -243,7 +260,7 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
     entries =
         getApi()
             .getEntries()
-            .refName(branch.getName())
+            .reference(refMode.transform(branch))
             .namespaceDepth(4)
             .filter("entry.namespace.matches('a\\\\.b\\\\.c(\\\\.|$)')")
             .get()
@@ -255,7 +272,7 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
     entries =
         getApi()
             .getEntries()
-            .refName(branch.getName())
+            .reference(refMode.transform(branch))
             .namespaceDepth(5)
             .filter("entry.namespace.matches('(\\\\.|$)')")
             .get()
@@ -265,7 +282,7 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
     entries =
         getApi()
             .getEntries()
-            .refName(branch.getName())
+            .reference(refMode.transform(branch))
             .namespaceDepth(3)
             .filter("entry.namespace.matches('(\\\\.|$)')")
             .get()

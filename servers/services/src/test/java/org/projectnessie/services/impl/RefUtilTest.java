@@ -22,10 +22,12 @@ import static org.projectnessie.services.impl.RefUtil.toReference;
 import javax.annotation.Nonnull;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.model.Branch;
+import org.projectnessie.model.Detached;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferenceMetadata;
 import org.projectnessie.model.Tag;
 import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.DetachedRef;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.TagName;
@@ -40,6 +42,8 @@ class RefUtilTest {
     assertThat(RefUtil.toNamedRef(Branch.of(REF_NAME, HASH_VALUE)))
         .isEqualTo(BranchName.of(REF_NAME));
     assertThat(RefUtil.toNamedRef(Tag.of(REF_NAME, HASH_VALUE))).isEqualTo(TagName.of(REF_NAME));
+    assertThat(RefUtil.toNamedRef(Detached.of(HASH_VALUE))).isSameAs(DetachedRef.INSTANCE);
+
     assertThat(RefUtil.toNamedRef(Branch.of(REF_NAME, null))).isEqualTo(BranchName.of(REF_NAME));
     assertThat(RefUtil.toNamedRef(Tag.of(REF_NAME, null))).isEqualTo(TagName.of(REF_NAME));
   }
@@ -99,6 +103,8 @@ class RefUtilTest {
         .isEqualTo(Branch.of(REF_NAME, HASH_VALUE));
     assertThat(RefUtil.toReference(TagName.of(REF_NAME), HASH_VALUE))
         .isEqualTo(Tag.of(REF_NAME, HASH_VALUE));
+    assertThat(RefUtil.toReference(DetachedRef.INSTANCE, HASH_VALUE))
+        .isEqualTo(Detached.of(HASH_VALUE));
     assertThat(RefUtil.toReference(BranchName.of(REF_NAME), (String) null))
         .isEqualTo(Branch.of(REF_NAME, null));
     assertThat(RefUtil.toReference(TagName.of(REF_NAME), (String) null))
@@ -111,6 +117,8 @@ class RefUtilTest {
         .isEqualTo(Branch.of(REF_NAME, HASH_VALUE));
     assertThat(RefUtil.toReference(TagName.of(REF_NAME), Hash.of(HASH_VALUE)))
         .isEqualTo(Tag.of(REF_NAME, HASH_VALUE));
+    assertThat(RefUtil.toReference(DetachedRef.INSTANCE, Hash.of(HASH_VALUE)))
+        .isEqualTo(Detached.of(HASH_VALUE));
     assertThat(RefUtil.toReference(BranchName.of(REF_NAME), (Hash) null))
         .isEqualTo(Branch.of(REF_NAME, null));
     assertThat(RefUtil.toReference(TagName.of(REF_NAME), (Hash) null))
@@ -143,6 +151,9 @@ class RefUtilTest {
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageStartingWith(
             "Unsupported named reference 'org.projectnessie.services.impl.RefUtilTest");
+    assertThatThrownBy(() -> toReference(DetachedRef.INSTANCE, (String) null))
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("hash must not be null for detached references");
   }
 
   @Test
@@ -171,5 +182,8 @@ class RefUtilTest {
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageStartingWith(
             "Unsupported named reference 'org.projectnessie.services.impl.RefUtilTest");
+    assertThatThrownBy(() -> toReference(DetachedRef.INSTANCE, (Hash) null))
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("hash must not be null for detached references");
   }
 }

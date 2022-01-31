@@ -18,6 +18,7 @@ package org.projectnessie.model;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -48,9 +49,9 @@ public final class Validation {
   public static final String REF_NAME_OR_HASH_MESSAGE =
       "Reference must be either a reference name or hash, " + REF_RULE + " or " + HASH_RULE;
   public static final String FORBIDDEN_REF_NAME_MESSAGE =
-      "Reference name mut not be HEAD, BARE or a potential commit ID representation.";
+      "Reference name mut not be HEAD, DETACHED or a potential commit ID representation.";
   public static final Set<String> FORBIDDEN_REF_NAMES =
-      Collections.unmodifiableSet(new HashSet<>(Arrays.asList("HEAD", "BARE")));
+      Collections.unmodifiableSet(new HashSet<>(Arrays.asList("HEAD", "DETACHED")));
 
   private Validation() {
     // empty
@@ -131,14 +132,15 @@ public final class Validation {
   }
 
   /**
-   * Checks whether {@code ref} represents a forbidden reference name ({@code HEAD} or {@code BARE})
-   * or could represent a commit-ID.
+   * Checks whether {@code ref} represents a forbidden reference name ({@code HEAD} or {@code
+   * DETACHED}) or could represent a commit-ID.
    *
    * @param ref reference name to check
    * @return {@code true}, if forbidden
    */
   public static boolean isForbiddenReferenceName(String ref) {
-    return FORBIDDEN_REF_NAMES.contains(ref) || HASH_PATTERN.matcher(ref).matches();
+    return FORBIDDEN_REF_NAMES.contains(ref.toUpperCase(Locale.ROOT))
+        || HASH_PATTERN.matcher(ref).matches();
   }
 
   /**

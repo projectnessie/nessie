@@ -18,7 +18,10 @@ package org.projectnessie.jaxrs;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.ImmutableList;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.EnumSource.Mode;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
@@ -30,8 +33,10 @@ import org.projectnessie.model.Operation.Put;
 
 /** See {@link AbstractTestRest} for details about and reason for the inheritance model. */
 public abstract class AbstractRestMergeTransplant extends AbstractRestInvalidWithHttp {
-  @Test
-  public void transplant() throws BaseNessieClientServerException {
+
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void transplant(boolean withDetachedCommit) throws BaseNessieClientServerException {
     Branch base = createBranch("transplant-base");
     Branch branch = createBranch("transplant-branch");
 
@@ -79,7 +84,7 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalidWit
     getApi()
         .transplantCommitsIntoBranch()
         .hashesToTransplant(ImmutableList.of(committed1.getHash(), committed2.getHash()))
-        .fromRefName(branch.getName())
+        .fromRefName(maybeAsDetachedName(withDetachedCommit, branch))
         .branch(base)
         .transplant();
 
@@ -108,8 +113,12 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalidWit
         .containsExactlyInAnyOrder("key1", "key2");
   }
 
-  @Test
-  public void merge() throws BaseNessieClientServerException {
+  @ParameterizedTest
+  @EnumSource(
+      value = ReferenceMode.class,
+      mode = Mode.EXCLUDE,
+      names = "NAME_ONLY") // merge requires the hash
+  public void merge(ReferenceMode refMode) throws BaseNessieClientServerException {
     Branch base = createBranch("merge-base");
     Branch branch = createBranch("merge-branch");
 
@@ -154,7 +163,7 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalidWit
         .operation(Put.of(ContentKey.of("key2"), table2))
         .commit();
 
-    getApi().mergeRefIntoBranch().branch(base).fromRef(committed2).merge();
+    getApi().mergeRefIntoBranch().branch(base).fromRef(refMode.transform(committed2)).merge();
 
     LogResponse log =
         getApi().getCommitLog().refName(base.getName()).untilHash(base.getHash()).get();
