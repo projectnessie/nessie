@@ -35,7 +35,6 @@ import org.projectnessie.versioned.StringStoreWorker.TestEnum;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStoreException;
-import org.projectnessie.versioned.WithHash;
 
 public abstract class AbstractReferences extends AbstractNestedVersionStore {
   protected AbstractReferences(VersionStore<String, String, TestEnum> store) {
@@ -159,30 +158,53 @@ public abstract class AbstractReferences extends AbstractNestedVersionStore {
         ReferenceNotFoundException.class, () -> store().delete(tag, Optional.of(initialHash)));
   }
 
+  /**
+   * Rudimentary test for {@link VersionStore#getNamedRef(String, GetNamedRefsParams)}. Better tests
+   * in {@code AbstractGetNamedReferences} in {@code :nessie-versioned-persist-tests}.
+   */
   @Test
-  void toRef() throws VersionStoreException {
-    final BranchName branch = BranchName.of("toRef");
-    store().create(branch, Optional.empty());
-    store().hashOnReference(branch, Optional.empty());
+  void getNamedRef() throws VersionStoreException {
+    final BranchName branch = BranchName.of("getNamedRef");
+    Hash hashFromCreate = store().create(branch, Optional.empty());
+    assertThat(store().hashOnReference(branch, Optional.empty())).isEqualTo(hashFromCreate);
 
-    final Hash firstCommit = commit("First Commit").toBranch(branch);
+    final Hash firstCommitHash = commit("First Commit").toBranch(branch);
 
-    assertThat(store().toRef(branch.getName())).isEqualTo(WithHash.of(firstCommit, branch));
+    assertThat(store().getNamedRef(branch.getName(), GetNamedRefsParams.DEFAULT))
+        .extracting(ReferenceInfo::getHash, ReferenceInfo::getNamedRef)
+        .containsExactly(firstCommitHash, branch);
 
-    final Hash secondCommit = commit("Second Commit").toBranch(branch);
-    final Hash thirdCommit = commit("Third Commit").toBranch(branch);
+    final Hash secondCommitHash = commit("Second Commit").toBranch(branch);
+    final Hash thirdCommitHash = commit("Third Commit").toBranch(branch);
 
-    store().create(BranchName.of(thirdCommit.asString()), Optional.of(firstCommit));
-    store().create(TagName.of(secondCommit.asString()), Optional.of(firstCommit));
+    BranchName branchName = BranchName.of("getNamedRef_branch_" + secondCommitHash.asString());
+    TagName tagName = TagName.of("getNamedRef_tag_" + thirdCommitHash.asString());
 
-    assertThat(store().toRef(secondCommit.asString()))
-        .isEqualTo(WithHash.of(firstCommit, TagName.of(secondCommit.asString())));
-    assertThat(store().toRef(thirdCommit.asString()))
-        .isEqualTo(WithHash.of(firstCommit, BranchName.of(thirdCommit.asString())));
-    // Is it correct to allow a reference with the sentinel reference?
-    // assertThat(store().toRef(initialCommit.asString()), is(WithHash.of(initialCommit,
-    // initialCommit)));
-    assertThrows(ReferenceNotFoundException.class, () -> store().toRef("unknown-ref"));
-    assertThrows(ReferenceNotFoundException.class, () -> store().toRef("1234567890abcdef"));
+    store().create(branchName, Optional.of(secondCommitHash));
+    store().create(tagName, Optional.of(thirdCommitHash));
+
+    // Verifies that the result of "getNamedRef" for the branch created at "firstCommitHash" is
+    // correct
+    assertThat(store().getNamedRef(branchName.getName(), GetNamedRefsParams.DEFAULT))
+        .extracting(ReferenceInfo::getHash, ReferenceInfo::getNamedRef)
+        .containsExactly(secondCommitHash, branchName);
+
+    // Verifies that the result of "getNamedRef" for the tag created at "firstCommitHash" is correct
+    assertThat(store().getNamedRef(tagName.getName(), GetNamedRefsParams.DEFAULT))
+        .extracting(ReferenceInfo::getHash, ReferenceInfo::getNamedRef)
+        .containsExactly(thirdCommitHash, tagName);
+
+    // Verifies that the result of "getNamedRef" for the branch created at "firstCommitHash" is
+    // correct
+    assertThat(store().getNamedRef(branchName.getName(), GetNamedRefsParams.DEFAULT))
+        .extracting(ReferenceInfo::getHash, ReferenceInfo::getNamedRef)
+        .containsExactly(secondCommitHash, branchName);
+
+    assertThrows(
+        ReferenceNotFoundException.class,
+        () -> store().getNamedRef("unknown-ref", GetNamedRefsParams.DEFAULT));
+    assertThrows(
+        ReferenceNotFoundException.class,
+        () -> store().getNamedRef("1234567890abcdef", GetNamedRefsParams.DEFAULT));
   }
 }

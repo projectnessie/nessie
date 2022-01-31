@@ -26,9 +26,10 @@ import org.projectnessie.model.Content;
 import org.projectnessie.services.authz.AccessChecker;
 import org.projectnessie.services.authz.ServerAccessContext;
 import org.projectnessie.services.config.ServerConfig;
+import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.NamedRef;
-import org.projectnessie.versioned.Ref;
+import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
@@ -57,13 +58,8 @@ abstract class BaseApiImpl {
     }
     WithHash<NamedRef> namedRefWithHash;
     try {
-      WithHash<Ref> refWithHash = getStore().toRef(namedRef);
-      Ref ref = refWithHash.getValue();
-      if (!(ref instanceof NamedRef)) {
-        throw new ReferenceNotFoundException(
-            String.format("Named reference '%s' not found", namedRef));
-      }
-      namedRefWithHash = WithHash.of(refWithHash.getHash(), (NamedRef) ref);
+      ReferenceInfo<CommitMeta> ref = getStore().getNamedRef(namedRef, GetNamedRefsParams.DEFAULT);
+      namedRefWithHash = WithHash.of(ref.getHash(), ref.getNamedRef());
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }

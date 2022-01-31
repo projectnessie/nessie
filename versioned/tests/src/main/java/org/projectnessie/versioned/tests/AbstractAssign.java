@@ -24,7 +24,6 @@ import org.junit.jupiter.api.Test;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Ref;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceInfo;
@@ -33,7 +32,6 @@ import org.projectnessie.versioned.StringStoreWorker.TestEnum;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStoreException;
-import org.projectnessie.versioned.WithHash;
 
 public abstract class AbstractAssign extends AbstractNestedVersionStore {
   protected AbstractAssign(VersionStore<String, String, TestEnum> store) {
@@ -89,21 +87,24 @@ public abstract class AbstractAssign extends AbstractNestedVersionStore {
   public void assignReferenceToFreshMain()
       throws ReferenceNotFoundException, ReferenceAlreadyExistsException,
           ReferenceConflictException {
-    BranchName main = BranchName.of("main");
-    WithHash<Ref> mainRef = store().toRef(main.getName());
-    assertThat(store().getCommits(main, false)).isEmpty();
+    ReferenceInfo<String> main = store.getNamedRef("main", GetNamedRefsParams.DEFAULT);
+    assertThat(store().getCommits(main.getHash(), false)).isEmpty();
     try (Stream<ReferenceInfo<String>> refs = store().getNamedRefs(GetNamedRefsParams.DEFAULT)) {
-      assertThat(refs).extracting(r -> r.getNamedRef().getName()).containsExactly(main.getName());
+      assertThat(refs)
+          .extracting(r -> r.getNamedRef().getName())
+          .containsExactly(main.getNamedRef().getName());
     }
 
     BranchName testBranch = BranchName.of("testBranch");
-    Hash testBranchHash = store().create(testBranch, Optional.empty());
-    store().assign(testBranch, Optional.of(testBranchHash), mainRef.getHash());
-    assertThat(store().toRef(testBranch.getName()).getHash()).isEqualTo(mainRef.getHash());
+    Hash testBranchHash = store.create(testBranch, Optional.empty());
+    store.assign(testBranch, Optional.of(testBranchHash), main.getHash());
+    assertThat(store.getNamedRef(testBranch.getName(), GetNamedRefsParams.DEFAULT).getHash())
+        .isEqualTo(main.getHash());
 
     TagName testTag = TagName.of("testTag");
-    Hash testTagHash = store().create(testTag, Optional.empty());
-    store().assign(testTag, Optional.of(testTagHash), mainRef.getHash());
-    assertThat(store().toRef(testTag.getName()).getHash()).isEqualTo(mainRef.getHash());
+    Hash testTagHash = store.create(testTag, Optional.empty());
+    store.assign(testTag, Optional.of(testTagHash), main.getHash());
+    assertThat(store.getNamedRef(testTag.getName(), GetNamedRefsParams.DEFAULT).getHash())
+        .isEqualTo(main.getHash());
   }
 }

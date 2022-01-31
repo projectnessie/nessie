@@ -554,8 +554,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   private Hash toHash(String referenceName, String hashOnReference)
       throws ReferenceNotFoundException {
     if (hashOnReference == null) {
-      WithHash<Ref> hash = getStore().toRef(referenceName);
-      return hash.getHash();
+      return getStore().getNamedRef(referenceName, GetNamedRefsParams.DEFAULT).getHash();
     }
     return toHash(hashOnReference, true)
         .orElseThrow(() -> new IllegalStateException("Required hash is missing"));
@@ -585,17 +584,14 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   protected void assignReference(NamedRef ref, String oldHash, Reference assignTo)
       throws NessieNotFoundException, NessieConflictException {
     try {
-      WithHash<Ref> resolved = getStore().toRef(ref.getName());
-      Ref resolvedRef = resolved.getValue();
-      if (resolvedRef instanceof NamedRef) {
-        getStore()
-            .assign(
-                (NamedRef) resolvedRef,
-                toHash(oldHash, true),
-                toHash(assignTo.getName(), assignTo.getHash()));
-      } else {
-        throw new IllegalArgumentException("Can only assign branch and tag types.");
-      }
+      ReferenceInfo<CommitMeta> resolved =
+          getStore().getNamedRef(ref.getName(), GetNamedRefsParams.DEFAULT);
+
+      getStore()
+          .assign(
+              resolved.getNamedRef(),
+              toHash(oldHash, true),
+              toHash(assignTo.getName(), assignTo.getHash()));
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
