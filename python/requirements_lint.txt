@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 -r requirements_dev.txt
-black==21.12b0
+black==22.1.0
 flake8-annotations
 flake8-bandit==2.1.2
 flake8-black==0.2.4
