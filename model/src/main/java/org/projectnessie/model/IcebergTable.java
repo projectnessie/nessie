@@ -43,7 +43,7 @@ import org.immutables.value.Value;
         "Represents the global state of an Iceberg table in Nessie. An Iceberg table is globally "
             + "identified via its unique 'Content.id'.\n"
             + "\n"
-            + "A Nessie commit-operation, performed via 'TreeApi.commitMultipleOperations', for Iceberg "
+            + "A Nessie commit-operation, performed via 'TreeApi.commitMultipleOperations',"
             + "for Iceberg consists of a 'Operation.Put' with an 'IcebergTable' as in the 'content' "
             + "field and the previous value of 'IcebergTable' in the 'expectedContent' field.\n"
             + "\n"

@@ -18,7 +18,7 @@ import pytest
 import simplejson
 from assertpy import assert_that
 
-from pynessie.model import ContentSchema, DeltaLakeTable, EntrySchema, IcebergTable, ReferenceSchema, SqlView
+from pynessie.model import ContentSchema, DeltaLakeTable, EntrySchema, IcebergTable, IcebergView, ReferenceSchema
 from .conftest import execute_cli_command, make_commit
 
 
@@ -33,11 +33,11 @@ def test_content_view() -> None:
 
     iceberg_table = _create_iceberg_table("test_contents_view")
     delta_lake_table = _create_delta_lake_table("uuid2")
-    sql_view = _create_sql_view("uuid3")
+    iceberg_view = _create_iceberg_view("uuid3")
 
     make_commit("this.is.iceberg.foo", iceberg_table, branch)
     make_commit("this.is.delta.bar", delta_lake_table, branch)
-    make_commit('this.is."sql.baz"', sql_view, branch)
+    make_commit('this.is."sql.baz"', iceberg_view, branch)
 
     result_table = ContentSchema().loads(
         execute_cli_command(["--json", CONTENT_COMMAND, "view", "--ref", branch, "this.is.iceberg.foo"]), many=True
@@ -58,7 +58,7 @@ def test_content_view() -> None:
     )
 
     assert_that(result_table).is_length(1)
-    assert_that(result_table[0]).is_equal_to(sql_view)
+    assert_that(result_table[0]).is_equal_to(iceberg_view)
 
 
 @pytest.mark.vcr
@@ -69,11 +69,11 @@ def test_content_list() -> None:
 
     iceberg_table = _create_iceberg_table("test_contents_list")
     delta_lake_table = _create_delta_lake_table("uuid2")
-    sql_view = _create_sql_view("uuid3")
+    iceberg_view = _create_iceberg_view("uuid3")
 
     make_commit("this.is.iceberg.foo", iceberg_table, branch)
     make_commit("this.is.delta.bar", delta_lake_table, branch)
-    make_commit("this.is.sql.baz", sql_view, branch)
+    make_commit("this.is.sql.baz", iceberg_view, branch)
 
     tables = EntrySchema().loads(
         execute_cli_command(["--json", CONTENT_COMMAND, "list", "--ref", branch, "--type", "ICEBERG_TABLE"]), many=True
@@ -109,7 +109,7 @@ def test_content_list() -> None:
     result = execute_cli_command(["--json", CONTENT_COMMAND, "list", "--ref", branch, "--filter", "entry.namespace.startsWith('this.is')"])
     tables = EntrySchema().loads(result, many=True)
     assert_that(tables).is_length(3)
-    assert_that(set(i.kind for i in tables)).is_equal_to({"ICEBERG_TABLE", "VIEW", "DELTA_LAKE_TABLE"})
+    assert_that(set(i.kind for i in tables)).is_equal_to({"ICEBERG_TABLE", "ICEBERG_VIEW", "DELTA_LAKE_TABLE"})
 
 
 @pytest.mark.vcr
@@ -247,8 +247,15 @@ def _create_delta_lake_table(
     return DeltaLakeTable(table_id, last_checkpoint, checkpoint_location_history, metadata_location_history)
 
 
-def _create_sql_view(table_id: str, sql_text: str = "SELECT * FROM foo", dialect: str = "SPARK") -> SqlView:
-    return SqlView(table_id, dialect, sql_text)
+def _create_iceberg_view(
+    table_id: str,
+    metadata_location: str = "/a/b/c",
+    version_id: int = 1,
+    schema_id: int = 1,
+    sql_text: str = "SELECT * FROM foo",
+    dialect: str = "SPARK",
+) -> IcebergView:
+    return IcebergView(table_id, metadata_location, version_id, schema_id, dialect, sql_text)
 
 
 def _get_head_branch_hash(branch: str) -> str:

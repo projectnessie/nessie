@@ -95,8 +95,8 @@ interactions:
   response:
     body:
       string: '{"hasMore": false, "references": [{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-        "name": "main", "type": "BRANCH"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-        "name": "contents_view_dev", "type": "BRANCH"}], "token": null}'
+        "name": "contents_view_dev", "type": "BRANCH"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "main", "type": "BRANCH"}], "token": null}'
     headers:
       Content-Type:
       - application/json
@@ -155,7 +155,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/branch/contents_view_dev/commit?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
-      string: '{"hash": "5050c8bd6b3d47bd75aba0b316f3895adb4ef39b722b0ae017222317af90017c",
+      string: '{"hash": "ea90941e2be0f5d7a9a2fbc20a318a05638a1e8fa5675b187bd476870e83535d",
         "name": "contents_view_dev", "type": "BRANCH"}'
     headers:
       Content-Type:
@@ -180,9 +180,9 @@ interactions:
     uri: http://localhost:19120/api/v1/trees
   response:
     body:
-      string: '{"hasMore": false, "references": [{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-        "name": "main", "type": "BRANCH"}, {"hash": "5050c8bd6b3d47bd75aba0b316f3895adb4ef39b722b0ae017222317af90017c",
-        "name": "contents_view_dev", "type": "BRANCH"}], "token": null}'
+      string: '{"hasMore": false, "references": [{"hash": "ea90941e2be0f5d7a9a2fbc20a318a05638a1e8fa5675b187bd476870e83535d",
+        "name": "contents_view_dev", "type": "BRANCH"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "main", "type": "BRANCH"}], "token": null}'
     headers:
       Content-Type:
       - application/json
@@ -238,10 +238,10 @@ interactions:
       User-Agent:
       - python-requests/2.26.0
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/contents_view_dev/commit?expectedHash=5050c8bd6b3d47bd75aba0b316f3895adb4ef39b722b0ae017222317af90017c
+    uri: http://localhost:19120/api/v1/trees/branch/contents_view_dev/commit?expectedHash=ea90941e2be0f5d7a9a2fbc20a318a05638a1e8fa5675b187bd476870e83535d
   response:
     body:
-      string: '{"hash": "d7f3f712c5c083123b6a2966db9fc74023dc173fc455d6bfb83f0598b6e61ee6",
+      string: '{"hash": "ce3a0d36f68bd2db170422bd64c1a292c4b22ce671cbe099d5844c31f0520921",
         "name": "contents_view_dev", "type": "BRANCH"}'
     headers:
       Content-Type:
@@ -266,9 +266,9 @@ interactions:
     uri: http://localhost:19120/api/v1/trees
   response:
     body:
-      string: '{"hasMore": false, "references": [{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-        "name": "main", "type": "BRANCH"}, {"hash": "d7f3f712c5c083123b6a2966db9fc74023dc173fc455d6bfb83f0598b6e61ee6",
-        "name": "contents_view_dev", "type": "BRANCH"}], "token": null}'
+      string: '{"hasMore": false, "references": [{"hash": "ce3a0d36f68bd2db170422bd64c1a292c4b22ce671cbe099d5844c31f0520921",
+        "name": "contents_view_dev", "type": "BRANCH"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "main", "type": "BRANCH"}], "token": null}'
     headers:
       Content-Type:
       - application/json
@@ -307,8 +307,9 @@ interactions:
     body: '{"commitMeta": {"author": "nessie test", "authorTime": null, "commitTime":
       null, "committer": null, "hash": null, "message": "test message", "properties":
       null, "signedOffBy": null}, "operations": [{"content": {"dialect": "SPARK",
-      "id": "uuid3", "sqlText": "SELECT * FROM foo", "type": "VIEW"}, "expectedContent":
-      null, "key": {"elements": ["this", "is", "sql.baz"]}, "type": "PUT"}]}'
+      "id": "uuid3", "metadataLocation": "/a/b/c", "schemaId": 1, "sqlText": "SELECT
+      * FROM foo", "type": "ICEBERG_VIEW", "versionId": 1}, "expectedContent": null,
+      "key": {"elements": ["this", "is", "sql.baz"]}, "type": "PUT"}]}'
     headers:
       Accept:
       - '*/*'
@@ -317,16 +318,16 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '384'
+      - '453'
       Content-Type:
       - application/json
       User-Agent:
       - python-requests/2.26.0
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/contents_view_dev/commit?expectedHash=d7f3f712c5c083123b6a2966db9fc74023dc173fc455d6bfb83f0598b6e61ee6
+    uri: http://localhost:19120/api/v1/trees/branch/contents_view_dev/commit?expectedHash=ce3a0d36f68bd2db170422bd64c1a292c4b22ce671cbe099d5844c31f0520921
   response:
     body:
-      string: '{"hash": "52fa8ff128bd9ca22771ac8859a4809fbd2c334a819b74b9e9aab8fdb3892eb3",
+      string: '{"hash": "44fd1af5ba71432c98a0c6f46cc0df2acd42ef85c47fe1cd5e40bc4a1fb7b874",
         "name": "contents_view_dev", "type": "BRANCH"}'
     headers:
       Content-Type:
@@ -401,13 +402,13 @@ interactions:
     uri: http://localhost:19120/api/v1/contents/this.is.sql%00baz?ref=contents_view_dev
   response:
     body:
-      string: '{"dialect": "SPARK", "id": "uuid3", "sqlText": "SELECT * FROM foo",
-        "type": "VIEW"}'
+      string: '{"dialect": "SPARK", "id": "uuid3", "metadataLocation": "/a/b/c", "schemaId":
+        1, "sqlText": "SELECT * FROM foo", "type": "ICEBERG_VIEW", "versionId": 1}'
     headers:
       Content-Type:
       - application/json
       content-length:
-      - '83'
+      - '152'
     status:
       code: 200
       message: OK

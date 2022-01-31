@@ -30,13 +30,13 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.IcebergTable;
+import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
-import org.projectnessie.model.ImmutableSqlView;
-import org.projectnessie.model.SqlView;
 import org.projectnessie.store.ObjectTypes;
 import org.projectnessie.store.ObjectTypes.IcebergMetadataPointer;
 import org.projectnessie.store.ObjectTypes.IcebergRefState;
+import org.projectnessie.store.ObjectTypes.IcebergViewState;
 
 class TestStoreWorker {
   private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -99,6 +99,40 @@ class TestStoreWorker {
   }
 
   @Test
+  void testSerdeIcebergView() {
+    String path = "foo/view";
+    String dialect = "Dremio";
+    String sqlText = "select * from world";
+    IcebergView view = IcebergView.of(ID, path, 1, 123, dialect, sqlText);
+
+    ObjectTypes.Content protoTableGlobal =
+        ObjectTypes.Content.newBuilder()
+            .setId(ID)
+            .setIcebergMetadataPointer(
+                IcebergMetadataPointer.newBuilder().setMetadataLocation(path))
+            .build();
+    ObjectTypes.Content protoOnRef =
+        ObjectTypes.Content.newBuilder()
+            .setId(ID)
+            .setIcebergViewState(
+                IcebergViewState.newBuilder()
+                    .setVersionId(1)
+                    .setDialect(dialect)
+                    .setSchemaId(123)
+                    .setSqlText(sqlText))
+            .build();
+
+    ByteString tableGlobalBytes = worker.toStoreGlobalState(view);
+    ByteString snapshotBytes = worker.toStoreOnReferenceState(view);
+
+    Assertions.assertEquals(protoTableGlobal.toByteString(), tableGlobalBytes);
+    Assertions.assertEquals(protoOnRef.toByteString(), snapshotBytes);
+
+    Content deserialized = worker.valueFromStore(snapshotBytes, Optional.of(tableGlobalBytes));
+    Assertions.assertEquals(view, deserialized);
+  }
+
+  @Test
   void testCommitSerde() throws JsonProcessingException {
     CommitMeta expectedCommit =
         ImmutableCommitMeta.builder()
@@ -122,7 +156,7 @@ class TestStoreWorker {
   }
 
   private static Stream<Map.Entry<ByteString, Content>> provideDeserialization() {
-    return Stream.of(getDelta(), getView());
+    return Stream.of(getDelta());
   }
 
   private static Map.Entry<ByteString, Content> getDelta() {
@@ -150,19 +184,6 @@ class TestStoreWorker {
                     .addCheckpointLocationHistory(cl2)
                     .addMetadataLocationHistory(ml1)
                     .addMetadataLocationHistory(ml2))
-            .build()
-            .toByteString();
-    return new AbstractMap.SimpleImmutableEntry<>(bytes, content);
-  }
-
-  private static Map.Entry<ByteString, Content> getView() {
-    String path = "SELECT * FROM foo.bar,";
-    Content content =
-        ImmutableSqlView.builder().dialect(SqlView.Dialect.DREMIO).sqlText(path).id(ID).build();
-    ByteString bytes =
-        ObjectTypes.Content.newBuilder()
-            .setId(ID)
-            .setSqlView(ObjectTypes.SqlView.newBuilder().setSqlText(path).setDialect("DREMIO"))
             .build()
             .toByteString();
     return new AbstractMap.SimpleImmutableEntry<>(bytes, content);

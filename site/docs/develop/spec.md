@@ -18,7 +18,7 @@ and [Python](python.md).
 ### General Contract
 
 _Content Objects_ describe the state of a data lake object like a table or view.
-Nessie currently provides types for Iceberg tables, Delta Lake tables and SQL views. Nessie uses
+Nessie currently provides types for Iceberg tables, Delta Lake tables and Iceberg views. Nessie uses
 two identifiers for a single Content object:
 
 1. The [Content Id](#content-id) is used to identify a content object across all branches even
@@ -37,8 +37,8 @@ new key ([see below](#operations-in-a-nessie-commit)).
 
 ### On Reference State vs Global State
 
-Nessie is designed to support multiple table formats like Apache Iceberg or Delta Lake or generic
-SQL views. Since different Nessie commits, think: on different branches in Nessie, can refer to the
+Nessie is designed to support multiple table formats like Apache Iceberg or Delta Lake. 
+Since different Nessie commits, think: on different branches in Nessie, can refer to the
 same physical table but with different state of the data and potentially different schema, some
 table formats like Apache Iceberg require Nessie to refer to a single _Global State_, in case of
 Iceberg the _table metadata_. This _Global State_ is not versioned in Nessie, because it has to

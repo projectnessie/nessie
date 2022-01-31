@@ -40,6 +40,7 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.IcebergTable;
+import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.Operation;
@@ -47,7 +48,6 @@ import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferenceMetadata;
 import org.projectnessie.model.ReferencesResponse;
-import org.projectnessie.model.SqlView;
 import org.projectnessie.model.Tag;
 import org.projectnessie.model.Validation;
 
@@ -311,7 +311,7 @@ public abstract class AbstractRestReferences extends AbstractRestMisc {
             .operation(
                 Put.of(
                     ContentKey.of("hello.world.BaseTable"),
-                    SqlView.of(SqlView.Dialect.SPARK, "SELECT ALL THE THINGS")))
+                    IcebergView.of("path1", 1, 1, "Spark", "SELECT ALL THE THINGS")))
             .commit();
     Branch b2 =
         getApi()
@@ -321,7 +321,7 @@ public abstract class AbstractRestReferences extends AbstractRestMisc {
             .operation(
                 Put.of(
                     ContentKey.of("cool.stuff.Caresian"),
-                    SqlView.of(SqlView.Dialect.SPARK, "CARTESIAN JOINS ARE AWESOME")))
+                    IcebergView.of("path2", 1, 1, "Spark", "CARTESIAN JOINS ARE AWESOME")))
             .commit();
     Branch b3 =
         getApi()
@@ -331,7 +331,7 @@ public abstract class AbstractRestReferences extends AbstractRestMisc {
             .operation(
                 Put.of(
                     ContentKey.of("super.old.Numbers"),
-                    SqlView.of(SqlView.Dialect.SPARK, "AGGREGATE EVERYTHING")))
+                    IcebergView.of("path3", 1, 1, "Spark", "AGGREGATE EVERYTHING")))
             .commit();
     Tag t1 =
         (Tag)

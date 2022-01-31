@@ -28,11 +28,11 @@ Nessie currently works with the following formats.
 
 We expect that Nessie will continue to add table formats as more are created.
 
-## SQL Views
+## Iceberg Views
 
-In addition to table formats, Nessie also supports storing SQL views within the Nessie 
+In addition to table formats, Nessie also supports storing Iceberg views within the Nessie 
 repository. This allows tools working in tandem with Nessie to provide very powerful versioned, 
-semantic-layering system. See more in our documentation on [SQL Views](views.md).
+semantic-layering system. See more in our documentation on [Iceberg Views](views.md).
 
 ## Other Object Types
 

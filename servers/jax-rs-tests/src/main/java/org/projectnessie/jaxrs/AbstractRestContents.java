@@ -35,13 +35,12 @@ import org.projectnessie.model.Content.Type;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.IcebergTable;
+import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
-import org.projectnessie.model.ImmutableSqlView;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Operation.Unchanged;
-import org.projectnessie.model.SqlView.Dialect;
 
 /** See {@link AbstractTestRest} for details about and reason for the inheritance model. */
 public abstract class AbstractRestContents extends AbstractRestCommitLog {
@@ -85,29 +84,20 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
             Type.ICEBERG_TABLE,
             Put.of(ContentKey.of("iceberg"), IcebergTable.of("/iceberg/table", 42, 42, 42, 42))),
         new ContentAndOperationType(
-            Type.VIEW,
+            Type.ICEBERG_VIEW,
             Put.of(
                 ContentKey.of("view_dremio"),
-                ImmutableSqlView.builder()
-                    .dialect(Dialect.DREMIO)
-                    .sqlText("SELECT foo FROM dremio")
-                    .build())),
+                IcebergView.of("/iceberg/view", 1, 1, "Dremio", "SELECT foo FROM dremio"))),
         new ContentAndOperationType(
-            Type.VIEW,
+            Type.ICEBERG_VIEW,
             Put.of(
                 ContentKey.of("view_presto"),
-                ImmutableSqlView.builder()
-                    .dialect(Dialect.PRESTO)
-                    .sqlText("SELECT foo FROM presto")
-                    .build())),
+                IcebergView.of("/iceberg/view", 1, 1, "Presto", "SELECT foo FROM presto"))),
         new ContentAndOperationType(
-            Type.VIEW,
+            Type.ICEBERG_VIEW,
             Put.of(
                 ContentKey.of("view_spark"),
-                ImmutableSqlView.builder()
-                    .dialect(Dialect.SPARK)
-                    .sqlText("SELECT foo FROM spark")
-                    .build())),
+                IcebergView.of("/iceberg/view2", 1, 1, "Spark", "SELECT foo FROM spark"))),
         new ContentAndOperationType(
             Type.DELTA_LAKE_TABLE,
             Put.of(
@@ -119,11 +109,14 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
         new ContentAndOperationType(Type.ICEBERG_TABLE, Delete.of(ContentKey.of("iceberg_delete"))),
         new ContentAndOperationType(
             Type.ICEBERG_TABLE, Unchanged.of(ContentKey.of("iceberg_unchanged"))),
-        new ContentAndOperationType(Type.VIEW, Delete.of(ContentKey.of("view_dremio_delete"))),
         new ContentAndOperationType(
-            Type.VIEW, Unchanged.of(ContentKey.of("view_dremio_unchanged"))),
-        new ContentAndOperationType(Type.VIEW, Delete.of(ContentKey.of("view_spark_delete"))),
-        new ContentAndOperationType(Type.VIEW, Unchanged.of(ContentKey.of("view_spark_unchanged"))),
+            Type.ICEBERG_VIEW, Delete.of(ContentKey.of("view_dremio_delete"))),
+        new ContentAndOperationType(
+            Type.ICEBERG_VIEW, Unchanged.of(ContentKey.of("view_dremio_unchanged"))),
+        new ContentAndOperationType(
+            Type.ICEBERG_VIEW, Delete.of(ContentKey.of("view_spark_delete"))),
+        new ContentAndOperationType(
+            Type.ICEBERG_VIEW, Unchanged.of(ContentKey.of("view_spark_unchanged"))),
         new ContentAndOperationType(
             Type.DELTA_LAKE_TABLE, Delete.of(ContentKey.of("delta_delete"))),
         new ContentAndOperationType(
