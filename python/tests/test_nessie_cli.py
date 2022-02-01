@@ -38,7 +38,7 @@ from pynessie.model import LogEntrySchema
 from pynessie.model import ReferenceSchema
 from pynessie.model import ReflogEntry
 from pynessie.model import ReflogEntrySchema
-from .conftest import execute_cli_command, make_commit
+from .conftest import execute_cli_command, make_commit, ref_hash
 
 
 @pytest.mark.vcr
@@ -92,6 +92,8 @@ def _new_table(table_id: str) -> IcebergTable:
 @pytest.mark.vcr
 def test_log() -> None:
     """Test log and log filtering."""
+    main_hash = ref_hash("main")
+
     logs = simplejson.loads(execute_cli_command(["--json", "log"]))
     assert len(logs) == 0
     execute_cli_command(["branch", "dev_test_log"])
@@ -116,12 +118,20 @@ def test_log() -> None:
     simple_logs: List[CommitMeta] = CommitMetaSchema().loads(execute_cli_command(["--json", "log"]), many=True)
     assert len(simple_logs) == 1 and simple_logs[0].message == "commit to main" and simple_logs[0].author == "nessie_user1"
 
+    logs_by_hash: List[CommitMeta] = CommitMetaSchema().loads(execute_cli_command(["--json", "log", simple_logs[0].hash_]), many=True)
+    assert_that(logs_by_hash).is_equal_to(simple_logs)
+
     logs = simplejson.loads(execute_cli_command(["--json", "log"]))
-    assert len(logs) == 1
-    logs = simplejson.loads(execute_cli_command(["--json", "log", "--revision-range", logs[0]["hash"]]))
-    assert len(logs) == 1
+    logs_hash = logs[0]["hash"]
+    assert_that(logs).is_length(1)
+    assert_that(simplejson.loads(execute_cli_command(["--json", "log", "--revision-range", logs_hash]))).is_equal_to(logs)
+    assert_that(simplejson.loads(execute_cli_command(["--json", "log", "--revision-range", f"..{logs_hash}"]))).is_equal_to(logs)
+    assert_that(simplejson.loads(execute_cli_command(["--json", "log", f"main@{logs_hash}", "--revision-range", logs_hash]))).is_equal_to(
+        logs
+    )
+
     entries = EntrySchema().loads(execute_cli_command(["--json", "content", "list"]), many=True)
-    assert len(entries) == 1
+    assert_that(entries).is_length(1)
     execute_cli_command(
         [
             "--json",
@@ -139,41 +149,47 @@ def test_log() -> None:
             "nessie_user2",
         ],
     )
-    logs = simplejson.loads(execute_cli_command(["--json", "log", "-n", 1]))
-    assert len(logs) == 1
-    logs = simplejson.loads(execute_cli_command(["--json", "log", "dev_test_log"]))
-    assert len(logs) == 1
+    assert_that(simplejson.loads(execute_cli_command(["--json", "log", "-n", 1]))).is_length(1)
+    assert_that(simplejson.loads(execute_cli_command(["--json", "log", "dev_test_log"]))).is_length(1)
     logs = simplejson.loads(execute_cli_command(["--json", "log"]))
-    assert len(logs) == 2
-    logs = simplejson.loads(execute_cli_command(["--json", "log", "--revision-range", "{}..{}".format(logs[0]["hash"], logs[1]["hash"])]))
-    assert len(logs) == 1
-    logs = simplejson.loads(execute_cli_command(["--json", "log"]))
-    assert len(logs) == 2
+    assert_that(logs).is_length(2)
+    assert_that(
+        simplejson.loads(execute_cli_command(["--json", "log", "--revision-range", "{}..{}".format(logs[0]["hash"], logs[1]["hash"])]))
+    ).is_length(1)
+    assert_that(simplejson.loads(execute_cli_command(["--json", "log"]))).is_length(2)
     logs = simplejson.loads(execute_cli_command(["--json", "log", "--author", "nessie_user1"]))
-    assert len(logs) == 1
+    assert_that(logs).is_length(1)
     assert_that(logs[0]["author"]).is_equal_to("nessie_user1")
     logs = simplejson.loads(execute_cli_command(["--json", "log", "--author", "nessie_user2"]))
-    assert len(logs) == 1
+    assert_that(logs).is_length(1)
     assert_that(logs[0]["author"]).is_equal_to("nessie_user2")
-    logs = simplejson.loads(execute_cli_command(["--json", "log", "--author", "nessie_user2", "--author", "nessie_user1"]))
-    assert len(logs) == 2
+    assert_that(simplejson.loads(execute_cli_command(["--json", "log", "--author", "nessie_user2", "--author", "nessie_user1"]))).is_length(
+        2
+    )
     # the committer is set on the server-side and is empty if we're not logged
     # in when performing a commit
-    logs = simplejson.loads(execute_cli_command(["--json", "log", "--committer", ""]))
-    assert len(logs) == 2
-    logs = simplejson.loads(
-        execute_cli_command(["--json", "log", "--filter", "commit.author == 'nessie_user2' || commit.author == 'non_existing'"])
-    )
-    assert len(logs) == 1
-    logs = simplejson.loads(
-        execute_cli_command(["--json", "log", "--after", "2001-01-01T00:00:00+00:00", "--before", "2999-12-30T23:00:00+00:00"])
-    )
-    assert len(logs) == 2
+    assert_that(simplejson.loads(execute_cli_command(["--json", "log", "--committer", ""]))).is_length(2)
+    assert_that(
+        simplejson.loads(
+            execute_cli_command(["--json", "log", "--filter", "commit.author == 'nessie_user2' || commit.author == 'non_existing'"])
+        )
+    ).is_length(1)
+    assert_that(
+        simplejson.loads(
+            execute_cli_command(["--json", "log", "--after", "2001-01-01T00:00:00+00:00", "--before", "2999-12-30T23:00:00+00:00"])
+        )
+    ).is_length(2)
+
+    # Specifying a different end-hash via revision-range and ref is forbidden
+    execute_cli_command(["--json", "log", main_hash, "--revision-range", logs[0]["hash"]], ret_val=2)
+    execute_cli_command(["--json", "log", f"main@{main_hash}", "--revision-range", logs[0]["hash"]], ret_val=2)
 
 
 @pytest.mark.vcr
 def test_branch() -> None:
     """Test create and assign refs."""
+    main_hash = ref_hash("main")
+
     references = ReferenceSchema().loads(execute_cli_command(["--json", "branch"]), many=True)
     assert len(references) == 1
     execute_cli_command(["branch", "dev"])
@@ -182,6 +198,12 @@ def test_branch() -> None:
     execute_cli_command(["branch", "etl", "main"])
     references = ReferenceSchema().loads(execute_cli_command(["--json", "branch"]), many=True)
     assert len(references) == 3
+    execute_cli_command(["branch", "dev_hash", main_hash])
+    references = ReferenceSchema().loads(execute_cli_command(["--json", "branch"]), many=True)
+    assert len(references) == 4
+    execute_cli_command(["branch", "etl_hash", f"main@{main_hash}"])
+    references = ReferenceSchema().loads(execute_cli_command(["--json", "branch"]), many=True)
+    assert len(references) == 5
     references = ReferenceSchema().loads(execute_cli_command(["--json", "branch", "-l", "etl"]), many=False)
     assert_that(references.name).is_equal_to("etl")
     references = simplejson.loads(execute_cli_command(["--json", "branch", "-l", "foo"]))
@@ -199,8 +221,12 @@ def test_branch() -> None:
     assert_that(ref_metadata.common_ancestor_hash).is_not_empty()
     assert_that(ref_metadata.commit_meta_of_head).is_not_none()
 
+    dev_hash = ref_hash("dev")
+
     execute_cli_command(["branch", "-d", "etl"])
-    execute_cli_command(["branch", "-d", "dev"])
+    execute_cli_command(["branch", "-d", "dev", "-c", dev_hash])
+    execute_cli_command(["branch", "-d", "etl_hash", "-c", main_hash])
+    execute_cli_command(["branch", "-d", "dev_hash"])
     references = ReferenceSchema().loads(execute_cli_command(["--json", "branch"]), many=True)
     assert len(references) == 1
 
@@ -208,6 +234,8 @@ def test_branch() -> None:
 @pytest.mark.vcr
 def test_tag() -> None:
     """Test create and assign refs."""
+    main_hash = ref_hash("main")
+
     references = ReferenceSchema().loads(execute_cli_command(["--json", "tag"]), many=True)
     assert len(references) == 0
     execute_cli_command(["tag", "dev-tag", "main"])
@@ -216,12 +244,20 @@ def test_tag() -> None:
     execute_cli_command(["tag", "etl-tag", "main"])
     references = ReferenceSchema().loads(execute_cli_command(["--json", "tag"]), many=True)
     assert len(references) == 2
+    execute_cli_command(["tag", "dev-hash-tag", main_hash])
+    references = ReferenceSchema().loads(execute_cli_command(["--json", "tag"]), many=True)
+    assert len(references) == 3
+    execute_cli_command(["tag", "etl-hash-tag", f"main@{main_hash}"])
+    references = ReferenceSchema().loads(execute_cli_command(["--json", "tag"]), many=True)
+    assert len(references) == 4
     references = ReferenceSchema().loads(execute_cli_command(["--json", "tag", "-l", "etl-tag"]), many=False)
     assert_that(references.name).is_equal_to("etl-tag")
     references = simplejson.loads(execute_cli_command(["--json", "tag", "-l", "foo"]))
     assert len(references) == 0
     execute_cli_command(["tag", "-d", "etl-tag"])
-    execute_cli_command(["tag", "-d", "dev-tag"])
+    execute_cli_command(["tag", "-d", "etl-hash-tag"])
+    execute_cli_command(["tag", "-d", "dev-tag", "-c", main_hash])
+    execute_cli_command(["tag", "-d", "dev-hash-tag", "-c", main_hash])
     references = ReferenceSchema().loads(execute_cli_command(["--json", "tag"]), many=True)
     assert len(references) == 0
     execute_cli_command(["tag", "v1.0"])
@@ -265,9 +301,33 @@ def test_merge() -> None:
     """Test merge operation."""
     execute_cli_command(["branch", "dev"])
     make_commit("merge.foo.bar", _new_table("test_merge"), "dev")
-    ref = ReferenceSchema().loads(execute_cli_command(["--json", "branch", "-l", "main"]), many=False)
-    main_hash = ref.hash_
+    main_hash = ref_hash("main")
+    dev_hash = ref_hash("dev")
+
+    # Passing detached commit-id plus a _different_ hash-on-ref --> error
+    execute_cli_command(["merge", f"dev@{dev_hash}", "-c", main_hash, "-o", main_hash], ret_val=1)
+
     execute_cli_command(["merge", "dev", "-c", main_hash])
+    logs = simplejson.loads(execute_cli_command(["--json", "log"]))
+    # we don't check for equality of hashes here because a merge
+    # produces a different commit hash on the target branch
+    assert len(logs) == 1
+    logs = simplejson.loads(execute_cli_command(["--json", "log", "dev"]))
+    assert len(logs) == 1
+
+
+@pytest.mark.vcr
+def test_merge_detached() -> None:
+    """Test merge operation."""
+    execute_cli_command(["branch", "dev"])
+    make_commit("merge.foo.bar", _new_table("test_merge_detached"), "dev")
+    main_hash = ref_hash("main")
+    dev_hash = ref_hash("dev")
+
+    # Passing detached commit-id plus a _different_ hash-on-ref --> error
+    execute_cli_command(["merge", dev_hash, "-c", main_hash, "-o", main_hash], ret_val=1)
+
+    execute_cli_command(["merge", dev_hash, "-c", main_hash])
     logs = simplejson.loads(execute_cli_command(["--json", "log"]))
     # we don't check for equality of hashes here because a merge
     # produces a different commit hash on the target branch
@@ -283,8 +343,7 @@ def test_transplant() -> None:
     make_commit("transplant.foo.bar", _new_table("test_transplant_1"), "dev")
     make_commit("bar.bar", _new_table("test_transplant_2"), "dev")
     make_commit("foo.baz", _new_table("test_transplant_3"), "dev")
-    refs = ReferenceSchema().loads(execute_cli_command(["--json", "branch", "-l"]), many=True)
-    main_hash = next(i.hash_ for i in refs if i.name == "main")
+    main_hash = ref_hash("main")
     logs = simplejson.loads(execute_cli_command(["--json", "log", "dev"]))
     first_hash = [i["hash"] for i in logs]
     execute_cli_command(["cherry-pick", "-c", main_hash, "-s", "dev", first_hash[1], first_hash[0]])
@@ -297,6 +356,7 @@ def test_transplant() -> None:
 def test_diff() -> None:
     """Test log and log filtering."""
     diff = DiffResponseSchema().loads(execute_cli_command(["--json", "diff", "main", "main"]))
+    main_hash = ref_hash("main")
     assert_that(diff).is_not_none()
     assert_that(diff.diffs).is_empty()
     branch = "dev_test_diff"
@@ -304,6 +364,8 @@ def test_diff() -> None:
     table = _new_table(branch)
     content_key = "diff.foo.dev"
     make_commit(content_key, table, branch, author="nessie_user1")
+    branch_hash = ref_hash(branch)
+
     diff = DiffResponseSchema().loads(execute_cli_command(["--json", "diff", "main", branch]))
     assert_that(diff).is_not_none()
     assert_that(diff.diffs).is_length(1)
@@ -311,6 +373,13 @@ def test_diff() -> None:
     assert_that(diff_entry.content_key).is_equal_to(ContentKey.from_path_string(content_key))
     assert_that(diff_entry.from_content).is_none()
     assert_that(diff_entry.to_content).is_equal_to(table)
+
+    diff_detached = DiffResponseSchema().loads(execute_cli_command(["--json", "diff", main_hash, branch_hash]))
+    assert_that(diff_detached).is_equal_to(diff)
+    diff_detached = DiffResponseSchema().loads(execute_cli_command(["--json", "diff", f"DETACHED@{main_hash}", f"DETACHED@{branch_hash}"]))
+    assert_that(diff_detached).is_equal_to(diff)
+    diff_detached = DiffResponseSchema().loads(execute_cli_command(["--json", "diff", f"main@{main_hash}", f"{branch}@{branch_hash}"]))
+    assert_that(diff_detached).is_equal_to(diff)
 
 
 @pytest.mark.vcr

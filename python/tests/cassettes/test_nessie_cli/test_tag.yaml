@@ -9,7 +9,7 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - python-requests/2.26.0
+      - python-requests/2.27.1
     method: GET
     uri: http://localhost:19120/api/v1/trees
   response:
@@ -34,7 +34,32 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - python-requests/2.26.0
+      - python-requests/2.27.1
+    method: GET
+    uri: http://localhost:19120/api/v1/trees
+  response:
+    body:
+      string: '{"hasMore": false, "references": [{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "main", "type": "BRANCH"}], "token": null}'
+    headers:
+      Content-Type:
+      - application/json
+      content-length:
+      - '161'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.27.1
     method: GET
     uri: http://localhost:19120/api/v1/trees/tree/main
   response:
@@ -64,7 +89,7 @@ interactions:
       Content-Type:
       - application/json
       User-Agent:
-      - python-requests/2.26.0
+      - python-requests/2.27.1
     method: POST
     uri: http://localhost:19120/api/v1/trees/tree?sourceRefName=main
   response:
@@ -89,14 +114,14 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - python-requests/2.26.0
+      - python-requests/2.27.1
     method: GET
     uri: http://localhost:19120/api/v1/trees
   response:
     body:
       string: '{"hasMore": false, "references": [{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-        "name": "main", "type": "BRANCH"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-        "name": "dev-tag", "type": "TAG"}], "token": null}'
+        "name": "dev-tag", "type": "TAG"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "main", "type": "BRANCH"}], "token": null}'
     headers:
       Content-Type:
       - application/json
@@ -115,7 +140,7 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - python-requests/2.26.0
+      - python-requests/2.27.1
     method: GET
     uri: http://localhost:19120/api/v1/trees/tree/main
   response:
@@ -145,7 +170,7 @@ interactions:
       Content-Type:
       - application/json
       User-Agent:
-      - python-requests/2.26.0
+      - python-requests/2.27.1
     method: POST
     uri: http://localhost:19120/api/v1/trees/tree?sourceRefName=main
   response:
@@ -170,20 +195,50 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - python-requests/2.26.0
+      - python-requests/2.27.1
     method: GET
     uri: http://localhost:19120/api/v1/trees
   response:
     body:
       string: '{"hasMore": false, "references": [{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-        "name": "main", "type": "BRANCH"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "etl-tag", "type": "TAG"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
         "name": "dev-tag", "type": "TAG"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-        "name": "etl-tag", "type": "TAG"}], "token": null}'
+        "name": "main", "type": "BRANCH"}], "token": null}'
     headers:
       Content-Type:
       - application/json
       content-length:
       - '385'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+      "metadata": null, "name": "dev-hash-tag", "type": "TAG"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '133'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.27.1
+    method: POST
+    uri: http://localhost:19120/api/v1/trees/tree?sourceRefName=DETACHED
+  response:
+    body:
+      string: '{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "dev-hash-tag", "type": "TAG"}'
+    headers:
+      Content-Type:
+      - application/json
+      content-length:
+      - '115'
     status:
       code: 200
       message: OK
@@ -197,20 +252,51 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - python-requests/2.26.0
+      - python-requests/2.27.1
     method: GET
     uri: http://localhost:19120/api/v1/trees
   response:
     body:
       string: '{"hasMore": false, "references": [{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-        "name": "main", "type": "BRANCH"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "dev-hash-tag", "type": "TAG"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "etl-tag", "type": "TAG"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
         "name": "dev-tag", "type": "TAG"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-        "name": "etl-tag", "type": "TAG"}], "token": null}'
+        "name": "main", "type": "BRANCH"}], "token": null}'
     headers:
       Content-Type:
       - application/json
       content-length:
-      - '385'
+      - '502'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+      "metadata": null, "name": "etl-hash-tag", "type": "TAG"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '133'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.27.1
+    method: POST
+    uri: http://localhost:19120/api/v1/trees/tree?sourceRefName=main
+  response:
+    body:
+      string: '{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "etl-hash-tag", "type": "TAG"}'
+    headers:
+      Content-Type:
+      - application/json
+      content-length:
+      - '115'
     status:
       code: 200
       message: OK
@@ -224,20 +310,22 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - python-requests/2.26.0
+      - python-requests/2.27.1
     method: GET
     uri: http://localhost:19120/api/v1/trees
   response:
     body:
       string: '{"hasMore": false, "references": [{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-        "name": "main", "type": "BRANCH"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "etl-hash-tag", "type": "TAG"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "dev-hash-tag", "type": "TAG"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "etl-tag", "type": "TAG"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
         "name": "dev-tag", "type": "TAG"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-        "name": "etl-tag", "type": "TAG"}], "token": null}'
+        "name": "main", "type": "BRANCH"}], "token": null}'
     headers:
       Content-Type:
       - application/json
       content-length:
-      - '385'
+      - '619'
     status:
       code: 200
       message: OK
@@ -251,7 +339,65 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - python-requests/2.26.0
+      - python-requests/2.27.1
+    method: GET
+    uri: http://localhost:19120/api/v1/trees
+  response:
+    body:
+      string: '{"hasMore": false, "references": [{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "etl-hash-tag", "type": "TAG"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "dev-hash-tag", "type": "TAG"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "etl-tag", "type": "TAG"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "dev-tag", "type": "TAG"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "main", "type": "BRANCH"}], "token": null}'
+    headers:
+      Content-Type:
+      - application/json
+      content-length:
+      - '619'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.27.1
+    method: GET
+    uri: http://localhost:19120/api/v1/trees
+  response:
+    body:
+      string: '{"hasMore": false, "references": [{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "etl-hash-tag", "type": "TAG"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "dev-hash-tag", "type": "TAG"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "etl-tag", "type": "TAG"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "dev-tag", "type": "TAG"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "main", "type": "BRANCH"}], "token": null}'
+    headers:
+      Content-Type:
+      - application/json
+      content-length:
+      - '619'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.27.1
     method: GET
     uri: http://localhost:19120/api/v1/trees/tree/etl-tag
   response:
@@ -278,7 +424,7 @@ interactions:
       Content-Length:
       - '0'
       User-Agent:
-      - python-requests/2.26.0
+      - python-requests/2.27.1
     method: DELETE
     uri: http://localhost:19120/api/v1/trees/tag/etl-tag?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
@@ -298,7 +444,54 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - python-requests/2.26.0
+      - python-requests/2.27.1
+    method: GET
+    uri: http://localhost:19120/api/v1/trees/tree/etl-hash-tag
+  response:
+    body:
+      string: '{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "etl-hash-tag", "type": "TAG"}'
+    headers:
+      Content-Type:
+      - application/json
+      content-length:
+      - '115'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '0'
+      User-Agent:
+      - python-requests/2.27.1
+    method: DELETE
+    uri: http://localhost:19120/api/v1/trees/tag/etl-hash-tag?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
+  response:
+    body:
+      string: ''
+    headers: {}
+    status:
+      code: 204
+      message: No Content
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.27.1
     method: GET
     uri: http://localhost:19120/api/v1/trees/tree/dev-tag
   response:
@@ -325,7 +518,7 @@ interactions:
       Content-Length:
       - '0'
       User-Agent:
-      - python-requests/2.26.0
+      - python-requests/2.27.1
     method: DELETE
     uri: http://localhost:19120/api/v1/trees/tag/dev-tag?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
@@ -345,7 +538,54 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - python-requests/2.26.0
+      - python-requests/2.27.1
+    method: GET
+    uri: http://localhost:19120/api/v1/trees/tree/dev-hash-tag
+  response:
+    body:
+      string: '{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "dev-hash-tag", "type": "TAG"}'
+    headers:
+      Content-Type:
+      - application/json
+      content-length:
+      - '115'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '0'
+      User-Agent:
+      - python-requests/2.27.1
+    method: DELETE
+    uri: http://localhost:19120/api/v1/trees/tag/dev-hash-tag?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
+  response:
+    body:
+      string: ''
+    headers: {}
+    status:
+      code: 204
+      message: No Content
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.27.1
     method: GET
     uri: http://localhost:19120/api/v1/trees
   response:
@@ -370,7 +610,7 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - python-requests/2.26.0
+      - python-requests/2.27.1
     method: GET
     uri: http://localhost:19120/api/v1/trees/tree
   response:
@@ -395,7 +635,7 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - python-requests/2.26.0
+      - python-requests/2.27.1
     method: GET
     uri: http://localhost:19120/api/v1/trees/tree/main
   response:
@@ -425,7 +665,7 @@ interactions:
       Content-Type:
       - application/json
       User-Agent:
-      - python-requests/2.26.0
+      - python-requests/2.27.1
     method: POST
     uri: http://localhost:19120/api/v1/trees/tree?sourceRefName=main
   response:
@@ -450,14 +690,14 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - python-requests/2.26.0
+      - python-requests/2.27.1
     method: GET
     uri: http://localhost:19120/api/v1/trees
   response:
     body:
       string: '{"hasMore": false, "references": [{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-        "name": "main", "type": "BRANCH"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-        "name": "v1.0", "type": "TAG"}], "token": null}'
+        "name": "v1.0", "type": "TAG"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "main", "type": "BRANCH"}], "token": null}'
     headers:
       Content-Type:
       - application/json
@@ -476,14 +716,14 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - python-requests/2.26.0
+      - python-requests/2.27.1
     method: GET
     uri: http://localhost:19120/api/v1/trees
   response:
     body:
       string: '{"hasMore": false, "references": [{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-        "name": "main", "type": "BRANCH"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-        "name": "v1.0", "type": "TAG"}], "token": null}'
+        "name": "v1.0", "type": "TAG"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "main", "type": "BRANCH"}], "token": null}'
     headers:
       Content-Type:
       - application/json
@@ -502,7 +742,7 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - python-requests/2.26.0
+      - python-requests/2.27.1
     method: GET
     uri: http://localhost:19120/api/v1/trees/tree/main
   response:
@@ -532,7 +772,7 @@ interactions:
       Content-Type:
       - application/json
       User-Agent:
-      - python-requests/2.26.0
+      - python-requests/2.27.1
     method: POST
     uri: http://localhost:19120/api/v1/trees/tree?sourceRefName=main
   response:
@@ -557,15 +797,15 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - python-requests/2.26.0
+      - python-requests/2.27.1
     method: GET
     uri: http://localhost:19120/api/v1/trees
   response:
     body:
       string: '{"hasMore": false, "references": [{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-        "name": "main", "type": "BRANCH"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "metadata_branch", "type": "BRANCH"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
         "name": "v1.0", "type": "TAG"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-        "name": "metadata_branch", "type": "BRANCH"}], "token": null}'
+        "name": "main", "type": "BRANCH"}], "token": null}'
     headers:
       Content-Type:
       - application/json
@@ -584,7 +824,7 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - python-requests/2.26.0
+      - python-requests/2.27.1
     method: GET
     uri: http://localhost:19120/api/v1/contents/test.tag.metadata?ref=metadata_branch
   response:
@@ -619,12 +859,12 @@ interactions:
       Content-Type:
       - application/json
       User-Agent:
-      - python-requests/2.26.0
+      - python-requests/2.27.1
     method: POST
     uri: http://localhost:19120/api/v1/trees/branch/metadata_branch/commit?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
-      string: '{"hash": "e044af405a40bd363de23e29b9983470c01a328aabd72136e82b790bd6dbbf33",
+      string: '{"hash": "e4cf089b878a8af0f3f586cf29c77704aa7536be752cb34a17c9fc09de5c7c95",
         "name": "metadata_branch", "type": "BRANCH"}'
     headers:
       Content-Type:
@@ -644,12 +884,12 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - python-requests/2.26.0
+      - python-requests/2.27.1
     method: GET
     uri: http://localhost:19120/api/v1/trees/tree/metadata_branch
   response:
     body:
-      string: '{"hash": "e044af405a40bd363de23e29b9983470c01a328aabd72136e82b790bd6dbbf33",
+      string: '{"hash": "e4cf089b878a8af0f3f586cf29c77704aa7536be752cb34a17c9fc09de5c7c95",
         "name": "metadata_branch", "type": "BRANCH"}'
     headers:
       Content-Type:
@@ -660,7 +900,7 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"hash": "e044af405a40bd363de23e29b9983470c01a328aabd72136e82b790bd6dbbf33",
+    body: '{"hash": "e4cf089b878a8af0f3f586cf29c77704aa7536be752cb34a17c9fc09de5c7c95",
       "metadata": null, "name": "metadata_tag", "type": "TAG"}'
     headers:
       Accept:
@@ -674,12 +914,12 @@ interactions:
       Content-Type:
       - application/json
       User-Agent:
-      - python-requests/2.26.0
+      - python-requests/2.27.1
     method: POST
     uri: http://localhost:19120/api/v1/trees/tree?sourceRefName=metadata_branch
   response:
     body:
-      string: '{"hash": "e044af405a40bd363de23e29b9983470c01a328aabd72136e82b790bd6dbbf33",
+      string: '{"hash": "e4cf089b878a8af0f3f586cf29c77704aa7536be752cb34a17c9fc09de5c7c95",
         "name": "metadata_tag", "type": "TAG"}'
     headers:
       Content-Type:
@@ -699,27 +939,27 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - python-requests/2.26.0
+      - python-requests/2.27.1
     method: GET
     uri: http://localhost:19120/api/v1/trees?fetch=ALL
   response:
     body:
-      string: '{"hasMore": false, "references": [{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-        "name": "main", "type": "BRANCH"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-        "name": "v1.0", "type": "TAG"}, {"hash": "e044af405a40bd363de23e29b9983470c01a328aabd72136e82b790bd6dbbf33",
+      string: '{"hasMore": false, "references": [{"hash": "e4cf089b878a8af0f3f586cf29c77704aa7536be752cb34a17c9fc09de5c7c95",
         "metadata": {"commitMetaOfHEAD": {"author": "nessie_user1", "authorTime":
-        "2021-12-07T10:04:02.900709Z", "commitTime": "2021-12-07T10:04:02.900709Z",
-        "committer": "", "hash": "e044af405a40bd363de23e29b9983470c01a328aabd72136e82b790bd6dbbf33",
+        "2022-01-31T10:05:36.630532Z", "commitTime": "2022-01-31T10:05:36.630532Z",
+        "committer": "", "hash": "e4cf089b878a8af0f3f586cf29c77704aa7536be752cb34a17c9fc09de5c7c95",
+        "message": "test message", "properties": {}, "signedOffBy": null}, "commonAncestorHash":
+        null, "numCommitsAhead": null, "numCommitsBehind": null, "numTotalCommits":
+        1}, "name": "metadata_tag", "type": "TAG"}, {"hash": "e4cf089b878a8af0f3f586cf29c77704aa7536be752cb34a17c9fc09de5c7c95",
+        "metadata": {"commitMetaOfHEAD": {"author": "nessie_user1", "authorTime":
+        "2022-01-31T10:05:36.630532Z", "commitTime": "2022-01-31T10:05:36.630532Z",
+        "committer": "", "hash": "e4cf089b878a8af0f3f586cf29c77704aa7536be752cb34a17c9fc09de5c7c95",
         "message": "test message", "properties": {}, "signedOffBy": null}, "commonAncestorHash":
         "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d", "numCommitsAhead":
         1, "numCommitsBehind": 0, "numTotalCommits": 1}, "name": "metadata_branch",
-        "type": "BRANCH"}, {"hash": "e044af405a40bd363de23e29b9983470c01a328aabd72136e82b790bd6dbbf33",
-        "metadata": {"commitMetaOfHEAD": {"author": "nessie_user1", "authorTime":
-        "2021-12-07T10:04:02.900709Z", "commitTime": "2021-12-07T10:04:02.900709Z",
-        "committer": "", "hash": "e044af405a40bd363de23e29b9983470c01a328aabd72136e82b790bd6dbbf33",
-        "message": "test message", "properties": {}, "signedOffBy": null}, "commonAncestorHash":
-        null, "numCommitsAhead": null, "numCommitsBehind": null, "numTotalCommits":
-        1}, "name": "metadata_tag", "type": "TAG"}], "token": null}'
+        "type": "BRANCH"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "v1.0", "type": "TAG"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "main", "type": "BRANCH"}], "token": null}'
     headers:
       Content-Type:
       - application/json

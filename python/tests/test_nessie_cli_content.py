@@ -19,7 +19,7 @@ import simplejson
 from assertpy import assert_that
 
 from pynessie.model import ContentSchema, DeltaLakeTable, EntrySchema, IcebergTable, IcebergView, ReferenceSchema
-from .conftest import execute_cli_command, make_commit
+from .conftest import execute_cli_command, make_commit, ref_hash
 
 
 CONTENT_COMMAND = "content"
@@ -32,8 +32,8 @@ def test_content_view() -> None:
     execute_cli_command(["branch", branch])
 
     iceberg_table = _create_iceberg_table("test_contents_view")
-    delta_lake_table = _create_delta_lake_table("uuid2")
-    iceberg_view = _create_iceberg_view("uuid3")
+    delta_lake_table = _create_delta_lake_table("test_dl_table")
+    iceberg_view = _create_iceberg_view("test_iceberg_view")
 
     make_commit("this.is.iceberg.foo", iceberg_table, branch)
     make_commit("this.is.delta.bar", delta_lake_table, branch)
@@ -45,6 +45,16 @@ def test_content_view() -> None:
 
     assert_that(result_table).is_length(1)
     assert_that(result_table[0]).is_equal_to(iceberg_table)
+
+    branch_hash = ref_hash(branch)
+    result_table_2 = ContentSchema().loads(
+        execute_cli_command(["--json", CONTENT_COMMAND, "view", "--ref", branch_hash, "this.is.iceberg.foo"]), many=True
+    )
+    assert_that(result_table_2).is_equal_to(result_table)
+    result_table_2 = ContentSchema().loads(
+        execute_cli_command(["--json", CONTENT_COMMAND, "view", "--ref", f"{branch}@{branch_hash}", "this.is.iceberg.foo"]), many=True
+    )
+    assert_that(result_table_2).is_equal_to(result_table)
 
     result_table = ContentSchema().loads(
         execute_cli_command(["--json", CONTENT_COMMAND, "view", "--ref", branch, "this.is.delta.bar"]), many=True
@@ -68,8 +78,8 @@ def test_content_list() -> None:
     execute_cli_command(["branch", branch])
 
     iceberg_table = _create_iceberg_table("test_contents_list")
-    delta_lake_table = _create_delta_lake_table("uuid2")
-    iceberg_view = _create_iceberg_view("uuid3")
+    delta_lake_table = _create_delta_lake_table("test_dl_table_list")
+    iceberg_view = _create_iceberg_view("test_iceberg_view_list")
 
     make_commit("this.is.iceberg.foo", iceberg_table, branch)
     make_commit("this.is.delta.bar", delta_lake_table, branch)
@@ -80,6 +90,16 @@ def test_content_list() -> None:
     )
     assert_that(tables).is_length(1)
     assert_that(tables[0].kind).is_equal_to("ICEBERG_TABLE")
+
+    branch_hash = ref_hash(branch)
+    tables_2 = EntrySchema().loads(
+        execute_cli_command(["--json", CONTENT_COMMAND, "list", "--ref", branch_hash, "--type", "ICEBERG_TABLE"]), many=True
+    )
+    assert_that(tables_2).is_equal_to(tables)
+    tables_2 = EntrySchema().loads(
+        execute_cli_command(["--json", CONTENT_COMMAND, "list", "--ref", f"{branch}@{branch_hash}", "--type", "ICEBERG_TABLE"]), many=True
+    )
+    assert_that(tables_2).is_equal_to(tables)
 
     tables = EntrySchema().loads(
         execute_cli_command(["--json", CONTENT_COMMAND, "list", "--ref", branch, "--type", "DELTA_LAKE_TABLE"]), many=True

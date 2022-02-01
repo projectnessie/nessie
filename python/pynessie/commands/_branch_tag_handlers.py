@@ -23,7 +23,7 @@ import click
 
 from ..client import NessieClient
 from ..error import NessieConflictException
-from ..model import Branch, ReferenceSchema, Tag
+from ..model import Branch, ReferenceSchema, split_into_reference_and_hash, Tag
 
 
 def handle_branch_tag(
@@ -66,10 +66,17 @@ def handle_branch_tag(
         # use locally configured default branch as base_ref by default
         if not base_ref:
             base_ref = nessie.get_default_branch()
+            hash_on_ref_arg = None
+        else:
+            base_ref, hash_on_ref_arg = split_into_reference_and_hash(base_ref)
 
         # use the current HEAD of base_ref as the hash for the new branch/tag by default
         if not hash_on_ref:
-            hash_on_ref = nessie.get_reference(base_ref).hash_
+            hash_on_ref = hash_on_ref_arg if hash_on_ref_arg else nessie.get_reference(base_ref).hash_
+        elif hash_on_ref_arg and hash_on_ref_arg != hash_on_ref:
+            raise click.exceptions.BadOptionUsage(
+                "hash_on_ref", "commit-hash provided via 'base-ref' and 'hash-on-ref', use only one of those"
+            )
 
         # try creating a _new_ branch/tag first
         try:

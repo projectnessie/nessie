@@ -27,6 +27,7 @@ import java.util.regex.Pattern;
 /** Collection of validation rules. */
 public final class Validation {
 
+  // Note: when changing a regex here, also update it in python/
   public static final String HASH_RAW_REGEX = "[0-9a-fA-F]{8,64}";
   public static final String HASH_REGEX = "^" + HASH_RAW_REGEX + "$";
   public static final String REF_NAME_RAW_REGEX =

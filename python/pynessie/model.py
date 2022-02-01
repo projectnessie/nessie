@@ -17,13 +17,45 @@
 """Nessie Data objects."""
 import re
 from datetime import datetime
-from typing import List
-from typing import Optional
+from typing import List, Optional, Tuple
 
 import attr
 import desert
 from marshmallow import fields
 from marshmallow_oneofschema import OneOfSchema
+
+
+# regex taken from org.projectnessie.model.Validation
+__RE_REFERENCE_NAME_RAW = "[A-Za-z](((?![.][.])[A-Za-z0-9./_-])*[A-Za-z0-9._-])"
+__RE_REFERENCE_NAME: re.Pattern = re.compile(f"^{__RE_REFERENCE_NAME_RAW}$")
+__RE_HASH_RAW = "[0-9a-fA-F]{8,64}"
+__RE_HASH: re.Pattern = re.compile(f"^{__RE_HASH_RAW}$")
+__RE_REFERENCE_WITH_HASH: re.Pattern = re.compile(f"^({__RE_REFERENCE_NAME_RAW})([@]|[*])({__RE_HASH_RAW})$")
+
+
+DETACHED_REFERENCE_NAME = "DETACHED"
+
+
+def is_valid_reference_name(ref: str) -> bool:
+    """Checks whether 'ref' is a valid reference name."""
+    return __RE_REFERENCE_NAME.match(ref) is not None
+
+
+def is_valid_hash(ref: str) -> bool:
+    """Checks whether 'ref' is a valid commit id/hash."""
+    return __RE_HASH.match(ref) is not None
+
+
+def split_into_reference_and_hash(ref_with_hash: Optional[str]) -> Tuple[str, Optional[str]]:
+    """Returns a tuple of reference-name + hash, if the given string represents a ref-name + hash tuple 'ref_name@commit_id'."""
+    if not ref_with_hash:
+        return "<UNKNOWN>", None
+    match = __RE_REFERENCE_WITH_HASH.match(ref_with_hash)
+    if not match:
+        if is_valid_hash(ref_with_hash):
+            return DETACHED_REFERENCE_NAME, ref_with_hash
+        return ref_with_hash, None
+    return match.group(1), match.group(5)
 
 
 @attr.dataclass
@@ -286,6 +318,16 @@ class Reference:
 
 
 @attr.dataclass
+class Detached(Reference):
+    """Dataclass for Nessie detached commit id."""
+
+    pass
+
+
+DetachedSchema = desert.schema_class(Detached)
+
+
+@attr.dataclass
 class Branch(Reference):
     """Dataclass for Nessie Branch."""
 
@@ -311,6 +353,7 @@ class ReferenceSchema(OneOfSchema):
     type_schemas = {
         "BRANCH": BranchSchema,
         "TAG": TagSchema,
+        "DETACHED": DetachedSchema,
     }
 
     def get_obj_type(self: "ReferenceSchema", obj: Reference) -> str:
@@ -319,6 +362,8 @@ class ReferenceSchema(OneOfSchema):
             return "BRANCH"
         if isinstance(obj, Tag):
             return "TAG"
+        if isinstance(obj, Detached):
+            return "DETACHED"
 
         raise Exception("Unknown object type: {}".format(obj.__class__.__name__))
 
