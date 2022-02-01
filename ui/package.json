@@ -85,7 +85,7 @@
     "@testing-library/react": "^12.1.2",
     "@testing-library/user-event": "^13.5.0",
     "@typescript-eslint/eslint-plugin": "^5.10.1",
-    "@typescript-eslint/parser": "^5.10.1",
+    "@typescript-eslint/parser": "^5.10.2",
     "babel-jest": "^27.4.5",
     "babel-loader": "8.2.3",
     "babel-plugin-named-asset-import": "^0.3.8",
