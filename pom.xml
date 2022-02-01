@@ -1053,6 +1053,7 @@ limitations under the License.
             <exclude>**/c.java</exclude>
             <exclude>**/swagger-ui/**</exclude>
             <exclude>**/gradlew</exclude>
+            <exclude>**/tsconfig.tsbuildinfo</exclude>
 
             <!-- by directory name -->
             <exclude>**/node_modules/**</exclude>
