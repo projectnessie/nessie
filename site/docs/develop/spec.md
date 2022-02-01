@@ -106,7 +106,7 @@ a new Iceberg snapshot. Any Nessie commit refers to a particular Iceberg snapsho
 table, which translates to the state of an Iceberg table for a particular Nessie commit.
 
 Nessie needs to track Iceberg's _table metadata_ as so called _Global State_ within Nessie to
-ensure that table evolution and other operations like delete works as expected.
+ensure that table evolution and other operations like delete work as expected.
 
 The Nessie `IcebergTable` object passed to Nessie in a [_Put operation_](#put-operation) therefore
 consists of
