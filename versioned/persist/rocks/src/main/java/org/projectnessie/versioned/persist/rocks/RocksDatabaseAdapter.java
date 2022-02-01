@@ -51,6 +51,7 @@ import org.projectnessie.versioned.persist.serialize.ProtoSerialization;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.Holder;
 import org.rocksdb.RocksDBException;
+import org.rocksdb.RocksIterator;
 import org.rocksdb.TransactionDB;
 import org.rocksdb.WriteBatch;
 import org.rocksdb.WriteOptions;
@@ -95,6 +96,33 @@ public class RocksDatabaseAdapter
   public void eraseRepo() {
     try {
       db.delete(dbInstance.getCfGlobalPointer(), globalPointerKey());
+      Stream.of(
+              dbInstance.getCfGlobalPointer(),
+              dbInstance.getCfGlobalLog(),
+              dbInstance.getCfCommitLog(),
+              dbInstance.getCfRepoProps(),
+              dbInstance.getCfKeyList(),
+              dbInstance.getCfRefLog())
+          .forEach(
+              cf -> {
+                try (RocksIterator iter = db.newIterator(cf)) {
+                  List<ByteString> deletes = new ArrayList<>();
+                  for (iter.seekToFirst(); iter.isValid(); iter.next()) {
+                    ByteString key = ByteString.copyFrom(iter.key());
+                    if (key.startsWith(keyPrefix)) {
+                      deletes.add(key);
+                    }
+                  }
+                  deletes.forEach(
+                      key -> {
+                        try {
+                          db.delete(cf, key.toByteArray());
+                        } catch (RocksDBException e) {
+                          throw new RuntimeException(e);
+                        }
+                      });
+                }
+              });
     } catch (RocksDBException e) {
       throw new RuntimeException(e);
     }
@@ -117,7 +145,7 @@ public class RocksDatabaseAdapter
     lock.lock();
     try {
       byte[] key = dbKey(entry.getHash());
-      if (db.keyMayExist(key, new Holder<>())) {
+      if (db.keyMayExist(dbInstance.getCfCommitLog(), key, new Holder<>())) {
         throw hashCollisionDetected();
       }
 
