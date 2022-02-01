@@ -19,8 +19,7 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
 import org.apache.spark.unsafe.types.UTF8String
-import org.projectnessie.client.NessieClient
-import org.projectnessie.model.ImmutableMerge
+import org.projectnessie.client.api.NessieApiV1
 
 case class MergeBranchExec(
     output: Seq[Attribute],
@@ -31,32 +30,33 @@ case class MergeBranchExec(
 ) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog) {
 
   override protected def runInternal(
-      nessieClient: NessieClient
+      api: NessieApiV1
   ): Seq[InternalRow] = {
-    val from = nessieClient.getTreeApi
-      .getReferenceByName(
+    val from = api.getReference
+      .refName(
         branch.getOrElse(
           NessieUtils.getCurrentRef(currentCatalog, catalog).getName
         )
       )
-    nessieClient.getTreeApi.mergeRefIntoBranch(
-      toRefName.getOrElse(nessieClient.getTreeApi.getDefaultBranch.getName),
-      toRefName
-        .map(r => nessieClient.getTreeApi.getReferenceByName(r).getHash)
-        .getOrElse(nessieClient.getTreeApi.getDefaultBranch.getHash),
-      ImmutableMerge.builder
-        .fromHash(from.getHash)
-        // TODO !! .sourceRefName(from.getName)
-        .build
-    )
-    val ref = nessieClient.getTreeApi.getReferenceByName(
-      toRefName.getOrElse(nessieClient.getTreeApi.getDefaultBranch.getName)
+    api
+      .mergeRefIntoBranch()
+      .branchName(toRefName.getOrElse(api.getDefaultBranch.getName))
+      .hash(
+        toRefName
+          .map(r => api.getReference.refName(r).get.getHash)
+          .getOrElse(api.getDefaultBranch.getHash)
+      )
+      .fromRef(from.get)
+      .merge()
+
+    val ref = api.getReference.refName(
+      toRefName.getOrElse(api.getDefaultBranch.getName)
     )
 
     Seq(
       InternalRow(
-        UTF8String.fromString(ref.getName),
-        UTF8String.fromString(ref.getHash)
+        UTF8String.fromString(ref.get.getName),
+        UTF8String.fromString(ref.get.getHash)
       )
     )
   }

@@ -19,7 +19,7 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
 import org.apache.spark.unsafe.types.UTF8String
-import org.projectnessie.client.NessieClient
+import org.projectnessie.client.api.NessieApiV1
 import org.projectnessie.error.NessieConflictException
 import org.projectnessie.model._
 
@@ -34,25 +34,24 @@ case class CreateReferenceExec(
 ) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog) {
 
   override protected def runInternal(
-      nessieClient: NessieClient
+      api: NessieApiV1
   ): Seq[InternalRow] = {
     val sourceRef = createdFrom
-      .map(nessieClient.getTreeApi.getReferenceByName)
-      .orElse(Option(nessieClient.getTreeApi.getDefaultBranch))
+      .map(x => api.getReference.refName(x).get)
+      .orElse(Option(api.getDefaultBranch))
       .orNull
     val ref =
       if (isBranch) Branch.of(branch, sourceRef.getHash)
       else Tag.of(branch, sourceRef.getHash)
     try {
-      // TODO !!! nessieClient.getTreeApi.createReference(sourceRef.getName, ref)
-      nessieClient.getTreeApi.createReference(ref)
+      api.createReference.reference(ref).create()
     } catch {
       case e: NessieConflictException =>
         if (failOnCreate) {
           throw e
         }
     }
-    val branchResult = nessieClient.getTreeApi.getReferenceByName(ref.getName)
+    val branchResult = api.getReference.refName(ref.getName).get()
 
     Seq(
       InternalRow(

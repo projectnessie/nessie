@@ -153,7 +153,7 @@
     <cel.version>0.2.4</cel.version>
     <checkstyle.version>9.3</checkstyle.version>
     <!-- to fix circular dependencies with NessieClient, certain projects need to use the same Nessie version as Iceberg/Delta has -->
-    <client.nessie.version>0.9.2</client.nessie.version>
+    <client.nessie.version>0.18.0</client.nessie.version>
     <deltalake.version>1.0.0-nessie</deltalake.version>
     <dockerjava.version>3.2.12</dockerjava.version>
     <dynamodb.version>1.12.0</dynamodb.version>
@@ -165,7 +165,7 @@
     <google-java-format.version>1.13.0</google-java-format.version>
     <guava.version>31.0.1-jre</guava.version>
     <hadoop.version>3.3.1</hadoop.version>
-    <iceberg.version>0.12.1</iceberg.version>
+    <iceberg.version>0.13.0</iceberg.version>
     <immutables.version>2.9.0</immutables.version>
     <jackson.version>2.13.1</jackson.version>
     <jacoco.version>0.8.7</jacoco.version>

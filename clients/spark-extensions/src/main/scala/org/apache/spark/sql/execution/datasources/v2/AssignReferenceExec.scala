@@ -19,7 +19,7 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
 import org.apache.spark.unsafe.types.UTF8String
-import org.projectnessie.client.NessieClient
+import org.projectnessie.client.api.NessieApiV1
 import org.projectnessie.model.{Branch, Tag}
 
 case class AssignReferenceExec(
@@ -33,28 +33,27 @@ case class AssignReferenceExec(
 ) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog) {
 
   override protected def runInternal(
-      nessieClient: NessieClient
+      api: NessieApiV1
   ): Seq[InternalRow] = {
     val toRef = toRefName
-      .map(r => nessieClient.getTreeApi.getReferenceByName(r))
-      .getOrElse(nessieClient.getTreeApi.getDefaultBranch)
-    val hash = nessieClient.getTreeApi.getReferenceByName(branch).getHash
+      .map(r => api.getReference().refName(r).get())
+      .getOrElse(api.getDefaultBranch)
+    val hash = api.getReference().refName(branch).get().getHash
     val assignToHash = toHash.getOrElse(toRef.getHash)
     if (isBranch) {
-      nessieClient.getTreeApi.assignBranch(
-        branch,
-        hash,
-        Branch.of(toRef.getName, assignToHash)
-      )
+      api
+        .assignBranch()
+        .branch(Branch.of(branch, hash))
+        .assignTo(Branch.of(toRef.getName, assignToHash))
+        .assign()
     } else {
-      nessieClient.getTreeApi.assignTag(
-        branch,
-        hash,
-        Tag.of(toRef.getName, assignToHash)
-      )
+      api
+        .assignTag()
+        .tag(Tag.of(branch, hash))
+        .assignTo(Branch.of(toRef.getName, assignToHash))
+        .assign()
     }
-
-    val ref = nessieClient.getTreeApi.getReferenceByName(branch)
+    val ref = api.getReference().refName(branch).get()
 
     Seq(
       InternalRow(

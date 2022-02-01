@@ -19,8 +19,7 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
 import org.apache.spark.unsafe.types.UTF8String
-import org.projectnessie.client.NessieClient
-import org.projectnessie.model.Branch
+import org.projectnessie.client.api.NessieApiV1
 
 case class ShowReferenceExec(
     output: Seq[Attribute],
@@ -29,7 +28,7 @@ case class ShowReferenceExec(
 ) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog) {
 
   override protected def runInternal(
-      nessieClient: NessieClient
+      api: NessieApiV1
   ): Seq[InternalRow] = {
 
     val ref = NessieUtils.getCurrentRef(currentCatalog, catalog)
