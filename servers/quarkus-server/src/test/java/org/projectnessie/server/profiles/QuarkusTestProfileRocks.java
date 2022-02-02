@@ -15,7 +15,9 @@
  */
 package org.projectnessie.server.profiles;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import java.util.List;
 import java.util.Map;
 import org.projectnessie.server.config.VersionStoreConfig.VersionStoreType;
 
@@ -27,5 +29,10 @@ public class QuarkusTestProfileRocks extends BaseConfigProfile {
         .putAll(super.getConfigOverrides())
         .put("nessie.version.store.type", VersionStoreType.ROCKS.name())
         .build();
+  }
+
+  @Override
+  public List<TestResourceEntry> testResources() {
+    return ImmutableList.of(new TestResourceEntry(RocksTestResourceLifecycleManager.class));
   }
 }
