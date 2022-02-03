@@ -181,9 +181,14 @@ public class TestTracer implements Tracer {
 
     private final Map<String, Object> tags = new HashMap<>();
     private final List<Map<String, ?>> logs = new ArrayList<>();
+    private boolean finished;
 
     TestSpan(Map<String, Object> tags) {
       this.tags.putAll(tags);
+    }
+
+    public boolean finished() {
+      return finished;
     }
 
     public Map<String, Object> getTags() {
@@ -261,7 +266,7 @@ public class TestTracer implements Tracer {
 
     @Override
     public void finish() {
-      throw new UnsupportedOperationException();
+      finished = true;
     }
 
     @Override
