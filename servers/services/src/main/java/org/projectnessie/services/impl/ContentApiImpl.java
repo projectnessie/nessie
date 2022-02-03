@@ -30,7 +30,7 @@ import org.projectnessie.model.GetMultipleContentsRequest;
 import org.projectnessie.model.GetMultipleContentsResponse;
 import org.projectnessie.model.GetMultipleContentsResponse.ContentWithKey;
 import org.projectnessie.model.ImmutableGetMultipleContentsResponse;
-import org.projectnessie.services.authz.AccessChecker;
+import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.NamedRef;
@@ -43,9 +43,9 @@ public class ContentApiImpl extends BaseApiImpl implements ContentApi {
   public ContentApiImpl(
       ServerConfig config,
       VersionStore<Content, CommitMeta, Content.Type> store,
-      AccessChecker accessChecker,
+      Authorizer authorizer,
       Principal principal) {
-    super(config, store, accessChecker, principal);
+    super(config, store, authorizer, principal);
   }
 
   @Override

@@ -24,6 +24,7 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.GetMultipleContentsRequest;
 import org.projectnessie.model.GetMultipleContentsResponse;
 import org.projectnessie.services.authz.AccessChecker;
+import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.VersionStore;
@@ -35,16 +36,16 @@ public class ContentApiImplWithAuthorization extends ContentApiImpl {
   public ContentApiImplWithAuthorization(
       ServerConfig config,
       VersionStore<Content, CommitMeta, Type> store,
-      AccessChecker accessChecker,
+      Authorizer authorizer,
       Principal principal) {
-    super(config, store, accessChecker, principal);
+    super(config, store, authorizer, principal);
   }
 
   @Override
   public Content getContent(ContentKey key, String namedRef, String hashOnRef)
       throws NessieNotFoundException {
     NamedRef ref = namedRefWithHashOrThrow(namedRef, hashOnRef).getValue();
-    getAccessChecker().canReadEntityValue(createAccessContext(), ref, key, null);
+    startAccessCheck().canReadEntityValue(ref, key, null).checkAndThrow();
     return super.getContent(key, namedRef, hashOnRef);
   }
 
@@ -53,12 +54,9 @@ public class ContentApiImplWithAuthorization extends ContentApiImpl {
       String namedRef, String hashOnRef, GetMultipleContentsRequest request)
       throws NessieNotFoundException {
     WithHash<NamedRef> ref = namedRefWithHashOrThrow(namedRef, hashOnRef);
-    request
-        .getRequestedKeys()
-        .forEach(
-            k ->
-                getAccessChecker()
-                    .canReadEntityValue(createAccessContext(), ref.getValue(), k, null));
+    AccessChecker check = startAccessCheck();
+    request.getRequestedKeys().forEach(k -> check.canReadEntityValue(ref.getValue(), k, null));
+    check.checkAndThrow();
     return super.getMultipleContents(namedRef, hashOnRef, request);
   }
 }

@@ -22,7 +22,7 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.Content.Type;
 import org.projectnessie.model.DiffResponse;
-import org.projectnessie.services.authz.AccessChecker;
+import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.VersionStore;
@@ -34,9 +34,9 @@ public class DiffApiImplWithAuthorization extends DiffApiImpl {
   public DiffApiImplWithAuthorization(
       ServerConfig config,
       VersionStore<Content, CommitMeta, Type> store,
-      AccessChecker accessChecker,
+      Authorizer authorizer,
       Principal principal) {
-    super(config, store, accessChecker, principal);
+    super(config, store, authorizer, principal);
   }
 
   @Override
@@ -44,8 +44,10 @@ public class DiffApiImplWithAuthorization extends DiffApiImpl {
     WithHash<NamedRef> from =
         namedRefWithHashOrThrow(params.getFromRef(), params.getFromHashOnRef());
     WithHash<NamedRef> to = namedRefWithHashOrThrow(params.getToRef(), params.getToHashOnRef());
-    getAccessChecker().canViewReference(createAccessContext(), from.getValue());
-    getAccessChecker().canViewReference(createAccessContext(), to.getValue());
+    startAccessCheck()
+        .canViewReference(from.getValue())
+        .canViewReference(to.getValue())
+        .checkAndThrow();
     return getDiff(from.getHash(), to.getHash());
   }
 }

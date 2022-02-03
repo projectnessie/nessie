@@ -41,7 +41,7 @@ import org.projectnessie.model.Content.Type;
 import org.projectnessie.model.ImmutableRefLogResponse;
 import org.projectnessie.model.ImmutableRefLogResponseEntry;
 import org.projectnessie.model.RefLogResponse;
-import org.projectnessie.services.authz.AccessChecker;
+import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.RefLogDetails;
@@ -55,9 +55,9 @@ public class RefLogApiImpl extends BaseApiImpl implements RefLogApi {
   public RefLogApiImpl(
       ServerConfig config,
       VersionStore<Content, CommitMeta, Type> store,
-      AccessChecker accessChecker,
+      Authorizer authorizer,
       Principal principal) {
-    super(config, store, accessChecker, principal);
+    super(config, store, authorizer, principal);
   }
 
   @Override

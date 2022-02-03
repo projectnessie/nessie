@@ -15,7 +15,7 @@
  */
 package org.projectnessie.server.authz;
 
-import static org.projectnessie.server.authz.CelAccessChecker.AuthorizationRuleType.VIEW_REFERENCE;
+import static org.projectnessie.services.authz.Check.CheckType.VIEW_REFERENCE;
 
 import com.google.common.collect.ImmutableMap;
 import io.quarkus.runtime.Startup;

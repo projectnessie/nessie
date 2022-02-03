@@ -18,6 +18,7 @@ package org.projectnessie.jaxrs.ext;
 import static org.projectnessie.services.config.ServerConfigExtension.SERVER_CONFIG;
 
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.core.Application;
@@ -37,8 +38,10 @@ import org.junit.jupiter.api.extension.ExtensionContext.Store.CloseableResource;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
+import org.projectnessie.services.authz.AbstractAccessChecker;
 import org.projectnessie.services.authz.AccessChecker;
-import org.projectnessie.services.authz.AccessCheckerExtension;
+import org.projectnessie.services.authz.AccessContext;
+import org.projectnessie.services.authz.AuthorizerExtension;
 import org.projectnessie.services.config.ServerConfigExtension;
 import org.projectnessie.services.impl.ConfigApiImpl;
 import org.projectnessie.services.impl.TreeApiImpl;
@@ -132,7 +135,7 @@ public class NessieJaxRsExtension
     }
 
     if (parameterContext.isAnnotated(NessieAccessChecker.class)) {
-      return (Consumer<AccessChecker>) env::setAccessChecker;
+      return (Consumer<Function<AccessContext, AccessChecker>>) env::setAccessChecker;
     }
 
     throw new ParameterResolutionException(
@@ -146,7 +149,7 @@ public class NessieJaxRsExtension
     private final Weld weld;
     private final JerseyTest jerseyTest;
     private SecurityContext securityContext;
-    private AccessChecker accessChecker;
+    private Function<AccessContext, AccessChecker> accessChecker;
 
     void reset() {
       this.securityContext = null;
@@ -157,7 +160,7 @@ public class NessieJaxRsExtension
       this.securityContext = securityContext;
     }
 
-    void setAccessChecker(AccessChecker accessChecker) {
+    void setAccessChecker(Function<AccessContext, AccessChecker> accessChecker) {
       this.accessChecker = accessChecker;
     }
 
@@ -175,7 +178,7 @@ public class NessieJaxRsExtension
                 databaseAdapter.initializeRepo(SERVER_CONFIG.getDefaultBranch());
                 return databaseAdapter;
               }));
-      weld.addExtension(new AccessCheckerExtension().setAccessCheckerSupplier(() -> accessChecker));
+      weld.addExtension(new AuthorizerExtension().setAccessCheckerSupplier(this::createNewChecker));
       weld.initialize();
 
       jerseyTest =
@@ -216,6 +219,13 @@ public class NessieJaxRsExtension
           };
 
       jerseyTest.setUp();
+    }
+
+    private AccessChecker createNewChecker(AccessContext context) {
+      if (accessChecker == null) {
+        return AbstractAccessChecker.NOOP_ACCESS_CHECKER;
+      }
+      return accessChecker.apply(context);
     }
 
     @Override

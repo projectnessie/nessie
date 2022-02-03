@@ -84,7 +84,7 @@ import org.projectnessie.model.ReferenceMetadata;
 import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.Transplant;
 import org.projectnessie.model.Validation;
-import org.projectnessie.services.authz.AccessChecker;
+import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.cel.CELUtil;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.BranchName;
@@ -113,9 +113,9 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   public TreeApiImpl(
       ServerConfig config,
       VersionStore<Content, CommitMeta, Content.Type> store,
-      AccessChecker accessChecker,
+      Authorizer authorizer,
       Principal principal) {
-    super(config, store, accessChecker, principal);
+    super(config, store, authorizer, principal);
   }
 
   @Override

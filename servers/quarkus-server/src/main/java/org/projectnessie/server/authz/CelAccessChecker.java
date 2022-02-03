@@ -16,186 +16,100 @@
 package org.projectnessie.server.authz;
 
 import com.google.common.collect.ImmutableMap;
-import java.security.AccessControlException;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Supplier;
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 import org.projectnessie.cel.tools.ScriptException;
-import org.projectnessie.model.ContentKey;
-import org.projectnessie.server.config.QuarkusNessieAuthorizationConfig;
+import org.projectnessie.services.authz.AbstractAccessChecker;
 import org.projectnessie.services.authz.AccessChecker;
 import org.projectnessie.services.authz.AccessContext;
-import org.projectnessie.versioned.NamedRef;
+import org.projectnessie.services.authz.Check;
 
 /**
  * A reference implementation of the {@link AccessChecker} that performs access checks using CEL
  * expressions.
  */
-@ApplicationScoped
-public class CelAccessChecker implements AccessChecker {
-  private final QuarkusNessieAuthorizationConfig config;
+final class CelAccessChecker extends AbstractAccessChecker {
   private final CompiledAuthorizationRules compiledRules;
+  private final AccessContext context;
 
-  public enum AuthorizationRuleType {
-    VIEW_REFERENCE,
-    CREATE_REFERENCE,
-    DELETE_REFERENCE,
-    LIST_COMMIT_LOG,
-    READ_ENTRIES,
-    ASSIGN_REFERENCE_TO_HASH,
-    COMMIT_CHANGE_AGAINST_REFERENCE,
-    READ_ENTITY_VALUE,
-    UPDATE_ENTITY,
-    DELETE_ENTITY,
-    VIEW_REFLOG;
-  }
-
-  @Inject
-  public CelAccessChecker(
-      QuarkusNessieAuthorizationConfig config, CompiledAuthorizationRules compiledRules) {
-    this.config = config;
+  CelAccessChecker(CompiledAuthorizationRules compiledRules, AccessContext context) {
     this.compiledRules = compiledRules;
+    this.context = context;
   }
 
   @Override
-  public void canViewReference(AccessContext context, NamedRef ref) throws AccessControlException {
-    canPerformOpOnReference(context, ref, AuthorizationRuleType.VIEW_REFERENCE);
+  public Map<Check, String> check() {
+    Map<Check, String> failed = new LinkedHashMap<>();
+    getChecks()
+        .forEach(
+            check -> {
+              if (check.name().isContent()) {
+                canPerformOpOnPath(check, failed);
+              } else if (check.name().isRef()) {
+                canPerformOpOnReference(check, failed);
+              } else {
+                canPerformOp(check, failed);
+              }
+            });
+    return failed;
   }
 
-  @Override
-  public void canCreateReference(AccessContext context, NamedRef ref)
-      throws AccessControlException {
-    canPerformOpOnReference(context, ref, AuthorizationRuleType.CREATE_REFERENCE);
-  }
-
-  @Override
-  public void canAssignRefToHash(AccessContext context, NamedRef ref)
-      throws AccessControlException {
-    canViewReference(context, ref);
-    canPerformOpOnReference(context, ref, AuthorizationRuleType.ASSIGN_REFERENCE_TO_HASH);
-  }
-
-  @Override
-  public void canDeleteReference(AccessContext context, NamedRef ref)
-      throws AccessControlException {
-    canViewReference(context, ref);
-    canPerformOpOnReference(context, ref, AuthorizationRuleType.DELETE_REFERENCE);
-  }
-
-  @Override
-  public void canReadEntries(AccessContext context, NamedRef ref) throws AccessControlException {
-    canViewReference(context, ref);
-    canPerformOpOnReference(context, ref, AuthorizationRuleType.READ_ENTRIES);
-  }
-
-  @Override
-  public void canListCommitLog(AccessContext context, NamedRef ref) throws AccessControlException {
-    canViewReference(context, ref);
-    canPerformOpOnReference(context, ref, AuthorizationRuleType.LIST_COMMIT_LOG);
-  }
-
-  @Override
-  public void canCommitChangeAgainstReference(AccessContext context, NamedRef ref)
-      throws AccessControlException {
-    canViewReference(context, ref);
-    canPerformOpOnReference(context, ref, AuthorizationRuleType.COMMIT_CHANGE_AGAINST_REFERENCE);
-  }
-
-  @Override
-  public void canReadEntityValue(
-      AccessContext context, NamedRef ref, ContentKey key, String contentId)
-      throws AccessControlException {
-    canViewReference(context, ref);
-    canPerformOpOnPath(context, ref, key, AuthorizationRuleType.READ_ENTITY_VALUE);
-  }
-
-  @Override
-  public void canUpdateEntity(AccessContext context, NamedRef ref, ContentKey key, String contentId)
-      throws AccessControlException {
-    canViewReference(context, ref);
-    canPerformOpOnPath(context, ref, key, AuthorizationRuleType.UPDATE_ENTITY);
-  }
-
-  @Override
-  public void canDeleteEntity(AccessContext context, NamedRef ref, ContentKey key, String contentId)
-      throws AccessControlException {
-    canViewReference(context, ref);
-    canPerformOpOnPath(context, ref, key, AuthorizationRuleType.DELETE_ENTITY);
-  }
-
-  @Override
-  public void canViewRefLog(AccessContext context) throws AccessControlException {
-    if (!config.enabled()) {
-      return;
-    }
-    String roleName = getRoleName(context);
-    ImmutableMap<String, Object> arguments =
-        ImmutableMap.of(
-            "role",
-            roleName,
-            "op",
-            AuthorizationRuleType.VIEW_REFLOG.name(),
-            "path",
-            "",
-            "ref",
-            "");
-
-    Supplier<String> errorMsgSupplier =
-        () ->
-            String.format(
-                "'%s' is not allowed for role '%s' ", AuthorizationRuleType.VIEW_REFLOG, roleName);
-    canPerformOp(arguments, errorMsgSupplier);
-  }
-
-  private String getRoleName(AccessContext context) {
+  private String getRoleName() {
     return null != context.user() ? context.user().getName() : "";
   }
 
-  private void canPerformOpOnReference(
-      AccessContext context, NamedRef ref, AuthorizationRuleType type) {
-    if (!config.enabled()) {
-      return;
-    }
-    String roleName = getRoleName(context);
+  private void canPerformOp(Check check, Map<Check, String> failed) {
+    String roleName = getRoleName();
     ImmutableMap<String, Object> arguments =
-        ImmutableMap.of("ref", ref.getName(), "role", roleName, "op", type.name(), "path", "");
+        ImmutableMap.of("role", roleName, "op", check.name().name(), "path", "", "ref", "");
+
+    Supplier<String> errorMsgSupplier =
+        () -> String.format("'%s' is not allowed for role '%s' ", check.name(), roleName);
+    canPerformOp(arguments, check, errorMsgSupplier, failed);
+  }
+
+  private void canPerformOpOnReference(Check check, Map<Check, String> failed) {
+    String roleName = getRoleName();
+    ImmutableMap<String, Object> arguments =
+        ImmutableMap.of(
+            "ref", check.ref().getName(), "role", roleName, "op", check.name().name(), "path", "");
 
     Supplier<String> errorMsgSupplier =
         () ->
             String.format(
                 "'%s' is not allowed for role '%s' on reference '%s'",
-                type, roleName, ref.getName());
-    canPerformOp(arguments, errorMsgSupplier);
+                check.name(), roleName, check.ref().getName());
+    canPerformOp(arguments, check, errorMsgSupplier, failed);
   }
 
-  private void canPerformOpOnPath(
-      AccessContext context, NamedRef ref, ContentKey contentKey, AuthorizationRuleType type) {
-    if (!config.enabled()) {
-      return;
-    }
-    String roleName = getRoleName(context);
+  private void canPerformOpOnPath(Check check, Map<Check, String> failed) {
+    String roleName = getRoleName();
     ImmutableMap<String, Object> arguments =
         ImmutableMap.of(
             "ref",
-            ref.getName(),
+            check.ref().getName(),
             "path",
-            contentKey.toPathString(),
+            check.key().toPathString(),
             "role",
             roleName,
             "op",
-            type.name());
+            check.name().name());
 
     Supplier<String> errorMsgSupplier =
         () ->
             String.format(
                 "'%s' is not allowed for role '%s' on content '%s'",
-                type, roleName, contentKey.toPathString());
+                check.name(), roleName, check.key().toPathString());
 
-    canPerformOp(arguments, errorMsgSupplier);
+    canPerformOp(arguments, check, errorMsgSupplier, failed);
   }
 
-  private void canPerformOp(Map<String, Object> arguments, Supplier<String> errorMessageSupplier) {
+  private void canPerformOp(
+      Map<String, Object> arguments,
+      Check check,
+      Supplier<String> errorMessageSupplier,
+      Map<Check, String> failed) {
     boolean allowed =
         compiledRules.getRules().entrySet().stream()
             .anyMatch(
@@ -211,7 +125,7 @@ public class CelAccessChecker implements AccessChecker {
                   }
                 });
     if (!allowed) {
-      throw new AccessControlException(errorMessageSupplier.get());
+      failed.put(check, errorMessageSupplier.get());
     }
   }
 }
