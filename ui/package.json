@@ -126,7 +126,7 @@
     "sass-loader": "^10.0.5",
     "terser-webpack-plugin": "4.2.3",
     "ts-pnp": "1.2.0",
-    "webpack-dev-server": "4.7.3",
+    "webpack-dev-server": "4.7.4",
     "webpack-manifest-plugin": "4.1.1",
     "workbox-webpack-plugin": "6.4.2"
   },
