@@ -306,7 +306,8 @@ class TestTracingVersionStore {
                 tracer.getActiveSpan().getTags(),
                 "expected tags don't match"),
         () -> assertTrue(tracer.isParentSet(), "Span-parent not set"),
-        () -> assertTrue(tracer.isClosed(), "Scope not closed"));
+        () -> assertTrue(tracer.isClosed(), "Scope not closed"),
+        () -> assertTrue(tracer.getActiveSpan().finished(), "Span did not finish"));
   }
 
   @Test
