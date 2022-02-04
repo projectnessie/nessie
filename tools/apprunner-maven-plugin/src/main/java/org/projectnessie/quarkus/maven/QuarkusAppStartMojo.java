@@ -131,7 +131,7 @@ public class QuarkusAppStartMojo extends AbstractQuarkusAppMojo {
   @Parameter(defaultValue = "quarkus.http.test-url")
   private String httpListenUrlProperty;
 
-  @Parameter(defaultValue = "${project.builddir}/nessie-quarkus")
+  @Parameter(defaultValue = "${project.build.directory}/nessie-quarkus")
   private String workingDirectory;
 
   @Parameter private long timeToListenUrlMillis;
