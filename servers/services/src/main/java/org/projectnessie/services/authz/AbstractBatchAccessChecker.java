@@ -23,9 +23,9 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.services.authz.Check.CheckType;
 import org.projectnessie.versioned.NamedRef;
 
-public abstract class AbstractAccessChecker implements AccessChecker {
-  public static final AccessChecker NOOP_ACCESS_CHECKER =
-      new AbstractAccessChecker() {
+public abstract class AbstractBatchAccessChecker implements BatchAccessChecker {
+  public static final BatchAccessChecker NOOP_ACCESS_CHECKER =
+      new AbstractBatchAccessChecker() {
         @Override
         public Map<Check, String> check() {
           return Collections.emptyMap();
@@ -34,7 +34,7 @@ public abstract class AbstractAccessChecker implements AccessChecker {
 
   private final Collection<Check> checks = new LinkedHashSet<>();
 
-  private AccessChecker add(ImmutableCheck.Builder builder) {
+  private BatchAccessChecker add(ImmutableCheck.Builder builder) {
     checks.add(builder.build());
     return this;
   }
@@ -44,65 +44,65 @@ public abstract class AbstractAccessChecker implements AccessChecker {
   }
 
   @Override
-  public AccessChecker canViewReference(NamedRef ref) {
+  public BatchAccessChecker canViewReference(NamedRef ref) {
     return add(Check.builder(CheckType.VIEW_REFERENCE).ref(ref));
   }
 
   @Override
-  public AccessChecker canCreateReference(NamedRef ref) {
+  public BatchAccessChecker canCreateReference(NamedRef ref) {
     return add(Check.builder(CheckType.CREATE_REFERENCE).ref(ref));
   }
 
   @Override
-  public AccessChecker canAssignRefToHash(NamedRef ref) {
+  public BatchAccessChecker canAssignRefToHash(NamedRef ref) {
     canViewReference(ref);
     return add(Check.builder(CheckType.ASSIGN_REFERENCE_TO_HASH).ref(ref));
   }
 
   @Override
-  public AccessChecker canDeleteReference(NamedRef ref) {
+  public BatchAccessChecker canDeleteReference(NamedRef ref) {
     canViewReference(ref);
     return add(Check.builder(CheckType.DELETE_REFERENCE).ref(ref));
   }
 
   @Override
-  public AccessChecker canReadEntries(NamedRef ref) {
+  public BatchAccessChecker canReadEntries(NamedRef ref) {
     canViewReference(ref);
     return add(Check.builder(CheckType.READ_ENTRIES).ref(ref));
   }
 
   @Override
-  public AccessChecker canListCommitLog(NamedRef ref) {
+  public BatchAccessChecker canListCommitLog(NamedRef ref) {
     canViewReference(ref);
     return add(Check.builder(CheckType.LIST_COMMIT_LOG).ref(ref));
   }
 
   @Override
-  public AccessChecker canCommitChangeAgainstReference(NamedRef ref) {
+  public BatchAccessChecker canCommitChangeAgainstReference(NamedRef ref) {
     canViewReference(ref);
     return add(Check.builder(CheckType.COMMIT_CHANGE_AGAINST_REFERENCE).ref(ref));
   }
 
   @Override
-  public AccessChecker canReadEntityValue(NamedRef ref, ContentKey key, String contentId) {
+  public BatchAccessChecker canReadEntityValue(NamedRef ref, ContentKey key, String contentId) {
     canViewReference(ref);
     return add(Check.builder(CheckType.READ_ENTITY_VALUE).ref(ref).key(key).contentId(contentId));
   }
 
   @Override
-  public AccessChecker canUpdateEntity(NamedRef ref, ContentKey key, String contentId) {
+  public BatchAccessChecker canUpdateEntity(NamedRef ref, ContentKey key, String contentId) {
     canViewReference(ref);
     return add(Check.builder(CheckType.UPDATE_ENTITY).ref(ref).key(key).contentId(contentId));
   }
 
   @Override
-  public AccessChecker canDeleteEntity(NamedRef ref, ContentKey key, String contentId) {
+  public BatchAccessChecker canDeleteEntity(NamedRef ref, ContentKey key, String contentId) {
     canViewReference(ref);
     return add(Check.builder(CheckType.DELETE_ENTITY).ref(ref).key(key).contentId(contentId));
   }
 
   @Override
-  public AccessChecker canViewRefLog() {
+  public BatchAccessChecker canViewRefLog() {
     return add(Check.builder(CheckType.VIEW_REFLOG));
   }
 }

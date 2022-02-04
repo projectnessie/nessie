@@ -20,20 +20,20 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 import org.projectnessie.cel.tools.ScriptException;
-import org.projectnessie.services.authz.AbstractAccessChecker;
-import org.projectnessie.services.authz.AccessChecker;
+import org.projectnessie.services.authz.AbstractBatchAccessChecker;
 import org.projectnessie.services.authz.AccessContext;
+import org.projectnessie.services.authz.BatchAccessChecker;
 import org.projectnessie.services.authz.Check;
 
 /**
- * A reference implementation of the {@link AccessChecker} that performs access checks using CEL
- * expressions.
+ * A reference implementation of the {@link BatchAccessChecker} that performs access checks using
+ * CEL expressions.
  */
-final class CelAccessChecker extends AbstractAccessChecker {
+final class CelBatchAccessChecker extends AbstractBatchAccessChecker {
   private final CompiledAuthorizationRules compiledRules;
   private final AccessContext context;
 
-  CelAccessChecker(CompiledAuthorizationRules compiledRules, AccessContext context) {
+  CelBatchAccessChecker(CompiledAuthorizationRules compiledRules, AccessContext context) {
     this.compiledRules = compiledRules;
     this.context = context;
   }

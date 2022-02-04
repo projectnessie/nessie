@@ -35,9 +35,9 @@ import org.projectnessie.model.Detached;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Tag;
-import org.projectnessie.services.authz.AbstractAccessChecker;
-import org.projectnessie.services.authz.AccessChecker;
+import org.projectnessie.services.authz.AbstractBatchAccessChecker;
 import org.projectnessie.services.authz.AccessContext;
+import org.projectnessie.services.authz.BatchAccessChecker;
 import org.projectnessie.services.authz.Check;
 import org.projectnessie.services.authz.Check.CheckType;
 import org.projectnessie.versioned.DetachedRef;
@@ -58,8 +58,8 @@ public abstract class AbstractRestAccessCheckDetached extends AbstractTestRest {
           CheckType.READ_ENTITY_VALUE, ENTITIES_MSG,
           CheckType.READ_ENTRIES, READ_MSG);
 
-  private AccessChecker newAccessChecker() {
-    return new AbstractAccessChecker() {
+  private BatchAccessChecker newAccessChecker() {
+    return new AbstractBatchAccessChecker() {
       @Override
       public Map<Check, String> check() {
         Map<Check, String> failed = new LinkedHashMap<>();
@@ -82,7 +82,8 @@ public abstract class AbstractRestAccessCheckDetached extends AbstractTestRest {
 
   @Test
   public void detachedRefAccessChecks(
-      @NessieAccessChecker Consumer<Function<AccessContext, AccessChecker>> accessCheckerConsumer)
+      @NessieAccessChecker
+          Consumer<Function<AccessContext, BatchAccessChecker>> accessCheckerConsumer)
       throws Exception {
     accessCheckerConsumer.accept(x -> newAccessChecker());
 

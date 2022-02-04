@@ -23,23 +23,23 @@ import javax.enterprise.inject.spi.AfterBeanDiscovery;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.Extension;
 
-/** This class needs to be in the same package as {@link AccessChecker}. */
+/** This class needs to be in the same package as {@link BatchAccessChecker}. */
 public class AuthorizerExtension implements Extension {
-  private volatile Function<AccessContext, AccessChecker> accessCheckerSupplier;
+  private volatile Function<AccessContext, BatchAccessChecker> accessCheckerSupplier;
 
   private final Authorizer authorizer =
       new Authorizer() {
         @Override
-        public AccessChecker startAccessCheck(AccessContext context) {
+        public BatchAccessChecker startAccessCheck(AccessContext context) {
           if (accessCheckerSupplier == null) {
-            return AbstractAccessChecker.NOOP_ACCESS_CHECKER;
+            return AbstractBatchAccessChecker.NOOP_ACCESS_CHECKER;
           }
           return accessCheckerSupplier.apply(context);
         }
       };
 
   public AuthorizerExtension setAccessCheckerSupplier(
-      Function<AccessContext, AccessChecker> accessCheckerSupplier) {
+      Function<AccessContext, BatchAccessChecker> accessCheckerSupplier) {
     this.accessCheckerSupplier = accessCheckerSupplier;
     return this;
   }

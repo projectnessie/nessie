@@ -38,10 +38,10 @@ import org.junit.jupiter.api.extension.ExtensionContext.Store.CloseableResource;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
-import org.projectnessie.services.authz.AbstractAccessChecker;
-import org.projectnessie.services.authz.AccessChecker;
+import org.projectnessie.services.authz.AbstractBatchAccessChecker;
 import org.projectnessie.services.authz.AccessContext;
 import org.projectnessie.services.authz.AuthorizerExtension;
+import org.projectnessie.services.authz.BatchAccessChecker;
 import org.projectnessie.services.config.ServerConfigExtension;
 import org.projectnessie.services.impl.ConfigApiImpl;
 import org.projectnessie.services.impl.TreeApiImpl;
@@ -135,7 +135,7 @@ public class NessieJaxRsExtension
     }
 
     if (parameterContext.isAnnotated(NessieAccessChecker.class)) {
-      return (Consumer<Function<AccessContext, AccessChecker>>) env::setAccessChecker;
+      return (Consumer<Function<AccessContext, BatchAccessChecker>>) env::setAccessChecker;
     }
 
     throw new ParameterResolutionException(
@@ -149,7 +149,7 @@ public class NessieJaxRsExtension
     private final Weld weld;
     private final JerseyTest jerseyTest;
     private SecurityContext securityContext;
-    private Function<AccessContext, AccessChecker> accessChecker;
+    private Function<AccessContext, BatchAccessChecker> accessChecker;
 
     void reset() {
       this.securityContext = null;
@@ -160,7 +160,7 @@ public class NessieJaxRsExtension
       this.securityContext = securityContext;
     }
 
-    void setAccessChecker(Function<AccessContext, AccessChecker> accessChecker) {
+    void setAccessChecker(Function<AccessContext, BatchAccessChecker> accessChecker) {
       this.accessChecker = accessChecker;
     }
 
@@ -221,9 +221,9 @@ public class NessieJaxRsExtension
       jerseyTest.setUp();
     }
 
-    private AccessChecker createNewChecker(AccessContext context) {
+    private BatchAccessChecker createNewChecker(AccessContext context) {
       if (accessChecker == null) {
-        return AbstractAccessChecker.NOOP_ACCESS_CHECKER;
+        return AbstractBatchAccessChecker.NOOP_ACCESS_CHECKER;
       }
       return accessChecker.apply(context);
     }

@@ -51,32 +51,32 @@ Some operations like performing garbage collection or changing access control do
 ## Server interface
 Although multiple server implementations may exist and conversely multiple access control interfaces may exist, this section aims to describe an interface to be used by the `JAX-RS` reference implementation of Nessie present under `servers/services`. The interface is composed of various methods for each operation to validate, which accept some access control context providing user identity and some arguments regarding the object to be accessed.
 
-Access checks start by creating an instance of `AccessChecker` from the implementation of the
+Access checks start by creating an instance of `BatchAccessChecker` from the implementation of the
 [`Authorizer` interface](../servers/services/src/main/java/org/projectnessie/services/authz/Authorizer.java),
 which looks like this:
 
     interface Authorizer {
-      AccessChecker startAccessCheck(AccessContext context);
+      BatchAccessChecker startAccessCheck(AccessContext context);
     }
 
 Individual checks are issued against the `canXyz()` functions on the
-[`AccessChecker` interface](..//servers/services/src/main/java/org/projectnessie/services/authz/AccessChecker.java),
+[`BatchAccessChecker` interface](..//servers/services/src/main/java/org/projectnessie/services/authz/BatchAccessChecker.java),
 which looks like this:
 
-    interface AccessChecker {
+    interface BatchAccessChecker {
       Map<Check, String> check();
       void checkAndThrow() throws AccessControlException;
-      AccessChecker canViewReference(NamedRef ref);
-      AccessChecker canCreateReference(NamedRef ref);
-      AccessChecker canDeleteReference(NamedRef ref);
-      AccessChecker canAssignRefToHash(NamedRef ref);
-      AccessChecker canReadEntries(NamedRef ref);
-      AccessChecker canListCommitLog(NamedRef ref);
-      AccessChecker canCommitChangeAgainstReference(NamedRef ref);
-      AccessChecker canReadEntityValue(NamedRef ref, ContentKey key, String contentId);
-      AccessChecker canUpdateEntity(NamedRef ref, ContentKey key, String contentId);
-      AccessChecker canDeleteEntity(NamedRef ref, ContentKey key, String contentId);
-      AccessChecker canViewRefLog();
+      BatchAccessChecker canViewReference(NamedRef ref);
+      BatchAccessChecker canCreateReference(NamedRef ref);
+      BatchAccessChecker canDeleteReference(NamedRef ref);
+      BatchAccessChecker canAssignRefToHash(NamedRef ref);
+      BatchAccessChecker canReadEntries(NamedRef ref);
+      BatchAccessChecker canListCommitLog(NamedRef ref);
+      BatchAccessChecker canCommitChangeAgainstReference(NamedRef ref);
+      BatchAccessChecker canReadEntityValue(NamedRef ref, ContentKey key, String contentId);
+      BatchAccessChecker canUpdateEntity(NamedRef ref, ContentKey key, String contentId);
+      BatchAccessChecker canDeleteEntity(NamedRef ref, ContentKey key, String contentId);
+      BatchAccessChecker canViewRefLog();
     }
 
 The actual check operation is triggered by calling either `check()`, which returns the failed checks
@@ -101,14 +101,15 @@ The `AccessContext` object passed as argument contains information regarding the
 
 ## Server reference implementation
 
-An implementation of the `AccessChecker` interface could be written with the following characteristics:
+An implementation of the `BatchAccessChecker` interface could be written with the following characteristics:
 * Rules would be configured through a Quarkus configuration file (`application.properties`), where the rule itself is a CEL expression (Common Expression Language).
 * Within the CEL expression, variables for `ref` / `role` / `path` / `op` would be available, which then would allow quite flexible rule definitions
 * Rule definitions are of the form `nessie.server.authorization.rules.<ruleId>="<rule_expression>"`
 * The `ref` refers to a string representing a branch/tag name
 * The `role` refers to the user's role and can be any string
 * The `path` refers to the Key for the content of an object and can be any string
-* The `op` variable in the `<rule_expression>` can be any of:
+* The `op` variable in the `<rule_expression>` can be any of the values of the
+  [`Check.Type` enum](../servers/services/src/main/java/org/projectnessie/services/authz/Check.java):
   * `VIEW_REFERENCE`
   * `CREATE_REFERENCE`
   * `DELETE_REFERENCE`

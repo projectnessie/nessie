@@ -38,11 +38,11 @@ import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.DetachedRef;
 import org.projectnessie.versioned.TagName;
 
-public class AccessCheckerTest {
+public class BatchAccessCheckerTest {
 
   @Test
   public void emptyDoesNotThrow() {
-    AccessChecker checker = newAccessChecker(checks -> Collections.emptyMap());
+    BatchAccessChecker checker = newAccessChecker(checks -> Collections.emptyMap());
     checker
         .canViewReference(BranchName.of("foo"))
         .canViewRefLog()
@@ -53,7 +53,7 @@ public class AccessCheckerTest {
 
   @Test
   public void allChecksPass() {
-    AccessChecker checker = newAccessChecker(checks -> Collections.emptyMap());
+    BatchAccessChecker checker = newAccessChecker(checks -> Collections.emptyMap());
     assertThatCode(checker::checkAndThrow).doesNotThrowAnyException();
   }
 
@@ -66,7 +66,7 @@ public class AccessCheckerTest {
         Check.builder(CheckType.LIST_COMMIT_LOG).ref(TagName.of("bar")).build();
     String msgListTagCommits = "don't look into bar";
 
-    AccessChecker checker =
+    BatchAccessChecker checker =
         newAccessChecker(
             checks ->
                 ImmutableMap.of(checkRefLog, msgRefLog, checkListTagCommits, msgListTagCommits));
@@ -111,7 +111,7 @@ public class AccessCheckerTest {
                     (a, b) -> a,
                     LinkedHashMap::new));
 
-    AccessChecker checker =
+    BatchAccessChecker checker =
         newAccessChecker(
             checks -> {
               assertThat(checks).containsAnyElementsOf(allChecks);
@@ -170,8 +170,9 @@ public class AccessCheckerTest {
         .hasMessage(expectedMsg);
   }
 
-  static AccessChecker newAccessChecker(Function<Collection<Check>, Map<Check, String>> check) {
-    return new AbstractAccessChecker() {
+  static BatchAccessChecker newAccessChecker(
+      Function<Collection<Check>, Map<Check, String>> check) {
+    return new AbstractBatchAccessChecker() {
       @Override
       public Map<Check, String> check() {
         return check.apply(getChecks());

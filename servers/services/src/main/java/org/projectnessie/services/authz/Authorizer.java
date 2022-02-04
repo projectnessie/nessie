@@ -18,8 +18,8 @@ package org.projectnessie.services.authz;
 /**
  * Authorizers are used to bulk-check permissions.
  *
- * <p>Authorizers produce {@link AccessChecker} instances, which collect all access checks required
- * for a certain version store operation and perform all access checks in a batch.
+ * <p>Authorizers produce {@link BatchAccessChecker} instances, which collect all access checks
+ * required for a certain version store operation and perform all access checks in a batch.
  */
 public interface Authorizer {
 
@@ -29,5 +29,5 @@ public interface Authorizer {
    * @param context The context carrying the principal information.
    * @return access checker
    */
-  AccessChecker startAccessCheck(AccessContext context);
+  BatchAccessChecker startAccessCheck(AccessContext context);
 }
