@@ -175,12 +175,6 @@
           <environment>
             <HTTP_ACCESS_LOG_LEVEL>${test.log.level}</HTTP_ACCESS_LOG_LEVEL>
           </environment>
-          <applicationProperties>
-            <quarkus.http.test-port>0</quarkus.http.test-port>
-          </applicationProperties>
-          <outputProperties>
-            <quarkus.http.test-port>quarkus.http.test-port</quarkus.http.test-port>
-          </outputProperties>
         </configuration>
         <dependencies>
           <dependency>
