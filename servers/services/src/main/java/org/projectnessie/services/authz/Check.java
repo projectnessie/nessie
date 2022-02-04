@@ -22,7 +22,7 @@ import org.projectnessie.versioned.NamedRef;
 
 @Value.Immutable
 public interface Check {
-  CheckType name();
+  CheckType type();
 
   @Nullable
   NamedRef ref();
@@ -34,7 +34,7 @@ public interface Check {
   String contentId();
 
   static ImmutableCheck.Builder builder(CheckType type) {
-    return ImmutableCheck.builder().name(type);
+    return ImmutableCheck.builder().type(type);
   }
 
   enum CheckType {

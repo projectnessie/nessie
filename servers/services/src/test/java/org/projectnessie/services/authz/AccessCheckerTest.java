@@ -107,7 +107,7 @@ public class AccessCheckerTest {
             .collect(
                 Collectors.toMap(
                     Function.identity(),
-                    c -> "no no " + c.name(),
+                    c -> "no no " + c.type(),
                     (a, b) -> a,
                     LinkedHashMap::new));
 
@@ -120,7 +120,7 @@ public class AccessCheckerTest {
 
     allChecks.forEach(
         c -> {
-          switch (c.name()) {
+          switch (c.type()) {
             case VIEW_REFERENCE:
               checker.canViewReference(c.ref());
               break;
@@ -134,7 +134,6 @@ public class AccessCheckerTest {
               checker.canReadEntries(c.ref());
               break;
             case ASSIGN_REFERENCE_TO_HASH:
-              E:
               checker.canAssignRefToHash(c.ref());
               break;
             case LIST_COMMIT_LOG:
@@ -156,7 +155,7 @@ public class AccessCheckerTest {
               checker.canViewRefLog();
               break;
             default:
-              throw new IllegalArgumentException("Unkupported: " + c);
+              throw new IllegalArgumentException("Unsupported: " + c);
           }
         });
 
@@ -164,7 +163,7 @@ public class AccessCheckerTest {
 
     String expectedMsg =
         allChecks.stream()
-            .map(c -> String.format("no no %s", c.name().name()))
+            .map(c -> String.format("no no %s", c.type().name()))
             .collect(Collectors.joining(", "));
     assertThatThrownBy(checker::checkAndThrow)
         .isInstanceOf(AccessControlException.class)

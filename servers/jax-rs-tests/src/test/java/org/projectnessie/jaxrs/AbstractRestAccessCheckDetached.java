@@ -66,7 +66,7 @@ public abstract class AbstractRestAccessCheckDetached extends AbstractTestRest {
         getChecks()
             .forEach(
                 check -> {
-                  String msg = CHECK_TYPE_MSG.get(check.name());
+                  String msg = CHECK_TYPE_MSG.get(check.type());
                   if (msg != null) {
                     if (check.ref() instanceof DetachedRef) {
                       failed.put(check, msg);

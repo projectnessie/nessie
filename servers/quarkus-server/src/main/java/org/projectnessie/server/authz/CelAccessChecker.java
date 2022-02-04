@@ -44,9 +44,9 @@ final class CelAccessChecker extends AbstractAccessChecker {
     getChecks()
         .forEach(
             check -> {
-              if (check.name().isContent()) {
+              if (check.type().isContent()) {
                 canPerformOpOnPath(check, failed);
-              } else if (check.name().isRef()) {
+              } else if (check.type().isRef()) {
                 canPerformOpOnReference(check, failed);
               } else {
                 canPerformOp(check, failed);
@@ -62,10 +62,10 @@ final class CelAccessChecker extends AbstractAccessChecker {
   private void canPerformOp(Check check, Map<Check, String> failed) {
     String roleName = getRoleName();
     ImmutableMap<String, Object> arguments =
-        ImmutableMap.of("role", roleName, "op", check.name().name(), "path", "", "ref", "");
+        ImmutableMap.of("role", roleName, "op", check.type().name(), "path", "", "ref", "");
 
     Supplier<String> errorMsgSupplier =
-        () -> String.format("'%s' is not allowed for role '%s' ", check.name(), roleName);
+        () -> String.format("'%s' is not allowed for role '%s' ", check.type(), roleName);
     canPerformOp(arguments, check, errorMsgSupplier, failed);
   }
 
@@ -73,13 +73,13 @@ final class CelAccessChecker extends AbstractAccessChecker {
     String roleName = getRoleName();
     ImmutableMap<String, Object> arguments =
         ImmutableMap.of(
-            "ref", check.ref().getName(), "role", roleName, "op", check.name().name(), "path", "");
+            "ref", check.ref().getName(), "role", roleName, "op", check.type().name(), "path", "");
 
     Supplier<String> errorMsgSupplier =
         () ->
             String.format(
                 "'%s' is not allowed for role '%s' on reference '%s'",
-                check.name(), roleName, check.ref().getName());
+                check.type(), roleName, check.ref().getName());
     canPerformOp(arguments, check, errorMsgSupplier, failed);
   }
 
@@ -94,13 +94,13 @@ final class CelAccessChecker extends AbstractAccessChecker {
             "role",
             roleName,
             "op",
-            check.name().name());
+            check.type().name());
 
     Supplier<String> errorMsgSupplier =
         () ->
             String.format(
                 "'%s' is not allowed for role '%s' on content '%s'",
-                check.name(), roleName, check.key().toPathString());
+                check.type(), roleName, check.key().toPathString());
 
     canPerformOp(arguments, check, errorMsgSupplier, failed);
   }

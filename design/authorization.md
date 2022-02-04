@@ -51,21 +51,37 @@ Some operations like performing garbage collection or changing access control do
 ## Server interface
 Although multiple server implementations may exist and conversely multiple access control interfaces may exist, this section aims to describe an interface to be used by the `JAX-RS` reference implementation of Nessie present under `servers/services`. The interface is composed of various methods for each operation to validate, which accept some access control context providing user identity and some arguments regarding the object to be accessed.
 
-More concretely, interface would look like this:
+Access checks start by creating an instance of `AccessChecker` from the implementation of the
+[`Authorizer` interface](../servers/services/src/main/java/org/projectnessie/services/authz/Authorizer.java),
+which looks like this:
+
+    interface Authorizer {
+      AccessChecker startAccessCheck(AccessContext context);
+    }
+
+Individual checks are issued against the `canXyz()` functions on the
+[`AccessChecker` interface](..//servers/services/src/main/java/org/projectnessie/services/authz/AccessChecker.java),
+which looks like this:
 
     interface AccessChecker {
-      void canViewReference(AccessContext context, NamedRef ref) throws AccessControlException;
-      void canCreateReference(AccessContext context, NamedRef ref) throws AccessControlException;
-      void canDeleteReference(AccessContext context, NamedRef ref) throws AccessControlException;
-      void canAssignRefToHash(AccessContext context, NamedRef ref) throws AccessControlException;
-      void canReadEntries(AccessContext context, NamedRef ref) throws AccessControlException;
-      void canListCommitLog(AccessContext context, NamedRef ref) throws AccessControlException;
-      void canCommitChangeAgainstReference(AccessContext context, NamedRef ref) throws AccessControlException;
-      void canReadEntityValue(AccessContext context, NamedRef ref, ContentKey key, String contentId) throws AccessControlException;
-      void canUpdateEntity(AccessContext context, NamedRef ref, ContentKey key, String contentId) throws AccessControlException;
-      void canDeleteEntity(AccessContext context, NamedRef ref, ContentKey key, String contentId) throws AccessControlException;
-      void canViewRefLog(AccessContext context) throws AccessControlException;
+      Map<Check, String> check();
+      void checkAndThrow() throws AccessControlException;
+      AccessChecker canViewReference(NamedRef ref);
+      AccessChecker canCreateReference(NamedRef ref);
+      AccessChecker canDeleteReference(NamedRef ref);
+      AccessChecker canAssignRefToHash(NamedRef ref);
+      AccessChecker canReadEntries(NamedRef ref);
+      AccessChecker canListCommitLog(NamedRef ref);
+      AccessChecker canCommitChangeAgainstReference(NamedRef ref);
+      AccessChecker canReadEntityValue(NamedRef ref, ContentKey key, String contentId);
+      AccessChecker canUpdateEntity(NamedRef ref, ContentKey key, String contentId);
+      AccessChecker canDeleteEntity(NamedRef ref, ContentKey key, String contentId);
+      AccessChecker canViewRefLog();
     }
+
+The actual check operation is triggered by calling either `check()`, which returns the failed checks
+with a description or by calling `checkAndThrow()`, which throws an `AccessControlException` if at
+least one check failed.
 
 The `AccessContext` object passed as argument contains information regarding the overall context of the operation and will be created by the server itself:
 
