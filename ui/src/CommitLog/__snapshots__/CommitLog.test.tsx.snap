@@ -1,0 +1,29 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Commit redirects on an invalid ref 1`] = `
+<DocumentFragment>
+  <div
+    class="EmptyView card-header"
+  >
+    <span
+      class="EmptyView__message"
+    >
+      Nothing to show
+    </span>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Commit redirects on an invalid ref 2`] = `
+<DocumentFragment>
+  <div
+    class="EmptyView card-header"
+  >
+    <span
+      class="EmptyView__message"
+    >
+      Nothing to show
+    </span>
+  </div>
+</DocumentFragment>
+`;

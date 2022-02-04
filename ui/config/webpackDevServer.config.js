@@ -41,7 +41,7 @@ module.exports = function (proxy, allowedHost, host, port) {
       webSocketURL: {
         hostname: sockHost,
         pathname: sockPath,
-        port: sockPort
+        port: sockPort,
       },
     },
     // By default WebpackDevServer serves physical files from current directory
@@ -64,8 +64,8 @@ module.exports = function (proxy, allowedHost, host, port) {
       publicPath: paths.publicUrlOrPath,
       watch: true,
       watch: {
-        ignored: ignoredFiles(paths.appSrc)
-      }
+        ignored: ignoredFiles(paths.appSrc),
+      },
     },
 
     // enable hot module replacement
@@ -81,7 +81,7 @@ module.exports = function (proxy, allowedHost, host, port) {
     // from the root.
     // remove last slash so user can land on `/test` instead of `/test/`
     devMiddleware: {
-      publicPath: paths.publicUrlOrPath.slice(0, -1)
+      publicPath: paths.publicUrlOrPath.slice(0, -1),
     },
     https: getHttpsConfig(),
     host: host,
