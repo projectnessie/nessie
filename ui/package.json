@@ -21,7 +21,7 @@
     "camelcase": "^6.3.0",
     "css-loader": "5.2.7",
     "dotenv": "16.0.0",
-    "dotenv-expand": "7.0.0",
+    "dotenv-expand": "8.0.1",
     "formik": "^2.2.9",
     "http-proxy-middleware": "^2.0.2",
     "identity-obj-proxy": "3.0.0",
