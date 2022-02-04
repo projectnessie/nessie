@@ -28,7 +28,7 @@ import org.projectnessie.model.DiffResponse;
 import org.projectnessie.model.ImmutableDiffEntry;
 import org.projectnessie.model.ImmutableDiffResponse;
 import org.projectnessie.model.ImmutableDiffResponse.Builder;
-import org.projectnessie.services.authz.AccessChecker;
+import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.Hash;
@@ -42,9 +42,9 @@ public class DiffApiImpl extends BaseApiImpl implements DiffApi {
   public DiffApiImpl(
       ServerConfig config,
       VersionStore<Content, CommitMeta, Content.Type> store,
-      AccessChecker accessChecker,
+      Authorizer authorizer,
       Principal principal) {
-    super(config, store, accessChecker, principal);
+    super(config, store, authorizer, principal);
   }
 
   @Override

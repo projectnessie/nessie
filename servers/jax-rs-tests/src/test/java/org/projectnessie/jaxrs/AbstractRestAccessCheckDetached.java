@@ -20,8 +20,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
-import java.security.AccessControlException;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.rest.NessieForbiddenException;
@@ -33,11 +35,13 @@ import org.projectnessie.model.Detached;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Tag;
+import org.projectnessie.services.authz.AbstractAccessChecker;
 import org.projectnessie.services.authz.AccessChecker;
 import org.projectnessie.services.authz.AccessContext;
-import org.projectnessie.services.authz.DefaultAccessChecker;
+import org.projectnessie.services.authz.Check;
+import org.projectnessie.services.authz.Check.CheckType;
 import org.projectnessie.versioned.DetachedRef;
-import org.projectnessie.versioned.NamedRef;
+import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
 /** See {@link AbstractTestRest} for details about and reason for the inheritance model. */
 public abstract class AbstractRestAccessCheckDetached extends AbstractTestRest {
@@ -47,48 +51,40 @@ public abstract class AbstractRestAccessCheckDetached extends AbstractTestRest {
   private static final String READ_MSG = "Must not read from detached references";
   private static final String ENTITIES_MSG = "Must not get entities from detached references";
 
+  private static final Map<CheckType, String> CHECK_TYPE_MSG =
+      ImmutableMap.of(
+          CheckType.VIEW_REFERENCE, VIEW_MSG,
+          CheckType.LIST_COMMIT_LOG, COMMITS_MSG,
+          CheckType.READ_ENTITY_VALUE, ENTITIES_MSG,
+          CheckType.READ_ENTRIES, READ_MSG);
+
+  private AccessChecker newAccessChecker() {
+    return new AbstractAccessChecker() {
+      @Override
+      public Map<Check, String> check() {
+        Map<Check, String> failed = new LinkedHashMap<>();
+        getChecks()
+            .forEach(
+                check -> {
+                  String msg = CHECK_TYPE_MSG.get(check.type());
+                  if (msg != null) {
+                    if (check.ref() instanceof DetachedRef) {
+                      failed.put(check, msg);
+                    } else {
+                      assertThat(check.ref().getName()).isNotEqualTo(DetachedRef.REF_NAME);
+                    }
+                  }
+                });
+        return failed;
+      }
+    };
+  }
+
   @Test
   public void detachedRefAccessChecks(
-      @NessieAccessChecker Consumer<AccessChecker> accessCheckerConsumer) throws Exception {
-    accessCheckerConsumer.accept(
-        new DefaultAccessChecker() {
-          @Override
-          public void canViewReference(AccessContext context, NamedRef ref)
-              throws AccessControlException {
-            if (ref instanceof DetachedRef) {
-              throw new AccessControlException(VIEW_MSG);
-            }
-            assertThat(ref.getName()).isNotEqualTo(DetachedRef.REF_NAME);
-          }
-
-          @Override
-          public void canListCommitLog(AccessContext context, NamedRef ref)
-              throws AccessControlException {
-            if (ref instanceof DetachedRef) {
-              throw new AccessControlException(COMMITS_MSG);
-            }
-            assertThat(ref.getName()).isNotEqualTo(DetachedRef.REF_NAME);
-          }
-
-          @Override
-          public void canReadEntityValue(
-              AccessContext context, NamedRef ref, ContentKey key, String contentId)
-              throws AccessControlException {
-            if (ref instanceof DetachedRef) {
-              throw new AccessControlException(ENTITIES_MSG);
-            }
-            assertThat(ref.getName()).isNotEqualTo(DetachedRef.REF_NAME);
-          }
-
-          @Override
-          public void canReadEntries(AccessContext context, NamedRef ref)
-              throws AccessControlException {
-            if (ref instanceof DetachedRef) {
-              throw new AccessControlException(READ_MSG);
-            }
-            assertThat(ref.getName()).isNotEqualTo(DetachedRef.REF_NAME);
-          }
-        });
+      @NessieAccessChecker Consumer<Function<AccessContext, AccessChecker>> accessCheckerConsumer)
+      throws Exception {
+    accessCheckerConsumer.accept(x -> newAccessChecker());
 
     Branch main = createBranch("committerAndAuthor");
     Branch merge = createBranch("committerAndAuthorMerge");

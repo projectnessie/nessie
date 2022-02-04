@@ -28,7 +28,7 @@ import org.projectnessie.model.Content.Type;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.GetMultipleContentsRequest;
 import org.projectnessie.model.GetMultipleContentsResponse;
-import org.projectnessie.services.authz.AccessChecker;
+import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.impl.ContentApiImplWithAuthorization;
 import org.projectnessie.versioned.VersionStore;
@@ -43,7 +43,7 @@ public class RestContentResource implements HttpContentApi {
 
   private final ServerConfig config;
   private final VersionStore<Content, CommitMeta, Type> store;
-  private final AccessChecker accessChecker;
+  private final Authorizer authorizer;
 
   @Context SecurityContext securityContext;
 
@@ -54,19 +54,17 @@ public class RestContentResource implements HttpContentApi {
 
   @Inject
   public RestContentResource(
-      ServerConfig config,
-      VersionStore<Content, CommitMeta, Type> store,
-      AccessChecker accessChecker) {
+      ServerConfig config, VersionStore<Content, CommitMeta, Type> store, Authorizer authorizer) {
     this.config = config;
     this.store = store;
-    this.accessChecker = accessChecker;
+    this.authorizer = authorizer;
   }
 
   private ContentApi resource() {
     return new ContentApiImplWithAuthorization(
         config,
         store,
-        accessChecker,
+        authorizer,
         securityContext == null ? null : securityContext.getUserPrincipal());
   }
 

@@ -25,6 +25,7 @@ import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.services.authz.AccessChecker;
+import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.authz.ServerAccessContext;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.DetachedRef;
@@ -39,17 +40,17 @@ import org.projectnessie.versioned.WithHash;
 abstract class BaseApiImpl {
   private final ServerConfig config;
   private final VersionStore<Content, CommitMeta, Content.Type> store;
-  private final AccessChecker accessChecker;
+  private final Authorizer authorizer;
   private final Principal principal;
 
   protected BaseApiImpl(
       ServerConfig config,
       VersionStore<Content, CommitMeta, Content.Type> store,
-      AccessChecker accessChecker,
+      Authorizer authorizer,
       Principal principal) {
     this.config = config;
     this.store = store;
-    this.accessChecker = accessChecker;
+    this.authorizer = authorizer;
     this.principal = principal;
   }
 
@@ -110,8 +111,12 @@ abstract class BaseApiImpl {
     return principal;
   }
 
-  protected AccessChecker getAccessChecker() {
-    return accessChecker;
+  protected Authorizer getAuthorizer() {
+    return authorizer;
+  }
+
+  protected AccessChecker startAccessCheck() {
+    return getAuthorizer().startAccessCheck(createAccessContext());
   }
 
   protected ServerAccessContext createAccessContext() {

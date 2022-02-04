@@ -38,7 +38,7 @@ import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.Transplant;
-import org.projectnessie.services.authz.AccessChecker;
+import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.impl.TreeApiImplWithAuthorization;
 import org.projectnessie.versioned.VersionStore;
@@ -53,7 +53,7 @@ public class RestTreeResource implements HttpTreeApi {
 
   private final ServerConfig config;
   private final VersionStore<Content, CommitMeta, Type> store;
-  private final AccessChecker accessChecker;
+  private final Authorizer authorizer;
 
   @Context SecurityContext securityContext;
 
@@ -64,19 +64,17 @@ public class RestTreeResource implements HttpTreeApi {
 
   @Inject
   public RestTreeResource(
-      ServerConfig config,
-      VersionStore<Content, CommitMeta, Type> store,
-      AccessChecker accessChecker) {
+      ServerConfig config, VersionStore<Content, CommitMeta, Type> store, Authorizer authorizer) {
     this.config = config;
     this.store = store;
-    this.accessChecker = accessChecker;
+    this.authorizer = authorizer;
   }
 
   private TreeApi resource() {
     return new TreeApiImplWithAuthorization(
         config,
         store,
-        accessChecker,
+        authorizer,
         securityContext == null ? null : securityContext.getUserPrincipal());
   }
 

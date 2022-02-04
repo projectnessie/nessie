@@ -27,7 +27,7 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.Content.Type;
 import org.projectnessie.model.RefLogResponse;
-import org.projectnessie.services.authz.AccessChecker;
+import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.impl.RefLogApiImplWithAuthorization;
 import org.projectnessie.versioned.VersionStore;
@@ -38,7 +38,7 @@ public class RestRefLogResource implements HttpRefLogApi {
 
   private final ServerConfig config;
   private final VersionStore<Content, CommitMeta, Type> store;
-  private final AccessChecker accessChecker;
+  private final Authorizer authorizer;
 
   @Context SecurityContext securityContext;
 
@@ -49,19 +49,17 @@ public class RestRefLogResource implements HttpRefLogApi {
 
   @Inject
   public RestRefLogResource(
-      ServerConfig config,
-      VersionStore<Content, CommitMeta, Type> store,
-      AccessChecker accessChecker) {
+      ServerConfig config, VersionStore<Content, CommitMeta, Type> store, Authorizer authorizer) {
     this.config = config;
     this.store = store;
-    this.accessChecker = accessChecker;
+    this.authorizer = authorizer;
   }
 
   private RefLogApi resource() {
     return new RefLogApiImplWithAuthorization(
         config,
         store,
-        accessChecker,
+        authorizer,
         securityContext == null ? null : securityContext.getUserPrincipal());
   }
 

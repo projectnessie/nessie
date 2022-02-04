@@ -16,135 +16,129 @@
 package org.projectnessie.services.authz;
 
 import java.security.AccessControlException;
+import java.util.Map;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.NamedRef;
 
 /**
- * The purpose of the {@link AccessChecker} is to make sure that a particular role is allowed to
- * perform an action (such as creation, deletion) on a {@link NamedRef} (Branch/Tag). Additionally,
- * this interface also provides checks based on a given {@link ContentKey}.
+ * Accept various allowance-checks and retrieve the result of all operations at once.
+ *
+ * <p>The purpose of the {@link AccessChecker} is to accept all required checks via the {@code
+ * can...()} methods and return the result of these "can do xyz" checks via {@link #check()}.
+ *
+ * <p>The checks make sure that a particular role is allowed to perform an action (such as creation,
+ * deletion) on a {@link NamedRef} (Branch/Tag). Additionally, this interface also provides checks
+ * based on a given {@link ContentKey}.
  */
 public interface AccessChecker {
 
   /**
+   * Checks the recorded checks.
+   *
+   * @return set of failed checks or an empty collection, if all checks passed
+   */
+  Map<Check, String> check();
+
+  /**
+   * Convenience methods that throws an {@link AccessControlException}, if {@link #check()} returns
+   * a non-empty map.
+   */
+  default void checkAndThrow() throws AccessControlException {
+    Map<Check, String> failedChecks = check();
+    if (!failedChecks.isEmpty()) {
+      throw new AccessControlException(String.join(", ", failedChecks.values()));
+    }
+  }
+
+  /**
    * Checks whether the given role/principal is allowed to view/list the given Branch/Tag.
    *
-   * @param context The context carrying the principal information.
    * @param ref The {@link NamedRef} to check
-   * @throws AccessControlException When the permission to view/list a Branch/Tag is not granted.
    */
-  void canViewReference(AccessContext context, NamedRef ref) throws AccessControlException;
+  AccessChecker canViewReference(NamedRef ref);
 
   /**
    * Checks whether the given role/principal is allowed to create a Branch/Tag.
    *
-   * @param context The context carrying the principal information.
    * @param ref The {@link NamedRef} to check
-   * @throws AccessControlException When the permission to create a Branch/Tag is not granted.
    */
-  void canCreateReference(AccessContext context, NamedRef ref) throws AccessControlException;
+  AccessChecker canCreateReference(NamedRef ref);
 
   /**
    * Checks whether the given role/principal is allowed to assign the given Branch/Tag to a Hash.
    *
-   * @param context The context carrying the principal information.
-   * @param ref The {@link NamedRef} to check
-   * @throws AccessControlException When the permission to assign the given Branch/Tag to a Hash is
-   *     not granted.
+   * @param ref The {@link NamedRef} to check not granted.
    */
-  void canAssignRefToHash(AccessContext context, NamedRef ref) throws AccessControlException;
+  AccessChecker canAssignRefToHash(NamedRef ref);
 
   /**
    * Checks whether the given role/principal is allowed to delete a Branch/Tag.
    *
-   * @param context The context carrying the principal information.
    * @param ref The {@link NamedRef} to check
-   * @throws AccessControlException When the permission to delete a Branch/Tag is not granted.
    */
-  void canDeleteReference(AccessContext context, NamedRef ref) throws AccessControlException;
+  AccessChecker canDeleteReference(NamedRef ref);
 
   /**
    * Checks whether the given role/principal is allowed to read entries content for the given
    * Branch/Tag.
    *
-   * @param context The context carrying the principal information.
    * @param ref The {@link NamedRef} to check
-   * @throws AccessControlException When the permission to read entries content is not granted.
    */
-  void canReadEntries(AccessContext context, NamedRef ref) throws AccessControlException;
+  AccessChecker canReadEntries(NamedRef ref);
 
   /**
    * Checks whether the given role/principal is allowed to list the commit log for the given
    * Branch/Tag.
    *
-   * @param context The context carrying the principal information.
    * @param ref The {@link NamedRef} to check
-   * @throws AccessControlException When the permission to list the commit log is not granted.
    */
-  void canListCommitLog(AccessContext context, NamedRef ref) throws AccessControlException;
+  AccessChecker canListCommitLog(NamedRef ref);
 
   /**
    * Checks whether the given role/principal is allowed to commit changes against the given
    * Branch/Tag.
    *
-   * @param context The context carrying the principal information.
    * @param ref The {@link NamedRef} to check
-   * @throws AccessControlException When the permission to commit changes is not granted.
    */
-  void canCommitChangeAgainstReference(AccessContext context, NamedRef ref)
-      throws AccessControlException;
+  AccessChecker canCommitChangeAgainstReference(NamedRef ref);
 
   /**
    * Checks whether the given role/principal is allowed to read an entity value as defined by the
    * {@link ContentKey} for the given Branch/Tag.
    *
-   * @param context The context carrying the principal information.
    * @param ref The {@link NamedRef} to check
    * @param key The {@link ContentKey} to check
    * @param contentId The ID of the {@link Content} object. See the <a
    *     href="https://projectnessie.org/features/metadata_authorization/#contentid">ContentId
    *     docs</a> for how to use this.
-   * @throws AccessControlException When the permission to read an entity value is not granted.
    */
-  void canReadEntityValue(AccessContext context, NamedRef ref, ContentKey key, String contentId)
-      throws AccessControlException;
+  AccessChecker canReadEntityValue(NamedRef ref, ContentKey key, String contentId);
 
   /**
    * Checks whether the given role/principal is allowed to update an entity value as defined by the
    * {@link ContentKey} for the given Branch/Tag.
    *
-   * @param context The context carrying the principal information.
    * @param ref The {@link NamedRef} to check
    * @param key The {@link ContentKey} to check
    * @param contentId The ID of the {@link Content} object. See the <a
    *     href="https://projectnessie.org/features/metadata_authorization/#contentid">ContentId
    *     docs</a> for how to use this.
-   * @throws AccessControlException When the permission to update an entity value is not granted.
    */
-  void canUpdateEntity(AccessContext context, NamedRef ref, ContentKey key, String contentId)
-      throws AccessControlException;
+  AccessChecker canUpdateEntity(NamedRef ref, ContentKey key, String contentId);
 
   /**
    * Checks whether the given role/principal is allowed to delete an entity value as defined by the
    * {@link ContentKey} for the given Branch/Tag.
    *
-   * @param context The context carrying the principal information.
    * @param ref The {@link NamedRef} to check
    * @param key The {@link ContentKey} to check
    * @param contentId The ID of the {@link Content} object. See the <a
    *     href="https://projectnessie.org/features/metadata_authorization/#contentid">ContentId
    *     docs</a> for how to use this.
-   * @throws AccessControlException When the permission to delete an entity value is not granted.
    */
-  void canDeleteEntity(AccessContext context, NamedRef ref, ContentKey key, String contentId)
-      throws AccessControlException;
+  AccessChecker canDeleteEntity(NamedRef ref, ContentKey key, String contentId);
 
-  /**
-   * Checks whether the given role/principal is allowed to view the reflog entries.
-   *
-   * @param context The context carrying the principal information.
-   * @throws AccessControlException When the permission to view the reflog entries is not granted.
-   */
-  void canViewRefLog(AccessContext context) throws AccessControlException;
+  /** Checks whether the given role/principal is allowed to view the reflog entries. */
+  AccessChecker canViewRefLog();
 }

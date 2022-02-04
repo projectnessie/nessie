@@ -22,7 +22,7 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.Content.Type;
 import org.projectnessie.model.RefLogResponse;
-import org.projectnessie.services.authz.AccessChecker;
+import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.VersionStore;
 
@@ -32,14 +32,14 @@ public class RefLogApiImplWithAuthorization extends RefLogApiImpl {
   public RefLogApiImplWithAuthorization(
       ServerConfig config,
       VersionStore<Content, CommitMeta, Type> store,
-      AccessChecker accessChecker,
+      Authorizer authorizer,
       Principal principal) {
-    super(config, store, accessChecker, principal);
+    super(config, store, authorizer, principal);
   }
 
   @Override
   public RefLogResponse getRefLog(RefLogParams params) throws NessieNotFoundException {
-    getAccessChecker().canViewRefLog(createAccessContext());
+    startAccessCheck().canViewRefLog().checkAndThrow();
     return super.getRefLog(params);
   }
 }
