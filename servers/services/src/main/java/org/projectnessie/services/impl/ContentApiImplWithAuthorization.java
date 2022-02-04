@@ -23,8 +23,8 @@ import org.projectnessie.model.Content.Type;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.GetMultipleContentsRequest;
 import org.projectnessie.model.GetMultipleContentsResponse;
-import org.projectnessie.services.authz.AccessChecker;
 import org.projectnessie.services.authz.Authorizer;
+import org.projectnessie.services.authz.BatchAccessChecker;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.VersionStore;
@@ -54,7 +54,7 @@ public class ContentApiImplWithAuthorization extends ContentApiImpl {
       String namedRef, String hashOnRef, GetMultipleContentsRequest request)
       throws NessieNotFoundException {
     WithHash<NamedRef> ref = namedRefWithHashOrThrow(namedRef, hashOnRef);
-    AccessChecker check = startAccessCheck();
+    BatchAccessChecker check = startAccessCheck();
     request.getRequestedKeys().forEach(k -> check.canReadEntityValue(ref.getValue(), k, null));
     check.checkAndThrow();
     return super.getMultipleContents(namedRef, hashOnRef, request);

@@ -42,8 +42,8 @@ import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.Transplant;
-import org.projectnessie.services.authz.AccessChecker;
 import org.projectnessie.services.authz.Authorizer;
+import org.projectnessie.services.authz.BatchAccessChecker;
 import org.projectnessie.services.authz.Check;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.BranchName;
@@ -64,7 +64,7 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
   @Override
   public ReferencesResponse getAllReferences(ReferencesParams params) {
     ImmutableReferencesResponse.Builder resp = ReferencesResponse.builder();
-    AccessChecker check = startAccessCheck();
+    BatchAccessChecker check = startAccessCheck();
     List<Reference> refs =
         super.getAllReferences(params).getReferences().stream()
             .peek(ref -> check.canViewReference(RefUtil.toNamedRef(ref)))
@@ -90,7 +90,7 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
   @Override
   public Reference createReference(@Nullable String sourceRefName, Reference reference)
       throws NessieNotFoundException, NessieConflictException {
-    AccessChecker check = startAccessCheck().canCreateReference(RefUtil.toNamedRef(reference));
+    BatchAccessChecker check = startAccessCheck().canCreateReference(RefUtil.toNamedRef(reference));
 
     try {
       check.canViewReference(
@@ -183,7 +183,7 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
   public Branch commitMultipleOperations(String branch, String hash, Operations operations)
       throws NessieNotFoundException, NessieConflictException {
     BranchName branchName = BranchName.of(branch);
-    AccessChecker check = startAccessCheck().canCommitChangeAgainstReference(branchName);
+    BatchAccessChecker check = startAccessCheck().canCommitChangeAgainstReference(branchName);
     operations
         .getOperations()
         .forEach(

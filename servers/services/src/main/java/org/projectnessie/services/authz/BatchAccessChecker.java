@@ -24,14 +24,14 @@ import org.projectnessie.versioned.NamedRef;
 /**
  * Accept various allowance-checks and retrieve the result of all operations at once.
  *
- * <p>The purpose of the {@link AccessChecker} is to accept all required checks via the {@code
+ * <p>The purpose of the {@link BatchAccessChecker} is to accept all required checks via the {@code
  * can...()} methods and return the result of these "can do xyz" checks via {@link #check()}.
  *
  * <p>The checks make sure that a particular role is allowed to perform an action (such as creation,
  * deletion) on a {@link NamedRef} (Branch/Tag). Additionally, this interface also provides checks
  * based on a given {@link ContentKey}.
  */
-public interface AccessChecker {
+public interface BatchAccessChecker {
 
   /**
    * Checks the recorded checks.
@@ -56,28 +56,28 @@ public interface AccessChecker {
    *
    * @param ref The {@link NamedRef} to check
    */
-  AccessChecker canViewReference(NamedRef ref);
+  BatchAccessChecker canViewReference(NamedRef ref);
 
   /**
    * Checks whether the given role/principal is allowed to create a Branch/Tag.
    *
    * @param ref The {@link NamedRef} to check
    */
-  AccessChecker canCreateReference(NamedRef ref);
+  BatchAccessChecker canCreateReference(NamedRef ref);
 
   /**
    * Checks whether the given role/principal is allowed to assign the given Branch/Tag to a Hash.
    *
    * @param ref The {@link NamedRef} to check not granted.
    */
-  AccessChecker canAssignRefToHash(NamedRef ref);
+  BatchAccessChecker canAssignRefToHash(NamedRef ref);
 
   /**
    * Checks whether the given role/principal is allowed to delete a Branch/Tag.
    *
    * @param ref The {@link NamedRef} to check
    */
-  AccessChecker canDeleteReference(NamedRef ref);
+  BatchAccessChecker canDeleteReference(NamedRef ref);
 
   /**
    * Checks whether the given role/principal is allowed to read entries content for the given
@@ -85,7 +85,7 @@ public interface AccessChecker {
    *
    * @param ref The {@link NamedRef} to check
    */
-  AccessChecker canReadEntries(NamedRef ref);
+  BatchAccessChecker canReadEntries(NamedRef ref);
 
   /**
    * Checks whether the given role/principal is allowed to list the commit log for the given
@@ -93,7 +93,7 @@ public interface AccessChecker {
    *
    * @param ref The {@link NamedRef} to check
    */
-  AccessChecker canListCommitLog(NamedRef ref);
+  BatchAccessChecker canListCommitLog(NamedRef ref);
 
   /**
    * Checks whether the given role/principal is allowed to commit changes against the given
@@ -101,7 +101,7 @@ public interface AccessChecker {
    *
    * @param ref The {@link NamedRef} to check
    */
-  AccessChecker canCommitChangeAgainstReference(NamedRef ref);
+  BatchAccessChecker canCommitChangeAgainstReference(NamedRef ref);
 
   /**
    * Checks whether the given role/principal is allowed to read an entity value as defined by the
@@ -113,7 +113,7 @@ public interface AccessChecker {
    *     href="https://projectnessie.org/features/metadata_authorization/#contentid">ContentId
    *     docs</a> for how to use this.
    */
-  AccessChecker canReadEntityValue(NamedRef ref, ContentKey key, String contentId);
+  BatchAccessChecker canReadEntityValue(NamedRef ref, ContentKey key, String contentId);
 
   /**
    * Checks whether the given role/principal is allowed to update an entity value as defined by the
@@ -125,7 +125,7 @@ public interface AccessChecker {
    *     href="https://projectnessie.org/features/metadata_authorization/#contentid">ContentId
    *     docs</a> for how to use this.
    */
-  AccessChecker canUpdateEntity(NamedRef ref, ContentKey key, String contentId);
+  BatchAccessChecker canUpdateEntity(NamedRef ref, ContentKey key, String contentId);
 
   /**
    * Checks whether the given role/principal is allowed to delete an entity value as defined by the
@@ -137,8 +137,8 @@ public interface AccessChecker {
    *     href="https://projectnessie.org/features/metadata_authorization/#contentid">ContentId
    *     docs</a> for how to use this.
    */
-  AccessChecker canDeleteEntity(NamedRef ref, ContentKey key, String contentId);
+  BatchAccessChecker canDeleteEntity(NamedRef ref, ContentKey key, String contentId);
 
   /** Checks whether the given role/principal is allowed to view the reflog entries. */
-  AccessChecker canViewRefLog();
+  BatchAccessChecker canViewRefLog();
 }

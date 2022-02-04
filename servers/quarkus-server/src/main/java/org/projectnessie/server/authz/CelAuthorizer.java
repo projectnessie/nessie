@@ -18,10 +18,10 @@ package org.projectnessie.server.authz;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import org.projectnessie.server.config.QuarkusNessieAuthorizationConfig;
-import org.projectnessie.services.authz.AbstractAccessChecker;
-import org.projectnessie.services.authz.AccessChecker;
+import org.projectnessie.services.authz.AbstractBatchAccessChecker;
 import org.projectnessie.services.authz.AccessContext;
 import org.projectnessie.services.authz.Authorizer;
+import org.projectnessie.services.authz.BatchAccessChecker;
 
 @ApplicationScoped
 public class CelAuthorizer implements Authorizer {
@@ -36,11 +36,11 @@ public class CelAuthorizer implements Authorizer {
   }
 
   @Override
-  public AccessChecker startAccessCheck(AccessContext context) {
+  public BatchAccessChecker startAccessCheck(AccessContext context) {
     if (!config.enabled()) {
-      return AbstractAccessChecker.NOOP_ACCESS_CHECKER;
+      return AbstractBatchAccessChecker.NOOP_ACCESS_CHECKER;
     }
 
-    return new CelAccessChecker(compiledRules, context);
+    return new CelBatchAccessChecker(compiledRules, context);
   }
 }

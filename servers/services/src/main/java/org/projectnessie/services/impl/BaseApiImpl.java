@@ -24,8 +24,8 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
-import org.projectnessie.services.authz.AccessChecker;
 import org.projectnessie.services.authz.Authorizer;
+import org.projectnessie.services.authz.BatchAccessChecker;
 import org.projectnessie.services.authz.ServerAccessContext;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.DetachedRef;
@@ -115,7 +115,7 @@ abstract class BaseApiImpl {
     return authorizer;
   }
 
-  protected AccessChecker startAccessCheck() {
+  protected BatchAccessChecker startAccessCheck() {
     return getAuthorizer().startAccessCheck(createAccessContext());
   }
 
