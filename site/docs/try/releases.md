@@ -1,5 +1,14 @@
 # Releases
 
+## 0.19.0 Release (February 7, 2022)
+
+* Reads using "detached" commit-ids w/o specifying a branch or tag name
+* Bump Nessie client version in Nessie Spark-Extensions
+* Support for Iceberg views (experimental)
+* Diff endpoint supports named-references + commit-on-reference as well
+* Add filtering for ref-log
+* Rework and simplification of the Nessie UI code
+
 ## 0.18.0 Release (January 13, 2022)
 
 * Add reflog support

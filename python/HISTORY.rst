@@ -2,6 +2,12 @@
 History
 =======
 
+0.19.0 (2022-02-07)
+-------------------
+
+* Reads using "detached" commit-ids w/o specifying a branch or tag name
+* Support for Iceberg views (experimental)
+
 0.18.0 (2022-01-13)
 -------------------
 
