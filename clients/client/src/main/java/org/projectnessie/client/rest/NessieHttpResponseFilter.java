@@ -16,7 +16,6 @@
 package org.projectnessie.client.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
 import org.projectnessie.client.http.HttpClientException;
 import org.projectnessie.client.http.ResponseContext;
 import org.projectnessie.client.http.ResponseFilter;
@@ -33,7 +32,9 @@ public class NessieHttpResponseFilter implements ResponseFilter {
   public void filter(ResponseContext con) {
     try {
       ResponseCheckFilter.checkResponse(con, mapper);
-    } catch (IOException e) {
+    } catch (RuntimeException e) {
+      throw e; // re-throw RuntimeExceptions unchanged
+    } catch (Exception e) {
       throw new HttpClientException(e); // pass up invalid response exception as untyped exception
     }
   }

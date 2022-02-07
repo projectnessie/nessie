@@ -18,11 +18,11 @@ package org.projectnessie.server.providers;
 import javax.inject.Inject;
 import javax.validation.ValidationException;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
 import org.jboss.resteasy.api.validation.ResteasyViolationException;
 import org.jboss.resteasy.api.validation.Validation;
+import org.projectnessie.error.ErrorCode;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.rest.BaseExceptionMapper;
 import org.projectnessie.services.rest.NessieExceptionMapper;
@@ -53,21 +53,16 @@ public class ResteasyExceptionMapper extends BaseExceptionMapper<ResteasyViolati
     Exception e = exception.getException();
     if (e == null) {
       boolean returnValueViolation = !exception.getReturnValueViolations().isEmpty();
-      Status st = returnValueViolation ? Status.INTERNAL_SERVER_ERROR : Status.BAD_REQUEST;
+      ErrorCode errorCode = returnValueViolation ? ErrorCode.UNKNOWN : ErrorCode.BAD_REQUEST;
       return buildExceptionResponse(
-          st.getStatusCode(),
-          st.getReasonPhrase(),
+          errorCode,
           exception.getMessage(),
           exception,
           false, // no need to send the stack trace for a validation-error
           b -> b.header(Validation.VALIDATION_HEADER, "true"));
     }
 
-    return buildExceptionResponse(
-        Status.INTERNAL_SERVER_ERROR.getStatusCode(),
-        Status.INTERNAL_SERVER_ERROR.getReasonPhrase(),
-        unwrapException(exception),
-        exception);
+    return buildExceptionResponse(ErrorCode.UNKNOWN, unwrapException(exception), exception);
   }
 
   protected String unwrapException(Throwable t) {

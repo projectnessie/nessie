@@ -21,11 +21,10 @@ import com.google.common.base.Throwables;
 import java.security.AccessControlException;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.ext.Provider;
 import org.projectnessie.error.BaseNessieClientServerException;
+import org.projectnessie.error.ErrorCode;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.BackendLimitExceededException;
 import org.slf4j.Logger;
@@ -54,46 +53,34 @@ public class NessieExceptionMapper extends BaseExceptionMapper<Exception> {
 
   @Override
   public Response toResponse(Exception exception) {
-    int status;
-    String reason;
+    ErrorCode errorCode;
     String message;
 
-    if (exception instanceof WebApplicationException) {
-      WebApplicationException e = (WebApplicationException) exception;
-      Status st = Status.fromStatusCode(e.getResponse().getStatus());
-      status = st.getStatusCode();
-      reason = st.getReasonPhrase();
-      message = exception.getMessage();
-    } else if (exception instanceof BaseNessieClientServerException) {
+    if (exception instanceof BaseNessieClientServerException) {
       BaseNessieClientServerException e = (BaseNessieClientServerException) exception;
-      status = e.getStatus();
-      reason = e.getReason();
+      errorCode = e.getErrorCode();
       message = exception.getMessage();
     } else if (exception instanceof JsonParseException
         || exception instanceof JsonMappingException
         || exception instanceof IllegalArgumentException) {
-      status = Status.BAD_REQUEST.getStatusCode();
-      reason = Status.BAD_REQUEST.getReasonPhrase();
+      errorCode = ErrorCode.BAD_REQUEST;
       message = exception.getMessage();
     } else if (exception instanceof BackendLimitExceededException) {
       LOGGER.warn("Backend throttled/refused the request: {}", exception.toString());
-      status = Status.TOO_MANY_REQUESTS.getStatusCode();
-      reason = Status.TOO_MANY_REQUESTS.getReasonPhrase();
-      message = "Backend store refused to process the request: " + exception.toString();
+      errorCode = ErrorCode.TOO_MANY_REQUESTS;
+      message = "Backend store refused to process the request: " + exception;
     } else if (exception instanceof AccessControlException) {
-      status = Status.FORBIDDEN.getStatusCode();
-      reason = Status.FORBIDDEN.getReasonPhrase();
+      errorCode = ErrorCode.FORBIDDEN;
       message = exception.getMessage();
     } else {
       LOGGER.warn("Unhandled exception returned as HTTP/500 to client", exception);
-      status = Status.INTERNAL_SERVER_ERROR.getStatusCode();
-      reason = Status.INTERNAL_SERVER_ERROR.getReasonPhrase();
+      errorCode = ErrorCode.UNKNOWN;
       message =
           Throwables.getCausalChain(exception).stream()
               .map(Throwable::toString)
               .collect(Collectors.joining(", caused by"));
     }
 
-    return buildExceptionResponse(status, reason, message, exception);
+    return buildExceptionResponse(errorCode, message, exception);
   }
 }

@@ -15,9 +15,18 @@
  */
 package org.projectnessie.client.rest;
 
+import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieError;
+import org.projectnessie.error.NessieRuntimeException;
 
-/** A Nessie REST API runtime exception. */
+/**
+ * A runtime exception that represents REST API errors that are beyond Nessie's control. For
+ * example, an HTTP 404 (Not Found) error in case of a mistake in the base Nessie URI will be
+ * reported as a {@link NessieServiceException}.
+ *
+ * <p>Errors raised by Nessie Services will be represented either by a {@link
+ * BaseNessieClientServerException} or by a {@link NessieRuntimeException}.
+ */
 public class NessieServiceException extends RuntimeException {
 
   private final NessieError error;

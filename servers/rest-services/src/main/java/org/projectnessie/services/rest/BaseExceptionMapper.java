@@ -21,7 +21,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.ext.ExceptionMapper;
-import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.ErrorCode;
 import org.projectnessie.error.ImmutableNessieError;
 import org.projectnessie.error.NessieError;
@@ -39,16 +38,17 @@ public abstract class BaseExceptionMapper<T extends Throwable> implements Except
     this.serverConfig = serverConfig;
   }
 
-  protected Response buildExceptionResponse(
-      int status, String reason, String message, Exception e) {
+  protected Response buildBadRequestResponse(Exception e) {
+    return buildExceptionResponse(ErrorCode.BAD_REQUEST, e.getMessage(), e);
+  }
 
+  protected Response buildExceptionResponse(ErrorCode errorCode, String message, Exception e) {
     return buildExceptionResponse(
-        status, reason, message, e, serverConfig.sendStacktraceToClient(), h -> {});
+        errorCode, message, e, serverConfig.sendStacktraceToClient(), h -> {});
   }
 
   protected Response buildExceptionResponse(
-      int status,
-      String reason,
+      ErrorCode errorCode,
       String message,
       Exception e,
       boolean includeExceptionStackTrace,
@@ -56,23 +56,23 @@ public abstract class BaseExceptionMapper<T extends Throwable> implements Except
 
     String stack = includeExceptionStackTrace ? Throwables.getStackTraceAsString(e) : null;
 
-    ErrorCode errorCode = ErrorCode.UNKNOWN;
-    if (e instanceof BaseNessieClientServerException) {
-      errorCode = ((BaseNessieClientServerException) e).getErrorCode();
+    Response.Status status = Response.Status.fromStatusCode(errorCode.httpStatus());
+    if (status == null) {
+      status = Response.Status.INTERNAL_SERVER_ERROR;
     }
 
     NessieError error =
         ImmutableNessieError.builder()
             .message(message)
-            .status(status)
+            .status(status.getStatusCode())
             .errorCode(errorCode)
-            .reason(reason)
+            .reason(status.getReasonPhrase())
             .serverStackTrace(stack)
             .build();
     LOGGER.debug(
         "Failure on server, propagated to client. Status: {} {}, Message: {}.",
-        status,
-        reason,
+        status.getStatusCode(),
+        status.getReasonPhrase(),
         message,
         e);
     ResponseBuilder responseBuilder =

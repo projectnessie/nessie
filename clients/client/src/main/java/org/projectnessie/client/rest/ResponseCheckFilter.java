@@ -24,12 +24,9 @@ import java.io.InputStream;
 import java.util.Optional;
 import org.projectnessie.client.http.ResponseContext;
 import org.projectnessie.client.http.Status;
-import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.ErrorCode;
 import org.projectnessie.error.ImmutableNessieError;
-import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieError;
-import org.projectnessie.error.NessieNotFoundException;
 
 public class ResponseCheckFilter {
 
@@ -40,7 +37,7 @@ public class ResponseCheckFilter {
    * @param mapper Jackson ObjectMapper instance for this client
    * @throws IOException Throws IOException for certain error types.
    */
-  public static void checkResponse(ResponseContext con, ObjectMapper mapper) throws IOException {
+  public static void checkResponse(ResponseContext con, ObjectMapper mapper) throws Exception {
     final Status status;
     final NessieError error;
     // this could IOException, in which case the error will be passed up to the client as an
@@ -56,33 +53,37 @@ public class ResponseCheckFilter {
       error = decodeErrorObject(status, is, mapper.reader());
     }
 
-    Optional<BaseNessieClientServerException> modelException = ErrorCode.asException(error);
+    Optional<Exception> modelException = ErrorCode.asException(error);
     if (modelException.isPresent()) {
+      // expected exception reported by one of the Nessie Server API endpoints
       throw modelException.get();
     }
 
+    // If the error could not be identified as a Nessie-controlled error, throw a client-side
+    // exception with some level of break-down by sub-class to allow for intelligent exception
+    // handling on the caller side.
+    Exception exception;
     switch (status) {
-      case BAD_REQUEST:
-        throw new NessieBadRequestException(error);
-      case UNAUTHORIZED:
-        throw new NessieNotAuthorizedException(error);
-      case FORBIDDEN:
-        throw new NessieForbiddenException(error);
-      case NOT_FOUND:
-        // Report a generic NessieNotFoundException if a sub-class could not be determined from the
-        // NessieError object
-        throw new NessieNotFoundException(error);
-      case CONFLICT:
-        // Report a generic NessieConflictException if a sub-class could not be determined from the
-        // NessieError object
-        throw new NessieConflictException(error);
-      case TOO_MANY_REQUESTS:
-        throw new NessieBackendThrottledException(error);
       case INTERNAL_SERVER_ERROR:
-        throw new NessieInternalServerException(error);
+        exception = new NessieInternalServerException(error);
+        break;
+      case UNAUTHORIZED:
+        // Note: UNAUTHORIZED at this point cannot be a Nessie-controlled error.
+        // It must be an error reported at a higher level HTTP service in front of the Nessie
+        // Server.
+        exception = new NessieNotAuthorizedException(error);
+        break;
       default:
-        throw new NessieServiceException(error);
+        // Note: Non-Nessie 404 (Not Found) errors (e.g. mistakes in Nessie URIs) will also go
+        // through this code and will be reported as generic NessieServiceException.
+        exception = new NessieServiceException(error);
     }
+
+    if (error.getClientProcessingException() != null) {
+      exception.addSuppressed(error.getClientProcessingException()); // for trouble-shooting
+    }
+
+    throw exception;
   }
 
   private static NessieError decodeErrorObject(

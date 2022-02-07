@@ -18,7 +18,6 @@ package org.projectnessie.services.rest;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import javax.inject.Inject;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.ext.Provider;
 import org.projectnessie.services.config.ServerConfig;
 
@@ -44,10 +43,6 @@ public class NessieJaxRsJsonMappingExceptionMapper
 
   @Override
   public Response toResponse(JsonMappingException exception) {
-    return buildExceptionResponse(
-        Status.BAD_REQUEST.getStatusCode(),
-        Status.BAD_REQUEST.getReasonPhrase(),
-        exception.getMessage(),
-        exception);
+    return buildBadRequestResponse(exception);
   }
 }

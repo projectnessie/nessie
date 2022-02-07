@@ -41,8 +41,7 @@ import org.projectnessie.api.http.HttpRefLogApi;
 import org.projectnessie.api.http.HttpTreeApi;
 import org.projectnessie.client.http.HttpClient.Builder;
 import org.projectnessie.client.rest.NessieHttpResponseFilter;
-import org.projectnessie.error.NessieConflictException;
-import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.error.BaseNessieClientServerException;
 
 public class NessieHttpClient extends NessieApiClient {
 
@@ -161,11 +160,9 @@ public class NessieHttpClient extends NessieApiClient {
       } catch (InvocationTargetException ex) {
         Throwable targetException = ex.getTargetException();
         if (targetException instanceof HttpClientException) {
-          if (targetException.getCause() instanceof NessieNotFoundException) {
-            throw targetException.getCause();
-          }
-          if (targetException.getCause() instanceof NessieConflictException) {
-            throw targetException.getCause();
+          Throwable cause = targetException.getCause();
+          if (cause instanceof BaseNessieClientServerException) {
+            throw cause;
           }
         }
 

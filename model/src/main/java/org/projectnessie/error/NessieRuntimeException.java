@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2022 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,14 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.rest;
+package org.projectnessie.error;
 
-import org.projectnessie.error.NessieError;
+/** Represents unchecked exceptions raised by Nessie API endpoints. */
+public class NessieRuntimeException extends RuntimeException implements ErrorCodeAware {
 
-/** Represents "Internal Server Errors" on trying to access a Nessie endpoint. */
-public class NessieInternalServerException extends NessieServiceException {
+  private final NessieError error;
 
-  public NessieInternalServerException(NessieError serverError) {
-    super(serverError);
+  public NessieRuntimeException(NessieError error) {
+    super(error.getFullMessage());
+    this.error = error;
+  }
+
+  public NessieError getError() {
+    return error;
+  }
+
+  @Override
+  public ErrorCode getErrorCode() {
+    return error.getErrorCode();
   }
 }
