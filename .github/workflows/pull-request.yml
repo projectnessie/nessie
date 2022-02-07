@@ -45,18 +45,46 @@ jobs:
     - name: Setup Java, Maven, Gradle
       uses: ./.github/actions/dev-tool-java
 
+    - name: What is up
+      run: |
+        ps auxww
+        echo ""
+        echo ""
+        df -h
+
     - name: Build with Maven
       env:
         SPARK_LOCAL_IP: localhost
       run: |
         ./mvnw -B install javadoc:javadoc-no-fork --file pom.xml -Pcode-coverage -Dtest.log.level=WARN
 
+    - name: What is up
+      run: |
+        ps auxww
+        echo ""
+        echo ""
+        df -h
+
     - name: Build with Gradle
       run: ./gradlew --rerun-tasks --no-daemon --info build
       working-directory: ./tools/apprunner-gradle-plugin
 
+    - name: What is up
+      run: |
+        ps auxww
+        echo ""
+        echo ""
+        df -h
+
     - name: Capture Results
       uses: ./.github/actions/ci-results
+
+    - name: What is up
+      run: |
+        ps auxww
+        echo ""
+        echo ""
+        df -h
 
   python:
     name: Python
