@@ -113,7 +113,7 @@
     "husky": "^7.0.4",
     "jest": "27.5.1",
     "jest-circus": "27.5.0",
-    "jest-resolve": "27.5.0",
+    "jest-resolve": "27.5.1",
     "jest-watch-typeahead": "1.0.0",
     "lint-staged": "^12.3.3",
     "mini-css-extract-plugin": "1.6.2",
