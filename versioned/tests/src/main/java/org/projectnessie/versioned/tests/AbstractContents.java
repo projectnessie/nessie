@@ -17,6 +17,8 @@ package org.projectnessie.versioned.tests;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.projectnessie.versioned.testworker.CommitMessage.commitMessage;
+import static org.projectnessie.versioned.testworker.WithGlobalStateContent.newWithGlobal;
 
 import com.google.common.collect.ImmutableList;
 import java.util.Optional;
@@ -28,12 +30,12 @@ import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
-import org.projectnessie.versioned.StringStoreWorker;
-import org.projectnessie.versioned.StringStoreWorker.TestEnum;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.testworker.BaseContent;
+import org.projectnessie.versioned.testworker.CommitMessage;
 
 public abstract class AbstractContents extends AbstractNestedVersionStore {
-  protected AbstractContents(VersionStore<String, String, TestEnum> store) {
+  protected AbstractContents(VersionStore<BaseContent, CommitMessage, BaseContent.Type> store) {
     super(store);
   }
 
@@ -55,39 +57,36 @@ public abstract class AbstractContents extends AbstractNestedVersionStore {
     store().create(branch, Optional.empty());
     // commit just something to have a "real" common ancestor and not "beginning of time", which
     // means no-common-ancestor
+    BaseContent initialState = newWithGlobal("initial-state", "value");
     Hash ancestor =
         store()
             .commit(
                 branch,
                 Optional.empty(),
-                "create table",
-                singletonList(
-                    Put.of(
-                        key,
-                        StringStoreWorker.withStateAndId(
-                            "initial-state", "value", "CONTENT-ID-1"))));
-    assertThat(store().getValue(branch, key)).isEqualTo("initial-state|value@CONTENT-ID-1");
-    assertThat(store().getValue(ancestor, key)).isEqualTo("initial-state|value@CONTENT-ID-1");
+                commitMessage("create table"),
+                singletonList(Put.of(key, initialState)));
+    assertThat(store().getValue(branch, key)).isEqualTo(initialState);
+    assertThat(store().getValue(ancestor, key)).isEqualTo(initialState);
 
     Hash delete =
-        store().commit(branch, Optional.empty(), "drop table", ImmutableList.of(Delete.of(key)));
+        store()
+            .commit(
+                branch,
+                Optional.empty(),
+                commitMessage("drop table"),
+                ImmutableList.of(Delete.of(key)));
     assertThat(store().getValue(branch, key)).isNull();
     assertThat(store().getValue(delete, key)).isNull();
 
+    BaseContent recreateState = newWithGlobal("recreate-state", "value");
     Hash recreate =
         store()
             .commit(
                 branch,
                 Optional.empty(),
-                "drop table",
-                ImmutableList.of(
-                    Put.of(
-                        key,
-                        StringStoreWorker.withStateAndId(
-                            "recreate-state", "value", "CONTENT-ID-DIFFERENT"))));
-    assertThat(store().getValue(branch, key))
-        .isEqualTo("recreate-state|value@CONTENT-ID-DIFFERENT");
-    assertThat(store().getValue(recreate, key))
-        .isEqualTo("recreate-state|value@CONTENT-ID-DIFFERENT");
+                commitMessage("drop table"),
+                ImmutableList.of(Put.of(key, recreateState)));
+    assertThat(store().getValue(branch, key)).isEqualTo(recreateState);
+    assertThat(store().getValue(recreate, key)).isEqualTo(recreateState);
   }
 }

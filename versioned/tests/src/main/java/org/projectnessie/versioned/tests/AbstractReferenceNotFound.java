@@ -17,6 +17,7 @@ package org.projectnessie.versioned.tests;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.projectnessie.versioned.testworker.CommitMessage.commitMessage;
 
 import java.util.Arrays;
 import java.util.List;
@@ -29,14 +30,15 @@ import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.ReferenceNotFoundException;
-import org.projectnessie.versioned.StringStoreWorker;
-import org.projectnessie.versioned.StringStoreWorker.TestEnum;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStoreException;
+import org.projectnessie.versioned.testworker.BaseContent;
+import org.projectnessie.versioned.testworker.CommitMessage;
 
 public abstract class AbstractReferenceNotFound extends AbstractNestedVersionStore {
-  protected AbstractReferenceNotFound(VersionStore<String, String, TestEnum> store) {
+  protected AbstractReferenceNotFound(
+      VersionStore<BaseContent, CommitMessage, BaseContent.Type> store) {
     super(store);
   }
 
@@ -73,7 +75,7 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
 
     @FunctionalInterface
     interface ThrowingFunction {
-      void run(VersionStore<String, String, StringStoreWorker.TestEnum> store)
+      void run(VersionStore<BaseContent, CommitMessage, BaseContent.Type> store)
           throws VersionStoreException;
     }
   }
@@ -174,7 +176,7 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                     s.commit(
                         BranchName.of("this-one-should-not-exist"),
                         Optional.empty(),
-                        "meta",
+                        commitMessage("meta"),
                         singletonList(Delete.of(Key.of("meep"))))),
         new ReferenceNotFoundFunction("commit/hash")
             .msg(
@@ -184,7 +186,7 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                     s.commit(
                         BranchName.of("main"),
                         Optional.of(Hash.of("12341234123412341234123412341234123412341234")),
-                        "meta",
+                        commitMessage("meta"),
                         singletonList(Delete.of(Key.of("meep"))))),
         // transplant()
         new ReferenceNotFoundFunction("transplant/branch/ok")

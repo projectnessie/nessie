@@ -17,6 +17,8 @@ package org.projectnessie.versioned.tests;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.projectnessie.versioned.testworker.CommitMessage.commitMessage;
+import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Arrays;
@@ -32,12 +34,24 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
-import org.projectnessie.versioned.StringStoreWorker.TestEnum;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStoreException;
+import org.projectnessie.versioned.testworker.BaseContent;
+import org.projectnessie.versioned.testworker.CommitMessage;
+import org.projectnessie.versioned.testworker.OnRefOnly;
 
 public abstract class AbstractTransplant extends AbstractNestedVersionStore {
-  protected AbstractTransplant(VersionStore<String, String, TestEnum> store) {
+
+  private static final OnRefOnly V_1_1 = newOnRef("v1_1");
+  private static final OnRefOnly V_1_2 = newOnRef("v1_2");
+  private static final OnRefOnly V_1_4 = newOnRef("v1_4");
+  private static final OnRefOnly V_2_2 = newOnRef("v2_2");
+  private static final OnRefOnly V_2_1 = newOnRef("v2_1");
+  private static final OnRefOnly V_3_1 = newOnRef("v3_1");
+  private static final OnRefOnly V_4_1 = newOnRef("v4_1");
+  private static final OnRefOnly V_5_1 = newOnRef("v5_1");
+
+  protected AbstractTransplant(VersionStore<BaseContent, CommitMessage, BaseContent.Type> store) {
     super(store);
   }
 
@@ -45,10 +59,10 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
   private Hash firstCommit;
   private Hash secondCommit;
   private Hash thirdCommit;
-  private List<Commit<String, String>> commits;
+  private List<Commit<CommitMessage, BaseContent>> commits;
 
-  String transplanted(String commitMeta) {
-    return commitMeta + ", transplanted";
+  CommitMessage transplanted(CommitMessage commitMessage) {
+    return commitMessage(commitMessage.getMessage() + ", transplanted");
   }
 
   @BeforeEach
@@ -60,20 +74,20 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
 
     firstCommit =
         commit("Initial Commit")
-            .put("t1", "v1_1")
-            .put("t2", "v2_1")
-            .put("t3", "v3_1")
+            .put("t1", V_1_1)
+            .put("t2", V_2_1)
+            .put("t3", V_3_1)
             .toBranch(branch);
 
     secondCommit =
         commit("Second Commit")
-            .put("t1", "v1_2")
+            .put("t1", V_1_2)
             .delete("t2")
             .delete("t3")
-            .put("t4", "v4_1")
+            .put("t4", V_4_1)
             .toBranch(branch);
 
-    thirdCommit = commit("Third Commit").put("t2", "v2_2").unchanged("t4").toBranch(branch);
+    thirdCommit = commit("Third Commit").put("t2", V_2_2).unchanged("t4").toBranch(branch);
 
     commits = commitsList(branch, false);
   }
@@ -88,7 +102,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
     checkTransplantOnEmptyBranch(this::transplanted);
   }
 
-  private void checkTransplantOnEmptyBranch(Function<String, String> commitMetaModify)
+  private void checkTransplantOnEmptyBranch(Function<CommitMessage, CommitMessage> commitMetaModify)
       throws VersionStoreException {
     final BranchName newBranch = BranchName.of("bar_1");
     store().create(newBranch, Optional.empty());
@@ -106,9 +120,9 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                     Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"))))
         .containsExactlyInAnyOrderEntriesOf(
             ImmutableMap.of(
-                Key.of("t1"), "v1_2",
-                Key.of("t2"), "v2_2",
-                Key.of("t4"), "v4_1"));
+                Key.of("t1"), V_1_2,
+                Key.of("t2"), V_2_2,
+                Key.of("t4"), V_4_1));
 
     assertCommitMeta(commitsList(newBranch, false).subList(0, 3), commits, commitMetaModify);
   }
@@ -117,7 +131,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
   protected void checkTransplantWithPreviousCommit() throws VersionStoreException {
     final BranchName newBranch = BranchName.of("bar_2");
     store().create(newBranch, Optional.empty());
-    commit("Unrelated commit").put("t5", "v5_1").toBranch(newBranch);
+    commit("Unrelated commit").put("t5", V_5_1).toBranch(newBranch);
 
     store()
         .transplant(
@@ -133,17 +147,17 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                         Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"), Key.of("t5"))))
         .containsExactlyInAnyOrderEntriesOf(
             ImmutableMap.of(
-                Key.of("t1"), "v1_2",
-                Key.of("t2"), "v2_2",
-                Key.of("t4"), "v4_1",
-                Key.of("t5"), "v5_1"));
+                Key.of("t1"), V_1_2,
+                Key.of("t2"), V_2_2,
+                Key.of("t4"), V_4_1,
+                Key.of("t5"), V_5_1));
   }
 
   @Test
   protected void checkTransplantWitConflictingCommit() throws VersionStoreException {
     final BranchName newBranch = BranchName.of("bar_3");
     store().create(newBranch, Optional.empty());
-    commit("Another commit").put("t1", "v1_4").toBranch(newBranch);
+    commit("Another commit").put("t1", V_1_4).toBranch(newBranch);
 
     assertThrows(
         ReferenceConflictException.class,
@@ -160,7 +174,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
   protected void checkTransplantWithDelete() throws VersionStoreException {
     final BranchName newBranch = BranchName.of("bar_4");
     store().create(newBranch, Optional.empty());
-    commit("Another commit").put("t1", "v1_4").toBranch(newBranch);
+    commit("Another commit").put("t1", V_1_4).toBranch(newBranch);
     commit("Another commit").delete("t1").toBranch(newBranch);
 
     store()
@@ -176,9 +190,9 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                     Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"))))
         .containsExactlyInAnyOrderEntriesOf(
             ImmutableMap.of(
-                Key.of("t1"), "v1_2",
-                Key.of("t2"), "v2_2",
-                Key.of("t4"), "v4_1"));
+                Key.of("t1"), V_1_2,
+                Key.of("t2"), V_2_2,
+                Key.of("t4"), V_4_1));
   }
 
   @Test
@@ -214,8 +228,8 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
   protected void checkTransplantWithNoExpectedHash() throws VersionStoreException {
     final BranchName newBranch = BranchName.of("bar_7");
     store().create(newBranch, Optional.empty());
-    commit("Another commit").put("t5", "v5_1").toBranch(newBranch);
-    commit("Another commit").put("t1", "v1_4").toBranch(newBranch);
+    commit("Another commit").put("t5", V_5_1).toBranch(newBranch);
+    commit("Another commit").put("t1", V_1_4).toBranch(newBranch);
 
     store()
         .transplant(
@@ -231,10 +245,10 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                         Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"), Key.of("t5"))))
         .containsExactlyInAnyOrderEntriesOf(
             ImmutableMap.of(
-                Key.of("t1"), "v1_2",
-                Key.of("t2"), "v2_2",
-                Key.of("t4"), "v4_1",
-                Key.of("t5"), "v5_1"));
+                Key.of("t1"), V_1_2,
+                Key.of("t2"), V_2_2,
+                Key.of("t4"), V_4_1,
+                Key.of("t5"), V_5_1));
   }
 
   @Test
@@ -259,9 +273,9 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
     store().create(anotherBranch, Optional.empty());
     final Hash unrelatedCommit =
         commit("Another Commit")
-            .put("t1", "v1_1")
-            .put("t2", "v2_1")
-            .put("t3", "v3_1")
+            .put("t1", V_1_1)
+            .put("t2", V_2_1)
+            .put("t3", V_3_1)
             .toBranch(anotherBranch);
 
     final BranchName newBranch = BranchName.of("bar_1");
@@ -282,7 +296,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
   protected void transplantBasic() throws VersionStoreException {
     final BranchName newBranch = BranchName.of("bar_2");
     store().create(newBranch, Optional.empty());
-    commit("Unrelated commit").put("t5", "v5_1").toBranch(newBranch);
+    commit("Unrelated commit").put("t5", V_5_1).toBranch(newBranch);
 
     store()
         .transplant(
@@ -294,8 +308,8 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             store().getValues(newBranch, Arrays.asList(Key.of("t1"), Key.of("t4"), Key.of("t5"))))
         .containsExactlyInAnyOrderEntriesOf(
             ImmutableMap.of(
-                Key.of("t1"), "v1_2",
-                Key.of("t4"), "v4_1",
-                Key.of("t5"), "v5_1"));
+                Key.of("t1"), V_1_2,
+                Key.of("t4"), V_4_1,
+                Key.of("t5"), V_5_1));
   }
 }

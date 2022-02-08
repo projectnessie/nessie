@@ -17,6 +17,9 @@ package org.projectnessie.versioned.persist.tests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.projectnessie.versioned.testworker.CommitMessage.commitMessage;
+import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
+import static org.projectnessie.versioned.testworker.WithGlobalStateContent.withGlobal;
 
 import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
@@ -36,13 +39,13 @@ import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.Operation;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceConflictException;
-import org.projectnessie.versioned.StringStoreWorker;
-import org.projectnessie.versioned.StringStoreWorker.TestEnum;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.tests.AbstractNestedVersionStore;
+import org.projectnessie.versioned.testworker.BaseContent;
+import org.projectnessie.versioned.testworker.CommitMessage;
 
 public abstract class AbstractSingleBranch extends AbstractNestedVersionStore {
-  protected AbstractSingleBranch(VersionStore<String, String, TestEnum> store) {
+  protected AbstractSingleBranch(VersionStore<BaseContent, CommitMessage, BaseContent.Type> store) {
     super(store);
   }
 
@@ -125,37 +128,37 @@ public abstract class AbstractSingleBranch extends AbstractNestedVersionStore {
     Hash createHash = store().create(branch, Optional.empty());
     Arrays.fill(hashesKnownByUser, createHash);
 
-    List<String> expectedValues = new ArrayList<>();
+    List<CommitMessage> expectedValues = new ArrayList<>();
     Map<Key, String> previousState = new HashMap<>();
     for (int commitNum = 0; commitNum < numCommits; commitNum++) {
       for (int user = 0; user < numUsers; user++) {
         Hash hashKnownByUser = hashesKnownByUser[user];
 
-        String msg = String.format("user %03d/commit %03d", user, commitNum);
+        CommitMessage msg = commitMessage(String.format("user %03d/commit %03d", user, commitNum));
         expectedValues.add(msg);
 
         Key key = Key.of(param.tableNameGen.apply(user));
         String contentId = param.contentIdGen.apply(user);
-        Operation<String> put;
+        Operation<BaseContent> put;
         if (param.globalState) {
           String state = String.format("%03d_%03d", user, commitNum);
           if (previousState.containsKey(key)) {
             put =
                 Put.of(
                     key,
-                    StringStoreWorker.withStateAndId(state, "data_file", contentId),
-                    StringStoreWorker.withStateAndId(previousState.get(key), "foo", contentId));
+                    withGlobal(state, "data_file", contentId),
+                    withGlobal(previousState.get(key), "foo", contentId));
           } else {
-            put = Put.of(key, StringStoreWorker.withStateAndId(state, "data_file", contentId));
+            put = Put.of(key, withGlobal(state, "data_file", contentId));
           }
           previousState.put(key, state);
         } else {
-          String value = String.format("data_file_%03d_%03d", user, commitNum);
+          BaseContent value = newOnRef(String.format("data_file_%03d_%03d", user, commitNum));
           put = Put.of(key, value);
         }
 
         Hash commitHash;
-        List<Operation<String>> ops = ImmutableList.of(put);
+        List<Operation<BaseContent>> ops = ImmutableList.of(put);
         try {
           commitHash = store().commit(branch, Optional.of(hashKnownByUser), msg, ops);
         } catch (ReferenceConflictException inconsistentValueException) {
@@ -174,7 +177,8 @@ public abstract class AbstractSingleBranch extends AbstractNestedVersionStore {
     }
 
     // Verify that all commits are there and that the order of the commits is correct
-    List<String> committedValues = commitsList(branch, s -> s.map(Commit::getCommitMeta), false);
+    List<CommitMessage> committedValues =
+        commitsList(branch, s -> s.map(Commit::getCommitMeta), false);
     Collections.reverse(expectedValues);
     assertEquals(expectedValues, committedValues);
   }

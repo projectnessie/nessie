@@ -17,6 +17,7 @@ package org.projectnessie.versioned.tests;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 
 import java.util.List;
 import java.util.Optional;
@@ -26,12 +27,20 @@ import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
-import org.projectnessie.versioned.StringStoreWorker.TestEnum;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStoreException;
+import org.projectnessie.versioned.testworker.BaseContent;
+import org.projectnessie.versioned.testworker.CommitMessage;
+import org.projectnessie.versioned.testworker.OnRefOnly;
 
 public abstract class AbstractDiff extends AbstractNestedVersionStore {
-  protected AbstractDiff(VersionStore<String, String, TestEnum> store) {
+
+  public static final OnRefOnly V_1 = newOnRef("v1");
+  public static final OnRefOnly V_2 = newOnRef("v2");
+  public static final OnRefOnly V_2_A = newOnRef("v2a");
+  public static final OnRefOnly V_3 = newOnRef("v3");
+
+  protected AbstractDiff(VersionStore<BaseContent, CommitMessage, BaseContent.Type> store) {
     super(store);
   }
 
@@ -41,35 +50,34 @@ public abstract class AbstractDiff extends AbstractNestedVersionStore {
     store().create(branch, Optional.empty());
     final Hash initial = store().hashOnReference(branch, Optional.empty());
 
-    final Hash firstCommit =
-        commit("First Commit").put("k1", "v1").put("k2", "v2").toBranch(branch);
+    final Hash firstCommit = commit("First Commit").put("k1", V_1).put("k2", V_2).toBranch(branch);
     final Hash secondCommit =
-        commit("Second Commit").put("k2", "v2a").put("k3", "v3").toBranch(branch);
+        commit("Second Commit").put("k2", V_2_A).put("k3", V_3).toBranch(branch);
 
-    List<Diff<String>> startToSecond =
+    List<Diff<BaseContent>> startToSecond =
         store().getDiffs(initial, secondCommit).collect(Collectors.toList());
     assertThat(startToSecond)
         .containsExactlyInAnyOrder(
-            Diff.of(Key.of("k1"), Optional.empty(), Optional.of("v1")),
-            Diff.of(Key.of("k2"), Optional.empty(), Optional.of("v2a")),
-            Diff.of(Key.of("k3"), Optional.empty(), Optional.of("v3")));
+            Diff.of(Key.of("k1"), Optional.empty(), Optional.of(V_1)),
+            Diff.of(Key.of("k2"), Optional.empty(), Optional.of(V_2_A)),
+            Diff.of(Key.of("k3"), Optional.empty(), Optional.of(V_3)));
 
-    List<Diff<String>> secondToStart =
+    List<Diff<BaseContent>> secondToStart =
         store().getDiffs(secondCommit, initial).collect(Collectors.toList());
     assertThat(secondToStart)
         .containsExactlyInAnyOrder(
-            Diff.of(Key.of("k1"), Optional.of("v1"), Optional.empty()),
-            Diff.of(Key.of("k2"), Optional.of("v2a"), Optional.empty()),
-            Diff.of(Key.of("k3"), Optional.of("v3"), Optional.empty()));
+            Diff.of(Key.of("k1"), Optional.of(V_1), Optional.empty()),
+            Diff.of(Key.of("k2"), Optional.of(V_2_A), Optional.empty()),
+            Diff.of(Key.of("k3"), Optional.of(V_3), Optional.empty()));
 
-    List<Diff<String>> firstToSecond =
+    List<Diff<BaseContent>> firstToSecond =
         store().getDiffs(firstCommit, secondCommit).collect(Collectors.toList());
     assertThat(firstToSecond)
         .containsExactlyInAnyOrder(
-            Diff.of(Key.of("k2"), Optional.of("v2"), Optional.of("v2a")),
-            Diff.of(Key.of("k3"), Optional.empty(), Optional.of("v3")));
+            Diff.of(Key.of("k2"), Optional.of(V_2), Optional.of(V_2_A)),
+            Diff.of(Key.of("k3"), Optional.empty(), Optional.of(V_3)));
 
-    List<Diff<String>> firstToFirst =
+    List<Diff<BaseContent>> firstToFirst =
         store().getDiffs(firstCommit, firstCommit).collect(Collectors.toList());
     assertTrue(firstToFirst.isEmpty());
   }

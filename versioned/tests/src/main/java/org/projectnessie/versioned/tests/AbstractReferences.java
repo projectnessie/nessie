@@ -31,13 +31,14 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
-import org.projectnessie.versioned.StringStoreWorker.TestEnum;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStoreException;
+import org.projectnessie.versioned.testworker.BaseContent;
+import org.projectnessie.versioned.testworker.CommitMessage;
 
 public abstract class AbstractReferences extends AbstractNestedVersionStore {
-  protected AbstractReferences(VersionStore<String, String, TestEnum> store) {
+  protected AbstractReferences(VersionStore<BaseContent, CommitMessage, BaseContent.Type> store) {
     super(store);
   }
 
@@ -66,8 +67,8 @@ public abstract class AbstractReferences extends AbstractNestedVersionStore {
     final Hash otherCreateHash = store().create(anotherAnotherBranch, Optional.of(commitHash));
     assertEquals(commitHash, otherCreateHash);
 
-    List<ReferenceInfo<String>> namedRefs;
-    try (Stream<ReferenceInfo<String>> str =
+    List<ReferenceInfo<CommitMessage>> namedRefs;
+    try (Stream<ReferenceInfo<CommitMessage>> str =
         store().getNamedRefs(GetNamedRefsParams.DEFAULT).filter(this::filterMainBranch)) {
       namedRefs = str.collect(Collectors.toList());
     }
@@ -91,7 +92,7 @@ public abstract class AbstractReferences extends AbstractNestedVersionStore {
     store().delete(branch, Optional.of(hash));
     assertThrows(
         ReferenceNotFoundException.class, () -> store().hashOnReference(branch, Optional.empty()));
-    try (Stream<ReferenceInfo<String>> str =
+    try (Stream<ReferenceInfo<CommitMessage>> str =
         store().getNamedRefs(GetNamedRefsParams.DEFAULT).filter(this::filterMainBranch)) {
       assertThat(str).hasSize(2); // bar + baz
     }
@@ -130,8 +131,8 @@ public abstract class AbstractReferences extends AbstractNestedVersionStore {
     assertThat(store().hashOnReference(tag, Optional.empty())).isEqualTo(initialHash);
     assertThat(store().hashOnReference(anotherTag, Optional.empty())).isEqualTo(commitHash);
 
-    List<ReferenceInfo<String>> namedRefs;
-    try (Stream<ReferenceInfo<String>> str =
+    List<ReferenceInfo<CommitMessage>> namedRefs;
+    try (Stream<ReferenceInfo<CommitMessage>> str =
         store().getNamedRefs(GetNamedRefsParams.DEFAULT).filter(this::filterMainBranch)) {
       namedRefs = str.collect(Collectors.toList());
     }
@@ -150,7 +151,7 @@ public abstract class AbstractReferences extends AbstractNestedVersionStore {
     store().delete(tag, Optional.of(initialHash));
     assertThrows(
         ReferenceNotFoundException.class, () -> store().hashOnReference(tag, Optional.empty()));
-    try (Stream<ReferenceInfo<String>> str =
+    try (Stream<ReferenceInfo<CommitMessage>> str =
         store().getNamedRefs(GetNamedRefsParams.DEFAULT).filter(this::filterMainBranch)) {
       assertThat(str).hasSize(2); // foo + another-tag
     }

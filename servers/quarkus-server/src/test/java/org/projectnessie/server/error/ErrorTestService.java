@@ -40,9 +40,11 @@ import org.projectnessie.versioned.BackendLimitExceededException;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
-import org.projectnessie.versioned.StringStoreWorker;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.store.PersistVersionStore;
+import org.projectnessie.versioned.testworker.BaseContent;
+import org.projectnessie.versioned.testworker.CommitMessage;
+import org.projectnessie.versioned.testworker.SimpleStoreWorker;
 
 /** REST service used to generate a bunch of violations for {@link TestNessieError}. */
 @RequestScoped
@@ -140,9 +142,9 @@ public class ErrorTestService {
     DatabaseAdapter databaseAdapter = Mockito.mock(DatabaseAdapter.class);
     Mockito.when(databaseAdapter.namedRefs(Mockito.any())).thenThrow(ex);
 
-    PersistVersionStore<String, String, StringStoreWorker.TestEnum> tvs =
-        new PersistVersionStore<>(databaseAdapter, StringStoreWorker.INSTANCE);
-    try (Stream<ReferenceInfo<String>> refs = tvs.getNamedRefs(GetNamedRefsParams.DEFAULT)) {
+    PersistVersionStore<BaseContent, CommitMessage, BaseContent.Type> tvs =
+        new PersistVersionStore<>(databaseAdapter, SimpleStoreWorker.INSTANCE);
+    try (Stream<ReferenceInfo<CommitMessage>> refs = tvs.getNamedRefs(GetNamedRefsParams.DEFAULT)) {
       refs.forEach(ref -> {});
     }
     return "we should not get here";

@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.tests;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.projectnessie.versioned.testworker.CommitMessage.commitMessage;
 
 import java.util.List;
 import java.util.function.Function;
@@ -29,70 +30,81 @@ import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.Ref;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
-import org.projectnessie.versioned.StringStoreWorker;
-import org.projectnessie.versioned.StringStoreWorker.TestEnum;
 import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.testworker.BaseContent;
+import org.projectnessie.versioned.testworker.CommitMessage;
 
 public abstract class AbstractNestedVersionStore {
-  protected final VersionStore<String, String, TestEnum> store;
+  protected final VersionStore<BaseContent, CommitMessage, BaseContent.Type> store;
 
-  protected AbstractNestedVersionStore(VersionStore<String, String, TestEnum> store) {
+  protected AbstractNestedVersionStore(
+      VersionStore<BaseContent, CommitMessage, BaseContent.Type> store) {
     this.store = store;
   }
 
-  protected VersionStore<String, String, TestEnum> store() {
+  protected VersionStore<BaseContent, CommitMessage, BaseContent.Type> store() {
     return store;
   }
 
-  protected List<Commit<String, String>> commitsList(Ref ref, boolean fetchAdditionalInfo)
-      throws ReferenceNotFoundException {
+  protected List<Commit<CommitMessage, BaseContent>> commitsList(
+      Ref ref, boolean fetchAdditionalInfo) throws ReferenceNotFoundException {
     return commitsList(ref, Function.identity(), fetchAdditionalInfo);
   }
 
   protected <T> List<T> commitsList(
       Ref ref,
-      Function<Stream<Commit<String, String>>, Stream<T>> streamFunction,
+      Function<Stream<Commit<CommitMessage, BaseContent>>, Stream<T>> streamFunction,
       boolean fetchAdditionalInfo)
       throws ReferenceNotFoundException {
-    try (Stream<Commit<String, String>> s = store().getCommits(ref, fetchAdditionalInfo)) {
+    try (Stream<Commit<CommitMessage, BaseContent>> s =
+        store().getCommits(ref, fetchAdditionalInfo)) {
       return streamFunction.apply(s).collect(Collectors.toList());
     }
   }
 
-  protected static Commit<String, String> commit(Hash hash, String commitMeta) {
-    return Commit.<String, String>builder().hash(hash).commitMeta(commitMeta).build();
+  protected static Commit<CommitMessage, BaseContent> commit(Hash hash, String commitMeta) {
+    return commit(hash, commitMessage(commitMeta));
   }
 
-  protected CommitBuilder<String, String, StringStoreWorker.TestEnum> forceCommit(String message) {
-    return new CommitBuilder<>(store()).withMetadata(message);
+  protected static Commit<CommitMessage, BaseContent> commit(
+      Hash hash, CommitMessage commitMessage) {
+    return Commit.<CommitMessage, BaseContent>builder()
+        .hash(hash)
+        .commitMeta(commitMessage)
+        .build();
   }
 
-  protected CommitBuilder<String, String, StringStoreWorker.TestEnum> commit(String message) {
-    return new CommitBuilder<>(store()).withMetadata(message).fromLatest();
+  protected CommitBuilder<BaseContent, CommitMessage, BaseContent.Type> forceCommit(
+      String message) {
+    return new CommitBuilder<>(store()).withMetadata(commitMessage(message));
   }
 
-  protected Put<String> put(String key, String value) {
+  protected CommitBuilder<BaseContent, CommitMessage, BaseContent.Type> commit(String message) {
+    return new CommitBuilder<>(store()).withMetadata(commitMessage(message)).fromLatest();
+  }
+
+  protected Put<BaseContent> put(String key, BaseContent value) {
     return Put.of(Key.of(key), value);
   }
 
-  protected Delete<String> delete(String key) {
+  protected Delete<BaseContent> delete(String key) {
     return Delete.of(Key.of(key));
   }
 
-  protected Unchanged<String> unchanged(String key) {
+  protected Unchanged<BaseContent> unchanged(String key) {
     return Unchanged.of(Key.of(key));
   }
 
   /** Exclude {@code main} branch in tests. */
-  protected boolean filterMainBranch(ReferenceInfo<String> r) {
+  protected boolean filterMainBranch(ReferenceInfo<CommitMessage> r) {
     return !r.getNamedRef().getName().equals("main");
   }
 
   protected static void assertCommitMeta(
-      List<Commit<String, String>> current,
-      List<Commit<String, String>> expected,
-      Function<String, String> commitMetaModifier) {
+      List<Commit<CommitMessage, BaseContent>> current,
+      List<Commit<CommitMessage, BaseContent>> expected,
+      Function<CommitMessage, CommitMessage> commitMetaModifier) {
     assertThat(current)
         .map(Commit::getCommitMeta)
         .containsExactlyElementsOf(

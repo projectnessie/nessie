@@ -19,6 +19,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.projectnessie.versioned.testworker.CommitMessage.commitMessage;
+import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Arrays;
@@ -35,12 +37,28 @@ import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
-import org.projectnessie.versioned.StringStoreWorker.TestEnum;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStoreException;
+import org.projectnessie.versioned.testworker.BaseContent;
+import org.projectnessie.versioned.testworker.CommitMessage;
+import org.projectnessie.versioned.testworker.OnRefOnly;
 
 public abstract class AbstractMerge extends AbstractNestedVersionStore {
-  protected AbstractMerge(VersionStore<String, String, TestEnum> store) {
+
+  private static final OnRefOnly V_1_1 = newOnRef("v1_1");
+  private static final OnRefOnly V_1_2 = newOnRef("v1_2");
+  private static final OnRefOnly V_1_4 = newOnRef("v1_4");
+  private static final OnRefOnly V_2_1 = newOnRef("v2_1");
+  private static final OnRefOnly V_2_2 = newOnRef("v2_2");
+  private static final OnRefOnly V_3_1 = newOnRef("v3_1");
+  private static final OnRefOnly V_4_1 = newOnRef("v4_1");
+  private static final OnRefOnly V_5_1 = newOnRef("v5_1");
+  private static final OnRefOnly VALUE_1 = newOnRef("value1");
+  private static final OnRefOnly VALUE_2 = newOnRef("value2");
+  private static final OnRefOnly VALUE_3 = newOnRef("value3");
+  private static final OnRefOnly VALUE_4 = newOnRef("value4");
+
+  protected AbstractMerge(VersionStore<BaseContent, CommitMessage, BaseContent.Type> store) {
     super(store);
   }
 
@@ -48,7 +66,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
   private Hash firstCommit;
   private Hash secondCommit;
   private Hash thirdCommit;
-  private List<Commit<String, String>> commits;
+  private List<Commit<CommitMessage, BaseContent>> commits;
 
   @BeforeEach
   protected void setupCommits() throws VersionStoreException {
@@ -64,25 +82,21 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
     initialHash = commit("Default common ancestor").toBranch(branch);
 
     firstCommit =
-        commit("First Commit")
-            .put("t1", "v1_1")
-            .put("t2", "v2_1")
-            .put("t3", "v3_1")
-            .toBranch(branch);
+        commit("First Commit").put("t1", V_1_1).put("t2", V_2_1).put("t3", V_3_1).toBranch(branch);
     secondCommit =
         commit("Second Commit")
-            .put("t1", "v1_2")
+            .put("t1", V_1_2)
             .delete("t2")
             .delete("t3")
-            .put("t4", "v4_1")
+            .put("t4", V_4_1)
             .toBranch(branch);
-    thirdCommit = commit("Third Commit").put("t2", "v2_2").unchanged("t4").toBranch(branch);
+    thirdCommit = commit("Third Commit").put("t2", V_2_2).unchanged("t4").toBranch(branch);
 
     commits = commitsList(branch, false).subList(0, 3);
   }
 
-  private String merged(String commitMeta) {
-    return commitMeta + ", merged";
+  private CommitMessage merged(CommitMessage commitMessage) {
+    return commitMessage(commitMessage.getMessage() + ", merged");
   }
 
   @Test
@@ -98,9 +112,9 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                     Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"))))
         .containsExactlyInAnyOrderEntriesOf(
             ImmutableMap.of(
-                Key.of("t1"), "v1_2",
-                Key.of("t2"), "v2_2",
-                Key.of("t4"), "v4_1"));
+                Key.of("t1"), V_1_2,
+                Key.of("t2"), V_2_2,
+                Key.of("t4"), V_4_1));
 
     // not modifying commit meta, will just "fast forward"
     assertThat(store().hashOnReference(newBranch, Optional.empty())).isEqualTo(thirdCommit);
@@ -121,9 +135,9 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                     Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"))))
         .containsExactlyInAnyOrderEntriesOf(
             ImmutableMap.of(
-                Key.of("t1"), "v1_2",
-                Key.of("t2"), "v2_2",
-                Key.of("t4"), "v4_1"));
+                Key.of("t1"), V_1_2,
+                Key.of("t2"), V_2_2,
+                Key.of("t4"), V_4_1));
 
     // modify the commit meta, will generate new commits and therefore new commit hashes
     assertThat(store().hashOnReference(newBranch, Optional.empty())).isNotEqualTo(thirdCommit);
@@ -135,7 +149,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
   protected void mergeIntoNonConflictingBranch() throws VersionStoreException {
     final BranchName newBranch = BranchName.of("bar_2");
     store().create(newBranch, Optional.of(initialHash));
-    final Hash newCommit = commit("Unrelated commit").put("t5", "v5_1").toBranch(newBranch);
+    final Hash newCommit = commit("Unrelated commit").put("t5", V_5_1).toBranch(newBranch);
 
     store().merge(thirdCommit, newBranch, Optional.empty(), Function.identity());
     assertThat(
@@ -146,17 +160,26 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                         Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"), Key.of("t5"))))
         .containsExactlyInAnyOrderEntriesOf(
             ImmutableMap.of(
-                Key.of("t1"), "v1_2",
-                Key.of("t2"), "v2_2",
-                Key.of("t4"), "v4_1",
-                Key.of("t5"), "v5_1"));
+                Key.of("t1"), V_1_2,
+                Key.of("t2"), V_2_2,
+                Key.of("t4"), V_4_1,
+                Key.of("t5"), V_5_1));
 
-    final List<Commit<String, String>> commits = commitsList(newBranch, false);
+    final List<Commit<CommitMessage, BaseContent>> commits = commitsList(newBranch, false);
     assertThat(commits)
         .satisfiesExactly(
-            c0 -> assertThat(c0).extracting(Commit::getCommitMeta).isEqualTo("Third Commit"),
-            c1 -> assertThat(c1).extracting(Commit::getCommitMeta).isEqualTo("Second Commit"),
-            c2 -> assertThat(c2).extracting(Commit::getCommitMeta).isEqualTo("First Commit"),
+            c0 ->
+                assertThat(c0)
+                    .extracting(Commit::getCommitMeta)
+                    .isEqualTo(commitMessage("Third Commit")),
+            c1 ->
+                assertThat(c1)
+                    .extracting(Commit::getCommitMeta)
+                    .isEqualTo(commitMessage("Second Commit")),
+            c2 ->
+                assertThat(c2)
+                    .extracting(Commit::getCommitMeta)
+                    .isEqualTo(commitMessage("First Commit")),
             c3 -> assertThat(c3).extracting(Commit::getHash).isEqualTo(newCommit),
             c4 -> assertThat(c4).extracting(Commit::getHash).isEqualTo(initialHash));
   }
@@ -170,7 +193,10 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
     store().create(review, Optional.of(initialHash));
     store()
         .commit(
-            etl, Optional.empty(), "commit 1", Collections.singletonList(Put.of(key, "value1")));
+            etl,
+            Optional.empty(),
+            commitMessage("commit 1"),
+            Collections.singletonList(Put.of(key, VALUE_1)));
     store()
         .merge(
             store().hashOnReference(etl, Optional.empty()),
@@ -179,14 +205,17 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             Function.identity());
     store()
         .commit(
-            etl, Optional.empty(), "commit 2", Collections.singletonList(Put.of(key, "value2")));
+            etl,
+            Optional.empty(),
+            commitMessage("commit 2"),
+            Collections.singletonList(Put.of(key, VALUE_2)));
     store()
         .merge(
             store().hashOnReference(etl, Optional.empty()),
             review,
             Optional.empty(),
             Function.identity());
-    assertEquals(store().getValue(review, key), "value2");
+    assertEquals(store().getValue(review, key), VALUE_2);
   }
 
   @Test
@@ -194,7 +223,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
     final BranchName newBranch = BranchName.of("bar_2");
     store().create(newBranch, Optional.of(firstCommit));
 
-    final Hash newCommit = commit("Unrelated commit").put("t5", "v5_1").toBranch(newBranch);
+    final Hash newCommit = commit("Unrelated commit").put("t5", V_5_1).toBranch(newBranch);
 
     store().merge(thirdCommit, newBranch, Optional.empty(), Function.identity());
     assertThat(
@@ -205,18 +234,18 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                         Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"), Key.of("t5"))))
         .containsExactlyInAnyOrderEntriesOf(
             ImmutableMap.of(
-                Key.of("t1"), "v1_2",
-                Key.of("t2"), "v2_2",
-                Key.of("t4"), "v4_1",
-                Key.of("t5"), "v5_1"));
+                Key.of("t1"), V_1_2,
+                Key.of("t2"), V_2_2,
+                Key.of("t4"), V_4_1,
+                Key.of("t5"), V_5_1));
 
-    final List<Commit<String, String>> commits = commitsList(newBranch, false);
+    final List<Commit<CommitMessage, BaseContent>> commits = commitsList(newBranch, false);
     assertThat(commits).hasSize(5);
     assertThat(commits.get(4).getHash()).isEqualTo(initialHash);
     assertThat(commits.get(3).getHash()).isEqualTo(firstCommit);
     assertThat(commits.get(2).getHash()).isEqualTo(newCommit);
-    assertThat(commits.get(1).getCommitMeta()).isEqualTo("Second Commit");
-    assertThat(commits.get(0).getCommitMeta()).isEqualTo("Third Commit");
+    assertThat(commits.get(1).getCommitMeta()).isEqualTo(commitMessage("Second Commit"));
+    assertThat(commits.get(0).getCommitMeta()).isEqualTo(commitMessage("Third Commit"));
   }
 
   @Test
@@ -233,20 +262,29 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
 
     store()
         .commit(
-            foo, Optional.empty(), "commit 1", Collections.singletonList(Put.of(key1, "value1")));
+            foo,
+            Optional.empty(),
+            commitMessage("commit 1"),
+            Collections.singletonList(Put.of(key1, VALUE_1)));
     store()
         .commit(
-            bar, Optional.empty(), "commit 2", Collections.singletonList(Put.of(key1, "value2")));
+            bar,
+            Optional.empty(),
+            commitMessage("commit 2"),
+            Collections.singletonList(Put.of(key1, VALUE_2)));
     store()
         .commit(
-            foo, Optional.empty(), "commit 3", Collections.singletonList(Put.of(key2, "value3")));
+            foo,
+            Optional.empty(),
+            commitMessage("commit 3"),
+            Collections.singletonList(Put.of(key2, VALUE_3)));
     Hash barHash =
         store()
             .commit(
                 bar,
                 Optional.empty(),
-                "commit 4",
-                Collections.singletonList(Put.of(key2, "value4")));
+                commitMessage("commit 4"),
+                Collections.singletonList(Put.of(key2, VALUE_4)));
 
     assertThatThrownBy(() -> store().merge(barHash, foo, Optional.empty(), Function.identity()))
         .isInstanceOf(ReferenceConflictException.class)
@@ -259,7 +297,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
   protected void mergeIntoConflictingBranch() throws VersionStoreException {
     final BranchName newBranch = BranchName.of("bar_3");
     store().create(newBranch, Optional.of(initialHash));
-    commit("Another commit").put("t1", "v1_4").toBranch(newBranch);
+    commit("Another commit").put("t1", V_1_4).toBranch(newBranch);
 
     assertThrows(
         ReferenceConflictException.class,

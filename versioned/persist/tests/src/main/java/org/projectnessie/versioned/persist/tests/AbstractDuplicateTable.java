@@ -18,6 +18,9 @@ package org.projectnessie.versioned.persist.tests;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.projectnessie.versioned.testworker.CommitMessage.commitMessage;
+import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
+import static org.projectnessie.versioned.testworker.WithGlobalStateContent.withGlobal;
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;
@@ -31,13 +34,14 @@ import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.Operation;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceConflictException;
-import org.projectnessie.versioned.StringStoreWorker;
-import org.projectnessie.versioned.StringStoreWorker.TestEnum;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.tests.AbstractNestedVersionStore;
+import org.projectnessie.versioned.testworker.BaseContent;
+import org.projectnessie.versioned.testworker.CommitMessage;
 
 public abstract class AbstractDuplicateTable extends AbstractNestedVersionStore {
-  protected AbstractDuplicateTable(VersionStore<String, String, TestEnum> store) {
+  protected AbstractDuplicateTable(
+      VersionStore<BaseContent, CommitMessage, BaseContent.Type> store) {
     super(store);
   }
 
@@ -86,8 +90,8 @@ public abstract class AbstractDuplicateTable extends AbstractNestedVersionStore 
             .commit(
                 branch0,
                 Optional.empty(),
-                "initial commit",
-                ImmutableList.of(Put.of(Key.of("unrelated", "table"), "value")));
+                commitMessage("initial commit"),
+                ImmutableList.of(Put.of(Key.of("unrelated", "table"), newOnRef("value"))));
 
     // Create a table with the same name on two branches.
     // WITH global-states, that must fail
@@ -97,58 +101,48 @@ public abstract class AbstractDuplicateTable extends AbstractNestedVersionStore 
     assertThat(store().create(branch1, Optional.of(ancestor))).isEqualTo(ancestor);
     assertThat(store().create(branch2, Optional.of(ancestor))).isEqualTo(ancestor);
 
-    List<Operation<String>> putForBranch1;
-    List<Operation<String>> putForBranch2;
-    String valuebranch1;
-    String valuebranch2;
+    List<Operation<BaseContent>> putForBranch1;
+    List<Operation<BaseContent>> putForBranch2;
+    BaseContent valuebranch1;
+    BaseContent valuebranch2;
     switch (mode) {
       case NO_GLOBAL:
-        valuebranch1 = "create table";
-        valuebranch2 = "create table";
+        valuebranch1 = newOnRef("create table");
+        valuebranch2 = newOnRef("create table");
         putForBranch1 = ImmutableList.of(Put.of(key, valuebranch1));
         putForBranch2 = ImmutableList.of(Put.of(key, valuebranch2));
         break;
       case STATEFUL_SAME_CONTENT_ID:
-        valuebranch1 =
-            StringStoreWorker.withStateAndId("state", "create table", "content-id-equal");
-        valuebranch2 =
-            StringStoreWorker.withStateAndId("state", "create table", "content-id-equal");
+        valuebranch1 = withGlobal("state", "create table", "content-id-equal");
+        valuebranch2 = withGlobal("state", "create table", "content-id-equal");
         putForBranch1 =
-            singletonList(
-                Put.of(
-                    key,
-                    StringStoreWorker.withStateAndId("state", "create table", "content-id-equal")));
+            singletonList(Put.of(key, withGlobal("state", "create table", "content-id-equal")));
         putForBranch2 =
-            singletonList(
-                Put.of(
-                    key,
-                    StringStoreWorker.withStateAndId("state", "create table", "content-id-equal")));
+            singletonList(Put.of(key, withGlobal("state", "create table", "content-id-equal")));
         break;
       case STATEFUL_DIFFERENT_CONTENT_ID:
-        valuebranch1 = StringStoreWorker.withStateAndId("state", "create table", "content-id-1");
-        valuebranch2 = StringStoreWorker.withStateAndId("state", "create table", "content-id-2");
+        valuebranch1 = withGlobal("state", "create table", "content-id-1");
+        valuebranch2 = withGlobal("state", "create table", "content-id-2");
         putForBranch1 =
-            singletonList(
-                Put.of(
-                    key,
-                    StringStoreWorker.withStateAndId("state", "create table", "content-id-1")));
+            singletonList(Put.of(key, withGlobal("state", "create table", "content-id-1")));
         putForBranch2 =
-            singletonList(
-                Put.of(
-                    key,
-                    StringStoreWorker.withStateAndId("state", "create table", "content-id-2")));
+            singletonList(Put.of(key, withGlobal("state", "create table", "content-id-2")));
         break;
       default:
         throw new IllegalStateException();
     }
 
-    store().commit(branch1, Optional.empty(), "create table", putForBranch1);
+    store().commit(branch1, Optional.empty(), commitMessage("create table"), putForBranch1);
     assertThat(store().getValue(branch1, key)).isEqualTo(valuebranch1);
 
     ThrowingCallable createTableOnOtherBranch =
         () ->
             store()
-                .commit(branch2, Optional.empty(), "create table on other branch", putForBranch2);
+                .commit(
+                    branch2,
+                    Optional.empty(),
+                    commitMessage("create table on other branch"),
+                    putForBranch2);
 
     if (mode == DuplicateTableMode.STATEFUL_SAME_CONTENT_ID) {
       assertThatThrownBy(createTableOnOtherBranch)

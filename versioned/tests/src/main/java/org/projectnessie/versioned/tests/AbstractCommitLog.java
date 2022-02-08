@@ -18,6 +18,9 @@ package org.projectnessie.versioned.tests;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.projectnessie.versioned.testworker.CommitMessage.commitMessage;
+import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
+import static org.projectnessie.versioned.testworker.OnRefOnly.onRef;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -36,12 +39,12 @@ import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.Put;
-import org.projectnessie.versioned.StringStoreWorker;
-import org.projectnessie.versioned.StringStoreWorker.TestEnum;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.testworker.BaseContent;
+import org.projectnessie.versioned.testworker.CommitMessage;
 
 public abstract class AbstractCommitLog extends AbstractNestedVersionStore {
-  protected AbstractCommitLog(VersionStore<String, String, TestEnum> store) {
+  protected AbstractCommitLog(VersionStore<BaseContent, CommitMessage, BaseContent.Type> store) {
     super(store);
   }
 
@@ -52,9 +55,9 @@ public abstract class AbstractCommitLog extends AbstractNestedVersionStore {
 
     int commits = 95; // this should be enough
     Hash[] commitHashes = new Hash[commits];
-    List<String> messages = new ArrayList<>(commits);
+    List<CommitMessage> messages = new ArrayList<>(commits);
     for (int i = 0; i < commits; i++) {
-      String msg = String.format("commit#%05d", i);
+      CommitMessage msg = commitMessage(String.format("commit#%05d", i));
       messages.add(msg);
       commitHashes[i] =
           store()
@@ -62,13 +65,16 @@ public abstract class AbstractCommitLog extends AbstractNestedVersionStore {
                   branch,
                   Optional.of(i == 0 ? createHash : commitHashes[i - 1]),
                   msg,
-                  ImmutableList.of(Put.of(Key.of("table"), String.format("value#%05d", i))));
+                  ImmutableList.of(
+                      Put.of(Key.of("table"), newOnRef(String.format("value#%05d", i)))));
     }
     Collections.reverse(messages);
 
-    List<String> justTwo = commitsList(branch, s -> s.limit(2).map(Commit::getCommitMeta), false);
+    List<CommitMessage> justTwo =
+        commitsList(branch, s -> s.limit(2).map(Commit::getCommitMeta), false);
     assertEquals(messages.subList(0, 2), justTwo);
-    List<String> justTen = commitsList(branch, s -> s.limit(10).map(Commit::getCommitMeta), false);
+    List<CommitMessage> justTen =
+        commitsList(branch, s -> s.limit(10).map(Commit::getCommitMeta), false);
     assertEquals(messages.subList(0, 10), justTen);
 
     int pageSize = 10;
@@ -78,7 +84,7 @@ public abstract class AbstractCommitLog extends AbstractNestedVersionStore {
 
     Hash lastHash = null;
     for (int offset = 0; ; ) {
-      List<Commit<String, String>> logPage =
+      List<Commit<CommitMessage, BaseContent>> logPage =
           commitsList(lastHash == null ? branch : lastHash, s -> s.limit(pageSize), false);
 
       assertEquals(
@@ -113,8 +119,8 @@ public abstract class AbstractCommitLog extends AbstractNestedVersionStore {
                 i -> {
                   try {
                     return commit("Commit #" + i)
-                        .put("k" + i, StringStoreWorker.withId("v" + i, "c" + i))
-                        .put("key" + i, StringStoreWorker.withId("value" + i, "cid" + i))
+                        .put("k" + i, onRef("v" + i, "c" + i))
+                        .put("key" + i, onRef("value" + i, "cid" + i))
                         .delete("delete" + i)
                         .toBranch(branch);
                   } catch (Exception e) {
@@ -135,11 +141,11 @@ public abstract class AbstractCommitLog extends AbstractNestedVersionStore {
         .extracting(Commit::getHash)
         .containsExactlyElementsOf(hashes);
 
-    List<Commit<String, String>> commits = Lists.reverse(commitsList(branch, true));
+    List<Commit<CommitMessage, BaseContent>> commits = Lists.reverse(commitsList(branch, true));
     assertThat(IntStream.rangeClosed(1, numCommits))
         .allSatisfy(
             i -> {
-              Commit<String, String> c = commits.get(i - 1);
+              Commit<CommitMessage, BaseContent> c = commits.get(i - 1);
               assertThat(c)
                   .extracting(
                       Commit::getCommitMeta,
@@ -147,18 +153,13 @@ public abstract class AbstractCommitLog extends AbstractNestedVersionStore {
                       Commit::getParentHash,
                       Commit::getOperations)
                   .containsExactly(
-                      "Commit #" + i,
+                      commitMessage("Commit #" + i),
                       hashes.get(i - 1),
                       parentHashes.get(i - 1),
                       Arrays.asList(
                           Delete.of(Key.of("delete" + i)),
-                          Put.of(
-                              Key.of("k" + i),
-                              StringStoreWorker.withStateAndId("v" + i, "v" + i, "c" + i)),
-                          Put.of(
-                              Key.of("key" + i),
-                              StringStoreWorker.withStateAndId(
-                                  "value" + i, "value" + i, "cid" + i))));
+                          Put.of(Key.of("k" + i), onRef("v" + i, "c" + i)),
+                          Put.of(Key.of("key" + i), onRef("value" + i, "cid" + i))));
             });
   }
 }
