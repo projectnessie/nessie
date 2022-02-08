@@ -26,7 +26,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
-import org.projectnessie.client.rest.NessieForbiddenException;
+import org.projectnessie.error.NessieForbiddenException;
 import org.projectnessie.jaxrs.ext.NessieAccessChecker;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;

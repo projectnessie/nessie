@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import com.sun.net.httpserver.HttpHandler;
 import io.opentracing.Scope;
 import io.opentracing.util.GlobalTracer;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
 import java.util.Base64;
@@ -33,6 +34,8 @@ import org.junit.jupiter.api.Test;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.auth.BasicAuthenticationProvider;
 import org.projectnessie.client.http.HttpClientBuilder;
+import org.projectnessie.client.rest.NessieInternalServerException;
+import org.projectnessie.client.rest.NessieNotAuthorizedException;
 import org.projectnessie.client.util.JaegerTestTracer;
 import org.projectnessie.client.util.TestServer;
 
@@ -113,6 +116,56 @@ class TestNessieHttpClient {
     }
 
     assertNull(traceId.get());
+  }
+
+  private TestServer errorServer(int status) throws IOException {
+    return new TestServer(
+        h -> {
+          h.sendResponseHeaders(status, 0);
+          h.getResponseBody().close();
+        });
+  }
+
+  @Test
+  void testNotFoundOnBaseUri() throws IOException {
+    try (TestServer server = errorServer(404)) {
+      NessieApiV1 api =
+          HttpClientBuilder.builder()
+              .withUri(server.getUri().resolve("/unknownPath"))
+              .build(NessieApiV1.class);
+
+      assertThatThrownBy(api::getConfig)
+          .isInstanceOf(RuntimeException.class)
+          .hasMessageContaining("Not Found");
+    }
+  }
+
+  @Test
+  void testInternalServerError() throws IOException {
+    try (TestServer server = errorServer(500)) {
+      NessieApiV1 api =
+          HttpClientBuilder.builder()
+              .withUri(server.getUri().resolve("/broken"))
+              .build(NessieApiV1.class);
+
+      assertThatThrownBy(api::getConfig)
+          .isInstanceOf(NessieInternalServerException.class)
+          .hasMessageContaining("Internal Server Error");
+    }
+  }
+
+  @Test
+  void testUnauthorized() throws IOException {
+    try (TestServer server = errorServer(401)) {
+      NessieApiV1 api =
+          HttpClientBuilder.builder()
+              .withUri(server.getUri().resolve("/unauthorized"))
+              .build(NessieApiV1.class);
+
+      assertThatThrownBy(api::getConfig)
+          .isInstanceOf(NessieNotAuthorizedException.class)
+          .hasMessageContaining("Unauthorized");
+    }
   }
 
   static HttpHandler handlerForHeaderTest(String headerName, AtomicReference<String> receiver) {

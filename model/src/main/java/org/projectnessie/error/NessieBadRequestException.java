@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2022 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,13 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.rest;
+package org.projectnessie.error;
 
-import org.projectnessie.error.NessieError;
-
-public class NessieForbiddenException extends NessieServiceException {
-
-  public NessieForbiddenException(NessieError serverError) {
-    super(serverError);
+/** Represents error responses to malformed or invalid client requests. */
+public class NessieBadRequestException extends NessieRuntimeException {
+  public NessieBadRequestException(NessieError error) {
+    super(error);
   }
 }

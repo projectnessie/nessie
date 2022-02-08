@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2022 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,17 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.rest;
+package org.projectnessie.error;
 
-import org.projectnessie.error.NessieError;
-
-/**
- * If a backend store refuses to process a request, the condition is signalled to clients via this
- * exception.
- */
-public class NessieBackendThrottledException extends NessieServiceException {
-
-  public NessieBackendThrottledException(NessieError serverError) {
-    super(serverError);
+/** Represents failures related to Nessie-specific access controls. */
+public class NessieForbiddenException extends NessieRuntimeException {
+  public NessieForbiddenException(NessieError error) {
+    super(error);
   }
 }

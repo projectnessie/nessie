@@ -22,9 +22,9 @@ import javax.validation.ElementKind;
 import javax.validation.Path;
 import javax.validation.ValidationException;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
+import org.projectnessie.error.ErrorCode;
 import org.projectnessie.services.config.ServerConfig;
 
 /**
@@ -50,30 +50,25 @@ public class ValidationExceptionMapper extends BaseExceptionMapper<ValidationExc
   public Response toResponse(ValidationException exception) {
     if (exception instanceof ConstraintViolationException) {
       final ConstraintViolationException cve = (ConstraintViolationException) exception;
-      Status status = Response.Status.BAD_REQUEST;
+      ErrorCode errorCode = ErrorCode.BAD_REQUEST;
       for (ConstraintViolation<?> violation : cve.getConstraintViolations()) {
         for (final Path.Node node : violation.getPropertyPath()) {
           final ElementKind kind = node.getKind();
 
           if (ElementKind.RETURN_VALUE.equals(kind)) {
-            status = Response.Status.INTERNAL_SERVER_ERROR;
+            errorCode = ErrorCode.UNKNOWN; // translates to "internal server error"
           }
         }
       }
       return buildExceptionResponse(
-          status.getStatusCode(),
-          status.getReasonPhrase(),
+          errorCode,
           exception.getMessage(),
           exception,
           false, // no need to send the stack trace for a validation-error
           header -> {});
     }
 
-    return buildExceptionResponse(
-        Status.INTERNAL_SERVER_ERROR.getStatusCode(),
-        Status.INTERNAL_SERVER_ERROR.getReasonPhrase(),
-        unwrapException(exception),
-        exception);
+    return buildExceptionResponse(ErrorCode.UNKNOWN, unwrapException(exception), exception);
   }
 
   protected String unwrapException(Throwable t) {

@@ -26,11 +26,11 @@ package org.projectnessie.error;
 public class NessieNotFoundException extends BaseNessieClientServerException {
 
   public NessieNotFoundException(String message, Throwable cause) {
-    super(message, 404, "Not Found", cause);
+    super(message, cause);
   }
 
   public NessieNotFoundException(String message) {
-    super(message, 404, "Not Found");
+    super(message);
   }
 
   public NessieNotFoundException(NessieError error) {

@@ -31,8 +31,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.api.params.FetchOption;
-import org.projectnessie.client.rest.NessieBadRequestException;
 import org.projectnessie.error.BaseNessieClientServerException;
+import org.projectnessie.error.NessieBadRequestException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.Branch;
@@ -69,6 +69,13 @@ public abstract class AbstractRestReferences extends AbstractRestMisc {
     ReferencesResponse references = getApi().getAllReferences().get();
     assertThat(references.getReferences())
         .anySatisfy(r -> assertThat(r.getName()).isEqualTo("main"));
+  }
+
+  @Test
+  public void getUnknownReference() {
+    assertThatThrownBy(() -> getApi().getReference().refName("unknown123").get())
+        .isInstanceOf(NessieNotFoundException.class)
+        .hasMessageContaining("unknown123");
   }
 
   @ParameterizedTest

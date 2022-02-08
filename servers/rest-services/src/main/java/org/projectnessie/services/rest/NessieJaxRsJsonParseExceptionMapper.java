@@ -18,7 +18,6 @@ package org.projectnessie.services.rest;
 import com.fasterxml.jackson.core.JsonParseException;
 import javax.inject.Inject;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.ext.Provider;
 import org.projectnessie.services.config.ServerConfig;
 
@@ -43,10 +42,6 @@ public class NessieJaxRsJsonParseExceptionMapper extends BaseExceptionMapper<Jso
 
   @Override
   public Response toResponse(JsonParseException exception) {
-    return buildExceptionResponse(
-        Status.BAD_REQUEST.getStatusCode(),
-        Status.BAD_REQUEST.getReasonPhrase(),
-        exception.getMessage(),
-        exception);
+    return buildBadRequestResponse(exception);
   }
 }

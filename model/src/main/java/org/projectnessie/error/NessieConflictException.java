@@ -26,11 +26,11 @@ package org.projectnessie.error;
 public class NessieConflictException extends BaseNessieClientServerException {
 
   public NessieConflictException(String message, Throwable cause) {
-    super(message, 409, "Conflict", cause);
+    super(message, cause);
   }
 
   public NessieConflictException(String message) {
-    super(message, 409, "Conflict");
+    super(message);
   }
 
   public NessieConflictException(NessieError error) {

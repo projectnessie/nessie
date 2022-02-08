@@ -24,7 +24,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 
 class TestErrorCode {
 
-  private Optional<BaseNessieClientServerException> ex(ErrorCode errorCode) {
+  private Optional<Exception> ex(ErrorCode errorCode) {
     NessieError error =
         ImmutableNessieError.builder().reason("test").status(1).errorCode(errorCode).build();
     return ErrorCode.asException(error);
@@ -38,8 +38,11 @@ class TestErrorCode {
   @ParameterizedTest
   @EnumSource(value = ErrorCode.class, mode = EnumSource.Mode.EXCLUDE, names = "UNKNOWN")
   public void testConversion(ErrorCode errorCode) {
-    Optional<BaseNessieClientServerException> ex = ex(errorCode);
+    Optional<Exception> ex = ex(errorCode);
     assertThat(ex).isPresent();
-    assertThat(ex.get().getErrorCode()).isEqualTo(errorCode);
+    assertThat(ex.get())
+        .isInstanceOf(ErrorCodeAware.class)
+        .extracting(e -> ((ErrorCodeAware) e).getErrorCode())
+        .isEqualTo(errorCode);
   }
 }

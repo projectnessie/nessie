@@ -25,21 +25,31 @@ import java.util.function.Function;
  * <p>The enum names also designate error code in the JSON representation of {@link NessieError}.
  */
 public enum ErrorCode {
-  UNKNOWN(null),
-  REFERENCE_NOT_FOUND(NessieReferenceNotFoundException::new),
-  REFERENCE_ALREADY_EXISTS(NessieReferenceAlreadyExistsException::new),
-  CONTENT_NOT_FOUND(NessieContentNotFoundException::new),
-  REFERENCE_CONFLICT(NessieReferenceConflictException::new),
-  REFLOG_NOT_FOUND(NessieRefLogNotFoundException::new),
+  UNKNOWN(500, null),
+  REFERENCE_NOT_FOUND(404, NessieReferenceNotFoundException::new),
+  REFERENCE_ALREADY_EXISTS(409, NessieReferenceAlreadyExistsException::new),
+  CONTENT_NOT_FOUND(404, NessieContentNotFoundException::new),
+  REFERENCE_CONFLICT(409, NessieReferenceConflictException::new),
+  REFLOG_NOT_FOUND(404, NessieRefLogNotFoundException::new),
+  BAD_REQUEST(400, NessieBadRequestException::new),
+  FORBIDDEN(403, NessieForbiddenException::new),
+  TOO_MANY_REQUESTS(429, NessieBackendThrottledException::new),
   ;
 
-  private final Function<NessieError, ? extends BaseNessieClientServerException> exceptionBuilder;
+  private final int httpStatus;
+  private final Function<NessieError, ? extends Exception> exceptionBuilder;
 
-  <T extends BaseNessieClientServerException> ErrorCode(Function<NessieError, T> exceptionBuilder) {
+  <T extends Exception & ErrorCodeAware> ErrorCode(
+      int status, Function<NessieError, T> exceptionBuilder) {
+    this.httpStatus = status;
     this.exceptionBuilder = exceptionBuilder;
   }
 
-  public static Optional<BaseNessieClientServerException> asException(NessieError error) {
+  public int httpStatus() {
+    return httpStatus;
+  }
+
+  public static Optional<Exception> asException(NessieError error) {
     return Optional.ofNullable(error.getErrorCode())
         .flatMap(e -> Optional.ofNullable(e.exceptionBuilder))
         .map(b -> b.apply(error));

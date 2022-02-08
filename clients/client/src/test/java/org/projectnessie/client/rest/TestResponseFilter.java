@@ -19,7 +19,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,10 +33,12 @@ import org.projectnessie.client.http.Status;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.ErrorCode;
 import org.projectnessie.error.ImmutableNessieError;
+import org.projectnessie.error.NessieBackendThrottledException;
+import org.projectnessie.error.NessieBadRequestException;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieContentNotFoundException;
 import org.projectnessie.error.NessieError;
-import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.error.NessieForbiddenException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import software.amazon.awssdk.utils.StringInputStream;
 
@@ -80,89 +81,81 @@ public class TestResponseFilter {
             () ->
                 ResponseCheckFilter.checkResponse(
                     new TestResponseContext(Status.UNSUPPORTED_MEDIA_TYPE, error), MAPPER))
-        .isInstanceOf(NessieServiceException.class)
+        .isInstanceOf(RuntimeException.class)
         .hasMessage("xxx (HTTP/415): unknown");
   }
 
   @Test
-  void testBadReturnNoError() throws IOException {
-    try {
-      ResponseCheckFilter.checkResponse(
-          new ResponseContext() {
-            @Override
-            public Status getResponseCode() {
-              return Status.UNAUTHORIZED;
-            }
+  void testBadReturnNoError() throws Exception {
+    assertThatThrownBy(
+            () ->
+                ResponseCheckFilter.checkResponse(
+                    new ResponseContext() {
+                      @Override
+                      public Status getResponseCode() {
+                        return Status.UNAUTHORIZED;
+                      }
 
-            @Override
-            public InputStream getInputStream() {
-              Assertions.fail();
-              return null;
-            }
+                      @Override
+                      public InputStream getInputStream() {
+                        Assertions.fail();
+                        return null;
+                      }
 
-            @Override
-            public InputStream getErrorStream() {
-              return new StringInputStream("this will fail");
-            }
-          },
-          MAPPER);
-    } catch (NessieServiceException e) {
-      assertThat(Status.UNAUTHORIZED.getCode()).isEqualTo(e.getError().getStatus());
-      assertThat(e.getError().getClientProcessingException()).isInstanceOf(IOException.class);
-      assertThat(e.getError().getServerStackTrace()).isNull();
-    }
+                      @Override
+                      public InputStream getErrorStream() {
+                        return new StringInputStream("this will fail");
+                      }
+                    },
+                    MAPPER))
+        .isInstanceOf(NessieNotAuthorizedException.class)
+        .hasMessageContaining("" + Status.UNAUTHORIZED.getCode())
+        .hasMessageContaining(Status.UNAUTHORIZED.getReason())
+        .hasMessageContaining("JsonParseException"); // from parsing `this will fail`
   }
 
   @Test
-  void testUnexpectedError() throws IOException {
-    try {
-      ResponseCheckFilter.checkResponse(
-          new ResponseContext() {
-            @Override
-            public Status getResponseCode() {
-              return Status.NOT_IMPLEMENTED;
-            }
+  void testUnexpectedError() throws Exception {
+    assertThatThrownBy(
+            () ->
+                ResponseCheckFilter.checkResponse(
+                    new ResponseContext() {
+                      @Override
+                      public Status getResponseCode() {
+                        return Status.NOT_IMPLEMENTED;
+                      }
 
-            @Override
-            public InputStream getInputStream() {
-              Assertions.fail();
-              return null;
-            }
+                      @Override
+                      public InputStream getInputStream() {
+                        Assertions.fail();
+                        return null;
+                      }
 
-            @Override
-            public InputStream getErrorStream() {
-              // Quarkus may sometimes produce JSON error responses like this
-              return new StringInputStream(
-                  "{\"details\":\"Error id ee7f7293-67ad-42bd-8973-179801e7120e-1\",\"stack\":\"\"}");
-            }
-          },
-          MAPPER);
-    } catch (NessieServiceException e) {
-      assertThat(Status.NOT_IMPLEMENTED.getCode()).isEqualTo(e.getError().getStatus());
-      assertThat(e.getError().getClientProcessingException())
-          .isInstanceOf(JsonProcessingException.class);
-      assertThat(e.getError().getServerStackTrace()).isNull();
-      assertThat(e.getError().getMessage()).contains("ee7f7293-67ad-42bd-8973-179801e7120e-1");
-    }
+                      @Override
+                      public InputStream getErrorStream() {
+                        // Quarkus may sometimes produce JSON error responses like this
+                        return new StringInputStream(
+                            "{\"details\":\"Error id ee7f7293-67ad-42bd-8973-179801e7120e-1\",\"stack\":\"\"}");
+                      }
+                    },
+                    MAPPER))
+        .isInstanceOf(RuntimeException.class)
+        .hasMessageContaining("" + Status.NOT_IMPLEMENTED.getCode())
+        .hasMessageContaining(Status.NOT_IMPLEMENTED.getReason())
+        .hasMessageContaining("ee7f7293-67ad-42bd-8973-179801e7120e-1")
+        .hasMessageContaining("UnrecognizedPropertyException"); // jackson parse error
   }
 
   @Test
   void testBadReturnBadError() {
-    NessieError defaultError =
-        ImmutableNessieError.builder()
-            .status(Status.UNAUTHORIZED.getCode())
-            .reason(Status.UNAUTHORIZED.getReason())
-            .message("Could not parse error object in response.")
-            .clientProcessingException(
-                new RuntimeException("Could not parse error object in response."))
-            .build();
     assertThatThrownBy(
             () ->
                 ResponseCheckFilter.checkResponse(
                     new TestResponseContext(Status.UNAUTHORIZED, null), MAPPER))
-        .isInstanceOf(NessieServiceException.class)
-        .extracting("error")
-        .isEqualTo(defaultError);
+        .isInstanceOf(NessieNotAuthorizedException.class)
+        .hasMessageContaining("" + Status.UNAUTHORIZED.getCode())
+        .hasMessageContaining(Status.UNAUTHORIZED.getReason())
+        .hasMessageContaining("Could not parse error object in response");
   }
 
   @Test
@@ -173,18 +166,25 @@ public class TestResponseFilter {
 
   private static Stream<Arguments> provider() {
     return Stream.of(
-        Arguments.of(Status.BAD_REQUEST, ErrorCode.UNKNOWN, NessieBadRequestException.class),
+        Arguments.of(Status.BAD_REQUEST, ErrorCode.UNKNOWN, RuntimeException.class),
+        Arguments.of(Status.BAD_REQUEST, ErrorCode.BAD_REQUEST, NessieBadRequestException.class),
         Arguments.of(Status.UNAUTHORIZED, ErrorCode.UNKNOWN, NessieNotAuthorizedException.class),
-        Arguments.of(Status.FORBIDDEN, ErrorCode.UNKNOWN, NessieForbiddenException.class),
+        Arguments.of(Status.FORBIDDEN, ErrorCode.FORBIDDEN, NessieForbiddenException.class),
+        Arguments.of(Status.FORBIDDEN, ErrorCode.UNKNOWN, NessieServiceException.class),
+        Arguments.of(Status.TOO_MANY_REQUESTS, ErrorCode.UNKNOWN, NessieServiceException.class),
+        Arguments.of(
+            Status.TOO_MANY_REQUESTS,
+            ErrorCode.TOO_MANY_REQUESTS,
+            NessieBackendThrottledException.class),
         Arguments.of(
             Status.NOT_FOUND, ErrorCode.CONTENT_NOT_FOUND, NessieContentNotFoundException.class),
         Arguments.of(
             Status.NOT_FOUND,
             ErrorCode.REFERENCE_NOT_FOUND,
             NessieReferenceNotFoundException.class),
-        Arguments.of(Status.NOT_FOUND, ErrorCode.UNKNOWN, NessieNotFoundException.class),
+        Arguments.of(Status.NOT_FOUND, ErrorCode.UNKNOWN, RuntimeException.class),
         Arguments.of(Status.CONFLICT, ErrorCode.REFERENCE_CONFLICT, NessieConflictException.class),
-        Arguments.of(Status.CONFLICT, ErrorCode.UNKNOWN, NessieConflictException.class),
+        Arguments.of(Status.CONFLICT, ErrorCode.UNKNOWN, RuntimeException.class),
         Arguments.of(
             Status.INTERNAL_SERVER_ERROR, ErrorCode.UNKNOWN, NessieInternalServerException.class));
   }
