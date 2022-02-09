@@ -28,13 +28,14 @@ import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
-import org.projectnessie.versioned.StringStoreWorker.TestEnum;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStoreException;
+import org.projectnessie.versioned.testworker.BaseContent;
+import org.projectnessie.versioned.testworker.CommitMessage;
 
 public abstract class AbstractAssign extends AbstractNestedVersionStore {
-  protected AbstractAssign(VersionStore<String, String, TestEnum> store) {
+  protected AbstractAssign(VersionStore<BaseContent, CommitMessage, BaseContent.Type> store) {
     super(store);
   }
 
@@ -87,9 +88,10 @@ public abstract class AbstractAssign extends AbstractNestedVersionStore {
   public void assignReferenceToFreshMain()
       throws ReferenceNotFoundException, ReferenceAlreadyExistsException,
           ReferenceConflictException {
-    ReferenceInfo<String> main = store.getNamedRef("main", GetNamedRefsParams.DEFAULT);
+    ReferenceInfo<CommitMessage> main = store.getNamedRef("main", GetNamedRefsParams.DEFAULT);
     assertThat(store().getCommits(main.getHash(), false)).isEmpty();
-    try (Stream<ReferenceInfo<String>> refs = store().getNamedRefs(GetNamedRefsParams.DEFAULT)) {
+    try (Stream<ReferenceInfo<CommitMessage>> refs =
+        store().getNamedRefs(GetNamedRefsParams.DEFAULT)) {
       assertThat(refs)
           .extracting(r -> r.getNamedRef().getName())
           .containsExactly(main.getNamedRef().getName());

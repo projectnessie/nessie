@@ -17,21 +17,22 @@ package org.projectnessie.versioned.persist.tests;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.projectnessie.versioned.StringStoreWorker;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.persist.tests.extension.DatabaseAdapterExtension;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapter;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterConfigItem;
 import org.projectnessie.versioned.tests.AbstractVersionStoreTestBase;
+import org.projectnessie.versioned.testworker.BaseContent;
+import org.projectnessie.versioned.testworker.CommitMessage;
 
 @ExtendWith(DatabaseAdapterExtension.class)
 @NessieDbAdapterConfigItem(name = "max.key.list.size", value = "2048")
 public abstract class AbstractDatabaseAdapterVersionStoreTest extends AbstractVersionStoreTestBase {
 
-  @NessieDbAdapter static VersionStore<String, String, StringStoreWorker.TestEnum> store;
+  @NessieDbAdapter static VersionStore<BaseContent, CommitMessage, BaseContent.Type> store;
 
   @Override
-  protected VersionStore<String, String, StringStoreWorker.TestEnum> store() {
+  protected VersionStore<BaseContent, CommitMessage, BaseContent.Type> store() {
     return store;
   }
 
