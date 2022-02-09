@@ -46,6 +46,7 @@ import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.platform.commons.util.AnnotationUtils;
 import org.junit.platform.commons.util.ExceptionUtils;
 import org.junit.platform.commons.util.ReflectionUtils;
+import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.persist.adapter.AdjustableDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
@@ -54,9 +55,6 @@ import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.adapter.DatabaseConnectionProvider;
 import org.projectnessie.versioned.persist.store.PersistVersionStore;
 import org.projectnessie.versioned.persist.tests.SystemPropertiesConfigurer;
-import org.projectnessie.versioned.testworker.BaseContent;
-import org.projectnessie.versioned.testworker.CommitMessage;
-import org.projectnessie.versioned.testworker.SimpleStoreWorker;
 
 /**
  * JUnit extension to supply {@link DatabaseAdapter} and derived {@link VersionStore} to test
@@ -161,13 +159,16 @@ public class DatabaseAdapterExtension
       NessieDbAdapter dbAdapter =
           AnnotationUtils.findAnnotation(field, NessieDbAdapter.class)
               .orElseThrow(IllegalStateException::new);
+
+      StoreWorker<?, ?, ?> storeWorker = createStoreWorker(dbAdapter);
+
       DatabaseAdapter databaseAdapter = createAdapterResource(dbAdapter, context, null);
 
       Object assign;
       if (field.getType().isAssignableFrom(DatabaseAdapter.class)) {
         assign = databaseAdapter;
       } else if (field.getType().isAssignableFrom(VersionStore.class)) {
-        assign = createStore(databaseAdapter);
+        assign = createStore(databaseAdapter, storeWorker);
       } else {
         throw new IllegalStateException("Cannot assign to " + field);
       }
@@ -196,6 +197,8 @@ public class DatabaseAdapterExtension
             .findAnnotation(NessieDbAdapter.class)
             .orElseThrow(IllegalStateException::new);
 
+    StoreWorker<?, ?, ?> storeWorker = createStoreWorker(nessieDbAdapter);
+
     DatabaseAdapter databaseAdapter =
         createAdapterResource(nessieDbAdapter, context, parameterContext);
 
@@ -207,11 +210,19 @@ public class DatabaseAdapterExtension
     if (parameter.getType().isAssignableFrom(DatabaseAdapter.class)) {
       assign = databaseAdapter;
     } else if (parameter.getType().isAssignableFrom(VersionStore.class)) {
-      assign = createStore(databaseAdapter);
+      assign = createStore(databaseAdapter, storeWorker);
     } else {
       throw new IllegalStateException("Cannot assign to " + parameter);
     }
     return assign;
+  }
+
+  private StoreWorker<?, ?, ?> createStoreWorker(NessieDbAdapter dbAdapter) {
+    try {
+      return dbAdapter.storeWorker().getDeclaredConstructor().newInstance();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   static <A extends Annotation> Optional<A> findAnnotation(
@@ -346,9 +357,9 @@ public class DatabaseAdapterExtension
     return (CONNECTOR) connectionProvider.getConnectionProvider();
   }
 
-  private static VersionStore<BaseContent, CommitMessage, BaseContent.Type> createStore(
-      DatabaseAdapter databaseAdapter) {
-    return new PersistVersionStore<>(databaseAdapter, SimpleStoreWorker.INSTANCE);
+  private static VersionStore<?, ?, ?> createStore(
+      DatabaseAdapter databaseAdapter, StoreWorker<?, ?, ?> storeWorker) {
+    return new PersistVersionStore<>(databaseAdapter, storeWorker);
   }
 
   private void assertValidFieldCandidate(Field field) {

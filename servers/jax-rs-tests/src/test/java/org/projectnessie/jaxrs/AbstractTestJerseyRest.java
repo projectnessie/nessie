@@ -22,6 +22,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.projectnessie.jaxrs.ext.NessieJaxRsExtension;
 import org.projectnessie.jaxrs.ext.NessieUri;
+import org.projectnessie.server.store.TableCommitMetaStoreWorker;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.tests.extension.DatabaseAdapterExtension;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapter;
@@ -30,7 +31,8 @@ import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapter;
 @ExtendWith(DatabaseAdapterExtension.class)
 abstract class AbstractTestJerseyRest extends AbstractRestSecurityContext {
 
-  @NessieDbAdapter static DatabaseAdapter databaseAdapter;
+  @NessieDbAdapter(storeWorker = TableCommitMetaStoreWorker.class)
+  static DatabaseAdapter databaseAdapter;
 
   @RegisterExtension
   static org.projectnessie.jaxrs.ext.NessieJaxRsExtension server =

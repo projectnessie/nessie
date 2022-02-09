@@ -20,6 +20,8 @@ import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import org.projectnessie.versioned.StoreWorker;
+import org.projectnessie.versioned.testworker.SimpleStoreWorker;
 
 @Target({ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
@@ -56,4 +58,6 @@ public @interface NessieDbAdapter {
 
   /** Whether to initialize the adapter, defaults to {@code true}. */
   boolean initializeRepo() default true;
+
+  Class<? extends StoreWorker<?, ?, ?>> storeWorker() default SimpleStoreWorker.class;
 }
