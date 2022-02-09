@@ -1,0 +1,106 @@
+openapi: 3.0.3
+info:
+  title: Nessie Webhooks API
+  contact:
+    name: Project Nessie
+    url: https://projectnessie.org
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: "0.1"
+paths:
+  /api/v1/webhooks:
+    post:
+      summary: Adds a new webhook.
+      description: Adds a new webhook.
+      responses:
+        "201":
+          description: Created successfully.
+          content:
+            application/json:
+              schema:
+                title: webhookId
+                type: string
+                description: The ID of the recently created webhook.
+        "400":
+          description: Invalid input.
+      requestBody:
+        description: The webhook to create.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Webhook'
+            examples:
+              simpleUrl:
+                $ref: '#/components/examples/simpleUrl'
+    get:
+      summary: Get a list of webhooks.
+      description: Get a list of webhooks associated with this nessie repository.
+      responses:
+        default: 
+          description: all webhooks associated with this nessie repo
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Webhook'
+                nullable: false
+  /api/v1/webhooks/{webhookId}:
+    put:
+      summary: Updates a webhook.
+      requestBody:
+        description: The webhook to update.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Webhook'
+            examples:
+              simpleUrl:
+                $ref: '#/components/examples/simpleUrl'
+      responses:
+        "201":
+          description: Updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Webhook'
+    get:
+      summary: Describes a webhook.
+      responses:
+        default:
+          description: The webhook information.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Webhook'
+    delete:
+      summary: Deletes a webhook.
+      responses:
+        default:
+          description: The webhook information that just got deleted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Webhook'
+components:
+  schemas:
+    Webhook:
+      title: Webhook
+      required:
+        - url
+      type: object
+      properties:
+        url:
+          pattern: \S # TODO: must be an url
+          type: string
+          nullable: false
+          description: The URL to callback.
+        jsonpath:
+          type: string
+          description: Optional, jsonpath filter applied to nessie events. The hook URL will get callback iff the jsonpath filter matches.
+  examples:
+    simpleUrl:
+      value:
+        type: Webhook
+        url: http://example.org/webhook/endpoint
