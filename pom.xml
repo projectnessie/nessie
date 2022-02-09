@@ -186,7 +186,7 @@
     <protobuf.version>3.19.4</protobuf.version>
     <quarkus.version>2.7.1.Final</quarkus.version>
     <reactor.version>2020.0.15</reactor.version>
-    <rocksdb.version>6.27.3</rocksdb.version>
+    <rocksdb.version>6.28.2</rocksdb.version>
     <scala2.12.version>2.12.13</scala2.12.version>
     <scala2.13.version>2.13.8</scala2.13.version>
     <serverless.version>1.5</serverless.version>
