@@ -33,6 +33,7 @@ import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.MetricsVersionStore;
 import org.projectnessie.versioned.TracingVersionStore;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.persist.adapter.ContentVariant;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.store.PersistVersionStore;
 import org.slf4j.Logger;
@@ -78,12 +79,30 @@ public class ConfigurableVersionStoreFactory {
 
     try {
       LOGGER.info("Using {} Version store", versionStoreType);
+
+      TableCommitMetaStoreWorker storeWorker = new TableCommitMetaStoreWorker();
+
       DatabaseAdapter databaseAdapter =
-          databaseAdapterBuilder.select(new Literal(versionStoreType)).get().newDatabaseAdapter();
+          databaseAdapterBuilder
+              .select(new Literal(versionStoreType))
+              .get()
+              .newDatabaseAdapter(
+                  onRefContent -> {
+                    Content.Type t = storeWorker.getType(onRefContent);
+                    switch (t) {
+                      case ICEBERG_TABLE:
+                      case ICEBERG_VIEW:
+                        return ContentVariant.WITH_GLOBAL;
+                      case DELTA_LAKE_TABLE:
+                        return ContentVariant.ON_REF;
+                      default:
+                        throw new IllegalStateException("Unknown type " + t);
+                    }
+                  });
       databaseAdapter.initializeRepo(serverConfig.getDefaultBranch());
 
       VersionStore<Content, CommitMeta, Content.Type> versionStore =
-          new PersistVersionStore<>(databaseAdapter, new TableCommitMetaStoreWorker());
+          new PersistVersionStore<>(databaseAdapter, storeWorker);
 
       if (storeConfig.isTracingEnabled()) {
         versionStore = new TracingVersionStore<>(versionStore);

@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.persist.nontx;
 
+import org.projectnessie.versioned.persist.adapter.ContentVariantSupplier;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.adapter.DatabaseConnectionProvider;
@@ -27,7 +28,9 @@ public abstract class NonTransactionalDatabaseAdapterFactory<
         CONNECTOR> {
 
   protected abstract DatabaseAdapter create(
-      NonTransactionalDatabaseAdapterConfig config, CONNECTOR connector);
+      NonTransactionalDatabaseAdapterConfig config,
+      CONNECTOR connector,
+      ContentVariantSupplier contentVariantSupplier);
 
   @Override
   public Builder<
@@ -57,8 +60,8 @@ public abstract class NonTransactionalDatabaseAdapterFactory<
     }
 
     @Override
-    public DatabaseAdapter build() {
-      return create(getConfig(), getConnector());
+    public DatabaseAdapter build(ContentVariantSupplier contentVariantSupplier) {
+      return create(getConfig(), getConnector(), contentVariantSupplier);
     }
   }
 }

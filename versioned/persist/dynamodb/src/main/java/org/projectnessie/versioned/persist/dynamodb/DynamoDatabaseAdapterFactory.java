@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.persist.dynamodb;
 
+import org.projectnessie.versioned.persist.adapter.ContentVariantSupplier;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterFactory;
@@ -31,7 +32,9 @@ public class DynamoDatabaseAdapterFactory
 
   @Override
   protected DatabaseAdapter create(
-      NonTransactionalDatabaseAdapterConfig config, DynamoDatabaseClient dynamoDatabaseClient) {
-    return new DynamoDatabaseAdapter(config, dynamoDatabaseClient);
+      NonTransactionalDatabaseAdapterConfig config,
+      DynamoDatabaseClient dynamoDatabaseClient,
+      ContentVariantSupplier contentVariantSupplier) {
+    return new DynamoDatabaseAdapter(config, dynamoDatabaseClient, contentVariantSupplier);
   }
 }

@@ -154,9 +154,14 @@ public class ProtoSerialization {
         .build();
   }
 
-  public static ContentIdAndBytes protoToContentIdAndBytes(AdapterTypes.ContentIdWithBytes proto) {
+  public static ContentIdAndBytes protoToContentIdAndBytes(
+      AdapterTypes.ContentIdWithBytes proto, int type) {
     return ContentIdAndBytes.of(
-        ContentId.of(proto.getContentId().getId()), (byte) proto.getType(), proto.getValue());
+        ContentId.of(proto.getContentId().getId()), (byte) type, proto.getValue());
+  }
+
+  public static ContentIdAndBytes protoToContentIdAndBytes(AdapterTypes.ContentIdWithBytes proto) {
+    return protoToContentIdAndBytes(proto, (byte) proto.getType());
   }
 
   public static AdapterTypes.ContentIdWithType toProto(ContentIdWithType x) {

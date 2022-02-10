@@ -68,6 +68,7 @@ import org.projectnessie.versioned.persist.adapter.ContentAndState;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
 import org.projectnessie.versioned.persist.adapter.ContentIdWithType;
+import org.projectnessie.versioned.persist.adapter.ContentVariantSupplier;
 import org.projectnessie.versioned.persist.adapter.Difference;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
@@ -103,8 +104,9 @@ public abstract class NonTransactionalDatabaseAdapter<
         CONFIG extends NonTransactionalDatabaseAdapterConfig>
     extends AbstractDatabaseAdapter<NonTransactionalOperationContext, CONFIG> {
 
-  protected NonTransactionalDatabaseAdapter(CONFIG config) {
-    super(config);
+  protected NonTransactionalDatabaseAdapter(
+      CONFIG config, ContentVariantSupplier contentVariantSupplier) {
+    super(config, contentVariantSupplier);
   }
 
   @Override
@@ -575,7 +577,10 @@ public abstract class NonTransactionalDatabaseAdapter<
 
     return takeUntilIncludeLast(stream, x -> remaining.isEmpty())
         .flatMap(e -> e.getPutsList().stream())
-        .map(ProtoSerialization::protoToContentIdAndBytes)
+        .map(
+            c ->
+                ProtoSerialization.protoToContentIdAndBytes(
+                    c, contentTypeExtractor.applyAsInt(c.getValue())))
         .filter(kct -> remaining.remove(kct.getContentId()));
   }
 
