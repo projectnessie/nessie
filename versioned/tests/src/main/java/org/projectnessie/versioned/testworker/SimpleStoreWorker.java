@@ -25,6 +25,7 @@ import com.google.protobuf.ByteString;
 import java.util.Optional;
 import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.StoreWorker;
+import org.projectnessie.versioned.testworker.BaseContent.Type;
 
 /**
  * {@link StoreWorker} implementation for tests using types that are independent of those in the
@@ -110,6 +111,14 @@ public final class SimpleStoreWorker
   }
 
   @Override
+  public Type getType(ByteString onRefContent) {
+    String serialized = onRefContent.toStringUtf8();
+    int i = serialized.indexOf(':');
+    String typeString = serialized.substring(0, i);
+    return BaseContent.Type.valueOf(typeString);
+  }
+
+  @Override
   public BaseContent.Type getType(Byte payload) {
     return BaseContent.Type.values()[payload];
   }
@@ -126,12 +135,7 @@ public final class SimpleStoreWorker
   }
 
   @Override
-  public boolean requiresGlobalState(BaseContent content) {
-    return content instanceof WithGlobalStateContent;
-  }
-
-  @Override
-  public boolean requiresGlobalState(BaseContent.Type type) {
+  public boolean requiresGlobalState(Enum<BaseContent.Type> type) {
     return type == BaseContent.Type.WITH_GLOBAL_STATE;
   }
 
