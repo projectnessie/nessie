@@ -28,6 +28,8 @@ import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.authz.BatchAccessChecker;
 import org.projectnessie.services.authz.ServerAccessContext;
 import org.projectnessie.services.config.ServerConfig;
+import org.projectnessie.services.events.EventObserver;
+import org.projectnessie.services.events.LogSpammingEventObserver;
 import org.projectnessie.versioned.DetachedRef;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
@@ -42,6 +44,7 @@ abstract class BaseApiImpl {
   private final VersionStore<Content, CommitMeta, Content.Type> store;
   private final Authorizer authorizer;
   private final Principal principal;
+  private final EventObserver observer;
 
   protected BaseApiImpl(
       ServerConfig config,
@@ -52,6 +55,7 @@ abstract class BaseApiImpl {
     this.store = store;
     this.authorizer = authorizer;
     this.principal = principal;
+    this.observer = new LogSpammingEventObserver();
   }
 
   WithHash<NamedRef> namedRefWithHashOrThrow(@Nullable String namedRef, @Nullable String hashOnRef)
@@ -121,5 +125,9 @@ abstract class BaseApiImpl {
 
   protected ServerAccessContext createAccessContext() {
     return ServerAccessContext.of(UUID.randomUUID().toString(), getPrincipal());
+  }
+
+  protected EventObserver getObserver() {
+    return observer;
   }
 }

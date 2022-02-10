@@ -61,6 +61,7 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceAlreadyExistsException;
 import org.projectnessie.error.NessieReferenceConflictException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
+import org.projectnessie.events.CommitEvent;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
@@ -521,13 +522,24 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     }
 
     try {
+      CommitMeta updatedMeta = commitMetaUpdate().apply(commitMeta);
       Hash newHash =
           getStore()
               .commit(
                   BranchName.of(Optional.ofNullable(branch).orElse(getConfig().getDefaultBranch())),
                   Optional.ofNullable(hash).map(Hash::of),
-                  commitMetaUpdate().apply(commitMeta),
+                  updatedMeta,
                   ops);
+
+      CommitEvent commitEvent =
+          CommitEvent.builder()
+              .reference(Branch.of(branch, hash))
+              .newHash(newHash.asString())
+              .metadata(updatedMeta)
+              .operations(operations.getOperations())
+              .build();
+
+      getObserver().notify(commitEvent);
 
       return Branch.of(branch, newHash.asString());
     } catch (ReferenceNotFoundException e) {
