@@ -1013,7 +1013,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
                 nonGlobal.put(put.getKey(), put.getValue());
                 keyToContentIds.put(put.getKey(), put.getContentId());
                 ContentVariant contentVariant =
-                    contentVariantSupplier.getContentVariant(put.getValue());
+                    contentVariantSupplier.getContentVariant(put.getType());
                 switch (contentVariant) {
                   case ON_REF:
                     break;

@@ -22,7 +22,6 @@ import static org.junit.platform.commons.util.ReflectionUtils.isPrivate;
 import static org.junit.platform.commons.util.ReflectionUtils.makeAccessible;
 import static org.projectnessie.versioned.persist.tests.SystemPropertiesConfigurer.CONFIG_NAME_PREFIX;
 
-import com.google.protobuf.ByteString;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
@@ -306,10 +305,9 @@ public class DatabaseAdapterExtension
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
-  private static ContentVariant contentVariant(
-      StoreWorker<?, ?, ?> storeWorker, ByteString onRefContent) {
-    Enum type = storeWorker.getType(onRefContent);
-    if (storeWorker.requiresGlobalState(type)) {
+  private static ContentVariant contentVariant(StoreWorker<?, ?, ?> storeWorker, byte type) {
+    Enum t = storeWorker.getType(type);
+    if (storeWorker.requiresGlobalState(t)) {
       return ContentVariant.WITH_GLOBAL;
     }
     return ContentVariant.ON_REF;

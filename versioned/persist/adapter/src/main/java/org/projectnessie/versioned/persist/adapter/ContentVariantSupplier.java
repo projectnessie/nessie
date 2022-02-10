@@ -15,9 +15,7 @@
  */
 package org.projectnessie.versioned.persist.adapter;
 
-import com.google.protobuf.ByteString;
-
 @FunctionalInterface
 public interface ContentVariantSupplier {
-  ContentVariant getContentVariant(ByteString onRefRepresentation);
+  ContentVariant getContentVariant(byte type);
 }
