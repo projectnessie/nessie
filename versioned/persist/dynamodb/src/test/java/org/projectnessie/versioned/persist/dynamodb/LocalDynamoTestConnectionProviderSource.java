@@ -78,8 +78,9 @@ public class LocalDynamoTestConnectionProviderSource extends DynamoTestConnectio
     container.start();
 
     Integer port = container.getFirstMappedPort();
+    String host = container.getHost();
 
-    endpointURI = String.format("http://localhost:%d", port);
+    endpointURI = String.format("http://%s:%d", host, port);
   }
 
   @Override
