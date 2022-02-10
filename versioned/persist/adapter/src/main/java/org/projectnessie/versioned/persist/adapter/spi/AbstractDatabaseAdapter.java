@@ -69,6 +69,8 @@ import org.projectnessie.versioned.persist.adapter.CommitAttempt;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentAndState;
 import org.projectnessie.versioned.persist.adapter.ContentId;
+import org.projectnessie.versioned.persist.adapter.ContentVariant;
+import org.projectnessie.versioned.persist.adapter.ContentVariantSupplier;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.Difference;
@@ -105,6 +107,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     implements DatabaseAdapter {
 
   protected final CONFIG config;
+  protected final ContentVariantSupplier contentVariantSupplier;
 
   @SuppressWarnings("UnstableApiUsage")
   public static final Hash NO_ANCESTOR =
@@ -114,9 +117,10 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
 
   protected static long COMMIT_LOG_HASH_SEED = 946928273206945677L;
 
-  protected AbstractDatabaseAdapter(CONFIG config) {
+  protected AbstractDatabaseAdapter(CONFIG config, ContentVariantSupplier contentVariantSupplier) {
     Objects.requireNonNull(config, "config parameter must not be null");
     this.config = config;
+    this.contentVariantSupplier = contentVariantSupplier;
   }
 
   @Override
@@ -997,7 +1001,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
 
     Map<Key, ByteString> nonGlobal = new HashMap<>();
     Map<Key, ContentId> keyToContentIds = new HashMap<>();
-    Set<ContentId> contentIds = new HashSet<>();
+    Set<ContentId> contentIdsForGlobal = new HashSet<>();
     try (Stream<CommitLogEntry> log =
         takeUntilExcludeLast(readCommitLogStream(ctx, refHead), e -> remainingKeys.isEmpty())) {
       log.peek(entry -> entry.getDeletes().forEach(remainingKeys::remove))
@@ -1008,11 +1012,21 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
               put -> {
                 nonGlobal.put(put.getKey(), put.getValue());
                 keyToContentIds.put(put.getKey(), put.getContentId());
-                contentIds.add(put.getContentId());
+                ContentVariant contentVariant =
+                    contentVariantSupplier.getContentVariant(put.getValue());
+                switch (contentVariant) {
+                  case ON_REF:
+                    break;
+                  case WITH_GLOBAL:
+                    contentIdsForGlobal.add(put.getContentId());
+                    break;
+                  default:
+                    throw new IllegalStateException("Unknown content variant " + contentVariant);
+                }
               });
     }
 
-    Map<ContentId, ByteString> globals = fetchGlobalStates(ctx, contentIds);
+    Map<ContentId, ByteString> globals = fetchGlobalStates(ctx, contentIdsForGlobal);
 
     return nonGlobal.entrySet().stream()
         .collect(

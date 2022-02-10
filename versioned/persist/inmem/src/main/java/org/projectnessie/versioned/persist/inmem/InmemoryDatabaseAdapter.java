@@ -31,6 +31,7 @@ import java.util.stream.Stream;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
+import org.projectnessie.versioned.persist.adapter.ContentVariantSupplier;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyWithType;
 import org.projectnessie.versioned.persist.adapter.RefLog;
@@ -50,8 +51,10 @@ public class InmemoryDatabaseAdapter
   private final ByteString keyPrefix;
 
   public InmemoryDatabaseAdapter(
-      NonTransactionalDatabaseAdapterConfig config, InmemoryStore store) {
-    super(config);
+      NonTransactionalDatabaseAdapterConfig config,
+      InmemoryStore store,
+      ContentVariantSupplier contentVariantSupplier) {
+    super(config, contentVariantSupplier);
 
     this.keyPrefix = ByteString.copyFromUtf8(config.getRepositoryId() + ':');
 

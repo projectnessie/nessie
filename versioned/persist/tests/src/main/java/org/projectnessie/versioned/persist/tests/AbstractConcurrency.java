@@ -54,6 +54,8 @@ import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt.Builder;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
+import org.projectnessie.versioned.testworker.SimpleStoreWorker;
+import org.projectnessie.versioned.testworker.WithGlobalStateContent;
 
 /**
  * Performs concurrent commits with four different strategies, just verifying that either no
@@ -179,17 +181,23 @@ public abstract class AbstractConcurrency {
                   for (int ki = 0; ki < keys.size(); ki++) {
                     Key key = keys.get(ki);
                     ContentId contentId = keyToContentId.get(key);
+                    String newGlobal =
+                        Integer.toString(
+                            Integer.parseInt(currentStates.get(ki).toStringUtf8()) + 1);
+                    WithGlobalStateContent c =
+                        WithGlobalStateContent.withGlobal(newGlobal, "", contentId.getId());
                     commitAttempt.putGlobal(
-                        contentId,
-                        ByteString.copyFromUtf8(
-                            Integer.toString(
-                                Integer.parseInt(currentStates.get(ki).toStringUtf8()) + 1)));
+                        contentId, SimpleStoreWorker.INSTANCE.toStoreGlobalState(c));
                     if (!variation.sharedKeys) {
                       commitAttempt.putExpectedStates(
                           contentId, Optional.of(currentStates.get(ki)));
                     }
                     commitAttempt.addPuts(
-                        KeyWithBytes.of(keys.get(ki), contentId, (byte) 0, ByteString.EMPTY));
+                        KeyWithBytes.of(
+                            keys.get(ki),
+                            contentId,
+                            SimpleStoreWorker.INSTANCE.getPayload(c),
+                            SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(c)));
                   }
 
                   try {
@@ -227,8 +235,14 @@ public abstract class AbstractConcurrency {
                     ByteString.copyFromUtf8("initial commit for " + branch.getName()));
         for (Key k : branchKeys.getValue()) {
           ContentId contentId = keyToContentId.get(k);
-          commitAttempt.addPuts(KeyWithBytes.of(k, contentId, (byte) 0, ByteString.EMPTY));
-          commitAttempt.putGlobal(contentId, ByteString.copyFromUtf8("0"));
+          WithGlobalStateContent c = WithGlobalStateContent.withGlobal("0", "", contentId.getId());
+          commitAttempt.addPuts(
+              KeyWithBytes.of(
+                  k,
+                  contentId,
+                  SimpleStoreWorker.INSTANCE.getPayload(c),
+                  SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(c)));
+          commitAttempt.putGlobal(contentId, SimpleStoreWorker.INSTANCE.toStoreGlobalState(c));
         }
         commitAndRecord(globalStates, onRefStates, branch, commitAttempt);
       }

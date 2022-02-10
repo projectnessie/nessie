@@ -22,6 +22,7 @@ import static org.junit.platform.commons.util.ReflectionUtils.isPrivate;
 import static org.junit.platform.commons.util.ReflectionUtils.makeAccessible;
 import static org.projectnessie.versioned.persist.tests.SystemPropertiesConfigurer.CONFIG_NAME_PREFIX;
 
+import com.google.protobuf.ByteString;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
@@ -49,6 +50,7 @@ import org.junit.platform.commons.util.ReflectionUtils;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.persist.adapter.AdjustableDatabaseAdapterConfig;
+import org.projectnessie.versioned.persist.adapter.ContentVariant;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
@@ -162,7 +164,8 @@ public class DatabaseAdapterExtension
 
       StoreWorker<?, ?, ?> storeWorker = createStoreWorker(dbAdapter);
 
-      DatabaseAdapter databaseAdapter = createAdapterResource(dbAdapter, context, null);
+      DatabaseAdapter databaseAdapter =
+          createAdapterResource(dbAdapter, context, null, storeWorker);
 
       Object assign;
       if (field.getType().isAssignableFrom(DatabaseAdapter.class)) {
@@ -200,7 +203,7 @@ public class DatabaseAdapterExtension
     StoreWorker<?, ?, ?> storeWorker = createStoreWorker(nessieDbAdapter);
 
     DatabaseAdapter databaseAdapter =
-        createAdapterResource(nessieDbAdapter, context, parameterContext);
+        createAdapterResource(nessieDbAdapter, context, parameterContext, storeWorker);
 
     if (nessieDbAdapter.initializeRepo()) {
       reinit(databaseAdapter);
@@ -245,7 +248,8 @@ public class DatabaseAdapterExtension
   static DatabaseAdapter createAdapterResource(
       NessieDbAdapter adapterAnnotation,
       ExtensionContext context,
-      ParameterContext parameterContext) {
+      ParameterContext parameterContext,
+      StoreWorker<?, ?, ?> storeWorker) {
     DatabaseAdapterFactory<
             DatabaseAdapterConfig, AdjustableDatabaseAdapterConfig, DatabaseConnectionProvider<?>>
         factory =
@@ -298,7 +302,17 @@ public class DatabaseAdapterExtension
         .configure(applyCustomConfig)
         .withConnector(getConnectionProvider(context));
 
-    return builder.build();
+    return builder.build(onRefContent -> contentVariant(storeWorker, onRefContent));
+  }
+
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  private static ContentVariant contentVariant(
+      StoreWorker<?, ?, ?> storeWorker, ByteString onRefContent) {
+    Enum type = storeWorker.getType(onRefContent);
+    if (storeWorker.requiresGlobalState(type)) {
+      return ContentVariant.WITH_GLOBAL;
+    }
+    return ContentVariant.ON_REF;
   }
 
   private static Function<AdjustableDatabaseAdapterConfig, DatabaseAdapterConfig>

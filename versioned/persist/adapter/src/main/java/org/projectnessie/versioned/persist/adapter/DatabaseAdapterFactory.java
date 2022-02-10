@@ -71,7 +71,7 @@ public interface DatabaseAdapterFactory<
       return connector;
     }
 
-    public abstract DatabaseAdapter build();
+    public abstract DatabaseAdapter build(ContentVariantSupplier contentVariantSupplier);
 
     public Builder<Config, AdjustableConfig, Connector> configure(
         Function<AdjustableConfig, Config> configurator) {

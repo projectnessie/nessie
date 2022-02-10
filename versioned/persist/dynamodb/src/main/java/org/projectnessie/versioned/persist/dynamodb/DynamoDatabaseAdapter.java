@@ -43,6 +43,7 @@ import org.projectnessie.versioned.BackendLimitExceededException;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
+import org.projectnessie.versioned.persist.adapter.ContentVariantSupplier;
 import org.projectnessie.versioned.persist.adapter.KeyList;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyWithType;
@@ -83,8 +84,10 @@ public class DynamoDatabaseAdapter
   private final Map<String, AttributeValue> globalPointerKeyMap;
 
   public DynamoDatabaseAdapter(
-      NonTransactionalDatabaseAdapterConfig config, DynamoDatabaseClient c) {
-    super(config);
+      NonTransactionalDatabaseAdapterConfig config,
+      DynamoDatabaseClient c,
+      ContentVariantSupplier contentVariantSupplier) {
+    super(config, contentVariantSupplier);
 
     Objects.requireNonNull(
         c, "Requires a non-null DynamoDatabaseClient from DynamoDatabaseAdapterConfig");

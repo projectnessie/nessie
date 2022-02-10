@@ -77,6 +77,7 @@ import org.projectnessie.versioned.persist.adapter.ContentAndState;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
 import org.projectnessie.versioned.persist.adapter.ContentIdWithType;
+import org.projectnessie.versioned.persist.adapter.ContentVariantSupplier;
 import org.projectnessie.versioned.persist.adapter.Difference;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
@@ -103,8 +104,11 @@ public abstract class TxDatabaseAdapter
 
   private final TxConnectionProvider<?> db;
 
-  public TxDatabaseAdapter(TxDatabaseAdapterConfig config, TxConnectionProvider<?> db) {
-    super(config);
+  public TxDatabaseAdapter(
+      TxDatabaseAdapterConfig config,
+      TxConnectionProvider<?> db,
+      ContentVariantSupplier contentVariantSupplier) {
+    super(config, contentVariantSupplier);
 
     // get the externally configured TxConnectionProvider
     Objects.requireNonNull(

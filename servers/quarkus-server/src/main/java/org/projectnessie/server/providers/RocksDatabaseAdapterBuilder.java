@@ -20,6 +20,7 @@ import static org.projectnessie.server.config.VersionStoreConfig.VersionStoreTyp
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 import org.projectnessie.server.config.VersionStoreConfig;
+import org.projectnessie.versioned.persist.adapter.ContentVariantSupplier;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.rocks.ImmutableRocksDbConfig;
@@ -34,7 +35,7 @@ public class RocksDatabaseAdapterBuilder implements DatabaseAdapterBuilder {
   @Inject NonTransactionalDatabaseAdapterConfig config;
 
   @Override
-  public DatabaseAdapter newDatabaseAdapter() {
+  public DatabaseAdapter newDatabaseAdapter(ContentVariantSupplier contentVariantSupplier) {
     RocksDbInstance rocksDbInstance = new RocksDbInstance();
     rocksDbInstance.configure(
         ImmutableRocksDbConfig.builder().dbPath(rocksConfig.getDbPath()).build());
@@ -44,6 +45,6 @@ public class RocksDatabaseAdapterBuilder implements DatabaseAdapterBuilder {
         .newBuilder()
         .withConfig(config)
         .withConnector(rocksDbInstance)
-        .build();
+        .build(contentVariantSupplier);
   }
 }
