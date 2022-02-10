@@ -48,8 +48,6 @@ public final class SimpleStoreWorker
         }
       };
 
-  private SimpleStoreWorker() {}
-
   @Override
   public ByteString toStoreOnReferenceState(BaseContent content) {
     BaseContent.Type type = getType(content);
