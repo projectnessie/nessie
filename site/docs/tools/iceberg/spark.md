@@ -13,7 +13,7 @@ In pyspark this would look like
 ``` python
 SparkSession.builder
     .config('spark.jars.packages',
-            'org.apache.iceberg:iceberg-spark3-runtime:{{ versions.iceberg }}')
+            'org.apache.iceberg:iceberg-spark-runtime-3.2_2.12:{{ versions.iceberg }}')
     ... rest of spark config
     .getOrCreate()
 ```
@@ -63,7 +63,7 @@ These are set as follows in code (or through other methods as described [here](h
 
     //for a local spark instance
     conf.set("spark.jars.packages",
-            "org.apache.iceberg:iceberg-spark3-runtime:{{ versions.iceberg }},org.projectnessie:nessie-spark-extensions:{{ versions.java }}")
+            "org.apache.iceberg:iceberg-spark-runtime-3.2_2.12:{{ versions.iceberg }},org.projectnessie:nessie-spark-extensions:{{ versions.java }}")
         .set("spark.sql.extensions", 
             "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions,org.projectnessie.spark.extensions.NessieSparkSessionExtensions")
         .set("spark.sql.catalog.nessie.uri", url)
@@ -93,7 +93,7 @@ These are set as follows in code (or through other methods as described [here](h
     # here we are assuming NONE authorisation
     spark = SparkSession.builder \
             .config("spark.jars.packages",
-                "org.apache.iceberg:iceberg-spark3-runtime:{{ versions.iceberg }},org.projectnessie:nessie-spark-extensions:{{ versions.java }}") \
+                "org.apache.iceberg:iceberg-spark-runtime-3.2_2.12:{{ versions.iceberg }},org.projectnessie:nessie-spark-extensions:{{ versions.java }}") \
             .config("spark.sql.extensions", 
                 "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions,org.projectnessie.spark.extensions.NessieSparkSessionExtensions") \
             .config("spark.sql.catalog.nessie.uri", url) \

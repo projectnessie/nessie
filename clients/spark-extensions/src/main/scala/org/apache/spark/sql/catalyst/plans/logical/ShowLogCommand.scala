@@ -19,7 +19,7 @@ import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.types.{DataTypes, Metadata, StructField, StructType}
 
 case class ShowLogCommand(refName: Option[String], catalog: Option[String])
-    extends Command {
+    extends LeafCommand {
 
   override lazy val output: Seq[Attribute] = new StructType(
     Array[StructField](
