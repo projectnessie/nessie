@@ -22,6 +22,8 @@ package org.projectnessie.versioned.persist.adapter;
  * global state.
  */
 public enum ContentVariant {
+  /** Content is only stored in Nessie commits. */
   ON_REF,
+  /** Content is stored in Nessie commits and requires global state. */
   WITH_GLOBAL
 }

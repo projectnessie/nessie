@@ -357,10 +357,9 @@ public abstract class AbstractCommitScenarios {
                     ContentId.of(cid),
                     SimpleStoreWorker.INSTANCE.getPayload(newContent),
                     SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(newContent)))
-            .putGlobal(
-                ContentId.of("id-" + i), SimpleStoreWorker.INSTANCE.toStoreGlobalState(newContent))
+            .putGlobal(ContentId.of(cid), SimpleStoreWorker.INSTANCE.toStoreGlobalState(newContent))
             .putExpectedStates(
-                ContentId.of("id-" + i),
+                ContentId.of(cid),
                 Optional.of(SimpleStoreWorker.INSTANCE.toStoreGlobalState(expectedContent)));
       }
 
