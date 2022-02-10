@@ -25,7 +25,8 @@ extra:
   versions:
     java: 0.20.1
     python: v0.20.1
-    iceberg: 0.12.0
+    iceberg: 0.13.0
+    iceberg_spark32: 3.2_2.12
   analytics:
     provider: google
     property: UA-177850801-1

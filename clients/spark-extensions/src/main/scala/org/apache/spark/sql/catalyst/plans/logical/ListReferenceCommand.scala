@@ -19,7 +19,6 @@ import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.types.{DataTypes, Metadata, StructField, StructType}
 
 case class ListReferenceCommand(catalog: Option[String]) extends Command {
-
   override lazy val output: Seq[Attribute] = new StructType(
     Array[StructField](
       StructField(
@@ -46,4 +45,5 @@ case class ListReferenceCommand(catalog: Option[String]) extends Command {
   override def simpleString(maxFields: Int): String = {
     s"ListReference"
   }
+
 }

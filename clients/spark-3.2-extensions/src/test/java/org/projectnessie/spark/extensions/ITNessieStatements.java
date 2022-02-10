@@ -13,24 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.spark.sql.execution.datasources.v2
-import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.connector.catalog.CatalogPlugin
-import org.projectnessie.client.api.NessieApiV1
+package org.projectnessie.spark.extensions;
 
-abstract class NessieExec(
-    currentCatalog: CatalogPlugin,
-    catalog: Option[String]
-) extends V2CommandExec {
+import org.junit.jupiter.api.BeforeAll;
 
-  protected def runInternal(api: NessieApiV1): Seq[InternalRow]
+public class ITNessieStatements extends AbstractSparkSqlTest {
 
-  override protected def run(): Seq[InternalRow] = {
-    val api = NessieUtils.nessieAPI(currentCatalog, catalog);
-    try {
-      runInternal(api)
-    } finally {
-      api.close()
-    }
+  @BeforeAll
+  protected static void useNessieExtensions() {
+    conf.set(
+        "spark.sql.extensions",
+        "org.projectnessie.spark.extensions.NessieSpark32SessionExtensions");
   }
 }

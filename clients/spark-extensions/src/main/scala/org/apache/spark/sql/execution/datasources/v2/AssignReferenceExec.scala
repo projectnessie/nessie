@@ -30,7 +30,15 @@ case class AssignReferenceExec(
     toRefName: Option[String],
     toHash: Option[String],
     catalog: Option[String]
-) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog) {
+) extends BaseAssignReferenceExec(
+      output,
+      branch,
+      isBranch,
+      currentCatalog,
+      toRefName,
+      toHash,
+      catalog
+    ) {
 
   override protected def runInternal(
       api: NessieApiV1
@@ -65,6 +73,6 @@ case class AssignReferenceExec(
   }
 
   override def simpleString(maxFields: Int): String = {
-    s"AssignReferenceExec ${catalog.getOrElse(currentCatalog.name())} ${branch} "
+    s"BaseAssignReferenceExec ${catalog.getOrElse(currentCatalog.name())} ${branch} "
   }
 }

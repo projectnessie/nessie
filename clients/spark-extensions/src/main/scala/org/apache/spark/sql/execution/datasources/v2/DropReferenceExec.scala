@@ -27,7 +27,13 @@ case class DropReferenceExec(
     currentCatalog: CatalogPlugin,
     isBranch: Boolean,
     catalog: Option[String]
-) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog) {
+) extends BaseDropReferenceExec(
+      output,
+      branch,
+      currentCatalog,
+      isBranch,
+      catalog
+    ) {
 
   override protected def runInternal(
       api: NessieApiV1

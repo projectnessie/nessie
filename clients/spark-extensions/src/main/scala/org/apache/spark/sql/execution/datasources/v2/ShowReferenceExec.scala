@@ -25,7 +25,7 @@ case class ShowReferenceExec(
     output: Seq[Attribute],
     currentCatalog: CatalogPlugin,
     catalog: Option[String]
-) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog) {
+) extends BaseShowReferenceExec(output, currentCatalog, catalog) {
 
   override protected def runInternal(
       api: NessieApiV1

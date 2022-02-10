@@ -23,7 +23,6 @@ case class DropReferenceCommand(
     isBranch: Boolean,
     catalog: Option[String]
 ) extends Command {
-
   override lazy val output: Seq[Attribute] = new StructType(
     Array[StructField](
       StructField(

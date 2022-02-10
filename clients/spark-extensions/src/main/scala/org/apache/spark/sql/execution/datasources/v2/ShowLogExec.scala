@@ -33,7 +33,7 @@ case class ShowLogExec(
     branch: Option[String],
     currentCatalog: CatalogPlugin,
     catalog: Option[String]
-) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog) {
+) extends BaseShowLogExec(output, branch, currentCatalog, catalog) {
 
   override protected def runInternal(
       api: NessieApiV1
