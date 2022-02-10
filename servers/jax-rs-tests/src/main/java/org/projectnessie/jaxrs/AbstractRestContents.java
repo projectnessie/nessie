@@ -82,45 +82,47 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
     return Stream.of(
         new ContentAndOperationType(
             Type.ICEBERG_TABLE,
-            Put.of(ContentKey.of("iceberg"), IcebergTable.of("/iceberg/table", 42, 42, 42, 42))),
+            Put.of(
+                ContentKey.of("a", "iceberg"), IcebergTable.of("/iceberg/table", 42, 42, 42, 42))),
         new ContentAndOperationType(
             Type.ICEBERG_VIEW,
             Put.of(
-                ContentKey.of("view_dremio"),
+                ContentKey.of("a", "view_dremio"),
                 IcebergView.of("/iceberg/view", 1, 1, "Dremio", "SELECT foo FROM dremio"))),
         new ContentAndOperationType(
             Type.ICEBERG_VIEW,
             Put.of(
-                ContentKey.of("view_presto"),
+                ContentKey.of("a", "view_presto"),
                 IcebergView.of("/iceberg/view", 1, 1, "Presto", "SELECT foo FROM presto"))),
         new ContentAndOperationType(
             Type.ICEBERG_VIEW,
             Put.of(
-                ContentKey.of("view_spark"),
+                ContentKey.of("b", "view_spark"),
                 IcebergView.of("/iceberg/view2", 1, 1, "Spark", "SELECT foo FROM spark"))),
         new ContentAndOperationType(
             Type.DELTA_LAKE_TABLE,
             Put.of(
-                ContentKey.of("delta"),
+                ContentKey.of("c", "delta"),
                 ImmutableDeltaLakeTable.builder()
                     .addCheckpointLocationHistory("checkpoint")
                     .addMetadataLocationHistory("metadata")
                     .build())),
-        new ContentAndOperationType(Type.ICEBERG_TABLE, Delete.of(ContentKey.of("iceberg_delete"))),
         new ContentAndOperationType(
-            Type.ICEBERG_TABLE, Unchanged.of(ContentKey.of("iceberg_unchanged"))),
+            Type.ICEBERG_TABLE, Delete.of(ContentKey.of("a", "iceberg_delete"))),
         new ContentAndOperationType(
-            Type.ICEBERG_VIEW, Delete.of(ContentKey.of("view_dremio_delete"))),
+            Type.ICEBERG_TABLE, Unchanged.of(ContentKey.of("a", "iceberg_unchanged"))),
         new ContentAndOperationType(
-            Type.ICEBERG_VIEW, Unchanged.of(ContentKey.of("view_dremio_unchanged"))),
+            Type.ICEBERG_VIEW, Delete.of(ContentKey.of("a", "view_dremio_delete"))),
         new ContentAndOperationType(
-            Type.ICEBERG_VIEW, Delete.of(ContentKey.of("view_spark_delete"))),
+            Type.ICEBERG_VIEW, Unchanged.of(ContentKey.of("a", "view_dremio_unchanged"))),
         new ContentAndOperationType(
-            Type.ICEBERG_VIEW, Unchanged.of(ContentKey.of("view_spark_unchanged"))),
+            Type.ICEBERG_VIEW, Delete.of(ContentKey.of("a", "view_spark_delete"))),
         new ContentAndOperationType(
-            Type.DELTA_LAKE_TABLE, Delete.of(ContentKey.of("delta_delete"))),
+            Type.ICEBERG_VIEW, Unchanged.of(ContentKey.of("a", "view_spark_unchanged"))),
         new ContentAndOperationType(
-            Type.DELTA_LAKE_TABLE, Unchanged.of(ContentKey.of("delta_unchanged"))));
+            Type.DELTA_LAKE_TABLE, Delete.of(ContentKey.of("a", "delta_delete"))),
+        new ContentAndOperationType(
+            Type.DELTA_LAKE_TABLE, Unchanged.of(ContentKey.of("a", "delta_unchanged"))));
   }
 
   @Test

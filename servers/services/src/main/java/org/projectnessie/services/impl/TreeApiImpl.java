@@ -386,7 +386,10 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
       }
       getStore()
           .transplant(
-              BranchName.of(branchName), toHash(hash, true), transplants, commitMetaUpdate());
+              BranchName.of(branchName),
+              toHash(hash, true),
+              transplants,
+              commitMetaUpdate(getPrincipal()));
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
@@ -403,7 +406,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
               toHash(merge.getFromRefName(), merge.getFromHash()),
               BranchName.of(branchName),
               toHash(hash, true),
-              commitMetaUpdate());
+              commitMetaUpdate(getPrincipal()));
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
@@ -455,7 +458,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     if (depth == null || depth < 1) {
       return entry;
     }
-    Type type = entry.getName().getElements().size() > depth ? Type.UNKNOWN : entry.getType();
+    Type type = entry.getName().getElements().size() > depth ? Type.NAMESPACE : entry.getType();
     ContentKey key = ContentKey.of(entry.getName().getElements().subList(0, depth));
     return EntriesResponse.Entry.builder().type(type).name(key).build();
   }
@@ -526,7 +529,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
               .commit(
                   BranchName.of(Optional.ofNullable(branch).orElse(getConfig().getDefaultBranch())),
                   Optional.ofNullable(hash).map(Hash::of),
-                  commitMetaUpdate().apply(commitMeta),
+                  commitMetaUpdate(getPrincipal()).apply(commitMeta),
                   ops);
 
       return Branch.of(branch, newHash.asString());
@@ -537,10 +540,9 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     }
   }
 
-  private Function<CommitMeta, CommitMeta> commitMetaUpdate() {
+  static Function<CommitMeta, CommitMeta> commitMetaUpdate(Principal principal) {
     // Used for setting contextual commit properties during new and merge/transplant commits.
     // WARNING: ONLY SET PROPERTIES, WHICH APPLY COMMONLY TO ALL COMMIT TYPES.
-    Principal principal = getPrincipal();
     String committer = principal == null ? "" : principal.getName();
     Instant now = Instant.now();
     return commitMeta ->

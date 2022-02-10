@@ -26,7 +26,7 @@ it("ExploreTree renders", async () => {
   now.setDate(now.getDate() - 1);
   const entry = {
     name: { elements: ["a"] },
-    type: "UNKNOWN",
+    type: "NAMESPACE",
   };
 
   const scope1 = nock("http://localhost/api/v1")
@@ -168,7 +168,7 @@ it("ExploreTree renders with slug", async () => {
   now.setDate(now.getDate() - 1);
   const entry = {
     name: { elements: ["b"] },
-    type: "UNKNOWN",
+    type: "NAMESPACE",
   };
 
   const scope1 = nock("http://localhost/api/v1")

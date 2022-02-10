@@ -29,7 +29,7 @@ const ShowPath = () => {
 it("TableListing renders", async () => {
   const entry = {
     name: { elements: ["a"] },
-    type: "UNKNOWN",
+    type: "NAMESPACE",
   };
   const scope = nock("http://localhost/api/v1")
     .get("/trees/tree/main/entries?namespaceDepth=1")

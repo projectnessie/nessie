@@ -26,6 +26,7 @@ message Content {
     IcebergRefState iceberg_ref_state = 2;
     IcebergViewState iceberg_view_state = 3;
     DeltaLakeTable delta_lake_table = 4;
+    Namespace namespace = 6;
   }
   string id = 5;
 }
@@ -52,4 +53,8 @@ message DeltaLakeTable {
   string last_checkpoint = 1;
   repeated string checkpoint_location_history = 2;
   repeated string metadata_location_history = 3;
+}
+
+message Namespace {
+  string name = 1;
 }

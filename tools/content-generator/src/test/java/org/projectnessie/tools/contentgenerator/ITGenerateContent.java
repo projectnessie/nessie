@@ -22,6 +22,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.Content.Type;
 import org.projectnessie.tools.contentgenerator.cli.NessieContentGenerator;
 
 class ITGenerateContent extends AbstractContentGeneratorTest {
@@ -29,7 +30,7 @@ class ITGenerateContent extends AbstractContentGeneratorTest {
   @ParameterizedTest
   @EnumSource(Content.Type.class)
   void basicGenerateContentTest(Content.Type contentType) throws Exception {
-    Assumptions.assumeTrue(contentType != Content.Type.UNKNOWN);
+    Assumptions.assumeTrue(contentType != Content.Type.UNKNOWN && contentType != Type.NAMESPACE);
 
     int numCommits = 20;
 

@@ -18,13 +18,21 @@ package org.projectnessie.jaxrs;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import com.google.common.collect.ImmutableList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.projectnessie.error.BaseNessieClientServerException;
+import org.projectnessie.error.NessieNamespaceAlreadyExistsException;
+import org.projectnessie.error.NessieNamespaceNotEmptyException;
+import org.projectnessie.error.NessieNamespaceNotFoundException;
+import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content.Type;
@@ -32,7 +40,9 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
+import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Operation.Put;
+import org.projectnessie.model.Reference;
 
 /** See {@link AbstractTestRest} for details about and reason for the inheritance model. */
 public abstract class AbstractRestEntries extends AbstractRestDiff {
@@ -191,8 +201,9 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
     ContentKey third = ContentKey.of("a", "thirdTable");
     ContentKey fourth = ContentKey.of("a", "b", "fourthTable");
     ContentKey fifth = ContentKey.of("a", "boo", "fifthTable");
-    List<ContentKey> keys = ImmutableList.of(first, second, third, fourth, fifth);
-    for (int i = 0; i < 5; i++) {
+    ContentKey withoutNamespace = ContentKey.of("withoutNamespace");
+    List<ContentKey> keys = ImmutableList.of(first, second, third, fourth, fifth, withoutNamespace);
+    for (int i = 0; i < keys.size(); i++) {
       getApi()
           .commitMultipleOperations()
           .branch(branch)
@@ -202,19 +213,15 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
     }
     branch = (Branch) getApi().getReference().refName(branch.getName()).get();
 
+    Reference reference = refMode.transform(branch);
     List<Entry> entries =
-        getApi()
-            .getEntries()
-            .reference(refMode.transform(branch))
-            .namespaceDepth(0)
-            .get()
-            .getEntries();
-    assertThat(entries).isNotNull().hasSize(5);
+        getApi().getEntries().reference(reference).namespaceDepth(0).get().getEntries();
+    assertThat(entries).isNotNull().hasSize(6);
 
     entries =
         getApi()
             .getEntries()
-            .reference(refMode.transform(branch))
+            .reference(reference)
             .namespaceDepth(0)
             .filter("entry.namespace.matches('a(\\\\.|$)')")
             .get()
@@ -224,55 +231,71 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
     entries =
         getApi()
             .getEntries()
-            .reference(refMode.transform(branch))
+            .reference(reference)
             .namespaceDepth(1)
             .filter("entry.namespace.matches('a(\\\\.|$)')")
             .get()
             .getEntries();
     assertThat(entries).hasSize(1);
-    assertThat(entries.stream().map(e -> e.getName().toPathString()))
-        .containsExactlyInAnyOrder("a");
+    assertThat(entries.get(0))
+        .matches(e -> e.getType().equals(Type.NAMESPACE))
+        .matches(e -> e.getName().equals(ContentKey.of("a")));
 
     entries =
         getApi()
             .getEntries()
-            .reference(refMode.transform(branch))
+            .reference(reference)
             .namespaceDepth(2)
             .filter("entry.namespace.matches('a(\\\\.|$)')")
             .get()
             .getEntries();
     assertThat(entries).hasSize(3);
-    assertThat(entries.stream().map(e -> e.getName().toPathString()))
-        .containsExactlyInAnyOrder("a.thirdTable", "a.b", "a.boo");
+    assertThat(entries.get(2))
+        .matches(e -> e.getType().equals(Type.ICEBERG_TABLE))
+        .matches(e -> e.getName().equals(ContentKey.of("a", "thirdTable")));
+    assertThat(entries.get(1))
+        .matches(e -> e.getType().equals(Type.NAMESPACE))
+        .matches(e -> e.getName().equals(ContentKey.of("a", "b")));
+    assertThat(entries.get(0))
+        .matches(e -> e.getType().equals(Type.NAMESPACE))
+        .matches(e -> e.getName().equals(ContentKey.of("a", "boo")));
 
     entries =
         getApi()
             .getEntries()
-            .reference(refMode.transform(branch))
+            .reference(reference)
             .namespaceDepth(3)
             .filter("entry.namespace.matches('a\\\\.b(\\\\.|$)')")
             .get()
             .getEntries();
     assertThat(entries).hasSize(2);
-    assertThat(entries.stream().map(e -> e.getName().toPathString()))
-        .containsExactlyInAnyOrder("a.b.c", "a.b.fourthTable");
+    assertThat(entries.get(1))
+        .matches(e -> e.getType().equals(Type.NAMESPACE))
+        .matches(e -> e.getName().equals(ContentKey.of("a", "b", "c")));
+    assertThat(entries.get(0))
+        .matches(e -> e.getType().equals(Type.ICEBERG_TABLE))
+        .matches(e -> e.getName().equals(ContentKey.of("a", "b", "fourthTable")));
 
     entries =
         getApi()
             .getEntries()
-            .reference(refMode.transform(branch))
+            .reference(reference)
             .namespaceDepth(4)
             .filter("entry.namespace.matches('a\\\\.b\\\\.c(\\\\.|$)')")
             .get()
             .getEntries();
     assertThat(entries).hasSize(2);
-    assertThat(entries.stream().map(e -> e.getName().toPathString()))
-        .containsExactlyInAnyOrder("a.b.c.firstTable", "a.b.c.secondTable");
+    assertThat(entries.get(1))
+        .matches(e -> e.getType().equals(Type.ICEBERG_TABLE))
+        .matches(e -> e.getName().equals(ContentKey.of("a", "b", "c", "firstTable")));
+    assertThat(entries.get(0))
+        .matches(e -> e.getType().equals(Type.ICEBERG_TABLE))
+        .matches(e -> e.getName().equals(ContentKey.of("a", "b", "c", "secondTable")));
 
     entries =
         getApi()
             .getEntries()
-            .reference(refMode.transform(branch))
+            .reference(reference)
             .namespaceDepth(5)
             .filter("entry.namespace.matches('(\\\\.|$)')")
             .get()
@@ -282,14 +305,14 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
     entries =
         getApi()
             .getEntries()
-            .reference(refMode.transform(branch))
+            .reference(reference)
             .namespaceDepth(3)
             .filter("entry.namespace.matches('(\\\\.|$)')")
             .get()
             .getEntries();
     assertThat(entries).hasSize(3);
     assertThat(entries.get(2))
-        .matches(e -> e.getType().equals(Type.UNKNOWN))
+        .matches(e -> e.getType().equals(Type.NAMESPACE))
         .matches(e -> e.getName().equals(ContentKey.of("a", "b", "c")));
     assertThat(entries.get(1))
         .matches(e -> e.getType().equals(Type.ICEBERG_TABLE))
@@ -297,5 +320,49 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
     assertThat(entries.get(0))
         .matches(e -> e.getType().equals(Type.ICEBERG_TABLE))
         .matches(e -> e.getName().equals(ContentKey.of("a", "boo", "fifthTable")));
+
+    assumeTrue(ReferenceMode.DETACHED != refMode);
+    // check that implicit namespaces are properly detected
+    checkNamespaces(
+        reference,
+        Arrays.asList("a", "a.b", "a.boo", "a.b.c"),
+        Arrays.asList(first, second, third, fourth, fifth));
+  }
+
+  private void checkNamespaces(
+      Reference reference, List<String> knownNamespaces, List<ContentKey> knownContentKeys)
+      throws NessieReferenceNotFoundException, NessieNamespaceNotFoundException {
+
+    assertThat(getApi().getNamespaces().reference(reference).namespace("a").get().getNamespaces())
+        .hasSize(4);
+    for (String namespace : knownNamespaces) {
+      Namespace ns = Namespace.parse(namespace);
+      assertThat(getApi().getNamespace().reference(reference).namespace(ns).get()).isNotNull();
+
+      assertThatThrownBy(
+              () -> getApi().createNamespace().reference(reference).namespace(ns).create())
+          .isInstanceOf(NessieNamespaceAlreadyExistsException.class)
+          .hasMessage(String.format("Namespace '%s' already exists", namespace));
+
+      assertThatThrownBy(
+              () -> getApi().deleteNamespace().reference(reference).namespace(ns).delete())
+          .isInstanceOf(NessieNamespaceNotEmptyException.class)
+          .hasMessage(String.format("Namespace '%s' is not empty", namespace));
+    }
+
+    // unknown in the sense that these are actual tables and not namespaces
+    List<String> unknownNamespaces =
+        knownContentKeys.stream().map(ContentKey::toString).collect(Collectors.toList());
+    for (String namespace : unknownNamespaces) {
+      assertThatThrownBy(
+              () ->
+                  getApi()
+                      .getNamespace()
+                      .reference(reference)
+                      .namespace(Namespace.parse(namespace))
+                      .get())
+          .isInstanceOf(NessieNamespaceNotFoundException.class)
+          .hasMessage(String.format("Namespace '%s' does not exist", namespace));
+    }
   }
 }

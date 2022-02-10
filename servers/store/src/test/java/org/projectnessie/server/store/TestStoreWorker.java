@@ -33,6 +33,7 @@ import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
+import org.projectnessie.model.ImmutableNamespace;
 import org.projectnessie.store.ObjectTypes;
 import org.projectnessie.store.ObjectTypes.IcebergMetadataPointer;
 import org.projectnessie.store.ObjectTypes.IcebergRefState;
@@ -156,7 +157,7 @@ class TestStoreWorker {
   }
 
   private static Stream<Map.Entry<ByteString, Content>> provideDeserialization() {
-    return Stream.of(getDelta());
+    return Stream.of(getDelta(), getNamespace());
   }
 
   private static Map.Entry<ByteString, Content> getDelta() {
@@ -184,6 +185,18 @@ class TestStoreWorker {
                     .addCheckpointLocationHistory(cl2)
                     .addMetadataLocationHistory(ml1)
                     .addMetadataLocationHistory(ml2))
+            .build()
+            .toByteString();
+    return new AbstractMap.SimpleImmutableEntry<>(bytes, content);
+  }
+
+  private static Map.Entry<ByteString, Content> getNamespace() {
+    String name = "a.b.c";
+    Content content = ImmutableNamespace.builder().id(name).name(name).build();
+    ByteString bytes =
+        ObjectTypes.Content.newBuilder()
+            .setId(name)
+            .setNamespace(ObjectTypes.Namespace.newBuilder().setName(name).build())
             .build()
             .toByteString();
     return new AbstractMap.SimpleImmutableEntry<>(bytes, content);

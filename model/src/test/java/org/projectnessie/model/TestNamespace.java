@@ -98,6 +98,22 @@ public class TestNamespace {
         .hasMessage(String.format(Namespace.ERROR_MSG_TEMPLATE, identifier));
   }
 
+  @ParameterizedTest
+  @ValueSource(strings = {"\u0000", "a.\u0000", "a.b.c.\u0000"})
+  void testZeroByteUsage() {
+    assertThatThrownBy(() -> Namespace.of("\u0000"))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("A namespace must not contain a zero byte.");
+  }
+
+  @ParameterizedTest
+  @MethodSource("invalidElementsWithNullsProvider")
+  void testNullsInElements(String[] elements) {
+    assertThatThrownBy(() -> Namespace.of(elements))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("A namespace must not contain a null element.");
+  }
+
   private static Stream<Arguments> elementsProvider() {
     return Stream.of(
         Arguments.of(new String[] {"a", "b"}, "a.b"),
@@ -114,5 +130,12 @@ public class TestNamespace {
         Arguments.of(new String[] {"."}, "x"),
         Arguments.of(new String[] {"a", "."}, "x"),
         Arguments.of(new String[] {"a", "b", "c", "."}, "x"));
+  }
+
+  private static Stream<Arguments> invalidElementsWithNullsProvider() {
+    return Stream.of(
+        Arguments.of(new String[] {null}, "x"),
+        Arguments.of(new String[] {"a", ".", null}, "x"),
+        Arguments.of(new String[] {"a", "b", "c", ".", null}, "x"));
   }
 }

@@ -18,14 +18,18 @@ package org.projectnessie.client.http.v1api;
 import org.projectnessie.client.api.AssignBranchBuilder;
 import org.projectnessie.client.api.AssignTagBuilder;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
+import org.projectnessie.client.api.CreateNamespaceBuilder;
 import org.projectnessie.client.api.CreateReferenceBuilder;
 import org.projectnessie.client.api.DeleteBranchBuilder;
+import org.projectnessie.client.api.DeleteNamespaceBuilder;
 import org.projectnessie.client.api.DeleteTagBuilder;
 import org.projectnessie.client.api.GetAllReferencesBuilder;
 import org.projectnessie.client.api.GetCommitLogBuilder;
 import org.projectnessie.client.api.GetContentBuilder;
 import org.projectnessie.client.api.GetDiffBuilder;
 import org.projectnessie.client.api.GetEntriesBuilder;
+import org.projectnessie.client.api.GetNamespaceBuilder;
+import org.projectnessie.client.api.GetNamespacesBuilder;
 import org.projectnessie.client.api.GetRefLogBuilder;
 import org.projectnessie.client.api.GetReferenceBuilder;
 import org.projectnessie.client.api.MergeReferenceBuilder;
@@ -132,5 +136,25 @@ public final class HttpApiV1 implements NessieApiV1 {
   @Override
   public GetRefLogBuilder getRefLog() {
     return new HttpGetRefLog(client);
+  }
+
+  @Override
+  public GetNamespaceBuilder getNamespace() {
+    return new HttpGetNamespace(client);
+  }
+
+  @Override
+  public GetNamespacesBuilder getNamespaces() {
+    return new HttpGetNamespaces(client);
+  }
+
+  @Override
+  public CreateNamespaceBuilder createNamespace() {
+    return new HttpCreateNamespace(client);
+  }
+
+  @Override
+  public DeleteNamespaceBuilder deleteNamespace() {
+    return new HttpDeleteNamespace(client);
   }
 }
