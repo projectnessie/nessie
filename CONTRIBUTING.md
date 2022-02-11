@@ -33,12 +33,12 @@ on the new feature or improvement.
 
 ### Maven tips
 
-A `./mvnw clean install` runs basically "everything" except release/deployment stuff. This is often
+A `./mvnw --threads 1C clean install` runs basically "everything" except release/deployment stuff. This is often
 not necessary. Some tips:
 
-* `./mvnw -Dquickly` Just compiles code, no tests, does not build code under `ui/` and `perftest/`.
-* `./mvnw -DskipTests` Compiles everything, runs no tests.
-* `./mvnw -DskipITs` Compiles everything, runs unit tests, but no integration tests.
+* `./mvnw --threads 1C package -Dquickly` Just compiles code, no tests, does not build code under `ui/` and `perftest/`.
+* `./mvnw --threads 1C package -DskipTests` Compiles everything, runs no tests.
+* `./mvnw --threads 1C package -DskipITs` Compiles everything, runs unit tests, but no integration tests.
 
 ### Development process
 
@@ -75,7 +75,7 @@ to work. These options are harmless when using Java 11.
 Apache Spark does **only** work with Java 11 (or 8), so all tests using Spark use the Maven toolchain mechanism
 to force Java 11 for the execution of those tests.
 
-Maven Wrapper, Maven and Mavan Deamon automatically pick up the necessary JVM options from `.mvn/jvm.config` or `.mvn/mvnd.properties`.
+Maven Wrapper, Maven and Maven Daemon automatically pick up the necessary JVM options from `.mvn/jvm.config` or `.mvn/mvnd.properties`.
 
 ### Style guide
 

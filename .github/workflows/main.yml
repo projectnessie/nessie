@@ -35,14 +35,14 @@ jobs:
         MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
         SPARK_LOCAL_IP: localhost
       if: ${{ env.MAVEN_USERNAME }}
-      run: ./mvnw -B deploy --file pom.xml -Pcode-coverage,release -DdeployAtEnd=true -Dtest.log.level=WARN
+      run: ./mvnw --batch-mode --threads 1C deploy -Pcode-coverage,release -DdeployAtEnd=true -Dtest.log.level=WARN
 
     - name: Build with Maven (Fork)
       env:
         MAVEN_USERNAME: ${{ secrets.OSSRH_ACCESS_ID }}
         SPARK_LOCAL_IP: localhost
       if: ${{ ! env.MAVEN_USERNAME }}
-      run: ./mvnw -B install --file pom.xml -Pcode-coverage,release -DskipGpg -Dtest.log.level=WARN
+      run: ./mvnw --batch-mode --threads 1C install -Pcode-coverage,release -DskipGpg -Dtest.log.level=WARN
 
     - name: Build with Gradle
       run: ./gradlew --rerun-tasks --no-daemon --info build
@@ -73,11 +73,11 @@ jobs:
         uses: ./.github/actions/dev-tool-java
 
       - name: Build with Maven
-        run: ./mvnw -B install -DskipTests -am -pl :nessie-quarkus -pl :nessie-lambda
+        run: ./mvnw --batch-mode --threads 1C install -DskipTests -am -pl :nessie-quarkus -pl :nessie-lambda
 
       - name: Test native with Maven
         run: |
-          ./mvnw -B install -Pnative,docker -Dtest.log.level=WARN -Dquarkus.native.native-image-xmx=6g -pl :nessie-quarkus -pl :nessie-lambda
+          ./mvnw --batch-mode install -Pnative,docker -Dtest.log.level=WARN -Dquarkus.native.native-image-xmx=6g -pl :nessie-quarkus -pl :nessie-lambda
 
       - name: Push Docker images
         env:

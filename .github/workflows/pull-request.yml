@@ -49,7 +49,7 @@ jobs:
       env:
         SPARK_LOCAL_IP: localhost
       run: |
-        ./mvnw -B install javadoc:javadoc-no-fork --file pom.xml -Pcode-coverage -Dtest.log.level=WARN
+        ./mvnw --batch-mode --threads 1C install javadoc:javadoc-no-fork -Pcode-coverage -Dtest.log.level=WARN
 
     - name: Build with Gradle
       run: ./gradlew --rerun-tasks --no-daemon --info build
