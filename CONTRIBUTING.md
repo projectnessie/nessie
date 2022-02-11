@@ -34,11 +34,11 @@ on the new feature or improvement.
 ### Maven tips
 
 A `./mvnw --threads 1C clean install` runs basically "everything" except release/deployment stuff. This is often
-not necessary. Some tips:
+not necessary. Use one of these parameters to speed things up:
 
-* `./mvnw --threads 1C package -Dquickly` Just compiles code, no tests, does not build code under `ui/` and `perftest/`.
-* `./mvnw --threads 1C package -DskipTests` Compiles everything, runs no tests.
-* `./mvnw --threads 1C package -DskipITs` Compiles everything, runs unit tests, but no integration tests.
+* `-Dquickly` Just compiles code, no tests, does not build code under `ui/` and `perftest/`.
+* `-DskipTests` Compiles everything, runs no tests.
+* `-DskipITs` Compiles everything, runs unit tests, but no integration tests.
 
 ### Development process
 
