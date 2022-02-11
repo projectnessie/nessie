@@ -25,7 +25,8 @@ runs:
         path: |
           ~/.m2/repository
           !~/.m2/repository/org/projectnessie
-        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          ~/.m2/wrapper
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '**/maven-wrapper.properties') }}
         restore-keys: |
           ${{ runner.os }}-maven-
     - name: Cache local NPM repository
@@ -41,8 +42,8 @@ runs:
         path: |
           ~/.gradle/caches
           ~/.gradle/wrapper
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
-        restore-keys: ${{ runner.os }}-gradle
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle', '**/gradle-wrapper.properties') }}
+        restore-keys: ${{ runner.os }}-gradle-
 
     - name: Set up Maven toolchains.xml
       shell: bash
