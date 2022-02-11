@@ -120,7 +120,7 @@ contains all modules that shall be measured. New modules must be added there as 
 
 ### Submitting a pull request
 
-Upon submission of a pull request you will be asked to sign our contributor license agreement. We use [Reviewable.io](https://reviewable.io/) for reviews.
+Upon submission of a pull request you will be asked to sign our contributor license agreement.
 Anyone can take part in the review process and once the community is happy and the build actions are passing a Pull Request will be merged. Support 
 must be unanimous for a change to be merged.
 

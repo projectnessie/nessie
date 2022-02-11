@@ -33,10 +33,6 @@ Google Groups as a mailing list.
 : Our website is all maintained in our source repository. If there is something you think
   can be improved, feel free to fork our repository and post a pull request.
 
-[Reviewable](https://reviewable.io/)
-: We use Reviewable (in addition to GitHub reviews) to collaborate on code and docs. They are
-  a great service and support OSS projects.
-
 ## Contribution
 
 All contributors are welcome to Project Nessie. To get started, feel free to introduce yourself
