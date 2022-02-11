@@ -43,6 +43,10 @@ import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.KeyWithType;
+import org.projectnessie.versioned.testworker.BaseContent;
+import org.projectnessie.versioned.testworker.OnRefOnly;
+import org.projectnessie.versioned.testworker.SimpleStoreWorker;
+import org.projectnessie.versioned.testworker.WithGlobalStateContent;
 
 /** Tests performing commits. */
 public abstract class AbstractCommitScenarios {
@@ -163,6 +167,18 @@ public abstract class AbstractCommitScenarios {
 
     ImmutableCommitAttempt.Builder commit;
 
+    BaseContent initialContent;
+    BaseContent renamContent;
+    if (param.globalState) {
+      initialContent = WithGlobalStateContent.newWithGlobal("0", "initial commit content");
+      renamContent =
+          WithGlobalStateContent.withGlobal("0", "rename commit content", initialContent.getId());
+    } else {
+      initialContent = OnRefOnly.newOnRef("initial commit content");
+      renamContent = OnRefOnly.onRef("rename commit content", initialContent.getId());
+    }
+    byte payload = SimpleStoreWorker.INSTANCE.getPayload(initialContent);
+
     commit =
         ImmutableCommitAttempt.builder()
             .commitToBranch(branch)
@@ -171,11 +187,11 @@ public abstract class AbstractCommitScenarios {
                 KeyWithBytes.of(
                     oldKey,
                     contentId,
-                    (byte) 0,
-                    ByteString.copyFromUtf8("initial commit content")));
+                    payload,
+                    SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(initialContent)));
     if (param.globalState) {
       commit
-          .putGlobal(contentId, ByteString.copyFromUtf8("0"))
+          .putGlobal(contentId, SimpleStoreWorker.INSTANCE.toStoreGlobalState(initialContent))
           .putExpectedStates(contentId, Optional.empty());
     }
     Hash hashInitial = databaseAdapter.commit(commit.build());
@@ -192,11 +208,16 @@ public abstract class AbstractCommitScenarios {
             .addDeletes(oldKey)
             .addPuts(
                 KeyWithBytes.of(
-                    newKey, contentId, (byte) 0, ByteString.copyFromUtf8("rename commit content")));
+                    newKey,
+                    contentId,
+                    payload,
+                    SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(renamContent)));
     if (param.globalState) {
       commit
-          .putGlobal(contentId, ByteString.copyFromUtf8("0"))
-          .putExpectedStates(contentId, Optional.of(ByteString.copyFromUtf8("0")));
+          .putGlobal(contentId, SimpleStoreWorker.INSTANCE.toStoreGlobalState(renamContent))
+          .putExpectedStates(
+              contentId,
+              Optional.of(SimpleStoreWorker.INSTANCE.toStoreGlobalState(initialContent)));
     }
     Hash hashRename = databaseAdapter.commit(commit.build());
 
@@ -235,7 +256,7 @@ public abstract class AbstractCommitScenarios {
         renameCommitVerify(
             Stream.concat(Stream.of(hashInitial), beforeRename.stream()),
             expectedCommitCount,
-            keys -> assertThat(keys).containsExactly(KeyWithType.of(oldKey, contentId, (byte) 0)));
+            keys -> assertThat(keys).containsExactly(KeyWithType.of(oldKey, contentId, payload)));
 
     // Verify that the commits since the rename-operation and before the delete-operation return the
     // _new_ key
@@ -243,7 +264,7 @@ public abstract class AbstractCommitScenarios {
         renameCommitVerify(
             Stream.concat(Stream.of(hashRename), beforeDelete.stream()),
             expectedCommitCount,
-            keys -> assertThat(keys).containsExactly(KeyWithType.of(newKey, contentId, (byte) 0)));
+            keys -> assertThat(keys).containsExactly(KeyWithType.of(newKey, contentId, payload)));
 
     // Verify that the commits since the delete-operation return _no_ keys
     expectedCommitCount =
@@ -291,15 +312,19 @@ public abstract class AbstractCommitScenarios {
       Key key = Key.of("my", "table", "num" + i);
       keys.add(key);
 
+      String cid = "id-" + i;
+      WithGlobalStateContent c =
+          WithGlobalStateContent.withGlobal("0", "initial commit content", cid);
+
       commit
           .addPuts(
               KeyWithBytes.of(
                   key,
-                  ContentId.of("id-" + i),
-                  (byte) 0,
-                  ByteString.copyFromUtf8("initial commit content")))
-          .putGlobal(ContentId.of("id-" + i), ByteString.copyFromUtf8("0"))
-          .putExpectedStates(ContentId.of("id-" + i), Optional.empty());
+                  ContentId.of(cid),
+                  SimpleStoreWorker.INSTANCE.getPayload(c),
+                  SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(c)))
+          .putGlobal(ContentId.of(cid), SimpleStoreWorker.INSTANCE.toStoreGlobalState(c))
+          .putExpectedStates(ContentId.of(cid), Optional.empty());
     }
     Hash head = databaseAdapter.commit(commit.build());
 
@@ -317,16 +342,25 @@ public abstract class AbstractCommitScenarios {
         String currentState = values.get(keys.get(i)).getGlobalState().toStringUtf8();
         String newGlobalState = Integer.toString(Integer.parseInt(currentState) + 1);
 
+        String cid = "id-" + i;
+
+        WithGlobalStateContent newContent =
+            WithGlobalStateContent.withGlobal(newGlobalState, "branch value", cid);
+
+        WithGlobalStateContent expectedContent =
+            WithGlobalStateContent.withGlobal(currentState, currentState, cid);
+
         commit
             .addPuts(
                 KeyWithBytes.of(
                     keys.get(i),
-                    ContentId.of("id-" + i),
-                    (byte) 0,
-                    ByteString.copyFromUtf8("branch value")))
-            .putGlobal(ContentId.of("id-" + i), ByteString.copyFromUtf8(newGlobalState))
+                    ContentId.of(cid),
+                    SimpleStoreWorker.INSTANCE.getPayload(newContent),
+                    SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(newContent)))
+            .putGlobal(ContentId.of(cid), SimpleStoreWorker.INSTANCE.toStoreGlobalState(newContent))
             .putExpectedStates(
-                ContentId.of("id-" + i), Optional.of(ByteString.copyFromUtf8(currentState)));
+                ContentId.of(cid),
+                Optional.of(SimpleStoreWorker.INSTANCE.toStoreGlobalState(expectedContent)));
       }
 
       Hash newHead = databaseAdapter.commit(commit.build());

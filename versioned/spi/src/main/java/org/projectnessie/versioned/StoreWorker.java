@@ -37,9 +37,17 @@ public interface StoreWorker<CONTENT, COMMIT_METADATA, CONTENT_TYPE extends Enum
 
   Byte getPayload(CONTENT content);
 
-  boolean requiresGlobalState(CONTENT content);
+  default boolean requiresGlobalState(ByteString content) {
+    return requiresGlobalState(getType(content));
+  }
 
-  boolean requiresGlobalState(CONTENT_TYPE contentType);
+  default boolean requiresGlobalState(CONTENT content) {
+    return requiresGlobalState(getType(content));
+  }
+
+  boolean requiresGlobalState(Enum<CONTENT_TYPE> contentType);
+
+  CONTENT_TYPE getType(ByteString onRefContent);
 
   CONTENT_TYPE getType(Byte payload);
 

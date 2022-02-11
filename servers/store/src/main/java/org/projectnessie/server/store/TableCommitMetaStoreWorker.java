@@ -182,6 +182,18 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
   }
 
   @Override
+  public Type getType(Content content) {
+    if (content instanceof IcebergTable) {
+      return Type.ICEBERG_TABLE;
+    } else if (content instanceof IcebergView) {
+      return Type.ICEBERG_VIEW;
+    } else if (content instanceof DeltaLakeTable) {
+      return Type.DELTA_LAKE_TABLE;
+    }
+    throw new IllegalArgumentException("Unknown type " + content);
+  }
+
+  @Override
   public Type getType(Byte payload) {
     if (payload == null || payload > Content.Type.values().length || payload < 0) {
       throw new IllegalArgumentException(
@@ -191,12 +203,25 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
   }
 
   @Override
-  public boolean requiresGlobalState(Content content) {
-    return content instanceof IcebergTable || content instanceof IcebergView;
+  public Type getType(ByteString onRefContent) {
+    ObjectTypes.Content parsed = parse(onRefContent);
+
+    if (parsed.hasIcebergViewState()) {
+      return Type.ICEBERG_TABLE;
+    }
+    if (parsed.hasIcebergRefState()) {
+      return Type.ICEBERG_VIEW;
+    }
+
+    if (parsed.hasDeltaLakeTable()) {
+      return Type.DELTA_LAKE_TABLE;
+    }
+
+    throw new IllegalArgumentException("Unsupported on-ref content " + parsed);
   }
 
   @Override
-  public boolean requiresGlobalState(Type type) {
+  public boolean requiresGlobalState(Enum<Type> type) {
     return type == Type.ICEBERG_TABLE || type == Type.ICEBERG_VIEW;
   }
 

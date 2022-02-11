@@ -17,14 +17,18 @@ package org.projectnessie.versioned.persist.tx.postgres;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
+import org.projectnessie.versioned.persist.adapter.ContentVariantSupplier;
 import org.projectnessie.versioned.persist.tx.TxConnectionProvider;
 import org.projectnessie.versioned.persist.tx.TxDatabaseAdapter;
 import org.projectnessie.versioned.persist.tx.TxDatabaseAdapterConfig;
 
 public class PostgresDatabaseAdapter extends TxDatabaseAdapter {
 
-  public PostgresDatabaseAdapter(TxDatabaseAdapterConfig config, TxConnectionProvider<?> db) {
-    super(config, db);
+  public PostgresDatabaseAdapter(
+      TxDatabaseAdapterConfig config,
+      TxConnectionProvider<?> db,
+      ContentVariantSupplier contentVariantSupplier) {
+    super(config, db, contentVariantSupplier);
   }
 
   @Override

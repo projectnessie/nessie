@@ -43,6 +43,8 @@ import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.KeyWithType;
+import org.projectnessie.versioned.testworker.SimpleStoreWorker;
+import org.projectnessie.versioned.testworker.WithGlobalStateContent;
 
 /**
  * Rather rudimentary test that verifies that multiple commits in a row work and the correct results
@@ -70,33 +72,45 @@ public abstract class AbstractManyCommits {
 
     for (int i = 0; i < numCommits; i++) {
       Key key = Key.of("many", "commits", Integer.toString(numCommits));
+      WithGlobalStateContent c =
+          WithGlobalStateContent.withGlobal(
+              "state for #" + i + " of " + numCommits,
+              "value for #" + i + " of " + numCommits,
+              fixed.getId());
+      byte payload = SimpleStoreWorker.INSTANCE.getPayload(c);
       ImmutableCommitAttempt.Builder commit =
           ImmutableCommitAttempt.builder()
               .commitToBranch(branch)
               .commitMetaSerialized(ByteString.copyFromUtf8("commit #" + i + " of " + numCommits))
               .addPuts(
                   KeyWithBytes.of(
-                      key,
-                      fixed,
-                      (byte) 0,
-                      ByteString.copyFromUtf8("value for #" + i + " of " + numCommits)))
-              .putGlobal(fixed, ByteString.copyFromUtf8("state for #" + i + " of " + numCommits));
+                      key, fixed, payload, SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(c)))
+              .putGlobal(fixed, SimpleStoreWorker.INSTANCE.toStoreGlobalState(c));
       if (i > 0) {
+        WithGlobalStateContent expected =
+            WithGlobalStateContent.withGlobal(
+                "state for #" + (i - 1) + " of " + numCommits,
+                "value for #" + (i - 1) + " of " + numCommits,
+                fixed.getId());
         commit.putExpectedStates(
-            fixed,
-            Optional.of(ByteString.copyFromUtf8("state for #" + (i - 1) + " of " + numCommits)));
+            fixed, Optional.of(SimpleStoreWorker.INSTANCE.toStoreGlobalState(expected)));
       }
       Hash hash = databaseAdapter.commit(commit.build());
       commits[i] = hash;
 
       try (Stream<ContentIdAndBytes> globals =
-          databaseAdapter.globalContent(Collections.singleton(fixed), bs -> (byte) 0)) {
+          databaseAdapter.globalContent(Collections.singleton(fixed), bs -> payload)) {
+
+        WithGlobalStateContent expected =
+            WithGlobalStateContent.withGlobal(
+                "state for #" + i + " of " + numCommits,
+                "value for #" + i + " of " + numCommits,
+                fixed.getId());
+
         assertThat(globals)
             .containsExactly(
                 ContentIdAndBytes.of(
-                    fixed,
-                    (byte) 0,
-                    ByteString.copyFromUtf8("state for #" + i + " of " + numCommits)));
+                    fixed, payload, SimpleStoreWorker.INSTANCE.toStoreGlobalState(expected)));
       }
     }
 
@@ -111,7 +125,7 @@ public abstract class AbstractManyCommits {
       CompletableFuture<Void> combinedFuture =
           CompletableFuture.allOf(
               IntStream.range(0, numCommits)
-                  .mapToObj(i -> (Runnable) () -> verify(i, numCommits, branch, commits[i]))
+                  .mapToObj(i -> (Runnable) () -> verify(i, numCommits, branch, commits[i], fixed))
                   .map(r -> CompletableFuture.runAsync(r, executor))
                   .toArray((IntFunction<CompletableFuture<?>[]>) CompletableFuture[]::new));
 
@@ -124,7 +138,7 @@ public abstract class AbstractManyCommits {
     databaseAdapter.delete(branch, Optional.empty());
   }
 
-  private void verify(int i, int numCommits, BranchName branch, Hash commit) {
+  private void verify(int i, int numCommits, BranchName branch, Hash commit, ContentId contentId) {
     Key key = Key.of("many", "commits", Integer.toString(numCommits));
 
     try {
@@ -137,9 +151,15 @@ public abstract class AbstractManyCommits {
       Map<Key, ContentAndState<ByteString>> values =
           databaseAdapter.values(
               commit, Collections.singletonList(key), KeyFilterPredicate.ALLOW_ALL);
-      ByteString expectValue = ByteString.copyFromUtf8("value for #" + i + " of " + numCommits);
-      ByteString expectState =
-          ByteString.copyFromUtf8("state for #" + (numCommits - 1) + " of " + numCommits);
+
+      WithGlobalStateContent expected =
+          WithGlobalStateContent.withGlobal(
+              "state for #" + (numCommits - 1) + " of " + numCommits,
+              "value for #" + i + " of " + numCommits,
+              contentId.getId());
+
+      ByteString expectValue = SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(expected);
+      ByteString expectState = SimpleStoreWorker.INSTANCE.toStoreGlobalState(expected);
       ContentAndState<ByteString> expect = ContentAndState.of(expectValue, expectState);
       assertThat(values).containsExactly(Maps.immutableEntry(key, expect));
     } catch (ReferenceNotFoundException e) {

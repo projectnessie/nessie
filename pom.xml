@@ -84,16 +84,19 @@
       <name>Ajantha Bhat</name>
       <url>https://github.com/ajantha-bhat</url>
     </developer>
-    <developer>
-      <id>maheshsapkal</id>
-      <name>Mahesh Sapkal</name>
-      <url>https://github.com/maheshsapkal</url>
-    </developer>
   </developers>
   <contributors>
     <contributor>
+      <name>Herman Polloni</name>
+      <url>https://github.com/hpolloni</url>
+    </contributor>
+    <contributor>
       <name>Ryan Tse</name>
       <url>https://github.com/ryantse</url>
+    </contributor>
+    <contributor>
+      <name>Mahesh Sapkal</name>
+      <url>https://github.com/maheshsapkal</url>
     </contributor>
   </contributors>
 
@@ -148,7 +151,7 @@
     <!-- Version properties -->
     <antlr.version>4.9.3</antlr.version>
     <assertj.version>3.22.0</assertj.version>
-    <awssdk.version>2.17.126</awssdk.version>
+    <awssdk.version>2.17.128</awssdk.version>
     <bouncycastle.version>1.66</bouncycastle.version>
     <cel.version>0.2.4</cel.version>
     <checkstyle.version>9.3</checkstyle.version>
@@ -181,7 +184,7 @@
     <mockito.version>4.3.1</mockito.version>
     <nessie.version>${project.version}</nessie.version>
     <openapi.version>3.0</openapi.version>
-    <picocli.version>4.6.2</picocli.version>
+    <picocli.version>4.6.3</picocli.version>
     <prometheus.version>0.9.0</prometheus.version>
     <protobuf.version>3.19.4</protobuf.version>
     <quarkus.version>2.7.1.Final</quarkus.version>
@@ -1050,6 +1053,7 @@ limitations under the License.
             <exclude>**/c.java</exclude>
             <exclude>**/swagger-ui/**</exclude>
             <exclude>**/gradlew</exclude>
+            <exclude>**/tsconfig.tsbuildinfo</exclude>
 
             <!-- by directory name -->
             <exclude>**/node_modules/**</exclude>

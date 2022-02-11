@@ -48,6 +48,8 @@ import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.tests.extension.DatabaseAdapterExtension;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapter;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterConfigItem;
+import org.projectnessie.versioned.testworker.SimpleStoreWorker;
+import org.projectnessie.versioned.testworker.WithGlobalStateContent;
 
 /**
  * Tests that verify {@link DatabaseAdapter} implementations. A few tests have similar pendants via
@@ -299,12 +301,15 @@ public abstract class AbstractDatabaseAdapterTest {
               .commitToBranch(branch)
               .commitMetaSerialized(ByteString.copyFromUtf8("commit " + i));
       for (int k = 0; k < 3; k++) {
+        WithGlobalStateContent c =
+            WithGlobalStateContent.withGlobal(
+                "global " + i + " for " + k, "on-ref " + i + " for " + k, "cid-" + i + "-" + k);
         commit.addPuts(
             KeyWithBytes.of(
                 Key.of("key", Integer.toString(k)),
                 ContentId.of("C" + k),
-                (byte) 0,
-                ByteString.copyFromUtf8("value " + i + " for " + k)));
+                SimpleStoreWorker.INSTANCE.getPayload(c),
+                SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(c)));
       }
       commits[i] = databaseAdapter.commit(commit.build());
     }
@@ -328,12 +333,19 @@ public abstract class AbstractDatabaseAdapterTest {
             .containsExactlyInAnyOrderElementsOf(
                 IntStream.range(0, 3)
                     .mapToObj(
-                        k ->
-                            Difference.of(
-                                Key.of("key", Integer.toString(k)),
-                                Optional.empty(),
-                                Optional.empty(),
-                                Optional.of(ByteString.copyFromUtf8("value " + c + " for " + k))))
+                        k -> {
+                          WithGlobalStateContent content =
+                              WithGlobalStateContent.withGlobal(
+                                  "global " + c + " for " + k,
+                                  "on-ref " + c + " for " + k,
+                                  "cid-" + c + "-" + k);
+                          return Difference.of(
+                              Key.of("key", Integer.toString(k)),
+                              Optional.empty(),
+                              Optional.empty(),
+                              Optional.of(
+                                  SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(content)));
+                        })
                     .collect(Collectors.toList()));
       }
     }
@@ -349,12 +361,19 @@ public abstract class AbstractDatabaseAdapterTest {
             .containsExactlyInAnyOrderElementsOf(
                 IntStream.range(0, 3)
                     .mapToObj(
-                        k ->
-                            Difference.of(
-                                Key.of("key", Integer.toString(k)),
-                                Optional.empty(),
-                                Optional.of(ByteString.copyFromUtf8("value " + c + " for " + k)),
-                                Optional.empty()))
+                        k -> {
+                          WithGlobalStateContent content =
+                              WithGlobalStateContent.withGlobal(
+                                  "global " + c + " for " + k,
+                                  "on-ref " + c + " for " + k,
+                                  "cid-" + c + "-" + k);
+                          return Difference.of(
+                              Key.of("key", Integer.toString(k)),
+                              Optional.empty(),
+                              Optional.of(
+                                  SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(content)),
+                              Optional.empty());
+                        })
                     .collect(Collectors.toList()));
       }
     }
@@ -370,13 +389,23 @@ public abstract class AbstractDatabaseAdapterTest {
             .containsExactlyInAnyOrderElementsOf(
                 IntStream.range(0, 3)
                     .mapToObj(
-                        k ->
-                            Difference.of(
-                                Key.of("key", Integer.toString(k)),
-                                Optional.empty(),
-                                Optional.of(
-                                    ByteString.copyFromUtf8("value " + (c - 1) + " for " + k)),
-                                Optional.of(ByteString.copyFromUtf8("value " + c + " for " + k))))
+                        k -> {
+                          WithGlobalStateContent from =
+                              WithGlobalStateContent.withGlobal(
+                                  "global " + (c - 1) + " for " + k,
+                                  "on-ref " + (c - 1) + " for " + k,
+                                  "cid-" + (c - 1) + "-" + k);
+                          WithGlobalStateContent to =
+                              WithGlobalStateContent.withGlobal(
+                                  "global " + c + " for " + k,
+                                  "on-ref " + c + " for " + k,
+                                  "cid-" + c + "-" + k);
+                          return Difference.of(
+                              Key.of("key", Integer.toString(k)),
+                              Optional.empty(),
+                              Optional.of(SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(from)),
+                              Optional.of(SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(to)));
+                        })
                     .collect(Collectors.toList()));
       }
     }

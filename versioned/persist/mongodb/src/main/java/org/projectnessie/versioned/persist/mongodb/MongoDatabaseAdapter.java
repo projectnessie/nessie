@@ -44,6 +44,7 @@ import org.bson.types.Binary;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
+import org.projectnessie.versioned.persist.adapter.ContentVariantSupplier;
 import org.projectnessie.versioned.persist.adapter.KeyList;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyWithType;
@@ -76,8 +77,10 @@ public class MongoDatabaseAdapter
   private final MongoDatabaseClient client;
 
   protected MongoDatabaseAdapter(
-      NonTransactionalDatabaseAdapterConfig config, MongoDatabaseClient client) {
-    super(config);
+      NonTransactionalDatabaseAdapterConfig config,
+      MongoDatabaseClient client,
+      ContentVariantSupplier contentVariantSupplier) {
+    super(config, contentVariantSupplier);
 
     Objects.requireNonNull(client, "MongoDatabaseClient cannot be null");
     this.client = client;
