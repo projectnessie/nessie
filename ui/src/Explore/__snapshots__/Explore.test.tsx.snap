@@ -38,6 +38,7 @@ exports[`Explore renders 2`] = `
               <a
                 aria-expanded="false"
                 class="dropdown-toggle nav-link"
+                href="#"
                 id="nav-dropdown"
                 role="button"
                 tabindex="0"
@@ -50,6 +51,7 @@ exports[`Explore renders 2`] = `
             >
               <a
                 class="nav-link"
+                href="#"
                 role="button"
                 tabindex="0"
               >
@@ -71,6 +73,7 @@ exports[`Explore renders 2`] = `
             >
               <a
                 class="nav-link"
+                href="#"
                 role="button"
                 tabindex="0"
               >
@@ -180,6 +183,7 @@ exports[`Explore renders with slug 2`] = `
               <a
                 aria-expanded="false"
                 class="dropdown-toggle nav-link"
+                href="#"
                 id="nav-dropdown"
                 role="button"
                 tabindex="0"
@@ -192,6 +196,7 @@ exports[`Explore renders with slug 2`] = `
             >
               <a
                 class="nav-link"
+                href="#"
                 role="button"
                 tabindex="0"
               >
@@ -213,6 +218,7 @@ exports[`Explore renders with slug 2`] = `
             >
               <a
                 class="nav-link"
+                href="#"
                 role="button"
                 tabindex="0"
               >
