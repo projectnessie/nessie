@@ -14,10 +14,18 @@
 # limitations under the License.
 #
 
+# https://docs.codecov.com/docs/codecovyml-reference
 codecov:
   notify:
     after_n_builds: 5
 comment:
   after_n_builds: 5
+# https://docs.codecov.com/docs/commit-status
+coverage:
+  status:
+    project:
+      default:
+        # do not fail the github check on random/tiny coverage changes
+        threshold: 1%
 github_checks:
   annotations: false
