@@ -84,16 +84,19 @@
       <name>Ajantha Bhat</name>
       <url>https://github.com/ajantha-bhat</url>
     </developer>
-    <developer>
-      <id>maheshsapkal</id>
-      <name>Mahesh Sapkal</name>
-      <url>https://github.com/maheshsapkal</url>
-    </developer>
   </developers>
   <contributors>
     <contributor>
+      <name>Herman Polloni</name>
+      <url>https://github.com/hpolloni</url>
+    </contributor>
+    <contributor>
       <name>Ryan Tse</name>
       <url>https://github.com/ryantse</url>
+    </contributor>
+    <contributor>
+      <name>Mahesh Sapkal</name>
+      <url>https://github.com/maheshsapkal</url>
     </contributor>
   </contributors>
 
