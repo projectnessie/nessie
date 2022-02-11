@@ -21,19 +21,18 @@
 
   <parent>
     <groupId>org.projectnessie</groupId>
-    <artifactId>nessie</artifactId>
+    <artifactId>nessie-tools</artifactId>
     <version>0.20.2-SNAPSHOT</version>
   </parent>
 
-  <artifactId>nessie-tools</artifactId>
+  <artifactId>nessie-compatibility</artifactId>
   <packaging>pom</packaging>
 
-  <name>Nessie - Tools</name>
+  <name>Nessie - Backward Compatibility - Parent</name>
 
   <modules>
-    <module>apprunner-common</module>
-    <module>apprunner-maven-plugin</module>
-    <module>content-generator</module>
-    <module>compatibility</module>
+    <module>common</module>
+    <module>jersey</module>
+    <module>compatibility-tests</module>
   </modules>
 </project>
