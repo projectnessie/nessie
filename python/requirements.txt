@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 attrs==21.4.0
-botocore==1.23.52
+botocore==1.23.53
 Click==8.0.3
 confuse==1.7.0
 desert==2020.11.18
