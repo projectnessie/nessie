@@ -19,28 +19,21 @@ import static org.projectnessie.server.config.VersionStoreConfig.VersionStoreTyp
 
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
-import org.projectnessie.server.config.VersionStoreConfig;
 import org.projectnessie.versioned.persist.adapter.ContentVariantSupplier;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
-import org.projectnessie.versioned.persist.rocks.ImmutableRocksDbConfig;
 import org.projectnessie.versioned.persist.rocks.RocksDatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.rocks.RocksDbInstance;
 
-/** In-memory version store factory. */
+/** RocksDB version store factory. */
 @StoreType(ROCKS)
 @Dependent
 public class RocksDatabaseAdapterBuilder implements DatabaseAdapterBuilder {
-  @Inject VersionStoreConfig.RocksVersionStoreConfig rocksConfig;
+  @Inject RocksDbInstance rocksDbInstance;
   @Inject NonTransactionalDatabaseAdapterConfig config;
 
   @Override
   public DatabaseAdapter newDatabaseAdapter(ContentVariantSupplier contentVariantSupplier) {
-    RocksDbInstance rocksDbInstance = new RocksDbInstance();
-    rocksDbInstance.configure(
-        ImmutableRocksDbConfig.builder().dbPath(rocksConfig.getDbPath()).build());
-    rocksDbInstance.initialize();
-
     return new RocksDatabaseAdapterFactory()
         .newBuilder()
         .withConfig(config)
