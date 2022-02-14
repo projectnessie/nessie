@@ -82,12 +82,7 @@ const BranchesDropdown = ({
       <NavDropdown.Item disabled>Tags</NavDropdown.Item>
       {tags.map((tag) => {
         return (
-          <ExploreLink
-            toRef={tag.name}
-            path={path}
-            type="CONTAINER"
-            key={tag.name}
-          >
+          <ExploreLink toRef={tag.name} path={path} type={type} key={tag.name}>
             <NavDropdown.Item as={"button"} key={tag.name}>
               {tag.name}
             </NavDropdown.Item>
@@ -137,7 +132,7 @@ const TreeTableHead = ({
       <Nav.Item className="tableHead__rightContentWrapper">
         <ExploreLink
           toRef={currentRef}
-          path={path?.concat("commits") || ["commits"]}
+          path={path || []}
           type="COMMIT"
           className="nav-link"
         >
@@ -221,7 +216,8 @@ const PathTreeTableHead = ({
   currentRef,
   defaultBranch,
   path,
-}: ITableHeadProps): React.ReactElement => {
+  type,
+}: NavDropdownProps): React.ReactElement => {
   if (!currentRef) {
     return <div />;
   }
@@ -234,8 +230,8 @@ const PathTreeTableHead = ({
           tags={tags}
           currentRef={currentRef}
           defaultBranch={defaultBranch}
-          path={path as string[]}
-          type={"COMMIT"}
+          path={path}
+          type={type}
         />
         <PathTableHead currentRef={currentRef} path={path || []} />
       </div>

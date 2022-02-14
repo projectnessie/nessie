@@ -26,6 +26,7 @@ type NavDropdownProps = {
   defaultBranch: string;
   path: string[];
   currentRef?: string;
+  content: boolean;
 };
 
 const TreeBase = ({
@@ -34,6 +35,7 @@ const TreeBase = ({
   branches,
   path,
   currentRef,
+  content,
 }: NavDropdownProps): React.ReactElement => {
   return path.length > 0 ? (
     <React.Fragment>
@@ -43,6 +45,7 @@ const TreeBase = ({
         defaultBranch={defaultBranch}
         currentRef={currentRef as string}
         path={path}
+        type={content ? "OBJECT" : "CONTAINER"}
       />
       <Card>
         <Outlet />

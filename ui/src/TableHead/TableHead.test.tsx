@@ -15,22 +15,30 @@
  */
 
 import React from "react";
-import { BrowserRouter } from "react-router-dom";
+import { MemoryRouter, Routes, Route, Navigate } from "react-router-dom";
 import { render, screen } from "@testing-library/react";
-import { TreeTableHead, PathTreeTableHead } from "./TableHead";
+import { TreeTableHead, PathTreeTableHead, CommitTableHead } from "./TableHead";
 import { Branch, Tag } from "../generated/utils/api";
 
 it("TableHead renders with path", () => {
   const { asFragment } = render(
-    <BrowserRouter>
-      <PathTreeTableHead
-        currentRef={"main"}
-        path={["a", "b", "c"]}
-        tags={[tag("t1"), tag("t2"), tag("t3")]}
-        branches={[branch("b1"), branch("b2"), branch("b3")]}
-        defaultBranch={"main"}
-      />
-    </BrowserRouter>
+    <MemoryRouter initialEntries={["/tree/main/a/b/c"]}>
+      <Routes>
+        <Route
+          path={"/tree/:branch/*"}
+          element={
+            <PathTreeTableHead
+              currentRef={"main"}
+              path={["a", "b", "c"]}
+              tags={[tag("t1"), tag("t2"), tag("t3")]}
+              branches={[branch("b1"), branch("b2"), branch("b3")]}
+              defaultBranch={"main"}
+              type={"CONTAINER"}
+            />
+          }
+        />
+      </Routes>
+    </MemoryRouter>
   );
 
   expect(asFragment()).toMatchSnapshot();
@@ -42,14 +50,21 @@ it("TableHead renders with path", () => {
 
 it("TableHead renders without path", () => {
   const { asFragment } = render(
-    <BrowserRouter>
-      <TreeTableHead
-        currentRef={"main"}
-        tags={[tag("t1"), tag("t2"), tag("t3")]}
-        branches={[tag("b1"), tag("b2"), tag("b3"), tag("b4")]}
-        defaultBranch={"main"}
-      />
-    </BrowserRouter>
+    <MemoryRouter initialEntries={["/tree/main"]}>
+      <Routes>
+        <Route
+          path={"/tree/:branch"}
+          element={
+            <TreeTableHead
+              currentRef={"main"}
+              tags={[tag("t1"), tag("t2"), tag("t3")]}
+              branches={[tag("b1"), tag("b2"), tag("b3"), tag("b4")]}
+              defaultBranch={"main"}
+            />
+          }
+        />
+      </Routes>
+    </MemoryRouter>
   );
 
   expect(asFragment()).toMatchSnapshot();
@@ -59,13 +74,45 @@ it("TableHead renders without path", () => {
 
 it("TableHead renders without current ref", () => {
   const { asFragment } = render(
-    <BrowserRouter>
-      <TreeTableHead
-        defaultBranch={"main"}
-        tags={[tag("t1"), tag("t2"), tag("t3")]}
-        branches={[tag("b1"), tag("b2"), tag("b3"), tag("b4")]}
-      />
-    </BrowserRouter>
+    <MemoryRouter initialEntries={["/tree/"]}>
+      <Routes>
+        <Route path={"/tree"}>
+          <Route index element={<Navigate to={`/tree/main`} />} />
+          <Route
+            path={"/tree/:branch"}
+            element={
+              <TreeTableHead
+                defaultBranch={"main"}
+                tags={[tag("t1"), tag("t2"), tag("t3")]}
+                branches={[tag("b1"), tag("b2"), tag("b3"), tag("b4")]}
+              />
+            }
+          />
+        </Route>
+      </Routes>
+    </MemoryRouter>
+  );
+
+  expect(asFragment()).toMatchSnapshot();
+});
+
+it("CommitHead renders with current ref", () => {
+  const { asFragment } = render(
+    <MemoryRouter initialEntries={["/commits/main"]}>
+      <Routes>
+        <Route
+          path={"/commits/:branch"}
+          element={
+            <CommitTableHead
+              currentRef={"main"}
+              defaultBranch={"main"}
+              tags={[tag("t1"), tag("t2"), tag("t3")]}
+              branches={[tag("b1"), tag("b2"), tag("b3"), tag("b4")]}
+            />
+          }
+        />
+      </Routes>
+    </MemoryRouter>
   );
 
   expect(asFragment()).toMatchSnapshot();
@@ -73,14 +120,21 @@ it("TableHead renders without current ref", () => {
 
 it("TableHead renders with different current ref", () => {
   const { asFragment } = render(
-    <BrowserRouter>
-      <TreeTableHead
-        currentRef={"b2"}
-        defaultBranch={"main"}
-        tags={[tag("t1"), tag("t2"), tag("t3")]}
-        branches={[tag("b1"), tag("b2"), tag("b3"), tag("b4")]}
-      />
-    </BrowserRouter>
+    <MemoryRouter initialEntries={["/tree/b2"]}>
+      <Routes>
+        <Route
+          path={"/tree/:branch"}
+          element={
+            <TreeTableHead
+              currentRef={"b2"}
+              defaultBranch={"main"}
+              tags={[tag("t1"), tag("t2"), tag("t3")]}
+              branches={[tag("b1"), tag("b2"), tag("b3"), tag("b4")]}
+            />
+          }
+        />
+      </Routes>
+    </MemoryRouter>
   );
 
   expect(asFragment()).toMatchSnapshot();

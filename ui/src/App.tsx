@@ -228,9 +228,6 @@ const App: React.FunctionComponent = () => {
   }, []);
 
   useEffect(() => {
-    if (location.pathname === "/notfound") {
-      return;
-    }
     if (branches.branches.length === 0 && branches.tags.length === 0) {
       return;
     }
@@ -247,6 +244,9 @@ const App: React.FunctionComponent = () => {
         setPath(newSlug.path);
       }
     } catch (e) {
+      if (location.pathname === "/notfound" || location.pathname === "/") {
+        return;
+      }
       history("/notfound");
     }
   }, [location, defaultBranch, branches]);
@@ -301,8 +301,8 @@ const App: React.FunctionComponent = () => {
   return (
     <Routes>
       <Route path={"/"} element={<Main />}>
-        <Route path="notfound" element={<NotFound />} />
         <Route index element={<Navigate to={`/tree/${defaultBranch}`} />} />
+        <Route path="notfound" element={<NotFound />} />
         <Route
           path={"tree"}
           element={
@@ -312,6 +312,7 @@ const App: React.FunctionComponent = () => {
               tags={branches.tags}
               path={path}
               currentRef={currentRef}
+              content={false}
             />
           }
         >
@@ -329,6 +330,7 @@ const App: React.FunctionComponent = () => {
               tags={branches.tags}
               path={path}
               currentRef={currentRef}
+              content
             />
           }
         >

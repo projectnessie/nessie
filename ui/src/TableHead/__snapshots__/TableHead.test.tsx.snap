@@ -1,5 +1,52 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`CommitHead renders with current ref 1`] = `
+<DocumentFragment>
+  <div
+    class="tableHead nav nav-pills"
+  >
+    <div
+      class="tableHead__leftContentWrapper"
+    >
+      <div
+        class="nav-item dropdown"
+        style="padding-left: 1em;"
+      >
+        <a
+          aria-expanded="false"
+          class="dropdown-toggle nav-link"
+          href="#"
+          id="nav-dropdown"
+          role="button"
+          tabindex="0"
+        >
+          main
+        </a>
+      </div>
+      <div
+        class="nav-link nav-item"
+      >
+        <a
+          href="/tree/main/"
+        >
+          nessie
+        </a>
+        <span
+          style="padding-left: 0.5em; padding-right: 0.5em;"
+        >
+          /
+        </span>
+        <a
+          href="/commits/main/"
+        >
+          commits
+        </a>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
 exports[`TableHead renders with different current ref 1`] = `
 <DocumentFragment>
   <div
@@ -73,7 +120,7 @@ exports[`TableHead renders with different current ref 1`] = `
     >
       <a
         class="nav-link"
-        href="/commits/b2/commits"
+        href="/commits/b2/"
       >
         <svg
           aria-hidden="true"
@@ -238,7 +285,7 @@ exports[`TableHead renders without path 1`] = `
     >
       <a
         class="nav-link"
-        href="/commits/main/commits"
+        href="/commits/main/"
       >
         <svg
           aria-hidden="true"

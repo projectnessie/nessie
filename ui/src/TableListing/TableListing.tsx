@@ -53,10 +53,13 @@ const fetchKeys = (
     path.length > 0
       ? `entry.namespace.matches('^${path.join("\\\\.")}(\\\\.|$)')`
       : undefined;
+  const refSplit = ref.includes(":") ? ref.split(":")[0] : ref;
+  const hashOnRef = ref.includes(":") ? ref.split(":")[1] : undefined;
   return api()
     .getEntries({
-      ref,
+      ref: refSplit,
       namespaceDepth: path.length + 1,
+      hashOnRef,
       filter,
     })
     .then((data) => {
