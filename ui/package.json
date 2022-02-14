@@ -111,7 +111,7 @@
     "file-loader": "6.2.0",
     "follow-redirects": ">=1.14.8",
     "fs-extra": "^10.0.0",
-    "html-webpack-plugin": "4.5.2",
+    "html-webpack-plugin": "5.5.0",
     "husky": "^7.0.4",
     "jest": "27.5.1",
     "jest-circus": "27.5.1",
