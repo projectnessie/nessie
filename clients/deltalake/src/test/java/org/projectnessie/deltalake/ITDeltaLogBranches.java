@@ -142,8 +142,8 @@ class ITDeltaLogBranches extends AbstractSparkTest {
     Content content = api.getContent().key(key).refName("main").get().get(key);
     Optional<DeltaLakeTable> table = content.unwrap(DeltaLakeTable.class);
     Assertions.assertTrue(table.isPresent());
-    Assertions.assertEquals(1, table.get().getCheckpointLocationHistory().size());
     Assertions.assertEquals(5, table.get().getMetadataLocationHistory().size());
+    Assertions.assertEquals(1, table.get().getCheckpointLocationHistory().size());
     Assertions.assertNotNull(table.get().getLastCheckpoint());
   }
 
