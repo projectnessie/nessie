@@ -22,13 +22,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
-import org.junit.jupiter.api.Test;
+import java.util.stream.Stream;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Operation;
+import org.projectnessie.model.Reference;
 
 public class EventSerDeTest {
+  private static final Instant EVENT_TIME = Instant.ofEpochMilli(1234634950000L);
   private static final ObjectMapper MAPPER = new ObjectMapper();
   private static final CommitEvent BOB_COMMIT =
       CommitEvent.builder()
@@ -36,26 +41,58 @@ public class EventSerDeTest {
           .metadata(bobCommitMeta())
           .newHash(randomHash())
           .addOperations(bobbyTablesDelete())
+          .eventTime(EVENT_TIME)
           .build();
 
-  @Test
-  public void canSerDeCommitEvent() throws Exception {
-    String serialized = MAPPER.writeValueAsString(BOB_COMMIT);
+  private static final ReferenceCreatedEvent DEV_CREATION =
+      ReferenceCreatedEvent.builder().reference(devBranch()).eventTime(EVENT_TIME).build();
 
-    assertEquals(BOB_COMMIT, MAPPER.readValue(serialized, CommitEvent.class));
+  private static final ReferenceDeletedEvent MAIN_DELETION =
+      ReferenceDeletedEvent.builder()
+          .referenceName("main")
+          .referenceType(Reference.ReferenceType.BRANCH)
+          .eventTime(EVENT_TIME)
+          .build();
+
+  private static Stream<Arguments> eventsToType() {
+    return Stream.of(
+        Arguments.of(BOB_COMMIT, "COMMIT_EVENT"),
+        Arguments.of(DEV_CREATION, "REFERENCE_CREATED"),
+        Arguments.of(MAIN_DELETION, "REFERENCE_DELETED"));
   }
 
-  @Test
-  public void commitEventsContainTypeInformation() throws Exception {
-    String serialized = MAPPER.writeValueAsString(BOB_COMMIT);
+  private static Stream<Arguments> eventsToClass() {
+    return Stream.of(
+        Arguments.of(BOB_COMMIT, CommitEvent.class),
+        Arguments.of(DEV_CREATION, ReferenceCreatedEvent.class),
+        Arguments.of(MAIN_DELETION, ReferenceDeletedEvent.class));
+  }
+
+  @ParameterizedTest(name = "{1}")
+  @MethodSource("eventsToType")
+  public void eventsContainRelevantInformation(Event event, String expectedType) throws Exception {
+    String serialized = MAPPER.writeValueAsString(event);
 
     JsonNode jsonNode = MAPPER.readValue(serialized, JsonNode.class);
 
-    assertEquals("COMMIT_EVENT", jsonNode.get("type").asText());
+    assertEquals(expectedType, jsonNode.get("type").asText());
+    assertEquals("2009-02-14T18:09:10Z", jsonNode.get("eventTime").asText());
+  }
+
+  @ParameterizedTest(name = "{1}")
+  @MethodSource("eventsToClass")
+  public void canSerDeCommitEvent(Event event, Class<Event> klass) throws Exception {
+    String serialized = MAPPER.writeValueAsString(event);
+
+    assertEquals(event, MAPPER.readValue(serialized, klass));
   }
 
   private static Branch mainBranch() {
     return Branch.of("main", randomHash());
+  }
+
+  private static Branch devBranch() {
+    return Branch.of("dev", randomHash());
   }
 
   private static String randomHash() {

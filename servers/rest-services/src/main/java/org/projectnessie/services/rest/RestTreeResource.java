@@ -71,11 +71,13 @@ public class RestTreeResource implements HttpTreeApi {
   }
 
   private TreeApi resource() {
+    // TODO: Replace No-op observer
     return new TreeApiImplWithAuthorization(
         config,
         store,
         authorizer,
-        securityContext == null ? null : securityContext.getUserPrincipal());
+        securityContext == null ? null : securityContext.getUserPrincipal(),
+        (e) -> {});
   }
 
   @Override

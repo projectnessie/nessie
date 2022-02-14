@@ -15,20 +15,24 @@
  */
 package org.projectnessie.events;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import java.time.Instant;
-import org.projectnessie.model.CommitMeta;
+import org.immutables.value.Value;
+import org.projectnessie.model.Reference;
 
-/** Marker interface for all events. */
-public interface Event {
+/** This event is fired every time a reference (Branch or Tag) is created. */
+@Value.Immutable
+@JsonSerialize(as = ImmutableReferenceCreatedEvent.class)
+@JsonDeserialize(as = ImmutableReferenceCreatedEvent.class)
+@JsonTypeName("REFERENCE_CREATED")
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+public interface ReferenceCreatedEvent extends Event {
+  /** The recently created reference. */
+  Reference getReference();
 
-  /**
-   * The event time. This is the time at which the event was "fired" and not necessarily the time at
-   * which the event happened. Although the idea is for those times to be equal, GC pauses and other
-   * scheduling "weirdness" prevent us to make that promise.
-   */
-  @JsonSerialize(using = CommitMeta.InstantSerializer.class)
-  @JsonDeserialize(using = CommitMeta.InstantDeserializer.class)
-  Instant getEventTime();
+  static ImmutableReferenceCreatedEvent.Builder builder() {
+    return ImmutableReferenceCreatedEvent.builder();
+  }
 }

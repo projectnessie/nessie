@@ -62,6 +62,8 @@ import org.projectnessie.error.NessieReferenceAlreadyExistsException;
 import org.projectnessie.error.NessieReferenceConflictException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.events.CommitEvent;
+import org.projectnessie.events.ReferenceCreatedEvent;
+import org.projectnessie.events.ReferenceDeletedEvent;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
@@ -88,6 +90,7 @@ import org.projectnessie.model.Validation;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.cel.CELUtil;
 import org.projectnessie.services.config.ServerConfig;
+import org.projectnessie.services.events.EventObserver;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Delete;
@@ -111,12 +114,16 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
 
   private static final int MAX_COMMIT_LOG_ENTRIES = 250;
 
+  private final EventObserver observer;
+
   public TreeApiImpl(
       ServerConfig config,
       VersionStore<Content, CommitMeta, Content.Type> store,
       Authorizer authorizer,
-      Principal principal) {
+      Principal principal,
+      EventObserver observer) {
     super(config, store, authorizer, principal);
+    this.observer = observer;
   }
 
   @Override
@@ -223,7 +230,14 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
 
     try {
       Hash hash = getStore().create(namedReference, toHash(reference.getHash(), false));
-      return RefUtil.toReference(namedReference, hash);
+      Reference createdReference = RefUtil.toReference(namedReference, hash);
+      getObserver()
+          .notify(
+              ReferenceCreatedEvent.builder()
+                  .reference(createdReference)
+                  .eventTime(Instant.now())
+                  .build());
+      return createdReference;
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (ReferenceAlreadyExistsException e) {
@@ -257,6 +271,13 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
       Reference.ReferenceType referenceType, String referenceName, String hash)
       throws NessieConflictException, NessieNotFoundException {
     deleteReference(toNamedRef(referenceType, referenceName), hash);
+    getObserver()
+        .notify(
+            ReferenceDeletedEvent.builder()
+                .referenceType(referenceType)
+                .referenceName(referenceName)
+                .eventTime(Instant.now())
+                .build());
   }
 
   @Override
@@ -531,15 +552,18 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
                   updatedMeta,
                   ops);
 
-      CommitEvent commitEvent =
-          CommitEvent.builder()
-              .reference(Branch.of(branch, hash))
-              .newHash(newHash.asString())
-              .metadata(updatedMeta)
-              .operations(operations.getOperations())
-              .build();
-
-      getObserver().notify(commitEvent);
+      getObserver()
+          .notify(
+              CommitEvent.builder()
+                  .reference(
+                      Branch.of(
+                          branch,
+                          hash)) // TODO: This should really be the previous hash on this branch.
+                  .newHash(newHash.asString())
+                  .metadata(updatedMeta)
+                  .operations(operations.getOperations())
+                  .eventTime(Instant.now())
+                  .build());
 
       return Branch.of(branch, newHash.asString());
     } catch (ReferenceNotFoundException e) {
@@ -683,5 +707,9 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     } else {
       throw new IllegalStateException("Unknown operation " + o);
     }
+  }
+
+  protected EventObserver getObserver() {
+    return observer;
   }
 }

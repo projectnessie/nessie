@@ -46,6 +46,7 @@ import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.authz.BatchAccessChecker;
 import org.projectnessie.services.authz.Check;
 import org.projectnessie.services.config.ServerConfig;
+import org.projectnessie.services.events.EventObserver;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.VersionStore;
@@ -57,8 +58,9 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
       ServerConfig config,
       VersionStore<Content, CommitMeta, Type> store,
       Authorizer authorizer,
-      Principal principal) {
-    super(config, store, authorizer, principal);
+      Principal principal,
+      EventObserver observer) {
+    super(config, store, authorizer, principal, observer);
   }
 
   @Override
