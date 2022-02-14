@@ -516,11 +516,4 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
   override def invalidateCache(): Unit = {}
 
   override def isPartialWriteVisible(path: Path): Boolean = true
-
-  override def resolveCheckpointPath(path: Path): Path = {
-    lastSnapshotUuid = Some(UUID.randomUUID().toString)
-    path
-      .getFileSystem(hadoopConf)
-      .makeQualified(new Path(path, lastSnapshotUuid.get))
-  }
 }
