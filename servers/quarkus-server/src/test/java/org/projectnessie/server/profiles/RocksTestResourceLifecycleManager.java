@@ -62,7 +62,7 @@ public class RocksTestResourceLifecycleManager implements QuarkusTestResourceLif
     List<IOException> failures = new ArrayList<>();
     Files.walkFileTree(
         dir,
-        new SimpleFileVisitor<Path>() {
+        new SimpleFileVisitor<>() {
 
           @Override
           public FileVisitResult visitFile(Path file, BasicFileAttributes attributes) {

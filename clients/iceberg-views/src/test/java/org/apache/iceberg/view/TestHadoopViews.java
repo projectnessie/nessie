@@ -23,11 +23,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import org.junit.jupiter.api.MethodOrderer.Alphanumeric;
+import org.junit.jupiter.api.MethodOrderer.MethodName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-@TestMethodOrder(Alphanumeric.class)
+@TestMethodOrder(MethodName.class)
 public class TestHadoopViews extends TestHadoopViewBase {
   int readVersionHint() throws IOException {
     return Integer.parseInt(Files.readFirstLine(versionHintFile, Charsets.UTF_8));

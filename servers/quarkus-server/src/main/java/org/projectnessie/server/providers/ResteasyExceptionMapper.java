@@ -75,7 +75,7 @@ public class ResteasyExceptionMapper extends BaseExceptionMapper<ResteasyViolati
     if (t == null) {
       return;
     }
-    sb.append(t.toString());
+    sb.append(t);
     if (t.getCause() != null && t != t.getCause()) {
       sb.append('[');
       doUnwrapException(sb, t.getCause());

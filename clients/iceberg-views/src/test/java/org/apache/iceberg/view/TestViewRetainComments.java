@@ -61,7 +61,7 @@ public class TestViewRetainComments extends TestViewBase {
     viewVersionMetadata = TestViews.loadViewVersionMetadata(metadataDir, "test");
     oldViewMetadata = viewVersionMetadata.definition();
     Assertions.assertEquals(oldViewMetadata.schema().columns().get(0).doc(), "c1 comment");
-    Assertions.assertEquals(oldViewMetadata.schema().columns().get(1).doc(), null);
+    Assertions.assertNull(oldViewMetadata.schema().columns().get(1).doc());
     Assertions.assertEquals(oldViewMetadata.sessionCatalog(), "new catalog");
     Assertions.assertEquals(
         viewVersionMetadata
@@ -95,7 +95,7 @@ public class TestViewRetainComments extends TestViewBase {
     viewVersionMetadata = TestViews.loadViewVersionMetadata(metadataDir, "test");
     oldViewMetadata = viewVersionMetadata.definition();
     Assertions.assertEquals(oldViewMetadata.schema().columns().get(0).doc(), "c1 comment");
-    Assertions.assertEquals(oldViewMetadata.schema().columns().get(0).isOptional(), true);
+    Assertions.assertTrue(oldViewMetadata.schema().columns().get(0).isOptional());
     Assertions.assertEquals(oldViewMetadata.schema().columns().get(1).doc(), "");
   }
 }

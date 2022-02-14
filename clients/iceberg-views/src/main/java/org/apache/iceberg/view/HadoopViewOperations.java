@@ -20,6 +20,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.UUID;
 import org.apache.hadoop.conf.Configuration;
@@ -123,7 +124,7 @@ public class HadoopViewOperations implements ViewOperations {
         !metadata.properties().containsKey(TableProperties.WRITE_METADATA_LOCATION),
         "Hadoop path-based tables cannot relocate metadata");
 
-    Path tempMetadataFile = metadataPath(UUID.randomUUID().toString() + ".json");
+    Path tempMetadataFile = metadataPath(UUID.randomUUID() + ".json");
     ViewVersionMetadataParser.write(metadata, io().newOutputFile(tempMetadataFile.toString()));
 
     int nextVersion = (version != null ? version + 1 : 1);
@@ -197,7 +198,8 @@ public class HadoopViewOperations implements ViewOperations {
       }
 
       try (BufferedReader in =
-          new BufferedReader(new InputStreamReader(fs.open(versionHintFile), "UTF-8"))) {
+          new BufferedReader(
+              new InputStreamReader(fs.open(versionHintFile), StandardCharsets.UTF_8))) {
         String versionStr = in.readLine();
         if (versionStr != null) {
           return Integer.parseInt(versionStr.replace("\n", ""));
@@ -215,7 +217,7 @@ public class HadoopViewOperations implements ViewOperations {
     FileSystem fs = getFS(versionHintFile, conf);
 
     try (FSDataOutputStream out = fs.create(versionHintFile, true /* overwrite */)) {
-      out.write(String.valueOf(version).getBytes("UTF-8"));
+      out.write(String.valueOf(version).getBytes(StandardCharsets.UTF_8));
 
     } catch (IOException e) {
       throw new RuntimeIOException(e, "Failed to write version hint");

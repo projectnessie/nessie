@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.projectnessie.client.http.HttpUtils.HEADER_ACCEPT;
 
 import java.net.URI;
-import org.jetbrains.annotations.Nullable;
+import javax.annotation.Nullable;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.http.HttpAuthentication;
 import org.projectnessie.client.http.HttpClient;

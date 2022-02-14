@@ -25,14 +25,12 @@ import org.immutables.value.Value.Immutable;
 public abstract class Key implements Comparable<Key> {
 
   private static final ThreadLocal<Collator> COLLATOR =
-      new ThreadLocal<Collator>() {
-        @Override
-        protected Collator initialValue() {
-          Collator c = Collator.getInstance(Locale.US);
-          c.setStrength(Collator.PRIMARY);
-          return c;
-        }
-      };
+      ThreadLocal.withInitial(
+          () -> {
+            Collator c = Collator.getInstance(Locale.US);
+            c.setStrength(Collator.PRIMARY);
+            return c;
+          });
 
   public abstract List<String> getElements();
 
@@ -62,7 +60,7 @@ public abstract class Key implements Comparable<Key> {
   public int hashCode() {
     final Collator collator = COLLATOR.get();
     return getElements().stream()
-        .map(s -> collator.getCollationKey(s))
+        .map(collator::getCollationKey)
         .collect(Collectors.toList())
         .hashCode();
   }
@@ -86,6 +84,6 @@ public abstract class Key implements Comparable<Key> {
 
   @Override
   public String toString() {
-    return getElements().stream().collect(Collectors.joining("."));
+    return String.join(".", getElements());
   }
 }

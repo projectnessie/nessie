@@ -238,7 +238,6 @@ public class ViewUtils {
     Preconditions.checkState(
         namespace.size() == 2, "Catalog and schema are expected in the namespace.");
 
-    return TableIdentifier.of(
-        Namespace.of(namespace.toArray(new String[namespace.size()])), lastPart);
+    return TableIdentifier.of(Namespace.of(namespace.toArray(new String[0])), lastPart);
   }
 }

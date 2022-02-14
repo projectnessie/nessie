@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -61,7 +62,7 @@ public class ViewVersionMetadataParser {
   public static void internalWrite(
       ViewVersionMetadata metadata, OutputFile outputFile, boolean overwrite) {
     OutputStream stream = overwrite ? outputFile.createOrOverwrite() : outputFile.create();
-    try (OutputStreamWriter writer = new OutputStreamWriter(stream, "UTF-8")) {
+    try (OutputStreamWriter writer = new OutputStreamWriter(stream, StandardCharsets.UTF_8)) {
       JsonGenerator generator = JsonUtil.factory().createGenerator(writer);
       generator.useDefaultPrettyPrinter();
       toJson(metadata, generator);
