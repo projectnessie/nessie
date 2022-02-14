@@ -25,12 +25,9 @@ from typing import Optional
 import attr
 import pytest
 import simplejson
-from _pytest.config import Config
-from _pytest.fixtures import FixtureRequest
 from assertpy import assert_that
 from click.testing import CliRunner
 from click.testing import Result
-from pytest import Session
 from vcr.config import VCR
 from vcr.request import Request
 from vcr.serializers import yamlserializer
@@ -55,14 +52,14 @@ def pytest_configure(config):  # noqa
     config.addinivalue_line("markers", "doc: mark as end-to-end test.")
 
 
-def pytest_sessionstart(session: "Session") -> None:
+def pytest_sessionstart(session: pytest.Session) -> None:
     """Setup a fresh temporary config directory for tests."""
     nessie_test_config.config_dir = tempfile.mkdtemp() + "/"
     # Instruct Confuse to keep Nessie config file in the temp location:
     os.environ["NESSIEDIR"] = nessie_test_config.config_dir
 
 
-def pytest_sessionfinish(session: "Session", exitstatus: int) -> None:
+def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     """Remove temporary config directory."""
     shutil.rmtree(nessie_test_config.config_dir)
 
@@ -188,7 +185,7 @@ class _NessieSortingSerializer:
         return yamlserializer.serialize(cassette_dict)
 
 
-def pytest_recording_configure(config: Config, vcr: VCR) -> None:
+def pytest_recording_configure(config: pytest.Config, vcr: VCR) -> None:
     """Callback invoked by pytest_recording. We register a custom VCR serializer here."""
     ser_name = "nessie_sorted_json"
     vcr.register_serializer(ser_name, _NessieSortingSerializer())
@@ -205,7 +202,7 @@ def vcr_config() -> dict:
 
 
 @pytest.fixture(autouse=True)
-def _clean_nessie_session_marker(request: "FixtureRequest", record_mode: str) -> None:
+def _clean_nessie_session_marker(request: pytest.FixtureRequest, record_mode: str) -> None:
     """This pytest fixture is invoked for all test methods and cleans up the Nessie Server state.
 
     :param request Request object provided by the pytest framework

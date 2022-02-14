@@ -15,9 +15,9 @@
 # limitations under the License.
 #
 """Use AWS4Auth and botocore to fetch credentials and sign requests."""
-from botocore.credentials import get_credentials
-from botocore.session import Session
-from requests_aws4auth import AWS4Auth
+from botocore.credentials import get_credentials  # type: ignore
+from botocore.session import Session  # type: ignore
+from requests_aws4auth import AWS4Auth  # type: ignore
 
 
 def setup_aws_auth(region: str, profile: str = None) -> AWS4Auth:
