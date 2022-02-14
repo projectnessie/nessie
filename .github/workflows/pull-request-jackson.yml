@@ -51,7 +51,7 @@ jobs:
           java-version: ${{ matrix.java-version }}
       - name: Build with Maven ${{ matrix.target-library }}
         run: |
-          ./mvnw -B install -DskipTests -am -pl :nessie-quarkus -pl :nessie-lambda
+          ./mvnw --batch-mode --threads 1C install -DskipTests -am -pl :nessie-quarkus -pl :nessie-lambda
       - name: Jackson Integration Tests ${{ matrix.target-library }}
         run: |
-          ./mvnw verify -pl :nessie-client -am -Pjackson-tests -Djackson.test.version=${{ matrix.jackson-version }} -Dtest.log.level=WARN
+          ./mvnw --batch-mode verify -pl :nessie-client -am -Pjackson-tests -Djackson.test.version=${{ matrix.jackson-version }} -Dtest.log.level=WARN

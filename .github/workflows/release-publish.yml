@@ -121,7 +121,7 @@ jobs:
           BUILD_ARGS="${BUILD_ARGS} -Dmaven.deploy.skip -Dgpg.skip"
         fi
 
-        ./mvnw -B ${GOALS} --file pom.xml ${PROFILES} ${NEXUS_ARGS} ${BUILD_ARGS}
+        ./mvnw --batch-mode ${GOALS} ${PROFILES} ${NEXUS_ARGS} ${BUILD_ARGS}
 
         # Build the native-image, it's not released to Maven Central anyway
         PROFILES="-Pnative -Pdocker"
@@ -129,7 +129,7 @@ jobs:
         if [[ -n ${ACT} ]] ; then
           BUILD_ARGS="${BUILD_ARGS} -Dquarkus.native.remote-container-build=true -Dquarkus.native.container-build=false -Dquarkus.native.native-image-xmx=6g"
         fi
-        ./mvnw -B install --file pom.xml ${PROFILES} ${BUILD_ARGS} -pl servers/quarkus-server
+        ./mvnw --batch-mode install ${PROFILES} ${BUILD_ARGS} -pl servers/quarkus-server
 
         # Add version to the openapi file name
         cp model/target/classes/META-INF/openapi/openapi.yaml model/target/nessie-openapi-${RELEASE_VERSION}.yaml
