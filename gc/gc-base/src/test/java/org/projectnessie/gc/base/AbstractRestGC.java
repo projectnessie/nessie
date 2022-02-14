@@ -18,18 +18,22 @@ package org.projectnessie.gc.base;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URI;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import java.io.File;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
+import org.apache.spark.SparkConf;
 import org.apache.spark.sql.SparkSession;
+import org.junit.jupiter.api.io.TempDir;
 import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.error.NessieConflictException;
@@ -47,6 +51,10 @@ import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
 
 public abstract class AbstractRestGC extends AbstractRest {
+
+  @TempDir static File LOCAL_DIR;
+
+  ObjectMapper objectMapper = new ObjectMapper();
 
   @NotNull
   List<LogEntry> fetchLogEntries(Branch branch, int numCommits) throws NessieNotFoundException {
@@ -70,7 +78,8 @@ public abstract class AbstractRestGC extends AbstractRest {
         .forEach(
             op -> {
               Content content = ((Put) op).getContent();
-              expected.addContent(branch.getName(), content);
+              expected.addContent(
+                  branch.getName(), content.getId(), GCUtil.serializeContent(content));
             });
   }
 
@@ -81,10 +90,8 @@ public abstract class AbstractRestGC extends AbstractRest {
       List<String> involvedRefs,
       boolean disableCommitProtection,
       Instant deadReferenceCutoffTime) {
-    SparkSession spark =
-        SparkSession.builder().appName("test-nessie-gc").master("local[2]").getOrCreate();
-    spark.sparkContext().setLogLevel("WARN");
-    try {
+
+    try (SparkSession sparkSession = getSparkSession()) {
       ImmutableGCParams.Builder builder = ImmutableGCParams.builder();
       final Map<String, String> options = new HashMap<>();
       options.put(CONF_NESSIE_URI, getUri().toString());
@@ -99,14 +106,44 @@ public abstract class AbstractRestGC extends AbstractRest {
               .deadReferenceCutOffTimeStamp(deadReferenceCutoffTime)
               .cutOffTimestampPerRef(cutOffTimeStampPerRef)
               .defaultCutOffTimestamp(cutoffTimeStamp)
+              .nessieCatalogName("nessie")
+              .outputTableRefName("gcRef")
+              .outputTableIdentifier("db1.gc_results")
               .build();
       GCImpl gc = new GCImpl(gcParams);
-      IdentifiedResult identifiedResult = gc.identifyExpiredContents(spark);
+      String runId = gc.identifyExpiredContents(sparkSession);
+
+      IdentifiedResultsRepo identifiedResultsRepo =
+          new IdentifiedResultsRepo(
+              sparkSession,
+              gcParams.getNessieCatalogName(),
+              gcParams.getOutputTableRefName(),
+              gcParams.getOutputTableIdentifier());
+      IdentifiedResult identifiedResult = identifiedResultsRepo.collectExpiredContents(runId);
       // compare the expected contents against the actual gc output
       verify(identifiedResult, expectedExpired, involvedRefs);
-    } finally {
-      spark.close();
     }
+  }
+
+  SparkSession getSparkSession() {
+    SparkConf conf = new SparkConf();
+    conf.set("spark.sql.catalog.nessie.uri", getUri().toString())
+        .set("spark.sql.catalog.nessie.ref", "main")
+        .set("spark.sql.catalog.nessie.warehouse", LOCAL_DIR.toURI().toString())
+        .set("spark.sql.catalog.nessie.catalog-impl", "org.apache.iceberg.nessie.NessieCatalog")
+        .set("spark.sql.catalog.nessie", "org.apache.iceberg.spark.SparkCatalog")
+        .set(
+            "spark.sql.extensions",
+            "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions,org.projectnessie.spark.extensions.NessieSparkSessionExtensions");
+
+    SparkSession spark =
+        SparkSession.builder()
+            .appName("test-nessie-gc")
+            .master("local[2]")
+            .config(conf)
+            .getOrCreate();
+    spark.sparkContext().setLogLevel("WARN");
+    return spark;
   }
 
   private void verify(
@@ -121,7 +158,7 @@ public abstract class AbstractRestGC extends AbstractRest {
                 expectedExpired.getContentValuesForReference(ref)));
   }
 
-  void compareContentsPerRef(
+  private void compareContentsPerRef(
       Map<String, ContentValues> actualMap, Map<String, ContentValues> expectedMap) {
     assertThat(actualMap.size()).isEqualTo(expectedMap.size());
     actualMap
@@ -132,23 +169,28 @@ public abstract class AbstractRestGC extends AbstractRest {
             });
   }
 
-  void compareContents(ContentValues actual, ContentValues expected) {
+  private void compareContents(ContentValues actual, ContentValues expected) {
     if (actual == null && expected == null) {
       return;
     }
     assertThat(actual).isNotNull();
     assertThat(expected).isNotNull();
     assertThat(actual.getExpiredContents().size()).isEqualTo(expected.getExpiredContents().size());
-    List<Content> expectedContents = new ArrayList<>(expected.getExpiredContents());
-    expectedContents.sort(new ContentComparator());
-    List<Content> actualContents = new ArrayList<>(actual.getExpiredContents());
-    actualContents.sort(new ContentComparator());
+    List<Content> expectedContents = getExpiredContents(expected);
+    List<Content> actualContents = getExpiredContents(actual);
     for (int i = 0; i < expectedContents.size(); i++) {
       compareContent(expectedContents.get(i), actualContents.get(i));
     }
   }
 
-  void compareContent(Content actual, Content expected) {
+  private List<Content> getExpiredContents(ContentValues expected) {
+    return expected.getExpiredContents().stream()
+        .map(GCUtil::deserializeContent)
+        .sorted(new ContentComparator())
+        .collect(Collectors.toList());
+  }
+
+  private void compareContent(Content actual, Content expected) {
     switch (expected.getType()) {
       case ICEBERG_TABLE:
         // exclude global state in comparison as it will change as per the commit and won't be same

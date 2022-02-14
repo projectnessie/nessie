@@ -19,7 +19,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import java.io.Serializable;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -47,7 +46,7 @@ import org.immutables.value.Value;
   @Type(Namespace.class)
 })
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
-public abstract class Content implements Serializable {
+public abstract class Content {
 
   public enum Type {
     UNKNOWN,

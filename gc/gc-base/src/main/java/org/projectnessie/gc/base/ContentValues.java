@@ -18,7 +18,6 @@ package org.projectnessie.gc.base;
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
-import org.projectnessie.model.Content;
 
 /** Contains details about one content id: like expired contents. */
 public class ContentValues implements Serializable {
@@ -27,13 +26,15 @@ public class ContentValues implements Serializable {
   // Note that we may need more info like refName, hashOnRef, contentKey
   // for the consumer of GC along with expired contents.
   // Hence, a separate class.
-  private final Set<Content> expiredContents = new HashSet<>();
+  // As these values will be written as a Spark Row of GC output table,
+  // keeping it as a JSON serialized content objects.
+  private final Set<String> expiredContents = new HashSet<>();
 
-  void gotValue(Content content) {
+  void gotValue(String content) {
     expiredContents.add(content);
   }
 
-  public Set<Content> getExpiredContents() {
+  public Set<String> getExpiredContents() {
     return expiredContents;
   }
 }

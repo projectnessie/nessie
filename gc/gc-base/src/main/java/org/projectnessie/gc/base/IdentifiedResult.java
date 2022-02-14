@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.spark.sql.SparkSession;
-import org.projectnessie.model.Content;
 
 /**
  * Output of Identify GC action {@link GCImpl#identifyExpiredContents(SparkSession)}. Contains a map
@@ -34,10 +33,10 @@ public class IdentifiedResult implements Serializable {
   // ContentValues per reference per content id.
   private final Map<String, Map<String, ContentValues>> contentValues = new ConcurrentHashMap<>();
 
-  public void addContent(String refName, Content content) {
+  public void addContent(String refName, String contentId, String content) {
     contentValues
         .computeIfAbsent(refName, k -> new HashMap<>())
-        .computeIfAbsent(content.getId(), k -> new ContentValues())
+        .computeIfAbsent(contentId, k -> new ContentValues())
         .gotValue(content);
   }
 

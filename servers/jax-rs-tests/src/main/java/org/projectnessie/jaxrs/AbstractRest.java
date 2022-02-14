@@ -30,6 +30,8 @@ import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.client.rest.NessieHttpResponseFilter;
 import org.projectnessie.error.BaseNessieClientServerException;
+import org.projectnessie.error.NessieConflictException;
+import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
@@ -159,6 +161,19 @@ public abstract class AbstractRest {
 
   protected Branch createBranch(String name) throws BaseNessieClientServerException {
     return createBranch(name, null);
+  }
+
+  protected static void checkAndCreateEmptyReference(NessieApiV1 api, String refName) {
+    try {
+      api.getReference().refName(refName).get();
+    } catch (NessieNotFoundException e) {
+      // create a reference pointing to NO_ANCESTOR hash.
+      try {
+        api.createReference().reference(Branch.of(refName, null)).create();
+      } catch (NessieNotFoundException | NessieConflictException ex) {
+        throw new RuntimeException(ex);
+      }
+    }
   }
 
   protected void deleteBranch(String name, String hash) throws BaseNessieClientServerException {

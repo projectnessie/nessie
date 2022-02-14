@@ -16,9 +16,12 @@
 package org.projectnessie.gc.base;
 
 import java.io.Serializable;
+import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.OptionalInt;
 import java.util.Set;
@@ -27,6 +30,7 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.spark.api.java.function.Function;
+import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.client.StreamingUtil;
@@ -62,9 +66,42 @@ public class IdentifyContentsPerExecutor implements Serializable {
             bloomFilterSize);
   }
 
-  protected Function<String, IdentifiedResult> computeExpiredContentsFunc(
-      Map<String, ContentBloomFilter> liveContentsBloomFilterMap) {
-    return reference -> computeExpiredContents(liveContentsBloomFilterMap, reference);
+  protected SerializableFunction1<
+          scala.collection.Iterator<IdentifiedResult>, scala.collection.Iterator<Row>>
+      getContentRowsFunc(String runID, Timestamp startedAt) {
+    return result -> getContentRows(result, runID, startedAt);
+  }
+
+  protected IdentifiedResult computeExpiredContents(
+      Map<String, ContentBloomFilter> liveContentsBloomFilterMap, String reference) {
+    try (NessieApiV1 api = GCUtil.getApi(gcParams.getNessieClientConfigs())) {
+      return walkAllCommitsInReference(
+          api, GCUtil.deserializeReference(reference), liveContentsBloomFilterMap);
+    }
+  }
+
+  /**
+   * convert scala Iterator of {@link IdentifiedResult} into scala Iterator of {@link Row}.
+   *
+   * <p>Each {@link IdentifiedResult} can produce one or more rows.
+   */
+  protected static scala.collection.Iterator<Row> getContentRows(
+      scala.collection.Iterator<IdentifiedResult> result, String runID, Timestamp startedAt) {
+    List<Row> rows = new ArrayList<>();
+    result.foreach(
+        identifiedResult -> {
+          identifiedResult
+              .getContentValues()
+              .forEach(
+                  (refName, value) ->
+                      value.forEach(
+                          (contentId, contentValues) ->
+                              rows.add(
+                                  IdentifiedResultsRepo.getContentRow(
+                                      runID, startedAt, refName, contentId, contentValues))));
+          return identifiedResult;
+        });
+    return scala.collection.JavaConverters.asScalaIterator(rows.iterator());
   }
 
   private Map<String, ContentBloomFilter> computeLiveContents(
@@ -92,14 +129,6 @@ public class IdentifyContentsPerExecutor implements Serializable {
               .build();
 
       return walkLiveCommitsInReference(gcStateParamsPerTask);
-    }
-  }
-
-  private IdentifiedResult computeExpiredContents(
-      Map<String, ContentBloomFilter> liveContentsBloomFilterMap, String reference) {
-    try (NessieApiV1 api = GCUtil.getApi(gcParams.getNessieClientConfigs())) {
-      return walkAllCommitsInReference(
-          api, GCUtil.deserializeReference(reference), liveContentsBloomFilterMap);
     }
   }
 
@@ -247,7 +276,8 @@ public class IdentifyContentsPerExecutor implements Serializable {
                 // fpp.
                 // But live contents never be considered as expired.
                 if (bloomFilter == null || !bloomFilter.mightContain(content)) {
-                  result.addContent(reference.getName(), content);
+                  result.addContent(
+                      reference.getName(), content.getId(), GCUtil.serializeContent(content));
                 }
               });
     }

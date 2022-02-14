@@ -27,6 +27,7 @@ import org.apache.spark.sql.SparkSession;
 import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.client.StreamingUtil;
 import org.projectnessie.client.api.NessieApiV1;
+import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.RefLogResponse;
@@ -93,9 +94,9 @@ public class GCImpl {
    * commit head of live keys at the time of cutoff timestamp will be retained.
    *
    * @param session spark session for distributed computation
-   * @return {@link IdentifiedResult} object having expired contents per content id.
+   * @return current run id of the completed gc task
    */
-  public IdentifiedResult identifyExpiredContents(SparkSession session) {
+  public String identifyExpiredContents(SparkSession session) {
     try (NessieApiV1 api = GCUtil.getApi(gcParams.getNessieClientConfigs())) {
       DistributedIdentifyContents distributedIdentifyContents =
           new DistributedIdentifyContents(session, gcParams);
@@ -117,8 +118,10 @@ public class GCImpl {
       Map<String, ContentBloomFilter> liveContentsBloomFilterMap =
           distributedIdentifyContents.getLiveContentsBloomFilters(
               allRefs, bloomFilterSize, droppedReferenceTimeMap);
+      checkAndCreateGcReference(api, gcParams.getOutputTableRefName());
       // Identify the expired contents
-      return distributedIdentifyContents.getIdentifiedResults(liveContentsBloomFilterMap, allRefs);
+      return distributedIdentifyContents.identifyExpiredContents(
+          liveContentsBloomFilterMap, allRefs);
     }
   }
 
@@ -193,5 +196,18 @@ public class GCImpl {
         TimeUnit.MICROSECONDS.toSeconds(microsSinceEpoch),
         TimeUnit.MICROSECONDS.toNanos(
             Math.floorMod(microsSinceEpoch, TimeUnit.SECONDS.toMicros(1))));
+  }
+
+  private static void checkAndCreateGcReference(NessieApiV1 api, String refName) {
+    try {
+      api.getReference().refName(refName).get();
+    } catch (NessieNotFoundException e) {
+      // create a gc reference pointing to NO_ANCESTOR hash.
+      try {
+        api.createReference().reference(Branch.of(refName, null)).create();
+      } catch (NessieNotFoundException | NessieConflictException ex) {
+        throw new RuntimeException(ex);
+      }
+    }
   }
 }
