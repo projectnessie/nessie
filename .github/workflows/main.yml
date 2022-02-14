@@ -119,7 +119,7 @@ jobs:
         with:
           java-version: ${{ matrix.java-version }}
       - name: Jackson Integration Tests ${{ matrix.target-library }}
-        run: mvn verify -pl :nessie-client -am -Pjackson-tests -Djackson.test.version=${{ matrix.jackson-version }} -Dtest.log.level=WARN
+        run: ./mvnw --batch-mode verify -pl :nessie-client -am -Pjackson-tests -Djackson.test.version=${{ matrix.jackson-version }} -Dtest.log.level=WARN
 
   python:
     name: Python
