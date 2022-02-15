@@ -27,3 +27,13 @@ omit = ["pynessie/auth/*.py"]
 [tool.coverage.report]
 show_missing = true
 fail_under = 80
+
+# https://mypy.readthedocs.io/en/stable/config_file.html#using-a-pyproject-toml
+[[tool.mypy.overrides]]
+module = [
+    'botocore.*',
+    'confuse.*',
+    'marshmallow_oneofschema.*',
+    'requests_aws4auth.*'
+]
+ignore_missing_imports = true

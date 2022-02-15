@@ -42,8 +42,6 @@ requirements = [
     "simplejson",  # stable
 ]
 
-setup_requirements = ["pytest-runner", "pip"]
-
 setup(
     author="Ryan Murray",
     author_email="nessie-release-builder@dremio.com",
@@ -72,9 +70,6 @@ setup(
     keywords="pynessie",
     name="pynessie",
     packages=find_packages(include=["pynessie", "pynessie.*"]),
-    setup_requires=setup_requirements,
-    test_suite="tests",
-    tests_require=[],
     url="https://github.com/projectnessie/nessie",
     version="0.19.1",
     zip_safe=False,
