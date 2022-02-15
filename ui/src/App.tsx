@@ -103,6 +103,7 @@ interface IBranchState {
 interface Slug {
   currentRef: string;
   path: string[];
+  isCommits?: boolean;
 }
 
 const parseSlug = (
@@ -152,11 +153,16 @@ const updateRef = (
     throw new Error("invalid url");
   }
   const view = locationParts[0];
+
   if (view === "commits" || view === "tree" || view === "content") {
     const branch = locationParts[1];
     const slug =
       locationParts.length > 2 ? locationParts.slice(2).join("/") : "";
-    return parseSlug(slug, branch, defaultBranch, branches, tags);
+
+    return {
+      ...parseSlug(slug, branch, defaultBranch, branches, tags),
+      isCommits: view === "commits",
+    };
   } else {
     throw new Error("invalid url");
   }
@@ -191,6 +197,7 @@ const App: React.FunctionComponent = () => {
       },
     },
   ]);
+  const [viewCommits, setViewCommits] = useState<boolean>(false);
 
   useEffect(() => {
     const references = async () => {
@@ -229,6 +236,7 @@ const App: React.FunctionComponent = () => {
       if (newSlug) {
         setCurrentRef(newSlug.currentRef);
         setPath(newSlug.path);
+        setViewCommits(newSlug.isCommits || false);
       }
     } catch (e) {
       if (location.pathname === "/notfound" || location.pathname === "/") {
@@ -265,8 +273,10 @@ const App: React.FunctionComponent = () => {
     if (currentRef === undefined) {
       return;
     }
-    void fetchMoreLog(true);
-  }, [currentRef, rowsPerPage]);
+    if (viewCommits) {
+      void fetchMoreLog(true);
+    }
+  }, [currentRef, rowsPerPage, viewCommits]);
 
   const handleChangePage = (
     event: React.MouseEvent<HTMLButtonElement> | null,
