@@ -17,8 +17,18 @@ package org.projectnessie.jaxrs;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.collect.ImmutableMap;
+import java.net.URI;
+import java.util.Locale;
+import javax.annotation.Nullable;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.projectnessie.client.api.NessieApiV1;
+import org.projectnessie.client.http.HttpClient;
+import org.projectnessie.client.http.HttpClientBuilder;
+import org.projectnessie.client.rest.NessieHttpResponseFilter;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
@@ -31,7 +41,72 @@ import org.projectnessie.model.Tag;
 
 /** See {@link AbstractTestRest} for details about and reason for the inheritance model. */
 public abstract class AbstractRest {
-  protected abstract NessieApiV1 getApi();
+
+  private NessieApiV1 api;
+  private HttpClient httpClient;
+  private URI uri;
+
+  static {
+    // Note: REST tests validate some locale-specific error messages, but expect on the messages to
+    // be in ENGLISH. However, the JRE's startup classes (in particular class loaders) may cause the
+    // default Locale to be initialized before Maven is able to override the user.language system
+    // property. Therefore, we explicitly set the default Locale to ENGLISH here to match tests'
+    // expectations.
+    Locale.setDefault(Locale.ENGLISH);
+  }
+
+  protected void init(URI uri) {
+    NessieApiV1 api = HttpClientBuilder.builder().withUri(uri).build(NessieApiV1.class);
+
+    ObjectMapper mapper =
+        new ObjectMapper()
+            .enable(SerializationFeature.INDENT_OUTPUT)
+            .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+    HttpClient.Builder httpClient = HttpClient.builder().setBaseUri(uri).setObjectMapper(mapper);
+    httpClient.addResponseFilter(new NessieHttpResponseFilter(mapper));
+
+    init(api, httpClient, uri);
+  }
+
+  protected void init(NessieApiV1 api, @Nullable HttpClient.Builder httpClient, URI uri) {
+    this.api = api;
+    this.httpClient = httpClient != null ? httpClient.build() : null;
+    this.uri = uri;
+  }
+
+  @BeforeEach
+  public void setUp() {
+    init(URI.create("http://localhost:19121/api/v1"));
+  }
+
+  @AfterEach
+  public void tearDown() throws Exception {
+    Branch defaultBranch = api.getDefaultBranch();
+    for (Reference ref : api.getAllReferences().get().getReferences()) {
+      if (ref.getName().equals(defaultBranch.getName())) {
+        continue;
+      }
+      if (ref instanceof Branch) {
+        api.deleteBranch().branch((Branch) ref).delete();
+      } else if (ref instanceof Tag) {
+        api.deleteTag().tag((Tag) ref).delete();
+      }
+    }
+
+    api.close();
+  }
+
+  public NessieApiV1 getApi() {
+    return api;
+  }
+
+  public HttpClient getHttpClient() {
+    return httpClient;
+  }
+
+  public URI getUri() {
+    return uri;
+  }
 
   protected String createCommits(
       Reference branch, int numAuthors, int commitsPerAuthor, String currentHash)
@@ -61,12 +136,33 @@ public abstract class AbstractRest {
     return currentHash;
   }
 
+  protected Branch createBranch(String name, Branch from) throws BaseNessieClientServerException {
+    Branch expectedBranch;
+    String srcBranchName;
+    if (from == null) {
+      Branch main = getApi().getDefaultBranch();
+      expectedBranch = Branch.of(name, main.getHash());
+      srcBranchName = "main";
+    } else {
+      expectedBranch = Branch.of(name, from.getHash());
+      srcBranchName = from.getName();
+    }
+    Reference created =
+        getApi()
+            .createReference()
+            .sourceRefName(srcBranchName)
+            .reference(Branch.of(name, expectedBranch.getHash()))
+            .create();
+    assertThat(created).isEqualTo(expectedBranch);
+    return expectedBranch;
+  }
+
   protected Branch createBranch(String name) throws BaseNessieClientServerException {
-    Branch main = getApi().getDefaultBranch();
-    Branch branch = Branch.of(name, main.getHash());
-    Reference created = getApi().createReference().sourceRefName("main").reference(branch).create();
-    assertThat(created).isEqualTo(branch);
-    return branch;
+    return createBranch(name, null);
+  }
+
+  protected void deleteBranch(String name, String hash) throws BaseNessieClientServerException {
+    getApi().deleteBranch().branchName(name).hash(hash).delete();
   }
 
   /**
