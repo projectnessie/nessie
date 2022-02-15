@@ -22,7 +22,7 @@ from typing import List, Optional, Tuple
 import attr
 import desert
 from marshmallow import fields
-from marshmallow_oneofschema import OneOfSchema  # type: ignore
+from marshmallow_oneofschema import OneOfSchema
 
 
 # regex taken from org.projectnessie.model.Validation

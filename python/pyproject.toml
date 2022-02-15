@@ -33,5 +33,7 @@ fail_under = 80
 module = [
     'botocore.*',
     'confuse.*',
+    'marshmallow_oneofschema.*',
+    'requests_aws4auth.*'
 ]
 ignore_missing_imports = true
