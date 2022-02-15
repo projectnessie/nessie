@@ -297,11 +297,3 @@ jobs:
           "${QUARKUS_UBER_JAR}" \
           "${NESSIE_OPENAPI}" \
           "${NESSIE_HELM_CHART}"
-    - name: Update SwaggerHub
-      if: ${{ !env.ACT }}
-      uses: smartbear/swaggerhub-cli@v0.6.1
-      env:
-        SWAGGERHUB_API_KEY: ${{ secrets.SWAGGERHUB_API_KEY }}
-        SWAGGERHUB_URL: "https://api.swaggerhub.com"
-      with:
-        args: api:create projectnessie/nessie -f ${{ steps.build_maven.outputs.NESSIE_OPENAPI }} --published=publish --setdefault --visibility=public
