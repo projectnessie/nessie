@@ -197,6 +197,7 @@
     <soebes.itf.version>0.11.0</soebes.itf.version>
     <spark3.jackson.version>2.13.1</spark3.jackson.version>
     <spark3.version>3.1.2</spark3.version>
+    <spark32.version>3.2.1</spark32.version>
     <sqlite.version>1.0.392</sqlite.version>
     <surefire.version>3.0.0-M5</surefire.version>
     <testcontainers.version>1.16.3</testcontainers.version>
