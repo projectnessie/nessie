@@ -158,7 +158,7 @@
     <!-- to fix circular dependencies with NessieClient, certain projects need to use the same Nessie version as Iceberg/Delta has -->
     <client.nessie.version>0.18.0</client.nessie.version>
     <deltalake.version>1.0.0-nessie</deltalake.version>
-    <dockerjava.version>3.2.12</dockerjava.version>
+    <dockerjava.version>3.2.13</dockerjava.version>
     <dynamodb.version>1.12.0</dynamodb.version>
     <errorprone-slf4j.version>0.1.5</errorprone-slf4j.version>
     <flapdoodle.version>3.1.4</flapdoodle.version>
