@@ -30,5 +30,8 @@ fail_under = 80
 
 # https://mypy.readthedocs.io/en/stable/config_file.html#using-a-pyproject-toml
 [[tool.mypy.overrides]]
-module = 'confuse.*'
+module = [
+    'botocore.*',
+    'confuse.*',
+]
 ignore_missing_imports = true
