@@ -29,6 +29,7 @@ with open("HISTORY.rst") as history_file:
 # here we have listed all dependencies w/o explicit pins to enable flexibility in client installs.
 # we use `requirements.txt` in this directory when testing to ensure a stable test in CI.
 requirements = [
+    "attrs",  # features we use are not regularly changing
     "botocore",  # features we use are not regularly changing
     "Click<9.0.0,>6.0.0",  # pinning to 7.x or 8.x as we have used w/ both
     "confuse==1.7.0",  # important for config so don't change w/o testing
