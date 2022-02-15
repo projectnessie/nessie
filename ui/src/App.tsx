@@ -112,9 +112,6 @@ const parseSlug = (
   branches: Branch[],
   tags: Tag[]
 ): Slug => {
-  if (!slug || slug.length === 0 || slug.split("/").length === 0) {
-    return { currentRef: defaultBranch, path: [] };
-  }
   if (!branch || branch.length === 0) {
     return { currentRef: defaultBranch, path: [] };
   }
@@ -122,12 +119,6 @@ const parseSlug = (
   // if we have a slug, need to figure out what portion is related to a ref versus a key.
   let sub = "";
   const checker = (b: Branch) => {
-    if (!b.name) {
-      return;
-    }
-    if (b.name.length <= sub.length) {
-      return;
-    }
     if (branch.toLowerCase().startsWith(b.name.toLowerCase())) {
       sub = b.name ?? "";
     }
@@ -135,10 +126,6 @@ const parseSlug = (
 
   branches.forEach(checker);
   tags.forEach(checker);
-
-  if (sub.length === 0) {
-    sub = slug.split("/")[0];
-  }
 
   const path = slug.split("/").filter((i) => i);
 

@@ -23,7 +23,7 @@ public class SinglePageAppRoutingFilter {
 
   // maintain list of base paths that should serve root html.
   // must be updated as more UI paths are introduced
-  private static final String[] UI_ROUTES = {"/tree", "/content", "/notfound"};
+  private static final String[] UI_ROUTES = {"/tree", "/content", "/notfound", "/commits"};
 
   @RouteFilter(100)
   void rerouteUiPaths(RoutingContext rc) {
