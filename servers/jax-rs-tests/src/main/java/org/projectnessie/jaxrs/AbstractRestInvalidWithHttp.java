@@ -25,7 +25,6 @@ import org.assertj.core.api.Assumptions;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpClientException;
 import org.projectnessie.error.NessieBadRequestException;
 import org.projectnessie.error.NessieConflictException;
@@ -40,8 +39,6 @@ public abstract class AbstractRestInvalidWithHttp extends AbstractRestInvalidRef
       ",1234567890123456789012345678901234567890123456789012345678901234";
   public static final String COMMA_VALID_HASH_2 = ",1234567890123456789012345678901234567890";
   public static final String COMMA_VALID_HASH_3 = ",1234567890123456";
-
-  protected abstract HttpClient getHttpClient();
 
   @ParameterizedTest
   @CsvSource({
