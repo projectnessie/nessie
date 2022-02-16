@@ -6,7 +6,7 @@
 To access Nessie from a spark cluster make sure the `spark.jars` spark option is set to include
 the [Spark 2](https://repo.maven.apache.org/maven2/org/apache/iceberg/iceberg-spark/{{ versions.iceberg }}/iceberg-spark-{{ versions.iceberg }}.jar)
 or [Spark 3](https://repo.maven.apache.org/maven2/org/apache/iceberg/iceberg-spark3/{{ versions.iceberg }}/iceberg-spark3-{{ versions.iceberg }}.jar) Nessie plugin jar. This fat jar
-is distributed by the Apache Iceberg project and contains all Apache Iceberg libraries required for operation, including the built in Nessie Catalog.
+is distributed by the Apache Iceberg project and contains all Apache Iceberg libraries required for operation, including the built-in Nessie Catalog.
 
 In pyspark this would look like
 
@@ -56,7 +56,7 @@ These are set as follows in code (or through other methods as described [here](h
     String fullPathToWarehouse = ...;
     // The ref or context that nessie will operate on
     // (if different from default branch).
-    // Can be the name of a Nessie branch or tag or a Nessie commit SHA. 
+    // Can be the name of a Nessie branch or tag name. 
     String ref = "main";
     // Nessie authentication type (BASIC, NONE or AWS)
     String authType = "NONE";
@@ -85,7 +85,7 @@ These are set as follows in code (or through other methods as described [here](h
     # Where to store nessie tables
     full_path_to_warehouse = ...
     # The ref or context that nessie will operate on (if different from default branch).
-    # Can be the name of a Nessie branch or tag or a Nessie commit SHA.
+    # Can be the name of a Nessie branch or tag name.
     ref = "main"
     # Nessie authentication type (BASIC, NONE or AWS)
     auth_type = "NONE"
@@ -124,10 +124,8 @@ The following properties are **required** in Spark when creating the Nessie Cata
 
 ## Writing
 
-### Writing
-
 Spark support is constantly evolving and the differences in Spark3 vs Spark2.4 are considerable. See the
-[iceberg](https://iceberg.apache.org/spark-writes/) docs for an up to date support table.
+[iceberg](https://iceberg.apache.org/spark-writes/) docs for an up-to-date support table.
 
 ### Spark2
 

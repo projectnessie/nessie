@@ -37,7 +37,7 @@ SET iceberg.catalog.<catalog_name>.uri=http://localhost:19120/api/v1;
 
 ## Create tables
 
-Whenever Hive creates an Iceberg table, it will create it as external table that is managed by Iceberg catalog (in this case Nessie Catalog), thus, some properties need to be provided in order to create a Iceberg tables in Hive:
+Whenever Hive creates an Iceberg table, it will create it as external table that is managed by Iceberg catalog (in this case Nessie Catalog), thus, some properties need to be provided in order to create an Iceberg tables in Hive:
 
 ```
 CREATE TABLE database_a.table_a (
