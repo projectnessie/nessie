@@ -26,7 +26,10 @@ class NessieLogFileMetaParser(val logStore: LogStore)
     "LogStore for NessieLogFileMetaParser must be a NessieLogStore"
   )
 
-  override def listFilesFrom(logPath: Path): Iterator[LogFileMeta] = {
+  override def listFilesFrom(
+      logPath: Path,
+      hadoopConf: org.apache.hadoop.conf.Configuration
+  ): Iterator[LogFileMeta] = {
     logStore.asInstanceOf[NessieLogStore].listFilesFrom(logPath)
   }
 }

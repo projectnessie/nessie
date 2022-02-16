@@ -26,60 +26,20 @@ import org.apache.spark.sql.Encoder;
 import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.delta.DeltaLog;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.projectnessie.client.api.NessieApiV1;
-import org.projectnessie.client.http.HttpClientBuilder;
-import org.projectnessie.client.tests.AbstractSparkTest;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.DeltaLakeTable;
-import org.projectnessie.model.Reference;
 import scala.Tuple2;
 
-class ITDeltaLogBranches extends AbstractSparkTest {
-
-  NessieApiV1 api;
+class ITDeltaLogBranches extends AbstractDeltaTest {
 
   @TempDir File tempPath;
-
-  @BeforeAll
-  protected static void createDelta() {
-    conf.set("spark.delta.logStore.class", NessieLogStore.class.getCanonicalName())
-        .set("spark.delta.logFileHandler.class", NessieLogFileMetaParser.class.getCanonicalName())
-        .set("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
-        .set("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog");
-  }
-
-  @BeforeEach
-  void createClient() {
-    api = HttpClientBuilder.builder().withUri(url).build(NessieApiV1.class);
-  }
-
-  @AfterEach
-  void closeClient() throws BaseNessieClientServerException {
-    Reference ref = null;
-    try {
-      ref = api.getReference().refName("test").get();
-    } catch (NessieNotFoundException e) {
-      // pass ignore
-    }
-    if (ref != null) {
-      api.deleteBranch().branch((Branch) ref).delete();
-    }
-    try {
-      api.close();
-    } finally {
-      api = null;
-    }
-  }
 
   @Test
   void testBranches() throws BaseNessieClientServerException {
