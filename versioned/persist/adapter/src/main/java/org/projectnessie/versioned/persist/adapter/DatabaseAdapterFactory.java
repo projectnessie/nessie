@@ -85,7 +85,12 @@ public interface DatabaseAdapterFactory<
           AdjustableConfig extends Config,
           Connector extends DatabaseConnectionProvider<?>>
       DatabaseAdapterFactory<Config, AdjustableConfig, Connector> loadFactoryByName(String name) {
-    return loadFactory(f -> f.getName().equalsIgnoreCase(name));
+    try {
+      return loadFactory(f -> f.getName().equalsIgnoreCase(name));
+    } catch (Exception e) {
+      throw new RuntimeException(
+          String.format("For database adapter factory '%s': %s", name, e), e);
+    }
   }
 
   static <
