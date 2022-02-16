@@ -200,7 +200,7 @@
     <sqlite.version>1.0.392</sqlite.version>
     <surefire.version>3.0.0-M5</surefire.version>
     <testcontainers.version>1.16.3</testcontainers.version>
-    <weld.version>3.1.8.Final</weld.version>
+    <weld.version>4.0.3.Final</weld.version>
   </properties>
 
   <dependencyManagement>
