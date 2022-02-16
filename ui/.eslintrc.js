@@ -41,9 +41,9 @@ module.exports = {
     "@typescript-eslint",
   ],
   settings: {
-    "react": {
-      "version": "detect"
-    }
+    react: {
+      version: "detect",
+    },
   },
   rules: {
     "prettier/prettier": "error",
@@ -226,7 +226,7 @@ module.exports = {
     "react/jsx-curly-spacing": "off",
     "react/jsx-equals-spacing": "off",
     "react/jsx-key": "error",
-    "react/jsx-no-bind": ["error", { allowArrowFunctions: true } ],
+    "react/jsx-no-bind": ["error", { allowArrowFunctions: true }],
     "react/jsx-tag-spacing": [
       "off",
       {
