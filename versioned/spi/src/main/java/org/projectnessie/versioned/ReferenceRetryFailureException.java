@@ -21,7 +21,20 @@ package org.projectnessie.versioned;
  * operations.
  */
 public class ReferenceRetryFailureException extends ReferenceConflictException {
-  public ReferenceRetryFailureException(String message) {
+  private final int retries;
+  private final long durationMillis;
+
+  public ReferenceRetryFailureException(String message, int retries, long durationMillis) {
     super(message);
+    this.retries = retries;
+    this.durationMillis = durationMillis;
+  }
+
+  public int getRetries() {
+    return retries;
+  }
+
+  public long getDurationMillis() {
+    return durationMillis;
   }
 }

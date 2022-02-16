@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2022 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.persist.dynamodb;
+package org.projectnessie.versioned.persist.tests;
 
-import org.projectnessie.versioned.persist.tests.AbstractDatabaseAdapterTest;
-import org.projectnessie.versioned.persist.tests.LongerCommitTimeouts;
-import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
+import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterConfigItem;
 
-@NessieExternalDatabase(LocalDynamoTestConnectionProviderSource.class)
-public class ITDynamoDatabaseAdapter extends AbstractDatabaseAdapterTest
-    implements LongerCommitTimeouts {}
+@NessieDbAdapterConfigItem(name = "retry.initial.sleep.millis.lower", value = "25")
+@NessieDbAdapterConfigItem(name = "retry.initial.sleep.millis.upper", value = "50")
+@NessieDbAdapterConfigItem(name = "retry.max.sleep.millis", value = "150")
+@NessieDbAdapterConfigItem(name = "commit.timeout", value = "500")
+public interface LongerCommitTimeouts {}

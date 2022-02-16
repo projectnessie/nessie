@@ -15,9 +15,11 @@
  */
 package org.projectnessie.versioned.persist.tests;
 
+import static io.micrometer.core.instrument.Metrics.globalRegistry;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.protobuf.ByteString;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -54,6 +56,7 @@ import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt.Builder;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
+import org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterMetrics;
 import org.projectnessie.versioned.testworker.SimpleStoreWorker;
 import org.projectnessie.versioned.testworker.WithGlobalStateContent;
 
@@ -123,6 +126,9 @@ public abstract class AbstractConcurrency {
   @ParameterizedTest
   @MethodSource("concurrencyVariations")
   void concurrency(Variation variation) throws Exception {
+    new ArrayList<>(globalRegistry.getRegistries()).forEach(globalRegistry::remove);
+    globalRegistry.add(new SimpleMeterRegistry());
+
     ExecutorService executor = Executors.newFixedThreadPool(variation.threads);
     AtomicInteger commitsOK = new AtomicInteger();
     AtomicInteger retryFailures = new AtomicInteger();
@@ -256,7 +262,7 @@ public abstract class AbstractConcurrency {
                   .toArray((IntFunction<CompletableFuture<?>[]>) CompletableFuture[]::new));
 
       startLatch.countDown();
-      Thread.sleep(1_500);
+      Thread.sleep(2_000);
       stopFlag.set(true);
 
       // 30 seconds is long, but necessary to let transactional databases detect deadlocks, which
@@ -266,36 +272,37 @@ public abstract class AbstractConcurrency {
       for (Entry<BranchName, Set<Key>> branchKeys : keysPerBranch.entrySet()) {
         BranchName branch = branchKeys.getKey();
         Hash hash = databaseAdapter.hashOnReference(branch, Optional.empty());
-        Map<Key, ByteString> onRef = onRefStates.get(branch);
         ArrayList<Key> keys = new ArrayList<>(branchKeys.getValue());
-        Map<Key, ContentAndState<ByteString>> values =
-            databaseAdapter.values(hash, keys, KeyFilterPredicate.ALLOW_ALL);
-        List<ContentAndState<ByteString>> csExpected = new ArrayList<>();
-        for (int i = 0; i < keys.size(); i++) {
-          Key key = keys.get(i);
-          ContentAndState<ByteString> cs = values.get(key);
-          ContentId contentId = keyToContentId.get(key);
-          csExpected.add(ContentAndState.of(onRef.get(key), globalStates.get(contentId)));
-        }
-        // There is a race between test threads (code above) updating the maps that store
-        // per-branch and global state in this test class. Random delays in the execution
-        // of test threads can cause false positive assertion failure in the below line...
-        // Disabling this assertion for now so as not to destabilize CI.
-        // TODO: assertThat(csList).describedAs("For branch %s", branch).isEqualTo(csExpected);
+        // Note: only fetch the values, cannot assert those here.
+        databaseAdapter.values(hash, keys, KeyFilterPredicate.ALLOW_ALL);
       }
-
     } finally {
       stopFlag.set(true);
-
-      System.out.printf(
-          "AbstractDatabaseAdapterTest.concurrency - %s : Commits OK: %s  Retry-Failures: %s%n",
-          variation, commitsOK, retryFailures);
 
       executor.shutdownNow();
 
       // 30 seconds is long, but necessary to let transactional databases detect deadlocks, which
       // cause Nessie-commit-retries.
       assertThat(executor.awaitTermination(30, TimeUnit.SECONDS)).isTrue();
+
+      System.out.printf(
+          "AbstractConcurrency.concurrency - %s : Commits OK: %s  Retry-Failures: %s%n",
+          variation, commitsOK, retryFailures);
+      System.out.printf(
+          "AbstractConcurrency.concurrency - %s : try-loop success: count: %6d  retries: %6d  total-time-millis: %d%n",
+          variation,
+          (long) DatabaseAdapterMetrics.tryLoopCounts("success").count(),
+          (long) DatabaseAdapterMetrics.tryLoopRetries("success").count(),
+          (long)
+              DatabaseAdapterMetrics.tryLoopDuration("success").totalTime(TimeUnit.MILLISECONDS));
+      System.out.printf(
+          "AbstractConcurrency.concurrency - %s : try-loop failure: count: %6d  retries: %6d  total-time-millis: %d%n",
+          variation,
+          (long) DatabaseAdapterMetrics.tryLoopCounts("fail").count(),
+          (long) DatabaseAdapterMetrics.tryLoopRetries("fail").count(),
+          (long) DatabaseAdapterMetrics.tryLoopDuration("fail").totalTime(TimeUnit.MILLISECONDS));
+
+      new ArrayList<>(globalRegistry.getRegistries()).forEach(globalRegistry::remove);
     }
   }
 

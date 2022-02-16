@@ -42,6 +42,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterator;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -597,7 +598,14 @@ public abstract class NonTransactionalDatabaseAdapter<
     NonTransactionalOperationContext ctx = NON_TRANSACTIONAL_OPERATION_CONTEXT;
 
     try (TryLoopState tryState =
-        newTryLoopState(() -> repoDescUpdateConflictMessage("Retry-failure"), config)) {
+        newTryLoopState(
+            ts ->
+                repoDescUpdateConflictMessage(
+                    String.format(
+                        "Retry-failure after %d retries, %d ms",
+                        ts.getRetries(), ts.getDuration(TimeUnit.MILLISECONDS))),
+            this::tryLoopStateCompletion,
+            config)) {
       while (true) {
         RepoDescription current = fetchRepositoryDescription(ctx);
 
@@ -807,7 +815,17 @@ public abstract class NonTransactionalDatabaseAdapter<
       throws VersionStoreException {
     NonTransactionalOperationContext ctx = NON_TRANSACTIONAL_OPERATION_CONTEXT;
 
-    try (TryLoopState tryState = newTryLoopState(retryErrorMessage, config)) {
+    try (TryLoopState tryState =
+        newTryLoopState(
+            ts ->
+                repoDescUpdateConflictMessage(
+                    String.format(
+                        "%s after %d retries, %d ms",
+                        retryErrorMessage.get(),
+                        ts.getRetries(),
+                        ts.getDuration(TimeUnit.MILLISECONDS))),
+            this::tryLoopStateCompletion,
+            config)) {
       while (true) {
         GlobalStatePointer pointer = fetchGlobalPointer(ctx);
         if (pointer == null) {

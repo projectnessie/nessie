@@ -15,6 +15,8 @@
  */
 package org.projectnessie.versioned.persist.adapter.spi;
 
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterMetrics.tryLoopFinished;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.hashKey;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.hashNotFound;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.newHasher;
@@ -51,6 +53,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import javax.annotation.Nonnull;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.GetNamedRefsParams;
@@ -137,7 +140,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     Instant instant = config.getClock().instant();
     long time = instant.getEpochSecond();
     long nano = instant.getNano();
-    return TimeUnit.SECONDS.toMicros(time) + TimeUnit.NANOSECONDS.toMicros(nano);
+    return TimeUnit.SECONDS.toMicros(time) + NANOSECONDS.toMicros(nano);
   }
 
   /**
@@ -1378,5 +1381,10 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       throw RefLogNotFoundException.forRefLogId(initialHash.asString());
     }
     return logFetcher(ctx, initial, this::fetchPageFromRefLog, RefLog::getParents);
+  }
+
+  protected void tryLoopStateCompletion(@Nonnull Boolean success, TryLoopState state) {
+    tryLoopFinished(
+        success ? "success" : "fail", state.getRetries(), state.getDuration(NANOSECONDS));
   }
 }

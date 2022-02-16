@@ -78,6 +78,21 @@ public interface QuarkusVersionStoreAdvancedConfig
   @Override
   int getCommitRetries();
 
+  @WithName("retry.initial-sleep.millis-lower")
+  @WithDefault("" + DEFAULT_RETRY_INITIAL_SLEEP_MILLIS_LOWER)
+  @Override
+  long getRetryInitialSleepMillisLower();
+
+  @WithName("retry.initial-sleep.millis-upper")
+  @WithDefault("" + DEFAULT_RETRY_INITIAL_SLEEP_MILLIS_UPPER)
+  @Override
+  long getRetryInitialSleepMillisUpper();
+
+  @WithName("retry.max-sleep.millis")
+  @WithDefault("" + DEFAULT_RETRY_MAX_SLEEP_MILLIS)
+  @Override
+  long getRetryMaxSleepMillis();
+
   @WithName("nontx.parents-per-global-commit")
   @WithDefault("" + DEFAULT_PARENTS_PER_GLOBAL_COMMIT)
   @Override

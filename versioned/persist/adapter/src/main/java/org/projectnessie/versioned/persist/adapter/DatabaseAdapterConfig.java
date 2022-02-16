@@ -34,6 +34,9 @@ public interface DatabaseAdapterConfig {
   int DEFAULT_COMMIT_TIMEOUT = 500;
   int DEFAULT_COMMIT_RETRIES = Integer.MAX_VALUE;
   int DEFAULT_PARENTS_PER_REFLOG_ENTRY = 20;
+  int DEFAULT_RETRY_INITIAL_SLEEP_MILLIS_LOWER = 5;
+  int DEFAULT_RETRY_INITIAL_SLEEP_MILLIS_UPPER = 25;
+  int DEFAULT_RETRY_MAX_SLEEP_MILLIS = 75;
 
   /**
    * A free-form string that identifies a particular Nessie storage repository.
@@ -111,16 +114,76 @@ public interface DatabaseAdapterConfig {
   /**
    * Timeout for CAS-like operations in milliseconds. Default is {@value #DEFAULT_COMMIT_TIMEOUT}
    * milliseconds.
+   *
+   * @see #getCommitRetries()
+   * @see #getRetryInitialSleepMillisLower()
+   * @see #getRetryInitialSleepMillisUpper()
+   * @see #getRetryMaxSleepMillis()
    */
   @Value.Default
   default long getCommitTimeout() {
     return DEFAULT_COMMIT_TIMEOUT;
   }
 
-  /** Maximum retries for CAS-like operations. Default is unlimited. */
+  /**
+   * Maximum retries for CAS-like operations. Default is unlimited.
+   *
+   * @see #getCommitTimeout()
+   * @see #getRetryInitialSleepMillisLower()
+   * @see #getRetryInitialSleepMillisUpper()
+   * @see #getRetryMaxSleepMillis()
+   */
   @Value.Default
   default int getCommitRetries() {
     return DEFAULT_COMMIT_RETRIES;
+  }
+
+  /**
+   * When the database adapter has to retry an operation due to a concurrent, conflicting update to
+   * the database state, this parameter defines the <em>initial</em> lower bound of the sleep time.
+   * Default is {@value #DEFAULT_RETRY_INITIAL_SLEEP_MILLIS_LOWER} ms.
+   *
+   * @see #getCommitRetries()
+   * @see #getCommitTimeout()
+   * @see #getRetryInitialSleepMillisUpper()
+   * @see #getRetryMaxSleepMillis()
+   */
+  @Value.Default
+  default long getRetryInitialSleepMillisLower() {
+    return DEFAULT_RETRY_INITIAL_SLEEP_MILLIS_LOWER;
+  }
+
+  /**
+   * When the database adapter has to retry an operation due to a concurrent, conflicting update to
+   * the database state, this parameter defines the <em>initial</em> upper bound of the sleep time.
+   * Default is {@value #DEFAULT_RETRY_INITIAL_SLEEP_MILLIS_UPPER} ms.
+   *
+   * @see #getCommitRetries()
+   * @see #getCommitTimeout()
+   * @see #getRetryInitialSleepMillisLower()
+   * @see #getRetryMaxSleepMillis()
+   */
+  @Value.Default
+  default long getRetryInitialSleepMillisUpper() {
+    return DEFAULT_RETRY_INITIAL_SLEEP_MILLIS_UPPER;
+  }
+
+  /**
+   * When the database adapter has to retry an operation due to a concurrent, conflicting update to
+   * the database state, this parameter defines the <em>maximum</em> sleep time. Each retry doubles
+   * the {@link #getRetryInitialSleepMillisLower() lower} and {@link
+   * #getRetryInitialSleepMillisUpper() upper} bounds of the random sleep time, unless the doubled
+   * upper bound would exceed the value of this configuration property. Default is {@value
+   * #DEFAULT_RETRY_MAX_SLEEP_MILLIS} ms.
+   *
+   * @see #getCommitRetries()
+   * @see #getCommitTimeout()
+   * @see #getRetryInitialSleepMillisLower()
+   * @see #getRetryInitialSleepMillisUpper()
+   */
+  @Value.Default
+  default long getRetryMaxSleepMillis() {
+    return DEFAULT_RETRY_MAX_SLEEP_MILLIS;
   }
 
   /** The {@link Clock} to use. */
