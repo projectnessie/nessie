@@ -1,5 +1,13 @@
 # Releases
 
+## 0.20.0 Release (February 16, 2022)
+
+* Enable metrics for MongoDB by default
+* Make try-loop-state configurable and add metrics
+* Reorganize routes in UI
+* Improve error reporting in Nessie Java client
+* Various test improvements
+
 ## 0.19.0 Release (February 7, 2022)
 
 * Reads using "detached" commit-ids w/o specifying a branch or tag name
