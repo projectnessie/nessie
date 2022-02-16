@@ -37,7 +37,7 @@ semantic-layering system. See more in our documentation on [Iceberg Views](views
 ## Other Object Types
 
 There has been discussion about adding additional types of objects to Nessie for the 
-purpose of creating a consistent repository between input assets (jobs, models, etc) 
+purpose of creating a consistent repository between input assets (jobs, models, etc.) 
 and output assets. This is something that will be evaluated based on demand. There are 
 currently three options being considered: 
 - more structured object types (such as spark job)

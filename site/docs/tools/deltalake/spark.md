@@ -153,8 +153,8 @@ to write to a specific branch without changing context the following should be u
 
 We have to manually change the `hadoopConfiguration` for the `SparkContext` for a Delta table to be initialised with the
 correct reference. This will change in the near future when it will be possible to use the same `branch@ref` syntax as
-[Iceberg](/tools/iceberg/spark/#writing) inside of delta. Currently, it isn't possible to change the ref from SQL directly. This
-should be fixed in an upcomming release.
+[Iceberg](../iceberg/spark.md#writing) inside of delta. Currently, it isn't possible to change the ref from SQL directly. This
+should be fixed in an upcoming release.
 
 !!! note
     Delta by default caches tables internally. If an action has to happen on the same table but a different branch the

@@ -20,17 +20,17 @@ things such as partitioning (including hidden partitions), schema migrations, ap
 require a pointer to the active metadata set to function. This pointer allows the Iceberg client to acquire and read the
 current schema, files and partitions in the dataset. Iceberg currently relies on the Hive metastore or hdfs to perform
 this role. The requirements for this root pointer store is it must hold (at least) information about the location of the
-current up-to-date metadata file and it must be able to update this location atomically. In Hive this is accomplished by
+current up-to-date metadata file, and it must be able to update this location atomically. In Hive this is accomplished by
 locks and in hdfs by using atomic file swap operations. These operations don’t exist in eventually consistent cloud
 object stores, necessitating a Hive metastore for cloud data lakes. The Nessie system is designed to store the
 root metadata pointer and perform atomic updates to this pointer, obviating the need for a Hive metastore. Removing the
 need for a Hive metastore simplifies deployment and broadens the reach of tools that can work with Iceberg tables.
 The above is specific to how Iceberg behaves however Delta Lake operates in a near identical way.
 
-The Nessie service is a lightweight Java based REST API server. It uses a standard optimistic locking strategy
+The Nessie service is a lightweight Java-based REST API server. It uses a standard optimistic locking strategy
 to ensure atomic transactions. This relies on every operation carrying an expected
 hash state for the store and allows for a very light weight and
-scalable implementation. The implementation uses configurable authentication (eg IAM on AWS, JWT elsewhere) and a
+scalable implementation. The implementation uses configurable authentication (e.g. IAM on AWS, JWT elsewhere) and a
 configurable backend (currently supporting RocksDB for single-node, and DynamoDB or MongoDB) and uses the optimistic locking features of cloud based
 key value stores to ensure scalability across servers. This architecture allows for Nessie to run in a docker container,
 as a Lambda function or in a number of other configurations.

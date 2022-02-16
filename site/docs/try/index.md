@@ -11,7 +11,7 @@ any special setup except for a web browser have been made available:
 The [nessie-demos](https://github.com/projectnessie/nessie-demos) repository contains a full list of all available Jupyter Notebooks that show how nessie can be used with other technologies.
 
 For people who are interested in trying out all nessie features, they can use
-the docker images published with each release and setup the server by following
+the docker images published with each release and set up the server by following
 the instructions available [here](docker.md)
 
 !!! note

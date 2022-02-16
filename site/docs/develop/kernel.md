@@ -275,6 +275,6 @@ See [Nessie Persistence Microbenchmarks README.me](https://github.com/projectnes
 ## Retry Mechanism
 
 All write operations do support retries. Retries happen, if a non-transactional CAS operation failed
-or a transactional DML operation ran into a "integrity constraint violation". Both the number of
+or a transactional DML operation ran into an "integrity constraint violation". Both the number of
 retries and total time for the operation are bounded. There is an (exponentially increasing) sleep
 time between two tries. The actual values for the retry mechanism are configurable. 

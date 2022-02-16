@@ -90,14 +90,14 @@ the [About Git](https://git-scm.com/about) pages as a quick start.
 
 ## Terms summary
 
-| Term | Meaning in Nessie |
-| --- | --- |
-| Commit | An atomic change to a set of data files. |
-| Hash | Nessie-commits are identified by a SHA-hash.[^3] |
+| Term                      | Meaning in Nessie                                                                                                                  |
+|---------------------------|------------------------------------------------------------------------------------------------------------------------------------|
+| Commit                    | An atomic change to a set of data files.                                                                                           |
+| Hash                      | Nessie-commits are identified by a commit id.[^3]                                                                                  |
 | (Multi-table) transaction | Since a Nessie commit can group data data files from many tables, you can think of a Nessie commit as a (multi-table) transaction. |
-| Branch | Named reference to a commit. A new commit to a branch updates the branch to the new commit. |
-| Tag | Named reference to a commit. Not automatically changed. |
-| Merge | Combination of two commits. Usually applies the changes of one source-branch onto another target-branch. |
+| Branch                    | Named reference to a commit. A new commit to a branch updates the branch to the new commit.                                        |
+| Tag                       | Named reference to a commit. Not automatically changed.                                                                            |
+| Merge                     | Combination of two commits. Usually applies the changes of one source-branch onto another target-branch.                           |
 
 ## Working with data in Nessie
 
@@ -106,7 +106,7 @@ Each *commit* in Nessie, except the very first one, has references to its
 predecessor, the previous versions of the data.
 
 For those who know Git and merge-commits: One important difference of Nessie-merges
-is that Nessie-commits have only parent (predecessor). Nessie-merge operations
+is that Nessie-commits have only one parent (predecessor). Nessie-merge operations
 technically work a bit different: the changes in branch to be merged are replayed
 on top of the target branch.
 
@@ -227,7 +227,7 @@ represents a consistent state.
 
 If all the tasks of a job would directly commit onto our "main" branch, the
 "main" branch would be *inconsistent* at least until not all tasks have finished.
-Further, if the whole job fails, it would be hard to rollback the changes, especially
+Further, if the whole job fails, it would be hard to roll back the changes, especially
 if other jobs are running. Last but not least, the "main" branch would contain a
 lot of commits (for example `job#213, task#47346, add 1234 rows to table x`), which
 do not make a lot of sense on their own, but a single commit (for example
@@ -301,12 +301,12 @@ Technically, Nessie replays `commit #2` and `commit #3` on top of the most-recen
 commit of the "main" branch.
 
 For those who know Git and merge-commits: One important difference of Nessie-merges
-is that Nessie-commits have only parent (predecessor). Nessie-merge operations
+is that Nessie-commits have only one parent (predecessor). Nessie-merge operations
 technically work a bit different: the changes in branch to be merged are replayed
 on top of the target branch.
 
-It is recommended to give a commit a [meaningful commit message](./best-practices/#commit-messages)
-and to let someone [review the changes](./best-practices/#reviews).
+It is recommended to give a commit a [meaningful commit message](./best-practices.md#commit-messages)
+and to let someone [review the changes](./best-practices.md#reviews).
 
 As described above in [Transactions in Nessie](#transaction-in-nessie), the merge
 operation in the above example can be considered a *Nessie distributed transaction*.
@@ -347,15 +347,15 @@ In addition to "summary" and "description", there are a bunch of additional attr
 as shown in the following table. We plan to add more structure to these attributes
 in the future.
 
-| Attribute | Meaning in Nessie
-| --- | ---
-| commit timestamp | The timestamp when the commit was recorded in Nessie.
-| committer | The one (human user, system id) that actually recorded the change in Nessie.
-| author timestamp | the timestamp when a change has been implemented (can be different from the commit timestamp).
-| author | The one (human user, system id) that authored the change, can be different if someone else actually commits the change to Nessie.
-| summary | A short, one-line meaningful summary of the changes.
-| description | potentially long description of the changes.
-| ... | There are potentially way more attributes, just too many to mention here.
+| Attribute        | Meaning in Nessie                                                                                                                 |
+|------------------|-----------------------------------------------------------------------------------------------------------------------------------|
+| commit timestamp | The timestamp when the commit was recorded in Nessie.                                                                             |
+| committer        | The one (human user, system id) that actually recorded the change in Nessie.                                                      |
+| author timestamp | the timestamp when a change has been implemented (can be different from the commit timestamp).                                    |
+| author           | The one (human user, system id) that authored the change, can be different if someone else actually commits the change to Nessie. |
+| summary          | A short, one-line meaningful summary of the changes.                                                                              |
+| description      | potentially long description of the changes.                                                                                      |
+| ...              | There are potentially way more attributes, just too many to mention here.                                                         |
 
 ## Garbage collection
 
@@ -364,7 +364,7 @@ the cost of ownership of a data lake. Keeping all data forever is probably going
 to be just too expensive, practically not useful and can also collide with data
 privacy regulations (for example GDPR or CCPA).
 
-Nessie keeps track of unused data files and collects the garbage for you. See [Table Management](./management/#garbage-collection)
+Nessie keeps track of unused data files and collects the garbage for you. See [Table Management](./management.md#garbage-collection)
 
 ## Footnotes
 
@@ -373,7 +373,7 @@ Nessie keeps track of unused data files and collects the garbage for you. See [T
 
 [^2]: Apache, Hive, Spark, Iceberg, Parquet are trademarks of The Apache Software Foundation.
 
-[^3]: Nessie-commits are identified by a SHA-hash. All commits in Nessie (and in Git) are
+[^3]: Nessie-commits are identified by a commit-id. All commits in Nessie (and in Git) are
   identified using such a hash. The value of each hash is generated from the relevant contents
   and attributes of each commit that are stored in Nessie.
 

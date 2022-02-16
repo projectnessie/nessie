@@ -18,7 +18,7 @@ There are at least two steps to a garbage collection action. The first steps are
 ### Identify Unreferenced Assets
 
 This is a spark job which should be run periodically to identify no longer referenced assets. Assets are defined as the set of
-files, records, entries etc that make up a table, view or other Nessie object. For example, iceberg assets are:
+files, records, entries etc. that make up a table, view or other Nessie object. For example, iceberg assets are:
  * manifest files
  * manifest lists
  * data files
@@ -43,15 +43,15 @@ into the destructive GC operation described below.
 GcActionsConfig actionsConfig, GcOptions gcConfig, TableIdentifier table
 The relevant configuration items are:
 
-| parameter | default value | description |
-|---|---|---|
-| table | `null` | The Iceberg `TableIdentifier` to which the unreferenced assets should be written |
-| GcOptions.getBloomFilterCapacity | 10000000 | Size (number of items) of bloom filter for identification of referenced values |
-| GcOptions.getMaxAgeMicros | 7 days | age at which a commit starts to expire |
-| GcOptions.getTimeSlopMicros | 1 day | minimum age a values can be before it will be considered expired |
-| GcActionsConfig.getDynamoRegion | provider default | AWS Region of the Nessie DynamoDB |
-| GcActionsConfig.getDynamoEndpoint | provider default | Custom AWS endpoint of the Nessie DynamoDB |
-| GcActionsConfig.getStoreType | DYNAMO | only backend which supports GC |
+| parameter                         | default value    | description                                                                      |
+|-----------------------------------|------------------|----------------------------------------------------------------------------------|
+| table                             | `null`           | The Iceberg `TableIdentifier` to which the unreferenced assets should be written |
+| GcOptions.getBloomFilterCapacity  | 10000000         | Size (number of items) of bloom filter for identification of referenced values   |
+| GcOptions.getMaxAgeMicros         | 7 days           | age at which a commit starts to expire                                           |
+| GcOptions.getTimeSlopMicros       | 1 day            | minimum age a values can be before it will be considered expired                 |
+| GcActionsConfig.getDynamoRegion   | provider default | AWS Region of the Nessie DynamoDB                                                |
+| GcActionsConfig.getDynamoEndpoint | provider default | Custom AWS endpoint of the Nessie DynamoDB                                       |
+| GcActionsConfig.getStoreType      | DYNAMO           | only backend which supports GC                                                   |
 
 Running the action can be done simply by:
 ```java
@@ -82,12 +82,12 @@ deleted object is returned to the user and either the records are removed from t
 
 The relevant configuration items are:
 
-| parameter | default value | description |
-|---|---|---|
-| seenCount | 10 | How many times an asset has been seen as unreferenced in order to be considered for deletion |
-| deleteOnPurge | true | Delete records from the underlying iceberg table of unreferenced assets |
-| dropGcTable | true | Drop the underlying iceberg table or attempt to clean only the missing rows |
-| table | `null` | The iceberg `Table` which stores the list of unreferenced assets |
+| parameter     | default value | description                                                                                  |
+|---------------|---------------|----------------------------------------------------------------------------------------------|
+| seenCount     | 10            | How many times an asset has been seen as unreferenced in order to be considered for deletion |
+| deleteOnPurge | true          | Delete records from the underlying iceberg table of unreferenced assets                      |
+| dropGcTable   | true          | Drop the underlying iceberg table or attempt to clean only the missing rows                  |
+| table         | `null`        | The iceberg `Table` which stores the list of unreferenced assets                             |
 
 Running the action can be done simply by:
 
@@ -120,7 +120,7 @@ so that users can refer to historical data using timestamps as opposed to commit
 This also works hand-in-hand with the Nessie garbage collection process by ensuring
 that older data is "referenced" and thus available for historical analysis.
 
-Currently there is one AutoTagging policy. By default, it creates the following tags:
+Currently, there is one AutoTagging policy. By default, it creates the following tags:
 
 * Hourly tags for the last 25 hours
 * Daily tags for the last 8 days
@@ -149,11 +149,11 @@ around partitions. This extends on the ideas in the Iceberg [`RewriteManifestsAc
 
 Key configuration parameters:
 
-|Name|Default|Meaning|
-|---|---|---|
-|effort|medium|How much rewriting is allowed to achieve the goals|
-|target manifest size|8mb|What is the target|
-|partition priority|medium|How important achieving partition-oriented manifests.|
+| Name                 | Default | Meaning                                               |
+|----------------------|---------|-------------------------------------------------------|
+| effort               | medium  | How much rewriting is allowed to achieve the goals    |
+| target manifest size | 8mb     | What is the target                                    |
+| partition priority   | medium  | How important achieving partition-oriented manifests. |
 
 ## Compaction
 
@@ -164,12 +164,12 @@ Because operations against table formats are done at the file level, a table can
 to generate many small files. These small files will slow consumption. As such, Nessie
 can automatically run jobs to compact tables to ensure a consistent level of performance.
 
-|Name|Default|Meaning|
-|---|---|---|
-|Maximum Small Files|10.0|Maximum number of small files as a ratio to large files|
-|Maximum Delete Files|10.0|Maximum number of delete tombstones as a ratio to other files before merging the tombstones into a consolidated file|
-|Small File Size|100mb|Size of file before it is considered small|
-|Target Rewrite Size|256mb|The target size for splittable units when rewriting data.|
+| Name                 | Default | Meaning                                                                                                              |
+|----------------------|---------|----------------------------------------------------------------------------------------------------------------------|
+| Maximum Small Files  | 10.0    | Maximum number of small files as a ratio to large files                                                              |
+| Maximum Delete Files | 10.0    | Maximum number of delete tombstones as a ratio to other files before merging the tombstones into a consolidated file |
+| Small File Size      | 100mb   | Size of file before it is considered small                                                                           |
+| Target Rewrite Size  | 256mb   | The target size for splittable units when rewriting data.                                                            |
 
 !!! note
     Compaction will show up as a commit, like any other table operation.

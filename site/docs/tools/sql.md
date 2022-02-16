@@ -43,7 +43,7 @@ Creating a branch `dev` in the `nessie` catalog off of an existing branch/tag `b
 
 * `CREATE BRANCH IF NOT EXISTS dev IN nessie FROM base`
 
-Note that in case `base` doesn't exist, Nessie will fallback to the default branch (`main`).
+Note that in case `base` doesn't exist, Nessie will fall back to the default branch (`main`).
 
 ## Dropping Branches/Tags
 
@@ -97,7 +97,7 @@ Assigning a tag `devTag` to `base` in catalog `nessie` can be done via:
 
 * `ASSIGN TAG devTag TO base IN nessie`
 
-Note that in case `base` doesn't exist, Nessie will fallback to the default branch (`main`).
+Note that in case `base` doesn't exist, Nessie will fall back to the default branch (`main`).
 
 It is also possible to assign a branch/tag to a `base` at a particular `hash`:
 
@@ -110,4 +110,4 @@ Merging branch `dev` into `base` for the `nessie` catalog can be done via:
 
 * `MERGE BRANCH dev INTO base IN nessie`
 
-Note that in case `base` doesn't exist, Nessie will fallback to the default branch (`main`).
+Note that in case `base` doesn't exist, Nessie will fall back to the default branch (`main`).
