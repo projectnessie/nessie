@@ -16,7 +16,9 @@
 package org.projectnessie.versioned.persist.mongodb;
 
 import org.projectnessie.versioned.persist.tests.AbstractDatabaseAdapterTest;
+import org.projectnessie.versioned.persist.tests.LongerCommitTimeouts;
 import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
 @NessieExternalDatabase(FlapdoodleMongoTestConnectionProviderSource.class)
-public class ITDatabaseAdapterMongo extends AbstractDatabaseAdapterTest {}
+public class ITDatabaseAdapterMongo extends AbstractDatabaseAdapterTest
+    implements LongerCommitTimeouts {}

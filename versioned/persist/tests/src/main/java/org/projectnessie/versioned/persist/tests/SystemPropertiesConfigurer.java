@@ -79,6 +79,14 @@ public class SystemPropertiesConfigurer {
           config = (T) m.invoke(config, value);
         } else if (type == Integer.class || type == int.class) {
           config = (T) m.invoke(config, Integer.parseInt(value));
+        } else if (type == Long.class || type == long.class) {
+          config = (T) m.invoke(config, Long.parseLong(value));
+        } else if (type == Float.class || type == float.class) {
+          config = (T) m.invoke(config, Float.parseFloat(value));
+        } else if (type == Double.class || type == double.class) {
+          config = (T) m.invoke(config, Double.parseDouble(value));
+        } else {
+          throw new UnsupportedOperationException("No converter from String to " + type);
         }
       }
       return config;

@@ -52,6 +52,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.ToIntFunction;
@@ -786,7 +787,17 @@ public abstract class TxDatabaseAdapter
       throws VersionStoreException {
     Connection conn = borrowConnection();
 
-    try (TryLoopState tryState = newTryLoopState(retryErrorMessage, config)) {
+    try (TryLoopState tryState =
+        newTryLoopState(
+            ts ->
+                repoDescUpdateConflictMessage(
+                    String.format(
+                        "%s after %d retries, %d ms",
+                        retryErrorMessage.get(),
+                        ts.getRetries(),
+                        ts.getDuration(TimeUnit.MILLISECONDS))),
+            this::tryLoopStateCompletion,
+            config)) {
       while (true) {
         Hash pointer = createRef ? null : fetchNamedRefHead(conn, namedReference);
 

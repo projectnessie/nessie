@@ -31,6 +31,14 @@ public interface AdjustableDatabaseAdapterConfig extends DatabaseAdapterConfig {
 
   AdjustableDatabaseAdapterConfig withCommitRetries(int commitRetries);
 
+  AdjustableDatabaseAdapterConfig withRetryInitialSleepMillisLower(
+      long retryInitialSleepMillisLower);
+
+  AdjustableDatabaseAdapterConfig withRetryInitialSleepMillisUpper(
+      long retryInitialSleepMillisUpper);
+
+  AdjustableDatabaseAdapterConfig withRetryMaxSleepMillis(long retryMaxSleepMillis);
+
   AdjustableDatabaseAdapterConfig withClock(Clock clock);
 
   AdjustableDatabaseAdapterConfig withParentsPerRefLogEntry(int parentsPerEntry);

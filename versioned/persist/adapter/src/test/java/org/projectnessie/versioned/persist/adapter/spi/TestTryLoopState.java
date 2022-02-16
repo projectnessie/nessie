@@ -20,6 +20,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.longThat;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -31,11 +32,61 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentMatcher;
+import org.mockito.InOrder;
 import org.projectnessie.versioned.ReferenceRetryFailureException;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.spi.TryLoopState.MonotonicClock;
 
 class TestTryLoopState {
+
+  @ParameterizedTest
+  @ValueSource(longs = {1, 5, 50, 100, 200})
+  void doesNotSleepLongerThanMax(long maxSleep) throws Exception {
+    int retries = 50;
+    Long[] times = new Long[retries];
+    Arrays.fill(times, 0L);
+    MonotonicClock clock = mockedClock(0L, times);
+
+    long lower = 1;
+    long upper = 2;
+    TryLoopState tryLoopState =
+        new TryLoopState(
+            this::retryErrorMessage,
+            mockedConfig(retries, Long.MAX_VALUE, 1, upper, maxSleep),
+            clock,
+            (success, tls) -> {});
+
+    verify(clock, times(1)).currentNanos();
+
+    InOrder inOrderClock = inOrder(clock);
+
+    for (int i = 0; i < retries; i++) {
+      tryLoopState.retry();
+      long finalLower = lower;
+      long finalUpper = upper;
+      ArgumentMatcher<Long> matcher =
+          new ArgumentMatcher<Long>() {
+            @Override
+            public boolean matches(Long l) {
+              return l >= finalLower && l < finalUpper && l <= maxSleep;
+            }
+
+            @Override
+            public String toString() {
+              return "lower = " + finalLower + ", upper = " + finalUpper + ", max = " + maxSleep;
+            }
+          };
+      inOrderClock.verify(clock, times(1)).sleepMillis(longThat(matcher));
+
+      if (upper * 2 <= maxSleep) {
+        lower *= 2;
+        upper *= 2;
+      }
+    }
+
+    verify(clock, times(1 + retries)).currentNanos();
+  }
 
   @ParameterizedTest
   @ValueSource(ints = {1, 5, 50})
@@ -45,7 +96,8 @@ class TestTryLoopState {
     MonotonicClock clock = mockedClock(0L, times);
 
     TryLoopState tryLoopState =
-        new TryLoopState(this::retryErrorMessage, mockedConfig(retries, 42L), clock);
+        new TryLoopState(
+            this::retryErrorMessage, mockedConfig(retries, 42L), clock, (success, tls) -> {});
 
     verify(clock, times(1)).currentNanos();
 
@@ -65,7 +117,8 @@ class TestTryLoopState {
     MonotonicClock clock = mockedClock(0L, times);
 
     TryLoopState tryLoopState =
-        new TryLoopState(this::retryErrorMessage, mockedConfig(retries - 1, 42L), clock);
+        new TryLoopState(
+            this::retryErrorMessage, mockedConfig(retries - 1, 42L), clock, (success, tls) -> {});
 
     verify(clock, times(1)).currentNanos();
 
@@ -78,7 +131,7 @@ class TestTryLoopState {
 
     assertThatThrownBy(tryLoopState::retry)
         .isInstanceOf(ReferenceRetryFailureException.class)
-        .hasMessage(retryErrorMessage());
+        .hasMessage(retryErrorMessage(null));
   }
 
   @Test
@@ -93,10 +146,14 @@ class TestTryLoopState {
     long timeoutMillis = 42L;
 
     TryLoopState tryLoopState =
-        new TryLoopState(this::retryErrorMessage, mockedConfig(retries, timeoutMillis), clock);
+        new TryLoopState(
+            this::retryErrorMessage,
+            mockedConfig(retries, timeoutMillis),
+            clock,
+            (success, tls) -> {});
 
-    long lower = TryLoopState.INITIAL_LOWER_BOUND;
-    long upper = TryLoopState.INITIAL_UPPER_BOUND;
+    long lower = DatabaseAdapterConfig.DEFAULT_RETRY_INITIAL_SLEEP_MILLIS_LOWER;
+    long upper = DatabaseAdapterConfig.DEFAULT_RETRY_INITIAL_SLEEP_MILLIS_UPPER;
 
     for (int i = 0; i < retries; i++) {
       tryLoopState.retry();
@@ -121,7 +178,8 @@ class TestTryLoopState {
     MonotonicClock clock = mockedClock(0L, times);
 
     TryLoopState tryLoopState =
-        new TryLoopState(this::retryErrorMessage, mockedConfig(retries, 42L), clock);
+        new TryLoopState(
+            this::retryErrorMessage, mockedConfig(retries, 42L), clock, (success, tls) -> {});
 
     verify(clock, times(1)).currentNanos();
 
@@ -134,7 +192,7 @@ class TestTryLoopState {
 
     assertThatThrownBy(tryLoopState::retry)
         .isInstanceOf(ReferenceRetryFailureException.class)
-        .hasMessage(retryErrorMessage());
+        .hasMessage(retryErrorMessage(null));
   }
 
   MonotonicClock mockedClock(Long t0, Long... times) {
@@ -144,14 +202,22 @@ class TestTryLoopState {
     return mock;
   }
 
-  DatabaseAdapterConfig mockedConfig(int commitRetries, long commitTImeout) {
+  DatabaseAdapterConfig mockedConfig(int retries, long commitTimeout) {
+    return mockedConfig(retries, commitTimeout, 5L, 25L, Long.MAX_VALUE);
+  }
+
+  DatabaseAdapterConfig mockedConfig(
+      int commitRetries, long commitTimeout, long lowerDefault, long upperDefault, long maxSleep) {
     DatabaseAdapterConfig mock = mock(DatabaseAdapterConfig.class);
     when(mock.getCommitRetries()).thenReturn(commitRetries);
-    when(mock.getCommitTimeout()).thenReturn(commitTImeout);
+    when(mock.getCommitTimeout()).thenReturn(commitTimeout);
+    when(mock.getRetryInitialSleepMillisLower()).thenReturn(lowerDefault);
+    when(mock.getRetryInitialSleepMillisUpper()).thenReturn(upperDefault);
+    when(mock.getRetryMaxSleepMillis()).thenReturn(maxSleep);
     return mock;
   }
 
-  private String retryErrorMessage() {
+  private String retryErrorMessage(TryLoopState state) {
     return "RETRY ERROR MESSAGE";
   }
 }

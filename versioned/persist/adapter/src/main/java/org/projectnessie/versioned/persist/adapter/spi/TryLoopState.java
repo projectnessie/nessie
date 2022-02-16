@@ -17,7 +17,8 @@ package org.projectnessie.versioned.persist.adapter.spi;
 
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ReferenceRetryFailureException;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
@@ -25,33 +26,47 @@ import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 /** Retry-logic for attempts for compare-and-swap-like operations. */
 public final class TryLoopState implements AutoCloseable {
 
-  static final int INITIAL_LOWER_BOUND = 5;
-  static final int INITIAL_UPPER_BOUND = 25;
-
   private final MonotonicClock monotonicClock;
   private final long t0;
   private final long maxTime;
   private final int maxRetries;
+  private final Function<TryLoopState, String> retryErrorMessage;
+  private final BiConsumer<Boolean, TryLoopState> completionNotifier;
+  private final long maxSleep;
+  private long lowerBound;
+  private long upperBound;
   private int retries;
-  private final Supplier<String> retryErrorMessage;
-
-  private long lowerBound = INITIAL_LOWER_BOUND;
-  private long upperBound = INITIAL_UPPER_BOUND;
 
   TryLoopState(
-      Supplier<String> retryErrorMessage,
+      Function<TryLoopState, String> retryErrorMessage,
       DatabaseAdapterConfig config,
-      MonotonicClock monotonicClock) {
+      MonotonicClock monotonicClock,
+      BiConsumer<Boolean, TryLoopState> completionNotifier) {
     this.retryErrorMessage = retryErrorMessage;
     this.maxTime = TimeUnit.MILLISECONDS.toNanos(config.getCommitTimeout());
     this.maxRetries = config.getCommitRetries();
     this.monotonicClock = monotonicClock;
     this.t0 = monotonicClock.currentNanos();
+    this.lowerBound = config.getRetryInitialSleepMillisLower();
+    this.upperBound = config.getRetryInitialSleepMillisUpper();
+    this.maxSleep = config.getRetryMaxSleepMillis();
+    this.completionNotifier = completionNotifier;
   }
 
   public static TryLoopState newTryLoopState(
-      Supplier<String> retryErrorMessage, DatabaseAdapterConfig config) {
-    return new TryLoopState(retryErrorMessage, config, DefaultMonotonicClock.INSTANCE);
+      Function<TryLoopState, String> retryErrorMessage,
+      BiConsumer<Boolean, TryLoopState> completionNotifier,
+      DatabaseAdapterConfig config) {
+    return new TryLoopState(
+        retryErrorMessage, config, DefaultMonotonicClock.INSTANCE, completionNotifier);
+  }
+
+  public int getRetries() {
+    return retries;
+  }
+
+  public long getDuration(TimeUnit timeUnit) {
+    return timeUnit.convert(monotonicClock.currentNanos() - t0, TimeUnit.NANOSECONDS);
   }
 
   /**
@@ -59,7 +74,14 @@ public final class TryLoopState implements AutoCloseable {
    * used to track/trace/monitor successes.
    */
   public Hash success(Hash result) {
+    completionNotifier.accept(true, this);
     return result;
+  }
+
+  private ReferenceRetryFailureException unsuccessful() {
+    completionNotifier.accept(false, this);
+    return new ReferenceRetryFailureException(
+        retryErrorMessage.apply(this), this.getRetries(), this.getDuration(TimeUnit.MILLISECONDS));
   }
 
   /**
@@ -78,7 +100,7 @@ public final class TryLoopState implements AutoCloseable {
     long elapsed = current - t0;
 
     if (maxTime < elapsed || maxRetries < retries) {
-      throw new ReferenceRetryFailureException(retryErrorMessage.get());
+      throw unsuccessful();
     }
 
     long sleepMillis = ThreadLocalRandom.current().nextLong(lowerBound, upperBound);
@@ -88,8 +110,11 @@ public final class TryLoopState implements AutoCloseable {
 
     monotonicClock.sleepMillis(sleepMillis);
 
-    lowerBound *= 2;
-    upperBound *= 2;
+    long upper = upperBound * 2;
+    if (upper <= maxSleep) {
+      lowerBound *= 2;
+      upperBound = upper;
+    }
   }
 
   @Override
