@@ -172,7 +172,7 @@ const ContentView = (props: { tableContent?: Content }): React.ReactElement => {
   };
 
   return tableContent === undefined ? (
-    renderInvalidView()
+    <EmptyMessageView message="Content not found" />
   ) : (
     <Fragment>{renderContent()}</Fragment>
   );

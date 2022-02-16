@@ -24,7 +24,7 @@ import {
 } from "../utils";
 import { factory } from "../ConfigLog4j";
 import { ContentView } from "../ContentView";
-import { useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 
 const log = factory.getLogger("api.TableListing");
 
@@ -44,6 +44,7 @@ const fetchContent = (
 };
 
 const Contents = (): React.ReactElement => {
+  const location = useLocation();
   const { branch, "*": path } = useParams<{ branch: string; "*": string }>();
   const [content, setContent] = useState<Content>();
 
@@ -60,7 +61,7 @@ const Contents = (): React.ReactElement => {
       setContent(contentDetails);
     };
     void getContent();
-  }, []);
+  }, [location]);
 
   return (
     <Card>
