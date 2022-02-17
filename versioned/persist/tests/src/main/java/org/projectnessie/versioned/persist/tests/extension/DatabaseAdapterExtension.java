@@ -49,11 +49,11 @@ import org.junit.platform.commons.util.ReflectionUtils;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.persist.adapter.AdjustableDatabaseAdapterConfig;
-import org.projectnessie.versioned.persist.adapter.ContentVariant;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.adapter.DatabaseConnectionProvider;
+import org.projectnessie.versioned.persist.store.GenericContentVariantSupplier;
 import org.projectnessie.versioned.persist.store.PersistVersionStore;
 import org.projectnessie.versioned.persist.tests.SystemPropertiesConfigurer;
 
@@ -301,16 +301,7 @@ public class DatabaseAdapterExtension
         .configure(applyCustomConfig)
         .withConnector(getConnectionProvider(context));
 
-    return builder.build(onRefContent -> contentVariant(storeWorker, onRefContent));
-  }
-
-  @SuppressWarnings({"rawtypes", "unchecked"})
-  private static ContentVariant contentVariant(StoreWorker<?, ?, ?> storeWorker, byte type) {
-    Enum t = storeWorker.getType(type);
-    if (storeWorker.requiresGlobalState(t)) {
-      return ContentVariant.WITH_GLOBAL;
-    }
-    return ContentVariant.ON_REF;
+    return builder.build(new GenericContentVariantSupplier<>(storeWorker));
   }
 
   private static Function<AdjustableDatabaseAdapterConfig, DatabaseAdapterConfig>
