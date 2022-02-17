@@ -50,13 +50,12 @@ import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceRetryFailureException;
 import org.projectnessie.versioned.persist.adapter.AdjustableDatabaseAdapterConfig;
-import org.projectnessie.versioned.persist.adapter.ContentVariant;
-import org.projectnessie.versioned.persist.adapter.ContentVariantSupplier;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.adapter.DatabaseConnectionConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseConnectionProvider;
+import org.projectnessie.versioned.persist.store.GenericContentVariantSupplier;
 import org.projectnessie.versioned.persist.store.PersistVersionStore;
 import org.projectnessie.versioned.persist.tests.SystemPropertiesConfigurer;
 import org.projectnessie.versioned.persist.tests.extension.TestConnectionProviderSource;
@@ -152,22 +151,9 @@ public class CommitBench {
         throw new RuntimeException(e);
       }
 
-      ContentVariantSupplier contentVariantSupplier =
-          onRefContent -> {
-            switch (SimpleStoreWorker.INSTANCE.getType(onRefContent)) {
-              case ON_REF_ONLY:
-                return ContentVariant.ON_REF;
-              case WITH_GLOBAL_STATE:
-                return ContentVariant.WITH_GLOBAL;
-              default:
-                throw new IllegalStateException(
-                    "Unknown type " + SimpleStoreWorker.INSTANCE.getType(onRefContent));
-            }
-          };
-
       return builder
           .withConnector(providerSource.getConnectionProvider())
-          .build(contentVariantSupplier);
+          .build(new GenericContentVariantSupplier<>(SimpleStoreWorker.INSTANCE));
     }
 
     @TearDown
