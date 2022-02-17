@@ -301,6 +301,7 @@ jobs:
       if: ${{ !env.ACT }}
       uses: smartbear/swaggerhub-cli@v0.6.1
       env:
+        XDG_CONFIG_HOME: "/tmp"
         SWAGGERHUB_API_KEY: ${{ secrets.SWAGGERHUB_API_KEY }}
         SWAGGERHUB_URL: "https://api.swaggerhub.com"
       with:
