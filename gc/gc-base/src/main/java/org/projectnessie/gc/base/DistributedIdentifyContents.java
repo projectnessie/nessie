@@ -49,7 +49,7 @@ public class DistributedIdentifyContents {
   public Map<String, ContentBloomFilter> getLiveContentsBloomFilters(
       List<Reference> references,
       long totalCommitsInDefaultReference,
-      Map<String, Instant> droppedRefTimeMap) {
+      Map<Reference, Instant> droppedRefTimeMap) {
     IdentifyContentsPerExecutor executor = new IdentifyContentsPerExecutor(gcParams);
     List<Map<String, ContentBloomFilter>> bloomFilterMaps =
         new JavaSparkContext(session.sparkContext())

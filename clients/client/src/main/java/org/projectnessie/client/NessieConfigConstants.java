@@ -80,6 +80,11 @@ public final class NessieConfigConstants {
    */
   public static final String CONF_NESSIE_DISABLE_COMPRESSION =
       "nessie.transport.disable-compression";
+  /**
+   * Config property name ({@value #CONF_NESSIE_CLIENT_BUILDER_IMPL}) for custom client builder
+   * class name.
+   */
+  public static final String CONF_NESSIE_CLIENT_BUILDER_IMPL = "nessie.client-builder-impl";
 
   private NessieConfigConstants() {
     // empty

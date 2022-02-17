@@ -17,8 +17,6 @@ package org.projectnessie.jaxrs.gc;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URI;
-import static org.projectnessie.gc.base.GCConfigConstants.CONF_NESSIE_GC_BLOOM_FILTER_SIZE;
-import static org.projectnessie.gc.base.GCConfigConstants.CONF_NESSIE_GC_COMMIT_PROTECTION_TIME_IN_HOURS;
 
 import com.google.common.collect.ImmutableMap;
 import java.time.Instant;
@@ -38,6 +36,7 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.gc.base.ContentValues;
 import org.projectnessie.gc.base.GCImpl;
 import org.projectnessie.gc.base.IdentifiedResult;
+import org.projectnessie.gc.base.ImmutableGCParams;
 import org.projectnessie.jaxrs.AbstractRest;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
@@ -89,16 +88,22 @@ public abstract class AbstractRestGC extends AbstractRest {
         SparkSession.builder().appName("test-nessie-gc").master("local[2]").getOrCreate();
     spark.sparkContext().setLogLevel("WARN");
     try {
+      ImmutableGCParams.Builder builder = ImmutableGCParams.builder();
       final Map<String, String> options = new HashMap<>();
       options.put(CONF_NESSIE_URI, getUri().toString());
       if (disableCommitProtection) {
         // disable commit protection for test purposes.
-        options.put(CONF_NESSIE_GC_COMMIT_PROTECTION_TIME_IN_HOURS, "0");
+        builder.commitProtectionTime(0);
       }
-      options.put(CONF_NESSIE_GC_BLOOM_FILTER_SIZE, "5");
-      GCImpl gc =
-          new GCImpl(options, cutoffTimeStamp, deadReferenceCutoffTime, cutOffTimeStampPerRef);
-
+      ImmutableGCParams gcParams =
+          builder
+              .bloomFilterExpectedEntries(5L)
+              .nessieClientConfigs(options)
+              .deadReferenceCutOffTimeStamp(deadReferenceCutoffTime)
+              .cutOffTimestampPerRef(cutOffTimeStampPerRef)
+              .defaultCutOffTimestamp(cutoffTimeStamp)
+              .build();
+      GCImpl gc = new GCImpl(gcParams);
       IdentifiedResult identifiedResult = gc.identifyExpiredContents(spark);
       // compare the expected contents against the actual gc output
       verify(identifiedResult, expectedExpired, involvedRefs);

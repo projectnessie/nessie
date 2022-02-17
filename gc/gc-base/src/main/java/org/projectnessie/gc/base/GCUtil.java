@@ -25,6 +25,7 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.projectnessie.client.NessieClientBuilder;
+import org.projectnessie.client.NessieConfigConstants;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.model.CommitMeta;
@@ -39,6 +40,8 @@ public final class GCUtil {
    * Traverse the live commits stream till an entry is seen for each live content key.
    *
    * @param liveCommitPredicate predicate to identify the commit as live
+   * @param isLiveContentsKeyAdded check point to enable the validation
+   * @param liveContentKeys live content keys at the point of cutoff time
    * @param commits stream of {@link LogResponse.LogEntry}
    * @param commitHandler consumer of {@link LogResponse.LogEntry}
    */
@@ -88,7 +91,7 @@ public final class GCUtil {
    */
   public static NessieApiV1 getApi(Map<String, String> configuration) {
     String clientBuilderClassName =
-        configuration.get(GCConfigConstants.CONF_NESSIE_CLIENT_BUILDER_IMPL);
+        configuration.get(NessieConfigConstants.CONF_NESSIE_CLIENT_BUILDER_IMPL);
     NessieClientBuilder builder;
     if (clientBuilderClassName == null) {
       // Use the default HttpClientBuilder

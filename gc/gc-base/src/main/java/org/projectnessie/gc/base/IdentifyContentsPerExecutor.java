@@ -39,8 +39,6 @@ import org.projectnessie.model.Detached;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Reference;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Contains the methods that executes in spark executor for {@link
@@ -48,7 +46,6 @@ import org.slf4j.LoggerFactory;
  */
 public class IdentifyContentsPerExecutor implements Serializable {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(IdentifyContentsPerExecutor.class);
   private final GCParams gcParams;
 
   public IdentifyContentsPerExecutor(GCParams gcParams) {
@@ -56,12 +53,12 @@ public class IdentifyContentsPerExecutor implements Serializable {
   }
 
   protected Function<Reference, Map<String, ContentBloomFilter>> computeLiveContentsFunc(
-      long totalCommitsInDefaultReference, Map<String, Instant> droppedRefTimeMap) {
+      long totalCommitsInDefaultReference, Map<Reference, Instant> droppedRefTimeMap) {
     return reference ->
         computeLiveContents(
             getCutoffTimeForRef(reference, droppedRefTimeMap),
             reference,
-            droppedRefTimeMap.get(reference.getName() + ":" + reference.getHash()),
+            droppedRefTimeMap.get(reference),
             totalCommitsInDefaultReference);
   }
 
@@ -135,9 +132,7 @@ public class IdentifyContentsPerExecutor implements Serializable {
           commits,
           commitHandler);
     } catch (NessieNotFoundException e) {
-      LOGGER.info(
-          "Reference {} to retrieve commits for no longer exists",
-          gcStateParamsPerTask.getReference());
+      throw new RuntimeException(e);
     }
     return bloomFilterMap;
   }
@@ -147,7 +142,7 @@ public class IdentifyContentsPerExecutor implements Serializable {
       Reference reference,
       Map<String, ContentBloomFilter> liveContentsBloomFilterMap) {
     IdentifiedResult result = new IdentifiedResult();
-    int commitProtectionTimeInHours = getCommitProtectionTime();
+    int commitProtectionTimeInHours = gcParams.getCommitProtectionTime();
     Instant commitProtectionTime =
         (commitProtectionTimeInHours == 0)
             ? null
@@ -172,7 +167,7 @@ public class IdentifyContentsPerExecutor implements Serializable {
             }
           });
     } catch (NessieNotFoundException e) {
-      LOGGER.info("Reference {} to retrieve commits no longer exists", reference);
+      throw new RuntimeException(e);
     }
     return result;
   }
@@ -204,7 +199,7 @@ public class IdentifyContentsPerExecutor implements Serializable {
               .forEach(entries -> liveContentKeys.add(entries.getName()));
           isLiveContentsKeyAdded.setTrue();
         } catch (NessieNotFoundException e) {
-          LOGGER.info("Failed to fetch entries for hash {} ", logEntry.getCommitMeta().getHash());
+          throw new RuntimeException(e);
         }
       }
       logEntry.getOperations().stream()
@@ -265,14 +260,11 @@ public class IdentifyContentsPerExecutor implements Serializable {
     }
   }
 
-  private int getCommitProtectionTime() {
-    // default is 2 hours
-    return gcParams.getCommitProtectionTime() == null ? 2 : gcParams.getCommitProtectionTime();
-  }
-
-  private Instant getCutoffTimeForRef(Reference reference, Map<String, Instant> droppedRefTimeMap) {
-    if (droppedRefTimeMap.containsKey(reference.getName() + ":" + reference.getHash())
+  private Instant getCutoffTimeForRef(
+      Reference reference, Map<Reference, Instant> droppedRefTimeMap) {
+    if (droppedRefTimeMap.containsKey(reference)
         && gcParams.getDeadReferenceCutOffTimeStamp() != null) {
+      // if the reference is dropped and deadReferenceCutOffTimeStamp is configured, use it.
       return gcParams.getDeadReferenceCutOffTimeStamp();
     }
     return gcParams.getCutOffTimestampPerRef() == null

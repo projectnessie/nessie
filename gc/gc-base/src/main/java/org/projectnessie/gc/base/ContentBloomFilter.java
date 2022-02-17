@@ -41,42 +41,35 @@ public class ContentBloomFilter implements Serializable {
         gcParams.getBloomFilterExpectedEntries() == null
             ? totalCommitsInDefaultReference
             : gcParams.getBloomFilterExpectedEntries();
-    double fpp = gcParams.getBloomFilterFpp() == null ? 0.03D : gcParams.getBloomFilterFpp();
     this.icebergContentBloomFilter =
-        BloomFilter.create(Funnels.stringFunnel(Charset.defaultCharset()), expectedEntries, fpp);
+        BloomFilter.create(
+            Funnels.stringFunnel(Charset.defaultCharset()),
+            expectedEntries,
+            gcParams.getBloomFilterFpp());
   }
 
   public void put(Content content) {
-    switch (content.getType()) {
-      case ICEBERG_TABLE:
-        icebergContentBloomFilter.put(
-            ICEBERG_TABLE.name() + ((IcebergTable) content).getSnapshotId());
-        break;
-      case ICEBERG_VIEW:
-        icebergContentBloomFilter.put(ICEBERG_VIEW.name() + ((IcebergView) content).getVersionId());
-        break;
-      default:
-        throw new RuntimeException("Unsupported type " + content.getType());
-    }
+    icebergContentBloomFilter.put(getValue(content));
   }
 
   public boolean mightContain(Content content) {
-    switch (content.getType()) {
-      case ICEBERG_TABLE:
-        return icebergContentBloomFilter.mightContain(
-            ICEBERG_TABLE.name() + ((IcebergTable) content).getSnapshotId());
-      case ICEBERG_VIEW:
-        return icebergContentBloomFilter.mightContain(
-            ICEBERG_VIEW.name() + ((IcebergView) content).getVersionId());
-      default:
-        throw new RuntimeException("Unsupported type " + content.getType());
-    }
+    return icebergContentBloomFilter.mightContain(getValue(content));
   }
 
-  public ContentBloomFilter merge(ContentBloomFilter filter) {
+  public void merge(ContentBloomFilter filter) {
     if (filter.icebergContentBloomFilter != null) {
       icebergContentBloomFilter.putAll(filter.icebergContentBloomFilter);
     }
-    return this;
+  }
+
+  private String getValue(Content content) {
+    switch (content.getType()) {
+      case ICEBERG_TABLE:
+        return ICEBERG_TABLE.name() + ((IcebergTable) content).getSnapshotId();
+      case ICEBERG_VIEW:
+        return ICEBERG_VIEW.name() + ((IcebergView) content).getVersionId();
+      default:
+        throw new RuntimeException("Unsupported type " + content.getType());
+    }
   }
 }
