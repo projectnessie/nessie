@@ -1,5 +1,9 @@
 # Releases
 
+## 0.20.1 Release (February 17, 2022)
+
+* (no user visible changes)
+
 ## 0.20.0 Release (February 16, 2022)
 
 * Enable metrics for MongoDB by default
