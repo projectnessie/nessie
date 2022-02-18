@@ -146,18 +146,10 @@ public abstract class AbstractConcurrency {
         List<Key> keys = new ArrayList<>(variation.tables);
 
         for (int k = 0; k < variation.tables; k++) {
-          Key key =
-              Key.of(
-                  "some",
-                  "key",
-                  variation.sharedKeys ? "shared" : Integer.toString(i),
-                  "table-" + k);
+          String variationKey = variation.sharedKeys ? "shared" : Integer.toString(i);
+          Key key = Key.of("some", "key", variationKey, "table-" + k);
           keys.add(key);
-          keyToContentId.put(
-              key,
-              ContentId.of(
-                  String.format(
-                      "%s-table-%d", variation.sharedKeys ? "shared" : Integer.toString(i), k)));
+          keyToContentId.put(key, ContentId.of(String.format("%s-table-%d", variationKey, k)));
           keysPerBranch.computeIfAbsent(branch, x -> new HashSet<>()).add(key);
         }
 
