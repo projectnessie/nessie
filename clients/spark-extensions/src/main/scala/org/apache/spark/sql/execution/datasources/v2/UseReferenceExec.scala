@@ -27,7 +27,13 @@ case class UseReferenceExec(
     currentCatalog: CatalogPlugin,
     timestampOrHash: Option[String],
     catalog: Option[String]
-) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog) {
+) extends BaseUseReferenceExec(
+      output,
+      branch,
+      currentCatalog,
+      timestampOrHash,
+      catalog
+    ) {
 
   override protected def runInternal(
       api: NessieApiV1

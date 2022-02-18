@@ -27,7 +27,13 @@ case class MergeBranchExec(
     currentCatalog: CatalogPlugin,
     toRefName: Option[String],
     catalog: Option[String]
-) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog) {
+) extends BaseMergeBranchExec(
+      output,
+      branch,
+      currentCatalog,
+      toRefName,
+      catalog
+    ) {
 
   override protected def runInternal(
       api: NessieApiV1

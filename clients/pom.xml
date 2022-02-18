@@ -32,7 +32,6 @@
 
   <modules>
     <module>client</module>
-    <module>tests</module>
     <module>spark-antlr-grammar</module>
     <module>iceberg-views</module>
   </modules>
@@ -47,7 +46,9 @@
       </activation>
       <modules>
         <module>deltalake</module>
+        <module>spark-extensions-base</module>
         <module>spark-extensions</module>
+        <module>spark-3.2-extensions</module>
       </modules>
     </profile>
   </profiles>

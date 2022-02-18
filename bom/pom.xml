@@ -61,11 +61,6 @@
       </dependency>
       <dependency>
         <groupId>org.projectnessie</groupId>
-        <artifactId>nessie-client-tests</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.projectnessie</groupId>
         <artifactId>nessie-tools</artifactId>
         <version>${project.version}</version>
       </dependency>

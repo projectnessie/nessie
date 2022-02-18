@@ -31,7 +31,15 @@ case class CreateReferenceExec(
     catalog: Option[String],
     createdFrom: Option[String],
     failOnCreate: Boolean
-) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog) {
+) extends BaseCreateReferenceExec(
+      output,
+      branch,
+      currentCatalog,
+      isBranch,
+      catalog,
+      createdFrom,
+      failOnCreate
+    ) {
 
   override protected def runInternal(
       api: NessieApiV1

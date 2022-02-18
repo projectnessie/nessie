@@ -16,10 +16,7 @@
 package org.apache.spark.sql.catalyst.plans.logical
 
 import org.apache.spark.sql.catalyst.expressions.Attribute
-import org.apache.spark.sql.types.DataTypes
-import org.apache.spark.sql.types.Metadata
-import org.apache.spark.sql.types.StructField
-import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.types.{DataTypes, Metadata, StructField, StructType}
 
 case class CreateReferenceCommand(
     reference: String,
@@ -28,7 +25,6 @@ case class CreateReferenceCommand(
     fromReference: Option[String],
     failOnCreate: Boolean
 ) extends Command {
-
   override lazy val output: Seq[Attribute] = new StructType(
     Array[StructField](
       StructField(
