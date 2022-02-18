@@ -37,7 +37,8 @@ public final class GCUtil {
   private GCUtil() {}
 
   /**
-   * Traverse the live commits stream till an entry is seen for each live content key.
+   * Traverse the live commits stream till an entry is seen for each live content key and reached
+   * expired commits.
    *
    * @param liveCommitPredicate predicate to identify the commit as live
    * @param isLiveContentsKeyAdded check point to enable the validation
@@ -45,7 +46,7 @@ public final class GCUtil {
    * @param commits stream of {@link LogResponse.LogEntry}
    * @param commitHandler consumer of {@link LogResponse.LogEntry}
    */
-  public static void traverseLiveCommits(
+  static void traverseLiveCommits(
       Predicate<CommitMeta> liveCommitPredicate,
       MutableBoolean isLiveContentsKeyAdded,
       Set<ContentKey> liveContentKeys,
@@ -69,8 +70,14 @@ public final class GCUtil {
                   if (!liveCommitPredicate.test(logEntry.getCommitMeta())
                       && isLiveContentsKeyAdded.isTrue()
                       && (liveContentKeys.isEmpty())) {
-                    // can stop traversing as we processed all the live commits
-                    // and found the head commit of all the live content keys after cutoff time.
+                    // can stop traversing as reached the expired commits
+                    // and an entry is seen for each live content key.
+
+                    // Note that the first expired commit will add the liveContentKeys,
+                    // Hence, isLiveContentsKeyAdded.isTrue() check
+                    // to avoid skipping processing of first expired commit.
+                    // The commitHandler will remove the entries from liveContentKeys after found.
+                    // Hence, checking for isEmpty() to stop traversal.
                     more = false;
                   } else {
                     // process this commit entry.
@@ -89,7 +96,7 @@ public final class GCUtil {
    * @param configuration map of client builder configurations.
    * @return {@link NessieApiV1} object.
    */
-  public static NessieApiV1 getApi(Map<String, String> configuration) {
+  static NessieApiV1 getApi(Map<String, String> configuration) {
     String clientBuilderClassName =
         configuration.get(NessieConfigConstants.CONF_NESSIE_CLIENT_BUILDER_IMPL);
     NessieClientBuilder builder;

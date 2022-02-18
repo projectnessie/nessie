@@ -21,7 +21,6 @@ import static org.projectnessie.model.Content.Type.DELTA_LAKE_TABLE;
 import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
 import static org.projectnessie.model.Content.Type.ICEBERG_VIEW;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -33,15 +32,9 @@ import org.projectnessie.model.ImmutableDeltaLakeTable;
 
 public class TestContentBloomFilter {
 
-  private final GCParams gcParams =
-      ImmutableGCParams.builder()
-          .nessieClientConfigs(Collections.emptyMap())
-          .defaultCutOffTimestamp(Instant.now())
-          .build();
-
   @Test
   void testBasic() {
-    ContentBloomFilter filter = new ContentBloomFilter(gcParams, 10);
+    ContentBloomFilter filter = new ContentBloomFilter(10, 0.03d);
     List<Content> contents = generateContents(0, ICEBERG_TABLE);
     contents.addAll(generateContents(0, ICEBERG_VIEW));
     contents.forEach(filter::put);
@@ -59,13 +52,13 @@ public class TestContentBloomFilter {
 
   @Test
   void testMerge() {
-    ContentBloomFilter filter1 = new ContentBloomFilter(gcParams, 10);
+    ContentBloomFilter filter1 = new ContentBloomFilter(10, 0.03d);
     List<Content> contents1 = generateContents(0, ICEBERG_TABLE);
     contents1.addAll(generateContents(0, ICEBERG_VIEW));
     contents1.forEach(filter1::put);
 
     // create another filter with overlapping contents
-    ContentBloomFilter filter2 = new ContentBloomFilter(gcParams, 10);
+    ContentBloomFilter filter2 = new ContentBloomFilter(10, 0.03d);
     List<Content> contents2 = generateContents(5, ICEBERG_TABLE);
     contents2.addAll(generateContents(0, ICEBERG_VIEW));
     contents2.forEach(filter2::put);
@@ -80,7 +73,7 @@ public class TestContentBloomFilter {
 
   @Test
   void testDeltaLakeContent() {
-    ContentBloomFilter filter = new ContentBloomFilter(gcParams, 10);
+    ContentBloomFilter filter = new ContentBloomFilter(10, 0.03d);
     List<Content> contents = generateContents(0, DELTA_LAKE_TABLE);
 
     assertThatThrownBy(() -> contents.forEach(filter::put))

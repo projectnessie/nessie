@@ -21,7 +21,7 @@ import static org.projectnessie.model.Content.Type.ICEBERG_VIEW;
 import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnels;
 import java.io.Serializable;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
@@ -34,31 +34,25 @@ public class ContentBloomFilter implements Serializable {
   // track iceberg table/view contents only using the snapshot/version id
   // as the consumer of GC results needs only this info for clean up.
   // String bloom filter with content type prefix + snapshot/version id.
-  private final BloomFilter<String> icebergContentBloomFilter;
+  private final BloomFilter<String> filter;
 
-  public ContentBloomFilter(GCParams gcParams, long totalCommitsInDefaultReference) {
-    long expectedEntries =
-        gcParams.getBloomFilterExpectedEntries() == null
-            ? totalCommitsInDefaultReference
-            : gcParams.getBloomFilterExpectedEntries();
-    this.icebergContentBloomFilter =
+  public ContentBloomFilter(long expectedEntries, double bloomFilterFpp) {
+    this.filter =
         BloomFilter.create(
-            Funnels.stringFunnel(Charset.defaultCharset()),
-            expectedEntries,
-            gcParams.getBloomFilterFpp());
+            Funnels.stringFunnel(StandardCharsets.UTF_8), expectedEntries, bloomFilterFpp);
   }
 
   public void put(Content content) {
-    icebergContentBloomFilter.put(getValue(content));
+    filter.put(getValue(content));
   }
 
   public boolean mightContain(Content content) {
-    return icebergContentBloomFilter.mightContain(getValue(content));
+    return filter.mightContain(getValue(content));
   }
 
   public void merge(ContentBloomFilter filter) {
-    if (filter.icebergContentBloomFilter != null) {
-      icebergContentBloomFilter.putAll(filter.icebergContentBloomFilter);
+    if (filter.filter != null) {
+      this.filter.putAll(filter.filter);
     }
   }
 

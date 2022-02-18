@@ -101,11 +101,14 @@ public class GCImpl {
       if (droppedReferenceTimeMap.size() > 0) {
         allRefs.addAll(droppedReferenceTimeMap.keySet());
       }
-      long totalCommitsInDefaultReference = getTotalCommitsInDefaultReference(api);
+      long bloomFilterSize =
+          gcParams.getBloomFilterExpectedEntries() == null
+              ? getTotalCommitsInDefaultReference(api)
+              : gcParams.getBloomFilterExpectedEntries();
       // Identify the live contents and return the bloom filter per content-id
       Map<String, ContentBloomFilter> liveContentsBloomFilterMap =
           distributedIdentifyContents.getLiveContentsBloomFilters(
-              allRefs, totalCommitsInDefaultReference, droppedReferenceTimeMap);
+              allRefs, bloomFilterSize, droppedReferenceTimeMap);
       // Identify the expired contents
       return distributedIdentifyContents.getIdentifiedResults(liveContentsBloomFilterMap, allRefs);
     }

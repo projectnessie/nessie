@@ -26,7 +26,7 @@ import org.projectnessie.model.Reference;
  * which contains the current state params for GC.
  */
 @Value.Immutable
-public interface GCStateParamsPerTask {
+interface GCStateParamsPerTask {
 
   NessieApiV1 getApi();
 
@@ -36,5 +36,5 @@ public interface GCStateParamsPerTask {
 
   Predicate<CommitMeta> getLiveCommitPredicate();
 
-  long getTotalCommitsInDefaultReference();
+  long getBloomFilterSize();
 }

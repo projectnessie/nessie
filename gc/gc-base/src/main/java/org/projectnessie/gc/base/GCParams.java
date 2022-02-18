@@ -40,18 +40,18 @@ public interface GCParams extends Serializable {
   Instant getDeadReferenceCutOffTimeStamp();
 
   /**
-   * Optional task count for spark parallelism, total reference count (live + dead) will be used for
-   * parallelism if not configured.
+   * Optional spark partitions count to be used for distributing references. Default total reference
+   * count (live + dead) will be used.
    */
   @Nullable
-  Integer getTaskCount();
+  Integer getSparkPartitionsCount();
 
   /**
-   * Commit protection time in hours to avoid expiring on going or recent commits. Default is 2
+   * Commit protection duration in hours to avoid expiring on going or recent commits. Default is 2
    * hours.
    */
   @Value.Default
-  default Integer getCommitProtectionTime() {
+  default int getCommitProtectionDuration() {
     // default is kept as 2 hours.
     return 2;
   }
@@ -63,33 +63,30 @@ public interface GCParams extends Serializable {
   @Nullable
   Long getBloomFilterExpectedEntries();
 
-  /**
-   * Optional bloom filter fpp. Default value is kept same as underlying Guava bloom filter default
-   * fpp (0.03D).
-   */
+  /** Optional bloom filter fpp. Default value is 0.03d. */
   @Value.Default
-  default Double getBloomFilterFpp() {
+  default double getBloomFilterFpp() {
     // default value is kept same as underlying Guava bloom filter default fpp.
-    return 0.03D;
+    return 0.03d;
   }
 
   @Value.Check
   default void validate() {
-    Integer taskCount = getTaskCount();
+    Integer taskCount = getSparkPartitionsCount();
     if (taskCount != null && taskCount <= 0) {
       throw new IllegalArgumentException("taskCount has invalid value: " + taskCount);
     }
-    Integer commitProtectionTime = getCommitProtectionTime();
-    if (commitProtectionTime < 0) {
+    int commitProtectionDuration = getCommitProtectionDuration();
+    if (commitProtectionDuration < 0) {
       throw new IllegalArgumentException(
-          "commitProtectionTime has invalid value: " + commitProtectionTime);
+          "commitProtectionDuration has invalid value: " + commitProtectionDuration);
     }
     Long bloomFilterExpectedEntries = getBloomFilterExpectedEntries();
     if (bloomFilterExpectedEntries != null && bloomFilterExpectedEntries < 0) {
       throw new IllegalArgumentException(
           "bloomFilterExpectedEntries has invalid value: " + bloomFilterExpectedEntries);
     }
-    Double bloomFilterFpp = getBloomFilterFpp();
+    double bloomFilterFpp = getBloomFilterFpp();
     if (!(bloomFilterFpp > 0.0D && bloomFilterFpp < 1.0D)) {
       throw new IllegalArgumentException("bloomFilterFpp has invalid value: " + bloomFilterFpp);
     }

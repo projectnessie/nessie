@@ -53,13 +53,13 @@ public class IdentifyContentsPerExecutor implements Serializable {
   }
 
   protected Function<Reference, Map<String, ContentBloomFilter>> computeLiveContentsFunc(
-      long totalCommitsInDefaultReference, Map<Reference, Instant> droppedRefTimeMap) {
+      long bloomFilterSize, Map<Reference, Instant> droppedRefTimeMap) {
     return reference ->
         computeLiveContents(
             getCutoffTimeForRef(reference, droppedRefTimeMap),
             reference,
             droppedRefTimeMap.get(reference),
-            totalCommitsInDefaultReference);
+            bloomFilterSize);
   }
 
   protected Function<Reference, IdentifiedResult> computeExpiredContentsFunc(
@@ -68,10 +68,7 @@ public class IdentifyContentsPerExecutor implements Serializable {
   }
 
   private Map<String, ContentBloomFilter> computeLiveContents(
-      Instant cutOffTimestamp,
-      Reference reference,
-      Instant droppedRefTime,
-      long totalCommitsInDefaultReference) {
+      Instant cutOffTimestamp, Reference reference, Instant droppedRefTime, long bloomFilterSize) {
     try (NessieApiV1 api = GCUtil.getApi(gcParams.getNessieClientConfigs())) {
       boolean isRefDroppedAfterCutoffTimeStamp =
           droppedRefTime == null || droppedRefTime.compareTo(cutOffTimestamp) >= 0;
@@ -87,7 +84,7 @@ public class IdentifyContentsPerExecutor implements Serializable {
               .reference(reference)
               .isRefDroppedAfterCutoffTimeStamp(isRefDroppedAfterCutoffTimeStamp)
               .liveCommitPredicate(liveCommitPredicate)
-              .totalCommitsInDefaultReference(totalCommitsInDefaultReference)
+              .bloomFilterSize(bloomFilterSize)
               .build();
 
       return walkLiveCommitsInReference(gcStateParamsPerTask);
@@ -142,8 +139,8 @@ public class IdentifyContentsPerExecutor implements Serializable {
       Reference reference,
       Map<String, ContentBloomFilter> liveContentsBloomFilterMap) {
     IdentifiedResult result = new IdentifiedResult();
-    int commitProtectionTimeInHours = gcParams.getCommitProtectionTime();
-    Instant commitProtectionTime =
+    int commitProtectionTimeInHours = gcParams.getCommitProtectionDuration();
+    Instant commitProtectionDuration =
         (commitProtectionTimeInHours == 0)
             ? null
             : Instant.now().minus(commitProtectionTimeInHours, ChronoUnit.HOURS);
@@ -155,10 +152,10 @@ public class IdentifyContentsPerExecutor implements Serializable {
             // Between the bloom filter creation and this step,
             // there can be some more commits in the backend.
             // Checking them against bloom filter will give false results.
-            // Hence, protect those commits using commitProtectionTime.
+            // Hence, protect those commits using commitProtectionDuration.
             boolean isUnprotectedCommit =
-                (commitProtectionTime == null)
-                    || (logEntry.getCommitMeta().getCommitTime().compareTo(commitProtectionTime)
+                (commitProtectionDuration == null)
+                    || (logEntry.getCommitMeta().getCommitTime().compareTo(commitProtectionDuration)
                         < 0);
             if (isUnprotectedCommit) {
               // this commit can be tested for expiry.
@@ -222,8 +219,8 @@ public class IdentifyContentsPerExecutor implements Serializable {
                           content.getId(),
                           k ->
                               new ContentBloomFilter(
-                                  gcParams,
-                                  gcStateParamsPerTask.getTotalCommitsInDefaultReference()))
+                                  gcStateParamsPerTask.getBloomFilterSize(),
+                                  gcParams.getBloomFilterFpp()))
                       .put(content);
                 }
               });

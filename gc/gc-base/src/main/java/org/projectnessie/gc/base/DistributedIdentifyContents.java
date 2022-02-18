@@ -42,20 +42,17 @@ public class DistributedIdentifyContents {
    * using spark.
    *
    * @param references list of all the references
-   * @param totalCommitsInDefaultReference total commits in default reference
+   * @param bloomFilterSize size of bloom filter to be used
    * @param droppedRefTimeMap map of dropped time for reference@hash
    * @return map of {@link ContentBloomFilter} per content-id.
    */
   public Map<String, ContentBloomFilter> getLiveContentsBloomFilters(
-      List<Reference> references,
-      long totalCommitsInDefaultReference,
-      Map<Reference, Instant> droppedRefTimeMap) {
+      List<Reference> references, long bloomFilterSize, Map<Reference, Instant> droppedRefTimeMap) {
     IdentifyContentsPerExecutor executor = new IdentifyContentsPerExecutor(gcParams);
     List<Map<String, ContentBloomFilter>> bloomFilterMaps =
         new JavaSparkContext(session.sparkContext())
-            .parallelize(references, getTaskCount(gcParams, references))
-            .map(
-                executor.computeLiveContentsFunc(totalCommitsInDefaultReference, droppedRefTimeMap))
+            .parallelize(references, getPartitionsCount(gcParams, references))
+            .map(executor.computeLiveContentsFunc(bloomFilterSize, droppedRefTimeMap))
             .collect();
     return mergeLiveContentResults(bloomFilterMaps);
   }
@@ -74,7 +71,7 @@ public class DistributedIdentifyContents {
     IdentifyContentsPerExecutor executor = new IdentifyContentsPerExecutor(gcParams);
     List<IdentifiedResult> results =
         new JavaSparkContext(session.sparkContext())
-            .parallelize(references, getTaskCount(gcParams, references))
+            .parallelize(references, getPartitionsCount(gcParams, references))
             .map(executor.computeExpiredContentsFunc(liveContentsBloomFilterMap))
             .collect();
     IdentifiedResult identifiedResult = new IdentifiedResult();
@@ -83,8 +80,10 @@ public class DistributedIdentifyContents {
     return identifiedResult;
   }
 
-  private static int getTaskCount(GCParams gcParams, List<Reference> references) {
-    return gcParams.getTaskCount() == null ? references.size() : gcParams.getTaskCount();
+  private static int getPartitionsCount(GCParams gcParams, List<Reference> references) {
+    return gcParams.getSparkPartitionsCount() == null
+        ? references.size()
+        : gcParams.getSparkPartitionsCount();
   }
 
   private static Map<String, ContentBloomFilter> mergeLiveContentResults(

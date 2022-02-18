@@ -93,7 +93,7 @@ public abstract class AbstractRestGC extends AbstractRest {
       options.put(CONF_NESSIE_URI, getUri().toString());
       if (disableCommitProtection) {
         // disable commit protection for test purposes.
-        builder.commitProtectionTime(0);
+        builder.commitProtectionDuration(0);
       }
       ImmutableGCParams gcParams =
           builder
