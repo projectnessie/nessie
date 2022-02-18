@@ -60,7 +60,7 @@ public abstract class Key implements Comparable<Key> {
   public int hashCode() {
     final Collator collator = COLLATOR.get();
     return getElements().stream()
-        .map(s -> collator.getCollationKey(s))
+        .map(collator::getCollationKey)
         .collect(Collectors.toList())
         .hashCode();
   }
@@ -84,6 +84,6 @@ public abstract class Key implements Comparable<Key> {
 
   @Override
   public String toString() {
-    return getElements().stream().collect(Collectors.joining("."));
+    return String.join(".", getElements());
   }
 }
