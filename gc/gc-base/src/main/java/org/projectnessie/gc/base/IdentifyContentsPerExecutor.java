@@ -17,7 +17,6 @@ package org.projectnessie.gc.base;
 
 import java.io.Serializable;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -72,6 +71,11 @@ public class IdentifyContentsPerExecutor implements Serializable {
     try (NessieApiV1 api = GCUtil.getApi(gcParams.getNessieClientConfigs())) {
       boolean isRefDroppedAfterCutoffTimeStamp =
           droppedRefTime == null || droppedRefTime.compareTo(cutOffTimestamp) >= 0;
+      if (!isRefDroppedAfterCutoffTimeStamp) {
+        // reference is dropped before cutoff time.
+        // All the contents for all the keys are expired.
+        return new HashMap<>();
+      }
       Predicate<CommitMeta> liveCommitPredicate =
           commitMeta ->
               // If the commit time is newer than (think: greater than or equal to) cutoff-time,
@@ -82,7 +86,6 @@ public class IdentifyContentsPerExecutor implements Serializable {
           ImmutableGCStateParamsPerTask.builder()
               .api(api)
               .reference(reference)
-              .isRefDroppedAfterCutoffTimeStamp(isRefDroppedAfterCutoffTimeStamp)
               .liveCommitPredicate(liveCommitPredicate)
               .bloomFilterSize(bloomFilterSize)
               .build();
@@ -111,7 +114,7 @@ public class IdentifyContentsPerExecutor implements Serializable {
             null,
             OptionalInt.empty(),
             true)) {
-      MutableBoolean isLiveContentsKeyAdded = new MutableBoolean(false);
+      MutableBoolean foundAllLiveCommitHeadsBeforeCutoffTime = new MutableBoolean(false);
       // commit handler for the spliterator
       Consumer<LogResponse.LogEntry> commitHandler =
           logEntry ->
@@ -119,15 +122,10 @@ public class IdentifyContentsPerExecutor implements Serializable {
                   gcStateParamsPerTask,
                   logEntry,
                   bloomFilterMap,
-                  isLiveContentsKeyAdded,
+                  foundAllLiveCommitHeadsBeforeCutoffTime,
                   liveContentKeys);
       // traverse commits using the spliterator
-      GCUtil.traverseLiveCommits(
-          gcStateParamsPerTask.getLiveCommitPredicate(),
-          isLiveContentsKeyAdded,
-          liveContentKeys,
-          commits,
-          commitHandler);
+      GCUtil.traverseLiveCommits(foundAllLiveCommitHeadsBeforeCutoffTime, commits, commitHandler);
     } catch (NessieNotFoundException e) {
       throw new RuntimeException(e);
     }
@@ -139,11 +137,7 @@ public class IdentifyContentsPerExecutor implements Serializable {
       Reference reference,
       Map<String, ContentBloomFilter> liveContentsBloomFilterMap) {
     IdentifiedResult result = new IdentifiedResult();
-    int commitProtectionTimeInHours = gcParams.getCommitProtectionDuration();
-    Instant commitProtectionDuration =
-        (commitProtectionTimeInHours == 0)
-            ? null
-            : Instant.now().minus(commitProtectionTimeInHours, ChronoUnit.HOURS);
+    Instant commitProtectionTime = Instant.now().minus(gcParams.getCommitProtectionDuration());
     try (Stream<LogResponse.LogEntry> commits =
         StreamingUtil.getCommitLogStream(
             api, Detached.REF_NAME, reference.getHash(), null, null, OptionalInt.empty(), true)) {
@@ -152,13 +146,9 @@ public class IdentifyContentsPerExecutor implements Serializable {
             // Between the bloom filter creation and this step,
             // there can be some more commits in the backend.
             // Checking them against bloom filter will give false results.
-            // Hence, protect those commits using commitProtectionDuration.
-            boolean isUnprotectedCommit =
-                (commitProtectionDuration == null)
-                    || (logEntry.getCommitMeta().getCommitTime().compareTo(commitProtectionDuration)
-                        < 0);
-            if (isUnprotectedCommit) {
-              // this commit can be tested for expiry.
+            // Hence, protect those commits using commitProtectionTime.
+            if (logEntry.getCommitMeta().getCommitTime().compareTo(commitProtectionTime) < 0) {
+              // this commit can be tested for expiry as it is unprotected.
               handleCommitForExpiredContents(
                   reference, logEntry, liveContentsBloomFilterMap, result);
             }
@@ -173,18 +163,14 @@ public class IdentifyContentsPerExecutor implements Serializable {
       GCStateParamsPerTask gcStateParamsPerTask,
       LogResponse.LogEntry logEntry,
       Map<String, ContentBloomFilter> bloomFilterMap,
-      MutableBoolean isLiveContentsKeyAdded,
+      MutableBoolean foundAllLiveCommitHeadsBeforeCutoffTime,
       Set<ContentKey> liveContentKeys) {
     if (logEntry.getOperations() != null) {
       boolean isExpired =
           !gcStateParamsPerTask.getLiveCommitPredicate().test(logEntry.getCommitMeta());
-      if (gcStateParamsPerTask.isRefDroppedAfterCutoffTimeStamp()
-          && isLiveContentsKeyAdded.isFalse()
-          && isExpired) {
+      if (isExpired && liveContentKeys.isEmpty()) {
         // get live content keys for this reference at hash
         // as it is the first expired commit. Time travel is supported till this state.
-        // Also, If the isRefDroppedAfterCutoffTimeStamp is false,
-        // no need to add live content keys as everything is expired.
         try {
           gcStateParamsPerTask
               .getApi()
@@ -194,7 +180,6 @@ public class IdentifyContentsPerExecutor implements Serializable {
               .get()
               .getEntries()
               .forEach(entries -> liveContentKeys.add(entries.getName()));
-          isLiveContentsKeyAdded.setTrue();
         } catch (NessieNotFoundException e) {
           throw new RuntimeException(e);
         }
@@ -204,11 +189,14 @@ public class IdentifyContentsPerExecutor implements Serializable {
           .forEach(
               operation -> {
                 boolean addContent;
-                if (isLiveContentsKeyAdded.isTrue()
-                    && liveContentKeys.contains(operation.getKey())) {
+                if (liveContentKeys.contains(operation.getKey())) {
                   // commit head of this key
                   addContent = true;
                   liveContentKeys.remove(operation.getKey());
+                  if (liveContentKeys.isEmpty()) {
+                    // found all the live commit heads before cutoff time.
+                    foundAllLiveCommitHeadsBeforeCutoffTime.setTrue();
+                  }
                 } else {
                   addContent = !isExpired;
                 }

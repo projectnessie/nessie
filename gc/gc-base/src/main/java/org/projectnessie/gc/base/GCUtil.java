@@ -17,19 +17,15 @@ package org.projectnessie.gc.base;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
-import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.NessieConfigConstants;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.http.HttpClientBuilder;
-import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.LogResponse;
 
 public final class GCUtil {
@@ -40,22 +36,17 @@ public final class GCUtil {
    * Traverse the live commits stream till an entry is seen for each live content key and reached
    * expired commits.
    *
-   * @param liveCommitPredicate predicate to identify the commit as live
-   * @param isLiveContentsKeyAdded check point to enable the validation
-   * @param liveContentKeys live content keys at the point of cutoff time
+   * @param foundAllLiveCommitHeadsBeforeCutoffTime condition to stop traversing
    * @param commits stream of {@link LogResponse.LogEntry}
    * @param commitHandler consumer of {@link LogResponse.LogEntry}
    */
   static void traverseLiveCommits(
-      Predicate<CommitMeta> liveCommitPredicate,
-      MutableBoolean isLiveContentsKeyAdded,
-      Set<ContentKey> liveContentKeys,
+      MutableBoolean foundAllLiveCommitHeadsBeforeCutoffTime,
       Stream<LogResponse.LogEntry> commits,
       Consumer<LogResponse.LogEntry> commitHandler) {
     Spliterator<LogResponse.LogEntry> src = commits.spliterator();
     // Use a Spliterator to limit the processed commits to the "live" commits - i.e. stop traversing
-    // the expired
-    // commits once an entry is seen for each live content key.
+    // the expired commits once an entry is seen for each live content key.
     new Spliterators.AbstractSpliterator<LogResponse.LogEntry>(src.estimateSize(), 0) {
       private boolean more = true;
 
@@ -67,17 +58,9 @@ public final class GCUtil {
         more =
             src.tryAdvance(
                 logEntry -> {
-                  if (!liveCommitPredicate.test(logEntry.getCommitMeta())
-                      && isLiveContentsKeyAdded.isTrue()
-                      && (liveContentKeys.isEmpty())) {
-                    // can stop traversing as reached the expired commits
-                    // and an entry is seen for each live content key.
-
-                    // Note that the first expired commit will add the liveContentKeys,
-                    // Hence, isLiveContentsKeyAdded.isTrue() check
-                    // to avoid skipping processing of first expired commit.
-                    // The commitHandler will remove the entries from liveContentKeys after found.
-                    // Hence, checking for isEmpty() to stop traversal.
+                  if (foundAllLiveCommitHeadsBeforeCutoffTime.isTrue()) {
+                    // can stop traversing as found all the live commit heads
+                    // for each live keys before cutoff time.
                     more = false;
                   } else {
                     // process this commit entry.

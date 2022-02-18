@@ -115,7 +115,7 @@ public class GCImpl {
   }
 
   private long getTotalCommitsInDefaultReference(NessieApiV1 api) {
-    ReferenceMetadata defaultRefMetadata = null;
+    ReferenceMetadata defaultRefMetadata;
     try {
       defaultRefMetadata =
           api.getReference()
@@ -126,9 +126,8 @@ public class GCImpl {
     } catch (NessieNotFoundException ex) {
       throw new RuntimeException(ex);
     }
-    return (defaultRefMetadata != null && defaultRefMetadata.getNumTotalCommits() != null)
-        ? defaultRefMetadata.getNumTotalCommits()
-        : 0;
+    // As the FetchOption.ALL is used, metadata and its content will not be null.
+    return defaultRefMetadata.getNumTotalCommits();
   }
 
   private static Map<Reference, Instant> collectDeadReferences(NessieApiV1 api) {

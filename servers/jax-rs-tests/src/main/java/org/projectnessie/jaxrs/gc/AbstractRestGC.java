@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URI;
 
 import com.google.common.collect.ImmutableMap;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -93,7 +94,7 @@ public abstract class AbstractRestGC extends AbstractRest {
       options.put(CONF_NESSIE_URI, getUri().toString());
       if (disableCommitProtection) {
         // disable commit protection for test purposes.
-        builder.commitProtectionDuration(0);
+        builder.commitProtectionDuration(Duration.ZERO);
       }
       ImmutableGCParams gcParams =
           builder

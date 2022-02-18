@@ -16,6 +16,7 @@
 package org.projectnessie.gc.base;
 
 import java.io.Serializable;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import javax.annotation.Nullable;
@@ -47,13 +48,12 @@ public interface GCParams extends Serializable {
   Integer getSparkPartitionsCount();
 
   /**
-   * Commit protection duration in hours to avoid expiring on going or recent commits. Default is 2
-   * hours.
+   * Commit protection duration to avoid expiring on going or recent commits. Default is 2 hours.
    */
   @Value.Default
-  default int getCommitProtectionDuration() {
+  default Duration getCommitProtectionDuration() {
     // default is kept as 2 hours.
-    return 2;
+    return Duration.ofHours(2);
   }
 
   /**
@@ -76,8 +76,8 @@ public interface GCParams extends Serializable {
     if (taskCount != null && taskCount <= 0) {
       throw new IllegalArgumentException("taskCount has invalid value: " + taskCount);
     }
-    int commitProtectionDuration = getCommitProtectionDuration();
-    if (commitProtectionDuration < 0) {
+    Duration commitProtectionDuration = getCommitProtectionDuration();
+    if (commitProtectionDuration.isNegative()) {
       throw new IllegalArgumentException(
           "commitProtectionDuration has invalid value: " + commitProtectionDuration);
     }
@@ -87,7 +87,7 @@ public interface GCParams extends Serializable {
           "bloomFilterExpectedEntries has invalid value: " + bloomFilterExpectedEntries);
     }
     double bloomFilterFpp = getBloomFilterFpp();
-    if (!(bloomFilterFpp > 0.0D && bloomFilterFpp < 1.0D)) {
+    if (!(bloomFilterFpp > 0.0d && bloomFilterFpp < 1.0d)) {
       throw new IllegalArgumentException("bloomFilterFpp has invalid value: " + bloomFilterFpp);
     }
   }

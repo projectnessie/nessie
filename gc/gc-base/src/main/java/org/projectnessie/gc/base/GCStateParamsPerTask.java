@@ -32,8 +32,6 @@ interface GCStateParamsPerTask {
 
   Reference getReference();
 
-  boolean isRefDroppedAfterCutoffTimeStamp();
-
   Predicate<CommitMeta> getLiveCommitPredicate();
 
   long getBloomFilterSize();
