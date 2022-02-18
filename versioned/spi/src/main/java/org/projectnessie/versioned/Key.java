@@ -25,14 +25,12 @@ import org.immutables.value.Value.Immutable;
 public abstract class Key implements Comparable<Key> {
 
   private static final ThreadLocal<Collator> COLLATOR =
-      new ThreadLocal<Collator>() {
-        @Override
-        protected Collator initialValue() {
-          Collator c = Collator.getInstance(Locale.US);
-          c.setStrength(Collator.PRIMARY);
-          return c;
-        }
-      };
+      ThreadLocal.withInitial(
+          () -> {
+            Collator c = Collator.getInstance(Locale.US);
+            c.setStrength(Collator.PRIMARY);
+            return c;
+          });
 
   public abstract List<String> getElements();
 
