@@ -1151,6 +1151,10 @@ limitations under the License.
                     <exclude>log4j:log4j</exclude>
                   </excludes>
                 </bannedDependencies>
+                <RestrictImports>
+                  <reason>Use javax annotations instead of jetbrains</reason>
+                  <bannedImport>org.jetbrains.annotations.**</bannedImport>
+                </RestrictImports>
               </rules>
             </configuration>
           </execution>
@@ -1168,21 +1172,6 @@ limitations under the License.
                 <requireMavenVersion>
                   <version>[3.6.2,)</version>
                 </requireMavenVersion>
-              </rules>
-            </configuration>
-          </execution>
-          <execution>
-            <id>ban-unwanted-imports</id>
-            <phase>process-sources</phase>
-            <goals>
-              <goal>enforce</goal>
-            </goals>
-            <configuration>
-              <rules>
-                <RestrictImports>
-                  <reason>Use javax annotations instead of jetbrains</reason>
-                  <bannedImport>org.jetbrains.annotations.**</bannedImport>
-                </RestrictImports>
               </rules>
             </configuration>
           </execution>
