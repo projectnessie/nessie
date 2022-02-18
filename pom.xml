@@ -1125,6 +1125,13 @@ limitations under the License.
       </plugin>
       <plugin>
         <artifactId>maven-enforcer-plugin</artifactId>
+        <dependencies>
+          <dependency>
+            <groupId>de.skuzzle.enforcer</groupId>
+            <artifactId>restrict-imports-enforcer-rule</artifactId>
+            <version>2.0.0</version>
+          </dependency>
+        </dependencies>
         <executions>
           <execution>
             <id>avoid-bad-dependencies</id>
@@ -1161,6 +1168,21 @@ limitations under the License.
                 <requireMavenVersion>
                   <version>[3.6.2,)</version>
                 </requireMavenVersion>
+              </rules>
+            </configuration>
+          </execution>
+          <execution>
+            <id>ban-unwanted-imports</id>
+            <phase>process-sources</phase>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <RestrictImports>
+                  <reason>Use javax annotations instead of jetbrains</reason>
+                  <bannedImport>org.jetbrains.annotations.**</bannedImport>
+                </RestrictImports>
               </rules>
             </configuration>
           </execution>
