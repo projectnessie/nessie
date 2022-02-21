@@ -148,10 +148,7 @@ public class RocksDatabaseAdapter
     lock.lock();
     try {
       byte[] key = dbKey(entry.getHash());
-      if (db.keyMayExist(dbInstance.getCfCommitLog(), key, new Holder<>())) {
-        throw hashCollisionDetected();
-      }
-
+      checkForHashCollision(dbInstance.getCfCommitLog(), key);
       db.put(dbInstance.getCfCommitLog(), key, toProto(entry).toByteArray());
     } catch (RocksDBException e) {
       throw new RuntimeException(e);
@@ -186,10 +183,7 @@ public class RocksDatabaseAdapter
     lock.lock();
     try {
       byte[] key = dbKey(entry.getId());
-      if (db.keyMayExist(key, new Holder<>())) {
-        throw hashCollisionDetected();
-      }
-
+      checkForHashCollision(dbInstance.getCfGlobalLog(), key);
       db.put(dbInstance.getCfGlobalLog(), key, entry.toByteArray());
     } catch (RocksDBException e) {
       throw new RuntimeException(e);
@@ -400,9 +394,7 @@ public class RocksDatabaseAdapter
     lock.lock();
     try {
       byte[] key = dbKey(entry.getRefLogId());
-      if (db.keyMayExist(key, new Holder<>())) {
-        throw hashCollisionDetected();
-      }
+      checkForHashCollision(dbInstance.getCfRefLog(), key);
       db.put(dbInstance.getCfRefLog(), key, entry.toByteArray());
     } catch (RocksDBException e) {
       throw new RuntimeException(e);
@@ -429,5 +421,14 @@ public class RocksDatabaseAdapter
   protected List<RefLog> fetchPageFromRefLog(
       NonTransactionalOperationContext ctx, List<Hash> hashes) {
     return fetchPage(dbInstance.getCfRefLog(), hashes, ProtoSerialization::protoToRefLog);
+  }
+
+  private void checkForHashCollision(ColumnFamilyHandle cf, byte[] key)
+      throws ReferenceConflictException, RocksDBException {
+    Holder<byte[]> value = new Holder<>();
+    // "may" exist is not "does really" exist, so check if a value was found
+    if (db.keyMayExist(cf, key, value) && value.getValue() != null) {
+      throw hashCollisionDetected();
+    }
   }
 }
