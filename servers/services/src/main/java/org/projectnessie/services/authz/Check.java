@@ -42,6 +42,7 @@ public interface Check {
     CREATE_REFERENCE(true, false),
     ASSIGN_REFERENCE_TO_HASH(true, false),
     DELETE_REFERENCE(true, false),
+    DELETE_DEFAULT_BRANCH(false, false),
     READ_ENTRIES(true, false),
     LIST_COMMIT_LOG(true, false),
     COMMIT_CHANGE_AGAINST_REFERENCE(true, false),

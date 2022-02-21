@@ -63,6 +63,8 @@ class TestAuthorizationRules extends BaseClientAuthTest {
 
   private void testAllOps(String branchName, String role, boolean shouldFail)
       throws BaseNessieClientServerException {
+    boolean isAdmin = role.equals("admin_user");
+
     ContentKey key = ContentKey.of("allowed", "x");
     if (shouldFail) {
       branchName = "disallowedBranchForTestUser";
@@ -94,7 +96,14 @@ class TestAuthorizationRules extends BaseClientAuthTest {
     branch = shouldFail ? branchWithInvalidHash : retrieveBranch(branchName, role, shouldFail);
     deleteBranch(branch, role, shouldFail);
 
-    getRefLog(role, !role.equals("admin_user"));
+    getRefLog(role, !isAdmin);
+
+    Branch defaultBranch = api().getDefaultBranch();
+    deleteBranch(defaultBranch, role, !isAdmin);
+    if (isAdmin) {
+      // need to recreate the default branch, so the test can continue normally
+      api().createReference().reference(Branch.of(defaultBranch.getName(), null)).create();
+    }
   }
 
   @Test

@@ -69,6 +69,7 @@ which looks like this:
       BatchAccessChecker canViewReference(NamedRef ref);
       BatchAccessChecker canCreateReference(NamedRef ref);
       BatchAccessChecker canDeleteReference(NamedRef ref);
+      BatchAccessChecker canDeleteDefaultBranch();
       BatchAccessChecker canAssignRefToHash(NamedRef ref);
       BatchAccessChecker canReadEntries(NamedRef ref);
       BatchAccessChecker canListCommitLog(NamedRef ref);
@@ -113,6 +114,7 @@ An implementation of the `BatchAccessChecker` interface could be written with th
   * `VIEW_REFERENCE`
   * `CREATE_REFERENCE`
   * `DELETE_REFERENCE`
+  * `DELETE_DEFAULT_BRANCH`
   * `ASSIGN_REFERENCE_TO_HASH`
   * `READ_ENTRIES`,
   * `LIST_COMMIT_LOG`
@@ -132,6 +134,7 @@ nessie.server.authorization.rules.allow_branch_deletion="op=='DELETE_REFERENCE' 
 nessie.server.authorization.rules.allow_updating_entity="op=='UPDATE_ENTITY' && role=='test_user' && path.startsWith('allowed.')"
 nessie.server.authorization.rules.allow_deleting_entity="op=='DELETE_ENTITY' && role=='test_user' && path.startsWith('allowed.')"
 nessie.server.authorization.rules.allow_listing_reflog="op=='VIEW_REFLOG' && role=='admin_user'"
+nessie.server.authorization.rules.allow_deleting_default_branch="op=='DELETE_DEFAULT_BRANCH' && role=='admin_user'"
 ```
 
 > Written with [StackEdit](https://stackedit.io/).

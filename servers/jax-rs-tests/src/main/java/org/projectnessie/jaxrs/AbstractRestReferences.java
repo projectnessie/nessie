@@ -33,7 +33,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieBadRequestException;
-import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.Branch;
@@ -55,21 +54,14 @@ import org.projectnessie.model.Validation;
 /** See {@link AbstractTestRest} for details about and reason for the inheritance model. */
 public abstract class AbstractRestReferences extends AbstractRestMisc {
   @Test
-  public void defaultBranchProtection() throws BaseNessieClientServerException {
-    Branch defaultBranch = getApi().getDefaultBranch();
+  public void createRecreateDefaultBranch() throws BaseNessieClientServerException {
+    getApi().deleteBranch().branch(getApi().getDefaultBranch()).delete();
 
-    assertThatThrownBy(() -> getApi().deleteBranch().branch(defaultBranch).delete())
-        .isInstanceOf(NessieBadRequestException.class)
-        .hasMessageContaining("can not be deleted");
-
-    assertThatThrownBy(
-            () ->
-                getApi()
-                    .createReference()
-                    .reference(Branch.of(defaultBranch.getName(), null))
-                    .create())
-        .isInstanceOf(NessieConflictException.class)
-        .hasMessageContaining("already exists");
+    Reference main = getApi().createReference().reference(Branch.of("main", null)).create();
+    assertThat(main).isNotNull();
+    assertThat(main.getName()).isEqualTo("main");
+    assertThat(main.getHash()).isNotNull();
+    assertThat(getApi().getReference().refName("main").get()).isEqualTo(main);
   }
 
   @Test

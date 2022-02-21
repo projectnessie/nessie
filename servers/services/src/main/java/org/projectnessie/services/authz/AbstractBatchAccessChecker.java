@@ -66,6 +66,11 @@ public abstract class AbstractBatchAccessChecker implements BatchAccessChecker {
   }
 
   @Override
+  public BatchAccessChecker canDeleteDefaultBranch() {
+    return add(Check.builder(CheckType.DELETE_DEFAULT_BRANCH));
+  }
+
+  @Override
   public BatchAccessChecker canReadEntries(NamedRef ref) {
     canViewReference(ref);
     return add(Check.builder(CheckType.READ_ENTRIES).ref(ref));
