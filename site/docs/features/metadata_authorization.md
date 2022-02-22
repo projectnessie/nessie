@@ -73,7 +73,7 @@ Rule definitions are of the form `nessie.server.authorization.rules.<ruleId>=<ru
 
 Available variables within the `<rule_expression>` are: **'op'** / **'role'** / **'ref'** / **'path'**.
 
-* The **'op'** variable in the `<rule_expression>` refers to the type of operation can be any of: **'VIEW_REFERENCE'**, **'CREATE_REFERENCE'**, **'DELETE_REFERENCE'**, **'READ_ENTRIES'**, **'LIST_COMMIT_LOG'**, **'COMMIT_CHANGE_AGAINST_REFERENCE'**, **'ASSIGN_REFERENCE_TO_HASH'**, **'UPDATE_ENTITY'**, **'READ_ENTITY_VALUE'**, **'DELETE_ENTITY'**,**'VIEW_REFLOG'**.
+* The **'op'** variable in the `<rule_expression>` refers to the type of operation can be any of: **'VIEW_REFERENCE'**, **'CREATE_REFERENCE'**, **'DELETE_REFERENCE'**, **'DELETE_DEFAULT_BRANCH'**, **'READ_ENTRIES'**, **'LIST_COMMIT_LOG'**, **'COMMIT_CHANGE_AGAINST_REFERENCE'**, **'ASSIGN_REFERENCE_TO_HASH'**, **'UPDATE_ENTITY'**, **'READ_ENTITY_VALUE'**, **'DELETE_ENTITY'**,**'VIEW_REFLOG'**.
 * The **'role'** refers to the user's role and can be any string.
 * The **'ref'** refers to a string representing a branch/tag name
 * The **'path'** refers to the Key for the contents of an object and can be any string
@@ -128,6 +128,12 @@ nessie.server.authorization.rules.allow_deleting_entity=\
 ```
 nessie.server.authorization.rules.allow_listing_reflog=\
   op=='VIEW_REFLOG' && role=='admin_user'
+```
+
+* allows deletion of the default branch for the role `admin_user`:
+```
+nessie.server.authorization.rules.allow_deleting_default_branch=\
+  op=='DELETE_DEFAULT_BRANCH' && role=='admin_user'
 ```
 
 ### Example authorization rules from Stories section

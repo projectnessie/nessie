@@ -130,6 +130,9 @@ public class BatchAccessCheckerTest {
             case DELETE_REFERENCE:
               checker.canDeleteReference(c.ref());
               break;
+            case DELETE_DEFAULT_BRANCH:
+              checker.canDeleteDefaultBranch();
+              break;
             case READ_ENTRIES:
               checker.canReadEntries(c.ref());
               break;

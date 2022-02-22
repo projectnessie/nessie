@@ -75,6 +75,9 @@ public class NessieAuthorizationTestProfile extends AuthenticationEnabledProfile
               "nessie.server.authorization.rules.allow_listing_reflog",
               "op=='VIEW_REFLOG' && role=='admin_user'")
           .put(
+              "nessie.server.authorization.rules.allow_deleting_default_branch",
+              "op=='DELETE_DEFAULT_BRANCH' && role=='admin_user'")
+          .put(
               "nessie.server.authorization.rules.allow_creation_user1",
               "op=='CREATE_REFERENCE' && role=='user1' && ref.matches('.*')")
           .put(

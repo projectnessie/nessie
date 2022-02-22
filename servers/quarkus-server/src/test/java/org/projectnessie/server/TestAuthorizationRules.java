@@ -63,6 +63,8 @@ class TestAuthorizationRules extends BaseClientAuthTest {
 
   private void testAllOps(String branchName, String role, boolean shouldFail)
       throws BaseNessieClientServerException {
+    boolean isAdmin = role.equals("admin_user");
+
     ContentKey key = ContentKey.of("allowed", "x");
     if (shouldFail) {
       branchName = "disallowedBranchForTestUser";
@@ -94,7 +96,14 @@ class TestAuthorizationRules extends BaseClientAuthTest {
     branch = shouldFail ? branchWithInvalidHash : retrieveBranch(branchName, role, shouldFail);
     deleteBranch(branch, role, shouldFail);
 
-    getRefLog(role, !role.equals("admin_user"));
+    getRefLog(role, !isAdmin);
+
+    Branch defaultBranch = api().getDefaultBranch();
+    deleteBranch(defaultBranch, role, !isAdmin);
+    if (isAdmin) {
+      // need to recreate the default branch, so the test can continue normally
+      api().createReference().reference(Branch.of(defaultBranch.getName(), null)).create();
+    }
   }
 
   @Test
@@ -329,12 +338,19 @@ class TestAuthorizationRules extends BaseClientAuthTest {
   private void deleteBranch(Branch branch, String role, boolean shouldFail)
       throws BaseNessieClientServerException {
     if (shouldFail) {
+      assertThat(role).isNotEqualTo("admin_user");
+
+      String expectedErrorMsg =
+          String.format(
+              "'DELETE_REFERENCE' is not allowed for role '%s' on reference '%s'",
+              role, branch.getName());
+      if (api().getDefaultBranch().equals(branch)) {
+        expectedErrorMsg =
+            String.format("'DELETE_DEFAULT_BRANCH' is not allowed for role '%s'", role);
+      }
       assertThatThrownBy(() -> api().deleteBranch().branch(branch).delete())
           .isInstanceOf(NessieForbiddenException.class)
-          .hasMessageContaining(
-              String.format(
-                  "'DELETE_REFERENCE' is not allowed for role '%s' on reference '%s'",
-                  role, branch.getName()));
+          .hasMessageContaining(expectedErrorMsg);
     } else {
       api().deleteBranch().branch(branch).delete();
     }
