@@ -7,7 +7,7 @@ listing, updating and deleting notifications for a nessie server.
 ## Event types
 This section lists out all events we support. All events in Nessie contain two pieces of information: the event time and
 the event type. The event time is the time at which the event was fired, it corresponds closely to when the event
-happened, but it can lag behind a few nanoseconds. The event type is an `UPPER_CASE` string representing the type of the
+happened. The event type is an `UPPER_CASE` string representing the type of the
 event, as an example, commit events have a `"COMMIT"` type.
 
 For the following section, we will use the same schema as Nessie's API for referring to references, branches and tags,
