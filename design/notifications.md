@@ -282,7 +282,7 @@ In Nessie's case, the contract between the webservice (caller) and the webhook U
 sent to the registered webhook. The contract is as follows:
 1. The client will register a webhook notification with Nessie by calling one of the APIs below.
 2. When an event happens in Nessie, it will call back using a `POST` request that:
-   1. Its content-type is `application/json`.
+   1. Its content-type is `application/json` or a content-type ending in `+json`.
    2. Its body contains the JSON payload of the event that happened. (See previous section for details on the expected schema).
 
 ### Creating a new notification/webhook
