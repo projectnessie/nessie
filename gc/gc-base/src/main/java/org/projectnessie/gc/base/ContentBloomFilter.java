@@ -56,6 +56,10 @@ public class ContentBloomFilter implements Serializable {
     }
   }
 
+  public double getExpectedFpp() {
+    return filter.expectedFpp();
+  }
+
   private String getValue(Content content) {
     switch (content.getType()) {
       case ICEBERG_TABLE:

@@ -17,17 +17,22 @@ package org.projectnessie.gc.base;
 
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.SparkSession;
 import org.projectnessie.model.Reference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Identify the expired and live contents in a distributed way using the spark and bloom filter by
  * walking all the references (both dead and live).
  */
 public class DistributedIdentifyContents {
+  private static final Logger LOGGER = LoggerFactory.getLogger(DistributedIdentifyContents.class);
 
   private final SparkSession session;
   private final GCParams gcParams;
@@ -54,7 +59,7 @@ public class DistributedIdentifyContents {
             .parallelize(references, getPartitionsCount(gcParams, references))
             .map(executor.computeLiveContentsFunc(bloomFilterSize, droppedRefTimeMap))
             .collect();
-    return mergeLiveContentResults(bloomFilterMaps);
+    return mergeLiveContentResults(bloomFilterMaps, gcParams.getBloomFilterFpp());
   }
 
   /**
@@ -87,7 +92,8 @@ public class DistributedIdentifyContents {
   }
 
   private static Map<String, ContentBloomFilter> mergeLiveContentResults(
-      List<Map<String, ContentBloomFilter>> bloomFilterMaps) {
+      List<Map<String, ContentBloomFilter>> bloomFilterMaps, double bloomFilterFpp) {
+    Set<String> mergedContentIds = new HashSet<>();
     Map<String, ContentBloomFilter> output = new HashMap<>();
     bloomFilterMaps.forEach(
         map ->
@@ -95,10 +101,23 @@ public class DistributedIdentifyContents {
                 (k, v) -> {
                   if (output.containsKey(k)) {
                     output.get(k).merge(v);
+                    mergedContentIds.add(k);
                   } else {
                     output.put(k, v);
                   }
                 }));
+    // Since we merged bloom filters log in case their quality deteriorated
+    mergedContentIds.stream()
+        .forEach(
+            contentId -> {
+              double fpp = output.get(contentId).getExpectedFpp();
+              if (fpp > bloomFilterFpp) {
+                LOGGER.info(
+                    "Fpp of ContentBloomFilter for '{}': {}",
+                    contentId,
+                    String.format("%.3f", fpp));
+              }
+            });
     return output;
   }
 }
