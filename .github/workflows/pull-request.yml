@@ -33,6 +33,10 @@ on:
 #      - '.idea/**'
 #      - '.editorconfig'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   java:
     name: Java/Maven
