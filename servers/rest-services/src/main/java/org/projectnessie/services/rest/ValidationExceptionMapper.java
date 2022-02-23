@@ -16,10 +16,6 @@
 package org.projectnessie.services.rest;
 
 import javax.inject.Inject;
-import javax.validation.ConstraintViolation;
-import javax.validation.ConstraintViolationException;
-import javax.validation.ElementKind;
-import javax.validation.Path;
 import javax.validation.ValidationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
@@ -48,26 +44,6 @@ public class ValidationExceptionMapper extends BaseExceptionMapper<ValidationExc
 
   @Override
   public Response toResponse(ValidationException exception) {
-    if (exception instanceof ConstraintViolationException) {
-      final ConstraintViolationException cve = (ConstraintViolationException) exception;
-      ErrorCode errorCode = ErrorCode.BAD_REQUEST;
-      for (ConstraintViolation<?> violation : cve.getConstraintViolations()) {
-        for (final Path.Node node : violation.getPropertyPath()) {
-          final ElementKind kind = node.getKind();
-
-          if (ElementKind.RETURN_VALUE.equals(kind)) {
-            errorCode = ErrorCode.UNKNOWN; // translates to "internal server error"
-          }
-        }
-      }
-      return buildExceptionResponse(
-          errorCode,
-          exception.getMessage(),
-          exception,
-          false, // no need to send the stack trace for a validation-error
-          header -> {});
-    }
-
     return buildExceptionResponse(ErrorCode.UNKNOWN, unwrapException(exception), exception);
   }
 
@@ -81,7 +57,7 @@ public class ValidationExceptionMapper extends BaseExceptionMapper<ValidationExc
     if (t == null) {
       return;
     }
-    sb.append(t.toString());
+    sb.append(t);
     if (t.getCause() != null && t != t.getCause()) {
       sb.append('[');
       doUnwrapException(sb, t.getCause());
