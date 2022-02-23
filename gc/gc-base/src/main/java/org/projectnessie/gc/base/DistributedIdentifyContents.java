@@ -17,10 +17,8 @@ package org.projectnessie.gc.base;
 
 import java.time.Instant;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.SparkSession;
 import org.projectnessie.model.Reference;
@@ -93,7 +91,6 @@ public class DistributedIdentifyContents {
 
   private static Map<String, ContentBloomFilter> mergeLiveContentResults(
       List<Map<String, ContentBloomFilter>> bloomFilterMaps, double bloomFilterFpp) {
-    Set<String> mergedContentIds = new HashSet<>();
     Map<String, ContentBloomFilter> output = new HashMap<>();
     bloomFilterMaps.forEach(
         map ->
@@ -101,21 +98,24 @@ public class DistributedIdentifyContents {
                 (k, v) -> {
                   if (output.containsKey(k)) {
                     output.get(k).merge(v);
-                    mergedContentIds.add(k);
                   } else {
                     output.put(k, v);
                   }
                 }));
     // Since we merged bloom filters log in case their quality deteriorated
-    mergedContentIds.stream()
+    output.entrySet().stream()
         .forEach(
-            contentId -> {
-              double fpp = output.get(contentId).getExpectedFpp();
-              if (fpp > bloomFilterFpp) {
-                LOGGER.info(
-                    "Fpp of ContentBloomFilter for '{}': {}",
-                    contentId,
-                    String.format("%.3f", fpp));
+            e -> {
+              ContentBloomFilter bloomFilter = e.getValue();
+              if (bloomFilter.wasMerged()) {
+                double fpp = bloomFilter.getExpectedFpp();
+                if (fpp > bloomFilterFpp) {
+                  String contentId = e.getKey();
+                  LOGGER.info(
+                      "Fpp of ContentBloomFilter for '{}': {}",
+                      contentId,
+                      String.format("%.3f", fpp));
+                }
               }
             });
     return output;
