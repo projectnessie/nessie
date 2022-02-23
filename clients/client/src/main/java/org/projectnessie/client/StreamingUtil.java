@@ -16,10 +16,12 @@
 package org.projectnessie.client;
 
 import java.util.OptionalInt;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import org.projectnessie.api.params.FetchOption;
+import org.projectnessie.client.api.GetCommitLogBuilder;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.api.PagingBuilder;
 import org.projectnessie.error.NessieNotFoundException;
@@ -94,27 +96,32 @@ public final class StreamingUtil {
    *
    * @param api The {@link NessieApiV1} to use
    * @param ref a named reference (branch or tag name) or a commit-hash
+   * @param builderCustomizer a Consumer of the {@link GetCommitLogBuilder} that is passed to the
+   *     caller of this method. It allows the caller to customize the GetCommitLogBuilder with
+   *     additional parameters (e.g.: hashOnRef, untilHash, filter).
+   * @param maxRecords - a maximum number of records in the stream. If it is {@code
+   *     Optional.empty()} the stream will be unbounded.
+   * @param fetchAdditionalInfo - specify whether it should fetch {@link FetchOption#ALL} or {@link
+   *     FetchOption#MINIMAL}
    * @return stream of {@link CommitMeta} objects
    */
   public static Stream<LogEntry> getCommitLogStream(
       @NotNull NessieApiV1 api,
-      @NotNull String ref,
-      @Nullable String hashOnRef,
-      @Nullable String untilHash,
-      @Nullable String filter,
+      String ref,
+      Consumer<GetCommitLogBuilder> builderCustomizer,
       OptionalInt maxRecords,
       boolean fetchAdditionalInfo)
       throws NessieNotFoundException {
     FetchOption fetchOption = fetchAdditionalInfo ? FetchOption.ALL : FetchOption.MINIMAL;
     return new ResultStreamPaginator<>(
             LogResponse::getLogEntries,
-            (reference, pageSize, token) ->
-                builderWithPaging(api.getCommitLog().fetch(fetchOption), pageSize, token)
-                    .refName(reference)
-                    .hashOnRef(hashOnRef)
-                    .filter(filter)
-                    .untilHash(untilHash)
-                    .get())
+            (reference, pageSize, token) -> {
+              GetCommitLogBuilder getCommitLogBuilder =
+                  builderWithPaging(api.getCommitLog().fetch(fetchOption), pageSize, token)
+                      .refName(ref);
+              builderCustomizer.accept(getCommitLogBuilder);
+              return getCommitLogBuilder.get();
+            })
         .generateStream(ref, maxRecords);
   }
 

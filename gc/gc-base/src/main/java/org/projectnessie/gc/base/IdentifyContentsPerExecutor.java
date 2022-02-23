@@ -109,9 +109,10 @@ public class IdentifyContentsPerExecutor implements Serializable {
         StreamingUtil.getCommitLogStream(
             gcStateParamsPerTask.getApi(),
             Detached.REF_NAME,
-            gcStateParamsPerTask.getReference().getHash(),
-            null,
-            null,
+            builder ->
+                builder
+                    .refName(Detached.REF_NAME)
+                    .hashOnRef(gcStateParamsPerTask.getReference().getHash()),
             OptionalInt.empty(),
             true)) {
       MutableBoolean foundAllLiveCommitHeadsBeforeCutoffTime = new MutableBoolean(false);
@@ -140,7 +141,11 @@ public class IdentifyContentsPerExecutor implements Serializable {
     Instant commitProtectionTime = Instant.now().minus(gcParams.getCommitProtectionDuration());
     try (Stream<LogResponse.LogEntry> commits =
         StreamingUtil.getCommitLogStream(
-            api, Detached.REF_NAME, reference.getHash(), null, null, OptionalInt.empty(), true)) {
+            api,
+            Detached.REF_NAME,
+            builder -> builder.hashOnRef(reference.getHash()),
+            OptionalInt.empty(),
+            true)) {
       commits.forEach(
           logEntry -> {
             // Between the bloom filter creation and this step,
