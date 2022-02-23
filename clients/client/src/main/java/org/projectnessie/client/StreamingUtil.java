@@ -22,6 +22,7 @@ import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.client.api.GetCommitLogBuilder;
+import org.projectnessie.client.api.GetRefLogBuilder;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.api.PagingBuilder;
 import org.projectnessie.error.NessieNotFoundException;
@@ -133,23 +134,25 @@ public final class StreamingUtil {
    * returns all reflog entries.
    *
    * @param api The {@link NessieApiV1} to use
+   * @param builderCustomizer a Consumer of the {@link GetRefLogBuilder} that is passed to the
+   *     caller of this method. It allows the caller to customize the GetCommitLogBuilder with
+   *     additional parameters (e.g.: fromHash, untilHash, filter).
+   * @param maxRecords - a maximum number of records in the stream. If it is {@code
+   *     Optional.empty()} the stream will be unbounded.
    * @return stream of {@link RefLogResponse.RefLogResponseEntry} objects
    */
   public static Stream<RefLogResponse.RefLogResponseEntry> getReflogStream(
       @NotNull NessieApiV1 api,
-      @Nullable String fromHash,
-      @Nullable String untilHash,
-      @Nullable String filter,
+      Consumer<GetRefLogBuilder> builderCustomizer,
       OptionalInt maxRecords)
       throws NessieNotFoundException {
     return new ResultStreamPaginator<>(
             RefLogResponse::getLogEntries,
-            (reference, pageSize, token) ->
-                builderWithPaging(api.getRefLog(), pageSize, token)
-                    .fromHash(fromHash)
-                    .untilHash(untilHash)
-                    .filter(filter)
-                    .get())
+            (reference, pageSize, token) -> {
+              GetRefLogBuilder builder = builderWithPaging(api.getRefLog(), pageSize, token);
+              builderCustomizer.accept(builder);
+              return builder.get();
+            })
         .generateStream(null, maxRecords);
   }
 

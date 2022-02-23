@@ -211,10 +211,10 @@ public abstract class AbstractRestRefLog extends AbstractRestReferences {
     List<RefLogResponse.RefLogResponseEntry> filteredResult =
         StreamingUtil.getReflogStream(
                 getApi(),
-                null,
-                null,
-                "reflog.operation == 'ASSIGN_REFERENCE' "
-                    + "&& reflog.refName == 'tag1_test_reflog'",
+                builder ->
+                    builder.filter(
+                        "reflog.operation == 'ASSIGN_REFERENCE' "
+                            + "&& reflog.refName == 'tag1_test_reflog'"),
                 OptionalInt.empty())
             .collect(Collectors.toList());
     assertThat(filteredResult.size()).isEqualTo(1);
