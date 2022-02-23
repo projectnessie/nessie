@@ -162,7 +162,7 @@
     <dockerjava.version>3.2.13</dockerjava.version>
     <dynamodb.version>1.12.0</dynamodb.version>
     <errorprone-slf4j.version>0.1.5</errorprone-slf4j.version>
-    <flapdoodle.version>3.1.4</flapdoodle.version>
+    <flapdoodle.version>3.4.2</flapdoodle.version>
     <gatling.maven.version>4.1.1</gatling.maven.version>
     <gatling.version>3.7.5</gatling.version>
     <google-error-prone.version>2.10.0</google-error-prone.version>
