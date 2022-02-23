@@ -109,10 +109,7 @@ public class IdentifyContentsPerExecutor implements Serializable {
         StreamingUtil.getCommitLogStream(
             gcStateParamsPerTask.getApi(),
             Detached.REF_NAME,
-            builder ->
-                builder
-                    .refName(Detached.REF_NAME)
-                    .hashOnRef(gcStateParamsPerTask.getReference().getHash()),
+            builder -> builder.hashOnRef(gcStateParamsPerTask.getReference().getHash()),
             OptionalInt.empty(),
             true)) {
       MutableBoolean foundAllLiveCommitHeadsBeforeCutoffTime = new MutableBoolean(false);
