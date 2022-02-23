@@ -45,6 +45,7 @@ import org.projectnessie.services.authz.BatchAccessChecker;
 import org.projectnessie.services.config.ServerConfigExtension;
 import org.projectnessie.services.impl.ConfigApiImpl;
 import org.projectnessie.services.impl.TreeApiImpl;
+import org.projectnessie.services.rest.ConstraintViolationExceptionMapper;
 import org.projectnessie.services.rest.ContentKeyParamConverterProvider;
 import org.projectnessie.services.rest.InstantParamConverterProvider;
 import org.projectnessie.services.rest.NessieExceptionMapper;
@@ -196,6 +197,7 @@ public class NessieJaxRsExtension
               config.register(ReferenceTypeParamConverterProvider.class);
               config.register(InstantParamConverterProvider.class);
               config.register(ValidationExceptionMapper.class, 10);
+              config.register(ConstraintViolationExceptionMapper.class, 10);
               config.register(NessieExceptionMapper.class);
               config.register(NessieJaxRsJsonParseExceptionMapper.class, 10);
               config.register(NessieJaxRsJsonMappingExceptionMapper.class, 10);
