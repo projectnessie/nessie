@@ -63,8 +63,9 @@ public class ContentBloomFilter implements Serializable {
   }
 
   /**
-   * @return true if other filters were merged into this instance, which might indicate decreased
-   *     filter quality
+   * A merged bloomfilter might indicate decreased filter quality.
+   *
+   * @return true if other filters were merged into this instance
    */
   public boolean wasMerged() {
     return wasMerged;
