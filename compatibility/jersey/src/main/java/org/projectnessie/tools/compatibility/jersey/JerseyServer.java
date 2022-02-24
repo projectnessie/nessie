@@ -83,6 +83,9 @@ public class JerseyServer implements AutoCloseable {
                 config::register);
             config.register(InstantParamConverterProvider.class);
             config.register(ValidationExceptionMapper.class, 10);
+            withClass(
+                "org.projectnessie.services.rest.ConstraintViolationExceptionMapper",
+                c -> config.register(c, 10));
             config.register(NessieExceptionMapper.class);
             config.register(NessieJaxRsJsonParseExceptionMapper.class, 10);
             config.register(NessieJaxRsJsonMappingExceptionMapper.class, 10);
