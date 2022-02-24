@@ -120,8 +120,8 @@ maintained per test class.
 * [`:nessie-compatibility-common`](./common) contains common code for JUnit engine and extensions,
   running current and already released Nessie servers, using current and already released Nessie
   clients.
-* [`:nessie-compatibility-tests`](./compatibility-tests) contains shared tests for
-  `:nessie-client-backward-compatibility` and `:nessie-server-backward-compatibility`.
+* [`:nessie-compatibility-tests`](./compatibility-tests) contains the actual client backwards,
+  server backwards and upgrade tests..
 * [`:nessie-compatibility-jersey`](./jersey) Helper code to run older Nessie servers. It's a
   separate module to keep the huge amount of dependency declarations separate from
   `:nessie-compatibility-common`.

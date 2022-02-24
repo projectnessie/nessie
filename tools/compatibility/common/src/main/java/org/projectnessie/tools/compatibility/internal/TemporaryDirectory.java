@@ -29,6 +29,10 @@ import java.util.List;
 import java.util.Objects;
 import org.junit.jupiter.api.extension.ExtensionContext.Store.CloseableResource;
 
+/**
+ * Cannot use JUnit's {@code @TempDir} annotation, because JUnit extensions cannot depend on other
+ * extensions.
+ */
 final class TemporaryDirectory implements CloseableResource {
   TemporaryDirectory() {}
 

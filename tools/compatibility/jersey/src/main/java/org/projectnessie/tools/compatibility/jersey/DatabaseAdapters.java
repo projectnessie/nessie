@@ -127,7 +127,7 @@ public class DatabaseAdapters {
     Method build =
         DatabaseAdapterFactory.Builder.class.getMethod("build", ContentVariantSupplier.class);
     return doBuild(
-        builder, build, new GenericContentVariantSupplier(new TableCommitMetaStoreWorker()));
+        builder, build, new GenericContentVariantSupplier<>(new TableCommitMetaStoreWorker()));
   }
 
   private static DatabaseAdapter doBuild(
