@@ -16,7 +16,7 @@
 package org.projectnessie.client;
 
 import java.util.OptionalInt;
-import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import javax.validation.constraints.NotNull;
 import org.projectnessie.client.api.GetAllReferencesBuilder;
@@ -47,24 +47,24 @@ public final class StreamingUtil {
    * {@link NessieApiV1#getAllReferences()} with manual paging.
    *
    * @param api The {@link NessieApiV1} to use
-   * @param builderCustomizer a Consumer of the {@link GetAllReferencesBuilder} that is passed to
-   *     the caller of this method. It allows the caller to customize the GetAllReferencesBuilder
-   *     with additional parameters (e.g.: filter).
+   * @param builderCustomizer a Function that takes and returns {@link GetAllReferencesBuilder} that
+   *     is passed to the caller of this method. It allows the caller to customize the
+   *     GetAllReferencesBuilder with additional parameters (e.g.: filter).
    * @param maxRecords - a maximum number of records in the stream. If it is {@code
    *     Optional.empty()} the stream will be unbounded.
    * @return stream of {@link Reference} objects
    */
   public static Stream<Reference> getAllReferencesStream(
       @NotNull NessieApiV1 api,
-      @NotNull Consumer<GetAllReferencesBuilder> builderCustomizer,
+      @NotNull Function<GetAllReferencesBuilder, GetAllReferencesBuilder> builderCustomizer,
       @NotNull OptionalInt maxRecords)
       throws NessieNotFoundException {
 
     return new ResultStreamPaginator<>(
             ReferencesResponse::getReferences,
             (r, pageSize, token) -> {
-              builderCustomizer.accept(api.getAllReferences());
-              return builderWithPaging(api.getAllReferences(), pageSize, token).get();
+              GetAllReferencesBuilder builder = builderCustomizer.apply(api.getAllReferences());
+              return builderWithPaging(builder, pageSize, token).get();
             })
         .generateStream(null, maxRecords);
   }
@@ -78,9 +78,9 @@ public final class StreamingUtil {
    *
    * @param api The {@link NessieApiV1} to use
    * @param ref a named reference (branch or tag name).
-   * @param builderCustomizer a Consumer of the {@link GetEntriesBuilder} that is passed to the
-   *     caller of this method. It allows the caller to customize the GetEntriesBuilder with
-   *     additional parameters (e.g.: hashOnRef, filter).
+   * @param builderCustomizer a Function that takes and returns {@link GetEntriesBuilder} that is
+   *     passed to the caller of this method. It allows the caller to customize the
+   *     GetEntriesBuilder with additional parameters (e.g.: hashOnRef, filter).
    * @param maxRecords - a maximum number of records in the stream. If it is {@code
    *     Optional.empty()} the stream will be unbounded.
    * @return stream of {@link Entry} objects
@@ -88,15 +88,15 @@ public final class StreamingUtil {
   public static Stream<Entry> getEntriesStream(
       @NotNull NessieApiV1 api,
       @NotNull String ref,
-      @NotNull Consumer<GetEntriesBuilder> builderCustomizer,
+      @NotNull Function<GetEntriesBuilder, GetEntriesBuilder> builderCustomizer,
       @NotNull OptionalInt maxRecords)
       throws NessieNotFoundException {
 
     return new ResultStreamPaginator<>(
             EntriesResponse::getEntries,
             (reference, pageSize, token) -> {
-              builderCustomizer.accept(api.getEntries());
-              return builderWithPaging(api.getEntries(), pageSize, token).refName(reference).get();
+              GetEntriesBuilder builder = builderCustomizer.apply(api.getEntries());
+              return builderWithPaging(builder, pageSize, token).refName(reference).get();
             })
         .generateStream(ref, maxRecords);
   }
@@ -110,9 +110,10 @@ public final class StreamingUtil {
    *
    * @param api The {@link NessieApiV1} to use
    * @param ref a named reference (branch or tag name).
-   * @param builderCustomizer a Consumer of the {@link GetCommitLogBuilder} that is passed to the
-   *     caller of this method. It allows the caller to customize the GetCommitLogBuilder with
-   *     additional parameters (e.g.: hashOnRef, untilHash, filter, fetchOption).
+   * @param builderCustomizer a Function that takes and returns {@link GetCommitLogBuilder} that is
+   *     passed to the caller of this method. It allows the caller to customize the
+   *     GetCommitLogBuilder with additional parameters (e.g.: hashOnRef, untilHash, filter,
+   *     fetchOption).
    * @param maxRecords - a maximum number of records in the stream. If it is {@code
    *     Optional.empty()} the stream will be unbounded.
    * @return stream of {@link CommitMeta} objects
@@ -120,16 +121,14 @@ public final class StreamingUtil {
   public static Stream<LogEntry> getCommitLogStream(
       @NotNull NessieApiV1 api,
       String ref,
-      @NotNull Consumer<GetCommitLogBuilder> builderCustomizer,
+      @NotNull Function<GetCommitLogBuilder, GetCommitLogBuilder> builderCustomizer,
       @NotNull OptionalInt maxRecords)
       throws NessieNotFoundException {
     return new ResultStreamPaginator<>(
             LogResponse::getLogEntries,
             (reference, pageSize, token) -> {
-              builderCustomizer.accept(api.getCommitLog());
-              return builderWithPaging(api.getCommitLog(), pageSize, token)
-                  .refName(reference)
-                  .get();
+              GetCommitLogBuilder builder = builderCustomizer.apply(api.getCommitLog());
+              return builderWithPaging(builder, pageSize, token).refName(reference).get();
             })
         .generateStream(ref, maxRecords);
   }
@@ -142,23 +141,23 @@ public final class StreamingUtil {
    * returns all reflog entries.
    *
    * @param api The {@link NessieApiV1} to use
-   * @param builderCustomizer a Consumer of the {@link GetRefLogBuilder} that is passed to the
-   *     caller of this method. It allows the caller to customize the GetRefLogBuilder with
-   *     additional parameters (e.g.: fromHash, untilHash, filter).
+   * @param builderCustomizer a Function that takes and returns {@link GetRefLogBuilder} that is
+   *     passed to the caller of this method. It allows the caller to customize the GetRefLogBuilder
+   *     with additional parameters (e.g.: fromHash, untilHash, filter).
    * @param maxRecords - a maximum number of records in the stream. If it is {@code
    *     Optional.empty()} the stream will be unbounded.
    * @return stream of {@link RefLogResponse.RefLogResponseEntry} objects
    */
   public static Stream<RefLogResponse.RefLogResponseEntry> getReflogStream(
       @NotNull NessieApiV1 api,
-      @NotNull Consumer<GetRefLogBuilder> builderCustomizer,
+      @NotNull Function<GetRefLogBuilder, GetRefLogBuilder> builderCustomizer,
       @NotNull OptionalInt maxRecords)
       throws NessieNotFoundException {
     return new ResultStreamPaginator<>(
             RefLogResponse::getLogEntries,
             (reference, pageSize, token) -> {
-              builderCustomizer.accept(api.getRefLog());
-              return builderWithPaging(api.getRefLog(), pageSize, token).get();
+              GetRefLogBuilder builder = builderCustomizer.apply(api.getRefLog());
+              return builderWithPaging(builder, pageSize, token).get();
             })
         .generateStream(null, maxRecords);
   }
