@@ -118,6 +118,7 @@
     <module>gc</module>
     <module>servers</module>
     <module>tools</module>
+    <module>compatibility</module>
   </modules>
 
   <scm>

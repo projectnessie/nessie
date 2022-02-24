@@ -34,6 +34,5 @@
     <module>apprunner-common</module>
     <module>apprunner-maven-plugin</module>
     <module>content-generator</module>
-    <module>compatibility</module>
   </modules>
 </project>
