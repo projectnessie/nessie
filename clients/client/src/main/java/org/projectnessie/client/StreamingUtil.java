@@ -77,7 +77,7 @@ public final class StreamingUtil {
    * limited, returns all commit-log entries.
    *
    * @param api The {@link NessieApiV1} to use
-   * @param ref a named reference (branch or tag name) or a commit-hash
+   * @param ref a named reference (branch or tag name).
    * @param builderCustomizer a Consumer of the {@link GetEntriesBuilder} that is passed to the
    *     caller of this method. It allows the caller to customize the GetEntriesBuilder with
    *     additional parameters (e.g.: hashOnRef, filter).
@@ -109,7 +109,7 @@ public final class StreamingUtil {
    * limited, returns all commit-log entries.
    *
    * @param api The {@link NessieApiV1} to use
-   * @param ref a named reference (branch or tag name) or a commit-hash
+   * @param ref a named reference (branch or tag name).
    * @param builderCustomizer a Consumer of the {@link GetCommitLogBuilder} that is passed to the
    *     caller of this method. It allows the caller to customize the GetCommitLogBuilder with
    *     additional parameters (e.g.: hashOnRef, untilHash, filter, fetchOption).
