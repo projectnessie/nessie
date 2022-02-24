@@ -18,7 +18,6 @@ package org.projectnessie.client;
 import java.util.OptionalInt;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
-import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.client.api.GetAllReferencesBuilder;
@@ -54,23 +53,20 @@ public final class StreamingUtil {
    *     with additional parameters (e.g.: filter).
    * @param maxRecords - a maximum number of records in the stream. If it is {@code
    *     Optional.empty()} the stream will be unbounded.
-   * @param filter - a filter expression to use when fetching a stream of references.
    * @return stream of {@link Reference} objects
    */
   public static Stream<Reference> getAllReferencesStream(
       @NotNull NessieApiV1 api,
       @NotNull Consumer<GetAllReferencesBuilder> builderCustomizer,
-      @NotNull OptionalInt maxRecords,
-      @Nullable String filter)
+      @NotNull OptionalInt maxRecords)
       throws NessieNotFoundException {
 
     return new ResultStreamPaginator<>(
             ReferencesResponse::getReferences,
             (r, pageSize, token) -> {
-              GetAllReferencesBuilder getAllReferencesBuilder =
-                  builderWithPaging(api.getAllReferences().filter(filter), pageSize, token);
-              builderCustomizer.accept(getAllReferencesBuilder);
-              return getAllReferencesBuilder.get();
+              GetAllReferencesBuilder allReferencesBuilder = api.getAllReferences();
+              builderCustomizer.accept(allReferencesBuilder);
+              return builderWithPaging(allReferencesBuilder, pageSize, token).get();
             })
         .generateStream(null, maxRecords);
   }
