@@ -62,6 +62,10 @@ public class ContentBloomFilter implements Serializable {
     return filter.expectedFpp();
   }
 
+  /**
+   * @return true if other filters were merged into this instance, which might indicate decreased
+   *     filter quality
+   */
   public boolean wasMerged() {
     return wasMerged;
   }

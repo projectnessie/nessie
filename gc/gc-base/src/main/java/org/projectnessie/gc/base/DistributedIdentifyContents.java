@@ -104,18 +104,16 @@ public class DistributedIdentifyContents {
                 }));
     // Since we merged bloom filters log in case their quality deteriorated
     output.entrySet().stream()
+        .filter(e -> e.getValue().wasMerged())
         .forEach(
             e -> {
-              ContentBloomFilter bloomFilter = e.getValue();
-              if (bloomFilter.wasMerged()) {
-                double fpp = bloomFilter.getExpectedFpp();
-                if (fpp > bloomFilterFpp) {
-                  String contentId = e.getKey();
-                  LOGGER.info(
-                      "Fpp of ContentBloomFilter for '{}': {}",
-                      contentId,
-                      String.format("%.3f", fpp));
-                }
+              double fpp = e.getValue().getExpectedFpp();
+              if (fpp > bloomFilterFpp) {
+                String contentId = e.getKey();
+                LOGGER.info(
+                    "Fpp of ContentBloomFilter for '{}': {}",
+                    contentId,
+                    String.format("%.3f", fpp));
               }
             });
     return output;
