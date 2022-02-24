@@ -19,7 +19,6 @@ import java.util.OptionalInt;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import javax.validation.constraints.NotNull;
-import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.client.api.GetAllReferencesBuilder;
 import org.projectnessie.client.api.GetCommitLogBuilder;
 import org.projectnessie.client.api.GetEntriesBuilder;
@@ -64,9 +63,8 @@ public final class StreamingUtil {
     return new ResultStreamPaginator<>(
             ReferencesResponse::getReferences,
             (r, pageSize, token) -> {
-              GetAllReferencesBuilder allReferencesBuilder = api.getAllReferences();
-              builderCustomizer.accept(allReferencesBuilder);
-              return builderWithPaging(allReferencesBuilder, pageSize, token).get();
+              builderCustomizer.accept(api.getAllReferences());
+              return builderWithPaging(api.getAllReferences(), pageSize, token).get();
             })
         .generateStream(null, maxRecords);
   }
@@ -97,10 +95,8 @@ public final class StreamingUtil {
     return new ResultStreamPaginator<>(
             EntriesResponse::getEntries,
             (reference, pageSize, token) -> {
-              GetEntriesBuilder builder =
-                  builderWithPaging(api.getEntries(), pageSize, token).refName(reference);
-              builderCustomizer.accept(builder);
-              return builder.get();
+              builderCustomizer.accept(api.getEntries());
+              return builderWithPaging(api.getEntries(), pageSize, token).refName(reference).get();
             })
         .generateStream(ref, maxRecords);
   }
@@ -116,29 +112,24 @@ public final class StreamingUtil {
    * @param ref a named reference (branch or tag name) or a commit-hash
    * @param builderCustomizer a Consumer of the {@link GetCommitLogBuilder} that is passed to the
    *     caller of this method. It allows the caller to customize the GetCommitLogBuilder with
-   *     additional parameters (e.g.: hashOnRef, untilHash, filter).
+   *     additional parameters (e.g.: hashOnRef, untilHash, filter, fetchOption).
    * @param maxRecords - a maximum number of records in the stream. If it is {@code
    *     Optional.empty()} the stream will be unbounded.
-   * @param fetchAdditionalInfo - specify whether it should fetch {@link FetchOption#ALL} or {@link
-   *     FetchOption#MINIMAL}
    * @return stream of {@link CommitMeta} objects
    */
   public static Stream<LogEntry> getCommitLogStream(
       @NotNull NessieApiV1 api,
       String ref,
       @NotNull Consumer<GetCommitLogBuilder> builderCustomizer,
-      @NotNull OptionalInt maxRecords,
-      boolean fetchAdditionalInfo)
+      @NotNull OptionalInt maxRecords)
       throws NessieNotFoundException {
-    FetchOption fetchOption = fetchAdditionalInfo ? FetchOption.ALL : FetchOption.MINIMAL;
     return new ResultStreamPaginator<>(
             LogResponse::getLogEntries,
             (reference, pageSize, token) -> {
-              GetCommitLogBuilder getCommitLogBuilder =
-                  builderWithPaging(api.getCommitLog().fetch(fetchOption), pageSize, token)
-                      .refName(reference);
-              builderCustomizer.accept(getCommitLogBuilder);
-              return getCommitLogBuilder.get();
+              builderCustomizer.accept(api.getCommitLog());
+              return builderWithPaging(api.getCommitLog(), pageSize, token)
+                  .refName(reference)
+                  .get();
             })
         .generateStream(ref, maxRecords);
   }
@@ -166,9 +157,8 @@ public final class StreamingUtil {
     return new ResultStreamPaginator<>(
             RefLogResponse::getLogEntries,
             (reference, pageSize, token) -> {
-              GetRefLogBuilder builder = builderWithPaging(api.getRefLog(), pageSize, token);
-              builderCustomizer.accept(builder);
-              return builder.get();
+              builderCustomizer.accept(api.getRefLog());
+              return builderWithPaging(api.getRefLog(), pageSize, token).get();
             })
         .generateStream(null, maxRecords);
   }
