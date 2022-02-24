@@ -33,12 +33,15 @@ import org.projectnessie.model.RefLogResponse;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferenceMetadata;
 import org.projectnessie.model.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Encapsulates the logic to retrieve expired contents by walking over all commits in all
  * named-references.
  */
 public class GCImpl {
+  private static final Logger LOGGER = LoggerFactory.getLogger(GCImpl.class);
   private final GCParams gcParams;
 
   /**
@@ -48,6 +51,7 @@ public class GCImpl {
    */
   public GCImpl(GCParams gcParams) {
     this.gcParams = gcParams;
+    LOGGER.info("GCImpl with params: {}", gcParams);
   }
 
   /**
