@@ -57,8 +57,15 @@ public final class NessieConfigConstants {
    * <p>Note that "basic" HTTP authentication is not considered secure, use {@code BEARER} instead.
    */
   public static final String CONF_NESSIE_AUTH_TYPE = "nessie.authentication.type";
-  /** Config property name ({@value #CONF_NESSIE_REF}) for the nessie reference used by clients. */
+  /**
+   * Config property name ({@value #CONF_NESSIE_REF}) for the nessie reference name used by clients.
+   */
   public static final String CONF_NESSIE_REF = "nessie.ref";
+  /**
+   * Config property name ({@value #CONF_NESSIE_REF_HASH}) for the nessie reference hash used by
+   * clients.
+   */
+  public static final String CONF_NESSIE_REF_HASH = "nessie.ref.hash";
   /**
    * Config property name ({@value #CONF_NESSIE_TRACING}) to enable adding the HTTP headers of an
    * active OpenTracing span to all Nessie requests. Valid values are {@code true} and {@code
