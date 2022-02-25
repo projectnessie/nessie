@@ -16,7 +16,7 @@
          'dev' branch that start with 'some.name.space'
 
    Options:
-     -r, --ref TEXT   Branch to list from. If FOOBAR not supplied the default branch from
+     -r, --ref TEXT   Branch to list from. If not supplied the default branch from
                       config is used
      -t, --type TEXT  entity types to filter on, if no entity types are passed then
                       all types are returned
