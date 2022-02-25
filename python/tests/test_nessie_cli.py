@@ -38,7 +38,7 @@ from pynessie.model import LogEntrySchema
 from pynessie.model import ReferenceSchema
 from pynessie.model import ReflogEntry
 from pynessie.model import ReflogEntrySchema
-from .conftest import execute_cli_command, make_commit, ref_hash
+from .conftest import execute_cli_command, execute_cli_command_raw, make_commit, ref_hash
 
 
 @pytest.mark.vcr
@@ -80,8 +80,8 @@ def test_remote() -> None:
     execute_cli_command(["remote", "set-head", "dev"])
     assert execute_cli_command(["config", "default_branch"]) == "dev\n"
     execute_cli_command(["remote", "set-head", "dev", "-d"])
-    result = execute_cli_command(["config", "default_branch"], ret_val=1, output_string=False)
-    assert result.output == ""
+    result = execute_cli_command_raw(["config", "default_branch"], ret_val=1)
+    assert result.stdout == ""
     assert isinstance(result.exception, confuse.exceptions.ConfigTypeError)
 
 
