@@ -191,6 +191,8 @@ object NessieUtils {
       SparkSession.active.sessionState.catalogManager.catalog(catalogName)
     SparkSession.active.sparkContext.conf
       .set(s"spark.sql.catalog.$catalogName.ref", ref.getName)
+    SparkSession.active.sparkContext.conf
+      .set(s"spark.sql.catalog.$catalogName.ref.hash", ref.getHash)
     val catalogConf = SparkSession.active.sparkContext.conf
       .getAllWithPrefix(s"spark.sql.catalog.$catalogName.")
       .toMap

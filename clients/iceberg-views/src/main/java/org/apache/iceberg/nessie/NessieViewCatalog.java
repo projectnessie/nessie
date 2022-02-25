@@ -97,7 +97,9 @@ public class NessieViewCatalog extends BaseMetastoreViews implements AutoCloseab
     }
     final String requestedRef =
         options.get(removePrefix.apply(NessieConfigConstants.CONF_NESSIE_REF));
-    this.reference = loadReference(requestedRef, null);
+    final String hashOnRef =
+        options.get(removePrefix.apply(NessieConfigConstants.CONF_NESSIE_REF_HASH));
+    this.reference = loadReference(requestedRef, hashOnRef);
   }
 
   private static NessieClientBuilder<?> createNessieClientBuilder(String customBuilder) {
