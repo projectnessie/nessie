@@ -28,6 +28,7 @@ import java.util.stream.Stream;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.sql.SparkSession;
+import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.client.StreamingUtil;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.error.NessieNotFoundException;
@@ -108,12 +109,12 @@ public class IdentifyContentsPerExecutor implements Serializable {
     try (Stream<LogResponse.LogEntry> commits =
         StreamingUtil.getCommitLogStream(
             gcStateParamsPerTask.getApi(),
-            Detached.REF_NAME,
-            gcStateParamsPerTask.getReference().getHash(),
-            null,
-            null,
-            OptionalInt.empty(),
-            true)) {
+            builder ->
+                builder
+                    .hashOnRef(gcStateParamsPerTask.getReference().getHash())
+                    .refName(Detached.REF_NAME)
+                    .fetch(FetchOption.ALL),
+            OptionalInt.empty())) {
       MutableBoolean foundAllLiveCommitHeadsBeforeCutoffTime = new MutableBoolean(false);
       // commit handler for the spliterator
       Consumer<LogResponse.LogEntry> commitHandler =
@@ -140,7 +141,13 @@ public class IdentifyContentsPerExecutor implements Serializable {
     Instant commitProtectionTime = Instant.now().minus(gcParams.getCommitProtectionDuration());
     try (Stream<LogResponse.LogEntry> commits =
         StreamingUtil.getCommitLogStream(
-            api, Detached.REF_NAME, reference.getHash(), null, null, OptionalInt.empty(), true)) {
+            api,
+            builder ->
+                builder
+                    .hashOnRef(reference.getHash())
+                    .refName(Detached.REF_NAME)
+                    .fetch(FetchOption.ALL),
+            OptionalInt.empty())) {
       commits.forEach(
           logEntry -> {
             // Between the bloom filter creation and this step,

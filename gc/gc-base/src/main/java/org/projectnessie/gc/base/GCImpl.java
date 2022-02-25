@@ -137,12 +137,12 @@ public class GCImpl {
       reflogStream =
           StreamingUtil.getReflogStream(
               api,
-              null,
-              null,
-              String.format(
-                  "reflog.operation == '%s' || reflog.operation == " + "'%s'",
-                  RefLogResponse.RefLogResponseEntry.DELETE_REFERENCE,
-                  RefLogResponse.RefLogResponseEntry.ASSIGN_REFERENCE),
+              builder ->
+                  builder.filter(
+                      String.format(
+                          "reflog.operation == '%s' || reflog.operation == " + "'%s'",
+                          RefLogResponse.RefLogResponseEntry.DELETE_REFERENCE,
+                          RefLogResponse.RefLogResponseEntry.ASSIGN_REFERENCE)),
               OptionalInt.empty());
     } catch (NessieNotFoundException e) {
       throw new RuntimeException(e);

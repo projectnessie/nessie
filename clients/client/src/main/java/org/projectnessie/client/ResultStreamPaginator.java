@@ -38,13 +38,12 @@ final class ResultStreamPaginator<R extends PaginatedResponse, E> {
     /**
      * Fetch the first/next response.
      *
-     * @param ref reference
      * @param pageSize page size
      * @param pagingToken paging continuation token
      * @return response object
      * @throws NessieNotFoundException if the ref does not exist
      */
-    R fetch(String ref, Integer pageSize, String pagingToken) throws NessieNotFoundException;
+    R fetch(Integer pageSize, String pagingToken) throws NessieNotFoundException;
   }
 
   private final Function<R, List<E>> entriesFromResponse;
@@ -61,14 +60,12 @@ final class ResultStreamPaginator<R extends PaginatedResponse, E> {
    * <p>This implementation fetches the first page eagerly to propagate {@link
    * NessieNotFoundException}.
    *
-   * @param ref reference
    * @param pageSizeHint page size hint
    * @return stream of entries
-   * @throws NessieNotFoundException propagated from {@link Fetcher#fetch(String, Integer, String)}
+   * @throws NessieNotFoundException propagated from {@link Fetcher#fetch(Integer, String)}
    */
-  Stream<E> generateStream(String ref, OptionalInt pageSizeHint) throws NessieNotFoundException {
-    R firstPage =
-        fetcher.fetch(ref, pageSizeHint.isPresent() ? pageSizeHint.getAsInt() : null, null);
+  Stream<E> generateStream(OptionalInt pageSizeHint) throws NessieNotFoundException {
+    R firstPage = fetcher.fetch(pageSizeHint.isPresent() ? pageSizeHint.getAsInt() : null, null);
     Spliterator<E> spliterator =
         new Spliterator<E>() {
           private String pageToken;
@@ -98,7 +95,7 @@ final class ResultStreamPaginator<R extends PaginatedResponse, E> {
               try {
                 currentPage =
                     fetcher.fetch(
-                        ref, pageSizeHint.isPresent() ? pageSizeHint.getAsInt() : null, pageToken);
+                        pageSizeHint.isPresent() ? pageSizeHint.getAsInt() : null, pageToken);
                 offsetInPage = 0;
                 // an empty returned page is probably an error, let's assume something went wrong
                 if (entriesFromResponse.apply(currentPage).isEmpty()) {

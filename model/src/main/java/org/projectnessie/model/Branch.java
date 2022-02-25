@@ -54,7 +54,7 @@ public interface Branch extends Reference {
     return ImmutableBranch.builder();
   }
 
-  static Branch of(String name, String hash) {
+  static Branch of(String name, @Nullable String hash) {
     return builder().name(name).hash(hash).build();
   }
 }
