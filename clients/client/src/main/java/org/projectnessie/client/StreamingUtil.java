@@ -98,7 +98,7 @@ public final class StreamingUtil {
               GetEntriesBuilder builder = builderCustomizer.apply(api.getEntries());
               return builderWithPaging(builder, pageSize, token).refName(reference).get();
             })
-        .generateStream(ref.getHash(), maxRecords);
+        .generateStream(ref.getHash() != null ? ref.getHash() : ref.getName(), maxRecords);
   }
 
   /**
@@ -130,7 +130,7 @@ public final class StreamingUtil {
               GetCommitLogBuilder builder = builderCustomizer.apply(api.getCommitLog());
               return builderWithPaging(builder, pageSize, token).refName(reference).get();
             })
-        .generateStream(ref.getHash(), maxRecords);
+        .generateStream(ref.getHash() != null ? ref.getHash() : ref.getName(), maxRecords);
   }
 
   /**
