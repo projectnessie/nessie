@@ -1,11 +1,11 @@
 .. code-block:: bash
 
    Usage: nessie [OPTIONS] COMMAND [ARGS]...
-   
+
      Nessie cli tool.
-   
+
      Interact with Nessie branches and tables via the command line
-   
+
    Options:
      --json             write output in json format.
      -v, --verbose      Verbose output.
@@ -13,7 +13,7 @@
      --auth-token TEXT  Optional bearer auth token, if different from config file.
      --version
      --help             Show this message and exit.
-   
+
    Commands:
      branch       Branch operations.
      cherry-pick  Cherry-pick HASHES onto another branch.
@@ -25,6 +25,5 @@
      reflog       Show reflog.
      remote       Set and view remote endpoint.
      tag          Tag operations.
-   
-   
+
 

@@ -1,42 +1,42 @@
 .. code-block:: bash
 
    Usage: nessie log [OPTIONS] [REF]
-   
+
      Show commit log.
-   
+
      REF name of branch or tag to use to show the commit logs
-   
+
      Examples:
-   
+
          nessie log -> show commit logs using the configured default branch
-   
+
          nessie log 1234567890abcdef -> show commit logs starting at commit
          1234567890abcdef
-   
+
          nessie log dev -> show commit logs for 'dev' branch, starting at the most
          recent (HEAD) commit of 'dev'
-   
+
          nessie log dev@1234567890abcdef -> show commit logs for 'dev' branch,
          starting at commit 1234567890abcdef in 'dev'
-   
+
          nessie log -n 5 dev -> show commit logs for 'dev' branch limited by 5
          commits
-   
+
          nessie log --revision-range 12345678abcdef..12345678efghj dev -> show
          commit logs in range of hash '12345678abcdef' and '12345678efghj' in 'dev'
          branch
-   
+
          nessie log --author nessie.user dev -> show commit logs for user
          'nessie.user' in 'dev' branch
-   
+
          nessie log --filter "commit.author == 'nessie_user2' || commit.author ==
          'non_existing'" dev -> show commit logs using query in 'dev' branch
-   
+
          nessie log --after "2019-01-01T00:00:00+00:00" --before
          "2021-01-01T00:00:00+00:00" dev -> show commit logs between
          "2019-01-01T00:00:00+00:00" and "2021-01-01T00:00:00+00:00" in 'dev'
          branch
-   
+
    Options:
      -n, --number INTEGER       number of log entries to return
      --since, --after TEXT      Only include commits newer than specific date, such
@@ -74,6 +74,5 @@
                                 of LogEntrySchema, otherwise a list of
                                 CommitMetaSchema.
      --help                     Show this message and exit.
-   
-   
+
 

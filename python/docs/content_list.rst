@@ -1,20 +1,20 @@
 .. code-block:: bash
 
    Usage: nessie content list [OPTIONS]
-   
+
      List content.
-   
+
      Examples:
-   
+
          nessie content list -r dev -> List all contents in 'dev' branch.
-   
+
          nessie content list -r dev -t DELTA_LAKE_TABLE ->  List all contents in
          'dev' branch with type `DELTA_LAKE_TABLE`.
-   
+
          nessie content list -r dev --filter
          "entry.namespace.startsWith('some.name.space')" -> List all contents in
          'dev' branch that start with 'some.name.space'
-   
+
    Options:
      -r, --ref TEXT   Branch to list from. If not supplied the default branch from
                       config is used
@@ -30,6 +30,5 @@
                       entry.namespace.startsWith('some.name.space') &&
                       entry.contentType in ['ICEBERG_TABLE','DELTA_LAKE_TABLE']
      --help           Show this message and exit.
-   
-   
+
 
