@@ -109,10 +109,10 @@ public class IdentifyContentsPerExecutor implements Serializable {
     try (Stream<LogResponse.LogEntry> commits =
         StreamingUtil.getCommitLogStream(
             gcStateParamsPerTask.getApi(),
-            Detached.of(Detached.REF_NAME),
             builder ->
                 builder
                     .hashOnRef(gcStateParamsPerTask.getReference().getHash())
+                    .refName(Detached.REF_NAME)
                     .fetch(FetchOption.ALL),
             OptionalInt.empty())) {
       MutableBoolean foundAllLiveCommitHeadsBeforeCutoffTime = new MutableBoolean(false);
@@ -142,8 +142,11 @@ public class IdentifyContentsPerExecutor implements Serializable {
     try (Stream<LogResponse.LogEntry> commits =
         StreamingUtil.getCommitLogStream(
             api,
-            Detached.of(Detached.REF_NAME),
-            builder -> builder.hashOnRef(reference.getHash()).fetch(FetchOption.ALL),
+            builder ->
+                builder
+                    .hashOnRef(reference.getHash())
+                    .refName(Detached.REF_NAME)
+                    .fetch(FetchOption.ALL),
             OptionalInt.empty())) {
       commits.forEach(
           logEntry -> {

@@ -37,10 +37,10 @@ class TestResultStreamPaginator {
     ResultStreamPaginator<MockPaginatedResponse, String> paginator =
         new ResultStreamPaginator<>(
             MockPaginatedResponse::getElements,
-            (ref, pageSize, token) -> {
+            (pageSize, token) -> {
               throw new NessieReferenceNotFoundException("Ref not found");
             });
-    assertThatThrownBy(() -> paginator.generateStream("ref", OptionalInt.empty()))
+    assertThatThrownBy(() -> paginator.generateStream(OptionalInt.empty()))
         .isInstanceOf(NessieReferenceNotFoundException.class)
         .hasMessage("Ref not found");
   }
@@ -50,12 +50,12 @@ class TestResultStreamPaginator {
     ResultStreamPaginator<MockPaginatedResponse, String> paginator =
         new ResultStreamPaginator<>(
             MockPaginatedResponse::getElements,
-            (ref, pageSize, token) -> {
+            (pageSize, token) -> {
               assertNull(pageSize);
               assertNull(token);
               return new MockPaginatedResponse(false, null, Arrays.asList("1", "2", "3"));
             });
-    assertThat(paginator.generateStream("ref", OptionalInt.empty())).containsExactly("1", "2", "3");
+    assertThat(paginator.generateStream(OptionalInt.empty())).containsExactly("1", "2", "3");
   }
 
   @Test
@@ -70,12 +70,12 @@ class TestResultStreamPaginator {
     ResultStreamPaginator<MockPaginatedResponse, String> paginator =
         new ResultStreamPaginator<>(
             MockPaginatedResponse::getElements,
-            (ref, pageSize, token) -> {
+            (pageSize, token) -> {
               assertNull(pageSize);
               assertEquals(expectedTokens.next(), token);
               return responses.next();
             });
-    assertThat(paginator.generateStream("ref", OptionalInt.empty()))
+    assertThat(paginator.generateStream(OptionalInt.empty()))
         .containsExactly("1", "2", "3", "4", "5", "6");
   }
 
@@ -84,12 +84,12 @@ class TestResultStreamPaginator {
     ResultStreamPaginator<MockPaginatedResponse, String> paginator =
         new ResultStreamPaginator<>(
             MockPaginatedResponse::getElements,
-            (ref, pageSize, token) -> {
+            (pageSize, token) -> {
               assertEquals(5, pageSize);
               assertNull(token);
               return new MockPaginatedResponse(false, null, Arrays.asList("1", "2", "3"));
             });
-    assertThat(paginator.generateStream("ref", OptionalInt.of(5))).containsExactly("1", "2", "3");
+    assertThat(paginator.generateStream(OptionalInt.of(5))).containsExactly("1", "2", "3");
   }
 
   @Test
@@ -104,12 +104,12 @@ class TestResultStreamPaginator {
     ResultStreamPaginator<MockPaginatedResponse, String> paginator =
         new ResultStreamPaginator<>(
             MockPaginatedResponse::getElements,
-            (ref, pageSize, token) -> {
+            (pageSize, token) -> {
               assertEquals(5, pageSize);
               assertEquals(expectedTokens.next(), token);
               return responses.next();
             });
-    assertThat(paginator.generateStream("ref", OptionalInt.of(5)))
+    assertThat(paginator.generateStream(OptionalInt.of(5)))
         .containsExactly("1", "2", "3", "4", "5", "6");
   }
 
@@ -118,9 +118,8 @@ class TestResultStreamPaginator {
     ResultStreamPaginator<MockPaginatedResponse, String> paginator =
         new ResultStreamPaginator<>(
             MockPaginatedResponse::getElements,
-            (ref, pageSize, token) ->
-                new MockPaginatedResponse(false, null, Collections.emptyList()));
-    assertThat(paginator.generateStream("ref", OptionalInt.of(5))).isEmpty();
+            (pageSize, token) -> new MockPaginatedResponse(false, null, Collections.emptyList()));
+    assertThat(paginator.generateStream(OptionalInt.of(5))).isEmpty();
   }
 
   @Test
@@ -135,12 +134,12 @@ class TestResultStreamPaginator {
     ResultStreamPaginator<MockPaginatedResponse, String> paginator =
         new ResultStreamPaginator<>(
             MockPaginatedResponse::getElements,
-            (ref, pageSize, token) -> {
+            (pageSize, token) -> {
               assertEquals(5, pageSize);
               assertEquals(expectedTokens.next(), token);
               return responses.next();
             });
-    assertThat(paginator.generateStream("ref", OptionalInt.of(5))).containsExactly("1", "2", "3");
+    assertThat(paginator.generateStream(OptionalInt.of(5))).containsExactly("1", "2", "3");
   }
 
   @SuppressWarnings("ResultOfMethodCallIgnored")
@@ -156,13 +155,13 @@ class TestResultStreamPaginator {
     ResultStreamPaginator<MockPaginatedResponse, String> paginator =
         new ResultStreamPaginator<>(
             MockPaginatedResponse::getElements,
-            (ref, pageSize, token) -> {
+            (pageSize, token) -> {
               assertEquals(5, pageSize);
               assertEquals(expectedTokens.next(), token);
               return responses.next();
             });
     assertThatThrownBy(
-            () -> paginator.generateStream("ref", OptionalInt.of(5)).collect(Collectors.toList()))
+            () -> paginator.generateStream(OptionalInt.of(5)).collect(Collectors.toList()))
         .isInstanceOf(IllegalStateException.class)
         .hasMessage("Backend returned empty page, but indicates there are more results");
   }
