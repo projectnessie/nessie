@@ -395,7 +395,7 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
     List<CommitMeta> completeLog =
         StreamingUtil.getCommitLogStream(
                 getApi(),
-                branch.getName(),
+                Branch.of(branch.getName(), null),
                 c -> c.fetch(FetchOption.MINIMAL),
                 OptionalInt.of(pageSizeHint))
             .map(LogEntry::getCommitMeta)
@@ -436,7 +436,7 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
     List<CommitMeta> completeLog =
         StreamingUtil.getCommitLogStream(
                 getApi(),
-                branch.getName(),
+                Branch.of(branch.getName(), null),
                 c -> c.fetch(FetchOption.MINIMAL),
                 OptionalInt.of(pageSizeHint))
             .map(LogEntry::getCommitMeta)

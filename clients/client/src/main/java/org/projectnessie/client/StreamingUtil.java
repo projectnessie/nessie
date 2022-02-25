@@ -87,7 +87,7 @@ public final class StreamingUtil {
    */
   public static Stream<Entry> getEntriesStream(
       @NotNull NessieApiV1 api,
-      @NotNull String ref,
+      @NotNull Reference ref,
       @NotNull Function<GetEntriesBuilder, GetEntriesBuilder> builderCustomizer,
       @NotNull OptionalInt maxRecords)
       throws NessieNotFoundException {
@@ -98,7 +98,7 @@ public final class StreamingUtil {
               GetEntriesBuilder builder = builderCustomizer.apply(api.getEntries());
               return builderWithPaging(builder, pageSize, token).refName(reference).get();
             })
-        .generateStream(ref, maxRecords);
+        .generateStream(ref.getHash(), maxRecords);
   }
 
   /**
@@ -120,7 +120,7 @@ public final class StreamingUtil {
    */
   public static Stream<LogEntry> getCommitLogStream(
       @NotNull NessieApiV1 api,
-      String ref,
+      Reference ref,
       @NotNull Function<GetCommitLogBuilder, GetCommitLogBuilder> builderCustomizer,
       @NotNull OptionalInt maxRecords)
       throws NessieNotFoundException {
@@ -130,7 +130,7 @@ public final class StreamingUtil {
               GetCommitLogBuilder builder = builderCustomizer.apply(api.getCommitLog());
               return builderWithPaging(builder, pageSize, token).refName(reference).get();
             })
-        .generateStream(ref, maxRecords);
+        .generateStream(ref.getHash(), maxRecords);
   }
 
   /**

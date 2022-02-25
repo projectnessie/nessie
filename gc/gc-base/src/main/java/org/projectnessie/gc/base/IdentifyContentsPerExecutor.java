@@ -109,7 +109,7 @@ public class IdentifyContentsPerExecutor implements Serializable {
     try (Stream<LogResponse.LogEntry> commits =
         StreamingUtil.getCommitLogStream(
             gcStateParamsPerTask.getApi(),
-            Detached.REF_NAME,
+            Detached.of(Detached.REF_NAME),
             builder ->
                 builder
                     .hashOnRef(gcStateParamsPerTask.getReference().getHash())
@@ -142,7 +142,7 @@ public class IdentifyContentsPerExecutor implements Serializable {
     try (Stream<LogResponse.LogEntry> commits =
         StreamingUtil.getCommitLogStream(
             api,
-            Detached.REF_NAME,
+            Detached.of(Detached.REF_NAME),
             builder -> builder.hashOnRef(reference.getHash()).fetch(FetchOption.ALL),
             OptionalInt.empty())) {
       commits.forEach(
