@@ -176,34 +176,35 @@ public class DynamoDatabaseAdapter
   }
 
   @Override
-  protected GlobalStatePointer fetchGlobalPointer(NonTransactionalOperationContext ctx) {
+  protected GlobalStatePointer doFetchGlobalPointer(NonTransactionalOperationContext ctx) {
     return loadById(TABLE_GLOBAL_POINTER, "", GlobalStatePointer::parseFrom);
   }
 
   @Override
-  protected CommitLogEntry fetchFromCommitLog(NonTransactionalOperationContext ctx, Hash hash) {
+  protected CommitLogEntry doFetchFromCommitLog(NonTransactionalOperationContext ctx, Hash hash) {
     return loadById(TABLE_COMMIT_LOG, hash, ProtoSerialization::protoToCommitLogEntry);
   }
 
   @Override
-  protected GlobalStateLogEntry fetchFromGlobalLog(NonTransactionalOperationContext ctx, Hash id) {
+  protected GlobalStateLogEntry doFetchFromGlobalLog(
+      NonTransactionalOperationContext ctx, Hash id) {
     return loadById(TABLE_GLOBAL_LOG, id, GlobalStateLogEntry::parseFrom);
   }
 
   @Override
-  protected List<CommitLogEntry> fetchPageFromCommitLog(
+  protected List<CommitLogEntry> doFetchPageFromCommitLog(
       NonTransactionalOperationContext ctx, List<Hash> hashes) {
     return fetchPageResult(TABLE_COMMIT_LOG, hashes, ProtoSerialization::protoToCommitLogEntry);
   }
 
   @Override
-  protected List<GlobalStateLogEntry> fetchPageFromGlobalLog(
+  protected List<GlobalStateLogEntry> doFetchPageFromGlobalLog(
       NonTransactionalOperationContext ctx, List<Hash> hashes) {
     return fetchPageResult(TABLE_GLOBAL_LOG, hashes, GlobalStateLogEntry::parseFrom);
   }
 
   @Override
-  protected Stream<KeyListEntity> fetchKeyLists(
+  protected Stream<KeyListEntity> doFetchKeyLists(
       NonTransactionalOperationContext ctx, List<Hash> keyListsIds) {
     Map<Hash, KeyList> map =
         fetchPage(TABLE_KEY_LISTS, keyListsIds, ProtoSerialization::protoToKeyList);
@@ -212,13 +213,14 @@ public class DynamoDatabaseAdapter
   }
 
   @Override
-  protected void writeGlobalCommit(
+  protected void doWriteGlobalCommit(
       NonTransactionalOperationContext ctx, GlobalStateLogEntry entry) {
     insert(TABLE_GLOBAL_LOG, Hash.of(entry.getId()).asString(), entry.toByteArray());
   }
 
   @Override
-  protected void writeIndividualCommit(NonTransactionalOperationContext ctx, CommitLogEntry entry) {
+  protected void doWriteIndividualCommit(
+      NonTransactionalOperationContext ctx, CommitLogEntry entry) {
     insert(TABLE_COMMIT_LOG, entry.getHash().asString(), toProto(entry).toByteArray());
   }
 
@@ -229,7 +231,7 @@ public class DynamoDatabaseAdapter
   }
 
   @Override
-  protected void writeMultipleCommits(
+  protected void doWriteMultipleCommits(
       NonTransactionalOperationContext ctx, List<CommitLogEntry> entries) {
     batchWrite(
         TABLE_COMMIT_LOG,
@@ -239,7 +241,7 @@ public class DynamoDatabaseAdapter
   }
 
   @Override
-  protected void writeKeyListEntities(
+  protected void doWriteKeyListEntities(
       NonTransactionalOperationContext ctx, List<KeyListEntity> newKeyListEntities) {
     batchWrite(
         TABLE_KEY_LISTS,
@@ -249,7 +251,7 @@ public class DynamoDatabaseAdapter
   }
 
   @Override
-  protected boolean globalPointerCas(
+  protected boolean doGlobalPointerCas(
       NonTransactionalOperationContext ctx,
       GlobalStatePointer expected,
       GlobalStatePointer newPointer) {
@@ -280,7 +282,7 @@ public class DynamoDatabaseAdapter
   }
 
   @Override
-  protected void cleanUpCommitCas(
+  protected void doCleanUpCommitCas(
       NonTransactionalOperationContext ctx,
       Hash globalId,
       Set<Hash> branchCommits,
@@ -316,12 +318,12 @@ public class DynamoDatabaseAdapter
   }
 
   @Override
-  protected RepoDescription fetchRepositoryDescription(NonTransactionalOperationContext ctx) {
+  protected RepoDescription doFetchRepositoryDescription(NonTransactionalOperationContext ctx) {
     return loadById(TABLE_REPO_DESC, "", ProtoSerialization::protoToRepoDescription);
   }
 
   @Override
-  protected boolean tryUpdateRepositoryDescription(
+  protected boolean doTryUpdateRepositoryDescription(
       NonTransactionalOperationContext ctx, RepoDescription expected, RepoDescription updateTo) {
     AttributeValue updateToBytes =
         AttributeValue.builder().b(SdkBytes.fromByteArray(toProto(updateTo).toByteArray())).build();
@@ -449,13 +451,13 @@ public class DynamoDatabaseAdapter
   }
 
   @Override
-  protected void writeRefLog(NonTransactionalOperationContext ctx, RefLogEntry entry)
+  protected void doWriteRefLog(NonTransactionalOperationContext ctx, RefLogEntry entry)
       throws ReferenceConflictException {
     insert(TABLE_REF_LOG, Hash.of(entry.getRefLogId()).asString(), entry.toByteArray());
   }
 
   @Override
-  protected RefLog fetchFromRefLog(NonTransactionalOperationContext ctx, Hash refLogId) {
+  protected RefLog doFetchFromRefLog(NonTransactionalOperationContext ctx, Hash refLogId) {
     if (refLogId == null) {
       // set the current head as refLogId
       refLogId = Hash.of(fetchGlobalPointer(ctx).getRefLogId());
@@ -464,7 +466,7 @@ public class DynamoDatabaseAdapter
   }
 
   @Override
-  protected List<RefLog> fetchPageFromRefLog(
+  protected List<RefLog> doFetchPageFromRefLog(
       NonTransactionalOperationContext ctx, List<Hash> hashes) {
     return fetchPageResult(TABLE_REF_LOG, hashes, ProtoSerialization::protoToRefLog);
   }

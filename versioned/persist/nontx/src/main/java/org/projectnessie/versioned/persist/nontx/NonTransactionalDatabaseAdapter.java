@@ -29,6 +29,7 @@ import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUti
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.takeUntilIncludeLast;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.transplantConflictMessage;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.verifyExpectedHash;
+import static org.projectnessie.versioned.persist.adapter.spi.Traced.trace;
 import static org.projectnessie.versioned.persist.adapter.spi.TryLoopState.newTryLoopState;
 import static org.projectnessie.versioned.persist.nontx.NonTransactionalOperationContext.NON_TRANSACTIONAL_OPERATION_CONTEXT;
 
@@ -77,6 +78,7 @@ import org.projectnessie.versioned.persist.adapter.KeyWithType;
 import org.projectnessie.versioned.persist.adapter.RefLog;
 import org.projectnessie.versioned.persist.adapter.RepoDescription;
 import org.projectnessie.versioned.persist.adapter.spi.AbstractDatabaseAdapter;
+import org.projectnessie.versioned.persist.adapter.spi.Traced;
 import org.projectnessie.versioned.persist.adapter.spi.TryLoopState;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.ContentIdWithBytes;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
@@ -104,6 +106,9 @@ import org.projectnessie.versioned.persist.serialize.ProtoSerialization;
 public abstract class NonTransactionalDatabaseAdapter<
         CONFIG extends NonTransactionalDatabaseAdapterConfig>
     extends AbstractDatabaseAdapter<NonTransactionalOperationContext, CONFIG> {
+
+  public static final String TAG_COMMIT_COUNT = "commit-count";
+  public static final String TAG_KEY_LIST_COUNT = "key-list-count";
 
   protected NonTransactionalDatabaseAdapter(
       CONFIG config, ContentVariantSupplier contentVariantSupplier) {
@@ -195,6 +200,7 @@ public abstract class NonTransactionalDatabaseAdapter<
     // creates a new commit-tree that is decoupled from other commit-trees.
     try {
       return casOpLoop(
+          "merge",
           toBranch,
           CasOpVariant.COMMIT,
           (ctx, pointer, branchCommits, newKeyLists) -> {
@@ -251,6 +257,7 @@ public abstract class NonTransactionalDatabaseAdapter<
       throws ReferenceNotFoundException, ReferenceConflictException {
     try {
       return casOpLoop(
+          "transplant",
           targetBranch,
           CasOpVariant.COMMIT,
           (ctx, pointer, branchCommits, newKeyLists) -> {
@@ -305,6 +312,7 @@ public abstract class NonTransactionalDatabaseAdapter<
       throws ReferenceConflictException, ReferenceNotFoundException {
     try {
       return casOpLoop(
+          "commit",
           commitAttempt.getCommitToBranch(),
           CasOpVariant.COMMIT,
           (ctx, pointer, x, newKeyLists) -> {
@@ -359,6 +367,7 @@ public abstract class NonTransactionalDatabaseAdapter<
       throws ReferenceAlreadyExistsException, ReferenceNotFoundException {
     try {
       return casOpLoop(
+          "createRef",
           ref,
           CasOpVariant.REF_UPDATE,
           (ctx, pointer, branchCommits, newKeyLists) -> {
@@ -407,6 +416,7 @@ public abstract class NonTransactionalDatabaseAdapter<
       throws ReferenceNotFoundException, ReferenceConflictException {
     try {
       casOpLoop(
+          "deleteRef",
           reference,
           CasOpVariant.DELETE_REF,
           (ctx, pointer, branchCommits, newKeyLists) -> {
@@ -443,6 +453,7 @@ public abstract class NonTransactionalDatabaseAdapter<
       throws ReferenceNotFoundException, ReferenceConflictException {
     try {
       casOpLoop(
+          "assignRef",
           assignee,
           CasOpVariant.REF_UPDATE,
           (ctx, pointer, branchCommits, newKeyLists) -> {
@@ -599,6 +610,7 @@ public abstract class NonTransactionalDatabaseAdapter<
 
     try (TryLoopState tryState =
         newTryLoopState(
+            "updateRepositoryDescription",
             ts ->
                 repoDescUpdateConflictMessage(
                     String.format(
@@ -630,10 +642,23 @@ public abstract class NonTransactionalDatabaseAdapter<
   // Non-Transactional DatabaseAdapter subclass API (protected)
   // /////////////////////////////////////////////////////////////////////////////////////////////
 
-  protected abstract RepoDescription fetchRepositoryDescription(
+  protected final RepoDescription fetchRepositoryDescription(NonTransactionalOperationContext ctx) {
+    try (Traced ignore = trace("fetchRepositoryDescription")) {
+      return doFetchRepositoryDescription(ctx);
+    }
+  }
+
+  protected abstract RepoDescription doFetchRepositoryDescription(
       NonTransactionalOperationContext ctx);
 
-  protected abstract boolean tryUpdateRepositoryDescription(
+  protected final boolean tryUpdateRepositoryDescription(
+      NonTransactionalOperationContext ctx, RepoDescription expected, RepoDescription updateTo) {
+    try (Traced ignore = trace("tryUpdateRepositoryDescription")) {
+      return doTryUpdateRepositoryDescription(ctx, expected, updateTo);
+    }
+  }
+
+  protected abstract boolean doTryUpdateRepositoryDescription(
       NonTransactionalOperationContext ctx, RepoDescription expected, RepoDescription updateTo);
 
   /**
@@ -737,9 +762,9 @@ public abstract class NonTransactionalDatabaseAdapter<
   }
 
   /**
-   * "Body" of a Compare-And-Swap loop that returns the value to apply. {@link #casOpLoop(NamedRef,
-   * CasOpVariant, CasOp, Supplier)} then tries to perform the Compare-And-Swap using the known
-   * "current value", as passed via the {@code pointer} parameter to {@link
+   * "Body" of a Compare-And-Swap loop that returns the value to apply. {@link #casOpLoop(String,
+   * NamedRef, CasOpVariant, CasOp, Supplier)} then tries to perform the Compare-And-Swap using the
+   * known "current value", as passed via the {@code pointer} parameter to {@link
    * #apply(NonTransactionalOperationContext, GlobalStatePointer, Consumer, Consumer)}, and the "new
    * value" from the return value.
    */
@@ -755,8 +780,8 @@ public abstract class NonTransactionalDatabaseAdapter<
      *     optimistically written, those must be passed to this consumer.
      * @param newKeyLists IDs of optimistically written {@link KeyListEntity} entities must be
      *     passed to this consumer.
-     * @return "new value" that {@link #casOpLoop(NamedRef, CasOpVariant, CasOp, Supplier)} tries to
-     *     apply
+     * @return "new value" that {@link #casOpLoop(String, NamedRef, CasOpVariant, CasOp, Supplier)}
+     *     tries to apply
      */
     GlobalStatePointer apply(
         NonTransactionalOperationContext ctx,
@@ -811,12 +836,17 @@ public abstract class NonTransactionalDatabaseAdapter<
    *     when the CAS operation failed to complete within the configured time and number of retries.
    */
   protected Hash casOpLoop(
-      NamedRef ref, CasOpVariant opVariant, CasOp casOp, Supplier<String> retryErrorMessage)
+      String opName,
+      NamedRef ref,
+      CasOpVariant opVariant,
+      CasOp casOp,
+      Supplier<String> retryErrorMessage)
       throws VersionStoreException {
     NonTransactionalOperationContext ctx = NON_TRANSACTIONAL_OPERATION_CONTEXT;
 
     try (TryLoopState tryState =
         newTryLoopState(
+            opName,
             ts ->
                 repoDescUpdateConflictMessage(
                     String.format(
@@ -869,7 +899,15 @@ public abstract class NonTransactionalDatabaseAdapter<
    * without any other consistency checks/guarantees. Some implementations however can enforce
    * strict consistency checks/guarantees.
    */
-  protected abstract void writeGlobalCommit(
+  protected final void writeGlobalCommit(
+      NonTransactionalOperationContext ctx, GlobalStateLogEntry entry)
+      throws ReferenceConflictException {
+    try (Traced ignore = trace("writeGlobalCommit")) {
+      doWriteGlobalCommit(ctx, entry);
+    }
+  }
+
+  protected abstract void doWriteGlobalCommit(
       NonTransactionalOperationContext ctx, GlobalStateLogEntry entry)
       throws ReferenceConflictException;
 
@@ -878,7 +916,14 @@ public abstract class NonTransactionalDatabaseAdapter<
    * other consistency checks/guarantees. Some implementations however can enforce strict
    * consistency checks/guarantees.
    */
-  protected abstract void writeRefLog(NonTransactionalOperationContext ctx, RefLogEntry entry)
+  protected final void writeRefLog(NonTransactionalOperationContext ctx, RefLogEntry entry)
+      throws ReferenceConflictException {
+    try (Traced ignore = trace("writeRefLog")) {
+      doWriteRefLog(ctx, entry);
+    }
+  }
+
+  protected abstract void doWriteRefLog(NonTransactionalOperationContext ctx, RefLogEntry entry)
       throws ReferenceConflictException;
 
   /**
@@ -919,7 +964,16 @@ public abstract class NonTransactionalDatabaseAdapter<
    * Atomically update the global-commit-pointer to the given new-global-head, if the value in the
    * database is the given expected-global-head.
    */
-  protected abstract boolean globalPointerCas(
+  protected final boolean globalPointerCas(
+      NonTransactionalOperationContext ctx,
+      GlobalStatePointer expected,
+      GlobalStatePointer newPointer) {
+    try (Traced ignore = trace("globalPointerCas")) {
+      return doGlobalPointerCas(ctx, expected, newPointer);
+    }
+  }
+
+  protected abstract boolean doGlobalPointerCas(
       NonTransactionalOperationContext ctx,
       GlobalStatePointer expected,
       GlobalStatePointer newPointer);
@@ -933,7 +987,21 @@ public abstract class NonTransactionalDatabaseAdapter<
    * <p>Implementation notes: non-transactional implementations <em>must</em> delete entries for the
    * given keys, no-op for transactional implementations.
    */
-  protected abstract void cleanUpCommitCas(
+  protected final void cleanUpCommitCas(
+      NonTransactionalOperationContext ctx,
+      Hash globalId,
+      Set<Hash> branchCommits,
+      Set<Hash> newKeyLists,
+      Hash refLogId) {
+    try (Traced ignore =
+        trace("cleanUpCommitCas")
+            .tag(TAG_COMMIT_COUNT, branchCommits.size())
+            .tag(TAG_KEY_LIST_COUNT, newKeyLists.size())) {
+      doCleanUpCommitCas(ctx, globalId, branchCommits, newKeyLists, refLogId);
+    }
+  }
+
+  protected abstract void doCleanUpCommitCas(
       NonTransactionalOperationContext ctx,
       Hash globalId,
       Set<Hash> branchCommits,
@@ -1005,10 +1073,16 @@ public abstract class NonTransactionalDatabaseAdapter<
    *
    * @return the current global points if set, or {@code null} if not set.
    */
-  protected abstract GlobalStatePointer fetchGlobalPointer(NonTransactionalOperationContext ctx);
+  protected final GlobalStatePointer fetchGlobalPointer(NonTransactionalOperationContext ctx) {
+    try (Traced ignore = trace("fetchGlobalPointer")) {
+      return doFetchGlobalPointer(ctx);
+    }
+  }
+
+  protected abstract GlobalStatePointer doFetchGlobalPointer(NonTransactionalOperationContext ctx);
 
   @Override
-  protected Map<ContentId, ByteString> fetchGlobalStates(
+  protected Map<ContentId, ByteString> doFetchGlobalStates(
       NonTransactionalOperationContext ctx, Set<ContentId> contentIds) {
     if (contentIds.isEmpty()) {
       return Collections.emptyMap();
@@ -1054,10 +1128,27 @@ public abstract class NonTransactionalDatabaseAdapter<
    *
    * @return the loaded entry if it is available, {@code null} if it does not exist.
    */
-  protected abstract GlobalStateLogEntry fetchFromGlobalLog(
+  protected final GlobalStateLogEntry fetchFromGlobalLog(
+      NonTransactionalOperationContext ctx, Hash id) {
+    try (Traced ignore = trace("fetchFromGlobalLog").tag(TAG_HASH, id.asString())) {
+      return doFetchFromGlobalLog(ctx, id);
+    }
+  }
+
+  protected abstract GlobalStateLogEntry doFetchFromGlobalLog(
       NonTransactionalOperationContext ctx, Hash id);
 
-  protected abstract List<GlobalStateLogEntry> fetchPageFromGlobalLog(
+  protected final List<GlobalStateLogEntry> fetchPageFromGlobalLog(
+      NonTransactionalOperationContext ctx, List<Hash> hashes) {
+    try (Traced ignore =
+        trace("fetchPageFromGlobalLog")
+            .tag(TAG_HASH, hashes.get(0).asString())
+            .tag(TAG_COUNT, hashes.size())) {
+      return doFetchPageFromGlobalLog(ctx, hashes);
+    }
+  }
+
+  protected abstract List<GlobalStateLogEntry> doFetchPageFromGlobalLog(
       NonTransactionalOperationContext ctx, List<Hash> hashes);
 
   protected Hash writeRefLogEntry(

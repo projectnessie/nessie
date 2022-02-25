@@ -15,21 +15,28 @@
  */
 package org.projectnessie.versioned.persist.tests;
 
+import io.opentracing.mock.MockTracer;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.persist.tests.extension.DatabaseAdapterExtension;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapter;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterConfigItem;
+import org.projectnessie.versioned.persist.tests.extension.NessieDbTracer;
+import org.projectnessie.versioned.persist.tests.extension.NessieMockedTracingExtension;
 import org.projectnessie.versioned.tests.AbstractVersionStoreTestBase;
 import org.projectnessie.versioned.testworker.BaseContent;
 import org.projectnessie.versioned.testworker.CommitMessage;
 
 @ExtendWith(DatabaseAdapterExtension.class)
+@ExtendWith(NessieMockedTracingExtension.class)
 @NessieDbAdapterConfigItem(name = "max.key.list.size", value = "2048")
 public abstract class AbstractDatabaseAdapterVersionStoreTest extends AbstractVersionStoreTestBase {
 
-  @NessieDbAdapter static VersionStore<BaseContent, CommitMessage, BaseContent.Type> store;
+  @NessieDbAdapter(withTracing = true)
+  static VersionStore<BaseContent, CommitMessage, BaseContent.Type> store;
+
+  @NessieDbTracer static MockTracer tracer;
 
   @Override
   protected VersionStore<BaseContent, CommitMessage, BaseContent.Type> store() {
@@ -46,6 +53,13 @@ public abstract class AbstractDatabaseAdapterVersionStoreTest extends AbstractVe
   @Nested
   public class DuplicateTable extends AbstractDuplicateTable {
     public DuplicateTable() {
+      super(AbstractDatabaseAdapterVersionStoreTest.store);
+    }
+  }
+
+  @Nested
+  public class Tracing extends AbstractTracing {
+    public Tracing() {
       super(AbstractDatabaseAdapterVersionStoreTest.store);
     }
   }

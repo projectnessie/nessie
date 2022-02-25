@@ -52,6 +52,7 @@ class TestTryLoopState {
     long upper = 2;
     TryLoopState tryLoopState =
         new TryLoopState(
+            "test",
             this::retryErrorMessage,
             mockedConfig(retries, Long.MAX_VALUE, 1, upper, maxSleep),
             clock,
@@ -97,7 +98,11 @@ class TestTryLoopState {
 
     TryLoopState tryLoopState =
         new TryLoopState(
-            this::retryErrorMessage, mockedConfig(retries, 42L), clock, (success, tls) -> {});
+            "test",
+            this::retryErrorMessage,
+            mockedConfig(retries, 42L),
+            clock,
+            (success, tls) -> {});
 
     verify(clock, times(1)).currentNanos();
 
@@ -118,7 +123,11 @@ class TestTryLoopState {
 
     TryLoopState tryLoopState =
         new TryLoopState(
-            this::retryErrorMessage, mockedConfig(retries - 1, 42L), clock, (success, tls) -> {});
+            "test",
+            this::retryErrorMessage,
+            mockedConfig(retries - 1, 42L),
+            clock,
+            (success, tls) -> {});
 
     verify(clock, times(1)).currentNanos();
 
@@ -147,6 +156,7 @@ class TestTryLoopState {
 
     TryLoopState tryLoopState =
         new TryLoopState(
+            "test",
             this::retryErrorMessage,
             mockedConfig(retries, timeoutMillis),
             clock,
@@ -179,7 +189,11 @@ class TestTryLoopState {
 
     TryLoopState tryLoopState =
         new TryLoopState(
-            this::retryErrorMessage, mockedConfig(retries, 42L), clock, (success, tls) -> {});
+            "test",
+            this::retryErrorMessage,
+            mockedConfig(retries, 42L),
+            clock,
+            (success, tls) -> {});
 
     verify(clock, times(1)).currentNanos();
 
