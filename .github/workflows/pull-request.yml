@@ -79,7 +79,29 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - name: Test with tox
-      run: tox
+      run: |
+        tox
+
+        if [[ "${{ matrix.python-version }}" == "3.8" ]]; then
+          echo "Starting Python docs up-to-date check ..."
+
+          git_changed_files=$(git status --porcelain)
+          if [ -n "${git_changed_files}" ]; then
+            echo "Python docs up-to-date check needs to start on a clean git repo!"
+            echo "Changed files: ${git_changed_files}"
+            exit 1
+          fi
+
+          tox -e docs
+
+          git_changed_files=$(git status --porcelain)
+          if [ -n "${git_changed_files}" ]; then
+            echo "Python docs up-to-date check has failed! Re-run 'tox -e docs' locally"
+            echo "Changed files: ${git_changed_files}"
+            exit 1
+          fi
+          echo "Python docs are fully up-to-date!"
+        fi
       working-directory: ${{env.working-directory}}
     - uses: codecov/codecov-action@v1
       with:
