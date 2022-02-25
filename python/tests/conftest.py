@@ -64,21 +64,20 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     shutil.rmtree(nessie_test_config.config_dir)
 
 
-def execute_cli_command(args: List[str], input_data: Optional[str] = None, ret_val: int = 0, output_string: bool = True) -> Any:
+def execute_cli_command_raw(args: List[str], input_data: Optional[str] = None, ret_val: int = 0) -> Result:
     """Execute a Nessie CLI command."""
-    if output_string:
-        return _run(args, input_data, ret_val).output
-
-    return _run(args, input_data, ret_val)
-
-
-def _run(args: List[str], input_data: Optional[str] = None, ret_val: int = 0) -> Result:
     result = CliRunner().invoke(cli.cli, args, input=input_data)
     if result.exit_code != ret_val:
-        print(result.output)
-        print(result)
+        print(result.stdout)
+        print(result.stderr)
+        print(result)  # exception
     assert_that(result.exit_code).is_equal_to(ret_val)
     return result
+
+
+def execute_cli_command(args: List[str], input_data: Optional[str] = None, ret_val: int = 0) -> str:
+    """Execute a Nessie CLI command and return its STDOUT."""
+    return execute_cli_command_raw(args, input_data=input_data, ret_val=ret_val).stdout
 
 
 def ref_hash(ref: str) -> str:
