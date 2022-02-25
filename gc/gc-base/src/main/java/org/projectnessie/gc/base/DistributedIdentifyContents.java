@@ -22,12 +22,15 @@ import java.util.Map;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.SparkSession;
 import org.projectnessie.model.Reference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Identify the expired and live contents in a distributed way using the spark and bloom filter by
  * walking all the references (both dead and live).
  */
 public class DistributedIdentifyContents {
+  private static final Logger LOGGER = LoggerFactory.getLogger(DistributedIdentifyContents.class);
 
   private final SparkSession session;
   private final GCParams gcParams;
@@ -54,7 +57,7 @@ public class DistributedIdentifyContents {
             .parallelize(references, getPartitionsCount(gcParams, references))
             .map(executor.computeLiveContentsFunc(bloomFilterSize, droppedRefTimeMap))
             .collect();
-    return mergeLiveContentResults(bloomFilterMaps);
+    return mergeLiveContentResults(bloomFilterMaps, gcParams.getBloomFilterFpp());
   }
 
   /**
@@ -87,7 +90,7 @@ public class DistributedIdentifyContents {
   }
 
   private static Map<String, ContentBloomFilter> mergeLiveContentResults(
-      List<Map<String, ContentBloomFilter>> bloomFilterMaps) {
+      List<Map<String, ContentBloomFilter>> bloomFilterMaps, double bloomFilterFpp) {
     Map<String, ContentBloomFilter> output = new HashMap<>();
     bloomFilterMaps.forEach(
         map ->
@@ -99,6 +102,20 @@ public class DistributedIdentifyContents {
                     output.put(k, v);
                   }
                 }));
+    // Since we merged bloom filters log in case their quality deteriorated
+    output.entrySet().stream()
+        .filter(e -> e.getValue().wasMerged())
+        .forEach(
+            e -> {
+              double fpp = e.getValue().getExpectedFpp();
+              if (fpp > bloomFilterFpp) {
+                String contentId = e.getKey();
+                LOGGER.info(
+                    "Fpp of ContentBloomFilter for '{}': {}",
+                    contentId,
+                    String.format("%.3f", fpp));
+              }
+            });
     return output;
   }
 }

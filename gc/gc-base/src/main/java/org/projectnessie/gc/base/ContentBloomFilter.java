@@ -35,6 +35,7 @@ public class ContentBloomFilter implements Serializable {
   // as the consumer of GC results needs only this info for clean up.
   // String bloom filter with content type prefix + snapshot/version id.
   private final BloomFilter<String> filter;
+  private boolean wasMerged = false;
 
   public ContentBloomFilter(long expectedEntries, double bloomFilterFpp) {
     this.filter =
@@ -53,7 +54,21 @@ public class ContentBloomFilter implements Serializable {
   public void merge(ContentBloomFilter filter) {
     if (filter.filter != null) {
       this.filter.putAll(filter.filter);
+      this.wasMerged = true;
     }
+  }
+
+  public double getExpectedFpp() {
+    return filter.expectedFpp();
+  }
+
+  /**
+   * A merged bloomfilter might indicate decreased filter quality.
+   *
+   * @return true if other filters were merged into this instance
+   */
+  public boolean wasMerged() {
+    return wasMerged;
   }
 
   private String getValue(Content content) {
