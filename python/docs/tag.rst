@@ -28,6 +28,10 @@
          nessie tag -o 12345678abcdef new_tag test -> create new tag named
          'new_tag' at hash 12345678abcdef on reference named 'test'
    
+         nessie tag new_tag test@12345678abcdef -> create new tag named 'new_tag'
+         at hash 12345678abcdef on reference named 'test', alternative syntax of
+         the above
+   
          nessie tag -f existing_tag main -> assign tag named 'existing_tag' to head
          of reference named 'main'
    
