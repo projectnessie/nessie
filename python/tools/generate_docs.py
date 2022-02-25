@@ -55,10 +55,10 @@ def _get_file_name_from_command(command: List[str]) -> str:
 
 def _write_command_output_to_file(file_io: IO, command: List[str]) -> None:
     result = _run_cli(command)
-    space = "   "
-    file_io.write(f".. code-block:: bash\n\n{space}")
-    for line in result.split("\n"):
-        file_io.write(line + f"\n{space}")
+    file_io.write(".. code-block:: bash\n\n")
+    for line in result.splitlines():
+        indent = "   " if line else ""
+        file_io.write(f"{indent}{line}\n")
     file_io.write("\n\n")
 
 
