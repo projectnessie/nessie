@@ -17,7 +17,6 @@ package org.projectnessie.tools.compatibility.tests;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.model.Branch;
@@ -48,7 +47,7 @@ public abstract class AbstractCompatibilityTests {
     assertThat(allRefs.getReferences()).contains(defaultBranch);
   }
 
-  @RepeatedTest(3)
+  @Test
   void getConfig() {
     NessieConfiguration config = api.getConfig();
     assertThat(config).extracting(NessieConfiguration::getDefaultBranch).isEqualTo("main");
