@@ -18,14 +18,15 @@ package org.projectnessie.tools.compatibility.tests;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,6 +43,7 @@ import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.Operation.Put;
+import org.projectnessie.model.Reference;
 import org.projectnessie.tools.compatibility.api.NessieAPI;
 import org.projectnessie.tools.compatibility.api.NessieVersion;
 import org.projectnessie.tools.compatibility.api.Version;
@@ -56,6 +58,8 @@ public class ITUpgradePath {
   @NessieAPI NessieApiV1 api;
 
   private static Branch versionBranch;
+
+  static Set<String> createdBranches = new HashSet<>();
 
   @BeforeAll
   static void beforeAll() {
@@ -82,23 +86,18 @@ public class ITUpgradePath {
   void createReference() throws Exception {
     Branch main = api.getDefaultBranch();
     versionBranch = Branch.of(VERSION_BRANCH_PREFIX + version, main.getHash());
+    createdBranches.add(versionBranch.getName());
     api.createReference().sourceRefName("main").reference(versionBranch).create();
   }
 
   @Order(2)
-  @RepeatedTest(5)
+  @Test
   void getReferences() {
-    System.err.println("--");
-    System.err.println("--");
-    api.getAllReferences()
-        .get()
-        .getReferences()
-        .forEach(
-            ref -> {
-              System.err.println("--> " + ref);
-            });
-    System.err.println("--");
-    System.err.println("--");
+    assertThat(
+            api.getAllReferences().get().getReferences().stream()
+                .map(Reference::getName)
+                .filter(ref -> ref.startsWith(VERSION_BRANCH_PREFIX)))
+        .containsExactlyInAnyOrderElementsOf(createdBranches);
   }
 
   @Test
