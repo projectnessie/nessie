@@ -167,18 +167,20 @@ public final class SqlStatements {
 
   public static final String TABLE_REF_LOG_HEAD = "ref_log_head";
   public static final String UPDATE_REF_LOG_HEAD =
-      String.format("UPDATE %s SET id = ? WHERE repo_id = ? AND id = ?", TABLE_REF_LOG_HEAD);
+      String.format(
+          "UPDATE %s SET id = ?, parents = ? WHERE repo_id = ? AND id = ?", TABLE_REF_LOG_HEAD);
   public static final String INSERT_REF_LOG_HEAD =
-      String.format("INSERT INTO %s (repo_id, id) VALUES (?, ?)", TABLE_REF_LOG_HEAD);
+      String.format("INSERT INTO %s (repo_id, id, parents) VALUES (?, ?, ?)", TABLE_REF_LOG_HEAD);
   public static final String DELETE_REF_LOG_HEAD_ALL =
       String.format("DELETE FROM %s WHERE repo_id = ?", TABLE_REF_LOG_HEAD);
   public static final String SELECT_REF_LOG_HEAD =
-      String.format("SELECT id FROM %s WHERE repo_id = ?", TABLE_REF_LOG_HEAD);
+      String.format("SELECT id, parents FROM %s WHERE repo_id = ?", TABLE_REF_LOG_HEAD);
   public static final String CREATE_TABLE_REF_LOG_HEAD =
       String.format(
           "CREATE TABLE %s (\n"
               + "  repo_id {2},\n"
               + "  id {1},\n"
+              + "  parents {0},\n"
               + "  PRIMARY KEY (repo_id, id)\n"
               + ")",
           TABLE_REF_LOG_HEAD);

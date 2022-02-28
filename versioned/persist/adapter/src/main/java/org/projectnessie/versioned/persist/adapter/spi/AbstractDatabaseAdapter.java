@@ -710,6 +710,22 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       T initial,
       BiFunction<OP_CONTEXT, List<Hash>, List<T>> fetcher,
       Function<T, List<Hash>> nextPage) {
+    return logFetcherCommon(ctx, Collections.singletonList(initial), fetcher, nextPage);
+  }
+
+  protected <T> Spliterator<T> logFetcherWithPage(
+      OP_CONTEXT ctx,
+      List<Hash> initialPage,
+      BiFunction<OP_CONTEXT, List<Hash>, List<T>> fetcher,
+      Function<T, List<Hash>> nextPage) {
+    return logFetcherCommon(ctx, fetcher.apply(ctx, initialPage), fetcher, nextPage);
+  }
+
+  private <T> Spliterator<T> logFetcherCommon(
+      OP_CONTEXT ctx,
+      List<T> initial,
+      BiFunction<OP_CONTEXT, List<Hash>, List<T>> fetcher,
+      Function<T, List<Hash>> nextPage) {
     return new AbstractSpliterator<T>(Long.MAX_VALUE, 0) {
       private Iterator<T> currentBatch;
       private boolean eof;
@@ -720,7 +736,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
         if (eof) {
           return false;
         } else if (currentBatch == null) {
-          currentBatch = Collections.singletonList(initial).iterator();
+          currentBatch = initial.iterator();
         } else if (!currentBatch.hasNext()) {
           if (previous == null) {
             eof = true;
