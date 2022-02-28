@@ -192,6 +192,8 @@
     <prometheus.version>0.9.0</prometheus.version>
     <protobuf.version>3.19.4</protobuf.version>
     <quarkus.version>2.7.2.Final</quarkus.version>
+    <!-- see https://github.com/quarkiverse/quarkus-logging-sentry -->
+    <quarkus.loggingsentry.version>1.0.2</quarkus.loggingsentry.version>
     <reactor.version>2020.0.16</reactor.version>
     <rocksdb.version>6.28.2</rocksdb.version>
     <scala2.12.version>2.12.13</scala2.12.version>
@@ -461,6 +463,20 @@
         <version>${quarkus.version}</version>
         <type>pom</type>
         <scope>import</scope>
+      </dependency>
+      <!-- see https://github.com/quarkusio/quarkus/wiki/Migration-Guide-2.6#extensions-included-inside-the-platform-with-their-own-bom -->
+      <dependency>
+        <groupId>io.quarkus.platform</groupId>
+        <artifactId>quarkus-amazon-services-bom</artifactId>
+        <version>${quarkus.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <!-- see https://github.com/quarkusio/quarkus/wiki/Migration-Guide-2.6#extensions-moved-out-of-the-quarkus-platform -->
+      <dependency>
+        <groupId>io.quarkiverse.loggingsentry</groupId>
+        <artifactId>quarkus-logging-sentry</artifactId>
+        <version>${quarkus.loggingsentry.version}</version>
       </dependency>
       <dependency>
         <groupId>org.slf4j</groupId>

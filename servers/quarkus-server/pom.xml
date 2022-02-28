@@ -148,7 +148,7 @@
       <artifactId>quarkus-smallrye-openapi</artifactId>
     </dependency>
     <dependency>
-      <groupId>io.quarkus</groupId>
+      <groupId>io.quarkiverse.loggingsentry</groupId>
       <artifactId>quarkus-logging-sentry</artifactId>
     </dependency>
     <dependency>
@@ -156,7 +156,7 @@
       <artifactId>quarkus-container-image-jib</artifactId>
     </dependency>
     <dependency>
-      <groupId>io.quarkus</groupId>
+      <groupId>io.quarkiverse.amazonservices</groupId>
       <artifactId>quarkus-amazon-dynamodb</artifactId>
     </dependency>
     <dependency>
