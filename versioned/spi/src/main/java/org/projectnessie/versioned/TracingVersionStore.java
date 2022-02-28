@@ -253,11 +253,6 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
       Consumer<SpanBuilder> spanBuilder,
       InvokerWithOneException<Stream<R>, E1> invoker)
       throws E1 {
-    // We keep the span active (in scope) only for the duration of the call that creates the stream,
-    // but close it when the stream is closed. This is because the outer scopes may call other
-    // instrumented code during stream iteration, but those calls should be nested directly under
-    // the caller's span, not under this `span`. This may cause overlapping spans, but at the same
-    // time it allows tracking the total duration of the stream iteration process.
     try (SpanHolder span = createSpan(spanName + ".stream", spanBuilder);
         Scope ignore = activeScope(span.get())) {
       try {
