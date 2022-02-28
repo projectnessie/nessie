@@ -63,7 +63,7 @@ When setting `nessie.version.store.type=DYNAMO` which enables DynamoDB as the ve
 | `quarkus.dynamodb.sync-client.type`     | `url`          | `url, apache` | Sets the type of the sync HTTP client implementation                                                                                                |
 
 !!! info
-    A complete set of DynamoDB configuration options for Quarkus can be found on [quarkus.io](https://quarkus.io/guides/all-config#quarkus-amazon-dynamodb_quarkus-amazon-dynamodb-amazon-dynamodb)
+    A complete set of DynamoDB configuration options for Quarkus can be found on [quarkiverse.github.io](https://quarkiverse.github.io/quarkiverse-docs/quarkus-amazon-services/dev/amazon-dynamodb.html#_configuration_reference)
 
 ### Version Store Advanced Settings
 
