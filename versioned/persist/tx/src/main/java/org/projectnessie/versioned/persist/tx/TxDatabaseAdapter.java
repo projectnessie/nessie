@@ -1269,23 +1269,18 @@ public abstract class TxDatabaseAdapter
 
   @Override
   protected Stream<KeyListEntity> doFetchKeyLists(Connection c, List<Hash> keyListsIds) {
-    Traced trace = trace("doFetchKeyLists");
-    try {
+    try (Traced ignore = trace("doFetchKeyLists.stream")) {
       return JdbcSelectSpliterator.buildStream(
-              c,
-              sqlForManyPlaceholders(SqlStatements.SELECT_KEY_LIST_MANY, keyListsIds.size()),
-              ps -> {
-                ps.setString(1, config.getRepositoryId());
-                int i = 2;
-                for (Hash id : keyListsIds) {
-                  ps.setString(i++, id.asString());
-                }
-              },
-              (rs) -> KeyListEntity.of(Hash.of(rs.getString(1)), protoToKeyList(rs.getBytes(2))))
-          .onClose(trace::close);
-    } catch (RuntimeException e) {
-      trace.close();
-      throw e;
+          c,
+          sqlForManyPlaceholders(SqlStatements.SELECT_KEY_LIST_MANY, keyListsIds.size()),
+          ps -> {
+            ps.setString(1, config.getRepositoryId());
+            int i = 2;
+            for (Hash id : keyListsIds) {
+              ps.setString(i++, id.asString());
+            }
+          },
+          (rs) -> KeyListEntity.of(Hash.of(rs.getString(1)), protoToKeyList(rs.getBytes(2))));
     }
   }
 

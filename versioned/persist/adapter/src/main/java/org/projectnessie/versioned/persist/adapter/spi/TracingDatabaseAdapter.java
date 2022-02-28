@@ -101,24 +101,16 @@ public final class TracingDatabaseAdapter implements DatabaseAdapter {
 
   @Override
   public Stream<CommitLogEntry> commitLog(Hash offset) throws ReferenceNotFoundException {
-    Traced trace = trace("commitLog").tag(TAG_HASH, offset.asString());
-    try {
-      return delegate.commitLog(offset).onClose(trace::close);
-    } catch (RuntimeException | ReferenceNotFoundException e) {
-      trace.close();
-      throw e;
+    try (Traced ignore = trace("commitLog.stream").tag(TAG_HASH, offset.asString())) {
+      return delegate.commitLog(offset);
     }
   }
 
   @Override
   public Stream<KeyWithType> keys(Hash commit, KeyFilterPredicate keyFilter)
       throws ReferenceNotFoundException {
-    Traced trace = trace("keys").tag(TAG_HASH, commit.asString());
-    try {
-      return delegate.keys(commit, keyFilter).onClose(trace::close);
-    } catch (RuntimeException | ReferenceNotFoundException e) {
-      trace.close();
-      throw e;
+    try (Traced ignore = trace("keys.stream").tag(TAG_HASH, commit.asString())) {
+      return delegate.keys(commit, keyFilter);
     }
   }
 
@@ -168,12 +160,8 @@ public final class TracingDatabaseAdapter implements DatabaseAdapter {
   @Override
   public Stream<ReferenceInfo<ByteString>> namedRefs(GetNamedRefsParams params)
       throws ReferenceNotFoundException {
-    Traced trace = trace("namedRefs");
-    try {
-      return delegate.namedRefs(params).onClose(trace::close);
-    } catch (RuntimeException | ReferenceNotFoundException e) {
-      trace.close();
-      throw e;
+    try (Traced ignore = trace("namedRefs.stream")) {
+      return delegate.namedRefs(params);
     }
   }
 
@@ -206,12 +194,9 @@ public final class TracingDatabaseAdapter implements DatabaseAdapter {
   @Override
   public Stream<Difference> diff(Hash from, Hash to, KeyFilterPredicate keyFilter)
       throws ReferenceNotFoundException {
-    Traced trace = trace("diff").tag(TAG_FROM, from.asString()).tag(TAG_TO, to.asString());
-    try {
-      return delegate.diff(from, to, keyFilter).onClose(trace::close);
-    } catch (RuntimeException | ReferenceNotFoundException e) {
-      trace.close();
-      throw e;
+    try (Traced ignore =
+        trace("diff.stream").tag(TAG_FROM, from.asString()).tag(TAG_TO, to.asString())) {
+      return delegate.diff(from, to, keyFilter);
     }
   }
 
@@ -232,24 +217,16 @@ public final class TracingDatabaseAdapter implements DatabaseAdapter {
 
   @Override
   public Stream<ContentIdWithType> globalKeys(ToIntFunction<ByteString> contentTypeExtractor) {
-    Traced trace = trace("globalKeys");
-    try {
-      return delegate.globalKeys(contentTypeExtractor).onClose(trace::close);
-    } catch (RuntimeException e) {
-      trace.close();
-      throw e;
+    try (Traced ignore = trace("globalKeys.stream")) {
+      return delegate.globalKeys(contentTypeExtractor);
     }
   }
 
   @Override
   public Stream<ContentIdAndBytes> globalContent(
       Set<ContentId> keys, ToIntFunction<ByteString> contentTypeExtractor) {
-    Traced trace = trace("globalContent").tag(TAG_COUNT, keys.size());
-    try {
-      return delegate.globalContent(keys, contentTypeExtractor).onClose(trace::close);
-    } catch (RuntimeException e) {
-      trace.close();
-      throw e;
+    try (Traced ignore = trace("globalContent.stream").tag(TAG_COUNT, keys.size())) {
+      return delegate.globalContent(keys, contentTypeExtractor);
     }
   }
 
@@ -263,12 +240,9 @@ public final class TracingDatabaseAdapter implements DatabaseAdapter {
 
   @Override
   public Stream<RefLog> refLog(Hash offset) throws RefLogNotFoundException {
-    Traced trace = trace("refLog").tag(TAG_HASH, offset != null ? offset.asString() : "HEAD");
-    try {
-      return delegate.refLog(offset).onClose(trace::close);
-    } catch (RuntimeException | RefLogNotFoundException e) {
-      trace.close();
-      throw e;
+    try (Traced ignore =
+        trace("refLog.stream").tag(TAG_HASH, offset != null ? offset.asString() : "HEAD")) {
+      return delegate.refLog(offset);
     }
   }
 }

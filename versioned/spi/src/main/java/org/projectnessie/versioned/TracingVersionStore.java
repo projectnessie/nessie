@@ -253,27 +253,20 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
       Consumer<SpanBuilder> spanBuilder,
       InvokerWithOneException<Stream<R>, E1> invoker)
       throws E1 {
-    SpanHolder span = createSpan(spanName, spanBuilder);
     // We keep the span active (in scope) only for the duration of the call that creates the stream,
     // but close it when the stream is closed. This is because the outer scopes may call other
     // instrumented code during stream iteration, but those calls should be nested directly under
     // the caller's span, not under this `span`. This may cause overlapping spans, but at the same
     // time it allows tracking the total duration of the stream iteration process.
-    Stream<R> result = null;
-    try (@SuppressWarnings("unused")
-        Scope autoclosed = activeScope(span.get())) {
-      result = invoker.handle();
-      return result.onClose(span::close);
-    } catch (IllegalArgumentException e) {
-      // IllegalArgumentException is a special kind of exception that indicates a user-error.
-      throw e;
-    } catch (RuntimeException e) {
-      throw traceError(span.get(), e);
-    } finally {
-      // We cannot `catch (E1 e)`, so assume that the delegate threw an exception, when result==null
-      // and then close the span.
-      if (result == null) {
-        span.close();
+    try (SpanHolder span = createSpan(spanName + ".stream", spanBuilder);
+        Scope ignore = activeScope(span.get())) {
+      try {
+        return invoker.handle();
+      } catch (IllegalArgumentException e) {
+        // IllegalArgumentException is a special kind of exception that indicates a user-error.
+        throw e;
+      } catch (RuntimeException e) {
+        throw traceError(span.get(), e);
       }
     }
   }
@@ -282,8 +275,7 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
       String spanName, Consumer<SpanBuilder> spanBuilder, InvokerWithOneException<R, E1> invoker)
       throws E1 {
     try (SpanHolder span = createSpan(spanName, spanBuilder);
-        @SuppressWarnings("unused")
-            Scope autoclosed = activeScope(span.get())) {
+        Scope ignore = activeScope(span.get())) {
       try {
         return invoker.handle();
       } catch (IllegalArgumentException e) {
@@ -302,8 +294,7 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
           InvokerWithTwoExceptions<E1, E2> invoker)
           throws E1, E2 {
     try (SpanHolder span = createSpan(spanName, spanBuilder);
-        @SuppressWarnings("unused")
-            Scope autoclosed = activeScope(span.get())) {
+        Scope ignore = activeScope(span.get())) {
       try {
         invoker.handle();
       } catch (IllegalArgumentException e) {
@@ -322,8 +313,7 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
           InvokerWithTwoExceptionsR<R, E1, E2> invoker)
           throws E1, E2 {
     try (SpanHolder span = createSpan(spanName, spanBuilder);
-        @SuppressWarnings("unused")
-            Scope autoclosed = activeScope(span.get())) {
+        Scope ignore = activeScope(span.get())) {
       try {
         return invoker.handle();
       } catch (IllegalArgumentException e) {
