@@ -18,7 +18,7 @@ bandit==1.7.2
 black==22.1.0
 flake8-annotations==2.7.0
 flake8-bandit==2.1.2
-flake8-black==0.2.4
+flake8-black==0.3.2
 flake8-bugbear==22.1.11
 flake8-docstrings==1.6.0
 flake8-import-order==0.18.1
