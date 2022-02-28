@@ -172,6 +172,21 @@
       <artifactId>nessie-gc-base</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.projectnessie</groupId>
+      <artifactId>nessie-compatibility-common</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.projectnessie</groupId>
+      <artifactId>nessie-compatibility-jersey</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.projectnessie</groupId>
+      <artifactId>nessie-compatibility-tests</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
 
   <build>
