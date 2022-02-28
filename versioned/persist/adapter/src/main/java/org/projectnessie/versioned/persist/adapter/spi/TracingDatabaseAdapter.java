@@ -55,6 +55,7 @@ public final class TracingDatabaseAdapter implements DatabaseAdapter {
   private static final String TAG_HASH = "hash";
   private static final String TAG_FROM = "from";
   private static final String TAG_TO = "to";
+  private static final String TAG_CONTENT_ID = "cid";
 
   private final DatabaseAdapter delegate;
 
@@ -233,7 +234,7 @@ public final class TracingDatabaseAdapter implements DatabaseAdapter {
   @Override
   public Optional<ContentIdAndBytes> globalContent(
       ContentId contentId, ToIntFunction<ByteString> contentTypeExtractor) {
-    try (Traced ignore = trace("globalContent")) {
+    try (Traced ignore = trace("globalContent").tag(TAG_CONTENT_ID, contentId.getId())) {
       return delegate.globalContent(contentId, contentTypeExtractor);
     }
   }
