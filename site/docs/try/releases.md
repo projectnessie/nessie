@@ -1,5 +1,9 @@
 # Releases
 
+## 0.21.1 Release (March 2, 2022)
+
+* (no user visible changes)
+
 ## 0.21.0 Release (March 1, 2022)
 
 * Add tracing to database-adapter internals
