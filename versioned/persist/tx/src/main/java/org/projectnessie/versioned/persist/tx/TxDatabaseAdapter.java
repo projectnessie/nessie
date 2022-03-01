@@ -1169,7 +1169,7 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
-  protected List<CommitLogEntry> doFetchPageFromCommitLog(Connection c, List<Hash> hashes) {
+  protected List<CommitLogEntry> doFetchMultipleFromCommitLog(Connection c, List<Hash> hashes) {
     String sql = sqlForManyPlaceholders(SqlStatements.SELECT_COMMIT_LOG_MANY, hashes.size());
 
     try (PreparedStatement ps = c.prepareStatement(sql)) {

@@ -646,7 +646,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
    * must have exactly as many elements as in the parameter {@code hashes}. Non-existing hashes are
    * returned as {@code null}.
    */
-  protected final List<CommitLogEntry> fetchPageFromCommitLog(OP_CONTEXT ctx, List<Hash> hashes) {
+  private List<CommitLogEntry> fetchMultipleFromCommitLog(OP_CONTEXT ctx, List<Hash> hashes) {
     if (hashes.isEmpty()) {
       return Collections.emptyList();
     }
@@ -654,11 +654,11 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
         trace("fetchPageFromCommitLog")
             .tag(TAG_HASH, hashes.get(0).asString())
             .tag(TAG_COUNT, hashes.size())) {
-      return doFetchPageFromCommitLog(ctx, hashes);
+      return doFetchMultipleFromCommitLog(ctx, hashes);
     }
   }
 
-  private List<CommitLogEntry> fetchPageFromCommitLog(
+  private List<CommitLogEntry> fetchMultipleFromCommitLog(
       OP_CONTEXT ctx, List<Hash> hashes, @Nonnull Function<Hash, CommitLogEntry> inMemoryCommits) {
     List<CommitLogEntry> result = new ArrayList<>(hashes.size());
     List<Hash> remainingHashes = new ArrayList<>(hashes.size());
@@ -680,7 +680,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     }
 
     if (!remainingHashes.isEmpty()) {
-      List<CommitLogEntry> fromStorage = fetchPageFromCommitLog(ctx, remainingHashes);
+      List<CommitLogEntry> fromStorage = fetchMultipleFromCommitLog(ctx, remainingHashes);
       // Fill the gaps in the final result list. Note that fetchPageFromCommitLog must return the
       // list of the same size as its `remainingHashes` parameter.
       idx = 0;
@@ -693,7 +693,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     return result;
   }
 
-  protected abstract List<CommitLogEntry> doFetchPageFromCommitLog(
+  protected abstract List<CommitLogEntry> doFetchMultipleFromCommitLog(
       OP_CONTEXT ctx, List<Hash> hashes);
 
   /** Reads from the commit-log starting at the given commit-log-hash. */
@@ -734,9 +734,9 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     // Note: == comparison is fine in this situation because the "in memory" function is local to
     // this class both for the empty and in the non-empty cases.
     if (inMemoryCommits == NO_IN_MEMORY_COMMITS) {
-      fetcher = this::fetchPageFromCommitLog;
+      fetcher = this::fetchMultipleFromCommitLog;
     } else {
-      fetcher = (c, hashes) -> fetchPageFromCommitLog(c, hashes, inMemoryCommits);
+      fetcher = (c, hashes) -> fetchMultipleFromCommitLog(c, hashes, inMemoryCommits);
     }
 
     return logFetcher(ctx, initial, fetcher, CommitLogEntry::getParents);

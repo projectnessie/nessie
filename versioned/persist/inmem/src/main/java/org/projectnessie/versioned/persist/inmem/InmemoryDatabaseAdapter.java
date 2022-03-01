@@ -174,7 +174,7 @@ public class InmemoryDatabaseAdapter
   }
 
   @Override
-  protected List<CommitLogEntry> doFetchPageFromCommitLog(
+  protected List<CommitLogEntry> doFetchMultipleFromCommitLog(
       NonTransactionalOperationContext ctx, List<Hash> hashes) {
     return hashes.stream()
         .map(this::dbKey)

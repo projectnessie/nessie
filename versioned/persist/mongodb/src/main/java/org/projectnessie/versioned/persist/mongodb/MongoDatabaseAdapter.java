@@ -298,7 +298,7 @@ public class MongoDatabaseAdapter
   }
 
   @Override
-  protected List<CommitLogEntry> doFetchPageFromCommitLog(
+  protected List<CommitLogEntry> doFetchMultipleFromCommitLog(
       NonTransactionalOperationContext ctx, List<Hash> hashes) {
     return fetchPage(client.getCommitLog(), hashes, ProtoSerialization::protoToCommitLogEntry);
   }

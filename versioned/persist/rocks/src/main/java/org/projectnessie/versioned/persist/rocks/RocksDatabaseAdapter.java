@@ -274,7 +274,7 @@ public class RocksDatabaseAdapter
   }
 
   @Override
-  protected List<CommitLogEntry> doFetchPageFromCommitLog(
+  protected List<CommitLogEntry> doFetchMultipleFromCommitLog(
       NonTransactionalOperationContext ctx, List<Hash> hashes) {
     return fetchPage(
         dbInstance.getCfCommitLog(), hashes, ProtoSerialization::protoToCommitLogEntry);
