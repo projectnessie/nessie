@@ -1,5 +1,5 @@
-
 ## Dev
+
 * Run `./mvnw quarkus:dev` to start the quarkus server
 * Run `target/node/npm test -- --coverage --watchAll` to get unit tests constantly running. This has a mini console which can be used to re-run tests or to re-create jest snapshots
 * Run `target/node/npm start --scripts-prepend-node-path` to start up a server and open a browser w/ the UI constantly updating

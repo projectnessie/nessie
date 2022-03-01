@@ -2,10 +2,10 @@
 
 ## Java Client
 
-Nessie has a thin client designed to be incorporated into existing projects with minimum 
+Nessie has a thin client designed to be incorporated into existing projects with minimum
 difficulty. The client is a thin layer over Nessie's [openapi Rest APIs](rest.md).
 
-To use the Nessie client, you can add it as a dependency to your Java project using 
+To use the Nessie client, you can add it as a dependency to your Java project using
 Maven. The coordinates are:
 
 ```
@@ -16,17 +16,15 @@ Maven. The coordinates are:
 </dependency> 
 ```
 
-For ease of integration with tools that carry many dependencies, the Nessie client's 
-dependencies are declared as `optional`. It is designed to work with 
-any recent version of JAX-RS client (Jersey and Resteasy are both tested inside Nessie's 
+For ease of integration with tools that carry many dependencies, the Nessie client's
+dependencies are declared as `optional`. It is designed to work with
+any recent version of JAX-RS client (Jersey and Resteasy are both tested inside Nessie's
 tests) + Jackson's DataBinding and JAX-RS modules (any version from the last ~3+ years).
-
 
 ## API
 
 The `NessieClientBuilder` and concrete builder implementations (such as `HttpClientBuilder`) provide an easy way of configuring and building a `NessieApi`. The currently stable API that should be used
 is `NessieApiV1`, which can be instantiated as shown below:
-
 
 ```java
 
@@ -51,6 +49,7 @@ The following subsections will outline how different actions can be done via tha
 ### Fetching details about a particular Reference
 
 Fetches the `Reference` object of the `main` branch and then gets its hash
+
 ```java
 api.getReference().refName("main").get().getHash();
 ```
@@ -58,6 +57,7 @@ api.getReference().refName("main").get().getHash();
 ### Creating a Reference
 
 Creates a new branch `dev` that points to the `main` branch
+
 ```java
 Reference main = api.getReference().refName("main").get();
 Reference branch =
@@ -68,6 +68,7 @@ Reference branch =
 ```
 
 Creates a new tag `dev-tag` that points to the `main` branch
+
 ```java
 Reference main = api.getReference().refName("main").get();
 Reference tag =
@@ -80,6 +81,7 @@ Reference tag =
 ### Assigning a Reference
 
 Assigns a previously created `devBranch2` to the `dev` branch
+
 ```java
 Reference dev = api.getReference().refName("dev").get();
 api.assignBranch()
@@ -90,6 +92,7 @@ api.assignBranch()
 ```
 
 Assigns a previously created `dev-tag` to the `dev` branch
+
 ```java
 Reference dev = api.getReference().refName("dev").get();
 api.assignTag()
@@ -102,6 +105,7 @@ api.assignTag()
 ### Deleting a Reference
 
 Deletes a previously created branch
+
 ```java
 api.deleteBranch()
     .branchName(dev.getName())
@@ -110,13 +114,13 @@ api.deleteBranch()
 ```
 
 Deletes a previously created tag
+
 ```java
 api.deleteTag()
     .tagName(devTag.getName())
     .hash(devTag.getHash())
     .delete();
 ```
-
 
 ### Fetching the Server Configuration
 
@@ -146,12 +150,14 @@ api.commitMultipleOperations()
 ### Fetching Content
 
 Fetches the content for a single `ContentKey`
+
 ```java
 ContentKey key = ContentKey.of("table.name.space", "name");
 Map<ContentKey, Content> map = api.getContent().key(key).refName("dev").get();
 ```
 
 Fetches the content for multiple `ContentKey` instances
+
 ```java
 List<ContentKey> keys =
   Arrays.asList(
@@ -161,10 +167,10 @@ List<ContentKey> keys =
 Map<ContentKey, Content> allContent = api.getContent().keys(keys).refName("dev").get();
 ```
 
-
 ### Fetching the Commit Log
 
 Fetches the commit log for the `dev` reference
+
 ```java
 LogResponse log = api.getCommitLog().refName("dev").get();
 ```
@@ -172,6 +178,7 @@ LogResponse log = api.getCommitLog().refName("dev").get();
 ### Fetching Entries
 
 Fetches the entries for the `dev` reference
+
 ```java
 EntriesResponse entries = api.getEntries().refName("dev").get();
 ```
@@ -179,6 +186,7 @@ EntriesResponse entries = api.getEntries().refName("dev").get();
 ### Merging
 
 This merges `fromBranch` into the given `intoBranch`
+
 ```java
 api.mergeRefIntoBranch()
   .branchName("intoBranch")
@@ -191,6 +199,7 @@ api.mergeRefIntoBranch()
 ### Transplanting
 
 Transplant/cherry-pick a bunch of commits from `main` into the `dev` branch
+
 ```java
 Branch dev = ...
 api.transplantCommitsIntoBranch()
@@ -201,7 +210,6 @@ api.transplantCommitsIntoBranch()
     .transplant()
 ```
 
-
 ## Authentication
 
 Nessie has multiple `NessieAuthenticationProvider` implementations that allow different client authentication mechanisms as can be seen below.
@@ -209,6 +217,7 @@ The documentation for how to configure Nessie server authentication can be found
 
 The `BasicAuthenticationProvider` allows connecting to a Nessie server that has `BASIC` authentication enabled.
 Note that `BASIC` is not supported in production and should only be used for development/testing.
+
 ```java
 NessieApiV1 api =
   HttpClientBuilder.builder()
@@ -218,6 +227,7 @@ NessieApiV1 api =
 ```
 
 The `BearerAuthenticationProvider` allows connecting to a Nessie server that has `BEARER` authentication enabled.
+
 ```java
 NessieApiV1 api =
   HttpClientBuilder.builder()
@@ -225,3 +235,4 @@ NessieApiV1 api =
   .withAuthentication(BearerAuthenticationProvider.create("bearerToken"))
   .build(NessieApiV1.class);
 ```
+

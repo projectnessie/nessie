@@ -9,11 +9,11 @@ commit that shall become a release must all have the "success" result (the green
 ### Preparing a Nessie Release
 
 1. Know the next Nessie version number ;)
-1. Check + update the files
-    * `python/HISTORY.rst`
-    * `site/docs/try/releases.md`
-    * `model/src/main/java/org/projectnessie/api/package-info.java`
-1. Prepare a PR with the updates of the above files and get it merged.
+2. Check + update the files
+   * `python/HISTORY.rst`
+   * `site/docs/try/releases.md`
+   * `model/src/main/java/org/projectnessie/api/package-info.java`
+3. Prepare a PR with the updates of the above files and get it merged.
 
 Note: don't bump the version in `python/setup.py` and `python/setup.cfg`. The release workflow
 will take care of bumping the version.
@@ -29,7 +29,7 @@ in a new git commit with a new git tag plus another git commit to bump to the Ne
 to the next development iteration version. Those two commits + the tag are pushed to the
 `main` branch.
 
-Pushing the Nessie release git-tag triggers the "Publish release" (`release-publish.yml`) 
+Pushing the Nessie release git-tag triggers the "Publish release" (`release-publish.yml`)
 workflow. This workflow runs in the `release` GitHub environment, which requires manual
 approval (GH calls it a review). The "Publish release" workflow then creates and deploys
 the release artifacts.
@@ -44,7 +44,7 @@ The `site.yml` workflow is triggered when the contents of the `site/` directory 
 ## Main-branch CI
 
 Runs CI on the `main` branch for Maven, Gradle + Python, deploys Maven snapshot artifacts
-and Docker using `nessie-unstable`. 
+and Docker using `nessie-unstable`.
 
 ## Pull-Request Ci
 

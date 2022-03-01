@@ -1,8 +1,8 @@
 # Nessie Spark SQL Extensions
+
 Spark SQL extensions provide an easy way to execute common Nessie commands via SQL.
 
 ## How to use them
-
 
 ### Spark 3.1
 
@@ -33,7 +33,9 @@ bin/spark-sql
 Additional configuration details can be found in the [Spark via Iceberg](iceberg/spark.md) docs.
 
 ## Grammar
+
 The current grammar is shown below:
+
 ```
 : CREATE (BRANCH|TAG) (IF NOT EXISTS)? reference=identifier (IN catalog=identifier)? (FROM fromRef=identifier)?
 | DROP (BRANCH|TAG) identifier (IN catalog=identifier)?
@@ -118,7 +120,6 @@ Note that in case `base` doesn't exist, Nessie will fall back to the default bra
 It is also possible to assign a branch/tag to a `base` at a particular `hash`:
 
 * `ASSIGN TAG devTag TO base AT dd8d46a3dd5478ce69749a5455dba29d74f6d1171188f4c21d0e15ff4a0a9a9b IN nessie`
-
 
 ## Merging a Branch into another Branch
 

@@ -1,20 +1,20 @@
 # Hive via Iceberg
 
 !!! note    
-    Detailed steps on how to set up Pyspark + Iceberg + Hive + Nessie with Python is available on [Binder](https://mybinder.org/v2/gh/projectnessie/nessie-demos/main?filepath=notebooks/nessie-iceberg-hive-demo-nba.ipynb)
+Detailed steps on how to set up Pyspark + Iceberg + Hive + Nessie with Python is available on [Binder](https://mybinder.org/v2/gh/projectnessie/nessie-demos/main?filepath=notebooks/nessie-iceberg-hive-demo-nba.ipynb)
 
 To access Hive via Iceberg, you will need to make sure `iceberg-hive-runtime` is added to Hive. This can be done either by adding the JAR file to `auxlib` folder in Hive home directory, by adding the JAR file to `hive-site.xml` file or via Hive shell, e.g: `add jar /path/to/iceberg-hive-runtime.jar;`. Nessie's Iceberg module is already included with `iceberg-hive-runtime` JAR distribution.
 
 For more general information about Hive and Iceberg, refer to [Iceberg and Hive documentation](https://iceberg.apache.org/hive/).
 
-## Configuration 
+## Configuration
 
 To configure a Nessie Catalog in Hive, first it needs to be [registered in Hive](https://iceberg.apache.org/hive/#custom-iceberg-catalogs), this can be done by configuring the following properties in Hive (Replace `<catalog_name>` with the name of your catalog):
 
 ```
 SET iceberg.catalog.<catalog_name>.catalog-impl=org.apache.iceberg.nessie.NessieCatalog
 SET iceberg.catalog.<catalog_name>.<nessie_config_property>=<config>
-``` 
+```
 
 To use Nessie Catalog in Hive via Iceberg, the following properties are **required** within Hive:
 
@@ -48,6 +48,7 @@ CREATE TABLE database_a.table_a (
   LOCATION '/path_nessie_warehouse/database_a/salaries
   TBLPROPERTIES ('iceberg.catalog'='<catalog_name>', 'write.format.default'='parquet');
 ```
+
 Whereby the above properties are explained as below:
 
 - `STORED BY 'org.apache.iceberg.mr.hive.HiveIcebergStorageHandler'` : Since Hive doesn't use a custom global catalog, we tell Hive here that individual table will be managed by Iceberg's catalog through `org.apache.iceberg.mr.hive.HiveIcebergStorageHandler`.
@@ -58,14 +59,15 @@ Whereby the above properties are explained as below:
 
 - `'write.format.default'='parquet'` : The format that is used to store the data, this could be anything that is supported by Iceberg, e.g: ORC.
 
-
 ## Writing and reading tables
 
 To read and write into tables that are managed by Iceberg and Nessie, typical Hive SQL queries can be used. Refer to this documentation [here](https://iceberg.apache.org/hive/#querying-with-sql) for more information.
 
 **Note**: Hive doesn't support the notation of `table@branch`, therefore everytime you want to execute against a specific branch, you will need to set this property to point to the working branch, e.g: `SET iceberg.catalog.<catalog_name>.ref=main`. E.g:
+
 ```
 SET iceberg.catalog.<catalog_name>.ref=dev
 
 SELECT * FROM database_a.table_a;
 ```
+

@@ -4,7 +4,7 @@
 
 Currently supported versions are listed below.
 
-| Version  | Supported          |
+| Version  |     Supported      |
 |----------|--------------------|
 | 0.20.1   | :white_check_mark: |
 | < 0.20.1 | :x:                |

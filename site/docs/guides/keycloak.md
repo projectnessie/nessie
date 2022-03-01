@@ -1,6 +1,6 @@
 # Authentication with Keycloak
 
-In this guide we walk through the process of configuring a Nessie Server to authenticate clients against 
+In this guide we walk through the process of configuring a Nessie Server to authenticate clients against
 a local [Keycloak](https://www.keycloak.org/) server. Docker is use at the runtime environments for both servers.
 
 ## Setting up Keycloak
@@ -32,24 +32,27 @@ to obtain a token. Then, store it in the `NESSIE_AUTH_TOKEN` environment variabl
 It will be required to access Nessie APIs later.
 
 === "Plain Command"
-    ```shell
-    curl -X POST \
-      http://localhost:8080/auth/realms/master/protocol/openid-connect/token \
-      --user admin-cli:none \
-      -d 'username=nessie' \
-      -d 'password=nessie' \
-      -d 'grant_type=password'
-    ```
+
+```shell
+curl -X POST \
+http://localhost:8080/auth/realms/master/protocol/openid-connect/token \
+--user admin-cli:none \
+-d 'username=nessie' \
+-d 'password=nessie' \
+-d 'grant_type=password'
+```
+
 === "Bash"
-    ```bash
-    export NESSIE_AUTH_TOKEN=$(curl -X POST \
-      http://localhost:8080/auth/realms/master/protocol/openid-connect/token \
-      --user admin-cli:none \
-      -d 'username=nessie' \
-      -d 'password=nessie' \
-      -d 'grant_type=password' |jq -r .access_token
-      )
-    ```
+
+```bash
+export NESSIE_AUTH_TOKEN=$(curl -X POST \
+http://localhost:8080/auth/realms/master/protocol/openid-connect/token \
+--user admin-cli:none \
+-d 'username=nessie' \
+-d 'password=nessie' \
+-d 'grant_type=password' |jq -r .access_token
+)
+```
 
 ## Setting up Nessie Server
 
@@ -84,3 +87,4 @@ For example:
 ```shell
 nessie log
 ```
+

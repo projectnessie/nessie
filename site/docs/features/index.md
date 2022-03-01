@@ -38,7 +38,8 @@ works fine, because data files[^1] are immutable.
 ## Data Lake 101
 
 > *"A data lake is a system or repository of data stored in its natural/raw format,
-usually object blobs or files."* (cite from [Wikipedia](https://en.wikipedia.org/wiki/Data_lake))
+>
+>> usually object blobs or files."* (cite from [Wikipedia](https://en.wikipedia.org/wiki/Data_lake))
 
 Data is stored in immutable data files[^1]. Each data file defines the schema of the
 data (i.e. names and types of the columns) and contains the data. A single,
@@ -73,8 +74,9 @@ Nessie without any production code changes, it's a simple configuration change.
 ## Git 101
 
 > *"Git is a free and open source distributed version control system designed to
-handle everything from small to very large projects with speed and efficiency"*
-(cite from [git-scm.com](https://git-scm.com/))
+>
+>> handle everything from small to very large projects with speed and efficiency"*
+>> (cite from [git-scm.com](https://git-scm.com/))
 
 Git maintains the history or all changes of a software project from the very
 first *commit* until the current state.
@@ -90,7 +92,7 @@ the [About Git](https://git-scm.com/about) pages as a quick start.
 
 ## Terms summary
 
-| Term                      | Meaning in Nessie                                                                                                                  |
+|           Term            |                                                         Meaning in Nessie                                                          |
 |---------------------------|------------------------------------------------------------------------------------------------------------------------------------|
 | Commit                    | An atomic change to a set of data files.                                                                                           |
 | Hash                      | Nessie-commits are identified by a commit id.[^3]                                                                                  |
@@ -115,22 +117,25 @@ in your data lake, which represent the state of all data in all tables.
 
 The following example illustrates that our *current commit* adds a 3rd data file.
 The other two data files 1+2 have been added by *previous commit*.
+
 ```
- +-------------------+       +-------------------------+
- |  previous commit  | --<-- |     current commit      |
- +-------------------+       +-------------------------+
-     |         |                 |        |        |
-   (add)     (add)               |        |      (add)
-     |         |                 |        |        |
-  +------+  +------+          +------+ +------+ +------+
-  | data |  | data |          | data | | data | | data |
-  | file |  | file |          | file | | file | | file |
-  | #1   |  | #2   |          | #1   | | #2   | | #3   |
-  |     _|  |     _|          |     _| |     _| |     _|
-  |  __/    |  __/            |  __/   |  __/   |  __/  
-  |_/       |_/               |_/      |_/      |_/  
++-------------------+       +-------------------------+
+|  previous commit  | --<-- |     current commit      |
++-------------------+       +-------------------------+
+    |         |                 |        |        |
+  (add)     (add)               |        |      (add)
+    |         |                 |        |        |
+ +------+  +------+          +------+ +------+ +------+
+ | data |  | data |          | data | | data | | data |
+ | file |  | file |          | file | | file | | file |
+ | #1   |  | #2   |          | #1   | | #2   | | #3   |
+ |     _|  |     _|          |     _| |     _| |     _|
+ |  __/    |  __/            |  __/   |  __/   |  __/  
+ |_/       |_/               |_/      |_/      |_/  
 ```
+
 In "relational SQL" you can think of the following sequence of SQL statements:
+
 ```SQL
 BEGIN TRANSACTION;
   -- The data for data file #1
@@ -189,31 +194,34 @@ the concept of merging one branch into another branch provides a lot of flexibil
 Nessie uses the concept of "branches" to always reference the *latest* version
 in a chain of commits. Our example branch is named "main" and has just
 a single commit:
+
 ```
- +-------------+
- |  commit #1  |
- +-------------+
-        ^
-        |
-        |
-      "main"
-      branch
++-------------+
+|  commit #1  |
++-------------+
+       ^
+       |
+       |
+     "main"
+     branch
 ```
+
 When we add changes to our "main" branch, a new `commit #2` will be created:
 
 * the new `commit #2` will reference `commit #1` as its predecessor and
 * the *named reference* "main" will be updated to point to our new `commit #2`
 
 ```
- +-------------+       +-------------+
- |  commit #1  | --<-- |  commit #2  |
- +-------------+       +-------------+
-                              ^
-                              |
-                              |
-                            "main"
-                            branch
++-------------+       +-------------+
+|  commit #1  | --<-- |  commit #2  |
++-------------+       +-------------+
+                             ^
+                             |
+                             |
+                           "main"
+                           branch
 ```
+
 This behavior ensures that the *named reference* "main" always points to the
 very latest version of our data.
 
@@ -237,6 +245,7 @@ To get around that issue, jobs can create a new "work"-branch when they start.
 The results from all tasks of a job are recorded as individual commits into that
 "work"-branch. Once the job has finished, all changes are then merged into the
 "main" branch at once.
+
 ```
     "work"
     branch
@@ -252,8 +261,10 @@ The results from all tasks of a job are recorded as individual commits into that
     "main"
     branch
 ```
+
 Our example Spark job has two tasks, each generates a separate commit, which are only
 visible on our "work"-branch:
+
 ```
           task#1         task#2   "work"
           result         result   branch
@@ -274,8 +285,10 @@ visible on our "work"-branch:
     "main"
     branch
 ```
+
 When the job has finished, you can merge the now consistent result back
 into the "main"-branch.
+
 ```
           task#1         task#2   "work"
           result         result   branch
@@ -347,7 +360,7 @@ In addition to "summary" and "description", there are a bunch of additional attr
 as shown in the following table. We plan to add more structure to these attributes
 in the future.
 
-| Attribute        | Meaning in Nessie                                                                                                                 |
+|    Attribute     |                                                         Meaning in Nessie                                                         |
 |------------------|-----------------------------------------------------------------------------------------------------------------------------------|
 | commit timestamp | The timestamp when the commit was recorded in Nessie.                                                                             |
 | committer        | The one (human user, system id) that actually recorded the change in Nessie.                                                      |
@@ -369,15 +382,15 @@ Nessie keeps track of unused data files and collects the garbage for you. See [T
 ## Footnotes
 
 [^1]: Common data file formats are [Apache Iceberg Tables](../tables/iceberg.md),
-  [Delta Lake Tables](../tables/deltalake.md)
+[Delta Lake Tables](../tables/deltalake.md)
 
 [^2]: Apache, Hive, Spark, Iceberg, Parquet are trademarks of The Apache Software Foundation.
 
 [^3]: Nessie-commits are identified by a commit-id. All commits in Nessie (and in Git) are
-  identified using such a hash. The value of each hash is generated from the relevant contents
-  and attributes of each commit that are stored in Nessie.
+identified using such a hash. The value of each hash is generated from the relevant contents
+and attributes of each commit that are stored in Nessie.
 
 [^4]: There are distributed relational databases that are not implemented as a single monolith.
-  Those "proper" distributed relational databases use distributed consensus algorithms like
-  RAFT to provide the same (or even better) guarantees that classic relational databases give.
-  However, the concepts of a classic relational database still apply.
+Those "proper" distributed relational databases use distributed consensus algorithms like
+RAFT to provide the same (or even better) guarantees that classic relational databases give.
+However, the concepts of a classic relational database still apply.

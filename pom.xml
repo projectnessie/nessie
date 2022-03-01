@@ -1407,6 +1407,18 @@ limitations under the License.
             <groupId>com.diffplug.spotless</groupId>
             <artifactId>spotless-maven-plugin</artifactId>
             <configuration>
+              <markdown>
+                <includes>
+                  <include>**/*.md</include>
+                </includes>
+                <excludes>
+                  <exclude>**/target/**</exclude>
+                  <exclude>**/build/**</exclude>
+                  <exclude>**/node_modules/**</exclude>
+                  <exclude>**/venv/**</exclude>
+                </excludes>
+                <flexmark/>
+              </markdown>
               <formats>
                 <format>
                   <includes>

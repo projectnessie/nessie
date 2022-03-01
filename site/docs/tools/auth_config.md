@@ -5,29 +5,32 @@ a way specific to the tool used.
 
 ## Spark
 
-When Nessie is used in Spark-based environments (either with [Iceberg](./iceberg/index.md) 
+When Nessie is used in Spark-based environments (either with [Iceberg](./iceberg/index.md)
 or [Delta Lake](./deltalake/index.md)) the Nessie authentication settings are configured via Spark session properties (Replace `<catalog_name>` with the name of your catalog).
 
 === "Java"
-    ``` java
-    // local spark instance, assuming NONE authentication
-    conf.set("spark.sql.catalog.<catalog_name>", "org.apache.iceberg.spark.SparkCatalog")
-        .set("spark.sql.catalog.<catalog_name>.authentication.type", "NONE")
-        .set(...);
-    spark = SparkSession.builder()
-                        .master("local[2]")
-                        .config(conf)
-                        .getOrCreate();
-    ```
+
+```java
+// local spark instance, assuming NONE authentication
+conf.set("spark.sql.catalog.<catalog_name>", "org.apache.iceberg.spark.SparkCatalog")
+.set("spark.sql.catalog.<catalog_name>.authentication.type", "NONE")
+.set(...);
+spark = SparkSession.builder()
+.master("local[2]")
+.config(conf)
+.getOrCreate();
+```
+
 === "Python"
-    ``` python
-    # local spark instance, assuming NONE authentication
-    spark = SparkSession.builder \
-            .config("spark.sql.catalog.<catalog_name>", "org.apache.iceberg.spark.SparkCatalog") \
-            .config("spark.sql.catalog.<catalog_name>.authentication.type", "NONE") \
-            .config(...) 
-            .getOrCreate()
-    ```
+
+```python
+# local spark instance, assuming NONE authentication
+spark = SparkSession.builder \
+.config("spark.sql.catalog.<catalog_name>", "org.apache.iceberg.spark.SparkCatalog") \
+.config("spark.sql.catalog.<catalog_name>.authentication.type", "NONE") \
+.config(...) 
+.getOrCreate()
+```
 
 ## Flink
 
@@ -88,7 +91,7 @@ For the `BEARER` Authentication Type the `authentication.token` property should 
 For the `AWS` Authentication Type the `authentication.aws.region` property should be set to the
 AWS region where the Nessie Server endpoint is located.
 
-Additional AWS authentication configuration should be provided via standard AWS configuration files. 
+Additional AWS authentication configuration should be provided via standard AWS configuration files.
 
 ## Authentication Type `BASIC`
 

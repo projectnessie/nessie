@@ -59,15 +59,15 @@ representation in the database adapters.
 operations like commit, transplants and merges as well as retrieving data.
 
 `AbstractDatabaseAdapter` implements the commit logic, commit conflict detection and operations
-to retrieve information. There are these subclasses: 
+to retrieve information. There are these subclasses:
 * `NonTransactionalDatabaseAdapter` is used as a base for key-value stores.
-  * Implementation for DynamoDB
-  * Implementation for MongoDB
-  * Implementation for RocksDB
-  * Implementation for InMemory
+* Implementation for DynamoDB
+* Implementation for MongoDB
+* Implementation for RocksDB
+* Implementation for InMemory
 * `TransactionalDatabaseAdapter` JDBC based implementation relying on relational database
-  transactions for conflict resolution (rollback).
-  * SQL/DDL/type definitions for Postgres, Cockroach, H2
+transactions for conflict resolution (rollback).
+* SQL/DDL/type definitions for Postgres, Cockroach, H2
 
 ### Non-transactional key-value databases
 
@@ -78,7 +78,7 @@ _current_ entry in the _ref-log_ and the "HEAD"s of all named references (branch
 The _global-log_ contains the changes of the _global-state_, like the location of Iceberg's
 table metadata.
 
-The _ref-log_ contains the history with details of operations 
+The _ref-log_ contains the history with details of operations
 like COMMIT, MERGE, TRANSPLANT, CREATE_REFERENCE, DELETE_REFERENCE, ASSIGN_REFERENCE.
 
 The _commit-log_ contains the individual Nessie commits.
@@ -88,7 +88,7 @@ reassigning or deleting a named reference work inside a so-called "CAS loop", wh
 works like the following pseudocode. A CAS operation can be imagined as an SQL like
 `UPDATE global_pointer SET value = :new_value WHERE primary_key = 1 AND value = :expected_value`.
 
-```java 
+```java
 // Pseudo definition of a Nessie write operation like a commit, merge, transplant, createReference,
 // assignReference, deleteReference.
 FunctionResult nessieWriteOperation(parameters...) {
@@ -123,11 +123,11 @@ FunctionResult nessieWriteOperation(parameters...) {
 
 The data model for transactional databases defines tables for
 * the _global-state_, where the primary key is the globally unique _content-id_ and the
-  value of the _global-state_,
+value of the _global-state_,
 * the _named-references_, which define the commit hash/id of the "HEAD" of each named reference,
 * the _commit-log_, which contains all commits
 * the _ref-log_ contains the history with details of operations
-  like COMMIT, MERGE, TRANSPLANT, CREATE_REFERENCE, DELETE_REFERENCE, ASSIGN_REFERENCE.
+like COMMIT, MERGE, TRANSPLANT, CREATE_REFERENCE, DELETE_REFERENCE, ASSIGN_REFERENCE.
 * the _ref-log-head_ contains current head of the _ref_log_ entry.
 
 All commit, transplant and merge operations as well as other write operations like creating,
@@ -192,7 +192,7 @@ conditional updates to multiple rows/records is either not supported at all or e
 
 Nessie differentiates between content types that do require so called _global-state_ and those
 that do not. Apache Iceberg is currently the only content type that supports global state:
-the pointer to the Iceberg "Table Metadata" is tracked as "global state" and 
+the pointer to the Iceberg "Table Metadata" is tracked as "global state" and
 the Iceberg snapshot ID, schema ID, partition spec ID, sort order ID
 is tracker per _Nessie named reference_. For _Nessie commits_, which are atomic, this means that
 Nessie has to update both the global-state and the on-reference-state for the Iceberg table. While
@@ -217,7 +217,7 @@ The logical data model shared by all non-transactional database adapters consist
 * _Key-lists_ acts as an "overflow" for large key lists that do not fit entirely into a single
   commit log entry's embedded key list.
 * _Ref-log_ contains the history with details of operations
-    like COMMIT, MERGE, TRANSPLANT, CREATE_REFERENCE, DELETE_REFERENCE, ASSIGN_REFERENCE.
+  like COMMIT, MERGE, TRANSPLANT, CREATE_REFERENCE, DELETE_REFERENCE, ASSIGN_REFERENCE.
 
 ### Transactional
 
@@ -277,4 +277,4 @@ See [Nessie Persistence Microbenchmarks README.me](https://github.com/projectnes
 All write operations do support retries. Retries happen, if a non-transactional CAS operation failed
 or a transactional DML operation ran into an "integrity constraint violation". Both the number of
 retries and total time for the operation are bounded. There is an (exponentially increasing) sleep
-time between two tries. The actual values for the retry mechanism are configurable. 
+time between two tries. The actual values for the retry mechanism are configurable.

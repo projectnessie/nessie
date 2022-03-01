@@ -66,6 +66,7 @@ following sections shall help to start a database locally. Please refer to the o
 projects/vendors how to install a "production grade" database, if needed.
 
 The snippets below assume that you have built Nessie from source. If not, run
+
 ```bash
 ./mvnw package -am -pl :nessie-versioned-persist-bench -DskipTests
 ```

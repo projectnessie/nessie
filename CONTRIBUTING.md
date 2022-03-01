@@ -1,21 +1,25 @@
 # Contributing to Nessie
+
 ## How to contribute
-Everyone is encouraged to contribute to the Nessie project. We welcome of course code changes, 
-but we are also grateful for bug reports, feature suggestions, helping with testing and 
+
+Everyone is encouraged to contribute to the Nessie project. We welcome of course code changes,
+but we are also grateful for bug reports, feature suggestions, helping with testing and
 documentation, or simply spreading the word about Nessie.
 
 There are several ways to get in touch with other contributors:
- * Slack: get an invite to the channel by emailing slack-subscribe@projectnessie.org
- * Google Groups: You can join the discussion at https://groups.google.com/g/projectnessie
+* Slack: get an invite to the channel by emailing slack-subscribe@projectnessie.org
+* Google Groups: You can join the discussion at https://groups.google.com/g/projectnessie
 
 More information are available at https://projectnessie.org/develop/
 
 ## Code of conduct
+
 You must agree to abide by the Project Nessie [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Reporting issues
-Issues can be filed on GitHub. Please use the template and add as much detail as possible. Including the 
-version of the client and server, how the server is being run (eg docker image) etc. The more the community 
+
+Issues can be filed on GitHub. Please use the template and add as much detail as possible. Including the
+version of the client and server, how the server is being run (eg docker image) etc. The more the community
 knows the more it can help :-)
 
 ### Feature Requests
@@ -25,7 +29,7 @@ and ask there. It helps build a richer discussion and more people can be involve
 
 ### Large changes or improvements
 
-We are excited to accept new contributors and larger changes. Please join the mailing list and post a proposal 
+We are excited to accept new contributors and larger changes. Please join the mailing list and post a proposal
 before submitting a large change. This helps avoid double work and allows the community to arrive at a consensus
 on the new feature or improvement.
 
@@ -43,13 +47,14 @@ not necessary. Use one of these parameters to speed things up:
 ### Development process
 
 The development process doesn't contain many surprises. As most projects on github anyone can contribute by
-forking the repo and posting a pull request. See 
-[GitHub's documentation](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request-from-a-fork) 
+forking the repo and posting a pull request. See
+[GitHub's documentation](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request-from-a-fork)
 for more information. Small changes don't require an issue. However, it is good practice to open up an issue for
 larger changes. If you are unsure of where to start ask on the slack channel or look at [existing issues](https://github.com/projectnessie/nessie/issues).
 The [good first issue](https://github.com/projectnessie/nessie/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) label marks issues that are particularly good for people new to the codebase.
 
-For the Spark tests to run with Java 16 or newer, you need to update your `~/.m2/toolchains.xml` to contain a reference to Java 11. 
+For the Spark tests to run with Java 16 or newer, you need to update your `~/.m2/toolchains.xml` to contain a reference to Java 11.
+
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <toolchains>
@@ -97,6 +102,7 @@ Java and Scala code style issues can be fixed from the command line using
 `./mvnw spotless:apply`.
 
 Python code style issues can be fixed from the command line using
+
 ```bash
 cd python/
 
@@ -121,16 +127,16 @@ contains all modules that shall be measured. New modules must be added there as 
 ### Submitting a pull request
 
 Upon submission of a pull request you will be asked to sign our contributor license agreement.
-Anyone can take part in the review process and once the community is happy and the build actions are passing a Pull Request will be merged. Support 
+Anyone can take part in the review process and once the community is happy and the build actions are passing a Pull Request will be merged. Support
 must be unanimous for a change to be merged.
 
 All pull-requests automatically trigger CI runs. Two long-running parts of the CI workflow are
 skipped for PRs by default, but can be enabled using "labels" on the PR.
 * Quarkus native image generation + tests against the native image. The label `pr-native` label enables this.
-  The label `pr-native` label enables this, CI results do not appear as a separate job, because
-  those run as part of the "Java/Maven" workflow job.
+The label `pr-native` label enables this, CI results do not appear as a separate job, because
+those run as part of the "Java/Maven" workflow job.
 * Nessie-client tests against various combinations of Jackson versions.
-  The label `pr-jackson` label enables this and CI result will appear as a separate check.
+The label `pr-jackson` label enables this and CI result will appear as a separate check.
 
 ### Reporting security issues
 

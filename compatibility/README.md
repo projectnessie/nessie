@@ -32,12 +32,14 @@ The test classes for all kinds of tests are rather standard JUnit 5 test classes
 Custom annotations:
 
 * `@Nessie` is used on fields to get the currently tested `NessieApiV1` injected. Example:
+
   ```java
   class ITMyTest {
     @Nessie NessieApiV1 nessieApiInstance; // can also be static
   }
   ```
 * `@NessieVersion` is used on fields to get the currently tested `Version` injected. Example:
+
   ```java
   class ITMyTest {
     @NessieVersion Version currentlyExercisedNessieVersion; // can also be static
@@ -45,6 +47,7 @@ Custom annotations:
   ```
 * `@NessieVersions` is used to restrict certain test methods or classes to run only with a minimum
   and/or maximum Nessie version. Example:
+
   ```java
   class ITMyTest {
     @Test
@@ -54,6 +57,7 @@ Custom annotations:
     }
   }
   ```
+
   ```java
   class ITMyTest {
     @Test
@@ -63,6 +67,7 @@ Custom annotations:
     }
   }
   ```
+
   ```java
   class ITMyTest {
     @Test
@@ -73,6 +78,7 @@ Custom annotations:
     }
   }
   ```
+
   ```java
   class ITMyTest {
     @Test
@@ -82,6 +88,7 @@ Custom annotations:
     }
   }
   ```
+
   ```java
   @NessieVersions(minVersion = "0.20")
   class ITMyTest {

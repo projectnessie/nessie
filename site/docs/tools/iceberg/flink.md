@@ -1,7 +1,7 @@
 # Flink via Iceberg
 
 !!! note    
-    Detailed steps on how to set up Pyspark + Iceberg + Flink + Nessie with Python is available on [Binder](https://mybinder.org/v2/gh/projectnessie/nessie-demos/main?filepath=notebooks/nessie-iceberg-flink-demo-nba.ipynb)
+Detailed steps on how to set up Pyspark + Iceberg + Flink + Nessie with Python is available on [Binder](https://mybinder.org/v2/gh/projectnessie/nessie-demos/main?filepath=notebooks/nessie-iceberg-flink-demo-nba.ipynb)
 
 In order to use Flink with Python API, you will need to make sure `pyflink` have access to all Hadoop JARs as mentioned in these [docs](https://iceberg.apache.org/flink/#preparation-when-using-flinks-python-api). After that, you will need to make sure `iceberg-flink-runtime` is added to Flink. This can be done by adding the iceberg JAR to `pyflink` via `env.add_jar`, e.g: `env.add_jars("file://path/to/jar/iceberg-flink-runtime-{{ versions.iceberg }}.jar")`. This can be shown below:
 
@@ -37,8 +37,7 @@ With the above statement, we have created a Nessie catalog (via Iceberg) that Fl
 
 For more general information about Flink and Iceberg, refer to [Iceberg and Flink documentation](https://iceberg.apache.org/flink/).
 
-
-## Configuration 
+## Configuration
 
 To use Nessie Catalog in Flink via Iceberg, we will need to create a catalog in Flink through `CREATE CATALOG` SQL statement (replace `<catalog_name>` with the name of your catalog), example:
 
@@ -61,7 +60,6 @@ The following properties are **required** in Flink when creating the Nessie Cata
 - `ref`: The Nessie ref/branch we want to use.
 - `warehouse`: The location where to store Iceberg tables managed by Nessie catalog.
 - `authentication.type`: The authentication type to be used, please refer to the [authentication docs](../auth_config.md) for more info.
-
 
 ## Create tables
 

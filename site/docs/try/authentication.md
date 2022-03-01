@@ -5,7 +5,7 @@ user identity. In Nessie clients this authentication type is known as `NONE`.
 
 When a Nessie server runs as an AWS Lambda, access to its API is controlled by AWS authentication settings.
 In this case there is no need to configure any additional authentication in the Nessie server.
-In Nessie clients this authentication type is known as `AWS`.  
+In Nessie clients this authentication type is known as `AWS`.
 
 When a Nessie API is exposed to clients without any external authentication layer, the server itself can be
 configured to authenticate clients using [OpenID tokens](https://openid.net/specs/openid-connect-core-1_0.html)
@@ -21,7 +21,7 @@ For client-side authentication settings refer to the following pages:
 
 Nessie supports bearer tokens and uses [OpenID Connect](https://openid.net/connect/) for validating them.
 
-To enable bearer authentication the following [configuration](./configuration.md) properties need to be set 
+To enable bearer authentication the following [configuration](./configuration.md) properties need to be set
 for the Nessie Server process:
 
 * `nessie.server.authentication.enabled=true`

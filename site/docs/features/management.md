@@ -13,21 +13,21 @@ you must rely on Nessie to clean up old data. Nessie calls this garbage collecti
 There are at least two steps to a garbage collection action. The first steps are instructive, and the last step is destructive.
 
 !!! info
-    currently the GC algorithm only works for Iceberg tables and Dynamo as a backend
+currently the GC algorithm only works for Iceberg tables and Dynamo as a backend
 
 ### Identify Unreferenced Assets
 
 This is a spark job which should be run periodically to identify no longer referenced assets. Assets are defined as the set of
 files, records, entries etc. that make up a table, view or other Nessie object. For example, iceberg assets are:
- * manifest files
- * manifest lists
- * data files
- * metadata files
- * the entire table directory on disk (if it is empty)
+* manifest files
+* manifest lists
+* data files
+* metadata files
+* the entire table directory on disk (if it is empty)
 
 To be marked as unreferenced an asset must either be:
- 1. No longer referenced by any branch or tag. For example, an entire branch was deleted, and a table on that branch is no longer accessible.
- 2. Assets created in a commit which has passed the (configurable) commit age. *If they are not referenced by newer commits*
+1. No longer referenced by any branch or tag. For example, an entire branch was deleted, and a table on that branch is no longer accessible.
+2. Assets created in a commit which has passed the (configurable) commit age. *If they are not referenced by newer commits*
 
 Identifying unreferenced assets is a non-destructive action. The result of the spark job is a Spark DataFrame of all the
 unreferenced assets. This dataframe is stored in an iceberg table managed by nessie at a configurable key. This table is
@@ -40,10 +40,11 @@ This action is designed to run concurrently to normal operational workloads and 
 into the destructive GC operation described below.
 
 #### Configuration and running
+
 GcActionsConfig actionsConfig, GcOptions gcConfig, TableIdentifier table
 The relevant configuration items are:
 
-| parameter                         | default value    | description                                                                      |
+|             parameter             |  default value   |                                   description                                    |
 |-----------------------------------|------------------|----------------------------------------------------------------------------------|
 | table                             | `null`           | The Iceberg `TableIdentifier` to which the unreferenced assets should be written |
 | GcOptions.getBloomFilterCapacity  | 10000000         | Size (number of items) of bloom filter for identification of referenced values   |
@@ -54,6 +55,7 @@ The relevant configuration items are:
 | GcActionsConfig.getStoreType      | DYNAMO           | only backend which supports GC                                                   |
 
 Running the action can be done simply by:
+
 ```java
 GcActionsConfig actionsConfig = GcActionsConfig.builder().build(); //use all defaults
 GcOptions gcOptions = GcOptions.builder().build(); //use all defaults
@@ -64,6 +66,7 @@ GcActions actions = new GcActions.Builder(spark)
 Dataset<Row> unreferencedAssets = actions.identifyUnreferencedAssets(); // (2)
 actions.updateUnreferencedAssetTable(unreferencedAssets); // (3)
 ```
+
 The first step above builds the action with known configs. Step 2 generates a DataFrame of unreferenced assets and
 Step 3 writes it as an iceberg table.
 
@@ -82,7 +85,7 @@ deleted object is returned to the user and either the records are removed from t
 
 The relevant configuration items are:
 
-| parameter     | default value | description                                                                                  |
+|   parameter   | default value |                                         description                                          |
 |---------------|---------------|----------------------------------------------------------------------------------------------|
 | seenCount     | 10            | How many times an asset has been seen as unreferenced in order to be considered for deletion |
 | deleteOnPurge | true          | Delete records from the underlying iceberg table of unreferenced assets                      |
@@ -95,12 +98,13 @@ Running the action can be done simply by:
 Table table = catalog.loadTable(TABLE_IDENTIFIER);
 GcTableCleanAction.GcTableCleanResult result = new GcTableCleanAction(table, spark).dropGcTable(true).deleteCountThreshold(2).deleteOnPurge(true).execute();
 ```
+
 The above snippet assumes a `TABLE_IDENTIFIER` which points to the unreferenced assets table. It also requires an active
 spark session and a nessie owned `Catalog`. The `result` object above returns the number of files the action tried to delete and the number that failed.
 
 !!! note
-    You can follow along an interactive demo in a [Jupyter Notebook via Binder](https://mybinder.org/v2/gh/projectnessie/nessie-demos/main?filepath=notebooks/nessie-iceberg-demo-nba.ipynb).
-    
+You can follow along an interactive demo in a [Jupyter Notebook via Binder](https://mybinder.org/v2/gh/projectnessie/nessie-demos/main?filepath=notebooks/nessie-iceberg-demo-nba.ipynb).
+
 ### Internal Garbage collection
 
 Currently, the only garbage collection algorithm available is on the values and assets in a Nessie database only. The
@@ -110,7 +114,7 @@ database will be persisted forever currently. A future release will also clean u
 ## Time-based AutoTagging
 
 !!! info
-    This service is currently in progress and is not yet included in a released version of Nessie.
+This service is currently in progress and is not yet included in a released version of Nessie.
 
 Nessie works against data based on a commit timeline. In many situations, it is useful
 to capture historical versions of data for analysis or comparison purposes. As such,
@@ -132,24 +136,24 @@ Tags are automatically named using a `date/` prefix and a zero-extended undersco
 For example: `date/2019_09_07_15_50` would be a tag for August 7, 2019 at 3:50pm.
 
 !!! warning
-    AutoTags are automatically deleted once the policy rolls-over. As such, if retention is desired post roll-over, manual tags should be created.
+AutoTags are automatically deleted once the policy rolls-over. As such, if retention is desired post roll-over, manual tags should be created.
 
 AutoTagging is currently done based on the UTC roll-over of each item.
 
 ## Manifest Reorganization
 
 !!! info
-    This service is currently in progress and is not yet included in a released version of Nessie.
+This service is currently in progress and is not yet included in a released version of Nessie.
 
 Rewrites the manifests associated with a table so that manifest files are organized
 around partitions. This extends on the ideas in the Iceberg [`RewriteManifestsAction`](http://iceberg.apache.org/javadoc/0.11.0/org/apache/iceberg/actions/RewriteManifestsAction.html).
 
 !!! note
-    Manifest reorganization will show up as a commit, like any other table operation.
+Manifest reorganization will show up as a commit, like any other table operation.
 
 Key configuration parameters:
 
-| Name                 | Default | Meaning                                               |
+|         Name         | Default |                        Meaning                        |
 |----------------------|---------|-------------------------------------------------------|
 | effort               | medium  | How much rewriting is allowed to achieve the goals    |
 | target manifest size | 8mb     | What is the target                                    |
@@ -158,13 +162,13 @@ Key configuration parameters:
 ## Compaction
 
 !!! info
-    This service is currently in progress and is not yet included in a released version of Nessie.
+This service is currently in progress and is not yet included in a released version of Nessie.
 
 Because operations against table formats are done at the file level, a table can start
 to generate many small files. These small files will slow consumption. As such, Nessie
 can automatically run jobs to compact tables to ensure a consistent level of performance.
 
-| Name                 | Default | Meaning                                                                                                              |
+|         Name         | Default |                                                       Meaning                                                        |
 |----------------------|---------|----------------------------------------------------------------------------------------------------------------------|
 | Maximum Small Files  | 10.0    | Maximum number of small files as a ratio to large files                                                              |
 | Maximum Delete Files | 10.0    | Maximum number of delete tombstones as a ratio to other files before merging the tombstones into a consolidated file |
@@ -172,4 +176,4 @@ can automatically run jobs to compact tables to ensure a consistent level of per
 | Target Rewrite Size  | 256mb   | The target size for splittable units when rewriting data.                                                            |
 
 !!! note
-    Compaction will show up as a commit, like any other table operation.
+Compaction will show up as a commit, like any other table operation.

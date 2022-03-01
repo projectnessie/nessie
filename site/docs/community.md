@@ -7,31 +7,31 @@ Google Groups as a mailing list.
 ## Get In Touch
 
 [Slack Channel](mailto:slack-subscribe@projectnessie.org)
-: The developers on Nessie frequent the nessie-public Slack channel. You can get an
-  invite to the channel by emailing [slack-subscribe@projectnessie.org](mailto:slack-subscribe@projectnessie.org).
-  If you want your organization invited to the channel, please state that in the request.
-  Whether you're super excited about development or just want to hear what is happening,
-  everyone is welcome to join.
+:   The developers on Nessie frequent the nessie-public Slack channel. You can get an
+    invite to the channel by emailing [slack-subscribe@projectnessie.org](mailto:slack-subscribe@projectnessie.org).
+    If you want your organization invited to the channel, please state that in the request.
+    Whether you're super excited about development or just want to hear what is happening,
+    everyone is welcome to join.
 
 [Google Group](https://groups.google.com/g/projectnessie)
-: If long form is more your thing, we also have created a mailing list on Google groups
-  that you can subscribe to.
+:   If long form is more your thing, we also have created a mailing list on Google groups
+    that you can subscribe to.
 
 [GitHub Issues](https://github.com/projectnessie/nessie/issues)
-: Nessie is developed via GitHub issues and pull requests. If you see a problem
-  or want to enhance the product, we suggest you file a GitHub issue for developers to
-  review.
+:   Nessie is developed via GitHub issues and pull requests. If you see a problem
+    or want to enhance the product, we suggest you file a GitHub issue for developers to
+    review.
 
 [Twitter](https://twitter.com/projectnessie)
-: The [@projectnessie](https://twitter.com/projectnessie) account on Twitter is our official account. Follow-up to keep
-  to date on what is happening with Project Nessie!
+:   The [@projectnessie](https://twitter.com/projectnessie) account on Twitter is our official account. Follow-up to keep
+    to date on what is happening with Project Nessie!
 
 [YouTube Channel](https://www.youtube.com/channel/UC5xjzYuGGuGPCY9FNtqZMsQ)
-: Video content for Nessie will be hosted on our YouTube channel.
+:   Video content for Nessie will be hosted on our YouTube channel.
 
 [Docs](https://github.com/projectnessie/nessie/tree/main/site/docs)
-: Our website is all maintained in our source repository. If there is something you think
-  can be improved, feel free to fork our repository and post a pull request.
+:   Our website is all maintained in our source repository. If there is something you think
+    can be improved, feel free to fork our repository and post a pull request.
 
 ## Contribution
 

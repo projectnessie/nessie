@@ -26,6 +26,7 @@ dependencies.
   * For Ubuntu: `apt-get install python3 virtualenv`
   * For MacOS/brew: `brew install python pyenv-virtualenv`
 * Install the virtual environment:
+
   ```
   # cd to the site/ directory
   cd site/
@@ -51,10 +52,11 @@ We have a GitHub action that will automatically deploy any changes to the site.
 
 ### Generate python API docs
 
-1. Enter into `python` directory and activate venv. 
+1. Enter into `python` directory and activate venv.
 2. Run `make docs`.
 
 ### Generate java API docs
 
 1. from root run `mvn javadoc:aggregate`
 2. `cp -R target/site/apidocs/* site/docs/javadoc`
+

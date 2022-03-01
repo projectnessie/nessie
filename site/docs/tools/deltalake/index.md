@@ -6,7 +6,8 @@ custom version of Delta's LogStore [interface](https://github.com/delta-io/delta
 This ensures that all filesystem changes are recorded by Nessie as commits. The benefit of this approach is the core
 ACID primitives are handled by Nessie. The limitations around [concurrency](https://docs.delta.io/latest/delta-storage.html)
 that Delta would normally have are removed, any number of readers and writers can simultaneously interact with a Nessie
-managed Delta Lake table. Current Nessie Delta Lake integration include 
+managed Delta Lake table. Current Nessie Delta Lake integration include
 the following:
 
 - [Spark via Delta Lake](spark.md)
+

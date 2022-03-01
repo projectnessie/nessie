@@ -6,7 +6,7 @@ the actual simulation class.
 Simulation classes must extend `io.gatling.core.scenario.Simulation.Simulation`,
 parameter case-classes should leverage `org.projectnessie.perftest.gatling.BaseParams`.
 
-The Gatling Simulations for Nessie use the Nessie DSL/protocol implemented in the 
+The Gatling Simulations for Nessie use the Nessie DSL/protocol implemented in the
 `nessie-perftest-gatling` module.
 
 ## Nessie-Gatling simulation tutorial
@@ -96,3 +96,4 @@ as in most cases, returned form the actions' code.
 * [Intro to Gatling](https://www.baeldung.com/introduction-to-gatling)
 * [Quickstart](https://gatling.io/docs/gatling/tutorials/quickstart/)
 * [Advanced Tutorial](https://gatling.io/docs/gatling/tutorials/advanced/)
+

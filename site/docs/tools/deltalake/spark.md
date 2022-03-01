@@ -1,17 +1,17 @@
 # Spark via Delta Lake
 
 !!! note
-    Detailed steps on how to set up Pyspark + Delta Lake + Nessie with Python is available on [Binder](https://mybinder.org/v2/gh/projectnessie/nessie-demos/main?filepath=notebooks/nessie-delta-demo-nba.ipynb).
+Detailed steps on how to set up Pyspark + Delta Lake + Nessie with Python is available on [Binder](https://mybinder.org/v2/gh/projectnessie/nessie-demos/main?filepath=notebooks/nessie-delta-demo-nba.ipynb).
 
 To access Nessie from a spark cluster make sure the `spark.jars` spark option is set to include the [Nessie Deltalake Client for Spark 3](https://repo.maven.apache.org/maven2/org/projectnessie/nessie-deltalake/{{ versions.java}}/nessie-deltalake-{{ versions.java}}.jar)
 jar. These jars contain all Nessie **and** Delta Lake libraries required for operation.
 
 !!! note
-    the `spark3` jar is for Delta versions >0.7.0 on Spark3 and the `spark2` jar is for Delta versions 0.6.x on Spark2.4
+the `spark3` jar is for Delta versions >0.7.0 on Spark3 and the `spark2` jar is for Delta versions 0.6.x on Spark2.4
 
 In pyspark this would look like
 
-``` python
+```python
 SparkSession.builder
     .config('spark.jars.packages',
             'org.projectnessie:nessie-deltalake:{{ versions.java}}')
@@ -31,45 +31,48 @@ spark.delta.logStore.class=org.projectnessie.deltalake.NessieLogStore
 These are set as follows in code (or through other methods as described [here](https://spark.apache.org/docs/latest/configuration.html))
 
 === "Java"
-    ``` java
-    //for a local spark instance
-    conf.set("spark.jars.packages",
-            "org.projectnessie:nessie-deltalake:{{ versions.java}}")
-        .set("spark.hadoop.nessie.url", url)
-        .set("spark.hadoop.nessie.ref", branch)
-        .set("spark.hadoop.nessie.authentication.type", authType)
-        .set("spark.sql.catalog.spark_catalog",
-            "org.apache.spark.sql.delta.catalog.DeltaCatalog")
-        .set("spark.sql.extensions",
-            "io.delta.sql.DeltaSparkSessionExtension")
-        .set("spark.delta.logStore.class",
-            "org.projectnessie.deltalake.NessieLogStore")
-        .set("spark.delta.logFileHandler.class",
-            "org.projectnessie.deltalake.NessieLogFileMetaParser");
-    spark = SparkSession.builder()
-                        .master("local[2]")
-                        .config(conf)
-                        .getOrCreate();
-    ```
+
+```java
+//for a local spark instance
+conf.set("spark.jars.packages",
+"org.projectnessie:nessie-deltalake:{{ versions.java}}")
+.set("spark.hadoop.nessie.url", url)
+.set("spark.hadoop.nessie.ref", branch)
+.set("spark.hadoop.nessie.authentication.type", authType)
+.set("spark.sql.catalog.spark_catalog",
+"org.apache.spark.sql.delta.catalog.DeltaCatalog")
+.set("spark.sql.extensions",
+"io.delta.sql.DeltaSparkSessionExtension")
+.set("spark.delta.logStore.class",
+"org.projectnessie.deltalake.NessieLogStore")
+.set("spark.delta.logFileHandler.class",
+"org.projectnessie.deltalake.NessieLogFileMetaParser");
+spark = SparkSession.builder()
+.master("local[2]")
+.config(conf)
+.getOrCreate();
+```
+
 === "Python"
-    ``` python
-    # here we are assuming NONE authorisation
-    spark = SparkSession.builder \
-            .config("spark.jars.packages",
-                "org.projectnessie:nessie-deltalake:{{ versions.java}}") \
-            .config("spark.hadoop.nessie.url",
-                "http://localhost:19120/api/v1") \
-            .config("spark.hadoop.nessie.ref", "main") \
-            .config("spark.sql.catalog.spark_catalog",
-                "org.apache.spark.sql.delta.catalog.DeltaCatalog") \
-            .config("spark.sql.extensions",
-                "io.delta.sql.DeltaSparkSessionExtension") \
-            .config("spark.delta.logFileHandler.class",
-                "org.projectnessie.deltalake.NessieLogFileMetaParser") \
-            .config("spark.delta.logStore.class",
-                "org.projectnessie.deltalake.NessieLogStore") \
-            .getOrCreate()
-    ```
+
+```python
+# here we are assuming NONE authorisation
+spark = SparkSession.builder \
+.config("spark.jars.packages",
+"org.projectnessie:nessie-deltalake:{{ versions.java}}") \
+.config("spark.hadoop.nessie.url",
+"http://localhost:19120/api/v1") \
+.config("spark.hadoop.nessie.ref", "main") \
+.config("spark.sql.catalog.spark_catalog",
+"org.apache.spark.sql.delta.catalog.DeltaCatalog") \
+.config("spark.sql.extensions",
+"io.delta.sql.DeltaSparkSessionExtension") \
+.config("spark.delta.logFileHandler.class",
+"org.projectnessie.deltalake.NessieLogFileMetaParser") \
+.config("spark.delta.logStore.class",
+"org.projectnessie.deltalake.NessieLogStore") \
+.getOrCreate()
+```
 
 Additional authentication settings are documented in the [Authentication in Tools](../auth_config.md) section.
 
@@ -83,8 +86,8 @@ enabled the Delta core library will delegate transaction handling to Nessie.
 Finally, note we have explicitly enabled Delta's SQL extensions which enable Delta specific SQL in Spark3.
 
 !!! warning
-    Currently Delta metadata operations like `VACUUM` are destructive to Nessie managed Delta tables. **Do not** run
-    these operations. Future versions of Nessie will disable these commands when Nessie is activated.
+Currently Delta metadata operations like `VACUUM` are destructive to Nessie managed Delta tables. **Do not** run
+these operations. Future versions of Nessie will disable these commands when Nessie is activated.
 
 ## Writing
 
@@ -96,26 +99,31 @@ Nessie tables in delta can be written via the Nessi enabled Delta client. The De
 or `append` mode in a standard `spark.write`.
 
 === "Java"
-    ``` java
-    regionDf = spark.read().load("data/region.parquet");
-    regionDf.write().format("delta").mode("overwrite")
-        .save("/location/to/delta/testing/region");
-    ```
-=== "Python"
-    ``` python
-    region_df = spark.read.load("data/region.parquet")
-    region_df.write.format("delta").mode("overwrite") \
-        .save("/location/to/delta/testing/region")
-    ```
-=== "SQL"
-    ``` sql
-    CREATE TABLE nessie.testing.city (
-        C_CITYKEY BIGINT, C_NAME STRING, N_NATIONKEY BIGINT, C_COMMENT STRING
-    ) USING delta PARTITIONED BY (N_NATIONKEY) LOCATION 'path/to/delta/testing/city'
-    -- SELECT .. can be added to the sql statement to perform a CTAS
 
-    INSERT [OVERWRITE] INTO nessie.testing.city VALUES (1, 'a', 1, 'comment')
-    ```
+```java
+regionDf = spark.read().load("data/region.parquet");
+regionDf.write().format("delta").mode("overwrite")
+.save("/location/to/delta/testing/region");
+```
+
+=== "Python"
+
+```python
+region_df = spark.read.load("data/region.parquet")
+region_df.write.format("delta").mode("overwrite") \
+.save("/location/to/delta/testing/region")
+```
+
+=== "SQL"
+
+```sql
+CREATE TABLE nessie.testing.city (
+C_CITYKEY BIGINT, C_NAME STRING, N_NATIONKEY BIGINT, C_COMMENT STRING
+) USING delta PARTITIONED BY (N_NATIONKEY) LOCATION 'path/to/delta/testing/city'
+-- SELECT .. can be added to the sql statement to perform a CTAS
+
+        INSERT [OVERWRITE] INTO nessie.testing.city VALUES (1, 'a', 1, 'comment')
+        ```
 
 Here we simply read a file from the default filesystem and write it to a new nessie Delta table. This will
 trigger a commit on current context's branch.
@@ -127,29 +135,33 @@ will only ever need one context or branch to write to. If however you are runnin
 to write to a specific branch without changing context the following should be used to change the context.
 
 === "Java"
-    ``` java
-    spark.sparkContext().hadoopConfiguration().set("nessie.ref", "dev");
-    regionDf = spark.read().load("data/region.parquet");
-    regionDf.write().format("delta").mode("overwrite")
-        .save("/location/to/delta/testing/region");
-    ```
+``` java
+spark.sparkContext().hadoopConfiguration().set("nessie.ref", "dev");
+regionDf = spark.read().load("data/region.parquet");
+regionDf.write().format("delta").mode("overwrite")
+.save("/location/to/delta/testing/region");
+```
+
 === "Python"
-    ``` python
-    spark.sparkContext._jsc.hadoopConfiguration().set("nessie.ref", "dev")
-    region_df = spark.read.load("data/region.parquet")
-    region_df.write.format("delta").mode("overwrite") \
-        .save("/location/to/delta/testing/region")
-    ```
+
+```python
+spark.sparkContext._jsc.hadoopConfiguration().set("nessie.ref", "dev")
+region_df = spark.read.load("data/region.parquet")
+region_df.write.format("delta").mode("overwrite") \
+.save("/location/to/delta/testing/region")
+```
+
 === "SQL"
-    ``` sql
-    -- change hadoop configuration externally using the Java or Python syntax
-    CREATE TABLE nessie.testing.city (
-        C_CITYKEY BIGINT, C_NAME STRING, N_NATIONKEY BIGINT, C_COMMENT STRING
-    ) USING iceberg PARTITIONED BY (N_NATIONKEY)
-    -- AS SELECT .. can be added to the sql statement to perform a CTAS
-    
-    INSERT INTO nessie.testing.city VALUES (1, 'a', 1, 'comment')
-    ```
+
+```sql
+-- change hadoop configuration externally using the Java or Python syntax
+CREATE TABLE nessie.testing.city (
+C_CITYKEY BIGINT, C_NAME STRING, N_NATIONKEY BIGINT, C_COMMENT STRING
+) USING iceberg PARTITIONED BY (N_NATIONKEY)
+-- AS SELECT .. can be added to the sql statement to perform a CTAS
+
+        INSERT INTO nessie.testing.city VALUES (1, 'a', 1, 'comment')
+        ```
 
 We have to manually change the `hadoopConfiguration` for the `SparkContext` for a Delta table to be initialised with the
 correct reference. This will change in the near future when it will be possible to use the same `branch@ref` syntax as
@@ -157,28 +169,31 @@ correct reference. This will change in the near future when it will be possible 
 should be fixed in an upcoming release.
 
 !!! note
-    Delta by default caches tables internally. If an action has to happen on the same table but a different branch the
-    cache first should be cleared. `DeltaLog.clearCache()`.
-
+Delta by default caches tables internally. If an action has to happen on the same table but a different branch the
+cache first should be cleared. `DeltaLog.clearCache()`.
 
 ## Reading
 
 To read a Nessie table in Delta Lake simply:
 
 === "Java"
-    ``` java
-    regionDf = spark.read().format("delta")
-        .load("/path/to/delta/testing/region");
-    ```
+``` java
+regionDf = spark.read().format("delta")
+.load("/path/to/delta/testing/region");
+```
+
 === "Python"
-    ``` python
-    region_df = spark.read.format("delta") \
-        .load("/path/to/delta/testing/region")
-    ```
+
+```python
+region_df = spark.read.format("delta") \
+.load("/path/to/delta/testing/region")
+```
+
 === "SQL"
-    ``` sql
-    SELECT * FROM '/path/to/delta/testing/region'
-    ```
+
+```sql
+SELECT * FROM '/path/to/delta/testing/region'
+```
 
 The examples above all use the default branch defined on initialisation. Future versions will add the ability to specify
 a branch and timestamp similar to Iceberg. Currently, to switch branches a similar technique as writing is required

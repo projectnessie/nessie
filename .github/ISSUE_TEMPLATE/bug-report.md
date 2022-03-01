@@ -1,11 +1,11 @@
 ---
+
 name: Bug Report
 about: Report a bug encountered while using Nessie
 labels: kind/bug
----
+----------------
 
 <!-- Please use this template while reporting a bug and provide as much info as possible.-->
-
 
 **What happened**:
 

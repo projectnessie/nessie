@@ -1,8 +1,8 @@
 # Nessie CLI
 
-The Nessie CLI is an easy way to get started with Nessie. It supports multiple branch 
+The Nessie CLI is an easy way to get started with Nessie. It supports multiple branch
 and tag management capabilities. This is installed as `pynessie` via `pip install pynessie`.
-Additional information about `pynessie` and release notes can be found at the [PyPI](https://pypi.org/project/pynessie/) site. 
+Additional information about `pynessie` and release notes can be found at the [PyPI](https://pypi.org/project/pynessie/) site.
 
 ## Installation
 
@@ -11,12 +11,13 @@ Additional information about `pynessie` and release notes can be found at the [P
 pip install pynessie
 ```
 
-## Usage 
+## Usage
+
 All the REST API calls are exposed via the command line interface. To see a list of what is available run:
 
-``` bash
+```bash
 $ nessie --help
-``` 
+```
 
 All docs of the CLI can be found [here](https://nessie.readthedocs.io/en/latest/cli.html).
 
@@ -32,7 +33,7 @@ You can configure the Nessie CLI by creating a configuration file as described b
 
 The default config file is as follows:
 
-``` yaml
+```yaml
 auth:
     # Authentication type can be: none, bearer or aws
     type: none
@@ -61,7 +62,7 @@ When configuring authentication type `bearer`, the `auth.token` parameter should
 configuration file, as an environment variable (details below), or by the `--auth-token <TOKEN>` command
 line option (for each command).
 
-When configuring authentication type `aws`, the client delegates to the [Boto](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html) 
+When configuring authentication type `aws`, the client delegates to the [Boto](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html)
 library. You can configure credentials using any of the standard [Boto AWS methods](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html#configuring-credentials).
 Additionally, the Nessie `auth.region` parameter should be set to the relevant AWS region.
 
@@ -74,12 +75,11 @@ a config directory. The relevant configs can also be set via environment variabl
 environment variable format is to append `NESSIE_` to a config parameter and nested configs are separated by a *_*. For
 example: `NESSIE_AUTH_TIMEOUT` maps to `auth.timeout` in the default configuration file above.
 
-
 ## Working with JSON
 
 The Nessie CLI can return data in json format and can be used effectively with [`jq`](https://stedolan.github.io/jq/). For example:
 
-``` bash
+```bash
 $ nessie --json branch -l | jq .
 ```
 

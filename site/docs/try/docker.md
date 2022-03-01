@@ -48,9 +48,9 @@ the following:
 $ nessie branch my_branch
 ```
 
-
 From there, you can use one of the three main Nessie integrations of:
 
 * Take a look at your current empty repository in the [Web UI](../tools/ui.md)
 * NessieCatalog for [Spark via Iceberg](../tools/iceberg/spark.md) integration
 * Nessie Log Handle for [Spark via Delta Lake](../tools/deltalake/spark.md) integration
+

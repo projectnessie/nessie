@@ -1,16 +1,15 @@
 # Simple tool to generate (nonsense) Nessie content
 
 When testing for example UI functionality, it is nice to have some content in Nessie, but we
-do not have a tool for this available. This tool creates (nonsense) commits in 1 or more branches. 
+do not have a tool for this available. This tool creates (nonsense) commits in 1 or more branches.
 Functionality supported:
 * Generate N commits (defaults to 100)
 * Commit to N branches (default: just the default branch)
 * Generate tags (default probability: 0)
 * Generate expected number of commits over a specified time duration - in other words: sleeps
-  for "expected duration" divided by "number of commits" (default: no sleep)
+for "expected duration" divided by "number of commits" (default: no sleep)
 * Generate content for N tables (default: 1 table)
 * Generate content for any content type (default: Iceberg-table)
-
 
 ```
 $ java -jar tools/content-generator/target/nessie-content-generator-0.12.2-SNAPSHOT.jar help generate
@@ -45,3 +44,4 @@ Generate commits
                                //localhost:19120/api/v1.
   -V, --version              Print version information and exit.
 ```
+
