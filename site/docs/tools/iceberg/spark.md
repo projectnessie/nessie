@@ -52,17 +52,17 @@ These are set as follows in code (or through other methods as described [here](h
 ### Spark 3.1
 
 === "Java"
-``` java
-// Full url of the Nessie API endpoint to nessie
-String url = "http://localhost:19120/api/v1";
-// Where to store nessie tables
-String fullPathToWarehouse = ...;
-// The ref or context that nessie will operate on
-// (if different from default branch).
-// Can be the name of a Nessie branch or tag name.
-String ref = "main";
-// Nessie authentication type (BASIC, NONE or AWS)
-String authType = "NONE";
+    ``` java
+    // Full url of the Nessie API endpoint to nessie
+    String url = "http://localhost:19120/api/v1";
+    // Where to store nessie tables
+    String fullPathToWarehouse = ...;
+    // The ref or context that nessie will operate on
+    // (if different from default branch).
+    // Can be the name of a Nessie branch or tag name.
+    String ref = "main";
+    // Nessie authentication type (BASIC, NONE or AWS)
+    String authType = "NONE";
 
     //for a local spark instance
     conf.set("spark.jars.packages",
@@ -81,17 +81,18 @@ String authType = "NONE";
                         .config(conf)
                         .getOrCreate();
     ```
+
 === "Python"
-``` python
-# Full url of the Nessie API endpoint to nessie
-url = "http://localhost:19120/api/v1"
-# Where to store nessie tables
-full_path_to_warehouse = ...
-# The ref or context that nessie will operate on (if different from default branch).
-# Can be the name of a Nessie branch or tag name.
-ref = "main"
-# Nessie authentication type (BASIC, NONE or AWS)
-auth_type = "NONE"
+    ``` python
+    # Full url of the Nessie API endpoint to nessie
+    url = "http://localhost:19120/api/v1"
+    # Where to store nessie tables
+    full_path_to_warehouse = ...
+    # The ref or context that nessie will operate on (if different from default branch).
+    # Can be the name of a Nessie branch or tag name.
+    ref = "main"
+    # Nessie authentication type (BASIC, NONE or AWS)
+    auth_type = "NONE"
 
     # here we are assuming NONE authorisation
     spark = SparkSession.builder \
@@ -141,6 +142,7 @@ auth_type = "NONE"
                         .config(conf)
                         .getOrCreate();
     ```
+
 === "Python"
     ``` python
     # Full url of the Nessie API endpoint to nessie
