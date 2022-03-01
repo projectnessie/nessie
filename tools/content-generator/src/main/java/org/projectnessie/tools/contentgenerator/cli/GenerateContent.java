@@ -103,8 +103,6 @@ public class GenerateContent extends AbstractCommand {
 
   @Override
   public void execute() throws BaseNessieClientServerException {
-    NessieApiV1 api = createNessieApiInstance();
-
     if (runtimeDuration != null) {
       if (runtimeDuration.isZero() || runtimeDuration.isNegative()) {
         throw new ParameterException(
@@ -130,98 +128,102 @@ public class GenerateContent extends AbstractCommand {
                         Integer.toString(i)))
             .collect(Collectors.toList());
 
-    Branch defaultBranch;
-    if (defaultBranchName == null) {
-      // Use the server's default branch.
-      defaultBranch = api.getDefaultBranch();
-    } else {
-      // Use the specified default branch.
-      try {
-        defaultBranch = (Branch) api.getReference().refName(defaultBranchName).get();
-      } catch (NessieReferenceNotFoundException e) {
-        // Create branch if it does not exist.
+    try (NessieApiV1 api = createNessieApiInstance()) {
+      Branch defaultBranch;
+      if (defaultBranchName == null) {
+        // Use the server's default branch.
         defaultBranch = api.getDefaultBranch();
-        defaultBranch =
-            (Branch)
-                api.createReference()
-                    .reference(Branch.of(defaultBranchName, defaultBranch.getHash()))
-                    .sourceRefName(defaultBranch.getName())
-                    .create();
-      }
-    }
-
-    List<String> branches = new ArrayList<>();
-    branches.add(defaultBranch.getName());
-    while (branches.size() < branchCount) {
-      // Create a new branch
-      String newBranchName = "branch-" + runStartTime + "_" + (branches.size() - 1);
-      Branch branch = Branch.of(newBranchName, defaultBranch.getHash());
-      spec.commandLine()
-          .getOut()
-          .printf(
-              "Creating branch '%s' from '%s' at %s%n",
-              branch.getName(), defaultBranch.getName(), branch.getHash());
-      api.createReference().reference(branch).sourceRefName(defaultBranch.getName()).create();
-      branches.add(newBranchName);
-    }
-
-    spec.commandLine().getOut().printf("Starting contents generation, %d commits...%n", numCommits);
-
-    for (int i = 0; i < numCommits; i++) {
-      // Choose a random branch to commit to
-      String branchName = branches.get(random.nextInt(branches.size()));
-
-      Branch commitToBranch = (Branch) api.getReference().refName(branchName).get();
-
-      ContentKey tableName = tableNames.get(random.nextInt(tableNames.size()));
-
-      Content tableContents =
-          api.getContent().refName(branchName).key(tableName).get().get(tableName);
-      Content newContents = createContents(tableContents, random);
-
-      spec.commandLine()
-          .getOut()
-          .printf(
-              "Committing content-key '%s' to branch '%s' at %s%n",
-              tableName, commitToBranch.getName(), commitToBranch.getHash());
-
-      CommitMultipleOperationsBuilder commit =
-          api.commitMultipleOperations()
-              .branch(commitToBranch)
-              .commitMeta(
-                  CommitMeta.builder()
-                      .message(
-                          String.format(
-                              "%s table %s on %s, commit #%d of %d",
-                              tableContents != null ? "Update" : "Create",
-                              tableName,
-                              branchName,
-                              i,
-                              numCommits))
-                      .author(System.getProperty("user.name"))
-                      .authorTime(Instant.now())
-                      .build());
-      if (newContents instanceof IcebergTable || newContents instanceof IcebergView) {
-        commit.operation(Put.of(tableName, newContents, tableContents));
       } else {
-        commit.operation(Put.of(tableName, newContents));
+        // Use the specified default branch.
+        try {
+          defaultBranch = (Branch) api.getReference().refName(defaultBranchName).get();
+        } catch (NessieReferenceNotFoundException e) {
+          // Create branch if it does not exist.
+          defaultBranch = api.getDefaultBranch();
+          defaultBranch =
+              (Branch)
+                  api.createReference()
+                      .reference(Branch.of(defaultBranchName, defaultBranch.getHash()))
+                      .sourceRefName(defaultBranch.getName())
+                      .create();
+        }
       }
-      Branch newHead = commit.commit();
 
-      if (random.nextDouble() < newTagProbability) {
-        Tag tag = Tag.of("new-tag-" + random.nextLong(), newHead.getHash());
+      List<String> branches = new ArrayList<>();
+      branches.add(defaultBranch.getName());
+      while (branches.size() < branchCount) {
+        // Create a new branch
+        String newBranchName = "branch-" + runStartTime + "_" + (branches.size() - 1);
+        Branch branch = Branch.of(newBranchName, defaultBranch.getHash());
         spec.commandLine()
             .getOut()
             .printf(
-                "Creating tag '%s' from '%s' at %s%n", tag.getName(), branchName, tag.getHash());
-        api.createReference().reference(tag).sourceRefName(branchName).create();
+                "Creating branch '%s' from '%s' at %s%n",
+                branch.getName(), defaultBranch.getName(), branch.getHash());
+        api.createReference().reference(branch).sourceRefName(defaultBranch.getName()).create();
+        branches.add(newBranchName);
       }
 
-      try {
-        TimeUnit.NANOSECONDS.sleep(perCommitDuration.toNanos());
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-        break;
+      spec.commandLine()
+          .getOut()
+          .printf("Starting contents generation, %d commits...%n", numCommits);
+
+      for (int i = 0; i < numCommits; i++) {
+        // Choose a random branch to commit to
+        String branchName = branches.get(random.nextInt(branches.size()));
+
+        Branch commitToBranch = (Branch) api.getReference().refName(branchName).get();
+
+        ContentKey tableName = tableNames.get(random.nextInt(tableNames.size()));
+
+        Content tableContents =
+            api.getContent().refName(branchName).key(tableName).get().get(tableName);
+        Content newContents = createContents(tableContents, random);
+
+        spec.commandLine()
+            .getOut()
+            .printf(
+                "Committing content-key '%s' to branch '%s' at %s%n",
+                tableName, commitToBranch.getName(), commitToBranch.getHash());
+
+        CommitMultipleOperationsBuilder commit =
+            api.commitMultipleOperations()
+                .branch(commitToBranch)
+                .commitMeta(
+                    CommitMeta.builder()
+                        .message(
+                            String.format(
+                                "%s table %s on %s, commit #%d of %d",
+                                tableContents != null ? "Update" : "Create",
+                                tableName,
+                                branchName,
+                                i,
+                                numCommits))
+                        .author(System.getProperty("user.name"))
+                        .authorTime(Instant.now())
+                        .build());
+        if (newContents instanceof IcebergTable || newContents instanceof IcebergView) {
+          commit.operation(Put.of(tableName, newContents, tableContents));
+        } else {
+          commit.operation(Put.of(tableName, newContents));
+        }
+        Branch newHead = commit.commit();
+
+        if (random.nextDouble() < newTagProbability) {
+          Tag tag = Tag.of("new-tag-" + random.nextLong(), newHead.getHash());
+          spec.commandLine()
+              .getOut()
+              .printf(
+                  "Creating tag '%s' from '%s' at %s%n", tag.getName(), branchName, tag.getHash());
+          api.createReference().reference(tag).sourceRefName(branchName).create();
+        }
+
+        try {
+          TimeUnit.NANOSECONDS.sleep(perCommitDuration.toNanos());
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+          break;
+        }
       }
     }
 
