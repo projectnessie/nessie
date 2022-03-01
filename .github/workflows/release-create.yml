@@ -97,6 +97,7 @@ jobs:
         grep -q "^${VERSION_PATTERH} [(][0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9][)]$" < python/HISTORY.rst || FAILS="${FAILS} python/HISTORY.rst"
         grep -q "^## ${VERSION_PATTERH} Release [(][A-Z][a-z]* [0-9][0-9]*, [0-9][0-9][0-9][0-9][)]$" < site/docs/try/releases.md || FAILS="${FAILS} site/docs/try/releases.md"
         grep -q "^| ${VERSION_PATTERH} .*check_mark.*$" < SECURITY.md || FAILS="${FAILS} SECURITY.md"
+        grep -q ".*${VERSION_PATTERH},current$" < compatibility/compatibility-tests/src/test/resources/META-INF/nessie-compatibility.properties || FAILS="${FAILS} nessie-compatibility.properties"
         if [[ -n ${FAILS} ]] ; then
           echo ${FAILS} "do not contain the release version ${RELEASE_VERSION}."
           exit 1
