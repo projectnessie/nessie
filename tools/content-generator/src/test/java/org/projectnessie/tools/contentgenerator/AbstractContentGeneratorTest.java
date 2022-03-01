@@ -15,7 +15,6 @@
  */
 package org.projectnessie.tools.contentgenerator;
 
-import java.io.PrintStream;
 import java.util.UUID;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.http.HttpClientBuilder;
@@ -30,12 +29,14 @@ import org.projectnessie.model.Reference;
 
 /** Base class for content generator tests. */
 public class AbstractContentGeneratorTest {
+
   static final Integer NESSIE_HTTP_PORT = Integer.getInteger("quarkus.http.test-port");
 
   static final String NESSIE_API_URI =
       String.format("http://localhost:%d/api/v1", NESSIE_HTTP_PORT);
 
-  private static final PrintStream DEFAULT_STDOUT = System.out;
+  protected static final String COMMIT_MSG = "testMessage";
+  protected static final ContentKey CONTENT_KEY = ContentKey.of("first", "second");
 
   protected Branch makeCommit(NessieApiV1 api, String contentId)
       throws NessieConflictException, NessieNotFoundException {
@@ -50,11 +51,10 @@ public class AbstractContentGeneratorTest {
     return api.commitMultipleOperations()
         .branchName(branch.getName())
         .hash(branch.getHash())
-        .commitMeta(CommitMeta.fromMessage("testMessage"))
+        .commitMeta(CommitMeta.fromMessage(COMMIT_MSG))
         .operation(
             Operation.Put.of(
-                ContentKey.of("first", "second"),
-                IcebergTable.of("testMeta", 123, 456, 789, 321, contentId)))
+                CONTENT_KEY, IcebergTable.of("testMeta", 123, 456, 789, 321, contentId)))
         .commit();
   }
 

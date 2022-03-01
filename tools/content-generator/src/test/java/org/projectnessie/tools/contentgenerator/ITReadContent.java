@@ -22,19 +22,16 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
-import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.tools.contentgenerator.cli.NessieContentGenerator;
 
-class ITReadCommits extends AbstractContentGeneratorTest {
+class ITReadContent extends AbstractContentGeneratorTest {
 
   private final String contentId = "testContentId-" + UUID.randomUUID();
   private Branch branch;
@@ -47,54 +44,59 @@ class ITReadCommits extends AbstractContentGeneratorTest {
   }
 
   @Test
-  void readCommits() throws UnsupportedEncodingException, NessieNotFoundException {
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    PrintStream out = new PrintStream(baos);
-    System.setOut(out);
-
-    assertThat(
-            NessieContentGenerator.runMain(
-                new String[] {"commits", "--uri", NESSIE_API_URI, "--ref", branch.getName()}))
-        .isEqualTo(0);
-
-    out.close();
-    String[] output = baos.toString(StandardCharsets.UTF_8.toString()).split("\n");
-    assertThat(output).anySatisfy(s -> assertThat(s).contains(COMMIT_MSG));
-    assertThat(output).noneSatisfy(s -> assertThat(s).contains(CONTENT_KEY.toString()));
-
-    try (NessieApiV1 api = buildNessieApi()) {
-      assertThat(api.getCommitLog().refName(branch.getName()).get().getLogEntries()).hasSize(1);
-    }
-  }
-
-  @Test
-  void readCommitsVerbose() throws UnsupportedEncodingException, NessieNotFoundException {
+  void readContent() throws UnsupportedEncodingException {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     try (PrintWriter out = new PrintWriter(new PrintStream(baos), true)) {
       assertThat(
               NessieContentGenerator.runMain(
                   out,
                   new String[] {
-                    "commits", "--uri", NESSIE_API_URI, "--ref", branch.getName(), "--verbose"
+                    "content",
+                    "--uri",
+                    NESSIE_API_URI,
+                    "--ref",
+                    branch.getName(),
+                    "--key",
+                    CONTENT_KEY.getElements().get(0),
+                    "--key",
+                    CONTENT_KEY.getElements().get(1)
                   }))
           .isEqualTo(0);
 
       String[] output = baos.toString(StandardCharsets.UTF_8.toString()).split("\n");
-      assertThat(output).anySatisfy(s -> assertThat(s).contains(COMMIT_MSG));
+      assertThat(output).anySatisfy(s -> assertThat(s).contains(contentId));
+      assertThat(output).anySatisfy(s -> assertThat(s).contains(CONTENT_KEY.toString()));
+    }
+  }
+
+  @Test
+  void readContentVerbose() throws UnsupportedEncodingException {
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    try (PrintWriter out = new PrintWriter(new PrintStream(baos), true)) {
+      assertThat(
+              NessieContentGenerator.runMain(
+                  out,
+                  new String[] {
+                    "content",
+                    "--uri",
+                    NESSIE_API_URI,
+                    "--ref",
+                    branch.getName(),
+                    "--verbose",
+                    "--key",
+                    CONTENT_KEY.getElements().get(0),
+                    "--key",
+                    CONTENT_KEY.getElements().get(1)
+                  }))
+          .isEqualTo(0);
+
+      String[] output = baos.toString(StandardCharsets.UTF_8.toString()).split("\n");
+      assertThat(output).anySatisfy(s -> assertThat(s).contains(contentId));
       assertThat(output).anySatisfy(s -> assertThat(s).contains(CONTENT_KEY.toString()));
       assertThat(output)
           .anySatisfy(s -> assertThat(s).contains("key[0]: " + CONTENT_KEY.getElements().get(0)));
       assertThat(output)
           .anySatisfy(s -> assertThat(s).contains("key[1]: " + CONTENT_KEY.getElements().get(1)));
-      assertThat(output).anySatisfy(s -> assertThat(s).contains(contentId));
-    }
-
-    try (NessieApiV1 api = buildNessieApi()) {
-      List<LogEntry> logEntries =
-          api.getCommitLog().refName(branch.getName()).fetch(FetchOption.ALL).get().getLogEntries();
-      assertThat(logEntries).hasSize(1);
-      assertThat(logEntries.get(0).getOperations()).isNotEmpty();
-      assertThat(logEntries.get(0).getParentCommitHash()).isNotNull();
     }
   }
 }

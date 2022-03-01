@@ -31,6 +31,7 @@ import picocli.CommandLine.HelpCommand;
       GenerateContent.class,
       ReadCommits.class,
       ReadReferences.class,
+      ReadContent.class,
       HelpCommand.class
     })
 public class NessieContentGenerator {
