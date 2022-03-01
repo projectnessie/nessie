@@ -168,7 +168,7 @@
     <gatling.version>3.7.5</gatling.version>
     <google-error-prone.version>2.10.0</google-error-prone.version>
     <google-java-format.version>1.14.0</google-java-format.version>
-    <guava.version>31.0.1-jre</guava.version>
+    <guava.version>31.1-jre</guava.version>
     <hadoop.version>3.3.1</hadoop.version>
     <iceberg.version>0.13.1</iceberg.version>
     <immutables.version>2.9.0</immutables.version>
