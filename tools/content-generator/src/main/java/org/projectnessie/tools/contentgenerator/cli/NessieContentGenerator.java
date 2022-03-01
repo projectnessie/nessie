@@ -16,6 +16,7 @@
 package org.projectnessie.tools.contentgenerator.cli;
 
 import com.google.common.annotations.VisibleForTesting;
+import java.io.PrintWriter;
 import org.projectnessie.client.http.HttpClientException;
 import org.projectnessie.error.BaseNessieClientServerException;
 import picocli.CommandLine;
@@ -26,31 +27,44 @@ import picocli.CommandLine.HelpCommand;
     name = "nessie-content-generator",
     mixinStandardHelpOptions = true,
     versionProvider = NessieVersionProvider.class,
-    subcommands = {GenerateContent.class, ReadCommits.class, HelpCommand.class})
+    subcommands = {
+      GenerateContent.class,
+      ReadCommits.class,
+      ReadReferences.class,
+      HelpCommand.class
+    })
 public class NessieContentGenerator {
 
   public static void main(String[] arguments) {
     System.exit(runMain(arguments));
   }
 
-  @SuppressWarnings("InstantiationOfUtilityClass")
   @VisibleForTesting
   public static int runMain(String[] arguments) {
-    return new CommandLine(new NessieContentGenerator())
-        .setExecutionExceptionHandler(
-            (ex, cmd, parseResult) -> {
-              if (ex instanceof BaseNessieClientServerException
-                  || ex instanceof HttpClientException) {
-                // Just print the exception w/o the stack trace for Nessie related exceptions
-                cmd.getErr().println(cmd.getColorScheme().errorText(ex.toString()));
-              } else {
-                // Print the full stack trace in all other cases.
-                cmd.getErr().println(cmd.getColorScheme().richStackTraceString(ex));
-              }
-              return cmd.getExitCodeExceptionMapper() != null
-                  ? cmd.getExitCodeExceptionMapper().getExitCode(ex)
-                  : cmd.getCommandSpec().exitCodeOnExecutionException();
-            })
-        .execute(arguments);
+    return runMain(null, arguments);
+  }
+
+  @VisibleForTesting
+  public static int runMain(PrintWriter out, String[] arguments) {
+    CommandLine commandLine =
+        new CommandLine(new NessieContentGenerator())
+            .setExecutionExceptionHandler(
+                (ex, cmd, parseResult) -> {
+                  if (ex instanceof BaseNessieClientServerException
+                      || ex instanceof HttpClientException) {
+                    // Just print the exception w/o the stack trace for Nessie related exceptions
+                    cmd.getErr().println(cmd.getColorScheme().errorText(ex.toString()));
+                  } else {
+                    // Print the full stack trace in all other cases.
+                    cmd.getErr().println(cmd.getColorScheme().richStackTraceString(ex));
+                  }
+                  return cmd.getExitCodeExceptionMapper() != null
+                      ? cmd.getExitCodeExceptionMapper().getExitCode(ex)
+                      : cmd.getCommandSpec().exitCodeOnExecutionException();
+                });
+    if (null != out) {
+      commandLine = commandLine.setOut(out);
+    }
+    return commandLine.execute(arguments);
   }
 }
