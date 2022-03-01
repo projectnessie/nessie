@@ -1687,6 +1687,15 @@ public abstract class TxDatabaseAdapter
 
     ByteString newId = randomHash().asBytes();
 
+    // Before Nessie 0.21.0: only the "head" of the ref-log is maintained, so Nessie has to read
+    // the head entry of the ref-log to get the IDs of all the previous parents to fill the parents
+    // in the new ref-log-entry.
+    //
+    // Since Nessie 0.21.0: the "head" for the ref-log and PLUS the parents of if are persisted,
+    // so Nessie no longer need to read the head entries from the ref-log.
+    //
+    // The check of the first entry is there to ensure backwards compatibility and also
+    // rolling-upgrades work.
     Stream<ByteString> newParents;
     if (refLogHead.getRefLogParentsInclHead().isEmpty()
         || !refLogHead.getRefLogParentsInclHead().get(0).equals(refLogHead.getRefLogHead())) {

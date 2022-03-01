@@ -933,6 +933,16 @@ public abstract class NonTransactionalDatabaseAdapter<
     Hash parentHash = Hash.of(pointer.getGlobalId());
     Hash hash = randomHash();
 
+    // Before Nessie 0.21.0: the global-state-pointer contains the "heads" for the ref-log and
+    // global-log, so it has to read the head ref-log & global-log to get the IDs of all the
+    // previous parents to fill the parents in the new global-log-entry & ref-log-entry.
+    //
+    // Since Nessie 0.21.0: the global-state-pointer contains the "heads" for the ref-log and
+    // global-log PLUS the parents of those, so Nessie no longer need to read the head entries
+    // from the ref-log + global-log.
+    //
+    // The check of the first entry is there to ensure backwards compatibility and also
+    // rolling-upgrades work.
     Stream<ByteString> newParents;
     if (pointer.getGlobalParentsInclHeadCount() == 0
         || !pointer.getGlobalId().equals(pointer.getGlobalParentsInclHead(0))) {
@@ -1110,18 +1120,29 @@ public abstract class NonTransactionalDatabaseAdapter<
       return Stream.empty();
     }
 
-    Hash initialId = Hash.of(pointer.getGlobalId());
-
-    GlobalStateLogEntry initial = fetchFromGlobalLog(ctx, initialId);
-    if (initial == null) {
-      throw new RuntimeException(
-          new ReferenceNotFoundException(
-              String.format("Global log entry '%s' not does not exist.", initialId.asString())));
-    }
+    // Before Nessie 0.21.0: the global-state-pointer contains the "heads" for the ref-log and
+    // global-log, so it has to read the head ref-log & global-log to get the IDs of all the
+    // previous parents to fill the parents in the new global-log-entry & ref-log-entry.
+    //
+    // Since Nessie 0.21.0: the global-state-pointer contains the "heads" for the ref-log and
+    // global-log PLUS the parents of those, so Nessie no longer need to read the head entries
+    // from the ref-log + global-log.
+    //
+    // The check of the first entry is there to ensure backwards compatibility and also
+    // rolling-upgrades work.
     Spliterator<GlobalStateLogEntry> split;
     if (pointer.getGlobalParentsInclHeadCount() == 0
         || !pointer.getGlobalId().equals(pointer.getGlobalParentsInclHead(0))) {
       // Before Nessie 0.21.0
+
+      Hash initialId = Hash.of(pointer.getGlobalId());
+
+      GlobalStateLogEntry initial = fetchFromGlobalLog(ctx, initialId);
+      if (initial == null) {
+        throw new RuntimeException(
+            new ReferenceNotFoundException(
+                String.format("Global log entry '%s' not does not exist.", initialId.asString())));
+      }
 
       split =
           logFetcher(
