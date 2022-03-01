@@ -36,6 +36,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -194,7 +195,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
             commitAttempt.getPuts(),
             commitAttempt.getDeletes(),
             currentBranchEntry != null ? currentBranchEntry.getKeyListDistance() : 0,
-            newKeyLists);
+            newKeyLists,
+            new LinkedList<>());
     writeIndividualCommit(ctx, newBranchCommit);
     return newBranchCommit;
   }
@@ -737,7 +739,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       List<KeyWithBytes> puts,
       List<Key> deletes,
       int currentKeyListDistance,
-      Consumer<Hash> newKeyLists)
+      Consumer<Hash> newKeyLists,
+      List<CommitLogEntry> unwrittenEntriesForKeyList)
       throws ReferenceNotFoundException {
     Hash commitHash = individualCommitHash(parentHashes, commitMeta, puts, deletes);
 
@@ -755,9 +758,33 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
             keyListDistance,
             null,
             Collections.emptyList());
-
     if (keyListDistance >= config.getKeyListDistance()) {
-      entry = buildKeyList(ctx, entry, newKeyLists);
+      // 'startHash' is the hash to be used for querying commit log from backend.
+      Hash startHash;
+      if (unwrittenEntriesForKeyList.isEmpty()) {
+        // query all commits from backend till the last keyList distance 0 commit.
+        // Because there is no previous unwritten entries (created from merge).
+        // So, set the hash to first ancestor of this entry.
+        startHash = entry.getParents().get(0);
+      } else if (entry.getParents().size() > unwrittenEntriesForKeyList.size()) {
+        // parents can have both written and unwritten commits.
+        // So, pick the startHash as the first written commit for backend query.
+        startHash = entry.getParents().get(unwrittenEntriesForKeyList.size());
+      } else if (entry.getParents().size() == unwrittenEntriesForKeyList.size()) {
+        // while merging many commits to fresh branch which is pointing to NO_ANCESTOR,
+        // parents can be equal to unwritten entries. So, no need to query backend.
+        startHash = NO_ANCESTOR;
+      } else {
+        // this cannot happen as per the merge logic
+        // as each unwritten entry will have one parent at least.
+        throw new RuntimeException(
+            String.format(
+                "Unwritten entries count: %s is greater than parents count: %s",
+                unwrittenEntriesForKeyList.size(), entry.getParents().size()));
+      }
+      entry = buildKeyList(ctx, entry, newKeyLists, startHash, unwrittenEntriesForKeyList.stream());
+      // remove the entries as key list is added for these entries.
+      unwrittenEntriesForKeyList.clear();
     }
     return entry;
   }
@@ -780,7 +807,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     return Hash.of(UnsafeByteOperations.unsafeWrap(hasher.hash().asBytes()));
   }
 
-  /** Helper object for {@link #buildKeyList(Object, CommitLogEntry, Consumer)}. */
+  /** Helper object for {@link #buildKeyList(Object, CommitLogEntry, Consumer, Hash, Stream)}. */
   private static class KeyListBuildState {
     final ImmutableCommitLogEntry.Builder newCommitEntry;
     /** Builder for {@link CommitLogEntry#getKeyList()}. */
@@ -843,12 +870,12 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
    * to both read and re-write those rows for {@link KeyListEntity}.
    */
   protected CommitLogEntry buildKeyList(
-      OP_CONTEXT ctx, CommitLogEntry unwrittenEntry, Consumer<Hash> newKeyLists)
+      OP_CONTEXT ctx,
+      CommitLogEntry unwrittenEntry,
+      Consumer<Hash> newKeyLists,
+      Hash startHash,
+      Stream<CommitLogEntry> unwrittenEntries)
       throws ReferenceNotFoundException {
-    // Read commit-log until the previous persisted key-list
-
-    Hash startHash = unwrittenEntry.getParents().get(0);
-
     // Return the new commit-log-entry with the complete-key-list
     ImmutableCommitLogEntry.Builder newCommitEntry =
         ImmutableCommitLogEntry.builder().from(unwrittenEntry).keyListDistance(0);
@@ -856,7 +883,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     KeyListBuildState buildState =
         new KeyListBuildState(entitySize(unwrittenEntry), newCommitEntry);
 
-    keysForCommitEntry(ctx, startHash)
+    // Read commit-log until the previous persisted key-list
+    keysForCommitEntry(ctx, startHash, unwrittenEntries)
         .forEach(
             keyWithType -> {
               int keyTypeSize = entitySize(keyWithType);
@@ -943,17 +971,22 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
   /** Retrieve the content-keys and their types for the commit-log-entry with the given hash. */
   protected Stream<KeyWithType> keysForCommitEntry(
       OP_CONTEXT ctx, Hash hash, KeyFilterPredicate keyFilter) throws ReferenceNotFoundException {
-    return keysForCommitEntry(ctx, hash)
+    return keysForCommitEntry(ctx, hash, Stream.empty())
         .filter(kt -> keyFilter.check(kt.getKey(), kt.getContentId(), kt.getType()));
   }
 
-  /** Retrieve the content-keys and their types for the commit-log-entry with the given hash. */
-  protected Stream<KeyWithType> keysForCommitEntry(OP_CONTEXT ctx, Hash hash)
+  /**
+   * Retrieve the content-keys and their types for the commit-log-entry with the given hash. And
+   * consider the unwrittenEntries along with the backend entries.
+   */
+  protected Stream<KeyWithType> keysForCommitEntry(
+      OP_CONTEXT ctx, Hash hash, Stream<CommitLogEntry> unwrittenEntries)
       throws ReferenceNotFoundException {
     // walk the commit-logs in reverse order - starting with the last persisted key-list
 
     Set<Key> seen = new HashSet<>();
     Stream<CommitLogEntry> log = readCommitLogStream(ctx, hash);
+    log = Stream.concat(unwrittenEntries, log);
     log = takeUntilIncludeLast(log, e -> e.getKeyList() != null);
     return log.flatMap(
         e -> {
@@ -1280,6 +1313,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
 
     int keyListDistance = targetHeadCommit != null ? targetHeadCommit.getKeyListDistance() : 0;
 
+    List<CommitLogEntry> unwrittenEntriesForKeyList = new LinkedList<>();
     // Rewrite commits to transplant and store those in 'commitsToTransplantReverse'
     for (int i = commitsChronological.size() - 1; i >= 0; i--, commitSeq++) {
       CommitLogEntry sourceCommit = commitsChronological.get(i);
@@ -1305,7 +1339,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
               sourceCommit.getPuts(),
               sourceCommit.getDeletes(),
               keyListDistance,
-              newKeyLists);
+              newKeyLists,
+              unwrittenEntriesForKeyList);
       keyListDistance = newEntry.getKeyListDistance();
 
       if (!newEntry.getHash().equals(sourceCommit.getHash())) {
@@ -1317,6 +1352,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       }
 
       targetHead = newEntry.getHash();
+      unwrittenEntriesForKeyList.add(0, sourceCommit);
     }
     return targetHead;
   }

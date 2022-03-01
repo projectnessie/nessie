@@ -17,17 +17,20 @@ package org.projectnessie.versioned.persist.tests;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig.DEFAULT_KEY_LIST_DISTANCE;
 
 import com.google.protobuf.ByteString;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
@@ -47,8 +50,15 @@ public abstract class AbstractMergeTransplant {
     this.databaseAdapter = databaseAdapter;
   }
 
-  @Test
-  void merge() throws Exception {
+  @ParameterizedTest
+  @CsvSource({
+    "3",
+    "10",
+    "" + DEFAULT_KEY_LIST_DISTANCE,
+    "" + (DEFAULT_KEY_LIST_DISTANCE + 1),
+    "100"
+  })
+  void merge(int numCommits) throws Exception {
     AtomicInteger unifier = new AtomicInteger();
     Function<ByteString, ByteString> metadataUpdater =
         commitMeta ->
@@ -57,6 +67,7 @@ public abstract class AbstractMergeTransplant {
 
     Hash[] commits =
         mergeTransplant(
+            numCommits,
             (target, expectedHead, branch, commitHashes, i) ->
                 databaseAdapter.merge(commitHashes[i], target, expectedHead, metadataUpdater));
 
@@ -74,8 +85,15 @@ public abstract class AbstractMergeTransplant {
         .hasMessageStartingWith("No hashes to merge from '");
   }
 
-  @Test
-  void transplant() throws Exception {
+  @ParameterizedTest
+  @CsvSource({
+    "3",
+    "10",
+    "" + DEFAULT_KEY_LIST_DISTANCE,
+    "" + (DEFAULT_KEY_LIST_DISTANCE + 1),
+    "100"
+  })
+  void transplant(int numCommits) throws Exception {
     AtomicInteger unifier = new AtomicInteger();
     Function<ByteString, ByteString> metadataUpdater =
         commitMeta ->
@@ -84,6 +102,7 @@ public abstract class AbstractMergeTransplant {
 
     Hash[] commits =
         mergeTransplant(
+            numCommits,
             (target, expectedHead, branch, commitHashes, i) ->
                 databaseAdapter.transplant(
                     target,
@@ -148,26 +167,31 @@ public abstract class AbstractMergeTransplant {
         throws Exception;
   }
 
-  private Hash[] mergeTransplant(MergeOrTransplant mergeOrTransplant) throws Exception {
+  private Hash[] mergeTransplant(int numCommits, MergeOrTransplant mergeOrTransplant)
+      throws Exception {
     BranchName main = BranchName.of("main");
     BranchName branch = BranchName.of("branch");
     BranchName conflict = BranchName.of("conflict");
 
     databaseAdapter.create(branch, databaseAdapter.hashOnReference(main, Optional.empty()));
 
-    Hash[] commits = new Hash[3];
+    Hash[] commits = new Hash[numCommits];
     for (int i = 0; i < commits.length; i++) {
       ImmutableCommitAttempt.Builder commit =
           ImmutableCommitAttempt.builder()
               .commitToBranch(branch)
               .commitMetaSerialized(ByteString.copyFromUtf8("commit " + i));
-      for (int k = 0; k < 3; k++) {
-        commit.addPuts(
-            KeyWithBytes.of(
-                Key.of("key", Integer.toString(k)),
-                ContentId.of("C" + k),
-                (byte) 0,
-                ByteString.copyFromUtf8("value " + i + " for " + k)));
+      if (i == commits.length - 1) {
+        commit.addDeletes(Key.of("key", Integer.toString(1)));
+      } else {
+        for (int k = 0; k < 3; k++) {
+          commit.addPuts(
+              KeyWithBytes.of(
+                  Key.of("key", Integer.toString(k)),
+                  ContentId.of("C" + k),
+                  (byte) 0,
+                  ByteString.copyFromUtf8("value " + i + " for " + k)));
+        }
       }
       commits[i] = databaseAdapter.commit(commit.build());
     }
@@ -180,7 +204,25 @@ public abstract class AbstractMergeTransplant {
 
       try (Stream<CommitLogEntry> targetLog =
           databaseAdapter.commitLog(databaseAdapter.hashOnReference(target, Optional.empty()))) {
-        assertThat(targetLog).hasSize(i + 1);
+        List<CommitLogEntry> targetLogEntries = targetLog.collect(Collectors.toList());
+        assertThat(targetLogEntries).hasSize(i + 1);
+        for (int k = 0; k < targetLogEntries.size(); k++) {
+          if (i == commits.length - 1 && k == 0) {
+            // validate delete
+            assertThat(targetLogEntries.get(k).getDeletes().size()).isEqualTo(1);
+            assertThat(targetLogEntries.get(k).getDeletes().get(0))
+                .isEqualTo(Key.of("key", Integer.toString(1)));
+          } else {
+            // validate put
+            assertThat(targetLogEntries.get(k).getPuts().size()).isEqualTo(3);
+            for (int key = 0; key < 3; key++) {
+              assertThat(targetLogEntries.get(k).getPuts().get(key).getKey())
+                  .isEqualTo(Key.of("key", Integer.toString(key)));
+              assertThat(targetLogEntries.get(k).getPuts().get(key).getContentId())
+                  .isEqualTo(ContentId.of("C" + key));
+            }
+          }
+        }
       }
     }
 
