@@ -17,10 +17,17 @@ package org.projectnessie.tools.compatibility.tests;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
+import static org.assertj.core.api.Assertions.tuple;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import org.assertj.core.groups.Tuple;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -43,10 +50,13 @@ import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.Operation.Put;
+import org.projectnessie.model.RefLogResponse;
+import org.projectnessie.model.RefLogResponse.RefLogResponseEntry;
 import org.projectnessie.model.Reference;
 import org.projectnessie.tools.compatibility.api.NessieAPI;
 import org.projectnessie.tools.compatibility.api.NessieVersion;
 import org.projectnessie.tools.compatibility.api.Version;
+import org.projectnessie.tools.compatibility.api.VersionCondition;
 import org.projectnessie.tools.compatibility.internal.NessieUpgradesExtension;
 
 @ExtendWith(NessieUpgradesExtension.class)
@@ -60,6 +70,8 @@ public class ITUpgradePath {
   private static Branch versionBranch;
 
   static Set<String> createdBranches = new HashSet<>();
+
+  static Map<String, List<String>> expectedRefLog = new LinkedHashMap<>();
 
   @BeforeAll
   static void beforeAll() {
@@ -88,6 +100,8 @@ public class ITUpgradePath {
     versionBranch = Branch.of(VERSION_BRANCH_PREFIX + version, main.getHash());
     createdBranches.add(versionBranch.getName());
     api.createReference().sourceRefName("main").reference(versionBranch).create();
+
+    expectedRefLogEntry("CREATE_REFERENCE");
   }
 
   @Order(2)
@@ -118,6 +132,8 @@ public class ITUpgradePath {
         .isNotEqualTo(versionBranch)
         .extracting(Branch::getName)
         .isEqualTo(versionBranch.getName());
+
+    expectedRefLogEntry("COMMIT");
   }
 
   private Branch commitMaybeRetry(CommitMultipleOperationsBuilder commitBuilder)
@@ -163,5 +179,27 @@ public class ITUpgradePath {
               Map<ContentKey, Content> contents = api.getContent().reference(ref).key(key).get();
               assertThat(contents).containsExactly(entry(key, content));
             });
+  }
+
+  private void expectedRefLogEntry(String op) {
+    if (version.compareTo(Version.parseVersion("0.18.0")) >= 0) {
+      expectedRefLog.computeIfAbsent(versionBranch.getName(), x -> new ArrayList<>()).add(op);
+    }
+  }
+
+  @Test
+  @Order(5)
+  @VersionCondition(minVersion = "0.18.0")
+  void refLog() throws Exception {
+    List<Tuple> allExpected =
+        expectedRefLog.entrySet().stream()
+            .flatMap(e -> e.getValue().stream().map(op -> tuple(e.getKey(), op)))
+            .collect(Collectors.toList());
+
+    RefLogResponse refLog = api.getRefLog().get();
+    ArrayList<RefLogResponseEntry> logEntries = new ArrayList<>(refLog.getLogEntries());
+    Collections.reverse(logEntries);
+    assertThat(logEntries.stream().map(e -> tuple(e.getRefName(), e.getOperation())))
+        .containsExactlyElementsOf(allExpected);
   }
 }

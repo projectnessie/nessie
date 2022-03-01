@@ -106,6 +106,13 @@ message GlobalStatePointer {
   // most recently updated named reference appears first
   repeated NamedReference named_references = 2;
   bytes ref_log_id = 3;
+  repeated bytes global_parents_incl_head = 4;
+  repeated bytes ref_log_parents_incl_head = 5;
+}
+
+// Used by transactional database-adapters
+message RefLogParents {
+  repeated bytes ref_log_parents_incl_head = 1;
 }
 
 message NamedReference {

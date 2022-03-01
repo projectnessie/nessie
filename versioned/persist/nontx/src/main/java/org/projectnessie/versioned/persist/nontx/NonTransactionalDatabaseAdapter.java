@@ -85,6 +85,8 @@ import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLog
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.NamedReference;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogEntry;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogEntry.Operation;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogEntry.RefType;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefPointer;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefPointer.Type;
 import org.projectnessie.versioned.persist.serialize.ProtoSerialization;
@@ -220,24 +222,22 @@ public abstract class NonTransactionalDatabaseAdapter<
                     newKeyLists,
                     updateCommitMetadata);
 
-            Hash newGlobalHead =
-                writeGlobalCommit(
-                    ctx, timeInMicros, Hash.of(pointer.getGlobalId()), Collections.emptyList());
+            GlobalStateLogEntry newGlobalHead =
+                writeGlobalCommit(ctx, timeInMicros, pointer, Collections.emptyList());
 
-            Hash newRefLogId =
+            RefLogEntry newRefLog =
                 writeRefLogEntry(
                     ctx,
+                    pointer,
                     toBranch.getName(),
                     RefLogEntry.RefType.Branch,
-                    Hash.of(pointer.getRefLogId()),
                     toHead,
                     RefLogEntry.Operation.MERGE,
                     timeInMicros,
                     Collections.singletonList(from));
 
             // Return hash of last commit (toHead) added to 'targetBranch' (via the casOpLoop)
-            return updateGlobalStatePointer(
-                toBranch, pointer, toHead, newGlobalHead, newRefLogId.asBytes());
+            return updateGlobalStatePointer(toBranch, pointer, toHead, newGlobalHead, newRefLog);
           },
           () -> mergeConflictMessage("Retry-failure", from, toBranch, expectedHead));
     } catch (ReferenceNotFoundException | ReferenceConflictException | RuntimeException e) {
@@ -277,16 +277,15 @@ public abstract class NonTransactionalDatabaseAdapter<
                     newKeyLists,
                     updateCommitMetadata);
 
-            Hash newGlobalHead =
-                writeGlobalCommit(
-                    ctx, timeInMicros, Hash.of(pointer.getGlobalId()), Collections.emptyList());
+            GlobalStateLogEntry newGlobalHead =
+                writeGlobalCommit(ctx, timeInMicros, pointer, Collections.emptyList());
 
-            Hash newRefLogId =
+            RefLogEntry newRefLog =
                 writeRefLogEntry(
                     ctx,
+                    pointer,
                     targetBranch.getName(),
                     RefLogEntry.RefType.Branch,
-                    Hash.of(pointer.getRefLogId()),
                     targetHead,
                     RefLogEntry.Operation.TRANSPLANT,
                     timeInMicros,
@@ -294,7 +293,7 @@ public abstract class NonTransactionalDatabaseAdapter<
 
             // Return hash of last commit (targetHead) added to 'targetBranch' (via the casOpLoop)
             return updateGlobalStatePointer(
-                targetBranch, pointer, targetHead, newGlobalHead, newRefLogId.asBytes());
+                targetBranch, pointer, targetHead, newGlobalHead, newRefLog);
           },
           () ->
               transplantConflictMessage(
@@ -323,21 +322,21 @@ public abstract class NonTransactionalDatabaseAdapter<
             CommitLogEntry newBranchCommit =
                 commitAttempt(ctx, timeInMicros, branchHead, commitAttempt, newKeyLists);
 
-            Hash newGlobalHead =
+            GlobalStateLogEntry newGlobalHead =
                 writeGlobalCommit(
                     ctx,
                     timeInMicros,
-                    Hash.of(pointer.getGlobalId()),
+                    pointer,
                     commitAttempt.getGlobal().entrySet().stream()
                         .map(e -> ContentIdAndBytes.of(e.getKey(), (byte) 0, e.getValue()))
                         .collect(Collectors.toList()));
 
-            Hash newRefLogId =
+            RefLogEntry newRefLog =
                 writeRefLogEntry(
                     ctx,
+                    pointer,
                     commitAttempt.getCommitToBranch().getName(),
                     RefLogEntry.RefType.Branch,
-                    Hash.of(pointer.getRefLogId()),
                     newBranchCommit.getHash(),
                     RefLogEntry.Operation.COMMIT,
                     timeInMicros,
@@ -348,7 +347,7 @@ public abstract class NonTransactionalDatabaseAdapter<
                 pointer,
                 newBranchCommit.getHash(),
                 newGlobalHead,
-                newRefLogId.asBytes());
+                newRefLog);
           },
           () ->
               commitConflictMessage(
@@ -385,23 +384,22 @@ public abstract class NonTransactionalDatabaseAdapter<
             validateHashExists(ctx, hash);
 
             // Need a new empty global-log entry to be able to CAS
-            Hash newGlobalHead = noopGlobalLogEntry(ctx, pointer);
+            GlobalStateLogEntry newGlobalHead = noopGlobalLogEntry(ctx, pointer);
 
             RefLogEntry.RefType refType =
                 ref instanceof TagName ? RefLogEntry.RefType.Tag : RefLogEntry.RefType.Branch;
-            Hash newRefLogId =
+            RefLogEntry newRefLog =
                 writeRefLogEntry(
                     ctx,
+                    pointer,
                     ref.getName(),
                     refType,
-                    Hash.of(pointer.getRefLogId()),
                     hash,
                     RefLogEntry.Operation.CREATE_REFERENCE,
                     commitTimeInMicros(),
                     Collections.emptyList());
 
-            return updateGlobalStatePointer(
-                ref, pointer, hash, newGlobalHead, newRefLogId.asBytes());
+            return updateGlobalStatePointer(ref, pointer, hash, newGlobalHead, newRefLog);
           },
           () -> createConflictMessage("Retry-Failure", ref, target));
     } catch (ReferenceAlreadyExistsException | ReferenceNotFoundException | RuntimeException e) {
@@ -422,23 +420,22 @@ public abstract class NonTransactionalDatabaseAdapter<
           (ctx, pointer, branchCommits, newKeyLists) -> {
             Hash branchHead = branchHead(pointer, reference);
             verifyExpectedHash(branchHead, reference, expectedHead);
-            Hash newGlobalHead = noopGlobalLogEntry(ctx, pointer);
+            GlobalStateLogEntry newGlobalHead = noopGlobalLogEntry(ctx, pointer);
 
             RefLogEntry.RefType refType =
                 reference instanceof TagName ? RefLogEntry.RefType.Tag : RefLogEntry.RefType.Branch;
-            Hash newRefLogId =
+            RefLogEntry newRefLog =
                 writeRefLogEntry(
                     ctx,
+                    pointer,
                     reference.getName(),
                     refType,
-                    Hash.of(pointer.getRefLogId()),
                     branchHead,
                     RefLogEntry.Operation.DELETE_REFERENCE,
                     commitTimeInMicros(),
                     Collections.emptyList());
 
-            return updateGlobalStatePointer(
-                reference, pointer, null, newGlobalHead, newRefLogId.asBytes());
+            return updateGlobalStatePointer(reference, pointer, null, newGlobalHead, newRefLog);
           },
           () -> deleteConflictMessage("Retry-Failure", reference, expectedHead));
     } catch (ReferenceNotFoundException | ReferenceConflictException | RuntimeException e) {
@@ -462,23 +459,22 @@ public abstract class NonTransactionalDatabaseAdapter<
 
             validateHashExists(ctx, assignTo);
 
-            Hash newGlobalHead = noopGlobalLogEntry(ctx, pointer);
+            GlobalStateLogEntry newGlobalHead = noopGlobalLogEntry(ctx, pointer);
 
             RefLogEntry.RefType refType =
                 assignee instanceof TagName ? RefLogEntry.RefType.Tag : RefLogEntry.RefType.Branch;
-            Hash newRefLogId =
+            RefLogEntry newRefLog =
                 writeRefLogEntry(
                     ctx,
+                    pointer,
                     assignee.getName(),
                     refType,
-                    Hash.of(pointer.getRefLogId()),
                     assignTo,
                     RefLogEntry.Operation.ASSIGN_REFERENCE,
                     commitTimeInMicros(),
                     Collections.singletonList(beforeAssign));
 
-            return updateGlobalStatePointer(
-                assignee, pointer, assignTo, newGlobalHead, newRefLogId.asBytes());
+            return updateGlobalStatePointer(assignee, pointer, assignTo, newGlobalHead, newRefLog);
           },
           () -> assignConflictMessage("Retry-Failure", assignee, expectedHead, assignTo));
     } catch (ReferenceNotFoundException | ReferenceConflictException | RuntimeException e) {
@@ -498,18 +494,25 @@ public abstract class NonTransactionalDatabaseAdapter<
   public void initializeRepo(String defaultBranchName) {
     NonTransactionalOperationContext ctx = NON_TRANSACTIONAL_OPERATION_CONTEXT;
     if (fetchGlobalPointer(ctx) == null) {
-      Hash globalHead;
-      Hash newRefLogId;
+      GlobalStateLogEntry globalHead;
+      RefLogEntry newRefLog;
       try {
         long timeInMicros = commitTimeInMicros();
-        globalHead = writeGlobalCommit(ctx, timeInMicros, NO_ANCESTOR, Collections.emptyList());
+        GlobalStatePointer dummyPointer =
+            GlobalStatePointer.newBuilder()
+                .setGlobalId(NO_ANCESTOR.asBytes())
+                .addGlobalParentsInclHead(NO_ANCESTOR.asBytes())
+                .setRefLogId(NO_ANCESTOR.asBytes())
+                .addRefLogParentsInclHead(NO_ANCESTOR.asBytes())
+                .build();
+        globalHead = writeGlobalCommit(ctx, timeInMicros, dummyPointer, Collections.emptyList());
 
-        newRefLogId =
+        newRefLog =
             writeRefLogEntry(
                 ctx,
+                dummyPointer,
                 defaultBranchName,
                 RefLogEntry.RefType.Branch,
-                NO_ANCESTOR,
                 NO_ANCESTOR,
                 RefLogEntry.Operation.CREATE_REFERENCE,
                 commitTimeInMicros(),
@@ -521,7 +524,7 @@ public abstract class NonTransactionalDatabaseAdapter<
       unsafeWriteGlobalPointer(
           ctx,
           GlobalStatePointer.newBuilder()
-              .setGlobalId(globalHead.asBytes())
+              .setGlobalId(globalHead.getId())
               .addNamedReferences(
                   NamedReference.newBuilder()
                       .setName(defaultBranchName)
@@ -529,21 +532,18 @@ public abstract class NonTransactionalDatabaseAdapter<
                           RefPointer.newBuilder()
                               .setType(Type.Branch)
                               .setHash(NO_ANCESTOR.asBytes())))
-              .setRefLogId(newRefLogId.asBytes())
+              .setRefLogId(newRefLog.getRefLogId())
+              .addRefLogParentsInclHead(newRefLog.getRefLogId())
+              .addRefLogParentsInclHead(NO_ANCESTOR.asBytes())
+              .addGlobalParentsInclHead(globalHead.getId())
+              .addGlobalParentsInclHead(NO_ANCESTOR.asBytes())
               .build());
     }
   }
 
   @Override
   public Stream<ContentIdWithType> globalKeys(ToIntFunction<ByteString> contentTypeExtractor) {
-    NonTransactionalOperationContext ctx = NON_TRANSACTIONAL_OPERATION_CONTEXT;
-
-    GlobalStatePointer pointer = fetchGlobalPointer(ctx);
-    if (pointer == null) {
-      return Stream.empty();
-    }
-
-    return globalLogFetcher(ctx, Hash.of(pointer.getGlobalId()))
+    return globalLogFetcher(NON_TRANSACTIONAL_OPERATION_CONTEXT)
         .flatMap(e -> e.getPutsList().stream())
         .map(ProtoSerialization::protoToContentIdAndBytes)
         .map(ContentIdAndBytes::asIdWithType)
@@ -553,14 +553,7 @@ public abstract class NonTransactionalDatabaseAdapter<
   @Override
   public Optional<ContentIdAndBytes> globalContent(
       ContentId contentId, ToIntFunction<ByteString> contentTypeExtractor) {
-    NonTransactionalOperationContext ctx = NON_TRANSACTIONAL_OPERATION_CONTEXT;
-
-    GlobalStatePointer pointer = fetchGlobalPointer(ctx);
-    if (pointer == null) {
-      return Optional.empty();
-    }
-
-    return globalLogFetcher(ctx, Hash.of(pointer.getGlobalId()))
+    return globalLogFetcher(NON_TRANSACTIONAL_OPERATION_CONTEXT)
         .flatMap(e -> e.getPutsList().stream())
         .map(ProtoSerialization::protoToContentIdAndBytes)
         .filter(entry -> contentId.equals(entry.getContentId()))
@@ -576,16 +569,9 @@ public abstract class NonTransactionalDatabaseAdapter<
   @Override
   public Stream<ContentIdAndBytes> globalContent(
       Set<ContentId> keys, ToIntFunction<ByteString> contentTypeExtractor) {
-    NonTransactionalOperationContext ctx = NON_TRANSACTIONAL_OPERATION_CONTEXT;
-
-    GlobalStatePointer pointer = fetchGlobalPointer(ctx);
-    if (pointer == null) {
-      return Stream.empty();
-    }
-
     HashSet<ContentId> remaining = new HashSet<>(keys);
 
-    Stream<GlobalStateLogEntry> stream = globalLogFetcher(ctx, Hash.of(pointer.getGlobalId()));
+    Stream<GlobalStateLogEntry> stream = globalLogFetcher(NON_TRANSACTIONAL_OPERATION_CONTEXT);
 
     return takeUntilIncludeLast(stream, x -> remaining.isEmpty())
         .flatMap(e -> e.getPutsList().stream())
@@ -674,13 +660,13 @@ public abstract class NonTransactionalDatabaseAdapter<
       NamedRef target,
       GlobalStatePointer pointer,
       @Nullable Hash toHead,
-      Hash newGlobalHead,
-      ByteString newRefLogId) {
+      GlobalStateLogEntry newGlobalHead,
+      RefLogEntry newRefLog) {
 
     GlobalStatePointer.Builder newPointer =
         GlobalStatePointer.newBuilder()
-            .setGlobalId(newGlobalHead.asBytes())
-            .setRefLogId(newRefLogId);
+            .setGlobalId(newGlobalHead.getId())
+            .setRefLogId(newRefLog.getRefLogId());
     String refName = target.getName();
     if (toHead != null) {
       // Most recently updated references first
@@ -695,6 +681,11 @@ public abstract class NonTransactionalDatabaseAdapter<
     pointer.getNamedReferencesList().stream()
         .filter(namedRef -> !refName.equals(namedRef.getName()))
         .forEach(newPointer::addNamedReferences);
+    newPointer
+        .addRefLogParentsInclHead(newRefLog.getRefLogId())
+        .addAllRefLogParentsInclHead(newRefLog.getParentsList())
+        .addGlobalParentsInclHead(newGlobalHead.getId())
+        .addAllGlobalParentsInclHead(newGlobalHead.getParentsList());
     return newPointer.build();
   }
 
@@ -932,32 +923,55 @@ public abstract class NonTransactionalDatabaseAdapter<
   protected abstract void unsafeWriteGlobalPointer(
       NonTransactionalOperationContext ctx, GlobalStatePointer pointer);
 
-  protected Hash writeGlobalCommit(
+  protected GlobalStateLogEntry writeGlobalCommit(
       NonTransactionalOperationContext ctx,
       long timeInMicros,
-      Hash parentHash,
+      GlobalStatePointer pointer,
       List<ContentIdAndBytes> globals)
       throws ReferenceConflictException {
-    GlobalStateLogEntry currentEntry = fetchFromGlobalLog(ctx, parentHash);
 
-    Stream<Hash> newParents = Stream.of(parentHash);
-    if (currentEntry != null) {
+    Hash parentHash = Hash.of(pointer.getGlobalId());
+    Hash hash = randomHash();
+
+    // Before Nessie 0.21.0: the global-state-pointer contains the "heads" for the ref-log and
+    // global-log, so it has to read the head ref-log & global-log to get the IDs of all the
+    // previous parents to fill the parents in the new global-log-entry & ref-log-entry.
+    //
+    // Since Nessie 0.21.0: the global-state-pointer contains the "heads" for the ref-log and
+    // global-log PLUS the parents of those, so Nessie no longer need to read the head entries
+    // from the ref-log + global-log.
+    //
+    // The check of the first entry is there to ensure backwards compatibility and also
+    // rolling-upgrades work.
+    Stream<ByteString> newParents;
+    if (pointer.getGlobalParentsInclHeadCount() == 0
+        || !pointer.getGlobalId().equals(pointer.getGlobalParentsInclHead(0))) {
+      // Before Nessie 0.21.0
+
+      newParents = Stream.of(parentHash.asBytes());
+      GlobalStateLogEntry currentEntry = fetchFromGlobalLog(ctx, parentHash);
+      if (currentEntry != null) {
+        newParents =
+            Stream.concat(
+                newParents,
+                currentEntry.getParentsList().stream()
+                    .limit(config.getParentsPerGlobalCommit() - 1));
+      }
+    } else {
+      // Since Nessie 0.21.0
+
       newParents =
-          Stream.concat(
-              newParents,
-              currentEntry.getParentsList().stream()
-                  .limit(config.getParentsPerGlobalCommit() - 1)
-                  .map(Hash::of));
+          pointer.getGlobalParentsInclHeadList().stream().limit(config.getParentsPerGlobalCommit());
     }
 
-    Hash hash = randomHash();
     GlobalStateLogEntry.Builder entry =
         GlobalStateLogEntry.newBuilder().setCreatedTime(timeInMicros).setId(hash.asBytes());
-    newParents.forEach(p -> entry.addParents(p.asBytes()));
+    newParents.forEach(entry::addParents);
     globals.forEach(g -> entry.addPuts(ProtoSerialization.toProto(g)));
-    writeGlobalCommit(ctx, entry.build());
+    GlobalStateLogEntry globalLogEntry = entry.build();
+    writeGlobalCommit(ctx, globalLogEntry);
 
-    return hash;
+    return globalLogEntry;
   }
 
   /**
@@ -1014,12 +1028,11 @@ public abstract class NonTransactionalDatabaseAdapter<
    */
   // TODO maybe replace with a 2nd-ary value in global-state-pointer to prevent the empty
   //  global-log-entry
-  protected Hash noopGlobalLogEntry(
+  protected GlobalStateLogEntry noopGlobalLogEntry(
       NonTransactionalOperationContext ctx, GlobalStatePointer pointer)
       throws ReferenceConflictException {
     // Need a new empty global-log entry to be able to CAS
-    return writeGlobalCommit(
-        ctx, commitTimeInMicros(), Hash.of(pointer.getGlobalId()), Collections.emptyList());
+    return writeGlobalCommit(ctx, commitTimeInMicros(), pointer, Collections.emptyList());
   }
 
   /**
@@ -1088,14 +1101,9 @@ public abstract class NonTransactionalDatabaseAdapter<
       return Collections.emptyMap();
     }
 
-    Set<ContentId> remainingIds = new HashSet<>(contentIds);
-    GlobalStatePointer pointer = fetchGlobalPointer(ctx);
-    if (pointer == null) {
-      return Collections.emptyMap();
-    }
-    Hash globalHead = Hash.of(pointer.getGlobalId());
+    Stream<GlobalStateLogEntry> log = globalLogFetcher(ctx);
 
-    Stream<GlobalStateLogEntry> log = globalLogFetcher(ctx, globalHead);
+    Set<ContentId> remainingIds = new HashSet<>(contentIds);
 
     return takeUntilExcludeLast(log, x -> remainingIds.isEmpty())
         .flatMap(e -> e.getPutsList().stream())
@@ -1106,20 +1114,56 @@ public abstract class NonTransactionalDatabaseAdapter<
   }
 
   /** Reads from the global-state-log starting at the given global-state-log-ID. */
-  private Stream<GlobalStateLogEntry> globalLogFetcher(
-      NonTransactionalOperationContext ctx, Hash initialId) {
-    GlobalStateLogEntry initial = fetchFromGlobalLog(ctx, initialId);
-    if (initial == null) {
-      throw new RuntimeException(
-          new ReferenceNotFoundException(
-              String.format("Global log entry '%s' not does not exist.", initialId.asString())));
+  private Stream<GlobalStateLogEntry> globalLogFetcher(NonTransactionalOperationContext ctx) {
+    GlobalStatePointer pointer = fetchGlobalPointer(ctx);
+    if (pointer == null) {
+      return Stream.empty();
     }
-    Spliterator<GlobalStateLogEntry> split =
-        logFetcher(
-            ctx,
-            initial,
-            this::fetchPageFromGlobalLog,
-            e -> e.getParentsList().stream().map(Hash::of).collect(Collectors.toList()));
+
+    // Before Nessie 0.21.0: the global-state-pointer contains the "heads" for the ref-log and
+    // global-log, so it has to read the head ref-log & global-log to get the IDs of all the
+    // previous parents to fill the parents in the new global-log-entry & ref-log-entry.
+    //
+    // Since Nessie 0.21.0: the global-state-pointer contains the "heads" for the ref-log and
+    // global-log PLUS the parents of those, so Nessie no longer need to read the head entries
+    // from the ref-log + global-log.
+    //
+    // The check of the first entry is there to ensure backwards compatibility and also
+    // rolling-upgrades work.
+    Spliterator<GlobalStateLogEntry> split;
+    if (pointer.getGlobalParentsInclHeadCount() == 0
+        || !pointer.getGlobalId().equals(pointer.getGlobalParentsInclHead(0))) {
+      // Before Nessie 0.21.0
+
+      Hash initialId = Hash.of(pointer.getGlobalId());
+
+      GlobalStateLogEntry initial = fetchFromGlobalLog(ctx, initialId);
+      if (initial == null) {
+        throw new RuntimeException(
+            new ReferenceNotFoundException(
+                String.format("Global log entry '%s' not does not exist.", initialId.asString())));
+      }
+
+      split =
+          logFetcher(
+              ctx,
+              initial,
+              this::fetchPageFromGlobalLog,
+              e -> e.getParentsList().stream().map(Hash::of).collect(Collectors.toList()));
+    } else {
+      // Since Nessie 0.21.0
+
+      List<Hash> hashes =
+          pointer.getGlobalParentsInclHeadList().stream()
+              .map(Hash::of)
+              .collect(Collectors.toList());
+      split =
+          logFetcherWithPage(
+              ctx,
+              hashes,
+              this::fetchPageFromGlobalLog,
+              e -> e.getParentsList().stream().map(Hash::of).collect(Collectors.toList()));
+    }
     return StreamSupport.stream(split, false);
   }
 
@@ -1151,53 +1195,40 @@ public abstract class NonTransactionalDatabaseAdapter<
   protected abstract List<GlobalStateLogEntry> doFetchPageFromGlobalLog(
       NonTransactionalOperationContext ctx, List<Hash> hashes);
 
-  protected Hash writeRefLogEntry(
+  protected RefLogEntry writeRefLogEntry(
       NonTransactionalOperationContext ctx,
+      GlobalStatePointer pointer,
       String refName,
-      RefLogEntry.RefType refType,
-      Hash parentRefLogId,
+      RefType refType,
       Hash commitHash,
-      RefLogEntry.Operation operation,
+      Operation operation,
       long timeInMicros,
       List<Hash> sourceHashes)
       throws ReferenceConflictException {
 
+    Hash parentHash = Hash.of(pointer.getRefLogId());
     Hash currentRefLogId = randomHash();
-    RefLog parentEntry = fetchFromRefLog(ctx, parentRefLogId);
-    RefLogEntry refLogEntry =
-        buildRefLogEntry(
-            refName,
-            refType,
-            parentRefLogId,
-            commitHash,
-            operation,
-            timeInMicros,
-            sourceHashes,
-            currentRefLogId,
-            parentEntry);
 
-    writeRefLog(ctx, refLogEntry);
+    Stream<ByteString> newParents;
+    if (pointer.getRefLogParentsInclHeadCount() == 0
+        || !pointer.getRefLogId().equals(pointer.getRefLogParentsInclHead(0))) {
+      // Before Nessie 0.21.0
 
-    return currentRefLogId;
-  }
+      newParents = Stream.of(parentHash.asBytes());
+      RefLog currentEntry = fetchFromRefLog(ctx, parentHash);
+      if (currentEntry != null) {
+        newParents =
+            Stream.concat(
+                newParents,
+                currentEntry.getParents().stream()
+                    .limit(config.getParentsPerRefLogEntry() - 1)
+                    .map(Hash::asBytes));
+      }
+    } else {
+      // Since Nessie 0.21.0
 
-  private RefLogEntry buildRefLogEntry(
-      String refName,
-      RefLogEntry.RefType refType,
-      Hash parentRefLogId,
-      Hash commitHash,
-      RefLogEntry.Operation operation,
-      long timeInMicros,
-      List<Hash> sourceHashes,
-      Hash currentRefLogId,
-      RefLog parentEntry) {
-    Stream<Hash> newParents = Stream.of(parentRefLogId);
-
-    if (parentEntry != null) {
       newParents =
-          Stream.concat(
-              newParents,
-              parentEntry.getParents().stream().limit(config.getParentsPerRefLogEntry() - 1));
+          pointer.getRefLogParentsInclHeadList().stream().limit(config.getParentsPerRefLogEntry());
     }
 
     RefLogEntry.Builder entry =
@@ -1209,8 +1240,12 @@ public abstract class NonTransactionalDatabaseAdapter<
             .setOperationTime(timeInMicros)
             .setOperation(operation);
     sourceHashes.forEach(hash -> entry.addSourceHashes(hash.asBytes()));
-    newParents.forEach(p -> entry.addParents(p.asBytes()));
-    return entry.build();
+    newParents.forEach(entry::addParents);
+    RefLogEntry refLogEntry = entry.build();
+
+    writeRefLog(ctx, refLogEntry);
+
+    return refLogEntry;
   }
 
   @Override
