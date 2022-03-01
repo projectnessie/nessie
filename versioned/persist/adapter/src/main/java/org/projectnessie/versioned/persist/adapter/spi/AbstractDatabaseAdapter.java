@@ -24,6 +24,7 @@ import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUti
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.referenceNotFound;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.takeUntilExcludeLast;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.takeUntilIncludeLast;
+import static org.projectnessie.versioned.persist.adapter.spi.Traced.trace;
 
 import com.google.common.hash.Hasher;
 import com.google.protobuf.ByteString;
@@ -109,6 +110,8 @@ import org.projectnessie.versioned.persist.adapter.RefLog;
 public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends DatabaseAdapterConfig>
     implements DatabaseAdapter {
 
+  protected static final String TAG_HASH = "hash";
+  protected static final String TAG_COUNT = "count";
   protected final CONFIG config;
   protected final ContentVariantSupplier contentVariantSupplier;
 
@@ -626,14 +629,33 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
   }
 
   /** Load the commit-log entry for the given hash, return {@code null}, if not found. */
-  protected abstract CommitLogEntry fetchFromCommitLog(OP_CONTEXT ctx, Hash hash);
+  protected final CommitLogEntry fetchFromCommitLog(OP_CONTEXT ctx, Hash hash) {
+    try (Traced ignore = trace("fetchFromCommitLog").tag(TAG_HASH, hash.asString())) {
+      return doFetchFromCommitLog(ctx, hash);
+    }
+  }
+
+  protected abstract CommitLogEntry doFetchFromCommitLog(OP_CONTEXT ctx, Hash hash);
 
   /**
    * Fetch multiple {@link CommitLogEntry commit-log-entries} from the commit-log. The returned list
    * must have exactly as many elements as in the parameter {@code hashes}. Non-existing hashes are
    * returned as {@code null}.
    */
-  protected abstract List<CommitLogEntry> fetchPageFromCommitLog(OP_CONTEXT ctx, List<Hash> hashes);
+  protected final List<CommitLogEntry> fetchPageFromCommitLog(OP_CONTEXT ctx, List<Hash> hashes) {
+    if (hashes.isEmpty()) {
+      return Collections.emptyList();
+    }
+    try (Traced ignore =
+        trace("fetchPageFromCommitLog")
+            .tag(TAG_HASH, hashes.get(0).asString())
+            .tag(TAG_COUNT, hashes.size())) {
+      return doFetchPageFromCommitLog(ctx, hashes);
+    }
+  }
+
+  protected abstract List<CommitLogEntry> doFetchPageFromCommitLog(
+      OP_CONTEXT ctx, List<Hash> hashes);
 
   /** Reads from the commit-log starting at the given commit-log-hash. */
   protected Stream<CommitLogEntry> readCommitLogStream(OP_CONTEXT ctx, Hash initialHash)
@@ -1047,10 +1069,23 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
    * @param contentIds the content-ids to fetch
    * @return map of content-id to state
    */
-  protected abstract Map<ContentId, ByteString> fetchGlobalStates(
+  protected final Map<ContentId, ByteString> fetchGlobalStates(
+      OP_CONTEXT ctx, Set<ContentId> contentIds) throws ReferenceNotFoundException {
+    try (Traced ignore = trace("fetchGlobalStates").tag(TAG_COUNT, contentIds.size())) {
+      return doFetchGlobalStates(ctx, contentIds);
+    }
+  }
+
+  protected abstract Map<ContentId, ByteString> doFetchGlobalStates(
       OP_CONTEXT ctx, Set<ContentId> contentIds) throws ReferenceNotFoundException;
 
-  protected abstract Stream<KeyListEntity> fetchKeyLists(OP_CONTEXT ctx, List<Hash> keyListsIds);
+  protected final Stream<KeyListEntity> fetchKeyLists(OP_CONTEXT ctx, List<Hash> keyListsIds) {
+    try (Traced ignore = trace("fetchKeyLists").tag(TAG_COUNT, keyListsIds.size())) {
+      return doFetchKeyLists(ctx, keyListsIds);
+    }
+  }
+
+  protected abstract Stream<KeyListEntity> doFetchKeyLists(OP_CONTEXT ctx, List<Hash> keyListsIds);
 
   /**
    * Write a new commit-entry, the given commit entry is to be persisted as is. All values of the
@@ -1059,7 +1094,14 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
    * <p>Implementations however can enforce strict consistency checks/guarantees, like a best-effort
    * approach to prevent hash-collisions but without any other consistency checks/guarantees.
    */
-  protected abstract void writeIndividualCommit(OP_CONTEXT ctx, CommitLogEntry entry)
+  protected final void writeIndividualCommit(OP_CONTEXT ctx, CommitLogEntry entry)
+      throws ReferenceConflictException {
+    try (Traced ignore = trace("writeIndividualCommit")) {
+      doWriteIndividualCommit(ctx, entry);
+    }
+  }
+
+  protected abstract void doWriteIndividualCommit(OP_CONTEXT ctx, CommitLogEntry entry)
       throws ReferenceConflictException;
 
   /**
@@ -1069,10 +1111,24 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
    * <p>Implementations however can enforce strict consistency checks/guarantees, like a best-effort
    * approach to prevent hash-collisions but without any other consistency checks/guarantees.
    */
-  protected abstract void writeMultipleCommits(OP_CONTEXT ctx, List<CommitLogEntry> entries)
+  protected final void writeMultipleCommits(OP_CONTEXT ctx, List<CommitLogEntry> entries)
+      throws ReferenceConflictException {
+    try (Traced ignore = trace("writeMultipleCommits").tag(TAG_COUNT, entries.size())) {
+      doWriteMultipleCommits(ctx, entries);
+    }
+  }
+
+  protected abstract void doWriteMultipleCommits(OP_CONTEXT ctx, List<CommitLogEntry> entries)
       throws ReferenceConflictException;
 
-  protected abstract void writeKeyListEntities(
+  protected final void writeKeyListEntities(
+      OP_CONTEXT ctx, List<KeyListEntity> newKeyListEntities) {
+    try (Traced ignore = trace("writeKeyListEntities").tag(TAG_COUNT, newKeyListEntities.size())) {
+      doWriteKeyListEntities(ctx, newKeyListEntities);
+    }
+  }
+
+  protected abstract void doWriteKeyListEntities(
       OP_CONTEXT ctx, List<KeyListEntity> newKeyListEntities);
 
   /**
@@ -1355,14 +1411,33 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
   }
 
   /** Load the refLog entry for the given hash, return {@code null}, if not found. */
-  protected abstract RefLog fetchFromRefLog(OP_CONTEXT ctx, Hash refLogId);
+  protected final RefLog fetchFromRefLog(OP_CONTEXT ctx, Hash refLogId) {
+    try (Traced ignore =
+        trace("fetchFromRefLog").tag(TAG_HASH, refLogId != null ? refLogId.asString() : "HEAD")) {
+      return doFetchFromRefLog(ctx, refLogId);
+    }
+  }
+
+  protected abstract RefLog doFetchFromRefLog(OP_CONTEXT ctx, Hash refLogId);
 
   /**
    * Fetch multiple {@link RefLog refLog-entries} from the refLog. The returned list must have
    * exactly as many elements as in the parameter {@code hashes}. Non-existing hashes are returned
    * as {@code null}.
    */
-  protected abstract List<RefLog> fetchPageFromRefLog(OP_CONTEXT ctx, List<Hash> hashes);
+  protected final List<RefLog> fetchPageFromRefLog(OP_CONTEXT ctx, List<Hash> hashes) {
+    if (hashes.isEmpty()) {
+      return Collections.emptyList();
+    }
+    try (Traced ignore =
+        trace("fetchPageFromRefLog")
+            .tag(TAG_HASH, hashes.get(0).asString())
+            .tag(TAG_COUNT, hashes.size())) {
+      return doFetchPageFromRefLog(ctx, hashes);
+    }
+  }
+
+  protected abstract List<RefLog> doFetchPageFromRefLog(OP_CONTEXT ctx, List<Hash> hashes);
 
   /** Reads from the refLog starting at the given refLog-hash. */
   protected Stream<RefLog> readRefLogStream(OP_CONTEXT ctx, Hash initialHash)

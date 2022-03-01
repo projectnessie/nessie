@@ -47,12 +47,14 @@ import org.junit.platform.commons.util.AnnotationUtils;
 import org.junit.platform.commons.util.ExceptionUtils;
 import org.junit.platform.commons.util.ReflectionUtils;
 import org.projectnessie.versioned.StoreWorker;
+import org.projectnessie.versioned.TracingVersionStore;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.persist.adapter.AdjustableDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.adapter.DatabaseConnectionProvider;
+import org.projectnessie.versioned.persist.adapter.spi.TracingDatabaseAdapter;
 import org.projectnessie.versioned.persist.store.GenericContentVariantSupplier;
 import org.projectnessie.versioned.persist.store.PersistVersionStore;
 import org.projectnessie.versioned.persist.tests.SystemPropertiesConfigurer;
@@ -153,28 +155,23 @@ public class DatabaseAdapterExtension
                                 })));
   }
 
+  @Override
+  public boolean supportsParameter(
+      ParameterContext parameterContext, ExtensionContext extensionContext)
+      throws ParameterResolutionException {
+    return parameterContext.isAnnotated(NessieDbAdapter.class);
+  }
+
   private void injectField(
       ExtensionContext context, Field field, Consumer<DatabaseAdapter> newAdapter) {
     assertValidFieldCandidate(field);
     try {
-      NessieDbAdapter dbAdapter =
+      NessieDbAdapter nessieDbAdapter =
           AnnotationUtils.findAnnotation(field, NessieDbAdapter.class)
               .orElseThrow(IllegalStateException::new);
 
-      StoreWorker<?, ?, ?> storeWorker = createStoreWorker(dbAdapter);
-
-      DatabaseAdapter databaseAdapter =
-          createAdapterResource(dbAdapter, context, null, storeWorker);
-
-      Object assign;
-      if (field.getType().isAssignableFrom(DatabaseAdapter.class)) {
-        assign = databaseAdapter;
-      } else if (field.getType().isAssignableFrom(VersionStore.class)) {
-        assign = createStore(databaseAdapter, storeWorker);
-      } else {
-        throw new IllegalStateException("Cannot assign to " + field);
-      }
-      newAdapter.accept(databaseAdapter);
+      Object assign =
+          resolve(nessieDbAdapter, field, field.getType(), context, null, false, newAdapter);
 
       makeAccessible(field).set(context.getTestInstance().orElse(null), assign);
     } catch (Throwable t) {
@@ -183,39 +180,61 @@ public class DatabaseAdapterExtension
   }
 
   @Override
-  public boolean supportsParameter(
-      ParameterContext parameterContext, ExtensionContext extensionContext)
-      throws ParameterResolutionException {
-    return parameterContext.isAnnotated(NessieDbAdapter.class);
-  }
-
-  @Override
   public Object resolveParameter(ParameterContext parameterContext, ExtensionContext context)
       throws ParameterResolutionException {
-    Parameter parameter = parameterContext.getParameter();
-
     NessieDbAdapter nessieDbAdapter =
         parameterContext
             .findAnnotation(NessieDbAdapter.class)
             .orElseThrow(IllegalStateException::new);
+
+    Parameter parameter = parameterContext.getParameter();
+    return resolve(
+        nessieDbAdapter,
+        parameter,
+        parameter.getType(),
+        context,
+        parameterContext,
+        true,
+        adapter -> {});
+  }
+
+  private Object resolve(
+      NessieDbAdapter nessieDbAdapter,
+      AnnotatedElement annotatedElement,
+      Class<?> type,
+      ExtensionContext context,
+      ParameterContext parameterContext,
+      boolean canReinit,
+      Consumer<DatabaseAdapter> newAdapter) {
 
     StoreWorker<?, ?, ?> storeWorker = createStoreWorker(nessieDbAdapter);
 
     DatabaseAdapter databaseAdapter =
         createAdapterResource(nessieDbAdapter, context, parameterContext, storeWorker);
 
-    if (nessieDbAdapter.initializeRepo()) {
+    if (nessieDbAdapter.withTracing()) {
+      databaseAdapter = new TracingDatabaseAdapter(databaseAdapter);
+    }
+
+    if (canReinit && nessieDbAdapter.initializeRepo()) {
       reinit(databaseAdapter);
     }
 
     Object assign;
-    if (parameter.getType().isAssignableFrom(DatabaseAdapter.class)) {
+    if (type.isAssignableFrom(DatabaseAdapter.class)) {
       assign = databaseAdapter;
-    } else if (parameter.getType().isAssignableFrom(VersionStore.class)) {
-      assign = createStore(databaseAdapter, storeWorker);
+    } else if (type.isAssignableFrom(VersionStore.class)) {
+      VersionStore<?, ?, ?> store = createStore(databaseAdapter, storeWorker);
+      if (nessieDbAdapter.withTracing()) {
+        store = new TracingVersionStore<>(store);
+      }
+      assign = store;
     } else {
-      throw new IllegalStateException("Cannot assign to " + parameter);
+      throw new IllegalStateException("Cannot assign to " + annotatedElement);
     }
+
+    newAdapter.accept(databaseAdapter);
+
     return assign;
   }
 

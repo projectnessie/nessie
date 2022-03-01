@@ -34,6 +34,7 @@ import org.projectnessie.versioned.MetricsVersionStore;
 import org.projectnessie.versioned.TracingVersionStore;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
+import org.projectnessie.versioned.persist.adapter.spi.TracingDatabaseAdapter;
 import org.projectnessie.versioned.persist.store.GenericContentVariantSupplier;
 import org.projectnessie.versioned.persist.store.PersistVersionStore;
 import org.slf4j.Logger;
@@ -88,6 +89,10 @@ public class ConfigurableVersionStoreFactory {
               .get()
               .newDatabaseAdapter(new GenericContentVariantSupplier<>(storeWorker));
       databaseAdapter.initializeRepo(serverConfig.getDefaultBranch());
+
+      if (storeConfig.isTracingEnabled()) {
+        databaseAdapter = new TracingDatabaseAdapter(databaseAdapter);
+      }
 
       VersionStore<Content, CommitMeta, Content.Type> versionStore =
           new PersistVersionStore<>(databaseAdapter, storeWorker);

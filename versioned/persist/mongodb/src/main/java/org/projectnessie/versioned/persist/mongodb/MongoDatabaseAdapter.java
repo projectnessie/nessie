@@ -275,7 +275,7 @@ public class MongoDatabaseAdapter
   }
 
   @Override
-  protected CommitLogEntry fetchFromCommitLog(NonTransactionalOperationContext ctx, Hash hash) {
+  protected CommitLogEntry doFetchFromCommitLog(NonTransactionalOperationContext ctx, Hash hash) {
     return loadById(client.getCommitLog(), hash, ProtoSerialization::protoToCommitLogEntry);
   }
 
@@ -298,19 +298,19 @@ public class MongoDatabaseAdapter
   }
 
   @Override
-  protected List<CommitLogEntry> fetchPageFromCommitLog(
+  protected List<CommitLogEntry> doFetchPageFromCommitLog(
       NonTransactionalOperationContext ctx, List<Hash> hashes) {
     return fetchPage(client.getCommitLog(), hashes, ProtoSerialization::protoToCommitLogEntry);
   }
 
   @Override
-  protected RepoDescription fetchRepositoryDescription(NonTransactionalOperationContext ctx) {
+  protected RepoDescription doFetchRepositoryDescription(NonTransactionalOperationContext ctx) {
     return loadById(
         client.getRepoDesc(), globalPointerKey, ProtoSerialization::protoToRepoDescription);
   }
 
   @Override
-  protected boolean tryUpdateRepositoryDescription(
+  protected boolean doTryUpdateRepositoryDescription(
       NonTransactionalOperationContext ctx, RepoDescription expected, RepoDescription updateTo) {
     Document doc = toDoc(toProto(updateTo));
 
@@ -344,7 +344,7 @@ public class MongoDatabaseAdapter
   }
 
   @Override
-  protected Stream<KeyListEntity> fetchKeyLists(
+  protected Stream<KeyListEntity> doFetchKeyLists(
       NonTransactionalOperationContext ctx, List<Hash> keyListsIds) {
     return fetchMappedPage(
         client.getKeyLists(),
@@ -358,13 +358,13 @@ public class MongoDatabaseAdapter
   }
 
   @Override
-  protected void writeIndividualCommit(NonTransactionalOperationContext ctx, CommitLogEntry entry)
+  protected void doWriteIndividualCommit(NonTransactionalOperationContext ctx, CommitLogEntry entry)
       throws ReferenceConflictException {
     insert(client.getCommitLog(), entry.getHash(), toProto(entry).toByteArray());
   }
 
   @Override
-  protected void writeMultipleCommits(
+  protected void doWriteMultipleCommits(
       NonTransactionalOperationContext ctx, List<CommitLogEntry> entries)
       throws ReferenceConflictException {
     List<Document> docs =
@@ -375,7 +375,7 @@ public class MongoDatabaseAdapter
   }
 
   @Override
-  protected void writeKeyListEntities(
+  protected void doWriteKeyListEntities(
       NonTransactionalOperationContext ctx, List<KeyListEntity> newKeyListEntities) {
     for (KeyListEntity keyList : newKeyListEntities) {
       try {
@@ -387,7 +387,8 @@ public class MongoDatabaseAdapter
   }
 
   @Override
-  protected void writeGlobalCommit(NonTransactionalOperationContext ctx, GlobalStateLogEntry entry)
+  protected void doWriteGlobalCommit(
+      NonTransactionalOperationContext ctx, GlobalStateLogEntry entry)
       throws ReferenceConflictException {
     Document id = toId(Hash.of(entry.getId()));
     insert(client.getGlobalLog(), toDoc(id, entry.toByteArray()));
@@ -413,7 +414,7 @@ public class MongoDatabaseAdapter
   }
 
   @Override
-  protected boolean globalPointerCas(
+  protected boolean doGlobalPointerCas(
       NonTransactionalOperationContext ctx,
       GlobalStatePointer expected,
       GlobalStatePointer newPointer) {
@@ -435,7 +436,7 @@ public class MongoDatabaseAdapter
   }
 
   @Override
-  protected void cleanUpCommitCas(
+  protected void doCleanUpCommitCas(
       NonTransactionalOperationContext ctx,
       Hash globalId,
       Set<Hash> branchCommits,
@@ -449,30 +450,31 @@ public class MongoDatabaseAdapter
   }
 
   @Override
-  protected GlobalStatePointer fetchGlobalPointer(NonTransactionalOperationContext ctx) {
+  protected GlobalStatePointer doFetchGlobalPointer(NonTransactionalOperationContext ctx) {
     return loadById(client.getGlobalPointers(), globalPointerKey, GlobalStatePointer::parseFrom);
   }
 
   @Override
-  protected GlobalStateLogEntry fetchFromGlobalLog(NonTransactionalOperationContext ctx, Hash id) {
+  protected GlobalStateLogEntry doFetchFromGlobalLog(
+      NonTransactionalOperationContext ctx, Hash id) {
     return loadById(client.getGlobalLog(), id, GlobalStateLogEntry::parseFrom);
   }
 
   @Override
-  protected List<GlobalStateLogEntry> fetchPageFromGlobalLog(
+  protected List<GlobalStateLogEntry> doFetchPageFromGlobalLog(
       NonTransactionalOperationContext ctx, List<Hash> hashes) {
     return fetchPage(client.getGlobalLog(), hashes, GlobalStateLogEntry::parseFrom);
   }
 
   @Override
-  protected void writeRefLog(NonTransactionalOperationContext ctx, AdapterTypes.RefLogEntry entry)
+  protected void doWriteRefLog(NonTransactionalOperationContext ctx, AdapterTypes.RefLogEntry entry)
       throws ReferenceConflictException {
     Document id = toId(Hash.of(entry.getRefLogId()));
     insert(client.getRefLog(), toDoc(id, entry.toByteArray()));
   }
 
   @Override
-  protected RefLog fetchFromRefLog(NonTransactionalOperationContext ctx, Hash refLogId) {
+  protected RefLog doFetchFromRefLog(NonTransactionalOperationContext ctx, Hash refLogId) {
     if (refLogId == null) {
       // set the current head as refLogId
       refLogId = Hash.of(fetchGlobalPointer(ctx).getRefLogId());
@@ -481,7 +483,7 @@ public class MongoDatabaseAdapter
   }
 
   @Override
-  protected List<RefLog> fetchPageFromRefLog(
+  protected List<RefLog> doFetchPageFromRefLog(
       NonTransactionalOperationContext ctx, List<Hash> hashes) {
     return fetchPage(client.getRefLog(), hashes, ProtoSerialization::protoToRefLog);
   }

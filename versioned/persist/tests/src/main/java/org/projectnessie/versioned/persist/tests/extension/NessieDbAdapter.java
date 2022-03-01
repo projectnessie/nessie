@@ -59,5 +59,7 @@ public @interface NessieDbAdapter {
   /** Whether to initialize the adapter, defaults to {@code true}. */
   boolean initializeRepo() default true;
 
+  boolean withTracing() default false;
+
   Class<? extends StoreWorker<?, ?, ?>> storeWorker() default SimpleStoreWorker.class;
 }

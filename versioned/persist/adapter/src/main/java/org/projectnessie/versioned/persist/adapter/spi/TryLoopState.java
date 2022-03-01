@@ -15,6 +15,8 @@
  */
 package org.projectnessie.versioned.persist.adapter.spi;
 
+import static org.projectnessie.versioned.persist.adapter.spi.Traced.trace;
+
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
@@ -24,8 +26,13 @@ import org.projectnessie.versioned.ReferenceRetryFailureException;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 
 /** Retry-logic for attempts for compare-and-swap-like operations. */
-public final class TryLoopState implements AutoCloseable {
+public class TryLoopState implements AutoCloseable {
 
+  private static final String TAG_ATTEMPT = "try-loop.attempt";
+  private static final String TAG_RETRIES = "try-loop.retries";
+
+  private Traced traced;
+  private final String opName;
   private final MonotonicClock monotonicClock;
   private final long t0;
   private final long maxTime;
@@ -38,10 +45,12 @@ public final class TryLoopState implements AutoCloseable {
   private int retries;
 
   TryLoopState(
+      String opName,
       Function<TryLoopState, String> retryErrorMessage,
       DatabaseAdapterConfig config,
       MonotonicClock monotonicClock,
       BiConsumer<Boolean, TryLoopState> completionNotifier) {
+    this.opName = opName;
     this.retryErrorMessage = retryErrorMessage;
     this.maxTime = TimeUnit.MILLISECONDS.toNanos(config.getCommitTimeout());
     this.maxRetries = config.getCommitRetries();
@@ -51,14 +60,20 @@ public final class TryLoopState implements AutoCloseable {
     this.upperBound = config.getRetryInitialSleepMillisUpper();
     this.maxSleep = config.getRetryMaxSleepMillis();
     this.completionNotifier = completionNotifier;
+    start();
   }
 
   public static TryLoopState newTryLoopState(
+      String opName,
       Function<TryLoopState, String> retryErrorMessage,
       BiConsumer<Boolean, TryLoopState> completionNotifier,
       DatabaseAdapterConfig config) {
     return new TryLoopState(
-        retryErrorMessage, config, DefaultMonotonicClock.INSTANCE, completionNotifier);
+        "try-loop." + opName,
+        retryErrorMessage,
+        config,
+        DefaultMonotonicClock.INSTANCE,
+        completionNotifier);
   }
 
   public int getRetries() {
@@ -94,6 +109,8 @@ public final class TryLoopState implements AutoCloseable {
    * exceeded the configured values.
    */
   public void retry() throws ReferenceRetryFailureException {
+    stop();
+
     retries++;
 
     long current = monotonicClock.currentNanos();
@@ -115,11 +132,14 @@ public final class TryLoopState implements AutoCloseable {
       lowerBound *= 2;
       upperBound = upper;
     }
+
+    start();
   }
 
   @Override
   public void close() {
     // Can detect success/failed/too-many-retries here, if needed.
+    stop();
   }
 
   /** Abstracts {@code System.nanoTime()} and {@code Thread.sleep()} for testing purposes. */
@@ -148,5 +168,13 @@ public final class TryLoopState implements AutoCloseable {
         Thread.currentThread().interrupt();
       }
     }
+  }
+
+  private void start() {
+    traced = trace(opName).tag(TAG_ATTEMPT, getRetries());
+  }
+
+  private void stop() {
+    traced.tag(TAG_RETRIES, getRetries()).close();
   }
 }

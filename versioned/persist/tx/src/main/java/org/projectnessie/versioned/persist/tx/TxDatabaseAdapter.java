@@ -27,6 +27,7 @@ import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUti
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.repoDescUpdateConflictMessage;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.transplantConflictMessage;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.verifyExpectedHash;
+import static org.projectnessie.versioned.persist.adapter.spi.Traced.trace;
 import static org.projectnessie.versioned.persist.adapter.spi.TryLoopState.newTryLoopState;
 import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.protoToCommitLogEntry;
 import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.protoToKeyList;
@@ -86,6 +87,7 @@ import org.projectnessie.versioned.persist.adapter.KeyWithType;
 import org.projectnessie.versioned.persist.adapter.RefLog;
 import org.projectnessie.versioned.persist.adapter.RepoDescription;
 import org.projectnessie.versioned.persist.adapter.spi.AbstractDatabaseAdapter;
+import org.projectnessie.versioned.persist.adapter.spi.Traced;
 import org.projectnessie.versioned.persist.adapter.spi.TryLoopState;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes;
 
@@ -240,6 +242,7 @@ public abstract class TxDatabaseAdapter
     // creates a new commit-tree that is decoupled from other commit-trees.
     try {
       return opLoop(
+          "merge",
           toBranch,
           false,
           (conn, currentHead) -> {
@@ -287,6 +290,7 @@ public abstract class TxDatabaseAdapter
       throws ReferenceNotFoundException, ReferenceConflictException {
     try {
       return opLoop(
+          "transplant",
           targetBranch,
           false,
           (conn, currentHead) -> {
@@ -331,6 +335,7 @@ public abstract class TxDatabaseAdapter
       throws ReferenceConflictException, ReferenceNotFoundException {
     try {
       return opLoop(
+          "commit",
           commitAttempt.getCommitToBranch(),
           false,
           (conn, branchHead) -> {
@@ -376,6 +381,7 @@ public abstract class TxDatabaseAdapter
       throws ReferenceAlreadyExistsException, ReferenceNotFoundException {
     try {
       return opLoop(
+          "createRef",
           ref,
           true,
           (conn, nullHead) -> {
@@ -418,14 +424,16 @@ public abstract class TxDatabaseAdapter
       throws ReferenceNotFoundException, ReferenceConflictException {
     try {
       opLoop(
+          "deleteRef",
           reference,
           false,
           (conn, pointer) -> {
             verifyExpectedHash(pointer, reference, expectedHead);
 
             Hash commitHash = fetchNamedRefHead(conn, reference);
-            try (PreparedStatement ps =
-                conn.prepareStatement(SqlStatements.DELETE_NAMED_REFERENCE)) {
+            try (Traced ignore = trace("deleteRefInDb");
+                PreparedStatement ps =
+                    conn.prepareStatement(SqlStatements.DELETE_NAMED_REFERENCE)) {
               ps.setString(1, config.getRepositoryId());
               ps.setString(2, reference.getName());
               ps.setString(3, pointer.asString());
@@ -458,6 +466,7 @@ public abstract class TxDatabaseAdapter
       throws ReferenceNotFoundException, ReferenceConflictException {
     try {
       opLoop(
+          "assignRef",
           assignee,
           true,
           (conn, assigneeHead) -> {
@@ -595,8 +604,9 @@ public abstract class TxDatabaseAdapter
       ContentId contentId, ToIntFunction<ByteString> contentTypeExtractor) {
     Connection conn = borrowConnection();
     try {
-      try (PreparedStatement ps =
-          conn.prepareStatement(String.format(SqlStatements.SELECT_GLOBAL_STATE_MANY, "?"))) {
+      try (Traced ignore = trace("globalContent");
+          PreparedStatement ps =
+              conn.prepareStatement(String.format(SqlStatements.SELECT_GLOBAL_STATE_MANY, "?"))) {
         ps.setString(1, config.getRepositoryId());
         ps.setString(2, contentId.getId());
         try (ResultSet rs = ps.executeQuery()) {
@@ -737,15 +747,15 @@ public abstract class TxDatabaseAdapter
      * @param conn current JDBC connection
      * @param targetRefHead current named-reference's HEAD
      * @return if non-{@code * null}, the JDBC transaction is committed and the hash returned from
-     *     {@link #opLoop(NamedRef, boolean, LoopOp, Supplier, Supplier)}. If {@code null}, the
-     *     {@code opLoop()} tries again.
+     *     {@link #opLoop(String, NamedRef, boolean, LoopOp, Supplier, Supplier)}. If {@code null},
+     *     the {@code opLoop()} tries again.
      * @throws RetryTransactionException (see {@link #isRetryTransaction(SQLException)}), the
-     *     current JDBC transaction is rolled back and {@link #opLoop(NamedRef, boolean, LoopOp,
-     *     Supplier, Supplier)} tries again
+     *     current JDBC transaction is rolled back and {@link #opLoop(String, NamedRef, boolean,
+     *     LoopOp, Supplier, Supplier)} tries again
      * @throws SQLException if this matches {@link #isIntegrityConstraintViolation(Throwable)}, the
      *     exception is re-thrown as a {@link ReferenceConflictException}
      * @throws VersionStoreException any other version-store exception
-     * @see #opLoop(NamedRef, boolean, LoopOp, Supplier, Supplier)
+     * @see #opLoop(String, NamedRef, boolean, LoopOp, Supplier, Supplier)
      */
     Hash apply(Connection conn, Hash targetRefHead) throws VersionStoreException, SQLException;
   }
@@ -779,6 +789,7 @@ public abstract class TxDatabaseAdapter
    * @see LoopOp#apply(Connection, Hash)
    */
   protected Hash opLoop(
+      String opName,
       NamedRef namedReference,
       boolean createRef,
       LoopOp loopOp,
@@ -789,6 +800,7 @@ public abstract class TxDatabaseAdapter
 
     try (TryLoopState tryState =
         newTryLoopState(
+            opName,
             ts ->
                 repoDescUpdateConflictMessage(
                     String.format(
@@ -862,7 +874,8 @@ public abstract class TxDatabaseAdapter
 
   /** Similar to {@link #fetchNamedRefHead(Connection, NamedRef)}, but just checks for existence. */
   protected boolean checkNamedRefExistence(Connection c, String refName) {
-    try (PreparedStatement ps = c.prepareStatement(SqlStatements.SELECT_NAMED_REFERENCE_NAME)) {
+    try (Traced ignore = trace("checkNamedRefExistence");
+        PreparedStatement ps = c.prepareStatement(SqlStatements.SELECT_NAMED_REFERENCE_NAME)) {
       ps.setString(1, config.getRepositoryId());
       ps.setString(2, refName);
       try (ResultSet rs = ps.executeQuery()) {
@@ -878,7 +891,8 @@ public abstract class TxDatabaseAdapter
    * reference does not exist.
    */
   protected Hash fetchNamedRefHead(Connection c, NamedRef ref) throws ReferenceNotFoundException {
-    try (PreparedStatement ps = c.prepareStatement(SqlStatements.SELECT_NAMED_REFERENCE)) {
+    try (Traced ignore = trace("fetchNamedRefHead");
+        PreparedStatement ps = c.prepareStatement(SqlStatements.SELECT_NAMED_REFERENCE)) {
       ps.setString(1, config.getRepositoryId());
       ps.setString(2, ref.getName());
       ps.setString(3, referenceTypeDiscriminator(ref));
@@ -895,7 +909,8 @@ public abstract class TxDatabaseAdapter
 
   protected ReferenceInfo<ByteString> fetchNamedRef(Connection c, String ref)
       throws ReferenceNotFoundException {
-    try (PreparedStatement ps = c.prepareStatement(SqlStatements.SELECT_NAMED_REFERENCE_ANY)) {
+    try (Traced ignore = trace("fetchNamedRef");
+        PreparedStatement ps = c.prepareStatement(SqlStatements.SELECT_NAMED_REFERENCE_ANY)) {
       ps.setString(1, config.getRepositoryId());
       ps.setString(2, ref);
       try (ResultSet rs = ps.executeQuery()) {
@@ -924,7 +939,8 @@ public abstract class TxDatabaseAdapter
 
   protected void insertNewReference(Connection conn, NamedRef ref, Hash hash)
       throws ReferenceAlreadyExistsException, SQLException {
-    try (PreparedStatement ps = conn.prepareStatement(SqlStatements.INSERT_NAMED_REFERENCE)) {
+    try (Traced ignore = trace("insertNewReference");
+        PreparedStatement ps = conn.prepareStatement(SqlStatements.INSERT_NAMED_REFERENCE)) {
       ps.setString(1, config.getRepositoryId());
       ps.setString(2, ref.getName());
       ps.setString(3, referenceTypeDiscriminator(ref));
@@ -998,7 +1014,8 @@ public abstract class TxDatabaseAdapter
 
     Set<ContentId> newKeys = new HashSet<>(commitAttempt.getGlobal().keySet());
 
-    try (PreparedStatement psSelect = conn.prepareStatement(sql);
+    try (Traced ignore = trace("upsertGlobalStates");
+        PreparedStatement psSelect = conn.prepareStatement(sql);
         PreparedStatement psUpdate = conn.prepareStatement(SqlStatements.UPDATE_GLOBAL_STATE);
         PreparedStatement psUpdateUnconditional =
             conn.prepareStatement(SqlStatements.UPDATE_GLOBAL_STATE_UNCOND)) {
@@ -1039,34 +1056,36 @@ public abstract class TxDatabaseAdapter
           String newHash = newHasher().putBytes(newStateBytes).hash().toString();
 
           // Perform a conditional update, if the client asked us to do so.
-          PreparedStatement ps = expected.isEmpty() ? psUpdateUnconditional : psUpdate;
-          ps.setBytes(1, newStateBytes);
-          ps.setString(2, newHash);
-          ps.setLong(3, newCreatedAt);
-          ps.setString(4, config.getRepositoryId());
-          ps.setString(5, contentId.getId());
-          if (!expected.isEmpty()) {
-            // Only perform a conditional update, if the client asked us to do so...
+          try (Traced ignored = trace("upsertGlobalStatesPerform")) {
+            PreparedStatement ps = expected.isEmpty() ? psUpdateUnconditional : psUpdate;
+            ps.setBytes(1, newStateBytes);
+            ps.setString(2, newHash);
+            ps.setLong(3, newCreatedAt);
+            ps.setString(4, config.getRepositoryId());
+            ps.setString(5, contentId.getId());
+            if (!expected.isEmpty()) {
+              // Only perform a conditional update, if the client asked us to do so...
 
-            @SuppressWarnings("UnstableApiUsage")
-            String expectedHash =
-                newHasher().putBytes(expected.asReadOnlyByteBuffer()).hash().toString();
-            ps.setString(6, expectedHash);
-          }
+              @SuppressWarnings("UnstableApiUsage")
+              String expectedHash =
+                  newHasher().putBytes(expected.asReadOnlyByteBuffer()).hash().toString();
+              ps.setString(6, expectedHash);
+            }
 
-          // Check whether the UPDATE worked. If not -> reference-conflict
-          if (ps.executeUpdate() != 1) {
-            // No need to continue, just throw a legit constraint-violation that will be
-            // converted to a "proper ReferenceConflictException" later up in the stack.
-            throw newIntegrityConstraintViolationException();
+            // Check whether the UPDATE worked. If not -> reference-conflict
+            if (ps.executeUpdate() != 1) {
+              // No need to continue, just throw a legit constraint-violation that will be
+              // converted to a "proper ReferenceConflictException" later up in the stack.
+              throw newIntegrityConstraintViolationException();
+            }
           }
         }
       }
 
       // 2. INSERT all global-state values for those keys that were not handled above.
       if (!newKeys.isEmpty()) {
-        try (PreparedStatement psInsert =
-            conn.prepareStatement(SqlStatements.INSERT_GLOBAL_STATE)) {
+        try (Traced ignored = trace("upsertGlobalStatesInsert")) {
+          PreparedStatement psInsert = conn.prepareStatement(SqlStatements.INSERT_GLOBAL_STATE);
           for (ContentId contentId : newKeys) {
             ByteString newGlob = commitAttempt.getGlobal().get(contentId);
             byte[] newGlobBytes = newGlob.toByteArray();
@@ -1098,7 +1117,7 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
-  protected Map<ContentId, ByteString> fetchGlobalStates(
+  protected Map<ContentId, ByteString> doFetchGlobalStates(
       Connection conn, Set<ContentId> contentIds) {
     if (contentIds.isEmpty()) {
       return Collections.emptyMap();
@@ -1131,7 +1150,7 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
-  protected CommitLogEntry fetchFromCommitLog(Connection c, Hash hash) {
+  protected CommitLogEntry doFetchFromCommitLog(Connection c, Hash hash) {
     try (PreparedStatement ps = c.prepareStatement(SqlStatements.SELECT_COMMIT_LOG)) {
       ps.setString(1, config.getRepositoryId());
       ps.setString(2, hash.asString());
@@ -1144,7 +1163,7 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
-  protected List<CommitLogEntry> fetchPageFromCommitLog(Connection c, List<Hash> hashes) {
+  protected List<CommitLogEntry> doFetchPageFromCommitLog(Connection c, List<Hash> hashes) {
     String sql = sqlForManyPlaceholders(SqlStatements.SELECT_COMMIT_LOG_MANY, hashes.size());
 
     try (PreparedStatement ps = c.prepareStatement(sql)) {
@@ -1167,7 +1186,7 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
-  protected void writeIndividualCommit(Connection c, CommitLogEntry entry)
+  protected void doWriteIndividualCommit(Connection c, CommitLogEntry entry)
       throws ReferenceConflictException {
     try (PreparedStatement ps = c.prepareStatement(SqlStatements.INSERT_COMMIT_LOG)) {
       ps.setString(1, config.getRepositoryId());
@@ -1185,7 +1204,7 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
-  protected void writeMultipleCommits(Connection c, List<CommitLogEntry> entries)
+  protected void doWriteMultipleCommits(Connection c, List<CommitLogEntry> entries)
       throws ReferenceConflictException {
     writeMany(
         c,
@@ -1196,7 +1215,7 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
-  protected void writeKeyListEntities(Connection c, List<KeyListEntity> newKeyListEntities) {
+  protected void doWriteKeyListEntities(Connection c, List<KeyListEntity> newKeyListEntities) {
     try {
       writeMany(
           c,
@@ -1249,18 +1268,20 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
-  protected Stream<KeyListEntity> fetchKeyLists(Connection c, List<Hash> keyListsIds) {
-    return JdbcSelectSpliterator.buildStream(
-        c,
-        sqlForManyPlaceholders(SqlStatements.SELECT_KEY_LIST_MANY, keyListsIds.size()),
-        ps -> {
-          ps.setString(1, config.getRepositoryId());
-          int i = 2;
-          for (Hash id : keyListsIds) {
-            ps.setString(i++, id.asString());
-          }
-        },
-        (rs) -> KeyListEntity.of(Hash.of(rs.getString(1)), protoToKeyList(rs.getBytes(2))));
+  protected Stream<KeyListEntity> doFetchKeyLists(Connection c, List<Hash> keyListsIds) {
+    try (Traced ignore = trace("doFetchKeyLists.stream")) {
+      return JdbcSelectSpliterator.buildStream(
+          c,
+          sqlForManyPlaceholders(SqlStatements.SELECT_KEY_LIST_MANY, keyListsIds.size()),
+          ps -> {
+            ps.setString(1, config.getRepositoryId());
+            int i = 2;
+            for (Hash id : keyListsIds) {
+              ps.setString(i++, id.asString());
+            }
+          },
+          (rs) -> KeyListEntity.of(Hash.of(rs.getString(1)), protoToKeyList(rs.getBytes(2))));
+    }
   }
 
   /**
@@ -1335,7 +1356,8 @@ public abstract class TxDatabaseAdapter
    */
   protected Hash tryMoveNamedReference(
       Connection conn, NamedRef ref, Hash expectedHead, Hash newHead) {
-    try (PreparedStatement ps = conn.prepareStatement(SqlStatements.UPDATE_NAMED_REFERENCE)) {
+    try (Traced ignore = trace("tryMoveNamedReference");
+        PreparedStatement ps = conn.prepareStatement(SqlStatements.UPDATE_NAMED_REFERENCE)) {
       ps.setString(1, newHead.asString());
       ps.setString(2, config.getRepositoryId());
       ps.setString(3, ref.getName());
@@ -1368,7 +1390,8 @@ public abstract class TxDatabaseAdapter
   }
 
   private byte[] fetchRepositoryDescriptionInternal(Connection conn) throws SQLException {
-    try (PreparedStatement ps = conn.prepareStatement(SqlStatements.SELECT_REPO_DESCRIPTION)) {
+    try (Traced ignore = trace("fetchRepositoryDescriptionInternal");
+        PreparedStatement ps = conn.prepareStatement(SqlStatements.SELECT_REPO_DESCRIPTION)) {
       ps.setString(1, config.getRepositoryId());
       try (ResultSet rs = ps.executeQuery()) {
         if (rs.next()) {
@@ -1386,6 +1409,7 @@ public abstract class TxDatabaseAdapter
 
     try {
       opLoop(
+          "updateRepositoryDescription",
           null,
           true,
           (conn, x) -> {
@@ -1554,44 +1578,51 @@ public abstract class TxDatabaseAdapter
 
   protected void updateRefLogHead(Hash newRefLogId, Hash parentRefLogId, Connection conn)
       throws SQLException {
-    PreparedStatement psUpdate = conn.prepareStatement(SqlStatements.UPDATE_REF_LOG_HEAD);
-    psUpdate.setString(1, newRefLogId.asString());
-    psUpdate.setString(2, config.getRepositoryId());
-    psUpdate.setString(3, parentRefLogId.asString());
-    if (psUpdate.executeUpdate() != 1) {
-      // retry the transaction with rebasing the parent id.
-      throw new RetryTransactionException();
+    try (Traced ignore = trace("updateRefLogHead");
+        PreparedStatement psUpdate = conn.prepareStatement(SqlStatements.UPDATE_REF_LOG_HEAD)) {
+      psUpdate.setString(1, newRefLogId.asString());
+      psUpdate.setString(2, config.getRepositoryId());
+      psUpdate.setString(3, parentRefLogId.asString());
+      if (psUpdate.executeUpdate() != 1) {
+        // retry the transaction with rebasing the parent id.
+        throw new RetryTransactionException();
+      }
     }
   }
 
   protected void insertRefLogHead(Hash newRefLogId, Connection conn) throws SQLException {
-    PreparedStatement selectStatement = conn.prepareStatement(SqlStatements.SELECT_REF_LOG_HEAD);
-    selectStatement.setString(1, config.getRepositoryId());
-    // insert if the table is empty
-    if (!selectStatement.executeQuery().next()) {
-      PreparedStatement psUpdate = conn.prepareStatement(SqlStatements.INSERT_REF_LOG_HEAD);
-      psUpdate.setString(1, config.getRepositoryId());
-      psUpdate.setString(2, newRefLogId.asString());
-      if (psUpdate.executeUpdate() != 1) {
-        // No need to continue, just throw a legit constraint-violation that will be
-        // converted to a "proper ReferenceConflictException" later up in the stack.
-        throw newIntegrityConstraintViolationException();
+    try (Traced ignore = trace("insertRefLogHead");
+        PreparedStatement selectStatement =
+            conn.prepareStatement(SqlStatements.SELECT_REF_LOG_HEAD)) {
+      selectStatement.setString(1, config.getRepositoryId());
+      // insert if the table is empty
+      if (!selectStatement.executeQuery().next()) {
+        PreparedStatement psUpdate = conn.prepareStatement(SqlStatements.INSERT_REF_LOG_HEAD);
+        psUpdate.setString(1, config.getRepositoryId());
+        psUpdate.setString(2, newRefLogId.asString());
+        if (psUpdate.executeUpdate() != 1) {
+          // No need to continue, just throw a legit constraint-violation that will be
+          // converted to a "proper ReferenceConflictException" later up in the stack.
+          throw newIntegrityConstraintViolationException();
+        }
       }
     }
   }
 
   protected Hash getRefLogHead(Connection conn) throws SQLException {
-    PreparedStatement psSelect = conn.prepareStatement(SqlStatements.SELECT_REF_LOG_HEAD);
-    psSelect.setString(1, config.getRepositoryId());
-    ResultSet resultSet = psSelect.executeQuery();
-    if (resultSet.next()) {
-      return Hash.of(resultSet.getString(1));
+    try (Traced ignore = trace("getRefLogHead");
+        PreparedStatement psSelect = conn.prepareStatement(SqlStatements.SELECT_REF_LOG_HEAD)) {
+      psSelect.setString(1, config.getRepositoryId());
+      ResultSet resultSet = psSelect.executeQuery();
+      if (resultSet.next()) {
+        return Hash.of(resultSet.getString(1));
+      }
+      return null;
     }
-    return null;
   }
 
   @Override
-  protected RefLog fetchFromRefLog(Connection connection, Hash refLogId) {
+  protected RefLog doFetchFromRefLog(Connection connection, Hash refLogId) {
     if (refLogId == null) {
       // set the current head as refLogId
       try {
@@ -1612,7 +1643,7 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
-  protected List<RefLog> fetchPageFromRefLog(Connection connection, List<Hash> hashes) {
+  protected List<RefLog> doFetchPageFromRefLog(Connection connection, List<Hash> hashes) {
     String sql = sqlForManyPlaceholders(SqlStatements.SELECT_REF_LOG_MANY, hashes.size());
 
     try (PreparedStatement ps = connection.prepareStatement(sql)) {

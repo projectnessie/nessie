@@ -78,12 +78,12 @@ public class InmemoryDatabaseAdapter
   }
 
   @Override
-  protected GlobalStatePointer fetchGlobalPointer(NonTransactionalOperationContext ctx) {
+  protected GlobalStatePointer doFetchGlobalPointer(NonTransactionalOperationContext ctx) {
     return globalState().get();
   }
 
   @Override
-  protected void writeIndividualCommit(NonTransactionalOperationContext ctx, CommitLogEntry entry)
+  protected void doWriteIndividualCommit(NonTransactionalOperationContext ctx, CommitLogEntry entry)
       throws ReferenceConflictException {
     if (store.commitLog.putIfAbsent(dbKey(entry.getHash()), toProto(entry).toByteString())
         != null) {
@@ -92,16 +92,17 @@ public class InmemoryDatabaseAdapter
   }
 
   @Override
-  protected void writeMultipleCommits(
+  protected void doWriteMultipleCommits(
       NonTransactionalOperationContext ctx, List<CommitLogEntry> entries)
       throws ReferenceConflictException {
     for (CommitLogEntry entry : entries) {
-      writeIndividualCommit(ctx, entry);
+      doWriteIndividualCommit(ctx, entry);
     }
   }
 
   @Override
-  protected void writeGlobalCommit(NonTransactionalOperationContext ctx, GlobalStateLogEntry entry)
+  protected void doWriteGlobalCommit(
+      NonTransactionalOperationContext ctx, GlobalStateLogEntry entry)
       throws ReferenceConflictException {
     if (store.globalStateLog.putIfAbsent(dbKey(entry.getId()), entry.toByteString()) != null) {
       throw hashCollisionDetected();
@@ -115,7 +116,7 @@ public class InmemoryDatabaseAdapter
   }
 
   @Override
-  protected boolean globalPointerCas(
+  protected boolean doGlobalPointerCas(
       NonTransactionalOperationContext ctx,
       GlobalStatePointer expected,
       GlobalStatePointer newPointer) {
@@ -127,7 +128,7 @@ public class InmemoryDatabaseAdapter
   }
 
   @Override
-  protected void cleanUpCommitCas(
+  protected void doCleanUpCommitCas(
       NonTransactionalOperationContext ctx,
       Hash globalId,
       Set<Hash> branchCommits,
@@ -140,7 +141,8 @@ public class InmemoryDatabaseAdapter
   }
 
   @Override
-  protected GlobalStateLogEntry fetchFromGlobalLog(NonTransactionalOperationContext ctx, Hash id) {
+  protected GlobalStateLogEntry doFetchFromGlobalLog(
+      NonTransactionalOperationContext ctx, Hash id) {
     ByteString serialized = store.globalStateLog.get(dbKey(id));
     try {
       return serialized != null ? GlobalStateLogEntry.parseFrom(serialized) : null;
@@ -150,7 +152,7 @@ public class InmemoryDatabaseAdapter
   }
 
   @Override
-  protected List<GlobalStateLogEntry> fetchPageFromGlobalLog(
+  protected List<GlobalStateLogEntry> doFetchPageFromGlobalLog(
       NonTransactionalOperationContext ctx, List<Hash> hashes) {
     return hashes.stream()
         .map(this::dbKey)
@@ -167,12 +169,12 @@ public class InmemoryDatabaseAdapter
   }
 
   @Override
-  protected CommitLogEntry fetchFromCommitLog(NonTransactionalOperationContext ctx, Hash hash) {
+  protected CommitLogEntry doFetchFromCommitLog(NonTransactionalOperationContext ctx, Hash hash) {
     return protoToCommitLogEntry(store.commitLog.get(dbKey(hash)));
   }
 
   @Override
-  protected List<CommitLogEntry> fetchPageFromCommitLog(
+  protected List<CommitLogEntry> doFetchPageFromCommitLog(
       NonTransactionalOperationContext ctx, List<Hash> hashes) {
     return hashes.stream()
         .map(this::dbKey)
@@ -182,14 +184,14 @@ public class InmemoryDatabaseAdapter
   }
 
   @Override
-  protected void writeKeyListEntities(
+  protected void doWriteKeyListEntities(
       NonTransactionalOperationContext ctx, List<KeyListEntity> newKeyListEntities) {
     newKeyListEntities.forEach(
         e -> store.keyLists.put(dbKey(e.getId()), toProto(e.getKeys()).toByteString()));
   }
 
   @Override
-  protected Stream<KeyListEntity> fetchKeyLists(
+  protected Stream<KeyListEntity> doFetchKeyLists(
       NonTransactionalOperationContext ctx, List<Hash> keyListsIds) {
     return keyListsIds.stream()
         .map(
@@ -201,13 +203,13 @@ public class InmemoryDatabaseAdapter
   }
 
   @Override
-  protected RepoDescription fetchRepositoryDescription(NonTransactionalOperationContext ctx) {
+  protected RepoDescription doFetchRepositoryDescription(NonTransactionalOperationContext ctx) {
     AtomicReference<RepoDescription> ref = store.repoDesc.get(dbKey(ByteString.EMPTY));
     return ref != null ? ref.get() : null;
   }
 
   @Override
-  protected boolean tryUpdateRepositoryDescription(
+  protected boolean doTryUpdateRepositoryDescription(
       NonTransactionalOperationContext ctx, RepoDescription expected, RepoDescription updateTo) {
     if (expected == null) {
       return store.repoDesc.putIfAbsent(dbKey(ByteString.EMPTY), new AtomicReference<>(updateTo))
@@ -227,7 +229,7 @@ public class InmemoryDatabaseAdapter
   }
 
   @Override
-  protected void writeRefLog(NonTransactionalOperationContext ctx, RefLogEntry entry)
+  protected void doWriteRefLog(NonTransactionalOperationContext ctx, RefLogEntry entry)
       throws ReferenceConflictException {
     if (store.refLog.putIfAbsent(dbKey(entry.getRefLogId()), entry.toByteString()) != null) {
       throw new ReferenceConflictException(" RefLog Hash collision detected");
@@ -235,7 +237,7 @@ public class InmemoryDatabaseAdapter
   }
 
   @Override
-  protected RefLog fetchFromRefLog(NonTransactionalOperationContext ctx, Hash refLogId) {
+  protected RefLog doFetchFromRefLog(NonTransactionalOperationContext ctx, Hash refLogId) {
     if (refLogId == null) {
       // set the current head as refLogId
       refLogId = Hash.of(fetchGlobalPointer(ctx).getRefLogId());
@@ -244,7 +246,7 @@ public class InmemoryDatabaseAdapter
   }
 
   @Override
-  protected List<RefLog> fetchPageFromRefLog(
+  protected List<RefLog> doFetchPageFromRefLog(
       NonTransactionalOperationContext ctx, List<Hash> hashes) {
     return hashes.stream()
         .map(this::dbKey)
