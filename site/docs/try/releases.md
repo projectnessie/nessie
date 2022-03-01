@@ -1,5 +1,14 @@
 # Releases
 
+## 0.21.0 Release (March 1, 2022)
+
+* Add tracing to database-adapter internals
+* Introduce compatibility and upgrade tests
+* Refactor StreamingUtil class
+* Support for Spark 3.1 + 3.2.1 in Nessie SQL extensions
+* Proper usage of commit-id in Spark SQL extensions
+* Add DELETE_DEFAULT_BRANCH access check
+
 ## 0.20.1 Release (February 17, 2022)
 
 * (no user visible changes)
