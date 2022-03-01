@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
@@ -39,7 +39,9 @@ import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt;
+import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
+import org.projectnessie.versioned.persist.adapter.KeyWithType;
 
 /** Check that merge and transplant operations work correctly. */
 public abstract class AbstractMergeTransplant {
@@ -51,13 +53,14 @@ public abstract class AbstractMergeTransplant {
   }
 
   @ParameterizedTest
-  @CsvSource({
-    "3",
-    "10",
-    "" + DEFAULT_KEY_LIST_DISTANCE,
-    "" + (DEFAULT_KEY_LIST_DISTANCE + 1),
-    "100"
-  })
+  @ValueSource(
+      strings = {
+        "3",
+        "10",
+        "" + DEFAULT_KEY_LIST_DISTANCE,
+        "" + (DEFAULT_KEY_LIST_DISTANCE + 1),
+        "100"
+      })
   void merge(int numCommits) throws Exception {
     AtomicInteger unifier = new AtomicInteger();
     Function<ByteString, ByteString> metadataUpdater =
@@ -86,13 +89,14 @@ public abstract class AbstractMergeTransplant {
   }
 
   @ParameterizedTest
-  @CsvSource({
-    "3",
-    "10",
-    "" + DEFAULT_KEY_LIST_DISTANCE,
-    "" + (DEFAULT_KEY_LIST_DISTANCE + 1),
-    "100"
-  })
+  @ValueSource(
+      strings = {
+        "3",
+        "10",
+        "" + DEFAULT_KEY_LIST_DISTANCE,
+        "" + (DEFAULT_KEY_LIST_DISTANCE + 1),
+        "100"
+      })
   void transplant(int numCommits) throws Exception {
     AtomicInteger unifier = new AtomicInteger();
     Function<ByteString, ByteString> metadataUpdater =
@@ -176,12 +180,14 @@ public abstract class AbstractMergeTransplant {
     databaseAdapter.create(branch, databaseAdapter.hashOnReference(main, Optional.empty()));
 
     Hash[] commits = new Hash[numCommits];
+    int deleteIndex = commits.length / 2;
     for (int i = 0; i < commits.length; i++) {
       ImmutableCommitAttempt.Builder commit =
           ImmutableCommitAttempt.builder()
               .commitToBranch(branch)
               .commitMetaSerialized(ByteString.copyFromUtf8("commit " + i));
-      if (i == commits.length - 1) {
+      if (i == deleteIndex) {
+        // add a delete for previously added key.1
         commit.addDeletes(Key.of("key", Integer.toString(1)));
       } else {
         for (int k = 0; k < 3; k++) {
@@ -196,6 +202,13 @@ public abstract class AbstractMergeTransplant {
       commits[i] = databaseAdapter.commit(commit.build());
     }
 
+    List<Key> expectedKeys =
+        Arrays.asList(Key.of("key", Integer.toString(0)), Key.of("key", Integer.toString(2)));
+    List<Key> allKeys =
+        Arrays.asList(
+            Key.of("key", Integer.toString(0)),
+            Key.of("key", Integer.toString(1)),
+            Key.of("key", Integer.toString(2)));
     for (int i = 0; i < commits.length; i++) {
       BranchName target = BranchName.of("transplant-" + i);
       databaseAdapter.create(target, databaseAdapter.hashOnReference(main, Optional.empty()));
@@ -205,13 +218,20 @@ public abstract class AbstractMergeTransplant {
       try (Stream<CommitLogEntry> targetLog =
           databaseAdapter.commitLog(databaseAdapter.hashOnReference(target, Optional.empty()))) {
         List<CommitLogEntry> targetLogEntries = targetLog.collect(Collectors.toList());
+        Collections.reverse(targetLogEntries);
         assertThat(targetLogEntries).hasSize(i + 1);
         for (int k = 0; k < targetLogEntries.size(); k++) {
-          if (i == commits.length - 1 && k == 0) {
+          if (k == deleteIndex) {
             // validate delete
             assertThat(targetLogEntries.get(k).getDeletes().size()).isEqualTo(1);
             assertThat(targetLogEntries.get(k).getDeletes().get(0))
                 .isEqualTo(Key.of("key", Integer.toString(1)));
+            List<Key> keys =
+                databaseAdapter
+                    .keys(targetLogEntries.get(k).getHash(), KeyFilterPredicate.ALLOW_ALL)
+                    .map(KeyWithType::getKey)
+                    .collect(Collectors.toList());
+            assertThat(keys).isEqualTo(expectedKeys);
           } else {
             // validate put
             assertThat(targetLogEntries.get(k).getPuts().size()).isEqualTo(3);
@@ -221,6 +241,12 @@ public abstract class AbstractMergeTransplant {
               assertThat(targetLogEntries.get(k).getPuts().get(key).getContentId())
                   .isEqualTo(ContentId.of("C" + key));
             }
+            List<Key> keys =
+                databaseAdapter
+                    .keys(targetLogEntries.get(k).getHash(), KeyFilterPredicate.ALLOW_ALL)
+                    .map(KeyWithType::getKey)
+                    .collect(Collectors.toList());
+            assertThat(keys).isEqualTo(allKeys);
           }
         }
       }

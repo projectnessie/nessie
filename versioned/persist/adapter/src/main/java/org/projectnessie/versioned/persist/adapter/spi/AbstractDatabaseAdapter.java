@@ -36,7 +36,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -196,7 +195,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
             commitAttempt.getDeletes(),
             currentBranchEntry != null ? currentBranchEntry.getKeyListDistance() : 0,
             newKeyLists,
-            new LinkedList<>());
+            new ArrayList<>());
     writeIndividualCommit(ctx, newBranchCommit);
     return newBranchCommit;
   }
@@ -1313,7 +1312,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
 
     int keyListDistance = targetHeadCommit != null ? targetHeadCommit.getKeyListDistance() : 0;
 
-    List<CommitLogEntry> unwrittenEntriesForKeyList = new LinkedList<>();
+    List<CommitLogEntry> unwrittenEntriesForKeyList = new ArrayList<>();
     // Rewrite commits to transplant and store those in 'commitsToTransplantReverse'
     for (int i = commitsChronological.size() - 1; i >= 0; i--, commitSeq++) {
       CommitLogEntry sourceCommit = commitsChronological.get(i);
