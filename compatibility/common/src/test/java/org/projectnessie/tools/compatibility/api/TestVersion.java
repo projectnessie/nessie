@@ -76,4 +76,33 @@ class TestVersion {
         .isGreaterThan(Version.parseVersion("0.99999"))
         .isGreaterThan(Version.parseVersion("0.1.0"));
   }
+
+  @Test
+  public void isGreaterThan() {
+    assertThat(Version.parseVersion("1.0.0").isGreaterThanOrEqual(Version.parseVersion("1.0.0")))
+        .isTrue();
+    assertThat(Version.parseVersion("1.0.0").isGreaterThan(Version.parseVersion("0.9.9"))).isTrue();
+    assertThat(Version.parseVersion("1.0.0").isGreaterThan(Version.parseVersion("0.9999")))
+        .isTrue();
+    assertThat(Version.parseVersion("1.0.0").isGreaterThan(Version.parseVersion("1.0.0")))
+        .isFalse();
+  }
+
+  @Test
+  public void isLessThan() {
+    assertThat(Version.parseVersion("1.0.0").isLessThanOrEqual(Version.parseVersion("1.0.0")))
+        .isTrue();
+    assertThat(Version.parseVersion("1.0.0").isLessThan(Version.parseVersion("1.0.1"))).isTrue();
+    assertThat(Version.parseVersion("1.0.0").isLessThan(Version.parseVersion("1.1"))).isTrue();
+    assertThat(Version.parseVersion("1.0.0").isLessThan(Version.parseVersion("1.0.1"))).isTrue();
+    assertThat(Version.parseVersion("1.0.0").isLessThan(Version.parseVersion("1.0.0"))).isFalse();
+  }
+
+  @Test
+  public void isSame() {
+    assertThat(Version.parseVersion("1.0").isSame(Version.parseVersion("1.0.0"))).isTrue();
+    assertThat(Version.parseVersion("1.0.0").isSame(Version.parseVersion("1.0.0"))).isTrue();
+    assertThat(Version.parseVersion("1.0.0").isSame(Version.parseVersion("1.0.1"))).isFalse();
+    assertThat(Version.parseVersion("1.0.0").isSame(Version.parseVersion("0.9.9"))).isFalse();
+  }
 }

@@ -80,6 +80,26 @@ public class Version implements Comparable<Version> {
     return val;
   }
 
+  public boolean isGreaterThan(Version version) {
+    return this.compareTo(version) > 0;
+  }
+
+  public boolean isGreaterThanOrEqual(Version version) {
+    return this.compareTo(version) >= 0;
+  }
+
+  public boolean isLessThan(Version version) {
+    return this.compareTo(version) < 0;
+  }
+
+  public boolean isLessThanOrEqual(Version version) {
+    return this.compareTo(version) <= 0;
+  }
+
+  public boolean isSame(Version version) {
+    return this.compareTo(version) == 0;
+  }
+
   @Override
   public int compareTo(Version o) {
     for (int i = 0; i < tuple.length || i < o.tuple.length; i++) {
