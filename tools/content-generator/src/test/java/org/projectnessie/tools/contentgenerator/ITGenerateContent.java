@@ -21,16 +21,10 @@ import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.projectnessie.client.api.NessieApiV1;
-import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.model.Content;
 import org.projectnessie.tools.contentgenerator.cli.NessieContentGenerator;
 
-class ITGenerateContent {
-
-  static final int NESSIE_HTTP_PORT = Integer.getInteger("quarkus.http.test-port");
-
-  static final String NESSIE_API_URI =
-      String.format("http://localhost:%d/api/v1", NESSIE_HTTP_PORT);
+class ITGenerateContent extends AbstractContentGeneratorTest {
 
   @ParameterizedTest
   @EnumSource(Content.Type.class)
@@ -39,8 +33,7 @@ class ITGenerateContent {
 
     int numCommits = 20;
 
-    try (NessieApiV1 api =
-        HttpClientBuilder.builder().withUri(NESSIE_API_URI).build(NessieApiV1.class)) {
+    try (NessieApiV1 api = buildNessieApi()) {
 
       String testCaseBranch = "type_" + contentType.name();
 

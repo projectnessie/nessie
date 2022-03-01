@@ -36,6 +36,15 @@ public abstract class AbstractCommand implements Callable<Integer> {
       description = "Custom implementation of org.projectnessie.client.NessieClientBuilder.")
   private Class<?> customBuilder;
 
+  @Option(
+      names = {"-v", "--verbose"},
+      description = "Produce verbose output (if possible)")
+  private boolean verbose = false;
+
+  protected boolean isVerbose() {
+    return verbose;
+  }
+
   public NessieApiV1 createNessieApiInstance() {
     NessieClientBuilder<?> clientBuilder;
     if (customBuilder != null) {

@@ -26,7 +26,7 @@ import picocli.CommandLine.HelpCommand;
     name = "nessie-content-generator",
     mixinStandardHelpOptions = true,
     versionProvider = NessieVersionProvider.class,
-    subcommands = {GenerateContent.class, HelpCommand.class})
+    subcommands = {GenerateContent.class, ReadCommits.class, HelpCommand.class})
 public class NessieContentGenerator {
 
   public static void main(String[] arguments) {
