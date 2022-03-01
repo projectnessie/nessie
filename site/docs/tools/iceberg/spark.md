@@ -80,7 +80,7 @@ String authType = "NONE";
                         .master("local[2]")
                         .config(conf)
                         .getOrCreate();
-    ```
+```
 === "Python"
 ``` python
 # Full url of the Nessie API endpoint to nessie
@@ -108,7 +108,7 @@ auth_type = "NONE"
             .config("spark.sql.catalog.nessie",
                 "org.apache.iceberg.spark.SparkCatalog") \
             .getOrCreate()
-    ```
+```
 
 ### Spark 3.2
 === "Java"
