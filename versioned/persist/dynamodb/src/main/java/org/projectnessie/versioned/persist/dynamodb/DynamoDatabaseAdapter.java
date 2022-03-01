@@ -192,7 +192,7 @@ public class DynamoDatabaseAdapter
   }
 
   @Override
-  protected List<CommitLogEntry> doFetchPageFromCommitLog(
+  protected List<CommitLogEntry> doFetchMultipleFromCommitLog(
       NonTransactionalOperationContext ctx, List<Hash> hashes) {
     return fetchPageResult(TABLE_COMMIT_LOG, hashes, ProtoSerialization::protoToCommitLogEntry);
   }
