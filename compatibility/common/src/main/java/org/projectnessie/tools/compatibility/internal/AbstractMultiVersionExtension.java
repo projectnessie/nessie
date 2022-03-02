@@ -101,14 +101,14 @@ abstract class AbstractMultiVersionExtension
     if (cond.isPresent()) {
       VersionCondition versionCondition = cond.get();
       if (!versionCondition.minVersion().isEmpty()
-          && parseVersion(versionCondition.minVersion()).compareTo(version) > 0) {
+          && parseVersion(versionCondition.minVersion()).isGreaterThan(version)) {
         return disabled(
             String.format(
                 "%s requires minimum Nessie version '%s', but current Nessie version is '%s'",
                 annotated, versionCondition.minVersion(), version));
       }
       if (!versionCondition.maxVersion().isEmpty()
-          && parseVersion(versionCondition.maxVersion()).compareTo(version) < 0) {
+          && parseVersion(versionCondition.maxVersion()).isLessThan(version)) {
         return disabled(
             String.format(
                 "%s requires maximum Nessie version '%s', but current Nessie version is '%s'",

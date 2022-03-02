@@ -144,7 +144,7 @@ public class ITUpgradePath {
         return commitBuilder.commit();
       } catch (NessieReferenceConflictException e) {
         if (!"Hash collision detected".equals(e.getMessage())
-            || Version.parseVersion("0.20.1").compareTo(version) < 0) {
+            || Version.parseVersion("0.20.1").isLessThan(version)) {
           throw e;
         }
       }
