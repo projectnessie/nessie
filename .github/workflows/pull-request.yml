@@ -46,7 +46,7 @@ jobs:
     - uses: actions/checkout@v2
     - name: Setup runner
       uses: ./.github/actions/setup-runner
-    - name: Setup Java, Maven, Gradle
+    - name: Setup Java, Maven
       uses: ./.github/actions/dev-tool-java
 
     - name: Build with Maven
@@ -54,10 +54,6 @@ jobs:
         SPARK_LOCAL_IP: localhost
       run: |
         ./mvnw --batch-mode --threads 1C install javadoc:javadoc-no-fork -Pcode-coverage -Dtest.log.level=WARN
-
-    - name: Build with Gradle
-      run: ./gradlew --rerun-tasks --no-daemon --info build
-      working-directory: ./tools/apprunner-gradle-plugin
 
     - name: Capture Results
       uses: ./.github/actions/ci-results

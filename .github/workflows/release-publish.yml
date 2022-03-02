@@ -87,7 +87,7 @@ jobs:
         ref: refs/tags/${{ github.event.inputs.releaseTag }}
     - name: Setup runner
       uses: ./.github/actions/setup-runner
-    - name: Setup Java, Maven, Gradle
+    - name: Setup Java, Maven
       uses: ./.github/actions/dev-tool-java
       with:
         gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
@@ -137,13 +137,6 @@ jobs:
         echo ::set-output name=QUARKUS_NATIVE_BINARY::servers/quarkus-server/target/nessie-quarkus-${RELEASE_VERSION}-runner
         echo ::set-output name=QUARKUS_UBER_JAR::servers/quarkus-server/target/nessie-quarkus-${RELEASE_VERSION}-runner.jar
         echo ::set-output name=NESSIE_OPENAPI::model/target/nessie-openapi-${RELEASE_VERSION}.yaml
-
-    # Deploys Gradle plugin. Build and test steps were already ran in previous steps
-    - name: Publish Gradle Plugin for release
-      working-directory: ./tools/apprunner-gradle-plugin/
-      if: ${{ !env.ACT }}
-      run: |
-        ./gradlew publishPlugins -Pgradle.publish.key=${{ secrets.GRADLE_PUBLISH_KEY }} -Pgradle.publish.secret=${{ secrets.GRADLE_PUBLISH_SECRET }}
 
     - name: Install Helm
       uses: azure/setup-helm@v1

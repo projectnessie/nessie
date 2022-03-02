@@ -31,8 +31,6 @@
   <name>Nessie - Tools</name>
 
   <modules>
-    <module>apprunner-common</module>
-    <module>apprunner-maven-plugin</module>
     <module>content-generator</module>
   </modules>
 </project>
