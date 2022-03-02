@@ -22,7 +22,7 @@
   <parent>
     <groupId>org.projectnessie</groupId>
     <artifactId>nessie-perftest</artifactId>
-    <version>0.21.2</version>
+    <version>0.21.3-SNAPSHOT</version>
   </parent>
 
   <artifactId>nessie-perftest-gatling</artifactId>
