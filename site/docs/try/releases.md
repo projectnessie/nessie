@@ -1,5 +1,9 @@
 # Releases
 
+## 0.21.2 Release (March 2, 2022)
+
+* Fix serialization issue
+
 ## 0.21.1 Release (March 2, 2022)
 
 * (no user visible changes)
