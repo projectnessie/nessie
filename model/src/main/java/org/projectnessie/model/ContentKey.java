@@ -36,7 +36,7 @@ import org.projectnessie.model.ImmutableContentKey.Builder;
  * <p>For URL encoding, embedded periods within a segment are replaced with zero byte values before
  * passing in a url string.
  */
-@Value.Immutable(lazyhash = true)
+@Value.Immutable
 @JsonSerialize(as = ImmutableContentKey.class)
 @JsonDeserialize(as = ImmutableContentKey.class)
 public abstract class ContentKey implements Serializable {
