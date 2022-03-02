@@ -3,6 +3,7 @@ arrange:
   - index.md
   - docker.md
   - helm.md
+  - grafana.md
   - configuration.md
   - authentication.md
   - releases.md
