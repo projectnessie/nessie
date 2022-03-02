@@ -17,7 +17,6 @@ package org.projectnessie.tools.contentgenerator;
 
 import java.io.PrintStream;
 import java.util.UUID;
-import org.junit.jupiter.api.AfterEach;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.error.NessieConflictException;
@@ -37,11 +36,6 @@ public class AbstractContentGeneratorTest {
       String.format("http://localhost:%d/api/v1", NESSIE_HTTP_PORT);
 
   private static final PrintStream DEFAULT_STDOUT = System.out;
-
-  @AfterEach
-  void resetStdOut() {
-    System.setOut(DEFAULT_STDOUT);
-  }
 
   protected Branch makeCommit(NessieApiV1 api, String contentId)
       throws NessieConflictException, NessieNotFoundException {

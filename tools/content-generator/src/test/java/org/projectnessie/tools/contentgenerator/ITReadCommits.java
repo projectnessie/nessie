@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -69,23 +70,22 @@ class ITReadCommits extends AbstractContentGeneratorTest {
   @Test
   void readCommitsVerbose() throws UnsupportedEncodingException, NessieNotFoundException {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    PrintStream out = new PrintStream(baos);
-    System.setOut(out);
+    try (PrintWriter out = new PrintWriter(new PrintStream(baos), true)) {
+      assertThat(
+              NessieContentGenerator.runMain(
+                  out,
+                  new String[] {
+                    "commits", "--uri", NESSIE_API_URI, "--ref", branch.getName(), "--verbose"
+                  }))
+          .isEqualTo(0);
 
-    assertThat(
-            NessieContentGenerator.runMain(
-                new String[] {
-                  "commits", "--uri", NESSIE_API_URI, "--ref", branch.getName(), "--verbose"
-                }))
-        .isEqualTo(0);
-
-    out.close();
-    String[] output = baos.toString(StandardCharsets.UTF_8.toString()).split("\n");
-    assertThat(output).anySatisfy(s -> assertThat(s).contains("testMessage"));
-    assertThat(output).anySatisfy(s -> assertThat(s).contains("first.second"));
-    assertThat(output).anySatisfy(s -> assertThat(s).contains("key[0]: first"));
-    assertThat(output).anySatisfy(s -> assertThat(s).contains("key[1]: second"));
-    assertThat(output).anySatisfy(s -> assertThat(s).contains(contentId));
+      String[] output = baos.toString(StandardCharsets.UTF_8.toString()).split("\n");
+      assertThat(output).anySatisfy(s -> assertThat(s).contains("testMessage"));
+      assertThat(output).anySatisfy(s -> assertThat(s).contains("first.second"));
+      assertThat(output).anySatisfy(s -> assertThat(s).contains("key[0]: first"));
+      assertThat(output).anySatisfy(s -> assertThat(s).contains("key[1]: second"));
+      assertThat(output).anySatisfy(s -> assertThat(s).contains(contentId));
+    }
 
     try (NessieApiV1 api = buildNessieApi()) {
       List<LogEntry> logEntries =
