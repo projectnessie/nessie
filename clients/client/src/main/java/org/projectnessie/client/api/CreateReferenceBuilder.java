@@ -28,16 +28,58 @@ import org.projectnessie.model.Validation;
 /**
  * Request builder for "create reference".
  *
+ * <h2>Examples for creating the reference.</h2>
+ *
+ * <p>1. Create a Tag called 'release' from the 'dev' branch at hash
+ * 'c26ce632cea616aabbbda2e1cfa82070514eb8b773fb035eaf668e2f0be8f10d'.
+ *
+ * <pre>{@code
+ * CreateReferenceBuilder builder = ..;
+ * builder
+ * .sourceRefName("dev")
+ * .reference(Tag.of("release","c26ce632cea616aabbbda2e1cfa82070514eb8b773fb035eaf668e2f0be8f10d"))
+ * .create();
+ * }</pre>
+ *
+ * <p>2. Create a Branch called 'test' from the 'dev' branch at hash
+ * 'c26ce632cea616aabbbda2e1cfa82070514eb8b773fb035eaf668e2f0be8f10d'.
+ *
+ * <pre>{@code
+ * CreateReferenceBuilder builder = ..;
+ * builder
+ * .sourceRefName("dev")
+ * .reference(Branch.of("test","c26ce632cea616aabbbda2e1cfa82070514eb8b773fb035eaf668e2f0be8f10d"))
+ * .create();
+ * }</pre>
+ *
+ * <p>3. Create a Branch called 'test' from the default branch {@link
+ * NessieApiV1#getDefaultBranch()} at hash
+ * 'c26ce632cea616aabbbda2e1cfa82070514eb8b773fb035eaf668e2f0be8f10d'.
+ *
+ * <pre>{@code
+ * CreateReferenceBuilder builder = ..;
+ * builder
+ * .reference(Branch.of("test","c26ce632cea616aabbbda2e1cfa82070514eb8b773fb035eaf668e2f0be8f10d"))
+ * .create();
+ * }</pre>
+ *
+ * <p>4. Create a Branch called 'test' pointing at the beginning of time (without any commits).
+ *
+ * <pre>{@code
+ * CreateReferenceBuilder builder = ..;
+ * builder
+ * .reference(Branch.of("test",null))
+ * .create();
+ * }</pre>
+ *
  * @since {@link NessieApiV1}
  */
 public interface CreateReferenceBuilder {
   /**
    * Sets the name of the reference that contains the hash of the reference-to-be-created.
    *
-   * <p>This reference name will be used for authorization purposes to validate that the caller has
-   * read access to the provided hash.
-   *
-   * <p>If not explicitly set, the default branch will be used as the source reference name.
+   * <p>If not explicitly set, the default branch {@link NessieApiV1#getDefaultBranch()} will be
+   * used as the source reference name.
    *
    * <p>The name and hash of the reference to be created is set via {@link #reference(Reference)}.
    *
@@ -63,49 +105,5 @@ public interface CreateReferenceBuilder {
    */
   CreateReferenceBuilder reference(@Valid @NotNull Reference reference);
 
-  /**
-   * Example for creating the reference.
-   *
-   * <p>1. Create a Tag called 'release' from the 'dev' branch at hash
-   * 'c26ce632cea616aabbbda2e1cfa82070514eb8b773fb035eaf668e2f0be8f10d'.
-   *
-   * <pre>{@code
-   * CreateReferenceBuilder builder = ..;
-   * builder
-   * .sourceRefName("dev")
-   * .reference(Tag.of("release","c26ce632cea616aabbbda2e1cfa82070514eb8b773fb035eaf668e2f0be8f10d"))
-   * .create();
-   * }</pre>
-   *
-   * <p>2. Create a Branch called 'test' from the 'dev' branch at hash
-   * 'c26ce632cea616aabbbda2e1cfa82070514eb8b773fb035eaf668e2f0be8f10d'.
-   *
-   * <pre>{@code
-   * CreateReferenceBuilder builder = ..;
-   * builder
-   * .sourceRefName("dev")
-   * .reference(Branch.of("test","c26ce632cea616aabbbda2e1cfa82070514eb8b773fb035eaf668e2f0be8f10d"))
-   * .create();
-   * }</pre>
-   *
-   * <p>3. Create a Branch called 'test' from the default branch 'main' at hash
-   * 'c26ce632cea616aabbbda2e1cfa82070514eb8b773fb035eaf668e2f0be8f10d'.
-   *
-   * <pre>{@code
-   * CreateReferenceBuilder builder = ..;
-   * builder
-   * .reference(Branch.of("test","c26ce632cea616aabbbda2e1cfa82070514eb8b773fb035eaf668e2f0be8f10d"))
-   * .create();
-   * }</pre>
-   *
-   * <p>4. Create a Branch called 'test' pointing at the beginning of time (without any commits).
-   *
-   * <pre>{@code
-   * CreateReferenceBuilder builder = ..;
-   * builder
-   * .reference(Branch.of("test",null))
-   * .create();
-   * }</pre>
-   */
   Reference create() throws NessieNotFoundException, NessieConflictException;
 }
