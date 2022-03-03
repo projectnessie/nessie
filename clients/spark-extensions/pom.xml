@@ -310,41 +310,5 @@
         </plugins>
       </build>
     </profile>
-    <profile>
-      <id>intellij-workaround</id>
-      <activation>
-        <property>
-          <name>idea.version</name>
-        </property>
-      </activation>
-      <!--
-        IntelliJ IDEA gets confused when a module builds a shaded jar.
-        It does not replace the original source with the shaded jar contents.
-        To avoid compile errors due to relocations we have to use a workaround here.
-
-        Partly taken from https://stackoverflow.com/a/59654377
-      -->
-      <dependencies>
-        <dependency>
-          <groupId>org.projectnessie</groupId>
-          <artifactId>nessie-spark-extensions-grammar</artifactId>
-          <version>${project.version}</version>
-          <!--
-          We need this dependency to build the shaded jar beforehand, but the runtime scope
-          makes it so intellij compilation does not use the original source (which references
-          non-relocated antlr classes).
-          -->
-          <scope>runtime</scope>
-        </dependency>
-        <dependency>
-          <groupId>${project.groupId}</groupId>
-          <artifactId>nessie-spark-extensions-grammar</artifactId>
-          <version>FAKE-VERSION</version>
-          <classifier>FAKE-CLASSIFIER</classifier>
-          <scope>system</scope>
-          <systemPath>${project.basedir}/../spark-antlr-grammar/target/nessie-spark-extensions-grammar-${project.version}.jar</systemPath>
-        </dependency>
-      </dependencies>
-    </profile>
   </profiles>
 </project>
