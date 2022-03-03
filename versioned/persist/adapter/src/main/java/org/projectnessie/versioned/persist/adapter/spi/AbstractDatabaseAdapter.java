@@ -217,9 +217,9 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
    * @param branchCommits consumer for the individual commits to merge
    * @param newKeyLists consumer for optimistically written {@link KeyListEntity}s
    * @param rewriteMetadata function to rewrite the commit-metadata for copied commits
-   * @return hash of the last commit-log-entry written to {@code toBranch}
+   * @return list of hashes in chronological order that are written to {@code toBranch}
    */
-  protected Hash mergeAttempt(
+  protected List<Hash> mergeAttempt(
       OP_CONTEXT ctx,
       long timeInMicros,
       Hash from,
@@ -266,7 +266,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
 
     // (no need to verify the global states during a transplant)
     // 6. re-apply commits in 'sequenceToTransplant' onto 'targetBranch'
-    toHead =
+    List<Hash> mergedCommits =
         copyCommits(
             ctx, timeInMicros, toHead, commitsToMergeChronological, newKeyLists, rewriteMetadata);
 
@@ -274,7 +274,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
 
     commitsToMergeChronological.stream().map(CommitLogEntry::getHash).forEach(branchCommits);
     writeMultipleCommits(ctx, commitsToMergeChronological);
-    return toHead;
+    return mergedCommits;
   }
 
   /**
@@ -288,9 +288,9 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
    * @param branchCommits consumer for the individual commits to merge
    * @param newKeyLists consumer for optimistically written {@link KeyListEntity}s
    * @param rewriteMetadata function to rewrite the commit-metadata for copied commits
-   * @return hash of the last commit-log-entry written to {@code targetBranch}
+   * @return list of hashes in chronological order that are written to {@code targetBranch}
    */
-  protected Hash transplantAttempt(
+  protected List<Hash> transplantAttempt(
       OP_CONTEXT ctx,
       long timeInMicros,
       BranchName targetBranch,
@@ -343,7 +343,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
 
     // (no need to verify the global states during a transplant)
     // 6. re-apply commits in 'sequenceToTransplant' onto 'targetBranch'
-    targetHead =
+    List<Hash> transplantedCommits =
         copyCommits(
             ctx,
             timeInMicros,
@@ -356,7 +356,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
 
     commitsToTransplantChronological.stream().map(CommitLogEntry::getHash).forEach(branchCommits);
     writeMultipleCommits(ctx, commitsToTransplantChronological);
-    return targetHead;
+    return transplantedCommits;
   }
 
   /**
@@ -1401,7 +1401,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
   }
 
   /** For merge/transplant, applies the given commits onto the target-hash. */
-  protected Hash copyCommits(
+  protected List<Hash> copyCommits(
       OP_CONTEXT ctx,
       long timeInMicros,
       Hash targetHead,
@@ -1409,6 +1409,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       Consumer<Hash> newKeyLists,
       Function<ByteString, ByteString> rewriteMetadata)
       throws ReferenceNotFoundException {
+    List<Hash> copiedHashes = new ArrayList<>();
     int parentsPerCommit = config.getParentsPerCommit();
 
     List<Hash> parents = new ArrayList<>(parentsPerCommit);
@@ -1463,10 +1464,10 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
         // This can happen, if the commit to transplant has NO_ANCESTOR as its parent.
         commitsChronological.remove(i);
       }
-
+      copiedHashes.add(0, newEntry.getHash());
       targetHead = newEntry.getHash();
     }
-    return targetHead;
+    return copiedHashes;
   }
 
   /**

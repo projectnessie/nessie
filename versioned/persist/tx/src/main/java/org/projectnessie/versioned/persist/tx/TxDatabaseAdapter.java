@@ -251,7 +251,7 @@ public abstract class TxDatabaseAdapter
           (conn, currentHead) -> {
             long timeInMicros = commitTimeInMicros();
 
-            Hash toHead =
+            List<Hash> mergedCommits =
                 mergeAttempt(
                     conn,
                     timeInMicros,
@@ -262,15 +262,11 @@ public abstract class TxDatabaseAdapter
                     h -> {},
                     h -> {},
                     updateCommitMetadata);
-            Hash resultHash = tryMoveNamedReference(conn, toBranch, currentHead, toHead);
+            Hash newHead = mergedCommits.isEmpty() ? currentHead : mergedCommits.get(0);
+            Hash resultHash = tryMoveNamedReference(conn, toBranch, currentHead, newHead);
 
             commitRefLog(
-                conn,
-                timeInMicros,
-                toHead,
-                toBranch,
-                RefLogEntry.Operation.MERGE,
-                Collections.singletonList(from));
+                conn, timeInMicros, newHead, toBranch, RefLogEntry.Operation.MERGE, mergedCommits);
 
             return resultHash;
           },
@@ -299,7 +295,7 @@ public abstract class TxDatabaseAdapter
           (conn, currentHead) -> {
             long timeInMicros = commitTimeInMicros();
 
-            Hash targetHead =
+            List<Hash> transplantedCommits =
                 transplantAttempt(
                     conn,
                     timeInMicros,
@@ -311,15 +307,17 @@ public abstract class TxDatabaseAdapter
                     h -> {},
                     updateCommitMetadata);
 
-            Hash resultHash = tryMoveNamedReference(conn, targetBranch, currentHead, targetHead);
+            Hash newHead = transplantedCommits.isEmpty() ? currentHead : transplantedCommits.get(0);
+
+            Hash resultHash = tryMoveNamedReference(conn, targetBranch, currentHead, newHead);
 
             commitRefLog(
                 conn,
                 timeInMicros,
-                targetHead,
+                newHead,
                 targetBranch,
                 RefLogEntry.Operation.TRANSPLANT,
-                commits);
+                transplantedCommits);
 
             return resultHash;
           },

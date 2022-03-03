@@ -30,6 +30,7 @@ import org.assertj.core.groups.Tuple;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.StreamingUtil;
 import org.projectnessie.error.BaseNessieClientServerException;
+import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieRefLogNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
@@ -131,6 +132,7 @@ public abstract class AbstractRestRefLog extends AbstractRestReferences {
         .fromHash(branch0.getHash())
         .merge();
     expectedEntries.add(Tuple.tuple(branch2, "MERGE"));
+    String mergeHash = getHeadCommitHash(branch2);
 
     // reflog 10: transplant
     getApi()
@@ -140,6 +142,7 @@ public abstract class AbstractRestRefLog extends AbstractRestReferences {
         .branch(createdBranch3)
         .transplant();
     expectedEntries.add(Tuple.tuple(branch3, "TRANSPLANT"));
+    String transplantHash = getHeadCommitHash(branch3);
 
     // reflog 11: delete branch
     getApi().deleteBranch().branchName(branch1).hash(branch0.getHash()).delete();
@@ -203,10 +206,10 @@ public abstract class AbstractRestRefLog extends AbstractRestReferences {
         .isEqualTo(Collections.singletonList(createdBranch1.getHash()));
     // verify source hashes for merge
     assertThat(refLogResponse.getLogEntries().get(3).getSourceHashes())
-        .isEqualTo(Collections.singletonList(branch0.getHash()));
+        .isEqualTo(Collections.singletonList(mergeHash));
     // verify source hashes for transplant
     assertThat(refLogResponse.getLogEntries().get(2).getSourceHashes())
-        .isEqualTo(Collections.singletonList(branch0.getHash()));
+        .isEqualTo(Collections.singletonList(transplantHash));
     // test filter with stream
     List<RefLogResponse.RefLogResponseEntry> filteredResult =
         StreamingUtil.getReflogStream(
@@ -223,5 +226,9 @@ public abstract class AbstractRestRefLog extends AbstractRestReferences {
             RefLogResponse.RefLogResponseEntry::getRefName,
             RefLogResponse.RefLogResponseEntry::getOperation)
         .isEqualTo(expectedEntries.get(5).toList());
+  }
+
+  private String getHeadCommitHash(String branch) throws NessieNotFoundException {
+    return getApi().getReference().refName(branch).get().getHash();
   }
 }

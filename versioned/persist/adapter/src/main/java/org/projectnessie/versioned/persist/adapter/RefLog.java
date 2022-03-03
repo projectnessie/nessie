@@ -45,8 +45,8 @@ public interface RefLog {
   String getOperation();
 
   /**
-   * Single hash in case of MERGE or ASSIGN. One or more hashes in case of TRANSPLANT. Empty list
-   * for other operations.
+   * Single hash (hash from the source) in case of ASSIGN. One or more hashes that are merged or
+   * transplanted in case of MERGE/TRANSPLANT. Empty list for other operations.
    */
   List<Hash> getSourceHashes();
 }

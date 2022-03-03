@@ -210,7 +210,7 @@ public abstract class NonTransactionalDatabaseAdapter<
 
             long timeInMicros = commitTimeInMicros();
 
-            toHead =
+            List<Hash> mergedCommits =
                 mergeAttempt(
                     ctx,
                     timeInMicros,
@@ -225,19 +225,21 @@ public abstract class NonTransactionalDatabaseAdapter<
             GlobalStateLogEntry newGlobalHead =
                 writeGlobalCommit(ctx, timeInMicros, pointer, Collections.emptyList());
 
+            Hash newHead = mergedCommits.isEmpty() ? toHead : mergedCommits.get(0);
+
             RefLogEntry newRefLog =
                 writeRefLogEntry(
                     ctx,
                     pointer,
                     toBranch.getName(),
                     RefLogEntry.RefType.Branch,
-                    toHead,
+                    newHead,
                     RefLogEntry.Operation.MERGE,
                     timeInMicros,
-                    Collections.singletonList(from));
+                    mergedCommits);
 
             // Return hash of last commit (toHead) added to 'targetBranch' (via the casOpLoop)
-            return updateGlobalStatePointer(toBranch, pointer, toHead, newGlobalHead, newRefLog);
+            return updateGlobalStatePointer(toBranch, pointer, newHead, newGlobalHead, newRefLog);
           },
           () -> mergeConflictMessage("Retry-failure", from, toBranch, expectedHead));
     } catch (ReferenceNotFoundException | ReferenceConflictException | RuntimeException e) {
@@ -265,7 +267,7 @@ public abstract class NonTransactionalDatabaseAdapter<
 
             long timeInMicros = commitTimeInMicros();
 
-            targetHead =
+            List<Hash> transplantedCommits =
                 transplantAttempt(
                     ctx,
                     timeInMicros,
@@ -277,6 +279,8 @@ public abstract class NonTransactionalDatabaseAdapter<
                     newKeyLists,
                     updateCommitMetadata);
 
+            Hash newHead = transplantedCommits.isEmpty() ? targetHead : transplantedCommits.get(0);
+
             GlobalStateLogEntry newGlobalHead =
                 writeGlobalCommit(ctx, timeInMicros, pointer, Collections.emptyList());
 
@@ -286,14 +290,14 @@ public abstract class NonTransactionalDatabaseAdapter<
                     pointer,
                     targetBranch.getName(),
                     RefLogEntry.RefType.Branch,
-                    targetHead,
+                    newHead,
                     RefLogEntry.Operation.TRANSPLANT,
                     timeInMicros,
-                    sequenceToTransplant);
+                    transplantedCommits);
 
             // Return hash of last commit (targetHead) added to 'targetBranch' (via the casOpLoop)
             return updateGlobalStatePointer(
-                targetBranch, pointer, targetHead, newGlobalHead, newRefLog);
+                targetBranch, pointer, newHead, newGlobalHead, newRefLog);
           },
           () ->
               transplantConflictMessage(

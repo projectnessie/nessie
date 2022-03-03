@@ -18,6 +18,8 @@ package org.projectnessie.jaxrs;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.ImmutableList;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
@@ -111,6 +113,16 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalidWit
             getApi().getEntries().refName(base.getName()).get().getEntries().stream()
                 .map(e -> e.getName().getName()))
         .containsExactlyInAnyOrder("key1", "key2");
+
+    // validate reflog source hashes
+    List<String> sourceHashes =
+        getApi().getRefLog().maxRecords(1).get().getLogEntries().get(0).getSourceHashes();
+    assertThat(sourceHashes)
+        .isEqualTo(
+            logOfTransplanted.getLogEntries().stream()
+                .map(LogEntry::getCommitMeta)
+                .map(CommitMeta::getHash)
+                .collect(Collectors.toList()));
   }
 
   @ParameterizedTest
@@ -187,5 +199,15 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalidWit
             getApi().getEntries().refName(base.getName()).get().getEntries().stream()
                 .map(e -> e.getName().getName()))
         .containsExactlyInAnyOrder("key1", "key2");
+
+    // validate reflog source hashes
+    List<String> sourceHashes =
+        getApi().getRefLog().maxRecords(1).get().getLogEntries().get(0).getSourceHashes();
+    assertThat(sourceHashes)
+        .isEqualTo(
+            logOfMerged.getLogEntries().stream()
+                .map(LogEntry::getCommitMeta)
+                .map(CommitMeta::getHash)
+                .collect(Collectors.toList()));
   }
 }
