@@ -20,19 +20,89 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.model.Branch;
 import org.projectnessie.model.Reference;
+import org.projectnessie.model.Tag;
 import org.projectnessie.model.Validation;
 
 /**
  * Request builder for "create reference".
  *
+ * <h2>Examples for creating the reference.</h2>
+ *
+ * <p>1. Create a Tag called 'release' from the 'dev' branch at hash
+ * 'c26ce632cea616aabbbda2e1cfa82070514eb8b773fb035eaf668e2f0be8f10d'.
+ *
+ * <pre>{@code
+ * CreateReferenceBuilder builder = ..;
+ * builder
+ * .sourceRefName("dev")
+ * .reference(Tag.of("release","c26ce632cea616aabbbda2e1cfa82070514eb8b773fb035eaf668e2f0be8f10d"))
+ * .create();
+ * }</pre>
+ *
+ * <p>2. Create a Branch called 'test' from the 'dev' branch at hash
+ * 'c26ce632cea616aabbbda2e1cfa82070514eb8b773fb035eaf668e2f0be8f10d'.
+ *
+ * <pre>{@code
+ * CreateReferenceBuilder builder = ..;
+ * builder
+ * .sourceRefName("dev")
+ * .reference(Branch.of("test","c26ce632cea616aabbbda2e1cfa82070514eb8b773fb035eaf668e2f0be8f10d"))
+ * .create();
+ * }</pre>
+ *
+ * <p>3. Create a Branch called 'test' from the default branch {@link
+ * NessieApiV1#getDefaultBranch()} at hash
+ * 'c26ce632cea616aabbbda2e1cfa82070514eb8b773fb035eaf668e2f0be8f10d'.
+ *
+ * <pre>{@code
+ * CreateReferenceBuilder builder = ..;
+ * builder
+ * .reference(Branch.of("test","c26ce632cea616aabbbda2e1cfa82070514eb8b773fb035eaf668e2f0be8f10d"))
+ * .create();
+ * }</pre>
+ *
+ * <p>4. Create a Branch called 'test' pointing at the beginning of time (without any commits).
+ *
+ * <pre>{@code
+ * CreateReferenceBuilder builder = ..;
+ * builder
+ * .reference(Branch.of("test",null))
+ * .create();
+ * }</pre>
+ *
  * @since {@link NessieApiV1}
  */
 public interface CreateReferenceBuilder {
+  /**
+   * Sets the name of the reference that contains the hash of the reference-to-be-created.
+   *
+   * <p>If not explicitly set, the default branch {@link NessieApiV1#getDefaultBranch()} will be
+   * used as the source reference name.
+   *
+   * <p>The name and hash of the reference to be created is set via {@link #reference(Reference)}.
+   *
+   * @param sourceRefName is the name of the reference that contains the hash of the
+   *     reference-to-be-created.
+   */
   CreateReferenceBuilder sourceRefName(
       @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           String sourceRefName);
 
+  /**
+   * Sets the name and hash of the reference-to-be-created.
+   *
+   * <p>For creating a {@link Tag}, hash cannot be null.
+   *
+   * <p>For creating a {@link Branch}, If the hash is not specified, hash will be set to reference
+   * the beginning of time (aka NO_ANCESTOR hash).
+   *
+   * <p>If the hash is specified, it should be on the {@link #sourceRefName(String)}
+   *
+   * @param reference is {@link Branch} or {@link Tag} defining the name and hash for the new
+   *     reference-to-be-created.
+   */
   CreateReferenceBuilder reference(@Valid @NotNull Reference reference);
 
   Reference create() throws NessieNotFoundException, NessieConflictException;
