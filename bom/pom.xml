@@ -111,6 +111,11 @@
       </dependency>
       <dependency>
         <groupId>org.projectnessie</groupId>
+        <artifactId>nessie-server-store-proto</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.projectnessie</groupId>
         <artifactId>nessie-server-store</artifactId>
         <version>${project.version}</version>
       </dependency>
@@ -127,6 +132,11 @@
       <dependency>
         <groupId>org.projectnessie</groupId>
         <artifactId>nessie-versioned-persist-adapter</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.projectnessie</groupId>
+        <artifactId>nessie-versioned-persist-serialize-proto</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>

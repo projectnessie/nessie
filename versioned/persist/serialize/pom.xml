@@ -36,8 +36,9 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.google.protobuf</groupId>
-      <artifactId>protobuf-java</artifactId>
+      <groupId>org.projectnessie</groupId>
+      <artifactId>nessie-versioned-persist-serialize-proto</artifactId>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.assertj</groupId>
@@ -65,21 +66,4 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
-
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.xolstice.maven.plugins</groupId>
-        <artifactId>protobuf-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>protobuf-java</id>
-            <goals>
-              <goal>compile</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
 </project>

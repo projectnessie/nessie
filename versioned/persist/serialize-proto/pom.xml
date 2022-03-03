@@ -21,43 +21,35 @@
 
   <parent>
     <groupId>org.projectnessie</groupId>
-    <artifactId>nessie-server-parent</artifactId>
+    <artifactId>nessie-versioned-persist</artifactId>
     <version>0.21.3-SNAPSHOT</version>
   </parent>
 
-  <artifactId>nessie-server-store</artifactId>
+  <artifactId>nessie-versioned-persist-serialize-proto</artifactId>
 
-  <name>Nessie - Server - Store</name>
+  <name>Nessie - Versioned - Persist - Serialization (Proto)</name>
 
   <dependencies>
     <dependency>
-      <groupId>org.projectnessie</groupId>
-      <artifactId>nessie-model</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.projectnessie</groupId>
-      <artifactId>nessie-versioned-spi</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.projectnessie</groupId>
-      <artifactId>nessie-server-store-proto</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-databind</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-api</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-params</artifactId>
-      <scope>test</scope>
+      <groupId>com.google.protobuf</groupId>
+      <artifactId>protobuf-java</artifactId>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.xolstice.maven.plugins</groupId>
+        <artifactId>protobuf-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>protobuf-java</id>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 </project>
