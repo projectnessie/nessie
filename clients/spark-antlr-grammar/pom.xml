@@ -72,11 +72,11 @@
               <goal>run</goal>
             </goals>
             <configuration>
-              <tasks>
+              <target>
                 <replaceregexp flags="g" byline="true" match="import org.antlr.v4.runtime." replace="import org.projectnessie.shaded.org.antlr.v4.runtime.">
                   <fileset dir="${project.build.directory}/generated-sources/antlr4" includes="**/*.java"/>
                 </replaceregexp>
-              </tasks>
+              </target>
             </configuration>
           </execution>
         </executions>
