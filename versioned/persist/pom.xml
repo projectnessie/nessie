@@ -42,6 +42,19 @@
     <module>tx</module>
     <module>store</module>
     <module>tests</module>
-    <module>bench</module>
   </modules>
+
+  <profiles>
+    <profile>
+      <id>build-all</id>
+      <activation>
+        <property>
+          <name>!quickly</name>
+        </property>
+      </activation>
+      <modules>
+        <module>bench</module>
+      </modules>
+    </profile>
+  </profiles>
 </project>
