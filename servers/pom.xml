@@ -35,6 +35,7 @@
     <module>quarkus-server</module>
     <module>services</module>
     <module>rest-services</module>
+    <module>store-proto</module>
     <module>store</module>
     <module>jax-rs</module>
     <module>jax-rs-testextension</module>

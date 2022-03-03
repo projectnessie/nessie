@@ -32,6 +32,7 @@
 
   <modules>
     <module>adapter</module>
+    <module>serialize-proto</module>
     <module>serialize</module>
     <module>nontx</module>
     <module>inmem</module>
