@@ -80,6 +80,12 @@ aws_secret_access_key=YOURSECRETKEYDATA
 * Install Minikube as described in https://minikube.sigs.k8s.io/docs/start/
 * Install Helm as described in https://helm.sh/docs/intro/install/ 
 * Start Minikube cluster: `minikube start`
-* Create K8s Namespace: `kubectl create namespace nessie-dev`
-* Install Nessie Helm chart: `helm install nessie -n nessie-dev helm/nessie`
+* Create K8s Namespace: `kubectl create namespace nessie-ns`
+* Install Nessie Helm chart: `helm install nessie -n nessie-ns helm/nessie`
 
+### Stop/Uninstall everything in Dev
+
+```sh
+helm uninstall --namespace nessie-ns nessie
+minikube delete
+```
