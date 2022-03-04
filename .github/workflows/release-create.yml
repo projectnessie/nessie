@@ -74,7 +74,7 @@ jobs:
     ### BEGIN runner setup
     - name: Checkout
       uses: actions/checkout@v2
-    - name: Setup Java, Maven, Gradle
+    - name: Setup Java, Maven
       uses: ./.github/actions/dev-tool-java
     - name: Setup Python
       uses: ./.github/actions/dev-tool-python

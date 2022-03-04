@@ -197,6 +197,7 @@
     <maven.version>3.8.4</maven.version>
     <mockito.version>4.3.1</mockito.version>
     <nessie.version>${project.version}</nessie.version>
+    <nessie-apprunner.version>0.21.2</nessie-apprunner.version>
     <openapi.version>3.0</openapi.version>
     <picocli.version>4.6.3</picocli.version>
     <prometheus.version>0.9.0</prometheus.version>
@@ -210,7 +211,6 @@
     <scala2.13.version>2.13.8</scala2.13.version>
     <serverless.version>1.5</serverless.version>
     <slf4j.version>1.7.36</slf4j.version>
-    <soebes.itf.version>0.11.0</soebes.itf.version>
     <spark3.jackson.version>2.13.1</spark3.jackson.version>
     <spark31.version>3.1.2</spark31.version>
     <spark32.version>3.2.1</spark32.version>
@@ -451,16 +451,6 @@
         <groupId>org.openjdk.jmh</groupId>
         <artifactId>jmh-generator-annprocess</artifactId>
         <version>${jmh.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.soebes.itf.jupiter.extension</groupId>
-        <artifactId>itf-jupiter-extension</artifactId>
-        <version>${soebes.itf.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.soebes.itf.jupiter.extension</groupId>
-        <artifactId>itf-assertj</artifactId>
-        <version>${soebes.itf.version}</version>
       </dependency>
       <dependency>
         <groupId>org.immutables</groupId>
@@ -754,11 +744,6 @@
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-plugin-plugin</artifactId>
-          <version>3.6.4</version>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-gpg-plugin</artifactId>
           <version>3.0.1</version>
         </plugin>
@@ -771,11 +756,6 @@
           <configuration>
             <visitor>true</visitor>
           </configuration>
-        </plugin>
-        <plugin>
-          <groupId>com.soebes.itf.jupiter.extension</groupId>
-          <artifactId>itf-maven-plugin</artifactId>
-          <version>${soebes.itf.version}</version>
         </plugin>
         <plugin>
           <groupId>com.github.eirslett</groupId>
