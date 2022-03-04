@@ -165,7 +165,6 @@
       <plugin>
         <groupId>org.projectnessie</groupId>
         <artifactId>nessie-apprunner-maven-plugin</artifactId>
-        <version>${nessie-apprunner.version}</version>
         <configuration>
           <skip>${skipITs}</skip>
           <systemProperties>
