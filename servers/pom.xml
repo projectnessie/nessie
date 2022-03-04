@@ -31,7 +31,6 @@
   <name>Nessie - Servers - Parent</name>
 
   <modules>
-    <module>lambda</module>
     <module>quarkus-server</module>
     <module>services</module>
     <module>rest-services</module>
@@ -41,4 +40,18 @@
     <module>jax-rs-testextension</module>
     <module>jax-rs-tests</module>
   </modules>
+
+  <profiles>
+    <profile>
+      <id>build-all</id>
+      <activation>
+        <property>
+          <name>!quickly</name>
+        </property>
+      </activation>
+      <modules>
+        <module>lambda</module>
+      </modules>
+    </profile>
+  </profiles>
 </project>
