@@ -38,7 +38,7 @@
     "ramda": "^0.28.0",
     "react": "^16.14.0",
     "react-app-polyfill": "^3.0.0",
-    "react-bootstrap": "^2.1.1",
+    "react-bootstrap": "^2.2.0",
     "react-dom": "^16.14.0",
     "react-refresh": "^0.11.0",
     "react-router-dom": "^6.2.2",
