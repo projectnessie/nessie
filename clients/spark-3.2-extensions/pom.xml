@@ -189,7 +189,6 @@
       <plugin>
         <groupId>org.projectnessie</groupId>
         <artifactId>nessie-apprunner-maven-plugin</artifactId>
-        <version>${nessie-apprunner.version}</version>
         <configuration>
           <skip>${skipITs}</skip>
           <appArtifactId>org.projectnessie:nessie-quarkus:jar:runner:${client.nessie.version}</appArtifactId>

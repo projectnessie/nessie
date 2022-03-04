@@ -748,6 +748,13 @@
           <version>3.0.1</version>
         </plugin>
 
+        <!-- Nessie plugins -->
+        <plugin>
+          <groupId>org.projectnessie</groupId>
+          <artifactId>nessie-apprunner-maven-plugin</artifactId>
+          <version>${nessie-apprunner.version}</version>
+        </plugin>
+
         <!-- 3rd party plugins -->
         <plugin>
           <groupId>org.antlr</groupId>
