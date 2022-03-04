@@ -47,9 +47,15 @@ Note: Using the above method via the project's context menu is much quicker than
 A `./mvnw --threads 1C clean install` runs basically "everything" except release/deployment stuff. This is often
 not necessary. Use one of these parameters to speed things up:
 
-* `-Dquickly` Just compiles code, no tests, does not build code under `ui/` and `perftest/`.
+* `-Dquickly` Just compiles code, no tests, does not build code under `ui/`, `perftest/` and a few more.
 * `-DskipTests` Compiles everything, runs no tests.
 * `-DskipITs` Compiles everything, runs unit tests, but no integration tests.
+
+#### Parallel Maven Builds
+
+Building Nessie works fine with Maven Daemon [`mvnd`](https://github.com/apache/maven-mvnd).
+
+Alternatively, use the provided Maven Wrapper `./mvnw` with the `-T1C` (or `--threads 1C`) option.
 
 ### Development process
 
