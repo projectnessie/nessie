@@ -59,11 +59,11 @@ public class DiffParamsTest {
   @Test
   public void testValidation() {
     assertThatThrownBy(() -> DiffParams.builder().fromRef("x").build())
-        .isInstanceOf(NullPointerException.class)
-        .hasMessage("toRef must be non-null");
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("Cannot build DiffParams, some of required attributes are not set [toRef]");
 
     assertThatThrownBy(() -> DiffParams.builder().toRef("x").build())
-        .isInstanceOf(NullPointerException.class)
-        .hasMessage("fromRef must be non-null");
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("Cannot build DiffParams, some of required attributes are not set [fromRef]");
   }
 }

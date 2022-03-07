@@ -79,28 +79,19 @@ public class CommitLogParams extends AbstractParams {
 
   public CommitLogParams() {}
 
-  private CommitLogParams(
-      String startHash,
-      String endHash,
-      Integer maxRecords,
-      String pageToken,
-      String filter,
-      FetchOption fetchOption) {
+  @org.immutables.builder.Builder.Constructor
+  CommitLogParams(
+      @Nullable String startHash,
+      @Nullable String endHash,
+      @Nullable Integer maxRecords,
+      @Nullable String pageToken,
+      @Nullable String filter,
+      @Nullable FetchOption fetchOption) {
     super(maxRecords, pageToken);
     this.startHash = startHash;
     this.endHash = endHash;
     this.filter = filter;
     this.fetchOption = fetchOption;
-  }
-
-  private CommitLogParams(Builder builder) {
-    this(
-        builder.startHash,
-        builder.endHash,
-        builder.maxRecords,
-        builder.pageToken,
-        builder.filter,
-        builder.fetchOption);
   }
 
   @Nullable
@@ -113,20 +104,22 @@ public class CommitLogParams extends AbstractParams {
     return endHash;
   }
 
+  @Nullable
   public String filter() {
     return filter;
   }
 
+  @Nullable
   public FetchOption fetchOption() {
     return fetchOption;
   }
 
-  public static CommitLogParams.Builder builder() {
-    return new CommitLogParams.Builder();
+  public static CommitLogParamsBuilder builder() {
+    return new CommitLogParamsBuilder();
   }
 
   public static CommitLogParams empty() {
-    return new CommitLogParams.Builder().build();
+    return builder().build();
   }
 
   @Override
@@ -161,51 +154,5 @@ public class CommitLogParams extends AbstractParams {
   @Override
   public int hashCode() {
     return Objects.hash(startHash, endHash, maxRecords(), pageToken(), filter, fetchOption);
-  }
-
-  public static class Builder extends AbstractParams.Builder<Builder> {
-
-    private String startHash;
-    private String endHash;
-    private String filter;
-    private FetchOption fetchOption;
-
-    private Builder() {}
-
-    public Builder startHash(String startHash) {
-      this.startHash = startHash;
-      return this;
-    }
-
-    public Builder endHash(String endHash) {
-      this.endHash = endHash;
-      return this;
-    }
-
-    public Builder filter(String filter) {
-      this.filter = filter;
-      return this;
-    }
-
-    public Builder fetch(FetchOption fetchOption) {
-      this.fetchOption = fetchOption;
-      return this;
-    }
-
-    public Builder from(CommitLogParams params) {
-      return startHash(params.startHash)
-          .endHash(params.endHash)
-          .maxRecords(params.maxRecords())
-          .pageToken(params.pageToken())
-          .filter(params.filter)
-          .fetch(params.fetchOption);
-    }
-
-    private void validate() {}
-
-    public CommitLogParams build() {
-      validate();
-      return new CommitLogParams(this);
-    }
   }
 }

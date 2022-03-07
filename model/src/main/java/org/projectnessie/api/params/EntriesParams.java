@@ -64,33 +64,25 @@ public class EntriesParams extends AbstractParams {
 
   public EntriesParams() {}
 
-  private EntriesParams(
-      String hashOnRef,
-      Integer maxRecords,
-      String pageToken,
-      Integer namespaceDepth,
-      String filter) {
+  @org.immutables.builder.Builder.Constructor
+  EntriesParams(
+      @Nullable String hashOnRef,
+      @Nullable Integer maxRecords,
+      @Nullable String pageToken,
+      @Nullable Integer namespaceDepth,
+      @Nullable String filter) {
     super(maxRecords, pageToken);
     this.hashOnRef = hashOnRef;
     this.namespaceDepth = namespaceDepth;
     this.filter = filter;
   }
 
-  private EntriesParams(Builder builder) {
-    this(
-        builder.hashOnRef,
-        builder.maxRecords,
-        builder.pageToken,
-        builder.namespaceDepth,
-        builder.filter);
-  }
-
-  public static EntriesParams.Builder builder() {
-    return new EntriesParams.Builder();
+  public static EntriesParamsBuilder builder() {
+    return new EntriesParamsBuilder();
   }
 
   public static EntriesParams empty() {
-    return new EntriesParams.Builder().build();
+    return builder().build();
   }
 
   @Nullable
@@ -98,10 +90,12 @@ public class EntriesParams extends AbstractParams {
     return hashOnRef;
   }
 
+  @Nullable
   public String filter() {
     return filter;
   }
 
+  @Nullable
   public Integer namespaceDepth() {
     return namespaceDepth;
   }
@@ -136,44 +130,5 @@ public class EntriesParams extends AbstractParams {
   @Override
   public int hashCode() {
     return Objects.hash(hashOnRef, maxRecords(), pageToken(), namespaceDepth, filter);
-  }
-
-  public static class Builder extends AbstractParams.Builder<Builder> {
-
-    private String hashOnRef;
-    private String filter;
-    private Integer namespaceDepth;
-
-    private Builder() {}
-
-    public EntriesParams.Builder hashOnRef(String hashOnRef) {
-      this.hashOnRef = hashOnRef;
-      return this;
-    }
-
-    public EntriesParams.Builder filter(String filter) {
-      this.filter = filter;
-      return this;
-    }
-
-    public Builder namespaceDepth(Integer namespaceDepth) {
-      this.namespaceDepth = namespaceDepth;
-      return this;
-    }
-
-    public EntriesParams.Builder from(EntriesParams params) {
-      return hashOnRef(params.hashOnRef)
-          .maxRecords(params.maxRecords())
-          .pageToken(params.pageToken())
-          .namespaceDepth(params.namespaceDepth)
-          .filter(params.filter);
-    }
-
-    private void validate() {}
-
-    public EntriesParams build() {
-      validate();
-      return new EntriesParams(this);
-    }
   }
 }

@@ -41,10 +41,12 @@ public abstract class AbstractParams {
     this.pageToken = pageToken;
   }
 
+  @Nullable
   public Integer maxRecords() {
     return maxRecords;
   }
 
+  @Nullable
   public String pageToken() {
     return pageToken;
   }

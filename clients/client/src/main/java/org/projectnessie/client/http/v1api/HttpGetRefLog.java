@@ -16,6 +16,7 @@
 package org.projectnessie.client.http.v1api;
 
 import org.projectnessie.api.params.RefLogParams;
+import org.projectnessie.api.params.RefLogParamsBuilder;
 import org.projectnessie.client.api.GetRefLogBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieNotFoundException;
@@ -23,7 +24,7 @@ import org.projectnessie.model.RefLogResponse;
 
 final class HttpGetRefLog extends BaseHttpRequest implements GetRefLogBuilder {
 
-  private final RefLogParams.Builder params = RefLogParams.builder();
+  private final RefLogParamsBuilder params = RefLogParams.builder();
 
   HttpGetRefLog(NessieApiClient client) {
     super(client);

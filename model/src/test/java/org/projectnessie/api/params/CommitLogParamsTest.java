@@ -39,7 +39,7 @@ public class CommitLogParamsTest {
                 .pageToken(pageToken)
                 .startHash(startHash)
                 .endHash(endHash)
-                .fetch(fetchOption)
+                .fetchOption(fetchOption)
                 .build();
 
     verify(maxRecords, startHash, endHash, pageToken, filter, fetchOption, generator);

@@ -16,6 +16,7 @@
 package org.projectnessie.client.http.v1api;
 
 import org.projectnessie.api.params.EntriesParams;
+import org.projectnessie.api.params.EntriesParamsBuilder;
 import org.projectnessie.client.api.GetEntriesBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieNotFoundException;
@@ -24,7 +25,7 @@ import org.projectnessie.model.EntriesResponse;
 final class HttpGetEntries extends BaseHttpOnReferenceRequest<GetEntriesBuilder>
     implements GetEntriesBuilder {
 
-  private final EntriesParams.Builder params = EntriesParams.builder();
+  private final EntriesParamsBuilder params = EntriesParams.builder();
 
   HttpGetEntries(NessieApiClient client) {
     super(client);

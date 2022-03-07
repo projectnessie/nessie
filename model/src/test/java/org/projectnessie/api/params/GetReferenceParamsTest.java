@@ -25,7 +25,7 @@ public class GetReferenceParamsTest {
   @Test
   public void testBuilder() {
     GetReferenceParams params =
-        GetReferenceParams.builder().refName("xx").fetch(FetchOption.ALL).build();
+        GetReferenceParams.builder().refName("xx").fetchOption(FetchOption.ALL).build();
     assertThat(params.getRefName()).isEqualTo("xx");
     assertThat(params.fetchOption()).isEqualTo(FetchOption.ALL);
 
@@ -37,11 +37,12 @@ public class GetReferenceParamsTest {
   @Test
   public void testValidation() {
     assertThatThrownBy(() -> GetReferenceParams.builder().build())
-        .isInstanceOf(NullPointerException.class)
-        .hasMessage("refName must be non-null");
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage(
+            "Cannot build GetReferenceParams, some of required attributes are not set [refName]");
 
     assertThatThrownBy(() -> GetReferenceParams.builder().refName(null).build())
         .isInstanceOf(NullPointerException.class)
-        .hasMessage("refName must be non-null");
+        .hasMessage("refName");
   }
 }
