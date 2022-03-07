@@ -24,6 +24,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
 import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.immutables.builder.Builder;
 import org.projectnessie.model.Validation;
 
 public class GetReferenceParams {
@@ -53,15 +54,13 @@ public class GetReferenceParams {
 
   public GetReferenceParams() {}
 
-  private GetReferenceParams(String refName, FetchOption fetchOption) {
+  @Builder.Constructor
+  GetReferenceParams(@NotNull String refName, @Nullable FetchOption fetchOption) {
     this.refName = refName;
     this.fetchOption = fetchOption;
   }
 
-  private GetReferenceParams(Builder builder) {
-    this(builder.refName, builder.fetchOption);
-  }
-
+  @Nullable
   public FetchOption fetchOption() {
     return fetchOption;
   }
@@ -70,8 +69,8 @@ public class GetReferenceParams {
     return refName;
   }
 
-  public static GetReferenceParams.Builder builder() {
-    return new GetReferenceParams.Builder();
+  public static GetReferenceParamsBuilder builder() {
+    return new GetReferenceParamsBuilder();
   }
 
   @Override
@@ -97,31 +96,5 @@ public class GetReferenceParams {
         .add("refName='" + refName + "'")
         .add("fetchOption=" + fetchOption)
         .toString();
-  }
-
-  public static class Builder {
-    private String refName;
-    private FetchOption fetchOption;
-
-    private Builder() {}
-
-    public Builder refName(String refName) {
-      this.refName = refName;
-      return this;
-    }
-
-    public Builder fetch(FetchOption fetchOption) {
-      this.fetchOption = fetchOption;
-      return this;
-    }
-
-    private void validate() {
-      Objects.requireNonNull(refName, "refName must be non-null");
-    }
-
-    public GetReferenceParams build() {
-      validate();
-      return new GetReferenceParams(this);
-    }
   }
 }

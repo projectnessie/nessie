@@ -16,6 +16,7 @@
 package org.projectnessie.client.http.v1api;
 
 import org.projectnessie.api.params.CommitLogParams;
+import org.projectnessie.api.params.CommitLogParamsBuilder;
 import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.client.api.GetCommitLogBuilder;
 import org.projectnessie.client.http.NessieApiClient;
@@ -25,7 +26,7 @@ import org.projectnessie.model.LogResponse;
 final class HttpGetCommitLog extends BaseHttpOnReferenceRequest<GetCommitLogBuilder>
     implements GetCommitLogBuilder {
 
-  private final CommitLogParams.Builder params = CommitLogParams.builder();
+  private final CommitLogParamsBuilder params = CommitLogParams.builder();
 
   HttpGetCommitLog(NessieApiClient client) {
     super(client);
@@ -33,7 +34,7 @@ final class HttpGetCommitLog extends BaseHttpOnReferenceRequest<GetCommitLogBuil
 
   @Override
   public GetCommitLogBuilder fetch(FetchOption fetchOption) {
-    params.fetch(fetchOption);
+    params.fetchOption(fetchOption);
     return this;
   }
 

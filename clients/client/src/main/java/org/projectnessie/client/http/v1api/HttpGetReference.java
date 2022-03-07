@@ -17,13 +17,14 @@ package org.projectnessie.client.http.v1api;
 
 import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.api.params.GetReferenceParams;
+import org.projectnessie.api.params.GetReferenceParamsBuilder;
 import org.projectnessie.client.api.GetReferenceBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Reference;
 
 final class HttpGetReference extends BaseHttpRequest implements GetReferenceBuilder {
-  private GetReferenceParams.Builder builder = GetReferenceParams.builder();
+  private GetReferenceParamsBuilder builder = GetReferenceParams.builder();
 
   HttpGetReference(NessieApiClient client) {
     super(client);
@@ -37,7 +38,7 @@ final class HttpGetReference extends BaseHttpRequest implements GetReferenceBuil
 
   @Override
   public GetReferenceBuilder fetch(FetchOption fetchOption) {
-    builder.fetch(fetchOption);
+    builder.fetchOption(fetchOption);
     return this;
   }
 

@@ -28,7 +28,7 @@ public class ReferencesParamsTest {
             .maxRecords(23)
             .pageToken("abc")
             .filter("some_expression")
-            .fetch(FetchOption.ALL)
+            .fetchOption(FetchOption.ALL)
             .build();
     assertThat(params.maxRecords()).isEqualTo(23);
     assertThat(params.pageToken()).isEqualTo("abc");

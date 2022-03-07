@@ -67,31 +67,33 @@ public class ReferencesParams extends AbstractParams {
 
   public ReferencesParams() {}
 
-  private ReferencesParams(
-      Integer maxRecords, String pageToken, FetchOption fetchOption, String filter) {
+  @org.immutables.builder.Builder.Constructor
+  ReferencesParams(
+      @Nullable Integer maxRecords,
+      @Nullable String pageToken,
+      @Nullable FetchOption fetchOption,
+      @Nullable String filter) {
     super(maxRecords, pageToken);
     this.fetchOption = fetchOption;
     this.filter = filter;
   }
 
-  private ReferencesParams(Builder builder) {
-    this(builder.maxRecords, builder.pageToken, builder.fetchOption, builder.filter);
-  }
-
+  @Nullable
   public FetchOption fetchOption() {
     return fetchOption;
   }
 
+  @Nullable
   public String filter() {
     return filter;
   }
 
-  public static ReferencesParams.Builder builder() {
-    return new ReferencesParams.Builder();
+  public static ReferencesParamsBuilder builder() {
+    return new ReferencesParamsBuilder();
   }
 
   public static ReferencesParams empty() {
-    return new ReferencesParams.Builder().build();
+    return builder().build();
   }
 
   @Override
@@ -122,37 +124,5 @@ public class ReferencesParams extends AbstractParams {
   @Override
   public int hashCode() {
     return Objects.hash(maxRecords(), pageToken(), fetchOption, filter);
-  }
-
-  public static class Builder extends AbstractParams.Builder<Builder> {
-
-    private Builder() {}
-
-    private FetchOption fetchOption;
-    private String filter;
-
-    public ReferencesParams.Builder from(ReferencesParams params) {
-      return maxRecords(params.maxRecords())
-          .pageToken(params.pageToken())
-          .fetch(params.fetchOption)
-          .filter(params.filter);
-    }
-
-    public Builder fetch(FetchOption fetchOption) {
-      this.fetchOption = fetchOption;
-      return this;
-    }
-
-    public Builder filter(String filter) {
-      this.filter = filter;
-      return this;
-    }
-
-    private void validate() {}
-
-    public ReferencesParams build() {
-      validate();
-      return new ReferencesParams(this);
-    }
   }
 }

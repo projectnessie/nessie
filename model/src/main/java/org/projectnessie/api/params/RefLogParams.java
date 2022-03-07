@@ -67,16 +67,17 @@ public class RefLogParams extends AbstractParams {
 
   public RefLogParams() {}
 
-  private RefLogParams(
-      String startHash, String endHash, Integer maxRecords, String pageToken, String filter) {
+  @org.immutables.builder.Builder.Constructor
+  RefLogParams(
+      @Nullable String startHash,
+      @Nullable String endHash,
+      @Nullable Integer maxRecords,
+      @Nullable String pageToken,
+      @Nullable String filter) {
     super(maxRecords, pageToken);
     this.startHash = startHash;
     this.endHash = endHash;
     this.filter = filter;
-  }
-
-  private RefLogParams(Builder builder) {
-    this(builder.startHash, builder.endHash, builder.maxRecords, builder.pageToken, builder.filter);
   }
 
   @Nullable
@@ -94,12 +95,12 @@ public class RefLogParams extends AbstractParams {
     return filter;
   }
 
-  public static RefLogParams.Builder builder() {
-    return new RefLogParams.Builder();
+  public static RefLogParamsBuilder builder() {
+    return new RefLogParamsBuilder();
   }
 
   public static RefLogParams empty() {
-    return new RefLogParams.Builder().build();
+    return builder().build();
   }
 
   @Override
@@ -132,41 +133,5 @@ public class RefLogParams extends AbstractParams {
   @Override
   public int hashCode() {
     return Objects.hash(startHash, endHash, filter, maxRecords(), pageToken());
-  }
-
-  public static class Builder extends AbstractParams.Builder<Builder> {
-
-    private String startHash;
-    private String endHash;
-    private String filter;
-
-    private Builder() {}
-
-    public Builder startHash(String startHash) {
-      this.startHash = startHash;
-      return this;
-    }
-
-    public Builder endHash(String endHash) {
-      this.endHash = endHash;
-      return this;
-    }
-
-    public Builder filter(String filter) {
-      this.filter = filter;
-      return this;
-    }
-
-    public Builder from(RefLogParams params) {
-      return startHash(params.startHash)
-          .endHash(params.endHash)
-          .filter(params.filter)
-          .maxRecords(params.maxRecords())
-          .pageToken(params.pageToken());
-    }
-
-    public RefLogParams build() {
-      return new RefLogParams(this);
-    }
   }
 }

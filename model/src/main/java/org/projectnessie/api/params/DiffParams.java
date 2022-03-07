@@ -62,21 +62,23 @@ public class DiffParams {
 
   public DiffParams() {}
 
-  private DiffParams(String fromRef, String fromHashOnRef, String toRef, String toHashOnRef) {
+  @org.immutables.builder.Builder.Constructor
+  DiffParams(
+      @NotNull String fromRef,
+      @Nullable String fromHashOnRef,
+      @NotNull String toRef,
+      @Nullable String toHashOnRef) {
     this.fromRef = fromRef;
     this.fromHashOnRef = fromHashOnRef;
     this.toRef = toRef;
     this.toHashOnRef = toHashOnRef;
   }
 
-  private DiffParams(Builder builder) {
-    this(builder.fromRef, builder.fromHashOnRef, builder.toRef, builder.toHashOnRef);
-  }
-
   public String getFromRef() {
     return fromRef;
   }
 
+  @Nullable
   public String getFromHashOnRef() {
     return emptyToNull(fromHashOnRef);
   }
@@ -85,6 +87,7 @@ public class DiffParams {
     return toRef;
   }
 
+  @Nullable
   public String getToHashOnRef() {
     return emptyToNull(toHashOnRef);
   }
@@ -102,8 +105,8 @@ public class DiffParams {
     return s;
   }
 
-  public static DiffParams.Builder builder() {
-    return new Builder();
+  public static DiffParamsBuilder builder() {
+    return new DiffParamsBuilder();
   }
 
   @Override
@@ -124,51 +127,5 @@ public class DiffParams {
   @Override
   public int hashCode() {
     return Objects.hash(fromRef, fromHashOnRef, toRef, toHashOnRef);
-  }
-
-  public static class Builder {
-    private String fromRef;
-    private String fromHashOnRef;
-    private String toRef;
-    private String toHashOnRef;
-
-    public Builder() {}
-
-    public Builder from(DiffParams params) {
-      return fromRef(params.fromRef)
-          .fromHashOnRef(params.fromHashOnRef)
-          .toRef(params.toRef)
-          .toHashOnRef(params.toHashOnRef);
-    }
-
-    public Builder fromRef(String fromRef) {
-      this.fromRef = fromRef;
-      return this;
-    }
-
-    public Builder fromHashOnRef(String fromHashOnRef) {
-      this.fromHashOnRef = fromHashOnRef;
-      return this;
-    }
-
-    public Builder toRef(String toRef) {
-      this.toRef = toRef;
-      return this;
-    }
-
-    public Builder toHashOnRef(String toHashOnRef) {
-      this.toHashOnRef = toHashOnRef;
-      return this;
-    }
-
-    private void validate() {
-      Objects.requireNonNull(fromRef, "fromRef must be non-null");
-      Objects.requireNonNull(toRef, "toRef must be non-null");
-    }
-
-    public DiffParams build() {
-      validate();
-      return new DiffParams(this);
-    }
   }
 }

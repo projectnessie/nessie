@@ -16,6 +16,7 @@
 package org.projectnessie.client.http.v1api;
 
 import org.projectnessie.api.params.DiffParams;
+import org.projectnessie.api.params.DiffParamsBuilder;
 import org.projectnessie.client.api.GetDiffBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieNotFoundException;
@@ -23,7 +24,7 @@ import org.projectnessie.model.DiffResponse;
 
 final class HttpGetDiff extends BaseHttpRequest implements GetDiffBuilder {
 
-  DiffParams.Builder builder = DiffParams.builder();
+  DiffParamsBuilder builder = DiffParams.builder();
 
   HttpGetDiff(NessieApiClient client) {
     super(client);

@@ -458,6 +458,11 @@
         <version>${immutables.version}</version>
       </dependency>
       <dependency>
+        <groupId>org.immutables</groupId>
+        <artifactId>builder</artifactId>
+        <version>${immutables.version}</version>
+      </dependency>
+      <dependency>
         <groupId>io.quarkus</groupId>
         <artifactId>quarkus-bom</artifactId>
         <version>${quarkus.version}</version>
