@@ -57,7 +57,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -79,7 +78,6 @@ import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentAndState;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
-import org.projectnessie.versioned.persist.adapter.ContentIdWithType;
 import org.projectnessie.versioned.persist.adapter.ContentVariantSupplier;
 import org.projectnessie.versioned.persist.adapter.Difference;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
@@ -588,7 +586,7 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
-  public Stream<ContentIdWithType> globalKeys(ToIntFunction<ByteString> contentTypeExtractor) {
+  public Stream<ContentId> globalKeys() {
     Connection conn = borrowConnection();
     return JdbcSelectSpliterator.buildStream(
             conn,
@@ -597,17 +595,13 @@ public abstract class TxDatabaseAdapter
             (rs) -> {
               ContentId contentId = ContentId.of(rs.getString(1));
               byte[] value = rs.getBytes(2);
-              byte type =
-                  (byte) contentTypeExtractor.applyAsInt(UnsafeByteOperations.unsafeWrap(value));
-
-              return ContentIdWithType.of(contentId, type);
+              return contentId;
             })
         .onClose(() -> releaseConnection(conn));
   }
 
   @Override
-  public Optional<ContentIdAndBytes> globalContent(
-      ContentId contentId, ToIntFunction<ByteString> contentTypeExtractor) {
+  public Optional<ContentIdAndBytes> globalContent(ContentId contentId) {
     Connection conn = borrowConnection();
     try {
       try (Traced ignore = trace("globalContent");
@@ -617,7 +611,7 @@ public abstract class TxDatabaseAdapter
         ps.setString(2, contentId.getId());
         try (ResultSet rs = ps.executeQuery()) {
           if (rs.next()) {
-            return Optional.of(globalContentFromRow(contentTypeExtractor, rs));
+            return Optional.of(globalContentFromRow(rs));
           }
         }
       }
@@ -630,8 +624,7 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
-  public Stream<ContentIdAndBytes> globalContent(
-      Set<ContentId> keys, ToIntFunction<ByteString> contentTypeExtractor) {
+  public Stream<ContentIdAndBytes> globalContent(Set<ContentId> keys) {
     // 1. Fetch the global states,
     // 1.1. filter the requested keys + content-ids
     // 1.2. extract the current state from the GLOBAL_STATE table
@@ -649,7 +642,7 @@ public abstract class TxDatabaseAdapter
               }
             },
             (rs) -> {
-              ContentIdAndBytes global = globalContentFromRow(contentTypeExtractor, rs);
+              ContentIdAndBytes global = globalContentFromRow(rs);
               if (!keys.contains(global.getContentId())) {
                 // 1.1. filter the requested keys + content-ids
                 return null;
@@ -676,12 +669,10 @@ public abstract class TxDatabaseAdapter
     }
   }
 
-  private ContentIdAndBytes globalContentFromRow(
-      ToIntFunction<ByteString> contentTypeExtractor, ResultSet rs) throws SQLException {
+  private ContentIdAndBytes globalContentFromRow(ResultSet rs) throws SQLException {
     ContentId cid = ContentId.of(rs.getString(1));
     ByteString value = UnsafeByteOperations.unsafeWrap(rs.getBytes(2));
-    byte type = (byte) contentTypeExtractor.applyAsInt(value);
-    return ContentIdAndBytes.of(cid, type, value);
+    return ContentIdAndBytes.of(cid, value);
   }
 
   // /////////////////////////////////////////////////////////////////////////////////////////////

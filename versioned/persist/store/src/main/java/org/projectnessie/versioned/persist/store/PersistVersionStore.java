@@ -270,10 +270,7 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
           }
           return globalContents.computeIfAbsent(
               contentId,
-              cid ->
-                  databaseAdapter
-                      .globalContent(contentId, bytes -> type)
-                      .map(ContentIdAndBytes::getValue));
+              cid -> databaseAdapter.globalContent(contentId).map(ContentIdAndBytes::getValue));
         };
 
     return (commitBuilder, logEntry) -> {

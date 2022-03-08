@@ -60,12 +60,12 @@ message ContentId {
 
 message ContentIdWithType {
   ContentId content_id = 1;
-  int32 type = 2;
+  int32 type_unused = 2; // ignore the value of this field
 }
 
 message ContentIdWithBytes {
   ContentId content_id = 1;
-  int32 type = 2;
+  int32 type_unused = 2; // ignore the value of this field
   bytes value = 3;
 }
 
