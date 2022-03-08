@@ -65,6 +65,7 @@ public abstract class AbstractSparkSqlTest {
   @TempDir File tempFile;
 
   private static final int NESSIE_PORT = Integer.getInteger("quarkus.http.test-port", 19121);
+  private static final String NON_NESSIE_CATALOG = "invalid_hive";
   protected static SparkConf conf = new SparkConf();
 
   protected static SparkSession spark;
@@ -89,10 +90,17 @@ public abstract class AbstractSparkSqlTest {
     conf.set(SQLConf.PARTITION_OVERWRITE_MODE().key(), "dynamic")
         .set("spark.testing", "true")
         .set("spark.sql.shuffle.partitions", "4")
-        .set("spark.sql.catalog.hive", "org.apache.iceberg.spark.SparkCatalog")
-        .set("spark.sql.catalog.hive.catalog-impl", "org.apache.iceberg.hive.HiveCatalog")
         .set("spark.sql.catalog.nessie.catalog-impl", "org.apache.iceberg.nessie.NessieCatalog")
         .set("spark.sql.catalog.nessie", "org.apache.iceberg.spark.SparkCatalog");
+
+    // the following catalog is only added to test a check in the nessie spark extensions
+    conf.set(
+            String.format("spark.sql.catalog.%s", NON_NESSIE_CATALOG),
+            "org.apache.iceberg.spark.SparkCatalog")
+        .set(
+            String.format("spark.sql.catalog.%s.catalog-impl", NON_NESSIE_CATALOG),
+            "org.apache.iceberg.hive.HiveCatalog");
+
     spark = SparkSession.builder().master("local[2]").config(conf).getOrCreate();
     spark.sparkContext().setLogLevel("WARN");
     api = HttpClientBuilder.builder().withUri(url).build(NessieApiV1.class);
@@ -692,17 +700,18 @@ public abstract class AbstractSparkSqlTest {
 
   @Test
   void testInvalidCatalog() {
-    assertThatThrownBy(() -> sql("LIST REFERENCES IN hive"))
-        .hasMessage(
-            "requirement failed: The command works only when the catalog is a NessieCatalog. Either set the catalog via USE <catalog_name> or provide the catalog during execution: <command> IN <catalog_name>.");
+    assertThatThrownBy(() -> sql(String.format("LIST REFERENCES IN %s", NON_NESSIE_CATALOG)))
+        .hasMessageContaining("The command works only when the catalog is a NessieCatalog.");
 
     // Catalog picked from the session
     String catalog = spark.sessionState().catalogManager().currentCatalog().name();
-    spark.sessionState().catalogManager().setCurrentCatalog("hive");
-    assertThatThrownBy(() -> sql("LIST REFERENCES"))
-        .hasMessage(
-            "requirement failed: The command works only when the catalog is a NessieCatalog. Either set the catalog via USE <catalog_name> or provide the catalog during execution: <command> IN <catalog_name>.");
-    spark.sessionState().catalogManager().setCurrentCatalog(catalog);
+    try {
+      spark.sessionState().catalogManager().setCurrentCatalog(NON_NESSIE_CATALOG);
+      assertThatThrownBy(() -> sql("LIST REFERENCES"))
+          .hasMessageContaining("The command works only when the catalog is a NessieCatalog.");
+    } finally {
+      spark.sessionState().catalogManager().setCurrentCatalog(catalog);
+    }
   }
 
   @Test
@@ -712,9 +721,12 @@ public abstract class AbstractSparkSqlTest {
 
     // Catalog picked from the session
     String catalog = spark.sessionState().catalogManager().currentCatalog().name();
-    spark.sessionState().catalogManager().setCurrentCatalog("nessie");
-    assertThat(sql("LIST REFERENCES")).containsExactlyInAnyOrder(row("Branch", "main", hash));
-    spark.sessionState().catalogManager().setCurrentCatalog(catalog);
+    try {
+      spark.sessionState().catalogManager().setCurrentCatalog("nessie");
+      assertThat(sql("LIST REFERENCES")).containsExactlyInAnyOrder(row("Branch", "main", hash));
+    } finally {
+      spark.sessionState().catalogManager().setCurrentCatalog(catalog);
+    }
   }
 
   private static Object[] convert(Object[] object) {
