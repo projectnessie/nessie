@@ -161,7 +161,7 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
         getApi()
             .getCommitLog()
             .refName(branch.getName())
-            .filter("commit.author == 'author-3' && commit.committer == ''")
+            .filter("commit.author == 'author-3'")
             .get();
     assertThat(log).isNotNull();
     assertThat(log.getLogEntries()).hasSize(commitsPerAuthor);
