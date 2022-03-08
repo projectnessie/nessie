@@ -31,7 +31,6 @@ import org.apache.spark.sql.functions;
 import org.apache.spark.util.Utils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.junit.jupiter.api.io.TempDir;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.Reference;
@@ -42,9 +41,6 @@ class ITDeltaLog extends AbstractDeltaTest {
   @TempDir File tempPath;
 
   @Test
-  // Delta < 0.8 w/ Spark 2.x doesn't support multiple branches well (warnings when changing the
-  // configuration)
-  @DisabledIfSystemProperty(named = "skip-multi-branch-tests", matches = "true")
   void testMultipleBranches() throws Exception {
     String csvSalaries1 = ITDeltaLog.class.getResource("/salaries1.csv").getPath();
     String csvSalaries2 = ITDeltaLog.class.getResource("/salaries2.csv").getPath();
@@ -88,9 +84,6 @@ class ITDeltaLog extends AbstractDeltaTest {
   }
 
   @Test
-  // Delta < 0.8 w/ Spark 2.x doesn't support multiple branches well (warnings when changing the
-  // configuration)
-  @DisabledIfSystemProperty(named = "skip-multi-branch-tests", matches = "true")
   void testCommitRetry() throws Exception {
     String csvSalaries1 = ITDeltaLog.class.getResource("/salaries1.csv").getPath();
     String csvSalaries2 = ITDeltaLog.class.getResource("/salaries2.csv").getPath();
