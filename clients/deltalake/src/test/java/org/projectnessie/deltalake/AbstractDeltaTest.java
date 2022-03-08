@@ -18,28 +18,30 @@ package org.projectnessie.deltalake;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
+import io.delta.sql.DeltaSparkSessionExtension;
 import java.io.File;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.spark.SparkConf;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.delta.catalog.DeltaCatalog;
 import org.apache.spark.sql.internal.SQLConf;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.http.HttpClientBuilder;
-import org.projectnessie.error.BaseNessieClientServerException;
+import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.Reference;
+import org.projectnessie.model.Tag;
+import org.projectnessie.spark.extensions.NessieSpark32SessionExtensions;
 
 public class AbstractDeltaTest {
 
@@ -55,20 +57,27 @@ public class AbstractDeltaTest {
 
   @BeforeEach
   protected void create() {
-    Map<String, String> nessieParams =
-        ImmutableMap.of("ref", "main", "uri", url, "warehouse", tempFile.toURI().toString());
 
-    nessieParams.forEach(
-        (k, v) -> {
-          conf.set(String.format("spark.sql.catalog.nessie.%s", k), v);
-          conf.set(String.format("spark.sql.catalog.spark_catalog.%s", k), v);
-        });
-
-    conf.set(SQLConf.PARTITION_OVERWRITE_MODE().key(), "dynamic")
+    conf.set("spark.sql.catalog.spark_catalog.ref", "main")
+        .set("spark.sql.catalog.spark_catalog.uri", url)
+        .set("spark.sql.catalog.spark_catalog.warehouse", tempFile.toURI().toString())
+        .set("spark.sql.catalog.spark_catalog", DeltaCatalog.class.getCanonicalName())
+        .set("spark.delta.logStore.class", NessieLogStore.class.getCanonicalName())
+        .set("spark.delta.logFileHandler.class", NessieLogFileMetaParser.class.getCanonicalName())
+        .set(
+            "spark.sql.extensions",
+            String.join(
+                ",",
+                Arrays.asList(
+                    DeltaSparkSessionExtension.class.getCanonicalName(),
+                    NessieSpark32SessionExtensions.class.getCanonicalName())))
+        .set(SQLConf.PARTITION_OVERWRITE_MODE().key(), "dynamic")
         .set("spark.testing", "true")
-        .set("spark.sql.shuffle.partitions", "4")
-        .set("spark.sql.catalog.nessie.catalog-impl", "org.apache.iceberg.nessie.NessieCatalog")
-        .set("spark.sql.catalog.nessie", "org.apache.iceberg.spark.SparkCatalog");
+        .set("spark.sql.shuffle.partitions", "4");
+
+    // the following is required until https://github.com/projectnessie/nessie/issues/3552 is fixed
+    conf.set("spark.sql.catalog.spark_catalog.catalog-impl", "workaround.NessieCatalog");
+
     spark = SparkSession.builder().master("local[2]").config(conf).getOrCreate();
     spark.sparkContext().setLogLevel("WARN");
 
@@ -76,29 +85,18 @@ public class AbstractDeltaTest {
   }
 
   @AfterEach
-  void closeClient() throws BaseNessieClientServerException {
-    Reference ref = null;
-    try {
-      ref = api.getReference().refName("test").get();
-    } catch (NessieNotFoundException e) {
-      // pass ignore
+  void removeBranches() throws NessieConflictException, NessieNotFoundException {
+    for (Reference ref : api.getAllReferences().get().getReferences()) {
+      if (ref instanceof Branch) {
+        api.deleteBranch().branchName(ref.getName()).hash(ref.getHash()).delete();
+      }
+      if (ref instanceof Tag) {
+        api.deleteTag().tagName(ref.getName()).hash(ref.getHash()).delete();
+      }
     }
-    if (ref != null) {
-      api.deleteBranch().branch((Branch) ref).delete();
-    }
-    try {
-      api.close();
-    } finally {
-      api = null;
-    }
-  }
-
-  @BeforeAll
-  protected static void setupDelta() {
-    conf.set("spark.delta.logStore.class", NessieLogStore.class.getCanonicalName())
-        .set("spark.delta.logFileHandler.class", NessieLogFileMetaParser.class.getCanonicalName())
-        .set("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
-        .set("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog");
+    api.createReference().reference(Branch.of("main", null)).create();
+    api.close();
+    api = null;
   }
 
   @AfterAll

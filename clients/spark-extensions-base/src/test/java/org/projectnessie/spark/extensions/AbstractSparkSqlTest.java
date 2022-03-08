@@ -118,6 +118,8 @@ public abstract class AbstractSparkSqlTest {
       }
     }
     api.createReference().reference(Branch.of("main", null)).create();
+    api.close();
+    api = null;
   }
 
   @AfterAll
@@ -701,14 +703,18 @@ public abstract class AbstractSparkSqlTest {
   @Test
   void testInvalidCatalog() {
     assertThatThrownBy(() -> sql(String.format("LIST REFERENCES IN %s", NON_NESSIE_CATALOG)))
-        .hasMessageContaining("The command works only when the catalog is a NessieCatalog.");
+        .hasMessageContaining("The command works only when the catalog is a NessieCatalog")
+        .hasMessageContaining(
+            String.format("but %s is a org.apache.iceberg.hive.HiveCatalog", NON_NESSIE_CATALOG));
 
     // Catalog picked from the session
     String catalog = spark.sessionState().catalogManager().currentCatalog().name();
     try {
       spark.sessionState().catalogManager().setCurrentCatalog(NON_NESSIE_CATALOG);
       assertThatThrownBy(() -> sql("LIST REFERENCES"))
-          .hasMessageContaining("The command works only when the catalog is a NessieCatalog.");
+          .hasMessageContaining("The command works only when the catalog is a NessieCatalog")
+          .hasMessageContaining(
+              String.format("but %s is a org.apache.iceberg.hive.HiveCatalog", NON_NESSIE_CATALOG));
     } finally {
       spark.sessionState().catalogManager().setCurrentCatalog(catalog);
     }
