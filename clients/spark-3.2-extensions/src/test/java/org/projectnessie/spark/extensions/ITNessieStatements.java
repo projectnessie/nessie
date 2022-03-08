@@ -21,8 +21,6 @@ public class ITNessieStatements extends AbstractSparkSqlTest {
 
   @BeforeAll
   protected static void useNessieExtensions() {
-    conf.set(
-        "spark.sql.extensions",
-        "org.projectnessie.spark.extensions.NessieSpark32SessionExtensions");
+    conf.set("spark.sql.extensions", NessieSpark32SessionExtensions.class.getCanonicalName());
   }
 }

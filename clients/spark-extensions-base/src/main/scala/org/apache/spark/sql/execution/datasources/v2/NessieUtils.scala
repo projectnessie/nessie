@@ -169,11 +169,16 @@ object NessieUtils {
       .toMap
     // Referring to https://github.com/apache/iceberg/blob/master/nessie/src/main/java/org/apache/iceberg/nessie/NessieCatalog.java
     // Not using fully-qualified class name to provide protection from shading activities (if any)
+    val catalogImpl = catalogConf.get("catalog-impl")
+    val catalogInfo = catalogImpl match {
+      case Some(clazz) => s"but $catalogName is a $clazz"
+      case None =>
+        s"but spark.sql.catalog.$catalogName.catalog-impl is not set"
+    }
     require(
-      catalogConf
-        .get("catalog-impl")
+      catalogImpl
         .exists(impl => impl.endsWith(".NessieCatalog")),
-      "The command works only when the catalog is a NessieCatalog. Either set the catalog via USE <catalog_name> or provide the catalog during execution: <command> IN <catalog_name>."
+      s"The command works only when the catalog is a NessieCatalog ($catalogInfo). Either set the catalog via USE <catalog_name> or provide the catalog during execution: <command> IN <catalog_name>."
     )
     HttpClientBuilder
       .builder()
