@@ -23,7 +23,6 @@ import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
-import org.projectnessie.versioned.persist.adapter.ContentIdWithType;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ImmutableKeyList;
 import org.projectnessie.versioned.persist.adapter.ImmutableRefLog;
@@ -149,30 +148,23 @@ public class ProtoSerialization {
   public static AdapterTypes.ContentIdWithBytes toProto(ContentIdAndBytes x) {
     return AdapterTypes.ContentIdWithBytes.newBuilder()
         .setContentId(AdapterTypes.ContentId.newBuilder().setId(x.getContentId().getId()))
-        .setType(x.getType())
         .setValue(x.getValue())
         .build();
   }
 
-  public static ContentIdAndBytes protoToContentIdAndBytes(
-      AdapterTypes.ContentIdWithBytes proto, int type) {
-    return ContentIdAndBytes.of(
-        ContentId.of(proto.getContentId().getId()), (byte) type, proto.getValue());
-  }
-
   public static ContentIdAndBytes protoToContentIdAndBytes(AdapterTypes.ContentIdWithBytes proto) {
-    return protoToContentIdAndBytes(proto, (byte) proto.getType());
+    return ContentIdAndBytes.of(ContentId.of(proto.getContentId().getId()), proto.getValue());
   }
 
-  public static AdapterTypes.ContentIdWithType toProto(ContentIdWithType x) {
+  public static AdapterTypes.ContentIdWithType toProto(ContentId x) {
     return AdapterTypes.ContentIdWithType.newBuilder()
-        .setContentId(AdapterTypes.ContentId.newBuilder().setId(x.getContentId().getId()))
-        .setType(x.getType())
+        .setContentId(AdapterTypes.ContentId.newBuilder().setId(x.getId()))
+        .setTypeUnused(0)
         .build();
   }
 
-  public static ContentIdWithType protoToContentIdWithType(AdapterTypes.ContentIdWithType proto) {
-    return ContentIdWithType.of(ContentId.of(proto.getContentId().getId()), (byte) proto.getType());
+  public static ContentId protoToContentId(AdapterTypes.ContentIdWithType proto) {
+    return ContentId.of(proto.getContentId().getId());
   }
 
   public static AdapterTypes.KeyList toProto(KeyList x) {

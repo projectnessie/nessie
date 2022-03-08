@@ -47,7 +47,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -69,7 +68,6 @@ import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentAndState;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
-import org.projectnessie.versioned.persist.adapter.ContentIdWithType;
 import org.projectnessie.versioned.persist.adapter.ContentVariantSupplier;
 import org.projectnessie.versioned.persist.adapter.Difference;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
@@ -328,7 +326,7 @@ public abstract class NonTransactionalDatabaseAdapter<
                     timeInMicros,
                     pointer,
                     commitAttempt.getGlobal().entrySet().stream()
-                        .map(e -> ContentIdAndBytes.of(e.getKey(), (byte) 0, e.getValue()))
+                        .map(e -> ContentIdAndBytes.of(e.getKey(), e.getValue()))
                         .collect(Collectors.toList()));
 
             RefLogEntry newRefLog =
@@ -542,43 +540,33 @@ public abstract class NonTransactionalDatabaseAdapter<
   }
 
   @Override
-  public Stream<ContentIdWithType> globalKeys(ToIntFunction<ByteString> contentTypeExtractor) {
+  public Stream<ContentId> globalKeys() {
     return globalLogFetcher(NON_TRANSACTIONAL_OPERATION_CONTEXT)
         .flatMap(e -> e.getPutsList().stream())
         .map(ProtoSerialization::protoToContentIdAndBytes)
-        .map(ContentIdAndBytes::asIdWithType)
+        .map(ContentIdAndBytes::getContentId)
         .distinct();
   }
 
   @Override
-  public Optional<ContentIdAndBytes> globalContent(
-      ContentId contentId, ToIntFunction<ByteString> contentTypeExtractor) {
+  public Optional<ContentIdAndBytes> globalContent(ContentId contentId) {
     return globalLogFetcher(NON_TRANSACTIONAL_OPERATION_CONTEXT)
         .flatMap(e -> e.getPutsList().stream())
         .map(ProtoSerialization::protoToContentIdAndBytes)
         .filter(entry -> contentId.equals(entry.getContentId()))
-        .map(
-            cb ->
-                ContentIdAndBytes.of(
-                    cb.getContentId(),
-                    (byte) contentTypeExtractor.applyAsInt(cb.getValue()),
-                    cb.getValue()))
+        .map(cb -> ContentIdAndBytes.of(cb.getContentId(), cb.getValue()))
         .findFirst();
   }
 
   @Override
-  public Stream<ContentIdAndBytes> globalContent(
-      Set<ContentId> keys, ToIntFunction<ByteString> contentTypeExtractor) {
+  public Stream<ContentIdAndBytes> globalContent(Set<ContentId> keys) {
     HashSet<ContentId> remaining = new HashSet<>(keys);
 
     Stream<GlobalStateLogEntry> stream = globalLogFetcher(NON_TRANSACTIONAL_OPERATION_CONTEXT);
 
     return takeUntilIncludeLast(stream, x -> remaining.isEmpty())
         .flatMap(e -> e.getPutsList().stream())
-        .map(
-            c ->
-                ProtoSerialization.protoToContentIdAndBytes(
-                    c, contentTypeExtractor.applyAsInt(c.getValue())))
+        .map(ProtoSerialization::protoToContentIdAndBytes)
         .filter(kct -> remaining.remove(kct.getContentId()));
   }
 

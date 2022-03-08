@@ -41,7 +41,6 @@ import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
-import org.projectnessie.versioned.persist.adapter.ContentIdWithType;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
@@ -230,13 +229,12 @@ public abstract class AbstractGlobalStates {
     }
 
     // verify that all global-state keys (== Key + content-id) are returned (in any order)
-    try (Stream<ContentIdWithType> globalKeys = databaseAdapter.globalKeys(x -> 0)) {
-      assertThat(globalKeys.map(ContentIdWithType::getContentId))
-          .containsExactlyInAnyOrderElementsOf(expectedGlobalStates.keySet());
+    try (Stream<ContentId> globalKeys = databaseAdapter.globalKeys()) {
+      assertThat(globalKeys).containsExactlyInAnyOrderElementsOf(expectedGlobalStates.keySet());
     }
 
     try (Stream<ContentIdAndBytes> allStates =
-        databaseAdapter.globalContent(expectedGlobalStates.keySet(), s -> 0)) {
+        databaseAdapter.globalContent(expectedGlobalStates.keySet())) {
       List<ContentIdAndBytes> all = allStates.collect(Collectors.toList());
 
       // verify that the global-state-log returns all keys (in any order)

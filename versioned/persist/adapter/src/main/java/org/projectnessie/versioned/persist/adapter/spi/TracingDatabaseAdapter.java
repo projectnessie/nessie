@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.function.ToIntFunction;
 import java.util.stream.Stream;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.GetNamedRefsParams;
@@ -41,7 +40,6 @@ import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentAndState;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
-import org.projectnessie.versioned.persist.adapter.ContentIdWithType;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.Difference;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
@@ -217,25 +215,23 @@ public final class TracingDatabaseAdapter implements DatabaseAdapter {
   }
 
   @Override
-  public Stream<ContentIdWithType> globalKeys(ToIntFunction<ByteString> contentTypeExtractor) {
+  public Stream<ContentId> globalKeys() {
     try (Traced ignore = trace("globalKeys.stream")) {
-      return delegate.globalKeys(contentTypeExtractor);
+      return delegate.globalKeys();
     }
   }
 
   @Override
-  public Stream<ContentIdAndBytes> globalContent(
-      Set<ContentId> keys, ToIntFunction<ByteString> contentTypeExtractor) {
+  public Stream<ContentIdAndBytes> globalContent(Set<ContentId> keys) {
     try (Traced ignore = trace("globalContent.stream").tag(TAG_COUNT, keys.size())) {
-      return delegate.globalContent(keys, contentTypeExtractor);
+      return delegate.globalContent(keys);
     }
   }
 
   @Override
-  public Optional<ContentIdAndBytes> globalContent(
-      ContentId contentId, ToIntFunction<ByteString> contentTypeExtractor) {
+  public Optional<ContentIdAndBytes> globalContent(ContentId contentId) {
     try (Traced ignore = trace("globalContent").tag(TAG_CONTENT_ID, contentId.getId())) {
-      return delegate.globalContent(contentId, contentTypeExtractor);
+      return delegate.globalContent(contentId);
     }
   }
 

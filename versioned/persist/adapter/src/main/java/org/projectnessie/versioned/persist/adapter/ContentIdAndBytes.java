@@ -26,19 +26,9 @@ import org.immutables.value.Value;
 public interface ContentIdAndBytes {
   ContentId getContentId();
 
-  byte getType();
-
   ByteString getValue();
 
-  static ContentIdAndBytes of(ContentId contentId, byte type, ByteString value) {
-    return ImmutableContentIdAndBytes.builder()
-        .contentId(contentId)
-        .type(type)
-        .value(value)
-        .build();
-  }
-
-  default ContentIdWithType asIdWithType() {
-    return ContentIdWithType.of(getContentId(), getType());
+  static ContentIdAndBytes of(ContentId contentId, ByteString value) {
+    return ImmutableContentIdAndBytes.builder().contentId(contentId).value(value).build();
   }
 }

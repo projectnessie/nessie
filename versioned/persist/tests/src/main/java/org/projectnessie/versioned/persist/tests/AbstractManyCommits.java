@@ -99,7 +99,7 @@ public abstract class AbstractManyCommits {
       commits[i] = hash;
 
       try (Stream<ContentIdAndBytes> globals =
-          databaseAdapter.globalContent(Collections.singleton(fixed), bs -> payload)) {
+          databaseAdapter.globalContent(Collections.singleton(fixed))) {
 
         WithGlobalStateContent expected =
             WithGlobalStateContent.withGlobal(
@@ -110,7 +110,7 @@ public abstract class AbstractManyCommits {
         assertThat(globals)
             .containsExactly(
                 ContentIdAndBytes.of(
-                    fixed, payload, SimpleStoreWorker.INSTANCE.toStoreGlobalState(expected)));
+                    fixed, SimpleStoreWorker.INSTANCE.toStoreGlobalState(expected)));
       }
     }
 

@@ -43,7 +43,6 @@ import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
-import org.projectnessie.versioned.persist.adapter.ContentIdWithType;
 import org.projectnessie.versioned.persist.adapter.ImmutableRepoDescription;
 import org.projectnessie.versioned.persist.adapter.ImmutableRepoDescription.Builder;
 import org.projectnessie.versioned.persist.adapter.KeyList;
@@ -255,9 +254,9 @@ class TestSerialization {
             }));
     params.add(
         new TypeSerialization<>(
-            ContentIdWithType.class,
+            ContentId.class,
             AdapterTypes.ContentIdWithType.class,
-            TestSerialization::createContentIdWithType,
+            TestSerialization::createContentId,
             ProtoSerialization::toProto,
             v -> {
               try {
@@ -268,7 +267,7 @@ class TestSerialization {
             },
             v -> {
               try {
-                return ProtoSerialization.protoToContentIdWithType(
+                return ProtoSerialization.protoToContentId(
                     AdapterTypes.ContentIdWithType.parseFrom(v));
               } catch (InvalidProtocolBufferException e) {
                 throw new RuntimeException(e);
@@ -401,7 +400,7 @@ class TestSerialization {
       entry.addPuts(
           AdapterTypes.ContentIdWithBytes.newBuilder()
               .setContentId(AdapterTypes.ContentId.newBuilder().setId(randomString(64)).build())
-              .setType(2)
+              .setTypeUnused(2)
               .setValue(randomBytes(120))
               .build());
     }
@@ -489,16 +488,12 @@ class TestSerialization {
         randomBytes(120));
   }
 
-  static ContentIdWithType createContentIdWithType() {
-    return ContentIdWithType.of(
-        ContentId.of(randomString(64)), (byte) ThreadLocalRandom.current().nextInt(0, 127));
+  static ContentId createContentId() {
+    return ContentId.of(randomString(64));
   }
 
   static ContentIdAndBytes createContentIdWithBytes() {
-    return ContentIdAndBytes.of(
-        ContentId.of(randomString(64)),
-        (byte) ThreadLocalRandom.current().nextInt(0, 127),
-        randomBytes(120));
+    return ContentIdAndBytes.of(ContentId.of(randomString(64)), randomBytes(120));
   }
 
   static RefLogEntry createRefLogEntry() {
