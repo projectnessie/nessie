@@ -18,9 +18,9 @@ import { Card } from "react-bootstrap";
 import prettyMilliseconds from "pretty-ms";
 import React, { useEffect, useState } from "react";
 import { api, LogEntry } from "../utils";
-import { factory } from "../ConfigLog4j";
+import { logProvider } from "../ConfigLog4j";
 
-const log = factory.getLogger("api.CommitHeader");
+const log = logProvider.getLogger("api.CommitHeader");
 
 const fetchLog = (currentRef: string): Promise<void | LogEntry | undefined> => {
   return api()

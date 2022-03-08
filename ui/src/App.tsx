@@ -30,7 +30,7 @@ import {
   Tag,
 } from "./generated/utils/api";
 import { api } from "./utils";
-import { factory } from "./ConfigLog4j";
+import { logProvider } from "./ConfigLog4j";
 import { CommitLog } from "./CommitLog";
 import { CommitBase } from "./CommitBase";
 import Main from "./Main/Main";
@@ -39,7 +39,7 @@ import { TreeBase } from "./TreeBase";
 import { TableListing } from "./TableListing";
 import { Contents } from "./Contents";
 
-const log = factory.getLogger("api.ExploreTree");
+const log = logProvider.getLogger("api.ExploreTree");
 
 const fetchLog = (
   ref: string,

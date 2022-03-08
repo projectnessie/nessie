@@ -19,10 +19,10 @@ import InsertDriveFileOutlinedIcon from "@material-ui/icons/InsertDriveFileOutli
 import FolderIcon from "@material-ui/icons/Folder";
 import { ExploreLink } from "../ExploreLink";
 import { api, ContentKey, Entry } from "../utils";
-import { factory } from "../ConfigLog4j";
+import { logProvider } from "../ConfigLog4j";
 import { useParams, useLocation } from "react-router-dom";
 
-const log = factory.getLogger("api.TableListing");
+const log = logProvider.getLogger("api.TableListing");
 
 const groupItem = (
   key: Key,
