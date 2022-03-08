@@ -102,6 +102,13 @@ public abstract class AbstractDatabaseAdapterTest {
     }
   }
 
+  @Nested
+  public class CompactGlobalLog extends AbstractCompactGlobalLog {
+    CompactGlobalLog() {
+      super(databaseAdapter);
+    }
+  }
+
   @Test
   void createBranch() throws Exception {
     BranchName create = BranchName.of("createBranch");

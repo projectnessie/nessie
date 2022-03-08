@@ -35,8 +35,10 @@ import static org.projectnessie.versioned.persist.nontx.NonTransactionalOperatio
 
 import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -61,6 +63,7 @@ import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.ReferenceRetryFailureException;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.VersionStoreException;
 import org.projectnessie.versioned.persist.adapter.CommitAttempt;
@@ -80,6 +83,7 @@ import org.projectnessie.versioned.persist.adapter.spi.Traced;
 import org.projectnessie.versioned.persist.adapter.spi.TryLoopState;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.ContentIdWithBytes;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry.Builder;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.NamedReference;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogEntry;
@@ -612,6 +616,13 @@ public abstract class NonTransactionalDatabaseAdapter<
     }
   }
 
+  @Override
+  public Map<String, Map<String, String>> repoMaintenance() {
+    Map<String, Map<String, String>> result = new HashMap<>();
+    result.put("compactGlobalLog", compactGlobalLog());
+    return result;
+  }
+
   // /////////////////////////////////////////////////////////////////////////////////////////////
   // Non-Transactional DatabaseAdapter subclass API (protected)
   // /////////////////////////////////////////////////////////////////////////////////////////////
@@ -919,7 +930,6 @@ public abstract class NonTransactionalDatabaseAdapter<
       throws ReferenceConflictException {
 
     Hash parentHash = Hash.of(pointer.getGlobalId());
-    Hash hash = randomHash();
 
     // Before Nessie 0.21.0: the global-state-pointer contains the "heads" for the ref-log and
     // global-log, so it has to read the head ref-log & global-log to get the IDs of all the
@@ -952,14 +962,19 @@ public abstract class NonTransactionalDatabaseAdapter<
           pointer.getGlobalParentsInclHeadList().stream().limit(config.getParentsPerGlobalCommit());
     }
 
-    GlobalStateLogEntry.Builder entry =
-        GlobalStateLogEntry.newBuilder().setCreatedTime(timeInMicros).setId(hash.asBytes());
+    GlobalStateLogEntry.Builder entry = newGlobalLogEntryBuilder(timeInMicros);
     newParents.forEach(entry::addParents);
     globals.forEach(g -> entry.addPuts(ProtoSerialization.toProto(g)));
     GlobalStateLogEntry globalLogEntry = entry.build();
     writeGlobalCommit(ctx, globalLogEntry);
 
     return globalLogEntry;
+  }
+
+  protected GlobalStateLogEntry.Builder newGlobalLogEntryBuilder(long timeInMicros) {
+    return GlobalStateLogEntry.newBuilder()
+        .setCreatedTime(timeInMicros)
+        .setId(randomHash().asBytes());
   }
 
   /**
@@ -1010,6 +1025,16 @@ public abstract class NonTransactionalDatabaseAdapter<
       Set<Hash> newKeyLists,
       Hash refLogId);
 
+  protected final void cleanUpGlobalLog(
+      NonTransactionalOperationContext ctx, List<Hash> globalIds) {
+    try (Traced ignore = trace("cleanUpGlobalLog").tag(TAG_COMMIT_COUNT, globalIds.size())) {
+      doCleanUpGlobalLog(ctx, globalIds);
+    }
+  }
+
+  protected abstract void doCleanUpGlobalLog(
+      NonTransactionalOperationContext ctx, List<Hash> globalIds);
+
   /**
    * Writes a global-state-log-entry without any operations, just to move the global-pointer
    * forwards for a "proper" CAS operation.
@@ -1033,6 +1058,9 @@ public abstract class NonTransactionalDatabaseAdapter<
    */
   protected static Hash branchHead(GlobalStatePointer pointer, NamedRef ref)
       throws ReferenceNotFoundException {
+    if (ref == null) {
+      return null;
+    }
     if (pointer == null) {
       throw referenceNotFound(ref);
     }
@@ -1103,7 +1131,11 @@ public abstract class NonTransactionalDatabaseAdapter<
 
   /** Reads from the global-state-log starting at the given global-state-log-ID. */
   private Stream<GlobalStateLogEntry> globalLogFetcher(NonTransactionalOperationContext ctx) {
-    GlobalStatePointer pointer = fetchGlobalPointer(ctx);
+    return globalLogFetcher(ctx, fetchGlobalPointer(ctx));
+  }
+
+  private Stream<GlobalStateLogEntry> globalLogFetcher(
+      NonTransactionalOperationContext ctx, GlobalStatePointer pointer) {
     if (pointer == null) {
       return Stream.empty();
     }
@@ -1234,6 +1266,157 @@ public abstract class NonTransactionalDatabaseAdapter<
     writeRefLog(ctx, refLogEntry);
 
     return refLogEntry;
+  }
+
+  protected Map<String, String> compactGlobalLog() {
+    // Not using casOpLoop() here, as it is simpler than adopting casOpLoop().
+    try (TryLoopState tryState =
+        newTryLoopState(
+            "compact-global-log",
+            ts ->
+                repoDescUpdateConflictMessage(
+                    String.format(
+                        "%s after %d retries, %d ms",
+                        "Retry-Failure", ts.getRetries(), ts.getDuration(TimeUnit.MILLISECONDS))),
+            this::tryLoopStateCompletion,
+            config)) {
+
+      CompactionStats stats = new CompactionStats();
+      while (true) {
+        NonTransactionalOperationContext ctx = NON_TRANSACTIONAL_OPERATION_CONTEXT;
+
+        GlobalStatePointer pointer = fetchGlobalPointer(ctx);
+
+        GlobalStatePointer.Builder newPointer =
+            GlobalStatePointer.newBuilder()
+                .addAllNamedReferences(pointer.getNamedReferencesList())
+                .addAllRefLogParentsInclHead(pointer.getRefLogParentsInclHeadList())
+                .setRefLogId(pointer.getRefLogId());
+
+        // initial global-log entry, becomes the "oldest" entry
+        GlobalStateLogEntry.Builder headEntry = newGlobalLogEntryBuilder(commitTimeInMicros());
+        headEntry.addParents(NO_ANCESTOR.asBytes());
+
+        // New global-log-entries, need to keep those to iteratively add parent IDs up to
+        // "config.getParentsPerGlobalCommit()".
+        List<GlobalStateLogEntry.Builder> newEntries =
+            new ArrayList<>(config.getParentsPerGlobalCommit());
+        newEntries.add(headEntry);
+        // Collect the old global-log-ids, to delete those after compaction
+        List<Hash> oldLogIds = new ArrayList<>();
+        // Collect the IDs of the written global-log-entries, to delete those when the CAS
+        // operation failed
+        List<Hash> newLogIds = new ArrayList<>();
+        // Set of content IDs that have already been processed, only need to maintain the
+        // latest global-value for a content-ID.
+        Set<String> seenContentIds = new HashSet<>();
+
+        // Read the global log - from the most recent global-log entry to the oldest.
+        try (Stream<GlobalStateLogEntry> globalLog = globalLogFetcher(ctx, pointer)) {
+          globalLog.forEach(
+              e -> {
+                stats.read++;
+                oldLogIds.add(Hash.of(e.getId()));
+                for (ContentIdWithBytes put : e.getPutsList()) {
+                  if (seenContentIds.add(put.getContentId().getId())) {
+                    GlobalStateLogEntry.Builder constructing =
+                        newEntries.get(newEntries.size() - 1);
+
+                    stats.puts++;
+                    constructing.addPuts(put);
+
+                    if (constructing.buildPartial().getSerializedSize()
+                        >= config.getGlobalLogEntrySize()) {
+                      Builder newEntry = newGlobalLogEntryBuilder(commitTimeInMicros());
+                      newEntries.forEach(ex -> ex.addParents(newEntry.getId()));
+                      newEntries.add(newEntry);
+
+                      // When enough global-log entries have been collected (the number of
+                      // parents-per-global-commit), flush the global log entry, that has that
+                      // amount of parents.
+                      if (newEntries.size() == config.getParentsPerGlobalCommit()) {
+                        // flush first entry
+                        compactGlobalLogFlushEntry(newEntries, newPointer, ctx, newLogIds::add);
+                        stats.written++;
+                      }
+                    }
+                  }
+                }
+              });
+        }
+
+        // flush remaining global-log-entries
+        while (!newEntries.isEmpty()) {
+          compactGlobalLogFlushEntry(newEntries, newPointer, ctx, newLogIds::add);
+          stats.written++;
+        }
+
+        stats.addToTotal();
+
+        // CAS global pointer
+        if (globalPointerCas(ctx, pointer, newPointer.build())) {
+          tryState.success(null);
+
+          cleanUpGlobalLog(ctx, oldLogIds);
+
+          return stats.asMap();
+        } else {
+          cleanUpGlobalLog(ctx, newLogIds);
+        }
+
+        stats.onRetry();
+
+        tryState.retry();
+      }
+    } catch (ReferenceRetryFailureException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private static final class CompactionStats {
+    long written;
+    long read;
+    long puts;
+    long totalWritten;
+    long totalRead;
+
+    Map<String, String> asMap() {
+      Map<String, String> statistics = new HashMap<>();
+      statistics.put("entries.written", Long.toString(written));
+      statistics.put("entries.read", Long.toString(read));
+      statistics.put("entries.puts", Long.toString(puts));
+      statistics.put("entries.written.total", Long.toString(totalWritten));
+      statistics.put("entries.read.total", Long.toString(totalRead));
+      return statistics;
+    }
+
+    public void addToTotal() {
+      totalRead += read;
+      totalWritten += written;
+    }
+
+    void onRetry() {
+      read = written = puts = 0;
+    }
+  }
+
+  private void compactGlobalLogFlushEntry(
+      List<Builder> batchEntries,
+      GlobalStatePointer.Builder newPointer,
+      NonTransactionalOperationContext ctx,
+      Consumer<Hash> writtenId) {
+    try {
+      GlobalStateLogEntry toFlush = batchEntries.remove(0).build();
+      if (newPointer.getGlobalId().isEmpty()) {
+        newPointer.setGlobalId(toFlush.getId());
+        newPointer.addGlobalParentsInclHead(toFlush.getId());
+        newPointer.addAllGlobalParentsInclHead(toFlush.getParentsList());
+      }
+      writtenId.accept(Hash.of(toFlush.getId()));
+      writeGlobalCommit(ctx, toFlush);
+    } catch (ReferenceConflictException ex) {
+      throw new RuntimeException(ex);
+    }
   }
 
   @Override

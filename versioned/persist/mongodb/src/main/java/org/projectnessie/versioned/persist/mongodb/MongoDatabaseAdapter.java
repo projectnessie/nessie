@@ -190,7 +190,7 @@ public class MongoDatabaseAdapter
     }
   }
 
-  private void delete(MongoCollection<Document> collection, Set<Hash> ids) {
+  private void delete(MongoCollection<Document> collection, Collection<Hash> ids) {
     DeleteResult result = collection.deleteMany(Filters.in(ID_PROPERTY_NAME, toIds(ids)));
 
     if (!result.wasAcknowledged()) {
@@ -447,6 +447,11 @@ public class MongoDatabaseAdapter
     delete(client.getCommitLog(), branchCommits);
     delete(client.getKeyLists(), newKeyLists);
     client.getRefLog().deleteOne(Filters.eq(toId(refLogId)));
+  }
+
+  @Override
+  protected void doCleanUpGlobalLog(NonTransactionalOperationContext ctx, List<Hash> globalIds) {
+    delete(client.getGlobalLog(), globalIds);
   }
 
   @Override

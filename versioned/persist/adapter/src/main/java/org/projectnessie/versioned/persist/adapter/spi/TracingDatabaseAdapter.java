@@ -242,4 +242,11 @@ public final class TracingDatabaseAdapter implements DatabaseAdapter {
       return delegate.refLog(offset);
     }
   }
+
+  @Override
+  public Map<String, Map<String, String>> repoMaintenance() {
+    try (Traced ignore = trace("repoMaintenance")) {
+      return delegate.repoMaintenance();
+    }
+  }
 }

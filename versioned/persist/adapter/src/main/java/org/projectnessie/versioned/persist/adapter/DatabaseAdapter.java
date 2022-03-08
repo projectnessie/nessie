@@ -312,6 +312,8 @@ public interface DatabaseAdapter {
    */
   Optional<ContentIdAndBytes> globalContent(ContentId contentId);
 
+  Map<String, Map<String, String>> repoMaintenance();
+
   /**
    * Retrieve the refLog starting at the refLog referenced by {@code offset}.
    *

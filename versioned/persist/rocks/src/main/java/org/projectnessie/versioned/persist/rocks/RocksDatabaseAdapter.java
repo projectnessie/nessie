@@ -253,6 +253,23 @@ public class RocksDatabaseAdapter
   }
 
   @Override
+  protected void doCleanUpGlobalLog(NonTransactionalOperationContext ctx, List<Hash> globalIds) {
+    Lock lock = dbInstance.getLock().writeLock();
+    lock.lock();
+    try {
+      WriteBatch batch = new WriteBatch();
+      for (Hash h : globalIds) {
+        batch.delete(dbInstance.getCfGlobalLog(), dbKey(h));
+      }
+      db.write(new WriteOptions(), batch);
+    } catch (RocksDBException e) {
+      throw new RuntimeException(e);
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  @Override
   protected GlobalStateLogEntry doFetchFromGlobalLog(
       NonTransactionalOperationContext ctx, Hash id) {
     try {

@@ -296,6 +296,13 @@ public class DynamoDatabaseAdapter
     }
   }
 
+  @Override
+  protected void doCleanUpGlobalLog(NonTransactionalOperationContext ctx, List<Hash> globalIds) {
+    try (BatchDelete batchDelete = new BatchDelete()) {
+      globalIds.forEach(h -> batchDelete.add(TABLE_GLOBAL_LOG, h));
+    }
+  }
+
   private final class BatchDelete implements AutoCloseable {
     private final Map<String, List<WriteRequest>> requestItems = new HashMap<>();
     private int requests;

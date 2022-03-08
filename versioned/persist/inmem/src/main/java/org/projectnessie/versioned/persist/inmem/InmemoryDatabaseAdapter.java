@@ -141,6 +141,11 @@ public class InmemoryDatabaseAdapter
   }
 
   @Override
+  protected void doCleanUpGlobalLog(NonTransactionalOperationContext ctx, List<Hash> globalIds) {
+    globalIds.forEach(h -> store.globalStateLog.remove(dbKey(h)));
+  }
+
+  @Override
   protected GlobalStateLogEntry doFetchFromGlobalLog(
       NonTransactionalOperationContext ctx, Hash id) {
     ByteString serialized = store.globalStateLog.get(dbKey(id));

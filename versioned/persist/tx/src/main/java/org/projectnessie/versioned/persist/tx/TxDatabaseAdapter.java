@@ -669,6 +669,12 @@ public abstract class TxDatabaseAdapter
     }
   }
 
+  @Override
+  public Map<String, Map<String, String>> repoMaintenance() {
+    // Nothing to do
+    return Collections.emptyMap();
+  }
+
   private ContentIdAndBytes globalContentFromRow(ResultSet rs) throws SQLException {
     ContentId cid = ContentId.of(rs.getString(1));
     ByteString value = UnsafeByteOperations.unsafeWrap(rs.getBytes(2));
