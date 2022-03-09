@@ -22,11 +22,11 @@ import {
   GetMultipleContentsRequest,
   GetMultipleContentsResponse,
 } from "../utils";
-import { factory } from "../ConfigLog4j";
+import { logProvider } from "../ConfigLog4j";
 import { ContentView } from "../ContentView";
 import { useLocation, useParams } from "react-router-dom";
 
-const log = factory.getLogger("api.TableListing");
+const log = logProvider.getLogger("api.TableListing");
 
 const fetchContent = (
   ref: string,

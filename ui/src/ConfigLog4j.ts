@@ -13,23 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  LoggerFactoryOptions,
-  LFService,
-  LogGroupRule,
-  LogLevel,
-} from "typescript-logging";
+import { LogLevel } from "typescript-logging";
+import { Log4TSProvider } from "typescript-logging-log4ts-style";
 
-// Create options instance and specify 2 LogGroupRules:
-// * One for any logger with a name starting with model, to log on debug
+// Create provider and specify 2 log groups:
+// * One for any logger with a name starting with model, to log on error
 // * The second one for anything else to log on info
-const options = new LoggerFactoryOptions()
-  .addLogGroupRule(new LogGroupRule(new RegExp("api.+"), LogLevel.Error))
-  .addLogGroupRule(new LogGroupRule(new RegExp(".+"), LogLevel.Info));
-
-// Create a named loggerfactory and pass in the options and export the factory.
-// Named is since version 0.2.+ (it's recommended for future usage)
-export const factory = LFService.createNamedLoggerFactory(
-  "LoggerFactory",
-  options
+export const logProvider = Log4TSProvider.createProvider(
+  "NessieLog4TSProvider",
+  {
+    level: LogLevel.Debug,
+    groups: [
+      {
+        expression: new RegExp("api.+"),
+        level: LogLevel.Error,
+      },
+      {
+        expression: new RegExp(".+"),
+        level: LogLevel.Info,
+      },
+    ],
+  }
 );
