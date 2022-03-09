@@ -117,6 +117,7 @@ public class NessieHttpClient extends NessieApiClient {
                       Tags.ERROR.set(inner.log(log), true);
                     }
                     scope.close();
+                    inner.finish();
                   });
 
               inner
