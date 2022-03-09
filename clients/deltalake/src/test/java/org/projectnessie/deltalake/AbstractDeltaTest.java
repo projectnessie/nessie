@@ -75,9 +75,6 @@ public class AbstractDeltaTest {
         .set("spark.testing", "true")
         .set("spark.sql.shuffle.partitions", "4");
 
-    // the following is required until https://github.com/projectnessie/nessie/issues/3552 is fixed
-    conf.set("spark.sql.catalog.spark_catalog.catalog-impl", "workaround.NessieCatalog");
-
     spark = SparkSession.builder().master("local[2]").config(conf).getOrCreate();
     spark.sparkContext().setLogLevel("WARN");
 
