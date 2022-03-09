@@ -18,12 +18,8 @@ package org.projectnessie.client.http;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.sun.net.httpserver.HttpHandler;
-import io.opentracing.Scope;
-import io.opentracing.util.GlobalTracer;
 import java.io.OutputStream;
 import java.net.URI;
 import java.util.Arrays;
@@ -143,49 +139,6 @@ public class TestHttpClientBuilder {
                 + new String(
                     Base64.getUrlEncoder().encode("my_username:very_secret".getBytes(UTF_8)),
                     UTF_8));
-  }
-
-  @Test
-  void testTracing() throws Exception {
-    AtomicReference<String> traceId = new AtomicReference<>();
-
-    try (TestServer server = new TestServer(handlerForHeaderTest("Uber-trace-id", traceId))) {
-      NessieApiV1 client =
-          HttpClientBuilder.builder()
-              .withUri(server.getUri())
-              .withTracing(true)
-              .build(NessieApiV1.class);
-      try (Scope ignore =
-          GlobalTracer.get()
-              .activateSpan(GlobalTracer.get().buildSpan("testOpenTracing").start())) {
-        client.getConfig();
-      }
-    }
-
-    // Cannot really assert on the value of the Uber-trace-id header, because the APIs don't
-    // give us access to that. Verifying that the Uber-trace-id header is being sent should
-    // be good enough though.
-    assertNotNull(traceId.get());
-  }
-
-  @Test
-  void testTracingNotEnabled() throws Exception {
-    AtomicReference<String> traceId = new AtomicReference<>();
-
-    try (TestServer server = new TestServer(handlerForHeaderTest("Uber-trace-id", traceId))) {
-      NessieApiV1 client =
-          HttpClientBuilder.builder()
-              .withUri(server.getUri())
-              .withTracing(false)
-              .build(NessieApiV1.class);
-      try (Scope ignore =
-          GlobalTracer.get()
-              .activateSpan(GlobalTracer.get().buildSpan("testOpenTracing").start())) {
-        client.getConfig();
-      }
-    }
-
-    assertNull(traceId.get());
   }
 
   static HttpHandler handlerForHeaderTest(String headerName, AtomicReference<String> receiver) {

@@ -16,7 +16,6 @@
 package org.projectnessie.client;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -26,13 +25,10 @@ import io.opentracing.Scope;
 import io.opentracing.util.GlobalTracer;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.URI;
-import java.util.Base64;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.api.NessieApiV1;
-import org.projectnessie.client.auth.BasicAuthenticationProvider;
 import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.client.rest.NessieInternalServerException;
 import org.projectnessie.client.rest.NessieNotAuthorizedException;
@@ -43,36 +39,6 @@ class TestNessieHttpClient {
   @BeforeAll
   static void setupTracer() {
     JaegerTestTracer.register();
-  }
-
-  @Test
-  void testNullUri() {
-    assertThatThrownBy(
-            () -> HttpClientBuilder.builder().withUri((URI) null).build(NessieApiV1.class))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Cannot construct Http client. Must have a non-null uri");
-  }
-
-  @Test
-  void testAuthBasic() throws Exception {
-    AtomicReference<String> authHeader = new AtomicReference<>();
-
-    try (TestServer server = new TestServer(handlerForHeaderTest("Authorization", authHeader))) {
-      NessieApiV1 api =
-          HttpClientBuilder.builder()
-              .withUri(server.getUri())
-              .withAuthentication(BasicAuthenticationProvider.create("my_username", "very_secret"))
-              .build(NessieApiV1.class);
-      api.getConfig();
-    }
-
-    assertThat(authHeader.get())
-        .isNotNull()
-        .isEqualTo(
-            "Basic "
-                + new String(
-                    Base64.getUrlEncoder().encode("my_username:very_secret".getBytes(UTF_8)),
-                    UTF_8));
   }
 
   @Test
