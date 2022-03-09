@@ -118,7 +118,8 @@ public abstract class AbstractCompactGlobalLog {
     Map<String, String> compactStats = statistics.get("compactGlobalLog");
 
     assertThat(compactStats)
-        .containsEntry("entries.puts", Long.toString(contentIds.size()))
+        .containsEntry("entries.puts", Long.toString(commits))
+        .containsEntry("entries.uniquePuts", Long.toString(contentIds.size()))
         .containsEntry("entries.read", Long.toString(commits + 2))
         .containsEntry("entries.read.total", Long.toString(commits + 2));
 
