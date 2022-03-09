@@ -52,8 +52,8 @@ public class IdentifyContentsPerExecutor implements Serializable {
     this.gcParams = gcParams;
   }
 
-  protected Function<Reference, Map<String, ContentBloomFilter>> computeLiveContentsFunc(
-      long bloomFilterSize, Map<Reference, Instant> droppedRefTimeMap) {
+  protected Function<String, Map<String, ContentBloomFilter>> computeLiveContentsFunc(
+      long bloomFilterSize, Map<String, Instant> droppedRefTimeMap) {
     return reference ->
         computeLiveContents(
             getCutoffTimeForRef(reference, droppedRefTimeMap),
@@ -62,13 +62,13 @@ public class IdentifyContentsPerExecutor implements Serializable {
             bloomFilterSize);
   }
 
-  protected Function<Reference, IdentifiedResult> computeExpiredContentsFunc(
+  protected Function<String, IdentifiedResult> computeExpiredContentsFunc(
       Map<String, ContentBloomFilter> liveContentsBloomFilterMap) {
     return reference -> computeExpiredContents(liveContentsBloomFilterMap, reference);
   }
 
   private Map<String, ContentBloomFilter> computeLiveContents(
-      Instant cutOffTimestamp, Reference reference, Instant droppedRefTime, long bloomFilterSize) {
+      Instant cutOffTimestamp, String reference, Instant droppedRefTime, long bloomFilterSize) {
     try (NessieApiV1 api = GCUtil.getApi(gcParams.getNessieClientConfigs())) {
       boolean isRefDroppedAfterCutoffTimeStamp =
           droppedRefTime == null || droppedRefTime.compareTo(cutOffTimestamp) >= 0;
@@ -86,7 +86,7 @@ public class IdentifyContentsPerExecutor implements Serializable {
       ImmutableGCStateParamsPerTask gcStateParamsPerTask =
           ImmutableGCStateParamsPerTask.builder()
               .api(api)
-              .reference(reference)
+              .reference(GCUtil.deserializeReference(reference))
               .liveCommitPredicate(liveCommitPredicate)
               .bloomFilterSize(bloomFilterSize)
               .build();
@@ -96,9 +96,10 @@ public class IdentifyContentsPerExecutor implements Serializable {
   }
 
   private IdentifiedResult computeExpiredContents(
-      Map<String, ContentBloomFilter> liveContentsBloomFilterMap, Reference reference) {
+      Map<String, ContentBloomFilter> liveContentsBloomFilterMap, String reference) {
     try (NessieApiV1 api = GCUtil.getApi(gcParams.getNessieClientConfigs())) {
-      return walkAllCommitsInReference(api, reference, liveContentsBloomFilterMap);
+      return walkAllCommitsInReference(
+          api, GCUtil.deserializeReference(reference), liveContentsBloomFilterMap);
     }
   }
 
@@ -252,8 +253,7 @@ public class IdentifyContentsPerExecutor implements Serializable {
     }
   }
 
-  private Instant getCutoffTimeForRef(
-      Reference reference, Map<Reference, Instant> droppedRefTimeMap) {
+  private Instant getCutoffTimeForRef(String reference, Map<String, Instant> droppedRefTimeMap) {
     if (droppedRefTimeMap.containsKey(reference)
         && gcParams.getDeadReferenceCutOffTimeStamp() != null) {
       // if the reference is dropped and deadReferenceCutOffTimeStamp is configured, use it.
@@ -263,6 +263,8 @@ public class IdentifyContentsPerExecutor implements Serializable {
         ? gcParams.getDefaultCutOffTimestamp()
         : gcParams
             .getCutOffTimestampPerRef()
-            .getOrDefault(reference.getName(), gcParams.getDefaultCutOffTimestamp());
+            .getOrDefault(
+                GCUtil.deserializeReference(reference).getName(),
+                gcParams.getDefaultCutOffTimestamp());
   }
 }
