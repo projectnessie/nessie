@@ -789,11 +789,6 @@
           <version>4.1</version>
         </plugin>
         <plugin>
-          <groupId>kr.motd.maven</groupId>
-          <artifactId>os-maven-plugin</artifactId>
-          <version>1.7.0</version>
-        </plugin>
-        <plugin>
           <groupId>net.alchim31.maven</groupId>
           <artifactId>scala-maven-plugin</artifactId>
           <version>4.5.6</version>
@@ -887,18 +882,6 @@
             <configuration>
               <skipIfEmpty>true</skipIfEmpty>
             </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>kr.motd.maven</groupId>
-        <artifactId>os-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <phase>initialize</phase>
-            <goals>
-              <goal>detect</goal>
-            </goals>
           </execution>
         </executions>
       </plugin>
@@ -1237,6 +1220,13 @@ limitations under the License.
         <version>${gatling.maven.version}</version>
       </plugin>
     </plugins>
+    <extensions>
+      <extension>
+        <groupId>kr.motd.maven</groupId>
+        <artifactId>os-maven-plugin</artifactId>
+        <version>1.7.0</version>
+      </extension>
+    </extensions>
   </build>
 
   <profiles>
