@@ -34,6 +34,7 @@ import static org.projectnessie.versioned.persist.adapter.spi.TryLoopState.newTr
 import static org.projectnessie.versioned.persist.nontx.NonTransactionalOperationContext.NON_TRANSACTIONAL_OPERATION_CONTEXT;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -1268,6 +1269,8 @@ public abstract class NonTransactionalDatabaseAdapter<
     return refLogEntry;
   }
 
+  private static final RuntimeException COMPACTION_NOT_NECESSARY = new RuntimeException();
+
   protected Map<String, String> compactGlobalLog() {
     // Not using casOpLoop() here, as it is simpler than adopting casOpLoop().
     try (TryLoopState tryState =
@@ -1298,6 +1301,11 @@ public abstract class NonTransactionalDatabaseAdapter<
         try (Stream<GlobalStateLogEntry> globalLog = globalLogFetcher(ctx, pointer)) {
           globalLog.forEach(
               e -> {
+                if (stats.read < config.getParentsPerGlobalCommit() && stats.puts > stats.read) {
+                  // First page in the global-log contains at least one compacted entry, so
+                  // do not compact.
+                  throw COMPACTION_NOT_NECESSARY;
+                }
                 stats.read++;
                 oldLogIds.add(Hash.of(e.getId()));
                 for (ContentIdWithBytes put : e.getPutsList()) {
@@ -1309,6 +1317,18 @@ public abstract class NonTransactionalDatabaseAdapter<
                   }
                 }
               });
+
+          if (stats.read < config.getParentsPerGlobalCommit()) {
+            // Global log does not have more global-log entries than can be fetched with a
+            // single-bulk read, so do not compact at all.
+            throw COMPACTION_NOT_NECESSARY;
+          }
+        } catch (RuntimeException e) {
+          if (e == COMPACTION_NOT_NECESSARY) {
+            tryState.success(null);
+            return Collections.singletonMap("compacted", "false");
+          }
+          throw e;
         }
 
         // Collect the IDs of the written global-log-entries, to delete those when the CAS
@@ -1407,14 +1427,21 @@ public abstract class NonTransactionalDatabaseAdapter<
     long totalRead;
 
     Map<String, String> asMap() {
-      Map<String, String> statistics = new HashMap<>();
-      statistics.put("entries.written", Long.toString(written));
-      statistics.put("entries.read", Long.toString(read));
-      statistics.put("entries.puts", Long.toString(puts));
-      statistics.put("entries.uniquePuts", Long.toString(uniquePuts));
-      statistics.put("entries.written.total", Long.toString(totalWritten));
-      statistics.put("entries.read.total", Long.toString(totalRead));
-      return statistics;
+      return ImmutableMap.of(
+          "compacted",
+          "true",
+          "entries.written",
+          Long.toString(written),
+          "entries.read",
+          Long.toString(read),
+          "entries.puts",
+          Long.toString(puts),
+          "entries.uniquePuts",
+          Long.toString(uniquePuts),
+          "entries.written.total",
+          Long.toString(totalWritten),
+          "entries.read.total",
+          Long.toString(totalRead));
     }
 
     public void addToTotal() {

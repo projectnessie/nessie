@@ -58,6 +58,7 @@ import org.projectnessie.versioned.testworker.WithGlobalStateContent;
 @ExtendWith(DatabaseAdapterExtension.class)
 @NessieDbAdapterConfigItem(name = "max.key.list.size", value = "2048")
 @NessieDbAdapterConfigItem(name = "global.log.entry.size", value = "2048")
+@NessieDbAdapterConfigItem(name = "parents.per.global.commit", value = "20")
 public abstract class AbstractDatabaseAdapterTest {
   @NessieDbAdapter protected static DatabaseAdapter databaseAdapter;
 
