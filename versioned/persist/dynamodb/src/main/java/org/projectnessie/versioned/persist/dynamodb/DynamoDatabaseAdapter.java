@@ -288,33 +288,47 @@ public class DynamoDatabaseAdapter
       Set<Hash> branchCommits,
       Set<Hash> newKeyLists,
       Hash refLogId) {
-    Map<String, List<WriteRequest>> requestItems = new HashMap<>();
-    if (!branchCommits.isEmpty()) {
-      requestItems.put(TABLE_COMMIT_LOG, cleanupDeletes(branchCommits));
+    try (BatchDelete batchDelete = new BatchDelete()) {
+      branchCommits.forEach(h -> batchDelete.add(TABLE_COMMIT_LOG, h));
+      newKeyLists.forEach(h -> batchDelete.add(TABLE_KEY_LISTS, h));
+      batchDelete.add(TABLE_GLOBAL_LOG, globalId);
+      batchDelete.add(TABLE_REF_LOG, refLogId);
     }
-    if (!newKeyLists.isEmpty()) {
-      requestItems.put(TABLE_KEY_LISTS, cleanupDeletes(newKeyLists));
-    }
-    requestItems.put(TABLE_GLOBAL_LOG, cleanupDeletes(Collections.singleton(globalId)));
-    requestItems.put(TABLE_REF_LOG, cleanupDeletes(Collections.singleton(refLogId)));
-
-    client.client.batchWriteItem(b -> b.requestItems(requestItems));
   }
 
-  private List<WriteRequest> cleanupDeletes(Set<Hash> hashes) {
-    List<WriteRequest> requests = new ArrayList<>();
-    for (Hash hash : hashes) {
-      requests.add(
-          WriteRequest.builder()
-              .deleteRequest(
-                  b ->
-                      b.key(
-                          Collections.singletonMap(
-                              KEY_NAME,
-                              AttributeValue.builder().s(keyPrefix + hash.asString()).build())))
-              .build());
+  private final class BatchDelete implements AutoCloseable {
+    private final Map<String, List<WriteRequest>> requestItems = new HashMap<>();
+    private int requests;
+
+    void add(String table, Hash hash) {
+      requestItems
+          .computeIfAbsent(table, t -> new ArrayList<>())
+          .add(
+              WriteRequest.builder()
+                  .deleteRequest(
+                      b ->
+                          b.key(
+                              Collections.singletonMap(
+                                  KEY_NAME,
+                                  AttributeValue.builder().s(keyPrefix + hash.asString()).build())))
+                  .build());
+      requests++;
+
+      if (requests == DYNAMO_BATCH_WRITE_MAX_REQUESTS) {
+        close();
+      }
     }
-    return requests;
+
+    // close() is actually a flush, implementing AutoCloseable for easier use of BatchDelete using
+    // try-with-resources.
+    @Override
+    public void close() {
+      if (requests > 0) {
+        client.client.batchWriteItem(b -> b.requestItems(requestItems));
+        requestItems.clear();
+        requests = 0;
+      }
+    }
   }
 
   @Override
