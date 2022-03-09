@@ -51,12 +51,12 @@ class CommitToBranchSimulation extends Simulation {
           val tableName = params.makeTableName(session)
 
           // Call the Nessie client operation to perform a commit
-          val key = ContentKey.of("name", "space", tableName)
-          val contentId = tableName
+          val key = ContentKey.of("name", "space", tableName, userId.toString)
+          val contentId = tableName + "_" + userId.toString
 
           val tableMeta = IcebergTable
             .of(
-              s"path_on_disk_${tableName}_$commitNum",
+              s"path_on_disk_${tableName}_${userId}_$commitNum",
               42,
               43,
               44,
@@ -71,7 +71,7 @@ class CommitToBranchSimulation extends Simulation {
                 key,
                 tableMeta,
                 IcebergTable.of(
-                  s"path_on_disk_${tableName}_${commitNum - 1}",
+                  s"path_on_disk_${tableName}_${userId}_${commitNum - 1}",
                   42,
                   43,
                   44,
