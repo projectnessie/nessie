@@ -31,6 +31,8 @@
   <name>Nessie - Servers - Parent</name>
 
   <modules>
+    <module>quarkus-common</module>
+    <module>quarkus-tests</module>
     <module>quarkus-server</module>
     <module>services</module>
     <module>rest-services</module>

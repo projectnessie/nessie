@@ -22,7 +22,7 @@ import io.quarkus.test.junit.TestProfile;
 import io.restassured.RestAssured;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.jaxrs.AbstractTestRest;
-import org.projectnessie.server.profiles.QuarkusTestProfileInmemory;
+import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfileInmemory;
 
 @QuarkusTest
 @TestProfile(value = QuarkusTestProfileInmemory.class)

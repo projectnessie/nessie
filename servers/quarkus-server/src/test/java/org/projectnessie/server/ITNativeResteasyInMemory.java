@@ -18,7 +18,7 @@ package org.projectnessie.server;
 import io.quarkus.test.junit.NativeImageTest;
 import io.quarkus.test.junit.TestProfile;
 import org.projectnessie.jaxrs.AbstractResteasyTest;
-import org.projectnessie.server.profiles.QuarkusNativeProfileInmemory;
+import org.projectnessie.quarkus.tests.profiles.QuarkusNativeProfileInmemory;
 
 @NativeImageTest
 @TestProfile(QuarkusNativeProfileInmemory.class)
