@@ -58,8 +58,10 @@ const CommitLog = ({
     return <EmptyMessageView />;
   }
 
-  const copyHash = async (hashCode: string) => {
-    await navigator.clipboard.writeText(hashCode);
+  const copyHash = (hashCode: string) => {
+    (async () => {
+      await navigator.clipboard.writeText(hashCode);
+    })().catch((failed) => alert(failed));
   };
   const commitList = (currentLog: LogEntry, index: number) => {
     const { commitTime, author, message, hash } = currentLog.commitMeta;
