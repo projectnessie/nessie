@@ -202,7 +202,7 @@
     <picocli.version>4.6.3</picocli.version>
     <prometheus.version>0.9.0</prometheus.version>
     <protobuf.version>3.19.4</protobuf.version>
-    <quarkus.version>2.7.3.Final</quarkus.version>
+    <quarkus.version>2.7.4.Final</quarkus.version>
     <!-- see https://github.com/quarkiverse/quarkus-logging-sentry -->
     <quarkus.loggingsentry.version>1.0.2</quarkus.loggingsentry.version>
     <reactor.version>2020.0.16</reactor.version>
