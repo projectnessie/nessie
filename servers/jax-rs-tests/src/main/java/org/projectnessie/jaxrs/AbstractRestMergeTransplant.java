@@ -18,6 +18,7 @@ package org.projectnessie.jaxrs;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.ImmutableList;
+import java.util.UUID;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
@@ -40,8 +41,10 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalidWit
     Branch base = createBranch("transplant-base");
     Branch branch = createBranch("transplant-branch");
 
-    IcebergTable table1 = IcebergTable.of("transplant-table1", 42, 42, 42, 42);
-    IcebergTable table2 = IcebergTable.of("transplant-table2", 43, 43, 43, 43);
+    IcebergTable table1 =
+        IcebergTable.of(UUID.randomUUID().toString(), "transplant-table1", 42, 42, 42, 42);
+    IcebergTable table2 =
+        IcebergTable.of(UUID.randomUUID().toString(), "transplant-table2", 43, 43, 43, 43);
 
     Branch committed1 =
         getApi()
@@ -122,8 +125,10 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalidWit
     Branch base = createBranch("merge-base");
     Branch branch = createBranch("merge-branch");
 
-    IcebergTable table1 = IcebergTable.of("merge-table1", 42, 42, 42, 42);
-    IcebergTable table2 = IcebergTable.of("merge-table2", 43, 43, 43, 43);
+    IcebergTable table1 =
+        IcebergTable.of(UUID.randomUUID().toString(), "merge-table1", 42, 42, 42, 42);
+    IcebergTable table2 =
+        IcebergTable.of(UUID.randomUUID().toString(), "merge-table2", 43, 43, 43, 43);
 
     Branch committed1 =
         getApi()

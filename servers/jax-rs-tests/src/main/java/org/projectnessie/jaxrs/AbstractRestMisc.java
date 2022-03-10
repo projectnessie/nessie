@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieBadRequestException;
@@ -43,7 +44,7 @@ public abstract class AbstractRestMisc extends AbstractRestMergeTransplant {
     Branch branch = createBranch("specialchar");
     // ContentKey k = ContentKey.of("/%国","国.国");
     ContentKey k = ContentKey.of("a.b", "c.txt");
-    IcebergTable ta = IcebergTable.of("path1", 42, 42, 42, 42);
+    IcebergTable ta = IcebergTable.of(UUID.randomUUID().toString(), "path1", 42, 42, 42, 42);
     getApi()
         .commitMultipleOperations()
         .branch(branch)

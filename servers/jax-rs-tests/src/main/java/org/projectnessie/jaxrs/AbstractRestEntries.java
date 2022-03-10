@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.projectnessie.error.BaseNessieClientServerException;
@@ -43,8 +44,10 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
     Branch branch = createBranch("filterTypes");
     ContentKey a = ContentKey.of("a");
     ContentKey b = ContentKey.of("b");
-    IcebergTable tam = IcebergTable.of("path1", 42, 42, 42, 42);
-    IcebergView tb = IcebergView.of("pathx", 1, 1, "select * from table", "Dremio");
+    IcebergTable tam = IcebergTable.of(UUID.randomUUID().toString(), "path1", 42, 42, 42, 42);
+    IcebergView tb =
+        IcebergView.of(
+            UUID.randomUUID().toString(), "pathx", 1, 1, "select * from table", "Dremio");
     getApi()
         .commitMultipleOperations()
         .branch(branch)
@@ -106,26 +109,31 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
     getApi()
         .commitMultipleOperations()
         .branch(branch)
-        .operation(Put.of(first, IcebergTable.of("path1", 42, 42, 42, 42)))
+        .operation(
+            Put.of(first, IcebergTable.of(UUID.randomUUID().toString(), "path1", 42, 42, 42, 42)))
         .commitMeta(CommitMeta.fromMessage("commit 1"))
         .commit();
     getApi()
         .commitMultipleOperations()
         .branch(branch)
-        .operation(Put.of(second, IcebergTable.of("path2", 42, 42, 42, 42)))
+        .operation(
+            Put.of(second, IcebergTable.of(UUID.randomUUID().toString(), "path2", 42, 42, 42, 42)))
         .commitMeta(CommitMeta.fromMessage("commit 2"))
         .commit();
     getApi()
         .commitMultipleOperations()
         .branch(branch)
-        .operation(Put.of(third, IcebergTable.of("path3", 42, 42, 42, 42)))
+        .operation(
+            Put.of(third, IcebergTable.of(UUID.randomUUID().toString(), "path3", 42, 42, 42, 42)))
         .commitMeta(CommitMeta.fromMessage("commit 3"))
         .commit();
     branch =
         getApi()
             .commitMultipleOperations()
             .branch(branch)
-            .operation(Put.of(fourth, IcebergTable.of("path4", 42, 42, 42, 42)))
+            .operation(
+                Put.of(
+                    fourth, IcebergTable.of(UUID.randomUUID().toString(), "path4", 42, 42, 42, 42)))
             .commitMeta(CommitMeta.fromMessage("commit 4"))
             .commit();
 
@@ -196,7 +204,10 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
       getApi()
           .commitMultipleOperations()
           .branch(branch)
-          .operation(Put.of(keys.get(i), IcebergTable.of("path" + i, 42, 42, 42, 42)))
+          .operation(
+              Put.of(
+                  keys.get(i),
+                  IcebergTable.of(UUID.randomUUID().toString(), "path" + i, 42, 42, 42, 42)))
           .commitMeta(CommitMeta.fromMessage("commit " + i))
           .commit();
     }

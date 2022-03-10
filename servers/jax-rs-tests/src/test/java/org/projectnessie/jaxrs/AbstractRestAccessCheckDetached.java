@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -91,7 +92,7 @@ public abstract class AbstractRestAccessCheckDetached extends AbstractTestRest {
     Branch merge = createBranch("committerAndAuthorMerge");
     Branch transplant = createBranch("committerAndAuthorTransplant");
 
-    IcebergTable meta1 = IcebergTable.of("meep", 42, 42, 42, 42);
+    IcebergTable meta1 = IcebergTable.of(UUID.randomUUID().toString(), "meep", 42, 42, 42, 42);
     ContentKey key = ContentKey.of("meep");
     Branch mainCommit =
         getApi()

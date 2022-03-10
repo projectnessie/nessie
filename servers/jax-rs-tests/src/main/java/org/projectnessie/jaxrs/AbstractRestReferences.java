@@ -24,6 +24,7 @@ import com.google.common.collect.ImmutableMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -194,7 +195,7 @@ public abstract class AbstractRestReferences extends AbstractRestMisc {
     String root = "ref_name_" + refNamePart.replaceAll("[^a-z]", "");
     Branch main = createBranch(root);
 
-    IcebergTable meta = IcebergTable.of("meep", 42, 42, 42, 42);
+    IcebergTable meta = IcebergTable.of(UUID.randomUUID().toString(), "meep", 42, 42, 42, 42);
     main =
         getApi()
             .commitMultipleOperations()
@@ -275,7 +276,7 @@ public abstract class AbstractRestReferences extends AbstractRestMisc {
 
     // Need to have at least one op, otherwise all following operations (assignTag/Branch, merge,
     // delete) will fail
-    meta = IcebergTable.of("foo", 42, 42, 42, 42);
+    meta = IcebergTable.of(UUID.randomUUID().toString(), "foo", 42, 42, 42, 42);
     getApi()
         .commitMultipleOperations()
         .branchName(branchName)
@@ -318,7 +319,13 @@ public abstract class AbstractRestReferences extends AbstractRestMisc {
             .operation(
                 Put.of(
                     ContentKey.of("hello.world.BaseTable"),
-                    IcebergView.of("path1", 1, 1, "Spark", "SELECT ALL THE THINGS")))
+                    IcebergView.of(
+                        UUID.randomUUID().toString(),
+                        "path1",
+                        1,
+                        1,
+                        "Spark",
+                        "SELECT ALL THE THINGS")))
             .commit();
     Branch b2 =
         getApi()
@@ -328,7 +335,13 @@ public abstract class AbstractRestReferences extends AbstractRestMisc {
             .operation(
                 Put.of(
                     ContentKey.of("cool.stuff.Caresian"),
-                    IcebergView.of("path2", 1, 1, "Spark", "CARTESIAN JOINS ARE AWESOME")))
+                    IcebergView.of(
+                        UUID.randomUUID().toString(),
+                        "path2",
+                        1,
+                        1,
+                        "Spark",
+                        "CARTESIAN JOINS ARE AWESOME")))
             .commit();
     Branch b3 =
         getApi()
@@ -338,7 +351,13 @@ public abstract class AbstractRestReferences extends AbstractRestMisc {
             .operation(
                 Put.of(
                     ContentKey.of("super.old.Numbers"),
-                    IcebergView.of("path3", 1, 1, "Spark", "AGGREGATE EVERYTHING")))
+                    IcebergView.of(
+                        UUID.randomUUID().toString(),
+                        "path3",
+                        1,
+                        1,
+                        "Spark",
+                        "AGGREGATE EVERYTHING")))
             .commit();
     Tag t1 =
         (Tag)

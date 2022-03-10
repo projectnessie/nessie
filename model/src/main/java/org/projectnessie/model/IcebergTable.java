@@ -77,23 +77,12 @@ public abstract class IcebergTable extends Content {
   }
 
   public static IcebergTable of(
-      String metadataLocation, long snapshotId, int schemaId, int specId, int sortOrderId) {
-    return ImmutableIcebergTable.builder()
-        .metadataLocation(metadataLocation)
-        .snapshotId(snapshotId)
-        .schemaId(schemaId)
-        .specId(specId)
-        .sortOrderId(sortOrderId)
-        .build();
-  }
-
-  public static IcebergTable of(
+      String contentId,
       String metadataLocation,
       long snapshotId,
       int schemaId,
       int specId,
-      int sortOrderId,
-      String contentId) {
+      int sortOrderId) {
     return ImmutableIcebergTable.builder()
         .metadataLocation(metadataLocation)
         .snapshotId(snapshotId)

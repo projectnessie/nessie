@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.collect.ImmutableMap;
 import java.net.URI;
 import java.util.Locale;
+import java.util.UUID;
 import javax.annotation.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -114,7 +115,8 @@ public abstract class AbstractRest {
     for (int j = 0; j < numAuthors; j++) {
       String author = "author-" + j;
       for (int i = 0; i < commitsPerAuthor; i++) {
-        IcebergTable meta = IcebergTable.of("some-file-" + i, 42, 42, 42, 42);
+        IcebergTable meta =
+            IcebergTable.of(UUID.randomUUID().toString(), "some-file-" + i, 42, 42, 42, 42);
         String nextHash =
             getApi()
                 .commitMultipleOperations()

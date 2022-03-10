@@ -54,17 +54,6 @@ public abstract class IcebergView extends Content {
   }
 
   public static IcebergView of(
-      String metadataLocation, int versionId, int schemaId, String dialect, String sqlText) {
-    return ImmutableIcebergView.builder()
-        .metadataLocation(metadataLocation)
-        .versionId(versionId)
-        .schemaId(schemaId)
-        .dialect(dialect)
-        .sqlText(sqlText)
-        .build();
-  }
-
-  public static IcebergView of(
       String id,
       String metadataLocation,
       int versionId,

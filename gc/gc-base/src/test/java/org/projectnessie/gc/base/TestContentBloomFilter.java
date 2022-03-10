@@ -24,6 +24,7 @@ import static org.projectnessie.model.Content.Type.ICEBERG_VIEW;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.IcebergTable;
@@ -86,10 +87,12 @@ public class TestContentBloomFilter {
     for (int i = index; i < 10 + index; i++) {
       switch (contentType) {
         case ICEBERG_TABLE:
-          contents.add(IcebergTable.of("temp" + i, i, 42, 42, 42));
+          contents.add(IcebergTable.of(UUID.randomUUID().toString(), "temp" + i, i, 42, 42, 42));
           break;
         case ICEBERG_VIEW:
-          contents.add(IcebergView.of("temp" + i, i, 42, "dialect" + i, "sql" + i));
+          contents.add(
+              IcebergView.of(
+                  UUID.randomUUID().toString(), "temp" + i, i, 42, "dialect" + i, "sql" + i));
           break;
         case DELTA_LAKE_TABLE:
           contents.add(

@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 
 import java.util.Arrays;
+import java.util.UUID;
 import java.util.function.Consumer;
 import javax.ws.rs.core.SecurityContext;
 import org.junit.jupiter.api.Test;
@@ -40,8 +41,8 @@ public abstract class AbstractRestSecurityContext extends AbstractRestAccessChec
     Branch merge = createBranch("committerAndAuthorMerge");
     Branch transplant = createBranch("committerAndAuthorTransplant");
 
-    IcebergTable meta1 = IcebergTable.of("meep", 42, 42, 42, 42);
-    IcebergTable meta2 = IcebergTable.of("meep_meep", 42, 42, 42, 42);
+    IcebergTable meta1 = IcebergTable.of(UUID.randomUUID().toString(), "meep", 42, 42, 42, 42);
+    IcebergTable meta2 = IcebergTable.of(UUID.randomUUID().toString(), "meep_meep", 42, 42, 42, 42);
     Branch noSecurityContext =
         getApi()
             .commitMultipleOperations()

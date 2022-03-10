@@ -24,6 +24,7 @@ import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import java.time.Instant;
+import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -88,7 +89,8 @@ public abstract class AbstractResteasyTest {
         newReference,
         rest().get("trees/tree/test").then().statusCode(200).extract().as(Branch.class));
 
-    IcebergTable table = IcebergTable.of("/the/directory/over/there", 42, 42, 42, 42);
+    IcebergTable table =
+        IcebergTable.of(UUID.randomUUID().toString(), "/the/directory/over/there", 42, 42, 42, 42);
 
     Branch commitResponse =
         rest()
@@ -114,13 +116,27 @@ public abstract class AbstractResteasyTest {
       updates[i] =
           ImmutablePut.builder()
               .key(ContentKey.of("item", Integer.toString(i)))
-              .content(IcebergTable.of("/the/directory/over/there/" + i, 42, 42, 42, 42))
+              .content(
+                  IcebergTable.of(
+                      UUID.randomUUID().toString(),
+                      "/the/directory/over/there/" + i,
+                      42,
+                      42,
+                      42,
+                      42))
               .build();
     }
     updates[10] =
         ImmutablePut.builder()
             .key(ContentKey.of("xxx", "test"))
-            .content(IcebergTable.of("/the/directory/over/there/has/been/moved", 42, 42, 42, 42))
+            .content(
+                IcebergTable.of(
+                    UUID.randomUUID().toString(),
+                    "/the/directory/over/there/has/been/moved",
+                    42,
+                    42,
+                    42,
+                    42))
             .build();
 
     Reference branch = rest().get("trees/tree/test").as(Reference.class);
@@ -148,7 +164,7 @@ public abstract class AbstractResteasyTest {
     IcebergTable currentTable = table;
     table =
         IcebergTable.of(
-            "/the/directory/over/there/has/been/moved/again", 42, 42, 42, 42, table.getId());
+            table.getId(), "/the/directory/over/there/has/been/moved/again", 42, 42, 42, 42);
 
     Branch b2 = rest().get("trees/tree/test").as(Branch.class);
     rest()
@@ -255,11 +271,11 @@ public abstract class AbstractResteasyTest {
                 (expectedMetadataUrl != null)
                     ? Put.of(
                         ContentKey.of(contentKey),
-                        IcebergTable.of(metadataUrl, 42, 42, 42, 42, contentId),
-                        IcebergTable.of(expectedMetadataUrl, 42, 42, 42, 42, contentId))
+                        IcebergTable.of(contentId, metadataUrl, 42, 42, 42, 42),
+                        IcebergTable.of(contentId, expectedMetadataUrl, 42, 42, 42, 42))
                     : Put.of(
                         ContentKey.of(contentKey),
-                        IcebergTable.of(metadataUrl, 42, 42, 42, 42, contentId)))
+                        IcebergTable.of(contentId, metadataUrl, 42, 42, 42, 42)))
             .commitMeta(CommitMeta.builder().author(author).message("").build())
             .build();
     return rest()
@@ -427,7 +443,8 @@ public abstract class AbstractResteasyTest {
   @Test
   public void testGetContent() {
     Branch branch = makeBranch("content-test");
-    IcebergTable table = IcebergTable.of("content-table1", 42, 42, 42, 42);
+    IcebergTable table =
+        IcebergTable.of(UUID.randomUUID().toString(), "content-table1", 42, 42, 42, 42);
 
     branch = commit(table.getId(), branch, "key1", table.getMetadataLocation());
 
@@ -448,8 +465,10 @@ public abstract class AbstractResteasyTest {
   public void testGetDiff() {
     Branch fromBranch = makeBranch("getdiff-test-from");
     Branch toBranch = makeBranch("getdiff-test-to");
-    IcebergTable fromTable = IcebergTable.of("content-table", 42, 42, 42, 42);
-    IcebergTable toTable = IcebergTable.of("content-table", 43, 43, 43, 43);
+    IcebergTable fromTable =
+        IcebergTable.of(UUID.randomUUID().toString(), "content-table", 42, 42, 42, 42);
+    IcebergTable toTable =
+        IcebergTable.of(UUID.randomUUID().toString(), "content-table", 43, 43, 43, 43);
 
     ContentKey contentKey = ContentKey.of("key1");
     commit(contentKey, fromTable, fromBranch, "diffAuthor");
@@ -474,7 +493,8 @@ public abstract class AbstractResteasyTest {
   @Test
   public void testGetRefLog() {
     Branch branch = makeBranch("branch-temp");
-    IcebergTable table = IcebergTable.of("content-table", 42, 42, 42, 42);
+    IcebergTable table =
+        IcebergTable.of(UUID.randomUUID().toString(), "content-table", 42, 42, 42, 42);
 
     ContentKey contentKey = ContentKey.of("key1");
     commit(contentKey, table, branch, "code");

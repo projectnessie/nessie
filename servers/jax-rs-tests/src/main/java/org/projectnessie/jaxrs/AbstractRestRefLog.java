@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.OptionalInt;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import org.assertj.core.groups.Tuple;
 import org.junit.jupiter.api.Test;
@@ -94,7 +95,7 @@ public abstract class AbstractRestRefLog extends AbstractRestReferences {
     expectedEntries.add(Tuple.tuple(branch3, "CREATE_REFERENCE"));
 
     // reflog 6: commit on default branch0
-    IcebergTable meta = IcebergTable.of("meep", 42, 42, 42, 42);
+    IcebergTable meta = IcebergTable.of(UUID.randomUUID().toString(), "meep", 42, 42, 42, 42);
     branch0 =
         getApi()
             .commitMultipleOperations()

@@ -21,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
@@ -82,22 +83,42 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
     return Stream.of(
         new ContentAndOperationType(
             Type.ICEBERG_TABLE,
-            Put.of(ContentKey.of("iceberg"), IcebergTable.of("/iceberg/table", 42, 42, 42, 42))),
+            Put.of(
+                ContentKey.of("iceberg"),
+                IcebergTable.of(UUID.randomUUID().toString(), "/iceberg/table", 42, 42, 42, 42))),
         new ContentAndOperationType(
             Type.ICEBERG_VIEW,
             Put.of(
                 ContentKey.of("view_dremio"),
-                IcebergView.of("/iceberg/view", 1, 1, "Dremio", "SELECT foo FROM dremio"))),
+                IcebergView.of(
+                    UUID.randomUUID().toString(),
+                    "/iceberg/view",
+                    1,
+                    1,
+                    "Dremio",
+                    "SELECT foo FROM dremio"))),
         new ContentAndOperationType(
             Type.ICEBERG_VIEW,
             Put.of(
                 ContentKey.of("view_presto"),
-                IcebergView.of("/iceberg/view", 1, 1, "Presto", "SELECT foo FROM presto"))),
+                IcebergView.of(
+                    UUID.randomUUID().toString(),
+                    "/iceberg/view",
+                    1,
+                    1,
+                    "Presto",
+                    "SELECT foo FROM presto"))),
         new ContentAndOperationType(
             Type.ICEBERG_VIEW,
             Put.of(
                 ContentKey.of("view_spark"),
-                IcebergView.of("/iceberg/view2", 1, 1, "Spark", "SELECT foo FROM spark"))),
+                IcebergView.of(
+                    UUID.randomUUID().toString(),
+                    "/iceberg/view2",
+                    1,
+                    1,
+                    "Spark",
+                    "SELECT foo FROM spark"))),
         new ContentAndOperationType(
             Type.DELTA_LAKE_TABLE,
             Put.of(
@@ -186,8 +207,8 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
     Branch branch = createBranch("foo");
     ContentKey a = ContentKey.of("a");
     ContentKey b = ContentKey.of("b");
-    IcebergTable ta = IcebergTable.of("path1", 42, 42, 42, 42);
-    IcebergTable tb = IcebergTable.of("path2", 42, 42, 42, 42);
+    IcebergTable ta = IcebergTable.of(UUID.randomUUID().toString(), "path1", 42, 42, 42, 42);
+    IcebergTable tb = IcebergTable.of(UUID.randomUUID().toString(), "path2", 42, 42, 42, 42);
     getApi()
         .commitMultipleOperations()
         .branch(branch)

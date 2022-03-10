@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.quarkus.test.junit.NativeImageTest;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.api.NessieApiV1;
@@ -50,7 +51,7 @@ public class ITNativeNessieError {
   @Test
   void testNullParamViolation() {
     ContentKey k = ContentKey.of("a");
-    IcebergTable t = IcebergTable.of("path1", 42, 42, 42, 42);
+    IcebergTable t = IcebergTable.of(UUID.randomUUID().toString(), "path1", 42, 42, 42, 42);
     assertEquals(
         "Bad Request (HTTP/400): commitMultipleOperations.hash: must not be null",
         assertThrows(

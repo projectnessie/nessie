@@ -32,6 +32,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.OptionalInt;
+import java.util.UUID;
 import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -70,11 +71,23 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
             .operation(
                 Put.of(
                     ContentKey.of("hello", "world", "BaseTable"),
-                    IcebergView.of("path1", 1, 1, "Spark", "SELECT ALL THE THINGS")))
+                    IcebergView.of(
+                        UUID.randomUUID().toString(),
+                        "path1",
+                        1,
+                        1,
+                        "Spark",
+                        "SELECT ALL THE THINGS")))
             .operation(
                 Put.of(
                     ContentKey.of("dlrow", "olleh", "BaseTable"),
-                    IcebergView.of("path2", 1, 1, "Spark", "SELECT ALL THE THINGS")))
+                    IcebergView.of(
+                        UUID.randomUUID().toString(),
+                        "path2",
+                        1,
+                        1,
+                        "Spark",
+                        "SELECT ALL THE THINGS")))
             .commit();
 
     assertThat(
@@ -415,7 +428,8 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
     for (int i = 0; i < commits; i++) {
       String msg = "message-for-" + i;
       allMessages.add(msg);
-      IcebergTable tableMeta = IcebergTable.of("some-file-" + i, 42, 42, 42, 42);
+      IcebergTable tableMeta =
+          IcebergTable.of(UUID.randomUUID().toString(), "some-file-" + i, 42, 42, 42, 42);
       String nextHash =
           getApi()
               .commitMultipleOperations()
@@ -472,11 +486,11 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
                         .operation(
                             Put.of(
                                 ContentKey.of("k" + i),
-                                IcebergTable.of("m" + i, i, i, i, i, c1.apply(i))))
+                                IcebergTable.of(c1.apply(i), "m" + i, i, i, i, i)))
                         .operation(
                             Put.of(
                                 ContentKey.of("key" + i),
-                                IcebergTable.of("meta" + i, i, i, i, i, c2.apply(i))))
+                                IcebergTable.of(c2.apply(i), "meta" + i, i, i, i, i)))
                         .operation(Delete.of(ContentKey.of("delete" + i)))
                         .operation(Unchanged.of(ContentKey.of("key" + i)))
                         .commitMeta(CommitMeta.fromMessage("Commit #" + i))
@@ -538,10 +552,10 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
                           Delete.of(ContentKey.of("delete" + i)),
                           Put.of(
                               ContentKey.of("k" + i),
-                              IcebergTable.of("m" + i, i, i, i, i, c1.apply(i))),
+                              IcebergTable.of(c1.apply(i), "m" + i, i, i, i, i)),
                           Put.of(
                               ContentKey.of("key" + i),
-                              IcebergTable.of("meta" + i, i, i, i, i, c2.apply(i)))));
+                              IcebergTable.of(c2.apply(i), "meta" + i, i, i, i, i))));
             });
   }
 
