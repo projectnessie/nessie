@@ -1388,16 +1388,29 @@ public abstract class NonTransactionalDatabaseAdapter<
         // CAS global pointer
         if (globalPointerCas(ctx, pointer, newPointer)) {
           tryState.success(null);
-
           cleanUpGlobalLog(ctx, oldLogIds);
-
           return stats.asMap(tryState);
-        } else {
-          cleanUpGlobalLog(ctx, newLogIds.stream().map(Hash::of).collect(Collectors.toList()));
         }
 
-        stats.onRetry();
+        // Note: if it turns out that there are too many CAS retries happening, the overall
+        // mechanism can be updated as follows. Since the approach below is much more complex
+        // and harder to test, if's not part of the initial implementation.
+        //
+        // 1. Read the whole global-log as currently, but outside the actual CAS-loop.
+        //    Save the current HEAD of the global-log
+        // 2. CAS-loop:
+        // 2.1. Construct and write the new global-log
+        // 2.2. Try the CAS, if it succeeds, fine
+        // 2.3. If the CAS failed:
+        // 2.3.1. Clean up the optimistically written new global-log
+        // 2.3.2. Read the global-log from its new HEAD up to the current HEAD from step 1.
+        //        Only add the most-recent values for the content-IDs in the incrementally
+        //        read global-log
+        // 2.3.3. Remember the "new HEAD" as the "current HEAD"
+        // 2.3.4. Continue to step 2.1.
 
+        cleanUpGlobalLog(ctx, newLogIds.stream().map(Hash::of).collect(Collectors.toList()));
+        stats.onRetry();
         tryState.retry();
       }
     } catch (ReferenceConflictException e) {
