@@ -15,6 +15,8 @@
  */
 package org.projectnessie.gc.base;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.Spliterator;
@@ -27,10 +29,31 @@ import org.projectnessie.client.NessieConfigConstants;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.model.LogResponse;
+import org.projectnessie.model.Reference;
 
 public final class GCUtil {
 
   private GCUtil() {}
+
+  private static final ObjectMapper objectMapper = new ObjectMapper();
+
+  /** Serialize {@link Reference} object using JSON Serialization. */
+  public static String serializeReference(Reference reference) {
+    try {
+      return objectMapper.writeValueAsString(reference);
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  /** Deserialize JSON String to {@link Reference} object. */
+  public static Reference deserializeReference(String reference) {
+    try {
+      return objectMapper.readValue(reference, Reference.class);
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException(e);
+    }
+  }
 
   /**
    * Traverse the live commits stream till an entry is seen for each live content key and reached
