@@ -15,19 +15,29 @@
  */
 package org.projectnessie.versioned.persist.adapter;
 
+import javax.annotation.Nullable;
 import org.immutables.value.Value;
+import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 
 /** Composite of key, content-id, content-type. */
 @Value.Immutable(lazyhash = true) // this type is used as a map-key in an expensive test
-public interface KeyWithType {
+public interface KeyListEntry {
   Key getKey();
 
   ContentId getContentId();
 
   byte getType();
 
-  static KeyWithType of(Key key, ContentId contentId, byte type) {
-    return ImmutableKeyWithType.builder().key(key).type(type).contentId(contentId).build();
+  @Nullable
+  Hash getCommitId();
+
+  static KeyListEntry of(Key key, ContentId contentId, byte type, Hash commitId) {
+    ImmutableKeyListEntry.Builder builder =
+        ImmutableKeyListEntry.builder().key(key).type(type).contentId(contentId);
+    if (commitId != null) {
+      builder.commitId(commitId);
+    }
+    return builder.build();
   }
 }

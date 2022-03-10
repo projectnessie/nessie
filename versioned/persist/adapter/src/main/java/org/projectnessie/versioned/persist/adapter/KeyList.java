@@ -24,9 +24,9 @@ import org.immutables.value.Value;
  */
 @Value.Immutable
 public interface KeyList {
-  List<KeyWithType> getKeys();
+  List<KeyListEntry> getKeys();
 
-  static KeyList of(List<KeyWithType> keys) {
+  static KeyList of(List<KeyListEntry> keys) {
     return ImmutableKeyList.builder().keys(keys).build();
   }
 }

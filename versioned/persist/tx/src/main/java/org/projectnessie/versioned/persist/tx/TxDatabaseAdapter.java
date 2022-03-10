@@ -82,7 +82,7 @@ import org.projectnessie.versioned.persist.adapter.ContentVariantSupplier;
 import org.projectnessie.versioned.persist.adapter.Difference;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
-import org.projectnessie.versioned.persist.adapter.KeyWithType;
+import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 import org.projectnessie.versioned.persist.adapter.RefLog;
 import org.projectnessie.versioned.persist.adapter.RepoDescription;
 import org.projectnessie.versioned.persist.adapter.RepoMaintenanceParams;
@@ -202,12 +202,12 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
-  public Stream<KeyWithType> keys(Hash commit, KeyFilterPredicate keyFilter)
+  public Stream<KeyListEntry> keys(Hash commit, KeyFilterPredicate keyFilter)
       throws ReferenceNotFoundException {
     ConnectionWrapper conn = borrowConnection();
     boolean failed = true;
     try {
-      Stream<KeyWithType> r = keysForCommitEntry(conn, commit, keyFilter);
+      Stream<KeyListEntry> r = keysForCommitEntry(conn, commit, keyFilter);
       failed = false;
       return r.onClose(conn::close);
     } finally {
@@ -701,7 +701,7 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
-  protected int entitySize(KeyWithType entry) {
+  protected int entitySize(KeyListEntry entry) {
     return toProto(entry).getSerializedSize();
   }
 

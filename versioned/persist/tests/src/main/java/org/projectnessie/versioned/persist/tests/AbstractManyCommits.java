@@ -41,8 +41,8 @@ import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
+import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
-import org.projectnessie.versioned.persist.adapter.KeyWithType;
 import org.projectnessie.versioned.testworker.SimpleStoreWorker;
 import org.projectnessie.versioned.testworker.WithGlobalStateContent;
 
@@ -166,8 +166,8 @@ public abstract class AbstractManyCommits {
       throw new RuntimeException(e);
     }
 
-    try (Stream<KeyWithType> keys = databaseAdapter.keys(commit, KeyFilterPredicate.ALLOW_ALL)) {
-      assertThat(keys.map(KeyWithType::getKey)).containsExactly(key);
+    try (Stream<KeyListEntry> keys = databaseAdapter.keys(commit, KeyFilterPredicate.ALLOW_ALL)) {
+      assertThat(keys.map(KeyListEntry::getKey)).containsExactly(key);
     } catch (ReferenceNotFoundException e) {
       throw new RuntimeException(e);
     }

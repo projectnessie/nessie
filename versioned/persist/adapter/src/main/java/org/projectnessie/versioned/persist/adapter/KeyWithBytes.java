@@ -38,8 +38,4 @@ public interface KeyWithBytes {
         .value(value)
         .build();
   }
-
-  default KeyWithType asKeyWithType() {
-    return KeyWithType.of(getKey(), getContentId(), getType());
-  }
 }
