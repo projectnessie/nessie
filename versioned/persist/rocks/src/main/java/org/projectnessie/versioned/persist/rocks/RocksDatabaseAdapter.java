@@ -26,6 +26,7 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -253,7 +254,8 @@ public class RocksDatabaseAdapter
   }
 
   @Override
-  protected void doCleanUpGlobalLog(NonTransactionalOperationContext ctx, List<Hash> globalIds) {
+  protected void doCleanUpGlobalLog(
+      NonTransactionalOperationContext ctx, Collection<Hash> globalIds) {
     Lock lock = dbInstance.getLock().writeLock();
     lock.lock();
     try {

@@ -19,12 +19,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assumptions.assumeThat;
 
 import com.google.protobuf.ByteString;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -37,8 +38,10 @@ import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
+import org.projectnessie.versioned.persist.adapter.GlobalLogCompactionParams;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
+import org.projectnessie.versioned.persist.adapter.RepoMaintenanceParams;
 import org.projectnessie.versioned.testworker.SimpleStoreWorker;
 import org.projectnessie.versioned.testworker.WithGlobalStateContent;
 
@@ -51,13 +54,55 @@ public abstract class AbstractCompactGlobalLog {
   }
 
   public static Stream<Arguments> compactGlobalLog() {
-    return Stream.of(Arguments.of(30, 0d), Arguments.of(30, .1d), Arguments.of(30, .9d));
+    return Stream.of(Arguments.of(30, 30), Arguments.of(30, 10), Arguments.of(30, 3));
+  }
+
+  static class ContentIdEmitter {
+
+    private final List<ContentId> allContentIds;
+    private int nextIndex;
+
+    ContentIdEmitter(int numContentIds) {
+      allContentIds =
+          IntStream.range(0, numContentIds)
+              .mapToObj(i -> "cid-" + i)
+              .map(ContentId::of)
+              .collect(Collectors.toList());
+    }
+
+    int size() {
+      return allContentIds.size();
+    }
+
+    ContentId contentIdForCommit() {
+      ContentId r = allContentIds.get(nextIndex++);
+      if (nextIndex == allContentIds.size()) {
+        nextIndex = 0;
+      }
+      return r;
+    }
+
+    Set<ContentId> allAsSet() {
+      return new HashSet<>(allContentIds);
+    }
   }
 
   @ParameterizedTest
   @MethodSource("compactGlobalLog")
-  public void compactGlobalLog(int commits, double contentReuseProbability) throws Exception {
-    Map<String, Map<String, String>> statistics = databaseAdapter.repoMaintenance();
+  public void compactGlobalLog(int commits, int numContentIds) throws Exception {
+    RepoMaintenanceParams repoMaintenanceParams =
+        RepoMaintenanceParams.builder()
+            .globalLogCompactionParams(
+                GlobalLogCompactionParams.builder()
+                    .noCompactionWhenCompactedWithin(20)
+                    .noCompactionUpToLength(20)
+                    .build())
+            .build();
+
+    Map<String, Map<String, String>> statistics =
+        databaseAdapter.repoMaintenance(repoMaintenanceParams);
+
+    ContentIdEmitter contentIdEmitter = new ContentIdEmitter(numContentIds);
 
     // If there's no statistics entry for global-log-compaction, then it's not a non-transactional
     // database adapter, so no global-log to compact.
@@ -70,8 +115,6 @@ public abstract class AbstractCompactGlobalLog {
         .containsEntry("compacted", "false");
 
     BranchName branch = BranchName.of("compactGlobalLog");
-    List<ContentId> contentIds = new ArrayList<>();
-    ThreadLocalRandom rand = ThreadLocalRandom.current();
     Map<ContentId, ByteString> currentGlobal = new HashMap<>();
 
     databaseAdapter.create(branch, databaseAdapter.noAncestorHash());
@@ -79,9 +122,9 @@ public abstract class AbstractCompactGlobalLog {
     Runnable verify =
         () -> {
           try (Stream<ContentIdAndBytes> globals =
-              databaseAdapter.globalContent(new HashSet<>(contentIds))) {
+              databaseAdapter.globalContent(contentIdEmitter.allAsSet())) {
             assertThat(globals)
-                .hasSize(contentIds.size())
+                .hasSize(contentIdEmitter.size())
                 .allSatisfy(
                     cb ->
                         assertThat(currentGlobal.get(cb.getContentId())).isEqualTo(cb.getValue()));
@@ -89,21 +132,20 @@ public abstract class AbstractCompactGlobalLog {
         };
 
     for (int i = 0; i < commits; i++) {
-      commitForGlobalLogCompaction(
-          commits, contentReuseProbability, branch, contentIds, rand, currentGlobal, i);
+      commitForGlobalLogCompaction(commits, contentIdEmitter, branch, currentGlobal, i);
     }
 
     // Verify
     verify.run();
 
-    statistics = databaseAdapter.repoMaintenance();
+    statistics = databaseAdapter.repoMaintenance(repoMaintenanceParams);
 
     assertThat(statistics)
         .containsKey("compactGlobalLog")
         .extracting("compactGlobalLog", InstanceOfAssertFactories.map(String.class, String.class))
         .containsEntry("compacted", "true")
         .containsEntry("entries.puts", Long.toString(commits))
-        .containsEntry("entries.uniquePuts", Long.toString(contentIds.size()))
+        .containsEntry("entries.uniquePuts", Long.toString(contentIdEmitter.size()))
         .containsEntry("entries.read", Long.toString(commits + 2))
         .containsEntry("entries.read.total", Long.toString(commits + 2));
 
@@ -113,7 +155,7 @@ public abstract class AbstractCompactGlobalLog {
     // Compact again, compaction must not run, because there is at least one compacted
     // global-log-entry in the first page (above only added 5 "uncompacted" global-log-entries).
 
-    statistics = databaseAdapter.repoMaintenance();
+    statistics = databaseAdapter.repoMaintenance(repoMaintenanceParams);
 
     assertThat(statistics)
         .containsKey("compactGlobalLog")
@@ -125,19 +167,13 @@ public abstract class AbstractCompactGlobalLog {
     int additionalCommits = 5;
     for (int i = 0; i < additionalCommits; i++) {
       commitForGlobalLogCompaction(
-          commits + additionalCommits,
-          contentReuseProbability,
-          branch,
-          contentIds,
-          rand,
-          currentGlobal,
-          i + commits);
+          commits + additionalCommits, contentIdEmitter, branch, currentGlobal, i + commits);
     }
 
     // Compact again, compaction must not run, because there is at least one compacted
     // global-log-entry in the first page (above only added 5 "uncompacted" global-log-entries).
 
-    statistics = databaseAdapter.repoMaintenance();
+    statistics = databaseAdapter.repoMaintenance(repoMaintenanceParams);
 
     assertThat(statistics)
         .containsKey("compactGlobalLog")
@@ -150,10 +186,8 @@ public abstract class AbstractCompactGlobalLog {
     for (int i = 0; i < additionalCommits2; i++) {
       commitForGlobalLogCompaction(
           commits + additionalCommits + additionalCommits2,
-          contentReuseProbability,
+          contentIdEmitter,
           branch,
-          contentIds,
-          rand,
           currentGlobal,
           i + commits + additionalCommits);
     }
@@ -161,13 +195,13 @@ public abstract class AbstractCompactGlobalLog {
     // Compact again, compaction must run, because there is no compacted global-log-entry in the
     // first page of the global log.
 
-    statistics = databaseAdapter.repoMaintenance();
+    statistics = databaseAdapter.repoMaintenance(repoMaintenanceParams);
 
     assertThat(statistics)
         .containsKey("compactGlobalLog")
         .extracting("compactGlobalLog", InstanceOfAssertFactories.map(String.class, String.class))
         .containsEntry("compacted", "true")
-        .containsEntry("entries.uniquePuts", Long.toString(contentIds.size()));
+        .containsEntry("entries.uniquePuts", Long.toString(contentIdEmitter.size()));
 
     // Verify again
     verify.run();
@@ -175,20 +209,12 @@ public abstract class AbstractCompactGlobalLog {
 
   private void commitForGlobalLogCompaction(
       int commits,
-      double contentReuseProbability,
+      ContentIdEmitter contentIdEmitter,
       BranchName branch,
-      List<ContentId> contentIds,
-      ThreadLocalRandom rand,
       Map<ContentId, ByteString> currentGlobal,
       int i)
       throws ReferenceConflictException, ReferenceNotFoundException {
-    ContentId contentId;
-    if (contentReuseProbability > rand.nextDouble() && !contentIds.isEmpty()) {
-      contentId = contentIds.get(rand.nextInt(contentIds.size()));
-    } else {
-      contentId = ContentId.of("cid-" + i);
-      contentIds.add(contentId);
-    }
+    ContentId contentId = contentIdEmitter.contentIdForCommit();
 
     Key key = Key.of("commit", Integer.toString(i));
     WithGlobalStateContent c =

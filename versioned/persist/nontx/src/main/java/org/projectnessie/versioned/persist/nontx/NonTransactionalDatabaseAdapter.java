@@ -73,11 +73,13 @@ import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
 import org.projectnessie.versioned.persist.adapter.ContentVariantSupplier;
 import org.projectnessie.versioned.persist.adapter.Difference;
+import org.projectnessie.versioned.persist.adapter.GlobalLogCompactionParams;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyWithType;
 import org.projectnessie.versioned.persist.adapter.RefLog;
 import org.projectnessie.versioned.persist.adapter.RepoDescription;
+import org.projectnessie.versioned.persist.adapter.RepoMaintenanceParams;
 import org.projectnessie.versioned.persist.adapter.spi.AbstractDatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.spi.Traced;
 import org.projectnessie.versioned.persist.adapter.spi.TryLoopState;
@@ -618,9 +620,9 @@ public abstract class NonTransactionalDatabaseAdapter<
   }
 
   @Override
-  public Map<String, Map<String, String>> repoMaintenance() {
+  public Map<String, Map<String, String>> repoMaintenance(RepoMaintenanceParams params) {
     Map<String, Map<String, String>> result = new HashMap<>();
-    result.put("compactGlobalLog", compactGlobalLog());
+    result.put("compactGlobalLog", compactGlobalLog(params.getGlobalLogCompactionParams()));
     return result;
   }
 
@@ -1027,14 +1029,14 @@ public abstract class NonTransactionalDatabaseAdapter<
       Hash refLogId);
 
   protected final void cleanUpGlobalLog(
-      NonTransactionalOperationContext ctx, List<Hash> globalIds) {
+      NonTransactionalOperationContext ctx, Collection<Hash> globalIds) {
     try (Traced ignore = trace("cleanUpGlobalLog").tag(TAG_COMMIT_COUNT, globalIds.size())) {
       doCleanUpGlobalLog(ctx, globalIds);
     }
   }
 
   protected abstract void doCleanUpGlobalLog(
-      NonTransactionalOperationContext ctx, List<Hash> globalIds);
+      NonTransactionalOperationContext ctx, Collection<Hash> globalIds);
 
   /**
    * Writes a global-state-log-entry without any operations, just to move the global-pointer
@@ -1271,7 +1273,8 @@ public abstract class NonTransactionalDatabaseAdapter<
 
   private static final RuntimeException COMPACTION_NOT_NECESSARY = new RuntimeException();
 
-  protected Map<String, String> compactGlobalLog() {
+  protected Map<String, String> compactGlobalLog(
+      GlobalLogCompactionParams globalLogCompactionParams) {
     // Not using casOpLoop() here, as it is simpler than adopting casOpLoop().
     try (TryLoopState tryState =
         newTryLoopState(
@@ -1301,7 +1304,8 @@ public abstract class NonTransactionalDatabaseAdapter<
         try (Stream<GlobalStateLogEntry> globalLog = globalLogFetcher(ctx, pointer)) {
           globalLog.forEach(
               e -> {
-                if (stats.read < config.getParentsPerGlobalCommit() && stats.puts > stats.read) {
+                if (stats.read < globalLogCompactionParams.getNoCompactionWhenCompactedWithin()
+                    && stats.puts > stats.read) {
                   // First page in the global-log contains at least one compacted entry, so
                   // do not compact.
                   throw COMPACTION_NOT_NECESSARY;
@@ -1318,7 +1322,7 @@ public abstract class NonTransactionalDatabaseAdapter<
                 }
               });
 
-          if (stats.read < config.getParentsPerGlobalCommit()) {
+          if (stats.read < globalLogCompactionParams.getNoCompactionUpToLength()) {
             // Global log does not have more global-log entries than can be fetched with a
             // single-bulk read, so do not compact at all.
             throw COMPACTION_NOT_NECESSARY;
@@ -1387,7 +1391,7 @@ public abstract class NonTransactionalDatabaseAdapter<
 
           cleanUpGlobalLog(ctx, oldLogIds);
 
-          return stats.asMap();
+          return stats.asMap(tryState);
         } else {
           cleanUpGlobalLog(ctx, newLogIds.stream().map(Hash::of).collect(Collectors.toList()));
         }
@@ -1426,7 +1430,7 @@ public abstract class NonTransactionalDatabaseAdapter<
     long totalWritten;
     long totalRead;
 
-    Map<String, String> asMap() {
+    Map<String, String> asMap(TryLoopState tryState) {
       return ImmutableMap.of(
           "compacted",
           "true",
@@ -1441,7 +1445,11 @@ public abstract class NonTransactionalDatabaseAdapter<
           "entries.written.total",
           Long.toString(totalWritten),
           "entries.read.total",
-          Long.toString(totalRead));
+          Long.toString(totalRead),
+          "duration.millis",
+          Long.toString(tryState.getDuration(TimeUnit.MILLISECONDS)),
+          "cas-retries",
+          Long.toString(tryState.getRetries()));
     }
 
     public void addToTotal() {
@@ -1450,7 +1458,7 @@ public abstract class NonTransactionalDatabaseAdapter<
     }
 
     void onRetry() {
-      read = written = puts = 0;
+      read = written = puts = uniquePuts = 0;
     }
   }
 

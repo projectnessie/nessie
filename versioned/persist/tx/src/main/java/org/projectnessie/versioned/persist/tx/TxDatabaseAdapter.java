@@ -85,6 +85,7 @@ import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyWithType;
 import org.projectnessie.versioned.persist.adapter.RefLog;
 import org.projectnessie.versioned.persist.adapter.RepoDescription;
+import org.projectnessie.versioned.persist.adapter.RepoMaintenanceParams;
 import org.projectnessie.versioned.persist.adapter.spi.AbstractDatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.spi.Traced;
 import org.projectnessie.versioned.persist.adapter.spi.TryLoopState;
@@ -670,7 +671,8 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
-  public Map<String, Map<String, String>> repoMaintenance() {
+  public Map<String, Map<String, String>> repoMaintenance(
+      RepoMaintenanceParams repoMaintenanceParams) {
     // Nothing to do
     return Collections.emptyMap();
   }

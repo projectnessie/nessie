@@ -450,7 +450,8 @@ public class MongoDatabaseAdapter
   }
 
   @Override
-  protected void doCleanUpGlobalLog(NonTransactionalOperationContext ctx, List<Hash> globalIds) {
+  protected void doCleanUpGlobalLog(
+      NonTransactionalOperationContext ctx, Collection<Hash> globalIds) {
     delete(client.getGlobalLog(), globalIds);
   }
 
