@@ -167,6 +167,11 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       throws ReferenceNotFoundException, ReferenceConflictException {
     List<String> mismatches = new ArrayList<>();
 
+    Runnable validator = commitAttempt.getValidator();
+    if (validator != null) {
+      validator.run();
+    }
+
     // verify expected global-states
     checkExpectedGlobalStates(ctx, commitAttempt, mismatches::add);
 

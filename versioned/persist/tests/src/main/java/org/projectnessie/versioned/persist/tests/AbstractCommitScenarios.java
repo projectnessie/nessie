@@ -16,9 +16,11 @@
 package org.projectnessie.versioned.persist.tests;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -27,10 +29,12 @@ import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.ReferenceConflictException;
@@ -367,5 +371,65 @@ public abstract class AbstractCommitScenarios {
       assertThat(newHead).isNotEqualTo(head);
       head = newHead;
     }
+  }
+
+  @Test
+  void commitWithValidation() throws Exception {
+    BranchName branch = BranchName.of("main");
+    Key key = Key.of("my", "table0");
+    Hash branchHead =
+        databaseAdapter.namedRef(branch.getName(), GetNamedRefsParams.DEFAULT).getHash();
+    String cid = "cid-0";
+
+    RuntimeException exception = new ArithmeticException("Whatever");
+    assertThatThrownBy(
+            () ->
+                doCommitWithValidation(
+                    branch,
+                    cid,
+                    key,
+                    () -> {
+                      // do some operations here
+                      databaseAdapter.globalContent(ContentId.of(cid));
+                      try {
+                        assertThat(
+                                databaseAdapter.values(
+                                    branchHead,
+                                    Collections.singleton(key),
+                                    KeyFilterPredicate.ALLOW_ALL))
+                            .isEmpty();
+                      } catch (ReferenceNotFoundException e) {
+                        throw new RuntimeException(e);
+                      }
+
+                      // let the custom commit-validation fail
+                      throw exception;
+                    }))
+        .isSameAs(exception);
+
+    assertThat(databaseAdapter.namedRef(branch.getName(), GetNamedRefsParams.DEFAULT).getHash())
+        .isEqualTo(branchHead);
+    assertThat(databaseAdapter.globalContent(ContentId.of(cid))).isEmpty();
+  }
+
+  void doCommitWithValidation(BranchName branch, String cid, Key key, Runnable validator)
+      throws Exception {
+    WithGlobalStateContent c =
+        WithGlobalStateContent.withGlobal("0", "initial commit content", cid);
+
+    ImmutableCommitAttempt.Builder commit =
+        ImmutableCommitAttempt.builder()
+            .commitToBranch(branch)
+            .commitMetaSerialized(ByteString.copyFromUtf8("initial commit meta"))
+            .addPuts(
+                KeyWithBytes.of(
+                    key,
+                    ContentId.of(cid),
+                    SimpleStoreWorker.INSTANCE.getPayload(c),
+                    SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(c)))
+            .putGlobal(ContentId.of(cid), SimpleStoreWorker.INSTANCE.toStoreGlobalState(c))
+            .putExpectedStates(ContentId.of(cid), Optional.empty())
+            .validator(validator);
+    databaseAdapter.commit(commit.build());
   }
 }

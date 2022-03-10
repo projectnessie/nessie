@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.tests;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.projectnessie.versioned.testworker.CommitMessage.commitMessage;
@@ -32,6 +33,7 @@ import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceInfo;
@@ -510,5 +512,49 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                     Optional.of(commitHash),
                     commitMessage("Another commit"),
                     Collections.emptyList()));
+  }
+
+  @Test
+  void commitWithValidation() throws Exception {
+    BranchName branch = BranchName.of("main");
+    Key key = Key.of("my", "table0");
+    Hash branchHead = store().getNamedRef(branch.getName(), GetNamedRefsParams.DEFAULT).getHash();
+    String cid = "cid-0";
+
+    RuntimeException exception = new ArithmeticException("Whatever");
+    assertThatThrownBy(
+            () ->
+                doCommitWithValidation(
+                    branch,
+                    cid,
+                    key,
+                    () -> {
+                      // do some operations here
+                      try {
+                        assertThat(store().getValue(branch, key)).isNull();
+                        store().getKeys(branch).close();
+                      } catch (ReferenceNotFoundException e) {
+                        throw new RuntimeException(e);
+                      }
+
+                      // let the custom commit-validation fail
+                      throw exception;
+                    }))
+        .isSameAs(exception);
+
+    assertThat(store().getNamedRef(branch.getName(), GetNamedRefsParams.DEFAULT).getHash())
+        .isEqualTo(branchHead);
+    assertThat(store().getValue(branch, key)).isNull();
+  }
+
+  void doCommitWithValidation(BranchName branch, String cid, Key key, Runnable validator)
+      throws Exception {
+    store()
+        .commit(
+            branch,
+            Optional.empty(),
+            CommitMessage.commitMessage("initial commit meta"),
+            Collections.singletonList(Put.of(key, newOnRef("some value"))),
+            validator);
   }
 }

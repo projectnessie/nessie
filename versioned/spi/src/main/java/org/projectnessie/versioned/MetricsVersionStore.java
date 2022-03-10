@@ -80,10 +80,11 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
       @Nonnull BranchName branch,
       @Nonnull Optional<Hash> referenceHash,
       @Nonnull METADATA metadata,
-      @Nonnull List<Operation<VALUE>> operations)
+      @Nonnull List<Operation<VALUE>> operations,
+      @Nonnull Runnable validator)
       throws ReferenceNotFoundException, ReferenceConflictException {
     return this.<Hash, ReferenceNotFoundException, ReferenceConflictException>delegate2ExR(
-        "commit", () -> delegate.commit(branch, referenceHash, metadata, operations));
+        "commit", () -> delegate.commit(branch, referenceHash, metadata, operations, validator));
   }
 
   @Override
