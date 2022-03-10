@@ -17,19 +17,21 @@ package org.projectnessie.gc.base;
 
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.api.java.function.MapFunction;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.encoders.RowEncoder;
+import org.apache.spark.sql.functions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.collection.JavaConverters;
 
 /**
  * Identify the expired and live contents in a distributed way using the spark and bloom filter by
@@ -88,12 +90,15 @@ public class DistributedIdentifyContents {
     Dataset<Row> rowDataset =
         session
             .createDataset(references, Encoders.STRING())
-            .map(
-                new ComputeExpiredContentsFunc(liveContentsBloomFilterMap, executor),
-                Encoders.bean(IdentifiedResult.class))
             .mapPartitions(
-                executor.getContentRowsFunc(runId, startedAt),
-                RowEncoder.apply(identifiedResultsRepo.getSchema()));
+                executor.getExpiredContentRowsFunc(liveContentsBloomFilterMap),
+                RowEncoder.apply(identifiedResultsRepo.getSchema()))
+            // replace the fixed value columns which was filled by null initially.
+            .withColumns(
+                JavaConverters.asScalaBuffer(Arrays.asList("gcRunId", "gcRunStart")).toSeq(),
+                JavaConverters.asScalaBuffer(
+                        Arrays.asList(functions.lit(runId), functions.lit(startedAt)))
+                    .toSeq());
     identifiedResultsRepo.writeToOutputTable(rowDataset, runId, startedAt);
     return runId;
   }
@@ -132,23 +137,5 @@ public class DistributedIdentifyContents {
               }
             });
     return output;
-  }
-
-  protected static class ComputeExpiredContentsFunc
-      implements MapFunction<String, IdentifiedResult> {
-    private final Map<String, ContentBloomFilter> liveContentsBloomFilterMap;
-    private final IdentifyContentsPerExecutor executor;
-
-    private ComputeExpiredContentsFunc(
-        Map<String, ContentBloomFilter> liveContentsBloomFilterMap,
-        IdentifyContentsPerExecutor executor) {
-      this.liveContentsBloomFilterMap = liveContentsBloomFilterMap;
-      this.executor = executor;
-    }
-
-    @Override
-    public IdentifiedResult call(String value) throws Exception {
-      return executor.computeExpiredContents(liveContentsBloomFilterMap, value);
-    }
   }
 }

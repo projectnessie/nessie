@@ -28,7 +28,6 @@ import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.NessieConfigConstants;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.http.HttpClientBuilder;
-import org.projectnessie.model.Content;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Reference;
 
@@ -36,7 +35,7 @@ public final class GCUtil {
 
   private GCUtil() {}
 
-  static final ObjectMapper objectMapper = new ObjectMapper();
+  private static final ObjectMapper objectMapper = new ObjectMapper();
 
   /** Serialize {@link Reference} object using JSON Serialization. */
   public static String serializeReference(Reference reference) {
@@ -51,24 +50,6 @@ public final class GCUtil {
   public static Reference deserializeReference(String reference) {
     try {
       return objectMapper.readValue(reference, Reference.class);
-    } catch (JsonProcessingException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  /** Serialize {@link Content} object using JSON Serialization. */
-  public static String serializeContent(Content content) {
-    try {
-      return objectMapper.writeValueAsString(content);
-    } catch (JsonProcessingException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  /** Deserialize JSON String to {@link Content} object. */
-  public static Content deserializeContent(String content) {
-    try {
-      return objectMapper.readValue(content, Content.class);
     } catch (JsonProcessingException e) {
       throw new RuntimeException(e);
     }

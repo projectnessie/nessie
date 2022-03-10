@@ -17,8 +17,6 @@ package org.projectnessie.gc.base;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -26,6 +24,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SparkSession;
@@ -40,7 +39,6 @@ public abstract class AbstractRestGCRepoTest extends AbstractRestGC {
   private final String identifierNameSpace = "db1";
   private final String identifierTableName = "identified_results";
   private final String identifier = identifierNameSpace + "." + identifierTableName;
-  private final String refName = "someRef";
   private final String gcRefName = "someGcRef";
   private final String catalogAndIdentifierWithReference = getCatalogAndIdentifierWithReference();
 
@@ -58,9 +56,9 @@ public abstract class AbstractRestGCRepoTest extends AbstractRestGC {
       writeRows(sparkSession, identifiedResultsRepo, getRows(runId, startAt, 5));
 
       // try to collect in-progress results.
-      IdentifiedResult identifiedResult = identifiedResultsRepo.collectExpiredContents(runId);
+      Dataset<Row> identifiedResult = identifiedResultsRepo.collectExpiredContentsAsDataSet(runId);
       // should not collect any results as write is in-progress.
-      assertThat(identifiedResult.getContentValues()).isEmpty();
+      assertThat(identifiedResult.collectAsList()).isEmpty();
 
       // latest completed run id should not be present.
       assertThat(identifiedResultsRepo.getLatestCompletedRunID()).isNull();
@@ -71,9 +69,9 @@ public abstract class AbstractRestGCRepoTest extends AbstractRestGC {
       assertThat(identifiedResultsRepo.getLatestCompletedRunID()).isEqualTo(runId);
 
       // collect results as marker row is written.
-      identifiedResult = identifiedResultsRepo.collectExpiredContents(runId);
+      identifiedResult = identifiedResultsRepo.collectExpiredContentsAsDataSet(runId);
       // should collect 5 rows.
-      assertThat(identifiedResult.getContentValuesForReference(refName).size()).isEqualTo(5);
+      assertThat(identifiedResult.collectAsList().size()).isEqualTo(5);
     } finally {
       if (sparkSession != null) {
         sparkSession.sql(String.format("DROP TABLE %s", catalogAndIdentifierWithReference));
@@ -103,10 +101,10 @@ public abstract class AbstractRestGCRepoTest extends AbstractRestGC {
       runIds.forEach(
           runId -> {
             // collect results as marker row is written.
-            IdentifiedResult identifiedResult = identifiedResultsRepo.collectExpiredContents(runId);
+            Dataset<Row> identifiedResult =
+                identifiedResultsRepo.collectExpiredContentsAsDataSet(runId);
             // should collect expectedRowCount rows.
-            assertThat(identifiedResult.getContentValuesForReference(refName).size())
-                .isEqualTo(expectedRowCount.get());
+            assertThat(identifiedResult.collectAsList().size()).isEqualTo(expectedRowCount.get());
             expectedRowCount.getAndIncrement();
           });
       assertThat(identifiedResultsRepo.getLatestCompletedRunID())
@@ -121,30 +119,30 @@ public abstract class AbstractRestGCRepoTest extends AbstractRestGC {
 
   private List<Row> getRows(String runId, Timestamp startAt, int rowCount) {
     List<Row> rows = new ArrayList<>();
-    ObjectMapper objectMapper = new ObjectMapper();
     for (int i = 0; i < rowCount; i++) {
       String contentId = "SomeContentId_" + i;
       String metadata = "file1";
       IcebergTable content = IcebergTable.of(metadata, 42, 42, 42, 42, contentId);
-      try {
-        rows.add(
-            RowFactory.create(
-                "GC_CONTENT",
-                startAt,
-                runId,
-                contentId,
-                Collections.singletonList(objectMapper.writeValueAsString(content)),
-                refName));
-      } catch (JsonProcessingException e) {
-        throw new RuntimeException(e);
-      }
+      String refName = "someRef";
+      rows.add(
+          RowFactory.create(
+              "GC_CONTENT",
+              startAt,
+              runId,
+              contentId,
+              content.getType().name(),
+              content.getSnapshotId(),
+              content.getMetadataLocation(),
+              refName,
+              null));
     }
     return rows;
   }
 
   private static List<Row> getMarkerRow(String runId) {
     return Collections.singletonList(
-        RowFactory.create("GC_MARK", Timestamp.from(Instant.now()), runId, null, null, null));
+        RowFactory.create(
+            "GC_MARK", Timestamp.from(Instant.now()), runId, null, null, null, null, null, null));
   }
 
   private void writeMarkerRow(

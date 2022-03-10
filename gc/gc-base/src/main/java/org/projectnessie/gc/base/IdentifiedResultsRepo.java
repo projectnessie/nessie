@@ -16,7 +16,6 @@
 package org.projectnessie.gc.base;
 
 import static org.apache.iceberg.types.Types.NestedField.optional;
-import static org.apache.iceberg.types.Types.NestedField.required;
 
 import java.sql.Timestamp;
 import java.util.Arrays;
@@ -50,36 +49,41 @@ public final class IdentifiedResultsRepo {
   private static final Logger LOGGER = LoggerFactory.getLogger(IdentifiedResultsRepo.class);
 
   private static final String COL_TYPE = "type";
-  private static final String COL_GC_RUN_ID = "gcRunId";
   private static final String COL_GC_RUN_START = "gcRunStart";
+  private static final String COL_GC_RUN_ID = "gcRunId";
   private static final String COL_CONTENT_ID = "contentId";
-  private static final String COL_EXPIRED_CONTENTS = "expiredContents";
-  private static final String COL_EXPIRED_AT_REFERENCE_NAME = "expiredAtReferenceName";
+  private static final String COL_CONTENT_TYPE = "contentType";
+  private static final String COL_SNAPSHOT_ID = "snapshotId";
+  private static final String COL_METADATA_LOCATION = "metadataLocation";
+  private static final String COL_REFERENCE_NAME = "referenceName";
+  private static final String COL_HASH_ON_REFERENCE = "hashOnReference";
 
   private static final String TYPE_CONTENT = "GC_CONTENT";
-  // marker row indicates that identify task is completed for that run id
-  // and the results for that run id is consumable.
-  // It is used to avoid reading in-progress writes.
   private static final String TYPE_GC_MARKER = "GC_MARK";
 
   private final Schema icebergSchema =
       new Schema(
           Types.StructType.of(
-                  // Type of information this row represents, marker row or content row
-                  required(1, COL_TYPE, Types.StringType.get()),
-                  // GC run start timestamp
-                  required(2, COL_GC_RUN_START, Types.TimestampType.withZone()),
-                  // GC run-ID
-                  required(3, COL_GC_RUN_ID, Types.StringType.get()),
+                  // Type of information this row represents, marker row or content row.
+                  // marker row indicates that identify task is completed for that run id
+                  // and the results for that run id is consumable.
+                  optional(1, COL_TYPE, Types.StringType.get()),
+                  // GC run start timestamp.
+                  optional(2, COL_GC_RUN_START, Types.TimestampType.withZone()),
+                  // GC run-ID.
+                  optional(3, COL_GC_RUN_ID, Types.StringType.get()),
                   // Nessie Content.id
                   optional(4, COL_CONTENT_ID, Types.StringType.get()),
-                  // List of expired contents (as a json serialized string), can be empty
-                  optional(
-                      5,
-                      COL_EXPIRED_CONTENTS,
-                      Types.ListType.ofRequired(6, Types.StringType.get())),
-                  // Name of the reference via which the contentID is visible
-                  optional(7, COL_EXPIRED_AT_REFERENCE_NAME, Types.StringType.get()))
+                  // Nessie Content.type
+                  optional(5, COL_CONTENT_TYPE, Types.StringType.get()),
+                  // Iceberg Table/View Content's snapshot/version id.
+                  optional(6, COL_SNAPSHOT_ID, Types.LongType.get()),
+                  // Iceberg Table/View Content's metadata location.
+                  optional(7, COL_METADATA_LOCATION, Types.StringType.get()),
+                  // Name of the reference via which the contentID was collected
+                  optional(8, COL_REFERENCE_NAME, Types.StringType.get()),
+                  // Hash of the reference via which the contentID was collected
+                  optional(9, COL_HASH_ON_REFERENCE, Types.StringType.get()))
               .fields());
 
   private final StructType schema = SparkSchemaUtil.convert(icebergSchema);
@@ -97,20 +101,6 @@ public final class IdentifiedResultsRepo {
 
   public StructType getSchema() {
     return schema;
-  }
-
-  /**
-   * Collect the expired contents for the given run id as {@link IdentifiedResult} .
-   *
-   * @param runId run id of completed identify task.
-   * @return {@link IdentifiedResult} object having the expired contents per content id per
-   *     reference.
-   */
-  public IdentifiedResult collectExpiredContents(String runId) {
-    List<Row> rows = collectExpiredContentsAsDataSet(runId).collectAsList();
-    IdentifiedResult identifiedResult = new IdentifiedResult();
-    rows.forEach(row -> addRowToIdentifiedResults(identifiedResult, row));
-    return identifiedResult;
   }
 
   /**
@@ -142,14 +132,10 @@ public final class IdentifiedResultsRepo {
       return markerRow;
     }
     // Example Query:
-    // SELECT gcRunId FROM nessie.db1.`identified_results@someGcRef`
+    // SELECT * FROM nessie.db1.`identified_results@someGcRef`
     //    WHERE gcRunId = '1a088e65-a6ea-42e9-819d-025f4e22eaec' AND type = 'GC_MARK'
     return sql(
-        "SELECT %s, %s, %s FROM %s WHERE %s = '%s' AND %s = '%s'",
-        COL_CONTENT_ID,
-        COL_EXPIRED_CONTENTS,
-        COL_EXPIRED_AT_REFERENCE_NAME,
-        //
+        "SELECT * FROM %s WHERE %s = '%s' AND %s = '%s'",
         catalogAndTableWithRefName,
         //
         COL_GC_RUN_ID,
@@ -206,24 +192,31 @@ public final class IdentifiedResultsRepo {
     }
   }
 
-  static Row getContentRow(
-      String runID,
-      Timestamp startedAt,
-      String refName,
+  static Row getContentRowVariablePart(
       String contentId,
-      ContentValues contentValues) {
+      String contentType,
+      long snapshotId,
+      String metadataLocation,
+      String refName,
+      String hash) {
     return RowFactory.create(
         IdentifiedResultsRepo.TYPE_CONTENT,
-        startedAt,
-        runID,
+        // the fixed value columns (runId and startTime)
+        // will be added in the callers using dataframe.withColumn().
+        // Hence they are filled as 'null' here.
+        null,
+        null,
         contentId,
-        contentValues.getExpiredContents().toArray(new String[0]),
-        refName);
+        contentType,
+        snapshotId,
+        metadataLocation,
+        refName,
+        hash);
   }
 
   private static Row getMarkerRow(String runID, Timestamp startedAt) {
     return RowFactory.create(
-        IdentifiedResultsRepo.TYPE_GC_MARKER, startedAt, runID, null, null, null);
+        IdentifiedResultsRepo.TYPE_GC_MARKER, startedAt, runID, null, null, null, null, null, null);
   }
 
   private void checkAndCreateTable(
@@ -243,14 +236,6 @@ public final class IdentifiedResultsRepo {
     } catch (AlreadyExistsException ex) {
       // Table can exist from previous GC run, no need to  throw exception.
     }
-  }
-
-  private static void addRowToIdentifiedResults(IdentifiedResult identifiedResult, Row row) {
-    List<Object> contentsInRow = row.getList(1);
-    contentsInRow.stream()
-        .map(val -> (String) val)
-        .forEach(
-            content -> identifiedResult.addContent(row.getString(2), row.getString(0), content));
   }
 
   private static String withRefName(String catalogAndTable, String refName) {
