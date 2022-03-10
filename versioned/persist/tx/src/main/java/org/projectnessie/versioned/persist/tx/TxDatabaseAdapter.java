@@ -504,10 +504,15 @@ public abstract class TxDatabaseAdapter
   public Stream<Difference> diff(Hash from, Hash to, KeyFilterPredicate keyFilter)
       throws ReferenceNotFoundException {
     Connection conn = borrowConnection();
+    boolean failed = true;
     try {
-      return buildDiff(conn, from, to, keyFilter);
+      Stream<Difference> r = buildDiff(conn, from, to, keyFilter);
+      failed = false;
+      return r.onClose(() -> releaseConnection(conn));
     } finally {
-      releaseConnection(conn);
+      if (failed) {
+        releaseConnection(conn);
+      }
     }
   }
 
