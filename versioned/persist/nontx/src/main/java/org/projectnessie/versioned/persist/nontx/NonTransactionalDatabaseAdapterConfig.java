@@ -36,7 +36,7 @@ public interface NonTransactionalDatabaseAdapterConfig extends DatabaseAdapterCo
    * Maximum size of a database object/row.
    *
    * <p>This parameter is respected when compacting the global log via {@link
-   * org.projectnessie.versioned.persist.adapter.DatabaseAdapter#repoMaintenance()}.
+   * org.projectnessie.versioned.persist.adapter.DatabaseAdapter#repoMaintenance(org.projectnessie.versioned.persist.adapter.RepoMaintenanceParams)}.
    *
    * <p>Not all kinds of databases have hard limits on the maximum size of a database object/row.
    *
