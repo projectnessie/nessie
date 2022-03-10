@@ -1116,7 +1116,31 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     Set<ContentId> contentIdsForGlobal = new HashSet<>();
     try (Stream<CommitLogEntry> log =
         takeUntilExcludeLast(readCommitLogStream(ctx, refHead), e -> remainingKeys.isEmpty())) {
-      log.peek(entry -> entry.getDeletes().forEach(remainingKeys::remove))
+      log.peek(
+              entry -> {
+                // remove deleted keys from keys to look for
+                entry.getDeletes().forEach(remainingKeys::remove);
+
+                if (entry.getKeyList() != null) {
+                  // CommitLogEntry has a KeyList.
+                  // All keys in 'remainingKeys', that are _not_ in the KeyList(s), can be removed,
+                  // because at this point we know that these do not exist.
+
+                  Set<Key> remainingInKeyList = new HashSet<>();
+                  try (Stream<KeyList> keyLists =
+                      Stream.concat(
+                          Stream.of(entry.getKeyList()),
+                          fetchKeyLists(ctx, entry.getKeyListsIds()).map(KeyListEntity::getKeys))) {
+                    keyLists
+                        .flatMap(kl -> kl.getKeys().stream())
+                        .map(KeyWithType::getKey)
+                        .filter(remainingKeys::contains)
+                        .forEach(remainingInKeyList::add);
+                  }
+
+                  remainingKeys.retainAll(remainingInKeyList);
+                }
+              })
           .flatMap(entry -> entry.getPuts().stream())
           .filter(put -> remainingKeys.remove(put.getKey()))
           .filter(put -> keyFilter.check(put.getKey(), put.getContentId(), put.getType()))
