@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import javax.validation.constraints.NotNull;
+import org.apache.spark.SparkConf;
 import org.apache.spark.sql.SparkSession;
 import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
@@ -85,9 +86,19 @@ public abstract class AbstractRestGC extends AbstractRest {
       List<String> involvedRefs,
       boolean disableCommitProtection,
       Instant deadReferenceCutoffTime) {
-    SparkSession spark =
-        SparkSession.builder().appName("test-nessie-gc").master("local[2]").getOrCreate();
+    SparkConf conf =
+        new SparkConf()
+            .setAppName("test-nessie-gc")
+            .setMaster("local[2]")
+            .set(
+                "spark.kryo.registrator",
+                "org.projectnessie.gc.serialization.ReferencesKryoRegistrator")
+            .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+            .set("spark.kryo.registrationRequired", "false");
+
+    SparkSession spark = SparkSession.builder().config(conf).getOrCreate();
     spark.sparkContext().setLogLevel("WARN");
+    System.out.println("serializer: " + spark.conf().get("spark.serializer"));
     try {
       ImmutableGCParams.Builder builder = ImmutableGCParams.builder();
       final Map<String, String> options = new HashMap<>();
