@@ -27,7 +27,6 @@ import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -36,15 +35,9 @@ import org.projectnessie.client.api.NessieApi;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.auth.BasicAuthenticationProvider;
 import org.projectnessie.client.auth.NessieAuthentication;
-import org.projectnessie.client.util.JaegerTestTracer;
 import org.projectnessie.client.util.TestServer;
 
 public class TestHttpClientBuilder {
-  @BeforeAll
-  static void setupTracer() {
-    JaegerTestTracer.register();
-  }
-
   interface IncompatibleApiInterface extends NessieApi {}
 
   @Test
