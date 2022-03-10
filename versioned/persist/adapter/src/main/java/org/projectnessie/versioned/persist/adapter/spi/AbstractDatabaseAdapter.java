@@ -1191,6 +1191,9 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       OP_CONTEXT ctx, Set<ContentId> contentIds) throws ReferenceNotFoundException;
 
   protected final Stream<KeyListEntity> fetchKeyLists(OP_CONTEXT ctx, List<Hash> keyListsIds) {
+    if (keyListsIds.isEmpty()) {
+      return Stream.empty();
+    }
     try (Traced ignore = trace("fetchKeyLists").tag(TAG_COUNT, keyListsIds.size())) {
       return doFetchKeyLists(ctx, keyListsIds);
     }
