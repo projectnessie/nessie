@@ -90,11 +90,16 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
       @Nonnull BranchName branch,
       @Nonnull Optional<Hash> expectedHead,
       @Nonnull METADATA metadata,
-      @Nonnull List<Operation<CONTENT>> operations)
+      @Nonnull List<Operation<CONTENT>> operations,
+      @Nonnull Runnable validator)
       throws ReferenceNotFoundException, ReferenceConflictException {
 
     ImmutableCommitAttempt.Builder commitAttempt =
-        ImmutableCommitAttempt.builder().commitToBranch(branch).expectedHead(expectedHead);
+        ImmutableCommitAttempt.builder()
+            .commitToBranch(branch)
+            .expectedHead(expectedHead)
+            .commitMetaSerialized(serializeMetadata(metadata))
+            .validator(validator);
 
     for (Operation<CONTENT> operation : operations) {
       if (operation instanceof Put) {
@@ -147,8 +152,6 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
         throw new IllegalArgumentException(String.format("Unknown operation type '%s'", operation));
       }
     }
-
-    commitAttempt.commitMetaSerialized(serializeMetadata(metadata));
 
     return databaseAdapter.commit(commitAttempt.build());
   }
