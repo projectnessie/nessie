@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.SparkSession;
+import org.projectnessie.model.Reference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,13 +44,13 @@ public class DistributedIdentifyContents {
    * Compute the bloom filter per content id by walking all the live references in a distributed way
    * using spark.
    *
-   * @param references list of all the references (JSON serialized)
+   * @param references list of all the references
    * @param bloomFilterSize size of bloom filter to be used
-   * @param droppedRefTimeMap map of dropped time for reference@hash (JSON serialized)
+   * @param droppedRefTimeMap map of dropped time for reference@hash
    * @return map of {@link ContentBloomFilter} per content-id.
    */
   public Map<String, ContentBloomFilter> getLiveContentsBloomFilters(
-      List<String> references, long bloomFilterSize, Map<String, Instant> droppedRefTimeMap) {
+      List<Reference> references, long bloomFilterSize, Map<Reference, Instant> droppedRefTimeMap) {
     IdentifyContentsPerExecutor executor = new IdentifyContentsPerExecutor(gcParams);
     List<Map<String, ContentBloomFilter>> bloomFilterMaps =
         new JavaSparkContext(session.sparkContext())
@@ -64,11 +65,11 @@ public class DistributedIdentifyContents {
    * distributed way using spark and checking the contents against the live bloom filter results.
    *
    * @param liveContentsBloomFilterMap live contents bloom filter per content id.
-   * @param references list of all the references (JSON serialized) to walk (live and dead)
+   * @param references list of all the references to walk (live and dead)
    * @return {@link IdentifiedResult} object.
    */
   public IdentifiedResult getIdentifiedResults(
-      Map<String, ContentBloomFilter> liveContentsBloomFilterMap, List<String> references) {
+      Map<String, ContentBloomFilter> liveContentsBloomFilterMap, List<Reference> references) {
 
     IdentifyContentsPerExecutor executor = new IdentifyContentsPerExecutor(gcParams);
     List<IdentifiedResult> results =
@@ -82,7 +83,7 @@ public class DistributedIdentifyContents {
     return identifiedResult;
   }
 
-  private static int getPartitionsCount(GCParams gcParams, List<String> references) {
+  private static int getPartitionsCount(GCParams gcParams, List<Reference> references) {
     return gcParams.getSparkPartitionsCount() == null
         ? references.size()
         : gcParams.getSparkPartitionsCount();
