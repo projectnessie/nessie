@@ -18,12 +18,8 @@ package org.projectnessie.client.http;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.sun.net.httpserver.HttpHandler;
-import io.opentracing.Scope;
-import io.opentracing.util.GlobalTracer;
 import java.io.OutputStream;
 import java.net.URI;
 import java.util.Arrays;
@@ -31,7 +27,6 @@ import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -40,15 +35,9 @@ import org.projectnessie.client.api.NessieApi;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.auth.BasicAuthenticationProvider;
 import org.projectnessie.client.auth.NessieAuthentication;
-import org.projectnessie.client.util.JaegerTestTracer;
 import org.projectnessie.client.util.TestServer;
 
 public class TestHttpClientBuilder {
-  @BeforeAll
-  static void setupTracer() {
-    JaegerTestTracer.register();
-  }
-
   interface IncompatibleApiInterface extends NessieApi {}
 
   @Test
@@ -143,49 +132,6 @@ public class TestHttpClientBuilder {
                 + new String(
                     Base64.getUrlEncoder().encode("my_username:very_secret".getBytes(UTF_8)),
                     UTF_8));
-  }
-
-  @Test
-  void testTracing() throws Exception {
-    AtomicReference<String> traceId = new AtomicReference<>();
-
-    try (TestServer server = new TestServer(handlerForHeaderTest("Uber-trace-id", traceId))) {
-      NessieApiV1 client =
-          HttpClientBuilder.builder()
-              .withUri(server.getUri())
-              .withTracing(true)
-              .build(NessieApiV1.class);
-      try (Scope ignore =
-          GlobalTracer.get()
-              .activateSpan(GlobalTracer.get().buildSpan("testOpenTracing").start())) {
-        client.getConfig();
-      }
-    }
-
-    // Cannot really assert on the value of the Uber-trace-id header, because the APIs don't
-    // give us access to that. Verifying that the Uber-trace-id header is being sent should
-    // be good enough though.
-    assertNotNull(traceId.get());
-  }
-
-  @Test
-  void testTracingNotEnabled() throws Exception {
-    AtomicReference<String> traceId = new AtomicReference<>();
-
-    try (TestServer server = new TestServer(handlerForHeaderTest("Uber-trace-id", traceId))) {
-      NessieApiV1 client =
-          HttpClientBuilder.builder()
-              .withUri(server.getUri())
-              .withTracing(false)
-              .build(NessieApiV1.class);
-      try (Scope ignore =
-          GlobalTracer.get()
-              .activateSpan(GlobalTracer.get().buildSpan("testOpenTracing").start())) {
-        client.getConfig();
-      }
-    }
-
-    assertNull(traceId.get());
   }
 
   static HttpHandler handlerForHeaderTest(String headerName, AtomicReference<String> receiver) {
