@@ -141,6 +141,10 @@ public final class DatabaseAdapterUtil {
         assignTo.asString());
   }
 
+  public static String maintenanceConflictMessage(String err, String msg) {
+    return String.format("%s during %s", err, msg);
+  }
+
   public static String repoDescUpdateConflictMessage(String err) {
     return String.format("%s during update of the repository description", err);
   }

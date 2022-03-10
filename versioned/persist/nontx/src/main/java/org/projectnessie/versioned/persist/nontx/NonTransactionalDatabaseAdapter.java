@@ -34,9 +34,12 @@ import static org.projectnessie.versioned.persist.adapter.spi.TryLoopState.newTr
 import static org.projectnessie.versioned.persist.nontx.NonTransactionalOperationContext.NON_TRANSACTIONAL_OPERATION_CONTEXT;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -70,16 +73,20 @@ import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
 import org.projectnessie.versioned.persist.adapter.ContentVariantSupplier;
 import org.projectnessie.versioned.persist.adapter.Difference;
+import org.projectnessie.versioned.persist.adapter.GlobalLogCompactionParams;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyWithType;
 import org.projectnessie.versioned.persist.adapter.RefLog;
 import org.projectnessie.versioned.persist.adapter.RepoDescription;
+import org.projectnessie.versioned.persist.adapter.RepoMaintenanceParams;
 import org.projectnessie.versioned.persist.adapter.spi.AbstractDatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.spi.Traced;
 import org.projectnessie.versioned.persist.adapter.spi.TryLoopState;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.ContentIdWithBytes;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry.Builder;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.NamedReference;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogEntry;
@@ -612,6 +619,13 @@ public abstract class NonTransactionalDatabaseAdapter<
     }
   }
 
+  @Override
+  public Map<String, Map<String, String>> repoMaintenance(RepoMaintenanceParams params) {
+    Map<String, Map<String, String>> result = new HashMap<>();
+    result.put("compactGlobalLog", compactGlobalLog(params.getGlobalLogCompactionParams()));
+    return result;
+  }
+
   // /////////////////////////////////////////////////////////////////////////////////////////////
   // Non-Transactional DatabaseAdapter subclass API (protected)
   // /////////////////////////////////////////////////////////////////////////////////////////////
@@ -919,7 +933,6 @@ public abstract class NonTransactionalDatabaseAdapter<
       throws ReferenceConflictException {
 
     Hash parentHash = Hash.of(pointer.getGlobalId());
-    Hash hash = randomHash();
 
     // Before Nessie 0.21.0: the global-state-pointer contains the "heads" for the ref-log and
     // global-log, so it has to read the head ref-log & global-log to get the IDs of all the
@@ -952,14 +965,19 @@ public abstract class NonTransactionalDatabaseAdapter<
           pointer.getGlobalParentsInclHeadList().stream().limit(config.getParentsPerGlobalCommit());
     }
 
-    GlobalStateLogEntry.Builder entry =
-        GlobalStateLogEntry.newBuilder().setCreatedTime(timeInMicros).setId(hash.asBytes());
+    GlobalStateLogEntry.Builder entry = newGlobalLogEntryBuilder(timeInMicros);
     newParents.forEach(entry::addParents);
     globals.forEach(g -> entry.addPuts(ProtoSerialization.toProto(g)));
     GlobalStateLogEntry globalLogEntry = entry.build();
     writeGlobalCommit(ctx, globalLogEntry);
 
     return globalLogEntry;
+  }
+
+  protected GlobalStateLogEntry.Builder newGlobalLogEntryBuilder(long timeInMicros) {
+    return GlobalStateLogEntry.newBuilder()
+        .setCreatedTime(timeInMicros)
+        .setId(randomHash().asBytes());
   }
 
   /**
@@ -1010,6 +1028,16 @@ public abstract class NonTransactionalDatabaseAdapter<
       Set<Hash> newKeyLists,
       Hash refLogId);
 
+  protected final void cleanUpGlobalLog(
+      NonTransactionalOperationContext ctx, Collection<Hash> globalIds) {
+    try (Traced ignore = trace("cleanUpGlobalLog").tag(TAG_COMMIT_COUNT, globalIds.size())) {
+      doCleanUpGlobalLog(ctx, globalIds);
+    }
+  }
+
+  protected abstract void doCleanUpGlobalLog(
+      NonTransactionalOperationContext ctx, Collection<Hash> globalIds);
+
   /**
    * Writes a global-state-log-entry without any operations, just to move the global-pointer
    * forwards for a "proper" CAS operation.
@@ -1033,6 +1061,9 @@ public abstract class NonTransactionalDatabaseAdapter<
    */
   protected static Hash branchHead(GlobalStatePointer pointer, NamedRef ref)
       throws ReferenceNotFoundException {
+    if (ref == null) {
+      return null;
+    }
     if (pointer == null) {
       throw referenceNotFound(ref);
     }
@@ -1103,7 +1134,11 @@ public abstract class NonTransactionalDatabaseAdapter<
 
   /** Reads from the global-state-log starting at the given global-state-log-ID. */
   private Stream<GlobalStateLogEntry> globalLogFetcher(NonTransactionalOperationContext ctx) {
-    GlobalStatePointer pointer = fetchGlobalPointer(ctx);
+    return globalLogFetcher(ctx, fetchGlobalPointer(ctx));
+  }
+
+  private Stream<GlobalStateLogEntry> globalLogFetcher(
+      NonTransactionalOperationContext ctx, GlobalStatePointer pointer) {
     if (pointer == null) {
       return Stream.empty();
     }
@@ -1234,6 +1269,230 @@ public abstract class NonTransactionalDatabaseAdapter<
     writeRefLog(ctx, refLogEntry);
 
     return refLogEntry;
+  }
+
+  private static final RuntimeException COMPACTION_NOT_NECESSARY_LENGTH = new RuntimeException();
+  private static final RuntimeException COMPACTION_NOT_NECESSARY_WITHIN = new RuntimeException();
+
+  protected Map<String, String> compactGlobalLog(
+      GlobalLogCompactionParams globalLogCompactionParams) {
+    if (!globalLogCompactionParams.isEnabled()) {
+      return ImmutableMap.of("compacted", "false", "reason", "not enabled");
+    }
+
+    // Not using casOpLoop() here, as it is simpler than adopting casOpLoop().
+    try (TryLoopState tryState =
+        newTryLoopState(
+            "compact-global-log",
+            ts ->
+                repoDescUpdateConflictMessage(
+                    String.format(
+                        "%s after %d retries, %d ms",
+                        "Retry-Failure", ts.getRetries(), ts.getDuration(TimeUnit.MILLISECONDS))),
+            this::tryLoopStateCompletion,
+            config)) {
+
+      CompactionStats stats = new CompactionStats();
+      while (true) {
+        NonTransactionalOperationContext ctx = NON_TRANSACTIONAL_OPERATION_CONTEXT;
+
+        GlobalStatePointer pointer = fetchGlobalPointer(ctx);
+
+        // Collect the old global-log-ids, to delete those after compaction
+        List<Hash> oldLogIds = new ArrayList<>();
+        // Map with all global contents.
+        Map<String, ByteString> globalContents = new HashMap<>();
+        // Content-IDs, most recently updated contents first.
+        List<String> contentIdsByRecency = new ArrayList<>();
+
+        // Read the global log - from the most recent global-log entry to the oldest.
+        try (Stream<GlobalStateLogEntry> globalLog = globalLogFetcher(ctx, pointer)) {
+          globalLog.forEach(
+              e -> {
+                if (stats.read < globalLogCompactionParams.getNoCompactionWhenCompactedWithin()
+                    && stats.puts > stats.read) {
+                  // First page in the global-log contains at least one compacted entry, so
+                  // do not compact.
+                  throw COMPACTION_NOT_NECESSARY_WITHIN;
+                }
+                stats.read++;
+                oldLogIds.add(Hash.of(e.getId()));
+                for (ContentIdWithBytes put : e.getPutsList()) {
+                  stats.puts++;
+                  String cid = put.getContentId().getId();
+                  if (globalContents.putIfAbsent(cid, put.getValue()) == null) {
+                    stats.uniquePuts++;
+                    contentIdsByRecency.add(cid);
+                  }
+                }
+              });
+
+          if (stats.read < globalLogCompactionParams.getNoCompactionUpToLength()) {
+            // Global log does not have more global-log entries than can be fetched with a
+            // single-bulk read, so do not compact at all.
+            throw COMPACTION_NOT_NECESSARY_LENGTH;
+          }
+        } catch (RuntimeException e) {
+          if (e == COMPACTION_NOT_NECESSARY_WITHIN) {
+            tryState.success(null);
+            return ImmutableMap.of(
+                "compacted",
+                "false",
+                "reason",
+                String.format(
+                    "compacted entry within %d most recent log entries",
+                    globalLogCompactionParams.getNoCompactionWhenCompactedWithin()));
+          }
+          if (e == COMPACTION_NOT_NECESSARY_LENGTH) {
+            tryState.success(null);
+            return ImmutableMap.of(
+                "compacted",
+                "false",
+                "reason",
+                String.format(
+                    "less than %d entries", globalLogCompactionParams.getNoCompactionUpToLength()));
+          }
+          throw e;
+        }
+
+        // Collect the IDs of the written global-log-entries, to delete those when the CAS
+        // operation failed
+        List<ByteString> newLogIds = new ArrayList<>();
+
+        // Reverse the order of content-IDs, most recently updated contents LAST.
+        // Do this to have the active contents closer to the HEAD of the global log.
+        Collections.reverse(contentIdsByRecency);
+
+        // Maintain the list of global-log-entry parent IDs, but in reverse order as in
+        // GlobalLogEntry for easier management here.
+        List<ByteString> globalParentsReverse = new ArrayList<>(config.getParentsPerGlobalCommit());
+        globalParentsReverse.add(NO_ANCESTOR.asBytes());
+
+        GlobalStateLogEntry.Builder currentEntry =
+            newGlobalLogEntryBuilder(commitTimeInMicros()).addParents(globalParentsReverse.get(0));
+
+        for (String cid : contentIdsByRecency) {
+          if (currentEntry.buildPartial().getSerializedSize() >= config.getGlobalLogEntrySize()) {
+            compactGlobalLogWriteEntry(ctx, stats, globalParentsReverse, currentEntry, newLogIds);
+
+            // Prepare new entry
+            currentEntry = newGlobalLogEntryBuilder(commitTimeInMicros());
+            for (int i = globalParentsReverse.size() - 1; i >= 0; i--) {
+              currentEntry.addParents(globalParentsReverse.get(i));
+            }
+          }
+
+          ByteString value = globalContents.get(cid);
+          currentEntry.addPuts(
+              ContentIdWithBytes.newBuilder()
+                  .setContentId(AdapterTypes.ContentId.newBuilder().setId(cid))
+                  .setTypeUnused(0)
+                  .setValue(value)
+                  .build());
+        }
+
+        compactGlobalLogWriteEntry(ctx, stats, globalParentsReverse, currentEntry, newLogIds);
+
+        GlobalStatePointer newPointer =
+            GlobalStatePointer.newBuilder()
+                .addAllNamedReferences(pointer.getNamedReferencesList())
+                .addAllRefLogParentsInclHead(pointer.getRefLogParentsInclHeadList())
+                .setRefLogId(pointer.getRefLogId())
+                .setGlobalId(currentEntry.getId())
+                .addGlobalParentsInclHead(currentEntry.getId())
+                .addAllGlobalParentsInclHead(currentEntry.getParentsList())
+                .build();
+
+        stats.addToTotal();
+
+        // CAS global pointer
+        if (globalPointerCas(ctx, pointer, newPointer)) {
+          tryState.success(null);
+          cleanUpGlobalLog(ctx, oldLogIds);
+          return stats.asMap(tryState);
+        }
+
+        // Note: if it turns out that there are too many CAS retries happening, the overall
+        // mechanism can be updated as follows. Since the approach below is much more complex
+        // and harder to test, if's not part of the initial implementation.
+        //
+        // 1. Read the whole global-log as currently, but outside the actual CAS-loop.
+        //    Save the current HEAD of the global-log
+        // 2. CAS-loop:
+        // 2.1. Construct and write the new global-log
+        // 2.2. Try the CAS, if it succeeds, fine
+        // 2.3. If the CAS failed:
+        // 2.3.1. Clean up the optimistically written new global-log
+        // 2.3.2. Read the global-log from its new HEAD up to the current HEAD from step 1.
+        //        Only add the most-recent values for the content-IDs in the incrementally
+        //        read global-log
+        // 2.3.3. Remember the "new HEAD" as the "current HEAD"
+        // 2.3.4. Continue to step 2.1.
+
+        cleanUpGlobalLog(ctx, newLogIds.stream().map(Hash::of).collect(Collectors.toList()));
+        stats.onRetry();
+        tryState.retry();
+      }
+    } catch (ReferenceConflictException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private void compactGlobalLogWriteEntry(
+      NonTransactionalOperationContext ctx,
+      CompactionStats stats,
+      List<ByteString> globalParentsReverse,
+      Builder currentEntry,
+      List<ByteString> newLogIds)
+      throws ReferenceConflictException {
+    writeGlobalCommit(ctx, currentEntry.build());
+    newLogIds.add(currentEntry.getId());
+    stats.written++;
+
+    if (globalParentsReverse.size() == config.getParentsPerGlobalCommit()) {
+      globalParentsReverse.remove(0);
+    }
+    globalParentsReverse.add(currentEntry.getId());
+  }
+
+  private static final class CompactionStats {
+    long written;
+    long read;
+    long puts;
+    long uniquePuts;
+    long totalWritten;
+    long totalRead;
+
+    Map<String, String> asMap(TryLoopState tryState) {
+      return ImmutableMap.of(
+          "compacted",
+          "true",
+          "entries.written",
+          Long.toString(written),
+          "entries.read",
+          Long.toString(read),
+          "entries.puts",
+          Long.toString(puts),
+          "entries.uniquePuts",
+          Long.toString(uniquePuts),
+          "entries.written.total",
+          Long.toString(totalWritten),
+          "entries.read.total",
+          Long.toString(totalRead),
+          "duration.millis",
+          Long.toString(tryState.getDuration(TimeUnit.MILLISECONDS)),
+          "cas-retries",
+          Long.toString(tryState.getRetries()));
+    }
+
+    public void addToTotal() {
+      totalRead += read;
+      totalWritten += written;
+    }
+
+    void onRetry() {
+      read = written = puts = uniquePuts = 0;
+    }
   }
 
   @Override

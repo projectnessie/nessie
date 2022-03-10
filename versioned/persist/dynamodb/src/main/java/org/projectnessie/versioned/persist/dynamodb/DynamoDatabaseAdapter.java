@@ -29,6 +29,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -293,6 +294,14 @@ public class DynamoDatabaseAdapter
       newKeyLists.forEach(h -> batchDelete.add(TABLE_KEY_LISTS, h));
       batchDelete.add(TABLE_GLOBAL_LOG, globalId);
       batchDelete.add(TABLE_REF_LOG, refLogId);
+    }
+  }
+
+  @Override
+  protected void doCleanUpGlobalLog(
+      NonTransactionalOperationContext ctx, Collection<Hash> globalIds) {
+    try (BatchDelete batchDelete = new BatchDelete()) {
+      globalIds.forEach(h -> batchDelete.add(TABLE_GLOBAL_LOG, h));
     }
   }
 

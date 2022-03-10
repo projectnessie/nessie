@@ -26,6 +26,7 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -244,6 +245,24 @@ public class RocksDatabaseAdapter
         batch.delete(dbInstance.getCfKeyList(), dbKey(h));
       }
       batch.delete(dbInstance.getCfRefLog(), dbKey(refLogId));
+      db.write(new WriteOptions(), batch);
+    } catch (RocksDBException e) {
+      throw new RuntimeException(e);
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  @Override
+  protected void doCleanUpGlobalLog(
+      NonTransactionalOperationContext ctx, Collection<Hash> globalIds) {
+    Lock lock = dbInstance.getLock().writeLock();
+    lock.lock();
+    try {
+      WriteBatch batch = new WriteBatch();
+      for (Hash h : globalIds) {
+        batch.delete(dbInstance.getCfGlobalLog(), dbKey(h));
+      }
       db.write(new WriteOptions(), batch);
     } catch (RocksDBException e) {
       throw new RuntimeException(e);

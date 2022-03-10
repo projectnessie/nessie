@@ -22,6 +22,7 @@ import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.t
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -138,6 +139,12 @@ public class InmemoryDatabaseAdapter
     branchCommits.forEach(h -> store.commitLog.remove(dbKey(h)));
     newKeyLists.forEach(h -> store.keyLists.remove(dbKey(h)));
     store.refLog.remove(dbKey(refLogId));
+  }
+
+  @Override
+  protected void doCleanUpGlobalLog(
+      NonTransactionalOperationContext ctx, Collection<Hash> globalIds) {
+    globalIds.forEach(h -> store.globalStateLog.remove(dbKey(h)));
   }
 
   @Override

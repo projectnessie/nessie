@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2022 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,17 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.persist.nontx;
+package org.projectnessie.versioned.persist.adapter;
 
 import org.immutables.value.Value;
-import org.projectnessie.versioned.persist.adapter.AdjustableDatabaseAdapterConfig;
 
 @Value.Immutable
-public interface AdjustableNonTransactionalDatabaseAdapterConfig
-    extends NonTransactionalDatabaseAdapterConfig, AdjustableDatabaseAdapterConfig {
+public interface RepoMaintenanceParams {
+  GlobalLogCompactionParams getGlobalLogCompactionParams();
 
-  AdjustableNonTransactionalDatabaseAdapterConfig withParentsPerGlobalCommit(
-      int parentsPerGlobalCommit);
-
-  AdjustableNonTransactionalDatabaseAdapterConfig withGlobalLogEntrySize(int globalLogEntrySize);
+  static ImmutableRepoMaintenanceParams.Builder builder() {
+    return ImmutableRepoMaintenanceParams.builder();
+  }
 }
