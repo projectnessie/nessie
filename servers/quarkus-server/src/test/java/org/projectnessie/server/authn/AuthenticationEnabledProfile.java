@@ -18,7 +18,7 @@ package org.projectnessie.server.authn;
 import com.google.common.collect.ImmutableMap;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import java.util.Map;
-import org.projectnessie.server.profiles.BaseConfigProfile;
+import org.projectnessie.quarkus.tests.profiles.BaseConfigProfile;
 
 /** A simple {@link QuarkusTestProfile} that enables Nessie authentication. */
 public class AuthenticationEnabledProfile implements QuarkusTestProfile {
