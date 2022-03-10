@@ -1271,10 +1271,15 @@ public abstract class NonTransactionalDatabaseAdapter<
     return refLogEntry;
   }
 
-  private static final RuntimeException COMPACTION_NOT_NECESSARY = new RuntimeException();
+  private static final RuntimeException COMPACTION_NOT_NECESSARY_LENGTH = new RuntimeException();
+  private static final RuntimeException COMPACTION_NOT_NECESSARY_WITHIN = new RuntimeException();
 
   protected Map<String, String> compactGlobalLog(
       GlobalLogCompactionParams globalLogCompactionParams) {
+    if (!globalLogCompactionParams.isEnabled()) {
+      return ImmutableMap.of("compacted", "false", "reason", "not enabled");
+    }
+
     // Not using casOpLoop() here, as it is simpler than adopting casOpLoop().
     try (TryLoopState tryState =
         newTryLoopState(
@@ -1308,7 +1313,7 @@ public abstract class NonTransactionalDatabaseAdapter<
                     && stats.puts > stats.read) {
                   // First page in the global-log contains at least one compacted entry, so
                   // do not compact.
-                  throw COMPACTION_NOT_NECESSARY;
+                  throw COMPACTION_NOT_NECESSARY_WITHIN;
                 }
                 stats.read++;
                 oldLogIds.add(Hash.of(e.getId()));
@@ -1325,12 +1330,27 @@ public abstract class NonTransactionalDatabaseAdapter<
           if (stats.read < globalLogCompactionParams.getNoCompactionUpToLength()) {
             // Global log does not have more global-log entries than can be fetched with a
             // single-bulk read, so do not compact at all.
-            throw COMPACTION_NOT_NECESSARY;
+            throw COMPACTION_NOT_NECESSARY_LENGTH;
           }
         } catch (RuntimeException e) {
-          if (e == COMPACTION_NOT_NECESSARY) {
+          if (e == COMPACTION_NOT_NECESSARY_WITHIN) {
             tryState.success(null);
-            return Collections.singletonMap("compacted", "false");
+            return ImmutableMap.of(
+                "compacted",
+                "false",
+                "reason",
+                String.format(
+                    "compacted entry within %d most recent log entries",
+                    globalLogCompactionParams.getNoCompactionWhenCompactedWithin()));
+          }
+          if (e == COMPACTION_NOT_NECESSARY_LENGTH) {
+            tryState.success(null);
+            return ImmutableMap.of(
+                "compacted",
+                "false",
+                "reason",
+                String.format(
+                    "less than %d entries", globalLogCompactionParams.getNoCompactionUpToLength()));
           }
           throw e;
         }
@@ -1472,25 +1492,6 @@ public abstract class NonTransactionalDatabaseAdapter<
 
     void onRetry() {
       read = written = puts = uniquePuts = 0;
-    }
-  }
-
-  private void compactGlobalLogFlushEntry(
-      List<Builder> batchEntries,
-      GlobalStatePointer.Builder newPointer,
-      NonTransactionalOperationContext ctx,
-      Consumer<Hash> writtenId) {
-    try {
-      GlobalStateLogEntry toFlush = batchEntries.remove(0).build();
-      if (newPointer.getGlobalId().isEmpty()) {
-        newPointer.setGlobalId(toFlush.getId());
-        newPointer.addGlobalParentsInclHead(toFlush.getId());
-        newPointer.addAllGlobalParentsInclHead(toFlush.getParentsList());
-      }
-      writtenId.accept(Hash.of(toFlush.getId()));
-      writeGlobalCommit(ctx, toFlush);
-    } catch (ReferenceConflictException ex) {
-      throw new RuntimeException(ex);
     }
   }
 

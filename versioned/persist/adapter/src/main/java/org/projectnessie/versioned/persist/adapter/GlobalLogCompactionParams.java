@@ -23,6 +23,11 @@ public interface GlobalLogCompactionParams {
   int DEFAULT_NO_COMPACTION_WHEN_COMPACTED_WITHIN = 50;
   int DEFAULT_NO_COMPACTION_UP_TO_LENGTH = 50;
 
+  @Value.Default
+  default boolean isEnabled() {
+    return true;
+  }
+
   /**
    * When the global-log contains a compacted entry within this number of entries, global-log
    * compaction will not happen, defaults to {@value #DEFAULT_NO_COMPACTION_WHEN_COMPACTED_WITHIN}.
