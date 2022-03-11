@@ -43,7 +43,7 @@ class ContentKeyParamType(click.ParamType):
     name = "content_key"
 
     # pylint: disable=R1710
-    def convert(self: "ContentKeyParamType", value: Any, param: Optional[Parameter], ctx: Optional[Context]) -> ContentKey:
+    def convert(self, value: Any, param: Optional[Parameter], ctx: Optional[Context]) -> ContentKey:
         """Convert incoming param into ContentKey type."""
         if isinstance(value, ContentKey):
             return value

@@ -42,12 +42,12 @@ class ContextObject:
 class MutuallyExclusiveOption(Option):
     """Only allow one option in a list to be set at once."""
 
-    def __init__(self: "MutuallyExclusiveOption", *args: List, **kwargs: Dict) -> None:
+    def __init__(self, *args: List, **kwargs: Dict) -> None:
         """Instantiated a mutually exclusive option."""
         self.mutually_exclusive = set(kwargs.pop("mutually_exclusive", []))
         super().__init__(*args, **kwargs)  # type: ignore
 
-    def handle_parse_result(self: "MutuallyExclusiveOption", ctx: click.Context, opts: Mapping, args: List) -> Tuple[Any, List[str]]:
+    def handle_parse_result(self, ctx: click.Context, opts: Mapping, args: List) -> Tuple[Any, List[str]]:
         """Ensure mutually exclusive options are not used together."""
         if self.mutually_exclusive.intersection(opts) and self.name in opts:
             raise UsageError(
@@ -60,7 +60,7 @@ class MutuallyExclusiveOption(Option):
 class DefaultHelp(click.Command):
     """If no options are presented show help."""
 
-    def __init__(self: "DefaultHelp", *args: List, **kwargs: Dict) -> None:
+    def __init__(self, *args: List, **kwargs: Dict) -> None:
         """Ensure that help is shown if nothing else is selected."""
         context_settings = kwargs.setdefault("context_settings", {})
         if "help_option_names" not in context_settings:
@@ -68,7 +68,7 @@ class DefaultHelp(click.Command):
         self.help_flag = context_settings["help_option_names"][0]
         super().__init__(*args, **kwargs)  # type: ignore
 
-    def parse_args(self: "DefaultHelp", ctx: click.Context, args: List) -> List:
+    def parse_args(self, ctx: click.Context, args: List) -> List:
         """Ensure that help is shown if nothing else is selected."""
         if not args:
             args = [self.help_flag]
