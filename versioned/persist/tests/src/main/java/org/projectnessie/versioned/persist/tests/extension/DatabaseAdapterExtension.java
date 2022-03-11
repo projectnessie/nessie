@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionConfigurationException;
@@ -67,7 +68,7 @@ import org.projectnessie.versioned.persist.tests.SystemPropertiesConfigurer;
  * org.junit.jupiter.api.extension.ExtendWith @ExtendWith}.
  */
 public class DatabaseAdapterExtension
-    implements BeforeAllCallback, BeforeEachCallback, ParameterResolver {
+    implements BeforeAllCallback, BeforeEachCallback, AfterEachCallback, ParameterResolver {
   private static final Namespace NAMESPACE = Namespace.create(DatabaseAdapterExtension.class);
   private static final String KEY_STATICS = "static-adapters";
 
@@ -153,6 +154,15 @@ public class DatabaseAdapterExtension
                                     reinit(adapter);
                                   }
                                 })));
+  }
+
+  @Override
+  public void afterEach(ExtensionContext context) {
+    context
+        .getStore(NAMESPACE)
+        .get(KEY_STATICS, ClassDbAdapters.class)
+        .adapters
+        .forEach(DatabaseAdapter::assertCleanStateForTests);
   }
 
   @Override

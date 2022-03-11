@@ -665,6 +665,17 @@ public abstract class TxDatabaseAdapter
     return Collections.emptyMap();
   }
 
+  @Override
+  public void assertCleanStateForTests() {
+    if (ConnectionWrapper.threadHasOpenConnection()) {
+      try {
+        throw new IllegalStateException("Current thread has unclosed database connection");
+      } finally {
+        ConnectionWrapper.borrow(() -> null).forceClose();
+      }
+    }
+  }
+
   private ContentIdAndBytes globalContentFromRow(ResultSet rs) throws SQLException {
     ContentId cid = ContentId.of(rs.getString(1));
     ByteString value = UnsafeByteOperations.unsafeWrap(rs.getBytes(2));
