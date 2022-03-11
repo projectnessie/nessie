@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.persist.adapter.spi;
 
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static org.projectnessie.versioned.persist.adapter.KeyFilterPredicate.ALLOW_ALL;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterMetrics.tryLoopFinished;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.hashKey;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.hashNotFound;
@@ -27,6 +28,7 @@ import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUti
 import static org.projectnessie.versioned.persist.adapter.spi.Traced.trace;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Sets;
 import com.google.common.hash.Hasher;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.UnsafeByteOperations;
@@ -52,6 +54,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -275,7 +278,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     Set<Key> keysTouchedOnTarget = collectModifiedKeys(toEntriesReverseChronological);
 
     // 5. check for key-collisions
-    checkForKeyCollisions(keysTouchedOnTarget, commitsToMergeChronological);
+    checkForKeyCollisions(ctx, toHead, keysTouchedOnTarget, commitsToMergeChronological);
 
     // (no need to verify the global states during a transplant)
     // 6. re-apply commits in 'sequenceToTransplant' onto 'targetBranch'
@@ -352,7 +355,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
             .collect(Collectors.toList());
 
     // 5. check for key-collisions
-    checkForKeyCollisions(keysTouchedOnTarget, commitsToTransplantChronological);
+    checkForKeyCollisions(ctx, targetHead, keysTouchedOnTarget, commitsToTransplantChronological);
 
     // (no need to verify the global states during a transplant)
     // 6. re-apply commits in 'sequenceToTransplant' onto 'targetBranch'
@@ -1445,8 +1448,11 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
    *     chronological order
    */
   protected void checkForKeyCollisions(
-      Set<Key> keysTouchedOnTarget, List<CommitLogEntry> commitsChronological)
-      throws ReferenceConflictException {
+      OP_CONTEXT ctx,
+      Hash refHead,
+      Set<Key> keysTouchedOnTarget,
+      List<CommitLogEntry> commitsChronological)
+      throws ReferenceConflictException, ReferenceNotFoundException {
     Set<Key> keyCollisions = new HashSet<>();
     for (int i = commitsChronological.size() - 1; i >= 0; i--) {
       CommitLogEntry sourceCommit = commitsChronological.get(i);
@@ -1456,14 +1462,54 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
           .filter(keysTouchedOnTarget::contains)
           .forEach(keyCollisions::add);
     }
+
     if (!keyCollisions.isEmpty()) {
-      throw new ReferenceConflictException(
-          String.format(
-              "The following keys have been changed in conflict: %s",
-              keyCollisions.stream()
-                  .map(k -> String.format("'%s'", k.toString()))
-                  .collect(Collectors.joining(", "))));
+      removeKeyCollisionsForNamespaces(
+          ctx,
+          refHead,
+          commitsChronological.get(commitsChronological.size() - 1).getHash(),
+          keyCollisions);
+      if (!keyCollisions.isEmpty()) {
+        throw new ReferenceConflictException(
+            String.format(
+                "The following keys have been changed in conflict: %s",
+                keyCollisions.stream()
+                    .map(k -> String.format("'%s'", k.toString()))
+                    .collect(Collectors.joining(", "))));
+      }
     }
+  }
+
+  /**
+   * If any key collision was found, we need to check whether the key collision was happening on a
+   * {@link ContentType#NAMESPACE} and if so, remove that key collision, since Namespaces can be
+   * merged/transplanted without problems.
+   *
+   * @param ctx The context
+   * @param hashFromTarget The hash from the target branch
+   * @param hashFromSource The hash from the source branch
+   * @param keyCollisions The found key collisions
+   * @throws ReferenceNotFoundException If the given reference could not be found
+   */
+  private void removeKeyCollisionsForNamespaces(
+      OP_CONTEXT ctx, Hash hashFromTarget, Hash hashFromSource, Set<Key> keyCollisions)
+      throws ReferenceNotFoundException {
+    Predicate<Entry<Key, ContentAndState<ByteString>>> isNamespace =
+        e -> contentVariantSupplier.isNamespace(e.getValue().getRefState());
+    Set<Key> namespacesOnTarget =
+        fetchValues(ctx, hashFromTarget, keyCollisions, ALLOW_ALL).entrySet().stream()
+            .filter(isNamespace)
+            .map(Entry::getKey)
+            .collect(Collectors.toSet());
+
+    Set<Key> namespacesOnSource =
+        fetchValues(ctx, hashFromSource, keyCollisions, ALLOW_ALL).entrySet().stream()
+            .filter(isNamespace)
+            .map(Entry::getKey)
+            .collect(Collectors.toSet());
+
+    // remove all keys related to namespaces from the existing collisions
+    Sets.intersection(namespacesOnTarget, namespacesOnSource).forEach(keyCollisions::remove);
   }
 
   /**

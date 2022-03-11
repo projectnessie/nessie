@@ -28,9 +28,14 @@ import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieNamespaceAlreadyExistsException;
 import org.projectnessie.error.NessieNamespaceNotEmptyException;
 import org.projectnessie.error.NessieNamespaceNotFoundException;
+import org.projectnessie.error.NessieReferenceConflictException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.EntriesResponse.Entry;
+import org.projectnessie.model.IcebergTable;
+import org.projectnessie.model.LogResponse;
+import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Operation.Put;
 
@@ -168,5 +173,73 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
           .isInstanceOf(NessieNamespaceNotEmptyException.class)
           .hasMessage(String.format("Namespace '%s' is not empty", namespace));
     }
+  }
+
+  @Test
+  public void testNamespaceMerge() throws BaseNessieClientServerException {
+    Branch base = createBranch("merge-base");
+    Branch branch = createBranch("merge-branch");
+    Namespace ns = Namespace.parse("a.b.c");
+    // create the same namespace on both branches
+    getApi().createNamespace().namespace(ns).refName(branch.getName()).create();
+    getApi().createNamespace().namespace(ns).refName(base.getName()).create();
+
+    base = (Branch) getApi().getReference().refName(base.getName()).get();
+    branch = (Branch) getApi().getReference().refName(branch.getName()).get();
+    getApi().mergeRefIntoBranch().branch(base).fromRef(branch).merge();
+
+    LogResponse log =
+        getApi().getCommitLog().refName(base.getName()).untilHash(base.getHash()).get();
+    String expectedCommitMsg = "create namespace a.b.c";
+    assertThat(
+            log.getLogEntries().stream().map(LogEntry::getCommitMeta).map(CommitMeta::getMessage))
+        .containsExactly(expectedCommitMsg, expectedCommitMsg);
+
+    assertThat(
+            getApi().getEntries().refName(base.getName()).get().getEntries().stream()
+                .map(Entry::getName))
+        .containsExactly(ContentKey.of(ns.getElements()));
+
+    assertThat(getApi().getNamespace().refName(base.getName()).namespace(ns).get()).isNotNull();
+  }
+
+  @Test
+  public void testNamespaceMergeWithConflict() throws BaseNessieClientServerException {
+    Branch base = createBranch("merge-base");
+    Branch branch = createBranch("merge-branch");
+    Namespace ns = Namespace.parse("a.b.c");
+    // create a namespace on the base branch
+    getApi().createNamespace().namespace(ns).refName(base.getName()).create();
+    base = (Branch) getApi().getReference().refName(base.getName()).get();
+
+    // create a table with the same name on the other branch
+    IcebergTable table = IcebergTable.of("merge-table1", 42, 42, 42, 42);
+    branch =
+        getApi()
+            .commitMultipleOperations()
+            .branchName(branch.getName())
+            .hash(branch.getHash())
+            .commitMeta(CommitMeta.fromMessage("test-merge-branch1"))
+            .operation(Put.of(ContentKey.of("a", "b", "c"), table))
+            .commit();
+    Branch finalBase = base;
+    Branch finalBranch = branch;
+    assertThatThrownBy(
+            () -> getApi().mergeRefIntoBranch().branch(finalBase).fromRef(finalBranch).merge())
+        .isInstanceOf(NessieReferenceConflictException.class)
+        .hasMessage("The following keys have been changed in conflict: 'a.b.c'");
+
+    LogResponse log =
+        getApi().getCommitLog().refName(base.getName()).untilHash(base.getHash()).get();
+    // merging should not have been possible ("test-merge-branch1" shouldn't be in the commits)
+    assertThat(
+            log.getLogEntries().stream().map(LogEntry::getCommitMeta).map(CommitMeta::getMessage))
+        .containsExactly("create namespace a.b.c");
+
+    List<Entry> entries = getApi().getEntries().refName(base.getName()).get().getEntries();
+    assertThat(entries.stream().map(Entry::getName))
+        .containsExactly(ContentKey.of(ns.getElements()));
+
+    assertThat(getApi().getNamespace().refName(base.getName()).namespace(ns).get()).isNotNull();
   }
 }
