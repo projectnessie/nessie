@@ -20,6 +20,7 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URI;
 
 import com.google.common.collect.ImmutableMap;
 import java.io.File;
+import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
@@ -79,9 +80,9 @@ public abstract class AbstractRestGC extends AbstractRest {
               // as metadata location will change based on new global state.
               expected.add(
                   RowFactory.create(
-                      null,
-                      null,
-                      null,
+                      "GC_CONTENT",
+                      Timestamp.from(Instant.now()),
+                      "dummyRunId",
                       content.getId(),
                       null,
                       content.getSnapshotId(),

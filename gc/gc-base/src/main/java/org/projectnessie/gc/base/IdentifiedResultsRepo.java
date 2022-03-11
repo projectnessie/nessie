@@ -16,6 +16,7 @@
 package org.projectnessie.gc.base;
 
 import static org.apache.iceberg.types.Types.NestedField.optional;
+import static org.apache.iceberg.types.Types.NestedField.required;
 
 import java.sql.Timestamp;
 import java.util.Arrays;
@@ -67,11 +68,11 @@ public final class IdentifiedResultsRepo {
                   // Type of information this row represents, marker row or content row.
                   // marker row indicates that identify task is completed for that run id
                   // and the results for that run id is consumable.
-                  optional(1, COL_TYPE, Types.StringType.get()),
+                  required(1, COL_TYPE, Types.StringType.get()),
                   // GC run start timestamp.
-                  optional(2, COL_GC_RUN_START, Types.TimestampType.withZone()),
+                  required(2, COL_GC_RUN_START, Types.TimestampType.withZone()),
                   // GC run-ID.
-                  optional(3, COL_GC_RUN_ID, Types.StringType.get()),
+                  required(3, COL_GC_RUN_ID, Types.StringType.get()),
                   // Nessie Content.id
                   optional(4, COL_CONTENT_ID, Types.StringType.get()),
                   // Nessie Content.type
@@ -113,9 +114,8 @@ public final class IdentifiedResultsRepo {
   public Dataset<Row> collectExpiredContentsAsDataSet(String runId) {
     // collect marker row for the given run-id
     // Example Query:
-    // SELECT contentId, expiredContents, expiredAtReferenceName FROM
-    // nessie.db1.`identified_results@someGcRef`
-    //    WHERE gcRunId = '9e809dc9-ac35-41c9-b1c0-5ebcf452ea2d' AND type = 'GC_CONTENT'
+    // SELECT gcRunId FROM nessie.db1.`identified_results@someGcRef`
+    //    WHERE gcRunId = '1a088e65-a6ea-42e9-819d-025f4e22eaec' AND type = 'GC_MARK'
     Dataset<Row> markerRow =
         sql(
             "SELECT %s FROM %s WHERE %s = '%s' AND %s = '%s'",
@@ -133,7 +133,7 @@ public final class IdentifiedResultsRepo {
     }
     // Example Query:
     // SELECT * FROM nessie.db1.`identified_results@someGcRef`
-    //    WHERE gcRunId = '1a088e65-a6ea-42e9-819d-025f4e22eaec' AND type = 'GC_MARK'
+    //    WHERE gcRunId = '9e809dc9-ac35-41c9-b1c0-5ebcf452ea2d' AND type = 'GC_CONTENT'
     return sql(
         "SELECT * FROM %s WHERE %s = '%s' AND %s = '%s'",
         catalogAndTableWithRefName,
