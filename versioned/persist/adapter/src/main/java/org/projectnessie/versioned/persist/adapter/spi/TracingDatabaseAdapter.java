@@ -251,4 +251,9 @@ public final class TracingDatabaseAdapter implements DatabaseAdapter {
       return delegate.repoMaintenance(repoMaintenanceParams);
     }
   }
+
+  @Override
+  public void assertCleanStateForTests() {
+    delegate.assertCleanStateForTests();
+  }
 }

@@ -39,6 +39,10 @@ public final class ConnectionWrapper implements AutoCloseable {
     return current;
   }
 
+  public static boolean threadHasOpenConnection() {
+    return INHERITED.get() != null;
+  }
+
   public Connection conn() {
     return connection;
   }
@@ -65,6 +69,10 @@ public final class ConnectionWrapper implements AutoCloseable {
       useCount--;
       return;
     }
+    forceClose();
+  }
+
+  public void forceClose() {
     try {
       try {
         connection.rollback();

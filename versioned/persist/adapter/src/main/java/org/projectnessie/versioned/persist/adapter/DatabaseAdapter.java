@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.persist.adapter;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.ByteString;
 import java.util.Collection;
 import java.util.List;
@@ -321,4 +322,7 @@ public interface DatabaseAdapter {
    * @param offset initial reflog id to read from
    */
   Stream<RefLog> refLog(Hash offset) throws RefLogNotFoundException;
+
+  @VisibleForTesting
+  void assertCleanStateForTests();
 }
