@@ -93,6 +93,7 @@ public abstract class AbstractRestGC extends AbstractRest {
   }
 
   void performGc(
+      String prefix,
       Instant cutoffTimeStamp,
       Map<String, Instant> cutOffTimeStampPerRef,
       List<Row> expectedDataSet,
@@ -116,7 +117,7 @@ public abstract class AbstractRestGC extends AbstractRest {
               .defaultCutOffTimestamp(cutoffTimeStamp)
               .nessieCatalogName("nessie")
               .outputTableRefName("gcRef")
-              .outputTableIdentifier("db1.gc_results")
+              .outputTableIdentifier(prefix + ".gc_results")
               .build();
       GCImpl gc = new GCImpl(gcParams);
       String runId = gc.identifyExpiredContents(sparkSession);

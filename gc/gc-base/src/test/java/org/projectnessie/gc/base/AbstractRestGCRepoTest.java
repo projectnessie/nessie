@@ -36,15 +36,16 @@ import org.projectnessie.model.ImmutableTableReference;
 public abstract class AbstractRestGCRepoTest extends AbstractRestGC {
 
   private final String catalogName = "nessie";
-  private final String identifierNameSpace = "db1";
   private final String identifierTableName = "identified_results";
-  private final String identifier = identifierNameSpace + "." + identifierTableName;
   private final String gcRefName = "someGcRef";
-  private final String catalogAndIdentifierWithReference = getCatalogAndIdentifierWithReference();
 
   @Test
   public void testGCRepoInProgressAndSuccess() {
-    checkAndCreateEmptyReference(getApi(), gcRefName);
+    final String identifierNameSpace = "db1";
+    final String identifier = identifierNameSpace + "." + identifierTableName;
+    final String catalogAndIdentifierWithReference =
+        getCatalogAndIdentifierWithReference(identifierNameSpace);
+    getOrCreateEmptyReference(getApi(), gcRefName);
     SparkSession sparkSession = null;
     try {
       sparkSession = getSparkSession();
@@ -53,7 +54,11 @@ public abstract class AbstractRestGCRepoTest extends AbstractRestGC {
       String runId = UUID.randomUUID().toString();
       Timestamp startAt = Timestamp.from(Instant.now());
       // write 5 rows to table without a marker row
-      writeRows(sparkSession, identifiedResultsRepo, getRows(runId, startAt, 5));
+      writeRows(
+          sparkSession,
+          identifiedResultsRepo,
+          createRows(runId, startAt, 5),
+          catalogAndIdentifierWithReference);
 
       // try to collect in-progress results.
       Dataset<Row> identifiedResult = identifiedResultsRepo.collectExpiredContentsAsDataSet(runId);
@@ -64,7 +69,7 @@ public abstract class AbstractRestGCRepoTest extends AbstractRestGC {
       assertThat(identifiedResultsRepo.getLatestCompletedRunID()).isNull();
 
       // write marker row
-      writeMarkerRow(sparkSession, identifiedResultsRepo, runId);
+      writeMarkerRow(sparkSession, identifiedResultsRepo, runId, catalogAndIdentifierWithReference);
 
       assertThat(identifiedResultsRepo.getLatestCompletedRunID()).isEqualTo(runId);
 
@@ -82,7 +87,11 @@ public abstract class AbstractRestGCRepoTest extends AbstractRestGC {
 
   @Test
   public void testGCRepoMultipleRuns() {
-    checkAndCreateEmptyReference(getApi(), gcRefName);
+    final String identifierNameSpace = "db2";
+    final String identifier = identifierNameSpace + "." + identifierTableName;
+    final String catalogAndIdentifierWithReference =
+        getCatalogAndIdentifierWithReference(identifierNameSpace);
+    getOrCreateEmptyReference(getApi(), gcRefName);
     SparkSession sparkSession = null;
     try {
       sparkSession = getSparkSession();
@@ -93,9 +102,10 @@ public abstract class AbstractRestGCRepoTest extends AbstractRestGC {
         String runId = UUID.randomUUID().toString();
         Timestamp startAt = Timestamp.from(Instant.now());
         runIds.add(runId);
-        List<Row> rows = getRows(runId, startAt, i + 1);
-        writeRows(sparkSession, identifiedResultsRepo, rows);
-        writeMarkerRow(sparkSession, identifiedResultsRepo, runId);
+        List<Row> rows = createRows(runId, startAt, i + 1);
+        writeRows(sparkSession, identifiedResultsRepo, rows, catalogAndIdentifierWithReference);
+        writeMarkerRow(
+            sparkSession, identifiedResultsRepo, runId, catalogAndIdentifierWithReference);
       }
       AtomicInteger expectedRowCount = new AtomicInteger(1);
       runIds.forEach(
@@ -117,7 +127,7 @@ public abstract class AbstractRestGCRepoTest extends AbstractRestGC {
     }
   }
 
-  private List<Row> getRows(String runId, Timestamp startAt, int rowCount) {
+  private List<Row> createRows(String runId, Timestamp startAt, int rowCount) {
     List<Row> rows = new ArrayList<>();
     for (int i = 0; i < rowCount; i++) {
       String contentId = "SomeContentId_" + i;
@@ -139,18 +149,20 @@ public abstract class AbstractRestGCRepoTest extends AbstractRestGC {
     return rows;
   }
 
-  private static List<Row> getMarkerRow(String runId) {
-    return Collections.singletonList(
-        RowFactory.create(
-            "GC_MARK", Timestamp.from(Instant.now()), runId, null, null, null, null, null, null));
+  private static Row createMarkerRow(String runId) {
+    return RowFactory.create(
+        "GC_MARK", Timestamp.from(Instant.now()), runId, null, null, null, null, null, null);
   }
 
   private void writeMarkerRow(
-      SparkSession sparkSession, IdentifiedResultsRepo identifiedResultsRepo, String runId) {
+      SparkSession sparkSession,
+      IdentifiedResultsRepo identifiedResultsRepo,
+      String runId,
+      String catalogAndIdentifierWithReference) {
     try {
-      List<Row> row = getMarkerRow(runId);
+      Row row = createMarkerRow(runId);
       sparkSession
-          .createDataFrame(row, identifiedResultsRepo.getSchema())
+          .createDataFrame(Collections.singletonList(row), identifiedResultsRepo.getSchema())
           .writeTo(catalogAndIdentifierWithReference)
           .append();
     } catch (NoSuchTableException e) {
@@ -159,7 +171,10 @@ public abstract class AbstractRestGCRepoTest extends AbstractRestGC {
   }
 
   private void writeRows(
-      SparkSession sparkSession, IdentifiedResultsRepo identifiedResultsRepo, List<Row> rows) {
+      SparkSession sparkSession,
+      IdentifiedResultsRepo identifiedResultsRepo,
+      List<Row> rows,
+      String catalogAndIdentifierWithReference) {
     try {
       sparkSession
           .createDataFrame(rows, identifiedResultsRepo.getSchema())
@@ -170,7 +185,7 @@ public abstract class AbstractRestGCRepoTest extends AbstractRestGC {
     }
   }
 
-  private String getCatalogAndIdentifierWithReference() {
+  private String getCatalogAndIdentifierWithReference(String identifierNameSpace) {
     return catalogName
         + "."
         + identifierNameSpace

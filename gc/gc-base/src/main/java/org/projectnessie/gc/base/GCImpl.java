@@ -118,7 +118,7 @@ public class GCImpl {
       Map<String, ContentBloomFilter> liveContentsBloomFilterMap =
           distributedIdentifyContents.getLiveContentsBloomFilters(
               allRefs, bloomFilterSize, droppedReferenceTimeMap);
-      checkAndCreateGcReference(api, gcParams.getOutputTableRefName());
+      getOrCreateEmptyReference(api, gcParams.getOutputTableRefName());
       // Identify the expired contents
       return distributedIdentifyContents.identifyExpiredContents(
           liveContentsBloomFilterMap, allRefs);
@@ -198,7 +198,7 @@ public class GCImpl {
             Math.floorMod(microsSinceEpoch, TimeUnit.SECONDS.toMicros(1))));
   }
 
-  private static void checkAndCreateGcReference(NessieApiV1 api, String refName) {
+  private static void getOrCreateEmptyReference(NessieApiV1 api, String refName) {
     try {
       api.getReference().refName(refName).get();
     } catch (NessieNotFoundException e) {

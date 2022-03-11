@@ -163,7 +163,7 @@ public abstract class AbstractRest {
     return createBranch(name, null);
   }
 
-  protected static void checkAndCreateEmptyReference(NessieApiV1 api, String refName) {
+  protected static void getOrCreateEmptyReference(NessieApiV1 api, String refName) {
     try {
       api.getReference().refName(refName).get();
     } catch (NessieNotFoundException e) {

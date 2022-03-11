@@ -242,7 +242,7 @@ public class IdentifyContentsPerExecutor implements Serializable {
     // there can be some more commits in the backend.
     // Checking them against bloom filter will give false results.
     // Hence, protect those commits using commitProtectionTime.
-    Predicate<LogResponse.LogEntry> getUnprotectedCommits =
+    Predicate<LogResponse.LogEntry> unprotectedCommitsPredicate =
         logEntry -> logEntry.getCommitMeta().getCommitTime().compareTo(commitProtectionTime) < 0;
     // when no live bloom filter exist for this content id, all the contents are
     // definitely expired.
@@ -255,7 +255,7 @@ public class IdentifyContentsPerExecutor implements Serializable {
     // Worst case few expired contents will be considered live due to bloom filter
     // fpp.
     // But live contents never be considered as expired.
-    Predicate<Content> getExpiredContent =
+    Predicate<Content> expiredContentPredicate =
         content ->
             (liveContentsBloomFilterMap.get(content.getId()) == null
                 || liveContentsBloomFilterMap.get(content.getId()).mightContain(content));
@@ -269,16 +269,16 @@ public class IdentifyContentsPerExecutor implements Serializable {
                           .refName(Detached.REF_NAME)
                           .fetch(FetchOption.ALL),
                   OptionalInt.empty())
-              .filter(getUnprotectedCommits)
+              .filter(unprotectedCommitsPredicate)
               .map(LogResponse.LogEntry::getOperations)
               .filter(operation -> operation instanceof Operation.Put)
               .map(op -> (Operation.Put) op)
               .map(Operation.Put::getContent)
               .filter(
                   content ->
-                      (content.getType().equals(Content.Type.ICEBERG_TABLE)
-                          || content.getType().equals(Content.Type.ICEBERG_VIEW)))
-              .filter(getExpiredContent)
+                      (content.getType() == Content.Type.ICEBERG_TABLE
+                          || content.getType() == Content.Type.ICEBERG_VIEW))
+              .filter(expiredContentPredicate)
               .iterator();
 
       return new Iterator<Row>() {

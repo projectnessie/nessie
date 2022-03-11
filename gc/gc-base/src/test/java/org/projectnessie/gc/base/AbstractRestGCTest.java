@@ -116,10 +116,10 @@ public abstract class AbstractRestGCTest extends AbstractRestGCRepoTest {
     dropTableCommit(prefix, branch1, table2.hash, TABLE_TWO);
 
     // test GC with commit protection. No commits should be expired.
-    performGc(cutoffTime, null, Collections.emptyList(), false, null);
+    performGc(prefix, cutoffTime, null, Collections.emptyList(), false, null);
 
     // test GC without commit protection.
-    performGc(cutoffTime, null, expectedResult, true, null);
+    performGc(prefix, cutoffTime, null, expectedResult, true, null);
   }
 
   @Test
@@ -187,7 +187,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGCRepoTest {
             TABLE_TWO);
 
     // rename table should not expire the live commits after cutoff timestamp.
-    performGc(cutoffTime, null, expectedResult, true, null);
+    performGc(prefix, cutoffTime, null, expectedResult, true, null);
   }
 
   @Test
@@ -255,7 +255,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGCRepoTest {
             table2.content,
             null);
 
-    performGc(cutoffTime, null, expectedResult, true, null);
+    performGc(prefix, cutoffTime, null, expectedResult, true, null);
   }
 
   @Test
@@ -313,7 +313,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGCRepoTest {
             table1.content,
             null);
 
-    performGc(cutoffTime, null, expectedResult, true, null);
+    performGc(prefix, cutoffTime, null, expectedResult, true, null);
   }
 
   @Test
@@ -357,7 +357,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGCRepoTest {
 
     final Instant cutoffTime = Instant.now();
 
-    performGc(cutoffTime, null, expectedResult, true, null);
+    performGc(prefix, cutoffTime, null, expectedResult, true, null);
   }
 
   @Test
@@ -402,7 +402,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGCRepoTest {
     // delete branch before cutoff time
     deleteBranch(branch1.getName(), table2.hash);
 
-    performGc(cutoffTime, null, expectedResult, true, null);
+    performGc(prefix, cutoffTime, null, expectedResult, true, null);
   }
 
   @Test
@@ -464,7 +464,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGCRepoTest {
     // delete branch before cutoff time
     deleteBranch(branch1.getName(), table2.hash);
 
-    performGc(cutoffTime, null, expectedResult, true, deadRefCutoffTime);
+    performGc(prefix, cutoffTime, null, expectedResult, true, deadRefCutoffTime);
   }
 
   @Test
@@ -570,7 +570,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGCRepoTest {
     // drop table TABLE_ONE on branch1 should not affect as it is performed after cutoff timestamp.
     dropTableCommit(prefix, branch1, b1table1.hash, TABLE_ONE);
 
-    performGc(cutoffTime, null, expectedResult, true, null);
+    performGc(prefix, cutoffTime, null, expectedResult, true, null);
   }
 
   @Test
@@ -669,7 +669,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGCRepoTest {
             b2table1.content,
             null);
 
-    performGc(cutoffTime, null, expectedResult, true, null);
+    performGc(prefix, cutoffTime, null, expectedResult, true, null);
   }
 
   @Test
@@ -758,7 +758,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGCRepoTest {
             table2.content,
             null);
 
-    performGc(defaultCutoffTime, perRefCutoffTime, expectedResult, true, null);
+    performGc(prefix, defaultCutoffTime, perRefCutoffTime, expectedResult, true, null);
   }
 
   @Test
@@ -857,6 +857,6 @@ public abstract class AbstractRestGCTest extends AbstractRestGCRepoTest {
     // drop ref branch1 should not affect as it is performed after cutoff timestamp.
     deleteBranch(branch1.getName(), table1.hash);
 
-    performGc(cutoffTime, null, expectedResult, true, null);
+    performGc(prefix, cutoffTime, null, expectedResult, true, null);
   }
 }

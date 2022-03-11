@@ -94,10 +94,9 @@ public final class IdentifiedResultsRepo {
 
   public IdentifiedResultsRepo(
       SparkSession sparkSession, String catalog, String gcRefName, String gcTable) {
-    String catalogAndTable = String.format("%s.%s", catalog, gcTable);
     this.sparkSession = sparkSession;
-    this.catalogAndTableWithRefName = withRefName(catalogAndTable, gcRefName);
-    checkAndCreateTable(sparkSession, catalog, TableIdentifier.parse(gcTable), gcRefName);
+    this.catalogAndTableWithRefName = withRefName(catalog, gcTable, gcRefName);
+    createTableIfAbsent(sparkSession, catalog, TableIdentifier.parse(gcTable), gcRefName);
   }
 
   public StructType getSchema() {
@@ -184,7 +183,7 @@ public final class IdentifiedResultsRepo {
       rowDataset.writeTo(catalogAndTableWithRefName).append();
       // write marker row
       sparkSession
-          .createDataFrame(Collections.singletonList(getMarkerRow(runId, startedAt)), schema)
+          .createDataFrame(Collections.singletonList(createMarkerRow(runId, startedAt)), schema)
           .writeTo(catalogAndTableWithRefName)
           .append();
     } catch (NoSuchTableException e) {
@@ -214,12 +213,12 @@ public final class IdentifiedResultsRepo {
         hash);
   }
 
-  private static Row getMarkerRow(String runID, Timestamp startedAt) {
+  private static Row createMarkerRow(String runID, Timestamp startedAt) {
     return RowFactory.create(
         IdentifiedResultsRepo.TYPE_GC_MARKER, startedAt, runID, null, null, null, null, null, null);
   }
 
-  private void checkAndCreateTable(
+  private void createTableIfAbsent(
       SparkSession sparkSession,
       String catalogName,
       TableIdentifier tableIdentifier,
@@ -238,13 +237,15 @@ public final class IdentifiedResultsRepo {
     }
   }
 
-  private static String withRefName(String catalogAndTable, String refName) {
-    int tableNameIndex = catalogAndTable.lastIndexOf(".") + 1;
-    return catalogAndTable.substring(0, tableNameIndex)
-        + ImmutableTableReference.builder()
-            .name(catalogAndTable.substring(tableNameIndex))
-            .reference(refName)
-            .build();
+  private static String withRefName(String catalog, String identifier, String refName) {
+    int tableNameIndex = identifier.lastIndexOf(".");
+    String namespace = identifier.substring(0, tableNameIndex);
+    String tableName = identifier.substring(tableNameIndex + 1);
+    return catalog
+        + "."
+        + namespace
+        + "."
+        + ImmutableTableReference.builder().name(tableName).reference(refName).build();
   }
 
   private static Map<String, String> catalogConfWithRef(
