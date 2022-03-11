@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Callable;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -91,7 +92,7 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
       @Nonnull Optional<Hash> expectedHead,
       @Nonnull METADATA metadata,
       @Nonnull List<Operation<CONTENT>> operations,
-      @Nonnull Runnable validator)
+      @Nonnull Callable<Void> validator)
       throws ReferenceNotFoundException, ReferenceConflictException {
 
     ImmutableCommitAttempt.Builder commitAttempt =

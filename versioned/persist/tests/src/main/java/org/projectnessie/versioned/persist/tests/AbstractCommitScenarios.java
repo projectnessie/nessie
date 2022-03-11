@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.IntFunction;
 import java.util.stream.Collectors;
@@ -391,16 +392,12 @@ public abstract class AbstractCommitScenarios {
                     () -> {
                       // do some operations here
                       databaseAdapter.globalContent(ContentId.of(cid));
-                      try {
-                        assertThat(
-                                databaseAdapter.values(
-                                    branchHead,
-                                    Collections.singleton(key),
-                                    KeyFilterPredicate.ALLOW_ALL))
-                            .isEmpty();
-                      } catch (ReferenceNotFoundException e) {
-                        throw new RuntimeException(e);
-                      }
+                      assertThat(
+                              databaseAdapter.values(
+                                  branchHead,
+                                  Collections.singleton(key),
+                                  KeyFilterPredicate.ALLOW_ALL))
+                          .isEmpty();
 
                       // let the custom commit-validation fail
                       throw exception;
@@ -412,7 +409,7 @@ public abstract class AbstractCommitScenarios {
     assertThat(databaseAdapter.globalContent(ContentId.of(cid))).isEmpty();
   }
 
-  void doCommitWithValidation(BranchName branch, String cid, Key key, Runnable validator)
+  void doCommitWithValidation(BranchName branch, String cid, Key key, Callable<Void> validator)
       throws Exception {
     WithGlobalStateContent c =
         WithGlobalStateContent.withGlobal("0", "initial commit content", cid);

@@ -27,6 +27,7 @@ import com.google.common.collect.ImmutableMap;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
+import java.util.concurrent.Callable;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.versioned.BranchName;
@@ -547,7 +548,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
     assertThat(store().getValue(branch, key)).isNull();
   }
 
-  void doCommitWithValidation(BranchName branch, String cid, Key key, Runnable validator)
+  void doCommitWithValidation(BranchName branch, String cid, Key key, Callable<Void> validator)
       throws Exception {
     store()
         .commit(

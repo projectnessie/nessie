@@ -47,6 +47,7 @@ import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.Spliterators.AbstractSpliterator;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -167,9 +168,16 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       throws ReferenceNotFoundException, ReferenceConflictException {
     List<String> mismatches = new ArrayList<>();
 
-    Runnable validator = commitAttempt.getValidator();
+    Callable<Void> validator = commitAttempt.getValidator();
     if (validator != null) {
-      validator.run();
+      try {
+        validator.call();
+      } catch (RuntimeException e) {
+        // just propagate the RuntimeException up
+        throw e;
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
     }
 
     // verify expected global-states
