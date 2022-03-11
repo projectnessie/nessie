@@ -111,7 +111,7 @@ class TestMetricsVersionStore {
                         Optional.empty(),
                         "metadata",
                         Collections.emptyList(),
-                        () -> {}),
+                        () -> null),
                 () -> Hash.of("cafebabedeadbeef"),
                 refNotFoundAndRefConflictThrows),
             new VersionStoreInvocation<>(

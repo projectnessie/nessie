@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Callable;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
@@ -87,7 +88,7 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
       @Nonnull Optional<Hash> referenceHash,
       @Nonnull METADATA metadata,
       @Nonnull List<Operation<VALUE>> operations,
-      @Nonnull Runnable validator)
+      @Nonnull Callable<Void> validator)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   default Hash commit(
@@ -96,7 +97,7 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
       @Nonnull METADATA metadata,
       @Nonnull List<Operation<VALUE>> operations)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    return commit(branch, referenceHash, metadata, operations, () -> {});
+    return commit(branch, referenceHash, metadata, operations, () -> null);
   }
 
   /**
