@@ -65,6 +65,8 @@ import org.projectnessie.tools.compatibility.api.NessieVersion;
 import org.projectnessie.tools.compatibility.api.Version;
 import org.projectnessie.tools.compatibility.api.VersionCondition;
 import org.projectnessie.tools.compatibility.internal.NessieUpgradesExtension;
+import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
+import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 
 @ExtendWith(NessieUpgradesExtension.class)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -225,7 +227,11 @@ public class ITUpgradePath {
       new LinkedHashMap<>();
   private static int keysUpgradeSequence;
   // exceed both number-of-parents per commit-log-entry and per global-log-entry
-  private static final int keysUpgradeCommitsPerVersion = 65;
+  private static final int keysUpgradeCommitsPerVersion =
+      Math.max(
+              NonTransactionalDatabaseAdapterConfig.DEFAULT_PARENTS_PER_GLOBAL_COMMIT,
+              DatabaseAdapterConfig.DEFAULT_PARENTS_PER_COMMIT)
+          + 15;
 
   @Test
   @Order(201)
