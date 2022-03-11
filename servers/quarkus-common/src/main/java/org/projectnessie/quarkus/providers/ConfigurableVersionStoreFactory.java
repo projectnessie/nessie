@@ -18,8 +18,6 @@ package org.projectnessie.quarkus.providers;
 import io.quarkus.runtime.Startup;
 import java.io.IOError;
 import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Any;
-import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -27,15 +25,11 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.quarkus.config.VersionStoreConfig;
 import org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType;
-import org.projectnessie.quarkus.providers.StoreType.Literal;
 import org.projectnessie.server.store.TableCommitMetaStoreWorker;
-import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.MetricsVersionStore;
 import org.projectnessie.versioned.TracingVersionStore;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
-import org.projectnessie.versioned.persist.adapter.spi.TracingDatabaseAdapter;
-import org.projectnessie.versioned.persist.store.GenericContentVariantSupplier;
 import org.projectnessie.versioned.persist.store.PersistVersionStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,25 +44,19 @@ public class ConfigurableVersionStoreFactory {
   private static final Logger LOGGER =
       LoggerFactory.getLogger(ConfigurableVersionStoreFactory.class);
 
-  private final Instance<DatabaseAdapterBuilder> databaseAdapterBuilder;
   private final VersionStoreConfig storeConfig;
-  private final ServerConfig serverConfig;
+  private final DatabaseAdapter databaseAdapter;
 
   /**
    * Configurable version store factory.
    *
-   * @param databaseAdapterBuilder a CDI injector for {@code DatabaseAdapterBuilder}
    * @param storeConfig the version store configuration
-   * @param serverConfig the server configuration
    */
   @Inject
   public ConfigurableVersionStoreFactory(
-      @Any Instance<DatabaseAdapterBuilder> databaseAdapterBuilder,
-      VersionStoreConfig storeConfig,
-      ServerConfig serverConfig) {
-    this.databaseAdapterBuilder = databaseAdapterBuilder;
+      VersionStoreConfig storeConfig, DatabaseAdapter databaseAdapter) {
     this.storeConfig = storeConfig;
-    this.serverConfig = serverConfig;
+    this.databaseAdapter = databaseAdapter;
   }
 
   /** Version store producer. */
@@ -79,20 +67,7 @@ public class ConfigurableVersionStoreFactory {
     VersionStoreType versionStoreType = storeConfig.getVersionStoreType();
 
     try {
-      LOGGER.info("Using {} Version store", versionStoreType);
-
       TableCommitMetaStoreWorker storeWorker = new TableCommitMetaStoreWorker();
-
-      DatabaseAdapter databaseAdapter =
-          databaseAdapterBuilder
-              .select(new Literal(versionStoreType))
-              .get()
-              .newDatabaseAdapter(new GenericContentVariantSupplier<>(storeWorker));
-      databaseAdapter.initializeRepo(serverConfig.getDefaultBranch());
-
-      if (storeConfig.isTracingEnabled()) {
-        databaseAdapter = new TracingDatabaseAdapter(databaseAdapter);
-      }
 
       VersionStore<Content, CommitMeta, Content.Type> versionStore =
           new PersistVersionStore<>(databaseAdapter, storeWorker);
