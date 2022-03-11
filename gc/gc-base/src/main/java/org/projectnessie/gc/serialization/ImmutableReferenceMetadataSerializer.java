@@ -23,6 +23,10 @@ import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableReferenceMetadata;
 
 public class ImmutableReferenceMetadataSerializer extends Serializer<ImmutableReferenceMetadata> {
+  public ImmutableReferenceMetadataSerializer() {
+    this.setImmutable(true);
+  }
+
   @Override
   public void write(Kryo kryo, Output output, ImmutableReferenceMetadata referenceMetadata) {
     kryo.writeObject(output, referenceMetadata.getNumCommitsAhead());

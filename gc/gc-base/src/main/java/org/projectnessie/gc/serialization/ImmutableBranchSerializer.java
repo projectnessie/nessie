@@ -21,12 +21,19 @@ import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import org.projectnessie.model.ImmutableBranch;
 import org.projectnessie.model.ImmutableReferenceMetadata;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ImmutableBranchSerializer extends Serializer<ImmutableBranch> {
+  private static final Logger LOGGER = LoggerFactory.getLogger(ImmutableBranchSerializer.class);
+
+  public ImmutableBranchSerializer() {
+    this.setImmutable(true);
+  }
 
   @Override
   public void write(Kryo kryo, Output output, ImmutableBranch immutableBranch) {
-    System.out.println("ImmutableBranchSerializer#write: " + immutableBranch);
+    LOGGER.info("ImmutableBranchSerializer#write: {}", immutableBranch);
     output.writeString(immutableBranch.getName());
     output.writeString(immutableBranch.getHash());
     kryo.writeObjectOrNull(output, immutableBranch.getMetadata(), ImmutableReferenceMetadata.class);
@@ -34,7 +41,7 @@ public class ImmutableBranchSerializer extends Serializer<ImmutableBranch> {
 
   @Override
   public ImmutableBranch read(Kryo kryo, Input input, Class classType) {
-    System.out.println("ImmutableBranchSerializer#read: ");
+    LOGGER.info("ImmutableBranchSerializer#read");
     return ImmutableBranch.builder()
         .name(input.readString())
         .hash(input.readString())

@@ -43,6 +43,11 @@ public class ContentBloomFilter implements Serializable {
             Funnels.stringFunnel(StandardCharsets.UTF_8), expectedEntries, bloomFilterFpp);
   }
 
+  public ContentBloomFilter(boolean wasMerged, BloomFilter<String> filter) {
+    this.wasMerged = wasMerged;
+    this.filter = filter;
+  }
+
   public void put(Content content) {
     filter.put(getValue(content));
   }
@@ -80,5 +85,9 @@ public class ContentBloomFilter implements Serializable {
       default:
         throw new RuntimeException("Unsupported type " + content.getType());
     }
+  }
+
+  public BloomFilter<String> getFilter() {
+    return filter;
   }
 }

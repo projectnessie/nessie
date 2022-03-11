@@ -25,6 +25,10 @@ import org.projectnessie.model.ImmutableCommitMeta;
 
 public class ImmutableCommitMetaSerializer extends Serializer<ImmutableCommitMeta> {
 
+  public ImmutableCommitMetaSerializer() {
+    this.setImmutable(true);
+  }
+
   @Override
   public void write(Kryo kryo, Output output, ImmutableCommitMeta immutableCommitMeta) {
     output.writeString(immutableCommitMeta.getCommitter());

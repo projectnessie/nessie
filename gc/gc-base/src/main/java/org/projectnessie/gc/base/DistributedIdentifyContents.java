@@ -19,6 +19,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.SparkSession;
 import org.projectnessie.model.Reference;
@@ -32,14 +33,6 @@ import org.slf4j.LoggerFactory;
 public class DistributedIdentifyContents {
   private static final Logger LOGGER = LoggerFactory.getLogger(DistributedIdentifyContents.class);
 
-  private final SparkSession session;
-  private final GCParams gcParams;
-
-  public DistributedIdentifyContents(SparkSession session, GCParams gcParams) {
-    this.session = session;
-    this.gcParams = gcParams;
-  }
-
   /**
    * Compute the bloom filter per content id by walking all the live references in a distributed way
    * using spark.
@@ -49,13 +42,28 @@ public class DistributedIdentifyContents {
    * @param droppedRefTimeMap map of dropped time for reference@hash
    * @return map of {@link ContentBloomFilter} per content-id.
    */
-  public Map<String, ContentBloomFilter> getLiveContentsBloomFilters(
-      List<Reference> references, long bloomFilterSize, Map<Reference, Instant> droppedRefTimeMap) {
-    IdentifyContentsPerExecutor executor = new IdentifyContentsPerExecutor(gcParams);
+  // here
+  public static Map<String, ContentBloomFilter> getLiveContentsBloomFilters(
+      List<Reference> references,
+      long bloomFilterSize,
+      Map<Reference, Instant> droppedRefTimeMap,
+      SparkSession session,
+      GCParams gcParams) {
+    LOGGER.info(
+        "droppedRefTimeMap: "
+            + droppedRefTimeMap
+            + " types: "
+            + droppedRefTimeMap.keySet().stream()
+                .map(Reference::getClass)
+                .collect(Collectors.toList()));
+
     List<Map<String, ContentBloomFilter>> bloomFilterMaps =
         new JavaSparkContext(session.sparkContext())
             .parallelize(references, getPartitionsCount(gcParams, references))
-            .map(executor.computeLiveContentsFunc(bloomFilterSize, droppedRefTimeMap))
+            .map(
+                ref ->
+                    IdentifyContentsPerExecutor.computeLiveContentsFunc(
+                        ref, bloomFilterSize, droppedRefTimeMap, gcParams))
             .collect();
     return mergeLiveContentResults(bloomFilterMaps, gcParams.getBloomFilterFpp());
   }
@@ -68,14 +76,19 @@ public class DistributedIdentifyContents {
    * @param references list of all the references to walk (live and dead)
    * @return {@link IdentifiedResult} object.
    */
-  public IdentifiedResult getIdentifiedResults(
-      Map<String, ContentBloomFilter> liveContentsBloomFilterMap, List<Reference> references) {
+  // here
+  public static IdentifiedResult getIdentifiedResults(
+      Map<String, ContentBloomFilter> liveContentsBloomFilterMap,
+      List<Reference> references,
+      GCParams gcParams,
+      SparkSession session) {
 
-    IdentifyContentsPerExecutor executor = new IdentifyContentsPerExecutor(gcParams);
     List<IdentifiedResult> results =
         new JavaSparkContext(session.sparkContext())
             .parallelize(references, getPartitionsCount(gcParams, references))
-            .map(executor.computeExpiredContentsFunc(liveContentsBloomFilterMap))
+            .map(
+                IdentifyContentsPerExecutor.computeExpiredContentsFunc(
+                    liveContentsBloomFilterMap, gcParams))
             .collect();
     IdentifiedResult identifiedResult = new IdentifiedResult();
     results.forEach(

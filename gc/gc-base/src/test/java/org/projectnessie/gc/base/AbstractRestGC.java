@@ -31,6 +31,8 @@ import java.util.Objects;
 import javax.validation.constraints.NotNull;
 import org.apache.spark.SparkConf;
 import org.apache.spark.sql.SparkSession;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.error.NessieConflictException;
@@ -46,8 +48,39 @@ import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class AbstractRestGC extends AbstractRest {
+  private static final Logger LOGGER = LoggerFactory.getLogger(AbstractRestGC.class);
+
+  private static SparkSession spark;
+
+  @BeforeAll
+  static void setupSpark() {
+    LOGGER.info("setup spark");
+    SparkConf conf =
+        new SparkConf()
+            .setAppName("test-nessie-gc")
+            .setMaster("local")
+            .set(
+                "spark.kryo.registrator",
+                "org.projectnessie.gc.serialization.ReferencesKryoRegistrator")
+            .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+            .set("spark.kryo.registrationRequired", "true");
+
+    spark = SparkSession.builder().config(conf).getOrCreate();
+    spark.sparkContext().setLogLevel("WARN");
+    LOGGER.info("serializer: " + spark.conf().get("spark.serializer"));
+  }
+
+  @AfterAll
+  static void closeSpark() {
+    if (spark != null) {
+      LOGGER.info("cleanup spark");
+      spark.close();
+    }
+  }
 
   @NotNull
   List<LogEntry> fetchLogEntries(Branch branch, int numCommits) throws NessieNotFoundException {
@@ -82,42 +115,25 @@ public abstract class AbstractRestGC extends AbstractRest {
       List<String> involvedRefs,
       boolean disableCommitProtection,
       Instant deadReferenceCutoffTime) {
-    SparkConf conf =
-        new SparkConf()
-            .setAppName("test-nessie-gc")
-            .setMaster("local[2]")
-            .set(
-                "spark.kryo.registrator",
-                "org.projectnessie.gc.serialization.ReferencesKryoRegistrator")
-            .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
-            .set("spark.kryo.registrationRequired", "false");
 
-    SparkSession spark = SparkSession.builder().config(conf).getOrCreate();
-    spark.sparkContext().setLogLevel("WARN");
-    System.out.println("serializer: " + spark.conf().get("spark.serializer"));
-    try {
-      ImmutableGCParams.Builder builder = ImmutableGCParams.builder();
-      final Map<String, String> options = new HashMap<>();
-      options.put(CONF_NESSIE_URI, getUri().toString());
-      if (disableCommitProtection) {
-        // disable commit protection for test purposes.
-        builder.commitProtectionDuration(Duration.ZERO);
-      }
-      ImmutableGCParams gcParams =
-          builder
-              .bloomFilterExpectedEntries(5L)
-              .nessieClientConfigs(options)
-              .deadReferenceCutOffTimeStamp(deadReferenceCutoffTime)
-              .cutOffTimestampPerRef(cutOffTimeStampPerRef)
-              .defaultCutOffTimestamp(cutoffTimeStamp)
-              .build();
-      GCImpl gc = new GCImpl(gcParams);
-      IdentifiedResult identifiedResult = gc.identifyExpiredContents(spark);
-      // compare the expected contents against the actual gc output
-      verify(identifiedResult, expectedExpired, involvedRefs);
-    } finally {
-      spark.close();
+    ImmutableGCParams.Builder builder = ImmutableGCParams.builder();
+    final Map<String, String> options = new HashMap<>();
+    options.put(CONF_NESSIE_URI, getUri().toString());
+    if (disableCommitProtection) {
+      // disable commit protection for test purposes.
+      builder.commitProtectionDuration(Duration.ZERO);
     }
+    ImmutableGCParams gcParams =
+        builder
+            .bloomFilterExpectedEntries(5L)
+            .nessieClientConfigs(options)
+            .deadReferenceCutOffTimeStamp(deadReferenceCutoffTime)
+            .cutOffTimestampPerRef(cutOffTimeStampPerRef)
+            .defaultCutOffTimestamp(cutoffTimeStamp)
+            .build();
+    IdentifiedResult identifiedResult = GCImpl.identifyExpiredContents(spark, gcParams);
+    // compare the expected contents against the actual gc output
+    verify(identifiedResult, expectedExpired, involvedRefs);
   }
 
   private void verify(

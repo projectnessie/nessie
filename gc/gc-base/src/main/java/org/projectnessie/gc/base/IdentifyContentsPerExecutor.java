@@ -15,7 +15,6 @@
  */
 package org.projectnessie.gc.base;
 
-import java.io.Serializable;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -44,31 +43,32 @@ import org.projectnessie.model.Reference;
  * Contains the methods that executes in spark executor for {@link
  * GCImpl#identifyExpiredContents(SparkSession)}.
  */
-public class IdentifyContentsPerExecutor implements Serializable {
+public class IdentifyContentsPerExecutor {
 
-  private final GCParams gcParams;
-
-  public IdentifyContentsPerExecutor(GCParams gcParams) {
-    this.gcParams = gcParams;
+  protected static Map<String, ContentBloomFilter> computeLiveContentsFunc(
+      Reference reference,
+      long bloomFilterSize,
+      Map<Reference, Instant> droppedRefTimeMap,
+      GCParams gcParams) {
+    return computeLiveContents(
+        getCutoffTimeForRef(reference, droppedRefTimeMap, gcParams),
+        reference,
+        droppedRefTimeMap.get(reference),
+        bloomFilterSize,
+        gcParams);
   }
 
-  protected Function<Reference, Map<String, ContentBloomFilter>> computeLiveContentsFunc(
-      long bloomFilterSize, Map<Reference, Instant> droppedRefTimeMap) {
-    return reference ->
-        computeLiveContents(
-            getCutoffTimeForRef(reference, droppedRefTimeMap),
-            reference,
-            droppedRefTimeMap.get(reference),
-            bloomFilterSize);
+  protected static Function<Reference, IdentifiedResult> computeExpiredContentsFunc(
+      Map<String, ContentBloomFilter> liveContentsBloomFilterMap, GCParams gcParams) {
+    return reference -> computeExpiredContents(liveContentsBloomFilterMap, reference, gcParams);
   }
 
-  protected Function<Reference, IdentifiedResult> computeExpiredContentsFunc(
-      Map<String, ContentBloomFilter> liveContentsBloomFilterMap) {
-    return reference -> computeExpiredContents(liveContentsBloomFilterMap, reference);
-  }
-
-  private Map<String, ContentBloomFilter> computeLiveContents(
-      Instant cutOffTimestamp, Reference reference, Instant droppedRefTime, long bloomFilterSize) {
+  private static Map<String, ContentBloomFilter> computeLiveContents(
+      Instant cutOffTimestamp,
+      Reference reference,
+      Instant droppedRefTime,
+      long bloomFilterSize,
+      GCParams gcParams) {
     try (NessieApiV1 api = GCUtil.getApi(gcParams.getNessieClientConfigs())) {
       boolean isRefDroppedAfterCutoffTimeStamp =
           droppedRefTime == null || droppedRefTime.compareTo(cutOffTimestamp) >= 0;
@@ -91,19 +91,21 @@ public class IdentifyContentsPerExecutor implements Serializable {
               .bloomFilterSize(bloomFilterSize)
               .build();
 
-      return walkLiveCommitsInReference(gcStateParamsPerTask);
+      return walkLiveCommitsInReference(gcStateParamsPerTask, gcParams);
     }
   }
 
-  private IdentifiedResult computeExpiredContents(
-      Map<String, ContentBloomFilter> liveContentsBloomFilterMap, Reference reference) {
+  private static IdentifiedResult computeExpiredContents(
+      Map<String, ContentBloomFilter> liveContentsBloomFilterMap,
+      Reference reference,
+      GCParams gcParams) {
     try (NessieApiV1 api = GCUtil.getApi(gcParams.getNessieClientConfigs())) {
-      return walkAllCommitsInReference(api, reference, liveContentsBloomFilterMap);
+      return walkAllCommitsInReference(api, reference, liveContentsBloomFilterMap, gcParams);
     }
   }
 
-  private Map<String, ContentBloomFilter> walkLiveCommitsInReference(
-      GCStateParamsPerTask gcStateParamsPerTask) {
+  private static Map<String, ContentBloomFilter> walkLiveCommitsInReference(
+      GCStateParamsPerTask gcStateParamsPerTask, GCParams gcParams) {
     Map<String, ContentBloomFilter> bloomFilterMap = new HashMap<>();
     Set<ContentKey> liveContentKeys = new HashSet<>();
     try (Stream<LogResponse.LogEntry> commits =
@@ -124,7 +126,8 @@ public class IdentifyContentsPerExecutor implements Serializable {
                   logEntry,
                   bloomFilterMap,
                   foundAllLiveCommitHeadsBeforeCutoffTime,
-                  liveContentKeys);
+                  liveContentKeys,
+                  gcParams);
       // traverse commits using the spliterator
       GCUtil.traverseLiveCommits(foundAllLiveCommitHeadsBeforeCutoffTime, commits, commitHandler);
     } catch (NessieNotFoundException e) {
@@ -133,10 +136,11 @@ public class IdentifyContentsPerExecutor implements Serializable {
     return bloomFilterMap;
   }
 
-  private IdentifiedResult walkAllCommitsInReference(
+  private static IdentifiedResult walkAllCommitsInReference(
       NessieApiV1 api,
       Reference reference,
-      Map<String, ContentBloomFilter> liveContentsBloomFilterMap) {
+      Map<String, ContentBloomFilter> liveContentsBloomFilterMap,
+      GCParams gcParams) {
     IdentifiedResult result = new IdentifiedResult();
     Instant commitProtectionTime = Instant.now().minus(gcParams.getCommitProtectionDuration());
     try (Stream<LogResponse.LogEntry> commits =
@@ -166,12 +170,13 @@ public class IdentifyContentsPerExecutor implements Serializable {
     return result;
   }
 
-  private void handleLiveCommit(
+  private static void handleLiveCommit(
       GCStateParamsPerTask gcStateParamsPerTask,
       LogResponse.LogEntry logEntry,
       Map<String, ContentBloomFilter> bloomFilterMap,
       MutableBoolean foundAllLiveCommitHeadsBeforeCutoffTime,
-      Set<ContentKey> liveContentKeys) {
+      Set<ContentKey> liveContentKeys,
+      GCParams gcParams) {
     if (logEntry.getOperations() != null) {
       boolean isExpired =
           !gcStateParamsPerTask.getLiveCommitPredicate().test(logEntry.getCommitMeta());
@@ -252,8 +257,8 @@ public class IdentifyContentsPerExecutor implements Serializable {
     }
   }
 
-  private Instant getCutoffTimeForRef(
-      Reference reference, Map<Reference, Instant> droppedRefTimeMap) {
+  private static Instant getCutoffTimeForRef(
+      Reference reference, Map<Reference, Instant> droppedRefTimeMap, GCParams gcParams) {
     if (droppedRefTimeMap.containsKey(reference)
         && gcParams.getDeadReferenceCutOffTimeStamp() != null) {
       // if the reference is dropped and deadReferenceCutOffTimeStamp is configured, use it.

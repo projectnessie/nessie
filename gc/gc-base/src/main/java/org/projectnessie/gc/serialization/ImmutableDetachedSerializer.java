@@ -19,27 +19,27 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import org.projectnessie.model.ImmutableDetached;
 import org.projectnessie.model.ImmutableReferenceMetadata;
-import org.projectnessie.model.ImmutableTag;
 
-public class ImmutableTagSerializer extends Serializer<ImmutableTag> {
-  public ImmutableTagSerializer() {
+public class ImmutableDetachedSerializer extends Serializer<ImmutableDetached> {
+
+  public ImmutableDetachedSerializer() {
     this.setImmutable(true);
   }
 
   @Override
-  public void write(Kryo kryo, Output output, ImmutableTag immutableTag) {
-    output.writeString(immutableTag.getName());
-    output.writeString(immutableTag.getHash());
-    kryo.writeObjectOrNull(output, immutableTag.getMetadata(), ImmutableReferenceMetadata.class);
+  public void write(Kryo kryo, Output output, ImmutableDetached immutableDetached) {
+    kryo.writeObjectOrNull(
+        output, immutableDetached.getMetadata(), ImmutableReferenceMetadata.class);
+    output.writeString(immutableDetached.getHash());
   }
 
   @Override
-  public ImmutableTag read(Kryo kryo, Input input, Class<ImmutableTag> classType) {
-    return ImmutableTag.builder()
-        .name(input.readString())
-        .hash(input.readString())
+  public ImmutableDetached read(Kryo kryo, Input input, Class<ImmutableDetached> classType) {
+    return ImmutableDetached.builder()
         .metadata(kryo.readObjectOrNull(input, ImmutableReferenceMetadata.class))
+        .hash(input.readString())
         .build();
   }
 }
