@@ -34,6 +34,7 @@
     <module>quarkus-common</module>
     <module>quarkus-tests</module>
     <module>quarkus-server</module>
+    <module>quarkus-cli</module>
     <module>services</module>
     <module>rest-services</module>
     <module>store-proto</module>
