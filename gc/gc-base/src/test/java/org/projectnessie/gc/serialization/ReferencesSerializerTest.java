@@ -27,7 +27,11 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.zip.DeflaterOutputStream;
 import org.junit.jupiter.api.Test;
-import org.projectnessie.model.*;
+import org.projectnessie.model.ImmutableBranch;
+import org.projectnessie.model.ImmutableCommitMeta;
+import org.projectnessie.model.ImmutableReferenceMetadata;
+import org.projectnessie.model.ImmutableTag;
+import org.projectnessie.model.Reference;
 
 class ReferencesSerializerTest {
 
