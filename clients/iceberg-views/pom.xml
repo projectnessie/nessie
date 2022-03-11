@@ -22,7 +22,7 @@
   <parent>
     <groupId>org.projectnessie</groupId>
     <artifactId>nessie-clients</artifactId>
-    <version>0.21.3-SNAPSHOT</version>
+    <version>0.22.0</version>
   </parent>
 
   <artifactId>iceberg-views</artifactId>
