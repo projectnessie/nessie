@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.model.Branch;
 
-public abstract class AbstractRestGCTest extends AbstractRestGCRepoTest {
+public abstract class AbstractRestGCTest extends AbstractRestGC {
 
   static final String CID_ONE = "cid_1";
   static final String CID_TWO = "cid_2";

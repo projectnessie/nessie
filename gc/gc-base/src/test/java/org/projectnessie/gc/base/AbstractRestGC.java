@@ -86,7 +86,6 @@ public abstract class AbstractRestGC extends AbstractRest {
                       content.getId(),
                       null,
                       content.getSnapshotId(),
-                      null,
                       branch.getName(),
                       null));
             });
@@ -163,7 +162,8 @@ public abstract class AbstractRestGC extends AbstractRest {
     Dataset<Row> dfActual = actual.select("referenceName", "contentId", "snapshotId");
     Dataset<Row> dfExpected = expected.select("referenceName", "contentId", "snapshotId");
     // when both the dataframe is same, df.except() should return empty.
-    assertThat(dfActual.except(dfExpected).collectAsList()).isEmpty();
+    assertThat(dfExpected.count()).isEqualTo(dfActual.count());
+    assertThat(dfExpected.except(dfActual).collectAsList()).isEmpty();
   }
 
   CommitOutput commitSingleOp(

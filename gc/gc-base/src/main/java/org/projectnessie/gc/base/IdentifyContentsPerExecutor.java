@@ -160,7 +160,7 @@ public class IdentifyContentsPerExecutor implements Serializable {
         }
       }
       logEntry.getOperations().stream()
-          .filter(operation -> operation instanceof Operation.Put)
+          .filter(Operation.Put.class::isInstance)
           .forEach(
               operation -> {
                 boolean addContent;
@@ -258,7 +258,7 @@ public class IdentifyContentsPerExecutor implements Serializable {
     Predicate<Content> expiredContentPredicate =
         content ->
             (liveContentsBloomFilterMap.get(content.getId()) == null
-                || liveContentsBloomFilterMap.get(content.getId()).mightContain(content));
+                || !liveContentsBloomFilterMap.get(content.getId()).mightContain(content));
     try {
       Iterator<Content> iterator =
           StreamingUtil.getCommitLogStream(
@@ -271,8 +271,8 @@ public class IdentifyContentsPerExecutor implements Serializable {
                   OptionalInt.empty())
               .filter(unprotectedCommitsPredicate)
               .map(LogResponse.LogEntry::getOperations)
-              .filter(operation -> operation instanceof Operation.Put)
-              .map(op -> (Operation.Put) op)
+              .flatMap(operations -> operations.stream().filter(Operation.Put.class::isInstance))
+              .map(Operation.Put.class::cast)
               .map(Operation.Put::getContent)
               .filter(
                   content ->
@@ -298,26 +298,24 @@ public class IdentifyContentsPerExecutor implements Serializable {
   }
 
   private static Row fillRow(Reference reference, Content content) {
-    long snapshotId;
-    String metadataLocation;
-    switch (content.getType()) {
-      case ICEBERG_VIEW:
-        IcebergView icebergView = (IcebergView) content;
-        snapshotId = icebergView.getVersionId();
-        metadataLocation = icebergView.getMetadataLocation();
-        break;
-      case ICEBERG_TABLE:
-      default:
-        IcebergTable icebergTable = (IcebergTable) content;
-        snapshotId = icebergTable.getSnapshotId();
-        metadataLocation = icebergTable.getMetadataLocation();
-    }
     return IdentifiedResultsRepo.getContentRowVariablePart(
         content.getId(),
         content.getType().name(),
-        snapshotId,
-        metadataLocation,
+        getSnapshotId(content),
         reference.getName(),
         reference.getHash());
+  }
+
+  private static long getSnapshotId(Content content) {
+    long snapshotId;
+    switch (content.getType()) {
+      case ICEBERG_VIEW:
+        snapshotId = ((IcebergView) content).getVersionId();
+        break;
+      case ICEBERG_TABLE:
+      default:
+        snapshotId = ((IcebergTable) content).getSnapshotId();
+    }
+    return snapshotId;
   }
 }

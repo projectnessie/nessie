@@ -55,7 +55,6 @@ public final class IdentifiedResultsRepo {
   private static final String COL_CONTENT_ID = "contentId";
   private static final String COL_CONTENT_TYPE = "contentType";
   private static final String COL_SNAPSHOT_ID = "snapshotId";
-  private static final String COL_METADATA_LOCATION = "metadataLocation";
   private static final String COL_REFERENCE_NAME = "referenceName";
   private static final String COL_HASH_ON_REFERENCE = "hashOnReference";
 
@@ -79,12 +78,10 @@ public final class IdentifiedResultsRepo {
                   optional(5, COL_CONTENT_TYPE, Types.StringType.get()),
                   // Iceberg Table/View Content's snapshot/version id.
                   optional(6, COL_SNAPSHOT_ID, Types.LongType.get()),
-                  // Iceberg Table/View Content's metadata location.
-                  optional(7, COL_METADATA_LOCATION, Types.StringType.get()),
                   // Name of the reference via which the contentID was collected
-                  optional(8, COL_REFERENCE_NAME, Types.StringType.get()),
+                  optional(7, COL_REFERENCE_NAME, Types.StringType.get()),
                   // Hash of the reference via which the contentID was collected
-                  optional(9, COL_HASH_ON_REFERENCE, Types.StringType.get()))
+                  optional(8, COL_HASH_ON_REFERENCE, Types.StringType.get()))
               .fields());
 
   private final StructType schema = SparkSchemaUtil.convert(icebergSchema);
@@ -192,12 +189,7 @@ public final class IdentifiedResultsRepo {
   }
 
   static Row getContentRowVariablePart(
-      String contentId,
-      String contentType,
-      long snapshotId,
-      String metadataLocation,
-      String refName,
-      String hash) {
+      String contentId, String contentType, long snapshotId, String refName, String hash) {
     return RowFactory.create(
         IdentifiedResultsRepo.TYPE_CONTENT,
         // the fixed value columns (runId and startTime)
@@ -208,14 +200,13 @@ public final class IdentifiedResultsRepo {
         contentId,
         contentType,
         snapshotId,
-        metadataLocation,
         refName,
         hash);
   }
 
   private static Row createMarkerRow(String runID, Timestamp startedAt) {
     return RowFactory.create(
-        IdentifiedResultsRepo.TYPE_GC_MARKER, startedAt, runID, null, null, null, null, null, null);
+        IdentifiedResultsRepo.TYPE_GC_MARKER, startedAt, runID, null, null, null, null, null);
   }
 
   private void createTableIfAbsent(

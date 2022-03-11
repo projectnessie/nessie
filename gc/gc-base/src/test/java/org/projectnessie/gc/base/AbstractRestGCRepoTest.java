@@ -33,7 +33,7 @@ import org.junit.jupiter.api.Test;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableTableReference;
 
-public abstract class AbstractRestGCRepoTest extends AbstractRestGC {
+public abstract class AbstractRestGCRepoTest extends AbstractRestGCTest {
 
   private final String catalogName = "nessie";
   private final String identifierTableName = "identified_results";
@@ -142,7 +142,6 @@ public abstract class AbstractRestGCRepoTest extends AbstractRestGC {
               contentId,
               content.getType().name(),
               content.getSnapshotId(),
-              content.getMetadataLocation(),
               refName,
               null));
     }
@@ -151,7 +150,7 @@ public abstract class AbstractRestGCRepoTest extends AbstractRestGC {
 
   private static Row createMarkerRow(String runId) {
     return RowFactory.create(
-        "GC_MARK", Timestamp.from(Instant.now()), runId, null, null, null, null, null, null);
+        "GC_MARK", Timestamp.from(Instant.now()), runId, null, null, null, null, null);
   }
 
   private void writeMarkerRow(
