@@ -121,7 +121,7 @@ public interface DatabaseAdapter {
    * @return Ordered stream with content-keys, content-ids and content-types
    * @throws ReferenceNotFoundException if {@code commit} does not exist.
    */
-  Stream<KeyWithType> keys(Hash commit, KeyFilterPredicate keyFilter)
+  Stream<KeyListEntry> keys(Hash commit, KeyFilterPredicate keyFilter)
       throws ReferenceNotFoundException;
 
   /**

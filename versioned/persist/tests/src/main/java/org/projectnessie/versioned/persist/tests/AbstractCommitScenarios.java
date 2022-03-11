@@ -46,8 +46,8 @@ import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
+import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
-import org.projectnessie.versioned.persist.adapter.KeyWithType;
 import org.projectnessie.versioned.testworker.BaseContent;
 import org.projectnessie.versioned.testworker.OnRefOnly;
 import org.projectnessie.versioned.testworker.SimpleStoreWorker;
@@ -261,7 +261,9 @@ public abstract class AbstractCommitScenarios {
         renameCommitVerify(
             Stream.concat(Stream.of(hashInitial), beforeRename.stream()),
             expectedCommitCount,
-            keys -> assertThat(keys).containsExactly(KeyWithType.of(oldKey, contentId, payload)));
+            keys ->
+                assertThat(keys)
+                    .containsExactly(KeyListEntry.of(oldKey, contentId, payload, hashInitial)));
 
     // Verify that the commits since the rename-operation and before the delete-operation return the
     // _new_ key
@@ -269,7 +271,9 @@ public abstract class AbstractCommitScenarios {
         renameCommitVerify(
             Stream.concat(Stream.of(hashRename), beforeDelete.stream()),
             expectedCommitCount,
-            keys -> assertThat(keys).containsExactly(KeyWithType.of(newKey, contentId, payload)));
+            keys ->
+                assertThat(keys)
+                    .containsExactly(KeyListEntry.of(newKey, contentId, payload, hashRename)));
 
     // Verify that the commits since the delete-operation return _no_ keys
     expectedCommitCount =
@@ -290,10 +294,10 @@ public abstract class AbstractCommitScenarios {
   }
 
   private int renameCommitVerify(
-      Stream<Hash> hashes, int expectedCommitCount, Consumer<Stream<KeyWithType>> keysStreamAssert)
+      Stream<Hash> hashes, int expectedCommitCount, Consumer<Stream<KeyListEntry>> keysStreamAssert)
       throws Exception {
     for (Hash hash : hashes.collect(Collectors.toList())) {
-      try (Stream<KeyWithType> keys = databaseAdapter.keys(hash, KeyFilterPredicate.ALLOW_ALL)) {
+      try (Stream<KeyListEntry> keys = databaseAdapter.keys(hash, KeyFilterPredicate.ALLOW_ALL)) {
         keysStreamAssert.accept(keys);
       }
       try (Stream<CommitLogEntry> log = databaseAdapter.commitLog(hash)) {

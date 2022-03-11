@@ -36,8 +36,8 @@ import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
+import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
-import org.projectnessie.versioned.persist.adapter.KeyWithType;
 
 /**
  * Verifies that a big-ish number of keys, split across multiple commits works and the correct
@@ -119,8 +119,8 @@ public abstract class AbstractManyKeys {
     }
 
     Hash mainHead = databaseAdapter.hashOnReference(main, Optional.empty());
-    try (Stream<KeyWithType> keys = databaseAdapter.keys(mainHead, KeyFilterPredicate.ALLOW_ALL)) {
-      List<Key> fetchedKeys = keys.map(KeyWithType::getKey).collect(Collectors.toList());
+    try (Stream<KeyListEntry> keys = databaseAdapter.keys(mainHead, KeyFilterPredicate.ALLOW_ALL)) {
+      List<Key> fetchedKeys = keys.map(KeyListEntry::getKey).collect(Collectors.toList());
 
       // containsExactlyInAnyOrderElementsOf() is quite expensive and slow with Key's
       // implementation of 'Key.equals()' since it uses a collator.

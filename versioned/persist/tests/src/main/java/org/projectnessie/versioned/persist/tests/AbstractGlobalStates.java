@@ -19,7 +19,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.google.protobuf.ByteString;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -44,7 +43,6 @@ import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
-import org.projectnessie.versioned.persist.adapter.KeyWithType;
 
 /**
  * Verifies handling of global-states in the database-adapters using various combinations of number
@@ -184,7 +182,6 @@ public abstract class AbstractGlobalStates {
     Set<ContentId> usedContentIds = new HashSet<>();
 
     Map<ContentId, ByteString> expectedGlobalStates = new HashMap<>();
-    Map<KeyWithType, List<ByteString>> expectedContents = new HashMap<>();
 
     for (int commit = 0; commit < param.commitsPerBranch; commit++) {
       for (BranchName branch : branches) {
@@ -211,10 +208,6 @@ public abstract class AbstractGlobalStates {
                 .addPuts(KeyWithBytes.of(key, contentId, (byte) 0, put));
 
             expectedGlobalStates.put(contentId, global);
-
-            expectedContents
-                .computeIfAbsent(KeyWithType.of(key, contentId, (byte) 0), k -> new ArrayList<>())
-                .add(put);
 
             usedContentIds.add(contentId);
             currentStates.put(contentId, global);

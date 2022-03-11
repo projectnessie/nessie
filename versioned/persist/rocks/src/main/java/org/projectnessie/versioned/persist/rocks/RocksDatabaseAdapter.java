@@ -40,7 +40,7 @@ import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentVariantSupplier;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
-import org.projectnessie.versioned.persist.adapter.KeyWithType;
+import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 import org.projectnessie.versioned.persist.adapter.RefLog;
 import org.projectnessie.versioned.persist.adapter.RepoDescription;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapter;
@@ -404,7 +404,7 @@ public class RocksDatabaseAdapter
   }
 
   @Override
-  protected int entitySize(KeyWithType entry) {
+  protected int entitySize(KeyListEntry entry) {
     return toProto(entry).getSerializedSize();
   }
 

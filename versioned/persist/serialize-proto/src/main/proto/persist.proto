@@ -28,19 +28,13 @@ message CommitLogEntry {
   repeated KeyWithBytes puts = 5;
   repeated Key deletes = 6;
   int32 key_list_distance = 7;
-  repeated KeyWithType key_list = 8;
+  repeated KeyListEntry key_list = 8;
   repeated bytes key_list_ids = 9;
   int64 commitSeq = 10;
 }
 
 message Key {
   repeated string element = 1;
-}
-
-message KeyWithType {
-  Key key = 1;
-  ContentId content_id = 2;
-  int32 type = 3;
 }
 
 message KeyWithBytes {
@@ -51,7 +45,14 @@ message KeyWithBytes {
 }
 
 message KeyList {
-  repeated KeyWithType keys = 1;
+  repeated KeyListEntry keys = 1;
+}
+
+message KeyListEntry {
+  Key key = 1;
+  ContentId content_id = 2;
+  int32 type = 3;
+  optional bytes commit_id = 4;
 }
 
 message ContentId {
