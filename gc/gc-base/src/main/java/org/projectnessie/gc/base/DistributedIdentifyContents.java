@@ -19,7 +19,6 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.SparkSession;
 import org.projectnessie.model.Reference;
@@ -49,13 +48,6 @@ public class DistributedIdentifyContents {
       Map<Reference, Instant> droppedRefTimeMap,
       SparkSession session,
       GCParams gcParams) {
-    LOGGER.info(
-        "droppedRefTimeMap: "
-            + droppedRefTimeMap
-            + " types: "
-            + droppedRefTimeMap.keySet().stream()
-                .map(Reference::getClass)
-                .collect(Collectors.toList()));
 
     List<Map<String, ContentBloomFilter>> bloomFilterMaps =
         new JavaSparkContext(session.sparkContext())
