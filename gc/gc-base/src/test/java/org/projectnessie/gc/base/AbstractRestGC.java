@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.jaxrs.gc;
+package org.projectnessie.gc.base;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URI;
@@ -34,10 +34,6 @@ import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
-import org.projectnessie.gc.base.ContentValues;
-import org.projectnessie.gc.base.GCImpl;
-import org.projectnessie.gc.base.IdentifiedResult;
-import org.projectnessie.gc.base.ImmutableGCParams;
 import org.projectnessie.jaxrs.AbstractRest;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
