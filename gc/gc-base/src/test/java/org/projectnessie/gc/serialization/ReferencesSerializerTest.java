@@ -28,6 +28,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.zip.DeflaterOutputStream;
 import org.junit.jupiter.api.Test;
+import org.projectnessie.gc.base.ContentBloomFilter;
 import org.projectnessie.gc.base.ImmutableGCParams;
 import org.projectnessie.model.ImmutableBranch;
 import org.projectnessie.model.ImmutableCommitMeta;
@@ -198,6 +199,24 @@ class ReferencesSerializerTest {
     ImmutableGCParams immutableGCParamsDeserialized =
         kryo.readObject(new Input(output.toBytes()), ImmutableGCParams.class);
     assertThat(gcParams).isEqualTo(immutableGCParamsDeserialized);
+  }
+
+  @Test
+  public void shouldSerializeAndDeserializeContentBloomFilter() {
+    // given
+    Kryo kryo = new Kryo();
+    new ReferencesKryoRegistrator().registerClasses(kryo);
+    ContentBloomFilter bloomFilter = new ContentBloomFilter(100, 0.5);
+
+    // when
+    Output output = createOutput();
+    kryo.writeObject(output, bloomFilter);
+
+    // then
+    ContentBloomFilter bloomFilterDeserialized =
+        kryo.readObject(new Input(output.toBytes()), ContentBloomFilter.class);
+    assertThat(bloomFilter.getFilter()).isEqualTo(bloomFilterDeserialized.getFilter());
+    assertThat(bloomFilter.wasMerged()).isEqualTo(bloomFilterDeserialized.wasMerged());
   }
 
   private Output createOutput() {
