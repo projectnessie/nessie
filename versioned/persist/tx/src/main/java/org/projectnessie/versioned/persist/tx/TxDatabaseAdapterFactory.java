@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.persist.tx;
 
+import org.projectnessie.versioned.persist.adapter.ContentTypeSupplier;
 import org.projectnessie.versioned.persist.adapter.ContentVariantSupplier;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
@@ -27,7 +28,8 @@ public abstract class TxDatabaseAdapterFactory<CONNECTOR extends DatabaseConnect
   protected abstract DatabaseAdapter create(
       TxDatabaseAdapterConfig config,
       CONNECTOR connector,
-      ContentVariantSupplier contentVariantSupplier);
+      ContentVariantSupplier contentVariantSupplier,
+      ContentTypeSupplier contentTypeSupplier);
 
   @Override
   public Builder<TxDatabaseAdapterConfig, AdjustableTxDatabaseAdapterConfig, CONNECTOR>
@@ -48,8 +50,9 @@ public abstract class TxDatabaseAdapterFactory<CONNECTOR extends DatabaseConnect
     }
 
     @Override
-    public DatabaseAdapter build(ContentVariantSupplier contentVariantSupplier) {
-      return create(getConfig(), getConnector(), contentVariantSupplier);
+    public DatabaseAdapter build(
+        ContentVariantSupplier contentVariantSupplier, ContentTypeSupplier contentTypeSupplier) {
+      return create(getConfig(), getConnector(), contentVariantSupplier, contentTypeSupplier);
     }
   }
 }

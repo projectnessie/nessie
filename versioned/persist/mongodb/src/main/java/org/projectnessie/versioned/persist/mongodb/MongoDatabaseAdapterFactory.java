@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.persist.mongodb;
 
+import org.projectnessie.versioned.persist.adapter.ContentTypeSupplier;
 import org.projectnessie.versioned.persist.adapter.ContentVariantSupplier;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
@@ -34,7 +35,8 @@ public class MongoDatabaseAdapterFactory
   protected DatabaseAdapter create(
       NonTransactionalDatabaseAdapterConfig config,
       MongoDatabaseClient client,
-      ContentVariantSupplier contentVariantSupplier) {
-    return new MongoDatabaseAdapter(config, client, contentVariantSupplier);
+      ContentVariantSupplier contentVariantSupplier,
+      ContentTypeSupplier contentTypeSupplier) {
+    return new MongoDatabaseAdapter(config, client, contentVariantSupplier, contentTypeSupplier);
   }
 }

@@ -55,6 +55,7 @@ import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.adapter.DatabaseConnectionConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseConnectionProvider;
+import org.projectnessie.versioned.persist.store.GenericContentTypeSupplier;
 import org.projectnessie.versioned.persist.store.GenericContentVariantSupplier;
 import org.projectnessie.versioned.persist.store.PersistVersionStore;
 import org.projectnessie.versioned.persist.tests.SystemPropertiesConfigurer;
@@ -153,7 +154,9 @@ public class CommitBench {
 
       return builder
           .withConnector(providerSource.getConnectionProvider())
-          .build(new GenericContentVariantSupplier<>(SimpleStoreWorker.INSTANCE));
+          .build(
+              new GenericContentVariantSupplier<>(SimpleStoreWorker.INSTANCE),
+              new GenericContentTypeSupplier<>(SimpleStoreWorker.INSTANCE));
     }
 
     @TearDown

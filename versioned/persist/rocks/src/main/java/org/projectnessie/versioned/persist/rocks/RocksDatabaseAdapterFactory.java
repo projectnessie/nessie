@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.persist.rocks;
 
+import org.projectnessie.versioned.persist.adapter.ContentTypeSupplier;
 import org.projectnessie.versioned.persist.adapter.ContentVariantSupplier;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
@@ -34,7 +35,9 @@ public class RocksDatabaseAdapterFactory
   protected DatabaseAdapter create(
       NonTransactionalDatabaseAdapterConfig config,
       RocksDbInstance rocksDbInstance,
-      ContentVariantSupplier contentVariantSupplier) {
-    return new RocksDatabaseAdapter(config, rocksDbInstance, contentVariantSupplier);
+      ContentVariantSupplier contentVariantSupplier,
+      ContentTypeSupplier contentTypeSupplier) {
+    return new RocksDatabaseAdapter(
+        config, rocksDbInstance, contentVariantSupplier, contentTypeSupplier);
   }
 }

@@ -19,6 +19,7 @@ import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreTy
 
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
+import org.projectnessie.versioned.persist.adapter.ContentTypeSupplier;
 import org.projectnessie.versioned.persist.adapter.ContentVariantSupplier;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.dynamodb.DynamoDatabaseAdapterFactory;
@@ -35,7 +36,8 @@ public class DynamoDatabaseAdapterBuilder implements DatabaseAdapterBuilder {
   @Inject NonTransactionalDatabaseAdapterConfig config;
 
   @Override
-  public DatabaseAdapter newDatabaseAdapter(ContentVariantSupplier contentVariantSupplier) {
+  public DatabaseAdapter newDatabaseAdapter(
+      ContentVariantSupplier contentVariantSupplier, ContentTypeSupplier contentTypeSupplier) {
     DynamoDatabaseClient client = new DynamoDatabaseClient();
     client.configure(ProvidedDynamoClientConfig.of(dynamoConfig));
     client.initialize();
@@ -44,6 +46,6 @@ public class DynamoDatabaseAdapterBuilder implements DatabaseAdapterBuilder {
         .newBuilder()
         .withConfig(config)
         .withConnector(client)
-        .build(contentVariantSupplier);
+        .build(contentVariantSupplier, contentTypeSupplier);
   }
 }

@@ -20,6 +20,7 @@ import java.lang.reflect.Method;
 import java.util.Locale;
 import java.util.Map;
 import org.projectnessie.server.store.TableCommitMetaStoreWorker;
+import org.projectnessie.versioned.persist.adapter.ContentTypeSupplier;
 import org.projectnessie.versioned.persist.adapter.ContentVariantSupplier;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
@@ -27,6 +28,7 @@ import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory.Builder;
 import org.projectnessie.versioned.persist.adapter.DatabaseConnectionConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseConnectionProvider;
+import org.projectnessie.versioned.persist.store.GenericContentTypeSupplier;
 import org.projectnessie.versioned.persist.store.GenericContentVariantSupplier;
 import org.projectnessie.versioned.persist.tests.SystemPropertiesConfigurer;
 import org.projectnessie.versioned.persist.tests.extension.TestConnectionProviderSource;
@@ -102,15 +104,21 @@ public class DatabaseAdapters {
     builder.withConnector(connectionProvider);
     try {
       // "New" signature 'public DatabaseAdapter build(ContentVariantSupplier
-      // contentVariantSupplier)'
-      return buildWithContentVariantSupplier(builder);
+      // contentVariantSupplier, ContentTypeSupplier contentTypeSupplier)'
+      return buildWithContentVariantAndContentTypeSupplier(builder);
     } catch (NoSuchMethodException | NoClassDefFoundError e) {
       try {
-        // "Old" signature 'public DatabaseAdapter build()'
-        //noinspection JavaReflectionMemberAccess
-        return buildPre019(builder, DatabaseAdapterFactory.Builder.class.getMethod("build"));
-      } catch (NoSuchMethodException ex) {
-        throw new RuntimeException(ex);
+        // signature 'public DatabaseAdapter build(ContentVariantSupplier
+        // contentVariantSupplier)'
+        return buildWithContentVariantSupplier(builder);
+      } catch (NoSuchMethodException | NoClassDefFoundError e2) {
+        try {
+          // "Old" signature 'public DatabaseAdapter build()'
+          //noinspection JavaReflectionMemberAccess
+          return buildPre019(builder, DatabaseAdapterFactory.Builder.class.getMethod("build"));
+        } catch (NoSuchMethodException ex) {
+          throw new RuntimeException(ex);
+        }
       }
     }
   }
@@ -128,6 +136,19 @@ public class DatabaseAdapters {
         DatabaseAdapterFactory.Builder.class.getMethod("build", ContentVariantSupplier.class);
     return doBuild(
         builder, build, new GenericContentVariantSupplier<>(new TableCommitMetaStoreWorker()));
+  }
+
+  private static DatabaseAdapter buildWithContentVariantAndContentTypeSupplier(
+      Builder<DatabaseAdapterConfig, DatabaseAdapterConfig, DatabaseConnectionProvider<?>> builder)
+      throws NoSuchMethodException {
+    Method build =
+        DatabaseAdapterFactory.Builder.class.getMethod(
+            "build", ContentVariantSupplier.class, ContentTypeSupplier.class);
+    return doBuild(
+        builder,
+        build,
+        new GenericContentVariantSupplier<>(new TableCommitMetaStoreWorker()),
+        new GenericContentTypeSupplier<>(new TableCommitMetaStoreWorker()));
   }
 
   private static DatabaseAdapter doBuild(

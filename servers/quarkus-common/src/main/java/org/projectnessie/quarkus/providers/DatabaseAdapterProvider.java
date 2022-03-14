@@ -29,6 +29,7 @@ import org.projectnessie.server.store.TableCommitMetaStoreWorker;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.spi.TracingDatabaseAdapter;
+import org.projectnessie.versioned.persist.store.GenericContentTypeSupplier;
 import org.projectnessie.versioned.persist.store.GenericContentVariantSupplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,7 +67,9 @@ public class DatabaseAdapterProvider {
         databaseAdapterBuilder
             .select(new Literal(versionStoreType))
             .get()
-            .newDatabaseAdapter(new GenericContentVariantSupplier<>(storeWorker));
+            .newDatabaseAdapter(
+                new GenericContentVariantSupplier<>(storeWorker),
+                new GenericContentTypeSupplier<>(storeWorker));
     databaseAdapter.initializeRepo(serverConfig.getDefaultBranch());
 
     if (storeConfig.isTracingEnabled()) {

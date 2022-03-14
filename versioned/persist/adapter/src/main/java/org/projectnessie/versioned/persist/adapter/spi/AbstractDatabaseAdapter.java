@@ -75,6 +75,7 @@ import org.projectnessie.versioned.persist.adapter.CommitAttempt;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentAndState;
 import org.projectnessie.versioned.persist.adapter.ContentId;
+import org.projectnessie.versioned.persist.adapter.ContentTypeSupplier;
 import org.projectnessie.versioned.persist.adapter.ContentVariant;
 import org.projectnessie.versioned.persist.adapter.ContentVariantSupplier;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
@@ -118,6 +119,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
   protected static final String TAG_COUNT = "count";
   protected final CONFIG config;
   protected final ContentVariantSupplier contentVariantSupplier;
+  protected final ContentTypeSupplier contentTypeSupplier;
 
   @SuppressWarnings("UnstableApiUsage")
   public static final Hash NO_ANCESTOR =
@@ -127,10 +129,14 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
 
   protected static long COMMIT_LOG_HASH_SEED = 946928273206945677L;
 
-  protected AbstractDatabaseAdapter(CONFIG config, ContentVariantSupplier contentVariantSupplier) {
+  protected AbstractDatabaseAdapter(
+      CONFIG config,
+      ContentVariantSupplier contentVariantSupplier,
+      ContentTypeSupplier contentTypeSupplier) {
     Objects.requireNonNull(config, "config parameter must not be null");
     this.config = config;
     this.contentVariantSupplier = contentVariantSupplier;
+    this.contentTypeSupplier = contentTypeSupplier;
   }
 
   @Override

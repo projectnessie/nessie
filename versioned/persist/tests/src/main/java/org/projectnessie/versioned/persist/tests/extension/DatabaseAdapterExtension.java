@@ -56,6 +56,7 @@ import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.adapter.DatabaseConnectionProvider;
 import org.projectnessie.versioned.persist.adapter.spi.TracingDatabaseAdapter;
+import org.projectnessie.versioned.persist.store.GenericContentTypeSupplier;
 import org.projectnessie.versioned.persist.store.GenericContentVariantSupplier;
 import org.projectnessie.versioned.persist.store.PersistVersionStore;
 import org.projectnessie.versioned.persist.tests.SystemPropertiesConfigurer;
@@ -330,7 +331,9 @@ public class DatabaseAdapterExtension
         .configure(applyCustomConfig)
         .withConnector(getConnectionProvider(context));
 
-    return builder.build(new GenericContentVariantSupplier<>(storeWorker));
+    return builder.build(
+        new GenericContentVariantSupplier<>(storeWorker),
+        new GenericContentTypeSupplier<>(storeWorker));
   }
 
   private static Function<AdjustableDatabaseAdapterConfig, DatabaseAdapterConfig>

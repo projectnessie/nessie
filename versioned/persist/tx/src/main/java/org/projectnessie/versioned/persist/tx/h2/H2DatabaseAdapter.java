@@ -17,6 +17,7 @@ package org.projectnessie.versioned.persist.tx.h2;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
+import org.projectnessie.versioned.persist.adapter.ContentTypeSupplier;
 import org.projectnessie.versioned.persist.adapter.ContentVariantSupplier;
 import org.projectnessie.versioned.persist.tx.TxConnectionProvider;
 import org.projectnessie.versioned.persist.tx.TxDatabaseAdapter;
@@ -27,8 +28,9 @@ public class H2DatabaseAdapter extends TxDatabaseAdapter {
   public H2DatabaseAdapter(
       TxDatabaseAdapterConfig config,
       TxConnectionProvider<?> db,
-      ContentVariantSupplier contentVariantSupplier) {
-    super(config, db, contentVariantSupplier);
+      ContentVariantSupplier contentVariantSupplier,
+      ContentTypeSupplier contentTypeSupplier) {
+    super(config, db, contentVariantSupplier, contentTypeSupplier);
   }
 
   @Override

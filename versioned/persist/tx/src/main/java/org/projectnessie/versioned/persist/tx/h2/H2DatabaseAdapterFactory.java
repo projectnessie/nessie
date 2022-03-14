@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.persist.tx.h2;
 
+import org.projectnessie.versioned.persist.adapter.ContentTypeSupplier;
 import org.projectnessie.versioned.persist.adapter.ContentVariantSupplier;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.tx.TxConnectionConfig;
@@ -36,7 +37,9 @@ public class H2DatabaseAdapterFactory
   protected DatabaseAdapter create(
       TxDatabaseAdapterConfig config,
       TxConnectionProvider<TxConnectionConfig> connectionProvider,
-      ContentVariantSupplier contentVariantSupplier) {
-    return new H2DatabaseAdapter(config, connectionProvider, contentVariantSupplier);
+      ContentVariantSupplier contentVariantSupplier,
+      ContentTypeSupplier contentTypeSupplier) {
+    return new H2DatabaseAdapter(
+        config, connectionProvider, contentVariantSupplier, contentTypeSupplier);
   }
 }

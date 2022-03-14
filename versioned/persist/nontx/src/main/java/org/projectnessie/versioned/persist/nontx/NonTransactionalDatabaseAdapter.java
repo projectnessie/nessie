@@ -71,6 +71,7 @@ import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentAndState;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
+import org.projectnessie.versioned.persist.adapter.ContentTypeSupplier;
 import org.projectnessie.versioned.persist.adapter.ContentVariantSupplier;
 import org.projectnessie.versioned.persist.adapter.Difference;
 import org.projectnessie.versioned.persist.adapter.GlobalLogCompactionParams;
@@ -118,8 +119,10 @@ public abstract class NonTransactionalDatabaseAdapter<
   public static final String TAG_KEY_LIST_COUNT = "key-list-count";
 
   protected NonTransactionalDatabaseAdapter(
-      CONFIG config, ContentVariantSupplier contentVariantSupplier) {
-    super(config, contentVariantSupplier);
+      CONFIG config,
+      ContentVariantSupplier contentVariantSupplier,
+      ContentTypeSupplier contentTypeSupplier) {
+    super(config, contentVariantSupplier, contentTypeSupplier);
   }
 
   @Override

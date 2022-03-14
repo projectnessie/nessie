@@ -15,6 +15,7 @@
  */
 package org.projectnessie.quarkus.providers;
 
+import org.projectnessie.versioned.persist.adapter.ContentTypeSupplier;
 import org.projectnessie.versioned.persist.adapter.ContentVariantSupplier;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 
@@ -27,6 +28,8 @@ public interface DatabaseAdapterBuilder {
    * @return new database adapter instance
    * @param contentVariantSupplier provides the kind of content, whether it's only stored on a
    *     reference or requires global state.
+   * @param contentTypeSupplier provides the type of content
    */
-  DatabaseAdapter newDatabaseAdapter(ContentVariantSupplier contentVariantSupplier);
+  DatabaseAdapter newDatabaseAdapter(
+      ContentVariantSupplier contentVariantSupplier, ContentTypeSupplier contentTypeSupplier);
 }

@@ -44,6 +44,7 @@ import org.projectnessie.versioned.BackendLimitExceededException;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
+import org.projectnessie.versioned.persist.adapter.ContentTypeSupplier;
 import org.projectnessie.versioned.persist.adapter.ContentVariantSupplier;
 import org.projectnessie.versioned.persist.adapter.KeyList;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
@@ -87,8 +88,9 @@ public class DynamoDatabaseAdapter
   public DynamoDatabaseAdapter(
       NonTransactionalDatabaseAdapterConfig config,
       DynamoDatabaseClient c,
-      ContentVariantSupplier contentVariantSupplier) {
-    super(config, contentVariantSupplier);
+      ContentVariantSupplier contentVariantSupplier,
+      ContentTypeSupplier contentTypeSupplier) {
+    super(config, contentVariantSupplier, contentTypeSupplier);
 
     Objects.requireNonNull(
         c, "Requires a non-null DynamoDatabaseClient from DynamoDatabaseAdapterConfig");
