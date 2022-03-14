@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2022 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.jaxrs.gc;
+package org.projectnessie.gc.base;
 
 import java.net.URI;
 import org.junit.jupiter.api.BeforeAll;
@@ -23,11 +23,17 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.projectnessie.jaxrs.ext.NessieJaxRsExtension;
 import org.projectnessie.jaxrs.ext.NessieUri;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
+import org.projectnessie.versioned.persist.inmem.InmemoryDatabaseAdapterFactory;
+import org.projectnessie.versioned.persist.inmem.InmemoryTestConnectionProviderSource;
 import org.projectnessie.versioned.persist.tests.extension.DatabaseAdapterExtension;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapter;
+import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterName;
+import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
+@NessieDbAdapterName(InmemoryDatabaseAdapterFactory.NAME)
+@NessieExternalDatabase(InmemoryTestConnectionProviderSource.class)
 @ExtendWith(DatabaseAdapterExtension.class)
-abstract class AbstractTestJerseyRestGC extends AbstractRestGCTest {
+class TestJerseyRestGcInMemory extends AbstractRestGCTest {
 
   @NessieDbAdapter static DatabaseAdapter databaseAdapter;
 

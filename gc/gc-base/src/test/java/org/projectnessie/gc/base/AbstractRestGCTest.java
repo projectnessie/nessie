@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.jaxrs.gc;
+package org.projectnessie.gc.base;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.error.BaseNessieClientServerException;
-import org.projectnessie.gc.base.IdentifiedResult;
 import org.projectnessie.model.Branch;
 
 public abstract class AbstractRestGCTest extends AbstractRestGC {
