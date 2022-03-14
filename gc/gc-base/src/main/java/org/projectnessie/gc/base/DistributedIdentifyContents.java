@@ -41,7 +41,6 @@ public class DistributedIdentifyContents {
    * @param droppedRefTimeMap map of dropped time for reference@hash
    * @return map of {@link ContentBloomFilter} per content-id.
    */
-  // here
   public static Map<String, ContentBloomFilter> getLiveContentsBloomFilters(
       List<Reference> references,
       long bloomFilterSize,
@@ -68,7 +67,6 @@ public class DistributedIdentifyContents {
    * @param references list of all the references to walk (live and dead)
    * @return {@link IdentifiedResult} object.
    */
-  // here
   public static IdentifiedResult getIdentifiedResults(
       Map<String, ContentBloomFilter> liveContentsBloomFilterMap,
       List<Reference> references,
