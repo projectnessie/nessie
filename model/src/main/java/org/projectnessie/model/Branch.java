@@ -20,6 +20,7 @@ import static org.projectnessie.model.Validation.validateReferenceName;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import java.io.Serializable;
 import javax.annotation.Nullable;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -31,7 +32,7 @@ import org.immutables.value.Value;
 @JsonSerialize(as = ImmutableBranch.class)
 @JsonDeserialize(as = ImmutableBranch.class)
 @JsonTypeName("BRANCH")
-public interface Branch extends Reference {
+public interface Branch extends Reference, Serializable {
 
   @Override
   @Nullable

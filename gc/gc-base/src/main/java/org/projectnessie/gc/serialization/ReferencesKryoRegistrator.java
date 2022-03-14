@@ -16,16 +16,13 @@
 package org.projectnessie.gc.serialization;
 
 import com.esotericsoftware.kryo.Kryo;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.spark.serializer.KryoRegistrator;
 import org.projectnessie.gc.base.ContentBloomFilter;
 import org.projectnessie.gc.base.ContentValues;
-import org.projectnessie.gc.base.DistributedIdentifyContents;
 import org.projectnessie.gc.base.IdentifiedResult;
-import org.projectnessie.gc.base.IdentifyContentsPerExecutor;
 import org.projectnessie.gc.base.ImmutableGCParams;
 import org.projectnessie.model.ImmutableBranch;
 import org.projectnessie.model.ImmutableCommitMeta;
@@ -41,10 +38,7 @@ public class ReferencesKryoRegistrator implements KryoRegistrator {
 
   @Override
   public void registerClasses(Kryo kryo) {
-    LOGGER.info(
-        "Registering classes for kryo: "
-            + kryo
-            + Arrays.toString(Thread.currentThread().getStackTrace()));
+    LOGGER.info("Registering classes for kryo: " + kryo);
     kryo.register(ImmutableBranch.class, new ImmutableBranchSerializer());
     kryo.register(ImmutableDetached.class, new ImmutableDetachedSerializer());
     kryo.register(ImmutableReferenceMetadata.class, new ImmutableReferenceMetadataSerializer());
@@ -58,20 +52,5 @@ public class ReferencesKryoRegistrator implements KryoRegistrator {
     kryo.register(ConcurrentHashMap.class);
     kryo.register(IdentifiedResult.class);
     kryo.register(ContentValues.class);
-    kryo.register(IdentifyContentsPerExecutor.class);
-    kryo.register(DistributedIdentifyContents.class);
-    //    kryo.register(Class.class);
-    //    kryo.register(java.lang.invoke.SerializedLambda.class);
-    //    kryo.register(ClosureSerializer.Closure.class, new ClosureSerializer());
   }
-
-  //
-  //  private static MapSerializer referenceToInstantMapSerializer() {
-  //    MapSerializer serializer = new MapSerializer();
-  //    serializer.setKeysCanBeNull(false);
-  //    serializer.setKeyClass(ImmutableBranch.class, new ImmutableBranchSerializer());
-  //    serializer.setValuesCanBeNull(false);
-  //    serializer.setValueClass(Instant.class, new InstantSerializer());
-  //    return serializer;
-  //  }
 }
