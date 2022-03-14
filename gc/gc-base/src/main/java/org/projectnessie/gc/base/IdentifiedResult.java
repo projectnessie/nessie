@@ -24,9 +24,9 @@ import org.apache.spark.sql.SparkSession;
 import org.projectnessie.model.Content;
 
 /**
- * Output of Identify GC action {@link GCImpl#identifyExpiredContents(SparkSession)}. Contains a map
- * of {@link ContentValues} which contains the globally expired contents per content id per
- * reference.
+ * Output of Identify GC action {@link GCImpl#identifyExpiredContents(SparkSession, GCParams)}.
+ * Contains a map of {@link ContentValues} which contains the globally expired contents per content
+ * id per reference.
  */
 public class IdentifiedResult implements Serializable {
 

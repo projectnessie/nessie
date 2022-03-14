@@ -41,7 +41,7 @@ import org.projectnessie.model.Reference;
 
 /**
  * Contains the methods that executes in spark executor for {@link
- * GCImpl#identifyExpiredContents(SparkSession)}.
+ * GCImpl#identifyExpiredContents(SparkSession, GCParams)}.
  */
 public class IdentifyContentsPerExecutor {
 
