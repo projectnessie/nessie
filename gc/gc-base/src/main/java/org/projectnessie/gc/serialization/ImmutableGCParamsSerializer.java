@@ -21,7 +21,7 @@ import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.HashMap;
+import java.util.Map;
 import org.projectnessie.gc.base.ImmutableGCParams;
 
 public class ImmutableGCParamsSerializer extends Serializer<ImmutableGCParams> {
@@ -46,13 +46,13 @@ public class ImmutableGCParamsSerializer extends Serializer<ImmutableGCParams> {
   @SuppressWarnings("unchecked")
   public ImmutableGCParams read(Kryo kryo, Input input, Class<ImmutableGCParams> classType) {
     return ImmutableGCParams.builder()
-        .nessieClientConfigs(kryo.readObject(input, HashMap.class))
-        .cutOffTimestampPerRef(kryo.readObject(input, HashMap.class))
+        .nessieClientConfigs((Map<String, ? extends String>) kryo.readClassAndObject(input))
+        .cutOffTimestampPerRef((Map<String, ? extends Instant>) kryo.readClassAndObject(input))
         .defaultCutOffTimestamp(kryo.readObject(input, Instant.class))
         .deadReferenceCutOffTimeStamp(kryo.readObjectOrNull(input, Instant.class))
         .sparkPartitionsCount(kryo.readObjectOrNull(input, Integer.class))
         .commitProtectionDuration(kryo.readObject(input, Duration.class))
-        .bloomFilterExpectedEntries(kryo.readObject(input, Long.class))
+        .bloomFilterExpectedEntries(kryo.readObjectOrNull(input, Long.class))
         .bloomFilterFpp(input.readDouble())
         .build();
   }

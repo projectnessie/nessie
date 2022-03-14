@@ -41,6 +41,12 @@
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
+    <!--- We cannot use version > 0.43 beacuse it uses a kryo version 5.x that is incompatible with out spark (requires 4.x) -->
+    <dependency>
+      <groupId>de.javakaffee</groupId>
+      <artifactId>kryo-serializers</artifactId>
+      <version>0.43</version>
+    </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>

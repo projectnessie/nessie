@@ -20,13 +20,15 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import com.google.common.collect.ImmutableMap;
 import java.io.ByteArrayOutputStream;
+import java.time.Duration;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.zip.DeflaterOutputStream;
 import org.junit.jupiter.api.Test;
+import org.projectnessie.gc.base.ImmutableGCParams;
 import org.projectnessie.model.ImmutableBranch;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableReferenceMetadata;
@@ -38,6 +40,10 @@ class ReferencesSerializerTest {
   @Test
   public void shouldSerializerAndDeserializerImmutableBranch() {
     // given
+    Map<String, String> properties = new HashMap<>();
+    properties.put("key", "value");
+    properties.put("key2", "value2");
+
     Kryo kryo = new Kryo();
     new ReferencesKryoRegistrator().registerClasses(kryo);
     ImmutableBranch immutableBranch =
@@ -59,7 +65,7 @@ class ReferencesSerializerTest {
                             .signedOffBy("author_signed")
                             .commitTime(Instant.now())
                             .authorTime(Instant.now().plusSeconds(10))
-                            .properties(ImmutableMap.of("key", "value"))
+                            .properties(properties)
                             .build())
                     .build())
             .build();
@@ -77,6 +83,10 @@ class ReferencesSerializerTest {
   @Test
   public void shouldSerializerAndDeserializerImmutableTag() {
     // given
+    Map<String, String> properties = new HashMap<>();
+    properties.put("key", "value");
+    properties.put("key2", "value2");
+
     Kryo kryo = new Kryo();
     new ReferencesKryoRegistrator().registerClasses(kryo);
     ImmutableTag immutableTag =
@@ -98,7 +108,7 @@ class ReferencesSerializerTest {
                             .signedOffBy("author_signed")
                             .commitTime(Instant.now())
                             .authorTime(Instant.now().plusSeconds(10))
-                            .properties(ImmutableMap.of("key", "value"))
+                            .properties(properties)
                             .build())
                     .build())
             .build();
@@ -115,6 +125,10 @@ class ReferencesSerializerTest {
 
   @Test
   public void shouldSerializeAndDeserializeCollectionOfReferences() {
+    Map<String, String> properties = new HashMap<>();
+    properties.put("key", "value");
+    properties.put("key2", "value2");
+
     Kryo kryo = new Kryo();
     new ReferencesKryoRegistrator().registerClasses(kryo);
     ImmutableBranch immutableBranch =
@@ -136,7 +150,7 @@ class ReferencesSerializerTest {
                             .signedOffBy("author_signed")
                             .commitTime(Instant.now())
                             .authorTime(Instant.now().plusSeconds(10))
-                            .properties(ImmutableMap.of("key", "value"))
+                            .properties(properties)
                             .build())
                     .build())
             .build();
@@ -151,6 +165,39 @@ class ReferencesSerializerTest {
     Map<Reference, Instant> mapDeserialized =
         kryo.readObject(new Input(output.toBytes()), LinkedHashMap.class);
     assertThat(map).isEqualTo(mapDeserialized);
+  }
+
+  @Test
+  public void shouldSerializeAndDeserializeGCParams() {
+    // given
+    Map<String, String> nessieConfig = new HashMap<>();
+    nessieConfig.put("k1", "v1");
+
+    Map<String, Instant> cutoffTimestamp = new HashMap<>();
+    cutoffTimestamp.put("k1", Instant.now());
+
+    Kryo kryo = new Kryo();
+    new ReferencesKryoRegistrator().registerClasses(kryo);
+    ImmutableGCParams gcParams =
+        ImmutableGCParams.builder()
+            .nessieClientConfigs(nessieConfig)
+            .deadReferenceCutOffTimeStamp(Instant.now().plusSeconds(60))
+            .bloomFilterExpectedEntries(10L)
+            .defaultCutOffTimestamp(Instant.now())
+            .commitProtectionDuration(Duration.ofDays(1))
+            .bloomFilterFpp(0.3)
+            .cutOffTimestampPerRef(cutoffTimestamp)
+            .sparkPartitionsCount(36)
+            .build();
+
+    // when
+    Output output = createOutput();
+    kryo.writeObject(output, gcParams);
+
+    // then
+    ImmutableGCParams immutableGCParamsDeserialized =
+        kryo.readObject(new Input(output.toBytes()), ImmutableGCParams.class);
+    assertThat(gcParams).isEqualTo(immutableGCParamsDeserialized);
   }
 
   private Output createOutput() {

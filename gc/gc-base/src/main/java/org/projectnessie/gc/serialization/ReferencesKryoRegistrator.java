@@ -16,8 +16,14 @@
 package org.projectnessie.gc.serialization;
 
 import com.esotericsoftware.kryo.Kryo;
+import de.javakaffee.kryoserializers.UnmodifiableCollectionsSerializer;
+import de.javakaffee.kryoserializers.guava.ImmutableMapSerializer;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.spark.serializer.KryoRegistrator;
 import org.projectnessie.gc.base.ContentBloomFilter;
@@ -36,6 +42,18 @@ import org.slf4j.LoggerFactory;
 public class ReferencesKryoRegistrator implements KryoRegistrator {
   private static final Logger LOGGER = LoggerFactory.getLogger(ReferencesKryoRegistrator.class);
 
+  /**
+   * Registering all needed classes. We need to register all used classes, because we are setting
+   * `spark.kryo.registrationRequired` to `true`. Setting it to false may impact the performance
+   * significantly, because as per doc:
+   *
+   * <p>Writing class names can cause significant performance overhead, so enabling this option can
+   * enforce strictly that a user has not omitted classes from registration.
+   *
+   * @see <a href="https://spark.apache.org/docs/latest/configuration.html">the Spark
+   *     documentation</a>
+   * @param kryo
+   */
   @Override
   public void registerClasses(Kryo kryo) {
     LOGGER.info("Registering classes for kryo: " + kryo);
@@ -46,11 +64,29 @@ public class ReferencesKryoRegistrator implements KryoRegistrator {
     kryo.register(ImmutableTag.class, new ImmutableTagSerializer());
     kryo.register(ContentBloomFilter.class, new ContentBloomFilterSerializer());
     kryo.register(ImmutableGCParams.class, new ImmutableGCParamsSerializer());
-    kryo.register(HashMap.class);
     kryo.register(ImmutableIcebergTable.class);
-    kryo.register(HashSet.class);
-    kryo.register(ConcurrentHashMap.class);
     kryo.register(IdentifiedResult.class);
     kryo.register(ContentValues.class);
+
+    // needed for date-time
+    kryo.register(Duration.class);
+    kryo.register(Instant.class);
+
+    // needed for all types of collections. It will use serializers from
+    // `com.esotericsoftware.kryo.serializers.DefaultSerializers`
+    kryo.register(HashMap.class);
+    kryo.register(HashSet.class);
+    kryo.register(ConcurrentHashMap.class);
+    kryo.register(LinkedHashMap.class);
+    kryo.register(Collections.EMPTY_LIST.getClass());
+    kryo.register(Collections.EMPTY_MAP.getClass());
+    kryo.register(Collections.EMPTY_SET.getClass());
+    kryo.register(Collections.singletonList("").getClass());
+    kryo.register(Collections.singleton("").getClass());
+    kryo.register(Collections.singletonMap("", "").getClass());
+
+    // needed for java.util.Collections$UnmodifiableMap
+    UnmodifiableCollectionsSerializer.registerSerializers(kryo);
+    ImmutableMapSerializer.registerSerializers(kryo);
   }
 }
