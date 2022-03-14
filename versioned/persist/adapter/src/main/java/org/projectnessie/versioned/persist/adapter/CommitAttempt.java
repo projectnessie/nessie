@@ -19,6 +19,8 @@ import com.google.protobuf.ByteString;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Callable;
+import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
@@ -68,4 +70,7 @@ public interface CommitAttempt {
 
   /** Serialized commit-metadata. */
   ByteString getCommitMetaSerialized();
+
+  @Nullable
+  Callable<Void> getValidator();
 }

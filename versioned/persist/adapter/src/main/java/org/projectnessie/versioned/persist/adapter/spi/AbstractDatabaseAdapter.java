@@ -47,6 +47,7 @@ import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.Spliterators.AbstractSpliterator;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -84,8 +85,8 @@ import org.projectnessie.versioned.persist.adapter.ImmutableKeyList;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyList;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
+import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
-import org.projectnessie.versioned.persist.adapter.KeyWithType;
 import org.projectnessie.versioned.persist.adapter.RefLog;
 
 /**
@@ -166,6 +167,18 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       Consumer<Hash> newKeyLists)
       throws ReferenceNotFoundException, ReferenceConflictException {
     List<String> mismatches = new ArrayList<>();
+
+    Callable<Void> validator = commitAttempt.getValidator();
+    if (validator != null) {
+      try {
+        validator.call();
+      } catch (RuntimeException e) {
+        // just propagate the RuntimeException up
+        throw e;
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    }
 
     // verify expected global-states
     checkExpectedGlobalStates(ctx, commitAttempt, mismatches::add);
@@ -376,10 +389,10 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     // TODO this implementation works, but is definitely not the most efficient one.
 
     Set<Key> allKeys = new HashSet<>();
-    try (Stream<Key> s = keysForCommitEntry(ctx, from, keyFilter).map(KeyWithType::getKey)) {
+    try (Stream<Key> s = keysForCommitEntry(ctx, from, keyFilter).map(KeyListEntry::getKey)) {
       s.forEach(allKeys::add);
     }
-    try (Stream<Key> s = keysForCommitEntry(ctx, to, keyFilter).map(KeyWithType::getKey)) {
+    try (Stream<Key> s = keysForCommitEntry(ctx, to, keyFilter).map(KeyListEntry::getKey)) {
       s.forEach(allKeys::add);
     }
 
@@ -917,14 +930,14 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       currentKeyList = ImmutableKeyList.builder();
     }
 
-    void addToKeyListEntity(KeyWithType keyWithType, int keyTypeSize) {
+    void addToKeyListEntity(KeyListEntry keyListEntry, int keyTypeSize) {
       currentSize += keyTypeSize;
-      currentKeyList.addKeys(keyWithType);
+      currentKeyList.addKeys(keyListEntry);
     }
 
-    void addToEmbedded(KeyWithType keyWithType, int keyTypeSize) {
+    void addToEmbedded(KeyListEntry keyListEntry, int keyTypeSize) {
       currentSize += keyTypeSize;
-      embeddedBuilder.addKeys(keyWithType);
+      embeddedBuilder.addKeys(keyListEntry);
     }
   }
 
@@ -1013,7 +1026,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
   protected abstract int entitySize(CommitLogEntry entry);
 
   /** Calculate the expected size of the given {@link CommitLogEntry} in the database. */
-  protected abstract int entitySize(KeyWithType entry);
+  protected abstract int entitySize(KeyListEntry entry);
 
   /**
    * If the current HEAD of the target branch for a commit/transplant/merge is not equal to the
@@ -1049,14 +1062,14 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
   }
 
   /** Retrieve the content-keys and their types for the commit-log-entry with the given hash. */
-  protected Stream<KeyWithType> keysForCommitEntry(
+  protected Stream<KeyListEntry> keysForCommitEntry(
       OP_CONTEXT ctx, Hash hash, KeyFilterPredicate keyFilter) throws ReferenceNotFoundException {
     return keysForCommitEntry(ctx, hash, NO_IN_MEMORY_COMMITS)
         .filter(kt -> keyFilter.check(kt.getKey(), kt.getContentId(), kt.getType()));
   }
 
   /** Retrieve the content-keys and their types for the commit-log-entry with the given hash. */
-  protected Stream<KeyWithType> keysForCommitEntry(
+  protected Stream<KeyListEntry> keysForCommitEntry(
       OP_CONTEXT ctx, Hash hash, @Nonnull Function<Hash, CommitLogEntry> inMemoryCommits)
       throws ReferenceNotFoundException {
     // walk the commit-logs in reverse order - starting with the last persisted key-list
@@ -1071,15 +1084,18 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
           seen.addAll(e.getDeletes());
 
           // Return from CommitLogEntry.puts first
-          Stream<KeyWithType> stream =
+          Stream<KeyListEntry> stream =
               e.getPuts().stream()
-                  .filter(kt -> seen.add(kt.getKey()))
-                  .map(KeyWithBytes::asKeyWithType);
+                  .filter(put -> seen.add(put.getKey()))
+                  .map(
+                      put ->
+                          KeyListEntry.of(
+                              put.getKey(), put.getContentId(), put.getType(), e.getHash()));
 
           if (e.getKeyList() != null) {
 
             // Return from CommitLogEntry.keyList after the keys in CommitLogEntry.puts
-            Stream<KeyWithType> embedded =
+            Stream<KeyListEntry> embedded =
                 e.getKeyList().getKeys().stream().filter(kt -> seen.add(kt.getKey()));
 
             stream = Stream.concat(stream, embedded);
@@ -1093,8 +1109,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
                       Stream.of(e.getKeyListsIds())
                           .flatMap(ids -> fetchKeyLists(ctx, ids))
                           .map(KeyListEntity::getKeys)
-                          .flatMap(k -> k.getKeys().stream())
-                          .filter(kt -> seen.add(kt.getKey())));
+                          .flatMap(keyList -> keyList.getKeys().stream())
+                          .filter(keyListEntry -> seen.add(keyListEntry.getKey())));
             }
           }
 
@@ -1114,28 +1130,91 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     Map<Key, ByteString> nonGlobal = new HashMap<>();
     Map<Key, ContentId> keyToContentIds = new HashMap<>();
     Set<ContentId> contentIdsForGlobal = new HashSet<>();
+
+    Consumer<CommitLogEntry> commitLogEntryHandler =
+        entry -> {
+          // remove deleted keys from keys to look for
+          entry.getDeletes().forEach(remainingKeys::remove);
+
+          // handle put operations
+          for (KeyWithBytes put : entry.getPuts()) {
+            if (!remainingKeys.remove(put.getKey())) {
+              continue;
+            }
+
+            if (!keyFilter.check(put.getKey(), put.getContentId(), put.getType())) {
+              continue;
+            }
+            nonGlobal.put(put.getKey(), put.getValue());
+            keyToContentIds.put(put.getKey(), put.getContentId());
+            ContentVariant contentVariant = contentVariantSupplier.getContentVariant(put.getType());
+            switch (contentVariant) {
+              case ON_REF:
+                break;
+              case WITH_GLOBAL:
+                contentIdsForGlobal.add(put.getContentId());
+                break;
+              default:
+                throw new IllegalStateException("Unknown content variant " + contentVariant);
+            }
+          }
+        };
+
+    // The algorithm is a bit complex, but not horribly complex.
+    //
+    // The commit-log `Stream` in the following try-with-resources fetches the commit-log until
+    // all requested keys have been seen.
+    //
+    // When a commit-log-entry with key-lists is encountered, use the key-lists to determine if
+    // and how the remaining keys need to be retrieved.
+    // - If any of the requested keys is not in the key-lists, ignore it - it doesn't exist.
+    // - If the `KeyListEntry` for a requested key contains the commit-ID, use the commit-ID to
+    //   directly access the commit that contains the `Put` operation for that key.
+    //
+    // Both the "outer" `Stream` and the result of the latter case (list of commit-log-entries)
+    // share common functionality implemented in the function `commitLogEntryHandler`, which
+    // handles the 'Put` operations.
+
     try (Stream<CommitLogEntry> log =
         takeUntilExcludeLast(readCommitLogStream(ctx, refHead), e -> remainingKeys.isEmpty())) {
-      log.peek(entry -> entry.getDeletes().forEach(remainingKeys::remove))
-          .flatMap(entry -> entry.getPuts().stream())
-          .filter(put -> remainingKeys.remove(put.getKey()))
-          .filter(put -> keyFilter.check(put.getKey(), put.getContentId(), put.getType()))
-          .forEach(
-              put -> {
-                nonGlobal.put(put.getKey(), put.getValue());
-                keyToContentIds.put(put.getKey(), put.getContentId());
-                ContentVariant contentVariant =
-                    contentVariantSupplier.getContentVariant(put.getType());
-                switch (contentVariant) {
-                  case ON_REF:
-                    break;
-                  case WITH_GLOBAL:
-                    contentIdsForGlobal.add(put.getContentId());
-                    break;
-                  default:
-                    throw new IllegalStateException("Unknown content variant " + contentVariant);
-                }
-              });
+      log.forEach(
+          entry -> {
+            commitLogEntryHandler.accept(entry);
+
+            if (entry.getKeyList() != null) {
+              // CommitLogEntry has a KeyList.
+              // All keys in 'remainingKeys', that are _not_ in the KeyList(s), can be removed,
+              // because at this point we know that these do not exist.
+
+              Set<KeyListEntry> remainingInKeyList = new HashSet<>();
+              try (Stream<KeyList> keyLists =
+                  Stream.concat(
+                      Stream.of(entry.getKeyList()),
+                      fetchKeyLists(ctx, entry.getKeyListsIds()).map(KeyListEntity::getKeys))) {
+                keyLists
+                    .flatMap(keyList -> keyList.getKeys().stream())
+                    .filter(keyListEntry -> remainingKeys.contains(keyListEntry.getKey()))
+                    .forEach(remainingInKeyList::add);
+              }
+
+              if (!remainingInKeyList.isEmpty()) {
+                List<CommitLogEntry> commitLogEntries =
+                    fetchMultipleFromCommitLog(
+                        ctx,
+                        remainingInKeyList.stream()
+                            .map(KeyListEntry::getCommitId)
+                            .filter(Objects::nonNull)
+                            .distinct()
+                            .collect(Collectors.toList()));
+                commitLogEntries.forEach(commitLogEntryHandler);
+              }
+
+              remainingKeys.retainAll(
+                  remainingInKeyList.stream()
+                      .map(KeyListEntry::getKey)
+                      .collect(Collectors.toSet()));
+            }
+          });
     }
 
     Map<ContentId, ByteString> globals = fetchGlobalStates(ctx, contentIdsForGlobal);
@@ -1167,6 +1246,9 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       OP_CONTEXT ctx, Set<ContentId> contentIds) throws ReferenceNotFoundException;
 
   protected final Stream<KeyListEntity> fetchKeyLists(OP_CONTEXT ctx, List<Hash> keyListsIds) {
+    if (keyListsIds.isEmpty()) {
+      return Stream.empty();
+    }
     try (Traced ignore = trace("fetchKeyLists").tag(TAG_COUNT, keyListsIds.size())) {
       return doFetchKeyLists(ctx, keyListsIds);
     }

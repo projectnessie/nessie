@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.persist.adapter;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.ByteString;
 import java.util.Collection;
 import java.util.List;
@@ -120,7 +121,7 @@ public interface DatabaseAdapter {
    * @return Ordered stream with content-keys, content-ids and content-types
    * @throws ReferenceNotFoundException if {@code commit} does not exist.
    */
-  Stream<KeyWithType> keys(Hash commit, KeyFilterPredicate keyFilter)
+  Stream<KeyListEntry> keys(Hash commit, KeyFilterPredicate keyFilter)
       throws ReferenceNotFoundException;
 
   /**
@@ -312,6 +313,8 @@ public interface DatabaseAdapter {
    */
   Optional<ContentIdAndBytes> globalContent(ContentId contentId);
 
+  Map<String, Map<String, String>> repoMaintenance(RepoMaintenanceParams repoMaintenanceParams);
+
   /**
    * Retrieve the refLog starting at the refLog referenced by {@code offset}.
    *
@@ -319,4 +322,7 @@ public interface DatabaseAdapter {
    * @param offset initial reflog id to read from
    */
   Stream<RefLog> refLog(Hash offset) throws RefLogNotFoundException;
+
+  @VisibleForTesting
+  void assertCleanStateForTests();
 }

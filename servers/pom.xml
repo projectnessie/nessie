@@ -22,7 +22,7 @@
   <parent>
     <groupId>org.projectnessie</groupId>
     <artifactId>nessie</artifactId>
-    <version>0.21.3-SNAPSHOT</version>
+    <version>0.22.1-SNAPSHOT</version>
   </parent>
 
   <artifactId>nessie-server-parent</artifactId>
@@ -31,7 +31,10 @@
   <name>Nessie - Servers - Parent</name>
 
   <modules>
+    <module>quarkus-common</module>
+    <module>quarkus-tests</module>
     <module>quarkus-server</module>
+    <module>quarkus-cli</module>
     <module>services</module>
     <module>rest-services</module>
     <module>store-proto</module>

@@ -28,8 +28,8 @@ import org.projectnessie.versioned.persist.adapter.ImmutableKeyList;
 import org.projectnessie.versioned.persist.adapter.ImmutableRefLog;
 import org.projectnessie.versioned.persist.adapter.ImmutableRepoDescription;
 import org.projectnessie.versioned.persist.adapter.KeyList;
+import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
-import org.projectnessie.versioned.persist.adapter.KeyWithType;
 import org.projectnessie.versioned.persist.adapter.RefLog;
 import org.projectnessie.versioned.persist.adapter.RepoDescription;
 
@@ -137,7 +137,7 @@ public class ProtoSerialization {
     proto.getDeletesList().forEach(p -> entry.addDeletes(protoToKey(p)));
     if (!proto.getKeyListList().isEmpty()) {
       ImmutableKeyList.Builder kl = ImmutableKeyList.builder();
-      proto.getKeyListList().forEach(kle -> kl.addKeys(protoToKeyWithType(kle)));
+      proto.getKeyListList().forEach(kle -> kl.addKeys(protoToKeyListEntry(kle)));
       entry.keyList(kl.build());
     }
     proto.getKeyListIdsList().forEach(p -> entry.addKeyListsIds(Hash.of(p)));
@@ -169,7 +169,7 @@ public class ProtoSerialization {
 
   public static AdapterTypes.KeyList toProto(KeyList x) {
     AdapterTypes.KeyList.Builder keyList = AdapterTypes.KeyList.newBuilder();
-    for (KeyWithType key : x.getKeys()) {
+    for (KeyListEntry key : x.getKeys()) {
       keyList.addKeys(toProto(key));
     }
     return keyList.build();
@@ -179,8 +179,8 @@ public class ProtoSerialization {
     try {
       AdapterTypes.KeyList proto = AdapterTypes.KeyList.parseFrom(serialized);
       ImmutableKeyList.Builder keyList = ImmutableKeyList.builder();
-      for (AdapterTypes.KeyWithType key : proto.getKeysList()) {
-        keyList.addKeys(protoToKeyWithType(key));
+      for (AdapterTypes.KeyListEntry key : proto.getKeysList()) {
+        keyList.addKeys(protoToKeyListEntry(key));
       }
       return keyList.build();
     } catch (InvalidProtocolBufferException e) {
@@ -192,8 +192,8 @@ public class ProtoSerialization {
     try {
       AdapterTypes.KeyList proto = AdapterTypes.KeyList.parseFrom(bytes);
       ImmutableKeyList.Builder keyList = ImmutableKeyList.builder();
-      for (AdapterTypes.KeyWithType key : proto.getKeysList()) {
-        keyList.addKeys(protoToKeyWithType(key));
+      for (AdapterTypes.KeyListEntry key : proto.getKeysList()) {
+        keyList.addKeys(protoToKeyListEntry(key));
       }
       return keyList.build();
     } catch (InvalidProtocolBufferException e) {
@@ -218,19 +218,24 @@ public class ProtoSerialization {
         proto.getValue());
   }
 
-  public static AdapterTypes.KeyWithType toProto(KeyWithType x) {
-    return AdapterTypes.KeyWithType.newBuilder()
-        .setKey(keyToProto(x.getKey()))
-        .setContentId(AdapterTypes.ContentId.newBuilder().setId(x.getContentId().getId()))
-        .setType(x.getType())
-        .build();
+  public static AdapterTypes.KeyListEntry toProto(KeyListEntry x) {
+    AdapterTypes.KeyListEntry.Builder builder =
+        AdapterTypes.KeyListEntry.newBuilder()
+            .setKey(keyToProto(x.getKey()))
+            .setContentId(AdapterTypes.ContentId.newBuilder().setId(x.getContentId().getId()))
+            .setType(x.getType());
+    if (x.getCommitId() != null) {
+      builder.setCommitId(x.getCommitId().asBytes());
+    }
+    return builder.build();
   }
 
-  public static KeyWithType protoToKeyWithType(AdapterTypes.KeyWithType proto) {
-    return KeyWithType.of(
+  public static KeyListEntry protoToKeyListEntry(AdapterTypes.KeyListEntry proto) {
+    return KeyListEntry.of(
         protoToKey(proto.getKey()),
         ContentId.of(proto.getContentId().getId()),
-        (byte) proto.getType());
+        (byte) proto.getType(),
+        proto.hasCommitId() ? Hash.of(proto.getCommitId()) : null);
   }
 
   public static AdapterTypes.Key keyToProto(Key key) {

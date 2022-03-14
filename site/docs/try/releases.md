@@ -1,5 +1,14 @@
 # Releases
 
+## 0.22.0 Release (March 11, 2022)
+
+* Improve performance of `getValues`
+* Global-log compaction
+* Store-level maintenance CLI
+* Reduce number of tags for micrometer
+* Grafana Dashboard for Nessie service
+* Add new commands to generate-content tool
+
 ## 0.21.2 Release (March 2, 2022)
 
 * Fix serialization issue

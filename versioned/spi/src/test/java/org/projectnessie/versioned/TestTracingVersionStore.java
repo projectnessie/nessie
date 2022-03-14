@@ -99,7 +99,8 @@ class TestTracingVersionStore {
                                 BranchName.of("mock-branch"),
                                 Optional.empty(),
                                 "metadata",
-                                Collections.emptyList()),
+                                Collections.emptyList(),
+                                () -> null),
                         () -> Hash.of("deadbeefcafebabe")),
                 new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>(
                         "Transplant", refNotFoundAndRefConflictThrows)

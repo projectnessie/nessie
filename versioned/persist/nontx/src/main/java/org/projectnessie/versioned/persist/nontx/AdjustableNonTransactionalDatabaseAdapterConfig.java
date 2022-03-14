@@ -24,4 +24,6 @@ public interface AdjustableNonTransactionalDatabaseAdapterConfig
 
   AdjustableNonTransactionalDatabaseAdapterConfig withParentsPerGlobalCommit(
       int parentsPerGlobalCommit);
+
+  AdjustableNonTransactionalDatabaseAdapterConfig withGlobalLogEntrySize(int globalLogEntrySize);
 }

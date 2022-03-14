@@ -26,6 +26,7 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -39,7 +40,7 @@ import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentVariantSupplier;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
-import org.projectnessie.versioned.persist.adapter.KeyWithType;
+import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 import org.projectnessie.versioned.persist.adapter.RefLog;
 import org.projectnessie.versioned.persist.adapter.RepoDescription;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapter;
@@ -253,6 +254,24 @@ public class RocksDatabaseAdapter
   }
 
   @Override
+  protected void doCleanUpGlobalLog(
+      NonTransactionalOperationContext ctx, Collection<Hash> globalIds) {
+    Lock lock = dbInstance.getLock().writeLock();
+    lock.lock();
+    try {
+      WriteBatch batch = new WriteBatch();
+      for (Hash h : globalIds) {
+        batch.delete(dbInstance.getCfGlobalLog(), dbKey(h));
+      }
+      db.write(new WriteOptions(), batch);
+    } catch (RocksDBException e) {
+      throw new RuntimeException(e);
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  @Override
   protected GlobalStateLogEntry doFetchFromGlobalLog(
       NonTransactionalOperationContext ctx, Hash id) {
     try {
@@ -385,7 +404,7 @@ public class RocksDatabaseAdapter
   }
 
   @Override
-  protected int entitySize(KeyWithType entry) {
+  protected int entitySize(KeyListEntry entry) {
     return toProto(entry).getSerializedSize();
   }
 

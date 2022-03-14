@@ -29,6 +29,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -46,7 +47,7 @@ import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentVariantSupplier;
 import org.projectnessie.versioned.persist.adapter.KeyList;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
-import org.projectnessie.versioned.persist.adapter.KeyWithType;
+import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 import org.projectnessie.versioned.persist.adapter.RefLog;
 import org.projectnessie.versioned.persist.adapter.RepoDescription;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapter;
@@ -296,6 +297,14 @@ public class DynamoDatabaseAdapter
     }
   }
 
+  @Override
+  protected void doCleanUpGlobalLog(
+      NonTransactionalOperationContext ctx, Collection<Hash> globalIds) {
+    try (BatchDelete batchDelete = new BatchDelete()) {
+      globalIds.forEach(h -> batchDelete.add(TABLE_GLOBAL_LOG, h));
+    }
+  }
+
   private final class BatchDelete implements AutoCloseable {
     private final Map<String, List<WriteRequest>> requestItems = new HashMap<>();
     private int requests;
@@ -383,7 +392,7 @@ public class DynamoDatabaseAdapter
   }
 
   @Override
-  protected int entitySize(KeyWithType entry) {
+  protected int entitySize(KeyListEntry entry) {
     return toProto(entry).getSerializedSize();
   }
 

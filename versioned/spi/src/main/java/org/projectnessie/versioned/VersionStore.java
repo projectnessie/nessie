@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Callable;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
@@ -75,6 +76,8 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    *     not perform conflict detection
    * @param metadata The metadata associated with the commit.
    * @param operations The set of operations to apply.
+   * @param validator Gets called during the atomic commit operations, callers can implement
+   *     validation logic.
    * @throws ReferenceConflictException if {@code referenceHash} values do not match the stored
    *     values for {@code branch}
    * @throws ReferenceNotFoundException if {@code branch} is not present in the store
@@ -84,8 +87,18 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
       @Nonnull BranchName branch,
       @Nonnull Optional<Hash> referenceHash,
       @Nonnull METADATA metadata,
-      @Nonnull List<Operation<VALUE>> operations)
+      @Nonnull List<Operation<VALUE>> operations,
+      @Nonnull Callable<Void> validator)
       throws ReferenceNotFoundException, ReferenceConflictException;
+
+  default Hash commit(
+      @Nonnull BranchName branch,
+      @Nonnull Optional<Hash> referenceHash,
+      @Nonnull METADATA metadata,
+      @Nonnull List<Operation<VALUE>> operations)
+      throws ReferenceNotFoundException, ReferenceConflictException {
+    return commit(branch, referenceHash, metadata, operations, () -> null);
+  }
 
   /**
    * Transplant a series of commits to a target branch.

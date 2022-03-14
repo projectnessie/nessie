@@ -46,8 +46,8 @@ import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
 import org.projectnessie.versioned.persist.adapter.ImmutableRepoDescription;
 import org.projectnessie.versioned.persist.adapter.ImmutableRepoDescription.Builder;
 import org.projectnessie.versioned.persist.adapter.KeyList;
+import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
-import org.projectnessie.versioned.persist.adapter.KeyWithType;
 import org.projectnessie.versioned.persist.adapter.RepoDescription;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
@@ -296,20 +296,21 @@ class TestSerialization {
             }));
     params.add(
         new TypeSerialization<>(
-            KeyWithType.class,
-            AdapterTypes.KeyWithType.class,
-            TestSerialization::createKeyWithType,
+            KeyListEntry.class,
+            AdapterTypes.KeyListEntry.class,
+            TestSerialization::createKeyListEntry,
             ProtoSerialization::toProto,
             v -> {
               try {
-                return AdapterTypes.KeyWithType.parseFrom(v);
+                return AdapterTypes.KeyListEntry.parseFrom(v);
               } catch (InvalidProtocolBufferException e) {
                 throw new RuntimeException(e);
               }
             },
             v -> {
               try {
-                return ProtoSerialization.protoToKeyWithType(AdapterTypes.KeyWithType.parseFrom(v));
+                return ProtoSerialization.protoToKeyListEntry(
+                    AdapterTypes.KeyListEntry.parseFrom(v));
               } catch (InvalidProtocolBufferException e) {
                 throw new RuntimeException(e);
               }
@@ -467,17 +468,9 @@ class TestSerialization {
         42,
         KeyList.of(
             IntStream.range(0, 20)
-                .mapToObj(
-                    i -> KeyWithType.of(randomKey(), ContentId.of(randomString(60)), (byte) 0))
+                .mapToObj(i -> createKeyListEntry())
                 .collect(Collectors.toList())),
         IntStream.range(0, 20).mapToObj(i -> randomHash()).collect(Collectors.toList()));
-  }
-
-  static KeyWithType createKeyWithType() {
-    return KeyWithType.of(
-        randomKey(),
-        ContentId.of(randomString(64)),
-        (byte) ThreadLocalRandom.current().nextInt(0, 127));
   }
 
   static KeyWithBytes createKeyWithBytes() {
@@ -486,6 +479,14 @@ class TestSerialization {
         ContentId.of(randomString(64)),
         (byte) ThreadLocalRandom.current().nextInt(0, 127),
         randomBytes(120));
+  }
+
+  static KeyListEntry createKeyListEntry() {
+    return KeyListEntry.of(
+        randomKey(),
+        ContentId.of(randomString(64)),
+        (byte) ThreadLocalRandom.current().nextInt(0, 127),
+        ThreadLocalRandom.current().nextBoolean() ? randomHash() : null);
   }
 
   static ContentId createContentId() {

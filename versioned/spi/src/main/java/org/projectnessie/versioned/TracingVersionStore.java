@@ -30,6 +30,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -93,7 +94,8 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
       @Nonnull BranchName branch,
       @Nonnull Optional<Hash> referenceHash,
       @Nonnull METADATA metadata,
-      @Nonnull List<Operation<VALUE>> operations)
+      @Nonnull List<Operation<VALUE>> operations,
+      @Nonnull Callable<Void> validator)
       throws ReferenceNotFoundException, ReferenceConflictException {
     return this.<Hash, ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
         "Commit",
@@ -101,7 +103,7 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
             b.withTag(TAG_BRANCH, safeRefName(branch))
                 .withTag(TAG_HASH, safeToString(referenceHash))
                 .withTag(TAG_NUM_OPS, safeSize(operations)),
-        () -> delegate.commit(branch, referenceHash, metadata, operations));
+        () -> delegate.commit(branch, referenceHash, metadata, operations, validator));
   }
 
   @Override

@@ -110,7 +110,8 @@ class TestMetricsVersionStore {
                         BranchName.of("mock-branch"),
                         Optional.empty(),
                         "metadata",
-                        Collections.emptyList()),
+                        Collections.emptyList(),
+                        () -> null),
                 () -> Hash.of("cafebabedeadbeef"),
                 refNotFoundAndRefConflictThrows),
             new VersionStoreInvocation<>(
