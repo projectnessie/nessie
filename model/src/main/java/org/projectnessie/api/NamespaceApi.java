@@ -17,6 +17,7 @@ package org.projectnessie.api;
 
 import javax.validation.constraints.NotNull;
 import org.projectnessie.api.params.NamespaceParams;
+import org.projectnessie.api.params.NamespacesParams;
 import org.projectnessie.error.NessieNamespaceAlreadyExistsException;
 import org.projectnessie.error.NessieNamespaceNotEmptyException;
 import org.projectnessie.error.NessieNamespaceNotFoundException;
@@ -68,6 +69,6 @@ public interface NamespaceApi {
    *     given namespace prefix.
    * @throws NessieReferenceNotFoundException If the reference could not be found.
    */
-  GetNamespacesResponse getNamespaces(@NotNull NamespaceParams params)
+  GetNamespacesResponse getNamespaces(@NotNull NamespacesParams params)
       throws NessieReferenceNotFoundException;
 }

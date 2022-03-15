@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.projectnessie.api.NamespaceApi;
 import org.projectnessie.api.params.NamespaceParams;
+import org.projectnessie.api.params.NamespacesParams;
 import org.projectnessie.error.NessieNamespaceAlreadyExistsException;
 import org.projectnessie.error.NessieNamespaceNotEmptyException;
 import org.projectnessie.error.NessieNamespaceNotFoundException;
@@ -64,7 +65,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
   public Namespace createNamespace(NamespaceParams params)
       throws NessieNamespaceAlreadyExistsException, NessieReferenceNotFoundException {
     try {
-      BranchName branch = branchFromRefName(params);
+      BranchName branch = branchFromRefName(params.getRefName());
 
       Callable<Void> validator =
           () -> {
@@ -91,7 +92,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
   public void deleteNamespace(NamespaceParams params)
       throws NessieReferenceNotFoundException, NessieNamespaceNotEmptyException,
           NessieNamespaceNotFoundException {
-    BranchName branch = branchFromRefName(params);
+    BranchName branch = branchFromRefName(params.getRefName());
     try {
       Namespace namespace = getNamespace(params, branch);
       Delete delete = Delete.of(ContentKey.of(namespace.getElements()));
@@ -121,7 +122,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
   public Namespace getNamespace(NamespaceParams params)
       throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException {
     try {
-      return getNamespace(params, branchFromRefName(params));
+      return getNamespace(params, branchFromRefName(params.getRefName()));
     } catch (ReferenceNotFoundException e) {
       throw refNotFoundException(e);
     }
@@ -154,9 +155,9 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
   }
 
   @Override
-  public GetNamespacesResponse getNamespaces(NamespaceParams params)
+  public GetNamespacesResponse getNamespaces(NamespacesParams params)
       throws NessieReferenceNotFoundException {
-    BranchName branch = branchFromRefName(params);
+    BranchName branch = branchFromRefName(params.getRefName());
     try {
       Set<Namespace> allNamespaces =
           Sets.newHashSet(getExplicitlyCreatedNamespaces(params, branch));
@@ -177,7 +178,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
    * @return A list of explicitly created namespaces.
    * @throws ReferenceNotFoundException If the ref could not be found.
    */
-  private List<Namespace> getExplicitlyCreatedNamespaces(NamespaceParams params, BranchName branch)
+  private List<Namespace> getExplicitlyCreatedNamespaces(NamespacesParams params, BranchName branch)
       throws ReferenceNotFoundException {
     try (Stream<Key> keyStream =
         getStore()
@@ -207,18 +208,19 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
    * @param branch The ref
    * @return A list of implicit namespaces that might contain duplicate entries.
    */
-  private List<Namespace> getImplicitlyCreatedNamespaces(NamespaceParams params, BranchName branch)
+  private List<Namespace> getImplicitlyCreatedNamespaces(NamespacesParams params, BranchName branch)
       throws ReferenceNotFoundException {
-    try (Stream<WithType<Key, Type>> stream = getImplicitNamespacesStream(params, branch)) {
+    try (Stream<WithType<Key, Type>> stream =
+        getImplicitNamespacesStream(params.getNamespace(), branch)) {
       return stream.map(this::implicitNamespaceFrom).collect(Collectors.toList());
     }
   }
 
   private Stream<WithType<Key, Type>> getImplicitNamespacesStream(
-      NamespaceParams params, BranchName branch) throws ReferenceNotFoundException {
+      Namespace namespace, BranchName branch) throws ReferenceNotFoundException {
     return getStore()
         .getKeys(branch)
-        .filter(k -> implicitNamespaceFrom(k).name().startsWith(params.getNamespace().name()));
+        .filter(k -> implicitNamespaceFrom(k).name().startsWith(namespace.name()));
   }
 
   /**
@@ -247,7 +249,8 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
 
   private Optional<Namespace> getImplicitlyCreatedNamespace(
       NamespaceParams params, BranchName branch) throws ReferenceNotFoundException {
-    try (Stream<WithType<Key, Type>> stream = getImplicitNamespacesStream(params, branch)) {
+    try (Stream<WithType<Key, Type>> stream =
+        getImplicitNamespacesStream(params.getNamespace(), branch)) {
       return stream.findAny().map(this::implicitNamespaceFrom);
     }
   }
@@ -268,9 +271,8 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
         String.format("Namespace '%s' is not empty", params.getNamespace()));
   }
 
-  private BranchName branchFromRefName(NamespaceParams params) {
-    return BranchName.of(
-        Optional.ofNullable(params.getRefName()).orElse(getConfig().getDefaultBranch()));
+  private BranchName branchFromRefName(String refName) {
+    return BranchName.of(Optional.ofNullable(refName).orElse(getConfig().getDefaultBranch()));
   }
 
   private NessieReferenceNotFoundException refNotFoundException(ReferenceNotFoundException e) {

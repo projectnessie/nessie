@@ -91,6 +91,15 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
     }
 
     assertThat(
+            getApi()
+                .getNamespaces()
+                .refName(branch.getName())
+                .namespace(Namespace.EMPTY)
+                .get()
+                .getNamespaces())
+        .containsExactlyInAnyOrder(one, two, three, four);
+
+    assertThat(
             getApi().getNamespaces().refName(branch.getName()).namespace("a").get().getNamespaces())
         .containsExactlyInAnyOrder(one, two);
     assertThat(

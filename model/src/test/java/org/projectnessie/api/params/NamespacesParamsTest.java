@@ -21,45 +21,35 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.model.Namespace;
 
-public class NamespaceParamsTest {
+public class NamespacesParamsTest {
 
   @Test
   public void testBuilder() {
-    Namespace namespace = Namespace.parse("a.b.c");
-    NamespaceParams params = NamespaceParams.builder().refName("xx").namespace(namespace).build();
+    NamespacesParams params = NamespacesParams.builder().refName("xx").build();
     assertThat(params.getRefName()).isEqualTo("xx");
-    assertThat(params.getNamespace()).isEqualTo(namespace);
+    assertThat(params.getNamespace()).isNull();
     assertThat(params.getHashOnRef()).isNull();
   }
 
   @Test
   public void testValidation() {
-    assertThatThrownBy(() -> NamespaceParams.builder().build())
+    assertThatThrownBy(() -> NamespacesParams.builder().build())
         .isInstanceOf(IllegalStateException.class)
         .hasMessage(
-            "Cannot build NamespaceParams, some of required attributes are not set [refName, namespace]");
+            "Cannot build NamespacesParams, some of required attributes are not set [refName]");
 
-    assertThatThrownBy(() -> NamespaceParams.builder().refName("x").build())
+    assertThatThrownBy(() -> NamespacesParams.builder().namespace(Namespace.of("x")).build())
         .isInstanceOf(IllegalStateException.class)
         .hasMessage(
-            "Cannot build NamespaceParams, some of required attributes are not set [namespace]");
+            "Cannot build NamespacesParams, some of required attributes are not set [refName]");
 
-    assertThatThrownBy(() -> NamespaceParams.builder().namespace(Namespace.of("x")).build())
+    assertThatThrownBy(() -> NamespacesParams.builder().hashOnRef("x").build())
         .isInstanceOf(IllegalStateException.class)
         .hasMessage(
-            "Cannot build NamespaceParams, some of required attributes are not set [refName]");
+            "Cannot build NamespacesParams, some of required attributes are not set [refName]");
 
-    assertThatThrownBy(() -> NamespaceParams.builder().hashOnRef("x").build())
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessage(
-            "Cannot build NamespaceParams, some of required attributes are not set [refName, namespace]");
-
-    assertThatThrownBy(() -> NamespaceParams.builder().refName(null).build())
+    assertThatThrownBy(() -> NamespacesParams.builder().refName(null).build())
         .isInstanceOf(NullPointerException.class)
         .hasMessage("refName");
-
-    assertThatThrownBy(() -> NamespaceParams.builder().namespace(null).build())
-        .isInstanceOf(NullPointerException.class)
-        .hasMessage("namespace");
   }
 }

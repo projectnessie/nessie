@@ -16,8 +16,8 @@
 package org.projectnessie.client.http.v1api;
 
 import javax.annotation.Nullable;
-import org.projectnessie.api.params.NamespaceParams;
-import org.projectnessie.api.params.NamespaceParamsBuilder;
+import org.projectnessie.api.params.NamespacesParams;
+import org.projectnessie.api.params.NamespacesParamsBuilder;
 import org.projectnessie.client.api.GetNamespacesBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieReferenceNotFoundException;
@@ -26,7 +26,7 @@ import org.projectnessie.model.Namespace;
 
 final class HttpGetNamespaces extends BaseHttpRequest implements GetNamespacesBuilder {
 
-  private final NamespaceParamsBuilder builder = NamespaceParams.builder();
+  private final NamespacesParamsBuilder builder = NamespacesParams.builder();
 
   HttpGetNamespaces(NessieApiClient client) {
     super(client);
@@ -58,7 +58,7 @@ final class HttpGetNamespaces extends BaseHttpRequest implements GetNamespacesBu
 
   @Override
   public GetNamespacesResponse get() throws NessieReferenceNotFoundException {
-    NamespaceParams build = builder.build();
+    NamespacesParams build = builder.build();
     return client.getNamespaceApi().getNamespaces(build);
   }
 }

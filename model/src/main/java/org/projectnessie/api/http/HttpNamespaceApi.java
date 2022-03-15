@@ -32,6 +32,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.projectnessie.api.NamespaceApi;
 import org.projectnessie.api.params.NamespaceParams;
+import org.projectnessie.api.params.NamespacesParams;
 import org.projectnessie.error.NessieNamespaceAlreadyExistsException;
 import org.projectnessie.error.NessieNamespaceNotEmptyException;
 import org.projectnessie.error.NessieNamespaceNotFoundException;
@@ -108,7 +109,7 @@ public interface HttpNamespaceApi extends NamespaceApi {
 
   @Override
   @GET
-  @Path("/{ref}/{name}")
+  @Path("/{ref}")
   @Produces(MediaType.APPLICATION_JSON)
   @APIResponses({
     @APIResponse(
@@ -125,6 +126,6 @@ public interface HttpNamespaceApi extends NamespaceApi {
     @APIResponse(responseCode = "403", description = "Not allowed to retrieve namespaces"),
     @APIResponse(responseCode = "404", description = "Reference not found"),
   })
-  GetNamespacesResponse getNamespaces(@BeanParam @NotNull NamespaceParams params)
+  GetNamespacesResponse getNamespaces(@BeanParam @NotNull NamespacesParams params)
       throws NessieReferenceNotFoundException;
 }
