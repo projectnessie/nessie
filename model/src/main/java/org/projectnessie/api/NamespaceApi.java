@@ -64,7 +64,7 @@ public interface NamespaceApi {
   /**
    * Retrieves a list of {@link Namespace} instances that match a given namespace prefix.
    *
-   * @param params The {@link NamespaceParams} that includes the parameters for the API call.
+   * @param params The {@link NamespacesParams} that includes the parameters for the API call.
    * @return A {@link GetNamespacesResponse} instance containing all the namespaces that match the
    *     given namespace prefix.
    * @throws NessieReferenceNotFoundException If the reference could not be found.

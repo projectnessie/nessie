@@ -79,7 +79,8 @@ class HttpNamespaceClient implements HttpNamespaceApi {
         .newRequest()
         .path("namespaces/{ref}")
         .resolveTemplate("ref", params.getRefName())
-        .queryParam("name", params.getNamespace().toPathString())
+        .queryParam(
+            "name", null != params.getNamespace() ? params.getNamespace().toPathString() : null)
         .queryParam("hashOnRef", params.getHashOnRef())
         .get()
         .readEntity(GetNamespacesResponse.class);

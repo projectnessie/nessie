@@ -114,14 +114,14 @@ public interface HttpNamespaceApi extends NamespaceApi {
   @APIResponses({
     @APIResponse(
         responseCode = "200",
-        description = "Returned Namespaces.",
+        description = "Returns Namespaces with a given prefix.",
         content =
             @Content(
                 mediaType = MediaType.APPLICATION_JSON,
                 examples = {
                   @ExampleObject(ref = "namespacesResponse"),
                 },
-                schema = @Schema(implementation = Namespace.class))),
+                schema = @Schema(implementation = GetNamespacesResponse.class))),
     @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
     @APIResponse(responseCode = "403", description = "Not allowed to retrieve namespaces"),
     @APIResponse(responseCode = "404", description = "Reference not found"),

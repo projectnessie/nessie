@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.annotation.Nullable;
 import org.projectnessie.api.NamespaceApi;
 import org.projectnessie.api.params.NamespaceParams;
 import org.projectnessie.api.params.NamespacesParams;
@@ -186,9 +187,10 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
             .filter(k -> Type.NAMESPACE == k.getType())
             .filter(
                 k ->
-                    Namespace.of(k.getValue().getElements())
-                        .name()
-                        .startsWith(params.getNamespace().name()))
+                    null == params.getNamespace()
+                        || Namespace.of(k.getValue().getElements())
+                            .name()
+                            .startsWith(params.getNamespace().name()))
             .map(WithType::getValue)) {
 
       List<Key> keys = keyStream.collect(Collectors.toList());
@@ -217,10 +219,11 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
   }
 
   private Stream<WithType<Key, Type>> getImplicitNamespacesStream(
-      Namespace namespace, BranchName branch) throws ReferenceNotFoundException {
+      @Nullable Namespace namespace, BranchName branch) throws ReferenceNotFoundException {
     return getStore()
         .getKeys(branch)
-        .filter(k -> implicitNamespaceFrom(k).name().startsWith(namespace.name()));
+        .filter(
+            k -> null == namespace || implicitNamespaceFrom(k).name().startsWith(namespace.name()));
   }
 
   /**

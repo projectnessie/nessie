@@ -38,7 +38,9 @@ public class NamespaceParams {
   @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
   private String refName;
 
-  @Parameter(description = "Specify the namespace name")
+  @Parameter(
+      description = "the name of the namespace",
+      examples = {@ExampleObject(ref = "namespaceName")})
   @PathParam("name")
   private Namespace namespace;
 
