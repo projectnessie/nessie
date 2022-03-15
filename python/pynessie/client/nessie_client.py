@@ -193,6 +193,7 @@ class NessieClient:
 
         return ContentSchema().load(get_content(self._base_url, self._auth, ref_name, content_key, hash_on_ref, self._ssl_verify))
 
+    # pylint: disable=keyword-arg-before-vararg
     def commit(self, branch: str, old_hash: str, reason: Optional[str] = None, author: Optional[str] = None, *ops: Operation) -> Branch:
         """Modify a set of Nessie tables."""
         meta = CommitMeta(message=reason if reason else "")
@@ -259,6 +260,7 @@ class NessieClient:
         merge_json = MergeSchema().dump(Merge(from_ref, str(from_hash)))
         merge(self._base_url, self._auth, onto_branch, merge_json, old_hash, self._ssl_verify)
 
+    # pylint: disable=keyword-arg-before-vararg
     def cherry_pick(self, branch: str, from_ref: str, old_hash: Optional[str] = None, *hashes: str) -> None:
         """Cherry pick a list of hashes to a branch."""
         if not old_hash:
