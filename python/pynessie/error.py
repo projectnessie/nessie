@@ -24,7 +24,7 @@ class NessieException(Exception):
     """Base Nessie exception."""
 
     def __init__(
-        self: "NessieException",
+        self,
         parsed_response: dict,
         status: int,
         url: str,
@@ -53,7 +53,7 @@ class NessieException(Exception):
         self.server_stack_trace = parsed_response.get("serverStackTrace")
         self.url = url
 
-    def json(self: "NessieException") -> str:
+    def json(self) -> str:
         """Dump this exception as a json object."""
         return json.dumps(
             dict(
@@ -139,14 +139,14 @@ class NessieServerException(NessieException):
 class NessieCliError(Exception):
     """Base Nessie CLI related errors."""
 
-    def __init__(self: "NessieCliError", title: str, msg: str = None) -> None:
+    def __init__(self, title: str, msg: str = None) -> None:
         """Construct base Nessie CLI Error."""
         super().__init__()
 
         self.title = title
         self.msg = msg
 
-    def json(self: "NessieCliError") -> str:
+    def json(self) -> str:
         """Dump this error as a json object."""
         return json.dumps(dict(title=self.title, message=self.msg))
 

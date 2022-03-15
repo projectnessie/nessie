@@ -69,7 +69,7 @@ class Content:
         """Checks whether this Content object requires the "expected" state to be provided for Put operations."""
         return False
 
-    def pretty_print(self: "Content") -> str:
+    def pretty_print(self) -> str:
         """Print out for cli."""
         pass
 
@@ -89,7 +89,7 @@ class IcebergTable(Content):
         """Returns True - expected state should be provided for Put operations on Iceberg tables."""
         return True
 
-    def pretty_print(self: "IcebergTable") -> str:
+    def pretty_print(self) -> str:
         """Print out for cli."""
         return (
             f"Iceberg table:\n\tmetadata-location: {self.metadata_location}\n\tsnapshot-id: {self.snapshot_id}"
@@ -109,7 +109,7 @@ class DeltaLakeTable(Content):
     checkpoint_location_history: List[str] = desert.ib(fields.List(fields.Str(), data_key="checkpointLocationHistory"))
     metadata_location_history: List[str] = desert.ib(fields.List(fields.Str(), data_key="metadataLocationHistory"))
 
-    def pretty_print(self: "DeltaLakeTable") -> str:
+    def pretty_print(self) -> str:
         """Print out for cli."""
         deltas = "\n\t\t".join(self.metadata_location_history)
         checkpoints = "\n\t\t".join(self.checkpoint_location_history)
@@ -131,7 +131,7 @@ class IcebergView(Content):
     dialect: str = desert.ib(fields.Str())
     sql_text: str = desert.ib(fields.Str(data_key="sqlText"))
 
-    def pretty_print(self: "IcebergView") -> str:
+    def pretty_print(self) -> str:
         """Print out for cli."""
         return "IcebergView:\n\tmetadata-location: {}\n\tversion-id: {}\n\tschema-id: {}\n\tDialect: {}\n\tSql: {}".format(
             self.metadata_location, self.version_id, self.schema_id, self.dialect, self.sql_text
@@ -150,7 +150,7 @@ class ContentSchema(OneOfSchema):
         "ICEBERG_VIEW": IcebergViewSchema,
     }
 
-    def get_obj_type(self: "ContentSchema", obj: Content) -> str:
+    def get_obj_type(self, obj: Content) -> str:
         """Returns the object type based on its class."""
         if isinstance(obj, IcebergTable):
             return "ICEBERG_TABLE"
@@ -168,13 +168,13 @@ class ContentKey:
 
     elements: List[str] = desert.ib(fields.List(fields.Str))
 
-    def to_string(self: "ContentKey") -> str:
+    def to_string(self) -> str:
         """Convert this key to friendly CLI string."""
         # false positives in pylint
         # pylint: disable=E1133
         return ".".join(f'"{i}"' if "." in i else i for i in self.elements)
 
-    def to_path_string(self: "ContentKey") -> str:
+    def to_path_string(self) -> str:
         """Convert this key to a url encoded path string."""
         # false positives in pylint
         # pylint: disable=E1133
@@ -210,7 +210,7 @@ class Operation:
 
     key: ContentKey = desert.ib(fields.Nested(ContentKeySchema))
 
-    def pretty_print(self: "Operation") -> str:
+    def pretty_print(self) -> str:
         """Print out for cli."""
         pass
 
@@ -222,7 +222,7 @@ class Put(Operation):
     content: Content = desert.ib(fields.Nested(ContentSchema))
     expectedContent: Optional[Content] = attr.ib(default=None, metadata=desert.metadata(fields.Nested(ContentSchema, allow_none=True)))
 
-    def pretty_print(self: "Put") -> str:
+    def pretty_print(self) -> str:
         """Print out for cli."""
         # pylint: disable=E1101
         return f"Put of {self.key.to_string()} : {self.content.pretty_print()}"
@@ -235,7 +235,7 @@ PutOperationSchema = desert.schema_class(Put)
 class Delete(Operation):
     """Delete single key."""
 
-    def pretty_print(self: "Delete") -> str:
+    def pretty_print(self) -> str:
         """Print out for cli."""
         # pylint: disable=E1101
         return f"Delete of {self.key.to_string()}"
@@ -263,7 +263,7 @@ class OperationsSchema(OneOfSchema):
         "DELETE": DeleteOperationSchema,
     }
 
-    def get_obj_type(self: "OperationsSchema", obj: Operation) -> str:
+    def get_obj_type(self, obj: Operation) -> str:
         """Returns the object type based on its class."""
         if isinstance(obj, Put):
             return "PUT"
@@ -356,7 +356,7 @@ class ReferenceSchema(OneOfSchema):
         "DETACHED": DetachedSchema,
     }
 
-    def get_obj_type(self: "ReferenceSchema", obj: Reference) -> str:
+    def get_obj_type(self, obj: Reference) -> str:
         """Returns the object type based on its class."""
         if isinstance(obj, Branch):
             return "BRANCH"
@@ -478,7 +478,7 @@ class DiffEntry:
     from_content: Content = desert.ib(fields.Nested(ContentSchema, default=None, data_key="from", allow_none=True))
     to_content: Content = desert.ib(fields.Nested(ContentSchema, default=None, data_key="to", allow_none=True))
 
-    def pretty_print(self: "DiffEntry") -> str:
+    def pretty_print(self) -> str:
         """Print out for cli."""
         # pylint: disable=E1101
         from_output = f"{self.from_content.pretty_print()}" if self.from_content else ""

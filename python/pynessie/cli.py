@@ -82,4 +82,5 @@ cli.add_command(reflog)
 
 
 if __name__ == "__main__":
+    # pylint: disable=no-value-for-parameter
     sys.exit(cli())  # pragma: no cover

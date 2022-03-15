@@ -86,9 +86,9 @@ def _format_keys(keys: Entries) -> str:
     result_str = ""
     for entry in keys.entries:
         results[entry.kind].append(entry.name)
-    for k in results.keys():
+    for k, result_list in results.items():
         result_str += k + ":\n"
-        for v in results[k]:
+        for v in result_list:
             value = ['"{}"'.format(i) if "." in i else i for i in v.elements]
             result_str += "\t{}\n".format(".".join(value))
     return result_str
