@@ -29,11 +29,6 @@
 
   <name>Nessie - GC - Base Implementation</name>
 
-  <properties>
-    <!--- We cannot use version > 0.43 beacuse it uses a kryo version 5.x that is incompatible with out spark (requires 4.x) -->
-    <kryo.serializers.version>0.43</kryo.serializers.version>
-  </properties>
-
   <dependencies>
     <dependency>
       <groupId>org.immutables</groupId>
@@ -49,7 +44,6 @@
     <dependency>
       <groupId>de.javakaffee</groupId>
       <artifactId>kryo-serializers</artifactId>
-      <version>${kryo.serializers.version}</version>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
