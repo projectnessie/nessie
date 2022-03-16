@@ -205,7 +205,7 @@
     <quarkus.version>2.7.4.Final</quarkus.version>
     <!-- see https://github.com/quarkiverse/quarkus-logging-sentry -->
     <quarkus.loggingsentry.version>1.0.2</quarkus.loggingsentry.version>
-    <reactor.version>2020.0.16</reactor.version>
+    <reactor.version>2020.0.17</reactor.version>
     <rocksdb.version>6.28.2</rocksdb.version>
     <scala2.12.version>2.12.13</scala2.12.version>
     <scala2.13.version>2.13.8</scala2.13.version>
