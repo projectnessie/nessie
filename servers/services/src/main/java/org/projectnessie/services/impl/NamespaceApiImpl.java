@@ -70,7 +70,14 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
 
       Callable<Void> validator =
           () -> {
-            if (getExplicitlyCreatedNamespace(params, branch).isPresent()) {
+            Optional<Content> explicitlyCreatedNamespace =
+                getExplicitlyCreatedNamespace(params, branch);
+            if (explicitlyCreatedNamespace.isPresent()) {
+              Namespace ignored =
+                  explicitlyCreatedNamespace
+                      .get()
+                      .unwrap(Namespace.class)
+                      .orElseThrow(() -> otherContentAlreadyExistsException(params));
               throw namespaceAlreadyExistsException(params);
             }
             if (getImplicitlyCreatedNamespace(params, branch).isPresent()) {
@@ -262,6 +269,13 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
       NamespaceParams params) {
     return new NessieNamespaceAlreadyExistsException(
         String.format("Namespace '%s' already exists", params.getNamespace()));
+  }
+
+  private NessieNamespaceAlreadyExistsException otherContentAlreadyExistsException(
+      NamespaceParams params) {
+    return new NessieNamespaceAlreadyExistsException(
+        String.format(
+            "Another content object with name '%s' already exists", params.getNamespace()));
   }
 
   private NessieNamespaceNotFoundException namespaceDoesNotExistException(NamespaceParams params) {
