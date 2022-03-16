@@ -64,20 +64,15 @@ class CommitToBranchSimulation extends Simulation {
               contentId
             )
 
-          // TODO the expectedContent is wrong!! commitNum is for the session, but we need the actual global state!!
+          val globalStates = client.getContent.reference(branch).key(key).get()
+          val globalIcebergTable = globalStates.get(key)
+
           val op =
-            if (commitNum > 0)
+            if (commitNum > 0 && globalIcebergTable != null)
               Put.of(
                 key,
                 tableMeta,
-                IcebergTable.of(
-                  s"path_on_disk_${tableName}_${userId}_${commitNum - 1}",
-                  42,
-                  43,
-                  44,
-                  45,
-                  contentId
-                )
+                globalIcebergTable
               )
             else Put.of(key, tableMeta);
 
