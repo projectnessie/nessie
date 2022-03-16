@@ -16,9 +16,11 @@
 package org.projectnessie.services.impl;
 
 import java.security.Principal;
+import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Function;
 import javax.annotation.Nullable;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
@@ -121,5 +123,20 @@ abstract class BaseApiImpl {
 
   protected ServerAccessContext createAccessContext() {
     return ServerAccessContext.of(UUID.randomUUID().toString(), getPrincipal());
+  }
+
+  protected Function<CommitMeta, CommitMeta> commitMetaUpdate() {
+    // Used for setting contextual commit properties during new and merge/transplant commits.
+    // WARNING: ONLY SET PROPERTIES, WHICH APPLY COMMONLY TO ALL COMMIT TYPES.
+    Principal principal = getPrincipal();
+    String committer = principal == null ? "" : principal.getName();
+    Instant now = Instant.now();
+    return commitMeta ->
+        commitMeta.toBuilder()
+            .committer(committer)
+            .commitTime(now)
+            .author(commitMeta.getAuthor() == null ? committer : commitMeta.getAuthor())
+            .authorTime(commitMeta.getAuthorTime() == null ? now : commitMeta.getAuthorTime())
+            .build();
   }
 }

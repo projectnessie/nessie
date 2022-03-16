@@ -22,8 +22,8 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.SecurityContext;
 import org.projectnessie.api.NamespaceApi;
 import org.projectnessie.api.http.HttpNamespaceApi;
+import org.projectnessie.api.params.MultipleNamespacesParams;
 import org.projectnessie.api.params.NamespaceParams;
-import org.projectnessie.api.params.NamespacesParams;
 import org.projectnessie.error.NessieNamespaceAlreadyExistsException;
 import org.projectnessie.error.NessieNamespaceNotEmptyException;
 import org.projectnessie.error.NessieNamespaceNotFoundException;
@@ -93,7 +93,7 @@ public class RestNamespaceResource implements HttpNamespaceApi {
   }
 
   @Override
-  public GetNamespacesResponse getNamespaces(@NotNull NamespacesParams params)
+  public GetNamespacesResponse getNamespaces(@NotNull MultipleNamespacesParams params)
       throws NessieReferenceNotFoundException {
     return resource().getNamespaces(params);
   }

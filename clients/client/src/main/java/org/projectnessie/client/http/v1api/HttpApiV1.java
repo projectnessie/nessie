@@ -28,8 +28,8 @@ import org.projectnessie.client.api.GetCommitLogBuilder;
 import org.projectnessie.client.api.GetContentBuilder;
 import org.projectnessie.client.api.GetDiffBuilder;
 import org.projectnessie.client.api.GetEntriesBuilder;
+import org.projectnessie.client.api.GetMultipleNamespacesBuilder;
 import org.projectnessie.client.api.GetNamespaceBuilder;
-import org.projectnessie.client.api.GetNamespacesBuilder;
 import org.projectnessie.client.api.GetRefLogBuilder;
 import org.projectnessie.client.api.GetReferenceBuilder;
 import org.projectnessie.client.api.MergeReferenceBuilder;
@@ -144,8 +144,8 @@ public final class HttpApiV1 implements NessieApiV1 {
   }
 
   @Override
-  public GetNamespacesBuilder getNamespaces() {
-    return new HttpGetNamespaces(client);
+  public GetMultipleNamespacesBuilder getMultipleNamespaces() {
+    return new HttpGetMultipleNamespaces(client);
   }
 
   @Override

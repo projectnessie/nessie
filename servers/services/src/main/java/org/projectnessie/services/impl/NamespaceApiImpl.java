@@ -27,8 +27,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import org.projectnessie.api.NamespaceApi;
+import org.projectnessie.api.params.MultipleNamespacesParams;
 import org.projectnessie.api.params.NamespaceParams;
-import org.projectnessie.api.params.NamespacesParams;
 import org.projectnessie.error.NessieNamespaceAlreadyExistsException;
 import org.projectnessie.error.NessieNamespaceNotEmptyException;
 import org.projectnessie.error.NessieNamespaceNotFoundException;
@@ -156,7 +156,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
   }
 
   @Override
-  public GetNamespacesResponse getNamespaces(NamespacesParams params)
+  public GetNamespacesResponse getNamespaces(MultipleNamespacesParams params)
       throws NessieReferenceNotFoundException {
     BranchName branch = branchFromRefName(params.getRefName());
     try {
@@ -179,8 +179,8 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
    * @return A list of explicitly created namespaces.
    * @throws ReferenceNotFoundException If the ref could not be found.
    */
-  private List<Namespace> getExplicitlyCreatedNamespaces(NamespacesParams params, BranchName branch)
-      throws ReferenceNotFoundException {
+  private List<Namespace> getExplicitlyCreatedNamespaces(
+      MultipleNamespacesParams params, BranchName branch) throws ReferenceNotFoundException {
     try (Stream<Key> keyStream =
         getStore()
             .getKeys(branch)
@@ -210,8 +210,8 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
    * @param branch The ref
    * @return A list of implicit namespaces that might contain duplicate entries.
    */
-  private List<Namespace> getImplicitlyCreatedNamespaces(NamespacesParams params, BranchName branch)
-      throws ReferenceNotFoundException {
+  private List<Namespace> getImplicitlyCreatedNamespaces(
+      MultipleNamespacesParams params, BranchName branch) throws ReferenceNotFoundException {
     try (Stream<WithType<Key, Type>> stream =
         getImplicitNamespacesStream(params.getNamespace(), branch)) {
       return stream.map(this::implicitNamespaceFrom).collect(Collectors.toList());
@@ -292,7 +292,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
         .commit(
             branch,
             Optional.empty(),
-            TreeApiImpl.commitMetaUpdate(getPrincipal()).apply(CommitMeta.fromMessage(commitMsg)),
+            commitMetaUpdate().apply(CommitMeta.fromMessage(commitMsg)),
             Collections.singletonList(contentOperation),
             validator);
   }

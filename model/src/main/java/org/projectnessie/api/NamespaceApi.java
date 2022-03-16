@@ -16,8 +16,8 @@
 package org.projectnessie.api;
 
 import javax.validation.constraints.NotNull;
+import org.projectnessie.api.params.MultipleNamespacesParams;
 import org.projectnessie.api.params.NamespaceParams;
-import org.projectnessie.api.params.NamespacesParams;
 import org.projectnessie.error.NessieNamespaceAlreadyExistsException;
 import org.projectnessie.error.NessieNamespaceNotEmptyException;
 import org.projectnessie.error.NessieNamespaceNotFoundException;
@@ -64,11 +64,12 @@ public interface NamespaceApi {
   /**
    * Retrieves a list of {@link Namespace} instances that match a given namespace prefix.
    *
-   * @param params The {@link NamespacesParams} that includes the parameters for the API call.
+   * @param params The {@link MultipleNamespacesParams} that includes the parameters for the API
+   *     call.
    * @return A {@link GetNamespacesResponse} instance containing all the namespaces that match the
    *     given namespace prefix.
    * @throws NessieReferenceNotFoundException If the reference could not be found.
    */
-  GetNamespacesResponse getNamespaces(@NotNull NamespacesParams params)
+  GetNamespacesResponse getNamespaces(@NotNull MultipleNamespacesParams params)
       throws NessieReferenceNotFoundException;
 }

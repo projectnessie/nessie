@@ -28,7 +28,6 @@ import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUti
 import static org.projectnessie.versioned.persist.adapter.spi.Traced.trace;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Sets;
 import com.google.common.hash.Hasher;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.UnsafeByteOperations;
@@ -1482,8 +1481,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
 
   /**
    * If any key collision was found, we need to check whether the key collision was happening on a
-   * {@link ContentType#NAMESPACE} and if so, remove that key collision, since Namespaces can be
-   * merged/transplanted without problems.
+   * Namespace and if so, remove that key collision, since Namespaces can be merged/transplanted
+   * without problems.
    *
    * @param ctx The context
    * @param hashFromTarget The hash from the target branch
@@ -1502,14 +1501,15 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
             .map(Entry::getKey)
             .collect(Collectors.toSet());
 
-    Set<Key> namespacesOnSource =
-        fetchValues(ctx, hashFromSource, keyCollisions, ALLOW_ALL).entrySet().stream()
+    // this will be an implicit set intersection between the namespaces on source & target
+    Set<Key> intersection =
+        fetchValues(ctx, hashFromSource, namespacesOnTarget, ALLOW_ALL).entrySet().stream()
             .filter(isNamespace)
             .map(Entry::getKey)
             .collect(Collectors.toSet());
 
     // remove all keys related to namespaces from the existing collisions
-    Sets.intersection(namespacesOnTarget, namespacesOnSource).forEach(keyCollisions::remove);
+    intersection.forEach(keyCollisions::remove);
   }
 
   /**

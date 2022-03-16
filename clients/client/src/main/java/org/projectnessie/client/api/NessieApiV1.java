@@ -128,7 +128,7 @@ public interface NessieApiV1 extends NessieApi {
   GetNamespaceBuilder getNamespace();
 
   /** Fetch one or more {@link org.projectnessie.model.Namespace}s based on a given prefix. */
-  GetNamespacesBuilder getNamespaces();
+  GetMultipleNamespacesBuilder getMultipleNamespaces();
 
   /** Create a single {@link org.projectnessie.model.Namespace}. */
   CreateNamespaceBuilder createNamespace();

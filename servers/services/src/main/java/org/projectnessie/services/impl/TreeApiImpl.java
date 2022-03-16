@@ -37,13 +37,11 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import java.security.Principal;
-import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -386,10 +384,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
       }
       getStore()
           .transplant(
-              BranchName.of(branchName),
-              toHash(hash, true),
-              transplants,
-              commitMetaUpdate(getPrincipal()));
+              BranchName.of(branchName), toHash(hash, true), transplants, commitMetaUpdate());
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
@@ -406,7 +401,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
               toHash(merge.getFromRefName(), merge.getFromHash()),
               BranchName.of(branchName),
               toHash(hash, true),
-              commitMetaUpdate(getPrincipal()));
+              commitMetaUpdate());
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
@@ -529,7 +524,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
               .commit(
                   BranchName.of(Optional.ofNullable(branch).orElse(getConfig().getDefaultBranch())),
                   Optional.ofNullable(hash).map(Hash::of),
-                  commitMetaUpdate(getPrincipal()).apply(commitMeta),
+                  commitMetaUpdate().apply(commitMeta),
                   ops);
 
       return Branch.of(branch, newHash.asString());
@@ -538,20 +533,6 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     } catch (ReferenceConflictException e) {
       throw new NessieReferenceConflictException(e.getMessage(), e);
     }
-  }
-
-  static Function<CommitMeta, CommitMeta> commitMetaUpdate(Principal principal) {
-    // Used for setting contextual commit properties during new and merge/transplant commits.
-    // WARNING: ONLY SET PROPERTIES, WHICH APPLY COMMONLY TO ALL COMMIT TYPES.
-    String committer = principal == null ? "" : principal.getName();
-    Instant now = Instant.now();
-    return commitMeta ->
-        commitMeta.toBuilder()
-            .committer(committer)
-            .commitTime(now)
-            .author(commitMeta.getAuthor() == null ? committer : commitMeta.getAuthor())
-            .authorTime(commitMeta.getAuthorTime() == null ? now : commitMeta.getAuthorTime())
-            .build();
   }
 
   private Hash toHash(String referenceName, String hashOnReference)

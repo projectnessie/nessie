@@ -41,10 +41,6 @@ public class GenericContentVariantSupplier<
 
   @Override
   public boolean isNamespace(ByteString type) {
-    try {
-      return storeWorker.getType(type).name().equals("NAMESPACE");
-    } catch (Exception e) {
-      return false;
-    }
+    return storeWorker.isNamespace(type);
   }
 }

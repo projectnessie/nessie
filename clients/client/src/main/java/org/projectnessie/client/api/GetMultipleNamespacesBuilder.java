@@ -25,7 +25,8 @@ import org.projectnessie.model.Namespace;
  *
  * @since {@link NessieApiV1}
  */
-public interface GetNamespacesBuilder extends OnNamespaceBuilder<GetNamespacesBuilder> {
+public interface GetMultipleNamespacesBuilder
+    extends OnNamespaceBuilder<GetMultipleNamespacesBuilder> {
 
   GetNamespacesResponse get() throws NessieReferenceNotFoundException;
 }

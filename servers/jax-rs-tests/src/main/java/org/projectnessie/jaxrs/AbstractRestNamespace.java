@@ -80,7 +80,7 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
 
   @Test
   public void testNamespacesRetrieval() throws BaseNessieClientServerException {
-    Branch branch = createBranch("testNamespacesRetrieval");
+    Branch branch = createBranch("namespace");
     Namespace one = Namespace.parse("a.b.c");
     Namespace two = Namespace.parse("a.b.d");
     Namespace three = Namespace.parse("x.y.z");
@@ -90,12 +90,12 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
           .isNotNull();
     }
 
-    assertThat(getApi().getNamespaces().refName(branch.getName()).get().getNamespaces())
+    assertThat(getApi().getMultipleNamespaces().refName(branch.getName()).get().getNamespaces())
         .containsExactlyInAnyOrder(one, two, three, four);
 
     assertThat(
             getApi()
-                .getNamespaces()
+                .getMultipleNamespaces()
                 .refName(branch.getName())
                 .namespace(Namespace.EMPTY)
                 .get()
@@ -103,11 +103,16 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
         .containsExactlyInAnyOrder(one, two, three, four);
 
     assertThat(
-            getApi().getNamespaces().refName(branch.getName()).namespace("a").get().getNamespaces())
+            getApi()
+                .getMultipleNamespaces()
+                .refName(branch.getName())
+                .namespace("a")
+                .get()
+                .getNamespaces())
         .containsExactlyInAnyOrder(one, two);
     assertThat(
             getApi()
-                .getNamespaces()
+                .getMultipleNamespaces()
                 .refName(branch.getName())
                 .namespace("a.b")
                 .get()
@@ -115,7 +120,7 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
         .containsExactlyInAnyOrder(one, two);
     assertThat(
             getApi()
-                .getNamespaces()
+                .getMultipleNamespaces()
                 .refName(branch.getName())
                 .namespace("a.b.c")
                 .get()
@@ -123,7 +128,7 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
         .containsExactlyInAnyOrder(one);
     assertThat(
             getApi()
-                .getNamespaces()
+                .getMultipleNamespaces()
                 .refName(branch.getName())
                 .namespace("a.b.d")
                 .get()
@@ -131,14 +136,24 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
         .containsExactlyInAnyOrder(two);
 
     assertThat(
-            getApi().getNamespaces().refName(branch.getName()).namespace("x").get().getNamespaces())
+            getApi()
+                .getMultipleNamespaces()
+                .refName(branch.getName())
+                .namespace("x")
+                .get()
+                .getNamespaces())
         .containsExactly(three);
     assertThat(
-            getApi().getNamespaces().refName(branch.getName()).namespace("z").get().getNamespaces())
+            getApi()
+                .getMultipleNamespaces()
+                .refName(branch.getName())
+                .namespace("z")
+                .get()
+                .getNamespaces())
         .isEmpty();
     assertThat(
             getApi()
-                .getNamespaces()
+                .getMultipleNamespaces()
                 .refName(branch.getName())
                 .namespace("on")
                 .get()

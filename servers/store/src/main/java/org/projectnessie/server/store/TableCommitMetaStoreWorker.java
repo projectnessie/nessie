@@ -278,4 +278,13 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
       }
     }
   }
+
+  @Override
+  public boolean isNamespace(ByteString type) {
+    try {
+      return Type.NAMESPACE == getType(type);
+    } catch (Exception e) {
+      return false;
+    }
+  }
 }

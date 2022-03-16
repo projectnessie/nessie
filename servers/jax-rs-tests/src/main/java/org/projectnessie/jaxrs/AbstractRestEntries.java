@@ -333,7 +333,13 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
       Reference reference, List<String> knownNamespaces, List<ContentKey> knownContentKeys)
       throws NessieReferenceNotFoundException, NessieNamespaceNotFoundException {
 
-    assertThat(getApi().getNamespaces().reference(reference).namespace("a").get().getNamespaces())
+    assertThat(
+            getApi()
+                .getMultipleNamespaces()
+                .reference(reference)
+                .namespace("a")
+                .get()
+                .getNamespaces())
         .hasSize(4);
     for (String namespace : knownNamespaces) {
       Namespace ns = Namespace.parse(namespace);

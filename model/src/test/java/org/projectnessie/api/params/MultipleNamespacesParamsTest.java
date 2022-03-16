@@ -21,11 +21,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.model.Namespace;
 
-public class NamespacesParamsTest {
+public class MultipleNamespacesParamsTest {
 
   @Test
   public void testBuilder() {
-    NamespacesParams params = NamespacesParams.builder().refName("xx").build();
+    MultipleNamespacesParams params = MultipleNamespacesParams.builder().refName("xx").build();
     assertThat(params.getRefName()).isEqualTo("xx");
     assertThat(params.getNamespace()).isNull();
     assertThat(params.getHashOnRef()).isNull();
@@ -33,22 +33,23 @@ public class NamespacesParamsTest {
 
   @Test
   public void testValidation() {
-    assertThatThrownBy(() -> NamespacesParams.builder().build())
+    assertThatThrownBy(() -> MultipleNamespacesParams.builder().build())
         .isInstanceOf(IllegalStateException.class)
         .hasMessage(
-            "Cannot build NamespacesParams, some of required attributes are not set [refName]");
+            "Cannot build MultipleNamespacesParams, some of required attributes are not set [refName]");
 
-    assertThatThrownBy(() -> NamespacesParams.builder().namespace(Namespace.of("x")).build())
+    assertThatThrownBy(
+            () -> MultipleNamespacesParams.builder().namespace(Namespace.of("x")).build())
         .isInstanceOf(IllegalStateException.class)
         .hasMessage(
-            "Cannot build NamespacesParams, some of required attributes are not set [refName]");
+            "Cannot build MultipleNamespacesParams, some of required attributes are not set [refName]");
 
-    assertThatThrownBy(() -> NamespacesParams.builder().hashOnRef("x").build())
+    assertThatThrownBy(() -> MultipleNamespacesParams.builder().hashOnRef("x").build())
         .isInstanceOf(IllegalStateException.class)
         .hasMessage(
-            "Cannot build NamespacesParams, some of required attributes are not set [refName]");
+            "Cannot build MultipleNamespacesParams, some of required attributes are not set [refName]");
 
-    assertThatThrownBy(() -> NamespacesParams.builder().refName(null).build())
+    assertThatThrownBy(() -> MultipleNamespacesParams.builder().refName(null).build())
         .isInstanceOf(NullPointerException.class)
         .hasMessage("refName");
   }

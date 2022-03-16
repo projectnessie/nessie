@@ -56,4 +56,8 @@ public interface StoreWorker<CONTENT, COMMIT_METADATA, CONTENT_TYPE extends Enum
   }
 
   Serializer<COMMIT_METADATA> getMetadataSerializer();
+
+  default boolean isNamespace(ByteString type) {
+    return false;
+  }
 }

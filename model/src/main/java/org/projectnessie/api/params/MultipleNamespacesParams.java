@@ -28,7 +28,7 @@ import org.immutables.builder.Builder;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Validation;
 
-public class NamespacesParams {
+public class MultipleNamespacesParams {
 
   @Parameter(
       description = "name of ref to fetch",
@@ -55,10 +55,10 @@ public class NamespacesParams {
   @Nullable
   private String hashOnRef;
 
-  public NamespacesParams() {}
+  public MultipleNamespacesParams() {}
 
   @Builder.Constructor
-  NamespacesParams(
+  MultipleNamespacesParams(
       @NotNull String refName, @Nullable Namespace namespace, @Nullable String hashOnRef) {
     this.refName = refName;
     this.namespace = namespace;
@@ -79,8 +79,8 @@ public class NamespacesParams {
     return hashOnRef;
   }
 
-  public static NamespacesParamsBuilder builder() {
-    return new NamespacesParamsBuilder();
+  public static MultipleNamespacesParamsBuilder builder() {
+    return new MultipleNamespacesParamsBuilder();
   }
 
   @Override
@@ -91,7 +91,7 @@ public class NamespacesParams {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    NamespacesParams that = (NamespacesParams) o;
+    MultipleNamespacesParams that = (MultipleNamespacesParams) o;
     return Objects.equals(refName, that.refName)
         && Objects.equals(namespace, that.namespace)
         && Objects.equals(hashOnRef, that.hashOnRef);
@@ -104,7 +104,7 @@ public class NamespacesParams {
 
   @Override
   public String toString() {
-    return new StringJoiner(", ", NamespacesParams.class.getSimpleName() + "[", "]")
+    return new StringJoiner(", ", MultipleNamespacesParams.class.getSimpleName() + "[", "]")
         .add("refName='" + refName + "'")
         .add("namespace=" + namespace)
         .add("hashOnRef='" + hashOnRef + "'")

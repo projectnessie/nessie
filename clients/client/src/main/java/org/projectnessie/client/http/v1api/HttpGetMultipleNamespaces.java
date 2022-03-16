@@ -16,19 +16,20 @@
 package org.projectnessie.client.http.v1api;
 
 import javax.annotation.Nullable;
-import org.projectnessie.api.params.NamespacesParams;
-import org.projectnessie.api.params.NamespacesParamsBuilder;
-import org.projectnessie.client.api.GetNamespacesBuilder;
+import org.projectnessie.api.params.MultipleNamespacesParams;
+import org.projectnessie.api.params.MultipleNamespacesParamsBuilder;
+import org.projectnessie.client.api.GetMultipleNamespacesBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.GetNamespacesResponse;
 import org.projectnessie.model.Namespace;
 
-final class HttpGetNamespaces extends BaseHttpRequest implements GetNamespacesBuilder {
+final class HttpGetMultipleNamespaces extends BaseHttpRequest
+    implements GetMultipleNamespacesBuilder {
 
-  private final NamespacesParamsBuilder builder = NamespacesParams.builder();
+  private final MultipleNamespacesParamsBuilder builder = MultipleNamespacesParams.builder();
 
-  HttpGetNamespaces(NessieApiClient client) {
+  HttpGetMultipleNamespaces(NessieApiClient client) {
     super(client);
   }
 
@@ -39,26 +40,26 @@ final class HttpGetNamespaces extends BaseHttpRequest implements GetNamespacesBu
    * @return this
    */
   @Override
-  public GetNamespacesBuilder namespace(Namespace namespace) {
+  public GetMultipleNamespacesBuilder namespace(Namespace namespace) {
     builder.namespace(namespace);
     return this;
   }
 
   @Override
-  public GetNamespacesBuilder refName(String refName) {
+  public GetMultipleNamespacesBuilder refName(String refName) {
     builder.refName(refName);
     return this;
   }
 
   @Override
-  public GetNamespacesBuilder hashOnRef(@Nullable String hashOnRef) {
+  public GetMultipleNamespacesBuilder hashOnRef(@Nullable String hashOnRef) {
     builder.hashOnRef(hashOnRef);
     return this;
   }
 
   @Override
   public GetNamespacesResponse get() throws NessieReferenceNotFoundException {
-    NamespacesParams build = builder.build();
+    MultipleNamespacesParams build = builder.build();
     return client.getNamespaceApi().getNamespaces(build);
   }
 }
