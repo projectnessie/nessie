@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.persist.store;
 
+import com.google.protobuf.ByteString;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.persist.adapter.ContentVariant;
 import org.projectnessie.versioned.persist.adapter.ContentVariantSupplier;
@@ -36,5 +37,10 @@ public class GenericContentVariantSupplier<
       return ContentVariant.WITH_GLOBAL;
     }
     return ContentVariant.ON_REF;
+  }
+
+  @Override
+  public boolean isNamespace(ByteString type) {
+    return storeWorker.isNamespace(type);
   }
 }

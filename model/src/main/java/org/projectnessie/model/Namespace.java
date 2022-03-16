@@ -15,7 +15,10 @@
  */
 package org.projectnessie.model;
 
-import com.fasterxml.jackson.annotation.JsonValue;
+import static org.projectnessie.model.UriUtil.ZERO_BYTE_STRING;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.Arrays;
@@ -33,23 +36,30 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonSerialize(as = ImmutableNamespace.class)
 @JsonDeserialize(as = ImmutableNamespace.class)
-public abstract class Namespace {
+@JsonTypeName("NAMESPACE")
+public abstract class Namespace extends Content {
 
   private static final String DOT = ".";
   static final String ERROR_MSG_TEMPLATE =
       "'%s' is not a valid namespace identifier (should not end with '.')";
 
-  public static final Namespace EMPTY = ImmutableNamespace.builder().name("").build();
+  public static final Namespace EMPTY = ImmutableNamespace.builder().name("").id("").build();
 
-  @JsonValue
+  @Override
+  public Type getType() {
+    return Type.NAMESPACE;
+  }
+
   @NotNull
   public abstract String name();
 
+  @JsonIgnore
   @Value.Redacted
   public boolean isEmpty() {
     return name().isEmpty();
   }
 
+  @JsonIgnore
   @Value.Redacted
   public String[] getElements() {
     return name().split("\\.");
@@ -68,13 +78,22 @@ public abstract class Namespace {
       return EMPTY;
     }
 
+    for (String e : elements) {
+      if (e == null) {
+        throw new IllegalArgumentException("A namespace must not contain a null element.");
+      }
+      if (e.contains(ZERO_BYTE_STRING)) {
+        throw new IllegalArgumentException("A namespace must not contain a zero byte.");
+      }
+    }
+
     if (DOT.equals(elements[elements.length - 1])) {
       throw new IllegalArgumentException(
           String.format(ERROR_MSG_TEMPLATE, Arrays.toString(elements)));
     }
 
     String name = String.join(DOT, Arrays.asList(elements));
-    return ImmutableNamespace.builder().name(name).build();
+    return ImmutableNamespace.builder().name(name).id(name).build();
   }
 
   /**
@@ -107,5 +126,29 @@ public abstract class Namespace {
       throw new IllegalArgumentException(String.format(ERROR_MSG_TEMPLATE, identifier));
     }
     return Namespace.of(identifier.split("\\."));
+  }
+
+  /**
+   * Convert from path encoded string to normal string.
+   *
+   * @param encoded Path encoded string
+   * @return Actual key.
+   */
+  public static Namespace fromPathString(String encoded) {
+    return Namespace.of(UriUtil.fromPathString(encoded));
+  }
+
+  /**
+   * Convert this namespace to a URL encoded path string.
+   *
+   * @return String encoded for path use.
+   */
+  public String toPathString() {
+    return UriUtil.toPathString(Arrays.asList(getElements()));
+  }
+
+  @Override
+  public String toString() {
+    return toPathString();
   }
 }

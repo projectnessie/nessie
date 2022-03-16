@@ -75,6 +75,20 @@ components:
           - example
           - key
 
+    namespaceName:
+      value: "a.b.c"
+
+    emptyNamespaceName:
+      value:
+
+    namespacesResponse:
+      value:
+        namespaces:
+          - "type": "NAMESPACE"
+            "name": "a.b.c"
+          - "type": "NAMESPACE"
+            "name": "a.b.d"
+
     iceberg:
       value:
         type: ICEBERG_TABLE

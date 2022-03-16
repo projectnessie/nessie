@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
@@ -89,7 +90,10 @@ public abstract class AbstractAssign extends AbstractNestedVersionStore {
       throws ReferenceNotFoundException, ReferenceAlreadyExistsException,
           ReferenceConflictException {
     ReferenceInfo<CommitMessage> main = store.getNamedRef("main", GetNamedRefsParams.DEFAULT);
-    assertThat(store().getCommits(main.getHash(), false)).isEmpty();
+    try (Stream<Commit<CommitMessage, BaseContent>> commits =
+        store().getCommits(main.getHash(), false)) {
+      assertThat(commits).isEmpty();
+    }
     try (Stream<ReferenceInfo<CommitMessage>> refs =
         store().getNamedRefs(GetNamedRefsParams.DEFAULT)) {
       assertThat(refs)

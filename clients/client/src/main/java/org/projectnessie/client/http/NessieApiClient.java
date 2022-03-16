@@ -19,6 +19,7 @@ import java.io.Closeable;
 import org.projectnessie.api.http.HttpConfigApi;
 import org.projectnessie.api.http.HttpContentApi;
 import org.projectnessie.api.http.HttpDiffApi;
+import org.projectnessie.api.http.HttpNamespaceApi;
 import org.projectnessie.api.http.HttpRefLogApi;
 import org.projectnessie.api.http.HttpTreeApi;
 
@@ -28,18 +29,21 @@ public class NessieApiClient implements Closeable {
   private final HttpContentApi content;
   private final HttpDiffApi diff;
   private final HttpRefLogApi refLog;
+  private final HttpNamespaceApi namespace;
 
   public NessieApiClient(
       HttpConfigApi config,
       HttpTreeApi tree,
       HttpContentApi content,
       HttpDiffApi diff,
-      HttpRefLogApi refLog) {
+      HttpRefLogApi refLog,
+      HttpNamespaceApi namespace) {
     this.config = config;
     this.tree = tree;
     this.content = content;
     this.diff = diff;
     this.refLog = refLog;
+    this.namespace = namespace;
   }
 
   public HttpTreeApi getTreeApi() {
@@ -60,6 +64,10 @@ public class NessieApiClient implements Closeable {
 
   public HttpRefLogApi getRefLogApi() {
     return refLog;
+  }
+
+  public HttpNamespaceApi getNamespaceApi() {
+    return namespace;
   }
 
   @Override

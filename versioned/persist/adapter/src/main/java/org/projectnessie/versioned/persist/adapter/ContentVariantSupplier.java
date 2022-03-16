@@ -15,7 +15,21 @@
  */
 package org.projectnessie.versioned.persist.adapter;
 
-@FunctionalInterface
+import com.google.protobuf.ByteString;
+
 public interface ContentVariantSupplier {
   ContentVariant getContentVariant(byte type);
+
+  /**
+   * Returns true if the given type is a NAMESPACE, false otherwise.
+   *
+   * @param type A potential type within a {@link ByteString}
+   * @return true if the given type is a NAMESPACE, false otherwise.
+   */
+  default boolean isNamespace(ByteString type) {
+    // this be seen as a temporary workaround to determine whether something is a namespace or
+    // not from within the DatabaseAdapter (as currently such knowledge only lives within a
+    // store worker)
+    return false;
+  }
 }

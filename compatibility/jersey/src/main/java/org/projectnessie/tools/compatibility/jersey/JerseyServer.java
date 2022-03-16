@@ -76,6 +76,7 @@ public class JerseyServer implements AutoCloseable {
             config.register(RestContentResource.class);
             withClass("org.projectnessie.services.rest.RestDiffResource", config::register);
             withClass("org.projectnessie.services.rest.RestRefLogResource", config::register);
+            withClass("org.projectnessie.services.rest.RestNamespaceResource", config::register);
             config.register(ConfigApiImpl.class);
             config.register(ContentKeyParamConverterProvider.class);
             withClass(
@@ -86,6 +87,9 @@ public class JerseyServer implements AutoCloseable {
             withClass(
                 "org.projectnessie.services.rest.ConstraintViolationExceptionMapper",
                 c -> config.register(c, 10));
+            withClass(
+                "org.projectnessie.services.rest.NamespaceParamConverterProvider",
+                config::register);
             config.register(NessieExceptionMapper.class);
             config.register(NessieJaxRsJsonParseExceptionMapper.class, 10);
             config.register(NessieJaxRsJsonMappingExceptionMapper.class, 10);

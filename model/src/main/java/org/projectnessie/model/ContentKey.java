@@ -23,7 +23,6 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import org.immutables.value.Value;
@@ -109,11 +108,7 @@ public abstract class ContentKey {
    * @return Actual key.
    */
   public static ContentKey fromPathString(String encoded) {
-    List<String> elements =
-        Arrays.stream(encoded.split("\\."))
-            .map(x -> x.replace('\u0000', '.'))
-            .collect(Collectors.toList());
-    return of(elements);
+    return ContentKey.of(UriUtil.fromPathString(encoded));
   }
 
   /**
@@ -122,9 +117,7 @@ public abstract class ContentKey {
    * @return String encoded for path use.
    */
   public String toPathString() {
-    return getElements().stream()
-        .map(x -> x.replace('.', '\u0000'))
-        .collect(Collectors.joining("."));
+    return UriUtil.toPathString(getElements());
   }
 
   @Override

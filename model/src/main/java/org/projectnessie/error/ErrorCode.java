@@ -34,6 +34,9 @@ public enum ErrorCode {
   BAD_REQUEST(400, NessieBadRequestException::new),
   FORBIDDEN(403, NessieForbiddenException::new),
   TOO_MANY_REQUESTS(429, NessieBackendThrottledException::new),
+  NAMESPACE_NOT_FOUND(404, NessieNamespaceNotFoundException::new),
+  NAMESPACE_ALREADY_EXISTS(409, NessieNamespaceAlreadyExistsException::new),
+  NAMESPACE_NOT_EMPTY(409, NessieNamespaceNotEmptyException::new),
   ;
 
   private final int httpStatus;

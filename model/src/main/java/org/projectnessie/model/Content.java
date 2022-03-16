@@ -32,14 +32,20 @@ import org.immutables.value.Value;
 @Schema(
     type = SchemaType.OBJECT,
     title = "Content",
-    oneOf = {IcebergTable.class, DeltaLakeTable.class, IcebergView.class},
+    oneOf = {IcebergTable.class, DeltaLakeTable.class, IcebergView.class, Namespace.class},
     discriminatorMapping = {
       @DiscriminatorMapping(value = "ICEBERG_TABLE", schema = IcebergTable.class),
       @DiscriminatorMapping(value = "DELTA_LAKE_TABLE", schema = DeltaLakeTable.class),
-      @DiscriminatorMapping(value = "ICEBERG_VIEW", schema = IcebergView.class)
+      @DiscriminatorMapping(value = "ICEBERG_VIEW", schema = IcebergView.class),
+      @DiscriminatorMapping(value = "NAMESPACE", schema = Namespace.class)
     },
     discriminatorProperty = "type")
-@JsonSubTypes({@Type(IcebergTable.class), @Type(DeltaLakeTable.class), @Type(IcebergView.class)})
+@JsonSubTypes({
+  @Type(IcebergTable.class),
+  @Type(DeltaLakeTable.class),
+  @Type(IcebergView.class),
+  @Type(Namespace.class)
+})
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 public abstract class Content implements Serializable {
 
@@ -47,7 +53,8 @@ public abstract class Content implements Serializable {
     UNKNOWN,
     ICEBERG_TABLE,
     DELTA_LAKE_TABLE,
-    ICEBERG_VIEW;
+    ICEBERG_VIEW,
+    NAMESPACE
   }
 
   /**

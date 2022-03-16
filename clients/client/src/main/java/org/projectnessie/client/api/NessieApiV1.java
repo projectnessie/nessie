@@ -123,4 +123,16 @@ public interface NessieApiV1 extends NessieApi {
    * <p>See {@code org.projectnessie.client.StreamingUtil} in {@code nessie-client}.
    */
   GetRefLogBuilder getRefLog();
+
+  /** Fetch a single {@link org.projectnessie.model.Namespace}. */
+  GetNamespaceBuilder getNamespace();
+
+  /** Fetch one or more {@link org.projectnessie.model.Namespace}s based on a given prefix. */
+  GetMultipleNamespacesBuilder getMultipleNamespaces();
+
+  /** Create a single {@link org.projectnessie.model.Namespace}. */
+  CreateNamespaceBuilder createNamespace();
+
+  /** Delete a single {@link org.projectnessie.model.Namespace}. */
+  DeleteNamespaceBuilder deleteNamespace();
 }

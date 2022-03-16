@@ -60,6 +60,10 @@ public class NessieExceptionMapper extends BaseExceptionMapper<Exception> {
       BaseNessieClientServerException e = (BaseNessieClientServerException) exception;
       errorCode = e.getErrorCode();
       message = exception.getMessage();
+    } else if (exception.getCause() instanceof BaseNessieClientServerException) {
+      BaseNessieClientServerException e = (BaseNessieClientServerException) exception.getCause();
+      errorCode = e.getErrorCode();
+      message = exception.getCause().getMessage();
     } else if (exception instanceof JsonParseException
         || exception instanceof JsonMappingException
         || exception instanceof IllegalArgumentException) {

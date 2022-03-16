@@ -37,13 +37,11 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import java.security.Principal;
-import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -455,7 +453,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     if (depth == null || depth < 1) {
       return entry;
     }
-    Type type = entry.getName().getElements().size() > depth ? Type.UNKNOWN : entry.getType();
+    Type type = entry.getName().getElements().size() > depth ? Type.NAMESPACE : entry.getType();
     ContentKey key = ContentKey.of(entry.getName().getElements().subList(0, depth));
     return EntriesResponse.Entry.builder().type(type).name(key).build();
   }
@@ -535,21 +533,6 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     } catch (ReferenceConflictException e) {
       throw new NessieReferenceConflictException(e.getMessage(), e);
     }
-  }
-
-  private Function<CommitMeta, CommitMeta> commitMetaUpdate() {
-    // Used for setting contextual commit properties during new and merge/transplant commits.
-    // WARNING: ONLY SET PROPERTIES, WHICH APPLY COMMONLY TO ALL COMMIT TYPES.
-    Principal principal = getPrincipal();
-    String committer = principal == null ? "" : principal.getName();
-    Instant now = Instant.now();
-    return commitMeta ->
-        commitMeta.toBuilder()
-            .committer(committer)
-            .commitTime(now)
-            .author(commitMeta.getAuthor() == null ? committer : commitMeta.getAuthor())
-            .authorTime(commitMeta.getAuthorTime() == null ? now : commitMeta.getAuthorTime())
-            .build();
   }
 
   private Hash toHash(String referenceName, String hashOnReference)

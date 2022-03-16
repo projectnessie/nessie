@@ -75,7 +75,7 @@ const fetchKeys = (
 const entryToKey = (entry: Entry): Key => {
   return {
     name: entry.name.elements[entry.name.elements.length - 1],
-    type: entry.type === "UNKNOWN" ? "CONTAINER" : "TABLE",
+    type: entry.type === "NAMESPACE" ? "CONTAINER" : "TABLE",
     contentKey: entry.name,
   };
 };

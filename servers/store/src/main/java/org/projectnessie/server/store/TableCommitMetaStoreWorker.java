@@ -32,6 +32,8 @@ import org.projectnessie.model.ImmutableDeltaLakeTable;
 import org.projectnessie.model.ImmutableDeltaLakeTable.Builder;
 import org.projectnessie.model.ImmutableIcebergTable;
 import org.projectnessie.model.ImmutableIcebergView;
+import org.projectnessie.model.ImmutableNamespace;
+import org.projectnessie.model.Namespace;
 import org.projectnessie.store.ObjectTypes;
 import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.StoreWorker;
@@ -73,6 +75,9 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
         table.setLastCheckpoint(lastCheckpoint);
       }
       builder.setDeltaLakeTable(table);
+    } else if (content instanceof Namespace) {
+      builder.setNamespace(
+          ObjectTypes.Namespace.newBuilder().setName(((Namespace) content).name()));
     } else {
       throw new IllegalArgumentException("Unknown type " + content);
     }
@@ -152,6 +157,10 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
             .id(content.getId())
             .build();
 
+      case NAMESPACE:
+        ObjectTypes.Namespace namespace = content.getNamespace();
+        return ImmutableNamespace.builder().id(content.getId()).name(namespace.getName()).build();
+
       case OBJECTTYPE_NOT_SET:
       default:
         throw new IllegalArgumentException("Unknown type " + content.getObjectTypeCase());
@@ -176,6 +185,8 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
       return (byte) Content.Type.DELTA_LAKE_TABLE.ordinal();
     } else if (content instanceof IcebergView) {
       return (byte) Content.Type.ICEBERG_VIEW.ordinal();
+    } else if (content instanceof Namespace) {
+      return (byte) Content.Type.NAMESPACE.ordinal();
     } else {
       throw new IllegalArgumentException("Unknown type " + content);
     }
@@ -189,6 +200,8 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
       return Type.ICEBERG_VIEW;
     } else if (content instanceof DeltaLakeTable) {
       return Type.DELTA_LAKE_TABLE;
+    } else if (content instanceof Namespace) {
+      return Type.NAMESPACE;
     }
     throw new IllegalArgumentException("Unknown type " + content);
   }
@@ -215,6 +228,10 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
 
     if (parsed.hasDeltaLakeTable()) {
       return Type.DELTA_LAKE_TABLE;
+    }
+
+    if (parsed.hasNamespace()) {
+      return Type.NAMESPACE;
     }
 
     throw new IllegalArgumentException("Unsupported on-ref content " + parsed);
@@ -259,6 +276,15 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
             .hash("unknown")
             .build();
       }
+    }
+  }
+
+  @Override
+  public boolean isNamespace(ByteString type) {
+    try {
+      return Type.NAMESPACE == getType(type);
+    } catch (Exception e) {
+      return false;
     }
   }
 }
