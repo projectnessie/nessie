@@ -56,5 +56,5 @@ message DeltaLakeTable {
 }
 
 message Namespace {
-  string name = 1;
+  repeated string elements = 1;
 }

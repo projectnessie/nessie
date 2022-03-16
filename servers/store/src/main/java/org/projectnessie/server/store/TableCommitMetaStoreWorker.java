@@ -76,8 +76,8 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
       }
       builder.setDeltaLakeTable(table);
     } else if (content instanceof Namespace) {
-      builder.setNamespace(
-          ObjectTypes.Namespace.newBuilder().setName(((Namespace) content).name()));
+      Namespace ns = (Namespace) content;
+      builder.setNamespace(ObjectTypes.Namespace.newBuilder().addAllElements(ns.getElements()));
     } else {
       throw new IllegalArgumentException("Unknown type " + content);
     }
@@ -159,7 +159,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
 
       case NAMESPACE:
         ObjectTypes.Namespace namespace = content.getNamespace();
-        return ImmutableNamespace.builder().id(content.getId()).name(namespace.getName()).build();
+        return ImmutableNamespace.builder().elements(namespace.getElementsList()).build();
 
       case OBJECTTYPE_NOT_SET:
       default:
