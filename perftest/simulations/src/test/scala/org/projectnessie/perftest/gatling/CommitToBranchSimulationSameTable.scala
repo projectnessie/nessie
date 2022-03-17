@@ -30,7 +30,7 @@ import scala.concurrent.duration.{FiniteDuration, HOURS, NANOSECONDS, SECONDS}
 /** Gatling simulation to perform commits against Nessie. Has a bunch of
   * configurables, see the `val`s defined at the top of this class.
   */
-class CommitToBranchSimulation extends Simulation {
+class CommitToBranchSimulationSameTable extends Simulation {
 
   val params: CommitToBranchParams = CommitToBranchParams.fromSystemProperties()
 
