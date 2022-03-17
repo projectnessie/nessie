@@ -56,6 +56,21 @@ public class TestNamespace {
     assertThat(Namespace.of("")).isEqualTo(Namespace.EMPTY);
     assertThat(Namespace.of(Collections.emptyList())).isEqualTo(Namespace.EMPTY);
     assertThat(Namespace.of(singletonList(""))).isEqualTo(Namespace.EMPTY);
+
+    assertThatThrownBy(() -> Namespace.of("", "something"))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Namespace '[, something]' must not contain an empty element.");
+    assertThatThrownBy(() -> Namespace.of("", "something", "x"))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Namespace '[, something, x]' must not contain an empty element.");
+
+    assertThatThrownBy(() -> Namespace.of("something", "", "x"))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Namespace '[something, , x]' must not contain an empty element.");
+
+    assertThatThrownBy(() -> Namespace.of("something", "x", ""))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Namespace '[something, x, ]' must not contain an empty element.");
   }
 
   @Test
@@ -132,7 +147,9 @@ public class TestNamespace {
   void testZeroByteUsage(String identifier) {
     assertThatThrownBy(() -> Namespace.of(identifier))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("A namespace must not contain a zero byte.");
+        .hasMessage(
+            String.format(
+                "Namespace '%s' must not contain a zero byte.", singletonList(identifier)));
   }
 
   @ParameterizedTest
@@ -140,7 +157,9 @@ public class TestNamespace {
   void testNullsInElements(String[] elements) {
     assertThatThrownBy(() -> Namespace.of(elements))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("A namespace must not contain a null element.");
+        .hasMessage(
+            String.format(
+                "Namespace '%s' must not contain a null element.", Arrays.toString(elements)));
   }
 
   private static Stream<Arguments> elementsProvider() {

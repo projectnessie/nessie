@@ -230,7 +230,7 @@ class TestContentKey {
   public void validation() {
     assertThatThrownBy(() -> ContentKey.of("a", "b", "\u0000", "c", "d"))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("An object key must not contain a zero byte.");
+        .hasMessage("Content key '[a, b, \u0000, c, d]' must not contain a zero byte.");
   }
 
   @Test
@@ -294,19 +294,27 @@ class TestContentKey {
         () ->
             assertThatThrownBy(() -> ContentKey.of(null, ""))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("An object key must not contain an empty name (last element)."),
+                .hasMessage("Content key '[]' must not contain an empty element."),
         () ->
             assertThatThrownBy(() -> ContentKey.of("a", ""))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("An object key must not contain an empty name (last element)."),
+                .hasMessage("Content key '[a, ]' must not contain an empty element."),
         () ->
             assertThatThrownBy(() -> ContentKey.of(singletonList("")))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("An object key must not contain an empty name (last element)."),
+                .hasMessage("Content key '[]' must not contain an empty element."),
         () ->
             assertThatThrownBy(() -> ContentKey.of(asList("a", "")))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("An object key must not contain an empty name (last element)."));
+                .hasMessage("Content key '[a, ]' must not contain an empty element."),
+        () ->
+            assertThatThrownBy(() -> ContentKey.of("", "something"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Content key '[, something]' must not contain an empty element."),
+        () ->
+            assertThatThrownBy(() -> ContentKey.of("", "something", "x"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Content key '[, something, x]' must not contain an empty element."));
   }
 
   private void assertRoundTrip(String... elements) {
