@@ -57,6 +57,9 @@
           <environment>
             <HTTP_ACCESS_LOG_LEVEL>${test.log.level}</HTTP_ACCESS_LOG_LEVEL>
           </environment>
+          <jvmArguments>
+            <jvmArgument>-Dquarkus.http.port=19120</jvmArgument>
+          </jvmArguments>
         </configuration>
         <dependencies>
           <dependency>
