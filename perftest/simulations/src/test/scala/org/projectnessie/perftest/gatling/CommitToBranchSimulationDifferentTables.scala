@@ -28,8 +28,9 @@ import org.projectnessie.perftest.gatling.Predef.nessie
 import scala.concurrent.duration.{FiniteDuration, HOURS, NANOSECONDS, SECONDS}
 
 /** Gatling simulation to perform commits against Nessie. It commits the data to
-  * different table - each user has its own dedicated table. Has a bunch of
-  * configurables, see the `val`s defined at the top of this class.
+  * different table - each user has its own dedicated table. The ContentKey is
+  * created per userId. Has a bunch of configurables, see the `val`s defined at
+  * the top of this class.
   */
 class CommitToBranchSimulationDifferentTables extends Simulation {
 
