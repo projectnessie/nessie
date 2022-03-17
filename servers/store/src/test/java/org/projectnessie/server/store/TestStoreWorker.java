@@ -20,6 +20,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.ByteString;
 import java.time.Instant;
 import java.util.AbstractMap;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -33,7 +35,7 @@ import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
-import org.projectnessie.model.ImmutableNamespace;
+import org.projectnessie.model.Namespace;
 import org.projectnessie.store.ObjectTypes;
 import org.projectnessie.store.ObjectTypes.IcebergMetadataPointer;
 import org.projectnessie.store.ObjectTypes.IcebergRefState;
@@ -191,14 +193,14 @@ class TestStoreWorker {
   }
 
   private static Map.Entry<ByteString, Content> getNamespace() {
-    String name = "a.b.c";
-    Content content = ImmutableNamespace.builder().id(name).name(name).build();
+    List<String> elements = Arrays.asList("a", "b.c", "d");
+    Namespace namespace = Namespace.of(elements);
     ByteString bytes =
         ObjectTypes.Content.newBuilder()
-            .setId(name)
-            .setNamespace(ObjectTypes.Namespace.newBuilder().setName(name).build())
+            .setId(namespace.getId())
+            .setNamespace(ObjectTypes.Namespace.newBuilder().addAllElements(elements).build())
             .build()
             .toByteString();
-    return new AbstractMap.SimpleImmutableEntry<>(bytes, content);
+    return new AbstractMap.SimpleImmutableEntry<>(bytes, namespace);
   }
 }

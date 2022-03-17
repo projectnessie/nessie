@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieNamespaceAlreadyExistsException;
@@ -41,10 +43,12 @@ import org.projectnessie.model.Operation.Put;
 
 /** See {@link AbstractTestRest} for details about and reason for the inheritance model. */
 public abstract class AbstractRestNamespace extends AbstractRestRefLog {
-  @Test
-  public void testNamespaces() throws BaseNessieClientServerException {
+
+  @ParameterizedTest
+  @ValueSource(strings = {"a.b.c", "a.b\u0000c.d", "a.b.c.d"})
+  void testNamespaces(String namespaceName) throws BaseNessieClientServerException {
     Branch branch = createBranch("testNamespaces");
-    Namespace ns = Namespace.parse("a.b.c");
+    Namespace ns = Namespace.parse(namespaceName);
     Namespace namespace =
         getApi().createNamespace().refName(branch.getName()).namespace(ns).create();
 
@@ -55,17 +59,17 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
     assertThatThrownBy(
             () -> getApi().createNamespace().refName(branch.getName()).namespace(ns).create())
         .isInstanceOf(NessieNamespaceAlreadyExistsException.class)
-        .hasMessage("Namespace 'a.b.c' already exists");
+        .hasMessage(String.format("Namespace '%s' already exists", namespaceName));
 
     getApi().deleteNamespace().refName(branch.getName()).namespace(ns).delete();
     assertThatThrownBy(
             () -> getApi().deleteNamespace().refName(branch.getName()).namespace(ns).delete())
         .isInstanceOf(NessieNamespaceNotFoundException.class)
-        .hasMessage("Namespace 'a.b.c' does not exist");
+        .hasMessage(String.format("Namespace '%s' does not exist", namespaceName));
 
     assertThatThrownBy(() -> getApi().getNamespace().refName(branch.getName()).namespace(ns).get())
         .isInstanceOf(NessieNamespaceNotFoundException.class)
-        .hasMessage("Namespace 'a.b.c' does not exist");
+        .hasMessage(String.format("Namespace '%s' does not exist", namespaceName));
 
     assertThatThrownBy(
             () ->
@@ -302,6 +306,94 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
 
     // it should only contain the parent namespace of the "a.b.c" table
     assertThat(getApi().getMultipleNamespaces().refName(branch.getName()).get().getNamespaces())
-        .containsExactly(Namespace.of("a.b"));
+        .containsExactly(Namespace.parse("a.b"));
+  }
+
+  @Test
+  public void testNamespacesWithAndWithoutZeroBytes() throws BaseNessieClientServerException {
+    Branch branch = createBranch("testNamespacesWithAndWithoutZeroBytes");
+    String firstName = "a.b\u0000c.d";
+    String secondName = "a.b.c.d";
+
+    Namespace first = Namespace.parse(firstName);
+    Namespace second = Namespace.parse(secondName);
+    List<Namespace> namespaces = Arrays.asList(first, second);
+
+    // perform creation and retrieval
+    for (Namespace namespace : namespaces) {
+      Namespace created =
+          getApi().createNamespace().refName(branch.getName()).namespace(namespace).create();
+      assertThat(created).isNotNull().isEqualTo(namespace);
+      assertThat(getApi().getNamespace().refName(branch.getName()).namespace(namespace).get())
+          .isEqualTo(created);
+
+      assertThatThrownBy(
+              () ->
+                  getApi()
+                      .createNamespace()
+                      .refName(branch.getName())
+                      .namespace(namespace)
+                      .create())
+          .isInstanceOf(NessieNamespaceAlreadyExistsException.class)
+          .hasMessage(String.format("Namespace '%s' already exists", namespace.name()));
+    }
+
+    // retrieval by prefix
+    assertThat(getApi().getMultipleNamespaces().refName(branch.getName()).get().getNamespaces())
+        .containsExactlyInAnyOrderElementsOf(namespaces);
+
+    assertThat(
+            getApi()
+                .getMultipleNamespaces()
+                .namespace("a")
+                .refName(branch.getName())
+                .get()
+                .getNamespaces())
+        .containsExactlyInAnyOrderElementsOf(namespaces);
+
+    assertThat(
+            getApi()
+                .getMultipleNamespaces()
+                .namespace("a.b")
+                .refName(branch.getName())
+                .get()
+                .getNamespaces())
+        .containsExactlyInAnyOrderElementsOf(namespaces);
+
+    assertThat(
+            getApi()
+                .getMultipleNamespaces()
+                .namespace("a.b\u0000c")
+                .refName(branch.getName())
+                .get()
+                .getNamespaces())
+        .containsExactly(first);
+
+    assertThat(
+            getApi()
+                .getMultipleNamespaces()
+                .namespace("a.b.c")
+                .refName(branch.getName())
+                .get()
+                .getNamespaces())
+        .containsExactly(second);
+
+    // deletion
+    for (Namespace namespace : namespaces) {
+      getApi().deleteNamespace().refName(branch.getName()).namespace(namespace).delete();
+
+      assertThatThrownBy(
+              () ->
+                  getApi()
+                      .deleteNamespace()
+                      .refName(branch.getName())
+                      .namespace(namespace)
+                      .delete())
+          .isInstanceOf(NessieNamespaceNotFoundException.class)
+          .hasMessage(String.format("Namespace '%s' does not exist", namespace.name()));
+    }
+
+    assertThat(getApi().getMultipleNamespaces().refName(branch.getName()).get().getNamespaces())
+        .isEmpty();
   }
 }

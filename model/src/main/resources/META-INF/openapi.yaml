@@ -84,10 +84,16 @@ components:
     namespacesResponse:
       value:
         namespaces:
-          - "type": "NAMESPACE"
-            "name": "a.b.c"
-          - "type": "NAMESPACE"
-            "name": "a.b.d"
+          - type: NAMESPACE
+            elements:
+              - a
+              - b.c
+              - d
+          - type: NAMESPACE
+            elements:
+              - a
+              - b
+              - d
 
     iceberg:
       value:

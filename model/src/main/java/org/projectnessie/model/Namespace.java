@@ -22,10 +22,12 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import javax.validation.constraints.NotNull;
 import org.immutables.value.Value;
+import org.immutables.value.Value.Derived;
 
 /**
  * For a given table name <b>a.b.c.tableName</b>, the {@link Namespace} would be the prefix
@@ -43,7 +45,8 @@ public abstract class Namespace extends Content {
   static final String ERROR_MSG_TEMPLATE =
       "'%s' is not a valid namespace identifier (should not end with '.')";
 
-  public static final Namespace EMPTY = ImmutableNamespace.builder().name("").id("").build();
+  public static final Namespace EMPTY =
+      ImmutableNamespace.builder().elements(Collections.emptyList()).build();
 
   @Override
   public Type getType() {
@@ -51,7 +54,19 @@ public abstract class Namespace extends Content {
   }
 
   @NotNull
-  public abstract String name();
+  @Derived
+  @JsonIgnore
+  public String name() {
+    return toPathString();
+  }
+
+  @Override
+  @NotNull
+  @Derived
+  @JsonIgnore
+  public String getId() {
+    return name();
+  }
 
   @JsonIgnore
   @Value.Redacted
@@ -59,11 +74,8 @@ public abstract class Namespace extends Content {
     return name().isEmpty();
   }
 
-  @JsonIgnore
-  @Value.Redacted
-  public String[] getElements() {
-    return name().split("\\.");
-  }
+  @NotNull
+  public abstract List<String> getElements();
 
   /**
    * Builds a {@link Namespace} instance for the given elements.
@@ -74,7 +86,7 @@ public abstract class Namespace extends Content {
    */
   public static Namespace of(String... elements) {
     Objects.requireNonNull(elements, "elements must be non-null");
-    if (elements.length == 0) {
+    if (elements.length == 0 || "".equals(elements[0])) {
       return EMPTY;
     }
 
@@ -92,8 +104,7 @@ public abstract class Namespace extends Content {
           String.format(ERROR_MSG_TEMPLATE, Arrays.toString(elements)));
     }
 
-    String name = String.join(DOT, Arrays.asList(elements));
-    return ImmutableNamespace.builder().name(name).id(name).build();
+    return ImmutableNamespace.builder().elements(Arrays.asList(elements)).build();
   }
 
   /**
@@ -125,7 +136,7 @@ public abstract class Namespace extends Content {
     if (identifier.endsWith(DOT)) {
       throw new IllegalArgumentException(String.format(ERROR_MSG_TEMPLATE, identifier));
     }
-    return Namespace.of(identifier.split("\\."));
+    return Namespace.of(UriUtil.fromPathString(identifier));
   }
 
   /**
@@ -135,7 +146,7 @@ public abstract class Namespace extends Content {
    * @return Actual key.
    */
   public static Namespace fromPathString(String encoded) {
-    return Namespace.of(UriUtil.fromPathString(encoded));
+    return parse(encoded);
   }
 
   /**
@@ -144,11 +155,11 @@ public abstract class Namespace extends Content {
    * @return String encoded for path use.
    */
   public String toPathString() {
-    return UriUtil.toPathString(Arrays.asList(getElements()));
+    return UriUtil.toPathString(getElements());
   }
 
   @Override
   public String toString() {
-    return toPathString();
+    return name();
   }
 }

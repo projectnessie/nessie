@@ -68,7 +68,7 @@ public abstract class ContentKey {
   public static ContentKey of(Namespace namespace, String name) {
     Builder b = ImmutableContentKey.builder();
     if (namespace != null && !namespace.isEmpty()) {
-      b.addElements(namespace.getElements());
+      b.elements(namespace.getElements());
     }
     return b.addElements(name).build();
   }
