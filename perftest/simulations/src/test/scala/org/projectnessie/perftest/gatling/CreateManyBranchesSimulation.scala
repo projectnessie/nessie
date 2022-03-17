@@ -97,7 +97,9 @@ class CreateManyBranchesSimulation extends Simulation {
       .client(
         HttpClientBuilder
           .builder()
-          .withUri("http://127.0.0.1:19120/api/v1")
+          .withUri(
+            s"http://127.0.0.1:${System.getProperties.getProperty("quarkus.http.test-port")}/api/v1"
+          )
           .fromSystemProperties()
           .build(classOf[NessieApiV1])
       )
