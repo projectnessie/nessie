@@ -64,15 +64,15 @@ class CommitToBranchSimulation extends Simulation {
               contentId
             )
 
-          val globalStates = client.getContent.reference(branch).key(key).get()
-          val globalIcebergTable = globalStates.get(key)
+          val existingTable =
+            client.getContent.reference(branch).key(key).get().get(key)
 
           val op =
-            if (commitNum > 0 && globalIcebergTable != null)
+            if (commitNum > 0 && existingTable != null)
               Put.of(
                 key,
                 tableMeta,
-                globalIcebergTable
+                existingTable
               )
             else Put.of(key, tableMeta);
 
