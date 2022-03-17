@@ -27,11 +27,11 @@ import org.projectnessie.perftest.gatling.Predef.nessie
 
 import scala.concurrent.duration.{FiniteDuration, HOURS, NANOSECONDS, SECONDS}
 
-/** Gatling simulation to perform commits against Nessie. Has a bunch of It
-  * commits the data the same table for all users. configurables, see the `val`s
-  * defined at the top of this class.
+/** Gatling simulation to perform commits against Nessie. It commits the data to
+  * different table - each user has its own dedicated table. Has a bunch of
+  * configurables, see the `val`s defined at the top of this class.
   */
-class CommitToBranchSimulationSameTable extends Simulation {
+class CommitToBranchSimulationDifferentTables extends Simulation {
 
   val params: CommitToBranchParams = CommitToBranchParams.fromSystemProperties()
 
@@ -52,12 +52,12 @@ class CommitToBranchSimulationSameTable extends Simulation {
           val tableName = params.makeTableName(session)
 
           // Call the Nessie client operation to perform a commit
-          val key = ContentKey.of("name", "space", tableName)
+          val key = ContentKey.of("name", "space", tableName, userId.toString)
           val contentId = tableName + "_" + userId.toString
 
           val tableMeta = IcebergTable
             .of(
-              s"path_on_disk_${tableName}_$commitNum",
+              s"path_on_disk_${tableName}_${userId}_$commitNum",
               42,
               43,
               44,
