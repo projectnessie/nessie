@@ -20,7 +20,7 @@ import org.projectnessie.model.IcebergTable
 
 import java.util.concurrent.ThreadLocalRandom
 
-/** Parameters for the [[CommitToBranchSimulation]].
+/** Parameters for the [[CommitToBranchSimulationSameTable]].
   *
   * @param branch
   *   The Nessie branch name to use, the default include the current wall-clock

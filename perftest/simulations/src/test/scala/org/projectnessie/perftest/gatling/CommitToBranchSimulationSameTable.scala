@@ -30,7 +30,7 @@ import scala.concurrent.duration.{FiniteDuration, HOURS, NANOSECONDS, SECONDS}
 /** Gatling simulation to perform commits against Nessie. Has a bunch of
   * configurables, see the `val`s defined at the top of this class.
   */
-class CommitToBranchSimulation extends Simulation {
+class CommitToBranchSimulationSameTable extends Simulation {
 
   val params: CommitToBranchParams = CommitToBranchParams.fromSystemProperties()
 
@@ -52,7 +52,7 @@ class CommitToBranchSimulation extends Simulation {
 
           // Call the Nessie client operation to perform a commit
           val key = ContentKey.of("name", "space", tableName)
-          val contentId = tableName
+          val contentId = tableName + "_" + userId.toString
 
           val tableMeta = IcebergTable
             .of(
@@ -64,20 +64,15 @@ class CommitToBranchSimulation extends Simulation {
               contentId
             )
 
-          // TODO the expectedContent is wrong!! commitNum is for the session, but we need the actual global state!!
+          val existingTable =
+            client.getContent.reference(branch).key(key).get().get(key)
+
           val op =
-            if (commitNum > 0)
+            if (commitNum > 0 && existingTable != null)
               Put.of(
                 key,
                 tableMeta,
-                IcebergTable.of(
-                  s"path_on_disk_${tableName}_${commitNum - 1}",
-                  42,
-                  43,
-                  44,
-                  45,
-                  contentId
-                )
+                existingTable
               )
             else Put.of(key, tableMeta);
 
