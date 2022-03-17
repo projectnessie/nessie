@@ -269,4 +269,39 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
 
     assertThat(getApi().getNamespace().refName(base.getName()).namespace(ns).get()).isNotNull();
   }
+
+  @Test
+  public void testNamespaceConflictWithOtherContent() throws BaseNessieClientServerException {
+    Branch branch = createBranch("testNamespaceConflictWithOtherContent");
+    IcebergTable icebergTable = IcebergTable.of("icebergTable", 42, 42, 42, 42);
+
+    List<String> elements = Arrays.asList("a", "b", "c");
+    ContentKey key = ContentKey.of(elements);
+    getApi()
+        .commitMultipleOperations()
+        .branchName(branch.getName())
+        .hash(branch.getHash())
+        .commitMeta(CommitMeta.fromMessage("add table"))
+        .operation(Put.of(key, icebergTable))
+        .commit();
+
+    Namespace ns = Namespace.of(elements);
+    assertThatThrownBy(
+            () -> getApi().createNamespace().refName(branch.getName()).namespace(ns).create())
+        .isInstanceOf(NessieNamespaceAlreadyExistsException.class)
+        .hasMessage("Another content object with name 'a.b.c' already exists");
+
+    assertThatThrownBy(() -> getApi().getNamespace().refName(branch.getName()).namespace(ns).get())
+        .isInstanceOf(NessieNamespaceNotFoundException.class)
+        .hasMessage("Namespace 'a.b.c' does not exist");
+
+    assertThatThrownBy(
+            () -> getApi().deleteNamespace().refName(branch.getName()).namespace(ns).delete())
+        .isInstanceOf(NessieNamespaceNotFoundException.class)
+        .hasMessage("Namespace 'a.b.c' does not exist");
+
+    // it should only contain the parent namespace of the "a.b.c" table
+    assertThat(getApi().getMultipleNamespaces().refName(branch.getName()).get().getNamespaces())
+        .containsExactly(Namespace.of("a.b"));
+  }
 }
