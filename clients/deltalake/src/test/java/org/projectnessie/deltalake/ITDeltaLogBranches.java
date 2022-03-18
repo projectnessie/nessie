@@ -20,7 +20,6 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.Path;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Encoder;
@@ -99,12 +98,7 @@ class ITDeltaLogBranches extends AbstractDeltaTest {
     Assertions.assertEquals(64, expectedSize);
 
     String tableName = tempPath.getAbsolutePath() + "/_delta_log";
-    // we can't simply do a tableName.split("/") as that would result with
-    // "/tmp/a/b/c in a string array where the first element is an empty string,
-    // which isn't supported by ContentKey
-    String[] elements =
-        StringUtils.stripEnd(StringUtils.stripStart(tableName, "/"), "/").split("/");
-    ContentKey key = ContentKey.of(elements);
+    ContentKey key = DeltaContentKeyUtil.fromFilePathString(tableName);
     Content content = api.getContent().key(key).refName("main").get().get(key);
     Optional<DeltaLakeTable> table = content.unwrap(DeltaLakeTable.class);
     Assertions.assertTrue(table.isPresent());
