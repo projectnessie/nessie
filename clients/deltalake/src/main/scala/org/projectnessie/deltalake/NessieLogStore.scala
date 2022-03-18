@@ -287,7 +287,8 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
       val targetHash =
         if (hash == null) referenceByName(targetRef).getHash else hash
       val table = updateDeltaTable(path, targetRef, lastCheckpoint)
-      val put = Put.of(pathToKey(path.getParent), table)
+      val put =
+        Put.of(DeltaContentKeyUtil.fromHadoopPath(path.getParent), table)
       val meta = CommitMeta
         .builder()
         .message(message)
@@ -358,19 +359,6 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
         fs.delete(path, false)
       }
     }
-  }
-
-  def pathToKey(path: Path): ContentKey = {
-    pathToKey(path.toUri.getPath)
-  }
-
-  def pathToKey(path: String): ContentKey = {
-    // we can't simply do a path.toString.split("/") as that would result with
-    // "/tmp/a/b/c in a string array where the first element is an empty string,
-    // which isn't supported by ContentKey
-    val p = StringUtils.stripEnd(StringUtils.stripStart(path, "/"), "/")
-    val parts = p.split("/").toList
-    ContentKey.of(parts.asJava)
   }
 
   def numCheckpointParts(path: Path): Option[Int] = {
@@ -491,7 +479,7 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
   }
 
   private def getTable(path: Path, branch: String): Option[DeltaLakeTable] = {
-    val key = pathToKey(path)
+    val key = DeltaContentKeyUtil.fromHadoopPath(path)
     Try(api.getContent.key(key).refName(branch).get().get(key))
       .filter(x => x != null && x.isInstanceOf[DeltaLakeTable])
       .map(_.asInstanceOf[DeltaLakeTable])
