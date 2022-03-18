@@ -118,7 +118,7 @@
     "jest-circus": "27.5.1",
     "jest-resolve": "27.5.1",
     "jest-watch-typeahead": "1.0.0",
-    "lint-staged": "^12.3.6",
+    "lint-staged": "^12.3.7",
     "mini-css-extract-plugin": "2.6.0",
     "nock": "^13.2.4",
     "pnp-webpack-plugin": "1.7.0",
