@@ -28,24 +28,24 @@ public class TestDeltaContentKeyUtil {
   public void nullAndEmptyAndInvalid() {
     assertThatThrownBy(() -> DeltaContentKeyUtil.fromFilePathString(null))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage(String.format(DeltaContentKeyUtil.INVALID_PATH_MSG, (String) null));
+        .hasMessage(String.format(DeltaContentKeyUtil.INVALID_PATH_MSG(), (String) null));
 
     assertThatThrownBy(() -> DeltaContentKeyUtil.fromFilePathString(""))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage(String.format(DeltaContentKeyUtil.INVALID_PATH_MSG, ""));
+        .hasMessage(String.format(DeltaContentKeyUtil.INVALID_PATH_MSG(), ""));
 
     assertThatThrownBy(() -> DeltaContentKeyUtil.fromFilePathString("//"))
         .isInstanceOf(IllegalStateException.class)
-        .hasMessage(String.format(DeltaContentKeyUtil.INVALID_PATH_MSG, "//"));
+        .hasMessage(String.format(DeltaContentKeyUtil.INVALID_PATH_MSG(), "//"));
 
     // these path strings are only valid via the Hadoop path
     assertThatThrownBy(() -> DeltaContentKeyUtil.fromFilePathString("file:///tmp/a/b/c/"))
         .isInstanceOf(IllegalStateException.class)
-        .hasMessage(String.format(DeltaContentKeyUtil.INVALID_PATH_MSG, "file:///tmp/a/b/c/"));
+        .hasMessage(String.format(DeltaContentKeyUtil.INVALID_PATH_MSG(), "file:///tmp/a/b/c/"));
 
     assertThatThrownBy(() -> DeltaContentKeyUtil.fromHadoopPath(null))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage(String.format(DeltaContentKeyUtil.INVALID_HADOOP_PATH_MSG, (String) null));
+        .hasMessage(String.format(DeltaContentKeyUtil.INVALID_HADOOP_PATH_MSG(), (String) null));
   }
 
   @Test
