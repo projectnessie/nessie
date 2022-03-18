@@ -107,7 +107,7 @@
     "eslint-plugin-react": "^7.29.4",
     "eslint-plugin-react-hooks": "^4.3.0",
     "eslint-plugin-testing-library": "^5.1.0",
-    "eslint-plugin-unicorn": "^41.0.0",
+    "eslint-plugin-unicorn": "^41.0.1",
     "eslint-webpack-plugin": "^3.1.1",
     "file-loader": "6.2.0",
     "follow-redirects": ">=1.14.9",
