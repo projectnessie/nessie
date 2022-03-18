@@ -34,6 +34,7 @@ import org.projectnessie.model.{
   TableReference
 }
 import org.apache.commons.io.IOUtils
+import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileStatus, Path}
 import org.apache.spark.SparkConf
@@ -364,7 +365,11 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
   }
 
   def pathToKey(path: String): ContentKey = {
-    val parts = path.split("/").toList
+    // we can't simply do a path.toString.split("/") as that would result with
+    // "/tmp/a/b/c in a string array where the first element is an empty string,
+    // which isn't supported by ContentKey
+    val p = StringUtils.stripEnd(StringUtils.stripStart(path, "/"), "/")
+    val parts = p.split("/").toList
     ContentKey.of(parts.asJava)
   }
 

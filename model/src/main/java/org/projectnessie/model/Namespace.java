@@ -86,16 +86,25 @@ public abstract class Namespace extends Content {
    */
   public static Namespace of(String... elements) {
     Objects.requireNonNull(elements, "elements must be non-null");
-    if (elements.length == 0 || "".equals(elements[0])) {
+    if (elements.length == 0 || (elements.length == 1 && "".equals(elements[0]))) {
       return EMPTY;
     }
 
     for (String e : elements) {
       if (e == null) {
-        throw new IllegalArgumentException("A namespace must not contain a null element.");
+        throw new IllegalArgumentException(
+            String.format(
+                "Namespace '%s' must not contain a null element.", Arrays.toString(elements)));
       }
       if (e.contains(ZERO_BYTE_STRING)) {
-        throw new IllegalArgumentException("A namespace must not contain a zero byte.");
+        throw new IllegalArgumentException(
+            String.format(
+                "Namespace '%s' must not contain a zero byte.", Arrays.toString(elements)));
+      }
+      if ("".equals(e)) {
+        throw new IllegalArgumentException(
+            String.format(
+                "Namespace '%s' must not contain an empty element.", Arrays.toString(elements)));
       }
     }
 

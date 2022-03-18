@@ -89,15 +89,17 @@ public abstract class ContentKey {
     List<String> elements = getElements();
     for (String e : elements) {
       if (e == null) {
-        throw new IllegalArgumentException("An object key must not contain a null element.");
+        throw new IllegalArgumentException(
+            String.format("Content key '%s' must not contain a null element.", elements));
       }
       if (e.contains(ZERO_BYTE_STRING)) {
-        throw new IllegalArgumentException("An object key must not contain a zero byte.");
+        throw new IllegalArgumentException(
+            String.format("Content key '%s' must not contain a zero byte.", elements));
       }
-    }
-    if (elements.get(elements.size() - 1).isEmpty()) {
-      throw new IllegalArgumentException(
-          "An object key must not contain an empty name (last element).");
+      if ("".equals(e)) {
+        throw new IllegalArgumentException(
+            String.format("Content key '%s' must not contain an empty element.", elements));
+      }
     }
   }
 
