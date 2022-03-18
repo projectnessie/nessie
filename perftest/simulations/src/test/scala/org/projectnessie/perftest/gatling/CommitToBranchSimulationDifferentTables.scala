@@ -28,10 +28,11 @@ import org.projectnessie.perftest.gatling.Predef.nessie
 import scala.concurrent.duration.{FiniteDuration, HOURS, NANOSECONDS, SECONDS}
 
 /** Gatling simulation to perform commits against Nessie. It commits the data to
-  * the same table for all users. Has a bunch of configurables, see the `val`s
-  * defined at the top of this class.
+  * different table - each user has its own dedicated table. The ContentKey is
+  * created per userId. Has a bunch of configurables, see the `val`s defined at
+  * the top of this class.
   */
-class CommitToBranchSimulationSameTable extends Simulation {
+class CommitToBranchSimulationDifferentTables extends Simulation {
 
   val params: CommitToBranchParams = CommitToBranchParams.fromSystemProperties()
 
@@ -52,12 +53,12 @@ class CommitToBranchSimulationSameTable extends Simulation {
           val tableName = params.makeTableName(session)
 
           // Call the Nessie client operation to perform a commit
-          val key = ContentKey.of("name", "space", tableName)
+          val key = ContentKey.of("name", "space", tableName, userId.toString)
           val contentId = tableName + "_" + userId.toString
 
           val tableMeta = IcebergTable
             .of(
-              s"path_on_disk_${tableName}_$commitNum",
+              s"path_on_disk_${tableName}_${userId}_$commitNum",
               42,
               43,
               44,
@@ -180,9 +181,7 @@ class CommitToBranchSimulationSameTable extends Simulation {
       .client(
         HttpClientBuilder
           .builder()
-          .withUri(
-            s"http://127.0.0.1:${System.getProperties.getProperty("quarkus.http.test-port")}/api/v1"
-          )
+          .withUri("http://127.0.0.1:19120/api/v1")
           .fromSystemProperties()
           .build(classOf[NessieApiV1])
       )

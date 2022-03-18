@@ -110,7 +110,7 @@ public class CELUtil {
 
     String getKey();
 
-    String[] getNamespaceElements();
+    List<String> getNamespaceElements();
 
     String getName();
 
@@ -181,7 +181,7 @@ public class CELUtil {
         }
 
         @Override
-        public String[] getNamespaceElements() {
+        public List<String> getNamespaceElements() {
           return op.getKey().getNamespace().getElements();
         }
 
