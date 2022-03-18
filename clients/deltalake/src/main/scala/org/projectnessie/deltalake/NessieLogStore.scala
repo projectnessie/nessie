@@ -27,14 +27,12 @@ import org.projectnessie.error.{
 }
 import org.projectnessie.model.{
   CommitMeta,
-  ContentKey,
   DeltaLakeTable,
   ImmutableDeltaLakeTable,
   Reference,
   TableReference
 }
 import org.apache.commons.io.IOUtils
-import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileStatus, Path}
 import org.apache.spark.SparkConf
