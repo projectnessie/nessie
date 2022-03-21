@@ -15,11 +15,8 @@
  */
 package org.apache.spark.sql.execution.datasources.v2
 
-import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
-import org.apache.spark.unsafe.types.UTF8String
-import org.projectnessie.client.api.NessieApiV1
 
 case class DropReferenceExec(
     output: Seq[Attribute],
@@ -33,22 +30,4 @@ case class DropReferenceExec(
       currentCatalog,
       isBranch,
       catalog
-    ) {
-
-  override protected def runInternal(
-      api: NessieApiV1
-  ): Seq[InternalRow] = {
-    val hash = api.getReference.refName(branch).get().getHash
-    if (isBranch) {
-      api.deleteBranch().branchName(branch).hash(hash).delete()
-    } else {
-      api.deleteTag().tagName(branch).hash(hash).delete()
-    }
-    Seq(InternalRow(UTF8String.fromString("OK")))
-  }
-
-  override def simpleString(maxFields: Int): String = {
-    s"DropReferenceExec ${catalog.getOrElse(currentCatalog.name())} ${if (isBranch) "BRANCH"
-    else "TAG"} ${branch} "
-  }
-}
+    ) {}

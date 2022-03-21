@@ -15,11 +15,8 @@
  */
 package org.apache.spark.sql.execution.datasources.v2
 
-import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
-import org.apache.spark.unsafe.types.UTF8String
-import org.projectnessie.client.api.NessieApiV1
 
 case class UseReferenceExec(
     output: Seq[Attribute],
@@ -33,25 +30,4 @@ case class UseReferenceExec(
       currentCatalog,
       timestampOrHash,
       catalog
-    ) {
-
-  override protected def runInternal(
-      api: NessieApiV1
-  ): Seq[InternalRow] = {
-
-    val ref = NessieUtils.calculateRef(branch, timestampOrHash, api)
-    NessieUtils.setCurrentRefForSpark(currentCatalog, catalog, ref)
-
-    Seq(
-      InternalRow(
-        UTF8String.fromString(NessieUtils.getRefType(ref)),
-        UTF8String.fromString(ref.getName),
-        UTF8String.fromString(ref.getHash)
-      )
-    )
-  }
-
-  override def simpleString(maxFields: Int): String = {
-    s"UseReferenceExec ${catalog.getOrElse(currentCatalog.name())} ${branch} "
-  }
-}
+    ) {}

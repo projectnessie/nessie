@@ -15,13 +15,8 @@
  */
 package org.apache.spark.sql.execution.datasources.v2
 
-import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
-import org.apache.spark.unsafe.types.UTF8String
-import org.projectnessie.client.api.NessieApiV1
-import org.projectnessie.error.NessieConflictException
-import org.projectnessie.model._
 
 case class CreateReferenceExec(
     output: Seq[Attribute],
