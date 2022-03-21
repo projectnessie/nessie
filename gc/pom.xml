@@ -32,5 +32,6 @@
 
   <modules>
     <module>gc-base</module>
+    <module>gc-iceberg</module>
   </modules>
 </project>
