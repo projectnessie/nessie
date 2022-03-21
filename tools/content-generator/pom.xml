@@ -126,14 +126,6 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
         <configuration>
-          <artifactSet>
-            <excludes>
-              <exclude>com.google.code.findbugs:*</exclude>
-              <exclude>com.google.errorprone:*</exclude>
-              <exclude>org.assertj:*</exclude>
-              <exclude>org.junit.jupiter:*</exclude>
-            </excludes>
-          </artifactSet>
           <filters>
             <!-- filter to address "Invalid signature file" issue - see https://stackoverflow.com/a/6743609/589215 -->
             <filter>

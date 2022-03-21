@@ -196,12 +196,8 @@
               <exclude>org.antlr:antlr-runtime</exclude>
               <exclude>org.antlr:antlr4-runtime</exclude>
               <exclude>org.antlr:ST4</exclude>
-              <exclude>org.assertj:*</exclude>
-              <exclude>org.junit.jupiter:*</exclude>
-              <exclude>org.projectnessie:nessie-spark-3.2-extensions</exclude>
               <exclude>org.scala-lang:scala-library</exclude>
               <exclude>org.scala-lang:scala-reflect</exclude>
-              <exclude>org.slf4j:log4j-over-slf4j</exclude>
             </excludes>
           </artifactSet>
         </configuration>

@@ -243,17 +243,8 @@
           </transformers>
           <artifactSet>
             <includes>
-              <include>org.projectnessie:*</include>
+              <include>org.projectnessie</include>
             </includes>
-            <excludes>
-              <exclude>ch.qos.logback:*</exclude>
-              <exclude>org.apache.iceberg:*</exclude>
-              <exclude>org.apache.spark:*</exclude>
-              <exclude>org.assertj:*</exclude>
-              <exclude>org.junit.jupiter:*</exclude>
-              <exclude>org.projectnessie:nessie-spark-extensions-base</exclude>
-              <exclude>org.slf4j:log4j-over-slf4j</exclude>
-            </excludes>
           </artifactSet>
         </configuration>
         <executions>
