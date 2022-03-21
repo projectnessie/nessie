@@ -163,13 +163,13 @@ public abstract class AbstractRest {
     return createBranch(name, null);
   }
 
-  protected static void getOrCreateEmptyReference(NessieApiV1 api, String refName) {
+  protected static void getOrCreateEmptyBranch(NessieApiV1 api, String gcBranchName) {
     try {
-      api.getReference().refName(refName).get();
+      api.getReference().refName(gcBranchName).get();
     } catch (NessieNotFoundException e) {
       // create a reference pointing to NO_ANCESTOR hash.
       try {
-        api.createReference().reference(Branch.of(refName, null)).create();
+        api.createReference().reference(Branch.of(gcBranchName, null)).create();
       } catch (NessieNotFoundException | NessieConflictException ex) {
         throw new RuntimeException(ex);
       }

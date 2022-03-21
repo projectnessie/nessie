@@ -18,9 +18,7 @@ package org.projectnessie.gc.base;
 import static org.apache.iceberg.types.Types.NestedField.optional;
 import static org.apache.iceberg.types.Types.NestedField.required;
 
-import java.sql.Timestamp;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -49,7 +47,6 @@ public final class IdentifiedResultsRepo {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(IdentifiedResultsRepo.class);
 
-  private static final String COL_TYPE = "type";
   private static final String COL_GC_RUN_START = "gcRunStart";
   private static final String COL_GC_RUN_ID = "gcRunId";
   private static final String COL_CONTENT_ID = "contentId";
@@ -58,30 +55,23 @@ public final class IdentifiedResultsRepo {
   private static final String COL_REFERENCE_NAME = "referenceName";
   private static final String COL_HASH_ON_REFERENCE = "hashOnReference";
 
-  private static final String TYPE_CONTENT = "GC_CONTENT";
-  private static final String TYPE_GC_MARKER = "GC_MARK";
-
   private final Schema icebergSchema =
       new Schema(
           Types.StructType.of(
-                  // Type of information this row represents, marker row or content row.
-                  // marker row indicates that identify task is completed for that run id
-                  // and the results for that run id is consumable.
-                  required(1, COL_TYPE, Types.StringType.get()),
                   // GC run start timestamp.
-                  required(2, COL_GC_RUN_START, Types.TimestampType.withZone()),
+                  required(1, COL_GC_RUN_START, Types.TimestampType.withZone()),
                   // GC run-ID.
-                  required(3, COL_GC_RUN_ID, Types.StringType.get()),
+                  required(2, COL_GC_RUN_ID, Types.StringType.get()),
                   // Nessie Content.id
-                  optional(4, COL_CONTENT_ID, Types.StringType.get()),
+                  optional(3, COL_CONTENT_ID, Types.StringType.get()),
                   // Nessie Content.type
-                  optional(5, COL_CONTENT_TYPE, Types.StringType.get()),
+                  optional(4, COL_CONTENT_TYPE, Types.StringType.get()),
                   // Iceberg Table/View Content's snapshot/version id.
-                  optional(6, COL_SNAPSHOT_ID, Types.LongType.get()),
+                  optional(5, COL_SNAPSHOT_ID, Types.LongType.get()),
                   // Name of the reference via which the contentID was collected
-                  optional(7, COL_REFERENCE_NAME, Types.StringType.get()),
+                  optional(6, COL_REFERENCE_NAME, Types.StringType.get()),
                   // Hash of the reference via which the contentID was collected
-                  optional(8, COL_HASH_ON_REFERENCE, Types.StringType.get()))
+                  optional(7, COL_HASH_ON_REFERENCE, Types.StringType.get()))
               .fields());
 
   private final StructType schema = SparkSchemaUtil.convert(icebergSchema);
@@ -90,10 +80,10 @@ public final class IdentifiedResultsRepo {
   private final String catalogAndTableWithRefName;
 
   public IdentifiedResultsRepo(
-      SparkSession sparkSession, String catalog, String gcRefName, String gcTable) {
+      SparkSession sparkSession, String catalog, String gcRefName, String gcTableIdentifier) {
     this.sparkSession = sparkSession;
-    this.catalogAndTableWithRefName = withRefName(catalog, gcTable, gcRefName);
-    createTableIfAbsent(sparkSession, catalog, TableIdentifier.parse(gcTable), gcRefName);
+    this.catalogAndTableWithRefName = withRefName(catalog, gcTableIdentifier, gcRefName);
+    createTableIfAbsent(sparkSession, catalog, TableIdentifier.parse(gcTableIdentifier), gcRefName);
   }
 
   public StructType getSchema() {
@@ -108,81 +98,40 @@ public final class IdentifiedResultsRepo {
    *     reference.
    */
   public Dataset<Row> collectExpiredContentsAsDataSet(String runId) {
-    // collect marker row for the given run-id
-    // Example Query:
-    // SELECT gcRunId FROM nessie.db1.`identified_results@someGcRef`
-    //    WHERE gcRunId = '1a088e65-a6ea-42e9-819d-025f4e22eaec' AND type = 'GC_MARK'
-    Dataset<Row> markerRow =
-        sql(
-            "SELECT %s FROM %s WHERE %s = '%s' AND %s = '%s'",
-            COL_GC_RUN_ID,
-            //
-            catalogAndTableWithRefName,
-            //
-            COL_GC_RUN_ID,
-            runId,
-            //
-            COL_TYPE,
-            TYPE_GC_MARKER);
-    if (markerRow.isEmpty()) {
-      return markerRow;
-    }
     // Example Query:
     // SELECT * FROM nessie.db1.`identified_results@someGcRef`
-    //    WHERE gcRunId = '9e809dc9-ac35-41c9-b1c0-5ebcf452ea2d' AND type = 'GC_CONTENT'
+    //    WHERE gcRunId = '9e809dc9-ac35-41c9-b1c0-5ebcf452ea2d'
     return sql(
-        "SELECT * FROM %s WHERE %s = '%s' AND %s = '%s'",
+        "SELECT * FROM %s WHERE %s = '%s'",
         catalogAndTableWithRefName,
         //
         COL_GC_RUN_ID,
-        runId,
-        //
-        COL_TYPE,
-        TYPE_CONTENT);
+        runId);
   }
 
-  /**
-   * Get the last written run id which is having a marker row.
-   *
-   * @return latest completed run id.
-   */
   public String getLatestCompletedRunID() {
-    // collect marker row for the last written run id
+    // collect row for the last written run id
     // Example query:
-    // SELECT gcRunId FROM nessie.db1.`identified_results@someGcRef
-    //    WHERE type = 'GC_MARK' ORDER BY gcRunStart DESC LIMIT 1
-    List<Row> markerRows =
+    // SELECT gcRunId FROM nessie.db2.`identified_results@someGcBranch` WHERE gcRunStart =
+    //    (SELECT MAX(gcRunStart) FROM nessie.db2.`identified_results@someGcBranch`) LIMIT 1
+    List<Row> rows =
         sql(
-                "SELECT %s FROM %s WHERE %s = '%s' ORDER BY %s DESC LIMIT 1",
+                "SELECT %s FROM %s WHERE %s = (SELECT MAX(%s) FROM %s) LIMIT 1",
                 COL_GC_RUN_ID,
                 //
                 catalogAndTableWithRefName,
                 //
-                COL_TYPE,
-                TYPE_GC_MARKER,
-                //
-                COL_GC_RUN_START)
+                COL_GC_RUN_START,
+                COL_GC_RUN_START,
+                catalogAndTableWithRefName)
             .collectAsList();
-    return markerRows.isEmpty() ? null : markerRows.get(0).getString(0);
+    return rows.isEmpty() ? null : rows.get(0).getString(0);
   }
 
-  /**
-   * Convert each task result into a spark row and store it in the output table. Write a marker row
-   * in the end to indicate that the task is completed.
-   *
-   * @param rowDataset content rows to be written.
-   * @param runId run id of current identify task.
-   * @param startedAt task start time.
-   */
-  void writeToOutputTable(Dataset<Row> rowDataset, String runId, Timestamp startedAt) {
+  void writeToOutputTable(Dataset<Row> rowDataset) {
     try {
-      // write content rows
+      // write content rows to the output table
       rowDataset.writeTo(catalogAndTableWithRefName).append();
-      // write marker row
-      sparkSession
-          .createDataFrame(Collections.singletonList(createMarkerRow(runId, startedAt)), schema)
-          .writeTo(catalogAndTableWithRefName)
-          .append();
     } catch (NoSuchTableException e) {
       throw new RuntimeException(e);
     }
@@ -191,22 +140,10 @@ public final class IdentifiedResultsRepo {
   static Row getContentRowVariablePart(
       String contentId, String contentType, long snapshotId, String refName, String hash) {
     return RowFactory.create(
-        IdentifiedResultsRepo.TYPE_CONTENT,
         // the fixed value columns (runId and startTime)
         // will be added in the callers using dataframe.withColumn().
         // Hence they are filled as 'null' here.
-        null,
-        null,
-        contentId,
-        contentType,
-        snapshotId,
-        refName,
-        hash);
-  }
-
-  private static Row createMarkerRow(String runID, Timestamp startedAt) {
-    return RowFactory.create(
-        IdentifiedResultsRepo.TYPE_GC_MARKER, startedAt, runID, null, null, null, null, null);
+        null, null, contentId, contentType, snapshotId, refName, hash);
   }
 
   private void createTableIfAbsent(
@@ -224,7 +161,7 @@ public final class IdentifiedResultsRepo {
     try {
       nessieCatalog.createTable(tableIdentifier, icebergSchema);
     } catch (AlreadyExistsException ex) {
-      // Table can exist from previous GC run, no need to  throw exception.
+      // Table can exist from previous GC run, no need to throw exception.
     }
   }
 
@@ -247,10 +184,8 @@ public final class IdentifiedResultsRepo {
                 .sparkContext()
                 .conf()
                 .getAllWithPrefix(String.format("spark.sql.catalog.%s.", catalog)));
-    if (branch != null) {
-      conf = conf.map(t -> t._1.equals("ref") ? Tuple2.apply(t._1, branch) : t);
-    }
-    return conf.collect(Collectors.toMap(t -> t._1, t -> t._2));
+    return conf.map(t -> t._1.equals("ref") ? Tuple2.apply(t._1, branch) : t)
+        .collect(Collectors.toMap(t -> t._1, t -> t._2));
   }
 
   private Dataset<Row> sql(String sqlStatement, Object... args) {

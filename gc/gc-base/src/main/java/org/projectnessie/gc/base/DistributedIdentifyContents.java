@@ -84,7 +84,7 @@ public class DistributedIdentifyContents {
         new IdentifiedResultsRepo(
             session,
             gcParams.getNessieCatalogName(),
-            gcParams.getOutputTableRefName(),
+            gcParams.getOutputBranchName(),
             gcParams.getOutputTableIdentifier());
     IdentifyContentsPerExecutor executor = new IdentifyContentsPerExecutor(gcParams);
     Dataset<Row> rowDataset =
@@ -99,7 +99,7 @@ public class DistributedIdentifyContents {
                 JavaConverters.asScalaBuffer(
                         Arrays.asList(functions.lit(runId), functions.lit(startedAt)))
                     .toSeq());
-    identifiedResultsRepo.writeToOutputTable(rowDataset, runId, startedAt);
+    identifiedResultsRepo.writeToOutputTable(rowDataset);
     return runId;
   }
 

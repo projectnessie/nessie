@@ -20,7 +20,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -28,101 +27,49 @@ import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.catalyst.analysis.NoSuchTableException;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableTableReference;
 
 public abstract class AbstractRestGCRepoTest extends AbstractRestGCTest {
 
-  private final String catalogName = "nessie";
-  private final String identifierTableName = "identified_results";
-  private final String gcRefName = "someGcRef";
-
-  @Test
-  public void testGCRepoInProgressAndSuccess() {
-    final String identifierNameSpace = "db1";
-    final String identifier = identifierNameSpace + "." + identifierTableName;
-    final String catalogAndIdentifierWithReference =
-        getCatalogAndIdentifierWithReference(identifierNameSpace);
-    getOrCreateEmptyReference(getApi(), gcRefName);
-    SparkSession sparkSession = null;
-    try {
-      sparkSession = getSparkSession();
-      IdentifiedResultsRepo identifiedResultsRepo =
-          new IdentifiedResultsRepo(sparkSession, catalogName, gcRefName, identifier);
-      String runId = UUID.randomUUID().toString();
-      Timestamp startAt = Timestamp.from(Instant.now());
-      // write 5 rows to table without a marker row
-      writeRows(
-          sparkSession,
-          identifiedResultsRepo,
-          createRows(runId, startAt, 5),
-          catalogAndIdentifierWithReference);
-
-      // try to collect in-progress results.
-      Dataset<Row> identifiedResult = identifiedResultsRepo.collectExpiredContentsAsDataSet(runId);
-      // should not collect any results as write is in-progress.
-      assertThat(identifiedResult.collectAsList()).isEmpty();
-
-      // latest completed run id should not be present.
-      assertThat(identifiedResultsRepo.getLatestCompletedRunID()).isNull();
-
-      // write marker row
-      writeMarkerRow(sparkSession, identifiedResultsRepo, runId, catalogAndIdentifierWithReference);
-
-      assertThat(identifiedResultsRepo.getLatestCompletedRunID()).isEqualTo(runId);
-
-      // collect results as marker row is written.
-      identifiedResult = identifiedResultsRepo.collectExpiredContentsAsDataSet(runId);
-      // should collect 5 rows.
-      assertThat(identifiedResult.collectAsList().size()).isEqualTo(5);
-    } finally {
-      if (sparkSession != null) {
-        sparkSession.sql(String.format("DROP TABLE %s", catalogAndIdentifierWithReference));
-        sparkSession.close();
-      }
-    }
-  }
-
   @Test
   public void testGCRepoMultipleRuns() {
-    final String identifierNameSpace = "db2";
-    final String identifier = identifierNameSpace + "." + identifierTableName;
-    final String catalogAndIdentifierWithReference =
-        getCatalogAndIdentifierWithReference(identifierNameSpace);
-    getOrCreateEmptyReference(getApi(), gcRefName);
-    SparkSession sparkSession = null;
-    try {
-      sparkSession = getSparkSession();
+    String catalogName = "nessie";
+    String namespace = "db2";
+    String tableName = "identified_results";
+    String identifier = namespace + "." + tableName;
+    String gcBranchName = "someGcBranch";
+    String catalogAndIdentifierWithReference =
+        getCatalogAndIdentifierWithReference(catalogName, namespace, tableName, gcBranchName);
+    getOrCreateEmptyBranch(getApi(), gcBranchName);
+    try (SparkSession sparkSession = getSparkSession()) {
       IdentifiedResultsRepo identifiedResultsRepo =
-          new IdentifiedResultsRepo(sparkSession, catalogName, gcRefName, identifier);
-      List<String> runIds = new ArrayList<>();
-      for (int i = 0; i < 5; i++) {
-        String runId = UUID.randomUUID().toString();
-        Timestamp startAt = Timestamp.from(Instant.now());
-        runIds.add(runId);
-        List<Row> rows = createRows(runId, startAt, i + 1);
-        writeRows(sparkSession, identifiedResultsRepo, rows, catalogAndIdentifierWithReference);
-        writeMarkerRow(
-            sparkSession, identifiedResultsRepo, runId, catalogAndIdentifierWithReference);
-      }
-      AtomicInteger expectedRowCount = new AtomicInteger(1);
-      runIds.forEach(
-          runId -> {
-            // collect results as marker row is written.
-            Dataset<Row> identifiedResult =
-                identifiedResultsRepo.collectExpiredContentsAsDataSet(runId);
-            // should collect expectedRowCount rows.
-            assertThat(identifiedResult.collectAsList().size()).isEqualTo(expectedRowCount.get());
-            expectedRowCount.getAndIncrement();
-          });
-      assertThat(identifiedResultsRepo.getLatestCompletedRunID())
-          .isEqualTo(runIds.get(runIds.size() - 1));
-    } finally {
-      if (sparkSession != null) {
+          new IdentifiedResultsRepo(sparkSession, catalogName, gcBranchName, identifier);
+      try {
+        List<String> runIds = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+          String runId = UUID.randomUUID().toString();
+          Timestamp startAt = Timestamp.from(Instant.now());
+          runIds.add(runId);
+          List<Row> rows = createRows(runId, startAt, i + 1);
+          Dataset<Row> dataset =
+              sparkSession.createDataFrame(rows, identifiedResultsRepo.getSchema());
+          identifiedResultsRepo.writeToOutputTable(dataset);
+        }
+        AtomicInteger expectedRowCount = new AtomicInteger(1);
+        runIds.forEach(
+            runId -> {
+              Dataset<Row> identifiedResult =
+                  identifiedResultsRepo.collectExpiredContentsAsDataSet(runId);
+              assertThat(identifiedResult.collectAsList().size()).isEqualTo(expectedRowCount.get());
+              expectedRowCount.getAndIncrement();
+            });
+        // validate the latest run id
+        assertThat(identifiedResultsRepo.getLatestCompletedRunID())
+            .isEqualTo(runIds.get(runIds.size() - 1));
+      } finally {
         sparkSession.sql(String.format("DROP TABLE %s", catalogAndIdentifierWithReference));
-        sparkSession.close();
       }
     }
   }
@@ -136,7 +83,6 @@ public abstract class AbstractRestGCRepoTest extends AbstractRestGCTest {
       String refName = "someRef";
       rows.add(
           RowFactory.create(
-              "GC_CONTENT",
               startAt,
               runId,
               contentId,
@@ -148,47 +94,12 @@ public abstract class AbstractRestGCRepoTest extends AbstractRestGCTest {
     return rows;
   }
 
-  private static Row createMarkerRow(String runId) {
-    return RowFactory.create(
-        "GC_MARK", Timestamp.from(Instant.now()), runId, null, null, null, null, null);
-  }
-
-  private void writeMarkerRow(
-      SparkSession sparkSession,
-      IdentifiedResultsRepo identifiedResultsRepo,
-      String runId,
-      String catalogAndIdentifierWithReference) {
-    try {
-      Row row = createMarkerRow(runId);
-      sparkSession
-          .createDataFrame(Collections.singletonList(row), identifiedResultsRepo.getSchema())
-          .writeTo(catalogAndIdentifierWithReference)
-          .append();
-    } catch (NoSuchTableException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  private void writeRows(
-      SparkSession sparkSession,
-      IdentifiedResultsRepo identifiedResultsRepo,
-      List<Row> rows,
-      String catalogAndIdentifierWithReference) {
-    try {
-      sparkSession
-          .createDataFrame(rows, identifiedResultsRepo.getSchema())
-          .writeTo(catalogAndIdentifierWithReference)
-          .append();
-    } catch (NoSuchTableException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  private String getCatalogAndIdentifierWithReference(String identifierNameSpace) {
+  private static String getCatalogAndIdentifierWithReference(
+      String catalogName, String namespace, String tableName, String gcBranchName) {
     return catalogName
         + "."
-        + identifierNameSpace
+        + namespace
         + "."
-        + ImmutableTableReference.builder().name(identifierTableName).reference(gcRefName).build();
+        + ImmutableTableReference.builder().name(tableName).reference(gcBranchName).build();
   }
 }

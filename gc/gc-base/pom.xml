@@ -90,6 +90,12 @@
       <groupId>org.apache.iceberg</groupId>
       <artifactId>iceberg-spark3-runtime</artifactId>
       <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.projectnessie</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>

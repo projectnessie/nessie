@@ -52,7 +52,7 @@ import org.projectnessie.model.Reference;
 
 public abstract class AbstractRestGC extends AbstractRest {
 
-  @TempDir static File LOCAL_DIR;
+  @TempDir File tempDir;
 
   @NotNull
   List<LogEntry> fetchLogEntries(Branch branch, int numCommits) throws NessieNotFoundException {
@@ -80,7 +80,6 @@ public abstract class AbstractRestGC extends AbstractRest {
               // as metadata location will change based on new global state.
               expected.add(
                   RowFactory.create(
-                      "GC_CONTENT",
                       Timestamp.from(Instant.now()),
                       "dummyRunId",
                       content.getId(),
@@ -115,7 +114,7 @@ public abstract class AbstractRestGC extends AbstractRest {
               .cutOffTimestampPerRef(cutOffTimeStampPerRef)
               .defaultCutOffTimestamp(cutoffTimeStamp)
               .nessieCatalogName("nessie")
-              .outputTableRefName("gcRef")
+              .outputBranchName("gcBranch")
               .outputTableIdentifier(prefix + ".gc_results")
               .build();
       GCImpl gc = new GCImpl(gcParams);
@@ -125,7 +124,7 @@ public abstract class AbstractRestGC extends AbstractRest {
           new IdentifiedResultsRepo(
               sparkSession,
               gcParams.getNessieCatalogName(),
-              gcParams.getOutputTableRefName(),
+              gcParams.getOutputBranchName(),
               gcParams.getOutputTableIdentifier());
       Dataset<Row> actualRowDataset =
           actualIdentifiedResultsRepo.collectExpiredContentsAsDataSet(runId);
@@ -139,7 +138,7 @@ public abstract class AbstractRestGC extends AbstractRest {
     SparkConf conf = new SparkConf();
     conf.set("spark.sql.catalog.nessie.uri", getUri().toString())
         .set("spark.sql.catalog.nessie.ref", "main")
-        .set("spark.sql.catalog.nessie.warehouse", LOCAL_DIR.toURI().toString())
+        .set("spark.sql.catalog.nessie.warehouse", tempDir.toURI().toString())
         .set("spark.sql.catalog.nessie.catalog-impl", "org.apache.iceberg.nessie.NessieCatalog")
         .set("spark.sql.catalog.nessie", "org.apache.iceberg.spark.SparkCatalog")
         .set(

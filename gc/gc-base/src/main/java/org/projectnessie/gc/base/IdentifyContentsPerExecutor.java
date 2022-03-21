@@ -46,6 +46,7 @@ import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Reference;
+import scala.collection.JavaConverters;
 
 /**
  * Contains the methods that executes in spark executor for {@link
@@ -222,7 +223,7 @@ public class IdentifyContentsPerExecutor implements Serializable {
         });
     // merge the iterators form each task.
     Iterator<Row> mergedIterator = Iterators.concat(iterators.iterator());
-    return scala.collection.JavaConverters.asScalaIterator(mergedIterator);
+    return JavaConverters.asScalaIterator(mergedIterator);
   }
 
   private Iterator<Row> computeExpiredContents(

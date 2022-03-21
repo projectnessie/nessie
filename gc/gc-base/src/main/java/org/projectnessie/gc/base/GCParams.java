@@ -74,14 +74,17 @@ public interface GCParams extends Serializable {
   String getNessieCatalogName();
 
   /**
-   * Reference name to be used for creating the output table.
+   * Branch's name to be used for creating the output table.
    *
-   * <p>If the reference doesn't exist for this reference name, reference with this name pointing to
-   * beginning of time (aka NO_ANCESTOR hash) will be created.
+   * <p>If the branch doesn't exist for this name, branch with this name pointing to beginning of
+   * time (aka NO_ANCESTOR hash) will be created.
    */
-  String getOutputTableRefName();
+  String getOutputBranchName();
 
-  /** Output table name to be used for storing the results in {@link #getOutputTableRefName()}. */
+  /**
+   * Output table identifier (namespace and table name) to be used for storing the results in {@link
+   * #getOutputBranchName()}.
+   */
   String getOutputTableIdentifier();
 
   @Value.Check
