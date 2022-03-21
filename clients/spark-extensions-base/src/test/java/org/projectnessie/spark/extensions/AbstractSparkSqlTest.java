@@ -27,14 +27,12 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.spark.SparkConf;
 import org.apache.spark.sql.AnalysisException;
-import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.functions;
@@ -130,22 +128,6 @@ public abstract class AbstractSparkSqlTest {
     }
   }
 
-  protected static List<Object[]> transform(Dataset<Row> table) {
-
-    return table.collectAsList().stream()
-        .map(
-            row ->
-                IntStream.range(0, row.size())
-                    .mapToObj(pos -> row.isNullAt(pos) ? null : row.get(pos))
-                    .toArray(Object[]::new))
-        .collect(Collectors.toList());
-  }
-
-  protected static void assertEquals(
-      String context, Object[] expectedRow, List<Object[]> actualRows) {
-    assertEquals(context, Collections.singletonList(expectedRow), actualRows);
-  }
-
   protected static void assertEquals(
       String context, List<Object[]> expectedRows, List<Object[]> actualRows) {
     assertThat(actualRows).as("%s", context).containsExactlyElementsOf(expectedRows);
@@ -188,25 +170,6 @@ public abstract class AbstractSparkSqlTest {
    */
   protected static Object[] row(Object... values) {
     return values;
-  }
-
-  @Test
-  void testCreateBranchInExists() throws NessieNotFoundException {
-    assertThat(sql("CREATE BRANCH %s IN nessie", refName))
-        .containsExactly(row("Branch", refName, hash));
-
-    assertThat(api.getReference().refName(refName).get()).isEqualTo(Branch.of(refName, hash));
-
-    assertThat(sql("CREATE BRANCH IF NOT EXISTS %s IN nessie", refName))
-        .containsExactly(row("Branch", refName, hash));
-
-    assertThat(api.getReference().refName(refName).get()).isEqualTo(Branch.of(refName, hash));
-
-    assertThatThrownBy(() -> sql("CREATE BRANCH %s IN nessie", refName))
-        .isInstanceOf(NessieConflictException.class)
-        .hasMessage("Named reference 'testBranch' already exists.");
-
-    assertThat(sql("DROP BRANCH %s IN nessie", refName)).containsExactly(row("OK"));
   }
 
   @Test
@@ -256,47 +219,37 @@ public abstract class AbstractSparkSqlTest {
   }
 
   @Test
-  void testCreateBranchIn() throws NessieNotFoundException {
+  void testCreateBranchInExists() throws NessieNotFoundException {
     assertThat(sql("CREATE BRANCH %s IN nessie", refName))
         .containsExactly(row("Branch", refName, hash));
-
     assertThat(api.getReference().refName(refName).get()).isEqualTo(Branch.of(refName, hash));
-    assertThat(sql("DROP BRANCH %s IN nessie", refName)).containsExactly(row("OK"));
-  }
 
-  @Test
-  void testCreateTagIn() throws NessieNotFoundException {
-    assertThat(sql("CREATE TAG %s IN nessie", refName)).containsExactly(row("Tag", refName, hash));
-    assertThat(api.getReference().refName(refName).get()).isEqualTo(Tag.of(refName, hash));
-    assertThat(sql("DROP TAG %s IN nessie", refName)).containsExactly(row("OK"));
-    assertThatThrownBy(() -> api.getReference().refName(refName).get())
-        .isInstanceOf(NessieNotFoundException.class)
-        .hasMessage("Named reference 'testBranch' not found");
-  }
-
-  @Test
-  void testCreateBranchInFrom() throws NessieNotFoundException {
-    assertThat(sql("CREATE BRANCH %s IN nessie FROM main", refName))
+    assertThat(sql("CREATE BRANCH IF NOT EXISTS %s IN nessie", refName))
         .containsExactly(row("Branch", refName, hash));
     assertThat(api.getReference().refName(refName).get()).isEqualTo(Branch.of(refName, hash));
-    assertThat(sql("DROP BRANCH %s IN nessie", refName)).containsExactly(row("OK"));
-    assertThatThrownBy(() -> api.getReference().refName(refName).get())
-        .isInstanceOf(NessieNotFoundException.class)
-        .hasMessage("Named reference 'testBranch' not found");
+
+    assertThatThrownBy(() -> sql("CREATE BRANCH %s IN nessie", refName))
+        .isInstanceOf(NessieConflictException.class)
+        .hasMessage("Named reference 'testBranch' already exists.");
   }
 
   @Test
-  void testCreateTagInFrom() throws NessieNotFoundException {
-    assertThat(sql("CREATE TAG %s IN nessie FROM main", refName))
-        .containsExactly(row("Tag", refName, hash));
+  void testCreateBranch() throws NessieNotFoundException {
+    assertThat(sql("CREATE BRANCH %s IN nessie", refName))
+        .containsExactly(row("Branch", refName, hash));
+    assertThat(api.getReference().refName(refName).get()).isEqualTo(Branch.of(refName, hash));
+    // Result of LIST REFERENCES does not guarantee any order
+    assertThat(sql("LIST REFERENCES IN nessie"))
+        .containsExactlyInAnyOrder(row("Branch", refName, hash), row("Branch", "main", hash));
+  }
+
+  @Test
+  void testCreateTag() throws NessieNotFoundException {
+    assertThat(sql("CREATE TAG %s IN nessie", refName)).containsExactly(row("Tag", refName, hash));
     assertThat(api.getReference().refName(refName).get()).isEqualTo(Tag.of(refName, hash));
     // Result of LIST REFERENCES does not guarantee any order
     assertThat(sql("LIST REFERENCES IN nessie"))
-        .containsExactlyInAnyOrder(row("Branch", "main", hash), row("Tag", refName, hash));
-    assertThat(sql("DROP TAG %s IN nessie", refName)).containsExactly(row("OK"));
-    assertThatThrownBy(() -> api.getReference().refName(refName).get())
-        .isInstanceOf(NessieNotFoundException.class)
-        .hasMessage("Named reference 'testBranch' not found");
+        .containsExactlyInAnyOrder(row("Tag", refName, hash), row("Branch", "main", hash));
   }
 
   @Test
@@ -324,21 +277,27 @@ public abstract class AbstractSparkSqlTest {
     String tag = refName + "_temp_tag";
     sql("CREATE TAG %s IN nessie FROM %s", tag, refName);
     assertThat(api.getReference().refName(tag).get()).isEqualTo(Tag.of(tag, newHash));
+  }
 
+  @Test
+  void testDropBranchIn() throws NessieNotFoundException {
+    assertThat(sql("CREATE BRANCH %s IN nessie", refName))
+        .containsExactly(row("Branch", refName, hash));
+    assertThat(api.getReference().refName(refName).get()).isEqualTo(Branch.of(refName, hash));
     assertThat(sql("DROP BRANCH %s IN nessie", refName)).containsExactly(row("OK"));
     assertThatThrownBy(() -> api.getReference().refName(refName).get())
         .isInstanceOf(NessieNotFoundException.class)
         .hasMessage("Named reference 'testBranch' not found");
+  }
 
-    assertThat(sql("DROP BRANCH %s IN nessie", tempRef)).containsExactly(row("OK"));
-    assertThatThrownBy(() -> api.getReference().refName(tempRef).get())
+  @Test
+  void testDropTagIn() throws NessieNotFoundException {
+    assertThat(sql("CREATE TAG %s IN nessie", refName)).containsExactly(row("Tag", refName, hash));
+    assertThat(api.getReference().refName(refName).get()).isEqualTo(Tag.of(refName, hash));
+    assertThat(sql("DROP TAG %s IN nessie", refName)).containsExactly(row("OK"));
+    assertThatThrownBy(() -> api.getReference().refName(refName).get())
         .isInstanceOf(NessieNotFoundException.class)
-        .hasMessage("Named reference 'testBranch_temp' not found");
-
-    assertThat(sql("DROP TAG %s IN nessie", tag)).containsExactly(row("OK"));
-    assertThatThrownBy(() -> api.getReference().refName(tag).get())
-        .isInstanceOf(NessieNotFoundException.class)
-        .hasMessage("Named reference 'testBranch_temp_tag' not found");
+        .hasMessage("Named reference 'testBranch' not found");
   }
 
   @Test
@@ -442,33 +401,6 @@ public abstract class AbstractSparkSqlTest {
   }
 
   @Test
-  void testCreateBranch() throws NessieNotFoundException {
-    assertThat(sql("CREATE BRANCH %s IN nessie", refName))
-        .containsExactly(row("Branch", refName, hash));
-    assertThat(api.getReference().refName(refName).get()).isEqualTo(Branch.of(refName, hash));
-    // Result of LIST REFERENCES does not guarantee any order
-    assertThat(sql("LIST REFERENCES IN nessie"))
-        .containsExactlyInAnyOrder(row("Branch", refName, hash), row("Branch", "main", hash));
-    assertThat(sql("DROP BRANCH %s IN nessie", refName)).containsExactly(row("OK"));
-    assertThatThrownBy(() -> api.getReference().refName(refName).get())
-        .isInstanceOf(NessieNotFoundException.class)
-        .hasMessage("Named reference 'testBranch' not found");
-  }
-
-  @Test
-  void testCreateTag() throws NessieNotFoundException {
-    assertThat(sql("CREATE TAG %s IN nessie", refName)).containsExactly(row("Tag", refName, hash));
-    assertThat(api.getReference().refName(refName).get()).isEqualTo(Tag.of(refName, hash));
-    // Result of LIST REFERENCES does not guarantee any order
-    assertThat(sql("LIST REFERENCES IN nessie"))
-        .containsExactlyInAnyOrder(row("Tag", refName, hash), row("Branch", "main", hash));
-    assertThat(sql("DROP TAG %s IN nessie", refName)).containsExactly(row("OK"));
-    assertThatThrownBy(() -> api.getReference().refName(refName).get())
-        .isInstanceOf(NessieNotFoundException.class)
-        .hasMessage("Named reference 'testBranch' not found");
-  }
-
-  @Test
   void useShowReferencesIn() throws NessieNotFoundException {
     assertThat(sql("CREATE BRANCH %s IN nessie", refName))
         .containsExactly(row("Branch", refName, hash));
@@ -477,11 +409,6 @@ public abstract class AbstractSparkSqlTest {
     assertThat(sql("USE REFERENCE %s IN nessie", refName))
         .containsExactly(row("Branch", refName, hash));
     assertThat(sql("SHOW REFERENCE IN nessie")).containsExactly(row("Branch", refName, hash));
-
-    assertThat(sql("DROP BRANCH %s IN nessie", refName)).containsExactly(row("OK"));
-    assertThatThrownBy(() -> api.getReference().refName(refName).get())
-        .isInstanceOf(NessieNotFoundException.class)
-        .hasMessage("Named reference 'testBranch' not found");
   }
 
   @Test
@@ -492,11 +419,6 @@ public abstract class AbstractSparkSqlTest {
     assertThat(sql("USE REFERENCE %s AT `%s` IN nessie ", refName, time))
         .containsExactly(row("Branch", refName, hash));
     assertThat(sql("SHOW REFERENCE IN nessie")).containsExactly(row("Branch", refName, hash));
-
-    assertThat(sql("DROP BRANCH %s IN nessie", refName)).containsExactly(row("OK"));
-    assertThatThrownBy(() -> api.getReference().refName(refName).get())
-        .isInstanceOf(NessieNotFoundException.class)
-        .hasMessage("Named reference 'testBranch' not found");
   }
 
   @Test
@@ -548,11 +470,6 @@ public abstract class AbstractSparkSqlTest {
     assertThat(sql("USE REFERENCE %s IN nessie", refName))
         .containsExactly(row("Branch", refName, hash));
     assertThat(sql("SHOW REFERENCE IN nessie")).containsExactly(row("Branch", refName, hash));
-
-    assertThat(sql("DROP BRANCH %s IN nessie", refName)).containsExactly(row("OK"));
-    assertThatThrownBy(() -> api.getReference().refName(refName).get())
-        .isInstanceOf(NessieNotFoundException.class)
-        .hasMessage("Named reference 'testBranch' not found");
   }
 
   @Test
