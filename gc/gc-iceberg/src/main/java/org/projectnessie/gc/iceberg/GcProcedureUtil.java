@@ -39,10 +39,14 @@ final class GcProcedureUtil {
 
   static BaseGcProcedure loadGcProcedure(Identifier procedureIdentifier, TableCatalog catalog)
       throws NoSuchProcedureException {
-    if (DummyProcedure.PROCEDURE_NAME.equals(procedureIdentifier.name())) {
-      return new DummyProcedure(catalog);
+    switch (procedureIdentifier.name()) {
+      case DummyProcedure.PROCEDURE_NAME:
+        return new DummyProcedure(catalog);
+      case IdentifyExpiredSnapshotsProcedure.PROCEDURE_NAME:
+        return new IdentifyExpiredSnapshotsProcedure(catalog);
+      default:
+        throw new NoSuchProcedureException(procedureIdentifier);
     }
-    throw new NoSuchProcedureException(procedureIdentifier);
   }
 
   static InternalRow internalRow(Object... columns) {
