@@ -15,24 +15,24 @@
  */
 package org.projectnessie.gc.base;
 
+import com.google.common.hash.BloomFilter;
+import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.OptionalInt;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.spark.sql.SparkSession;
 import org.projectnessie.api.params.FetchOption;
-import org.projectnessie.client.StreamingUtil;
 import org.projectnessie.client.api.NessieApiV1;
-import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
-import org.projectnessie.model.Branch;
+import org.projectnessie.model.Content;
+import org.projectnessie.model.Detached;
 import org.projectnessie.model.RefLogResponse;
-import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferenceMetadata;
-import org.projectnessie.model.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,7 +57,8 @@ public class GCImpl {
   /**
    * Identify the expired contents using a two-step traversal algorithm.
    *
-   * <h2>Algorithm for identifying the live contents and return the bloom filter per content-id</h2>
+   * <h2>Algorithm for identifying the live contents and return the bloom filter of live contents
+   * info</h2>
    *
    * <p>Walk through each reference(both live and dead) distributively (one spark task for each
    * reference).
@@ -71,12 +72,13 @@ public class GCImpl {
    * of cutoff time to support the time travel.
    *
    * <p>While traversing the expired commits (commit that is expired based on cutoff time), if it is
-   * a head commit content for its key, add it to bloom filter. Else move to next expired commit.
+   * the latest commit content for its key, add it to bloom filter. Else move to next expired
+   * commit.
    *
    * <p>Stop traversing the expired commits if each live content key has processed one live commit
    * for it. This is an optimization to avoid traversing all the commits.
    *
-   * <p>Collect bloom filter per content id from each task and merge them.
+   * <p>Collect bloom filter per reference from each task and merge them.
    *
    * <h2>Algorithm for identifying the expired contents and return the list of globally expired
    * contents per content id per reference </h2>
@@ -98,15 +100,21 @@ public class GCImpl {
   public String identifyExpiredContents(SparkSession session) throws NessieNotFoundException {
     DistributedIdentifyContents distributedIdentifyContents;
     List<String> allRefs;
-    Map<String, ContentBloomFilter> liveContentsBloomFilterMap;
+    BloomFilter<Content> liveContentsBloomFilter;
+    Map<String, Instant> droppedReferenceTimeMap;
+    String runId = UUID.randomUUID().toString();
+    Timestamp startedAt = Timestamp.from(Instant.now());
     try (NessieApiV1 api = GCUtil.getApi(gcParams.getNessieClientConfigs())) {
       distributedIdentifyContents = new DistributedIdentifyContents(session, gcParams);
-      Stream<Reference> liveReferences = api.getAllReferences().stream();
-      Map<String, Instant> droppedReferenceTimeMap = collectDeadReferences(api);
+
+      droppedReferenceTimeMap = collectDeadReferences(api);
+
       // As this list of references is passed from Spark driver to executor,
-      // using available Immutables JSON serialization instead of adding java serialization to the
-      // classes.
-      allRefs = liveReferences.map(GCUtil::serializeReference).collect(Collectors.toList());
+      // using JSON serialization instead of adding java serialization to the Immutables classes.
+      allRefs =
+          api.getAllReferences().stream()
+              .map(GCUtil::serializeReference)
+              .collect(Collectors.toCollection(ArrayList::new));
       if (droppedReferenceTimeMap.size() > 0) {
         allRefs.addAll(droppedReferenceTimeMap.keySet());
       }
@@ -114,14 +122,15 @@ public class GCImpl {
           gcParams.getBloomFilterExpectedEntries() == null
               ? getTotalCommitsInDefaultReference(api)
               : gcParams.getBloomFilterExpectedEntries();
-      // Identify the live contents and return the bloom filter per content-id
-      liveContentsBloomFilterMap =
-          distributedIdentifyContents.getLiveContentsBloomFilters(
+      GCUtil.maybeCreateEmptyBranch(api, gcParams.getOutputBranchName());
+      // Identify the live contents and return the bloom filter
+      liveContentsBloomFilter =
+          distributedIdentifyContents.getLiveContentsBloomFilter(
               allRefs, bloomFilterSize, droppedReferenceTimeMap);
-      getOrCreateEmptyBranch(api, gcParams.getOutputBranchName());
     }
     // Identify the expired contents
-    return distributedIdentifyContents.identifyExpiredContents(liveContentsBloomFilterMap, allRefs);
+    return distributedIdentifyContents.identifyExpiredContents(
+        liveContentsBloomFilter, allRefs, droppedReferenceTimeMap, runId, startedAt);
   }
 
   private long getTotalCommitsInDefaultReference(NessieApiV1 api) {
@@ -145,15 +154,14 @@ public class GCImpl {
     Stream<RefLogResponse.RefLogResponseEntry> reflogStream;
     try {
       reflogStream =
-          StreamingUtil.getReflogStream(
-              api,
-              builder ->
-                  builder.filter(
-                      String.format(
-                          "reflog.operation == '%s' || reflog.operation == " + "'%s'",
-                          RefLogResponse.RefLogResponseEntry.DELETE_REFERENCE,
-                          RefLogResponse.RefLogResponseEntry.ASSIGN_REFERENCE)),
-              OptionalInt.empty());
+          api
+              .getRefLog()
+              .filter(
+                  String.format(
+                      "reflog.operation == '%s' || reflog.operation == " + "'%s'",
+                      RefLogResponse.RefLogResponseEntry.DELETE_REFERENCE,
+                      RefLogResponse.RefLogResponseEntry.ASSIGN_REFERENCE))
+              .stream();
     } catch (NessieNotFoundException e) {
       throw new RuntimeException(e);
     }
@@ -171,35 +179,10 @@ public class GCImpl {
               throw new RuntimeException(
                   entry.getOperation() + " operation found in dead reflog query");
           }
-          switch (entry.getRefType()) {
-            case RefLogResponse.RefLogResponseEntry.BRANCH:
-              droppedReferenceTimeMap.put(
-                  GCUtil.serializeReference(Branch.of(entry.getRefName(), hash)),
-                  GCUtil.getInstantFromMicros(entry.getOperationTime()));
-              break;
-            case RefLogResponse.RefLogResponseEntry.TAG:
-              droppedReferenceTimeMap.put(
-                  GCUtil.serializeReference(Tag.of(entry.getRefName(), hash)),
-                  GCUtil.getInstantFromMicros(entry.getOperationTime()));
-              break;
-            default:
-              throw new RuntimeException(
-                  entry.getRefType() + " type reference is found in dead reflog query");
-          }
+          droppedReferenceTimeMap.put(
+              GCUtil.serializeReference(Detached.of(hash)),
+              GCUtil.getInstantFromMicros(entry.getOperationTime()));
         });
     return droppedReferenceTimeMap;
-  }
-
-  private static void getOrCreateEmptyBranch(NessieApiV1 api, String branchName) {
-    try {
-      api.getReference().refName(branchName).get();
-    } catch (NessieNotFoundException e) {
-      // create a gc branch pointing to NO_ANCESTOR hash.
-      try {
-        api.createReference().reference(Branch.of(branchName, null)).create();
-      } catch (NessieNotFoundException | NessieConflictException ex) {
-        throw new RuntimeException(ex);
-      }
-    }
   }
 }

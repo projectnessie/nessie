@@ -19,19 +19,13 @@ import static org.apache.iceberg.types.Types.NestedField.optional;
 import static org.apache.iceberg.types.Types.NestedField.required;
 
 import com.google.errorprone.annotations.FormatMethod;
+import com.google.errorprone.annotations.FormatString;
 import java.sql.Timestamp;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import org.apache.iceberg.CatalogUtil;
 import org.apache.iceberg.Schema;
-import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
-import org.apache.iceberg.nessie.NessieCatalog;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.iceberg.types.Types;
 import org.apache.spark.sql.Dataset;
@@ -45,7 +39,6 @@ import org.projectnessie.model.ImmutableTableReference;
 import org.projectnessie.model.Reference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.Tuple2;
 
 /** DDL + DML functionality for the "IdentifiedResult" table. */
 public final class IdentifiedResultsRepo {
@@ -59,8 +52,11 @@ public final class IdentifiedResultsRepo {
   private static final String COL_SNAPSHOT_ID = "snapshotId";
   private static final String COL_REFERENCE_NAME = "referenceName";
   private static final String COL_HASH_ON_REFERENCE = "hashOnReference";
+  private static final String COL_COMMIT_HASH = "commitHash";
+  private static final String COL_METADATA_LOCATION = "metadataLocation";
+  private static final String COL_IS_EXPIRED = "isExpired";
 
-  private final Schema icebergSchema =
+  private static final Schema icebergSchema =
       new Schema(
           Types.StructType.of(
                   // GC run start timestamp.
@@ -76,22 +72,29 @@ public final class IdentifiedResultsRepo {
                   // Name of the reference via which the contentID was collected
                   optional(6, COL_REFERENCE_NAME, Types.StringType.get()),
                   // Hash of the reference via which the contentID was collected
-                  optional(7, COL_HASH_ON_REFERENCE, Types.StringType.get()))
+                  optional(7, COL_HASH_ON_REFERENCE, Types.StringType.get()),
+                  // commit hash which is containing this content
+                  optional(8, COL_COMMIT_HASH, Types.StringType.get()),
+                  // metadata location of this content
+                  optional(9, COL_METADATA_LOCATION, Types.StringType.get()),
+                  // to indicate whether this content is expired or live
+                  optional(10, COL_IS_EXPIRED, Types.BooleanType.get()))
               .fields());
 
-  private final StructType schema = SparkSchemaUtil.convert(icebergSchema);
+  private static final StructType schema = SparkSchemaUtil.convert(icebergSchema);
 
   private final SparkSession sparkSession;
   private final String catalogAndTableWithRefName;
 
   public IdentifiedResultsRepo(
-      SparkSession sparkSession, String catalog, String gcRefName, String gcTableIdentifier) {
+      SparkSession sparkSession, String catalog, String gcBranchName, String gcTableIdentifier) {
     this.sparkSession = sparkSession;
-    this.catalogAndTableWithRefName = withRefName(catalog, gcTableIdentifier, gcRefName);
-    createTableIfAbsent(sparkSession, catalog, TableIdentifier.parse(gcTableIdentifier), gcRefName);
+    this.catalogAndTableWithRefName = withRefName(catalog, gcTableIdentifier, gcBranchName);
+    createTableIfAbsent(
+        sparkSession, catalog, TableIdentifier.parse(gcTableIdentifier), gcBranchName);
   }
 
-  public StructType getSchema() {
+  public static StructType getSchema() {
     return schema;
   }
 
@@ -103,15 +106,18 @@ public final class IdentifiedResultsRepo {
    *     reference.
    */
   public Dataset<Row> collectExpiredContentsAsDataSet(String runId) {
-    // Example Query:
-    // SELECT * FROM nessie.db1.`identified_results@someGcRef`
-    //    WHERE gcRunId = '9e809dc9-ac35-41c9-b1c0-5ebcf452ea2d'
-    return sql(
-        "SELECT * FROM %s WHERE %s = '%s'",
-        catalogAndTableWithRefName,
-        //
-        COL_GC_RUN_ID,
-        runId);
+    return getContentRowsForRunId(runId, true);
+  }
+
+  /**
+   * Collect the live contents for the given run id as spark dataset.
+   *
+   * @param runId run id of completed identify task.
+   * @return spark dataset of row where each row is having the live contents per content id per
+   *     reference.
+   */
+  public Dataset<Row> collectLiveContentsAsDataSet(String runId) {
+    return getContentRowsForRunId(runId, false);
   }
 
   public Optional<String> getLatestCompletedRunID() {
@@ -139,12 +145,19 @@ public final class IdentifiedResultsRepo {
       rowDataset.writeTo(catalogAndTableWithRefName).append();
     } catch (NoSuchTableException e) {
       throw new RuntimeException(
-          "Problem while writing gc output rows to the table: " + catalogAndTableWithRefName, e);
+          "Problem while writing output rows to the table: " + catalogAndTableWithRefName, e);
     }
   }
 
   static Row createContentRow(
-      Content content, String runId, Timestamp startedAt, long snapshotId, Reference ref) {
+      Content content,
+      String runId,
+      Timestamp startedAt,
+      long snapshotId,
+      Reference ref,
+      String commitHash,
+      String metadataLocation,
+      boolean isExpired) {
     return RowFactory.create(
         startedAt,
         runId,
@@ -152,23 +165,20 @@ public final class IdentifiedResultsRepo {
         content.getType().name(),
         snapshotId,
         ref.getName(),
-        ref.getHash());
+        ref.getHash(),
+        commitHash,
+        metadataLocation,
+        isExpired);
   }
 
-  private void createTableIfAbsent(
+  static void createTableIfAbsent(
       SparkSession sparkSession,
       String catalogName,
       TableIdentifier tableIdentifier,
-      String gcRefName) {
-    // get Nessie catalog
-    Catalog nessieCatalog =
-        CatalogUtil.loadCatalog(
-            NessieCatalog.class.getName(),
-            catalogName,
-            catalogConfWithRef(sparkSession, catalogName, gcRefName),
-            sparkSession.sparkContext().hadoopConfiguration());
+      String gcBranchName) {
     try {
-      nessieCatalog.createTable(tableIdentifier, icebergSchema);
+      GCUtil.loadNessieCatalog(sparkSession, catalogName, gcBranchName)
+          .createTable(tableIdentifier, IdentifiedResultsRepo.icebergSchema);
     } catch (AlreadyExistsException ex) {
       // Table can exist from previous GC run, no need to throw exception.
     }
@@ -185,22 +195,20 @@ public final class IdentifiedResultsRepo {
         + ImmutableTableReference.builder().name(tableName).reference(refName).build();
   }
 
-  private static Map<String, String> catalogConfWithRef(
-      SparkSession spark, String catalog, String branchName) {
-    // select the nessie catalog related conf.
-    Stream<Tuple2<String, String>> conf =
-        Arrays.stream(
-            spark
-                .sparkContext()
-                .conf()
-                .getAllWithPrefix(String.format("spark.sql.catalog.%s.", catalog)));
-    // override the default ref name configuration to branchName.
-    return conf.map(t -> t._1.equals("ref") ? Tuple2.apply(t._1, branchName) : t)
-        .collect(Collectors.toMap(t -> t._1, t -> t._2));
+  private Dataset<Row> getContentRowsForRunId(String runId, boolean isExpired) {
+    return sql(
+        "SELECT * FROM %s WHERE %s = '%s' AND %s = %s",
+        catalogAndTableWithRefName,
+        //
+        COL_GC_RUN_ID,
+        runId,
+        //
+        COL_IS_EXPIRED,
+        isExpired);
   }
 
   @FormatMethod
-  private Dataset<Row> sql(String sqlStatement, Object... args) {
+  private Dataset<Row> sql(@FormatString String sqlStatement, Object... args) {
     String sql = String.format(sqlStatement, args);
     LOGGER.debug("Executing the sql -> {}", sql);
     return sparkSession.sql(sql);

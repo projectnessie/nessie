@@ -18,20 +18,16 @@ plugins {
   `java-library`
   jacoco
   `maven-publish`
-  signing
   `nessie-conventions`
-  id("org.projectnessie.buildsupport.attach-test-jar")
 }
 
-extra["maven.name"] = "Nessie - GC - Base Implementation"
+extra["maven.name"] = "Nessie - GC - Iceberg Implementation"
 
 val sparkScala = useSparkScalaVersionsForProject("3.2")
 
 dependencies {
   implementation(platform(nessieRootProject()))
-  annotationProcessor(nessieProjectPlatform("nessie-deps-build-only", gradle))
-  compileOnly(nessieProjectPlatform("nessie-deps-build-only", gradle))
-  compileOnly(nessieProjectPlatform("nessie-deps-iceberg", gradle))
+  annotationProcessor(platform(nessieRootProject()))
   implementation(platform("com.fasterxml.jackson:jackson-bom"))
 
   forScala(sparkScala.scalaVersion)
@@ -42,8 +38,10 @@ dependencies {
   compileOnly(nessieProject("nessie-client"))
   compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
   compileOnly("jakarta.validation:jakarta.validation-api")
+  implementation(project(":nessie-gc-base"))
   implementation("com.fasterxml.jackson.core:jackson-annotations")
   implementation("com.google.code.findbugs:jsr305")
+  implementation("com.google.guava:guava")
 
   compileOnly("org.apache.spark:spark-sql_${sparkScala.scalaMajorVersion}") {
     forSpark(sparkScala.sparkVersion)
@@ -57,9 +55,7 @@ dependencies {
   compileOnly("org.apache.iceberg:iceberg-parquet")
   compileOnly("org.apache.parquet:parquet-column")
 
-  testImplementation(nessieProjectPlatform("nessie-deps-iceberg", gradle))
-  testCompileOnly(platform("com.fasterxml.jackson:jackson-bom"))
-  testImplementation(platform("org.junit:junit-bom"))
+  testImplementation(platform(nessieRootProject()))
 
   testCompileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
   testImplementation(nessieProject("nessie-jaxrs-testextension"))
@@ -71,6 +67,7 @@ dependencies {
   testImplementation("org.slf4j:log4j-over-slf4j")
   testImplementation("ch.qos.logback:logback-classic")
 
+  testCompileOnly(platform("com.fasterxml.jackson:jackson-bom"))
   testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
   testImplementation(project(":nessie-spark-extensions-base_${sparkScala.scalaMajorVersion}")) {
@@ -81,6 +78,7 @@ dependencies {
       ":nessie-spark-extensions-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}"
     )
   )
+  testImplementation(project(":nessie-gc-base")) { testJarCapability() }
   testImplementation("org.apache.iceberg:iceberg-nessie")
   testImplementation(
     "org.apache.iceberg:iceberg-spark-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}"
@@ -91,6 +89,7 @@ dependencies {
   testImplementation("org.apache.iceberg:iceberg-hive-metastore")
 
   testImplementation("org.assertj:assertj-core")
+  testImplementation(platform("org.junit:junit-bom"))
   testImplementation("org.junit.jupiter:junit-jupiter-api")
   testImplementation("org.junit.jupiter:junit-jupiter-params")
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")

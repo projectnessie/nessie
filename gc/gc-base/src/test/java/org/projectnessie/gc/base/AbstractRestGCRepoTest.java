@@ -54,7 +54,7 @@ public abstract class AbstractRestGCRepoTest extends AbstractRestGCTest {
           runIds.add(runId);
           List<Row> rows = createRows(runId, startAt, i + 1);
           Dataset<Row> dataset =
-              sparkSession.createDataFrame(rows, identifiedResultsRepo.getSchema());
+              sparkSession.createDataFrame(rows, IdentifiedResultsRepo.getSchema());
           identifiedResultsRepo.writeToOutputTable(dataset);
         }
         AtomicInteger expectedRowCount = new AtomicInteger(1);
@@ -89,7 +89,10 @@ public abstract class AbstractRestGCRepoTest extends AbstractRestGCTest {
               content.getType().name(),
               content.getSnapshotId(),
               refName,
-              null));
+              null,
+              null,
+              content.getMetadataLocation(),
+              true));
     }
     return rows;
   }

@@ -69,6 +69,7 @@ dependencies {
       api(project(":nessie-spark-antlr-runtime"))
       api(project(":nessie-spark-extensions-grammar"))
       api(project(":nessie-gc-base"))
+      api(project(":nessie-gc-iceberg"))
 
       val ideaSyncActive = System.getProperty("idea.sync.active").toBoolean()
       val sparkVersions = rootProject.extra["sparkVersions"].toString().split(",").map { it.trim() }

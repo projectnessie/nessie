@@ -21,7 +21,6 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URI;
 import com.google.common.collect.ImmutableMap;
 import java.io.File;
 import java.sql.Timestamp;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
@@ -42,7 +41,6 @@ import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.jaxrs.AbstractRest;
-import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
@@ -56,20 +54,21 @@ public abstract class AbstractRestGC extends AbstractRest {
   @TempDir File tempDir;
 
   @NotNull
-  List<LogEntry> fetchLogEntries(Branch branch, int numCommits) throws NessieNotFoundException {
+  List<LogEntry> fetchLogEntries(Reference reference, int numCommits)
+      throws NessieNotFoundException {
     return getApi()
         .getCommitLog()
-        .refName(branch.getName())
-        .hashOnRef(branch.getHash())
+        .refName(reference.getName())
+        .hashOnRef(reference.getHash())
         .fetch(FetchOption.ALL)
         .stream()
         .limit(numCommits)
         .collect(Collectors.toList());
   }
 
-  void fillExpectedContents(Branch branch, int numCommits, List<Row> expected)
+  protected void fillExpectedContents(Reference reference, int numCommits, List<Row> expected)
       throws NessieNotFoundException {
-    fetchLogEntries(branch, numCommits).stream()
+    fetchLogEntries(reference, numCommits).stream()
         .map(LogEntry::getOperations)
         .filter(Objects::nonNull)
         .flatMap(Collection::stream)
@@ -86,8 +85,11 @@ public abstract class AbstractRestGC extends AbstractRest {
                       content.getId(),
                       null,
                       content.getSnapshotId(),
-                      branch.getName(),
-                      null));
+                      reference.getName(),
+                      null,
+                      null,
+                      content.getMetadataLocation(),
+                      true));
             });
   }
 
@@ -96,18 +98,17 @@ public abstract class AbstractRestGC extends AbstractRest {
       Instant cutoffTimeStamp,
       Map<String, Instant> cutOffTimeStampPerRef,
       List<Row> expectedDataSet,
-      boolean disableCommitProtection,
       Instant deadReferenceCutoffTime)
       throws NessieNotFoundException {
+
+    if (deadReferenceCutoffTime == null) {
+      deadReferenceCutoffTime = cutoffTimeStamp;
+    }
 
     try (SparkSession sparkSession = getSparkSession()) {
       ImmutableGCParams.Builder builder = ImmutableGCParams.builder();
       final Map<String, String> options = new HashMap<>();
       options.put(CONF_NESSIE_URI, getUri().toString());
-      if (disableCommitProtection) {
-        // disable commit protection for test purposes.
-        builder.commitProtectionDuration(Duration.ZERO);
-      }
       ImmutableGCParams gcParams =
           builder
               .bloomFilterExpectedEntries(5L)
@@ -131,8 +132,7 @@ public abstract class AbstractRestGC extends AbstractRest {
       Dataset<Row> actualRowDataset =
           actualIdentifiedResultsRepo.collectExpiredContentsAsDataSet(runId);
       // compare the expected contents against the actual gc output
-      verify(
-          actualRowDataset, expectedDataSet, sparkSession, actualIdentifiedResultsRepo.getSchema());
+      verify(actualRowDataset, expectedDataSet, sparkSession, IdentifiedResultsRepo.getSchema());
     }
   }
 
@@ -145,7 +145,7 @@ public abstract class AbstractRestGC extends AbstractRest {
         .set("spark.sql.catalog.nessie", "org.apache.iceberg.spark.SparkCatalog")
         .set(
             "spark.sql.extensions",
-            "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions,org.projectnessie.spark.extensions.NessieSparkSessionExtensions");
+            "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions,org.projectnessie.spark.extensions.NessieSpark32SessionExtensions");
 
     SparkSession spark =
         SparkSession.builder()
@@ -180,7 +180,12 @@ public abstract class AbstractRestGC extends AbstractRest {
       throws NessieNotFoundException, NessieConflictException {
     IcebergTable meta =
         IcebergTable.of(
-            prefix + "_" + metadataFile, snapshotId, 42, 42, 42, prefix + "_" + contentId);
+            prefix + "_" + contentId + "_" + metadataFile,
+            snapshotId,
+            42,
+            42,
+            42,
+            prefix + "_" + contentId);
     CommitMultipleOperationsBuilder multiOp =
         getApi()
             .commitMultipleOperations()

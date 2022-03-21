@@ -41,12 +41,15 @@ public class TestLiveCommitsSpliterator {
     List<LogResponse.LogEntry> traversedCommits = new ArrayList<>();
     // latest commit should be head, hence reverse the order.
     Collections.reverse(allCommits);
-    MutableBoolean foundAllCommitHeads = new MutableBoolean(false);
+    MutableBoolean foundAllRequiredCommits = new MutableBoolean(false);
     Consumer<LogResponse.LogEntry> commitHandler =
-        entry -> commitHandler(entry, foundAllCommitHeads, 8, traversedCommits);
-    GCUtil.traverseLiveCommits(foundAllCommitHeads, allCommits.stream(), commitHandler);
+        entry -> commitHandler(entry, foundAllRequiredCommits, 8, traversedCommits);
+    String lastTraversedCommit =
+        IdentifyLiveContentsPerExecutor.traverseLiveCommits(
+            foundAllRequiredCommits, allCommits.stream(), commitHandler);
     // stop at index. So should traverse only first two commit.
     assertThat(allCommits.subList(0, 2)).isEqualTo(traversedCommits);
+    assertThat(lastTraversedCommit).isEqualTo(allCommits.get(1).getCommitMeta().getHash());
   }
 
   @Test
@@ -55,12 +58,16 @@ public class TestLiveCommitsSpliterator {
     List<LogResponse.LogEntry> traversedCommits = new ArrayList<>();
     // latest commit should be head, hence reverse the order.
     Collections.reverse(allCommits);
-    MutableBoolean foundAllCommitHeads = new MutableBoolean(false);
+    MutableBoolean foundAllRequiredCommits = new MutableBoolean(false);
     Consumer<LogResponse.LogEntry> commitHandler =
-        entry -> commitHandler(entry, foundAllCommitHeads, 12, traversedCommits);
-    GCUtil.traverseLiveCommits(foundAllCommitHeads, allCommits.stream(), commitHandler);
+        entry -> commitHandler(entry, foundAllRequiredCommits, 12, traversedCommits);
+    String lastTraversedCommit =
+        IdentifyLiveContentsPerExecutor.traverseLiveCommits(
+            foundAllRequiredCommits, allCommits.stream(), commitHandler);
     // must traverse all commits as everything is live
     assertThat(allCommits).isEqualTo(traversedCommits);
+    assertThat(lastTraversedCommit)
+        .isEqualTo(allCommits.get(allCommits.size() - 1).getCommitMeta().getHash());
   }
 
   private List<LogResponse.LogEntry> generateCommits(int num) {
@@ -81,11 +88,11 @@ public class TestLiveCommitsSpliterator {
 
   private void commitHandler(
       LogResponse.LogEntry entry,
-      MutableBoolean foundAllCommitHeads,
+      MutableBoolean foundAllRequiredCommits,
       int lastLiveCommitHeadIndex,
       List<LogResponse.LogEntry> traversedCommits) {
     if (String.valueOf(lastLiveCommitHeadIndex).equals(entry.getCommitMeta().getHash())) {
-      foundAllCommitHeads.setTrue();
+      foundAllRequiredCommits.setTrue();
     }
     traversedCommits.add(entry);
   }

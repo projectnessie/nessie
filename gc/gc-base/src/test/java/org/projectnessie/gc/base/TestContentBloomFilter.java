@@ -21,6 +21,7 @@ import static org.projectnessie.model.Content.Type.DELTA_LAKE_TABLE;
 import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
 import static org.projectnessie.model.Content.Type.ICEBERG_VIEW;
 
+import com.google.common.hash.BloomFilter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -34,7 +35,7 @@ public class TestContentBloomFilter {
 
   @Test
   void testBasic() {
-    ContentBloomFilter filter = new ContentBloomFilter(10, 0.03d);
+    BloomFilter<Content> filter = BloomFilter.create(ContentFunnel.INSTANCE, 10, 0.03d);
     List<Content> contents = generateContents(0, ICEBERG_TABLE);
     contents.addAll(generateContents(0, ICEBERG_VIEW));
     contents.forEach(filter::put);
@@ -52,18 +53,18 @@ public class TestContentBloomFilter {
 
   @Test
   void testMerge() {
-    ContentBloomFilter filter1 = new ContentBloomFilter(10, 0.03d);
+    BloomFilter<Content> filter1 = BloomFilter.create(ContentFunnel.INSTANCE, 10, 0.03d);
     List<Content> contents1 = generateContents(0, ICEBERG_TABLE);
     contents1.addAll(generateContents(0, ICEBERG_VIEW));
     contents1.forEach(filter1::put);
 
     // create another filter with overlapping contents
-    ContentBloomFilter filter2 = new ContentBloomFilter(10, 0.03d);
+    BloomFilter<Content> filter2 = BloomFilter.create(ContentFunnel.INSTANCE, 10, 0.03d);
     List<Content> contents2 = generateContents(5, ICEBERG_TABLE);
     contents2.addAll(generateContents(0, ICEBERG_VIEW));
     contents2.forEach(filter2::put);
 
-    filter1.merge(filter2);
+    filter1.putAll(filter2);
 
     // merged filter should contain contents from both the filters.
     assertThat(filter1.mightContain(contents1.get(4))).isTrue();
@@ -73,7 +74,7 @@ public class TestContentBloomFilter {
 
   @Test
   void testDeltaLakeContent() {
-    ContentBloomFilter filter = new ContentBloomFilter(10, 0.03d);
+    BloomFilter<Content> filter = BloomFilter.create(ContentFunnel.INSTANCE, 10, 0.03d);
     List<Content> contents = generateContents(0, DELTA_LAKE_TABLE);
 
     assertThatThrownBy(() -> contents.forEach(filter::put))

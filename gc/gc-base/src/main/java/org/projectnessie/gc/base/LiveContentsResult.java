@@ -15,24 +15,20 @@
  */
 package org.projectnessie.gc.base;
 
-import java.util.function.Predicate;
+import com.google.common.hash.BloomFilter;
+import java.io.Serializable;
+import javax.annotation.Nullable;
 import org.immutables.value.Value;
-import org.projectnessie.client.api.NessieApiV1;
-import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.Reference;
+import org.projectnessie.model.Content;
 
-/**
- * Just a wrapper class for input arguments of few methods in {@link IdentifyContentsPerExecutor}
- * which contains the current state params for GC.
- */
+/** Intermediate object to hold the per reference results from identify live contents gc step. */
 @Value.Immutable
-interface GCStateParamsPerTask {
+public interface LiveContentsResult extends Serializable {
 
-  NessieApiV1 getApi();
+  @Nullable
+  BloomFilter<Content> getBloomFilter();
 
-  Reference getReference();
+  String getReferenceName();
 
-  Predicate<CommitMeta> getLiveCommitPredicate();
-
-  long getBloomFilterSize();
+  String getHashOnReference();
 }

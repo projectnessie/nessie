@@ -17,7 +17,6 @@ package org.projectnessie.gc.base;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +24,7 @@ import org.apache.spark.sql.Row;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.model.Branch;
+import org.projectnessie.model.Detached;
 
 public abstract class AbstractRestGCTest extends AbstractRestGC {
 
@@ -106,11 +106,8 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
     // this should not affect as it is done after the cutoff timestamp
     dropTableCommit(prefix, branch1, table2.hash, TABLE_TWO);
 
-    // test GC with commit protection. No commits should be expired.
-    performGc(prefix, cutoffTime, null, Collections.emptyList(), false, null);
-
     // test GC without commit protection.
-    performGc(prefix, cutoffTime, null, expectedResult, true, null);
+    performGc(prefix, cutoffTime, null, expectedResult, null);
   }
 
   @Test
@@ -177,7 +174,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
         TABLE_TWO);
 
     // rename table should not expire the live commits after cutoff timestamp.
-    performGc(prefix, cutoffTime, null, expectedResult, true, null);
+    performGc(prefix, cutoffTime, null, expectedResult, null);
   }
 
   @Test
@@ -244,7 +241,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
         table2.content,
         null);
 
-    performGc(prefix, cutoffTime, null, expectedResult, true, null);
+    performGc(prefix, cutoffTime, null, expectedResult, null);
   }
 
   @Test
@@ -293,7 +290,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
     commitSingleOp(
         prefix, branch1, table1.hash, 43, CID_ONE, TABLE_ONE, METADATA_TWO, table1.content, null);
 
-    performGc(prefix, cutoffTime, null, expectedResult, true, null);
+    performGc(prefix, cutoffTime, null, expectedResult, null);
   }
 
   @Test
@@ -331,7 +328,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
 
     final Instant cutoffTime = Instant.now();
 
-    performGc(prefix, cutoffTime, null, expectedResult, true, null);
+    performGc(prefix, cutoffTime, null, expectedResult, null);
   }
 
   @Test
@@ -349,21 +346,12 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
     CommitOutput table2 =
         commitSingleOp(
             prefix, branch1, branch1.getHash(), -1, CID_TWO, TABLE_TWO, METADATA_ONE, null, null);
-    table2 =
-        commitSingleOp(
-            prefix,
-            branch1,
-            table2.hash,
-            42,
-            CID_TWO,
-            TABLE_TWO,
-            METADATA_TWO,
-            table2.content,
-            null);
+    commitSingleOp(
+        prefix, branch1, table2.hash, 42, CID_TWO, TABLE_TWO, METADATA_TWO, table2.content, null);
 
     final Instant cutoffTime = Instant.now();
     // expect nothing to be expired as -1 is considered as invalid snapshot for expiry.
-    performGc(prefix, cutoffTime, null, expectedResult, true, null);
+    performGc(prefix, cutoffTime, null, expectedResult, null);
   }
 
   @Test
@@ -399,14 +387,14 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
             table2.content,
             null);
     // all 3 commits on branch1 are expected to be expired due to drop reference before cutoff time.
-    fillExpectedContents(Branch.of(branch1.getName(), table2.hash), 3, expectedResult);
+    fillExpectedContents(Detached.of(table2.hash), 3, expectedResult);
 
     // delete branch before cutoff time
     deleteBranch(branch1.getName(), table2.hash);
 
     final Instant cutoffTime = Instant.now();
 
-    performGc(prefix, cutoffTime, null, expectedResult, true, null);
+    performGc(prefix, cutoffTime, null, expectedResult, null);
   }
 
   @Test
@@ -431,7 +419,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
         commitSingleOp(
             prefix, branch1, branch1.getHash(), 42, CID_TWO, TABLE_TWO, METADATA_ONE, null, null);
     // after cutoff time.
-    fillExpectedContents(Branch.of(branch1.getName(), table2.hash), 1, expectedResult);
+    fillExpectedContents(Detached.of(table2.hash), 1, expectedResult);
     // one commit for TABLE_TWO on branch1
     table2 =
         commitSingleOp(
@@ -450,7 +438,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
     // delete branch before cutoff time
     deleteBranch(branch1.getName(), table2.hash);
 
-    performGc(prefix, cutoffTime, null, expectedResult, true, null);
+    performGc(prefix, cutoffTime, null, expectedResult, null);
   }
 
   @Test
@@ -492,7 +480,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
             null);
     // last two commits are expected to be expired as it is not the commit head
     // and commit is before dead ref cutoff time.
-    fillExpectedContents(Branch.of(branch1.getName(), table2.hash), 2, expectedResult);
+    fillExpectedContents(Detached.of(table2.hash), 2, expectedResult);
 
     table2 =
         commitSingleOp(
@@ -511,7 +499,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
     // delete branch before cutoff time
     deleteBranch(branch1.getName(), table2.hash);
 
-    performGc(prefix, cutoffTime, null, expectedResult, true, deadRefCutoffTime);
+    performGc(prefix, cutoffTime, null, expectedResult, deadRefCutoffTime);
   }
 
   @Test
@@ -557,7 +545,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
     fillExpectedContents(Branch.of(branch2.getName(), firstCommitHash), 1, expectedResult);
     Branch branch3 = createBranch(prefix + "_3", Branch.of(branch1.getName(), b1table1.hash));
     // expired as it is before cutoff time and not the commit head
-    fillExpectedContents(Branch.of(branch3.getName(), firstCommitHash), 1, expectedResult);
+    fillExpectedContents(Detached.of(firstCommitHash), 1, expectedResult);
     // commit for TABLE_ONE on branch2
     CommitOutput b2table1 =
         commitSingleOp(
@@ -617,7 +605,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
     // drop table TABLE_ONE on branch1 should not affect as it is performed after cutoff timestamp.
     dropTableCommit(prefix, branch1, b1table1.hash, TABLE_ONE);
 
-    performGc(prefix, cutoffTime, null, expectedResult, true, null);
+    performGc(prefix, cutoffTime, null, expectedResult, null);
   }
 
   @Test
@@ -698,7 +686,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
     commitSingleOp(
         prefix, branch3, b3.hash, 44, CID_ONE, TABLE_ONE, METADATA_FIVE, b2table1.content, null);
 
-    performGc(prefix, cutoffTime, null, expectedResult, true, null);
+    performGc(prefix, cutoffTime, null, expectedResult, null);
   }
 
   @Test
@@ -769,7 +757,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
     commitSingleOp(
         prefix, branch2, table2.hash, 45, CID_TWO, TABLE_TWO, METADATA_FOUR, table2.content, null);
 
-    performGc(prefix, defaultCutoffTime, perRefCutoffTime, expectedResult, true, null);
+    performGc(prefix, defaultCutoffTime, perRefCutoffTime, expectedResult, null);
   }
 
   @Test
@@ -799,13 +787,13 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
         commitSingleOp(
             prefix, branch1, branch1.getHash(), 42, CID_ONE, TABLE_ONE, METADATA_ONE, null, null);
     // expect this commit to be expired as it is before cutoff time and not the head commit
-    fillExpectedContents(Branch.of(branch1.getName(), table1.hash), 1, expectedResult);
+    fillExpectedContents(Detached.of(table1.hash), 1, expectedResult);
     // commit for TABLE_TWO on branch2
     CommitOutput table2 =
         commitSingleOp(
             prefix, branch2, branch2.getHash(), 42, CID_TWO, TABLE_TWO, METADATA_ONE, null, null);
-    // expect this commit to be expired as it is before cutoff time and not the head commit
-    fillExpectedContents(Branch.of(branch2.getName(), table2.hash), 1, expectedResult);
+    // Detached due to assign branch
+    fillExpectedContents(Detached.of(table2.hash), 1, expectedResult);
 
     table1 =
         commitSingleOp(
@@ -868,6 +856,6 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
     // drop ref branch1 should not affect as it is performed after cutoff timestamp.
     deleteBranch(branch1.getName(), table1.hash);
 
-    performGc(prefix, cutoffTime, null, expectedResult, true, null);
+    performGc(prefix, cutoffTime, null, expectedResult, null);
   }
 }

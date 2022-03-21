@@ -16,7 +16,6 @@
 package org.projectnessie.gc.base;
 
 import java.io.Serializable;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import javax.annotation.Nullable;
@@ -36,8 +35,7 @@ public interface GCParams extends Serializable {
   /** Default cutoff time for all the references. */
   Instant getDefaultCutOffTimestamp();
 
-  /** Optional cutoff time for all the dead references. */
-  @Nullable
+  /** cutoff time for all the dead references. */
   Instant getDeadReferenceCutOffTimeStamp();
 
   /**
@@ -46,15 +44,6 @@ public interface GCParams extends Serializable {
    */
   @Nullable
   Integer getSparkPartitionsCount();
-
-  /**
-   * Commit protection duration to avoid expiring on going or recent commits. Default is 2 hours.
-   */
-  @Value.Default
-  default Duration getCommitProtectionDuration() {
-    // default is kept as 2 hours.
-    return Duration.ofHours(2);
-  }
 
   /**
    * Optional bloom filter expected live commits entries per reference. Default is total commits in
@@ -89,14 +78,9 @@ public interface GCParams extends Serializable {
 
   @Value.Check
   default void validate() {
-    Integer taskCount = getSparkPartitionsCount();
-    if (taskCount != null && taskCount <= 0) {
-      throw new IllegalArgumentException("taskCount has invalid value: " + taskCount);
-    }
-    Duration commitProtectionDuration = getCommitProtectionDuration();
-    if (commitProtectionDuration.isNegative()) {
-      throw new IllegalArgumentException(
-          "commitProtectionDuration has invalid value: " + commitProtectionDuration);
+    Integer partitionsCount = getSparkPartitionsCount();
+    if (partitionsCount != null && partitionsCount <= 0) {
+      throw new IllegalArgumentException("partitionsCount has invalid value: " + partitionsCount);
     }
     Long bloomFilterExpectedEntries = getBloomFilterExpectedEntries();
     if (bloomFilterExpectedEntries != null && bloomFilterExpectedEntries < 0) {
@@ -106,6 +90,14 @@ public interface GCParams extends Serializable {
     double bloomFilterFpp = getBloomFilterFpp();
     if (!(bloomFilterFpp > 0.0d && bloomFilterFpp < 1.0d)) {
       throw new IllegalArgumentException("bloomFilterFpp has invalid value: " + bloomFilterFpp);
+    }
+    Instant defaultCutOffTimestamp = getDefaultCutOffTimestamp();
+    Instant deadReferenceCutOffTimeStamp = getDeadReferenceCutOffTimeStamp();
+    if (deadReferenceCutOffTimeStamp.compareTo(defaultCutOffTimestamp) < 0) {
+      throw new IllegalArgumentException(
+          String.format(
+              "deadReferenceCutOffTimeStamp:%s should not be less than defaultCutOffTimestamp:%s",
+              deadReferenceCutOffTimeStamp, defaultCutOffTimestamp));
     }
   }
 }
