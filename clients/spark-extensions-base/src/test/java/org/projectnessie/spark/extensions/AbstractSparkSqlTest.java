@@ -300,6 +300,48 @@ public abstract class AbstractSparkSqlTest {
   }
 
   @Test
+  void testCreateReferenceFromHashOnNonDefaultBranch() throws NessieNotFoundException {
+    assertThat(sql("CREATE BRANCH %s IN nessie FROM main", refName))
+        .containsExactly(row("Branch", refName, hash));
+    assertThat(api.getReference().refName(refName).get()).isEqualTo(Branch.of(refName, hash));
+    sql("USE REFERENCE %s IN nessie", refName);
+    sql("CREATE TABLE nessie.db.tbl (id int, name string)");
+    sql("INSERT INTO nessie.db.tbl select 23, \"test\"");
+    String newHash =
+        api.getCommitLog()
+            .refName(refName)
+            .maxRecords(1)
+            .get()
+            .getLogEntries()
+            .get(0)
+            .getCommitMeta()
+            .getHash();
+
+    String tempRef = refName + "_temp";
+    sql("CREATE BRANCH %s IN nessie FROM %s", tempRef, refName);
+    assertThat(api.getReference().refName(tempRef).get()).isEqualTo(Branch.of(tempRef, newHash));
+
+    String tag = refName + "_temp_tag";
+    sql("CREATE TAG %s IN nessie FROM %s", tag, refName);
+    assertThat(api.getReference().refName(tag).get()).isEqualTo(Tag.of(tag, newHash));
+
+    assertThat(sql("DROP BRANCH %s IN nessie", refName)).containsExactly(row("OK"));
+    assertThatThrownBy(() -> api.getReference().refName(refName).get())
+        .isInstanceOf(NessieNotFoundException.class)
+        .hasMessage("Named reference 'testBranch' not found");
+
+    assertThat(sql("DROP BRANCH %s IN nessie", tempRef)).containsExactly(row("OK"));
+    assertThatThrownBy(() -> api.getReference().refName(tempRef).get())
+        .isInstanceOf(NessieNotFoundException.class)
+        .hasMessage("Named reference 'testBranch_temp' not found");
+
+    assertThat(sql("DROP TAG %s IN nessie", tag)).containsExactly(row("OK"));
+    assertThatThrownBy(() -> api.getReference().refName(tag).get())
+        .isInstanceOf(NessieNotFoundException.class)
+        .hasMessage("Named reference 'testBranch_temp_tag' not found");
+  }
+
+  @Test
   void testAssignBranch() throws NessieConflictException, NessieNotFoundException {
     String random = "randomBranch";
     assertThat(sql("CREATE BRANCH %s IN nessie", random))

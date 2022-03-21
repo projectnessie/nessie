@@ -44,7 +44,10 @@ abstract class BaseCreateReferenceExec(
       if (isBranch) Branch.of(branch, sourceRef.getHash)
       else Tag.of(branch, sourceRef.getHash)
     try {
-      api.createReference.reference(ref).create()
+      api.createReference
+        .reference(ref)
+        .sourceRefName(sourceRef.getName)
+        .create()
     } catch {
       case e: NessieConflictException =>
         if (failOnCreate) {
