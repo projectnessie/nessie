@@ -1342,6 +1342,14 @@ limitations under the License.
           </plugin>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-shade-plugin</artifactId>
+            <configuration>
+              <!-- Workaround for https://github.com/projectnessie/nessie/issues/3678 -->
+              <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
+            </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
             <executions>
               <execution>
