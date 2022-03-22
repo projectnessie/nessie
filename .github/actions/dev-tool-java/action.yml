@@ -20,7 +20,7 @@ runs:
         gpg-private-key: ${{ inputs.gpg-private-key }}
         gpg-passphrase: MAVEN_GPG_PASSPHRASE
     - name: Cache local Maven repository
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: |
           ~/.m2/repository
@@ -30,7 +30,7 @@ runs:
         restore-keys: |
           ${{ runner.os }}-maven-
     - name: Cache local NPM repository
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: ~/.npm
         key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
