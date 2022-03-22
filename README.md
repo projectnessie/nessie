@@ -85,10 +85,11 @@ Refer to [CONTRIBUTING](./CONTRIBUTING.md) for build instructions.
 
 Nessie Iceberg's integration is compatible with Iceberg as in the following table:
 
-| Nessie version | Iceberg version | Spark version | Hive version | Flink version |
-|----------------|-----------------|---------------|--------------|---------------|
-| 0.22.0         | 0.13.1          | 3.0.X, 3.1.X  | 2.3.9        | 1.12.1        |
-| 0.9.2          | 0.12.1, 0.12.0  | 3.0.X, 3.1.X  | 2.3.9        | 1.12.1        |
+| Nessie version | Iceberg version | Spark version      | Hive version | Flink version |
+|----------------|-----------------|--------------------|--------------|---------------|
+| 0.22.0         | upcoming release| 3.0.X, 3.1.X, 3.2.X| 2.3.9        | 1.12.1        |
+| 0.19.0         | 0.13.1          | 3.0.X, 3.1.X       | 2.3.9        | 1.12.1        |
+| 0.9.2          | 0.12.1, 0.12.0  | 3.0.X, 3.1.X       | 2.3.9        | 1.12.1        |
 
 Nessie Delta Lake's integration is compatible with Delta Lake as in the following table:
 
