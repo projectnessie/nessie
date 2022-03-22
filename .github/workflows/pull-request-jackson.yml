@@ -48,7 +48,7 @@ jobs:
             target-library: Spark 3.0.1
             java-version: 11
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Setup Java, Maven, Gradle
         uses: ./.github/actions/dev-tool-java
         with:
