@@ -136,6 +136,6 @@ jobs:
     - name: Test with tox
       run: tox
       working-directory: ${{env.working-directory}}
-    - uses: codecov/codecov-action@v1
+    - uses: codecov/codecov-action@v2
       with:
         flags: python
