@@ -184,7 +184,6 @@ jobs:
     # 'main' branch and break the linear history for the Nessie git repo.
     # The `release-publish.yml` job will run when the release tag `nessie-x.y.z` has been pushed.
     - name: Push tag + branch
-      if: ${{ !env.ACT }}
       run: |
         # Push directly using the remote repo URL, which includes the secret so this job can push to the repo
         UPSTREAM="https://${{ secrets.NESSIE_BUILDER }}@github.com/${GITHUB_REPOSITORY}.git"
