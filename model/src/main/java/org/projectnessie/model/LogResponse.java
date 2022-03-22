@@ -33,6 +33,10 @@ public interface LogResponse extends PaginatedResponse {
   @NotNull
   List<LogEntry> getLogEntries();
 
+  static ImmutableLogResponse.Builder builder() {
+    return ImmutableLogResponse.builder();
+  }
+
   @Value.Immutable
   @Schema(type = SchemaType.OBJECT, title = "LogEntry")
   @JsonSerialize(as = ImmutableLogEntry.class)

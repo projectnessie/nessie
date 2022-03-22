@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.services.authz.Check.CheckType;
 import org.projectnessie.versioned.NamedRef;
@@ -77,6 +78,12 @@ public abstract class AbstractBatchAccessChecker implements BatchAccessChecker {
   }
 
   @Override
+  public BatchAccessChecker canReadContentKey(NamedRef ref, ContentKey key) {
+    canViewReference(ref);
+    return add(Check.builder(CheckType.READ_CONTENT_KEY).ref(ref).key(key));
+  }
+
+  @Override
   public BatchAccessChecker canListCommitLog(NamedRef ref) {
     canViewReference(ref);
     return add(Check.builder(CheckType.LIST_COMMIT_LOG).ref(ref));
@@ -95,9 +102,15 @@ public abstract class AbstractBatchAccessChecker implements BatchAccessChecker {
   }
 
   @Override
-  public BatchAccessChecker canUpdateEntity(NamedRef ref, ContentKey key, String contentId) {
+  public BatchAccessChecker canUpdateEntity(
+      NamedRef ref, ContentKey key, String contentId, Content.Type contentType) {
     canViewReference(ref);
-    return add(Check.builder(CheckType.UPDATE_ENTITY).ref(ref).key(key).contentId(contentId));
+    return add(
+        Check.builder(CheckType.UPDATE_ENTITY)
+            .ref(ref)
+            .key(key)
+            .contentId(contentId)
+            .contentType(contentType));
   }
 
   @Override

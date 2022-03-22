@@ -68,7 +68,6 @@ import org.projectnessie.model.Detached;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.ImmutableBranch;
 import org.projectnessie.model.ImmutableLogEntry;
-import org.projectnessie.model.ImmutableLogResponse;
 import org.projectnessie.model.ImmutableReferenceMetadata;
 import org.projectnessie.model.ImmutableReferencesResponse;
 import org.projectnessie.model.ImmutableTag;
@@ -313,13 +312,13 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
           filterCommitLog(logEntries, params.filter()).limit(max + 1).collect(Collectors.toList());
 
       if (items.size() == max + 1) {
-        return ImmutableLogResponse.builder()
+        return LogResponse.builder()
             .addAllLogEntries(items.subList(0, max))
             .isHasMore(true)
             .token(items.get(max).getCommitMeta().getHash())
             .build();
       }
-      return ImmutableLogResponse.builder().addAllLogEntries(items).build();
+      return LogResponse.builder().addAllLogEntries(items).build();
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }

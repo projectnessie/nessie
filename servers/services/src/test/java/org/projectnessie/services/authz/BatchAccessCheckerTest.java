@@ -52,8 +52,15 @@ public class BatchAccessCheckerTest {
   }
 
   @Test
+  public void noChecksPass() {
+    BatchAccessChecker checker = newAccessChecker(checks -> Collections.emptyMap());
+    assertThatCode(checker::checkAndThrow).doesNotThrowAnyException();
+  }
+
+  @Test
   public void allChecksPass() {
     BatchAccessChecker checker = newAccessChecker(checks -> Collections.emptyMap());
+    performChecks(checker, listWithAllCheckTypes());
     assertThatCode(checker::checkAndThrow).doesNotThrowAnyException();
   }
 
@@ -87,20 +94,7 @@ public class BatchAccessCheckerTest {
 
   @Test
   public void allCheckTypes() {
-    List<Check> allChecks =
-        Arrays.stream(CheckType.values())
-            .map(
-                t -> {
-                  Builder b = Check.builder(t);
-                  if (t.isRef()) {
-                    b.ref(BranchName.of("some-branch"));
-                  }
-                  if (t.isContent()) {
-                    b.key(ContentKey.of("hello", "my", "table")).contentId("cid-foo");
-                  }
-                  return b.build();
-                })
-            .collect(Collectors.toList());
+    List<Check> allChecks = listWithAllCheckTypes();
 
     Map<Check, String> expectedErrors =
         allChecks.stream()
@@ -118,49 +112,7 @@ public class BatchAccessCheckerTest {
               return expectedErrors;
             });
 
-    allChecks.forEach(
-        c -> {
-          switch (c.type()) {
-            case VIEW_REFERENCE:
-              checker.canViewReference(c.ref());
-              break;
-            case CREATE_REFERENCE:
-              checker.canCreateReference(c.ref());
-              break;
-            case DELETE_REFERENCE:
-              checker.canDeleteReference(c.ref());
-              break;
-            case DELETE_DEFAULT_BRANCH:
-              checker.canDeleteDefaultBranch();
-              break;
-            case READ_ENTRIES:
-              checker.canReadEntries(c.ref());
-              break;
-            case ASSIGN_REFERENCE_TO_HASH:
-              checker.canAssignRefToHash(c.ref());
-              break;
-            case LIST_COMMIT_LOG:
-              checker.canListCommitLog(c.ref());
-              break;
-            case COMMIT_CHANGE_AGAINST_REFERENCE:
-              checker.canCommitChangeAgainstReference(c.ref());
-              break;
-            case READ_ENTITY_VALUE:
-              checker.canReadEntityValue(c.ref(), c.key(), c.contentId());
-              break;
-            case UPDATE_ENTITY:
-              checker.canUpdateEntity(c.ref(), c.key(), c.contentId());
-              break;
-            case DELETE_ENTITY:
-              checker.canDeleteEntity(c.ref(), c.key(), c.contentId());
-              break;
-            case VIEW_REFLOG:
-              checker.canViewRefLog();
-              break;
-            default:
-              throw new IllegalArgumentException("Unsupported: " + c);
-          }
-        });
+    performChecks(checker, allChecks);
 
     assertThat(checker.check()).containsAllEntriesOf(expectedErrors);
 
@@ -171,6 +123,72 @@ public class BatchAccessCheckerTest {
     assertThatThrownBy(checker::checkAndThrow)
         .isInstanceOf(AccessControlException.class)
         .hasMessage(expectedMsg);
+  }
+
+  private static void performChecks(BatchAccessChecker checker, List<Check> checks) {
+    checks.forEach(c -> performCheck(checker, c));
+  }
+
+  private static void performCheck(BatchAccessChecker checker, Check c) {
+    switch (c.type()) {
+      case VIEW_REFERENCE:
+        checker.canViewReference(c.ref());
+        break;
+      case CREATE_REFERENCE:
+        checker.canCreateReference(c.ref());
+        break;
+      case DELETE_REFERENCE:
+        checker.canDeleteReference(c.ref());
+        break;
+      case DELETE_DEFAULT_BRANCH:
+        checker.canDeleteDefaultBranch();
+        break;
+      case READ_ENTRIES:
+        checker.canReadEntries(c.ref());
+        break;
+      case READ_CONTENT_KEY:
+        checker.canReadContentKey(c.ref(), c.key());
+        break;
+      case ASSIGN_REFERENCE_TO_HASH:
+        checker.canAssignRefToHash(c.ref());
+        break;
+      case LIST_COMMIT_LOG:
+        checker.canListCommitLog(c.ref());
+        break;
+      case COMMIT_CHANGE_AGAINST_REFERENCE:
+        checker.canCommitChangeAgainstReference(c.ref());
+        break;
+      case READ_ENTITY_VALUE:
+        checker.canReadEntityValue(c.ref(), c.key(), c.contentId());
+        break;
+      case UPDATE_ENTITY:
+        checker.canUpdateEntity(c.ref(), c.key(), c.contentId(), c.contentType());
+        break;
+      case DELETE_ENTITY:
+        checker.canDeleteEntity(c.ref(), c.key(), c.contentId());
+        break;
+      case VIEW_REFLOG:
+        checker.canViewRefLog();
+        break;
+      default:
+        throw new IllegalArgumentException("Unsupported: " + c);
+    }
+  }
+
+  private static List<Check> listWithAllCheckTypes() {
+    return Arrays.stream(CheckType.values())
+        .map(
+            t -> {
+              Builder b = Check.builder(t);
+              if (t.isRef()) {
+                b.ref(BranchName.of("some-branch"));
+              }
+              if (t.isContent()) {
+                b.key(ContentKey.of("hello", "my", "table")).contentId("cid-foo");
+              }
+              return b.build();
+            })
+        .collect(Collectors.toList());
   }
 
   static BatchAccessChecker newAccessChecker(

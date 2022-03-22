@@ -81,7 +81,7 @@ public class TestModelObjectsSerialization {
             Transplant.class,
             Json.arr("hashesToTransplant", HASH).add("fromRefName", "testBranch")),
         new Case(
-            ImmutableEntriesResponse.builder()
+            EntriesResponse.builder()
                 .addEntries(
                     ImmutableEntry.builder()
                         .type(Type.ICEBERG_TABLE)
@@ -98,7 +98,7 @@ public class TestModelObjectsSerialization {
                         .addNoQuotes("name", Json.arr("elements", "/tmp/testpath")))
                 .addNoQuotes("hasMore", true)),
         new Case(
-            ImmutableLogResponse.builder()
+            LogResponse.builder()
                 .token(HASH)
                 .addLogEntries(
                     LogEntry.builder()

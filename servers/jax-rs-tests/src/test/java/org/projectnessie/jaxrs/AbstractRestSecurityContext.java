@@ -32,7 +32,7 @@ import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.Operation.Put;
 
 /** See {@link AbstractTestRest} for details about and reason for the inheritance model. */
-public abstract class AbstractRestSecurityContext extends AbstractRestAccessCheckDetached {
+public abstract class AbstractRestSecurityContext extends AbstractRestAccessChecks {
   @Test
   public void committerAndAuthor(
       @NessieSecurityContext Consumer<SecurityContext> securityContextConsumer) throws Exception {
