@@ -51,7 +51,7 @@ jobs:
       run: |
         ./mvnw dependency-check:aggregate -DskipTests -Powasp-dependency-check
     - name: Upload OWASP Report
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: owasp-report
         path: |
