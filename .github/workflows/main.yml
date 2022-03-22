@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Setup runner
       uses: ./.github/actions/setup-runner
     - name: Setup Java, Maven
@@ -62,7 +62,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Maven, Gradle
@@ -109,7 +109,7 @@ jobs:
             target-library: Spark 3.0.1
             java-version: 11
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Setup Java, Maven, Gradle
         uses: ./.github/actions/dev-tool-java
         with:
@@ -128,7 +128,7 @@ jobs:
         python-version: ['3.7', '3.8', '3.9', '3.10']
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Setup Python
       uses: ./.github/actions/dev-tool-python
       with:
