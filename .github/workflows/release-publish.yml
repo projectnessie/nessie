@@ -114,21 +114,13 @@ jobs:
         NEXUS_ARGS="-DnexusUrl=https://oss.sonatype.org -DserverId=ossrh -DautoReleaseAfterClose=true"
         PROFILES="-Puber-jar -Prelease"
         GOALS="install org.sonatype.plugins:nexus-staging-maven-plugin:1.6.8:deploy"
-        BUILD_ARGS="-DskipTests"
-
-        if [[ -n ${ACT} ]] ; then
-          # don't deploy and don't sign when running locally with nektos/act
-          BUILD_ARGS="${BUILD_ARGS} -Dmaven.deploy.skip -Dgpg.skip"
-        fi
+        BUILD_ARGS="-DskipTests -Dmaven.deploy.skip -Dgpg.skip"
 
         ./mvnw --batch-mode ${GOALS} ${PROFILES} ${NEXUS_ARGS} ${BUILD_ARGS}
 
         # Build the native-image, it's not released to Maven Central anyway
         PROFILES="-Pnative -Pdocker"
-        BUILD_ARGS="-DskipTests"
-        if [[ -n ${ACT} ]] ; then
-          BUILD_ARGS="${BUILD_ARGS} -Dquarkus.native.remote-container-build=true -Dquarkus.native.container-build=false -Dquarkus.native.native-image-xmx=6g"
-        fi
+        BUILD_ARGS="-DskipTests -Dquarkus.native.remote-container-build=true -Dquarkus.native.container-build=false -Dquarkus.native.native-image-xmx=6g"
         ./mvnw --batch-mode install ${PROFILES} ${BUILD_ARGS} -pl servers/quarkus-server
 
         # Add version to the openapi file name
@@ -148,7 +140,6 @@ jobs:
     - name: Package Nessie Helm chart for release
       env:
         RELEASE_VERSION: ${{ steps.get_version.outputs.VERSION }}
-      if: ${{ !env.ACT }}
       run: |
         helm package helm/nessie --version ${RELEASE_VERSION}
 
@@ -157,7 +148,6 @@ jobs:
       id: nessie_helm
       env:
         RELEASE_VERSION: ${{ steps.get_version.outputs.VERSION }}
-      if: ${{ !env.ACT }}
       run: |
         mv nessie-${RELEASE_VERSION}.tgz nessie-helm-${RELEASE_VERSION}.tgz
         echo ::set-output name=NESSIE_HELM_CHART::nessie-helm-${RELEASE_VERSION}.tgz
@@ -166,7 +156,6 @@ jobs:
     - name: Publish Nessie Helm chart to Helm Repo
       env:
         RELEASE_VERSION: ${{ steps.get_version.outputs.VERSION }}
-      if: ${{ !env.ACT }}
       run: |
         wget https://raw.githubusercontent.com/projectnessie/charts.projectnessie.org/main/index.yaml
         helm repo index . --merge index.yaml --url https://github.com/projectnessie/nessie/releases/download/nessie-${RELEASE_VERSION}
@@ -182,7 +171,6 @@ jobs:
 
     - name: Publish pynessie package
       uses: pypa/gh-action-pypi-publish@release/v1
-      if: ${{ !env.ACT }}
       with:
         user: __token__
         password: ${{ secrets.PYPI_API_TOKEN }}
@@ -197,7 +185,6 @@ jobs:
 
     # Deploys Docker images. Build and test steps were already ran in previous workflows
     - name: Publish Docker image for release
-      if: ${{ !env.ACT }}
       env:
         RELEASE_VERSION: ${{ steps.get_version.outputs.VERSION }}
       run: |
@@ -274,7 +261,6 @@ jobs:
       run: cat ${{ steps.prep_release.outputs.NOTES_FILE }}
 
     - name: Create Nessie release in GitHub
-      if: ${{ !env.ACT }}
       env:
         RELEASE_VERSION: ${{ steps.get_version.outputs.VERSION }}
         GIT_TAG: nessie-${{ steps.get_version.outputs.VERSION }}
@@ -293,8 +279,8 @@ jobs:
           "${CLI_UBER_JAR}" \
           "${NESSIE_OPENAPI}" \
           "${NESSIE_HELM_CHART}"
+
     - name: Update SwaggerHub
-      if: ${{ !env.ACT }}
       uses: smartbear/swaggerhub-cli@v0.6.1
       env:
         XDG_CONFIG_HOME: "/tmp"
