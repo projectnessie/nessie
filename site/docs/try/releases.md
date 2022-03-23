@@ -1,5 +1,12 @@
 # Releases
 
+## 0.23.0 Release (March 23, 2022)
+
+* Support Namespaces
+* CI "perf tests" improvements
+* SQL Extension: Fix Create reference from a hash on non-default reference
+* Enhance authorization checks
+
 ## 0.22.0 Release (March 11, 2022)
 
 * Improve performance of `getValues`
