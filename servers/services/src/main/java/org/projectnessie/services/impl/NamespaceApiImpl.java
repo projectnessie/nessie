@@ -221,7 +221,10 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
       MultipleNamespacesParams params, BranchName branch) throws ReferenceNotFoundException {
     try (Stream<WithType<Key, Type>> stream =
         getImplicitNamespacesStream(params.getNamespace(), branch)) {
-      return stream.map(this::implicitNamespaceFrom).collect(Collectors.toList());
+      return stream
+          .map(this::implicitNamespaceFrom)
+          .filter(ns -> !ns.isEmpty())
+          .collect(Collectors.toList());
     }
   }
 
