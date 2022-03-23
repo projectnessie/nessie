@@ -1,12 +1,16 @@
 # Releases
 
-## 0.23.0 Release (March 23, 2022)
+## 0.23.1 Release (March 23, 2022)
 
 * Support Namespaces
 * CI "perf tests" improvements
 * SQL Extension: Fix Create reference from a hash on non-default reference
 * Enhance authorization checks
 * Support custom annotations on Nessie Helm service
+
+## 0.23.0 Release (March 23, 2022)
+
+(not properly released)
 
 ## 0.22.0 Release (March 11, 2022)
 
