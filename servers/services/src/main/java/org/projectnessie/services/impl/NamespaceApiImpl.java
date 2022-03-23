@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
@@ -188,19 +189,10 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
    */
   private List<Namespace> getExplicitlyCreatedNamespaces(
       MultipleNamespacesParams params, BranchName branch) throws ReferenceNotFoundException {
-    try (Stream<Key> keyStream =
-        getStore()
-            .getKeys(branch)
-            .filter(k -> Type.NAMESPACE == k.getType())
-            .filter(
-                k ->
-                    null == params.getNamespace()
-                        || Namespace.of(k.getValue().getElements())
-                            .name()
-                            .startsWith(params.getNamespace().name()))
+    try (Stream<Key> stream =
+        getNamespacesKeyStream(params.getNamespace(), branch, k -> Type.NAMESPACE == k.getType())
             .map(WithType::getValue)) {
-
-      List<Key> keys = keyStream.collect(Collectors.toList());
+      List<Key> keys = stream.collect(Collectors.toList());
       Map<Key, Content> values = getStore().getValues(branch, keys);
       return values.values().stream()
           .map(c -> c.unwrap(Namespace.class).get())
@@ -220,20 +212,23 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
   private List<Namespace> getImplicitlyCreatedNamespaces(
       MultipleNamespacesParams params, BranchName branch) throws ReferenceNotFoundException {
     try (Stream<WithType<Key, Type>> stream =
-        getImplicitNamespacesStream(params.getNamespace(), branch)) {
+        getNamespacesKeyStream(params.getNamespace(), branch, k -> true)) {
       return stream
-          .map(this::implicitNamespaceFrom)
+          .map(this::namespaceFromType)
           .filter(ns -> !ns.isEmpty())
           .collect(Collectors.toList());
     }
   }
 
-  private Stream<WithType<Key, Type>> getImplicitNamespacesStream(
-      @Nullable Namespace namespace, BranchName branch) throws ReferenceNotFoundException {
+  private Stream<WithType<Key, Type>> getNamespacesKeyStream(
+      @Nullable Namespace namespace,
+      BranchName branch,
+      Predicate<WithType<Key, Type>> earlyFilterPredicate)
+      throws ReferenceNotFoundException {
     return getStore()
         .getKeys(branch)
-        .filter(
-            k -> null == namespace || implicitNamespaceFrom(k).name().startsWith(namespace.name()));
+        .filter(earlyFilterPredicate)
+        .filter(k -> null == namespace || namespaceFromType(k).name().startsWith(namespace.name()));
   }
 
   /**
@@ -246,7 +241,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
    * @param withType The {@link WithType} instance holding the key and type.
    * @return A {@link Namespace} instance.
    */
-  private Namespace implicitNamespaceFrom(WithType<Key, Type> withType) {
+  private Namespace namespaceFromType(WithType<Key, Type> withType) {
     List<String> elements = withType.getValue().getElements();
     if (Type.NAMESPACE != withType.getType()) {
       elements = elements.subList(0, elements.size() - 1);
@@ -263,8 +258,8 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
   private Optional<Namespace> getImplicitlyCreatedNamespace(
       NamespaceParams params, BranchName branch) throws ReferenceNotFoundException {
     try (Stream<WithType<Key, Type>> stream =
-        getImplicitNamespacesStream(params.getNamespace(), branch)) {
-      return stream.findAny().map(this::implicitNamespaceFrom);
+        getNamespacesKeyStream(params.getNamespace(), branch, k -> true)) {
+      return stream.findAny().map(this::namespaceFromType);
     }
   }
 
