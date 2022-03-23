@@ -17,8 +17,16 @@ package org.projectnessie.services.authz;
 
 import java.security.AccessControlException;
 import java.util.Map;
+import org.projectnessie.api.TreeApi;
+import org.projectnessie.api.params.CommitLogParams;
+import org.projectnessie.api.params.EntriesParams;
+import org.projectnessie.model.Branch;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.Detached;
+import org.projectnessie.model.Operation;
+import org.projectnessie.model.Operations;
+import org.projectnessie.model.Tag;
 import org.projectnessie.versioned.NamedRef;
 
 /**
@@ -30,6 +38,14 @@ import org.projectnessie.versioned.NamedRef;
  * <p>The checks make sure that a particular role is allowed to perform an action (such as creation,
  * deletion) on a {@link NamedRef} (Branch/Tag). Additionally, this interface also provides checks
  * based on a given {@link ContentKey}.
+ *
+ * <p>It is safe to call a check method with the same arguments multiple times.
+ *
+ * <p>Implementations can expect that either {@link #check()} or {@link #checkAndThrow()} are called
+ * either once or never.
+ *
+ * @see Check and {@link Check.CheckType}
+ * @see AbstractBatchAccessChecker
  */
 public interface BatchAccessChecker {
 
@@ -52,28 +68,32 @@ public interface BatchAccessChecker {
   }
 
   /**
-   * Checks whether the given role/principal is allowed to view/list the given Branch/Tag.
+   * Checks whether the given role/principal is allowed to view/list the given {@link Branch}/{@link
+   * Tag} or {@link Detached}.
    *
    * @param ref The {@link NamedRef} to check
    */
   BatchAccessChecker canViewReference(NamedRef ref);
 
   /**
-   * Checks whether the given role/principal is allowed to create a Branch/Tag.
+   * Checks whether the given role/principal is allowed to create a {@link Branch}/{@link Tag}.
    *
    * @param ref The {@link NamedRef} to check
    */
   BatchAccessChecker canCreateReference(NamedRef ref);
 
   /**
-   * Checks whether the given role/principal is allowed to assign the given Branch/Tag to a Hash.
+   * Checks whether the given role/principal is allowed to assign the given {@link Branch}/{@link
+   * Tag} to a commit id.
+   *
+   * <p>Adds an implicit {@link #canViewReference(NamedRef)}.
    *
    * @param ref The {@link NamedRef} to check not granted.
    */
   BatchAccessChecker canAssignRefToHash(NamedRef ref);
 
   /**
-   * Checks whether the given role/principal is allowed to delete a Branch/Tag.
+   * Checks whether the given role/principal is allowed to delete a {@link Branch}/{@link Tag}.
    *
    * @param ref The {@link NamedRef} to check
    */
@@ -83,24 +103,46 @@ public interface BatchAccessChecker {
   BatchAccessChecker canDeleteDefaultBranch();
 
   /**
-   * Checks whether the given role/principal is allowed to read entries content for the given
-   * Branch/Tag.
+   * Checks whether the given role/principal is allowed to read entries content for the given {@link
+   * Branch}/{@link Tag} or {@link Detached}.
+   *
+   * <p>Adds an implicit {@link #canViewReference(NamedRef)}.
    *
    * @param ref The {@link NamedRef} to check
    */
   BatchAccessChecker canReadEntries(NamedRef ref);
 
   /**
-   * Checks whether the given role/principal is allowed to list the commit log for the given
-   * Branch/Tag.
+   * Called for every content-key about to be returned by for example {@link
+   * TreeApi#getEntries(String, EntriesParams)} and {@link Operation}s in commit-log entries from
+   * {@link TreeApi#getCommitLog(String, CommitLogParams)}.
+   *
+   * <p>This is an additional check for each content-key. "Early" checks, that run before generating
+   * the result, like {@link #canReadEntries(NamedRef)} or {@link #canListCommitLog(NamedRef)}, run
+   * as well.
+   *
+   * <p>Adds an implicit {@link #canViewReference(NamedRef)}.
+   *
+   * @param ref current reference
+   * @param key content key to check
+   */
+  BatchAccessChecker canReadContentKey(NamedRef ref, ContentKey key);
+
+  /**
+   * Checks whether the given role/principal is allowed to list the commit log for the given {@link
+   * Branch}/{@link Tag} or {@link Detached}.
+   *
+   * <p>Adds an implicit {@link #canViewReference(NamedRef)}.
    *
    * @param ref The {@link NamedRef} to check
    */
   BatchAccessChecker canListCommitLog(NamedRef ref);
 
   /**
-   * Checks whether the given role/principal is allowed to commit changes against the given
-   * Branch/Tag.
+   * Checks whether the given role/principal is allowed to commit changes against the given {@link
+   * Branch}/{@link Tag} or {@link Detached}.
+   *
+   * <p>Adds an implicit {@link #canViewReference(NamedRef)}.
    *
    * @param ref The {@link NamedRef} to check
    */
@@ -108,7 +150,9 @@ public interface BatchAccessChecker {
 
   /**
    * Checks whether the given role/principal is allowed to read an entity value as defined by the
-   * {@link ContentKey} for the given Branch/Tag.
+   * {@link ContentKey} for the given {@link Branch}/{@link Tag} or {@link Detached}.
+   *
+   * <p>Adds an implicit {@link #canViewReference(NamedRef)}.
    *
    * @param ref The {@link NamedRef} to check
    * @param key The {@link ContentKey} to check
@@ -120,19 +164,27 @@ public interface BatchAccessChecker {
 
   /**
    * Checks whether the given role/principal is allowed to update an entity value as defined by the
-   * {@link ContentKey} for the given Branch/Tag.
+   * {@link ContentKey} for the given {@link Branch}, called for a {@link Operation.Put} operation
+   * for a {@link TreeApi#commitMultipleOperations(String, String, Operations) commit}.
+   *
+   * <p>Adds an implicit {@link #canViewReference(NamedRef)}.
    *
    * @param ref The {@link NamedRef} to check
    * @param key The {@link ContentKey} to check
    * @param contentId The ID of the {@link Content} object. See the <a
    *     href="https://projectnessie.org/features/metadata_authorization/#contentid">ContentId
    *     docs</a> for how to use this.
+   * @param contentType the {@link Content.Type} of the entity value.
    */
-  BatchAccessChecker canUpdateEntity(NamedRef ref, ContentKey key, String contentId);
+  BatchAccessChecker canUpdateEntity(
+      NamedRef ref, ContentKey key, String contentId, Content.Type contentType);
 
   /**
    * Checks whether the given role/principal is allowed to delete an entity value as defined by the
-   * {@link ContentKey} for the given Branch/Tag.
+   * {@link ContentKey} for the given {@link Branch}, called for a {@link Operation.Delete}
+   * operation for a {@link TreeApi#commitMultipleOperations(String, String, Operations) commit}.
+   *
+   * <p>Adds an implicit {@link #canViewReference(NamedRef)}.
    *
    * @param ref The {@link NamedRef} to check
    * @param key The {@link ContentKey} to check

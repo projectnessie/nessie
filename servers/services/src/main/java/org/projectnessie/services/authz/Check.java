@@ -17,9 +17,11 @@ package org.projectnessie.services.authz;
 
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
+import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.NamedRef;
 
+/** Describes a check operation. */
 @Value.Immutable
 public interface Check {
   CheckType type();
@@ -33,22 +35,41 @@ public interface Check {
   @Nullable
   String contentId();
 
+  @Nullable
+  Content.Type contentType();
+
   static ImmutableCheck.Builder builder(CheckType type) {
     return ImmutableCheck.builder().type(type);
   }
 
   enum CheckType {
+    /** See {@link BatchAccessChecker#canViewReference(NamedRef)}. */
     VIEW_REFERENCE(true, false),
+    /** See {@link BatchAccessChecker#canCreateReference(NamedRef)}. */
     CREATE_REFERENCE(true, false),
+    /** See {@link BatchAccessChecker#canAssignRefToHash(NamedRef)}. */
     ASSIGN_REFERENCE_TO_HASH(true, false),
+    /** See {@link BatchAccessChecker#canDeleteReference(NamedRef)}. */
     DELETE_REFERENCE(true, false),
+    /** See {@link BatchAccessChecker#canDeleteDefaultBranch()}. */
     DELETE_DEFAULT_BRANCH(false, false),
+    /** See {@link BatchAccessChecker#canReadEntries(NamedRef)}. */
     READ_ENTRIES(true, false),
+    /** See {@link BatchAccessChecker#canReadContentKey(NamedRef, ContentKey)}. */
+    READ_CONTENT_KEY(true, true),
+    /** See {@link BatchAccessChecker#canListCommitLog(NamedRef)}. */
     LIST_COMMIT_LOG(true, false),
+    /** See {@link BatchAccessChecker#canCommitChangeAgainstReference(NamedRef)}. */
     COMMIT_CHANGE_AGAINST_REFERENCE(true, false),
+    /** See {@link BatchAccessChecker#canReadEntityValue(NamedRef, ContentKey, String)}. */
     READ_ENTITY_VALUE(true, true),
+    /**
+     * See {@link BatchAccessChecker#canUpdateEntity(NamedRef, ContentKey, String, Content.Type)}.
+     */
     UPDATE_ENTITY(true, true),
+    /** See {@link BatchAccessChecker#canDeleteEntity(NamedRef, ContentKey, String)}. */
     DELETE_ENTITY(true, true),
+    /** See {@link BatchAccessChecker#canViewRefLog()}. */
     VIEW_REFLOG(false, false);
 
     private final boolean ref;

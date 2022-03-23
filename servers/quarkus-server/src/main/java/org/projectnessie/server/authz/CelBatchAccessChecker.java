@@ -62,7 +62,8 @@ final class CelBatchAccessChecker extends AbstractBatchAccessChecker {
   private void canPerformOp(Check check, Map<Check, String> failed) {
     String roleName = getRoleName();
     ImmutableMap<String, Object> arguments =
-        ImmutableMap.of("role", roleName, "op", check.type().name(), "path", "", "ref", "");
+        ImmutableMap.of(
+            "role", roleName, "op", check.type().name(), "path", "", "ref", "", "contentType", "");
 
     Supplier<String> errorMsgSupplier =
         () -> String.format("'%s' is not allowed for role '%s' ", check.type(), roleName);
@@ -73,7 +74,16 @@ final class CelBatchAccessChecker extends AbstractBatchAccessChecker {
     String roleName = getRoleName();
     ImmutableMap<String, Object> arguments =
         ImmutableMap.of(
-            "ref", check.ref().getName(), "role", roleName, "op", check.type().name(), "path", "");
+            "ref",
+            check.ref().getName(),
+            "role",
+            roleName,
+            "op",
+            check.type().name(),
+            "path",
+            "",
+            "contentType",
+            "");
 
     Supplier<String> errorMsgSupplier =
         () ->
@@ -94,7 +104,9 @@ final class CelBatchAccessChecker extends AbstractBatchAccessChecker {
             "role",
             roleName,
             "op",
-            check.type().name());
+            check.type().name(),
+            "contentType",
+            check.contentType() != null ? check.contentType().name() : "");
 
     Supplier<String> errorMsgSupplier =
         () ->
