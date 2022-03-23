@@ -396,4 +396,58 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
     assertThat(getApi().getMultipleNamespaces().refName(branch.getName()).get().getNamespaces())
         .isEmpty();
   }
+
+  @Test
+  public void testEmptyNamespace() throws BaseNessieClientServerException {
+    Branch branch = createBranch("emptyNamespace");
+    // can't create/fetch/delete an empty namespace due to empty REST path
+    assertThatThrownBy(
+            () ->
+                getApi()
+                    .createNamespace()
+                    .refName(branch.getName())
+                    .namespace(Namespace.EMPTY)
+                    .create())
+        .isInstanceOf(Exception.class)
+        .hasMessageContaining("Internal Server Error");
+
+    assertThatThrownBy(
+            () ->
+                getApi().getNamespace().refName(branch.getName()).namespace(Namespace.EMPTY).get())
+        .isInstanceOf(Exception.class)
+        .hasMessageContaining("Internal Server Error");
+
+    assertThatThrownBy(
+            () ->
+                getApi()
+                    .deleteNamespace()
+                    .refName(branch.getName())
+                    .namespace(Namespace.EMPTY)
+                    .delete())
+        .isInstanceOf(Exception.class)
+        .hasMessageContaining("Internal Server Error");
+
+    assertThat(getApi().getMultipleNamespaces().refName(branch.getName()).get().getNamespaces())
+        .isEmpty();
+
+    ContentKey keyWithoutNamespace = ContentKey.of("icebergTable");
+    getApi()
+        .commitMultipleOperations()
+        .branchName(branch.getName())
+        .hash(branch.getHash())
+        .commitMeta(CommitMeta.fromMessage("add table"))
+        .operation(Put.of(keyWithoutNamespace, IcebergTable.of("icebergTable", 42, 42, 42, 42)))
+        .commit();
+
+    assertThat(getApi().getMultipleNamespaces().refName(branch.getName()).get().getNamespaces())
+        .isEmpty();
+    assertThat(
+            getApi()
+                .getMultipleNamespaces()
+                .refName(branch.getName())
+                .namespace(Namespace.EMPTY)
+                .get()
+                .getNamespaces())
+        .isEmpty();
+  }
 }
