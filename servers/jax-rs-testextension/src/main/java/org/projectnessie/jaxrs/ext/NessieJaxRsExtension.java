@@ -31,6 +31,7 @@ import org.glassfish.jersey.test.JerseyTest;
 import org.glassfish.jersey.test.TestProperties;
 import org.jboss.weld.environment.se.Weld;
 import org.junit.jupiter.api.extension.AfterEachCallback;
+import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -65,7 +66,11 @@ import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 
 /** A JUnit 5 extension that starts up Weld/JerseyTest. */
 public class NessieJaxRsExtension
-    implements BeforeAllCallback, BeforeEachCallback, AfterEachCallback, ParameterResolver {
+    implements BeforeAllCallback,
+        BeforeEachCallback,
+        AfterEachCallback,
+        AfterTestExecutionCallback,
+        ParameterResolver {
   private static final ExtensionContext.Namespace NAMESPACE =
       ExtensionContext.Namespace.create(NessieJaxRsExtension.class);
 
@@ -99,13 +104,19 @@ public class NessieJaxRsExtension
   }
 
   @Override
-  public void afterEach(ExtensionContext extensionContext) throws Exception {
+  public void afterEach(ExtensionContext extensionContext) {
     EnvHolder env = extensionContext.getStore(NAMESPACE).get(EnvHolder.class, EnvHolder.class);
     env.reset();
   }
 
   @Override
-  public void beforeEach(ExtensionContext extensionContext) throws Exception {
+  public void afterTestExecution(ExtensionContext extensionContext) {
+    EnvHolder env = extensionContext.getStore(NAMESPACE).get(EnvHolder.class, EnvHolder.class);
+    env.reset();
+  }
+
+  @Override
+  public void beforeEach(ExtensionContext extensionContext) {
     EnvHolder env = extensionContext.getStore(NAMESPACE).get(EnvHolder.class, EnvHolder.class);
     env.reset();
   }
