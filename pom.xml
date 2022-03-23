@@ -1278,7 +1278,7 @@ limitations under the License.
             <configuration>
               <compilerArgs combine.children="append">
                 <arg>-XDcompilePolicy=simple</arg>
-                <arg>-Xplugin:ErrorProne -XepExcludedPaths:.*/target/generated-*sources/.*</arg>
+                <arg>-Xplugin:ErrorProne -Xep:UnicodeInCode:OFF -XepExcludedPaths:.*/target/generated-*sources/.*</arg>
               </compilerArgs>
               <annotationProcessorPaths combine.children="append">
                 <path>
