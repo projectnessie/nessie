@@ -93,6 +93,8 @@ securityContext: {}
 service:
   type: ClusterIP
   port: 19120
+  # Annotations to add to the service
+  annotations: {}
 
 ingress:
   enabled: false
