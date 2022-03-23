@@ -15,15 +15,16 @@
  */
 package org.projectnessie.services.impl;
 
-import com.google.common.collect.Sets;
 import java.security.Principal;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.stream.Collectors;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import org.projectnessie.api.NamespaceApi;
@@ -167,73 +168,63 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
       throws NessieReferenceNotFoundException {
     BranchName branch = branchFromRefName(params.getRefName());
     try {
-      Set<Namespace> allNamespaces =
-          Sets.newHashSet(getExplicitlyCreatedNamespaces(params, branch));
-      List<Namespace> implicitlyCreatedNamespaces = getImplicitlyCreatedNamespaces(params, branch);
-      allNamespaces.addAll(implicitlyCreatedNamespaces);
-      return ImmutableGetNamespacesResponse.builder().addAllNamespaces(allNamespaces).build();
+
+      // Note: `Namespace` objects are supposed to get more attributes (e.g. a properties map)
+      // which will make it impossible to use the `Namespace` object itself as an identifier to
+      // subtract the set of explicitly created namespaces from the set of implicitly created ones.
+
+      // Iterate through all candidate keys, split into `Key`s of explicitly created namespaces
+      // (type==NAMESPACE) and collect implicitly created namespaces for all other content-types.
+      Set<Key> explicitNamespaceKeys = new HashSet<>();
+      Map<List<String>, Namespace> implicitNamespaces = new HashMap<>();
+      try (Stream<WithType<Key, Content.Type>> stream =
+          getNamespacesKeyStream(params.getNamespace(), branch, k -> true)) {
+        stream.forEach(
+            namespaceKeyWithType -> {
+              if (namespaceKeyWithType.getType() == Type.NAMESPACE) {
+                explicitNamespaceKeys.add(namespaceKeyWithType.getValue());
+              } else {
+                Namespace implicitNamespace = namespaceFromType(namespaceKeyWithType);
+                if (!implicitNamespace.isEmpty()) {
+                  implicitNamespaces.put(implicitNamespace.getElements(), implicitNamespace);
+                }
+              }
+            });
+      }
+
+      ImmutableGetNamespacesResponse.Builder response = ImmutableGetNamespacesResponse.builder();
+
+      // Next step: fetch the content-objects (of type `Namespace`) for all collected explicit
+      // namespaces, add those to the response and the implicitly created `Namespace` for the
+      // same key.
+      if (!explicitNamespaceKeys.isEmpty()) {
+        Map<Key, Content> namespaceValues = getStore().getValues(branch, explicitNamespaceKeys);
+        namespaceValues.values().stream()
+            .filter(Namespace.class::isInstance)
+            .map(Namespace.class::cast)
+            .peek(explicitNamepsace -> implicitNamespaces.remove(explicitNamepsace.getElements()))
+            .forEach(response::addNamespaces);
+      }
+
+      // Add the remaining (= those not being explicitly created) implicitly created namespaces
+      // to the response.
+      response.addAllNamespaces(implicitNamespaces.values());
+
+      return response.build();
     } catch (ReferenceNotFoundException e) {
       throw refNotFoundException(e);
     }
   }
 
-  /**
-   * Retrieves a list of explicitly created namespaces (via {@link
-   * NamespaceApi#createNamespace(NamespaceParams)}).
-   *
-   * @param params The params to use for fetching the namespaces
-   * @param branch The ref
-   * @return A list of explicitly created namespaces.
-   * @throws ReferenceNotFoundException If the ref could not be found.
-   */
-  private List<Namespace> getExplicitlyCreatedNamespaces(
-      MultipleNamespacesParams params, BranchName branch) throws ReferenceNotFoundException {
-    try (Stream<Key> keyStream =
-        getStore()
-            .getKeys(branch)
-            .filter(k -> Type.NAMESPACE == k.getType())
-            .filter(
-                k ->
-                    null == params.getNamespace()
-                        || Namespace.of(k.getValue().getElements())
-                            .name()
-                            .startsWith(params.getNamespace().name()))
-            .map(WithType::getValue)) {
-
-      List<Key> keys = keyStream.collect(Collectors.toList());
-      Map<Key, Content> values = getStore().getValues(branch, keys);
-      return values.values().stream()
-          .map(c -> c.unwrap(Namespace.class).get())
-          .collect(Collectors.toList());
-    }
-  }
-
-  /**
-   * Retrieves a list of implicit namespaces that might contain duplicate entries. An implicitly
-   * created namespace generally occurs when adding a table 'a.b.c.table' where the 'a.b.c' part
-   * represents the namespace.
-   *
-   * @param params The params to use for fetching the namespaces
-   * @param branch The ref
-   * @return A list of implicit namespaces that might contain duplicate entries.
-   */
-  private List<Namespace> getImplicitlyCreatedNamespaces(
-      MultipleNamespacesParams params, BranchName branch) throws ReferenceNotFoundException {
-    try (Stream<WithType<Key, Type>> stream =
-        getImplicitNamespacesStream(params.getNamespace(), branch)) {
-      return stream
-          .map(this::implicitNamespaceFrom)
-          .filter(ns -> !ns.isEmpty())
-          .collect(Collectors.toList());
-    }
-  }
-
-  private Stream<WithType<Key, Type>> getImplicitNamespacesStream(
-      @Nullable Namespace namespace, BranchName branch) throws ReferenceNotFoundException {
+  private Stream<WithType<Key, Type>> getNamespacesKeyStream(
+      @Nullable Namespace namespace,
+      BranchName branch,
+      Predicate<WithType<Key, Type>> earlyFilterPredicate)
+      throws ReferenceNotFoundException {
     return getStore()
         .getKeys(branch)
-        .filter(
-            k -> null == namespace || implicitNamespaceFrom(k).name().startsWith(namespace.name()));
+        .filter(earlyFilterPredicate)
+        .filter(k -> null == namespace || namespaceFromType(k).name().startsWith(namespace.name()));
   }
 
   /**
@@ -246,7 +237,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
    * @param withType The {@link WithType} instance holding the key and type.
    * @return A {@link Namespace} instance.
    */
-  private Namespace implicitNamespaceFrom(WithType<Key, Type> withType) {
+  private Namespace namespaceFromType(WithType<Key, Type> withType) {
     List<String> elements = withType.getValue().getElements();
     if (Type.NAMESPACE != withType.getType()) {
       elements = elements.subList(0, elements.size() - 1);
@@ -263,8 +254,8 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
   private Optional<Namespace> getImplicitlyCreatedNamespace(
       NamespaceParams params, BranchName branch) throws ReferenceNotFoundException {
     try (Stream<WithType<Key, Type>> stream =
-        getImplicitNamespacesStream(params.getNamespace(), branch)) {
-      return stream.findAny().map(this::implicitNamespaceFrom);
+        getNamespacesKeyStream(params.getNamespace(), branch, k -> true)) {
+      return stream.findAny().map(this::namespaceFromType);
     }
   }
 
