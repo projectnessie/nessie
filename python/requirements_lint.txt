@@ -19,7 +19,7 @@ black==22.1.0
 flake8-annotations==2.7.0
 flake8-bandit==3.0.0
 flake8-black==0.3.2
-flake8-bugbear==22.3.20
+flake8-bugbear==22.3.23
 flake8-docstrings==1.6.0
 flake8-import-order==0.18.1
 pytest-mypy==0.9.1
