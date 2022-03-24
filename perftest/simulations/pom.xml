@@ -93,6 +93,7 @@
           <skip>${skipITs}</skip>
           <jvmArgs>
             <jvmArg>-Dsim.users=10</jvmArg>
+            <jvmArg>-Dquarkus.http.test-port=${quarkus.http.test-port}</jvmArg>
           </jvmArgs>
           <runMultipleSimulations>true</runMultipleSimulations>
         </configuration>
