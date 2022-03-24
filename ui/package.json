@@ -10,7 +10,7 @@
     "@svgr/webpack": "6.2.1",
     "@types/bootstrap": "^5.1.9",
     "@types/material-ui": "^0.21.12",
-    "@types/ramda": "^0.28.1",
+    "@types/ramda": "^0.28.2",
     "@types/react": "^17.0.42",
     "@types/react-bootstrap": "^0.32.29",
     "@types/react-dom": "^17.0.14",
