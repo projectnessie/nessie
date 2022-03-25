@@ -176,13 +176,7 @@ class CommitToBranchSimulationSameTable extends Simulation {
     * maximum-duration.
     */
   private def doSetUp(): SetUp = {
-    val nessieProtocol: NessieProtocol = nessie()
-      .client(
-        HttpClientBuilder
-          .builder()
-          .fromSystemProperties()
-          .build(classOf[NessieApiV1])
-      )
+    val nessieProtocol: NessieProtocol = nessie().clientFromSystemProperties()
 
     System.out.println(params.asPrintableString())
 
