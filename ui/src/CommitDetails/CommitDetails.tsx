@@ -26,8 +26,10 @@ const CommitDetails = (props: {
   commitDetails: LogEntry[];
 }): React.ReactElement => {
   const allCommitDetails = props.commitDetails;
-  const { branch, commit_id } =
-    useParams<{ branch: string; commit_id: string }>();
+  const { branch, commit_id } = useParams<{
+    branch: string;
+    commit_id: string;
+  }>();
   const commitDetails = allCommitDetails.find((x) => {
     return x.commitMeta.hash === commit_id;
   });
