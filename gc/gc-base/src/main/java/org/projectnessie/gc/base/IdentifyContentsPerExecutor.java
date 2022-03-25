@@ -17,6 +17,7 @@ package org.projectnessie.gc.base;
 
 import com.google.common.collect.Iterators;
 import java.io.Serializable;
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -71,8 +72,11 @@ public class IdentifyContentsPerExecutor implements Serializable {
   }
 
   protected SerializableFunction1<scala.collection.Iterator<String>, scala.collection.Iterator<Row>>
-      getExpiredContentRowsFunc(Map<String, ContentBloomFilter> liveContentsBloomFilterMap) {
-    return result -> getExpiredContentRows(result, liveContentsBloomFilterMap);
+      getExpiredContentRowsFunc(
+          Map<String, ContentBloomFilter> liveContentsBloomFilterMap,
+          String runId,
+          Timestamp startedAt) {
+    return result -> getExpiredContentRows(result, liveContentsBloomFilterMap, runId, startedAt);
   }
 
   // --- Methods for computing live content bloom filter ----------
@@ -214,11 +218,14 @@ public class IdentifyContentsPerExecutor implements Serializable {
    */
   private scala.collection.Iterator<Row> getExpiredContentRows(
       scala.collection.Iterator<String> references,
-      Map<String, ContentBloomFilter> liveContentsBloomFilterMap) {
+      Map<String, ContentBloomFilter> liveContentsBloomFilterMap,
+      String runId,
+      Timestamp startedAt) {
     List<Iterator<Row>> iterators = new ArrayList<>();
     references.foreach(
         reference -> {
-          iterators.add(computeExpiredContents(liveContentsBloomFilterMap, reference));
+          iterators.add(
+              computeExpiredContents(liveContentsBloomFilterMap, reference, runId, startedAt));
           return reference;
         });
     // merge the iterators form each task.
@@ -227,17 +234,26 @@ public class IdentifyContentsPerExecutor implements Serializable {
   }
 
   private Iterator<Row> computeExpiredContents(
-      Map<String, ContentBloomFilter> liveContentsBloomFilterMap, String reference) {
+      Map<String, ContentBloomFilter> liveContentsBloomFilterMap,
+      String reference,
+      String runId,
+      Timestamp startedAt) {
     try (NessieApiV1 api = GCUtil.getApi(gcParams.getNessieClientConfigs())) {
       return walkAllCommitsInReference(
-          api, GCUtil.deserializeReference(reference), liveContentsBloomFilterMap);
+          api,
+          GCUtil.deserializeReference(reference),
+          liveContentsBloomFilterMap,
+          runId,
+          startedAt);
     }
   }
 
   private Iterator<Row> walkAllCommitsInReference(
       NessieApiV1 api,
       Reference reference,
-      Map<String, ContentBloomFilter> liveContentsBloomFilterMap) {
+      Map<String, ContentBloomFilter> liveContentsBloomFilterMap,
+      String runId,
+      Timestamp startedAt) {
     Instant commitProtectionTime = Instant.now().minus(gcParams.getCommitProtectionDuration());
     // Between the bloom filter creation and this step,
     // there can be some more commits in the backend.
@@ -290,7 +306,7 @@ public class IdentifyContentsPerExecutor implements Serializable {
 
         @Override
         public Row next() {
-          return fillRow(reference, iterator.next());
+          return fillRow(reference, iterator.next(), runId, startedAt);
         }
       };
     } catch (NessieNotFoundException e) {
@@ -298,13 +314,10 @@ public class IdentifyContentsPerExecutor implements Serializable {
     }
   }
 
-  private static Row fillRow(Reference reference, Content content) {
-    return IdentifiedResultsRepo.getContentRowVariablePart(
-        content.getId(),
-        content.getType().name(),
-        getSnapshotId(content),
-        reference.getName(),
-        reference.getHash());
+  private static Row fillRow(
+      Reference reference, Content content, String runId, Timestamp startedAt) {
+    return IdentifiedResultsRepo.createContentRow(
+        content, runId, startedAt, getSnapshotId(content), reference);
   }
 
   private static long getSnapshotId(Content content) {

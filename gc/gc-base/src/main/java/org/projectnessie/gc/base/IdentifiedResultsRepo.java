@@ -18,6 +18,7 @@ package org.projectnessie.gc.base;
 import static org.apache.iceberg.types.Types.NestedField.optional;
 import static org.apache.iceberg.types.Types.NestedField.required;
 
+import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +38,9 @@ import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException;
 import org.apache.spark.sql.types.StructType;
+import org.projectnessie.model.Content;
 import org.projectnessie.model.ImmutableTableReference;
+import org.projectnessie.model.Reference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Tuple2;
@@ -137,13 +140,16 @@ public final class IdentifiedResultsRepo {
     }
   }
 
-  static Row getContentRowVariablePart(
-      String contentId, String contentType, long snapshotId, String refName, String hash) {
+  static Row createContentRow(
+      Content content, String runId, Timestamp startedAt, long snapshotId, Reference ref) {
     return RowFactory.create(
-        // the fixed value columns (runId and startTime)
-        // will be added in the callers using dataframe.withColumn().
-        // Hence they are filled as 'null' here.
-        null, null, contentId, contentType, snapshotId, refName, hash);
+        startedAt,
+        runId,
+        content.getId(),
+        content.getType().name(),
+        snapshotId,
+        ref.getName(),
+        ref.getHash());
   }
 
   private void createTableIfAbsent(

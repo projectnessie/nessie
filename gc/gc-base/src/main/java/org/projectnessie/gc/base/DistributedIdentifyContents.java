@@ -17,7 +17,6 @@ package org.projectnessie.gc.base;
 
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,10 +27,8 @@ import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.encoders.RowEncoder;
-import org.apache.spark.sql.functions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.collection.JavaConverters;
 
 /**
  * Identify the expired and live contents in a distributed way using the spark and bloom filter by
@@ -91,14 +88,8 @@ public class DistributedIdentifyContents {
         session
             .createDataset(references, Encoders.STRING())
             .mapPartitions(
-                executor.getExpiredContentRowsFunc(liveContentsBloomFilterMap),
-                RowEncoder.apply(identifiedResultsRepo.getSchema()))
-            // replace the fixed value columns which was filled by null initially.
-            .withColumns(
-                JavaConverters.asScalaBuffer(Arrays.asList("gcRunId", "gcRunStart")).toSeq(),
-                JavaConverters.asScalaBuffer(
-                        Arrays.asList(functions.lit(runId), functions.lit(startedAt)))
-                    .toSeq());
+                executor.getExpiredContentRowsFunc(liveContentsBloomFilterMap, runId, startedAt),
+                RowEncoder.apply(identifiedResultsRepo.getSchema()));
     identifiedResultsRepo.writeToOutputTable(rowDataset);
     return runId;
   }
