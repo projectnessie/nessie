@@ -24,6 +24,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.apache.spark.SparkConf;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 
 final class ProcedureTestUtil {
@@ -94,7 +96,7 @@ final class ProcedureTestUtil {
             CONF_NESSIE_URI,
             uri,
             commitProtectionTimeInHours,
-            5);
+            500);
     sb.append(commonParams);
     if (deadReferenceCutoffTime != null) {
       String deadReferenceCutoff =
@@ -103,7 +105,7 @@ final class ProcedureTestUtil {
               Timestamp.from(deadReferenceCutoffTime));
       sb.append(deadReferenceCutoff);
     }
-    if (cutOffTimeStampPerRef != null) {
+    if (cutOffTimeStampPerRef != null && !cutOffTimeStampPerRef.isEmpty()) {
       List<String> entries = new ArrayList<>();
       cutOffTimeStampPerRef.forEach(
           (key, value) -> {
@@ -118,5 +120,48 @@ final class ProcedureTestUtil {
     sb.append(")");
     // execute the call procedure
     return sparkSession.sql(sb.toString()).collectAsList().get(0).getString(0);
+  }
+
+  static void createBranch(
+      SparkSession sparkSession, String catalogName, String newBranch, String fromBranchHead) {
+    ProcedureTestUtil.sql(
+        sparkSession,
+        "CREATE BRANCH IF NOT EXISTS %s IN %s FROM %s",
+        newBranch,
+        catalogName,
+        fromBranchHead);
+  }
+
+  static void dropBranch(SparkSession sparkSession, String catalogName, String branchHead) {
+    ProcedureTestUtil.sql(sparkSession, "DROP BRANCH IF EXISTS %s IN %s", branchHead, catalogName);
+  }
+
+  static void useReference(SparkSession sparkSession, String catalogName, String branchHead) {
+    ProcedureTestUtil.sql(sparkSession, "USE REFERENCE %s IN %s", branchHead, catalogName);
+  }
+
+  static void createTable(
+      SparkSession sparkSession, String catalogName, String namespace, String tableName) {
+    ProcedureTestUtil.sql(
+        sparkSession,
+        "CREATE TABLE %s(id int) USING ICEBERG",
+        catalogName + "." + namespace + "." + tableName);
+  }
+
+  static void dropTable(
+      SparkSession sparkSession, String catalogName, String namespace, String tableName) {
+    ProcedureTestUtil.sql(
+        sparkSession, "DROP TABLE IF EXISTS %s", catalogName + "." + namespace + "." + tableName);
+  }
+
+  static void commit(
+      SparkSession sparkSession, String catalogName, String namespace, String tableName) {
+    ProcedureTestUtil.sql(
+        sparkSession, "INSERT INTO %s SELECT 42", catalogName + "." + namespace + "." + tableName);
+  }
+
+  private static Dataset<Row> sql(SparkSession sparkSession, String sqlStatement, Object... args) {
+    String sql = String.format(sqlStatement, args);
+    return sparkSession.sql(sql);
   }
 }

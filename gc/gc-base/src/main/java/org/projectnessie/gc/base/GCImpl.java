@@ -26,7 +26,6 @@ import org.apache.spark.sql.SparkSession;
 import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.client.StreamingUtil;
 import org.projectnessie.client.api.NessieApiV1;
-import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.RefLogResponse;
@@ -119,7 +118,7 @@ public class GCImpl {
       liveContentsBloomFilterMap =
           distributedIdentifyContents.getLiveContentsBloomFilters(
               allRefs, bloomFilterSize, droppedReferenceTimeMap);
-      getOrCreateEmptyBranch(api, gcParams.getOutputBranchName());
+      GCUtil.getOrCreateEmptyBranch(api, gcParams.getOutputBranchName());
     }
     // Identify the expired contents
     return distributedIdentifyContents.identifyExpiredContents(liveContentsBloomFilterMap, allRefs);
@@ -189,18 +188,5 @@ public class GCImpl {
           }
         });
     return droppedReferenceTimeMap;
-  }
-
-  private static void getOrCreateEmptyBranch(NessieApiV1 api, String branchName) {
-    try {
-      api.getReference().refName(branchName).get();
-    } catch (NessieNotFoundException e) {
-      // create a gc branch pointing to NO_ANCESTOR hash.
-      try {
-        api.createReference().reference(Branch.of(branchName, null)).create();
-      } catch (NessieNotFoundException | NessieConflictException ex) {
-        throw new RuntimeException(ex);
-      }
-    }
   }
 }

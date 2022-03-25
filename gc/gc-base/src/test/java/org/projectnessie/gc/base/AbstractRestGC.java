@@ -66,7 +66,7 @@ public abstract class AbstractRestGC extends AbstractRest {
         .getLogEntries();
   }
 
-  void fillExpectedContents(Branch branch, int numCommits, List<Row> expected)
+  protected void fillExpectedContents(Branch branch, int numCommits, List<Row> expected)
       throws NessieNotFoundException {
     fetchLogEntries(branch, numCommits).stream()
         .map(LogEntry::getOperations)
@@ -86,6 +86,8 @@ public abstract class AbstractRestGC extends AbstractRest {
                       null,
                       content.getSnapshotId(),
                       branch.getName(),
+                      null,
+                      null,
                       null));
             });
   }

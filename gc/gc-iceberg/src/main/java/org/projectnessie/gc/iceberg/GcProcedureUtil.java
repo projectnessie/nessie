@@ -16,15 +16,18 @@
 package org.projectnessie.gc.iceberg;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.iceberg.spark.procedures.BaseGcProcedure;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.catalyst.analysis.NoSuchProcedureException;
+import org.apache.spark.sql.catalyst.util.ArrayData;
 import org.apache.spark.sql.connector.catalog.Identifier;
 import org.apache.spark.sql.connector.catalog.TableCatalog;
 import org.apache.spark.unsafe.types.UTF8String;
 import scala.collection.JavaConverters;
 import scala.collection.Seq;
+import scala.reflect.ClassTag;
 
 final class GcProcedureUtil {
 
@@ -44,6 +47,8 @@ final class GcProcedureUtil {
         return new DummyProcedure(catalog);
       case IdentifyExpiredSnapshotsProcedure.PROCEDURE_NAME:
         return new IdentifyExpiredSnapshotsProcedure(catalog);
+      case ExpireSnapshotsProcedure.PROCEDURE_NAME:
+        return new ExpireSnapshotsProcedure(catalog);
       default:
         throw new NoSuchProcedureException(procedureIdentifier);
     }
@@ -53,13 +58,23 @@ final class GcProcedureUtil {
     Seq<Object> seq =
         JavaConverters.collectionAsScalaIterable(
                 Arrays.stream(columns)
-                    .map(
-                        object ->
-                            object instanceof String
-                                ? UTF8String.fromString((String) object)
-                                : object)
+                    .map(GcProcedureUtil::toSparkObject)
                     .collect(Collectors.toList()))
             .toSeq();
     return InternalRow.fromSeq(seq);
+  }
+
+  private static Object toSparkObject(Object object) {
+    if (object instanceof String) {
+      return UTF8String.fromString((String) object);
+    }
+    if (object instanceof List) {
+      List<?> converted =
+          ((List<?>) object)
+              .stream().map(GcProcedureUtil::toSparkObject).collect(Collectors.toList());
+      return ArrayData.toArrayData(
+          JavaConverters.collectionAsScalaIterable(converted).toArray(ClassTag.Any()));
+    }
+    return object;
   }
 }
