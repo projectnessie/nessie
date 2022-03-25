@@ -180,7 +180,6 @@ class CommitToBranchSimulationSameTable extends Simulation {
       .client(
         HttpClientBuilder
           .builder()
-          .withUri("http://127.0.0.1:19120/api/v1")
           .fromSystemProperties()
           .build(classOf[NessieApiV1])
       )
