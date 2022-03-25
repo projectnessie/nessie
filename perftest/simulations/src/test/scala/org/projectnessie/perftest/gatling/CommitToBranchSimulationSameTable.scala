@@ -181,7 +181,7 @@ class CommitToBranchSimulationSameTable extends Simulation {
         HttpClientBuilder
           .builder()
           .withUri(
-            s"http://127.0.0.1:${System.getProperties.getProperty("quarkus.http.test-port")}/api/v1"
+            s"http://127.0.0.1:${System.getProperties.getProperty("nessie.http.port")}/api/v1"
           )
           .fromSystemProperties()
           .build(classOf[NessieApiV1])

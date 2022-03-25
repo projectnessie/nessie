@@ -27,7 +27,7 @@ class SimpleSimulation extends Simulation {
     .client(
       NessieClient
         .builder()
-        .withUri(s"http://127.0.0.1:${System.getProperties.getProperty("quarkus.http.test-port")}/api/v1")
+        .withUri(s"http://127.0.0.1:${System.getProperties.getProperty("nessie.http.port")}/api/v1")
         .fromSystemProperties()
         .withTracing(params.prometheusPushURL.isDefined)
         .build()
