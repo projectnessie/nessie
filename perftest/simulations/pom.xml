@@ -93,7 +93,7 @@
           <skip>${skipITs}</skip>
           <jvmArgs>
             <jvmArg>-Dsim.users=10</jvmArg>
-            <jvmArg>-Dnessie.http.port=${quarkus.http.test-port}</jvmArg>
+            <jvmArg>-Dnessie.uri=http://127.0.0.1:${quarkus.http.test-port}/api/v1</jvmArg>
           </jvmArgs>
           <runMultipleSimulations>true</runMultipleSimulations>
         </configuration>
