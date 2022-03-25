@@ -97,7 +97,6 @@ class CreateManyBranchesSimulation extends Simulation {
       .client(
         HttpClientBuilder
           .builder()
-          .withUri(s"${System.getProperties.getProperty("nessie.uri")}")
           .fromSystemProperties()
           .build(classOf[NessieApiV1])
       )

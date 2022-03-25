@@ -27,7 +27,6 @@ class SimpleSimulation extends Simulation {
     .client(
       NessieClient
         .builder()
-        .withUri(s"${System.getProperties.getProperty("nessie.uri")}")
         .fromSystemProperties()
         .withTracing(params.prometheusPushURL.isDefined)
         .build()
