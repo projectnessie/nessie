@@ -222,30 +222,22 @@ public class IdentifyContentsPerExecutor implements Serializable {
       String runId,
       Timestamp startedAt) {
     List<Iterator<Row>> iterators = new ArrayList<>();
-    references.foreach(
-        reference -> {
-          iterators.add(
-              computeExpiredContents(liveContentsBloomFilterMap, reference, runId, startedAt));
-          return reference;
-        });
-    // merge the iterators form each task.
+    try (NessieApiV1 api = GCUtil.getApi(gcParams.getNessieClientConfigs())) {
+      references.foreach(
+          reference -> {
+            iterators.add(
+                walkAllCommitsInReference(
+                    api,
+                    GCUtil.deserializeReference(reference),
+                    liveContentsBloomFilterMap,
+                    runId,
+                    startedAt));
+            return reference;
+          });
+    }
+    // merge the iterators from each task.
     Iterator<Row> mergedIterator = Iterators.concat(iterators.iterator());
     return JavaConverters.asScalaIterator(mergedIterator);
-  }
-
-  private Iterator<Row> computeExpiredContents(
-      Map<String, ContentBloomFilter> liveContentsBloomFilterMap,
-      String reference,
-      String runId,
-      Timestamp startedAt) {
-    try (NessieApiV1 api = GCUtil.getApi(gcParams.getNessieClientConfigs())) {
-      return walkAllCommitsInReference(
-          api,
-          GCUtil.deserializeReference(reference),
-          liveContentsBloomFilterMap,
-          runId,
-          startedAt);
-    }
   }
 
   private Iterator<Row> walkAllCommitsInReference(
