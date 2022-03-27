@@ -168,6 +168,7 @@
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
+          <argLine>@{argLine} -Dfile.encoding=UTF-8 --add-opens=java.base/java.util=ALL-UNNAMED</argLine>
           <systemPropertyVariables>
             <maven.home>${maven.home}</maven.home>
             <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
