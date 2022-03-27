@@ -20,7 +20,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import javax.validation.constraints.NotNull;
@@ -75,7 +74,7 @@ public abstract class ContentKey {
 
   public static ContentKey of(String... elements) {
     Objects.requireNonNull(elements, "Elements array must not be null");
-    return ImmutableContentKey.builder().elements(Arrays.asList(elements)).build();
+    return ImmutableContentKey.builder().addElements(elements).build();
   }
 
   @JsonCreator
