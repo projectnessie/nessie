@@ -55,7 +55,7 @@ public interface Check {
     DELETE_DEFAULT_BRANCH(false, false),
     /** See {@link BatchAccessChecker#canReadEntries(NamedRef)}. */
     READ_ENTRIES(true, false),
-    /** See {@link BatchAccessChecker#canReadContentKey(NamedRef, ContentKey)}. */
+    /** See {@link BatchAccessChecker#canReadContentKey(NamedRef, ContentKey, String)}. */
     READ_CONTENT_KEY(true, true),
     /** See {@link BatchAccessChecker#canListCommitLog(NamedRef)}. */
     LIST_COMMIT_LOG(true, false),

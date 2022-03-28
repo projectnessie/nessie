@@ -67,6 +67,7 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Detached;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.ImmutableBranch;
+import org.projectnessie.model.ImmutableEntriesResponse;
 import org.projectnessie.model.ImmutableLogEntry;
 import org.projectnessie.model.ImmutableReferenceMetadata;
 import org.projectnessie.model.ImmutableReferencesResponse;
@@ -91,9 +92,9 @@ import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.GetNamedRefsParams.RetrieveOptions;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.KeyEntry;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.Put;
-import org.projectnessie.versioned.Ref;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceInfo;
@@ -258,19 +259,25 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   @Override
   public LogResponse getCommitLog(String namedRef, CommitLogParams params)
       throws NessieNotFoundException {
+
+    // we should only allow named references when no paging is defined
+    WithHash<NamedRef> endRef =
+        namedRefWithHashOrThrow(
+            namedRef, null == params.pageToken() ? params.endHash() : params.pageToken());
+
+    return getCommitLog(params, endRef);
+  }
+
+  protected LogResponse getCommitLog(CommitLogParams params, WithHash<NamedRef> endRef)
+      throws NessieNotFoundException {
     int max =
         Math.min(
             params.maxRecords() != null ? params.maxRecords() : MAX_COMMIT_LOG_ENTRIES,
             MAX_COMMIT_LOG_ENTRIES);
 
-    // we should only allow named references when no paging is defined
-    Ref endRef =
-        namedRefWithHashOrThrow(
-                namedRef, null == params.pageToken() ? params.endHash() : params.pageToken())
-            .getHash();
-
     boolean fetchAll = FetchOption.isFetchAll(params.fetchOption());
-    try (Stream<Commit<CommitMeta, Content>> commits = getStore().getCommits(endRef, fetchAll)) {
+    try (Stream<Commit<CommitMeta, Content>> commits =
+        getStore().getCommits(endRef.getHash(), fetchAll)) {
       Stream<LogEntry> logEntries =
           commits.map(
               commit -> {
@@ -422,17 +429,16 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     // to the store though
     //  all existing VersionStore implementations have to read all keys anyways so we don't get much
     try {
-      List<EntriesResponse.Entry> entries;
-      try (Stream<EntriesResponse.Entry> entryStream =
-          getStore()
-              .getKeys(refWithHash.getHash())
-              .map(
-                  key ->
-                      EntriesResponse.Entry.builder()
-                          .name(fromKey(key.getValue()))
-                          .type((Type) key.getType())
-                          .build())) {
-        Stream<EntriesResponse.Entry> entriesStream = filterEntries(entryStream, params.filter());
+      ImmutableEntriesResponse.Builder response = EntriesResponse.builder();
+      try (Stream<KeyEntry<Type>> entryStream = getStore().getKeys(refWithHash.getHash())) {
+        Stream<EntriesResponse.Entry> entriesStream =
+            filterEntries(refWithHash, entryStream, params.filter())
+                .map(
+                    key ->
+                        EntriesResponse.Entry.builder()
+                            .name(fromKey(key.getKey()))
+                            .type((Type) key.getType())
+                            .build());
         if (params.namespaceDepth() != null && params.namespaceDepth() > 0) {
           entriesStream =
               entriesStream
@@ -440,9 +446,9 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
                   .map(e -> truncate(e, params.namespaceDepth()))
                   .distinct();
         }
-        entries = entriesStream.collect(ImmutableList.toImmutableList());
+        entriesStream.forEach(response::addEntries);
       }
-      return EntriesResponse.builder().addAllEntries(entries).build();
+      return response.build();
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }
@@ -464,8 +470,8 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
    * @param filter The filter to filter by
    * @return A potentially filtered {@link Stream} of entries based on the filter
    */
-  private Stream<EntriesResponse.Entry> filterEntries(
-      Stream<EntriesResponse.Entry> entries, String filter) {
+  protected Stream<KeyEntry<Type>> filterEntries(
+      WithHash<NamedRef> refWithHash, Stream<KeyEntry<Type>> entries, String filter) {
     if (Strings.isNullOrEmpty(filter)) {
       return entries;
     }
@@ -491,7 +497,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
                   VAR_ENTRY,
                   ImmutableMap.of(
                       VAR_NAMESPACE,
-                      entry.getName().getNamespace().name(),
+                      fromKey(entry.getKey()).getNamespace().name(),
                       VAR_CONTENT_TYPE,
                       entry.getType().name()));
 
@@ -585,7 +591,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     }
   }
 
-  private static ContentKey fromKey(Key key) {
+  protected static ContentKey fromKey(Key key) {
     return ContentKey.of(key.getElements());
   }
 

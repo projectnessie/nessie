@@ -153,7 +153,7 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
   }
 
   @Override
-  public Stream<WithType<Key, VALUE_TYPE>> getKeys(Ref ref) throws ReferenceNotFoundException {
+  public Stream<KeyEntry<VALUE_TYPE>> getKeys(Ref ref) throws ReferenceNotFoundException {
     return delegateStream1Ex("getkeys", () -> delegate.getKeys(ref));
   }
 

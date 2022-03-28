@@ -147,7 +147,7 @@ public class BatchAccessCheckerTest {
         checker.canReadEntries(c.ref());
         break;
       case READ_CONTENT_KEY:
-        checker.canReadContentKey(c.ref(), c.key());
+        checker.canReadContentKey(c.ref(), c.key(), c.contentId());
         break;
       case ASSIGN_REFERENCE_TO_HASH:
         checker.canAssignRefToHash(c.ref());

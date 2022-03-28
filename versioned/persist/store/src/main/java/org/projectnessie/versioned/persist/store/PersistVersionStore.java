@@ -38,6 +38,7 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableCommit;
 import org.projectnessie.versioned.ImmutableRefLogDetails;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.KeyEntry;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.Operation;
 import org.projectnessie.versioned.Put;
@@ -51,7 +52,6 @@ import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
-import org.projectnessie.versioned.WithType;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentAndState;
 import org.projectnessie.versioned.persist.adapter.ContentId;
@@ -296,11 +296,16 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
   }
 
   @Override
-  public Stream<WithType<Key, CONTENT_TYPE>> getKeys(Ref ref) throws ReferenceNotFoundException {
+  public Stream<KeyEntry<CONTENT_TYPE>> getKeys(Ref ref) throws ReferenceNotFoundException {
     Hash hash = refToHash(ref);
     return databaseAdapter
         .keys(hash, KeyFilterPredicate.ALLOW_ALL)
-        .map(kt -> WithType.of(storeWorker.getType(kt.getType()), kt.getKey()));
+        .map(
+            entry ->
+                KeyEntry.of(
+                    storeWorker.getType(entry.getType()),
+                    entry.getKey(),
+                    entry.getContentId().getId()));
   }
 
   @Override
