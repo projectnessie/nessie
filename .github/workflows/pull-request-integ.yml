@@ -1,0 +1,105 @@
+# Copyright (C) 2020 Dremio
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+# Projectnessie GitHub Pull-Request / Native-image tests
+
+name: Tools Integrations Tests
+
+on:
+  pull_request:
+    types: [labeled, opened, synchronize, reopened]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  java:
+    name: Java/Maven Native
+    runs-on: ubuntu-latest
+    if: contains(github.event.pull_request.labels.*.name, 'pr-integrations')
+    env:
+      NESSIE_DIR: ${{ env.GITHUB_WORKSPACE }}
+      ICEBERG_DIR: ${{ env.GITHUB_WORKSPACE }}/integ-tests-tools/target/git/iceberg
+      TRINO_DIR: ${{ env.GITHUB_WORKSPACE }}/integ-tests-tools/target/git/trino
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup runner
+      uses: ./.github/actions/setup-runner
+    - name: Setup Java, Maven, Gradle
+      uses: ./.github/actions/dev-tool-java
+
+    - name: Initialize tools integration tests
+      run: integ-tests-tools/init.sh
+
+    - name: Checkout Iceberg
+      uses: actions/checkout@v3
+      with:
+        repository: 'apache/iceberg'
+        path: $ICEBERG_DIR
+
+    - name: Checkout Trino
+      uses: actions/checkout@v3
+      with:
+        repository: 'nastra/trino'
+        ref: add-nessie-support
+        path: $TRINO_DIR
+
+    - name: WIP Fetch latest-Iceberg patch for Nessie
+      run: |
+        git fetch origin main
+        git remote add github https://github.com/projectnessie/nessie.git
+        git fetch github main
+        git remote add snazy https://github.com/snazy/nessie.git
+        git fetch snazy main
+        git fetch snazy integ-bump/iceberg
+
+    - name: Apply lastest-Iceberg patch to Nessie
+      env:
+        NESSIE_ICEBERG_BUMP_BRANCH: snazy/integ-bump/iceberg
+      run: integ-tests-tools/apply_bump.sh "${NESSIE_DIR}" "${NESSIE_ICEBERG_BUMP_BRANCH}" "origin/main github/main snazy/main"
+
+    - name: WIP Fetch latest-Iceberg/Nessie patch for Trino
+      working-directory: ${{ env.TRINO_DIR }}
+      run: |
+        git fetch origin master
+        git remote add github https://github.com/trinodb/trino.git
+        git fetch github master
+        git remote add snazy https://github.com/snazy/trino.git
+        git fetch snazy iceberg-0.14
+        git fetch snazy master
+
+    - name: Apply lastest-Iceberg/Nessie patch to Trino
+      env:
+        NESSIE_TRINO_BUMP_BRANCH: snazy/iceberg-0.14
+      run: integ-tests-tools/apply_bump.sh "${NESSIE_DIR}" "${NESSIE_TRINO_BUMP_BRANCH}" "origin/master github/master snazy/master"
+
+    - name: Build Nessie
+      run: integ-tests-tools/build-nessie.sh
+
+    - name: Build Iceberg
+      run: integ-tests-tools/build-iceberg.sh
+
+    - name: Build Trino
+      run: integ-tests-tools/build-trino.sh
+
+    - name: Test Nessie
+      run: integ-tests-tools/test-nessie.sh
+
+    - name: Test Iceberg
+      run: integ-tests-tools/test-iceberg.sh
+
+    - name: Test Trino
+      run: integ-tests-tools/test-trino.sh
