@@ -234,10 +234,10 @@ public class IdentifyContentsPerExecutor implements Serializable {
                     startedAt));
             return reference;
           });
+      // merge the iterators from each task.
+      Iterator<Row> mergedIterator = Iterators.concat(iterators.iterator());
+      return JavaConverters.asScalaIterator(mergedIterator);
     }
-    // merge the iterators from each task.
-    Iterator<Row> mergedIterator = Iterators.concat(iterators.iterator());
-    return JavaConverters.asScalaIterator(mergedIterator);
   }
 
   private Iterator<Row> walkAllCommitsInReference(
