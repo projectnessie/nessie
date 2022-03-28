@@ -157,7 +157,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.release>8</maven.compiler.release>
     <argLine />
-    <quarkus.native.builder-image>quay.io/quarkus/ubi-quarkus-native-image:21.3-java11</quarkus.native.builder-image>
+    <quarkus.native.builder-image>quay.io/quarkus/ubi-quarkus-native-image:22.0-java11</quarkus.native.builder-image>
     <test.log.level>INFO</test.log.level>
 
     <!-- Version properties -->
