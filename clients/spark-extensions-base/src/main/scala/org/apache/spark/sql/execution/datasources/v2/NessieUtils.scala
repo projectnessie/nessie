@@ -89,10 +89,10 @@ object NessieUtils {
       StreamingUtil
         .getCommitLogStream(
           api,
-          branch,
-          Validation.validateHash(requestedHash),
-          null,
-          null,
+          builder =>
+            builder
+              .refName(branch)
+              .hashOnRef(Validation.validateHash(requestedHash)),
           OptionalInt.empty
         )
         .findFirst()
@@ -124,13 +124,15 @@ object NessieUtils {
       StreamingUtil
         .getCommitLogStream(
           api,
-          branch,
-          null,
-          null,
-          String.format(
-            "timestamp(commit.commitTime) <= timestamp('%s')",
-            timestamp
-          ),
+          builder =>
+            builder
+              .refName(branch)
+              .filter(
+                String.format(
+                  "timestamp(commit.commitTime) <= timestamp('%s')",
+                  timestamp
+                )
+              ),
           OptionalInt.empty
         )
         .findFirst()
