@@ -31,6 +31,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.mutable.MutableBoolean;
+import org.apache.spark.TaskContext;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
@@ -47,6 +48,8 @@ import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Reference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import scala.collection.JavaConverters;
 
 /**
@@ -56,6 +59,7 @@ import scala.collection.JavaConverters;
 public class IdentifyContentsPerExecutor implements Serializable {
 
   private final GCParams gcParams;
+  private static final Logger LOGGER = LoggerFactory.getLogger(IdentifyContentsPerExecutor.class);
 
   public IdentifyContentsPerExecutor(GCParams gcParams) {
     this.gcParams = gcParams;
@@ -82,30 +86,35 @@ public class IdentifyContentsPerExecutor implements Serializable {
   // --- Methods for computing live content bloom filter ----------
   private Map<String, ContentBloomFilter> computeLiveContents(
       Instant cutOffTimestamp, String reference, Instant droppedRefTime, long bloomFilterSize) {
-    try (NessieApiV1 api = GCUtil.getApi(gcParams.getNessieClientConfigs())) {
-      boolean isRefDroppedAfterCutoffTimeStamp =
-          droppedRefTime == null || droppedRefTime.compareTo(cutOffTimestamp) >= 0;
-      if (!isRefDroppedAfterCutoffTimeStamp) {
-        // reference is dropped before cutoff time.
-        // All the contents for all the keys are expired.
-        return new HashMap<>();
-      }
-      Predicate<CommitMeta> liveCommitPredicate =
-          commitMeta ->
-              // If the commit time is newer than (think: greater than or equal to) cutoff-time,
-              // then commit is live.
-              commitMeta.getCommitTime().compareTo(cutOffTimestamp) >= 0;
-
-      ImmutableGCStateParamsPerTask gcStateParamsPerTask =
-          ImmutableGCStateParamsPerTask.builder()
-              .api(api)
-              .reference(GCUtil.deserializeReference(reference))
-              .liveCommitPredicate(liveCommitPredicate)
-              .bloomFilterSize(bloomFilterSize)
-              .build();
-
-      return walkLiveCommitsInReference(gcStateParamsPerTask);
+    NessieApiV1 api = GCUtil.getApi(gcParams.getNessieClientConfigs());
+    TaskContext.get()
+        .addTaskCompletionListener(
+            context -> {
+              LOGGER.info("Closing the nessie api for compute live contents task");
+              api.close();
+            });
+    boolean isRefDroppedAfterCutoffTimeStamp =
+        droppedRefTime == null || droppedRefTime.compareTo(cutOffTimestamp) >= 0;
+    if (!isRefDroppedAfterCutoffTimeStamp) {
+      // reference is dropped before cutoff time.
+      // All the contents for all the keys are expired.
+      return new HashMap<>();
     }
+    Predicate<CommitMeta> liveCommitPredicate =
+        commitMeta ->
+            // If the commit time is newer than (think: greater than or equal to) cutoff-time,
+            // then commit is live.
+            commitMeta.getCommitTime().compareTo(cutOffTimestamp) >= 0;
+
+    ImmutableGCStateParamsPerTask gcStateParamsPerTask =
+        ImmutableGCStateParamsPerTask.builder()
+            .api(api)
+            .reference(GCUtil.deserializeReference(reference))
+            .liveCommitPredicate(liveCommitPredicate)
+            .bloomFilterSize(bloomFilterSize)
+            .build();
+
+    return walkLiveCommitsInReference(gcStateParamsPerTask);
   }
 
   private Map<String, ContentBloomFilter> walkLiveCommitsInReference(
@@ -221,23 +230,28 @@ public class IdentifyContentsPerExecutor implements Serializable {
       Map<String, ContentBloomFilter> liveContentsBloomFilterMap,
       String runId,
       Timestamp startedAt) {
+    NessieApiV1 api = GCUtil.getApi(gcParams.getNessieClientConfigs());
+    TaskContext.get()
+        .addTaskCompletionListener(
+            context -> {
+              LOGGER.info("Closing the nessie api for compute expired contents task");
+              api.close();
+            });
     List<Iterator<Row>> iterators = new ArrayList<>();
-    try (NessieApiV1 api = GCUtil.getApi(gcParams.getNessieClientConfigs())) {
-      references.foreach(
-          reference -> {
-            iterators.add(
-                walkAllCommitsInReference(
-                    api,
-                    GCUtil.deserializeReference(reference),
-                    liveContentsBloomFilterMap,
-                    runId,
-                    startedAt));
-            return reference;
-          });
-      // merge the iterators from each task.
-      Iterator<Row> mergedIterator = Iterators.concat(iterators.iterator());
-      return JavaConverters.asScalaIterator(mergedIterator);
-    }
+    references.foreach(
+        reference -> {
+          iterators.add(
+              walkAllCommitsInReference(
+                  api,
+                  GCUtil.deserializeReference(reference),
+                  liveContentsBloomFilterMap,
+                  runId,
+                  startedAt));
+          return reference;
+        });
+    // merge the iterators from each task.
+    Iterator<Row> mergedIterator = Iterators.concat(iterators.iterator());
+    return JavaConverters.asScalaIterator(mergedIterator);
   }
 
   private Iterator<Row> walkAllCommitsInReference(

@@ -22,6 +22,7 @@ import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.iceberg.CatalogUtil;
@@ -112,7 +113,7 @@ public final class IdentifiedResultsRepo {
         runId);
   }
 
-  public String getLatestCompletedRunID() {
+  public Optional<String> getLatestCompletedRunID() {
     // collect row for the last written run id
     // Example query:
     // SELECT gcRunId FROM nessie.db2.`identified_results@someGcBranch` WHERE gcRunStart =
@@ -128,7 +129,7 @@ public final class IdentifiedResultsRepo {
                 COL_GC_RUN_START,
                 catalogAndTableWithRefName)
             .collectAsList();
-    return rows.isEmpty() ? null : rows.get(0).getString(0);
+    return rows.isEmpty() ? Optional.empty() : Optional.of(rows.get(0).getString(0));
   }
 
   void writeToOutputTable(Dataset<Row> rowDataset) {
@@ -136,7 +137,8 @@ public final class IdentifiedResultsRepo {
       // write content rows to the output table
       rowDataset.writeTo(catalogAndTableWithRefName).append();
     } catch (NoSuchTableException e) {
-      throw new RuntimeException(e);
+      throw new RuntimeException(
+          "Problem while writing gc output rows to the table: " + catalogAndTableWithRefName, e);
     }
   }
 
@@ -183,14 +185,16 @@ public final class IdentifiedResultsRepo {
   }
 
   private static Map<String, String> catalogConfWithRef(
-      SparkSession spark, String catalog, String branch) {
+      SparkSession spark, String catalog, String branchName) {
+    // select the nessie catalog related conf.
     Stream<Tuple2<String, String>> conf =
         Arrays.stream(
             spark
                 .sparkContext()
                 .conf()
                 .getAllWithPrefix(String.format("spark.sql.catalog.%s.", catalog)));
-    return conf.map(t -> t._1.equals("ref") ? Tuple2.apply(t._1, branch) : t)
+    // override the default ref name configuration to branchName.
+    return conf.map(t -> t._1.equals("ref") ? Tuple2.apply(t._1, branchName) : t)
         .collect(Collectors.toMap(t -> t._1, t -> t._2));
   }
 
