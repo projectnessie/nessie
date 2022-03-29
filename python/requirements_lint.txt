@@ -15,7 +15,7 @@
 #
 -r requirements_dev.txt
 bandit==1.7.4
-black==22.1.0
+black==22.3.0
 flake8-annotations==2.7.0
 flake8-bandit==3.0.0
 flake8-black==0.3.2
