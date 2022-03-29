@@ -189,7 +189,7 @@
     <jersey.version>2.35</jersey.version>
     <jetty.version>9.4.31.v20200723</jetty.version>
     <jjwt.version>0.11.2</jjwt.version>
-    <jmh.version>1.34</jmh.version>
+    <jmh.version>1.35</jmh.version>
     <jsr305.version>3.0.2</jsr305.version>
     <junit.version>5.8.2</junit.version>
     <logback.version>1.2.11</logback.version>
