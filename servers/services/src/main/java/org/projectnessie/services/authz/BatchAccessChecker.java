@@ -17,6 +17,7 @@ package org.projectnessie.services.authz;
 
 import java.security.AccessControlException;
 import java.util.Map;
+import javax.annotation.Nullable;
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.params.EntriesParams;
@@ -125,8 +126,10 @@ public interface BatchAccessChecker {
    *
    * @param ref current reference
    * @param key content key to check
+   * @param contentId content id to check, will be {@code null} for a {@link Operation.Delete} from
+   *     {@link TreeApi#getCommitLog(String, CommitLogParams)}
    */
-  BatchAccessChecker canReadContentKey(NamedRef ref, ContentKey key);
+  BatchAccessChecker canReadContentKey(NamedRef ref, ContentKey key, @Nullable String contentId);
 
   /**
    * Checks whether the given role/principal is allowed to list the commit log for the given {@link

@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -83,8 +84,13 @@ public abstract class AbstractRestAccessChecks extends AbstractTestRest {
 
     ContentKey keyForbidden1 = ContentKey.of("forbidden_1");
     ContentKey keyForbidden2 = ContentKey.of("forbidden_2");
+    ContentKey idForbidden1 = ContentKey.of("id_forbidden_1");
+    ContentKey idForbidden2 = ContentKey.of("id_forbidden_2");
     ContentKey keyAllowed1 = ContentKey.of("allowed_1");
     ContentKey keyAllowed2 = ContentKey.of("allowed_2");
+
+    String contentIdForbidden1 = UUID.randomUUID().toString();
+    String contentIdForbidden2 = UUID.randomUUID().toString();
 
     Branch commit =
         getApi()
@@ -94,9 +100,17 @@ public abstract class AbstractRestAccessChecks extends AbstractTestRest {
             .commitMeta(CommitMeta.builder().message("no security context").build())
             .operation(
                 Put.of(keyForbidden1, IcebergTable.of(keyForbidden1.getName(), 42, 42, 42, 42)))
+            .operation(
+                Put.of(
+                    idForbidden1,
+                    IcebergTable.of(idForbidden1.getName(), 42, 42, 42, 42, contentIdForbidden1)))
             .operation(Put.of(keyAllowed1, IcebergTable.of(keyAllowed1.getName(), 42, 42, 42, 42)))
             .operation(
                 Put.of(keyForbidden2, IcebergTable.of(keyForbidden2.getName(), 42, 42, 42, 42)))
+            .operation(
+                Put.of(
+                    idForbidden2,
+                    IcebergTable.of(idForbidden2.getName(), 42, 42, 42, 42, contentIdForbidden2)))
             .operation(Put.of(keyAllowed2, IcebergTable.of(keyAllowed2.getName(), 42, 42, 42, 42)))
             .commit();
 
@@ -120,7 +134,9 @@ public abstract class AbstractRestAccessChecks extends AbstractTestRest {
               .containsExactlyInAnyOrderElementsOf(expectedKeys);
         };
 
-    assertKeys.accept(Arrays.asList(keyAllowed1, keyAllowed2, keyForbidden1, keyForbidden2));
+    assertKeys.accept(
+        Arrays.asList(
+            keyAllowed1, keyAllowed2, keyForbidden1, keyForbidden2, idForbidden1, idForbidden2));
 
     accessCheckerConsumer.accept(
         x ->
@@ -129,7 +145,13 @@ public abstract class AbstractRestAccessChecks extends AbstractTestRest {
               public Map<Check, String> check() {
                 return getChecks().stream()
                     .filter(c -> c.type() == CheckType.READ_CONTENT_KEY)
-                    .filter(c -> c.key().getName().startsWith("forbidden"))
+                    .filter(
+                        c ->
+                            // forbid all content-keys starting with "forbidden"
+                            c.key().getName().startsWith("forbidden")
+                                // forbid the two content-ids
+                                || c.contentId().equals(contentIdForbidden1)
+                                || c.contentId().equals(contentIdForbidden2))
                     .collect(
                         Collectors.toMap(
                             Function.identity(), c -> "Forbidden key " + c.key().getName()));

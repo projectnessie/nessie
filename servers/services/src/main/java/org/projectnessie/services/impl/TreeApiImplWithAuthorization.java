@@ -24,9 +24,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import org.projectnessie.api.params.CommitLogParams;
-import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.api.params.GetReferenceParams;
 import org.projectnessie.api.params.ReferencesParams;
 import org.projectnessie.error.NessieConflictException;
@@ -36,8 +36,6 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.Content.Type;
 import org.projectnessie.model.ContentKey;
-import org.projectnessie.model.EntriesResponse;
-import org.projectnessie.model.ImmutableEntriesResponse;
 import org.projectnessie.model.ImmutableLogEntry;
 import org.projectnessie.model.ImmutableLogResponse;
 import org.projectnessie.model.ImmutableReferencesResponse;
@@ -54,8 +52,10 @@ import org.projectnessie.services.authz.BatchAccessChecker;
 import org.projectnessie.services.authz.Check;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.KeyEntry;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.WithHash;
 
 /** Does authorization checks (if enabled) on the {@link TreeApiImpl}. */
 public class TreeApiImplWithAuthorization extends TreeApiImpl {
@@ -142,11 +142,10 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
   }
 
   @Override
-  public EntriesResponse getEntries(String namedRef, EntriesParams params)
-      throws NessieNotFoundException {
-    NamedRef ref = namedRefWithHashOrThrow(namedRef, params.hashOnRef()).getValue();
-    startAccessCheck().canReadEntries(ref).checkAndThrow();
-    EntriesResponse entriesResponse = super.getEntries(namedRef, params);
+  protected Stream<KeyEntry<Type>> filterEntries(
+      WithHash<NamedRef> refWithHash, Stream<KeyEntry<Type>> entries, String filter) {
+
+    startAccessCheck().canReadEntries(refWithHash.getValue()).checkAndThrow();
 
     // Post-process the response to only contain content-keys to which the user has access to.
     // Note: no optimization here to return the non-post-processed response to ensure that tests
@@ -155,39 +154,36 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
 
     // First, collect the content-keys to which the user has no access to.
 
+    List<KeyEntry<Type>> entriesList =
+        super.filterEntries(refWithHash, entries, filter).collect(Collectors.toList());
+
     BatchAccessChecker responseCheck = startAccessCheck();
-    entriesResponse.getEntries().forEach(e -> responseCheck.canReadContentKey(ref, e.getName()));
-    Set<ContentKey> notAllowed =
-        responseCheck.check().keySet().stream().map(Check::key).collect(Collectors.toSet());
+    entriesList.forEach(
+        e ->
+            responseCheck.canReadContentKey(
+                refWithHash.getValue(), fromKey(e.getKey()), e.getContentId()));
+    Set<String> notAllowedContentIds =
+        responseCheck.check().keySet().stream().map(Check::contentId).collect(Collectors.toSet());
 
     // Second, only add the `Entry`s for allowed content keys.
 
-    ImmutableEntriesResponse.Builder newEntriesResponse =
-        EntriesResponse.builder()
-            .isHasMore(entriesResponse.isHasMore())
-            .token(entriesResponse.getToken());
-    entriesResponse.getEntries().stream()
-        .filter(e -> !notAllowed.contains(e.getName()))
-        .forEach(newEntriesResponse::addEntries);
-
-    return newEntriesResponse.build();
+    return entriesList.stream()
+        .filter(entry -> !notAllowedContentIds.contains(entry.getContentId()));
   }
 
   @Override
-  public LogResponse getCommitLog(String namedRef, CommitLogParams params)
+  protected LogResponse getCommitLog(CommitLogParams params, WithHash<NamedRef> endRef)
       throws NessieNotFoundException {
-    String checkHash = params.pageToken() == null ? params.endHash() : params.pageToken();
-    NamedRef ref = namedRefWithHashOrThrow(namedRef, checkHash).getValue();
-    startAccessCheck().canListCommitLog(ref).checkAndThrow();
-    LogResponse logResponse = super.getCommitLog(namedRef, params);
+    NamedRef ref = endRef.getValue();
 
-    Set<ContentKey> allContentKeys =
+    startAccessCheck().canListCommitLog(ref).checkAndThrow();
+    LogResponse logResponse = super.getCommitLog(params, endRef);
+
+    Stream<Operation> allOperations =
         logResponse.getLogEntries().stream()
             .map(LogEntry::getOperations)
             .filter(Objects::nonNull)
-            .flatMap(Collection::stream)
-            .map(Operation::getKey)
-            .collect(Collectors.toSet());
+            .flatMap(Collection::stream);
 
     // Post-process the response to only contain content-keys to which the user has access to.
     // Note: no optimization here to return the non-post-processed response to ensure that tests
@@ -197,7 +193,16 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
     // First, collect the content-keys to which the user has no access to.
 
     BatchAccessChecker responseCheck = startAccessCheck();
-    allContentKeys.forEach(contentKey -> responseCheck.canReadContentKey(ref, contentKey));
+    allOperations.forEach(
+        op -> {
+          if (op instanceof Put) {
+            Put put = (Put) op;
+            responseCheck.canReadContentKey(ref, put.getKey(), put.getContent().getId());
+          } else if (op instanceof Delete) {
+            Delete delete = (Delete) op;
+            responseCheck.canReadContentKey(ref, delete.getKey(), null);
+          }
+        });
     Set<ContentKey> notAllowed =
         responseCheck.check().keySet().stream().map(Check::key).collect(Collectors.toSet());
 

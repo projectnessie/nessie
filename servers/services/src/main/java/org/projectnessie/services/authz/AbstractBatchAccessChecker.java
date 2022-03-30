@@ -78,9 +78,13 @@ public abstract class AbstractBatchAccessChecker implements BatchAccessChecker {
   }
 
   @Override
-  public BatchAccessChecker canReadContentKey(NamedRef ref, ContentKey key) {
+  public BatchAccessChecker canReadContentKey(NamedRef ref, ContentKey key, String contentId) {
     canViewReference(ref);
-    return add(Check.builder(CheckType.READ_CONTENT_KEY).ref(ref).key(key));
+    ImmutableCheck.Builder builder = Check.builder(CheckType.READ_CONTENT_KEY).ref(ref).key(key);
+    if (contentId != null) {
+      builder.contentId(contentId);
+    }
+    return add(builder);
   }
 
   @Override

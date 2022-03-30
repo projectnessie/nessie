@@ -34,13 +34,13 @@ import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.KeyEntry;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
-import org.projectnessie.versioned.WithType;
 import org.projectnessie.versioned.testworker.BaseContent;
 import org.projectnessie.versioned.testworker.CommitMessage;
 import org.projectnessie.versioned.testworker.OnRefOnly;
@@ -151,15 +151,15 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
             commit(secondCommit, "Second Commit"),
             commit(initialCommit, "Initial Commit"));
 
-    try (Stream<Key> keys = store().getKeys(branch).map(WithType::getValue)) {
+    try (Stream<Key> keys = store().getKeys(branch).map(KeyEntry::getKey)) {
       assertThat(keys).containsExactlyInAnyOrder(Key.of("t1"), Key.of("t2"), Key.of("t4"));
     }
 
-    try (Stream<Key> keys = store().getKeys(secondCommit).map(WithType::getValue)) {
+    try (Stream<Key> keys = store().getKeys(secondCommit).map(KeyEntry::getKey)) {
       assertThat(keys).containsExactlyInAnyOrder(Key.of("t1"), Key.of("t4"));
     }
 
-    try (Stream<Key> keys = store().getKeys(initialCommit).map(WithType::getValue)) {
+    try (Stream<Key> keys = store().getKeys(initialCommit).map(KeyEntry::getKey)) {
       assertThat(keys).containsExactlyInAnyOrder(Key.of("t1"), Key.of("t2"), Key.of("t3"));
     }
 
@@ -246,7 +246,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
             commit(t1Commit, "T1 Commit"),
             commit(initialCommit, "Initial Commit"));
 
-    try (Stream<Key> keys = store().getKeys(branch).map(WithType::getValue)) {
+    try (Stream<Key> keys = store().getKeys(branch).map(KeyEntry::getKey)) {
       assertThat(keys).containsExactlyInAnyOrder(Key.of("t1"), Key.of("t2"), Key.of("t3"));
     }
 
