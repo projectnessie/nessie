@@ -18,20 +18,16 @@ package org.projectnessie.perftest.gatling
 import io.gatling.core.Predef._
 import io.gatling.core.scenario.Simulation
 import io.gatling.core.structure.{ChainBuilder, ScenarioBuilder}
-import org.projectnessie.client.api.NessieApiV1
-import org.projectnessie.client.http.HttpClientBuilder
-import org.projectnessie.error.NessieConflictException
 import org.projectnessie.model.Operation.Put
 import org.projectnessie.model._
 import org.projectnessie.perftest.gatling.Predef.nessie
 
 import scala.concurrent.duration.{FiniteDuration, HOURS, NANOSECONDS, SECONDS}
 
-/** Gatling simulation to perform commits against Nessie. It commits the data to
-  * the same table for all users. Has a bunch of configurables, see the `val`s
-  * defined at the top of this class.
+/** Gatling simulation to perform commits against Nessie. It has a bunch of
+  * configurables, see [[CommitToBranchParams]]
   */
-class CommitToBranchSimulationSameTable extends Simulation {
+class CommitToBranchSimulation extends Simulation {
 
   val params: CommitToBranchParams = CommitToBranchParams.fromSystemProperties()
 
@@ -39,71 +35,68 @@ class CommitToBranchSimulationSameTable extends Simulation {
     * scenarios.
     */
   private def commitToBranch: ChainBuilder = {
-    val chain = exec(
-      nessie("Commit")
-        .execute { (client, session) =>
-          // The commit number is the loop-variable declared buildScenario()
-          val commitNum = session("commitNum").asOption[Int].get
-          // Current Nessie Branch object
-          val branch = session("branch").as[Branch]
-          // Our "user ID", an integer supplied by Gatling
-          val userId = session.userId
-          // Table used in the Nessie commit
-          val tableName = params.makeTableName(session)
-
-          // Call the Nessie client operation to perform a commit
-          val key = ContentKey.of("name", "space", tableName)
-          val contentId = tableName + "_" + userId.toString
-
-          val tableMeta = IcebergTable
-            .of(
-              s"path_on_disk_${tableName}_$commitNum",
-              42,
-              43,
-              44,
-              45,
-              contentId
-            )
-
-          val existingTable =
-            client.getContent.reference(branch).key(key).get().get(key)
-
-          val op =
-            if (commitNum > 0 && existingTable != null)
-              Put.of(
-                key,
-                tableMeta,
-                existingTable
-              )
-            else Put.of(key, tableMeta);
-
-          val updatedBranch = client
-            .commitMultipleOperations()
-            .branch(branch)
-            .commitMeta(
-              CommitMeta.fromMessage(s"test-commit $userId $commitNum")
-            )
-            .operation(op)
-            .commit()
-
-          session.set("branch", updatedBranch)
-        }
-        .onException { (e, client, session) =>
-          if (e.isInstanceOf[NessieConflictException]) {
+    val chain = {
+      exec(
+        // fetch the previous state of the table (if exists)
+        nessie("FetchContent")
+          .execute { (client, session) =>
+            // Current Nessie Branch object
             val branch = session("branch").as[Branch]
-            session.set(
-              "branch",
-              client
-                .getReference()
-                .refName(branch.getName)
-                .get()
-                .asInstanceOf[Branch]
-            )
-          } else {
+            // Table used in the Nessie commit
+            val tableName = params.makeTableName(session)
+
+            val key = ContentKey.of("name", "space", tableName)
+
+            val existingTable =
+              client.getContent.reference(branch).key(key).get().get(key)
+
+            // Store precomputed values in the session
             session
+              .set("existingTable", Option(existingTable))
+              .set("key", key)
           }
-        }
-    )
+      ).exec(
+        // Create / update the table
+        nessie("Commit")
+          .execute { (client, session) =>
+            // The commit number is the loop-variable declared buildScenario()
+            val commitNum = session("commitNum").asOption[Int].get
+            // Current Nessie Branch object
+            val branch = session("branch").as[Branch]
+            // Our "user ID", an integer supplied by Gatling
+            val userId = session.userId
+            // Precomputed key and table from the previous action
+            val key = session("key").as[ContentKey]
+
+            val expectedTable =
+              if (params.uniqueTables) Option.empty
+              else session("existingTable").as[Option[IcebergTable]]
+
+            val metadataLocation = s"metadata_${userId}_$commitNum"
+
+            val table =
+              if (expectedTable.isEmpty)
+                IcebergTable.of(metadataLocation, 42, 43, 44, 45)
+              else
+                ImmutableIcebergTable.builder
+                  .from(expectedTable.get)
+                  .metadataLocation(metadataLocation)
+                  .build()
+
+            // Call the Nessie client operation to perform a commit
+            val updatedBranch = client
+              .commitMultipleOperations()
+              .branch(branch)
+              .commitMeta(
+                CommitMeta.fromMessage(s"test-commit $userId $commitNum")
+              )
+              .operation(Put.of(key, table, expectedTable.orNull))
+              .commit()
+
+            session.set("branch", updatedBranch)
+          }
+      )
+    }
 
     if (params.opRate > 0) {
       // "pace" the commits, if commit-rate is configured
@@ -142,8 +135,7 @@ class CommitToBranchSimulationSameTable extends Simulation {
         nessie(s"Get reference $params.branch")
           .execute { (client, session) =>
             // retrieve the Nessie branch reference and store it in the Gatling session object
-            val branch = client
-              .getReference()
+            val branch = client.getReference
               .refName(params.makeBranchName(session))
               .get()
               .asInstanceOf[Branch]

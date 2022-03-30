@@ -18,9 +18,10 @@ package org.projectnessie.perftest.gatling
 import io.gatling.core.Predef.Session
 import org.projectnessie.model.IcebergTable
 
+import java.lang
 import java.util.concurrent.ThreadLocalRandom
 
-/** Parameters for the [[CommitToBranchSimulationSameTable]].
+/** Parameters for the [[CommitToBranchSimulation]].
   *
   * @param branch
   *   The Nessie branch name to use, the default include the current wall-clock
@@ -33,6 +34,11 @@ import java.util.concurrent.ThreadLocalRandom
   *   The table name to use, the default include the current wall-clock in ms
   *   since epoch. System property: `sim.tablePrefix`, defaults to
   *   `s"someTable${System.currentTimeMillis()}"`.
+  * @param uniqueTables
+  *   Whether each commit should use a unique content ID for each table
+  *   (regardless of key). This mode is not meaningful from the normal Nessie
+  *   Catalog usage point of view, but it is helpful in testing the Nessie
+  *   server performance in situations where table IDs proliferate.
   * @param numTables
   *   The number of simulated tables, each commit chooses a random table .
   *   System property: `sim.tables`, defaults to `250`.
@@ -55,6 +61,7 @@ case class CommitToBranchParams(
     branch: String,
     mode: BranchMode.BranchMode,
     tablePrefix: String,
+    uniqueTables: Boolean,
     numTables: Int,
     numberOfCommits: Int,
     durationSeconds: Int,
@@ -68,6 +75,7 @@ case class CommitToBranchParams(
     |   branch-name:    $branch
     |   branch-mode:    $mode
     |   table-prefix:   $tablePrefix
+    |   unique tables:  $uniqueTables
     |   num-tables:     $numTables
     |   num-commits:    $numberOfCommits
     |   duration:       $durationSeconds
@@ -129,6 +137,7 @@ object CommitToBranchParams {
       branch,
       mode,
       tablePrefix,
+      lang.Boolean.getBoolean("sim.tables.unique"),
       numTables,
       numberOfCommits,
       durationSeconds,
