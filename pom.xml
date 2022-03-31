@@ -700,6 +700,9 @@
               <user.country>US</user.country>
               <user.variant/>
             </systemProperties>
+            <systemPropertyVariables>
+              <test.log.level>${test.log.level}</test.log.level>
+            </systemPropertyVariables>
           </configuration>
         </plugin>
         <plugin>
@@ -714,6 +717,9 @@
               <user.country>US</user.country>
               <user.variant/>
             </systemProperties>
+            <systemPropertyVariables>
+              <test.log.level>${test.log.level}</test.log.level>
+            </systemPropertyVariables>
             <useModulePath>false</useModulePath>
           </configuration>
         </plugin>
