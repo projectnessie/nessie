@@ -46,7 +46,7 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
 
   @ParameterizedTest
   @ValueSource(strings = {"a.b.c", "a.b\u0000c.d", "a.b.c.d"})
-  void testNamespaces(String namespaceName) throws BaseNessieClientServerException {
+  public void testNamespaces(String namespaceName) throws BaseNessieClientServerException {
     Branch branch = createBranch("testNamespaces");
     Namespace ns = Namespace.parse(namespaceName);
     Namespace namespace =
@@ -408,14 +408,12 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
                     .refName(branch.getName())
                     .namespace(Namespace.EMPTY)
                     .create())
-        .isInstanceOf(Exception.class)
-        .hasMessageContaining("Internal Server Error");
+        .isInstanceOf(Exception.class);
 
     assertThatThrownBy(
             () ->
                 getApi().getNamespace().refName(branch.getName()).namespace(Namespace.EMPTY).get())
-        .isInstanceOf(Exception.class)
-        .hasMessageContaining("Internal Server Error");
+        .isInstanceOf(Exception.class);
 
     assertThatThrownBy(
             () ->
@@ -424,8 +422,7 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
                     .refName(branch.getName())
                     .namespace(Namespace.EMPTY)
                     .delete())
-        .isInstanceOf(Exception.class)
-        .hasMessageContaining("Internal Server Error");
+        .isInstanceOf(Exception.class);
 
     assertThat(getApi().getMultipleNamespaces().refName(branch.getName()).get().getNamespaces())
         .isEmpty();

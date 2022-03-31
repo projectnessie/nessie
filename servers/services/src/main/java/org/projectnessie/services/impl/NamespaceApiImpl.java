@@ -15,6 +15,7 @@
  */
 package org.projectnessie.services.impl;
 
+import com.google.common.base.Preconditions;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.HashMap;
@@ -89,6 +90,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
           };
 
       Namespace namespace = params.getNamespace();
+      Preconditions.checkArgument(!namespace.isEmpty(), "Namespace name must not be empty");
       Put put = Put.of(ContentKey.of(namespace.getElements()), namespace);
       commit(branch, "create namespace " + namespace.name(), TreeApiImpl.toOp(put), validator);
 
@@ -284,7 +286,8 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
   }
 
   private BranchName branchFromRefName(String refName) {
-    return BranchName.of(Optional.ofNullable(refName).orElse(getConfig().getDefaultBranch()));
+    return BranchName.of(
+        Optional.ofNullable(refName).orElseGet(() -> getConfig().getDefaultBranch()));
   }
 
   private NessieReferenceNotFoundException refNotFoundException(ReferenceNotFoundException e) {
