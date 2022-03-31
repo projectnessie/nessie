@@ -22,7 +22,7 @@
   <parent>
     <groupId>org.projectnessie</groupId>
     <artifactId>nessie-clients</artifactId>
-    <version>0.23.2-SNAPSHOT</version>
+    <version>0.24.0</version>
   </parent>
 
   <artifactId>nessie-spark-extensions-base</artifactId>
