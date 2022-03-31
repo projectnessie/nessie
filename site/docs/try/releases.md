@@ -1,5 +1,10 @@
 # Releases
 
+## 0.24.0 Release (March 31, 2022)
+
+* Prevent explicit creation of empty namespaces
+* Add content-id to `BatchAccessChecker.canReadContentKey()`
+
 ## 0.23.1 Release (March 23, 2022)
 
 * Support Namespaces
