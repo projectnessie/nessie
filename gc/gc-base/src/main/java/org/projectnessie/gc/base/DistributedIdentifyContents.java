@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.SparkSession;
+import org.projectnessie.client.api.NessieApiV1;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,12 +50,15 @@ public class DistributedIdentifyContents {
    * @return map of {@link ContentBloomFilter} per content-id.
    */
   public Map<String, ContentBloomFilter> getLiveContentsBloomFilters(
-      List<String> references, long bloomFilterSize, Map<String, Instant> droppedRefTimeMap) {
+      List<String> references,
+      long bloomFilterSize,
+      Map<String, Instant> droppedRefTimeMap,
+      NessieApiV1 api) {
     IdentifyContentsPerExecutor executor = new IdentifyContentsPerExecutor(gcParams);
     List<Map<String, ContentBloomFilter>> bloomFilterMaps =
         new JavaSparkContext(session.sparkContext())
             .parallelize(references, getPartitionsCount(gcParams, references))
-            .map(executor.computeLiveContentsFunc(bloomFilterSize, droppedRefTimeMap))
+            .map(executor.computeLiveContentsFunc(bloomFilterSize, droppedRefTimeMap, api))
             .collect();
     return mergeLiveContentResults(bloomFilterMaps, gcParams.getBloomFilterFpp());
   }
@@ -68,13 +72,15 @@ public class DistributedIdentifyContents {
    * @return {@link IdentifiedResult} object.
    */
   public IdentifiedResult getIdentifiedResults(
-      Map<String, ContentBloomFilter> liveContentsBloomFilterMap, List<String> references) {
+      Map<String, ContentBloomFilter> liveContentsBloomFilterMap,
+      List<String> references,
+      NessieApiV1 api) {
 
     IdentifyContentsPerExecutor executor = new IdentifyContentsPerExecutor(gcParams);
     List<IdentifiedResult> results =
         new JavaSparkContext(session.sparkContext())
             .parallelize(references, getPartitionsCount(gcParams, references))
-            .map(executor.computeExpiredContentsFunc(liveContentsBloomFilterMap))
+            .map(executor.computeExpiredContentsFunc(liveContentsBloomFilterMap, api))
             .collect();
     IdentifiedResult identifiedResult = new IdentifiedResult();
     results.forEach(

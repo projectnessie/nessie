@@ -116,9 +116,10 @@ public class GCImpl {
       // Identify the live contents and return the bloom filter per content-id
       Map<String, ContentBloomFilter> liveContentsBloomFilterMap =
           distributedIdentifyContents.getLiveContentsBloomFilters(
-              allRefs, bloomFilterSize, droppedReferenceTimeMap);
+              allRefs, bloomFilterSize, droppedReferenceTimeMap, api);
       // Identify the expired contents
-      return distributedIdentifyContents.getIdentifiedResults(liveContentsBloomFilterMap, allRefs);
+      return distributedIdentifyContents.getIdentifiedResults(
+          liveContentsBloomFilterMap, allRefs, api);
     }
   }
 

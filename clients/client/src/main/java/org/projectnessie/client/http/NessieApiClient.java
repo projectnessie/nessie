@@ -16,6 +16,7 @@
 package org.projectnessie.client.http;
 
 import java.io.Closeable;
+import java.io.Serializable;
 import org.projectnessie.api.http.HttpConfigApi;
 import org.projectnessie.api.http.HttpContentApi;
 import org.projectnessie.api.http.HttpDiffApi;
@@ -23,7 +24,7 @@ import org.projectnessie.api.http.HttpNamespaceApi;
 import org.projectnessie.api.http.HttpRefLogApi;
 import org.projectnessie.api.http.HttpTreeApi;
 
-public class NessieApiClient implements Closeable {
+public class NessieApiClient implements Closeable, Serializable {
   private final HttpConfigApi config;
   private final HttpTreeApi tree;
   private final HttpContentApi content;

@@ -15,6 +15,7 @@
  */
 package org.projectnessie.client.http;
 
+import java.io.Serializable;
 import java.util.Locale;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -35,7 +36,7 @@ import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.Transplant;
 
-class HttpTreeClient implements HttpTreeApi {
+class HttpTreeClient implements HttpTreeApi, Serializable {
 
   private final HttpClient client;
 

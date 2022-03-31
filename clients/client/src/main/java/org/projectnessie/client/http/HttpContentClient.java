@@ -15,6 +15,7 @@
  */
 package org.projectnessie.client.http;
 
+import java.io.Serializable;
 import javax.validation.constraints.NotNull;
 import org.projectnessie.api.http.HttpContentApi;
 import org.projectnessie.error.NessieNotFoundException;
@@ -23,7 +24,7 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.GetMultipleContentsRequest;
 import org.projectnessie.model.GetMultipleContentsResponse;
 
-class HttpContentClient implements HttpContentApi {
+class HttpContentClient implements HttpContentApi, Serializable {
 
   private final HttpClient client;
 

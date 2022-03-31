@@ -15,6 +15,7 @@
  */
 package org.projectnessie.client.http.v1api;
 
+import java.io.Serializable;
 import org.projectnessie.client.api.AssignBranchBuilder;
 import org.projectnessie.client.api.AssignTagBuilder;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
@@ -40,7 +41,7 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.NessieConfiguration;
 
-public final class HttpApiV1 implements NessieApiV1 {
+public final class HttpApiV1 implements NessieApiV1, Serializable {
 
   private final NessieApiClient client;
 

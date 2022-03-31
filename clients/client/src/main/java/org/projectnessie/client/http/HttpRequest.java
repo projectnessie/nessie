@@ -24,6 +24,7 @@ import static org.projectnessie.client.http.HttpUtils.HEADER_CONTENT_TYPE;
 
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -41,15 +42,17 @@ import org.projectnessie.client.http.HttpClient.Method;
 /** Class to hold an ongoing HTTP request and its parameters/filters. */
 public class HttpRequest {
 
-  private final HttpRuntimeConfig config;
+  private HttpRuntimeConfig config;
   private final UriBuilder uriBuilder;
   private final HttpHeaders headers = new HttpHeaders();
   private String contentsType = "application/json; charset=utf-8";
   private String accept = "application/json; charset=utf-8";
+  private ObjectMapper mapper;
 
   HttpRequest(HttpRuntimeConfig config) {
     this.uriBuilder = new UriBuilder(config.getBaseUri());
     this.config = config;
+    this.mapper = config.getMapper() == null ? new ObjectMapper() : config.getMapper();
   }
 
   public HttpRequest contentsType(String contentsType) {
@@ -123,7 +126,7 @@ public class HttpRequest {
 
             Class<?> bodyType = body.getClass();
             if (bodyType != String.class) {
-              config.getMapper().writerFor(bodyType).writeValue(out, body);
+              mapper.writerFor(bodyType).writeValue(out, body);
             } else {
               // This is mostly used for testing bad/broken JSON
               out.write(((String) body).getBytes(StandardCharsets.UTF_8));
@@ -149,7 +152,7 @@ public class HttpRequest {
 
       config.getResponseFilters().forEach(responseFilter -> responseFilter.filter(responseContext));
 
-      return new HttpResponse(responseContext, config.getMapper());
+      return new HttpResponse(responseContext, mapper);
     } catch (ProtocolException e) {
       throw new HttpClientException(
           String.format("Cannot perform request against '%s'. Invalid protocol %s", uri, method),

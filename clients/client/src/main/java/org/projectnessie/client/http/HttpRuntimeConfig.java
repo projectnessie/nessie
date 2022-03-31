@@ -16,19 +16,20 @@
 package org.projectnessie.client.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.Serializable;
 import java.net.URI;
 import java.util.List;
 import java.util.Objects;
 import javax.net.ssl.SSLContext;
 
 /** Package-private HTTP configuration holder. */
-final class HttpRuntimeConfig {
+final class HttpRuntimeConfig implements Serializable {
   private final URI baseUri;
-  private final ObjectMapper mapper;
+  private final transient ObjectMapper mapper;
   private final int readTimeoutMillis;
   private final int connectionTimeoutMillis;
   private final boolean disableCompression;
-  private final SSLContext sslContext;
+  private final transient SSLContext sslContext;
   private final List<RequestFilter> requestFilters;
   private final List<ResponseFilter> responseFilters;
 

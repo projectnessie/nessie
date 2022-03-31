@@ -15,6 +15,7 @@
  */
 package org.projectnessie.client.http;
 
+import java.io.Serializable;
 import javax.validation.constraints.NotNull;
 import org.projectnessie.api.http.HttpNamespaceApi;
 import org.projectnessie.api.params.MultipleNamespacesParams;
@@ -26,7 +27,7 @@ import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.GetNamespacesResponse;
 import org.projectnessie.model.Namespace;
 
-class HttpNamespaceClient implements HttpNamespaceApi {
+class HttpNamespaceClient implements HttpNamespaceApi, Serializable {
 
   private final HttpClient client;
 

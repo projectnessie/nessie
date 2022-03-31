@@ -16,13 +16,14 @@
 package org.projectnessie.client.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.Serializable;
 import org.projectnessie.client.http.HttpClientException;
 import org.projectnessie.client.http.ResponseContext;
 import org.projectnessie.client.http.ResponseFilter;
 
-public class NessieHttpResponseFilter implements ResponseFilter {
+public class NessieHttpResponseFilter implements ResponseFilter, Serializable {
 
-  private final ObjectMapper mapper;
+  private final transient ObjectMapper mapper;
 
   public NessieHttpResponseFilter(ObjectMapper mapper) {
     this.mapper = mapper;

@@ -15,13 +15,14 @@
  */
 package org.projectnessie.client.http;
 
+import java.io.Serializable;
 import javax.validation.constraints.NotNull;
 import org.projectnessie.api.http.HttpDiffApi;
 import org.projectnessie.api.params.DiffParams;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.DiffResponse;
 
-class HttpDiffClient implements HttpDiffApi {
+class HttpDiffClient implements HttpDiffApi, Serializable {
 
   private final HttpClient client;
 

@@ -15,13 +15,14 @@
  */
 package org.projectnessie.client.http;
 
+import java.io.Serializable;
 import javax.validation.constraints.NotNull;
 import org.projectnessie.api.http.HttpRefLogApi;
 import org.projectnessie.api.params.RefLogParams;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.RefLogResponse;
 
-class HttpRefLogClient implements HttpRefLogApi {
+class HttpRefLogClient implements HttpRefLogApi, Serializable {
 
   private final HttpClient client;
 

@@ -27,6 +27,7 @@ import io.opentracing.propagation.TextMapAdapter;
 import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
 import java.io.IOException;
+import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -148,7 +149,7 @@ public class NessieHttpClient extends NessieApiClient {
    * This will rewrite exceptions, so they are correctly thrown by the api classes. (since the
    * filter will cause them to be wrapped in {@link javax.ws.rs.client.ResponseProcessingException})
    */
-  private static class ExceptionRewriter implements InvocationHandler {
+  private static class ExceptionRewriter implements InvocationHandler, Serializable {
 
     private final Object delegate;
 

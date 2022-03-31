@@ -53,54 +53,57 @@ public class IdentifyContentsPerExecutor implements Serializable {
   }
 
   protected Function<String, Map<String, ContentBloomFilter>> computeLiveContentsFunc(
-      long bloomFilterSize, Map<String, Instant> droppedRefTimeMap) {
+      long bloomFilterSize, Map<String, Instant> droppedRefTimeMap, NessieApiV1 api) {
     return reference ->
         computeLiveContents(
             getCutoffTimeForRef(reference, droppedRefTimeMap),
             reference,
             droppedRefTimeMap.get(reference),
-            bloomFilterSize);
+            bloomFilterSize,
+            api);
   }
 
   protected Function<String, IdentifiedResult> computeExpiredContentsFunc(
-      Map<String, ContentBloomFilter> liveContentsBloomFilterMap) {
-    return reference -> computeExpiredContents(liveContentsBloomFilterMap, reference);
+      Map<String, ContentBloomFilter> liveContentsBloomFilterMap, NessieApiV1 api) {
+    return reference -> computeExpiredContents(liveContentsBloomFilterMap, reference, api);
   }
 
   private Map<String, ContentBloomFilter> computeLiveContents(
-      Instant cutOffTimestamp, String reference, Instant droppedRefTime, long bloomFilterSize) {
-    try (NessieApiV1 api = GCUtil.getApi(gcParams.getNessieClientConfigs())) {
-      boolean isRefDroppedAfterCutoffTimeStamp =
-          droppedRefTime == null || droppedRefTime.compareTo(cutOffTimestamp) >= 0;
-      if (!isRefDroppedAfterCutoffTimeStamp) {
-        // reference is dropped before cutoff time.
-        // All the contents for all the keys are expired.
-        return new HashMap<>();
-      }
-      Predicate<CommitMeta> liveCommitPredicate =
-          commitMeta ->
-              // If the commit time is newer than (think: greater than or equal to) cutoff-time,
-              // then commit is live.
-              commitMeta.getCommitTime().compareTo(cutOffTimestamp) >= 0;
-
-      ImmutableGCStateParamsPerTask gcStateParamsPerTask =
-          ImmutableGCStateParamsPerTask.builder()
-              .api(api)
-              .reference(GCUtil.deserializeReference(reference))
-              .liveCommitPredicate(liveCommitPredicate)
-              .bloomFilterSize(bloomFilterSize)
-              .build();
-
-      return walkLiveCommitsInReference(gcStateParamsPerTask);
+      Instant cutOffTimestamp,
+      String reference,
+      Instant droppedRefTime,
+      long bloomFilterSize,
+      NessieApiV1 api) {
+    boolean isRefDroppedAfterCutoffTimeStamp =
+        droppedRefTime == null || droppedRefTime.compareTo(cutOffTimestamp) >= 0;
+    if (!isRefDroppedAfterCutoffTimeStamp) {
+      // reference is dropped before cutoff time.
+      // All the contents for all the keys are expired.
+      return new HashMap<>();
     }
+    Predicate<CommitMeta> liveCommitPredicate =
+        commitMeta ->
+            // If the commit time is newer than (think: greater than or equal to) cutoff-time,
+            // then commit is live.
+            commitMeta.getCommitTime().compareTo(cutOffTimestamp) >= 0;
+
+    ImmutableGCStateParamsPerTask gcStateParamsPerTask =
+        ImmutableGCStateParamsPerTask.builder()
+            .api(api)
+            .reference(GCUtil.deserializeReference(reference))
+            .liveCommitPredicate(liveCommitPredicate)
+            .bloomFilterSize(bloomFilterSize)
+            .build();
+
+    return walkLiveCommitsInReference(gcStateParamsPerTask);
   }
 
   private IdentifiedResult computeExpiredContents(
-      Map<String, ContentBloomFilter> liveContentsBloomFilterMap, String reference) {
-    try (NessieApiV1 api = GCUtil.getApi(gcParams.getNessieClientConfigs())) {
-      return walkAllCommitsInReference(
-          api, GCUtil.deserializeReference(reference), liveContentsBloomFilterMap);
-    }
+      Map<String, ContentBloomFilter> liveContentsBloomFilterMap,
+      String reference,
+      NessieApiV1 api) {
+    return walkAllCommitsInReference(
+        api, GCUtil.deserializeReference(reference), liveContentsBloomFilterMap);
   }
 
   private Map<String, ContentBloomFilter> walkLiveCommitsInReference(

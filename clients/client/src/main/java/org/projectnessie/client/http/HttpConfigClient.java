@@ -15,10 +15,11 @@
  */
 package org.projectnessie.client.http;
 
+import java.io.Serializable;
 import org.projectnessie.api.http.HttpConfigApi;
 import org.projectnessie.model.NessieConfiguration;
 
-class HttpConfigClient implements HttpConfigApi {
+class HttpConfigClient implements HttpConfigApi, Serializable {
   private final HttpClient client;
 
   HttpConfigClient(HttpClient client) {

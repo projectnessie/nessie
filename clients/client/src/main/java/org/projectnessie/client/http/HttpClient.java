@@ -16,6 +16,7 @@
 package org.projectnessie.client.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.Serializable;
 import java.net.URI;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -28,7 +29,7 @@ import javax.net.ssl.SSLContext;
  * <p>Assumptions: - always send/receive JSON - set headers accordingly by default - very simple
  * interactions w/ API - no cookies - no caching of connections. Could be slow
  */
-public class HttpClient {
+public class HttpClient implements Serializable {
 
   private final HttpRuntimeConfig config;
 
