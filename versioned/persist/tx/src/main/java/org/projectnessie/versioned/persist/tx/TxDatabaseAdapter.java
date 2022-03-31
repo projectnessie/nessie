@@ -1072,9 +1072,9 @@ public abstract class TxDatabaseAdapter
 
       // 2. INSERT all global-state values for those keys that were not handled above.
       if (!newKeys.isEmpty()) {
-        try (Traced ignored = trace("upsertGlobalStatesInsert")) {
-          PreparedStatement psInsert =
-              conn.conn().prepareStatement(SqlStatements.INSERT_GLOBAL_STATE);
+        try (Traced ignored = trace("upsertGlobalStatesInsert");
+            PreparedStatement psInsert =
+                conn.conn().prepareStatement(SqlStatements.INSERT_GLOBAL_STATE)) {
           for (ContentId contentId : newKeys) {
             ByteString newGlob = commitAttempt.getGlobal().get(contentId);
             byte[] newGlobBytes = newGlob.toByteArray();
@@ -1554,15 +1554,16 @@ public abstract class TxDatabaseAdapter
       selectStatement.setString(1, config.getRepositoryId());
       // insert if the table is empty
       if (!selectStatement.executeQuery().next()) {
-        PreparedStatement psUpdate =
-            conn.conn().prepareStatement(SqlStatements.INSERT_REF_LOG_HEAD);
-        psUpdate.setString(1, config.getRepositoryId());
-        psUpdate.setString(2, Hash.of(newRefLog.getRefLogId()).asString());
-        psUpdate.setBytes(3, refLogHeadParents(newRefLog).toByteArray());
-        if (psUpdate.executeUpdate() != 1) {
-          // No need to continue, just throw a legit constraint-violation that will be
-          // converted to a "proper ReferenceConflictException" later up in the stack.
-          throw newIntegrityConstraintViolationException();
+        try (PreparedStatement psUpdate =
+            conn.conn().prepareStatement(SqlStatements.INSERT_REF_LOG_HEAD)) {
+          psUpdate.setString(1, config.getRepositoryId());
+          psUpdate.setString(2, Hash.of(newRefLog.getRefLogId()).asString());
+          psUpdate.setBytes(3, refLogHeadParents(newRefLog).toByteArray());
+          if (psUpdate.executeUpdate() != 1) {
+            // No need to continue, just throw a legit constraint-violation that will be
+            // converted to a "proper ReferenceConflictException" later up in the stack.
+            throw newIntegrityConstraintViolationException();
+          }
         }
       }
     }
@@ -1583,24 +1584,25 @@ public abstract class TxDatabaseAdapter
         PreparedStatement psSelect =
             conn.conn().prepareStatement(SqlStatements.SELECT_REF_LOG_HEAD)) {
       psSelect.setString(1, config.getRepositoryId());
-      ResultSet resultSet = psSelect.executeQuery();
-      if (resultSet.next()) {
-        Hash head = Hash.of(resultSet.getString(1));
-        ImmutableRefLogHead.Builder refLogHead = RefLogHead.builder().refLogHead(head);
-        byte[] parentsBytes = resultSet.getBytes(2);
-        if (parentsBytes != null) {
-          try {
-            RefLogParents refLogParents = RefLogParents.parseFrom(parentsBytes);
-            refLogParents
-                .getRefLogParentsInclHeadList()
-                .forEach(b -> refLogHead.addRefLogParentsInclHead(Hash.of(b)));
-          } catch (InvalidProtocolBufferException e) {
-            throw new RuntimeException(e);
+      try (ResultSet resultSet = psSelect.executeQuery()) {
+        if (resultSet.next()) {
+          Hash head = Hash.of(resultSet.getString(1));
+          ImmutableRefLogHead.Builder refLogHead = RefLogHead.builder().refLogHead(head);
+          byte[] parentsBytes = resultSet.getBytes(2);
+          if (parentsBytes != null) {
+            try {
+              RefLogParents refLogParents = RefLogParents.parseFrom(parentsBytes);
+              refLogParents
+                  .getRefLogParentsInclHeadList()
+                  .forEach(b -> refLogHead.addRefLogParentsInclHead(Hash.of(b)));
+            } catch (InvalidProtocolBufferException e) {
+              throw new RuntimeException(e);
+            }
           }
+          return refLogHead.build();
         }
-        return refLogHead.build();
+        return null;
       }
-      return null;
     }
   }
 
