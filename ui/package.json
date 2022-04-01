@@ -41,7 +41,7 @@
     "react-bootstrap": "^2.2.2",
     "react-dom": "^18.0.0",
     "react-refresh": "^0.12.0",
-    "react-router-dom": "^6.2.2",
+    "react-router-dom": "^6.3.0",
     "resolve": "1.22.0",
     "resolve-url-loader": "^5.0.0",
     "rxjs": "^7.5.5",
