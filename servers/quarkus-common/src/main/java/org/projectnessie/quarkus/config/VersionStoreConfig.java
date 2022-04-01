@@ -32,6 +32,7 @@ public interface VersionStoreConfig {
     INMEMORY,
     ROCKS,
     MONGO,
+    TRANSACTIONAL,
   }
 
   @WithName("type")

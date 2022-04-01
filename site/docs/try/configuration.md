@@ -23,11 +23,18 @@ docker run -p 8080:8080 projectnessie/nessie \
 
 ### Version Store Settings
 
-| Property                              | Default values | Type               | Description                                                                                                     |
-|---------------------------------------|----------------|--------------------|-----------------------------------------------------------------------------------------------------------------|
-| `nessie.version.store.type`           | `INMEMORY`     | `VersionStoreType` | Sets which type of version store to use by Nessie. Possible values are: `DYNAMO`, `INMEMORY`, `ROCKS`, `MONGO`. |
-| `nessie.version.store.trace.enable`   | `true`         | `boolean`          | Sets whether calls against the version-store are traced with OpenTracing/OpenTelemetry (Jaeger).                |
-| `nessie.version.store.metrics.enable` | `true`         | `boolean`          | Sets whether metrics for the version-store are enabled.                                                         |
+| Property                              | Default values | Type               | Description                                                                                                                      |
+|---------------------------------------|----------------|--------------------|----------------------------------------------------------------------------------------------------------------------------------|
+| `nessie.version.store.type`           | `INMEMORY`     | `VersionStoreType` | Sets which type of version store to use by Nessie. Possible values are: `DYNAMO`, `INMEMORY`, `ROCKS`, `MONGO`, 'TRANSACTIONAL'. |
+| `nessie.version.store.trace.enable`   | `true`         | `boolean`          | Sets whether calls against the version-store are traced with OpenTracing/OpenTelemetry (Jaeger).                                 |
+| `nessie.version.store.metrics.enable` | `true`         | `boolean`          | Sets whether metrics for the version-store are enabled.                                                                          |
+
+#### Transactional Version Store Settings (Since Nessie 0.25.0)
+
+When setting `nessie.version.store.type=TRANSACTIONAL` which enables transactional/RDBMS as the version store used by the Nessie server, the following configurations are applicable in combination with `nessie.version.store.type`:
+
+!!! info
+    A complete set of JDBC configuration options for Quarkus can be found on [quarkus.io](https://quarkus.io/guides/datasource)
 
 #### RocksDB Version Store Settings
 
@@ -80,6 +87,8 @@ The following configurations are advanced configurations to configure how Nessie
 | `nessie.version.store.advanced.commit-retries`                  | `Integer.MAX_VALUE` | `int`    | Sets the maximum retries for CAS-like operations.                                                                                                                                                                                     |
 | `nessie.version.store.advanced.nontx.parents-per-global-commit` | `50`                | `int`    | Sets the number of parent-global-commit-hashes.                                                                                                                                                                                       |
 | `nessie.version.store.advanced.tx.batch-size`                   | `20`                | `int`    | Sets the DML batch size, used when writing multiple commits to a branch during a transplant or merge operation or when writing "overflow full key-lists".                                                                             |
+| `nessie.version.store.advanced.tx.jdbc.catalog`                 |                     | `String` | Sets the catalog name to use via JDBC.                                                                                                                                                                                                |
+| `nessie.version.store.advanced.tx.jdbc.schema`                  |                     | `String` | Sets the schema name to use via JDBC.                                                                                                                                                                                                 |
 
 ### Authentication settings
 

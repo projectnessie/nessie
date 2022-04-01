@@ -107,4 +107,14 @@ public interface QuarkusVersionStoreAdvancedConfig
   @WithDefault("" + DEFAULT_PARENTS_PER_REFLOG_ENTRY)
   @Override
   int getParentsPerRefLogEntry();
+
+  @WithName("tx.jdbc.catalog")
+  @WithDefault("")
+  @WithConverter(RepoIdConverter.class)
+  String getJdbcCatalog();
+
+  @WithName("tx.jdbc.schema")
+  @WithDefault("")
+  @WithConverter(RepoIdConverter.class)
+  String getJdbcSchema();
 }
