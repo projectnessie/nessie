@@ -15,15 +15,12 @@
  */
 package org.projectnessie.gc.base;
 
-import com.google.common.collect.Iterators;
 import java.io.Serializable;
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.OptionalInt;
 import java.util.Set;
@@ -237,21 +234,16 @@ public class IdentifyContentsPerExecutor implements Serializable {
               LOGGER.info("Closing the nessie api for compute expired contents task");
               api.close();
             });
-    List<Iterator<Row>> iterators = new ArrayList<>();
-    references.foreach(
-        reference -> {
-          iterators.add(
-              walkAllCommitsInReference(
-                  api,
-                  GCUtil.deserializeReference(reference),
-                  liveContentsBloomFilterMap,
-                  runId,
-                  startedAt));
-          return reference;
-        });
-    // merge the iterators from each task.
-    Iterator<Row> mergedIterator = Iterators.concat(iterators.iterator());
-    return JavaConverters.asScalaIterator(mergedIterator);
+    return references.flatMap(
+        reference ->
+            JavaConverters.asScalaIterator(
+                    walkAllCommitsInReference(
+                        api,
+                        GCUtil.deserializeReference(reference),
+                        liveContentsBloomFilterMap,
+                        runId,
+                        startedAt))
+                .toTraversable());
   }
 
   private Iterator<Row> walkAllCommitsInReference(
