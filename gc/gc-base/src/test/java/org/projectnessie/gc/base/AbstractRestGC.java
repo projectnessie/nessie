@@ -19,17 +19,23 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URI;
 
 import com.google.common.collect.ImmutableMap;
+import java.io.File;
+import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import javax.validation.constraints.NotNull;
+import org.apache.spark.SparkConf;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
+import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.types.StructType;
+import org.junit.jupiter.api.io.TempDir;
 import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.error.NessieConflictException;
@@ -37,16 +43,16 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.jaxrs.AbstractRest;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
-import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
 
 public abstract class AbstractRestGC extends AbstractRest {
+
+  @TempDir File tempDir;
 
   @NotNull
   List<LogEntry> fetchLogEntries(Branch branch, int numCommits) throws NessieNotFoundException {
@@ -60,7 +66,7 @@ public abstract class AbstractRestGC extends AbstractRest {
         .getLogEntries();
   }
 
-  void fillExpectedContents(Branch branch, int numCommits, IdentifiedResult expected)
+  void fillExpectedContents(Branch branch, int numCommits, List<Row> expected)
       throws NessieNotFoundException {
     fetchLogEntries(branch, numCommits).stream()
         .map(LogEntry::getOperations)
@@ -69,22 +75,30 @@ public abstract class AbstractRestGC extends AbstractRest {
         .filter(op -> op instanceof Put)
         .forEach(
             op -> {
-              Content content = ((Put) op).getContent();
-              expected.addContent(branch.getName(), content);
+              IcebergTable content = (IcebergTable) (((Put) op).getContent());
+              // using only contentId, ref, snapshot id for validation
+              // as metadata location will change based on new global state.
+              expected.add(
+                  RowFactory.create(
+                      Timestamp.from(Instant.now()),
+                      "dummyRunId",
+                      content.getId(),
+                      null,
+                      content.getSnapshotId(),
+                      branch.getName(),
+                      null));
             });
   }
 
   void performGc(
+      String prefix,
       Instant cutoffTimeStamp,
       Map<String, Instant> cutOffTimeStampPerRef,
-      IdentifiedResult expectedExpired,
-      List<String> involvedRefs,
+      List<Row> expectedDataSet,
       boolean disableCommitProtection,
       Instant deadReferenceCutoffTime) {
-    SparkSession spark =
-        SparkSession.builder().appName("test-nessie-gc").master("local[2]").getOrCreate();
-    spark.sparkContext().setLogLevel("WARN");
-    try {
+
+    try (SparkSession sparkSession = getSparkSession()) {
       ImmutableGCParams.Builder builder = ImmutableGCParams.builder();
       final Map<String, String> options = new HashMap<>();
       options.put(CONF_NESSIE_URI, getUri().toString());
@@ -99,93 +113,56 @@ public abstract class AbstractRestGC extends AbstractRest {
               .deadReferenceCutOffTimeStamp(deadReferenceCutoffTime)
               .cutOffTimestampPerRef(cutOffTimeStampPerRef)
               .defaultCutOffTimestamp(cutoffTimeStamp)
+              .nessieCatalogName("nessie")
+              .outputBranchName("gcBranch")
+              .outputTableIdentifier(prefix + ".gc_results")
               .build();
       GCImpl gc = new GCImpl(gcParams);
-      IdentifiedResult identifiedResult = gc.identifyExpiredContents(spark);
+      String runId = gc.identifyExpiredContents(sparkSession);
+
+      IdentifiedResultsRepo actualIdentifiedResultsRepo =
+          new IdentifiedResultsRepo(
+              sparkSession,
+              gcParams.getNessieCatalogName(),
+              gcParams.getOutputBranchName(),
+              gcParams.getOutputTableIdentifier());
+      Dataset<Row> actualRowDataset =
+          actualIdentifiedResultsRepo.collectExpiredContentsAsDataSet(runId);
       // compare the expected contents against the actual gc output
-      verify(identifiedResult, expectedExpired, involvedRefs);
-    } finally {
-      spark.close();
+      verify(
+          actualRowDataset, expectedDataSet, sparkSession, actualIdentifiedResultsRepo.getSchema());
     }
+  }
+
+  SparkSession getSparkSession() {
+    SparkConf conf = new SparkConf();
+    conf.set("spark.sql.catalog.nessie.uri", getUri().toString())
+        .set("spark.sql.catalog.nessie.ref", "main")
+        .set("spark.sql.catalog.nessie.warehouse", tempDir.toURI().toString())
+        .set("spark.sql.catalog.nessie.catalog-impl", "org.apache.iceberg.nessie.NessieCatalog")
+        .set("spark.sql.catalog.nessie", "org.apache.iceberg.spark.SparkCatalog")
+        .set(
+            "spark.sql.extensions",
+            "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions,org.projectnessie.spark.extensions.NessieSparkSessionExtensions");
+
+    SparkSession spark =
+        SparkSession.builder()
+            .appName("test-nessie-gc")
+            .master("local[2]")
+            .config(conf)
+            .getOrCreate();
+    spark.sparkContext().setLogLevel("WARN");
+    return spark;
   }
 
   private void verify(
-      IdentifiedResult identifiedResult,
-      IdentifiedResult expectedExpired,
-      List<String> involvedRefs) {
-    assertThat(identifiedResult.getContentValues()).isNotNull();
-    involvedRefs.forEach(
-        ref ->
-            compareContentsPerRef(
-                identifiedResult.getContentValuesForReference(ref),
-                expectedExpired.getContentValuesForReference(ref)));
-  }
-
-  void compareContentsPerRef(
-      Map<String, ContentValues> actualMap, Map<String, ContentValues> expectedMap) {
-    assertThat(actualMap.size()).isEqualTo(expectedMap.size());
-    actualMap
-        .keySet()
-        .forEach(
-            contentId -> {
-              compareContents(actualMap.get(contentId), expectedMap.get(contentId));
-            });
-  }
-
-  void compareContents(ContentValues actual, ContentValues expected) {
-    if (actual == null && expected == null) {
-      return;
-    }
-    assertThat(actual).isNotNull();
-    assertThat(expected).isNotNull();
-    assertThat(actual.getExpiredContents().size()).isEqualTo(expected.getExpiredContents().size());
-    List<Content> expectedContents = new ArrayList<>(expected.getExpiredContents());
-    expectedContents.sort(new ContentComparator());
-    List<Content> actualContents = new ArrayList<>(actual.getExpiredContents());
-    actualContents.sort(new ContentComparator());
-    for (int i = 0; i < expectedContents.size(); i++) {
-      compareContent(expectedContents.get(i), actualContents.get(i));
-    }
-  }
-
-  void compareContent(Content actual, Content expected) {
-    switch (expected.getType()) {
-      case ICEBERG_TABLE:
-        // exclude global state in comparison as it will change as per the commit and won't be same
-        // as original.
-        // compare only snapshot id for this content.
-        assertThat((IcebergTable) actual)
-            .extracting(IcebergTable::getSnapshotId)
-            .isEqualTo(((IcebergTable) expected).getSnapshotId());
-        break;
-      case ICEBERG_VIEW:
-        // exclude global state in comparison as it will change as per the commit and won't be same
-        // as original.
-        // compare only version id for this content.
-        assertThat((IcebergView) actual)
-            .extracting(IcebergView::getVersionId)
-            .isEqualTo(((IcebergView) expected).getVersionId());
-        break;
-      default:
-        // contents that doesn't have global state can be compared fully.
-        assertThat(actual).isEqualTo(expected);
-    }
-  }
-
-  static class ContentComparator implements Comparator<Content> {
-    @Override
-    public int compare(Content c1, Content c2) {
-      switch (c1.getType()) {
-        case ICEBERG_TABLE:
-          return Long.compare(
-              ((IcebergTable) c1).getSnapshotId(), ((IcebergTable) c2).getSnapshotId());
-        case ICEBERG_VIEW:
-          return Integer.compare(
-              ((IcebergView) c1).getVersionId(), ((IcebergView) c2).getVersionId());
-        default:
-          return c1.getId().compareTo(c2.getId());
-      }
-    }
+      Dataset<Row> actual, List<Row> expectedRows, SparkSession session, StructType schema) {
+    Dataset<Row> expected = session.createDataFrame(expectedRows, schema);
+    Dataset<Row> dfActual = actual.select("referenceName", "contentId", "snapshotId");
+    Dataset<Row> dfExpected = expected.select("referenceName", "contentId", "snapshotId");
+    // when both the dataframe is same, df.except() should return empty.
+    assertThat(dfExpected.count()).isEqualTo(dfActual.count());
+    assertThat(dfExpected.except(dfActual).collectAsList()).isEmpty();
   }
 
   CommitOutput commitSingleOp(

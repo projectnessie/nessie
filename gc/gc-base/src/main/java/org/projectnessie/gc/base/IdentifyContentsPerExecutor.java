@@ -16,9 +16,11 @@
 package org.projectnessie.gc.base;
 
 import java.io.Serializable;
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.OptionalInt;
 import java.util.Set;
@@ -26,7 +28,9 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.mutable.MutableBoolean;
+import org.apache.spark.TaskContext;
 import org.apache.spark.api.java.function.Function;
+import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.client.StreamingUtil;
@@ -36,9 +40,14 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Detached;
+import org.projectnessie.model.IcebergTable;
+import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Reference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import scala.collection.JavaConverters;
 
 /**
  * Contains the methods that executes in spark executor for {@link
@@ -47,6 +56,7 @@ import org.projectnessie.model.Reference;
 public class IdentifyContentsPerExecutor implements Serializable {
 
   private final GCParams gcParams;
+  private static final Logger LOGGER = LoggerFactory.getLogger(IdentifyContentsPerExecutor.class);
 
   public IdentifyContentsPerExecutor(GCParams gcParams) {
     this.gcParams = gcParams;
@@ -62,45 +72,46 @@ public class IdentifyContentsPerExecutor implements Serializable {
             bloomFilterSize);
   }
 
-  protected Function<String, IdentifiedResult> computeExpiredContentsFunc(
-      Map<String, ContentBloomFilter> liveContentsBloomFilterMap) {
-    return reference -> computeExpiredContents(liveContentsBloomFilterMap, reference);
+  protected SerializableFunction1<scala.collection.Iterator<String>, scala.collection.Iterator<Row>>
+      getExpiredContentRowsFunc(
+          Map<String, ContentBloomFilter> liveContentsBloomFilterMap,
+          String runId,
+          Timestamp startedAt) {
+    return result -> getExpiredContentRows(result, liveContentsBloomFilterMap, runId, startedAt);
   }
 
+  // --- Methods for computing live content bloom filter ----------
   private Map<String, ContentBloomFilter> computeLiveContents(
       Instant cutOffTimestamp, String reference, Instant droppedRefTime, long bloomFilterSize) {
-    try (NessieApiV1 api = GCUtil.getApi(gcParams.getNessieClientConfigs())) {
-      boolean isRefDroppedAfterCutoffTimeStamp =
-          droppedRefTime == null || droppedRefTime.compareTo(cutOffTimestamp) >= 0;
-      if (!isRefDroppedAfterCutoffTimeStamp) {
-        // reference is dropped before cutoff time.
-        // All the contents for all the keys are expired.
-        return new HashMap<>();
-      }
-      Predicate<CommitMeta> liveCommitPredicate =
-          commitMeta ->
-              // If the commit time is newer than (think: greater than or equal to) cutoff-time,
-              // then commit is live.
-              commitMeta.getCommitTime().compareTo(cutOffTimestamp) >= 0;
-
-      ImmutableGCStateParamsPerTask gcStateParamsPerTask =
-          ImmutableGCStateParamsPerTask.builder()
-              .api(api)
-              .reference(GCUtil.deserializeReference(reference))
-              .liveCommitPredicate(liveCommitPredicate)
-              .bloomFilterSize(bloomFilterSize)
-              .build();
-
-      return walkLiveCommitsInReference(gcStateParamsPerTask);
+    NessieApiV1 api = GCUtil.getApi(gcParams.getNessieClientConfigs());
+    TaskContext.get()
+        .addTaskCompletionListener(
+            context -> {
+              LOGGER.info("Closing the nessie api for compute live contents task");
+              api.close();
+            });
+    boolean isRefDroppedAfterCutoffTimeStamp =
+        droppedRefTime == null || droppedRefTime.compareTo(cutOffTimestamp) >= 0;
+    if (!isRefDroppedAfterCutoffTimeStamp) {
+      // reference is dropped before cutoff time.
+      // All the contents for all the keys are expired.
+      return new HashMap<>();
     }
-  }
+    Predicate<CommitMeta> liveCommitPredicate =
+        commitMeta ->
+            // If the commit time is newer than (think: greater than or equal to) cutoff-time,
+            // then commit is live.
+            commitMeta.getCommitTime().compareTo(cutOffTimestamp) >= 0;
 
-  private IdentifiedResult computeExpiredContents(
-      Map<String, ContentBloomFilter> liveContentsBloomFilterMap, String reference) {
-    try (NessieApiV1 api = GCUtil.getApi(gcParams.getNessieClientConfigs())) {
-      return walkAllCommitsInReference(
-          api, GCUtil.deserializeReference(reference), liveContentsBloomFilterMap);
-    }
+    ImmutableGCStateParamsPerTask gcStateParamsPerTask =
+        ImmutableGCStateParamsPerTask.builder()
+            .api(api)
+            .reference(GCUtil.deserializeReference(reference))
+            .liveCommitPredicate(liveCommitPredicate)
+            .bloomFilterSize(bloomFilterSize)
+            .build();
+
+    return walkLiveCommitsInReference(gcStateParamsPerTask);
   }
 
   private Map<String, ContentBloomFilter> walkLiveCommitsInReference(
@@ -134,39 +145,6 @@ public class IdentifyContentsPerExecutor implements Serializable {
     return bloomFilterMap;
   }
 
-  private IdentifiedResult walkAllCommitsInReference(
-      NessieApiV1 api,
-      Reference reference,
-      Map<String, ContentBloomFilter> liveContentsBloomFilterMap) {
-    IdentifiedResult result = new IdentifiedResult();
-    Instant commitProtectionTime = Instant.now().minus(gcParams.getCommitProtectionDuration());
-    try (Stream<LogResponse.LogEntry> commits =
-        StreamingUtil.getCommitLogStream(
-            api,
-            builder ->
-                builder
-                    .hashOnRef(reference.getHash())
-                    .refName(Detached.REF_NAME)
-                    .fetch(FetchOption.ALL),
-            OptionalInt.empty())) {
-      commits.forEach(
-          logEntry -> {
-            // Between the bloom filter creation and this step,
-            // there can be some more commits in the backend.
-            // Checking them against bloom filter will give false results.
-            // Hence, protect those commits using commitProtectionTime.
-            if (logEntry.getCommitMeta().getCommitTime().compareTo(commitProtectionTime) < 0) {
-              // this commit can be tested for expiry as it is unprotected.
-              handleCommitForExpiredContents(
-                  reference, logEntry, liveContentsBloomFilterMap, result);
-            }
-          });
-    } catch (NessieNotFoundException e) {
-      throw new RuntimeException(e);
-    }
-    return result;
-  }
-
   private void handleLiveCommit(
       GCStateParamsPerTask gcStateParamsPerTask,
       LogResponse.LogEntry logEntry,
@@ -193,7 +171,7 @@ public class IdentifyContentsPerExecutor implements Serializable {
         }
       }
       logEntry.getOperations().stream()
-          .filter(operation -> operation instanceof Operation.Put)
+          .filter(Operation.Put.class::isInstance)
           .forEach(
               operation -> {
                 boolean addContent;
@@ -223,36 +201,6 @@ public class IdentifyContentsPerExecutor implements Serializable {
     }
   }
 
-  private static void handleCommitForExpiredContents(
-      Reference reference,
-      LogResponse.LogEntry logEntry,
-      Map<String, ContentBloomFilter> liveContentsBloomFilterMap,
-      IdentifiedResult result) {
-    if (logEntry.getOperations() != null) {
-      logEntry.getOperations().stream()
-          .filter(operation -> operation instanceof Operation.Put)
-          .forEach(
-              operation -> {
-                Content content = ((Operation.Put) operation).getContent();
-                ContentBloomFilter bloomFilter = liveContentsBloomFilterMap.get(content.getId());
-                // when no live bloom filter exist for this content id, all the contents are
-                // definitely expired.
-
-                // Checking against live contents bloom filter can result
-                //    no  --> content is considered expired (filter cannot say 'no' for live
-                // contents).
-                //    may be  -->  content is considered live (filter can say 'maybe' for expired
-                // contents).
-                // Worst case few expired contents will be considered live due to bloom filter
-                // fpp.
-                // But live contents never be considered as expired.
-                if (bloomFilter == null || !bloomFilter.mightContain(content)) {
-                  result.addContent(reference.getName(), content);
-                }
-              });
-    }
-  }
-
   private Instant getCutoffTimeForRef(String reference, Map<String, Instant> droppedRefTimeMap) {
     if (droppedRefTimeMap.containsKey(reference)
         && gcParams.getDeadReferenceCutOffTimeStamp() != null) {
@@ -266,5 +214,120 @@ public class IdentifyContentsPerExecutor implements Serializable {
             .getOrDefault(
                 GCUtil.deserializeReference(reference).getName(),
                 gcParams.getDefaultCutOffTimestamp());
+  }
+
+  // --- Methods for computing expired content rows ----------
+  /**
+   * convert scala Iterator of reference into scala Iterator of {@link Row}.
+   *
+   * <p>Each reference can produce one or more rows.
+   */
+  private scala.collection.Iterator<Row> getExpiredContentRows(
+      scala.collection.Iterator<String> references,
+      Map<String, ContentBloomFilter> liveContentsBloomFilterMap,
+      String runId,
+      Timestamp startedAt) {
+    NessieApiV1 api = GCUtil.getApi(gcParams.getNessieClientConfigs());
+    TaskContext.get()
+        .addTaskCompletionListener(
+            context -> {
+              LOGGER.info("Closing the nessie api for compute expired contents task");
+              api.close();
+            });
+    return references.flatMap(
+        reference ->
+            JavaConverters.asScalaIterator(
+                    walkAllCommitsInReference(
+                        api,
+                        GCUtil.deserializeReference(reference),
+                        liveContentsBloomFilterMap,
+                        runId,
+                        startedAt))
+                .toTraversable());
+  }
+
+  private Iterator<Row> walkAllCommitsInReference(
+      NessieApiV1 api,
+      Reference reference,
+      Map<String, ContentBloomFilter> liveContentsBloomFilterMap,
+      String runId,
+      Timestamp startedAt) {
+    Instant commitProtectionTime = Instant.now().minus(gcParams.getCommitProtectionDuration());
+    // Between the bloom filter creation and this step,
+    // there can be some more commits in the backend.
+    // Checking them against bloom filter will give false results.
+    // Hence, protect those commits using commitProtectionTime.
+    Predicate<LogResponse.LogEntry> unprotectedCommitsPredicate =
+        logEntry -> logEntry.getCommitMeta().getCommitTime().compareTo(commitProtectionTime) < 0;
+    // when no live bloom filter exist for this content id, all the contents are
+    // definitely expired.
+
+    // Checking against live contents bloom filter can result
+    //    no  --> content is considered expired (filter cannot say 'no' for live
+    // contents).
+    //    may be  -->  content is considered live (filter can say 'maybe' for expired
+    // contents).
+    // Worst case few expired contents will be considered live due to bloom filter
+    // fpp.
+    // But live contents never be considered as expired.
+    Predicate<Content> expiredContentPredicate =
+        content ->
+            (liveContentsBloomFilterMap.get(content.getId()) == null
+                || !liveContentsBloomFilterMap.get(content.getId()).mightContain(content));
+    try {
+      Iterator<Content> iterator =
+          StreamingUtil.getCommitLogStream(
+                  api,
+                  builder ->
+                      builder
+                          .hashOnRef(reference.getHash())
+                          .refName(Detached.REF_NAME)
+                          .fetch(FetchOption.ALL),
+                  OptionalInt.empty())
+              .filter(unprotectedCommitsPredicate)
+              .map(LogResponse.LogEntry::getOperations)
+              .flatMap(operations -> operations.stream().filter(Operation.Put.class::isInstance))
+              .map(Operation.Put.class::cast)
+              .map(Operation.Put::getContent)
+              .filter(
+                  content ->
+                      (content.getType() == Content.Type.ICEBERG_TABLE
+                          || content.getType() == Content.Type.ICEBERG_VIEW))
+              .filter(expiredContentPredicate)
+              .iterator();
+
+      return new Iterator<Row>() {
+        @Override
+        public boolean hasNext() {
+          return iterator.hasNext();
+        }
+
+        @Override
+        public Row next() {
+          return fillRow(reference, iterator.next(), runId, startedAt);
+        }
+      };
+    } catch (NessieNotFoundException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private static Row fillRow(
+      Reference reference, Content content, String runId, Timestamp startedAt) {
+    return IdentifiedResultsRepo.createContentRow(
+        content, runId, startedAt, getSnapshotId(content), reference);
+  }
+
+  private static long getSnapshotId(Content content) {
+    long snapshotId;
+    switch (content.getType()) {
+      case ICEBERG_VIEW:
+        snapshotId = ((IcebergView) content).getVersionId();
+        break;
+      case ICEBERG_TABLE:
+      default:
+        snapshotId = ((IcebergTable) content).getSnapshotId();
+    }
+    return snapshotId;
   }
 }

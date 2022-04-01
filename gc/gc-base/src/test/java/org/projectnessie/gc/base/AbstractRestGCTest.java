@@ -16,10 +16,12 @@
 package org.projectnessie.gc.base;
 
 import java.time.Instant;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import org.apache.spark.sql.Row;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.model.Branch;
@@ -55,7 +57,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
     //         t7        |            DROP TABLE_TWO
 
     String prefix = "singleRefMultiTable";
-    IdentifiedResult expectedResult = new IdentifiedResult();
+    List<Row> expectedResult = new ArrayList<>();
 
     Branch branch1 = createBranch(prefix);
     // one commit for TABLE_ONE on branch1
@@ -114,17 +116,10 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
     dropTableCommit(prefix, branch1, table2.hash, TABLE_TWO);
 
     // test GC with commit protection. No commits should be expired.
-    performGc(
-        cutoffTime,
-        null,
-        new IdentifiedResult(),
-        Collections.singletonList(branch1.getName()),
-        false,
-        null);
+    performGc(prefix, cutoffTime, null, Collections.emptyList(), false, null);
 
     // test GC without commit protection.
-    performGc(
-        cutoffTime, null, expectedResult, Collections.singletonList(branch1.getName()), true, null);
+    performGc(prefix, cutoffTime, null, expectedResult, true, null);
   }
 
   @Test
@@ -137,7 +132,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
     //         t4        |            TABLE_TWO : 44
     //         t5        |            RENAME TABLE_TWO to TABLE_TWO_RENAMED
     String prefix = "singleRefRenameTable";
-    IdentifiedResult expectedResult = new IdentifiedResult();
+    List<Row> expectedResult = new ArrayList<>();
 
     Branch branch1 = createBranch(prefix);
     // one commit for TABLE_TWO on branch1
@@ -192,8 +187,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
             TABLE_TWO);
 
     // rename table should not expire the live commits after cutoff timestamp.
-    performGc(
-        cutoffTime, null, expectedResult, Collections.singletonList(branch1.getName()), true, null);
+    performGc(prefix, cutoffTime, null, expectedResult, true, null);
   }
 
   @Test
@@ -207,7 +201,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
     //         t5        |            TABLE_TWO_RENAMED : 44
 
     String prefix = "singleRefRenameTableBeforeCutoff";
-    IdentifiedResult expectedResult = new IdentifiedResult();
+    List<Row> expectedResult = new ArrayList<>();
 
     Branch branch1 = createBranch(prefix);
     // one commit for TABLE_TWO on branch1
@@ -261,8 +255,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
             table2.content,
             null);
 
-    performGc(
-        cutoffTime, null, expectedResult, Collections.singletonList(branch1.getName()), true, null);
+    performGc(prefix, cutoffTime, null, expectedResult, true, null);
   }
 
   @Test
@@ -276,7 +269,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
     //         t5        | ------- cut off time ----------------|
     //         t6        |            TABLE_ONE : 43
     String prefix = "singleRefDropTable";
-    IdentifiedResult expectedResult = new IdentifiedResult();
+    List<Row> expectedResult = new ArrayList<>();
 
     Branch branch1 = createBranch(prefix);
     // one commit for TABLE_ONE on branch1
@@ -320,8 +313,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
             table1.content,
             null);
 
-    performGc(
-        cutoffTime, null, expectedResult, Collections.singletonList(branch1.getName()), true, null);
+    performGc(prefix, cutoffTime, null, expectedResult, true, null);
   }
 
   @Test
@@ -334,7 +326,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
     //         t4        |            delete branch
     //         t5        | ------- cut off time ----------------|
     String prefix = "singleRefDropRefBeforeCutoff";
-    IdentifiedResult expectedResult = new IdentifiedResult();
+    List<Row> expectedResult = new ArrayList<>();
 
     Branch branch1 = createBranch(prefix);
     // one commit for TABLE_ONE on branch1
@@ -365,8 +357,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
 
     final Instant cutoffTime = Instant.now();
 
-    performGc(
-        cutoffTime, null, expectedResult, Collections.singletonList(branch1.getName()), true, null);
+    performGc(prefix, cutoffTime, null, expectedResult, true, null);
   }
 
   @Test
@@ -380,7 +371,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
     //         t5        |            delete branch
 
     String prefix = "singleRefDropRefAfterCutoff";
-    IdentifiedResult expectedResult = new IdentifiedResult();
+    List<Row> expectedResult = new ArrayList<>();
 
     Branch branch1 = createBranch(prefix);
     // one commit for TABLE_ONE on branch1
@@ -411,8 +402,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
     // delete branch before cutoff time
     deleteBranch(branch1.getName(), table2.hash);
 
-    performGc(
-        cutoffTime, null, expectedResult, Collections.singletonList(branch1.getName()), true, null);
+    performGc(prefix, cutoffTime, null, expectedResult, true, null);
   }
 
   @Test
@@ -428,7 +418,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
     //         t5        |            delete branch
 
     String prefix = "singleRefDeadRefCutoff";
-    IdentifiedResult expectedResult = new IdentifiedResult();
+    List<Row> expectedResult = new ArrayList<>();
 
     Branch branch1 = createBranch(prefix);
     // one commit for TABLE_ONE on branch1
@@ -474,13 +464,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
     // delete branch before cutoff time
     deleteBranch(branch1.getName(), table2.hash);
 
-    performGc(
-        cutoffTime,
-        null,
-        expectedResult,
-        Collections.singletonList(branch1.getName()),
-        true,
-        deadRefCutoffTime);
+    performGc(prefix, cutoffTime, null, expectedResult, true, deadRefCutoffTime);
   }
 
   @Test
@@ -500,7 +484,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
     //         t11       |  DROP TABLE_ONE  |                   |                  |
 
     String prefix = "multiRefSharedTable";
-    IdentifiedResult expectedResult = new IdentifiedResult();
+    List<Row> expectedResult = new ArrayList<>();
 
     Branch branch1 = createBranch(prefix + "_1");
     // commit for TABLE_ONE on branch1
@@ -586,13 +570,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
     // drop table TABLE_ONE on branch1 should not affect as it is performed after cutoff timestamp.
     dropTableCommit(prefix, branch1, b1table1.hash, TABLE_ONE);
 
-    performGc(
-        cutoffTime,
-        null,
-        expectedResult,
-        Arrays.asList(branch1.getName(), branch2.getName(), branch3.getName()),
-        true,
-        null);
+    performGc(prefix, cutoffTime, null, expectedResult, true, null);
   }
 
   @Test
@@ -613,7 +591,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
     //         t12       |                  |                   | TABLE_ONE : 44            |
 
     String prefix = "multiRefMultipleSharedTables";
-    IdentifiedResult expectedResult = new IdentifiedResult();
+    List<Row> expectedResult = new ArrayList<>();
 
     Branch branch1 = createBranch(prefix + "_1");
 
@@ -691,13 +669,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
             b2table1.content,
             null);
 
-    performGc(
-        cutoffTime,
-        null,
-        expectedResult,
-        Arrays.asList(branch1.getName(), branch2.getName(), branch3.getName()),
-        true,
-        null);
+    performGc(prefix, cutoffTime, null, expectedResult, true, null);
   }
 
   @Test
@@ -714,7 +686,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
     //         t8        |                          |-- cut off time ----------- |
     //         t9        |                          | TABLE_TWO : 45             |
     String prefix = "multiRefCutoffTimeStampPerRef";
-    IdentifiedResult expectedResult = new IdentifiedResult();
+    List<Row> expectedResult = new ArrayList<>();
 
     Branch branch1 = createBranch(prefix + "_1");
     Branch branch2 = createBranch(prefix + "_2");
@@ -786,13 +758,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
             table2.content,
             null);
 
-    performGc(
-        defaultCutoffTime,
-        perRefCutoffTime,
-        expectedResult,
-        Arrays.asList(branch1.getName(), branch2.getName()),
-        true,
-        null);
+    performGc(prefix, defaultCutoffTime, perRefCutoffTime, expectedResult, true, null);
   }
 
   @Test
@@ -811,7 +777,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
     //         t10       |  delete branch           |                            |
 
     String prefix = "multiRefAssignAndDropRef";
-    IdentifiedResult expectedResult = new IdentifiedResult();
+    List<Row> expectedResult = new ArrayList<>();
 
     // 'before' is same as main branch
     Branch before = createBranch(prefix + "_0");
@@ -891,12 +857,6 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
     // drop ref branch1 should not affect as it is performed after cutoff timestamp.
     deleteBranch(branch1.getName(), table1.hash);
 
-    performGc(
-        cutoffTime,
-        null,
-        expectedResult,
-        Arrays.asList(branch1.getName(), branch2.getName()),
-        true,
-        null);
+    performGc(prefix, cutoffTime, null, expectedResult, true, null);
   }
 }

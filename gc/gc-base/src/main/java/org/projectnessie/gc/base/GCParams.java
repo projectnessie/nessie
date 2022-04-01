@@ -70,6 +70,23 @@ public interface GCParams extends Serializable {
     return 0.03d;
   }
 
+  /** Nessie catalog name to be used with spark to create the output results table. */
+  String getNessieCatalogName();
+
+  /**
+   * Branch's name to be used for creating the output table.
+   *
+   * <p>If the branch doesn't exist for this name, branch with this name pointing to beginning of
+   * time (aka NO_ANCESTOR hash) will be created.
+   */
+  String getOutputBranchName();
+
+  /**
+   * Output table identifier (namespace and table name) to be used for storing the results in {@link
+   * #getOutputBranchName()}.
+   */
+  String getOutputTableIdentifier();
+
   @Value.Check
   default void validate() {
     Integer taskCount = getSparkPartitionsCount();

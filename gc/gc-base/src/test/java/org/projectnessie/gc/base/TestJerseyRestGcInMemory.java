@@ -33,7 +33,7 @@ import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabas
 @NessieDbAdapterName(InmemoryDatabaseAdapterFactory.NAME)
 @NessieExternalDatabase(InmemoryTestConnectionProviderSource.class)
 @ExtendWith(DatabaseAdapterExtension.class)
-class TestJerseyRestGcInMemory extends AbstractRestGCTest {
+class TestJerseyRestGcInMemory extends AbstractRestGCRepoTest {
 
   @NessieDbAdapter static DatabaseAdapter databaseAdapter;
 

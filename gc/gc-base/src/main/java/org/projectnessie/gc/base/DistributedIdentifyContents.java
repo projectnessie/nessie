@@ -15,12 +15,18 @@
  */
 package org.projectnessie.gc.base;
 
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Encoders;
+import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.catalyst.encoders.RowEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,21 +71,27 @@ public class DistributedIdentifyContents {
    *
    * @param liveContentsBloomFilterMap live contents bloom filter per content id.
    * @param references list of all the references (JSON serialized) to walk (live and dead)
-   * @return {@link IdentifiedResult} object.
+   * @return current run id of the completed gc task
    */
-  public IdentifiedResult getIdentifiedResults(
+  public String identifyExpiredContents(
       Map<String, ContentBloomFilter> liveContentsBloomFilterMap, List<String> references) {
-
+    String runId = UUID.randomUUID().toString();
+    Timestamp startedAt = Timestamp.from(Instant.now());
+    IdentifiedResultsRepo identifiedResultsRepo =
+        new IdentifiedResultsRepo(
+            session,
+            gcParams.getNessieCatalogName(),
+            gcParams.getOutputBranchName(),
+            gcParams.getOutputTableIdentifier());
     IdentifyContentsPerExecutor executor = new IdentifyContentsPerExecutor(gcParams);
-    List<IdentifiedResult> results =
-        new JavaSparkContext(session.sparkContext())
-            .parallelize(references, getPartitionsCount(gcParams, references))
-            .map(executor.computeExpiredContentsFunc(liveContentsBloomFilterMap))
-            .collect();
-    IdentifiedResult identifiedResult = new IdentifiedResult();
-    results.forEach(
-        result -> identifiedResult.getContentValues().putAll(result.getContentValues()));
-    return identifiedResult;
+    Dataset<Row> rowDataset =
+        session
+            .createDataset(references, Encoders.STRING())
+            .mapPartitions(
+                executor.getExpiredContentRowsFunc(liveContentsBloomFilterMap, runId, startedAt),
+                RowEncoder.apply(identifiedResultsRepo.getSchema()));
+    identifiedResultsRepo.writeToOutputTable(rowDataset);
+    return runId;
   }
 
   private static int getPartitionsCount(GCParams gcParams, List<String> references) {
