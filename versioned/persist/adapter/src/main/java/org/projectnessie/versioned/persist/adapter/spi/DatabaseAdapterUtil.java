@@ -19,7 +19,6 @@ import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 import com.google.protobuf.UnsafeByteOperations;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.Optional;
 import java.util.Spliterator;
 import java.util.Spliterators.AbstractSpliterator;
@@ -36,6 +35,8 @@ import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
+import org.projectnessie.versioned.persist.adapter.MergeParams;
+import org.projectnessie.versioned.persist.adapter.TransplantParams;
 
 /** Utility methods for {@link DatabaseAdapter} implementations. */
 public final class DatabaseAdapterUtil {
@@ -89,27 +90,22 @@ public final class DatabaseAdapterUtil {
         String.format("Named reference '%s' already exists.", ref.getName()));
   }
 
-  public static String mergeConflictMessage(
-      String err, Hash from, BranchName toBranch, Optional<Hash> expectedHead) {
+  public static String mergeConflictMessage(String err, MergeParams mergeParams) {
     return String.format(
         "%s during merge of '%s' into '%s%s' requiring a common ancestor",
         err,
-        from.asString(),
-        toBranch.getName(),
-        expectedHead.map(h -> "@" + h.asString()).orElse(""));
+        mergeParams.getMergeFromHash().asString(),
+        mergeParams.getToBranch().getName(),
+        mergeParams.getExpectedHead().map(h -> "@" + h.asString()).orElse(""));
   }
 
-  public static String transplantConflictMessage(
-      String err,
-      BranchName targetBranch,
-      Optional<Hash> expectedHead,
-      List<Hash> sequenceToTransplant) {
+  public static String transplantConflictMessage(String err, TransplantParams transplantParams) {
     return String.format(
         "%s during transplant of %d commits into '%s%s'",
         err,
-        sequenceToTransplant.size(),
-        targetBranch.getName(),
-        expectedHead.map(h -> "@" + h.asString()).orElse(""));
+        transplantParams.getSequenceToTransplant().size(),
+        transplantParams.getToBranch().getName(),
+        transplantParams.getExpectedHead().map(h -> "@" + h.asString()).orElse(""));
   }
 
   public static String commitConflictMessage(

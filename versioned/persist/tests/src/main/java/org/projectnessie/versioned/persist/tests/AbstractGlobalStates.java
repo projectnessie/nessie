@@ -41,7 +41,7 @@ import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
-import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt;
+import org.projectnessie.versioned.persist.adapter.ImmutableCommitParams;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 
 /**
@@ -175,9 +175,9 @@ public abstract class AbstractGlobalStates {
 
     for (int commit = 0; commit < param.commitsPerBranch; commit++) {
       for (BranchName branch : branches) {
-        ImmutableCommitAttempt.Builder commitAttempt =
-            ImmutableCommitAttempt.builder()
-                .commitToBranch(branch)
+        ImmutableCommitParams.Builder commitAttempt =
+            ImmutableCommitParams.builder()
+                .toBranch(branch)
                 .expectedHead(Optional.of(heads.get(branch)))
                 .commitMetaSerialized(
                     ByteString.copyFromUtf8(
@@ -204,7 +204,7 @@ public abstract class AbstractGlobalStates {
           }
         }
 
-        ImmutableCommitAttempt attempt = commitAttempt.build();
+        ImmutableCommitParams attempt = commitAttempt.build();
         if (!attempt.getPuts().isEmpty()) {
           heads.put(branch, databaseAdapter.commit(attempt));
         }
@@ -243,8 +243,8 @@ public abstract class AbstractGlobalStates {
     Hash branchInitial = databaseAdapter.hashOnReference(branch, Optional.empty());
 
     databaseAdapter.commit(
-        ImmutableCommitAttempt.builder()
-            .commitToBranch(branch)
+        ImmutableCommitParams.builder()
+            .toBranch(branch)
             .commitMetaSerialized(ByteString.EMPTY)
             .addPuts(
                 KeyWithBytes.of(
@@ -258,8 +258,8 @@ public abstract class AbstractGlobalStates {
     assertThatThrownBy(
             () ->
                 databaseAdapter.commit(
-                    ImmutableCommitAttempt.builder()
-                        .commitToBranch(branch)
+                    ImmutableCommitParams.builder()
+                        .toBranch(branch)
                         .expectedHead(Optional.of(branchInitial))
                         .commitMetaSerialized(ByteString.EMPTY)
                         .addPuts(
@@ -278,8 +278,8 @@ public abstract class AbstractGlobalStates {
     assertThatThrownBy(
             () ->
                 databaseAdapter.commit(
-                    ImmutableCommitAttempt.builder()
-                        .commitToBranch(branch)
+                    ImmutableCommitParams.builder()
+                        .toBranch(branch)
                         .commitMetaSerialized(ByteString.EMPTY)
                         .addPuts(
                             KeyWithBytes.of(
@@ -296,8 +296,8 @@ public abstract class AbstractGlobalStates {
     assertThatThrownBy(
             () ->
                 databaseAdapter.commit(
-                    ImmutableCommitAttempt.builder()
-                        .commitToBranch(branch)
+                    ImmutableCommitParams.builder()
+                        .toBranch(branch)
                         .commitMetaSerialized(ByteString.EMPTY)
                         .addPuts(
                             KeyWithBytes.of(
@@ -315,8 +315,8 @@ public abstract class AbstractGlobalStates {
     assertThatThrownBy(
             () ->
                 databaseAdapter.commit(
-                    ImmutableCommitAttempt.builder()
-                        .commitToBranch(branch)
+                    ImmutableCommitParams.builder()
+                        .toBranch(branch)
                         .expectedHead(Optional.of(branchInitial))
                         .commitMetaSerialized(ByteString.EMPTY)
                         .addPuts(

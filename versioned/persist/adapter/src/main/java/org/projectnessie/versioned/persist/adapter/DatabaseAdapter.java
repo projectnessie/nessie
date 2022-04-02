@@ -18,13 +18,11 @@ package org.projectnessie.versioned.persist.adapter;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.ByteString;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
-import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
@@ -125,29 +123,23 @@ public interface DatabaseAdapter {
       throws ReferenceNotFoundException;
 
   /**
-   * Commit operation, see {@link CommitAttempt} for a description of the parameters.
+   * Commit operation, see {@link CommitParams} for a description of the parameters.
    *
-   * @param commitAttempt parameters for the commit
+   * @param commitParams parameters for the commit
    * @return optimistically written commit-log-entry
    * @throws ReferenceNotFoundException if either the named reference in {@link
-   *     CommitAttempt#getCommitToBranch()} or the commit on that reference, if specified, does not
-   *     exist.
+   *     CommitParams#getToBranch()} or the commit on that reference, if specified, does not exist.
    * @throws ReferenceConflictException if any of the commits could not be committed onto the target
    *     branch due to a conflicting change or if the expected hash in {@link
-   *     CommitAttempt#getCommitToBranch()}is not its expected hEAD
+   *     CommitParams#getToBranch()}is not its expected hEAD
    */
-  Hash commit(CommitAttempt commitAttempt)
+  Hash commit(CommitParams commitParams)
       throws ReferenceConflictException, ReferenceNotFoundException;
 
   /**
    * Cherry-pick the commits with the hashes {@code sequenceToTransplant} from named reference
    * {@code source} onto the reference {@code targetBranch}.
    *
-   * @param targetBranch named-reference to commit to. If no value for the hash is specified, it
-   *     defaults to the named reference's HEAD.
-   * @param expectedHead if present, {@code target}'s current HEAD must be equal to this value
-   * @param sequenceToTransplant commits in {@code source} to cherry-pick onto {@code targetBranch}
-   * @param updateCommitMetadata function to rewrite the commit-metadata for copied commits
    * @return the hash of the last cherry-picked commit, in other words the new HEAD of the target
    *     branch
    * @throws ReferenceNotFoundException if either the named reference in {@code commitOnReference}
@@ -156,11 +148,7 @@ public interface DatabaseAdapter {
    *     branch due to a conflicting change or if the expected hash of {@code toBranch} is not its
    *     expected hEAD
    */
-  Hash transplant(
-      BranchName targetBranch,
-      Optional<Hash> expectedHead,
-      List<Hash> sequenceToTransplant,
-      Function<ByteString, ByteString> updateCommitMetadata)
+  Hash transplant(TransplantParams transplantParams)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**
@@ -170,10 +158,6 @@ public interface DatabaseAdapter {
    * <p>The implementation first identifies the common-ancestor (the most-recent commit that is both
    * reachable via {@code from} and {@code to}).
    *
-   * @param from commit-hash to start reading commits from.
-   * @param toBranch target branch to commit to
-   * @param expectedHead if present, {@code toBranch}'s current HEAD must be equal to this value
-   * @param updateCommitMetadata function to rewrite the commit-metadata for copied commits
    * @return the hash of the last cherry-picked commit, in other words the new HEAD of the target
    *     branch
    * @throws ReferenceNotFoundException if either the named reference in {@code toBranch} or the
@@ -182,12 +166,7 @@ public interface DatabaseAdapter {
    *     branch due to a conflicting change or if the expected hash of {@code toBranch} is not its
    *     expected hEAD
    */
-  Hash merge(
-      Hash from,
-      BranchName toBranch,
-      Optional<Hash> expectedHead,
-      Function<ByteString, ByteString> updateCommitMetadata)
-      throws ReferenceNotFoundException, ReferenceConflictException;
+  Hash merge(MergeParams mergeParams) throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**
    * Resolve the current HEAD of the given named-reference and optionally additional information.

@@ -42,7 +42,7 @@ import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.Difference;
-import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt;
+import org.projectnessie.versioned.persist.adapter.ImmutableCommitParams;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.tests.extension.DatabaseAdapterExtension;
@@ -191,8 +191,8 @@ public abstract class AbstractDatabaseAdapterTest {
 
     Hash unreachableHead =
         databaseAdapter.commit(
-            ImmutableCommitAttempt.builder()
-                .commitToBranch(unreachable)
+            ImmutableCommitParams.builder()
+                .toBranch(unreachable)
                 .commitMetaSerialized(ByteString.copyFromUtf8("commit meta"))
                 .addPuts(
                     KeyWithBytes.of(
@@ -215,8 +215,8 @@ public abstract class AbstractDatabaseAdapterTest {
             assertThatThrownBy(
                     () ->
                         databaseAdapter.commit(
-                            ImmutableCommitAttempt.builder()
-                                .commitToBranch(helper)
+                            ImmutableCommitParams.builder()
+                                .toBranch(helper)
                                 .expectedHead(Optional.of(unreachableHead))
                                 .commitMetaSerialized(ByteString.copyFromUtf8("commit meta"))
                                 .addPuts(
@@ -260,8 +260,8 @@ public abstract class AbstractDatabaseAdapterTest {
     for (int i = 0; i < commits.length; i++) {
       commits[i] =
           databaseAdapter.commit(
-              ImmutableCommitAttempt.builder()
-                  .commitToBranch(main)
+              ImmutableCommitParams.builder()
+                  .toBranch(main)
                   .commitMetaSerialized(ByteString.copyFromUtf8("commit meta " + i))
                   .addPuts(
                       KeyWithBytes.of(
@@ -304,9 +304,9 @@ public abstract class AbstractDatabaseAdapterTest {
 
     Hash[] commits = new Hash[3];
     for (int i = 0; i < commits.length; i++) {
-      ImmutableCommitAttempt.Builder commit =
-          ImmutableCommitAttempt.builder()
-              .commitToBranch(branch)
+      ImmutableCommitParams.Builder commit =
+          ImmutableCommitParams.builder()
+              .toBranch(branch)
               .commitMetaSerialized(ByteString.copyFromUtf8("commit " + i));
       for (int k = 0; k < 3; k++) {
         WithGlobalStateContent c =
@@ -482,16 +482,16 @@ public abstract class AbstractDatabaseAdapterTest {
     ByteString barCommitMeta = ByteString.copyFromUtf8("meta-bar");
 
     foo.commit(
-        ImmutableCommitAttempt.builder()
-            .commitToBranch(main)
+        ImmutableCommitParams.builder()
+            .toBranch(main)
             .commitMetaSerialized(fooCommitMeta)
             .addPuts(
                 KeyWithBytes.of(
                     Key.of("foo"), ContentId.of("foo"), (byte) 0, ByteString.copyFromUtf8("foo")))
             .build());
     bar.commit(
-        ImmutableCommitAttempt.builder()
-            .commitToBranch(main)
+        ImmutableCommitParams.builder()
+            .toBranch(main)
             .commitMetaSerialized(barCommitMeta)
             .addPuts(
                 KeyWithBytes.of(

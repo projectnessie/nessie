@@ -39,7 +39,7 @@ import org.projectnessie.versioned.persist.adapter.ContentAndState;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
-import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt;
+import org.projectnessie.versioned.persist.adapter.ImmutableCommitParams;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
@@ -78,9 +78,9 @@ public abstract class AbstractManyCommits {
               "value for #" + i + " of " + numCommits,
               fixed.getId());
       byte payload = SimpleStoreWorker.INSTANCE.getPayload(c);
-      ImmutableCommitAttempt.Builder commit =
-          ImmutableCommitAttempt.builder()
-              .commitToBranch(branch)
+      ImmutableCommitParams.Builder commit =
+          ImmutableCommitParams.builder()
+              .toBranch(branch)
               .commitMetaSerialized(ByteString.copyFromUtf8("commit #" + i + " of " + numCommits))
               .addPuts(
                   KeyWithBytes.of(

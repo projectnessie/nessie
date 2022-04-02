@@ -22,27 +22,11 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
-import org.projectnessie.versioned.BranchName;
-import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 
-/**
- * API helper method to encapsulate parameters for {@link DatabaseAdapter#commit(CommitAttempt)}.
- */
+/** API helper method to encapsulate parameters for {@link DatabaseAdapter#commit(CommitParams)}. */
 @Value.Immutable
-public interface CommitAttempt {
-
-  /**
-   * Branch to commit to. If {@link #getExpectedHead()} is present, the referenced branch's HEAD
-   * must be equal to this hash.
-   */
-  BranchName getCommitToBranch();
-
-  /** Expected HEAD of {@link #getCommitToBranch()}. */
-  @Value.Default
-  default Optional<Hash> getExpectedHead() {
-    return Optional.empty();
-  }
+public interface CommitParams extends ToBranchParams {
 
   /**
    * Mapping of content-ids to expected global content-state (think: Iceberg table-metadata), coming

@@ -44,7 +44,7 @@ import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentAndState;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
-import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt;
+import org.projectnessie.versioned.persist.adapter.ImmutableCommitParams;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
@@ -140,8 +140,8 @@ public abstract class AbstractCommitScenarios {
         i -> {
           try {
             return databaseAdapter.commit(
-                ImmutableCommitAttempt.builder()
-                    .commitToBranch(branch)
+                ImmutableCommitParams.builder()
+                    .toBranch(branch)
                     .commitMetaSerialized(ByteString.copyFromUtf8("dummy commit meta " + i))
                     .addUnchanged(dummyKey)
                     .build());
@@ -155,7 +155,7 @@ public abstract class AbstractCommitScenarios {
             .mapToObj(performDummyCommit)
             .collect(Collectors.toList());
 
-    ImmutableCommitAttempt.Builder commit;
+    ImmutableCommitParams.Builder commit;
 
     BaseContent initialContent;
     BaseContent renamContent;
@@ -170,8 +170,8 @@ public abstract class AbstractCommitScenarios {
     byte payload = SimpleStoreWorker.INSTANCE.getPayload(initialContent);
 
     commit =
-        ImmutableCommitAttempt.builder()
-            .commitToBranch(branch)
+        ImmutableCommitParams.builder()
+            .toBranch(branch)
             .commitMetaSerialized(ByteString.copyFromUtf8("initial commit meta"))
             .addPuts(
                 KeyWithBytes.of(
@@ -192,8 +192,8 @@ public abstract class AbstractCommitScenarios {
             .collect(Collectors.toList());
 
     commit =
-        ImmutableCommitAttempt.builder()
-            .commitToBranch(branch)
+        ImmutableCommitParams.builder()
+            .toBranch(branch)
             .commitMetaSerialized(ByteString.copyFromUtf8("rename table"))
             .addDeletes(oldKey)
             .addPuts(
@@ -217,8 +217,8 @@ public abstract class AbstractCommitScenarios {
             .collect(Collectors.toList());
 
     commit =
-        ImmutableCommitAttempt.builder()
-            .commitToBranch(branch)
+        ImmutableCommitParams.builder()
+            .toBranch(branch)
             .commitMetaSerialized(ByteString.copyFromUtf8("delete table"))
             .addDeletes(newKey);
     if (param.globalState) {
@@ -298,9 +298,9 @@ public abstract class AbstractCommitScenarios {
     BranchName branch = BranchName.of("main");
 
     ArrayList<Key> keys = new ArrayList<>(tablesPerCommit);
-    ImmutableCommitAttempt.Builder commit =
-        ImmutableCommitAttempt.builder()
-            .commitToBranch(branch)
+    ImmutableCommitParams.Builder commit =
+        ImmutableCommitParams.builder()
+            .toBranch(branch)
             .commitMetaSerialized(ByteString.copyFromUtf8("initial commit meta"));
     for (int i = 0; i < tablesPerCommit; i++) {
       Key key = Key.of("my", "table", "num" + i);
@@ -329,8 +329,8 @@ public abstract class AbstractCommitScenarios {
               keys,
               KeyFilterPredicate.ALLOW_ALL);
       commit =
-          ImmutableCommitAttempt.builder()
-              .commitToBranch(branch)
+          ImmutableCommitParams.builder()
+              .toBranch(branch)
               .commitMetaSerialized(ByteString.copyFromUtf8("initial commit meta"));
       for (int i = 0; i < tablesPerCommit; i++) {
         String currentState = values.get(keys.get(i)).getGlobalState().toStringUtf8();
@@ -403,9 +403,9 @@ public abstract class AbstractCommitScenarios {
     WithGlobalStateContent c =
         WithGlobalStateContent.withGlobal("0", "initial commit content", cid);
 
-    ImmutableCommitAttempt.Builder commit =
-        ImmutableCommitAttempt.builder()
-            .commitToBranch(branch)
+    ImmutableCommitParams.Builder commit =
+        ImmutableCommitParams.builder()
+            .toBranch(branch)
             .commitMetaSerialized(ByteString.copyFromUtf8("initial commit meta"))
             .addPuts(
                 KeyWithBytes.of(
@@ -433,9 +433,9 @@ public abstract class AbstractCommitScenarios {
         KeyWithBytes.of(key, contentsId, (byte) 0, ByteString.copyFromUtf8("no no"));
     KeyWithBytes createPut2 = KeyWithBytes.of(key, contentsId, (byte) 0, tableRefState);
 
-    ImmutableCommitAttempt.Builder commit1 =
-        ImmutableCommitAttempt.builder()
-            .commitToBranch(branch)
+    ImmutableCommitParams.Builder commit1 =
+        ImmutableCommitParams.builder()
+            .toBranch(branch)
             .commitMetaSerialized(ByteString.copyFromUtf8("initial"))
             .addPuts(createPut1)
             .addPuts(createPut2);
@@ -446,9 +446,9 @@ public abstract class AbstractCommitScenarios {
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining(key.toString());
 
-    ImmutableCommitAttempt.Builder commit2 =
-        ImmutableCommitAttempt.builder()
-            .commitToBranch(branch)
+    ImmutableCommitParams.Builder commit2 =
+        ImmutableCommitParams.builder()
+            .toBranch(branch)
             .commitMetaSerialized(ByteString.copyFromUtf8("initial"))
             .addDeletes(key)
             .addPuts(createPut2);
@@ -459,9 +459,9 @@ public abstract class AbstractCommitScenarios {
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining(key.toString());
 
-    ImmutableCommitAttempt.Builder commit3 =
-        ImmutableCommitAttempt.builder()
-            .commitToBranch(branch)
+    ImmutableCommitParams.Builder commit3 =
+        ImmutableCommitParams.builder()
+            .toBranch(branch)
             .commitMetaSerialized(ByteString.copyFromUtf8("initial"))
             .addDeletes(key)
             .addUnchanged(key);
@@ -472,9 +472,9 @@ public abstract class AbstractCommitScenarios {
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining(key.toString());
 
-    ImmutableCommitAttempt.Builder commit4 =
-        ImmutableCommitAttempt.builder()
-            .commitToBranch(branch)
+    ImmutableCommitParams.Builder commit4 =
+        ImmutableCommitParams.builder()
+            .toBranch(branch)
             .commitMetaSerialized(ByteString.copyFromUtf8("initial"))
             .addUnchanged(key)
             .addPuts(createPut2);
