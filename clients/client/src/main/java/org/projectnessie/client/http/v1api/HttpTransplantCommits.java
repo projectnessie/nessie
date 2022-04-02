@@ -51,6 +51,12 @@ final class HttpTransplantCommits extends BaseHttpOnBranchRequest<TransplantComm
   }
 
   @Override
+  public TransplantCommitsBuilder keepIndividualCommits(boolean keepIndividualCommits) {
+    transplant.keepIndividualCommits(keepIndividualCommits);
+    return this;
+  }
+
+  @Override
   public void transplant() throws NessieNotFoundException, NessieConflictException {
     client.getTreeApi().transplantCommitsIntoBranch(branchName, hash, message, transplant.build());
   }

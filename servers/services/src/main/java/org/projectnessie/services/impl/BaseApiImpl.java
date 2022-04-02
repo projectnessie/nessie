@@ -17,6 +17,9 @@ package org.projectnessie.services.impl;
 
 import java.security.Principal;
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -26,6 +29,7 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.authz.BatchAccessChecker;
 import org.projectnessie.services.authz.ServerAccessContext;
@@ -125,7 +129,45 @@ abstract class BaseApiImpl {
     return ServerAccessContext.of(UUID.randomUUID().toString(), getPrincipal());
   }
 
-  protected Function<CommitMeta, CommitMeta> commitMetaUpdate() {
+  protected Function<List<CommitMeta>, CommitMeta> commitMetaUpdate(boolean keepIndividual) {
+    Function<List<CommitMeta>, CommitMeta> metaUpdate;
+    if (keepIndividual) {
+      Function<CommitMeta, CommitMeta> f = commitMetaUpdateSingle();
+      metaUpdate = l -> f.apply(l.get(0));
+    } else {
+      // Used for setting contextual commit properties during new and merge/transplant commits.
+      // WARNING: ONLY SET PROPERTIES, WHICH APPLY COMMONLY TO ALL COMMIT TYPES.
+      Principal principal = getPrincipal();
+      String committer = principal == null ? "" : principal.getName();
+      Instant now = Instant.now();
+      metaUpdate =
+          metaList -> {
+            if (metaList.size() == 1) {
+              return commitMetaUpdateSingle().apply(metaList.get(0));
+            }
+
+            ImmutableCommitMeta.Builder newMeta =
+                CommitMeta.builder()
+                    .committer(committer)
+                    .commitTime(now)
+                    .author(committer)
+                    .authorTime(now);
+            StringBuilder newMessage = new StringBuilder();
+            Map<String, String> newProperties = new HashMap<>();
+            for (CommitMeta commitMeta : metaList) {
+              newProperties.putAll(commitMeta.getProperties());
+              if (newMessage.length() > 0) {
+                newMessage.append("\n---------------------------------------------\n");
+              }
+              newMessage.append(commitMeta.getMessage());
+            }
+            return newMeta.putAllProperties(newProperties).message(newMessage.toString()).build();
+          };
+    }
+    return metaUpdate;
+  }
+
+  protected Function<CommitMeta, CommitMeta> commitMetaUpdateSingle() {
     // Used for setting contextual commit properties during new and merge/transplant commits.
     // WARNING: ONLY SET PROPERTIES, WHICH APPLY COMMONLY TO ALL COMMIT TYPES.
     Principal principal = getPrincipal();

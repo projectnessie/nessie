@@ -185,14 +185,16 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
       BranchName targetBranch,
       Optional<Hash> referenceHash,
       List<Hash> sequenceToTransplant,
-      Function<METADATA, METADATA> updateCommitMetadata)
+      Function<List<METADATA>, METADATA> updateCommitMetadata,
+      boolean keepIndividualCommits)
       throws ReferenceNotFoundException, ReferenceConflictException {
     databaseAdapter.transplant(
         TransplantParams.builder()
             .toBranch(targetBranch)
             .expectedHead(referenceHash)
             .sequenceToTransplant(sequenceToTransplant)
-            .updateCommitMetadata(updateCommitMetadata(updateCommitMetadata))
+            .updateCommitMetadata(updateCommitMetadataFunction(updateCommitMetadata))
+            .keepIndividualCommits(keepIndividualCommits)
             .build());
   }
 
@@ -201,15 +203,27 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
       Hash fromHash,
       BranchName toBranch,
       Optional<Hash> expectedHash,
-      Function<METADATA, METADATA> updateCommitMetadata)
+      Function<List<METADATA>, METADATA> updateCommitMetadata,
+      boolean keepIndividualCommits)
       throws ReferenceNotFoundException, ReferenceConflictException {
     databaseAdapter.merge(
         MergeParams.builder()
             .toBranch(toBranch)
             .expectedHead(expectedHash)
             .mergeFromHash(fromHash)
-            .updateCommitMetadata(updateCommitMetadata(updateCommitMetadata))
+            .updateCommitMetadata(updateCommitMetadataFunction(updateCommitMetadata))
+            .keepIndividualCommits(keepIndividualCommits)
             .build());
+  }
+
+  private Function<List<ByteString>, ByteString> updateCommitMetadataFunction(
+      Function<List<METADATA>, METADATA> updateCommitMetadata) {
+    return original -> {
+      List<METADATA> deserialized =
+          original.stream().map(this::deserializeMetadata).collect(Collectors.toList());
+      METADATA updated = updateCommitMetadata.apply(deserialized);
+      return serializeMetadata(updated);
+    };
   }
 
   @Override
@@ -246,15 +260,6 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
         .map(
             namedRef ->
                 namedRef.withUpdatedCommitMeta(deserializeMetadata(namedRef.getHeadCommitMeta())));
-  }
-
-  private Function<ByteString, ByteString> updateCommitMetadata(
-      Function<METADATA, METADATA> updateCommitMetadata) {
-    return original -> {
-      METADATA commitMeta = deserializeMetadata(original);
-      METADATA updated = updateCommitMetadata.apply(commitMeta);
-      return serializeMetadata(updated);
-    };
   }
 
   private ByteString serializeMetadata(METADATA metadata) {

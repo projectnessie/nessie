@@ -52,7 +52,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 import java.util.function.ToLongFunction;
@@ -121,7 +120,8 @@ class TestMetricsVersionStore {
                         BranchName.of("mock-branch"),
                         Optional.empty(),
                         Collections.emptyList(),
-                        Function.identity()),
+                        l -> l.get(0),
+                        false),
                 refNotFoundAndRefConflictThrows),
             new VersionStoreInvocation<>(
                 "merge",
@@ -130,7 +130,8 @@ class TestMetricsVersionStore {
                         Hash.of("42424242"),
                         BranchName.of("mock-branch"),
                         Optional.empty(),
-                        Function.identity()),
+                        l -> l.get(0),
+                        false),
                 refNotFoundAndRefConflictThrows),
             new VersionStoreInvocation<>(
                 "assign",

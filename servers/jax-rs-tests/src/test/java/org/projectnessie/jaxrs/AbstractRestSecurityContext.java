@@ -37,6 +37,7 @@ public abstract class AbstractRestSecurityContext extends AbstractRestAccessChec
   public void committerAndAuthor(
       @NessieSecurityContext Consumer<SecurityContext> securityContextConsumer) throws Exception {
     Branch main = createBranch("committerAndAuthor");
+    Branch merge2 = createBranch("committerAndAuthorMergeTarget2");
     Branch merge = createBranch("committerAndAuthorMerge");
     Branch transplant = createBranch("committerAndAuthorTransplant");
 
@@ -92,7 +93,29 @@ public abstract class AbstractRestSecurityContext extends AbstractRestAccessChec
 
     merge = (Branch) getApi().getReference().refName(merge.getName()).get();
 
-    assertThat(getApi().getCommitLog().reference(merge).maxRecords(2).get().getLogEntries())
+    assertThat(getApi().getCommitLog().reference(merge).maxRecords(1).get().getLogEntries())
+        .extracting(LogEntry::getCommitMeta)
+        .allSatisfy(
+            commitMeta -> {
+              assertThat(commitMeta.getCommitter()).isEqualTo("NessieHerself");
+              assertThat(commitMeta.getAuthor()).isEqualTo("NessieHerself");
+              assertThat(commitMeta.getMessage())
+                  .contains("with security")
+                  .contains("no security context");
+            });
+
+    // Merge (individual commits)
+
+    getApi()
+        .mergeRefIntoBranch()
+        .fromRef(withSecurityContext)
+        .branch(merge2)
+        .keepIndividualCommits(true)
+        .merge();
+
+    merge2 = (Branch) getApi().getReference().refName(merge2.getName()).get();
+
+    assertThat(getApi().getCommitLog().reference(merge2).maxRecords(2).get().getLogEntries())
         .extracting(LogEntry::getCommitMeta)
         .extracting(CommitMeta::getCommitter, CommitMeta::getAuthor, CommitMeta::getMessage)
         .containsExactly(
@@ -107,6 +130,7 @@ public abstract class AbstractRestSecurityContext extends AbstractRestAccessChec
         .hashesToTransplant(
             Arrays.asList(noSecurityContext.getHash(), withSecurityContext.getHash()))
         .branch(transplant)
+        .keepIndividualCommits(true)
         .transplant();
 
     transplant = (Branch) getApi().getReference().refName(transplant.getName()).get();

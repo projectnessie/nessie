@@ -18,6 +18,7 @@ package org.projectnessie.versioned.tests;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.projectnessie.versioned.testworker.CommitMessage.commitMessage;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -104,12 +105,13 @@ public abstract class AbstractNestedVersionStore {
   protected static void assertCommitMeta(
       List<Commit<CommitMessage, BaseContent>> current,
       List<Commit<CommitMessage, BaseContent>> expected,
-      Function<CommitMessage, CommitMessage> commitMetaModifier) {
+      Function<List<CommitMessage>, CommitMessage> commitMetaModifier) {
     assertThat(current)
         .map(Commit::getCommitMeta)
         .containsExactlyElementsOf(
             expected.stream()
                 .map(Commit::getCommitMeta)
+                .map(Collections::singletonList)
                 .map(commitMetaModifier)
                 .collect(Collectors.toList()));
   }

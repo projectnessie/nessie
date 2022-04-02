@@ -93,13 +93,18 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
       BranchName targetBranch,
       Optional<Hash> referenceHash,
       List<Hash> sequenceToTransplant,
-      Function<METADATA, METADATA> updateCommitMetadata)
+      Function<List<METADATA>, METADATA> updateCommitMetadata,
+      boolean keepIndividualCommits)
       throws ReferenceNotFoundException, ReferenceConflictException {
     this.<ReferenceNotFoundException, ReferenceConflictException>delegate2Ex(
         "transplant",
         () ->
             delegate.transplant(
-                targetBranch, referenceHash, sequenceToTransplant, updateCommitMetadata));
+                targetBranch,
+                referenceHash,
+                sequenceToTransplant,
+                updateCommitMetadata,
+                keepIndividualCommits));
   }
 
   @Override
@@ -107,10 +112,14 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
       Hash fromHash,
       BranchName toBranch,
       Optional<Hash> expectedHash,
-      Function<METADATA, METADATA> updateCommitMetadata)
+      Function<List<METADATA>, METADATA> updateCommitMetadata,
+      boolean keepIndividualCommits)
       throws ReferenceNotFoundException, ReferenceConflictException {
     this.<ReferenceNotFoundException, ReferenceConflictException>delegate2Ex(
-        "merge", () -> delegate.merge(fromHash, toBranch, expectedHash, updateCommitMetadata));
+        "merge",
+        () ->
+            delegate.merge(
+                fromHash, toBranch, expectedHash, updateCommitMetadata, keepIndividualCommits));
   }
 
   @Override

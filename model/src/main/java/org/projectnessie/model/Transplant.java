@@ -40,7 +40,7 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonSerialize(as = ImmutableTransplant.class)
 @JsonDeserialize(as = ImmutableTransplant.class)
-public interface Transplant {
+public interface Transplant extends BaseMergeTransplant {
 
   @NotNull
   @Size(min = 1)

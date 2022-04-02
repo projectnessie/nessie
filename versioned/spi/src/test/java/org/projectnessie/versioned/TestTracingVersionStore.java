@@ -34,7 +34,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -113,7 +112,8 @@ class TestTracingVersionStore {
                                 BranchName.of("mock-branch"),
                                 Optional.empty(),
                                 Collections.emptyList(),
-                                Function.identity())),
+                                l -> l.get(0),
+                                true)),
                 new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>(
                         "Merge", refNotFoundAndRefConflictThrows)
                     .tag("nessie.version-store.to-branch", "mock-branch")
@@ -125,7 +125,8 @@ class TestTracingVersionStore {
                                 Hash.of("42424242"),
                                 BranchName.of("mock-branch"),
                                 Optional.empty(),
-                                Function.identity())),
+                                l -> l.get(0),
+                                false)),
                 new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>(
                         "Assign", refNotFoundAndRefConflictThrows)
                     .tag("nessie.version-store.ref", "BranchName{name=mock-branch}")

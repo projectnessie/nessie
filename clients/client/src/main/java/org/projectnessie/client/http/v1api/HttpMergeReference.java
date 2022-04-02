@@ -43,6 +43,12 @@ final class HttpMergeReference extends BaseHttpOnBranchRequest<MergeReferenceBui
   }
 
   @Override
+  public MergeReferenceBuilder keepIndividualCommits(boolean keepIndividualCommits) {
+    merge.keepIndividualCommits(keepIndividualCommits);
+    return this;
+  }
+
+  @Override
   public void merge() throws NessieNotFoundException, NessieConflictException {
     client.getTreeApi().mergeRefIntoBranch(branchName, hash, merge.build());
   }

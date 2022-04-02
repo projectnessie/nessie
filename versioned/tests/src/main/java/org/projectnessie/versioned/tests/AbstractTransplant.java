@@ -26,8 +26,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
@@ -65,6 +67,17 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
     return commitMessage(commitMessage.getMessage() + ", transplanted");
   }
 
+  private CommitMessage transplantCommitMessages(List<CommitMessage> commitMessages) {
+    if (commitMessages.size() == 1) {
+      return transplanted(commitMessages.get(0));
+    }
+
+    return CommitMessage.commitMessage(
+        commitMessages.stream()
+            .map(CommitMessage::getMessage)
+            .collect(Collectors.joining("\n-----------------------------------\n")));
+  }
+
   @BeforeEach
   protected void setupCommits() throws VersionStoreException {
     final BranchName branch = BranchName.of("foo");
@@ -92,17 +105,36 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
     commits = commitsList(branch, false);
   }
 
-  @Test
-  protected void checkTransplantOnEmptyBranch() throws VersionStoreException {
-    checkTransplantOnEmptyBranch(Function.identity());
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  protected void checkTransplantOnEmptyBranch(boolean individualCommits)
+      throws VersionStoreException {
+    checkTransplantOnEmptyBranch(l -> l.get(0), individualCommits);
   }
 
-  @Test
-  protected void checkTransplantOnEmptyBranchModify() throws VersionStoreException {
-    checkTransplantOnEmptyBranch(this::transplanted);
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  protected void checkTransplantOnEmptyBranchModify(boolean individualCommits)
+      throws VersionStoreException {
+    BranchName newBranch =
+        checkTransplantOnEmptyBranch(this::transplantCommitMessages, individualCommits);
+
+    if (!individualCommits) {
+      assertThat(commitsList(newBranch, false))
+          .first()
+          .extracting(Commit::getCommitMeta)
+          .extracting(CommitMessage::getMessage)
+          .asString()
+          .contains(
+              commits.stream()
+                  .map(Commit::getCommitMeta)
+                  .map(CommitMessage::getMessage)
+                  .toArray(String[]::new));
+    }
   }
 
-  private void checkTransplantOnEmptyBranch(Function<CommitMessage, CommitMessage> commitMetaModify)
+  private BranchName checkTransplantOnEmptyBranch(
+      Function<List<CommitMessage>, CommitMessage> commitMetaModify, boolean individualCommits)
       throws VersionStoreException {
     final BranchName newBranch = BranchName.of("bar_1");
     store().create(newBranch, Optional.empty());
@@ -112,7 +144,8 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             newBranch,
             Optional.of(initialHash),
             Arrays.asList(firstCommit, secondCommit, thirdCommit),
-            commitMetaModify);
+            commitMetaModify,
+            individualCommits);
     assertThat(
             store()
                 .getValues(
@@ -124,11 +157,17 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                 Key.of("t2"), V_2_2,
                 Key.of("t4"), V_4_1));
 
-    assertCommitMeta(commitsList(newBranch, false).subList(0, 3), commits, commitMetaModify);
+    if (individualCommits) {
+      assertCommitMeta(commitsList(newBranch, false).subList(0, 3), commits, commitMetaModify);
+    }
+
+    return newBranch;
   }
 
-  @Test
-  protected void checkTransplantWithPreviousCommit() throws VersionStoreException {
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  protected void checkTransplantWithPreviousCommit(boolean individualCommits)
+      throws VersionStoreException {
     final BranchName newBranch = BranchName.of("bar_2");
     store().create(newBranch, Optional.empty());
     commit("Unrelated commit").put("t5", V_5_1).toBranch(newBranch);
@@ -138,7 +177,8 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             newBranch,
             Optional.of(initialHash),
             Arrays.asList(firstCommit, secondCommit, thirdCommit),
-            Function.identity());
+            this::transplantCommitMessages,
+            individualCommits);
     assertThat(
             store()
                 .getValues(
@@ -153,8 +193,10 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                 Key.of("t5"), V_5_1));
   }
 
-  @Test
-  protected void checkTransplantWitConflictingCommit() throws VersionStoreException {
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  protected void checkTransplantWitConflictingCommit(boolean individualCommits)
+      throws VersionStoreException {
     final BranchName newBranch = BranchName.of("bar_3");
     store().create(newBranch, Optional.empty());
     commit("Another commit").put("t1", V_1_4).toBranch(newBranch);
@@ -167,11 +209,13 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                     newBranch,
                     Optional.of(initialHash),
                     Arrays.asList(firstCommit, secondCommit, thirdCommit),
-                    Function.identity()));
+                    this::transplantCommitMessages,
+                    individualCommits));
   }
 
-  @Test
-  protected void checkTransplantWithDelete() throws VersionStoreException {
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  protected void checkTransplantWithDelete(boolean individualCommits) throws VersionStoreException {
     final BranchName newBranch = BranchName.of("bar_4");
     store().create(newBranch, Optional.empty());
     commit("Another commit").put("t1", V_1_4).toBranch(newBranch);
@@ -182,7 +226,8 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             newBranch,
             Optional.of(initialHash),
             Arrays.asList(firstCommit, secondCommit, thirdCommit),
-            Function.identity());
+            this::transplantCommitMessages,
+            individualCommits);
     assertThat(
             store()
                 .getValues(
@@ -195,8 +240,9 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                 Key.of("t4"), V_4_1));
   }
 
-  @Test
-  protected void checkTransplantOnNonExistingBranch() {
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  protected void checkTransplantOnNonExistingBranch(boolean individualCommits) {
     final BranchName newBranch = BranchName.of("bar_5");
     assertThrows(
         ReferenceNotFoundException.class,
@@ -206,11 +252,14 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                     newBranch,
                     Optional.of(initialHash),
                     Arrays.asList(firstCommit, secondCommit, thirdCommit),
-                    Function.identity()));
+                    this::transplantCommitMessages,
+                    individualCommits));
   }
 
-  @Test
-  protected void checkTransplantWithNonExistingCommit() throws VersionStoreException {
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  protected void checkTransplantWithNonExistingCommit(boolean individualCommits)
+      throws VersionStoreException {
     final BranchName newBranch = BranchName.of("bar_6");
     store().create(newBranch, Optional.empty());
     assertThrows(
@@ -221,11 +270,14 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                     newBranch,
                     Optional.of(initialHash),
                     Collections.singletonList(Hash.of("1234567890abcdef")),
-                    Function.identity()));
+                    this::transplantCommitMessages,
+                    individualCommits));
   }
 
-  @Test
-  protected void checkTransplantWithNoExpectedHash() throws VersionStoreException {
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  protected void checkTransplantWithNoExpectedHash(boolean individualCommits)
+      throws VersionStoreException {
     final BranchName newBranch = BranchName.of("bar_7");
     store().create(newBranch, Optional.empty());
     commit("Another commit").put("t5", V_5_1).toBranch(newBranch);
@@ -236,7 +288,8 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             newBranch,
             Optional.empty(),
             Arrays.asList(firstCommit, secondCommit, thirdCommit),
-            Function.identity());
+            this::transplantCommitMessages,
+            individualCommits);
     assertThat(
             store()
                 .getValues(
@@ -251,8 +304,10 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                 Key.of("t5"), V_5_1));
   }
 
-  @Test
-  protected void checkTransplantWithCommitsInWrongOrder() throws VersionStoreException {
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  protected void checkTransplantWithCommitsInWrongOrder(boolean individualCommits)
+      throws VersionStoreException {
     final BranchName newBranch = BranchName.of("bar_8");
     store().create(newBranch, Optional.empty());
 
@@ -264,11 +319,13 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                     newBranch,
                     Optional.empty(),
                     Arrays.asList(secondCommit, firstCommit, thirdCommit),
-                    Function.identity()));
+                    this::transplantCommitMessages,
+                    individualCommits));
   }
 
-  @Test
-  protected void checkInvalidBranchHash() throws VersionStoreException {
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  protected void checkInvalidBranchHash(boolean individualCommits) throws VersionStoreException {
     final BranchName anotherBranch = BranchName.of("bar");
     store().create(anotherBranch, Optional.empty());
     final Hash unrelatedCommit =
@@ -289,11 +346,13 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                     newBranch,
                     Optional.of(unrelatedCommit),
                     Arrays.asList(firstCommit, secondCommit, thirdCommit),
-                    Function.identity()));
+                    this::transplantCommitMessages,
+                    individualCommits));
   }
 
-  @Test
-  protected void transplantBasic() throws VersionStoreException {
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  protected void transplantBasic(boolean individualCommits) throws VersionStoreException {
     final BranchName newBranch = BranchName.of("bar_2");
     store().create(newBranch, Optional.empty());
     commit("Unrelated commit").put("t5", V_5_1).toBranch(newBranch);
@@ -303,7 +362,8 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             newBranch,
             Optional.of(initialHash),
             Arrays.asList(firstCommit, secondCommit),
-            Function.identity());
+            this::transplantCommitMessages,
+            individualCommits);
     assertThat(
             store().getValues(newBranch, Arrays.asList(Key.of("t1"), Key.of("t4"), Key.of("t5"))))
         .containsExactlyInAnyOrderEntriesOf(

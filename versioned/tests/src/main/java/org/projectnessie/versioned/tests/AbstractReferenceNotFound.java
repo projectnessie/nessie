@@ -22,7 +22,6 @@ import static org.projectnessie.versioned.testworker.CommitMessage.commitMessage
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.versioned.BranchName;
@@ -197,7 +196,8 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                         BranchName.of("this-one-should-not-exist"),
                         Optional.empty(),
                         singletonList(s.hashOnReference(BranchName.of("main"), Optional.empty())),
-                        Function.identity())),
+                        l -> l.get(0),
+                        false)),
         new ReferenceNotFoundFunction("transplant/hash/empty")
             .msg(
                 "Could not find commit '12341234123412341234123412341234123412341234' in reference 'main'.")
@@ -207,7 +207,8 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                         BranchName.of("main"),
                         Optional.of(Hash.of("12341234123412341234123412341234123412341234")),
                         singletonList(Hash.of("12341234123412341234123412341234123412341234")),
-                        Function.identity())),
+                        l -> l.get(0),
+                        true)),
         new ReferenceNotFoundFunction("transplant/empty/hash")
             .msg("Commit '12341234123412341234123412341234123412341234' not found")
             .function(
@@ -216,7 +217,8 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                         BranchName.of("main"),
                         Optional.empty(),
                         singletonList(Hash.of("12341234123412341234123412341234123412341234")),
-                        Function.identity())),
+                        l -> l.get(0),
+                        false)),
         // merge()
         new ReferenceNotFoundFunction("merge/hash/empty")
             .msg("Commit '12341234123412341234123412341234123412341234' not found")
@@ -226,7 +228,8 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                         Hash.of("12341234123412341234123412341234123412341234"),
                         BranchName.of("main"),
                         Optional.empty(),
-                        Function.identity())),
+                        l -> l.get(0),
+                        true)),
         new ReferenceNotFoundFunction("merge/empty/hash")
             .msg(
                 "Could not find commit '12341234123412341234123412341234123412341234' in reference 'main'.")
@@ -236,7 +239,8 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                         s.noAncestorHash(),
                         BranchName.of("main"),
                         Optional.of(Hash.of("12341234123412341234123412341234123412341234")),
-                        Function.identity())));
+                        l -> l.get(0),
+                        true)));
   }
 
   @ParameterizedTest

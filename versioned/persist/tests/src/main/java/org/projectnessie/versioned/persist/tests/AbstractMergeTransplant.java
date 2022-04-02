@@ -22,6 +22,7 @@ import static org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig.
 import com.google.protobuf.ByteString;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -30,11 +31,12 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.ReferenceConflictException;
+import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentAndState;
 import org.projectnessie.versioned.persist.adapter.ContentId;
@@ -57,18 +59,23 @@ public abstract class AbstractMergeTransplant {
   }
 
   @ParameterizedTest
-  @ValueSource(
-      ints = {
-        3,
-        DEFAULT_KEY_LIST_DISTANCE,
-        DEFAULT_KEY_LIST_DISTANCE + 1,
+  @CsvSource(
+      value = {
+        "3,true",
+        "3,false",
+        DEFAULT_KEY_LIST_DISTANCE + ",true",
+        DEFAULT_KEY_LIST_DISTANCE + ",false",
+        (DEFAULT_KEY_LIST_DISTANCE + 1) + ",true",
+        (DEFAULT_KEY_LIST_DISTANCE + 1) + ",false"
       })
-  void merge(int numCommits) throws Exception {
+  void merge(int numCommits, boolean keepIndividualCommits) throws Exception {
     AtomicInteger unifier = new AtomicInteger();
-    Function<ByteString, ByteString> metadataUpdater =
+    Function<List<ByteString>, ByteString> metadataUpdater =
         commitMeta ->
             ByteString.copyFromUtf8(
-                commitMeta.toStringUtf8() + " merged " + unifier.getAndIncrement());
+                commitMeta.stream().map(ByteString::toStringUtf8).collect(Collectors.joining(";"))
+                    + " merged "
+                    + unifier.getAndIncrement());
 
     mergeTransplant(
         numCommits,
@@ -77,9 +84,14 @@ public abstract class AbstractMergeTransplant {
                 MergeParams.builder()
                     .toBranch(target)
                     .expectedHead(expectedHead)
-                    .mergeFromHash(commitHashes[i])
+                    .mergeFromHash(
+                        keepIndividualCommits
+                            ? commitHashes[i]
+                            : commitHashes[commitHashes.length - 1])
                     .updateCommitMetadata(metadataUpdater)
-                    .build()));
+                    .keepIndividualCommits(keepIndividualCommits)
+                    .build()),
+        keepIndividualCommits);
 
     BranchName branch = BranchName.of("branch");
     BranchName branch2 = BranchName.of("branch2");
@@ -90,25 +102,31 @@ public abstract class AbstractMergeTransplant {
                     MergeParams.builder()
                         .toBranch(branch2)
                         .mergeFromHash(databaseAdapter.hashOnReference(branch, Optional.empty()))
-                        .updateCommitMetadata(Function.identity())
+                        .updateCommitMetadata(l -> l.get(0))
+                        .keepIndividualCommits(keepIndividualCommits)
                         .build()))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageStartingWith("No hashes to merge from '");
   }
 
   @ParameterizedTest
-  @ValueSource(
-      ints = {
-        3,
-        DEFAULT_KEY_LIST_DISTANCE,
-        DEFAULT_KEY_LIST_DISTANCE + 1,
+  @CsvSource(
+      value = {
+        "3,true",
+        "3,false",
+        DEFAULT_KEY_LIST_DISTANCE + ",true",
+        DEFAULT_KEY_LIST_DISTANCE + ",false",
+        (DEFAULT_KEY_LIST_DISTANCE + 1) + ",true",
+        (DEFAULT_KEY_LIST_DISTANCE + 1) + ",false"
       })
-  void transplant(int numCommits) throws Exception {
+  void transplant(int numCommits, boolean keepIndividualCommits) throws Exception {
     AtomicInteger unifier = new AtomicInteger();
-    Function<ByteString, ByteString> metadataUpdater =
+    Function<List<ByteString>, ByteString> metadataUpdater =
         commitMeta ->
             ByteString.copyFromUtf8(
-                commitMeta.toStringUtf8() + " transplanted " + unifier.getAndIncrement());
+                commitMeta.stream().map(ByteString::toStringUtf8).collect(Collectors.joining(";"))
+                    + " transplanted "
+                    + unifier.getAndIncrement());
 
     Hash[] commits =
         mergeTransplant(
@@ -118,9 +136,13 @@ public abstract class AbstractMergeTransplant {
                     TransplantParams.builder()
                         .toBranch(target)
                         .expectedHead(expectedHead)
-                        .sequenceToTransplant(Arrays.asList(commitHashes).subList(0, i + 1))
+                        .sequenceToTransplant(
+                            Arrays.asList(commitHashes)
+                                .subList(0, keepIndividualCommits ? i + 1 : commitHashes.length))
                         .updateCommitMetadata(metadataUpdater)
-                        .build()));
+                        .keepIndividualCommits(keepIndividualCommits)
+                        .build()),
+            keepIndividualCommits);
 
     BranchName conflict = BranchName.of("conflict");
 
@@ -134,19 +156,11 @@ public abstract class AbstractMergeTransplant {
                 .expectedHead(Optional.of(noConflictHead))
                 .addSequenceToTransplant(commits)
                 .updateCommitMetadata(metadataUpdater)
+                .keepIndividualCommits(keepIndividualCommits)
                 .build());
     int offset = unifier.get();
 
-    try (Stream<CommitLogEntry> log =
-        databaseAdapter.commitLog(transplanted).limit(commits.length)) {
-      AtomicInteger testOffset = new AtomicInteger(offset);
-      assertThat(log.map(CommitLogEntry::getMetadata).map(ByteString::toStringUtf8))
-          .containsExactlyElementsOf(
-              IntStream.range(0, commits.length)
-                  .map(i -> commits.length - i - 1)
-                  .mapToObj(i -> "commit " + i + " transplanted " + testOffset.decrementAndGet())
-                  .collect(Collectors.toList()));
-    }
+    checkTransplantedCommits(keepIndividualCommits, commits, transplanted, offset);
 
     // again, no conflict (same as above, just again)
     transplanted =
@@ -155,29 +169,54 @@ public abstract class AbstractMergeTransplant {
                 .toBranch(conflict)
                 .addSequenceToTransplant(commits)
                 .updateCommitMetadata(metadataUpdater)
+                .keepIndividualCommits(keepIndividualCommits)
                 .build());
     offset = unifier.get();
 
-    try (Stream<CommitLogEntry> log =
-        databaseAdapter.commitLog(transplanted).limit(commits.length)) {
-      AtomicInteger testOffset = new AtomicInteger(offset);
-      assertThat(log.map(CommitLogEntry::getMetadata).map(ByteString::toStringUtf8))
-          .containsExactlyElementsOf(
-              IntStream.range(0, commits.length)
-                  .map(i -> commits.length - i - 1)
-                  .mapToObj(i -> "commit " + i + " transplanted " + testOffset.decrementAndGet())
-                  .collect(Collectors.toList()));
-    }
+    checkTransplantedCommits(keepIndividualCommits, commits, transplanted, offset);
 
     assertThatThrownBy(
             () ->
                 databaseAdapter.transplant(
                     TransplantParams.builder()
                         .toBranch(conflict)
-                        .updateCommitMetadata(Function.identity())
+                        .updateCommitMetadata(l -> l.get(0))
+                        .keepIndividualCommits(keepIndividualCommits)
                         .build()))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("No hashes to transplant given.");
+  }
+
+  private void checkTransplantedCommits(
+      boolean keepIndividualCommits, Hash[] commits, Hash transplanted, int offset)
+      throws ReferenceNotFoundException {
+    if (keepIndividualCommits) {
+      try (Stream<CommitLogEntry> log =
+          databaseAdapter.commitLog(transplanted).limit(commits.length)) {
+        AtomicInteger testOffset = new AtomicInteger(offset);
+        assertThat(log.map(CommitLogEntry::getMetadata).map(ByteString::toStringUtf8))
+            .containsExactlyElementsOf(
+                IntStream.range(0, commits.length)
+                    .map(i -> commits.length - i - 1)
+                    .mapToObj(i -> "commit " + i + " transplanted " + testOffset.decrementAndGet())
+                    .collect(Collectors.toList()));
+      }
+    } else {
+      try (Stream<CommitLogEntry> log = databaseAdapter.commitLog(transplanted).limit(1)) {
+        AtomicInteger testOffset = new AtomicInteger(offset);
+        assertThat(log)
+            .first()
+            .extracting(CommitLogEntry::getMetadata)
+            .extracting(ByteString::toStringUtf8)
+            .asString()
+            .contains(
+                IntStream.range(0, commits.length)
+                        .mapToObj(i -> "commit " + i)
+                        .collect(Collectors.joining(";"))
+                    + " transplanted "
+                    + testOffset.decrementAndGet());
+      }
+    }
   }
 
   @FunctionalInterface
@@ -191,7 +230,8 @@ public abstract class AbstractMergeTransplant {
         throws Exception;
   }
 
-  private Hash[] mergeTransplant(int numCommits, MergeOrTransplant mergeOrTransplant)
+  private Hash[] mergeTransplant(
+      int numCommits, MergeOrTransplant mergeOrTransplant, boolean individualCommits)
       throws Exception {
     BranchName main = BranchName.of("main");
     BranchName branch = BranchName.of("branch");
@@ -236,7 +276,7 @@ public abstract class AbstractMergeTransplant {
       targetHead = databaseAdapter.hashOnReference(target, Optional.empty());
 
       try (Stream<CommitLogEntry> targetLog = databaseAdapter.commitLog(targetHead)) {
-        assertThat(targetLog).hasSize(i + 1);
+        assertThat(targetLog).hasSize(individualCommits ? i + 1 : 1);
       }
     }
 

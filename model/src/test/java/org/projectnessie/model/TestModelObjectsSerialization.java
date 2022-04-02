@@ -81,6 +81,16 @@ public class TestModelObjectsSerialization {
             Transplant.class,
             Json.arr("hashesToTransplant", HASH).add("fromRefName", "testBranch")),
         new Case(
+            ImmutableTransplant.builder()
+                .addHashesToTransplant(HASH)
+                .fromRefName(branchName)
+                .keepIndividualCommits(true)
+                .build(),
+            Transplant.class,
+            Json.noQuotes("keepIndividualCommits", "true")
+                .addArr("hashesToTransplant", HASH)
+                .add("fromRefName", "testBranch")),
+        new Case(
             EntriesResponse.builder()
                 .addEntries(
                     ImmutableEntry.builder()
@@ -136,7 +146,17 @@ public class TestModelObjectsSerialization {
         new Case(
             ImmutableMerge.builder().fromHash(HASH).fromRefName(branchName).build(),
             Merge.class,
-            Json.from("fromHash", HASH).add("fromRefName", "testBranch")));
+            Json.from("fromRefName", "testBranch").add("fromHash", HASH)),
+        new Case(
+            ImmutableMerge.builder()
+                .fromHash(HASH)
+                .fromRefName(branchName)
+                .keepIndividualCommits(true)
+                .build(),
+            Merge.class,
+            Json.from("fromRefName", "testBranch")
+                .addNoQuotes("keepIndividualCommits", "true")
+                .add("fromHash", HASH)));
   }
 
   static List<Case> negativeCases() {
@@ -216,6 +236,15 @@ public class TestModelObjectsSerialization {
 
     public Json add(String key, String val) {
       this.currentContent = String.format(STR_KV_FORMAT, currentContent, key, val);
+      return this;
+    }
+
+    public Json addArr(String key, String... val) {
+      String keyContent =
+          Stream.of(val)
+              .map(v -> String.format("\"%s\"", v))
+              .collect(Collectors.joining(",", String.format("\"%s\":[", key), "]"));
+      this.currentContent = String.format("%s,%s", currentContent, keyContent);
       return this;
     }
 
