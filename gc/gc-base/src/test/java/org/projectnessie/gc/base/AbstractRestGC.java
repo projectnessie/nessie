@@ -90,7 +90,7 @@ public abstract class AbstractRestGC extends AbstractRest {
             });
   }
 
-  void performGc(
+  protected void performGc(
       String prefix,
       Instant cutoffTimeStamp,
       Map<String, Instant> cutOffTimeStampPerRef,
@@ -134,7 +134,7 @@ public abstract class AbstractRestGC extends AbstractRest {
     }
   }
 
-  SparkSession getSparkSession() {
+  protected SparkSession getSparkSession() {
     SparkConf conf = new SparkConf();
     conf.set("spark.sql.catalog.nessie.uri", getUri().toString())
         .set("spark.sql.catalog.nessie.ref", "main")
@@ -155,7 +155,7 @@ public abstract class AbstractRestGC extends AbstractRest {
     return spark;
   }
 
-  private void verify(
+  protected void verify(
       Dataset<Row> actual, List<Row> expectedRows, SparkSession session, StructType schema) {
     Dataset<Row> expected = session.createDataFrame(expectedRows, schema);
     Dataset<Row> dfActual = actual.select("referenceName", "contentId", "snapshotId");

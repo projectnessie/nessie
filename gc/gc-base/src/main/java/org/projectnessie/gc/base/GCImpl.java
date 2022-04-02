@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.OptionalInt;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.spark.sql.SparkSession;
@@ -177,12 +176,12 @@ public class GCImpl {
             case RefLogResponse.RefLogResponseEntry.BRANCH:
               droppedReferenceTimeMap.put(
                   GCUtil.serializeReference(Branch.of(entry.getRefName(), hash)),
-                  getInstantFromMicros(entry.getOperationTime()));
+                  GCUtil.getInstantFromMicros(entry.getOperationTime()));
               break;
             case RefLogResponse.RefLogResponseEntry.TAG:
               droppedReferenceTimeMap.put(
                   GCUtil.serializeReference(Tag.of(entry.getRefName(), hash)),
-                  getInstantFromMicros(entry.getOperationTime()));
+                  GCUtil.getInstantFromMicros(entry.getOperationTime()));
               break;
             default:
               throw new RuntimeException(
@@ -190,13 +189,6 @@ public class GCImpl {
           }
         });
     return droppedReferenceTimeMap;
-  }
-
-  private static Instant getInstantFromMicros(Long microsSinceEpoch) {
-    return Instant.ofEpochSecond(
-        TimeUnit.MICROSECONDS.toSeconds(microsSinceEpoch),
-        TimeUnit.MICROSECONDS.toNanos(
-            Math.floorMod(microsSinceEpoch, TimeUnit.SECONDS.toMicros(1))));
   }
 
   private static void getOrCreateEmptyBranch(NessieApiV1 api, String branchName) {
