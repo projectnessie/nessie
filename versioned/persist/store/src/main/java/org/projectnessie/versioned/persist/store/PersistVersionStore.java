@@ -139,20 +139,20 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
             expectedValue = Optional.empty();
           }
 
-          // Handle the case when there are multiple operations against the same contents-id.
+          // Handle the case when there are multiple operations against the same content-id.
           if (!expectedStates.containsKey(contentId)) {
-            // First occurrence of contentsId in this commit.
+            // First occurrence of contentId in this commit.
             commitAttempt.putExpectedStates(contentId, expectedValue);
             expectedStates.put(contentId, expectedValue);
           } else {
-            // Consecutive occurrence of contentsId in this commit.
+            // Consecutive occurrence of contentId in this commit.
             if (expectedValue.isPresent()) {
               // Operation expects a certain global, compare against the previous global-value
               // from this commit.
               if (!globals.get(contentId).equals(expectedValue.get())) {
                 // Value not equal - aka not expected -> report conflict.
                 throw new ReferenceConflictException(
-                    String.format("Mismatch in global-state for contents-id '%s'.", contentId));
+                    String.format("Mismatch in global-state for content-id '%s'.", contentId));
               }
             }
           }

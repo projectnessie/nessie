@@ -143,7 +143,7 @@ Each Nessie commit carries one or more operations. Each operation contains the
 [Content Key](#content-key) and is either a [Put](#put-operation), [Delete](#delete-operation) or
 [Unmodified](#unmodified-operation) operation.
 
-One [Content Key](#content-key) must only occur once in a Nessie commit.
+A [Content Key](#content-key) must only occur once in a Nessie commit.
 
 Operations present in a commit are passed into Nessie as a list of operations.
 
