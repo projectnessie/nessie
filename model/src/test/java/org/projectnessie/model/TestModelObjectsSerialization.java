@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2022 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,8 @@ import java.util.stream.Stream;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.projectnessie.model.BaseMergeTransplant.MergeBehavior;
+import org.projectnessie.model.BaseMergeTransplant.MergeKeyBehavior;
 import org.projectnessie.model.Content.Type;
 import org.projectnessie.model.LogResponse.LogEntry;
 
@@ -156,6 +158,44 @@ public class TestModelObjectsSerialization {
             Merge.class,
             Json.from("fromRefName", "testBranch")
                 .addNoQuotes("keepIndividualCommits", "true")
+                .add("fromHash", HASH)),
+        new Case(
+            ImmutableMerge.builder()
+                .fromHash(HASH)
+                .fromRefName(branchName)
+                .defaultKeyMergeMode(MergeBehavior.FORCE)
+                .addKeyMergeModes(
+                    MergeKeyBehavior.of(ContentKey.of("merge", "me"), MergeBehavior.NORMAL),
+                    MergeKeyBehavior.of(ContentKey.of("ignore", "this"), MergeBehavior.DROP))
+                .build(),
+            Merge.class,
+            Json.from("fromRefName", "testBranch")
+                .addArrNoQuotes(
+                    "keyMergeModes",
+                    Json.noQuotes("key", Json.arr("elements", "merge", "me"))
+                        .add("mergeBehavior", "NORMAL"),
+                    Json.noQuotes("key", Json.arr("elements", "ignore", "this"))
+                        .add("mergeBehavior", "DROP"))
+                .add("defaultKeyMergeMode", "FORCE")
+                .add("fromHash", HASH)),
+        new Case(
+            ImmutableMerge.builder()
+                .fromHash(HASH)
+                .fromRefName(branchName)
+                .keepIndividualCommits(true)
+                .addKeyMergeModes(
+                    MergeKeyBehavior.of(ContentKey.of("merge", "me"), MergeBehavior.NORMAL),
+                    MergeKeyBehavior.of(ContentKey.of("ignore", "this"), MergeBehavior.DROP))
+                .build(),
+            Merge.class,
+            Json.from("fromRefName", "testBranch")
+                .addNoQuotes("keepIndividualCommits", "true")
+                .addArrNoQuotes(
+                    "keyMergeModes",
+                    Json.noQuotes("key", Json.arr("elements", "merge", "me"))
+                        .add("mergeBehavior", "NORMAL"),
+                    Json.noQuotes("key", Json.arr("elements", "ignore", "this"))
+                        .add("mergeBehavior", "DROP"))
                 .add("fromHash", HASH)));
   }
 

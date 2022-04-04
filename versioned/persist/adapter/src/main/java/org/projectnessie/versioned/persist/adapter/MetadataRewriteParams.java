@@ -16,7 +16,10 @@
 package org.projectnessie.versioned.persist.adapter;
 
 import com.google.protobuf.ByteString;
+import java.util.Map;
 import org.immutables.value.Value;
+import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.MergeType;
 import org.projectnessie.versioned.MetadataRewriter;
 
 public interface MetadataRewriteParams extends ToBranchParams {
@@ -25,6 +28,13 @@ public interface MetadataRewriteParams extends ToBranchParams {
   @Value.Default
   default boolean keepIndividualCommits() {
     return false;
+  }
+
+  Map<Key, MergeType> getMergeTypes();
+
+  @Value.Default
+  default MergeType getDefaultMergeType() {
+    return MergeType.NORMAL;
   }
 
   /** Function to rewrite the commit-metadata. */

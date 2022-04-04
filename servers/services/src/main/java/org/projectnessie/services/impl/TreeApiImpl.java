@@ -59,6 +59,7 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceAlreadyExistsException;
 import org.projectnessie.error.NessieReferenceConflictException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
+import org.projectnessie.model.BaseMergeTransplant;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
@@ -93,6 +94,7 @@ import org.projectnessie.versioned.GetNamedRefsParams.RetrieveOptions;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.KeyEntry;
+import org.projectnessie.versioned.MergeType;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
@@ -384,19 +386,21 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
       String branchName, String hash, String message, Transplant transplant)
       throws NessieNotFoundException, NessieConflictException {
     try {
-      Boolean keep = transplant.keepIndividualCommits();
-      boolean keepIndividual = keep != null && keep;
       List<Hash> transplants;
       try (Stream<Hash> s = transplant.getHashesToTransplant().stream().map(Hash::of)) {
         transplants = s.collect(Collectors.toList());
       }
+
+      boolean keepIndividual = keepIndividualCommits(transplant);
       getStore()
           .transplant(
               BranchName.of(branchName),
               toHash(hash, true),
               transplants,
               commitMetaUpdate(),
-              keepIndividual);
+              keepIndividual,
+              keyMergeTypes(transplant),
+              defaultMergeType(transplant));
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
@@ -408,21 +412,41 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   public void mergeRefIntoBranch(String branchName, String hash, Merge merge)
       throws NessieNotFoundException, NessieConflictException {
     try {
-      Boolean keep = merge.keepIndividualCommits();
-      boolean keepIndividual = keep != null && keep;
-
+      boolean keepIndividual = keepIndividualCommits(merge);
       getStore()
           .merge(
               toHash(merge.getFromRefName(), merge.getFromHash()),
               BranchName.of(branchName),
               toHash(hash, true),
               commitMetaUpdate(),
-              keepIndividual);
+              keepIndividual,
+              keyMergeTypes(merge),
+              defaultMergeType(merge));
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
       throw new NessieReferenceConflictException(e.getMessage(), e);
     }
+  }
+
+  private boolean keepIndividualCommits(BaseMergeTransplant params) {
+    Boolean keep = params.keepIndividualCommits();
+    return keep != null && keep;
+  }
+
+  private Map<Key, MergeType> keyMergeTypes(BaseMergeTransplant params) {
+    return params.getKeyMergeModes() != null
+        ? params.getKeyMergeModes().stream()
+            .collect(
+                Collectors.toMap(
+                    e -> toKey(e.getKey()), e -> MergeType.valueOf(e.getMergeBehavior().name())))
+        : Collections.emptyMap();
+  }
+
+  private MergeType defaultMergeType(BaseMergeTransplant params) {
+    return params.getDefaultKeyMergeMode() != null
+        ? MergeType.valueOf(params.getDefaultKeyMergeMode().name())
+        : MergeType.NORMAL;
   }
 
   @Override

@@ -134,7 +134,9 @@ class TestMetricsVersionStore {
                         Optional.empty(),
                         Collections.emptyList(),
                         metadataRewriter,
-                        false),
+                        false,
+                        Collections.emptyMap(),
+                        MergeType.NORMAL),
                 refNotFoundAndRefConflictThrows),
             new VersionStoreInvocation<>(
                 "merge",
@@ -144,7 +146,9 @@ class TestMetricsVersionStore {
                         BranchName.of("mock-branch"),
                         Optional.empty(),
                         metadataRewriter,
-                        false),
+                        false,
+                        null,
+                        null),
                 refNotFoundAndRefConflictThrows),
             new VersionStoreInvocation<>(
                 "assign",

@@ -32,6 +32,7 @@ import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.MergeType;
 import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
@@ -146,7 +147,9 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             Optional.of(initialHash),
             Arrays.asList(firstCommit, secondCommit, thirdCommit),
             commitMetaModify,
-            individualCommits);
+            individualCommits,
+            Collections.emptyMap(),
+            MergeType.NORMAL);
     assertThat(
             store()
                 .getValues(
@@ -179,7 +182,9 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             Optional.of(initialHash),
             Arrays.asList(firstCommit, secondCommit, thirdCommit),
             createMetadataRewriter(""),
-            individualCommits);
+            individualCommits,
+            Collections.emptyMap(),
+            MergeType.NORMAL);
     assertThat(
             store()
                 .getValues(
@@ -211,7 +216,9 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                     Optional.of(initialHash),
                     Arrays.asList(firstCommit, secondCommit, thirdCommit),
                     createMetadataRewriter(""),
-                    individualCommits));
+                    individualCommits,
+                    Collections.emptyMap(),
+                    MergeType.NORMAL));
   }
 
   @ParameterizedTest
@@ -228,7 +235,9 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             Optional.of(initialHash),
             Arrays.asList(firstCommit, secondCommit, thirdCommit),
             createMetadataRewriter(""),
-            individualCommits);
+            individualCommits,
+            Collections.emptyMap(),
+            MergeType.NORMAL);
     assertThat(
             store()
                 .getValues(
@@ -254,7 +263,9 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                     Optional.of(initialHash),
                     Arrays.asList(firstCommit, secondCommit, thirdCommit),
                     createMetadataRewriter(""),
-                    individualCommits));
+                    individualCommits,
+                    Collections.emptyMap(),
+                    MergeType.NORMAL));
   }
 
   @ParameterizedTest
@@ -272,7 +283,9 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                     Optional.of(initialHash),
                     Collections.singletonList(Hash.of("1234567890abcdef")),
                     createMetadataRewriter(""),
-                    individualCommits));
+                    individualCommits,
+                    Collections.emptyMap(),
+                    MergeType.NORMAL));
   }
 
   @ParameterizedTest
@@ -290,7 +303,9 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             Optional.empty(),
             Arrays.asList(firstCommit, secondCommit, thirdCommit),
             createMetadataRewriter(""),
-            individualCommits);
+            individualCommits,
+            Collections.emptyMap(),
+            MergeType.NORMAL);
     assertThat(
             store()
                 .getValues(
@@ -321,7 +336,9 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                     Optional.empty(),
                     Arrays.asList(secondCommit, firstCommit, thirdCommit),
                     createMetadataRewriter(""),
-                    individualCommits));
+                    individualCommits,
+                    Collections.emptyMap(),
+                    MergeType.NORMAL));
   }
 
   @ParameterizedTest
@@ -348,7 +365,9 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                     Optional.of(unrelatedCommit),
                     Arrays.asList(firstCommit, secondCommit, thirdCommit),
                     createMetadataRewriter(""),
-                    individualCommits));
+                    individualCommits,
+                    Collections.emptyMap(),
+                    MergeType.NORMAL));
   }
 
   @ParameterizedTest
@@ -364,7 +383,9 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             Optional.of(initialHash),
             Arrays.asList(firstCommit, secondCommit),
             createMetadataRewriter(""),
-            individualCommits);
+            individualCommits,
+            Collections.emptyMap(),
+            MergeType.NORMAL);
     assertThat(
             store().getValues(newBranch, Arrays.asList(Key.of("t1"), Key.of("t4"), Key.of("t5"))))
         .containsExactlyInAnyOrderEntriesOf(

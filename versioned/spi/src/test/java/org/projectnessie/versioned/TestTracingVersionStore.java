@@ -126,7 +126,9 @@ class TestTracingVersionStore {
                                 Optional.empty(),
                                 Collections.emptyList(),
                                 metadataRewriter,
-                                true)),
+                                true,
+                                Collections.emptyMap(),
+                                MergeType.NORMAL)),
                 new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>(
                         "Merge", refNotFoundAndRefConflictThrows)
                     .tag("nessie.version-store.to-branch", "mock-branch")
@@ -139,7 +141,9 @@ class TestTracingVersionStore {
                                 BranchName.of("mock-branch"),
                                 Optional.empty(),
                                 metadataRewriter,
-                                false)),
+                                false,
+                                null,
+                                null)),
                 new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>(
                         "Assign", refNotFoundAndRefConflictThrows)
                     .tag("nessie.version-store.ref", "BranchName{name=mock-branch}")

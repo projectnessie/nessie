@@ -38,6 +38,7 @@ import org.projectnessie.versioned.ImmutableCommit;
 import org.projectnessie.versioned.ImmutableRefLogDetails;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.KeyEntry;
+import org.projectnessie.versioned.MergeType;
 import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.Operation;
@@ -186,7 +187,9 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
       Optional<Hash> referenceHash,
       List<Hash> sequenceToTransplant,
       MetadataRewriter<METADATA> updateCommitMetadata,
-      boolean keepIndividualCommits)
+      boolean keepIndividualCommits,
+      Map<Key, MergeType> mergeTypes,
+      MergeType defaultMergeType)
       throws ReferenceNotFoundException, ReferenceConflictException {
     databaseAdapter.transplant(
         TransplantParams.builder()
@@ -195,6 +198,8 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
             .sequenceToTransplant(sequenceToTransplant)
             .updateCommitMetadata(updateCommitMetadataFunction(updateCommitMetadata))
             .keepIndividualCommits(keepIndividualCommits)
+            .mergeTypes(mergeTypes)
+            .defaultMergeType(defaultMergeType)
             .build());
   }
 
@@ -204,7 +209,9 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
       BranchName toBranch,
       Optional<Hash> expectedHash,
       MetadataRewriter<METADATA> updateCommitMetadata,
-      boolean keepIndividualCommits)
+      boolean keepIndividualCommits,
+      Map<Key, MergeType> mergeTypes,
+      MergeType defaultMergeType)
       throws ReferenceNotFoundException, ReferenceConflictException {
     databaseAdapter.merge(
         MergeParams.builder()
@@ -213,6 +220,8 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
             .mergeFromHash(fromHash)
             .updateCommitMetadata(updateCommitMetadataFunction(updateCommitMetadata))
             .keepIndividualCommits(keepIndividualCommits)
+            .mergeTypes(mergeTypes)
+            .defaultMergeType(defaultMergeType)
             .build());
   }
 
