@@ -215,7 +215,7 @@
     <spark31.version>3.1.2</spark31.version>
     <spark32.version>3.2.1</spark32.version>
     <sqlite.version>1.0.392</sqlite.version>
-    <surefire.version>3.0.0-M5</surefire.version>
+    <surefire.version>3.0.0-M6</surefire.version>
     <testcontainers.version>1.16.3</testcontainers.version>
     <weld.version>3.1.8.Final</weld.version>
   </properties>
