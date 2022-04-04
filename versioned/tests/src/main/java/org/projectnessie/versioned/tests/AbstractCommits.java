@@ -30,7 +30,10 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
@@ -40,10 +43,12 @@ import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.testworker.BaseContent;
 import org.projectnessie.versioned.testworker.CommitMessage;
 import org.projectnessie.versioned.testworker.OnRefOnly;
+import org.projectnessie.versioned.testworker.WithGlobalStateContent;
 
 public abstract class AbstractCommits extends AbstractNestedVersionStore {
 
@@ -557,5 +562,71 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
             CommitMessage.commitMessage("initial commit meta"),
             Collections.singletonList(Put.of(key, newOnRef("some value"))),
             validator);
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void duplicateKeys(boolean globalState) {
+    BranchName branch = BranchName.of("main");
+
+    Key key = Key.of("my.awesome.table");
+    String oldContentsId = "cid";
+    String tableRefState = "table ref state";
+    String tableGlobalState1 = "table global state 1";
+    String tableGlobalState2 = "table global state 2";
+
+    BaseContent createValue1 =
+        globalState
+            ? WithGlobalStateContent.withGlobal(
+                tableGlobalState1, "no no - not this", oldContentsId)
+            : OnRefOnly.onRef("no no - not this", oldContentsId);
+    BaseContent createValue2 =
+        globalState
+            ? WithGlobalStateContent.withGlobal(tableGlobalState2, tableRefState, oldContentsId)
+            : OnRefOnly.onRef(tableRefState, oldContentsId);
+
+    assertThatThrownBy(
+            () ->
+                store()
+                    .commit(
+                        branch,
+                        Optional.empty(),
+                        CommitMessage.commitMessage("initial"),
+                        Arrays.asList(Put.of(key, createValue1), Put.of(key, createValue2))))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining(key.toString());
+
+    assertThatThrownBy(
+            () ->
+                store()
+                    .commit(
+                        branch,
+                        Optional.empty(),
+                        CommitMessage.commitMessage("initial"),
+                        Arrays.asList(Unchanged.of(key), Put.of(key, createValue2))))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining(key.toString());
+
+    assertThatThrownBy(
+            () ->
+                store()
+                    .commit(
+                        branch,
+                        Optional.empty(),
+                        CommitMessage.commitMessage("initial"),
+                        Arrays.asList(Delete.of(key), Put.of(key, createValue2))))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining(key.toString());
+
+    assertThatThrownBy(
+            () ->
+                store()
+                    .commit(
+                        branch,
+                        Optional.empty(),
+                        CommitMessage.commitMessage("initial"),
+                        Arrays.asList(Delete.of(key), Unchanged.of(key))))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining(key.toString());
   }
 }

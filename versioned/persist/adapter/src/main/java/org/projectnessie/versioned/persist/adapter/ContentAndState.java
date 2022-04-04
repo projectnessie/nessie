@@ -42,4 +42,9 @@ public interface ContentAndState<CONTENT> {
         .globalState(globalState)
         .build();
   }
+
+  @Nonnull
+  static <CONTENT> ContentAndState<CONTENT> of(@Nonnull CONTENT refState) {
+    return ImmutableContentAndState.<CONTENT>builder().refState(refState).build();
+  }
 }
