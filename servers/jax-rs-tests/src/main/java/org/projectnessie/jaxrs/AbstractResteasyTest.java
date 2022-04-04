@@ -24,9 +24,12 @@ import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import java.time.Instant;
+import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
@@ -424,18 +427,25 @@ public abstract class AbstractResteasyTest {
         .isAfter(firstCommitTime);
   }
 
-  @Test
-  public void testGetContent() {
-    Branch branch = makeBranch("content-test");
+  @ParameterizedTest
+  @CsvSource({
+    "simple,name",
+    "simple,dotted.txt",
+    "dotted.prefix,name",
+    "dotted.prefix,dotted.txt",
+  })
+  public void testGetContent(String ns, String name) {
+    Branch branch = makeBranch("content-test-" + UUID.randomUUID());
     IcebergTable table = IcebergTable.of("content-table1", 42, 42, 42, 42);
 
-    branch = commit(table.getId(), branch, "key1", table.getMetadataLocation());
+    ContentKey key = ContentKey.of(ns, name);
+    branch = commit(key, table, branch, "test author");
 
     Content content =
         rest()
             .queryParam("ref", branch.getName())
             .queryParam("hashOnRef", branch.getHash())
-            .get(String.format("contents/%s", "key1"))
+            .get(String.format("contents/%s", key.toPathString()))
             .then()
             .statusCode(200)
             .extract()
