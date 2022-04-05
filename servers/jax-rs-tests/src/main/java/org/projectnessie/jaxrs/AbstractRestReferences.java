@@ -396,8 +396,8 @@ public abstract class AbstractRestReferences extends AbstractRestMisc {
   public void testReferencesHaveMetadataProperties() throws BaseNessieClientServerException {
     String branchPrefix = "branchesHaveMetadataProperties";
     String tagPrefix = "tagsHaveMetadataProperties";
-    int numBranches = 5;
-    int commitsPerBranch = 10;
+    int numBranches = 3;
+    int commitsPerBranch = 3;
 
     for (int i = 0; i < numBranches; i++) {
       Reference r =
@@ -449,7 +449,7 @@ public abstract class AbstractRestReferences extends AbstractRestMisc {
   public void testSingleReferenceHasMetadataProperties() throws BaseNessieClientServerException {
     String branchName = "singleBranchHasMetadataProperties";
     String tagName = "singleTagHasMetadataProperties";
-    int numCommits = 10;
+    int numCommits = 3;
 
     Reference r = getApi().createReference().reference(Branch.of(branchName, null)).create();
     String currentHash = r.getHash();
@@ -514,6 +514,6 @@ public abstract class AbstractRestReferences extends AbstractRestMisc {
     assertThat(referenceMetadata.getNumCommitsBehind()).isNull();
     assertThat(referenceMetadata.getCommitMetaOfHEAD()).isEqualTo(commitMeta);
     assertThat(referenceMetadata.getCommonAncestorHash()).isNull();
-    assertThat(referenceMetadata.getNumTotalCommits()).isEqualTo(10);
+    assertThat(referenceMetadata.getNumTotalCommits()).isEqualTo(3);
   }
 }
