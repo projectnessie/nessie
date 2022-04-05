@@ -15,6 +15,8 @@
  */
 package org.projectnessie.model;
 
+import static org.projectnessie.model.UriUtil.DOT_STRING;
+import static org.projectnessie.model.UriUtil.GROUP_SEPARATOR_STRING;
 import static org.projectnessie.model.UriUtil.ZERO_BYTE_STRING;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -41,7 +43,6 @@ import org.immutables.value.Value.Derived;
 @JsonTypeName("NAMESPACE")
 public abstract class Namespace extends Content {
 
-  private static final String DOT = ".";
   static final String ERROR_MSG_TEMPLATE =
       "'%s' is not a valid namespace identifier (should not end with '.')";
 
@@ -96,10 +97,11 @@ public abstract class Namespace extends Content {
             String.format(
                 "Namespace '%s' must not contain a null element.", Arrays.toString(elements)));
       }
-      if (e.contains(ZERO_BYTE_STRING)) {
+      if (e.contains(ZERO_BYTE_STRING) || e.contains(GROUP_SEPARATOR_STRING)) {
         throw new IllegalArgumentException(
             String.format(
-                "Namespace '%s' must not contain a zero byte.", Arrays.toString(elements)));
+                "Namespace '%s' must not contain a zero byte (\\u0000) / group separator (\\u001D).",
+                Arrays.toString(elements)));
       }
       if ("".equals(e)) {
         throw new IllegalArgumentException(
@@ -108,7 +110,7 @@ public abstract class Namespace extends Content {
       }
     }
 
-    if (DOT.equals(elements[elements.length - 1])) {
+    if (DOT_STRING.equals(elements[elements.length - 1])) {
       throw new IllegalArgumentException(
           String.format(ERROR_MSG_TEMPLATE, Arrays.toString(elements)));
     }
@@ -142,7 +144,7 @@ public abstract class Namespace extends Content {
     if (identifier.isEmpty()) {
       return EMPTY;
     }
-    if (identifier.endsWith(DOT)) {
+    if (identifier.endsWith(DOT_STRING)) {
       throw new IllegalArgumentException(String.format(ERROR_MSG_TEMPLATE, identifier));
     }
     return Namespace.of(UriUtil.fromPathString(identifier));

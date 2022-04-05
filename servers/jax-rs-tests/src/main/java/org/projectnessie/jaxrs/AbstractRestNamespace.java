@@ -45,7 +45,7 @@ import org.projectnessie.model.Operation.Put;
 public abstract class AbstractRestNamespace extends AbstractRestRefLog {
 
   @ParameterizedTest
-  @ValueSource(strings = {"a.b.c", "a.b\u0000c.d", "a.b.c.d"})
+  @ValueSource(strings = {"a.b.c", "a.b\u001Dc.d", "a.b.c.d", "a.b\u0000c.d"})
   public void testNamespaces(String namespaceName) throws BaseNessieClientServerException {
     Branch branch = createBranch("testNamespaces");
     Namespace ns = Namespace.parse(namespaceName);
@@ -56,20 +56,23 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
     assertThat(getApi().getNamespace().refName(branch.getName()).namespace(ns).get())
         .isEqualTo(namespace);
 
+    // the namespace in the error message will contain the reprensentation with u001D
+    String namespaceInErrorMsg = namespaceName.replace("\u0000", "\u001D");
+
     assertThatThrownBy(
             () -> getApi().createNamespace().refName(branch.getName()).namespace(ns).create())
         .isInstanceOf(NessieNamespaceAlreadyExistsException.class)
-        .hasMessage(String.format("Namespace '%s' already exists", namespaceName));
+        .hasMessage(String.format("Namespace '%s' already exists", namespaceInErrorMsg));
 
     getApi().deleteNamespace().refName(branch.getName()).namespace(ns).delete();
     assertThatThrownBy(
             () -> getApi().deleteNamespace().refName(branch.getName()).namespace(ns).delete())
         .isInstanceOf(NessieNamespaceNotFoundException.class)
-        .hasMessage(String.format("Namespace '%s' does not exist", namespaceName));
+        .hasMessage(String.format("Namespace '%s' does not exist", namespaceInErrorMsg));
 
     assertThatThrownBy(() -> getApi().getNamespace().refName(branch.getName()).namespace(ns).get())
         .isInstanceOf(NessieNamespaceNotFoundException.class)
-        .hasMessage(String.format("Namespace '%s' does not exist", namespaceName));
+        .hasMessage(String.format("Namespace '%s' does not exist", namespaceInErrorMsg));
 
     assertThatThrownBy(
             () ->
@@ -359,6 +362,15 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
                 .get()
                 .getNamespaces())
         .containsExactlyInAnyOrderElementsOf(namespaces);
+
+    assertThat(
+            getApi()
+                .getMultipleNamespaces()
+                .namespace("a.b\u001Dc")
+                .refName(branch.getName())
+                .get()
+                .getNamespaces())
+        .containsExactly(first);
 
     assertThat(
             getApi()

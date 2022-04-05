@@ -24,7 +24,11 @@ final class UriUtil {
   private UriUtil() {}
 
   public static final char ZERO_BYTE = '\u0000';
+  public static final char DOT = '.';
+  public static final char GROUP_SEPARATOR = '\u001D';
+  public static final String DOT_STRING = ".";
   public static final String ZERO_BYTE_STRING = Character.toString(ZERO_BYTE);
+  public static final String GROUP_SEPARATOR_STRING = Character.toString(GROUP_SEPARATOR);
 
   /**
    * Convert from path encoded string to normal string.
@@ -34,7 +38,7 @@ final class UriUtil {
    */
   public static List<String> fromPathString(String encoded) {
     return Arrays.stream(encoded.split("\\."))
-        .map(x -> x.replace('\u0000', '.'))
+        .map(x -> x.replace(GROUP_SEPARATOR, DOT).replace(ZERO_BYTE, DOT))
         .collect(Collectors.toList());
   }
 
@@ -44,6 +48,8 @@ final class UriUtil {
    * @return String encoded for path use.
    */
   public static String toPathString(List<String> elements) {
-    return elements.stream().map(x -> x.replace('.', '\u0000')).collect(Collectors.joining("."));
+    return elements.stream()
+        .map(x -> x.replace(DOT, GROUP_SEPARATOR).replace(ZERO_BYTE, GROUP_SEPARATOR))
+        .collect(Collectors.joining("."));
   }
 }

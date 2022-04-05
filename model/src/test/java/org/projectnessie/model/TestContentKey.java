@@ -31,6 +31,7 @@ import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @Execution(ExecutionMode.CONCURRENT)
 class TestContentKey {
@@ -233,7 +234,13 @@ class TestContentKey {
   public void validation() {
     assertThatThrownBy(() -> ContentKey.of("a", "b", "\u0000", "c", "d"))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Content key '[a, b, \u0000, c, d]' must not contain a zero byte.");
+        .hasMessage(
+            "Content key '[a, b, \u0000, c, d]' must not contain a zero byte (\\u0000) / group separator (\\u001D).");
+
+    assertThatThrownBy(() -> ContentKey.of("a", "b", "\u001D", "c", "d"))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage(
+            "Content key '[a, b, \u001D, c, d]' must not contain a zero byte (\\u0000) / group separator (\\u001D).");
   }
 
   @Test
@@ -260,9 +267,16 @@ class TestContentKey {
     assertRoundTrip("/%国", "国.国");
   }
 
+  @ParameterizedTest
+  @ValueSource(strings = {"\u0000", "\u001D"})
+  void blockZeroByteUsage(String s) {
+    assertThrows(IllegalArgumentException.class, () -> ContentKey.of(s));
+  }
+
   @Test
-  void blockZeroByteUsage() {
-    assertThrows(IllegalArgumentException.class, () -> ContentKey.of("\u0000"));
+  public void testDifferentZeroByteRepresentations() {
+    assertThat(ContentKey.fromPathString("a.b\u001Dc.d"))
+        .isEqualTo(ContentKey.fromPathString("a.b\u0000c.d"));
   }
 
   @Test
