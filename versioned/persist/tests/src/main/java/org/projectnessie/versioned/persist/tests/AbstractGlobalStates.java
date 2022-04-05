@@ -117,36 +117,26 @@ public abstract class AbstractGlobalStates {
         new GlobalStateParam().branches(1).tables(1).commitsPerBranch(1),
         new GlobalStateParam().branches(3).tables(3).commitsPerBranch(3),
         // Forces multiple global_log entries
-        new GlobalStateParam().branches(1).tables(1).commitsPerBranch(500),
-        new GlobalStateParam()
-            .branches(1)
-            .tables(1000)
-            .commitsPerBranch(100)
-            .tableCommitProbability(.05d),
+        new GlobalStateParam().branches(1).tables(1).commitsPerBranch(25),
         new GlobalStateParam()
             .branches(3)
-            .tables(1000)
-            .commitsPerBranch(100)
-            .tableCommitProbability(.01d),
-        new GlobalStateParam()
-            .branches(3)
-            .tables(100)
-            .commitsPerBranch(1000)
+            .tables(3)
+            .commitsPerBranch(25)
             .tableCommitProbability(.01d),
         new GlobalStateParam()
             .branches(1)
-            .tables(100)
-            .commitsPerBranch(100)
+            .tables(25)
+            .commitsPerBranch(25)
             .tableCommitProbability(.2d),
         new GlobalStateParam()
             .branches(3)
-            .tables(100)
-            .commitsPerBranch(100)
+            .tables(25)
+            .commitsPerBranch(25)
             .tableCommitProbability(.2d),
         new GlobalStateParam()
             .branches(3)
-            .tables(30)
-            .commitsPerBranch(30)
+            .tables(25)
+            .commitsPerBranch(25)
             .tableCommitProbability(.4d));
   }
 

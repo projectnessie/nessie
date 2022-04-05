@@ -59,7 +59,7 @@ public abstract class AbstractManyCommits {
   }
 
   @ParameterizedTest
-  @ValueSource(ints = {0, 1, 19, 20, 21, 39, 40, 41, 49, 50, 51, 255, 256, 257, 500})
+  @ValueSource(ints = {0, 1, 19, 20, 21, 49, 50, 51})
   // Note: 1000 commits is quite the max that in-JVM H2 database can handle
   void manyCommits(int numCommits) throws Exception {
     BranchName branch = BranchName.of("manyCommits-" + numCommits);

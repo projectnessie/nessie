@@ -111,22 +111,7 @@ public abstract class AbstractCommitScenarios {
             .flatMap(
                 i ->
                     Stream.of(
-                        new RenameTable(i, 0, 0, 0, false),
-                        new RenameTable(0, i, 0, 0, false),
-                        new RenameTable(0, 0, i, 0, false),
-                        new RenameTable(0, 0, 0, i, false),
-                        new RenameTable(i, i, 0, 0, false),
-                        new RenameTable(i, 0, i, 0, false),
-                        new RenameTable(i, 0, 0, i, false),
-                        new RenameTable(0, i, 0, 0, false),
-                        new RenameTable(0, i, i, 0, false),
-                        new RenameTable(0, i, 0, i, false),
-                        new RenameTable(i, 0, i, 0, false),
-                        new RenameTable(0, i, i, 0, false),
-                        new RenameTable(0, 0, i, i, false),
-                        new RenameTable(i, 0, 0, i, false),
-                        new RenameTable(0, i, 0, i, false),
-                        new RenameTable(0, 0, i, i, false)));
+                        new RenameTable(i, i, i, i, false), new RenameTable(0, 0, 0, 0, false)));
 
     // duplicate all params to use and not use global state
     return Stream.concat(zero, intervals).flatMap(p -> Stream.of(p, p.globalState()));
