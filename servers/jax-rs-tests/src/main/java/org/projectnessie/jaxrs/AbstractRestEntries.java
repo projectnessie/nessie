@@ -20,7 +20,6 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import com.google.common.collect.ImmutableList;
 import java.util.Arrays;
@@ -321,12 +320,13 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
         .matches(e -> e.getType().equals(Type.ICEBERG_TABLE))
         .matches(e -> e.getName().equals(ContentKey.of("a", "boo", "fifthTable")));
 
-    assumeTrue(ReferenceMode.DETACHED != refMode);
-    // check that implicit namespaces are properly detected
-    checkNamespaces(
-        reference,
-        Arrays.asList("a", "a.b", "a.boo", "a.b.c"),
-        Arrays.asList(first, second, third, fourth, fifth));
+    if (ReferenceMode.DETACHED != refMode) {
+      // check that implicit namespaces are properly detected
+      checkNamespaces(
+          reference,
+          Arrays.asList("a", "a.b", "a.boo", "a.b.c"),
+          Arrays.asList(first, second, third, fourth, fifth));
+    }
   }
 
   private void checkNamespaces(
