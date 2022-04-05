@@ -57,10 +57,12 @@ import org.projectnessie.versioned.persist.adapter.ContentAndState;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
-import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt;
+import org.projectnessie.versioned.persist.adapter.ImmutableCommitParams;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
+import org.projectnessie.versioned.persist.adapter.MergeParams;
 import org.projectnessie.versioned.persist.adapter.RefLog;
+import org.projectnessie.versioned.persist.adapter.TransplantParams;
 
 public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CONTENT_TYPE>>
     implements VersionStore<CONTENT, METADATA, CONTENT_TYPE> {
@@ -95,9 +97,9 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
       @Nonnull Callable<Void> validator)
       throws ReferenceNotFoundException, ReferenceConflictException {
 
-    ImmutableCommitAttempt.Builder commitAttempt =
-        ImmutableCommitAttempt.builder()
-            .commitToBranch(branch)
+    ImmutableCommitParams.Builder commitAttempt =
+        ImmutableCommitParams.builder()
+            .toBranch(branch)
             .expectedHead(expectedHead)
             .commitMetaSerialized(serializeMetadata(metadata))
             .validator(validator);
@@ -186,10 +188,12 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
       Function<METADATA, METADATA> updateCommitMetadata)
       throws ReferenceNotFoundException, ReferenceConflictException {
     databaseAdapter.transplant(
-        targetBranch,
-        referenceHash,
-        sequenceToTransplant,
-        updateCommitMetadata(updateCommitMetadata));
+        TransplantParams.builder()
+            .toBranch(targetBranch)
+            .expectedHead(referenceHash)
+            .sequenceToTransplant(sequenceToTransplant)
+            .updateCommitMetadata(updateCommitMetadata(updateCommitMetadata))
+            .build());
   }
 
   @Override
@@ -200,7 +204,12 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
       Function<METADATA, METADATA> updateCommitMetadata)
       throws ReferenceNotFoundException, ReferenceConflictException {
     databaseAdapter.merge(
-        fromHash, toBranch, expectedHash, updateCommitMetadata(updateCommitMetadata));
+        MergeParams.builder()
+            .toBranch(toBranch)
+            .expectedHead(expectedHash)
+            .mergeFromHash(fromHash)
+            .updateCommitMetadata(updateCommitMetadata(updateCommitMetadata))
+            .build());
   }
 
   @Override

@@ -73,8 +73,8 @@ import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.ReferenceRetryFailureException;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.VersionStoreException;
-import org.projectnessie.versioned.persist.adapter.CommitAttempt;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
+import org.projectnessie.versioned.persist.adapter.CommitParams;
 import org.projectnessie.versioned.persist.adapter.ContentAndState;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
@@ -83,9 +83,11 @@ import org.projectnessie.versioned.persist.adapter.Difference;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyListEntry;
+import org.projectnessie.versioned.persist.adapter.MergeParams;
 import org.projectnessie.versioned.persist.adapter.RefLog;
 import org.projectnessie.versioned.persist.adapter.RepoDescription;
 import org.projectnessie.versioned.persist.adapter.RepoMaintenanceParams;
+import org.projectnessie.versioned.persist.adapter.TransplantParams;
 import org.projectnessie.versioned.persist.adapter.spi.AbstractDatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.spi.Traced;
 import org.projectnessie.versioned.persist.adapter.spi.TryLoopState;
@@ -218,11 +220,7 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
-  public Hash merge(
-      Hash from,
-      BranchName toBranch,
-      Optional<Hash> expectedHead,
-      Function<ByteString, ByteString> updateCommitMetadata)
+  public Hash merge(MergeParams mergeParams)
       throws ReferenceNotFoundException, ReferenceConflictException {
     // The spec for 'VersionStore.merge' mentions "(...) until we arrive at a common ancestor",
     // but old implementations allowed a merge even if the "merge-from" and "merge-to" have no
@@ -236,36 +234,28 @@ public abstract class TxDatabaseAdapter
     try {
       return opLoop(
           "merge",
-          toBranch,
+          mergeParams.getToBranch(),
           false,
           (conn, currentHead) -> {
             long timeInMicros = commitTimeInMicros();
 
             Hash toHead =
-                mergeAttempt(
-                    conn,
-                    timeInMicros,
-                    from,
-                    toBranch,
-                    expectedHead,
-                    currentHead,
-                    h -> {},
-                    h -> {},
-                    updateCommitMetadata);
-            Hash resultHash = tryMoveNamedReference(conn, toBranch, currentHead, toHead);
+                mergeAttempt(conn, timeInMicros, currentHead, h -> {}, h -> {}, mergeParams);
+            Hash resultHash =
+                tryMoveNamedReference(conn, mergeParams.getToBranch(), currentHead, toHead);
 
             commitRefLog(
                 conn,
                 timeInMicros,
                 toHead,
-                toBranch,
+                mergeParams.getToBranch(),
                 RefLogEntry.Operation.MERGE,
-                Collections.singletonList(from));
+                Collections.singletonList(mergeParams.getMergeFromHash()));
 
             return resultHash;
           },
-          () -> mergeConflictMessage("Conflict", from, toBranch, expectedHead),
-          () -> mergeConflictMessage("Retry-failure", from, toBranch, expectedHead));
+          () -> mergeConflictMessage("Conflict", mergeParams),
+          () -> mergeConflictMessage("Retry-failure", mergeParams));
     } catch (ReferenceNotFoundException | ReferenceConflictException | RuntimeException e) {
       throw e;
     } catch (Exception e) {
@@ -275,46 +265,36 @@ public abstract class TxDatabaseAdapter
 
   @SuppressWarnings("RedundantThrows")
   @Override
-  public Hash transplant(
-      BranchName targetBranch,
-      Optional<Hash> expectedHead,
-      List<Hash> commits,
-      Function<ByteString, ByteString> updateCommitMetadata)
+  public Hash transplant(TransplantParams transplantParams)
       throws ReferenceNotFoundException, ReferenceConflictException {
     try {
       return opLoop(
           "transplant",
-          targetBranch,
+          transplantParams.getToBranch(),
           false,
           (conn, currentHead) -> {
             long timeInMicros = commitTimeInMicros();
 
             Hash targetHead =
                 transplantAttempt(
-                    conn,
-                    timeInMicros,
-                    targetBranch,
-                    expectedHead,
-                    currentHead,
-                    commits,
-                    h -> {},
-                    h -> {},
-                    updateCommitMetadata);
+                    conn, timeInMicros, currentHead, h -> {}, h -> {}, transplantParams);
 
-            Hash resultHash = tryMoveNamedReference(conn, targetBranch, currentHead, targetHead);
+            Hash resultHash =
+                tryMoveNamedReference(
+                    conn, transplantParams.getToBranch(), currentHead, targetHead);
 
             commitRefLog(
                 conn,
                 timeInMicros,
                 targetHead,
-                targetBranch,
+                transplantParams.getToBranch(),
                 RefLogEntry.Operation.TRANSPLANT,
-                commits);
+                transplantParams.getSequenceToTransplant());
 
             return resultHash;
           },
-          () -> transplantConflictMessage("Conflict", targetBranch, expectedHead, commits),
-          () -> transplantConflictMessage("Retry-failure", targetBranch, expectedHead, commits));
+          () -> transplantConflictMessage("Conflict", transplantParams),
+          () -> transplantConflictMessage("Retry-failure", transplantParams));
 
     } catch (ReferenceNotFoundException | ReferenceConflictException | RuntimeException e) {
       throw e;
@@ -324,30 +304,30 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
-  public Hash commit(CommitAttempt commitAttempt)
+  public Hash commit(CommitParams commitParams)
       throws ReferenceConflictException, ReferenceNotFoundException {
     try {
       return opLoop(
           "commit",
-          commitAttempt.getCommitToBranch(),
+          commitParams.getToBranch(),
           false,
           (conn, branchHead) -> {
             long timeInMicros = commitTimeInMicros();
 
             CommitLogEntry newBranchCommit =
-                commitAttempt(conn, timeInMicros, branchHead, commitAttempt, h -> {});
+                commitAttempt(conn, timeInMicros, branchHead, commitParams, h -> {});
 
-            upsertGlobalStates(commitAttempt, conn, newBranchCommit.getCreatedTime());
+            upsertGlobalStates(commitParams, conn, newBranchCommit.getCreatedTime());
 
             Hash resultHash =
                 tryMoveNamedReference(
-                    conn, commitAttempt.getCommitToBranch(), branchHead, newBranchCommit.getHash());
+                    conn, commitParams.getToBranch(), branchHead, newBranchCommit.getHash());
 
             commitRefLog(
                 conn,
                 timeInMicros,
                 newBranchCommit.getHash(),
-                commitAttempt.getCommitToBranch(),
+                commitParams.getToBranch(),
                 RefLogEntry.Operation.COMMIT,
                 Collections.emptyList());
 
@@ -355,12 +335,10 @@ public abstract class TxDatabaseAdapter
           },
           () ->
               commitConflictMessage(
-                  "Conflict", commitAttempt.getCommitToBranch(), commitAttempt.getExpectedHead()),
+                  "Conflict", commitParams.getToBranch(), commitParams.getExpectedHead()),
           () ->
               commitConflictMessage(
-                  "Retry-Failure",
-                  commitAttempt.getCommitToBranch(),
-                  commitAttempt.getExpectedHead()));
+                  "Retry-Failure", commitParams.getToBranch(), commitParams.getExpectedHead()));
     } catch (ReferenceNotFoundException | ReferenceConflictException | RuntimeException e) {
       throw e;
     } catch (Exception e) {
@@ -994,16 +972,16 @@ public abstract class TxDatabaseAdapter
    * </ol>
    */
   protected void upsertGlobalStates(
-      CommitAttempt commitAttempt, ConnectionWrapper conn, long newCreatedAt) throws SQLException {
-    if (commitAttempt.getGlobal().isEmpty()) {
+      CommitParams commitParams, ConnectionWrapper conn, long newCreatedAt) throws SQLException {
+    if (commitParams.getGlobal().isEmpty()) {
       return;
     }
 
     String sql =
         sqlForManyPlaceholders(
-            SqlStatements.SELECT_GLOBAL_STATE_MANY_WITH_LOGS, commitAttempt.getGlobal().size());
+            SqlStatements.SELECT_GLOBAL_STATE_MANY_WITH_LOGS, commitParams.getGlobal().size());
 
-    Set<ContentId> newKeys = new HashSet<>(commitAttempt.getGlobal().keySet());
+    Set<ContentId> newKeys = new HashSet<>(commitParams.getGlobal().keySet());
 
     try (Traced ignore = trace("upsertGlobalStates");
         PreparedStatement psSelect = conn.conn().prepareStatement(sql);
@@ -1016,7 +994,7 @@ public abstract class TxDatabaseAdapter
 
       psSelect.setString(1, config.getRepositoryId());
       int i = 2;
-      for (ContentId cid : commitAttempt.getGlobal().keySet()) {
+      for (ContentId cid : commitParams.getGlobal().keySet()) {
         psSelect.setString(i++, cid.getId());
       }
 
@@ -1030,10 +1008,10 @@ public abstract class TxDatabaseAdapter
           // content-id exists -> not a new row
           newKeys.remove(contentId);
 
-          ByteString newState = commitAttempt.getGlobal().get(contentId);
+          ByteString newState = commitParams.getGlobal().get(contentId);
 
           ByteString expected =
-              commitAttempt
+              commitParams
                   .getExpectedStates()
                   .getOrDefault(contentId, Optional.empty())
                   .orElse(ByteString.EMPTY);
@@ -1080,7 +1058,7 @@ public abstract class TxDatabaseAdapter
             PreparedStatement psInsert =
                 conn.conn().prepareStatement(SqlStatements.INSERT_GLOBAL_STATE)) {
           for (ContentId contentId : newKeys) {
-            ByteString newGlob = commitAttempt.getGlobal().get(contentId);
+            ByteString newGlob = commitParams.getGlobal().get(contentId);
             byte[] newGlobBytes = newGlob.toByteArray();
             @SuppressWarnings("UnstableApiUsage")
             String newHash = newHasher().putBytes(newGlobBytes).hash().toString();

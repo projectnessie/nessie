@@ -66,8 +66,8 @@ import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.VersionStoreException;
-import org.projectnessie.versioned.persist.adapter.CommitAttempt;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
+import org.projectnessie.versioned.persist.adapter.CommitParams;
 import org.projectnessie.versioned.persist.adapter.ContentAndState;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
@@ -77,9 +77,11 @@ import org.projectnessie.versioned.persist.adapter.GlobalLogCompactionParams;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyListEntry;
+import org.projectnessie.versioned.persist.adapter.MergeParams;
 import org.projectnessie.versioned.persist.adapter.RefLog;
 import org.projectnessie.versioned.persist.adapter.RepoDescription;
 import org.projectnessie.versioned.persist.adapter.RepoMaintenanceParams;
+import org.projectnessie.versioned.persist.adapter.TransplantParams;
 import org.projectnessie.versioned.persist.adapter.spi.AbstractDatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.spi.Traced;
 import org.projectnessie.versioned.persist.adapter.spi.TryLoopState;
@@ -190,11 +192,7 @@ public abstract class NonTransactionalDatabaseAdapter<
   }
 
   @Override
-  public Hash merge(
-      Hash from,
-      BranchName toBranch,
-      Optional<Hash> expectedHead,
-      Function<ByteString, ByteString> updateCommitMetadata)
+  public Hash merge(MergeParams mergeParams)
       throws ReferenceNotFoundException, ReferenceConflictException {
     // The spec for 'VersionStore.merge' mentions "(...) until we arrive at a common ancestor",
     // but old implementations allowed a merge even if the "merge-from" and "merge-to" have no
@@ -208,24 +206,16 @@ public abstract class NonTransactionalDatabaseAdapter<
     try {
       return casOpLoop(
           "merge",
-          toBranch,
+          mergeParams.getToBranch(),
           CasOpVariant.COMMIT,
           (ctx, pointer, branchCommits, newKeyLists) -> {
-            Hash toHead = branchHead(pointer, toBranch);
+            Hash currentHead = branchHead(pointer, mergeParams.getToBranch());
 
             long timeInMicros = commitTimeInMicros();
 
-            toHead =
+            Hash newHead =
                 mergeAttempt(
-                    ctx,
-                    timeInMicros,
-                    from,
-                    toBranch,
-                    expectedHead,
-                    toHead,
-                    branchCommits,
-                    newKeyLists,
-                    updateCommitMetadata);
+                    ctx, timeInMicros, currentHead, branchCommits, newKeyLists, mergeParams);
 
             GlobalStateLogEntry newGlobalHead =
                 writeGlobalCommit(ctx, timeInMicros, pointer, Collections.emptyList());
@@ -234,17 +224,18 @@ public abstract class NonTransactionalDatabaseAdapter<
                 writeRefLogEntry(
                     ctx,
                     pointer,
-                    toBranch.getName(),
+                    mergeParams.getToBranch().getName(),
                     RefLogEntry.RefType.Branch,
-                    toHead,
+                    newHead,
                     RefLogEntry.Operation.MERGE,
                     timeInMicros,
-                    Collections.singletonList(from));
+                    Collections.singletonList(mergeParams.getMergeFromHash()));
 
             // Return hash of last commit (toHead) added to 'targetBranch' (via the casOpLoop)
-            return updateGlobalStatePointer(toBranch, pointer, toHead, newGlobalHead, newRefLog);
+            return updateGlobalStatePointer(
+                mergeParams.getToBranch(), pointer, newHead, newGlobalHead, newRefLog);
           },
-          () -> mergeConflictMessage("Retry-failure", from, toBranch, expectedHead));
+          () -> mergeConflictMessage("Retry-failure", mergeParams));
     } catch (ReferenceNotFoundException | ReferenceConflictException | RuntimeException e) {
       throw e;
     } catch (Exception e) {
@@ -254,33 +245,21 @@ public abstract class NonTransactionalDatabaseAdapter<
 
   @SuppressWarnings("RedundantThrows")
   @Override
-  public Hash transplant(
-      BranchName targetBranch,
-      Optional<Hash> expectedHead,
-      List<Hash> sequenceToTransplant,
-      Function<ByteString, ByteString> updateCommitMetadata)
+  public Hash transplant(TransplantParams transplantParams)
       throws ReferenceNotFoundException, ReferenceConflictException {
     try {
       return casOpLoop(
           "transplant",
-          targetBranch,
+          transplantParams.getToBranch(),
           CasOpVariant.COMMIT,
           (ctx, pointer, branchCommits, newKeyLists) -> {
-            Hash targetHead = branchHead(pointer, targetBranch);
+            Hash currentHead = branchHead(pointer, transplantParams.getToBranch());
 
             long timeInMicros = commitTimeInMicros();
 
-            targetHead =
+            Hash newHead =
                 transplantAttempt(
-                    ctx,
-                    timeInMicros,
-                    targetBranch,
-                    expectedHead,
-                    targetHead,
-                    sequenceToTransplant,
-                    branchCommits,
-                    newKeyLists,
-                    updateCommitMetadata);
+                    ctx, timeInMicros, currentHead, branchCommits, newKeyLists, transplantParams);
 
             GlobalStateLogEntry newGlobalHead =
                 writeGlobalCommit(ctx, timeInMicros, pointer, Collections.emptyList());
@@ -289,20 +268,18 @@ public abstract class NonTransactionalDatabaseAdapter<
                 writeRefLogEntry(
                     ctx,
                     pointer,
-                    targetBranch.getName(),
+                    transplantParams.getToBranch().getName(),
                     RefLogEntry.RefType.Branch,
-                    targetHead,
+                    newHead,
                     RefLogEntry.Operation.TRANSPLANT,
                     timeInMicros,
-                    sequenceToTransplant);
+                    transplantParams.getSequenceToTransplant());
 
             // Return hash of last commit (targetHead) added to 'targetBranch' (via the casOpLoop)
             return updateGlobalStatePointer(
-                targetBranch, pointer, targetHead, newGlobalHead, newRefLog);
+                transplantParams.getToBranch(), pointer, newHead, newGlobalHead, newRefLog);
           },
-          () ->
-              transplantConflictMessage(
-                  "Retry-failure", targetBranch, expectedHead, sequenceToTransplant));
+          () -> transplantConflictMessage("Retry-failure", transplantParams));
 
     } catch (ReferenceNotFoundException | ReferenceConflictException | RuntimeException e) {
       throw e;
@@ -312,27 +289,27 @@ public abstract class NonTransactionalDatabaseAdapter<
   }
 
   @Override
-  public Hash commit(CommitAttempt commitAttempt)
+  public Hash commit(CommitParams commitParams)
       throws ReferenceConflictException, ReferenceNotFoundException {
     try {
       return casOpLoop(
           "commit",
-          commitAttempt.getCommitToBranch(),
+          commitParams.getToBranch(),
           CasOpVariant.COMMIT,
           (ctx, pointer, x, newKeyLists) -> {
-            Hash branchHead = branchHead(pointer, commitAttempt.getCommitToBranch());
+            Hash branchHead = branchHead(pointer, commitParams.getToBranch());
 
             long timeInMicros = commitTimeInMicros();
 
             CommitLogEntry newBranchCommit =
-                commitAttempt(ctx, timeInMicros, branchHead, commitAttempt, newKeyLists);
+                commitAttempt(ctx, timeInMicros, branchHead, commitParams, newKeyLists);
 
             GlobalStateLogEntry newGlobalHead =
                 writeGlobalCommit(
                     ctx,
                     timeInMicros,
                     pointer,
-                    commitAttempt.getGlobal().entrySet().stream()
+                    commitParams.getGlobal().entrySet().stream()
                         .map(e -> ContentIdAndBytes.of(e.getKey(), e.getValue()))
                         .collect(Collectors.toList()));
 
@@ -340,7 +317,7 @@ public abstract class NonTransactionalDatabaseAdapter<
                 writeRefLogEntry(
                     ctx,
                     pointer,
-                    commitAttempt.getCommitToBranch().getName(),
+                    commitParams.getToBranch().getName(),
                     RefLogEntry.RefType.Branch,
                     newBranchCommit.getHash(),
                     RefLogEntry.Operation.COMMIT,
@@ -348,7 +325,7 @@ public abstract class NonTransactionalDatabaseAdapter<
                     Collections.emptyList());
 
             return updateGlobalStatePointer(
-                commitAttempt.getCommitToBranch(),
+                commitParams.getToBranch(),
                 pointer,
                 newBranchCommit.getHash(),
                 newGlobalHead,
@@ -356,9 +333,7 @@ public abstract class NonTransactionalDatabaseAdapter<
           },
           () ->
               commitConflictMessage(
-                  "Retry-Failure",
-                  commitAttempt.getCommitToBranch(),
-                  commitAttempt.getExpectedHead()));
+                  "Retry-Failure", commitParams.getToBranch(), commitParams.getExpectedHead()));
     } catch (ReferenceNotFoundException | ReferenceConflictException | RuntimeException e) {
       throw e;
     } catch (Exception e) {
@@ -1006,7 +981,7 @@ public abstract class NonTransactionalDatabaseAdapter<
   /**
    * If a {@link #globalPointerCas(NonTransactionalOperationContext, GlobalStatePointer,
    * GlobalStatePointer)} failed, {@link
-   * org.projectnessie.versioned.persist.adapter.DatabaseAdapter#commit(CommitAttempt)} calls this
+   * org.projectnessie.versioned.persist.adapter.DatabaseAdapter#commit(CommitParams)} calls this
    * function to remove the optimistically written data.
    *
    * <p>Implementation notes: non-transactional implementations <em>must</em> delete entries for the

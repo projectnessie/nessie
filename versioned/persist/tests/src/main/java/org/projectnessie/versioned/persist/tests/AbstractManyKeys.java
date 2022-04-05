@@ -34,7 +34,7 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
-import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt;
+import org.projectnessie.versioned.persist.adapter.ImmutableCommitParams;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
@@ -81,13 +81,13 @@ public abstract class AbstractManyKeys {
   void manyKeys(ManyKeysParams params) throws Exception {
     BranchName main = BranchName.of("main");
 
-    List<ImmutableCommitAttempt.Builder> commits =
+    List<ImmutableCommitParams.Builder> commits =
         IntStream.range(0, params.commits)
             .mapToObj(
                 i ->
-                    ImmutableCommitAttempt.builder()
+                    ImmutableCommitParams.builder()
                         .commitMetaSerialized(ByteString.copyFromUtf8("commit #" + i))
-                        .commitToBranch(main))
+                        .toBranch(main))
             .collect(Collectors.toList());
     AtomicInteger commitDist = new AtomicInteger();
 
@@ -110,7 +110,7 @@ public abstract class AbstractManyKeys {
             })
         .forEach(kb -> commits.get(commitDist.incrementAndGet() % params.commits).addPuts(kb));
 
-    for (ImmutableCommitAttempt.Builder commit : commits) {
+    for (ImmutableCommitParams.Builder commit : commits) {
       databaseAdapter.commit(commit.build());
     }
 

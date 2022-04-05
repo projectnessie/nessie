@@ -77,13 +77,13 @@ public interface CommitLogEntry {
       long createdTime,
       Hash hash,
       long commitSeq,
-      List<Hash> parents,
+      Iterable<Hash> parents,
       ByteString metadata,
-      List<KeyWithBytes> puts,
-      List<Key> deletes,
+      Iterable<KeyWithBytes> puts,
+      Iterable<Key> deletes,
       int keyListDistance,
       KeyList keyList,
-      List<Hash> keyListIds) {
+      Iterable<Hash> keyListIds) {
     return ImmutableCommitLogEntry.builder()
         .createdTime(createdTime)
         .hash(hash)

@@ -19,13 +19,11 @@ import static org.projectnessie.versioned.persist.adapter.spi.Traced.trace;
 
 import com.google.protobuf.ByteString;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
-import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
@@ -35,8 +33,8 @@ import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
-import org.projectnessie.versioned.persist.adapter.CommitAttempt;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
+import org.projectnessie.versioned.persist.adapter.CommitParams;
 import org.projectnessie.versioned.persist.adapter.ContentAndState;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
@@ -44,9 +42,11 @@ import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.Difference;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyListEntry;
+import org.projectnessie.versioned.persist.adapter.MergeParams;
 import org.projectnessie.versioned.persist.adapter.RefLog;
 import org.projectnessie.versioned.persist.adapter.RepoDescription;
 import org.projectnessie.versioned.persist.adapter.RepoMaintenanceParams;
+import org.projectnessie.versioned.persist.adapter.TransplantParams;
 
 public final class TracingDatabaseAdapter implements DatabaseAdapter {
   private static final String TAG_COUNT = "count";
@@ -115,37 +115,30 @@ public final class TracingDatabaseAdapter implements DatabaseAdapter {
   }
 
   @Override
-  public Hash commit(CommitAttempt commitAttempt)
+  public Hash commit(CommitParams commitParams)
       throws ReferenceConflictException, ReferenceNotFoundException {
-    try (Traced ignore =
-        trace("commit").tag(TAG_REF, commitAttempt.getCommitToBranch().getName())) {
-      return delegate.commit(commitAttempt);
+    try (Traced ignore = trace("commit").tag(TAG_REF, commitParams.getToBranch().getName())) {
+      return delegate.commit(commitParams);
     }
   }
 
   @Override
-  public Hash transplant(
-      BranchName targetBranch,
-      Optional<Hash> expectedHead,
-      List<Hash> sequenceToTransplant,
-      Function<ByteString, ByteString> updateCommitMetadata)
+  public Hash transplant(TransplantParams transplantParams)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    try (Traced ignore = trace("transplant").tag(TAG_REF, targetBranch.getName())) {
-      return delegate.transplant(
-          targetBranch, expectedHead, sequenceToTransplant, updateCommitMetadata);
+    try (Traced ignore =
+        trace("transplant").tag(TAG_REF, transplantParams.getToBranch().getName())) {
+      return delegate.transplant(transplantParams);
     }
   }
 
   @Override
-  public Hash merge(
-      Hash from,
-      BranchName toBranch,
-      Optional<Hash> expectedHead,
-      Function<ByteString, ByteString> updateCommitMetadata)
+  public Hash merge(MergeParams mergeParams)
       throws ReferenceNotFoundException, ReferenceConflictException {
     try (Traced ignore =
-        trace("merge").tag(TAG_REF, toBranch.getName()).tag(TAG_HASH, from.asString())) {
-      return delegate.merge(from, toBranch, expectedHead, updateCommitMetadata);
+        trace("merge")
+            .tag(TAG_REF, mergeParams.getToBranch().getName())
+            .tag(TAG_HASH, mergeParams.getMergeFromHash().asString())) {
+      return delegate.merge(mergeParams);
     }
   }
 

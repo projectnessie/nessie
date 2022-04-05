@@ -39,7 +39,7 @@ import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.GlobalLogCompactionParams;
-import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt;
+import org.projectnessie.versioned.persist.adapter.ImmutableCommitParams;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.RepoMaintenanceParams;
 import org.projectnessie.versioned.testworker.SimpleStoreWorker;
@@ -225,9 +225,9 @@ public abstract class AbstractCompactGlobalLog {
     byte payload = SimpleStoreWorker.INSTANCE.getPayload(c);
     ByteString global = SimpleStoreWorker.INSTANCE.toStoreGlobalState(c);
 
-    ImmutableCommitAttempt.Builder commit =
-        ImmutableCommitAttempt.builder()
-            .commitToBranch(branch)
+    ImmutableCommitParams.Builder commit =
+        ImmutableCommitParams.builder()
+            .toBranch(branch)
             .commitMetaSerialized(ByteString.copyFromUtf8("commit#" + i))
             .addPuts(
                 KeyWithBytes.of(

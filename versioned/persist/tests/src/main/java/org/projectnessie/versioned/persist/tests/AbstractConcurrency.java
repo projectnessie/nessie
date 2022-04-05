@@ -48,12 +48,12 @@ import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.ReferenceRetryFailureException;
-import org.projectnessie.versioned.persist.adapter.CommitAttempt;
+import org.projectnessie.versioned.persist.adapter.CommitParams;
 import org.projectnessie.versioned.persist.adapter.ContentAndState;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
-import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt;
-import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt.Builder;
+import org.projectnessie.versioned.persist.adapter.ImmutableCommitParams;
+import org.projectnessie.versioned.persist.adapter.ImmutableCommitParams.Builder;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterMetrics;
@@ -174,7 +174,7 @@ public abstract class AbstractConcurrency {
                           .map(ContentAndState::getGlobalState)
                           .collect(Collectors.toList());
 
-                  ImmutableCommitAttempt.Builder commitAttempt = ImmutableCommitAttempt.builder();
+                  ImmutableCommitParams.Builder commitAttempt = ImmutableCommitParams.builder();
 
                   for (int ki = 0; ki < keys.size(); ki++) {
                     Key key = keys.get(ki);
@@ -200,7 +200,7 @@ public abstract class AbstractConcurrency {
 
                   try {
                     commitAttempt
-                        .commitToBranch(branch)
+                        .toBranch(branch)
                         .commitMetaSerialized(
                             ByteString.copyFromUtf8(
                                 "commit #"
@@ -226,9 +226,9 @@ public abstract class AbstractConcurrency {
         BranchName branch = branchKeys.getKey();
         databaseAdapter.create(
             branch, databaseAdapter.hashOnReference(BranchName.of("main"), Optional.empty()));
-        ImmutableCommitAttempt.Builder commitAttempt =
-            ImmutableCommitAttempt.builder()
-                .commitToBranch(branchKeys.getKey())
+        ImmutableCommitParams.Builder commitAttempt =
+            ImmutableCommitParams.builder()
+                .toBranch(branchKeys.getKey())
                 .commitMetaSerialized(
                     ByteString.copyFromUtf8("initial commit for " + branch.getName()));
         for (Key k : branchKeys.getValue()) {
@@ -304,7 +304,7 @@ public abstract class AbstractConcurrency {
       BranchName branch,
       Builder commitAttempt)
       throws ReferenceConflictException, ReferenceNotFoundException {
-    CommitAttempt c = commitAttempt.build();
+    CommitParams c = commitAttempt.build();
     databaseAdapter.commit(c);
     globalStates.putAll(c.getGlobal());
     Map<Key, ByteString> onRef =

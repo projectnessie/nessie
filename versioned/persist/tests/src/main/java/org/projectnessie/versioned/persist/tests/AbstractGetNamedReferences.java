@@ -40,7 +40,7 @@ import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
-import org.projectnessie.versioned.persist.adapter.ImmutableCommitAttempt;
+import org.projectnessie.versioned.persist.adapter.ImmutableCommitParams;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 
 public abstract class AbstractGetNamedReferences {
@@ -381,9 +381,9 @@ public abstract class AbstractGetNamedReferences {
 
   private Hash dummyCommit(BranchName branch, Hash expectedHash, int num) throws Exception {
     return databaseAdapter.commit(
-        ImmutableCommitAttempt.builder()
+        ImmutableCommitParams.builder()
             .commitMetaSerialized(commitMetaFor(branch, num))
-            .commitToBranch(branch)
+            .toBranch(branch)
             .expectedHead(Optional.of(expectedHash))
             .addPuts(
                 KeyWithBytes.of(
