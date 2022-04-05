@@ -51,7 +51,7 @@ public abstract class AbstractRestDiff extends AbstractRestContents {
   @MethodSource("diffRefModes")
   public void testDiff(ReferenceMode refModeFrom, ReferenceMode refModeTo)
       throws BaseNessieClientServerException {
-    int commitsPerBranch = 10;
+    int commitsPerBranch = 3;
 
     Reference fromRef =
         getApi().createReference().reference(Branch.of("testDiffFromRef", null)).create();

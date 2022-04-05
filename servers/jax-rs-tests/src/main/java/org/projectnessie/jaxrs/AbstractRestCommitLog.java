@@ -129,7 +129,7 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
     Branch branch = createBranch("filterCommitLogByAuthor");
 
     int numAuthors = 5;
-    int commitsPerAuthor = 10;
+    int commitsPerAuthor = 3;
 
     String currentHash = branch.getHash();
     createCommits(branch, numAuthors, commitsPerAuthor, currentHash);
@@ -215,8 +215,8 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
   public void filterCommitLogByTimeRange() throws BaseNessieClientServerException {
     Branch branch = createBranch("filterCommitLogByTimeRange");
 
-    int numAuthors = 5;
-    int commitsPerAuthor = 10;
+    int numAuthors = 3;
+    int commitsPerAuthor = 3;
     int expectedTotalSize = numAuthors * commitsPerAuthor;
 
     String currentHash = branch.getHash();
@@ -290,8 +290,8 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
   public void filterCommitLogByProperties() throws BaseNessieClientServerException {
     Branch branch = createBranch("filterCommitLogByProperties");
 
-    int numAuthors = 5;
-    int commitsPerAuthor = 10;
+    int numAuthors = 3;
+    int commitsPerAuthor = 3;
 
     String currentHash = branch.getHash();
     createCommits(branch, numAuthors, commitsPerAuthor, currentHash);
@@ -326,7 +326,7 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
   public void filterCommitLogByCommitRange() throws BaseNessieClientServerException {
     Branch branch = createBranch("filterCommitLogByCommitRange");
 
-    int numCommits = 10;
+    int numCommits = 3;
 
     String currentHash = branch.getHash();
     createCommits(branch, 1, numCommits, currentHash);
@@ -407,8 +407,8 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
   public void commitLogPaging() throws BaseNessieClientServerException {
     Branch branch = createBranch("commitLogPaging");
 
-    int commits = 95;
-    int pageSizeHint = 10;
+    int commits = 25;
+    int pageSizeHint = 4;
 
     String currentHash = branch.getHash();
     List<String> allMessages = new ArrayList<>();
