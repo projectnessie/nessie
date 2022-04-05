@@ -165,7 +165,7 @@
     <assertj.version>3.22.0</assertj.version>
     <awssdk.version>2.17.162</awssdk.version>
     <bouncycastle.version>1.66</bouncycastle.version>
-    <cel.version>0.3.0</cel.version>
+    <cel.version>0.3.1</cel.version>
     <checkstyle.version>10.1</checkstyle.version>
     <!-- to fix circular dependencies with NessieClient, certain projects need to use the same Nessie version as Iceberg/Delta has -->
     <client.nessie.version>0.18.0</client.nessie.version>
