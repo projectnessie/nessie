@@ -20,7 +20,7 @@ import org.projectnessie.versioned.Hash;
 
 /** API helper method to encapsulate parameters for {@link DatabaseAdapter#merge(MergeParams)}. */
 @Value.Immutable
-public interface MergeParams extends CopyCommitsParams {
+public interface MergeParams extends MetadataRewriteParams {
 
   /** Commit-hash to start reading commits from. */
   Hash getMergeFromHash();

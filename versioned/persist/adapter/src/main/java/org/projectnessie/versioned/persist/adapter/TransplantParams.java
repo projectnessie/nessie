@@ -24,9 +24,9 @@ import org.projectnessie.versioned.Hash;
  * DatabaseAdapter#transplant(TransplantParams)}.
  */
 @Value.Immutable
-public interface TransplantParams extends CopyCommitsParams {
+public interface TransplantParams extends MetadataRewriteParams {
 
-  /** Commits to cherry-pick onto {@code targetBranch}. */
+  /** Commits to cherry-pick onto {@link #getToBranch()}. */
   List<Hash> getSequenceToTransplant();
 
   static ImmutableTransplantParams.Builder builder() {

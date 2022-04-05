@@ -18,7 +18,7 @@ package org.projectnessie.versioned.persist.adapter;
 import com.google.protobuf.ByteString;
 import java.util.function.Function;
 
-public interface CopyCommitsParams extends ToBranchParams {
+public interface MetadataRewriteParams extends ToBranchParams {
 
   /** Function to rewrite the commit-metadata. */
   Function<ByteString, ByteString> getUpdateCommitMetadata();
