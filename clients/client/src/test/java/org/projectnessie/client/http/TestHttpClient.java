@@ -39,9 +39,12 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.GZIPInputStream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.projectnessie.client.util.TestServer;
 import org.projectnessie.model.CommitMeta;
 
+@Execution(ExecutionMode.CONCURRENT)
 public class TestHttpClient {
 
   private static final ObjectMapper MAPPER = new ObjectMapper();

@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.model.BaseMergeTransplant.MergeBehavior;
@@ -35,6 +37,7 @@ import org.projectnessie.model.LogResponse.LogEntry;
  * This test merely checks the JSON serialization/deserialization of the model classes, with an
  * intention to identify breaking cases whenever jackson version varies.
  */
+@Execution(ExecutionMode.CONCURRENT)
 public class TestModelObjectsSerialization {
 
   private static final ObjectMapper MAPPER = new ObjectMapper();

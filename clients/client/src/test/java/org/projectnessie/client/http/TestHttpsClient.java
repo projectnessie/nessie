@@ -55,10 +55,13 @@ import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.projectnessie.client.util.TestServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Execution(ExecutionMode.CONCURRENT)
 class TestHttpsClient {
   private static final Logger LOGGER = LoggerFactory.getLogger(TestHttpsClient.class);
   private static final ObjectMapper MAPPER = new ObjectMapper();

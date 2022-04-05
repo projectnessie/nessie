@@ -28,10 +28,13 @@ import static org.projectnessie.model.Validation.validateReferenceName;
 import static org.projectnessie.model.Validation.validateReferenceNameOrHash;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+@Execution(ExecutionMode.CONCURRENT)
 class TestValidation {
 
   @ParameterizedTest

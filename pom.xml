@@ -764,6 +764,33 @@
         </plugin>
 
         <!-- 3rd party plugins -->
+        <plugin><!-- Using the junit-platform-maven-plugin as it "knows JUnit platform inside out"...
+           The Maven Surefire + Failsafe plugins don't really work well with parallel +
+           concurrent test execution.
+           -->
+          <groupId>de.sormuras.junit</groupId>
+          <artifactId>junit-platform-maven-plugin</artifactId>
+          <version>1.1.6</version>
+          <extensions>false</extensions> <!-- Neither install this plugin into `test` phase, nor touch Surefire. -->
+          <executions>
+            <execution>
+              <id>Launch JUnit Platform</id>
+              <phase>test</phase>
+              <goals>
+                <goal>launch</goal>
+              </goals>
+              <configuration>
+                <skip>${skipTests}</skip>
+                <classNamePatterns>
+                  <pattern>^(Test.*|.+[.$]Test.*|.*Tests?)$</pattern>
+                </classNamePatterns>
+                <parameters>
+                  <junit.jupiter.execution.parallel.enabled>true</junit.jupiter.execution.parallel.enabled>
+                </parameters>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
         <plugin>
           <groupId>org.antlr</groupId>
           <artifactId>antlr4-maven-plugin</artifactId>

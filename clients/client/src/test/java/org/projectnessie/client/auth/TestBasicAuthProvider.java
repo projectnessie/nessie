@@ -25,6 +25,8 @@ import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.mockito.Mockito;
 import org.projectnessie.client.NessieConfigConstants;
 import org.projectnessie.client.http.HttpAuthentication;
@@ -33,6 +35,7 @@ import org.projectnessie.client.http.HttpHeaders;
 import org.projectnessie.client.http.RequestContext;
 import org.projectnessie.client.http.RequestFilter;
 
+@Execution(ExecutionMode.CONCURRENT)
 class TestBasicAuthProvider {
   @Test
   void testNullParams() {

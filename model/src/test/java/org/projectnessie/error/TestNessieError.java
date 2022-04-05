@@ -19,9 +19,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.regex.Pattern;
 import javax.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 
+@Execution(ExecutionMode.CONCURRENT)
 class TestNessieError {
 
   private static final ObjectMapper mapper = new ObjectMapper();
@@ -51,15 +55,20 @@ class TestNessieError {
             .clientProcessingException(new Exception("processingException"))
             .build();
     assertThat(e.getFullMessage())
-        .startsWith(
-            Response.Status.INTERNAL_SERVER_ERROR.getReasonPhrase()
-                + " (HTTP/"
-                + Response.Status.INTERNAL_SERVER_ERROR.getStatusCode()
-                + "): message\n"
-                + "foo.bar.InternalServerError\n"
-                + "\tat some.other.Class\n"
-                + "java.lang.Exception: processingException\n"
-                + "\tat org.projectnessie.error.TestNessieError.fullMessage(TestNessieError.java:");
+        .matches(
+            // Using a regex here, because the stack trace looks different with
+            // junit-platform-maven-plugin
+            Pattern.compile(
+                Response.Status.INTERNAL_SERVER_ERROR.getReasonPhrase()
+                    + " [(]HTTP/"
+                    + Response.Status.INTERNAL_SERVER_ERROR.getStatusCode()
+                    + "[)]: message\n"
+                    + "foo.bar.InternalServerError\n"
+                    + "\tat some.other.Class\n"
+                    + "java.lang.Exception: processingException\n"
+                    + "\tat (all//)?org.projectnessie.error.TestNessieError.fullMessage[(]TestNessieError.java:"
+                    + ".*",
+                Pattern.DOTALL));
   }
 
   @Test

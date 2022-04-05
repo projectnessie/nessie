@@ -31,6 +31,8 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.services.authz.Check.CheckType;
 import org.projectnessie.services.authz.ImmutableCheck.Builder;
@@ -38,6 +40,7 @@ import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.DetachedRef;
 import org.projectnessie.versioned.TagName;
 
+@Execution(ExecutionMode.CONCURRENT)
 public class BatchAccessCheckerTest {
 
   @Test

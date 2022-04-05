@@ -21,7 +21,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.net.URI;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 
+@Execution(ExecutionMode.CONCURRENT)
 class TestUriBuilder {
 
   @Test

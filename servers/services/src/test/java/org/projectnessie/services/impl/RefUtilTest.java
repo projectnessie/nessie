@@ -21,6 +21,8 @@ import static org.projectnessie.services.impl.RefUtil.toReference;
 
 import javax.annotation.Nonnull;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.Detached;
 import org.projectnessie.model.Reference;
@@ -32,6 +34,7 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.TagName;
 
+@Execution(ExecutionMode.CONCURRENT)
 class RefUtilTest {
 
   public static final String HASH_VALUE = "deadbeeffeedcafe";
