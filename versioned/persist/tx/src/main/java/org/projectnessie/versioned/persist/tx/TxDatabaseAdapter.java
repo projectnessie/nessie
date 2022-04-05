@@ -614,6 +614,10 @@ public abstract class TxDatabaseAdapter
 
   @Override
   public Stream<ContentIdAndBytes> globalContent(Set<ContentId> keys) {
+    if (keys.isEmpty()) {
+      return Stream.empty();
+    }
+
     // 1. Fetch the global states,
     // 1.1. filter the requested keys + content-ids
     // 1.2. extract the current state from the GLOBAL_STATE table
