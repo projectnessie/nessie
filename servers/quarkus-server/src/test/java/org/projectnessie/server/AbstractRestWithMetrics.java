@@ -17,16 +17,11 @@ package org.projectnessie.server;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
-import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.TestProfile;
 import io.restassured.RestAssured;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.jaxrs.AbstractTestRest;
-import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfileInmemory;
 
-@QuarkusTest
-@TestProfile(value = QuarkusTestProfileInmemory.class)
-public class ITMetrics extends AbstractTestRest {
+public class AbstractRestWithMetrics extends AbstractTestRest {
   // We need to extend the AbstractTestRest because all Nessie metrics are created lazily.
   // They will appear in the `/q/metrics` endpoint only when some REST actions are executed.
 

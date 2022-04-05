@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.TestProfile;
 import java.net.URI;
 import javax.ws.rs.core.Response;
 import org.junit.jupiter.api.BeforeAll;
@@ -37,12 +38,15 @@ import org.projectnessie.error.NessieBackendThrottledException;
 import org.projectnessie.error.NessieBadRequestException;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfileInmemory;
 
 /**
  * Test reported exceptions both for cases when {@code javax.validation} fails (when the Nessie
  * infra code isn't even run) and exceptions reported <em>by</em> Nessie.
  */
 @QuarkusTest
+@TestProfile(
+    QuarkusTestProfileInmemory.class) // use the QuarkusTestProfileInmemory, as it can be reused
 class TestNessieError {
 
   static String baseURI = "http://localhost:19121/api/v1/nessieErrorTest";
