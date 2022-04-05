@@ -53,10 +53,8 @@ public abstract class AbstractMergeTransplant {
   @ValueSource(
       ints = {
         3,
-        10,
         DEFAULT_KEY_LIST_DISTANCE,
         DEFAULT_KEY_LIST_DISTANCE + 1,
-        100,
       })
   void merge(int numCommits) throws Exception {
     AtomicInteger unifier = new AtomicInteger();
@@ -89,10 +87,8 @@ public abstract class AbstractMergeTransplant {
   @ValueSource(
       ints = {
         3,
-        10,
         DEFAULT_KEY_LIST_DISTANCE,
         DEFAULT_KEY_LIST_DISTANCE + 1,
-        100,
       })
   void transplant(int numCommits) throws Exception {
     AtomicInteger unifier = new AtomicInteger();

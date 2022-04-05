@@ -70,14 +70,10 @@ public abstract class AbstractManyKeys {
 
   static List<ManyKeysParams> manyKeysParams() {
     return Arrays.asList(
-        // quite slow for a unit-test
-        // new ManyKeysParams(20000, 25),
-        // new ManyKeysParams(20000, 100),
-        new ManyKeysParams(250, 25),
         new ManyKeysParams(1000, 25),
-        new ManyKeysParams(1000, 100),
-        new ManyKeysParams(5000, 25),
-        new ManyKeysParams(5000, 100));
+        new ManyKeysParams(100, 10),
+        new ManyKeysParams(500, 2),
+        new ManyKeysParams(500, 10));
   }
 
   @ParameterizedTest

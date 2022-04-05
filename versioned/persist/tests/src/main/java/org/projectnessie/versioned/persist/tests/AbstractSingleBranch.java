@@ -121,8 +121,8 @@ public abstract class AbstractSingleBranch extends AbstractNestedVersionStore {
   void singleBranchManyUsers(SingleBranchParam param) throws Exception {
     BranchName branch = BranchName.of(param.branchName);
 
-    int numUsers = 5;
-    int numCommits = 50;
+    int numUsers = 3;
+    int numCommits = 20;
 
     Hash[] hashesKnownByUser = new Hash[numUsers];
     Hash createHash = store().create(branch, Optional.empty());
