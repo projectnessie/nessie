@@ -19,6 +19,7 @@ import static org.apache.iceberg.types.Types.NestedField.required;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.google.common.collect.ImmutableMap;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -43,13 +44,16 @@ import org.apache.iceberg.view.ViewUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.jaxrs.ext.NessieUri;
+import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.LogResponse.LogEntry;
+import org.projectnessie.model.Reference;
 
 public class TestNessieIcebergViews extends BaseIcebergTest {
 
@@ -114,7 +118,7 @@ public class TestNessieIcebergViews extends BaseIcebergTest {
     verifyCommitMetadata();
     assertThat(api.getCommitLog().refName(BRANCH).get().getLogEntries()).hasSize(3);
 
-    verifyViewInNessie(viewIdentifier, icebergView);
+    verifyViewInNessie(viewIdentifier, icebergView, BRANCH);
   }
 
   @Test
@@ -138,7 +142,7 @@ public class TestNessieIcebergViews extends BaseIcebergTest {
     assertThat(icebergView.properties()).isEmpty();
     assertThat(Paths.get(metadataLocationViews(VIEW_IDENTIFIER.name()))).exists();
     assertThat(metadataFilesForViews(VIEW_IDENTIFIER.name())).isNotNull().hasSize(2);
-    verifyViewInNessie(VIEW_IDENTIFIER, icebergView);
+    verifyViewInNessie(VIEW_IDENTIFIER, icebergView, BRANCH);
 
     // update sql
     ViewDefinition updatedSql =
@@ -152,7 +156,7 @@ public class TestNessieIcebergViews extends BaseIcebergTest {
     assertThat(icebergView.properties()).isEmpty();
     assertThat(Paths.get(metadataLocationViews(VIEW_IDENTIFIER.name()))).exists();
     assertThat(metadataFilesForViews(VIEW_IDENTIFIER.name())).isNotNull().hasSize(3);
-    verifyViewInNessie(VIEW_IDENTIFIER, icebergView);
+    verifyViewInNessie(VIEW_IDENTIFIER, icebergView, BRANCH);
 
     // update properties
     Map<String, String> properties = new HashMap<>();
@@ -173,7 +177,7 @@ public class TestNessieIcebergViews extends BaseIcebergTest {
 
     verifyCommitMetadata();
     assertThat(api.getCommitLog().refName(BRANCH).get().getLogEntries()).hasSize(6);
-    verifyViewInNessie(VIEW_IDENTIFIER, icebergView);
+    verifyViewInNessie(VIEW_IDENTIFIER, icebergView, BRANCH);
   }
 
   @Test
@@ -201,7 +205,7 @@ public class TestNessieIcebergViews extends BaseIcebergTest {
 
     verifyCommitMetadata();
     assertThat(api.getCommitLog().refName(BRANCH).get().getLogEntries()).hasSize(3);
-    verifyViewInNessie(VIEW_IDENTIFIER, icebergView);
+    verifyViewInNessie(VIEW_IDENTIFIER, icebergView, BRANCH);
   }
 
   @Test
@@ -232,6 +236,55 @@ public class TestNessieIcebergViews extends BaseIcebergTest {
         .isInstanceOf(UnsupportedOperationException.class);
   }
 
+  @Test
+  public void testViewsAcrossBranches() throws NessieNotFoundException, NessieConflictException {
+    View icebergView = catalog.load(VIEW_IDENTIFIER.toString());
+    ViewDefinition viewDefinition = catalog.loadDefinition(VIEW_IDENTIFIER.toString());
+    assertThat(icebergView).isNotNull();
+    assertThat(icebergView.currentVersion().versionId()).isEqualTo(1);
+    assertThat(icebergView.currentVersion().viewDefinition()).isEqualTo(viewDefinition);
+    assertThat(Paths.get(metadataLocationViews(VIEW_IDENTIFIER.name()))).exists();
+    assertThat(metadataFilesForViews(VIEW_IDENTIFIER.name())).isNotNull().hasSize(1);
+    verifyViewInNessie(VIEW_IDENTIFIER, icebergView, BRANCH);
+
+    String branch1 = "branch1";
+    Reference reference = api.getReference().refName(BRANCH).get();
+    api.createReference()
+        .reference(Branch.of(branch1, reference.getHash()))
+        .sourceRefName(reference.getName())
+        .create();
+    NessieExtCatalog c = initCatalog(branch1);
+    ViewDefinition updatedSql =
+        ViewDefinition.of(SQL_ALTERED, SCHEMA, CATALOG_NAME, new ArrayList<>());
+
+    c.replace(VIEW_IDENTIFIER.toString(), updatedSql, ImmutableMap.of());
+    View updatedView = c.load(VIEW_IDENTIFIER + "@" + branch1);
+    ViewDefinition updatedDefinition = c.loadDefinition(VIEW_IDENTIFIER.toString());
+    assertThat(updatedView).isNotNull();
+    assertThat(updatedView.currentVersion().versionId()).isEqualTo(2);
+    assertThat(updatedView.currentVersion().viewDefinition()).isEqualTo(updatedSql);
+    assertThat(updatedView.versions()).hasSize(2);
+    assertThat(updatedView.history()).hasSize(2);
+    verifyViewInNessie(VIEW_IDENTIFIER, updatedView, branch1);
+    assertThat(updatedDefinition.sql()).isEqualTo(SQL_ALTERED);
+
+    IcebergView original = getIcebergView(VIEW_IDENTIFIER, BRANCH);
+    IcebergView updated = getIcebergView(VIEW_IDENTIFIER, branch1);
+    assertThat(updated).isNotEqualTo(original);
+    assertThat(updated.getMetadataLocation()).isEqualTo(original.getMetadataLocation());
+    assertThat(original.getVersionId()).isEqualTo(1);
+    assertThat(updated.getVersionId()).isEqualTo(2);
+    assertThat(original.getSqlText()).isEqualTo(SQL);
+    assertThat(updated.getSqlText()).isEqualTo(SQL_ALTERED);
+
+    // original view on the other branch should still have the same version ID/view definition
+    View originalView = c.load(VIEW_IDENTIFIER + "@" + BRANCH);
+    assertThat(originalView.currentVersion().versionId()).isEqualTo(1);
+    assertThat(originalView.currentVersion().viewDefinition()).isEqualTo(viewDefinition);
+    assertThat(originalView.versions()).hasSize(1);
+    assertThat(originalView.history()).hasSize(1);
+  }
+
   private void verifyCommitMetadata() throws NessieNotFoundException {
     // check that the author is properly set
     List<LogEntry> log = api.getCommitLog().refName(BRANCH).get().getLogEntries();
@@ -249,14 +302,9 @@ public class TestNessieIcebergViews extends BaseIcebergTest {
             });
   }
 
-  private void verifyViewInNessie(TableIdentifier viewIdentifier, View icebergView)
+  private void verifyViewInNessie(TableIdentifier viewIdentifier, View icebergView, String branch)
       throws NessieNotFoundException {
-    ContentKey contentKey = ContentKey.of(viewIdentifier.toString().split("\\."));
-    Map<ContentKey, Content> contentMap = api.getContent().key(contentKey).refName(BRANCH).get();
-    assertThat(contentMap).hasSize(1).containsKey(contentKey);
-    Content content = contentMap.get(contentKey);
-    assertThat(content.unwrap(IcebergView.class)).isPresent();
-    IcebergView view = content.unwrap(IcebergView.class).get();
+    IcebergView view = getIcebergView(viewIdentifier, branch);
     assertThat(metadataFilesForViewsPath(viewIdentifier.name()))
         .contains(view.getMetadataLocation());
     // TODO: currently the schema id is always 0
@@ -266,6 +314,17 @@ public class TestNessieIcebergViews extends BaseIcebergTest {
     assertThat(view.getSqlText()).isEqualTo(icebergView.currentVersion().viewDefinition().sql());
     // TODO: currently not implemented in the view definition
     // assertThat(view.getDialect()).isEqualTo(viewDefinition.dialect());
+  }
+
+  private IcebergView getIcebergView(TableIdentifier viewIdentifier, String branch)
+      throws NessieNotFoundException {
+    ContentKey contentKey = ContentKey.of(viewIdentifier.toString().split("\\."));
+    Map<ContentKey, Content> contentMap = api.getContent().key(contentKey).refName(branch).get();
+    assertThat(contentMap).hasSize(1).containsKey(contentKey);
+    Content content = contentMap.get(contentKey);
+    assertThat(content.unwrap(IcebergView.class)).isPresent();
+    IcebergView view = content.unwrap(IcebergView.class).get();
+    return view;
   }
 
   private String getTableBasePath(String tableName) {
