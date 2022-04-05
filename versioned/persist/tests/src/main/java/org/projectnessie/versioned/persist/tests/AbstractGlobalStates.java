@@ -173,7 +173,9 @@ public abstract class AbstractGlobalStates {
 
     Map<ContentId, ByteString> expectedGlobalStates = new HashMap<>();
 
-    for (int commit = 0; commit < param.commitsPerBranch; commit++) {
+    for (int commit = 0;
+        commit < param.commitsPerBranch || expectedGlobalStates.isEmpty();
+        commit++) {
       for (BranchName branch : branches) {
         ImmutableCommitAttempt.Builder commitAttempt =
             ImmutableCommitAttempt.builder()
