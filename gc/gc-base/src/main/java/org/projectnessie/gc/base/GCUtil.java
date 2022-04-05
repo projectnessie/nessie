@@ -18,9 +18,11 @@ package org.projectnessie.gc.base;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.lang.reflect.InvocationTargetException;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Spliterator;
 import java.util.Spliterators;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.mutable.MutableBoolean;
@@ -53,6 +55,13 @@ public final class GCUtil {
     } catch (JsonProcessingException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  public static Instant getInstantFromMicros(Long microsSinceEpoch) {
+    return Instant.ofEpochSecond(
+        TimeUnit.MICROSECONDS.toSeconds(microsSinceEpoch),
+        TimeUnit.MICROSECONDS.toNanos(
+            Math.floorMod(microsSinceEpoch, TimeUnit.SECONDS.toMicros(1))));
   }
 
   /**
