@@ -18,6 +18,7 @@ package org.apache.iceberg.view;
 import com.google.common.base.Objects;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import org.apache.iceberg.io.OutputFile;
 import org.apache.iceberg.util.Tasks;
@@ -69,7 +70,10 @@ public abstract class BaseMetastoreViewOperations implements ViewOperations {
   }
 
   protected void refreshFromMetadataLocation(
-      String newLocation, Predicate<Exception> shouldRetry, int numRetries) {
+      String newLocation,
+      Predicate<Exception> shouldRetry,
+      int numRetries,
+      Function<String, ViewVersionMetadata> metadataLoader) {
     // use null-safe equality check because new tables have a null metadata location
     if (!Objects.equal(currentMetadataLocation, newLocation)) {
       LOG.info("Refreshing table metadata from new version: {}", newLocation);
@@ -80,10 +84,7 @@ public abstract class BaseMetastoreViewOperations implements ViewOperations {
           .exponentialBackoff(100, 5000, 600000, 4.0 /* 100, 400, 1600, ... */)
           .throwFailureWhenFinished()
           .shouldRetryTest(shouldRetry)
-          .run(
-              metadataLocation ->
-                  newMetadata.set(
-                      ViewVersionMetadataParser.read(io().newInputFile(metadataLocation))));
+          .run(metadataLocation -> newMetadata.set(metadataLoader.apply(metadataLocation)));
       this.currentMetadata = newMetadata.get();
       this.currentMetadataLocation = newLocation;
       this.version = parseVersion(newLocation);

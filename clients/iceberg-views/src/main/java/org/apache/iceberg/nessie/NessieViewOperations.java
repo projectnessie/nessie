@@ -17,7 +17,10 @@ package org.apache.iceberg.nessie;
 
 import static org.apache.iceberg.view.ViewUtils.toCatalogTableIdentifier;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Predicate;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.CommitFailedException;
@@ -26,7 +29,11 @@ import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.util.Tasks;
 import org.apache.iceberg.view.BaseMetastoreViewOperations;
+import org.apache.iceberg.view.BaseVersion;
+import org.apache.iceberg.view.HistoryEntry;
+import org.apache.iceberg.view.Version;
 import org.apache.iceberg.view.ViewVersionMetadata;
+import org.apache.iceberg.view.ViewVersionMetadataParser;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.http.HttpClientException;
@@ -100,8 +107,58 @@ public class NessieViewOperations extends BaseMetastoreViewOperations {
         throw new NoSuchTableException(ex, "No such view %s", key);
       }
     }
-    refreshFromMetadataLocation(metadataLocation, RETRY_IF, 2);
+    refreshFromMetadataLocation(metadataLocation, RETRY_IF, 2, this::loadViewMetadata);
     return current();
+  }
+
+  private ViewVersionMetadata loadViewMetadata(String metadataLocation) {
+    ViewVersionMetadata metadata =
+        ViewVersionMetadataParser.read(io().newInputFile(metadataLocation));
+    Optional<Version> viewVersion =
+        metadata.versions().stream()
+            .filter(v -> v.versionId() == icebergView.getVersionId())
+            .findFirst();
+    if (viewVersion.isPresent()) {
+      Version v = viewVersion.get();
+      BaseVersion baseVersion =
+          new BaseVersion(
+              v.versionId(), v.parentId(), v.timestampMillis(), v.summary(), v.viewDefinition());
+
+      List<Version> versions = getVersionsUntil(metadata, icebergView.getVersionId());
+      List<HistoryEntry> history = getHistoryEntriesUntil(metadata, icebergView.getVersionId());
+      metadata =
+          ViewVersionMetadata.newViewVersionMetadata(
+              baseVersion,
+              metadata.location(),
+              v.viewDefinition(),
+              metadata.properties(),
+              versions,
+              history);
+    }
+
+    return metadata;
+  }
+
+  private List<HistoryEntry> getHistoryEntriesUntil(ViewVersionMetadata metadata, int versionId) {
+    List<HistoryEntry> history = new ArrayList<>();
+    for (HistoryEntry entry : metadata.history()) {
+      if (entry.versionId() == versionId) {
+        break;
+      }
+      history.add(entry);
+    }
+    return history;
+  }
+
+  private List<Version> getVersionsUntil(ViewVersionMetadata metadata, int versionId) {
+    List<Version> versions = new ArrayList<>();
+    for (Version version : metadata.versions()) {
+      if (version.versionId() == versionId) {
+        break;
+      }
+      versions.add(version);
+    }
+    return versions;
   }
 
   private IcebergView view(TableIdentifier viewIdentifier) {

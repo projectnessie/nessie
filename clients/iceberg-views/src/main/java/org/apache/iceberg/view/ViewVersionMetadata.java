@@ -41,6 +41,17 @@ public class ViewVersionMetadata {
       BaseVersion version,
       String location,
       ViewDefinition definition,
+      Map<String, String> properties,
+      List<Version> versions,
+      List<HistoryEntry> history) {
+
+    return new ViewVersionMetadata(version, location, definition, properties, versions, history);
+  }
+
+  public static ViewVersionMetadata newViewVersionMetadata(
+      BaseVersion version,
+      String location,
+      ViewDefinition definition,
       ViewVersionMetadata viewVersionMetadata,
       Map<String, String> properties) {
     return new ViewVersionMetadata(
