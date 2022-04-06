@@ -125,7 +125,6 @@
     <module>model</module>
     <module>clients</module>
     <module>versioned</module>
-    <module>gc</module>
     <module>servers</module>
     <module>tools</module>
     <module>compatibility</module>
@@ -1511,6 +1510,7 @@ limitations under the License.
       <modules>
         <module>perftest</module>
         <module>ui</module>
+        <module>gc</module>
       </modules>
     </profile>
     <profile>
