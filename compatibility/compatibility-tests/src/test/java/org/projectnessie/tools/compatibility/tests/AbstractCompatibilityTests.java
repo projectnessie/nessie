@@ -82,5 +82,8 @@ public abstract class AbstractCompatibilityTests {
         .map(LogEntry::getCommitMeta)
         .map(CommitMeta::getMessage)
         .containsExactly(commitMessage);
+
+    assertThat(api.getContent().refName(branch.getName()).key(key).get())
+        .containsEntry(key, content);
   }
 }

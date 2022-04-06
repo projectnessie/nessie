@@ -40,12 +40,14 @@ new key ([see below](#operations-in-a-nessie-commit)).
 Nessie is designed to support multiple table formats like Apache Iceberg or Delta Lake. 
 Since different Nessie commits, think: on different branches in Nessie, can refer to the
 same physical table but with different state of the data and potentially different schema, some
-table formats like Apache Iceberg require Nessie to refer to a single _Global State_, in case of
-Iceberg the _table metadata_. This _Global State_ is not versioned in Nessie, because it has to
+table formats require Nessie to refer to a single _Global State_.
+
+This _Global State_ is not versioned in Nessie, because it has to
 contain enough information to resolve all information in all Nessie commits.
-the IDs of the _Iceberg snapshot_, _Iceberg schema_, _Iceberg partition spec_, _Iceberg sort order_ 
-within the Iceberg _table metadata_ is stored per Nessie named reference(branch or tag)
-as so-called _on-reference-state_.
+
+IDs of the _Iceberg snapshot_, _Iceberg schema_, _Iceberg partition spec_, _Iceberg sort order_ 
+within the Iceberg _table metadata_ are also stored per Nessie named reference (branch or tag),
+as the so-called _on-reference-state_.
 
 !!! note
     The term _all information in all Nessie commits_ used above precisely means all information
@@ -105,15 +107,12 @@ for example an _append_ or _rewrite_ operation or more generally each Iceberg tr
 a new Iceberg snapshot. Any Nessie commit refers to a particular Iceberg snapshot for an Iceberg
 table, which translates to the state of an Iceberg table for a particular Nessie commit.
 
-Nessie needs to track Iceberg's _table metadata_ as so called _Global State_ within Nessie to
-ensure that table evolution and other operations like delete work as expected.
-
 The Nessie `IcebergTable` object passed to Nessie in a [_Put operation_](#put-operation) therefore
 consists of
 
-1. the pointer to the Iceberg _table metadata_ (so called _Global State_) and
+1. the pointer to the Iceberg _table metadata_ and
 2. the IDs of the _Iceberg snapshot_, _Iceberg schema_, _Iceberg partition spec_, _Iceberg sort order_ 
-within the Iceberg _table metadata_.  (so called _On Reference State_)
+within the Iceberg _table metadata_.  (so-called _On Reference State_)
 
 !!! note
     This model puts a strong restriction on the Iceberg table. All metadata JSON documents must be
@@ -134,7 +133,7 @@ recorded within the [_Put Operation_](#put-operation) of a Nessie commit.
 The state of an SQL view is represented using the attributes
 `sqlText` and `dialect` (currently one of `HIVE`, `SPARK`, `DREMIO`, `PRESTO`).
 
-SQL views are tracked without a _Global State_ in Nessie, i.e. those three attributes are
+Views are tracked without a _Global State_ in Nessie, i.e. those three attributes are
 recorded within the [_Put Operation_](#put-operation) of a Nessie commit.
 
 ## Operations in a Nessie commit
@@ -164,7 +163,7 @@ mapped to one _Put operation_ with a different Content Id.
 ### Put operation
 
 A _Put operation_ modifies the state of the included Content object. It must contain the Content
-object and, if the Content type tracks [_Global State_](#on-reference-state-vs-global-state), also
+object and, if the _Put operation_ modifies an existing content object, also the
 the _expected contents_. The _expected contents_ attribute can be omitted, if the Content object
 refers to a new Content Id, e.g. a newly created table or view. See also
 [Conflict Resolution](#conflict-resolution).
@@ -199,9 +198,9 @@ with a `NessieConflictException`. This is basically an optimistic lock that acco
 that the commit hash is global and nessie branch could have moved on from `expectedHash` without
 modifying the key in question.
 
-For content tables that require Global State, a Nessie [_Put operation_](#put-operation) should
-pass the so called _expected state_, which will be used to compare the latest recorded Global State
-of a content object with the Global State in the _expected state_ in the _Put operation_. If both
+A Nessie [_Put operation_](#put-operation) that updates an existing content object must
+pass the so-called _expected state_, which might be used to compare the current recorded state
+of a content object with the state in the _expected state_ in the _Put operation_. If both
 values differ, Nessie will reject the operation with a `NessieConflictException`.
 
 The reason for these conditions is to behave like a ‘real’ database. You shouldn’t have to update
