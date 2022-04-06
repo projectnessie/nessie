@@ -37,15 +37,11 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonSerialize(as = ImmutableMerge.class)
 @JsonDeserialize(as = ImmutableMerge.class)
-public interface Merge {
+public interface Merge extends BaseMergeTransplant {
 
   @NotBlank
   @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
   String getFromHash();
-
-  @NotBlank
-  @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-  String getFromRefName();
 
   /**
    * Validation rule using {@link org.projectnessie.model.Validation#validateHash(String)}

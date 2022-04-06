@@ -294,7 +294,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
                         .getOperations()
                         .forEach(
                             op -> {
-                              ContentKey key = ContentKey.of(op.getKey().getElements());
+                              ContentKey key = fromKey(op.getKey());
                               if (op instanceof Put) {
                                 Content content = ((Put<Content>) op).getValue();
                                 logEntry.addOperations(Operation.Put.of(key, content));
@@ -384,13 +384,19 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
       String branchName, String hash, String message, Transplant transplant)
       throws NessieNotFoundException, NessieConflictException {
     try {
+      Boolean keep = transplant.keepIndividualCommits();
+      boolean keepIndividual = keep != null && keep;
       List<Hash> transplants;
       try (Stream<Hash> s = transplant.getHashesToTransplant().stream().map(Hash::of)) {
         transplants = s.collect(Collectors.toList());
       }
       getStore()
           .transplant(
-              BranchName.of(branchName), toHash(hash, true), transplants, commitMetaUpdate());
+              BranchName.of(branchName),
+              toHash(hash, true),
+              transplants,
+              commitMetaUpdate(),
+              keepIndividual);
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
@@ -402,12 +408,16 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   public void mergeRefIntoBranch(String branchName, String hash, Merge merge)
       throws NessieNotFoundException, NessieConflictException {
     try {
+      Boolean keep = merge.keepIndividualCommits();
+      boolean keepIndividual = keep != null && keep;
+
       getStore()
           .merge(
               toHash(merge.getFromRefName(), merge.getFromHash()),
               BranchName.of(branchName),
               toHash(hash, true),
-              commitMetaUpdate());
+              commitMetaUpdate(),
+              keepIndividual);
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
@@ -529,7 +539,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
               .commit(
                   BranchName.of(Optional.ofNullable(branch).orElse(getConfig().getDefaultBranch())),
                   Optional.ofNullable(hash).map(Hash::of),
-                  commitMetaUpdate().apply(commitMeta),
+                  commitMetaUpdate().rewriteSingle(commitMeta),
                   ops);
 
       return Branch.of(branch, newHash.asString());
@@ -595,6 +605,10 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     return ContentKey.of(key.getElements());
   }
 
+  protected static Key toKey(ContentKey key) {
+    return Key.of(key.getElements());
+  }
+
   private static Reference makeReference(
       ReferenceInfo<CommitMeta> refWithHash, boolean fetchMetadata) {
     NamedRef ref = refWithHash.getNamedRef();
@@ -646,7 +660,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   }
 
   protected static org.projectnessie.versioned.Operation<Content> toOp(Operation o) {
-    Key key = Key.of(o.getKey().getElements().toArray(new String[0]));
+    Key key = toKey(o.getKey());
     if (o instanceof Operation.Delete) {
       return Delete.of(key);
     } else if (o instanceof Operation.Put) {

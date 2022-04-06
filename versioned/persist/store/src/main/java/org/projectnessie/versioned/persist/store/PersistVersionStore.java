@@ -25,7 +25,6 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
@@ -39,6 +38,7 @@ import org.projectnessie.versioned.ImmutableCommit;
 import org.projectnessie.versioned.ImmutableRefLogDetails;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.KeyEntry;
+import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.Operation;
 import org.projectnessie.versioned.Put;
@@ -185,14 +185,16 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
       BranchName targetBranch,
       Optional<Hash> referenceHash,
       List<Hash> sequenceToTransplant,
-      Function<METADATA, METADATA> updateCommitMetadata)
+      MetadataRewriter<METADATA> updateCommitMetadata,
+      boolean keepIndividualCommits)
       throws ReferenceNotFoundException, ReferenceConflictException {
     databaseAdapter.transplant(
         TransplantParams.builder()
             .toBranch(targetBranch)
             .expectedHead(referenceHash)
             .sequenceToTransplant(sequenceToTransplant)
-            .updateCommitMetadata(updateCommitMetadata(updateCommitMetadata))
+            .updateCommitMetadata(updateCommitMetadataFunction(updateCommitMetadata))
+            .keepIndividualCommits(keepIndividualCommits)
             .build());
   }
 
@@ -201,15 +203,36 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
       Hash fromHash,
       BranchName toBranch,
       Optional<Hash> expectedHash,
-      Function<METADATA, METADATA> updateCommitMetadata)
+      MetadataRewriter<METADATA> updateCommitMetadata,
+      boolean keepIndividualCommits)
       throws ReferenceNotFoundException, ReferenceConflictException {
     databaseAdapter.merge(
         MergeParams.builder()
             .toBranch(toBranch)
             .expectedHead(expectedHash)
             .mergeFromHash(fromHash)
-            .updateCommitMetadata(updateCommitMetadata(updateCommitMetadata))
+            .updateCommitMetadata(updateCommitMetadataFunction(updateCommitMetadata))
+            .keepIndividualCommits(keepIndividualCommits)
             .build());
+  }
+
+  private MetadataRewriter<ByteString> updateCommitMetadataFunction(
+      MetadataRewriter<METADATA> updateCommitMetadata) {
+    return new MetadataRewriter<ByteString>() {
+      @Override
+      public ByteString rewriteSingle(ByteString metadata) {
+        return serializeMetadata(updateCommitMetadata.rewriteSingle(deserializeMetadata(metadata)));
+      }
+
+      @Override
+      public ByteString squash(List<ByteString> metadata) {
+        return serializeMetadata(
+            updateCommitMetadata.squash(
+                metadata.stream()
+                    .map(PersistVersionStore.this::deserializeMetadata)
+                    .collect(Collectors.toList())));
+      }
+    };
   }
 
   @Override
@@ -246,15 +269,6 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
         .map(
             namedRef ->
                 namedRef.withUpdatedCommitMeta(deserializeMetadata(namedRef.getHeadCommitMeta())));
-  }
-
-  private Function<ByteString, ByteString> updateCommitMetadata(
-      Function<METADATA, METADATA> updateCommitMetadata) {
-    return original -> {
-      METADATA commitMeta = deserializeMetadata(original);
-      METADATA updated = updateCommitMetadata.apply(commitMeta);
-      return serializeMetadata(updated);
-    };
   }
 
   private ByteString serializeMetadata(METADATA metadata) {

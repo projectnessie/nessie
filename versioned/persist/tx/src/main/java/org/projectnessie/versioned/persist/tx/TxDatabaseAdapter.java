@@ -241,6 +241,12 @@ public abstract class TxDatabaseAdapter
 
             Hash toHead =
                 mergeAttempt(conn, timeInMicros, currentHead, h -> {}, h -> {}, mergeParams);
+
+            if (toHead.equals(currentHead)) {
+              // nothing done
+              return currentHead;
+            }
+
             Hash resultHash =
                 tryMoveNamedReference(conn, mergeParams.getToBranch(), currentHead, toHead);
 

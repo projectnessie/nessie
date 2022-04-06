@@ -13,20 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.persist.adapter;
+package org.projectnessie.model;
 
-import com.google.protobuf.ByteString;
-import org.immutables.value.Value;
-import org.projectnessie.versioned.MetadataRewriter;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import javax.annotation.Nullable;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Pattern;
 
-public interface MetadataRewriteParams extends ToBranchParams {
+public interface BaseMergeTransplant {
 
-  /** Whether to keep the individual commits and do not squash the commits to merge. */
-  @Value.Default
-  default boolean keepIndividualCommits() {
-    return false;
-  }
+  @NotBlank
+  @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+  String getFromRefName();
 
-  /** Function to rewrite the commit-metadata. */
-  MetadataRewriter<ByteString> getUpdateCommitMetadata();
+  @Nullable
+  @JsonInclude(Include.NON_NULL)
+  Boolean keepIndividualCommits();
 }

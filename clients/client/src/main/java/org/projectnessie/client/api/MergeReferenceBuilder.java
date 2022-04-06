@@ -16,23 +16,17 @@
 package org.projectnessie.client.api;
 
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Pattern;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Reference;
-import org.projectnessie.model.Validation;
 
 /**
  * Request builder for "merge reference".
  *
  * @since {@link NessieApiV1}
  */
-public interface MergeReferenceBuilder extends OnBranchBuilder<MergeReferenceBuilder> {
+public interface MergeReferenceBuilder extends MergeTransplantBuilder<MergeReferenceBuilder> {
   MergeReferenceBuilder fromHash(@NotBlank String fromHash);
-
-  MergeReferenceBuilder fromRefName(
-      @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-          String fromRefName);
 
   /**
    * Convenience for {@link #fromRefName(String) fromRefName(fromRef.getName())}{@code .}{@link

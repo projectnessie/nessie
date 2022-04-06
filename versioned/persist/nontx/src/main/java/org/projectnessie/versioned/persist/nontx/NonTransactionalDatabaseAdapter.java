@@ -217,6 +217,11 @@ public abstract class NonTransactionalDatabaseAdapter<
                 mergeAttempt(
                     ctx, timeInMicros, currentHead, branchCommits, newKeyLists, mergeParams);
 
+            if (newHead.equals(currentHead)) {
+              // nothing done
+              return pointer;
+            }
+
             GlobalStateLogEntry newGlobalHead =
                 writeGlobalCommit(ctx, timeInMicros, pointer, Collections.emptyList());
 
@@ -260,6 +265,11 @@ public abstract class NonTransactionalDatabaseAdapter<
             Hash newHead =
                 transplantAttempt(
                     ctx, timeInMicros, currentHead, branchCommits, newKeyLists, transplantParams);
+
+            if (newHead.equals(currentHead)) {
+              // nothing done
+              return pointer;
+            }
 
             GlobalStateLogEntry newGlobalHead =
                 writeGlobalCommit(ctx, timeInMicros, pointer, Collections.emptyList());

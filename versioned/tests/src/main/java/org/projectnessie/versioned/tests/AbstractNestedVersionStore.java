@@ -26,6 +26,7 @@ import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.Ref;
 import org.projectnessie.versioned.ReferenceInfo;
@@ -104,13 +105,13 @@ public abstract class AbstractNestedVersionStore {
   protected static void assertCommitMeta(
       List<Commit<CommitMessage, BaseContent>> current,
       List<Commit<CommitMessage, BaseContent>> expected,
-      Function<CommitMessage, CommitMessage> commitMetaModifier) {
+      MetadataRewriter<CommitMessage> commitMetaModifier) {
     assertThat(current)
         .map(Commit::getCommitMeta)
         .containsExactlyElementsOf(
             expected.stream()
                 .map(Commit::getCommitMeta)
-                .map(commitMetaModifier)
+                .map(commitMetaModifier::rewriteSingle)
                 .collect(Collectors.toList()));
   }
 }

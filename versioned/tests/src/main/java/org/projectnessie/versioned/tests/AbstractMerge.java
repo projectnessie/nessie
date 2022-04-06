@@ -27,13 +27,15 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
@@ -95,16 +97,35 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
     commits = commitsList(branch, false).subList(0, 3);
   }
 
-  private CommitMessage merged(CommitMessage commitMessage) {
-    return commitMessage(commitMessage.getMessage() + ", merged");
+  private MetadataRewriter<CommitMessage> createMetadataRewriter(String suffix) {
+    return new MetadataRewriter<CommitMessage>() {
+      @Override
+      public CommitMessage rewriteSingle(CommitMessage metadata) {
+        return CommitMessage.commitMessage(metadata.getMessage() + suffix);
+      }
+
+      @Override
+      public CommitMessage squash(List<CommitMessage> metadata) {
+        return CommitMessage.commitMessage(
+            metadata.stream()
+                .map(cm -> cm.getMessage() + suffix)
+                .collect(Collectors.joining("\n-----------------------------------\n")));
+      }
+    };
   }
 
-  @Test
-  protected void mergeIntoEmptyBranch() throws VersionStoreException {
-    final BranchName newBranch = BranchName.of("mergeIntoEmptyBranch");
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  protected void mergeIntoEmptyBranch3Commits(boolean individualCommits)
+      throws VersionStoreException {
+    final BranchName newBranch = BranchName.of("mergeIntoEmptyBranch3Commits");
     store().create(newBranch, Optional.of(initialHash));
 
-    store().merge(thirdCommit, newBranch, Optional.of(initialHash), Function.identity());
+    MetadataRewriter<CommitMessage> metadataRewriter = createMetadataRewriter("");
+
+    store()
+        .merge(
+            thirdCommit, newBranch, Optional.of(initialHash), metadataRewriter, individualCommits);
     assertThat(
             store()
                 .getValues(
@@ -116,18 +137,70 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 Key.of("t2"), V_2_2,
                 Key.of("t4"), V_4_1));
 
-    // not modifying commit meta, will just "fast forward"
-    assertThat(store().hashOnReference(newBranch, Optional.empty())).isEqualTo(thirdCommit);
+    if (individualCommits) {
+      // not modifying commit meta, will just "fast forward"
+      assertThat(store().hashOnReference(newBranch, Optional.empty())).isEqualTo(thirdCommit);
 
-    assertCommitMeta(commitsList(newBranch, false).subList(0, 3), commits, Function.identity());
+      assertCommitMeta(commitsList(newBranch, false).subList(0, 3), commits, metadataRewriter);
+    } else {
+      // must modify commit meta, it's more than one commit
+      assertThat(store().hashOnReference(newBranch, Optional.empty())).isNotEqualTo(thirdCommit);
+
+      assertThat(commitsList(newBranch, false))
+          .first()
+          .extracting(Commit::getCommitMeta)
+          .extracting(CommitMessage::getMessage)
+          .asString()
+          .contains(
+              commits.stream()
+                  .map(Commit::getCommitMeta)
+                  .map(CommitMessage::getMessage)
+                  .toArray(String[]::new));
+    }
   }
 
-  @Test
-  protected void mergeIntoEmptyBranchModifying() throws VersionStoreException {
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  protected void mergeIntoEmptyBranch1Commit(boolean individualCommits)
+      throws VersionStoreException {
+    final BranchName newBranch = BranchName.of("mergeIntoEmptyBranch1Commit");
+    store().create(newBranch, Optional.of(initialHash));
+
+    MetadataRewriter<CommitMessage> metadataRewriter = createMetadataRewriter("");
+
+    store()
+        .merge(
+            firstCommit, newBranch, Optional.of(initialHash), metadataRewriter, individualCommits);
+    assertThat(
+            store()
+                .getValues(
+                    newBranch,
+                    Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"))))
+        .containsExactlyInAnyOrderEntriesOf(
+            ImmutableMap.of(
+                Key.of("t1"), V_1_1,
+                Key.of("t2"), V_2_1,
+                Key.of("t3"), V_3_1));
+
+    // not modifying commit meta, will just "fast forward"
+    assertThat(store().hashOnReference(newBranch, Optional.empty())).isEqualTo(firstCommit);
+
+    assertCommitMeta(
+        commitsList(newBranch, false).subList(0, 1), commits.subList(2, 3), metadataRewriter);
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  protected void mergeIntoEmptyBranchModifying(boolean individualCommits)
+      throws VersionStoreException {
     final BranchName newBranch = BranchName.of("mergeIntoEmptyBranchModifying");
     store().create(newBranch, Optional.of(initialHash));
 
-    store().merge(thirdCommit, newBranch, Optional.of(initialHash), this::merged);
+    MetadataRewriter<CommitMessage> metadataRewriter = createMetadataRewriter(", merged");
+
+    store()
+        .merge(
+            thirdCommit, newBranch, Optional.of(initialHash), metadataRewriter, individualCommits);
     assertThat(
             store()
                 .getValues(
@@ -142,16 +215,33 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
     // modify the commit meta, will generate new commits and therefore new commit hashes
     assertThat(store().hashOnReference(newBranch, Optional.empty())).isNotEqualTo(thirdCommit);
 
-    assertCommitMeta(commitsList(newBranch, false).subList(0, 3), commits, this::merged);
+    if (individualCommits) {
+      assertCommitMeta(commitsList(newBranch, false).subList(0, 3), commits, metadataRewriter);
+    } else {
+      assertThat(commitsList(newBranch, false))
+          .first()
+          .extracting(Commit::getCommitMeta)
+          .extracting(CommitMessage::getMessage)
+          .asString()
+          .contains(
+              commits.stream()
+                  .map(Commit::getCommitMeta)
+                  .map(CommitMessage::getMessage)
+                  .toArray(String[]::new));
+    }
   }
 
-  @Test
-  protected void mergeIntoNonConflictingBranch() throws VersionStoreException {
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  protected void mergeIntoNonConflictingBranch(boolean individualCommits)
+      throws VersionStoreException {
     final BranchName newBranch = BranchName.of("bar_2");
     store().create(newBranch, Optional.of(initialHash));
     final Hash newCommit = commit("Unrelated commit").put("t5", V_5_1).toBranch(newBranch);
 
-    store().merge(thirdCommit, newBranch, Optional.empty(), Function.identity());
+    MetadataRewriter<CommitMessage> metadataRewriter = createMetadataRewriter("");
+
+    store().merge(thirdCommit, newBranch, Optional.empty(), metadataRewriter, individualCommits);
     assertThat(
             store()
                 .getValues(
@@ -166,31 +256,47 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 Key.of("t5"), V_5_1));
 
     final List<Commit<CommitMessage, BaseContent>> commits = commitsList(newBranch, false);
-    assertThat(commits)
-        .satisfiesExactly(
-            c0 ->
-                assertThat(c0)
-                    .extracting(Commit::getCommitMeta)
-                    .isEqualTo(commitMessage("Third Commit")),
-            c1 ->
-                assertThat(c1)
-                    .extracting(Commit::getCommitMeta)
-                    .isEqualTo(commitMessage("Second Commit")),
-            c2 ->
-                assertThat(c2)
-                    .extracting(Commit::getCommitMeta)
-                    .isEqualTo(commitMessage("First Commit")),
-            c3 -> assertThat(c3).extracting(Commit::getHash).isEqualTo(newCommit),
-            c4 -> assertThat(c4).extracting(Commit::getHash).isEqualTo(initialHash));
+    if (individualCommits) {
+      assertThat(commits)
+          .satisfiesExactly(
+              c0 ->
+                  assertThat(c0)
+                      .extracting(Commit::getCommitMeta)
+                      .isEqualTo(commitMessage("Third Commit")),
+              c1 ->
+                  assertThat(c1)
+                      .extracting(Commit::getCommitMeta)
+                      .isEqualTo(commitMessage("Second Commit")),
+              c2 ->
+                  assertThat(c2)
+                      .extracting(Commit::getCommitMeta)
+                      .isEqualTo(commitMessage("First Commit")),
+              c3 -> assertThat(c3).extracting(Commit::getHash).isEqualTo(newCommit),
+              c4 -> assertThat(c4).extracting(Commit::getHash).isEqualTo(initialHash));
+    } else {
+      assertThat(commits)
+          .satisfiesExactly(
+              c0 ->
+                  assertThat(c0)
+                      .extracting(Commit::getCommitMeta)
+                      .extracting(CommitMessage::getMessage)
+                      .asString()
+                      .contains("Third Commit", "Second Commit", "First Commit"),
+              c3 -> assertThat(c3).extracting(Commit::getHash).isEqualTo(newCommit),
+              c4 -> assertThat(c4).extracting(Commit::getHash).isEqualTo(initialHash));
+    }
   }
 
-  @Test
-  protected void nonEmptyFastForwardMerge() throws VersionStoreException {
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  protected void nonEmptyFastForwardMerge(boolean individualCommits) throws VersionStoreException {
     final Key key = Key.of("t1");
     final BranchName etl = BranchName.of("etl");
     final BranchName review = BranchName.of("review");
     store().create(etl, Optional.of(initialHash));
     store().create(review, Optional.of(initialHash));
+
+    MetadataRewriter<CommitMessage> metadataRewriter = createMetadataRewriter("");
     store()
         .commit(
             etl,
@@ -202,7 +308,8 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             store().hashOnReference(etl, Optional.empty()),
             review,
             Optional.empty(),
-            Function.identity());
+            metadataRewriter,
+            individualCommits);
     store()
         .commit(
             etl,
@@ -214,18 +321,22 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             store().hashOnReference(etl, Optional.empty()),
             review,
             Optional.empty(),
-            Function.identity());
+            metadataRewriter,
+            individualCommits);
     assertEquals(store().getValue(review, key), VALUE_2);
   }
 
-  @Test
-  protected void mergeWithCommonAncestor() throws VersionStoreException {
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  protected void mergeWithCommonAncestor(boolean individualCommits) throws VersionStoreException {
     final BranchName newBranch = BranchName.of("bar_2");
     store().create(newBranch, Optional.of(firstCommit));
 
     final Hash newCommit = commit("Unrelated commit").put("t5", V_5_1).toBranch(newBranch);
 
-    store().merge(thirdCommit, newBranch, Optional.empty(), Function.identity());
+    MetadataRewriter<CommitMessage> metadataRewriter = createMetadataRewriter("");
+
+    store().merge(thirdCommit, newBranch, Optional.empty(), metadataRewriter, individualCommits);
     assertThat(
             store()
                 .getValues(
@@ -240,16 +351,31 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 Key.of("t5"), V_5_1));
 
     final List<Commit<CommitMessage, BaseContent>> commits = commitsList(newBranch, false);
-    assertThat(commits).hasSize(5);
-    assertThat(commits.get(4).getHash()).isEqualTo(initialHash);
-    assertThat(commits.get(3).getHash()).isEqualTo(firstCommit);
-    assertThat(commits.get(2).getHash()).isEqualTo(newCommit);
-    assertThat(commits.get(1).getCommitMeta()).isEqualTo(commitMessage("Second Commit"));
-    assertThat(commits.get(0).getCommitMeta()).isEqualTo(commitMessage("Third Commit"));
+    if (individualCommits) {
+      assertThat(commits)
+          .hasSize(5)
+          .satisfiesExactly(
+              c -> assertThat(c.getCommitMeta().getMessage()).isEqualTo("Third Commit"),
+              c -> assertThat(c.getCommitMeta().getMessage()).isEqualTo("Second Commit"),
+              c -> assertThat(c.getHash()).isEqualTo(newCommit),
+              c -> assertThat(c.getHash()).isEqualTo(firstCommit),
+              c -> assertThat(c.getHash()).isEqualTo(initialHash));
+    } else {
+      assertThat(commits)
+          .hasSize(4)
+          .satisfiesExactly(
+              c ->
+                  assertThat(c.getCommitMeta().getMessage())
+                      .contains("Second Commit", "Third Commit"),
+              c -> assertThat(c.getHash()).isEqualTo(newCommit),
+              c -> assertThat(c.getHash()).isEqualTo(firstCommit),
+              c -> assertThat(c.getHash()).isEqualTo(initialHash));
+    }
   }
 
-  @Test
-  protected void mergeWithConflictingKeys() throws VersionStoreException {
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  protected void mergeWithConflictingKeys(boolean individualCommits) throws VersionStoreException {
     final BranchName foo = BranchName.of("foofoo");
     final BranchName bar = BranchName.of("barbar");
     store().create(foo, Optional.of(this.initialHash));
@@ -286,34 +412,61 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 commitMessage("commit 4"),
                 Collections.singletonList(Put.of(key2, VALUE_4)));
 
-    assertThatThrownBy(() -> store().merge(barHash, foo, Optional.empty(), Function.identity()))
+    assertThatThrownBy(
+            () ->
+                store()
+                    .merge(
+                        barHash,
+                        foo,
+                        Optional.empty(),
+                        createMetadataRewriter(""),
+                        individualCommits))
         .isInstanceOf(ReferenceConflictException.class)
         .hasMessageContaining("The following keys have been changed in conflict:")
         .hasMessageContaining(key1.toString())
         .hasMessageContaining(key2.toString());
   }
 
-  @Test
-  protected void mergeIntoConflictingBranch() throws VersionStoreException {
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  protected void mergeIntoConflictingBranch(boolean individualCommits)
+      throws VersionStoreException {
     final BranchName newBranch = BranchName.of("bar_3");
     store().create(newBranch, Optional.of(initialHash));
     commit("Another commit").put("t1", V_1_4).toBranch(newBranch);
 
     assertThrows(
         ReferenceConflictException.class,
-        () -> store().merge(thirdCommit, newBranch, Optional.of(initialHash), Function.identity()));
+        () ->
+            store()
+                .merge(
+                    thirdCommit,
+                    newBranch,
+                    Optional.of(initialHash),
+                    createMetadataRewriter(""),
+                    individualCommits));
   }
 
-  @Test
-  protected void mergeIntoNonExistingBranch() {
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  protected void mergeIntoNonExistingBranch(boolean individualCommits) {
     final BranchName newBranch = BranchName.of("bar_5");
     assertThrows(
         ReferenceNotFoundException.class,
-        () -> store().merge(thirdCommit, newBranch, Optional.of(initialHash), Function.identity()));
+        () ->
+            store()
+                .merge(
+                    thirdCommit,
+                    newBranch,
+                    Optional.of(initialHash),
+                    createMetadataRewriter(""),
+                    individualCommits));
   }
 
-  @Test
-  protected void mergeIntoNonExistingReference() throws VersionStoreException {
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  protected void mergeIntoNonExistingReference(boolean individualCommits)
+      throws VersionStoreException {
     final BranchName newBranch = BranchName.of("bar_6");
     store().create(newBranch, Optional.of(initialHash));
     assertThrows(
@@ -324,6 +477,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                     Hash.of("1234567890abcdef"),
                     newBranch,
                     Optional.of(initialHash),
-                    Function.identity()));
+                    createMetadataRewriter(""),
+                    individualCommits));
   }
 }

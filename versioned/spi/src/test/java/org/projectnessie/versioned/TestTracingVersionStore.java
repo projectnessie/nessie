@@ -34,7 +34,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -77,6 +76,19 @@ class TestTracingVersionStore {
             new ReferenceNotFoundException("not-found"),
             new ReferenceAlreadyExistsException("already exists"));
 
+    MetadataRewriter<String> metadataRewriter =
+        new MetadataRewriter<String>() {
+          @Override
+          public String rewriteSingle(String metadata) {
+            return metadata;
+          }
+
+          @Override
+          public String squash(List<String> metadata) {
+            return String.join(", ", metadata);
+          }
+        };
+
     // "Declare" test-invocations for all VersionStore functions with their respective outcomes
     // and exceptions.
     Stream<TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>>
@@ -113,7 +125,8 @@ class TestTracingVersionStore {
                                 BranchName.of("mock-branch"),
                                 Optional.empty(),
                                 Collections.emptyList(),
-                                Function.identity())),
+                                metadataRewriter,
+                                true)),
                 new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>(
                         "Merge", refNotFoundAndRefConflictThrows)
                     .tag("nessie.version-store.to-branch", "mock-branch")
@@ -125,7 +138,8 @@ class TestTracingVersionStore {
                                 Hash.of("42424242"),
                                 BranchName.of("mock-branch"),
                                 Optional.empty(),
-                                Function.identity())),
+                                metadataRewriter,
+                                false)),
                 new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>(
                         "Assign", refNotFoundAndRefConflictThrows)
                     .tag("nessie.version-store.ref", "BranchName{name=mock-branch}")

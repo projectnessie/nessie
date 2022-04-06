@@ -66,6 +66,7 @@ import org.projectnessie.versioned.GetNamedRefsParams.RetrieveOptions;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableReferenceInfo;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.RefLogNotFoundException;
 import org.projectnessie.versioned.ReferenceConflictException;
@@ -90,6 +91,7 @@ import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.MergeParams;
+import org.projectnessie.versioned.persist.adapter.MetadataRewriteParams;
 import org.projectnessie.versioned.persist.adapter.RefLog;
 import org.projectnessie.versioned.persist.adapter.TransplantParams;
 
@@ -279,7 +281,6 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
         takeUntilExcludeLast(
                 readCommitLogStream(ctx, toHead), e -> e.getHash().equals(commonAncestor))
             .collect(Collectors.toList());
-    Collections.reverse(toEntriesReverseChronological);
     List<CommitLogEntry> commitsToMergeChronological =
         takeUntilExcludeLast(
                 readCommitLogStream(ctx, mergeParams.getMergeFromHash()),
@@ -296,29 +297,15 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
               toHead));
     }
 
-    // 4. Collect modified keys.
-    Set<Key> keysTouchedOnTarget = collectModifiedKeys(toEntriesReverseChronological);
-
-    // 5. check for key-collisions
-    checkForKeyCollisions(ctx, toHead, keysTouchedOnTarget, commitsToMergeChronological);
-
-    // (no need to verify the global states during a merge)
-    // re-apply commits in 'sequenceToTransplant' onto 'targetBranch'
-    toHead =
-        copyCommits(
-            ctx,
-            timeInMicros,
-            toHead,
-            commitsToMergeChronological,
-            newKeyLists,
-            mergeParams.getUpdateCommitMetadata());
-
-    // Write commits
-
-    commitsToMergeChronological.stream().map(CommitLogEntry::getHash).forEach(branchCommits);
-    writeMultipleCommits(ctx, commitsToMergeChronological);
-
-    return toHead;
+    return mergeTransplantCommon(
+        ctx,
+        timeInMicros,
+        toHead,
+        branchCommits,
+        newKeyLists,
+        commitsToMergeChronological,
+        toEntriesReverseChronological,
+        mergeParams);
   }
 
   /**
@@ -360,10 +347,6 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
             .equals(transplantParams.getExpectedHead().get())) {
       targetEntriesReverseChronological.remove(0);
     }
-    Collections.reverse(targetEntriesReverseChronological);
-
-    // 2. Collect modified keys.
-    Set<Key> keysTouchedOnTarget = collectModifiedKeys(targetEntriesReverseChronological);
 
     // 4. ensure 'sequenceToTransplant' is sequential
     int[] index = new int[] {transplantParams.getSequenceToTransplant().size() - 1};
@@ -387,24 +370,61 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
             .collect(Collectors.toList());
 
     // 5. check for key-collisions
-    checkForKeyCollisions(ctx, targetHead, keysTouchedOnTarget, commitsToTransplantChronological);
+    return mergeTransplantCommon(
+        ctx,
+        timeInMicros,
+        targetHead,
+        branchCommits,
+        newKeyLists,
+        commitsToTransplantChronological,
+        targetEntriesReverseChronological,
+        transplantParams);
+  }
 
-    // (no need to verify the global states during a transplant)
-    // 6. re-apply commits in 'sequenceToTransplant' onto 'targetBranch'
-    targetHead =
-        copyCommits(
-            ctx,
-            timeInMicros,
-            targetHead,
-            commitsToTransplantChronological,
-            newKeyLists,
-            transplantParams.getUpdateCommitMetadata());
+  protected Hash mergeTransplantCommon(
+      OP_CONTEXT ctx,
+      long timeInMicros,
+      Hash toHead,
+      Consumer<Hash> branchCommits,
+      Consumer<Hash> newKeyLists,
+      List<CommitLogEntry> commitsToMergeChronological,
+      List<CommitLogEntry> toEntriesReverseChronological,
+      MetadataRewriteParams params)
+      throws ReferenceConflictException, ReferenceNotFoundException {
 
-    // 7. Write commits
+    // Collect modified keys.
+    Collections.reverse(toEntriesReverseChronological);
+    Set<Key> keysTouchedOnTarget = collectModifiedKeys(toEntriesReverseChronological);
 
-    commitsToTransplantChronological.stream().map(CommitLogEntry::getHash).forEach(branchCommits);
-    writeMultipleCommits(ctx, commitsToTransplantChronological);
-    return targetHead;
+    checkForKeyCollisions(ctx, toHead, keysTouchedOnTarget, commitsToMergeChronological);
+
+    if (params.keepIndividualCommits() || commitsToMergeChronological.size() == 1) {
+      // (no need to verify the global states during a merge)
+      // re-apply commits in 'sequenceToTransplant' onto 'targetBranch'
+      toHead =
+          copyCommits(
+              ctx,
+              timeInMicros,
+              toHead,
+              commitsToMergeChronological,
+              newKeyLists,
+              params.getUpdateCommitMetadata());
+
+      // Write commits
+
+      commitsToMergeChronological.stream().map(CommitLogEntry::getHash).forEach(branchCommits);
+      writeMultipleCommits(ctx, commitsToMergeChronological);
+    } else {
+      toHead =
+          squashCommits(
+              ctx,
+              timeInMicros,
+              toHead,
+              commitsToMergeChronological,
+              newKeyLists,
+              params.getUpdateCommitMetadata());
+    }
+    return toHead;
   }
 
   /**
@@ -1564,6 +1584,78 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     return keysTouchedOnTarget;
   }
 
+  /**
+   * For merge/transplant, applies one squashed commit derived from the given commits onto the
+   * target-hash.
+   */
+  protected Hash squashCommits(
+      OP_CONTEXT ctx,
+      long timeInMicros,
+      Hash toHead,
+      List<CommitLogEntry> commitsToMergeChronological,
+      Consumer<Hash> newKeyLists,
+      MetadataRewriter<ByteString> rewriteMetadata)
+      throws ReferenceConflictException, ReferenceNotFoundException {
+
+    List<ByteString> commitMeta = new ArrayList<>();
+    Map<Key, KeyWithBytes> puts = new HashMap<>();
+    Set<Key> deletes = new HashSet<>();
+    for (int i = commitsToMergeChronological.size() - 1; i >= 0; i--) {
+      CommitLogEntry source = commitsToMergeChronological.get(i);
+      for (Key delete : source.getDeletes()) {
+        deletes.add(delete);
+        puts.remove(delete);
+      }
+      for (KeyWithBytes put : source.getPuts()) {
+        deletes.remove(put.getKey());
+        puts.put(put.getKey(), put);
+      }
+
+      commitMeta.add(source.getMetadata());
+    }
+
+    if (puts.isEmpty() && deletes.isEmpty()) {
+      // Copied commit will not contain any operation, skip.
+      return toHead;
+    }
+
+    ByteString newCommitMeta = rewriteMetadata.squash(commitMeta);
+
+    CommitLogEntry targetHeadCommit = fetchFromCommitLog(ctx, toHead);
+
+    int parentsPerCommit = config.getParentsPerCommit();
+    List<Hash> parents = new ArrayList<>(parentsPerCommit);
+    parents.add(toHead);
+    long commitSeq;
+    int keyListDistance;
+    if (targetHeadCommit != null) {
+      List<Hash> p = targetHeadCommit.getParents();
+      parents.addAll(p.subList(0, Math.min(p.size(), parentsPerCommit - 1)));
+      commitSeq = targetHeadCommit.getCommitSeq() + 1;
+      keyListDistance = targetHeadCommit.getKeyListDistance();
+    } else {
+      commitSeq = 1;
+      keyListDistance = 0;
+    }
+
+    CommitLogEntry squashedCommit =
+        buildIndividualCommit(
+            ctx,
+            timeInMicros,
+            parents,
+            commitSeq,
+            newCommitMeta,
+            puts.values(),
+            deletes,
+            keyListDistance,
+            newKeyLists,
+            h -> null);
+
+    writeIndividualCommit(ctx, squashedCommit);
+
+    return squashedCommit.getHash();
+  }
+
   /** For merge/transplant, applies the given commits onto the target-hash. */
   protected Hash copyCommits(
       OP_CONTEXT ctx,
@@ -1571,7 +1663,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       Hash targetHead,
       List<CommitLogEntry> commitsChronological,
       Consumer<Hash> newKeyLists,
-      Function<ByteString, ByteString> rewriteMetadata)
+      MetadataRewriter<ByteString> rewriteMetadata)
       throws ReferenceNotFoundException {
     int parentsPerCommit = config.getParentsPerCommit();
 
@@ -1602,7 +1694,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
         parents.add(0, targetHead);
       }
 
-      ByteString updatedMetadata = rewriteMetadata.apply(sourceCommit.getMetadata());
+      ByteString updatedMetadata = rewriteMetadata.rewriteSingle(sourceCommit.getMetadata());
 
       CommitLogEntry newEntry =
           buildIndividualCommit(

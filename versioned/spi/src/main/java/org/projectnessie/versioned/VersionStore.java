@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
-import java.util.function.Function;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.ThreadSafe;
@@ -111,7 +110,10 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @param referenceHash The hash to use as a reference for conflict detection. If not present, do
    *     not perform conflict detection
    * @param sequenceToTransplant The sequence of hashes to transplant.
-   * @param updateCommitMetadata
+   * @param updateCommitMetadata function that rewrites the commit metadata, gets a multiple commit
+   *     metadata if {@code keepIndividualCommits} is {@code false}
+   * @param keepIndividualCommits whether to keep the individual commits and do not squash the
+   *     commits to transplant
    * @throws ReferenceConflictException if {@code referenceHash} values do not match the stored
    *     values for {@code branch}
    * @throws ReferenceNotFoundException if {@code branch} or if any of the hashes from {@code
@@ -121,7 +123,8 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
       BranchName targetBranch,
       Optional<Hash> referenceHash,
       List<Hash> sequenceToTransplant,
-      Function<METADATA, METADATA> updateCommitMetadata)
+      MetadataRewriter<METADATA> updateCommitMetadata,
+      boolean keepIndividualCommits)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**
@@ -142,7 +145,10 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @param fromHash The hash we are using to get additional commits
    * @param toBranch The branch that we are merging into
    * @param expectedHash The current head of the branch to validate before updating (optional).
-   * @param updateCommitMetadata
+   * @param updateCommitMetadata function that rewrites the commit metadata, gets a multiple commit
+   *     metadata if {@code keepIndividualCommits} is {@code false}
+   * @param keepIndividualCommits whether to keep the individual commits and do not squash the
+   *     commits to merge
    * @throws ReferenceConflictException if {@code expectedBranchHash} doesn't match the stored hash
    *     for {@code toBranch}
    * @throws ReferenceNotFoundException if {@code toBranch} or {@code fromHash} is not present in
@@ -152,7 +158,8 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
       Hash fromHash,
       BranchName toBranch,
       Optional<Hash> expectedHash,
-      Function<METADATA, METADATA> updateCommitMetadata)
+      MetadataRewriter<METADATA> updateCommitMetadata,
+      boolean keepIndividualCommits)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**

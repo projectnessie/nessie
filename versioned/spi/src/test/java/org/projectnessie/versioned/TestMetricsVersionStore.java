@@ -52,7 +52,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 import java.util.function.ToLongFunction;
@@ -94,6 +93,19 @@ class TestMetricsVersionStore {
             new ReferenceNotFoundException("not-found"),
             new ReferenceAlreadyExistsException("already exists"));
 
+    MetadataRewriter<String> metadataRewriter =
+        new MetadataRewriter<String>() {
+          @Override
+          public String rewriteSingle(String metadata) {
+            return metadata;
+          }
+
+          @Override
+          public String squash(List<String> metadata) {
+            return String.join(", ", metadata);
+          }
+        };
+
     // "Declare" test-invocations for all VersionStore functions with their respective outcomes
     // and exceptions.
     Stream<VersionStoreInvocation<?>> versionStoreFunctions =
@@ -121,7 +133,8 @@ class TestMetricsVersionStore {
                         BranchName.of("mock-branch"),
                         Optional.empty(),
                         Collections.emptyList(),
-                        Function.identity()),
+                        metadataRewriter,
+                        false),
                 refNotFoundAndRefConflictThrows),
             new VersionStoreInvocation<>(
                 "merge",
@@ -130,7 +143,8 @@ class TestMetricsVersionStore {
                         Hash.of("42424242"),
                         BranchName.of("mock-branch"),
                         Optional.empty(),
-                        Function.identity()),
+                        metadataRewriter,
+                        false),
                 refNotFoundAndRefConflictThrows),
             new VersionStoreInvocation<>(
                 "assign",
