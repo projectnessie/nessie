@@ -183,7 +183,7 @@
     <iceberg.version>0.13.1</iceberg.version>
     <immutables.version>2.9.0</immutables.version>
     <jackson.version>2.13.2.20220328</jackson.version>
-    <jacoco.version>0.8.7</jacoco.version>
+    <jacoco.version>0.8.8</jacoco.version>
     <javax.version>4.0.1</javax.version>
     <javax.ws.rs.version>2.1.1</javax.ws.rs.version>
     <jersey.version>2.35</jersey.version>
