@@ -15,37 +15,11 @@
  */
 package org.projectnessie.versioned;
 
-import static java.lang.String.format;
-
-import javax.annotation.Nonnull;
-
 /** Exception thrown when a reference already exists in the store. */
 public class ReferenceAlreadyExistsException extends VersionStoreException {
   private static final long serialVersionUID = -6125198004202778224L;
 
   public ReferenceAlreadyExistsException(String message) {
     super(message);
-  }
-
-  /**
-   * Create a {@code ReferenceConflictException} instance with an accurate message based on the
-   * provided named referenced and the compared hashes.
-   *
-   * @param ref the named reference
-   * @return a {@code ReferenceNotFoundException} instance
-   * @throws NullPointerException if {@code ref} is {@code null}.
-   */
-  @Nonnull
-  public static ReferenceAlreadyExistsException forReference(@Nonnull NamedRef ref) {
-    final String refType;
-    if (ref instanceof BranchName) {
-      refType = "branch";
-    } else if (ref instanceof TagName) {
-      refType = "tag";
-    } else {
-      refType = "named ref";
-    }
-    return new ReferenceAlreadyExistsException(
-        format("%s '%s' already exists", refType, ref.getName()));
   }
 }

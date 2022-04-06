@@ -15,11 +15,6 @@
  */
 package org.projectnessie.versioned;
 
-import static java.lang.String.format;
-
-import java.util.Optional;
-import javax.annotation.Nonnull;
-
 /**
  * Exception thrown when the hash associated with a named reference does not match with the hash
  * provided by the caller.
@@ -33,67 +28,5 @@ public class ReferenceConflictException extends VersionStoreException {
 
   public ReferenceConflictException(String message, Throwable t) {
     super(message, t);
-  }
-
-  /**
-   * Create a {@code ReferenceConflictException} instance with an accurate message based on the
-   * provided named referenced and the compared hashes.
-   *
-   * @param ref the named reference
-   * @param expected the hash expected to be found in the store
-   * @param actual the hash found in the store for the reference
-   * @return a {@code ReferenceNotFoundException} instance
-   * @throws NullPointerException if {@code ref} is {@code null}.
-   */
-  @Nonnull
-  public static ReferenceConflictException forReference(
-      @Nonnull NamedRef ref, @Nonnull Optional<Hash> expected, @Nonnull Optional<Hash> actual) {
-    final String expectedArgument = expected.map(Hash::asString).orElse("no reference");
-    final String actualArgument = actual.map(Hash::asString).orElse("no reference");
-    final String refType;
-    if (ref instanceof BranchName) {
-      refType = "branch";
-    } else if (ref instanceof TagName) {
-      refType = "tag";
-    } else {
-      refType = "named ref";
-    }
-    return new ReferenceConflictException(
-        format(
-            "Expected %s for %s '%s' but was %s",
-            expectedArgument, refType, ref.getName(), actualArgument));
-  }
-
-  /**
-   * Create a {@code ReferenceConflictException} instance with an accurate message based on the
-   * provided named referenced and the compared hashes.
-   *
-   * @param ref the named reference
-   * @param expected the hash expected to be found in the store
-   * @param actual the hash found in the store for the reference
-   * @return a {@code ReferenceNotFoundException} instance
-   * @throws NullPointerException if {@code ref} is {@code null}.
-   */
-  @Nonnull
-  public static ReferenceConflictException forReference(
-      @Nonnull NamedRef ref,
-      @Nonnull Optional<Hash> expected,
-      @Nonnull Optional<Hash> actual,
-      @Nonnull Throwable t) {
-    final String expectedArgument = expected.map(Hash::asString).orElse("no reference");
-    final String actualArgument = actual.map(Hash::asString).orElse("no reference");
-    final String refType;
-    if (ref instanceof BranchName) {
-      refType = "branch";
-    } else if (ref instanceof TagName) {
-      refType = "tag";
-    } else {
-      refType = "named ref";
-    }
-    return new ReferenceConflictException(
-        format(
-            "Expected %s for %s '%s' but was %s",
-            expectedArgument, refType, ref.getName(), actualArgument),
-        t);
   }
 }
