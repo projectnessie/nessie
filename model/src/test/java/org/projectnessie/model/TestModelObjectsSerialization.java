@@ -79,7 +79,7 @@ public class TestModelObjectsSerialization {
                 .fromRefName(branchName)
                 .build(),
             Transplant.class,
-            Json.arr("hashesToTransplant", HASH).add("fromRefName", "testBranch")),
+            Json.from("fromRefName", "testBranch").addArr("hashesToTransplant", HASH)),
         new Case(
             ImmutableTransplant.builder()
                 .addHashesToTransplant(HASH)
@@ -87,9 +87,9 @@ public class TestModelObjectsSerialization {
                 .keepIndividualCommits(true)
                 .build(),
             Transplant.class,
-            Json.noQuotes("keepIndividualCommits", "true")
-                .addArr("hashesToTransplant", HASH)
-                .add("fromRefName", "testBranch")),
+            Json.from("fromRefName", "testBranch")
+                .addNoQuotes("keepIndividualCommits", "true")
+                .addArr("hashesToTransplant", HASH)),
         new Case(
             EntriesResponse.builder()
                 .addEntries(

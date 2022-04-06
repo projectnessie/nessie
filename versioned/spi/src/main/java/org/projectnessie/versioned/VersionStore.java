@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
-import java.util.function.Function;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.ThreadSafe;
@@ -124,7 +123,7 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
       BranchName targetBranch,
       Optional<Hash> referenceHash,
       List<Hash> sequenceToTransplant,
-      Function<List<METADATA>, METADATA> updateCommitMetadata,
+      MetadataRewriter<METADATA> updateCommitMetadata,
       boolean keepIndividualCommits)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
@@ -159,7 +158,7 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
       Hash fromHash,
       BranchName toBranch,
       Optional<Hash> expectedHash,
-      Function<List<METADATA>, METADATA> updateCommitMetadata,
+      MetadataRewriter<METADATA> updateCommitMetadata,
       boolean keepIndividualCommits)
       throws ReferenceNotFoundException, ReferenceConflictException;
 

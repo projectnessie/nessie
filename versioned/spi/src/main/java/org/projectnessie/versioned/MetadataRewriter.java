@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2022 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,20 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.persist.adapter;
+package org.projectnessie.versioned;
 
-import com.google.protobuf.ByteString;
-import org.immutables.value.Value;
-import org.projectnessie.versioned.MetadataRewriter;
+import java.util.List;
 
-public interface MetadataRewriteParams extends ToBranchParams {
+public interface MetadataRewriter<T> {
+  T rewriteSingle(T metadata);
 
-  /** Whether to keep the individual commits and do not squash the commits to merge. */
-  @Value.Default
-  default boolean keepIndividualCommits() {
-    return false;
-  }
-
-  /** Function to rewrite the commit-metadata. */
-  MetadataRewriter<ByteString> getUpdateCommitMetadata();
+  T squash(List<T> metadata);
 }

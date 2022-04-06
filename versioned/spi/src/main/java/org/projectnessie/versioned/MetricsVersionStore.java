@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
-import java.util.function.Function;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
@@ -93,7 +92,7 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
       BranchName targetBranch,
       Optional<Hash> referenceHash,
       List<Hash> sequenceToTransplant,
-      Function<List<METADATA>, METADATA> updateCommitMetadata,
+      MetadataRewriter<METADATA> updateCommitMetadata,
       boolean keepIndividualCommits)
       throws ReferenceNotFoundException, ReferenceConflictException {
     this.<ReferenceNotFoundException, ReferenceConflictException>delegate2Ex(
@@ -112,7 +111,7 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
       Hash fromHash,
       BranchName toBranch,
       Optional<Hash> expectedHash,
-      Function<List<METADATA>, METADATA> updateCommitMetadata,
+      MetadataRewriter<METADATA> updateCommitMetadata,
       boolean keepIndividualCommits)
       throws ReferenceNotFoundException, ReferenceConflictException {
     this.<ReferenceNotFoundException, ReferenceConflictException>delegate2Ex(

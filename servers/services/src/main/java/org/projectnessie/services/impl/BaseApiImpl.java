@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.Function;
 import javax.annotation.Nullable;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
@@ -37,6 +36,7 @@ import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.DetachedRef;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
+import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
@@ -129,56 +129,47 @@ abstract class BaseApiImpl {
     return ServerAccessContext.of(UUID.randomUUID().toString(), getPrincipal());
   }
 
-  protected Function<List<CommitMeta>, CommitMeta> commitMetaUpdate(boolean keepIndividual) {
-    Function<List<CommitMeta>, CommitMeta> metaUpdate;
-    if (keepIndividual) {
-      Function<CommitMeta, CommitMeta> f = commitMetaUpdateSingle();
-      metaUpdate = l -> f.apply(l.get(0));
-    } else {
+  protected MetadataRewriter<CommitMeta> commitMetaUpdate() {
+    return new MetadataRewriter<CommitMeta>() {
       // Used for setting contextual commit properties during new and merge/transplant commits.
       // WARNING: ONLY SET PROPERTIES, WHICH APPLY COMMONLY TO ALL COMMIT TYPES.
-      Principal principal = getPrincipal();
-      String committer = principal == null ? "" : principal.getName();
-      Instant now = Instant.now();
-      metaUpdate =
-          metaList -> {
-            if (metaList.size() == 1) {
-              return commitMetaUpdateSingle().apply(metaList.get(0));
-            }
+      private final Principal principal = getPrincipal();
+      private final String committer = principal == null ? "" : principal.getName();
+      private final Instant now = Instant.now();
 
-            ImmutableCommitMeta.Builder newMeta =
-                CommitMeta.builder()
-                    .committer(committer)
-                    .commitTime(now)
-                    .author(committer)
-                    .authorTime(now);
-            StringBuilder newMessage = new StringBuilder();
-            Map<String, String> newProperties = new HashMap<>();
-            for (CommitMeta commitMeta : metaList) {
-              newProperties.putAll(commitMeta.getProperties());
-              if (newMessage.length() > 0) {
-                newMessage.append("\n---------------------------------------------\n");
-              }
-              newMessage.append(commitMeta.getMessage());
-            }
-            return newMeta.putAllProperties(newProperties).message(newMessage.toString()).build();
-          };
-    }
-    return metaUpdate;
-  }
-
-  protected Function<CommitMeta, CommitMeta> commitMetaUpdateSingle() {
-    // Used for setting contextual commit properties during new and merge/transplant commits.
-    // WARNING: ONLY SET PROPERTIES, WHICH APPLY COMMONLY TO ALL COMMIT TYPES.
-    Principal principal = getPrincipal();
-    String committer = principal == null ? "" : principal.getName();
-    Instant now = Instant.now();
-    return commitMeta ->
-        commitMeta.toBuilder()
+      @Override
+      public CommitMeta rewriteSingle(CommitMeta metadata) {
+        return metadata.toBuilder()
             .committer(committer)
             .commitTime(now)
-            .author(commitMeta.getAuthor() == null ? committer : commitMeta.getAuthor())
-            .authorTime(commitMeta.getAuthorTime() == null ? now : commitMeta.getAuthorTime())
+            .author(metadata.getAuthor() == null ? committer : metadata.getAuthor())
+            .authorTime(metadata.getAuthorTime() == null ? now : metadata.getAuthorTime())
             .build();
+      }
+
+      @Override
+      public CommitMeta squash(List<CommitMeta> metadata) {
+        if (metadata.size() == 1) {
+          return rewriteSingle(metadata.get(0));
+        }
+
+        ImmutableCommitMeta.Builder newMeta =
+            CommitMeta.builder()
+                .committer(committer)
+                .commitTime(now)
+                .author(committer)
+                .authorTime(now);
+        StringBuilder newMessage = new StringBuilder();
+        Map<String, String> newProperties = new HashMap<>();
+        for (CommitMeta commitMeta : metadata) {
+          newProperties.putAll(commitMeta.getProperties());
+          if (newMessage.length() > 0) {
+            newMessage.append("\n---------------------------------------------\n");
+          }
+          newMessage.append(commitMeta.getMessage());
+        }
+        return newMeta.putAllProperties(newProperties).message(newMessage.toString()).build();
+      }
+    };
   }
 }

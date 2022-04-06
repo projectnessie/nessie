@@ -66,6 +66,7 @@ import org.projectnessie.versioned.GetNamedRefsParams.RetrieveOptions;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableReferenceInfo;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.RefLogNotFoundException;
 import org.projectnessie.versioned.ReferenceConflictException;
@@ -407,7 +408,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
               toHead,
               commitsToMergeChronological,
               newKeyLists,
-              m -> params.getUpdateCommitMetadata().apply(Collections.singletonList(m)));
+              params.getUpdateCommitMetadata());
 
       // Write commits
 
@@ -1593,7 +1594,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       Hash toHead,
       List<CommitLogEntry> commitsToMergeChronological,
       Consumer<Hash> newKeyLists,
-      Function<List<ByteString>, ByteString> rewriteMetadata)
+      MetadataRewriter<ByteString> rewriteMetadata)
       throws ReferenceConflictException, ReferenceNotFoundException {
 
     List<ByteString> commitMeta = new ArrayList<>();
@@ -1618,7 +1619,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       return toHead;
     }
 
-    ByteString newCommitMeta = rewriteMetadata.apply(commitMeta);
+    ByteString newCommitMeta = rewriteMetadata.squash(commitMeta);
 
     CommitLogEntry targetHeadCommit = fetchFromCommitLog(ctx, toHead);
 
@@ -1662,7 +1663,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       Hash targetHead,
       List<CommitLogEntry> commitsChronological,
       Consumer<Hash> newKeyLists,
-      Function<ByteString, ByteString> rewriteMetadata)
+      MetadataRewriter<ByteString> rewriteMetadata)
       throws ReferenceNotFoundException {
     int parentsPerCommit = config.getParentsPerCommit();
 
@@ -1693,7 +1694,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
         parents.add(0, targetHead);
       }
 
-      ByteString updatedMetadata = rewriteMetadata.apply(sourceCommit.getMetadata());
+      ByteString updatedMetadata = rewriteMetadata.rewriteSingle(sourceCommit.getMetadata());
 
       CommitLogEntry newEntry =
           buildIndividualCommit(

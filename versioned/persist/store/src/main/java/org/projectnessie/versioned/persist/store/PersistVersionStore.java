@@ -25,7 +25,6 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
@@ -39,6 +38,7 @@ import org.projectnessie.versioned.ImmutableCommit;
 import org.projectnessie.versioned.ImmutableRefLogDetails;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.KeyEntry;
+import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.Operation;
 import org.projectnessie.versioned.Put;
@@ -185,7 +185,7 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
       BranchName targetBranch,
       Optional<Hash> referenceHash,
       List<Hash> sequenceToTransplant,
-      Function<List<METADATA>, METADATA> updateCommitMetadata,
+      MetadataRewriter<METADATA> updateCommitMetadata,
       boolean keepIndividualCommits)
       throws ReferenceNotFoundException, ReferenceConflictException {
     databaseAdapter.transplant(
@@ -203,7 +203,7 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
       Hash fromHash,
       BranchName toBranch,
       Optional<Hash> expectedHash,
-      Function<List<METADATA>, METADATA> updateCommitMetadata,
+      MetadataRewriter<METADATA> updateCommitMetadata,
       boolean keepIndividualCommits)
       throws ReferenceNotFoundException, ReferenceConflictException {
     databaseAdapter.merge(
@@ -216,13 +216,22 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
             .build());
   }
 
-  private Function<List<ByteString>, ByteString> updateCommitMetadataFunction(
-      Function<List<METADATA>, METADATA> updateCommitMetadata) {
-    return original -> {
-      List<METADATA> deserialized =
-          original.stream().map(this::deserializeMetadata).collect(Collectors.toList());
-      METADATA updated = updateCommitMetadata.apply(deserialized);
-      return serializeMetadata(updated);
+  private MetadataRewriter<ByteString> updateCommitMetadataFunction(
+      MetadataRewriter<METADATA> updateCommitMetadata) {
+    return new MetadataRewriter<ByteString>() {
+      @Override
+      public ByteString rewriteSingle(ByteString metadata) {
+        return serializeMetadata(updateCommitMetadata.rewriteSingle(deserializeMetadata(metadata)));
+      }
+
+      @Override
+      public ByteString squash(List<ByteString> metadata) {
+        return serializeMetadata(
+            updateCommitMetadata.squash(
+                metadata.stream()
+                    .map(PersistVersionStore.this::deserializeMetadata)
+                    .collect(Collectors.toList())));
+      }
     };
   }
 

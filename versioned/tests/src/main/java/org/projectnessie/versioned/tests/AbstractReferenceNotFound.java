@@ -28,6 +28,7 @@ import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.VersionStore;
@@ -80,6 +81,18 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
   }
 
   static List<ReferenceNotFoundFunction> referenceNotFoundFunctions() {
+    MetadataRewriter<CommitMessage> metadataRewriter =
+        new MetadataRewriter<CommitMessage>() {
+          @Override
+          public CommitMessage rewriteSingle(CommitMessage metadata) {
+            return null;
+          }
+
+          @Override
+          public CommitMessage squash(List<CommitMessage> metadata) {
+            return null;
+          }
+        };
     return Arrays.asList(
         // getCommits()
         new ReferenceNotFoundFunction("getCommits/branch")
@@ -196,7 +209,7 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                         BranchName.of("this-one-should-not-exist"),
                         Optional.empty(),
                         singletonList(s.hashOnReference(BranchName.of("main"), Optional.empty())),
-                        l -> l.get(0),
+                        metadataRewriter,
                         false)),
         new ReferenceNotFoundFunction("transplant/hash/empty")
             .msg(
@@ -207,7 +220,7 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                         BranchName.of("main"),
                         Optional.of(Hash.of("12341234123412341234123412341234123412341234")),
                         singletonList(Hash.of("12341234123412341234123412341234123412341234")),
-                        l -> l.get(0),
+                        metadataRewriter,
                         true)),
         new ReferenceNotFoundFunction("transplant/empty/hash")
             .msg("Commit '12341234123412341234123412341234123412341234' not found")
@@ -217,7 +230,7 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                         BranchName.of("main"),
                         Optional.empty(),
                         singletonList(Hash.of("12341234123412341234123412341234123412341234")),
-                        l -> l.get(0),
+                        metadataRewriter,
                         false)),
         // merge()
         new ReferenceNotFoundFunction("merge/hash/empty")
@@ -228,7 +241,7 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                         Hash.of("12341234123412341234123412341234123412341234"),
                         BranchName.of("main"),
                         Optional.empty(),
-                        l -> l.get(0),
+                        metadataRewriter,
                         true)),
         new ReferenceNotFoundFunction("merge/empty/hash")
             .msg(
@@ -239,7 +252,7 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                         s.noAncestorHash(),
                         BranchName.of("main"),
                         Optional.of(Hash.of("12341234123412341234123412341234123412341234")),
-                        l -> l.get(0),
+                        metadataRewriter,
                         true)));
   }
 

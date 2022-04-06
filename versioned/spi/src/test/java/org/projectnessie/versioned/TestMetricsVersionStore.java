@@ -93,6 +93,19 @@ class TestMetricsVersionStore {
             new ReferenceNotFoundException("not-found"),
             new ReferenceAlreadyExistsException("already exists"));
 
+    MetadataRewriter<String> metadataRewriter =
+        new MetadataRewriter<String>() {
+          @Override
+          public String rewriteSingle(String metadata) {
+            return metadata;
+          }
+
+          @Override
+          public String squash(List<String> metadata) {
+            return String.join(", ", metadata);
+          }
+        };
+
     // "Declare" test-invocations for all VersionStore functions with their respective outcomes
     // and exceptions.
     Stream<VersionStoreInvocation<?>> versionStoreFunctions =
@@ -120,7 +133,7 @@ class TestMetricsVersionStore {
                         BranchName.of("mock-branch"),
                         Optional.empty(),
                         Collections.emptyList(),
-                        l -> l.get(0),
+                        metadataRewriter,
                         false),
                 refNotFoundAndRefConflictThrows),
             new VersionStoreInvocation<>(
@@ -130,7 +143,7 @@ class TestMetricsVersionStore {
                         Hash.of("42424242"),
                         BranchName.of("mock-branch"),
                         Optional.empty(),
-                        l -> l.get(0),
+                        metadataRewriter,
                         false),
                 refNotFoundAndRefConflictThrows),
             new VersionStoreInvocation<>(

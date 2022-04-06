@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -35,6 +34,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
@@ -70,12 +70,7 @@ public abstract class AbstractMergeTransplant {
       })
   void merge(int numCommits, boolean keepIndividualCommits) throws Exception {
     AtomicInteger unifier = new AtomicInteger();
-    Function<List<ByteString>, ByteString> metadataUpdater =
-        commitMeta ->
-            ByteString.copyFromUtf8(
-                commitMeta.stream().map(ByteString::toStringUtf8).collect(Collectors.joining(";"))
-                    + " merged "
-                    + unifier.getAndIncrement());
+    MetadataRewriter<ByteString> metadataUpdater = createMetadataUpdater(unifier, "merged");
 
     mergeTransplant(
         numCommits,
@@ -102,11 +97,31 @@ public abstract class AbstractMergeTransplant {
                     MergeParams.builder()
                         .toBranch(branch2)
                         .mergeFromHash(databaseAdapter.hashOnReference(branch, Optional.empty()))
-                        .updateCommitMetadata(l -> l.get(0))
+                        .updateCommitMetadata(metadataUpdater)
                         .keepIndividualCommits(keepIndividualCommits)
                         .build()))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageStartingWith("No hashes to merge from '");
+  }
+
+  private MetadataRewriter<ByteString> createMetadataUpdater(AtomicInteger unifier, String suffix) {
+    return new MetadataRewriter<ByteString>() {
+      @Override
+      public ByteString rewriteSingle(ByteString metadata) {
+        return ByteString.copyFromUtf8(
+            metadata.toStringUtf8() + " " + suffix + " " + unifier.getAndIncrement());
+      }
+
+      @Override
+      public ByteString squash(List<ByteString> metadata) {
+        return ByteString.copyFromUtf8(
+            metadata.stream().map(ByteString::toStringUtf8).collect(Collectors.joining(";"))
+                + " "
+                + suffix
+                + " "
+                + unifier.getAndIncrement());
+      }
+    };
   }
 
   @ParameterizedTest
@@ -121,12 +136,7 @@ public abstract class AbstractMergeTransplant {
       })
   void transplant(int numCommits, boolean keepIndividualCommits) throws Exception {
     AtomicInteger unifier = new AtomicInteger();
-    Function<List<ByteString>, ByteString> metadataUpdater =
-        commitMeta ->
-            ByteString.copyFromUtf8(
-                commitMeta.stream().map(ByteString::toStringUtf8).collect(Collectors.joining(";"))
-                    + " transplanted "
-                    + unifier.getAndIncrement());
+    MetadataRewriter<ByteString> metadataUpdater = createMetadataUpdater(unifier, "transplanted");
 
     Hash[] commits =
         mergeTransplant(
@@ -180,7 +190,7 @@ public abstract class AbstractMergeTransplant {
                 databaseAdapter.transplant(
                     TransplantParams.builder()
                         .toBranch(conflict)
-                        .updateCommitMetadata(l -> l.get(0))
+                        .updateCommitMetadata(metadataUpdater)
                         .keepIndividualCommits(keepIndividualCommits)
                         .build()))
         .isInstanceOf(IllegalArgumentException.class)

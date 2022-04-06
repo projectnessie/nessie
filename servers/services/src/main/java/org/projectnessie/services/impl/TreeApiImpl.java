@@ -395,7 +395,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
               BranchName.of(branchName),
               toHash(hash, true),
               transplants,
-              commitMetaUpdate(keepIndividual),
+              commitMetaUpdate(),
               keepIndividual);
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
@@ -416,7 +416,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
               toHash(merge.getFromRefName(), merge.getFromHash()),
               BranchName.of(branchName),
               toHash(hash, true),
-              commitMetaUpdate(keepIndividual),
+              commitMetaUpdate(),
               keepIndividual);
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
@@ -539,7 +539,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
               .commit(
                   BranchName.of(Optional.ofNullable(branch).orElse(getConfig().getDefaultBranch())),
                   Optional.ofNullable(hash).map(Hash::of),
-                  commitMetaUpdateSingle().apply(commitMeta),
+                  commitMetaUpdate().rewriteSingle(commitMeta),
                   ops);
 
       return Branch.of(branch, newHash.asString());

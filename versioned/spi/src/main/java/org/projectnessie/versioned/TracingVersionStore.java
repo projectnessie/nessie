@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
@@ -111,7 +110,7 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
       BranchName targetBranch,
       Optional<Hash> referenceHash,
       List<Hash> sequenceToTransplant,
-      Function<List<METADATA>, METADATA> updateCommitMetadata,
+      MetadataRewriter<METADATA> updateCommitMetadata,
       boolean keepIndividualCommits)
       throws ReferenceNotFoundException, ReferenceConflictException {
     this.<ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
@@ -134,7 +133,7 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
       Hash fromHash,
       BranchName toBranch,
       Optional<Hash> expectedHash,
-      Function<List<METADATA>, METADATA> updateCommitMetadata,
+      MetadataRewriter<METADATA> updateCommitMetadata,
       boolean keepIndividualCommits)
       throws ReferenceNotFoundException, ReferenceConflictException {
     this.<ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(

@@ -17,7 +17,6 @@ package org.projectnessie.versioned.tests;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.projectnessie.versioned.testworker.CommitMessage.commitMessage;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 
 import com.google.common.collect.ImmutableMap;
@@ -25,7 +24,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -34,6 +32,7 @@ import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
@@ -63,19 +62,21 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
   private Hash thirdCommit;
   private List<Commit<CommitMessage, BaseContent>> commits;
 
-  CommitMessage transplanted(CommitMessage commitMessage) {
-    return commitMessage(commitMessage.getMessage() + ", transplanted");
-  }
+  private MetadataRewriter<CommitMessage> createMetadataRewriter(String suffix) {
+    return new MetadataRewriter<CommitMessage>() {
+      @Override
+      public CommitMessage rewriteSingle(CommitMessage metadata) {
+        return metadata;
+      }
 
-  private CommitMessage transplantCommitMessages(List<CommitMessage> commitMessages) {
-    if (commitMessages.size() == 1) {
-      return transplanted(commitMessages.get(0));
-    }
-
-    return CommitMessage.commitMessage(
-        commitMessages.stream()
-            .map(CommitMessage::getMessage)
-            .collect(Collectors.joining("\n-----------------------------------\n")));
+      @Override
+      public CommitMessage squash(List<CommitMessage> metadata) {
+        return CommitMessage.commitMessage(
+            metadata.stream()
+                .map(cm -> cm.getMessage() + suffix)
+                .collect(Collectors.joining("\n-----------------------------------\n")));
+      }
+    };
   }
 
   @BeforeEach
@@ -109,7 +110,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
   @ValueSource(booleans = {false, true})
   protected void checkTransplantOnEmptyBranch(boolean individualCommits)
       throws VersionStoreException {
-    checkTransplantOnEmptyBranch(l -> l.get(0), individualCommits);
+    checkTransplantOnEmptyBranch(createMetadataRewriter(""), individualCommits);
   }
 
   @ParameterizedTest
@@ -117,7 +118,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
   protected void checkTransplantOnEmptyBranchModify(boolean individualCommits)
       throws VersionStoreException {
     BranchName newBranch =
-        checkTransplantOnEmptyBranch(this::transplantCommitMessages, individualCommits);
+        checkTransplantOnEmptyBranch(createMetadataRewriter(""), individualCommits);
 
     if (!individualCommits) {
       assertThat(commitsList(newBranch, false))
@@ -134,7 +135,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
   }
 
   private BranchName checkTransplantOnEmptyBranch(
-      Function<List<CommitMessage>, CommitMessage> commitMetaModify, boolean individualCommits)
+      MetadataRewriter<CommitMessage> commitMetaModify, boolean individualCommits)
       throws VersionStoreException {
     final BranchName newBranch = BranchName.of("bar_1");
     store().create(newBranch, Optional.empty());
@@ -177,7 +178,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             newBranch,
             Optional.of(initialHash),
             Arrays.asList(firstCommit, secondCommit, thirdCommit),
-            this::transplantCommitMessages,
+            createMetadataRewriter(""),
             individualCommits);
     assertThat(
             store()
@@ -209,7 +210,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                     newBranch,
                     Optional.of(initialHash),
                     Arrays.asList(firstCommit, secondCommit, thirdCommit),
-                    this::transplantCommitMessages,
+                    createMetadataRewriter(""),
                     individualCommits));
   }
 
@@ -226,7 +227,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             newBranch,
             Optional.of(initialHash),
             Arrays.asList(firstCommit, secondCommit, thirdCommit),
-            this::transplantCommitMessages,
+            createMetadataRewriter(""),
             individualCommits);
     assertThat(
             store()
@@ -252,7 +253,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                     newBranch,
                     Optional.of(initialHash),
                     Arrays.asList(firstCommit, secondCommit, thirdCommit),
-                    this::transplantCommitMessages,
+                    createMetadataRewriter(""),
                     individualCommits));
   }
 
@@ -270,7 +271,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                     newBranch,
                     Optional.of(initialHash),
                     Collections.singletonList(Hash.of("1234567890abcdef")),
-                    this::transplantCommitMessages,
+                    createMetadataRewriter(""),
                     individualCommits));
   }
 
@@ -288,7 +289,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             newBranch,
             Optional.empty(),
             Arrays.asList(firstCommit, secondCommit, thirdCommit),
-            this::transplantCommitMessages,
+            createMetadataRewriter(""),
             individualCommits);
     assertThat(
             store()
@@ -319,7 +320,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                     newBranch,
                     Optional.empty(),
                     Arrays.asList(secondCommit, firstCommit, thirdCommit),
-                    this::transplantCommitMessages,
+                    createMetadataRewriter(""),
                     individualCommits));
   }
 
@@ -346,7 +347,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                     newBranch,
                     Optional.of(unrelatedCommit),
                     Arrays.asList(firstCommit, secondCommit, thirdCommit),
-                    this::transplantCommitMessages,
+                    createMetadataRewriter(""),
                     individualCommits));
   }
 
@@ -362,7 +363,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             newBranch,
             Optional.of(initialHash),
             Arrays.asList(firstCommit, secondCommit),
-            this::transplantCommitMessages,
+            createMetadataRewriter(""),
             individualCommits);
     assertThat(
             store().getValues(newBranch, Arrays.asList(Key.of("t1"), Key.of("t4"), Key.of("t5"))))
