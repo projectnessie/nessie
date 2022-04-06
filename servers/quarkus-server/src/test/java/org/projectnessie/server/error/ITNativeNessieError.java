@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.quarkus.test.junit.NativeImageTest;
+import io.quarkus.test.junit.TestProfile;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.api.NessieApiV1;
@@ -28,6 +29,7 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.Operation.Put;
+import org.projectnessie.quarkus.tests.profiles.QuarkusNativeProfileInmemory;
 
 /**
  * Rudimentary version of {@link TestNessieError}, because we cannot dynamically add beans and
@@ -35,6 +37,8 @@ import org.projectnessie.model.Operation.Put;
  * very basic validation functionality.
  */
 @NativeImageTest
+@TestProfile(
+    QuarkusNativeProfileInmemory.class) // use the QuarkusNativeProfileInmemory, as it can be reused
 public class ITNativeNessieError {
 
   private NessieApiV1 api;
