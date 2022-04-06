@@ -1,5 +1,11 @@
 # Releases
 
+## 0.25.0 Release (April 6, 2022)
+
+* Nessie Quarkus Server can use Postgres as its backend database
+* Explicitly define behavior of multiple commit-operations in a commit
+* Load correct view metadata for a given ref
+
 ## 0.24.0 Release (March 31, 2022)
 
 * Prevent explicit creation of empty namespaces
