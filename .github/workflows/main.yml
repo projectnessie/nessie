@@ -44,6 +44,10 @@ jobs:
       if: ${{ ! env.MAVEN_USERNAME }}
       run: ./mvnw --batch-mode --threads 1C install -Pcode-coverage,release -DskipGpg -Dtest.log.level=WARN
 
+    - name: Capture Test Reports
+      if: ${{ failure() }}
+      uses: ./.github/actions/ci-reports
+
     - name: Capture Results
       uses: ./.github/actions/ci-results
 

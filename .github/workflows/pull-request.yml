@@ -55,6 +55,10 @@ jobs:
       run: |
         ./mvnw --batch-mode --threads 1C install javadoc:javadoc-no-fork -Pcode-coverage -Dtest.log.level=WARN
 
+    - name: Capture Test Reports
+      if: ${{ failure() }}
+      uses: ./.github/actions/ci-reports
+
     - name: Capture Results
       uses: ./.github/actions/ci-results
 

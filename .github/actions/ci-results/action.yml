@@ -2,15 +2,6 @@ name: 'Capture test results'
 runs:
   using: "composite"
   steps:
-    - name: Capture test results
-      uses: actions/upload-artifact@v3
-      with:
-        name: test-results
-        path: |
-          **/target/surefire-reports/*
-          **/target/failsafe-reports/*
-          **/build/reports/*
-          **/build/test-results/*
     - name: Capture Gatling simulation logs
       uses: actions/upload-artifact@v3
       with:
