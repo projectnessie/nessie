@@ -1,4 +1,8 @@
 name: 'Setup runner'
+inputs:
+  more-memory:
+    required: false
+    default: 'false'
 runs:
   using: "composite"
   steps:
@@ -14,6 +18,7 @@ runs:
         df -h
         echo
     - name: Add 8G more swap for native-image build
+      if: ${{ inputs.more-memory != 'false' }}
       shell: bash
       run: |
         sudo dd if=/dev/zero of=/mnt/swapfile-2 bs=1MiB count=$((8*1024))
@@ -21,6 +26,7 @@ runs:
         sudo mkswap /mnt/swapfile-2
         sudo swapon /mnt/swapfile-2
     - name: Memory report
+      if: ${{ inputs.more-memory != 'false' }}
       shell: bash
       run: |
         echo "Memory report after adding more swap:"
