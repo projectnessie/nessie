@@ -43,6 +43,7 @@ dependency-reduced-pom.xml
 # node
 node_modules/
 ui/src/generated/
+.mvn/.babel-cache/
 
 # Eclipse IDE
 .classpath

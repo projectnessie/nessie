@@ -32,7 +32,9 @@ runs:
     - name: Cache local NPM repository
       uses: actions/cache@v3
       with:
-        path: ~/.npm
+        path: | 
+          ~/.npm
+          .mvn/.babel-cache
         key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
         restore-keys: |
           ${{ runner.os }}-node-

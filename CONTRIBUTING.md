@@ -51,6 +51,29 @@ not necessary. Use one of these parameters to speed things up:
 * `-DskipTests` Compiles everything, runs no tests.
 * `-DskipITs` Compiles everything, runs unit tests, but no integration tests.
 
+If you do not (regularly) update the `ui/` module, you may want to use the properties
+`-Dui.disable-terser=true` and `-Dui.disable-es-lint=true` to speed up the build of the ui module by
+about 20 seconds.
+
+Hint: you can define a default set of properties in your `~/.m2/settings.xml` like this:
+```xml
+<settings>
+  <profiles>
+    <profile>
+      <id>nessie-props</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <properties>
+        <test.log.level>WARN</test.log.level>
+        <ui.disable-terser>true</ui.disable-terser>
+        <ui.disable-es-lint>true</ui.disable-es-lint>
+      </properties>
+    </profile>
+  </profiles>
+</settings>
+```
+
 #### Parallel Maven Builds
 
 Building Nessie works fine with Maven Daemon [`mvnd`](https://github.com/apache/maven-mvnd).
