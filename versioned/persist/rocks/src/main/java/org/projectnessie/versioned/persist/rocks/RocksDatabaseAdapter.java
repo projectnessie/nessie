@@ -37,8 +37,8 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ReferenceConflictException;
+import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
-import org.projectnessie.versioned.persist.adapter.ContentVariantSupplier;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 import org.projectnessie.versioned.persist.adapter.RefLog;
@@ -70,8 +70,8 @@ public class RocksDatabaseAdapter
   public RocksDatabaseAdapter(
       NonTransactionalDatabaseAdapterConfig config,
       RocksDbInstance dbInstance,
-      ContentVariantSupplier contentVariantSupplier) {
-    super(config, contentVariantSupplier);
+      StoreWorker<?, ?, ?> storeWorker) {
+    super(config, storeWorker);
 
     this.keyPrefix = ByteString.copyFromUtf8(config.getRepositoryId() + ':');
     this.globalPointerKey = ByteString.copyFromUtf8(config.getRepositoryId()).toByteArray();

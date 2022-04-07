@@ -19,6 +19,7 @@ import java.util.Iterator;
 import java.util.ServiceLoader;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import org.projectnessie.versioned.StoreWorker;
 
 /**
  * Each {@link org.projectnessie.versioned.persist.adapter.DatabaseAdapter} is configured and
@@ -71,7 +72,7 @@ public interface DatabaseAdapterFactory<
       return connector;
     }
 
-    public abstract DatabaseAdapter build(ContentVariantSupplier contentVariantSupplier);
+    public abstract DatabaseAdapter build(StoreWorker<?, ?, ?> storeWorker);
 
     public Builder<Config, AdjustableConfig, Connector> configure(
         Function<AdjustableConfig, Config> configurator) {

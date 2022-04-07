@@ -15,7 +15,7 @@
  */
 package org.projectnessie.versioned.persist.inmem;
 
-import org.projectnessie.versioned.persist.adapter.ContentVariantSupplier;
+import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterFactory;
@@ -34,7 +34,7 @@ public class InmemoryDatabaseAdapterFactory
   protected DatabaseAdapter create(
       NonTransactionalDatabaseAdapterConfig config,
       InmemoryStore inmemoryStore,
-      ContentVariantSupplier contentVariantSupplier) {
-    return new InmemoryDatabaseAdapter(config, inmemoryStore, contentVariantSupplier);
+      StoreWorker<?, ?, ?> storeWorker) {
+    return new InmemoryDatabaseAdapter(config, inmemoryStore, storeWorker);
   }
 }

@@ -19,7 +19,7 @@ import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreTy
 
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
-import org.projectnessie.versioned.persist.adapter.ContentVariantSupplier;
+import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.inmem.InmemoryDatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.inmem.InmemoryStore;
@@ -32,11 +32,11 @@ public class InmemoryDatabaseAdapterBuilder implements DatabaseAdapterBuilder {
   @Inject NonTransactionalDatabaseAdapterConfig config;
 
   @Override
-  public DatabaseAdapter newDatabaseAdapter(ContentVariantSupplier contentVariantSupplier) {
+  public DatabaseAdapter newDatabaseAdapter(StoreWorker<?, ?, ?> storeWorker) {
     return new InmemoryDatabaseAdapterFactory()
         .newBuilder()
         .withConfig(config)
         .withConnector(new InmemoryStore())
-        .build(contentVariantSupplier);
+        .build(storeWorker);
   }
 }

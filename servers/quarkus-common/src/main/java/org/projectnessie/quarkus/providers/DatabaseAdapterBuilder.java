@@ -15,7 +15,7 @@
  */
 package org.projectnessie.quarkus.providers;
 
-import org.projectnessie.versioned.persist.adapter.ContentVariantSupplier;
+import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 
 /** Factory interface for creating database adapter instances. */
@@ -25,8 +25,6 @@ public interface DatabaseAdapterBuilder {
    * Creates a new database adapter instance.
    *
    * @return new database adapter instance
-   * @param contentVariantSupplier provides the kind of content, whether it's only stored on a
-   *     reference or requires global state.
    */
-  DatabaseAdapter newDatabaseAdapter(ContentVariantSupplier contentVariantSupplier);
+  DatabaseAdapter newDatabaseAdapter(StoreWorker<?, ?, ?> storeWorker);
 }

@@ -64,6 +64,7 @@ import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.VersionStoreException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
@@ -71,7 +72,6 @@ import org.projectnessie.versioned.persist.adapter.CommitParams;
 import org.projectnessie.versioned.persist.adapter.ContentAndState;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
-import org.projectnessie.versioned.persist.adapter.ContentVariantSupplier;
 import org.projectnessie.versioned.persist.adapter.Difference;
 import org.projectnessie.versioned.persist.adapter.GlobalLogCompactionParams;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
@@ -119,9 +119,8 @@ public abstract class NonTransactionalDatabaseAdapter<
   public static final String TAG_COMMIT_COUNT = "commit-count";
   public static final String TAG_KEY_LIST_COUNT = "key-list-count";
 
-  protected NonTransactionalDatabaseAdapter(
-      CONFIG config, ContentVariantSupplier contentVariantSupplier) {
-    super(config, contentVariantSupplier);
+  protected NonTransactionalDatabaseAdapter(CONFIG config, StoreWorker<?, ?, ?> storeWorker) {
+    super(config, storeWorker);
   }
 
   @Override
