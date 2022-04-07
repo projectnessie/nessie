@@ -73,13 +73,12 @@ import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceInfo.CommitsAheadBehind;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.CommitParams;
 import org.projectnessie.versioned.persist.adapter.ContentAndState;
 import org.projectnessie.versioned.persist.adapter.ContentId;
-import org.projectnessie.versioned.persist.adapter.ContentVariant;
-import org.projectnessie.versioned.persist.adapter.ContentVariantSupplier;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.Difference;
@@ -123,7 +122,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
   protected static final String TAG_HASH = "hash";
   protected static final String TAG_COUNT = "count";
   protected final CONFIG config;
-  protected final ContentVariantSupplier contentVariantSupplier;
+  protected final StoreWorker<?, ?, ?> storeWorker;
 
   @SuppressWarnings("UnstableApiUsage")
   public static final Hash NO_ANCESTOR =
@@ -133,10 +132,10 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
 
   protected static long COMMIT_LOG_HASH_SEED = 946928273206945677L;
 
-  protected AbstractDatabaseAdapter(CONFIG config, ContentVariantSupplier contentVariantSupplier) {
+  protected AbstractDatabaseAdapter(CONFIG config, StoreWorker<?, ?, ?> storeWorker) {
     Objects.requireNonNull(config, "config parameter must not be null");
     this.config = config;
-    this.contentVariantSupplier = contentVariantSupplier;
+    this.storeWorker = storeWorker;
   }
 
   @Override
@@ -1215,15 +1214,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
             }
             nonGlobal.put(put.getKey(), put.getValue());
             keyToContentIds.put(put.getKey(), put.getContentId());
-            ContentVariant contentVariant = contentVariantSupplier.getContentVariant(put.getType());
-            switch (contentVariant) {
-              case ON_REF:
-                break;
-              case WITH_GLOBAL:
-                contentIdsForGlobal.add(put.getContentId());
-                break;
-              default:
-                throw new IllegalStateException("Unknown content variant " + contentVariant);
+            if (storeWorker.requiresGlobalState(put.getValue())) {
+              contentIdsForGlobal.add(put.getContentId());
             }
           }
         };
@@ -1560,7 +1552,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       OP_CONTEXT ctx, Hash hashFromTarget, Hash hashFromSource, Set<Key> keyCollisions)
       throws ReferenceNotFoundException {
     Predicate<Entry<Key, ContentAndState<ByteString>>> isNamespace =
-        e -> contentVariantSupplier.isNamespace(e.getValue().getRefState());
+        e -> storeWorker.isNamespace(e.getValue().getRefState());
     Set<Key> namespacesOnTarget =
         fetchValues(ctx, hashFromTarget, keyCollisions, ALLOW_ALL).entrySet().stream()
             .filter(isNamespace)
