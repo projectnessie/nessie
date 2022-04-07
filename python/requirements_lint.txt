@@ -24,4 +24,4 @@ flake8-docstrings==1.6.0
 flake8-import-order==0.18.1
 pytest-mypy==0.9.1
 safety==1.10.3
-pylint==2.13.4
+pylint==2.13.5
