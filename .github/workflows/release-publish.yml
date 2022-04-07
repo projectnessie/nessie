@@ -87,6 +87,8 @@ jobs:
         ref: refs/tags/${{ github.event.inputs.releaseTag }}
     - name: Setup runner
       uses: ./.github/actions/setup-runner
+      with:
+        more-memory: 'true'
     - name: Setup Java, Maven
       uses: ./.github/actions/dev-tool-java
       with:
