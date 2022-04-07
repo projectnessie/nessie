@@ -25,6 +25,8 @@ import java.io.InputStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -42,6 +44,7 @@ import org.projectnessie.error.NessieForbiddenException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import software.amazon.awssdk.utils.StringInputStream;
 
+@Execution(ExecutionMode.CONCURRENT)
 public class TestResponseFilter {
 
   private static final ObjectMapper MAPPER = new ObjectMapper();

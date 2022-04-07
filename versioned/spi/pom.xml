@@ -81,4 +81,22 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>default-test</id>
+            <phase>none</phase>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>de.sormuras.junit</groupId>
+        <artifactId>junit-platform-maven-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
 </project>

@@ -105,6 +105,19 @@
     </resources>
     <plugins>
       <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>default-test</id>
+            <phase>none</phase>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>de.sormuras.junit</groupId>
+        <artifactId>junit-platform-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
         <groupId>io.smallrye</groupId>
         <artifactId>smallrye-open-api-maven-plugin</artifactId>
         <configuration>

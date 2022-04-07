@@ -25,8 +25,11 @@ import java.net.URLConnection;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.mockito.ArgumentCaptor;
 
+@Execution(ExecutionMode.CONCURRENT)
 public class TestHttpHeaders {
   @Test
   public void multipleValues() {
