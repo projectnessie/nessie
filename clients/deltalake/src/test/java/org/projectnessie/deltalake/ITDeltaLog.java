@@ -15,11 +15,11 @@
  */
 package org.projectnessie.deltalake;
 
+import com.google.common.collect.ImmutableMap;
 import io.delta.tables.DeltaTable;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.spark.sql.Column;
@@ -204,12 +204,7 @@ class ITDeltaLog extends AbstractDeltaTest {
     targetTable.write().format("delta").save(tempPath.getAbsolutePath());
     DeltaTable target = DeltaTable.forPath(spark, tempPath.getAbsolutePath());
 
-    Map<String, String> set =
-        new HashMap<String, String>() {
-          {
-            put("key", "100");
-          }
-        };
+    Map<String, String> set = ImmutableMap.of("key", "100");
     target.updateExpr(set);
 
     Dataset<Row> expectedAnswer =
@@ -231,12 +226,7 @@ class ITDeltaLog extends AbstractDeltaTest {
     targetTable.write().format("delta").save(tempPath.getAbsolutePath());
     DeltaTable target = DeltaTable.forPath(spark, tempPath.getAbsolutePath());
 
-    Map<String, Column> set =
-        new HashMap<String, Column>() {
-          {
-            put("key", functions.expr("100"));
-          }
-        };
+    Map<String, Column> set = ImmutableMap.of("key", functions.expr("100"));
     target.update(set);
 
     Dataset<Row> expectedAnswer =
@@ -258,12 +248,7 @@ class ITDeltaLog extends AbstractDeltaTest {
     targetTable.write().format("delta").save(tempPath.getAbsolutePath());
     DeltaTable target = DeltaTable.forPath(spark, tempPath.getAbsolutePath());
 
-    Map<String, String> set =
-        new HashMap<String, String>() {
-          {
-            put("key", "100");
-          }
-        };
+    Map<String, String> set = ImmutableMap.of("key", "100");
     target.updateExpr("key = 1 or key = 2", set);
 
     Dataset<Row> expectedAnswer =
@@ -282,12 +267,7 @@ class ITDeltaLog extends AbstractDeltaTest {
     targetTable.write().format("delta").save(tempPath.getAbsolutePath());
     DeltaTable target = DeltaTable.forPath(spark, tempPath.getAbsolutePath());
 
-    Map<String, Column> set =
-        new HashMap<String, Column>() {
-          {
-            put("key", functions.expr("100"));
-          }
-        };
+    Map<String, Column> set = ImmutableMap.of("key", functions.expr("100"));
     target.update(functions.expr("key = 1 or key = 2"), set);
 
     Dataset<Row> expectedAnswer =
@@ -307,20 +287,8 @@ class ITDeltaLog extends AbstractDeltaTest {
         createKVDataSet(Arrays.asList(tuple2(1, 100), tuple2(3, 30)), "key2", "value2");
 
     DeltaTable target = DeltaTable.forPath(spark, tempPath.getAbsolutePath());
-    Map<String, String> updateMap =
-        new HashMap<String, String>() {
-          {
-            put("key1", "key2");
-            put("value1", "value2");
-          }
-        };
-    Map<String, String> insertMap =
-        new HashMap<String, String>() {
-          {
-            put("key1", "key2");
-            put("value1", "value2");
-          }
-        };
+    Map<String, String> updateMap = ImmutableMap.of("key1", "key2", "value1", "value2");
+    Map<String, String> insertMap = ImmutableMap.of("key1", "key2", "value1", "value2");
     target
         .merge(sourceTable, "key1 = key2")
         .whenMatched()
@@ -345,20 +313,8 @@ class ITDeltaLog extends AbstractDeltaTest {
         createKVDataSet(Arrays.asList(tuple2(1, 100), tuple2(3, 30)), "key2", "value2");
 
     DeltaTable target = DeltaTable.forPath(spark, tempPath.getAbsolutePath());
-    Map<String, String> updateMap =
-        new HashMap<String, String>() {
-          {
-            put("key1", "key2");
-            put("value1", "value2");
-          }
-        };
-    Map<String, String> insertMap =
-        new HashMap<String, String>() {
-          {
-            put("key1", "key2");
-            put("value1", "value2");
-          }
-        };
+    Map<String, String> updateMap = ImmutableMap.of("key1", "key2", "value1", "value2");
+    Map<String, String> insertMap = ImmutableMap.of("key1", "key2", "value1", "value2");
     target
         .merge(sourceTable, "key1 = key2")
         .whenMatched("key1 = 4")
@@ -390,19 +346,9 @@ class ITDeltaLog extends AbstractDeltaTest {
 
     DeltaTable target = DeltaTable.forPath(spark, tempPath.getAbsolutePath());
     Map<String, Column> updateMap =
-        new HashMap<String, Column>() {
-          {
-            put("key1", functions.col("key2"));
-            put("value1", functions.col("value2"));
-          }
-        };
+        ImmutableMap.of("key1", functions.col("key2"), "value1", functions.col("value2"));
     Map<String, Column> insertMap =
-        new HashMap<String, Column>() {
-          {
-            put("key1", functions.col("key2"));
-            put("value1", functions.col("value2"));
-          }
-        };
+        ImmutableMap.of("key1", functions.col("key2"), "value1", functions.col("value2"));
     target
         .merge(sourceTable, functions.expr("key1 = key2"))
         .whenMatched(functions.expr("key1 = 4"))
