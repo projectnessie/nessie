@@ -31,6 +31,11 @@ class TestErrorCode {
   }
 
   @Test
+  void testFail() {
+    assertThat(true).isFalse();
+  }
+
+  @Test
   void testUnknown() {
     assertThat(ex(ErrorCode.UNKNOWN)).isNotPresent();
   }
