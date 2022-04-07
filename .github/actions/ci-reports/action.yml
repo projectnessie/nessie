@@ -1,0 +1,14 @@
+name: 'Capture test reports'
+runs:
+  using: "composite"
+  steps:
+    - name: Capture test reports
+      uses: actions/upload-artifact@v3
+      if: ${{ inputs.include-reports != 'false' }}
+      with:
+        name: test-results
+        path: |
+          **/target/surefire-reports/*
+          **/target/failsafe-reports/*
+          **/build/reports/*
+          **/build/test-results/*
