@@ -259,17 +259,12 @@ public abstract class AbstractMergeTransplant {
               .commitMetaSerialized(ByteString.copyFromUtf8("commit " + i));
       for (int k = 0; k < 3; k++) {
         Key key = Key.of("key", Integer.toString(k));
-        ByteString onRef =
-            SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
-                OnRefOnly.newOnRef("value " + i + " for " + k));
+        OnRefOnly value = OnRefOnly.newOnRef("value " + i + " for " + k);
+        ByteString onRef = SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(value);
         keysAndValue.put(key, ContentAndState.of(onRef));
         commit.addPuts(
             KeyWithBytes.of(
-                key,
-                ContentId.of("C" + k),
-                SimpleStoreWorker.INSTANCE.getPayload(
-                    OnRefOnly.newOnRef("value " + i + " for " + k)),
-                onRef));
+                key, ContentId.of("C" + k), SimpleStoreWorker.INSTANCE.getPayload(value), onRef));
       }
       commits[i] = databaseAdapter.commit(commit.build());
     }
@@ -302,12 +297,13 @@ public abstract class AbstractMergeTransplant {
             .toBranch(conflict)
             .commitMetaSerialized(ByteString.copyFromUtf8("commit conflict"));
     for (int k = 0; k < 2; k++) {
+      OnRefOnly conflictValue = OnRefOnly.newOnRef("conflict value for " + k);
       commit.addPuts(
           KeyWithBytes.of(
               Key.of("key", Integer.toString(k)),
               ContentId.of("C" + k),
-              (byte) 0,
-              ByteString.copyFromUtf8("conflict value for " + k)));
+              SimpleStoreWorker.INSTANCE.getPayload(conflictValue),
+              SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(conflictValue)));
     }
     databaseAdapter.commit(commit.build());
 
