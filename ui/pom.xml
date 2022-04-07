@@ -29,6 +29,17 @@
 
   <name>Nessie - UI</name>
 
+  <properties>
+    <!-- sourcemap generation takes 11 seconds or more and isn't necessary for production -->
+    <ui.generate-sourcemap>false</ui.generate-sourcemap>
+    <!-- ES Lint takes 17 seconds or more, but should be enabled for CI -->
+    <ui.disable-es-lint>false</ui.disable-es-lint>
+    <!-- Terser takes 5 seconds or more, but should be enabled for CI -->
+    <ui.disable-terser>false</ui.disable-terser>
+    <!-- requires manual installation of `speed-measure-webpack-plugin` -->
+    <ui.profile-plugins>false</ui.profile-plugins>
+  </properties>
+
   <dependencies>
     <!-- The dependency is technically not needed, but parallel Maven builds (e.g. `mvn -T` or `mvnd`) require it. -->
     <dependency>
@@ -170,6 +181,12 @@
             </goals>
             <configuration>
               <arguments>run build</arguments>
+              <environmentVariables>
+                <GENERATE_SOURCEMAP>${ui.generate-sourcemap}</GENERATE_SOURCEMAP>
+                <DISABLE_ESLINT_PLUGIN>${ui.disable-es-lint}</DISABLE_ESLINT_PLUGIN>
+                <DISABLE_TERSER_PLUGIN>${ui.disable-terser}</DISABLE_TERSER_PLUGIN>
+                <PROFILE_PLUGINS>${ui.profile-plugins}</PROFILE_PLUGINS>
+              </environmentVariables>
             </configuration>
           </execution>
           <execution>

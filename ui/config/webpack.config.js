@@ -63,6 +63,13 @@ const shouldInlineRuntimeChunk = process.env.INLINE_RUNTIME_CHUNK !== "false";
 
 const emitErrorsAsWarnings = process.env.ESLINT_NO_DEV_ERRORS === "true";
 const disableESLintPlugin = process.env.DISABLE_ESLINT_PLUGIN === "true";
+const disableTerserPlugin = process.env.DISABLE_TERSER_PLUGIN === "true";
+
+// Keep babel-cache separate to speed up repeated `mvn clean install -pl ui/`
+// by a ~7-8 seconds.
+const babelCacheDirectory = process.env.KEEP_BABEL_CACHE !== "false"
+  ? path.resolve(__dirname, "..", "..", ".mvn", ".babel-cache")
+  : true;
 
 const imageInlineSizeLimit = parseInt(
   process.env.IMAGE_INLINE_SIZE_LIMIT || "10000"
@@ -199,7 +206,7 @@ module.exports = function (webpackEnv) {
     return loaders;
   };
 
-  return {
+  const config = {
     target: ["browserslist"],
     mode: isEnvProduction ? "production" : isEnvDevelopment && "development",
     // Stop compilation early in production
@@ -248,7 +255,7 @@ module.exports = function (webpackEnv) {
       minimize: isEnvProduction,
       minimizer: [
         // This is only used in production mode
-        new TerserPlugin({
+        !disableTerserPlugin && new TerserPlugin({
           terserOptions: {
             parse: {
               // We want terser to parse ecma 8 code. However, we don't want it
@@ -427,7 +434,7 @@ module.exports = function (webpackEnv) {
                 // This is a feature of `babel-loader` for webpack (not Babel itself).
                 // It enables caching results in ./node_modules/.cache/babel-loader/
                 // directory for faster rebuilds.
-                cacheDirectory: true,
+                cacheDirectory: babelCacheDirectory,
                 // See #6846 for context on why cacheCompression is disabled
                 cacheCompression: false,
                 compact: isEnvProduction,
@@ -449,7 +456,7 @@ module.exports = function (webpackEnv) {
                     { helpers: true },
                   ],
                 ],
-                cacheDirectory: true,
+                cacheDirectory: babelCacheDirectory,
                 // See #6846 for context on why cacheCompression is disabled
                 cacheCompression: false,
 
@@ -620,13 +627,6 @@ module.exports = function (webpackEnv) {
       // a plugin that prints an error when you attempt to do this.
       // See https://github.com/facebook/create-react-app/issues/240
       isEnvDevelopment && new CaseSensitivePathsPlugin(),
-      isEnvProduction &&
-        new MiniCssExtractPlugin({
-          // Options similar to the same options in webpackOptions.output
-          // both options are optional
-          filename: "static/css/[name].[contenthash:8].css",
-          chunkFilename: "static/css/[name].[contenthash:8].chunk.css",
-        }),
       // Generate an asset manifest file with the following content:
       // - "files" key: Mapping of all asset filenames to their corresponding
       //   output file so that tools can pick it up without having to parse
@@ -751,4 +751,26 @@ module.exports = function (webpackEnv) {
     // our own hints via the FileSizeReporter
     performance: false,
   };
+
+  // The MiniCssExtractPlugin is not really compatible with the SpeedMeasurePlugin,
+  // so it has to be treated differently (see workaround from
+  // https://github.com/stephencookdev/speed-measure-webpack-plugin/issues/167).
+  const miniCssExtractPlugin = new MiniCssExtractPlugin({
+    // Options similar to the same options in webpackOptions.output
+    // both options are optional
+    filename: "static/css/[name].[contenthash:8].css",
+    chunkFilename: "static/css/[name].[contenthash:8].chunk.css",
+  });
+
+  const profilePlugins = isEnvDevelopment || (process.env.PROFILE_PLUGINS !== "false");
+  if (!profilePlugins) {
+    config.plugins.push(miniCssExtractPlugin)
+    return config;
+  }
+
+  const SpeedMeasurePlugin = require("speed-measure-webpack-plugin");
+  const smp = new SpeedMeasurePlugin();
+  const wrappedConfig = smp.wrap(config);
+  wrappedConfig.plugins.push(miniCssExtractPlugin);
+  return wrappedConfig;
 };
