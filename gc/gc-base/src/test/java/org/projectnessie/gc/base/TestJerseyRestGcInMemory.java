@@ -22,6 +22,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.projectnessie.jaxrs.ext.NessieJaxRsExtension;
 import org.projectnessie.jaxrs.ext.NessieUri;
+import org.projectnessie.server.store.TableCommitMetaStoreWorker;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.inmem.InmemoryDatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.inmem.InmemoryTestConnectionProviderSource;
@@ -35,7 +36,8 @@ import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabas
 @ExtendWith(DatabaseAdapterExtension.class)
 class TestJerseyRestGcInMemory extends AbstractRestGCRepoTest {
 
-  @NessieDbAdapter static DatabaseAdapter databaseAdapter;
+  @NessieDbAdapter(storeWorker = TableCommitMetaStoreWorker.class)
+  static DatabaseAdapter databaseAdapter;
 
   @RegisterExtension
   static NessieJaxRsExtension server = new NessieJaxRsExtension(() -> databaseAdapter);
