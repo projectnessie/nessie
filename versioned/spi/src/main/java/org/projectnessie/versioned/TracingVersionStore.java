@@ -111,7 +111,9 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
       Optional<Hash> referenceHash,
       List<Hash> sequenceToTransplant,
       MetadataRewriter<METADATA> updateCommitMetadata,
-      boolean keepIndividualCommits)
+      boolean keepIndividualCommits,
+      Map<Key, MergeType> mergeTypes,
+      MergeType defaultMergeType)
       throws ReferenceNotFoundException, ReferenceConflictException {
     this.<ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
         "Transplant",
@@ -125,7 +127,9 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
                 referenceHash,
                 sequenceToTransplant,
                 updateCommitMetadata,
-                keepIndividualCommits));
+                keepIndividualCommits,
+                mergeTypes,
+                defaultMergeType));
   }
 
   @Override
@@ -134,7 +138,9 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
       BranchName toBranch,
       Optional<Hash> expectedHash,
       MetadataRewriter<METADATA> updateCommitMetadata,
-      boolean keepIndividualCommits)
+      boolean keepIndividualCommits,
+      Map<Key, MergeType> mergeTypes,
+      MergeType defaultMergeType)
       throws ReferenceNotFoundException, ReferenceConflictException {
     this.<ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
         "Merge",
@@ -144,7 +150,13 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
                 .withTag(TAG_EXPECTED_HASH, safeToString(expectedHash)),
         () ->
             delegate.merge(
-                fromHash, toBranch, expectedHash, updateCommitMetadata, keepIndividualCommits));
+                fromHash,
+                toBranch,
+                expectedHash,
+                updateCommitMetadata,
+                keepIndividualCommits,
+                mergeTypes,
+                defaultMergeType));
   }
 
   @Override

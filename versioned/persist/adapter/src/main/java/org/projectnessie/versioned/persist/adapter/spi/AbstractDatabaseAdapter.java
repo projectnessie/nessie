@@ -396,6 +396,14 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     Collections.reverse(toEntriesReverseChronological);
     Set<Key> keysTouchedOnTarget = collectModifiedKeys(toEntriesReverseChronological);
 
+    Predicate<Key> skipCheckPredicate =
+        k -> params.getMergeTypes().getOrDefault(k, params.getDefaultMergeType()).isSkipCheck();
+    Predicate<Key> mergePredicate =
+        k -> params.getMergeTypes().getOrDefault(k, params.getDefaultMergeType()).isMerge();
+
+    // Ignore keys in collision-check that will not be merged or collision-checked
+    keysTouchedOnTarget.removeIf(skipCheckPredicate);
+
     checkForKeyCollisions(ctx, toHead, keysTouchedOnTarget, commitsToMergeChronological);
 
     if (params.keepIndividualCommits() || commitsToMergeChronological.size() == 1) {
@@ -408,7 +416,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
               toHead,
               commitsToMergeChronological,
               newKeyLists,
-              params.getUpdateCommitMetadata());
+              params.getUpdateCommitMetadata(),
+              mergePredicate);
 
       // Write commits
 
@@ -422,7 +431,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
               toHead,
               commitsToMergeChronological,
               newKeyLists,
-              params.getUpdateCommitMetadata());
+              params.getUpdateCommitMetadata(),
+              mergePredicate);
     }
     return toHead;
   }
@@ -1594,7 +1604,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       Hash toHead,
       List<CommitLogEntry> commitsToMergeChronological,
       Consumer<Hash> newKeyLists,
-      MetadataRewriter<ByteString> rewriteMetadata)
+      MetadataRewriter<ByteString> rewriteMetadata,
+      Predicate<Key> includeKeyPredicate)
       throws ReferenceConflictException, ReferenceNotFoundException {
 
     List<ByteString> commitMeta = new ArrayList<>();
@@ -1603,12 +1614,16 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     for (int i = commitsToMergeChronological.size() - 1; i >= 0; i--) {
       CommitLogEntry source = commitsToMergeChronological.get(i);
       for (Key delete : source.getDeletes()) {
-        deletes.add(delete);
-        puts.remove(delete);
+        if (includeKeyPredicate.test(delete)) {
+          deletes.add(delete);
+          puts.remove(delete);
+        }
       }
       for (KeyWithBytes put : source.getPuts()) {
-        deletes.remove(put.getKey());
-        puts.put(put.getKey(), put);
+        if (includeKeyPredicate.test(put.getKey())) {
+          deletes.remove(put.getKey());
+          puts.put(put.getKey(), put);
+        }
       }
 
       commitMeta.add(source.getMetadata());
@@ -1663,7 +1678,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       Hash targetHead,
       List<CommitLogEntry> commitsChronological,
       Consumer<Hash> newKeyLists,
-      MetadataRewriter<ByteString> rewriteMetadata)
+      MetadataRewriter<ByteString> rewriteMetadata,
+      Predicate<Key> includeKeyPredicate)
       throws ReferenceNotFoundException {
     int parentsPerCommit = config.getParentsPerCommit();
 
@@ -1685,6 +1701,21 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     for (int i = commitsChronological.size() - 1; i >= 0; i--, commitSeq++) {
       CommitLogEntry sourceCommit = commitsChronological.get(i);
 
+      List<KeyWithBytes> puts =
+          sourceCommit.getPuts().stream()
+              .filter(p -> includeKeyPredicate.test(p.getKey()))
+              .collect(Collectors.toList());
+      List<Key> deletes =
+          sourceCommit.getDeletes().stream()
+              .filter(includeKeyPredicate)
+              .collect(Collectors.toList());
+
+      if (puts.isEmpty() && deletes.isEmpty()) {
+        // Copied commit will not contain any operation, skip.
+        commitsChronological.remove(i);
+        continue;
+      }
+
       while (parents.size() > parentsPerCommit - 1) {
         parents.remove(parentsPerCommit - 1);
       }
@@ -1703,8 +1734,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
               parents,
               commitSeq,
               updatedMetadata,
-              sourceCommit.getPuts(),
-              sourceCommit.getDeletes(),
+              puts,
+              deletes,
               keyListDistance,
               newKeyLists,
               unwrittenCommits::get);

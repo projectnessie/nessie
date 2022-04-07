@@ -27,14 +27,17 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
+import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.MergeType;
 import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceConflictException;
@@ -59,6 +62,8 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
   private static final OnRefOnly VALUE_2 = newOnRef("value2");
   private static final OnRefOnly VALUE_3 = newOnRef("value3");
   private static final OnRefOnly VALUE_4 = newOnRef("value4");
+  private static final OnRefOnly VALUE_5 = newOnRef("value5");
+  private static final OnRefOnly VALUE_6 = newOnRef("value6");
 
   protected AbstractMerge(VersionStore<BaseContent, CommitMessage, BaseContent.Type> store) {
     super(store);
@@ -125,7 +130,13 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
 
     store()
         .merge(
-            thirdCommit, newBranch, Optional.of(initialHash), metadataRewriter, individualCommits);
+            thirdCommit,
+            newBranch,
+            Optional.of(initialHash),
+            metadataRewriter,
+            individualCommits,
+            Collections.emptyMap(),
+            MergeType.NORMAL);
     assertThat(
             store()
                 .getValues(
@@ -170,7 +181,13 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
 
     store()
         .merge(
-            firstCommit, newBranch, Optional.of(initialHash), metadataRewriter, individualCommits);
+            firstCommit,
+            newBranch,
+            Optional.of(initialHash),
+            metadataRewriter,
+            individualCommits,
+            Collections.emptyMap(),
+            MergeType.NORMAL);
     assertThat(
             store()
                 .getValues(
@@ -200,7 +217,13 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
 
     store()
         .merge(
-            thirdCommit, newBranch, Optional.of(initialHash), metadataRewriter, individualCommits);
+            thirdCommit,
+            newBranch,
+            Optional.of(initialHash),
+            metadataRewriter,
+            individualCommits,
+            Collections.emptyMap(),
+            MergeType.NORMAL);
     assertThat(
             store()
                 .getValues(
@@ -241,7 +264,16 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
 
     MetadataRewriter<CommitMessage> metadataRewriter = createMetadataRewriter("");
 
-    store().merge(thirdCommit, newBranch, Optional.empty(), metadataRewriter, individualCommits);
+    store()
+        .merge(
+            thirdCommit,
+            newBranch,
+            Optional.empty(),
+            metadataRewriter,
+            individualCommits,
+            Collections.emptyMap(),
+            MergeType.NORMAL);
+
     assertThat(
             store()
                 .getValues(
@@ -309,7 +341,9 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             review,
             Optional.empty(),
             metadataRewriter,
-            individualCommits);
+            individualCommits,
+            Collections.emptyMap(),
+            MergeType.NORMAL);
     store()
         .commit(
             etl,
@@ -322,7 +356,9 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             review,
             Optional.empty(),
             metadataRewriter,
-            individualCommits);
+            individualCommits,
+            Collections.emptyMap(),
+            MergeType.NORMAL);
     assertEquals(store().getValue(review, key), VALUE_2);
   }
 
@@ -336,7 +372,15 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
 
     MetadataRewriter<CommitMessage> metadataRewriter = createMetadataRewriter("");
 
-    store().merge(thirdCommit, newBranch, Optional.empty(), metadataRewriter, individualCommits);
+    store()
+        .merge(
+            thirdCommit,
+            newBranch,
+            Optional.empty(),
+            metadataRewriter,
+            individualCommits,
+            Collections.emptyMap(),
+            MergeType.NORMAL);
     assertThat(
             store()
                 .getValues(
@@ -376,55 +420,164 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   protected void mergeWithConflictingKeys(boolean individualCommits) throws VersionStoreException {
-    final BranchName foo = BranchName.of("foofoo");
-    final BranchName bar = BranchName.of("barbar");
-    store().create(foo, Optional.of(this.initialHash));
-    store().create(bar, Optional.of(this.initialHash));
+    final BranchName mergeInto = BranchName.of("foofoo");
+    final BranchName mergeFrom = BranchName.of("barbar");
+    store().create(mergeInto, Optional.of(this.initialHash));
+    store().create(mergeFrom, Optional.of(this.initialHash));
 
     // we're essentially modifying the same key on both branches and then merging one branch into
     // the other and expect a conflict
-    Key key1 = Key.of("some_key1");
-    Key key2 = Key.of("some_key2");
+    Key conflictingKey1 = Key.of("some_key1");
+    Key conflictingKey2 = Key.of("some_key2");
+    Key key3 = Key.of("some_key3");
+    Key key4 = Key.of("some_key4");
 
     store()
         .commit(
-            foo,
+            mergeInto,
             Optional.empty(),
             commitMessage("commit 1"),
-            Collections.singletonList(Put.of(key1, VALUE_1)));
+            Collections.singletonList(Put.of(conflictingKey1, VALUE_1)));
     store()
         .commit(
-            bar,
+            mergeFrom,
             Optional.empty(),
             commitMessage("commit 2"),
-            Collections.singletonList(Put.of(key1, VALUE_2)));
-    store()
-        .commit(
-            foo,
-            Optional.empty(),
-            commitMessage("commit 3"),
-            Collections.singletonList(Put.of(key2, VALUE_3)));
-    Hash barHash =
+            Arrays.asList(Put.of(conflictingKey1, VALUE_2), Put.of(key3, VALUE_5)));
+    Hash mergeIntoHead =
         store()
             .commit(
-                bar,
+                mergeInto,
+                Optional.empty(),
+                commitMessage("commit 3"),
+                Arrays.asList(Put.of(conflictingKey2, VALUE_3), Put.of(key4, VALUE_6)));
+    Hash mergeFromHash =
+        store()
+            .commit(
+                mergeFrom,
                 Optional.empty(),
                 commitMessage("commit 4"),
-                Collections.singletonList(Put.of(key2, VALUE_4)));
+                Collections.singletonList(Put.of(conflictingKey2, VALUE_4)));
 
+    // "Plain" merge attempt - all keys default to MergeType.NORMAL
     assertThatThrownBy(
             () ->
                 store()
                     .merge(
-                        barHash,
-                        foo,
+                        mergeFromHash,
+                        mergeInto,
                         Optional.empty(),
                         createMetadataRewriter(""),
-                        individualCommits))
+                        individualCommits,
+                        Collections.emptyMap(),
+                        MergeType.NORMAL))
         .isInstanceOf(ReferenceConflictException.class)
         .hasMessageContaining("The following keys have been changed in conflict:")
-        .hasMessageContaining(key1.toString())
-        .hasMessageContaining(key2.toString());
+        .hasMessageContaining(conflictingKey1.toString())
+        .hasMessageContaining(conflictingKey2.toString());
+
+    // default to MergeType.NORMAL, but ignore conflictingKey1
+    assertThatThrownBy(
+            () ->
+                store()
+                    .merge(
+                        mergeFromHash,
+                        mergeInto,
+                        Optional.empty(),
+                        createMetadataRewriter(""),
+                        individualCommits,
+                        Collections.singletonMap(conflictingKey2, MergeType.DROP),
+                        MergeType.NORMAL))
+        .isInstanceOf(ReferenceConflictException.class)
+        .hasMessageContaining("The following keys have been changed in conflict:")
+        .hasMessageContaining(conflictingKey1.toString())
+        .hasMessageNotContaining(conflictingKey2.toString());
+
+    // default to MergeType.DROP (don't merge keys by default), but include conflictingKey1
+    assertThatThrownBy(
+            () ->
+                store()
+                    .merge(
+                        mergeFromHash,
+                        mergeInto,
+                        Optional.empty(),
+                        createMetadataRewriter(""),
+                        individualCommits,
+                        Collections.singletonMap(conflictingKey1, MergeType.NORMAL),
+                        MergeType.DROP))
+        .isInstanceOf(ReferenceConflictException.class)
+        .hasMessageContaining("The following keys have been changed in conflict:")
+        .hasMessageContaining(conflictingKey1.toString())
+        .hasMessageNotContaining(conflictingKey2.toString());
+
+    // default to MergeType.NORMAL, but include conflictingKey1
+    assertThatThrownBy(
+            () ->
+                store()
+                    .merge(
+                        mergeFromHash,
+                        mergeInto,
+                        Optional.empty(),
+                        createMetadataRewriter(""),
+                        individualCommits,
+                        Collections.singletonMap(conflictingKey1, MergeType.FORCE),
+                        MergeType.NORMAL))
+        .isInstanceOf(ReferenceConflictException.class)
+        .hasMessageContaining("The following keys have been changed in conflict:")
+        .hasMessageNotContaining(conflictingKey1.toString())
+        .hasMessageContaining(conflictingKey2.toString());
+
+    Supplier<Hash> mergeIntoHeadSupplier =
+        () -> {
+          try {
+            return store.getNamedRef(mergeInto.getName(), GetNamedRefsParams.DEFAULT).getHash();
+          } catch (ReferenceNotFoundException e) {
+            throw new RuntimeException(e);
+          }
+        };
+
+    assertThat(mergeIntoHeadSupplier.get()).isEqualTo(mergeIntoHead);
+
+    // Merge with force-merge of conflictingKey1 + drop of conflictingKey2
+    store()
+        .merge(
+            mergeFromHash,
+            mergeInto,
+            Optional.empty(),
+            createMetadataRewriter(", merge-force-1"),
+            individualCommits,
+            ImmutableMap.of(conflictingKey1, MergeType.FORCE, conflictingKey2, MergeType.DROP),
+            MergeType.NORMAL);
+    assertThat(
+            store.getValues(
+                mergeIntoHeadSupplier.get(),
+                Arrays.asList(conflictingKey1, conflictingKey2, key3, key4)))
+        .containsEntry(conflictingKey1, VALUE_2) // value as in "mergeFrom"
+        .containsEntry(conflictingKey2, VALUE_3) // value as in "mergeInto"
+        .containsEntry(key3, VALUE_5)
+        .containsEntry(key4, VALUE_6);
+
+    // reset merge-into branch
+    store().assign(mergeInto, Optional.empty(), mergeIntoHead);
+
+    // Merge with force-merge of conflictingKey1 + drop of conflictingKey2
+    store()
+        .merge(
+            mergeFromHash,
+            mergeInto,
+            Optional.empty(),
+            createMetadataRewriter(", merge-all-force"),
+            individualCommits,
+            Collections.emptyMap(),
+            MergeType.FORCE);
+    assertThat(
+            store.getValues(
+                mergeIntoHeadSupplier.get(),
+                Arrays.asList(conflictingKey1, conflictingKey2, key3, key4)))
+        .containsEntry(conflictingKey1, VALUE_2) // value as in "mergeFrom"
+        .containsEntry(conflictingKey2, VALUE_4) // value as in "mergeFrom"
+        .containsEntry(key3, VALUE_5)
+        .containsEntry(key4, VALUE_6);
   }
 
   @ParameterizedTest
@@ -444,7 +597,9 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                     newBranch,
                     Optional.of(initialHash),
                     createMetadataRewriter(""),
-                    individualCommits));
+                    individualCommits,
+                    Collections.emptyMap(),
+                    MergeType.NORMAL));
   }
 
   @ParameterizedTest
@@ -460,7 +615,9 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                     newBranch,
                     Optional.of(initialHash),
                     createMetadataRewriter(""),
-                    individualCommits));
+                    individualCommits,
+                    Collections.emptyMap(),
+                    MergeType.NORMAL));
   }
 
   @ParameterizedTest
@@ -478,6 +635,8 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                     newBranch,
                     Optional.of(initialHash),
                     createMetadataRewriter(""),
-                    individualCommits));
+                    individualCommits,
+                    Collections.emptyMap(),
+                    MergeType.NORMAL));
   }
 }

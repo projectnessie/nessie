@@ -114,6 +114,8 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    *     metadata if {@code keepIndividualCommits} is {@code false}
    * @param keepIndividualCommits whether to keep the individual commits and do not squash the
    *     commits to transplant
+   * @param mergeTypes merge types per content key
+   * @param defaultMergeType default merge type for all keys not present in {@code mergeTypes}
    * @throws ReferenceConflictException if {@code referenceHash} values do not match the stored
    *     values for {@code branch}
    * @throws ReferenceNotFoundException if {@code branch} or if any of the hashes from {@code
@@ -124,7 +126,9 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
       Optional<Hash> referenceHash,
       List<Hash> sequenceToTransplant,
       MetadataRewriter<METADATA> updateCommitMetadata,
-      boolean keepIndividualCommits)
+      boolean keepIndividualCommits,
+      Map<Key, MergeType> mergeTypes,
+      MergeType defaultMergeType)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**
@@ -149,6 +153,8 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    *     metadata if {@code keepIndividualCommits} is {@code false}
    * @param keepIndividualCommits whether to keep the individual commits and do not squash the
    *     commits to merge
+   * @param mergeTypes merge types per content key
+   * @param defaultMergeType default merge type for all keys not present in {@code mergeTypes}
    * @throws ReferenceConflictException if {@code expectedBranchHash} doesn't match the stored hash
    *     for {@code toBranch}
    * @throws ReferenceNotFoundException if {@code toBranch} or {@code fromHash} is not present in
@@ -159,7 +165,9 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
       BranchName toBranch,
       Optional<Hash> expectedHash,
       MetadataRewriter<METADATA> updateCommitMetadata,
-      boolean keepIndividualCommits)
+      boolean keepIndividualCommits,
+      Map<Key, MergeType> mergeTypes,
+      MergeType defaultMergeType)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**
