@@ -1,0 +1,83 @@
+# Copyright (C) 2020 Dremio
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# GitHub workflow to automatically approve and merge dependabot-PRs that
+# have passed CI.
+
+name: Dependabot Auto Merge
+
+on:
+  workflow_run:
+    types:
+      - "completed"
+    workflows:
+      - "PR Build Check"
+      - "PR Build Check Jackson"
+      - "PR Build Check Native"
+      - "PR Integrations Tests"
+
+jobs:
+  merge:
+    name: "Dependabot Auto Merge"
+    runs-on: ubuntu-latest
+
+    # Note: the check `github.actor == 'dependabot[bot]'` ensures that auto-approve-and-merge
+    # only happens when dependabot triggers the workflow runs - but not when another user pushes.
+
+    # PRs to bump flapdoodle/mongo are intentionally ignored (no version after 3.1.4 works fine on macOS)!
+
+    if: >
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.actor == 'dependabot[bot]' && (
+        startsWith(github.event.workflow_run.head_commit.message, 'Bump')
+      ) && !(
+        startsWith(github.event.workflow_run.head_commit.message, 'Bump de.flapdoodle.embed.mongo')
+      )
+
+    steps:
+      - name: Check commit status
+        run: |
+          echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token
+          gh api repos/projectnessie/nessie/commits/${{ github.event.workflow_run.head_commit.id }}/check-runs --jq 'if ([.check_runs[] | select(.name | endswith(" release") or startswith("codecov/") or startswith("Report ") | not ) | select(.conclusion != "skipped") | .conclusion // "pending" ] | unique == ["success"]) then "OK" else error("Commit checks are not OK") end'
+
+      - name: "Approve pull request"
+        uses: "actions/github-script@v6"
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+          script: |
+            const pullRequest = context.payload.workflow_run.pull_requests[0]
+            const repository = context.repo
+
+            await github.rest.pulls.createReview({
+              event: "APPROVE",
+              owner: repository.owner,
+              repo: repository.repo,
+              pull_number: pullRequest.number,
+            })
+
+      - name: "Merge pull request"
+        uses: "actions/github-script@v6"
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+          script: |
+            const pullRequest = context.payload.workflow_run.pull_requests[0]
+            const repository = context.repo
+
+            await github.rest.pulls.merge({
+              merge_method: "squash",
+              owner: repository.owner,
+              pull_number: pullRequest.number,
+              repo: repository.repo,
+            })
