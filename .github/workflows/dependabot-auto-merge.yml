@@ -44,9 +44,30 @@ jobs:
         startsWith(github.event.workflow_run.head_commit.message, 'Bump')
       ) && !(
         startsWith(github.event.workflow_run.head_commit.message, 'Bump de.flapdoodle.embed.mongo')
-      )
+      ) &&
+      github.repository == 'projectnessie/nessie'
 
     steps:
+      - name: Information
+        uses: "actions/github-script@v6"
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+          script: |
+            const pullRequest = context.payload.workflow_run.pull_requests[0]
+            const repository = context.repo
+            const pullRequestDetails = await github.rest.pulls.get({
+              owner: repository.owner,
+              repo: repository.repo,
+              pull_number: pullRequest.number,
+            })
+            
+            console.log("PR Number: " + pullRequest.number)
+            console.log("PR Title: " + pullRequestDetails.data.title)
+            console.log("PR head SHA: " + pullRequest.head.sha)
+            console.log("PR head ref: " + pullRequest.head.ref)
+            console.log("PR URL: " + pullRequestDetails.data.html_url)
+            console.log(pullRequestDetails)
+
       - name: Check commit status
         run: |
           echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token
@@ -65,6 +86,7 @@ jobs:
               owner: repository.owner,
               repo: repository.repo,
               pull_number: pullRequest.number,
+              commit_id: pullRequest.head.sha,
             })
 
       - name: "Merge pull request"
@@ -80,4 +102,5 @@ jobs:
               owner: repository.owner,
               pull_number: pullRequest.number,
               repo: repository.repo,
+              commit_id: pullRequest.head.sha,
             })
