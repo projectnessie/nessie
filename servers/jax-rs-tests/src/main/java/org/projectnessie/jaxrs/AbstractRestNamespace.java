@@ -162,7 +162,7 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
             getApi()
                 .getMultipleNamespaces()
                 .refName(branch.getName())
-                .namespace("on")
+                .namespace("one")
                 .get()
                 .getNamespaces())
         .containsExactly(four);
@@ -361,7 +361,7 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
                 .refName(branch.getName())
                 .get()
                 .getNamespaces())
-        .containsExactlyInAnyOrderElementsOf(namespaces);
+        .containsExactly(second);
 
     assertThat(
             getApi()

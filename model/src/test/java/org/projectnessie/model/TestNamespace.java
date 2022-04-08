@@ -104,8 +104,46 @@ public class TestNamespace {
   }
 
   @Test
+  public void testIsSameOrSubElementOf() {
+    Namespace namespace = Namespace.of(asList("a", "b.c", "namespace"));
+
+    assertThatThrownBy(() -> Namespace.EMPTY.isSameOrSubElementOf(null))
+        .hasMessage("namespace must be non-null");
+
+    assertThat(Namespace.EMPTY.isSameOrSubElementOf(Namespace.EMPTY)).isTrue();
+    assertThat(namespace.isSameOrSubElementOf(Namespace.EMPTY)).isTrue();
+    assertThat(namespace.isSameOrSubElementOf(Namespace.of("a"))).isTrue();
+    assertThat(namespace.isSameOrSubElementOf(Namespace.parse("a"))).isTrue();
+    assertThat(namespace.isSameOrSubElementOf(Namespace.of("a", "b"))).isFalse();
+    assertThat(namespace.isSameOrSubElementOf(Namespace.parse("a.b\u001Dc"))).isTrue();
+    assertThat(namespace.isSameOrSubElementOf(Namespace.parse("a.b\u001Dc.namespa"))).isFalse();
+    assertThat(namespace.isSameOrSubElementOf(Namespace.parse("a.b\u001Dc.namespace"))).isTrue();
+    assertThat(namespace.isSameOrSubElementOf(Namespace.parse("a.b\u0000c.namespace"))).isTrue();
+
+    assertThat(namespace.isSameOrSubElementOf(Namespace.of("a", "\u0012b"))).isFalse();
+    assertThat(namespace.isSameOrSubElementOf(Namespace.of("x"))).isFalse();
+    assertThat(namespace.isSameOrSubElementOf(Namespace.of("a", "b", "c"))).isFalse();
+
+    assertThat(Namespace.parse("a.b.c").isSameOrSubElementOf(Namespace.parse("a.b\u001Dc")))
+        .isFalse();
+    assertThat(Namespace.EMPTY.isSameOrSubElementOf(Namespace.of("a"))).isFalse();
+  }
+
+  @Test
   public void testDifferentZeroByteRepresentations() {
     assertThat(Namespace.parse("a.b\u001Dc.d")).isEqualTo(Namespace.parse("a.b\u0000c.d"));
+    assertThat(
+            Namespace.parse("a.b\u001Dc.d").isSameOrSubElementOf(Namespace.parse("a.b\u0000c.d")))
+        .isTrue();
+
+    assertThat(Namespace.parse("a.b\u001Dc.d").isSameOrSubElementOf(Namespace.parse("a.b\u0000c")))
+        .isTrue();
+    assertThat(Namespace.parse("a.b\u0000c.d").isSameOrSubElementOf(Namespace.parse("a.b\u001Dc")))
+        .isTrue();
+
+    // even though we treat the zero byte + the group separator equally, we can't do comparisons
+    // based on strings only
+    assertThat(Namespace.of(asList("a", "b.c", "namespace")).name()).doesNotStartWith("a.b\u0000c");
   }
 
   @ParameterizedTest

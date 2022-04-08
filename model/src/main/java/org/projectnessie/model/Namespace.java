@@ -151,6 +151,29 @@ public abstract class Namespace extends Content {
   }
 
   /**
+   * Checks whether the current {@link Namespace} is the same as or a sub-element of the given
+   * {@link Namespace} instance by comparing each canonical element.
+   *
+   * @param parent {@link Namespace} instance to compare with.
+   * @return <code>true</code> if the current {@link Namespace} is the same as or a sub-element of
+   *     the given {@link Namespace} instance by comparing each canonical element, <code>false
+   *     </code> otherwise.
+   */
+  public boolean isSameOrSubElementOf(Namespace parent) {
+    Objects.requireNonNull(parent, "namespace must be non-null");
+    if (getElements().size() < parent.getElements().size()) {
+      return false;
+    }
+    for (int i = 0; i < parent.getElements().size(); i++) {
+      // elements must match exactly
+      if (!getElements().get(i).equals(parent.getElements().get(i))) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
    * Convert from path encoded string to normal string.
    *
    * @param encoded Path encoded string
