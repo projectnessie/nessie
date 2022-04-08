@@ -15,6 +15,10 @@
  */
 package org.projectnessie.model;
 
+import static org.projectnessie.model.UriUtil.DOT_STRING;
+import static org.projectnessie.model.UriUtil.GROUP_SEPARATOR_STRING;
+import static org.projectnessie.model.UriUtil.ZERO_BYTE_STRING;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -37,9 +41,6 @@ import org.projectnessie.model.ImmutableContentKey.Builder;
 @JsonSerialize(as = ImmutableContentKey.class)
 @JsonDeserialize(as = ImmutableContentKey.class)
 public abstract class ContentKey {
-
-  private static final char ZERO_BYTE = '\u0000';
-  private static final String ZERO_BYTE_STRING = Character.toString(ZERO_BYTE);
 
   @NotNull
   @Size(min = 1)
@@ -91,9 +92,11 @@ public abstract class ContentKey {
         throw new IllegalArgumentException(
             String.format("Content key '%s' must not contain a null element.", elements));
       }
-      if (e.contains(ZERO_BYTE_STRING)) {
+      if (e.contains(ZERO_BYTE_STRING) || e.contains(GROUP_SEPARATOR_STRING)) {
         throw new IllegalArgumentException(
-            String.format("Content key '%s' must not contain a zero byte.", elements));
+            String.format(
+                "Content key '%s' must not contain a zero byte (\\u0000) / group separator (\\u001D).",
+                elements));
       }
       if ("".equals(e)) {
         throw new IllegalArgumentException(
@@ -123,6 +126,6 @@ public abstract class ContentKey {
 
   @Override
   public String toString() {
-    return String.join(".", getElements());
+    return String.join(DOT_STRING, getElements());
   }
 }

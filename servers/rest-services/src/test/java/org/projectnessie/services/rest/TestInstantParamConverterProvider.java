@@ -22,7 +22,7 @@ import javax.ws.rs.ext.ParamConverter;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class InstantParamConverterProviderTest {
+public class TestInstantParamConverterProvider {
 
   private final ParamConverter<Instant> converter =
       new InstantParamConverterProvider().getConverter(Instant.class, null, null);

@@ -88,7 +88,7 @@ public class TestNamespace {
   public void testRoundTrip() {
     List<String> elements = asList("a", "b.c", "namespace");
     String pathString = UriUtil.toPathString(elements);
-    String expectedPathString = "a.b\u0000c.namespace";
+    String expectedPathString = "a.b\u001Dc.namespace";
     assertThat(pathString).isEqualTo(expectedPathString);
     Namespace namespace = Namespace.parse(pathString);
     assertThat(namespace.name()).isEqualTo(pathString);
@@ -96,11 +96,16 @@ public class TestNamespace {
     assertThat(namespace.toString()).isEqualTo(pathString);
     assertThat(namespace.toPathString()).isEqualTo(pathString);
     assertThat(namespace.name()).startsWith("a.b");
-    assertThat(namespace.name()).startsWith("a.b\u0000");
-    assertThat(namespace.name()).startsWith("a.b\u0000c");
-    assertThat(namespace.name()).startsWith("a.b\u0000c.namespa");
+    assertThat(namespace.name()).startsWith("a.b\u001D");
+    assertThat(namespace.name()).startsWith("a.b\u001Dc");
+    assertThat(namespace.name()).startsWith("a.b\u001Dc.namespa");
     assertThat(namespace.name()).doesNotStartWith("a.b.c");
-    assertThat(Namespace.parse("a.b.c").name()).doesNotStartWith("a.b\u0000");
+    assertThat(Namespace.parse("a.b.c").name()).doesNotStartWith("a.b\u001D");
+  }
+
+  @Test
+  public void testDifferentZeroByteRepresentations() {
+    assertThat(Namespace.parse("a.b\u001Dc.d")).isEqualTo(Namespace.parse("a.b\u0000c.d"));
   }
 
   @ParameterizedTest
@@ -146,13 +151,15 @@ public class TestNamespace {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {"\u0000", "a.\u0000", "a.b.c.\u0000"})
+  @ValueSource(
+      strings = {"\u0000", "a.\u0000", "a.b.c.\u0000", "\u001D", "a.\u001D", "a.b.c.\u001D"})
   void testZeroByteUsage(String identifier) {
     assertThatThrownBy(() -> Namespace.of(identifier))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage(
             String.format(
-                "Namespace '%s' must not contain a zero byte.", singletonList(identifier)));
+                "Namespace '%s' must not contain a zero byte (\\u0000) / group separator (\\u001D).",
+                singletonList(identifier)));
   }
 
   @ParameterizedTest
@@ -169,9 +176,9 @@ public class TestNamespace {
     return Stream.of(
         Arguments.of(new String[] {"a", "b"}, "a.b"),
         Arguments.of(new String[] {"a", "b", "c"}, "a.b.c"),
-        Arguments.of(new String[] {"a", "b.c", "d"}, "a.b\u0000c.d"),
-        Arguments.of(new String[] {"a", "b_c", "d.e"}, "a.b_c.d\u0000e"),
-        Arguments.of(new String[] {"a.c", "b.d"}, "a\u0000c.b\u0000d"));
+        Arguments.of(new String[] {"a", "b.c", "d"}, "a.b\u001Dc.d"),
+        Arguments.of(new String[] {"a", "b_c", "d.e"}, "a.b_c.d\u001De"),
+        Arguments.of(new String[] {"a.c", "b.d"}, "a\u001Dc.b\u001Dd"));
   }
 
   private static Stream<Arguments> identifierProvider() {
