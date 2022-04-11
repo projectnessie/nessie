@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2022 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.persist.serialize;
+package org.projectnessie.versioned.persist.adapter.serialize;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.toProto;
+import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.toProto;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -49,11 +49,13 @@ import org.projectnessie.versioned.persist.adapter.KeyList;
 import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.RepoDescription;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.NamedReference;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefPointer;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.RepoProps;
 
 /** (Re-)serialization tests using random data for relevant types. */
 class TestSerialization {
@@ -204,7 +206,7 @@ class TestSerialization {
     params.add(
         new TypeSerialization<>(
             RepoDescription.class,
-            AdapterTypes.RepoProps.class,
+            RepoProps.class,
             TestSerialization::createRepoDescription,
             ProtoSerialization::toProto,
             v -> {

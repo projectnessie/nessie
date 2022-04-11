@@ -15,12 +15,12 @@
  */
 package org.projectnessie.versioned.persist.rocks;
 
+import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.protoToCommitLogEntry;
+import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.protoToKeyList;
+import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.protoToRefLog;
+import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.protoToRepoDescription;
+import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.toProto;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.hashCollisionDetected;
-import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.protoToCommitLogEntry;
-import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.protoToKeyList;
-import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.protoToRefLog;
-import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.protoToRepoDescription;
-import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.toProto;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -43,13 +43,13 @@ import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 import org.projectnessie.versioned.persist.adapter.RefLog;
 import org.projectnessie.versioned.persist.adapter.RepoDescription;
+import org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapter;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalOperationContext;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
-import org.projectnessie.versioned.persist.serialize.ProtoSerialization;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.Holder;
 import org.rocksdb.RocksDBException;

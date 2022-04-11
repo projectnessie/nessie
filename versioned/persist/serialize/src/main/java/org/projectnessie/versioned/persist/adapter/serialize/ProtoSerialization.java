@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2022 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.persist.serialize;
+package org.projectnessie.versioned.persist.adapter.serialize;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -32,11 +32,14 @@ import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.RefLog;
 import org.projectnessie.versioned.persist.adapter.RepoDescription;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.RepoProps;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.RepoProps.Builder;
 
 public class ProtoSerialization {
 
-  public static AdapterTypes.RepoProps toProto(RepoDescription repoDescription) {
-    AdapterTypes.RepoProps.Builder proto =
+  public static RepoProps toProto(RepoDescription repoDescription) {
+    Builder proto =
         AdapterTypes.RepoProps.newBuilder().setRepoVersion(repoDescription.getRepoVersion());
     // Must be sorted
     new TreeMap<>(repoDescription.getProperties())

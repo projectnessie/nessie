@@ -36,10 +36,10 @@ import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
 import org.projectnessie.model.Namespace;
-import org.projectnessie.store.ObjectTypes;
-import org.projectnessie.store.ObjectTypes.IcebergMetadataPointer;
-import org.projectnessie.store.ObjectTypes.IcebergRefState;
-import org.projectnessie.store.ObjectTypes.IcebergViewState;
+import org.projectnessie.server.store.proto.ObjectTypes;
+import org.projectnessie.server.store.proto.ObjectTypes.IcebergMetadataPointer;
+import org.projectnessie.server.store.proto.ObjectTypes.IcebergRefState;
+import org.projectnessie.server.store.proto.ObjectTypes.IcebergViewState;
 
 class TestStoreWorker {
   private static final ObjectMapper MAPPER = new ObjectMapper();
