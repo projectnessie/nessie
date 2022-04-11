@@ -20,7 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.io.IOException;
-import java.util.Optional;
+import java.util.function.Supplier;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.Content.Type;
@@ -47,13 +47,13 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
   public ByteString toStoreOnReferenceState(Content content) {
     ObjectTypes.Content.Builder builder = ObjectTypes.Content.newBuilder().setId(content.getId());
     if (content instanceof IcebergTable) {
-      IcebergTable state = (IcebergTable) content;
+      IcebergTable table = (IcebergTable) content;
       ObjectTypes.IcebergRefState.Builder stateBuilder =
           ObjectTypes.IcebergRefState.newBuilder()
-              .setSnapshotId(state.getSnapshotId())
-              .setSchemaId(state.getSchemaId())
-              .setSpecId(state.getSpecId())
-              .setSortOrderId(state.getSortOrderId());
+              .setSnapshotId(table.getSnapshotId())
+              .setSchemaId(table.getSchemaId())
+              .setSpecId(table.getSpecId())
+              .setSortOrderId(table.getSortOrderId());
       builder.setIcebergRefState(stateBuilder);
     } else if (content instanceof IcebergView) {
       IcebergView view = (IcebergView) content;
@@ -108,48 +108,36 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
   }
 
   @Override
-  public Content valueFromStore(ByteString onReferenceValue, Optional<ByteString> globalState) {
+  public Content valueFromStore(ByteString onReferenceValue, Supplier<ByteString> globalState) {
     ObjectTypes.Content content = parse(onReferenceValue);
-    Optional<ObjectTypes.Content> globalContent =
-        globalState.map(TableCommitMetaStoreWorker::parse);
     switch (content.getObjectTypeCase()) {
       case DELTA_LAKE_TABLE:
+        ObjectTypes.DeltaLakeTable deltaLakeTable = content.getDeltaLakeTable();
         Builder builder =
             ImmutableDeltaLakeTable.builder()
                 .id(content.getId())
-                .addAllMetadataLocationHistory(
-                    content.getDeltaLakeTable().getMetadataLocationHistoryList())
-                .addAllCheckpointLocationHistory(
-                    content.getDeltaLakeTable().getCheckpointLocationHistoryList());
-        if (content.getDeltaLakeTable().getLastCheckpoint() != null) {
+                .addAllMetadataLocationHistory(deltaLakeTable.getMetadataLocationHistoryList())
+                .addAllCheckpointLocationHistory(deltaLakeTable.getCheckpointLocationHistoryList());
+        if (deltaLakeTable.hasLastCheckpoint()) {
           builder.lastCheckpoint(content.getDeltaLakeTable().getLastCheckpoint());
         }
         return builder.build();
 
       case ICEBERG_REF_STATE:
-        ObjectTypes.Content global =
-            globalContent.orElseThrow(TableCommitMetaStoreWorker::noIcebergMetadataPointer);
-        if (!global.hasIcebergMetadataPointer()) {
-          throw noIcebergMetadataPointer();
-        }
+        ObjectTypes.IcebergRefState table = content.getIcebergRefState();
         return ImmutableIcebergTable.builder()
-            .metadataLocation(global.getIcebergMetadataPointer().getMetadataLocation())
-            .snapshotId(content.getIcebergRefState().getSnapshotId())
-            .schemaId(content.getIcebergRefState().getSchemaId())
-            .specId(content.getIcebergRefState().getSpecId())
-            .sortOrderId(content.getIcebergRefState().getSortOrderId())
+            .metadataLocation(metadataLocationFromGlobal(globalState))
+            .snapshotId(table.getSnapshotId())
+            .schemaId(table.getSchemaId())
+            .specId(table.getSpecId())
+            .sortOrderId(table.getSortOrderId())
             .id(content.getId())
             .build();
 
       case ICEBERG_VIEW_STATE:
-        ObjectTypes.Content globalView =
-            globalContent.orElseThrow(TableCommitMetaStoreWorker::noIcebergMetadataPointer);
-        if (!globalView.hasIcebergMetadataPointer()) {
-          throw noIcebergMetadataPointer();
-        }
         ObjectTypes.IcebergViewState view = content.getIcebergViewState();
         return ImmutableIcebergView.builder()
-            .metadataLocation(globalView.getIcebergMetadataPointer().getMetadataLocation())
+            .metadataLocation(metadataLocationFromGlobal(globalState))
             .versionId(view.getVersionId())
             .schemaId(view.getSchemaId())
             .dialect(view.getDialect())
@@ -165,6 +153,18 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
       default:
         throw new IllegalArgumentException("Unknown type " + content.getObjectTypeCase());
     }
+  }
+
+  private String metadataLocationFromGlobal(Supplier<ByteString> globalContent) {
+    ByteString globalBytes = globalContent.get();
+    if (globalBytes == null) {
+      throw noIcebergMetadataPointer();
+    }
+    ObjectTypes.Content global = parse(globalBytes);
+    if (!global.hasIcebergMetadataPointer()) {
+      throw noIcebergMetadataPointer();
+    }
+    return global.getIcebergMetadataPointer().getMetadataLocation();
   }
 
   private static IllegalArgumentException noIcebergMetadataPointer() {
@@ -194,16 +194,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
 
   @Override
   public Type getType(Content content) {
-    if (content instanceof IcebergTable) {
-      return Type.ICEBERG_TABLE;
-    } else if (content instanceof IcebergView) {
-      return Type.ICEBERG_VIEW;
-    } else if (content instanceof DeltaLakeTable) {
-      return Type.DELTA_LAKE_TABLE;
-    } else if (content instanceof Namespace) {
-      return Type.NAMESPACE;
-    }
-    throw new IllegalArgumentException("Unknown type " + content);
+    return content.getType();
   }
 
   @Override
@@ -219,10 +210,10 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
   public Type getType(ByteString onRefContent) {
     ObjectTypes.Content parsed = parse(onRefContent);
 
-    if (parsed.hasIcebergViewState()) {
+    if (parsed.hasIcebergRefState()) {
       return Type.ICEBERG_TABLE;
     }
-    if (parsed.hasIcebergRefState()) {
+    if (parsed.hasIcebergViewState()) {
       return Type.ICEBERG_VIEW;
     }
 
@@ -238,13 +229,37 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
   }
 
   @Override
-  public boolean requiresGlobalState(Enum<Type> type) {
-    return type == Type.ICEBERG_TABLE || type == Type.ICEBERG_VIEW;
+  public boolean requiresGlobalState(Content content) {
+    switch (content.getType()) {
+      case ICEBERG_TABLE:
+      case ICEBERG_VIEW:
+        return true;
+      case DELTA_LAKE_TABLE:
+      case NAMESPACE:
+        return false;
+      default:
+        throw new IllegalArgumentException("Unknown onRefContent " + content);
+    }
   }
 
-  private static ObjectTypes.Content parse(ByteString onReferenceValue) {
+  @Override
+  public boolean requiresGlobalState(ByteString content) {
+    ObjectTypes.Content parsed = parse(content);
+    switch (parsed.getObjectTypeCase()) {
+      case ICEBERG_REF_STATE:
+      case ICEBERG_VIEW_STATE:
+        return true;
+      case DELTA_LAKE_TABLE:
+      case NAMESPACE:
+        return false;
+      default:
+        throw new IllegalArgumentException("Unsupported on-ref content " + parsed);
+    }
+  }
+
+  private static ObjectTypes.Content parse(ByteString value) {
     try {
-      return ObjectTypes.Content.parseFrom(onReferenceValue);
+      return ObjectTypes.Content.parseFrom(value);
     } catch (InvalidProtocolBufferException e) {
       throw new RuntimeException("Failure parsing data", e);
     }
