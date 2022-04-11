@@ -115,8 +115,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
               if (keys.anyMatch(
                   k ->
                       Namespace.of(k.getKey().getElements())
-                              .name()
-                              .startsWith(params.getNamespace().name())
+                              .isSameOrSubElementOf(params.getNamespace())
                           && k.getType() != Type.NAMESPACE)) {
                 throw namespaceNotEmptyException(params);
               }
@@ -227,7 +226,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
     return getStore()
         .getKeys(branch)
         .filter(earlyFilterPredicate)
-        .filter(k -> null == namespace || namespaceFromType(k).name().startsWith(namespace.name()));
+        .filter(k -> null == namespace || namespaceFromType(k).isSameOrSubElementOf(namespace));
   }
 
   /**
