@@ -59,7 +59,6 @@ public abstract class AbstractTracing extends AbstractNestedVersionStore {
     12 (39000µs)          DatabaseAdapter.create {nessie.database-adapter.operation=create, nessie.database-adapter.hash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d, nessie.database-adapter.ref=traceCreateBranch}
     13 (36000µs)              DatabaseAdapter.try-loop.createRef {nessie.database-adapter.operation=try-loop.createRef, nessie.database-adapter.try-loop.attempt=0, nessie.database-adapter.try-loop.retries=0}
     14 (    0µs)                  DatabaseAdapter.fetchGlobalPointer {nessie.database-adapter.operation=fetchGlobalPointer}
-    16 (    0µs)                  DatabaseAdapter.writeGlobalCommit {nessie.database-adapter.operation=writeGlobalCommit}
     18 (    0µs)                  DatabaseAdapter.writeRefLog {nessie.database-adapter.operation=writeRefLog}
     19 (    0µs)                  DatabaseAdapter.globalPointerCas {nessie.database-adapter.operation=globalPointerCas}
     */
@@ -81,7 +80,6 @@ public abstract class AbstractTracing extends AbstractNestedVersionStore {
                                                 tryLoop ->
                                                     tryLoop
                                                         .add("DatabaseAdapter.fetchGlobalPointer")
-                                                        .add("DatabaseAdapter.writeGlobalCommit")
                                                         .add("DatabaseAdapter.writeRefLog")
                                                         .add(
                                                             "DatabaseAdapter.globalPointerCas"))))),

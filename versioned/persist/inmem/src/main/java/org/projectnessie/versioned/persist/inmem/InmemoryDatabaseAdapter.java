@@ -25,6 +25,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -131,11 +132,11 @@ public class InmemoryDatabaseAdapter
   @Override
   protected void doCleanUpCommitCas(
       NonTransactionalOperationContext ctx,
-      Hash globalId,
+      Optional<Hash> globalHead,
       Set<Hash> branchCommits,
       Set<Hash> newKeyLists,
       Hash refLogId) {
-    store.globalStateLog.remove(dbKey(globalId));
+    globalHead.ifPresent(h -> store.globalStateLog.remove(dbKey(h)));
     branchCommits.forEach(h -> store.commitLog.remove(dbKey(h)));
     newKeyLists.forEach(h -> store.keyLists.remove(dbKey(h)));
     store.refLog.remove(dbKey(refLogId));

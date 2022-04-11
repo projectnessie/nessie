@@ -146,8 +146,8 @@ public abstract class AbstractCompactGlobalLog {
         .containsEntry("compacted", "true")
         .containsEntry("entries.puts", Long.toString(commits))
         .containsEntry("entries.uniquePuts", Long.toString(contentIdEmitter.size()))
-        .containsEntry("entries.read", Long.toString(commits + 2))
-        .containsEntry("entries.read.total", Long.toString(commits + 2));
+        .containsEntry("entries.read", Long.toString(commits + 1))
+        .containsEntry("entries.read.total", Long.toString(commits + 1));
 
     // Verify again
     verify.run();

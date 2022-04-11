@@ -1277,7 +1277,10 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
           });
     }
 
-    Map<ContentId, ByteString> globals = fetchGlobalStates(ctx, contentIdsForGlobal);
+    Map<ContentId, ByteString> globals =
+        contentIdsForGlobal.isEmpty()
+            ? Collections.emptyMap()
+            : fetchGlobalStates(ctx, contentIdsForGlobal);
 
     return nonGlobal.entrySet().stream()
         .collect(
@@ -1755,10 +1758,13 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
   protected void checkExpectedGlobalStates(
       OP_CONTEXT ctx, CommitParams commitParams, Consumer<String> mismatches)
       throws ReferenceNotFoundException {
-    Map<ContentId, ByteString> globalStates =
-        fetchGlobalStates(ctx, commitParams.getExpectedStates().keySet());
-    for (Entry<ContentId, Optional<ByteString>> expectedState :
-        commitParams.getExpectedStates().entrySet()) {
+    Map<ContentId, Optional<ByteString>> expectedStates = commitParams.getExpectedStates();
+    if (expectedStates.isEmpty()) {
+      return;
+    }
+
+    Map<ContentId, ByteString> globalStates = fetchGlobalStates(ctx, expectedStates.keySet());
+    for (Entry<ContentId, Optional<ByteString>> expectedState : expectedStates.entrySet()) {
       ByteString currentState = globalStates.get(expectedState.getKey());
       if (currentState == null) {
         if (expectedState.getValue().isPresent()) {

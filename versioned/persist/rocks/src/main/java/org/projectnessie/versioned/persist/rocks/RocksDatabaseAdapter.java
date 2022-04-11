@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.function.Function;
@@ -229,7 +230,7 @@ public class RocksDatabaseAdapter
   @Override
   protected void doCleanUpCommitCas(
       NonTransactionalOperationContext ctx,
-      Hash globalId,
+      Optional<Hash> globalHead,
       Set<Hash> branchCommits,
       Set<Hash> newKeyLists,
       Hash refLogId) {
@@ -237,7 +238,9 @@ public class RocksDatabaseAdapter
     lock.lock();
     try {
       WriteBatch batch = new WriteBatch();
-      batch.delete(dbInstance.getCfGlobalLog(), dbKey(globalId));
+      if (globalHead.isPresent()) {
+        batch.delete(dbInstance.getCfGlobalLog(), dbKey(globalHead.get()));
+      }
       for (Hash h : branchCommits) {
         batch.delete(dbInstance.getCfCommitLog(), dbKey(h));
       }
