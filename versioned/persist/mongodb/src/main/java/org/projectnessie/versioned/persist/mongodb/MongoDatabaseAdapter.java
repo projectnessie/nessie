@@ -34,6 +34,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -438,11 +439,11 @@ public class MongoDatabaseAdapter
   @Override
   protected void doCleanUpCommitCas(
       NonTransactionalOperationContext ctx,
-      Hash globalId,
+      Optional<Hash> globalHead,
       Set<Hash> branchCommits,
       Set<Hash> newKeyLists,
       Hash refLogId) {
-    client.getGlobalLog().deleteOne(Filters.eq(toId(globalId)));
+    globalHead.ifPresent(h -> client.getGlobalLog().deleteOne(Filters.eq(toId(h))));
 
     delete(client.getCommitLog(), branchCommits);
     delete(client.getKeyLists(), newKeyLists);

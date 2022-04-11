@@ -103,12 +103,17 @@ message RefLogEntry {
 
 // Used by non-transactional database-adapters
 message GlobalStatePointer {
+  // Random ID, used for CAS.
   bytes global_id = 1;
   // most recently updated named reference appears first
   repeated NamedReference named_references = 2;
   bytes ref_log_id = 3;
   repeated bytes global_parents_incl_head = 4;
   repeated bytes ref_log_parents_incl_head = 5;
+  // If present, contains the ID of the head of the global-log.
+  // If not present, probably from an older Nessie version, global_id
+  // represents the head of the global-log.
+  optional bytes global_log_head = 6;
 }
 
 // Used by transactional database-adapters

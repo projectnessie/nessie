@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -285,14 +286,14 @@ public class DynamoDatabaseAdapter
   @Override
   protected void doCleanUpCommitCas(
       NonTransactionalOperationContext ctx,
-      Hash globalId,
+      Optional<Hash> globalHead,
       Set<Hash> branchCommits,
       Set<Hash> newKeyLists,
       Hash refLogId) {
     try (BatchDelete batchDelete = new BatchDelete()) {
       branchCommits.forEach(h -> batchDelete.add(TABLE_COMMIT_LOG, h));
       newKeyLists.forEach(h -> batchDelete.add(TABLE_KEY_LISTS, h));
-      batchDelete.add(TABLE_GLOBAL_LOG, globalId);
+      globalHead.ifPresent(h -> batchDelete.add(TABLE_GLOBAL_LOG, h));
       batchDelete.add(TABLE_REF_LOG, refLogId);
     }
   }
