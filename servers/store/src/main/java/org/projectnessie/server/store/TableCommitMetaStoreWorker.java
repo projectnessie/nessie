@@ -34,7 +34,7 @@ import org.projectnessie.model.ImmutableIcebergTable;
 import org.projectnessie.model.ImmutableIcebergView;
 import org.projectnessie.model.ImmutableNamespace;
 import org.projectnessie.model.Namespace;
-import org.projectnessie.store.ObjectTypes;
+import org.projectnessie.server.store.proto.ObjectTypes;
 import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.StoreWorker;
 

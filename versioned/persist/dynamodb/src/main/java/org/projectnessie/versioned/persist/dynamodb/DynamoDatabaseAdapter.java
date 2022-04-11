@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.persist.dynamodb;
 
+import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.toProto;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.KEY_NAME;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_COMMIT_LOG;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_GLOBAL_LOG;
@@ -23,7 +24,6 @@ import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_KEY_LIST
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_REF_LOG;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_REPO_DESC;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.VALUE_NAME;
-import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.toProto;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
@@ -50,14 +50,14 @@ import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 import org.projectnessie.versioned.persist.adapter.RefLog;
 import org.projectnessie.versioned.persist.adapter.RepoDescription;
+import org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization;
+import org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.Parser;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapter;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalOperationContext;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogEntry;
-import org.projectnessie.versioned.persist.serialize.ProtoSerialization;
-import org.projectnessie.versioned.persist.serialize.ProtoSerialization.Parser;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.dynamodb.model.AttributeAction;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;

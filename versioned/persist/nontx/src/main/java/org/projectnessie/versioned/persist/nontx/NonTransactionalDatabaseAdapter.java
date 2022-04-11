@@ -82,6 +82,7 @@ import org.projectnessie.versioned.persist.adapter.RefLog;
 import org.projectnessie.versioned.persist.adapter.RepoDescription;
 import org.projectnessie.versioned.persist.adapter.RepoMaintenanceParams;
 import org.projectnessie.versioned.persist.adapter.TransplantParams;
+import org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization;
 import org.projectnessie.versioned.persist.adapter.spi.AbstractDatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.spi.Traced;
 import org.projectnessie.versioned.persist.adapter.spi.TryLoopState;
@@ -96,7 +97,6 @@ import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogEntry.Op
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogEntry.RefType;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefPointer;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefPointer.Type;
-import org.projectnessie.versioned.persist.serialize.ProtoSerialization;
 
 /**
  * Non-transactional database-adapter implementation suitable for no-sql databases.

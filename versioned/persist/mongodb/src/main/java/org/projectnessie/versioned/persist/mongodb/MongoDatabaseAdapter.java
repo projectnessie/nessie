@@ -15,8 +15,8 @@
  */
 package org.projectnessie.versioned.persist.mongodb;
 
-import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.protoToKeyList;
-import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.toProto;
+import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.protoToKeyList;
+import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.toProto;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.mongodb.ErrorCategory;
@@ -50,6 +50,8 @@ import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 import org.projectnessie.versioned.persist.adapter.RefLog;
 import org.projectnessie.versioned.persist.adapter.RepoDescription;
+import org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization;
+import org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.Parser;
 import org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapter;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
@@ -58,8 +60,6 @@ import org.projectnessie.versioned.persist.serialize.AdapterTypes;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RepoProps;
-import org.projectnessie.versioned.persist.serialize.ProtoSerialization;
-import org.projectnessie.versioned.persist.serialize.ProtoSerialization.Parser;
 
 public class MongoDatabaseAdapter
     extends NonTransactionalDatabaseAdapter<NonTransactionalDatabaseAdapterConfig> {

@@ -15,6 +15,11 @@
  */
 package org.projectnessie.versioned.persist.tx;
 
+import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.protoToCommitLogEntry;
+import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.protoToKeyList;
+import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.protoToRefLog;
+import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.protoToRepoDescription;
+import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.toProto;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.assignConflictMessage;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.commitConflictMessage;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.createConflictMessage;
@@ -29,11 +34,6 @@ import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUti
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.verifyExpectedHash;
 import static org.projectnessie.versioned.persist.adapter.spi.Traced.trace;
 import static org.projectnessie.versioned.persist.adapter.spi.TryLoopState.newTryLoopState;
-import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.protoToCommitLogEntry;
-import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.protoToKeyList;
-import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.protoToRefLog;
-import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.protoToRepoDescription;
-import static org.projectnessie.versioned.persist.serialize.ProtoSerialization.toProto;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;

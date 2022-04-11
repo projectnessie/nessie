@@ -16,7 +16,7 @@
 syntax = "proto3";
 package nessie.store;
 
-option java_package = "org.projectnessie.store";
+option java_package = "org.projectnessie.server.store.proto";
 option java_outer_classname = "ObjectTypes";
 option java_generate_equals_and_hash = true;
 
