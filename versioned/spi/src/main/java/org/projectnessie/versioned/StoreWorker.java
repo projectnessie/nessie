@@ -16,7 +16,7 @@
 package org.projectnessie.versioned;
 
 import com.google.protobuf.ByteString;
-import java.util.Optional;
+import java.util.function.Supplier;
 
 /**
  * A set of helpers that users of a VersionStore must implement.
@@ -31,21 +31,15 @@ public interface StoreWorker<CONTENT, COMMIT_METADATA, CONTENT_TYPE extends Enum
 
   ByteString toStoreGlobalState(CONTENT content);
 
-  CONTENT valueFromStore(ByteString onReferenceValue, Optional<ByteString> globalState);
+  CONTENT valueFromStore(ByteString onReferenceValue, Supplier<ByteString> globalState);
 
   String getId(CONTENT content);
 
   Byte getPayload(CONTENT content);
 
-  default boolean requiresGlobalState(ByteString content) {
-    return requiresGlobalState(getType(content));
-  }
+  boolean requiresGlobalState(ByteString content);
 
-  default boolean requiresGlobalState(CONTENT content) {
-    return requiresGlobalState(getType(content));
-  }
-
-  boolean requiresGlobalState(Enum<CONTENT_TYPE> contentType);
+  boolean requiresGlobalState(CONTENT content);
 
   CONTENT_TYPE getType(ByteString onRefContent);
 

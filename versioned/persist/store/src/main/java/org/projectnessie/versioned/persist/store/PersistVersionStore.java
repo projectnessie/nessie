@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
@@ -118,6 +118,17 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
                 contentId,
                 storeWorker.getPayload(op.getValue()),
                 storeWorker.toStoreOnReferenceState(op.getValue())));
+
+        if (op.getExpectedValue() != null) {
+          ContentId expectedContentId = ContentId.of(storeWorker.getId(op.getExpectedValue()));
+          if (!contentId.equals(expectedContentId)) {
+            throw new IllegalArgumentException(
+                String.format(
+                    "Content Ids for new ('%s') and expected ('%s') content differ for key '%s'",
+                    contentId, expectedContentId, op.getKey()));
+          }
+        }
+
         if (storeWorker.requiresGlobalState(op.getValue())) {
           ByteString newState = storeWorker.toStoreGlobalState(op.getValue());
           Optional<ByteString> expectedValue;
@@ -160,14 +171,6 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
             }
           }
           globals.put(contentId, newState);
-
-        } else {
-          if (op.getExpectedValue() != null) {
-            throw new IllegalArgumentException(
-                String.format(
-                    "Content-type '%s' for put-operation for key '%s' does not support global state, expected-value not supported for this content-type.",
-                    storeWorker.getType(op.getValue()), op.getKey()));
-          }
         }
       } else if (operation instanceof Delete) {
         commitAttempt.addDeletes(operation.getKey());
@@ -319,16 +322,16 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
     }
 
     // Memoize already retrieved global-content
-    Map<ContentId, Optional<ByteString>> globalContents = new HashMap<>();
-    BiFunction<ContentId, Byte, Optional<ByteString>> getGlobalContents =
-        (contentId, type) -> {
-          if (!storeWorker.requiresGlobalState(storeWorker.getType(type))) {
-            return Optional.empty();
-          }
-          return globalContents.computeIfAbsent(
-              contentId,
-              cid -> databaseAdapter.globalContent(contentId).map(ContentIdAndBytes::getValue));
-        };
+    Map<ContentId, ByteString> globalContents = new HashMap<>();
+    Function<KeyWithBytes, ByteString> getGlobalContents =
+        (put) ->
+            globalContents.computeIfAbsent(
+                put.getContentId(),
+                cid ->
+                    databaseAdapter
+                        .globalContent(put.getContentId())
+                        .map(ContentIdAndBytes::getValue)
+                        .orElse(null));
 
     return (commitBuilder, logEntry) -> {
       if (!logEntry.getParents().isEmpty()) {
@@ -338,13 +341,13 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
       logEntry
           .getPuts()
           .forEach(
-              put ->
-                  commitBuilder.addOperations(
-                      Put.of(
-                          put.getKey(),
-                          storeWorker.valueFromStore(
-                              put.getValue(),
-                              getGlobalContents.apply(put.getContentId(), put.getType())))));
+              put -> {
+                commitBuilder.addOperations(
+                    Put.of(
+                        put.getKey(),
+                        storeWorker.valueFromStore(
+                            put.getValue(), () -> getGlobalContents.apply(put))));
+              });
     };
   }
 
@@ -375,7 +378,7 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
   }
 
   private CONTENT mapContentAndState(ContentAndState<ByteString> cs) {
-    return storeWorker.valueFromStore(cs.getRefState(), Optional.ofNullable(cs.getGlobalState()));
+    return storeWorker.valueFromStore(cs.getRefState(), cs::getGlobalState);
   }
 
   @Override
@@ -388,8 +391,11 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
             d ->
                 Diff.of(
                     d.getKey(),
-                    d.getFromValue().map(v -> storeWorker.valueFromStore(v, d.getGlobal())),
-                    d.getToValue().map(v -> storeWorker.valueFromStore(v, d.getGlobal()))));
+                    d.getFromValue()
+                        .map(v -> storeWorker.valueFromStore(v, () -> d.getGlobal().orElse(null))),
+                    d.getToValue()
+                        .map(
+                            v -> storeWorker.valueFromStore(v, () -> d.getGlobal().orElse(null)))));
   }
 
   private Hash refToHash(Ref ref) throws ReferenceNotFoundException {

@@ -22,10 +22,9 @@ import static org.projectnessie.versioned.testworker.OnRefOnly.onRef;
 import static org.projectnessie.versioned.testworker.WithGlobalStateContent.withGlobal;
 
 import com.google.protobuf.ByteString;
-import java.util.Optional;
+import java.util.function.Supplier;
 import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.StoreWorker;
-import org.projectnessie.versioned.testworker.BaseContent.Type;
 
 /**
  * {@link StoreWorker} implementation for tests using types that are independent of those in the
@@ -75,7 +74,7 @@ public final class SimpleStoreWorker
   }
 
   @Override
-  public BaseContent valueFromStore(ByteString onReferenceValue, Optional<ByteString> globalState) {
+  public BaseContent valueFromStore(ByteString onReferenceValue, Supplier<ByteString> globalState) {
     String serialized = onReferenceValue.toStringUtf8();
 
     int i = serialized.indexOf(':');
@@ -88,13 +87,14 @@ public final class SimpleStoreWorker
     i = serialized.indexOf(':');
     String onRef = serialized.substring(i + 1);
 
+    ByteString global = globalState.get();
     switch (type) {
       case ON_REF_ONLY:
-        assertThat(globalState).isEmpty();
+        assertThat(global).isNull();
         return onRef(onRef, contentId);
       case WITH_GLOBAL_STATE:
-        assertThat(globalState).isNotEmpty();
-        return withGlobal(globalState.get().toStringUtf8(), onRef, contentId);
+        assertThat(global).isNotNull();
+        return withGlobal(global.toStringUtf8(), onRef, contentId);
       default:
         throw new IllegalArgumentException("" + onReferenceValue);
     }
@@ -111,9 +111,12 @@ public final class SimpleStoreWorker
   }
 
   @Override
-  public Type getType(ByteString onRefContent) {
+  public BaseContent.Type getType(ByteString onRefContent) {
     String serialized = onRefContent.toStringUtf8();
     int i = serialized.indexOf(':');
+    if (i == -1) {
+      return BaseContent.Type.ON_REF_ONLY;
+    }
     String typeString = serialized.substring(0, i);
     return BaseContent.Type.valueOf(typeString);
   }
@@ -135,8 +138,13 @@ public final class SimpleStoreWorker
   }
 
   @Override
-  public boolean requiresGlobalState(Enum<BaseContent.Type> type) {
-    return type == BaseContent.Type.WITH_GLOBAL_STATE;
+  public boolean requiresGlobalState(ByteString content) {
+    return getType(content) == BaseContent.Type.WITH_GLOBAL_STATE;
+  }
+
+  @Override
+  public boolean requiresGlobalState(BaseContent baseContent) {
+    return baseContent instanceof WithGlobalStateContent;
   }
 
   @Override
