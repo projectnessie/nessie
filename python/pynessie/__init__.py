@@ -24,7 +24,7 @@ from .conf import build_config
 
 __author__ = """Project Nessie"""
 __email__ = "nessie-release-builder@dremio.com"
-__version__ = "0.25.1"
+__version__ = "0.26.0"
 
 
 def get_config(config_dir: str = None, args: dict = None) -> confuse.Configuration:
