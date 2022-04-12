@@ -40,6 +40,11 @@ message IcebergRefState {
   int32 schema_id = 2;
   int32 spec_id = 3;
   int32 sort_order_id = 4;
+  // If metadata_location is present, the state of the Iceberg view is
+  // maintained purely on the reference/commit.
+  // If metadata_location not present, the location needs to be fetched
+  // from global state.
+  optional string metadata_location = 5;
 }
 
 message IcebergViewState {
@@ -47,6 +52,11 @@ message IcebergViewState {
   int32 schema_id = 2;
   string sql_text = 3;
   string dialect = 4;
+  // If metadata_location is present, the state of the Iceberg view is
+  // maintained purely on the reference/commit.
+  // If metadata_location not present, the location needs to be fetched
+  // from global state.
+  optional string metadata_location = 5;
 }
 
 message DeltaLakeTable {

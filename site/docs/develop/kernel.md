@@ -27,9 +27,9 @@ current state of a table in a data lake. Whenever a table has changed via for ex
 a so-called commit operation instructs Nessie to record the new state in a Nessie commit, which
 carries the `Content` object(s).
 
-`IcebergTable` contains the _current_ and _global_ pointer to Iceberg's table metadata plus the
+`IcebergTable` contains the pointer to Iceberg's table metadata plus the
 IDs of the snapshot, schema, partition spec, sort order defined in the table metadata.
-- Since Iceberg's table metadata manages information that must be consistent across all branches in Nessie, it is stored as so-called _global state_.
+- Iceberg's table metadata manages information is stored in the Nessie commit.
 - The value of the snapshot-ID, schema-ID, partition-spec-ID, sort-order-ID is stored per Nessie named reference (branch or tag).
 For more information, please refer the spec [On Reference State vs Global State](spec.md#on-reference-state-vs-global-state)
 
@@ -75,8 +75,7 @@ The data model for non-transactional key-value databases relies on a single _glo
 which is technically a table with a single row pointing to the _current_ entry in the _global-log_,
 _current_ entry in the _ref-log_ and the "HEAD"s of all named references (branches and tags).
 
-The _global-log_ contains the changes of the _global-state_, like the location of Iceberg's
-table metadata.
+The _global-log_ contains changes to _global-state_, which is needed for backwards compatibility.
 
 The _ref-log_ contains the history with details of operations 
 like COMMIT, MERGE, TRANSPLANT, CREATE_REFERENCE, DELETE_REFERENCE, ASSIGN_REFERENCE.
@@ -191,11 +190,11 @@ support atomic CAS (compare-and-swap) operations against a single row/record, bu
 conditional updates to multiple rows/records is either not supported at all or extremely slow.
 
 Nessie differentiates between content types that do require so called _global-state_ and those
-that do not. Apache Iceberg is currently the only content type that supports global state:
-the pointer to the Iceberg "Table Metadata" is tracked as "global state" and 
-the Iceberg snapshot ID, schema ID, partition spec ID, sort order ID
-is tracker per _Nessie named reference_. For _Nessie commits_, which are atomic, this means that
-Nessie has to update both the global-state and the on-reference-state for the Iceberg table. While
+that do not. _Global-state_ is maintained globally and evaluated when a content value object is
+being retrieved, combined with the requested on-reference state on a Nessie commit.
+For _Nessie commits_, which are atomic, this means that
+Nessie has to update both the global-state and the on-reference-state for a content type that
+requires _global state_. While
 this is not an issue with a relational/transactional database, it is an issue in a key-value store.
 Nessie solves this with a single "global pointer", which is updated using a CAS operation.
 
@@ -213,7 +212,7 @@ The logical data model shared by all non-transactional database adapters consist
 * _Commit-log_ contains all commit log entries, identified by a deterministic hash. This is the same
   as for transactional databases.
 * _Global-state-log_ contains all changes to the global state for content types that do require
-  global state (currently Apache Iceberg). The row keys are random IDs.
+  global state. The row keys are random IDs.
 * _Key-lists_ acts as an "overflow" for large key lists that do not fit entirely into a single
   commit log entry's embedded key list.
 * _Ref-log_ contains the history with details of operations
@@ -231,7 +230,7 @@ The data for transactional database adapters consists of six tables:
 * _Named-references_ contains all named references and their current HEAD, the latter is used to
   guarantee consistent updates.
 * _Global-state_ contains the current global state for a contents ID for content types that require
-  global state (currently Apache Iceberg). Consistent changes are guaranteed by tracking a checksum
+  global state. Consistent changes are guaranteed by tracking a checksum
   + value of the contents of the value representing the global state.
 * _Commit-log_ contains all commit log entries, identified by a deterministic hash. This is the same
   as for non-transactional databases.

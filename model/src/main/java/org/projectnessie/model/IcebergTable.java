@@ -38,17 +38,14 @@ import org.immutables.value.Value;
  */
 @Schema(
     type = SchemaType.OBJECT,
-    title = "Iceberg table global state",
+    title = "Iceberg table state",
     description =
-        "Represents the global state of an Iceberg table in Nessie. An Iceberg table is globally "
+        "Represents the state of an Iceberg table in Nessie. An Iceberg table is globally "
             + "identified via its unique 'Content.id'.\n"
             + "\n"
             + "A Nessie commit-operation, performed via 'TreeApi.commitMultipleOperations',"
             + "for Iceberg consists of a 'Operation.Put' with an 'IcebergTable' as in the 'content' "
-            + "field and the previous value of 'IcebergTable' in the 'expectedContent' field.\n"
-            + "\n"
-            + "During a commit-operation, Nessie checks whether the known global state of the "
-            + "Iceberg table is compatible (think: equal) to 'Operation.Put.expectedContent'.")
+            + "field and the previous value of 'IcebergTable' in the 'expectedContent' field.")
 @Value.Immutable
 @JsonSerialize(as = ImmutableIcebergTable.class)
 @JsonDeserialize(as = ImmutableIcebergTable.class)

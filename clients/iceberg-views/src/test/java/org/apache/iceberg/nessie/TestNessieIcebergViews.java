@@ -271,7 +271,7 @@ public class TestNessieIcebergViews extends BaseIcebergTest {
     IcebergView original = getIcebergView(VIEW_IDENTIFIER, BRANCH);
     IcebergView updated = getIcebergView(VIEW_IDENTIFIER, branch1);
     assertThat(updated).isNotEqualTo(original);
-    assertThat(updated.getMetadataLocation()).isEqualTo(original.getMetadataLocation());
+    assertThat(updated.getMetadataLocation()).isNotEqualTo(original.getMetadataLocation());
     assertThat(original.getVersionId()).isEqualTo(1);
     assertThat(updated.getVersionId()).isEqualTo(2);
     assertThat(original.getSqlText()).isEqualTo(SQL);

@@ -53,7 +53,8 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
               .setSnapshotId(table.getSnapshotId())
               .setSchemaId(table.getSchemaId())
               .setSpecId(table.getSpecId())
-              .setSortOrderId(table.getSortOrderId());
+              .setSortOrderId(table.getSortOrderId())
+              .setMetadataLocation(table.getMetadataLocation());
       builder.setIcebergRefState(stateBuilder);
     } else if (content instanceof IcebergView) {
       IcebergView view = (IcebergView) content;
@@ -62,7 +63,8 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
               .setVersionId(view.getVersionId())
               .setSchemaId(view.getSchemaId())
               .setDialect(view.getDialect())
-              .setSqlText(view.getSqlText()));
+              .setSqlText(view.getSqlText())
+              .setMetadataLocation(view.getMetadataLocation()));
     } else if (content instanceof DeltaLakeTable) {
       ObjectTypes.DeltaLakeTable.Builder table =
           ObjectTypes.DeltaLakeTable.newBuilder()
@@ -125,8 +127,14 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
 
       case ICEBERG_REF_STATE:
         ObjectTypes.IcebergRefState table = content.getIcebergRefState();
+        String metadataLocation;
+        if (table.hasMetadataLocation()) {
+          metadataLocation = table.getMetadataLocation();
+        } else {
+          metadataLocation = metadataLocationFromGlobal(globalState);
+        }
         return ImmutableIcebergTable.builder()
-            .metadataLocation(metadataLocationFromGlobal(globalState))
+            .metadataLocation(metadataLocation)
             .snapshotId(table.getSnapshotId())
             .schemaId(table.getSchemaId())
             .specId(table.getSpecId())
@@ -136,8 +144,13 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
 
       case ICEBERG_VIEW_STATE:
         ObjectTypes.IcebergViewState view = content.getIcebergViewState();
+        if (view.hasMetadataLocation()) {
+          metadataLocation = view.getMetadataLocation();
+        } else {
+          metadataLocation = metadataLocationFromGlobal(globalState);
+        }
         return ImmutableIcebergView.builder()
-            .metadataLocation(metadataLocationFromGlobal(globalState))
+            .metadataLocation(metadataLocation)
             .versionId(view.getVersionId())
             .schemaId(view.getSchemaId())
             .dialect(view.getDialect())
@@ -232,8 +245,9 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
   public boolean requiresGlobalState(Content content) {
     switch (content.getType()) {
       case ICEBERG_TABLE:
+        // yes, Iceberg Tables used global state before, but no longer do so
       case ICEBERG_VIEW:
-        return true;
+        // yes, Iceberg Views used global state before, but no longer do so
       case DELTA_LAKE_TABLE:
       case NAMESPACE:
         return false;
@@ -247,8 +261,9 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
     ObjectTypes.Content parsed = parse(content);
     switch (parsed.getObjectTypeCase()) {
       case ICEBERG_REF_STATE:
+        return !parsed.getIcebergRefState().hasMetadataLocation();
       case ICEBERG_VIEW_STATE:
-        return true;
+        return !parsed.getIcebergViewState().hasMetadataLocation();
       case DELTA_LAKE_TABLE:
       case NAMESPACE:
         return false;

@@ -16,6 +16,7 @@
 package org.projectnessie.server.store;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,8 +27,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
+import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
@@ -45,6 +48,301 @@ class TestStoreWorker {
   private static final ObjectMapper MAPPER = new ObjectMapper();
   private static final String ID = "x";
   private final TableCommitMetaStoreWorker worker = new TableCommitMetaStoreWorker();
+
+  @Test
+  void tableMetadataLocationGlobalNotAvailable() {
+    assertThatThrownBy(
+            () ->
+                worker.valueFromStore(
+                    ObjectTypes.Content.newBuilder()
+                        .setId("cid")
+                        .setIcebergRefState(
+                            ObjectTypes.IcebergRefState.newBuilder()
+                                .setSnapshotId(42)
+                                .setSchemaId(43)
+                                .setSpecId(44)
+                                .setSortOrderId(45))
+                        .build()
+                        .toByteString(),
+                    () -> null))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Iceberg content from reference must have global state, but has none");
+  }
+
+  @Test
+  void tableMetadataLocationGlobal() {
+    Content value =
+        worker.valueFromStore(
+            ObjectTypes.Content.newBuilder()
+                .setId("cid")
+                .setIcebergRefState(
+                    IcebergRefState.newBuilder()
+                        .setSnapshotId(42)
+                        .setSchemaId(43)
+                        .setSpecId(44)
+                        .setSortOrderId(45))
+                .build()
+                .toByteString(),
+            () ->
+                ObjectTypes.Content.newBuilder()
+                    .setId("cid")
+                    .setIcebergMetadataPointer(
+                        IcebergMetadataPointer.newBuilder()
+                            .setMetadataLocation("metadata-location"))
+                    .build()
+                    .toByteString());
+    assertThat(value)
+        .isInstanceOf(IcebergTable.class)
+        .asInstanceOf(InstanceOfAssertFactories.type(IcebergTable.class))
+        .extracting(
+            IcebergTable::getMetadataLocation,
+            IcebergTable::getSnapshotId,
+            IcebergTable::getSchemaId,
+            IcebergTable::getSpecId,
+            IcebergTable::getSortOrderId)
+        .containsExactly("metadata-location", 42L, 43, 44, 45);
+  }
+
+  @Test
+  void tableMetadataLocationOnRef() {
+    Content value =
+        worker.valueFromStore(
+            ObjectTypes.Content.newBuilder()
+                .setId("cid")
+                .setIcebergRefState(
+                    IcebergRefState.newBuilder()
+                        .setSnapshotId(42)
+                        .setSchemaId(43)
+                        .setSpecId(44)
+                        .setSortOrderId(45)
+                        .setMetadataLocation("metadata-location"))
+                .build()
+                .toByteString(),
+            () -> null);
+    assertThat(value)
+        .isInstanceOf(IcebergTable.class)
+        .asInstanceOf(InstanceOfAssertFactories.type(IcebergTable.class))
+        .extracting(
+            IcebergTable::getMetadataLocation,
+            IcebergTable::getSnapshotId,
+            IcebergTable::getSchemaId,
+            IcebergTable::getSpecId,
+            IcebergTable::getSortOrderId)
+        .containsExactly("metadata-location", 42L, 43, 44, 45);
+  }
+
+  @Test
+  void viewMetadataLocationGlobalNotAvailable() {
+    assertThatThrownBy(
+            () ->
+                worker.valueFromStore(
+                    ObjectTypes.Content.newBuilder()
+                        .setId("cid")
+                        .setIcebergViewState(
+                            ObjectTypes.IcebergViewState.newBuilder().setVersionId(42))
+                        .build()
+                        .toByteString(),
+                    () -> null))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Iceberg content from reference must have global state, but has none");
+  }
+
+  @Test
+  void viewMetadataLocationGlobal() {
+    Content value =
+        worker.valueFromStore(
+            ObjectTypes.Content.newBuilder()
+                .setId("cid")
+                .setIcebergViewState(ObjectTypes.IcebergViewState.newBuilder().setVersionId(42))
+                .build()
+                .toByteString(),
+            () ->
+                ObjectTypes.Content.newBuilder()
+                    .setId("cid")
+                    .setIcebergMetadataPointer(
+                        IcebergMetadataPointer.newBuilder()
+                            .setMetadataLocation("metadata-location"))
+                    .build()
+                    .toByteString());
+    assertThat(value)
+        .isInstanceOf(IcebergView.class)
+        .asInstanceOf(InstanceOfAssertFactories.type(IcebergView.class))
+        .extracting(IcebergView::getMetadataLocation, IcebergView::getVersionId)
+        .containsExactly("metadata-location", 42);
+  }
+
+  static Stream<Arguments> requiresGlobalStateModelType() {
+    return Stream.of(
+        Arguments.of(
+            Namespace.of("foo"),
+            false,
+            ObjectTypes.Content.newBuilder()
+                .setId("foo")
+                .setNamespace(ObjectTypes.Namespace.newBuilder().addElements("foo")),
+            null,
+            false,
+            Content.Type.NAMESPACE),
+        //
+        Arguments.of(
+            IcebergTable.of("metadata", 42, 43, 44, 45, "cid"),
+            false,
+            ObjectTypes.Content.newBuilder()
+                .setId("cid")
+                .setIcebergRefState(
+                    ObjectTypes.IcebergRefState.newBuilder()
+                        .setSnapshotId(42)
+                        .setSchemaId(43)
+                        .setSpecId(44)
+                        .setSortOrderId(45)),
+            ObjectTypes.Content.newBuilder()
+                .setId("cid")
+                .setIcebergMetadataPointer(
+                    ObjectTypes.IcebergMetadataPointer.newBuilder()
+                        .setMetadataLocation("metadata")),
+            true,
+            Content.Type.ICEBERG_TABLE),
+        //
+        Arguments.of(
+            IcebergTable.of("metadata", 42, 43, 44, 45, "cid"),
+            false,
+            ObjectTypes.Content.newBuilder()
+                .setId("cid")
+                .setIcebergRefState(
+                    ObjectTypes.IcebergRefState.newBuilder()
+                        .setSnapshotId(42)
+                        .setSchemaId(43)
+                        .setSpecId(44)
+                        .setSortOrderId(45)
+                        .setMetadataLocation("metadata")),
+            null,
+            false,
+            Content.Type.ICEBERG_TABLE),
+        //
+        Arguments.of(
+            IcebergView.of("cid", "metadata", 42, 43, "dialect", "sqlText"),
+            false,
+            ObjectTypes.Content.newBuilder()
+                .setId("cid")
+                .setIcebergViewState(
+                    ObjectTypes.IcebergViewState.newBuilder()
+                        .setVersionId(42)
+                        .setSchemaId(43)
+                        .setDialect("dialect")
+                        .setSqlText("sqlText")),
+            ObjectTypes.Content.newBuilder()
+                .setId("cid")
+                .setIcebergMetadataPointer(
+                    ObjectTypes.IcebergMetadataPointer.newBuilder()
+                        .setMetadataLocation("metadata")),
+            true,
+            Content.Type.ICEBERG_VIEW),
+        //
+        Arguments.of(
+            IcebergView.of("cid", "metadata", 42, 43, "dialect", "sqlText"),
+            false,
+            ObjectTypes.Content.newBuilder()
+                .setId("cid")
+                .setIcebergViewState(
+                    ObjectTypes.IcebergViewState.newBuilder()
+                        .setVersionId(42)
+                        .setSchemaId(43)
+                        .setDialect("dialect")
+                        .setSqlText("sqlText")
+                        .setMetadataLocation("metadata")),
+            null,
+            false,
+            Content.Type.ICEBERG_VIEW),
+        //
+        Arguments.of(
+            ImmutableDeltaLakeTable.builder()
+                .id("cid")
+                .addCheckpointLocationHistory("check")
+                .addMetadataLocationHistory("meta")
+                .build(),
+            false,
+            ObjectTypes.Content.newBuilder()
+                .setId("cid")
+                .setDeltaLakeTable(
+                    ObjectTypes.DeltaLakeTable.newBuilder()
+                        .addCheckpointLocationHistory("check")
+                        .addMetadataLocationHistory("meta")),
+            null,
+            false,
+            Content.Type.DELTA_LAKE_TABLE));
+  }
+
+  @ParameterizedTest
+  @MethodSource("requiresGlobalStateModelType")
+  void requiresGlobalStateModelType(
+      Content content,
+      boolean modelGlobal,
+      ObjectTypes.Content.Builder onRefBuilder,
+      ObjectTypes.Content.Builder globalBuilder,
+      boolean storeGlobal,
+      Content.Type type) {
+    assertThat(content)
+        .extracting(worker::requiresGlobalState, worker::getType)
+        .containsExactly(modelGlobal, type);
+
+    ByteString onRef = onRefBuilder.build().toByteString();
+    ByteString global = globalBuilder != null ? globalBuilder.build().toByteString() : null;
+
+    assertThat(onRef)
+        .asInstanceOf(InstanceOfAssertFactories.type(ByteString.class))
+        .extracting(worker::requiresGlobalState, worker::getType)
+        .containsExactly(storeGlobal, type);
+    assertThat(worker.valueFromStore(onRef, () -> global)).isEqualTo(content);
+
+    if (storeGlobal) {
+      // Add "metadataLocation" to expected on-ref status, because toStoreOnReferenceState() always
+      // returns the "metadataLocation", as #3866 changed the type of IcebergTable/View from
+      // global state to on-ref state.
+      if (onRefBuilder.hasIcebergRefState()) {
+        onRef =
+            onRefBuilder
+                .setIcebergRefState(
+                    onRefBuilder
+                        .getIcebergRefStateBuilder()
+                        .setMetadataLocation(((IcebergTable) content).getMetadataLocation()))
+                .build()
+                .toByteString();
+      } else if (onRefBuilder.hasIcebergViewState()) {
+        onRef =
+            onRefBuilder
+                .setIcebergViewState(
+                    onRefBuilder
+                        .getIcebergViewStateBuilder()
+                        .setMetadataLocation(((IcebergView) content).getMetadataLocation()))
+                .build()
+                .toByteString();
+      }
+    }
+
+    assertThat(content).extracting(worker::toStoreOnReferenceState).isEqualTo(onRef);
+    if (storeGlobal) {
+      assertThat(content).extracting(worker::toStoreGlobalState).isEqualTo(global);
+    }
+  }
+
+  @Test
+  void viewMetadataLocationOnRef() {
+    Content value =
+        worker.valueFromStore(
+            ObjectTypes.Content.newBuilder()
+                .setId("cid")
+                .setIcebergViewState(
+                    ObjectTypes.IcebergViewState.newBuilder()
+                        .setVersionId(42)
+                        .setMetadataLocation("metadata-location"))
+                .build()
+                .toByteString(),
+            () -> null);
+    assertThat(value)
+        .isInstanceOf(IcebergView.class)
+        .asInstanceOf(InstanceOfAssertFactories.type(IcebergView.class))
+        .extracting(IcebergView::getMetadataLocation, IcebergView::getVersionId)
+        .containsExactly("metadata-location", 42);
+  }
 
   @ParameterizedTest
   @MethodSource("provideDeserialization")
@@ -88,7 +386,8 @@ class TestStoreWorker {
                     .setSnapshotId(42)
                     .setSchemaId(43)
                     .setSpecId(44)
-                    .setSortOrderId(45))
+                    .setSortOrderId(45)
+                    .setMetadataLocation(path))
             .build();
 
     ByteString tableGlobalBytes = worker.toStoreGlobalState(table);
@@ -122,7 +421,8 @@ class TestStoreWorker {
                     .setVersionId(1)
                     .setDialect(dialect)
                     .setSchemaId(123)
-                    .setSqlText(sqlText))
+                    .setSqlText(sqlText)
+                    .setMetadataLocation(path))
             .build();
 
     ByteString tableGlobalBytes = worker.toStoreGlobalState(view);
