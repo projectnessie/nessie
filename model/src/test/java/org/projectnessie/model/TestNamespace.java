@@ -22,7 +22,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.StringJoiner;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
@@ -144,6 +146,15 @@ public class TestNamespace {
     // even though we treat the zero byte + the group separator equally, we can't do comparisons
     // based on strings only
     assertThat(Namespace.of(asList("a", "b.c", "namespace")).name()).doesNotStartWith("a.b\u0000c");
+  }
+
+  @Test
+  public void testNamespaceWithProperties() {
+    Map<String, String> properties = new HashMap<>();
+    properties.put("location", "/tmp");
+    properties.put("x", "y");
+    Namespace namespace = Namespace.of(properties, "a", "b.c", "d");
+    assertThat(namespace.getProperties()).isEqualTo(properties);
   }
 
   @ParameterizedTest

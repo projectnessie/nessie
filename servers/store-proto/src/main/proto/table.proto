@@ -67,4 +67,5 @@ message DeltaLakeTable {
 
 message Namespace {
   repeated string elements = 1;
+  map<string, string> properties = 2;
 }

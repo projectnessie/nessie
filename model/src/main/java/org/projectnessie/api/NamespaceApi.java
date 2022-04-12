@@ -18,6 +18,7 @@ package org.projectnessie.api;
 import javax.validation.constraints.NotNull;
 import org.projectnessie.api.params.MultipleNamespacesParams;
 import org.projectnessie.api.params.NamespaceParams;
+import org.projectnessie.api.params.NamespaceUpdate;
 import org.projectnessie.error.NessieNamespaceAlreadyExistsException;
 import org.projectnessie.error.NessieNamespaceNotEmptyException;
 import org.projectnessie.error.NessieNamespaceNotFoundException;
@@ -28,14 +29,15 @@ import org.projectnessie.model.Namespace;
 public interface NamespaceApi {
 
   /**
-   * Creates a new namespace.
+   * Creates a new namespace with Namespace properties.
    *
    * @param params The {@link NamespaceParams} that includes the parameters for the API call.
+   * @param namespace The instance including the namespace properties.
    * @return A {@link Namespace} instance if creating the namespace succeeded.
    * @throws NessieReferenceNotFoundException If the reference could not be found.
    * @throws NessieNamespaceAlreadyExistsException If the namespace already exists.
    */
-  Namespace createNamespace(@NotNull NamespaceParams params)
+  Namespace createNamespace(@NotNull NamespaceParams params, @NotNull Namespace namespace)
       throws NessieNamespaceAlreadyExistsException, NessieReferenceNotFoundException;
 
   /**
@@ -72,4 +74,15 @@ public interface NamespaceApi {
    */
   GetNamespacesResponse getNamespaces(@NotNull MultipleNamespacesParams params)
       throws NessieReferenceNotFoundException;
+
+  /**
+   * Updates/removes properties for a given {@link Namespace}.
+   *
+   * @param params The {@link NamespaceParams} that includes the parameters for the API call.
+   * @param namespaceUpdate The instance including the property updates/deletes.
+   * @throws NessieNamespaceNotFoundException If the namespace does not exist.
+   * @throws NessieReferenceNotFoundException If the reference could not be found.
+   */
+  void updateProperties(@NotNull NamespaceParams params, @NotNull NamespaceUpdate namespaceUpdate)
+      throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException;
 }
