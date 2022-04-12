@@ -92,7 +92,8 @@ jobs:
       - name: "Merge pull request"
         uses: "actions/github-script@v6"
         with:
-          github-token: "${{ secrets.GITHUB_TOKEN }}"
+          # Use the NESSIE_BUILDER secret to tigger CI on main branch
+          github-token: "${{ secrets.NESSIE_BUILDER }}"
           script: |
             const pullRequest = context.payload.workflow_run.pull_requests[0]
             const repository = context.repo
