@@ -42,9 +42,6 @@ Since different Nessie commits, think: on different branches in Nessie, can refe
 same physical table but with different state of the data and potentially different schema, some
 table formats require Nessie to refer to a single _Global State_.
 
-This _Global State_ is not versioned in Nessie, because it has to
-contain enough information to resolve all information in all Nessie commits.
-
 IDs of the _Iceberg snapshot_, _Iceberg schema_, _Iceberg partition spec_, _Iceberg sort order_ 
 within the Iceberg _table metadata_ are also stored per Nessie named reference (branch or tag),
 as the so-called _on-reference-state_.
@@ -120,20 +117,22 @@ within the Iceberg _table metadata_.  (so-called _On Reference State_)
     potentially serious issues regarding schema migrations in this model as well. Therefore, the
     Iceberg table spec should be considered subject to change in the near future.
 
+#### Iceberg View
+
+!!! note
+    Iceberg Views are experimental and subject to change!
+
+The state of an Iceberg view is represented using the attributes `versionId`, `schemaId`, `sqlText`
+and `dialect`.
+
+Iceberg views are handled similar to [Iceberg Tables](#iceberg-table).
+
 #### Delta Lake Table
 
 The state of a Delta Lake Table is represented using the Delta Lake Table attributes
 `metadataLocationHistory`, `checkpointLocationHistory` and `lastCheckpoint`.
 
 Delta Lake Tables are tracked without a _Global State_ in Nessie, i.e. those three attributes are
-recorded within the [_Put Operation_](#put-operation) of a Nessie commit.
-
-#### View
-
-The state of an SQL view is represented using the attributes
-`sqlText` and `dialect` (currently one of `HIVE`, `SPARK`, `DREMIO`, `PRESTO`).
-
-Views are tracked without a _Global State_ in Nessie, i.e. those three attributes are
 recorded within the [_Put Operation_](#put-operation) of a Nessie commit.
 
 ## Operations in a Nessie commit

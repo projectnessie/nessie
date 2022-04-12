@@ -75,7 +75,7 @@ The data model for non-transactional key-value databases relies on a single _glo
 which is technically a table with a single row pointing to the _current_ entry in the _global-log_,
 _current_ entry in the _ref-log_ and the "HEAD"s of all named references (branches and tags).
 
-The _global-log_ contains the changes of the _global-state_.
+The _global-log_ contains changes to _global-state_, which is needed for backwards compatibility.
 
 The _ref-log_ contains the history with details of operations 
 like COMMIT, MERGE, TRANSPLANT, CREATE_REFERENCE, DELETE_REFERENCE, ASSIGN_REFERENCE.
@@ -190,7 +190,7 @@ support atomic CAS (compare-and-swap) operations against a single row/record, bu
 conditional updates to multiple rows/records is either not supported at all or extremely slow.
 
 Nessie differentiates between content types that do require so called _global-state_ and those
-that do not. _Global-state_ is maintained globally and evaluated when a convent value object is
+that do not. _Global-state_ is maintained globally and evaluated when a content value object is
 being retrieved, combined with the requested on-reference state on a Nessie commit.
 For _Nessie commits_, which are atomic, this means that
 Nessie has to update both the global-state and the on-reference-state for a content type that
