@@ -59,7 +59,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
 
   public NamespaceApiImpl(
       ServerConfig config,
-      VersionStore<Content, CommitMeta, Content.Type> store,
+      VersionStore<Content, CommitMeta, Type> store,
       Authorizer authorizer,
       Principal principal) {
     super(config, store, authorizer, principal);
@@ -71,25 +71,25 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
     try {
       BranchName branch = branchFromRefName(params.getRefName());
 
+      Namespace namespace = params.getNamespace();
       Callable<Void> validator =
           () -> {
             Optional<Content> explicitlyCreatedNamespace =
-                getExplicitlyCreatedNamespace(params, branch);
+                getExplicitlyCreatedNamespace(namespace, branch);
             if (explicitlyCreatedNamespace.isPresent()) {
               Namespace ignored =
                   explicitlyCreatedNamespace
                       .get()
                       .unwrap(Namespace.class)
-                      .orElseThrow(() -> otherContentAlreadyExistsException(params));
-              throw namespaceAlreadyExistsException(params);
+                      .orElseThrow(() -> otherContentAlreadyExistsException(namespace));
+              throw namespaceAlreadyExistsException(namespace);
             }
-            if (getImplicitlyCreatedNamespace(params, branch).isPresent()) {
-              throw namespaceAlreadyExistsException(params);
+            if (getImplicitlyCreatedNamespace(namespace, branch).isPresent()) {
+              throw namespaceAlreadyExistsException(namespace);
             }
             return null;
           };
 
-      Namespace namespace = params.getNamespace();
       Preconditions.checkArgument(!namespace.isEmpty(), "Namespace name must not be empty");
       Put put = Put.of(ContentKey.of(namespace.getElements()), namespace);
       commit(branch, "create namespace " + namespace.name(), TreeApiImpl.toOp(put), validator);
@@ -106,7 +106,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
           NessieNamespaceNotFoundException {
     BranchName branch = branchFromRefName(params.getRefName());
     try {
-      Namespace namespace = getNamespace(params, branch);
+      Namespace namespace = getNamespace(params.getNamespace(), branch);
       Delete delete = Delete.of(ContentKey.of(namespace.getElements()));
 
       Callable<Void> validator =
@@ -117,7 +117,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
                       Namespace.of(k.getKey().getElements())
                               .isSameOrSubElementOf(params.getNamespace())
                           && k.getType() != Type.NAMESPACE)) {
-                throw namespaceNotEmptyException(params);
+                throw namespaceNotEmptyException(params.getNamespace());
               }
             }
             return null;
@@ -133,7 +133,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
   public Namespace getNamespace(NamespaceParams params)
       throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException {
     try {
-      return getNamespace(params, branchFromRefName(params.getRefName()));
+      return getNamespace(params.getNamespace(), branchFromRefName(params.getRefName()));
     } catch (ReferenceNotFoundException e) {
       throw refNotFoundException(e);
     }
@@ -145,24 +145,24 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
    * namespace. An implicitly created namespace generally occurs when adding a table 'a.b.c.table'
    * where the 'a.b.c' part * represents the namespace.
    *
-   * @param params The params to use for the fetching the namespace
+   * @param namespace The namespace to fetch
    * @param branch The ref to use
    * @return A {@link Namespace} instance
    * @throws ReferenceNotFoundException If the ref could not be found
    * @throws NessieNamespaceNotFoundException If the namespace could not be found
    */
-  private Namespace getNamespace(NamespaceParams params, BranchName branch)
+  private Namespace getNamespace(Namespace namespace, BranchName branch)
       throws ReferenceNotFoundException, NessieNamespaceNotFoundException {
-    Optional<Content> explicitlyCreatedNamespace = getExplicitlyCreatedNamespace(params, branch);
+    Optional<Content> explicitlyCreatedNamespace = getExplicitlyCreatedNamespace(namespace, branch);
     if (explicitlyCreatedNamespace.isPresent()) {
       return explicitlyCreatedNamespace
           .get()
           .unwrap(Namespace.class)
-          .orElseThrow(() -> namespaceDoesNotExistException(params));
+          .orElseThrow(() -> namespaceDoesNotExistException(namespace));
     }
 
-    return getImplicitlyCreatedNamespace(params, branch)
-        .orElseThrow(() -> namespaceDoesNotExistException(params));
+    return getImplicitlyCreatedNamespace(namespace, branch)
+        .orElseThrow(() -> namespaceDoesNotExistException(namespace));
   }
 
   @Override
@@ -247,41 +247,38 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
     return Namespace.of(elements);
   }
 
-  private Optional<Content> getExplicitlyCreatedNamespace(NamespaceParams params, BranchName branch)
+  private Optional<Content> getExplicitlyCreatedNamespace(Namespace namespace, BranchName branch)
       throws ReferenceNotFoundException {
-    return Optional.ofNullable(
-        getStore().getValue(branch, Key.of(params.getNamespace().getElements())));
+    return Optional.ofNullable(getStore().getValue(branch, Key.of(namespace.getElements())));
   }
 
-  private Optional<Namespace> getImplicitlyCreatedNamespace(
-      NamespaceParams params, BranchName branch) throws ReferenceNotFoundException {
-    try (Stream<KeyEntry<Type>> stream =
-        getNamespacesKeyStream(params.getNamespace(), branch, k -> true)) {
+  private Optional<Namespace> getImplicitlyCreatedNamespace(Namespace namespace, BranchName branch)
+      throws ReferenceNotFoundException {
+    try (Stream<KeyEntry<Type>> stream = getNamespacesKeyStream(namespace, branch, k -> true)) {
       return stream.findAny().map(this::namespaceFromType);
     }
   }
 
   private NessieNamespaceAlreadyExistsException namespaceAlreadyExistsException(
-      NamespaceParams params) {
+      Namespace namespace) {
     return new NessieNamespaceAlreadyExistsException(
-        String.format("Namespace '%s' already exists", params.getNamespace()));
+        String.format("Namespace '%s' already exists", namespace));
   }
 
   private NessieNamespaceAlreadyExistsException otherContentAlreadyExistsException(
-      NamespaceParams params) {
+      Namespace namespace) {
     return new NessieNamespaceAlreadyExistsException(
-        String.format(
-            "Another content object with name '%s' already exists", params.getNamespace()));
+        String.format("Another content object with name '%s' already exists", namespace));
   }
 
-  private NessieNamespaceNotFoundException namespaceDoesNotExistException(NamespaceParams params) {
+  private NessieNamespaceNotFoundException namespaceDoesNotExistException(Namespace namespace) {
     return new NessieNamespaceNotFoundException(
-        String.format("Namespace '%s' does not exist", params.getNamespace()));
+        String.format("Namespace '%s' does not exist", namespace));
   }
 
-  private NessieNamespaceNotEmptyException namespaceNotEmptyException(NamespaceParams params) {
+  private NessieNamespaceNotEmptyException namespaceNotEmptyException(Namespace namespace) {
     return new NessieNamespaceNotEmptyException(
-        String.format("Namespace '%s' is not empty", params.getNamespace()));
+        String.format("Namespace '%s' is not empty", namespace));
   }
 
   private BranchName branchFromRefName(String refName) {
