@@ -1,5 +1,13 @@
 # Releases
 
+## 0.26.0 Release (April 12, 2022)
+
+* Remove global state for Iceberg tables + views
+* Internal optimizations in database adapters, version store and API endpoints
+* Change 'marker' character to indicate `.` in namespace/table identifiers from ASCII 0 to `\u001D`
+* Opt-in to force-merge or not merge specific content keys (also for transplant)
+* Squash merged and transplanted commits by default (with opt-out)
+
 ## 0.25.0 Release (April 6, 2022)
 
 * Nessie Quarkus Server can use Postgres as its backend database
