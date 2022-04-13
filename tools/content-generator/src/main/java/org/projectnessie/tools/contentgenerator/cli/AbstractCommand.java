@@ -15,26 +15,15 @@
  */
 package org.projectnessie.tools.contentgenerator.cli;
 
-import java.net.URI;
 import java.util.concurrent.Callable;
-import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.api.NessieApiV1;
-import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.error.BaseNessieClientServerException;
+import picocli.CommandLine;
 import picocli.CommandLine.Option;
 
 public abstract class AbstractCommand implements Callable<Integer> {
 
-  @Option(
-      names = {"-u", "--uri"},
-      description = "Nessie API endpoint URI, defaults to http://localhost:19120/api/v1.")
-  private URI uri = URI.create("http://localhost:19120/api/v1");
-
-  @Option(
-      names = {"-B", "--custom-nessie-client-builder"},
-      hidden = true,
-      description = "Custom implementation of org.projectnessie.client.NessieClientBuilder.")
-  private Class<?> customBuilder;
+  @CommandLine.ParentCommand private ContentGenerator<NessieApiV1> parent;
 
   @Option(
       names = {"-v", "--verbose"},
@@ -46,22 +35,7 @@ public abstract class AbstractCommand implements Callable<Integer> {
   }
 
   public NessieApiV1 createNessieApiInstance() {
-    NessieClientBuilder<?> clientBuilder;
-    if (customBuilder != null) {
-      try {
-        clientBuilder =
-            (NessieClientBuilder<?>) customBuilder.getDeclaredMethod("builder").invoke(null);
-      } catch (Exception e) {
-        throw new RuntimeException("Failed to use custom NessieClientBuilder", e);
-      }
-    } else {
-      clientBuilder = HttpClientBuilder.builder();
-    }
-    clientBuilder.fromSystemProperties();
-    if (uri != null) {
-      clientBuilder.withUri(uri);
-    }
-    return clientBuilder.build(NessieApiV1.class);
+    return parent.createNessieApiInstance();
   }
 
   /** Convenience method declaration that allows to "just throw" Nessie API exceptions. */
