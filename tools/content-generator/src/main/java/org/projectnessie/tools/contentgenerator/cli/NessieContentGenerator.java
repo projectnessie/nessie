@@ -17,27 +17,34 @@ package org.projectnessie.tools.contentgenerator.cli;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.io.PrintWriter;
+import java.net.URI;
+import org.projectnessie.client.NessieClientBuilder;
+import org.projectnessie.client.api.NessieApiV1;
+import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.client.http.HttpClientException;
 import org.projectnessie.error.BaseNessieClientServerException;
 import picocli.CommandLine;
-import picocli.CommandLine.Command;
-import picocli.CommandLine.HelpCommand;
 
-@Command(
-    name = "nessie-content-generator",
-    mixinStandardHelpOptions = true,
-    versionProvider = NessieVersionProvider.class,
-    subcommands = {
-      GenerateContent.class,
-      ReadCommits.class,
-      ReadReferences.class,
-      ReadContent.class,
-      HelpCommand.class
-    })
-public class NessieContentGenerator {
+public class NessieContentGenerator extends ContentGenerator<NessieApiV1> {
+
+  @CommandLine.Option(
+      names = {"-u", "--uri"},
+      scope = CommandLine.ScopeType.INHERIT,
+      description = "Nessie API endpoint URI, defaults to http://localhost:19120/api/v1.")
+  private URI uri = URI.create("http://localhost:19120/api/v1");
 
   public static void main(String[] arguments) {
     System.exit(runMain(arguments));
+  }
+
+  @Override
+  public NessieApiV1 createNessieApiInstance() {
+    NessieClientBuilder<?> clientBuilder = HttpClientBuilder.builder();
+    clientBuilder.fromSystemProperties();
+    if (uri != null) {
+      clientBuilder.withUri(uri);
+    }
+    return clientBuilder.build(NessieApiV1.class);
   }
 
   @VisibleForTesting
