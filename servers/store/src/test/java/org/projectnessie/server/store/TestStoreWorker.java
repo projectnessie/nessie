@@ -19,17 +19,24 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
+import java.net.URL;
 import java.time.Instant;
 import java.util.AbstractMap;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Test;
@@ -45,6 +52,8 @@ import org.projectnessie.model.ImmutableDeltaLakeTable;
 import org.projectnessie.model.ImmutableNamespace;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.server.store.proto.ObjectTypes;
+import org.projectnessie.server.store.proto.ObjectTypes.ContentPartReference;
+import org.projectnessie.server.store.proto.ObjectTypes.ContentPartType;
 import org.projectnessie.server.store.proto.ObjectTypes.IcebergMetadataPointer;
 import org.projectnessie.server.store.proto.ObjectTypes.IcebergRefState;
 import org.projectnessie.server.store.proto.ObjectTypes.IcebergViewState;
@@ -61,6 +70,10 @@ class TestStoreWorker {
   @SuppressWarnings("UnnecessaryLambda")
   private static final Consumer<ContentAttachment> ALWAYS_THROWING_ATTACHMENT_CONSUMER =
       attachment -> fail("Unexpected use of Consumer<ContentAttachment>");
+
+  @SuppressWarnings("UnnecessaryLambda")
+  private static final Supplier<ByteString> ALWAYS_THROWING_BYTE_STRING_SUPPLIER =
+    () -> fail("Unexpected use of Supplier<ByteString>");
 
   @SuppressWarnings("UnnecessaryLambda")
   private static final Function<Stream<ContentAttachmentKey>, Stream<ContentAttachment>>
@@ -397,6 +410,164 @@ class TestStoreWorker {
     Content actualContent = worker.valueFromStore(entry.getKey(), () -> null, x -> Stream.empty());
     assertThat(worker.toStoreOnReferenceState(actualContent, ALWAYS_THROWING_ATTACHMENT_CONSUMER))
         .isEqualTo(entry.getKey());
+  }
+
+  private static JsonNode loadJson(String resource) {
+    URL url = Thread.currentThread().getContextClassLoader().getResource(resource);
+    try (JsonParser parser =
+        new ObjectMapper()
+            .createParser(
+                Objects.requireNonNull(
+                    url, () -> String.format("Resource %s not found", resource)))) {
+      return parser.readValueAs(JsonNode.class);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Test
+  void testSerdeIcebergTableMetadata() throws Exception {
+    IcebergTable table =
+        IcebergTable.of(
+            loadJson("org/projectnessie/test-data/iceberg-metadata/table-three-snapshots/3.json"),
+            "foo://bar",
+            ID);
+
+    IcebergRefState baseStoreOnRef =
+        IcebergRefState.newBuilder()
+            .setSnapshotId(table.getSnapshotId())
+            .setSchemaId(table.getSchemaId())
+            .setSpecId(table.getSpecId())
+            .setSortOrderId(table.getSortOrderId())
+            .setMetadataLocation(table.getMetadataLocation())
+            .build();
+
+    Map<ContentAttachmentKey, ContentAttachment> attachments = new LinkedHashMap<>();
+
+    ByteString onReferenceState =
+        worker.toStoreOnReferenceState(table, att -> attachments.put(att.getKey(), att));
+
+    IcebergRefState.Builder expectedStoreOnRef = baseStoreOnRef.toBuilder();
+
+    attachments.entrySet().stream()
+        .map(
+            e -> {
+              ContentPartReference.Builder partReference =
+                  ContentPartReference.newBuilder()
+                      .setType(ContentPartType.valueOf(e.getKey().getAttachmentType()))
+                      .setAttachmentId(e.getKey().getAttachmentId());
+              if (e.getValue().getObjectId() != null) {
+                partReference.setObjectId(e.getValue().getObjectId());
+              }
+              return partReference;
+            })
+        .collect(Collectors.groupingBy(ContentPartReference.Builder::getType))
+        .forEach(
+            (type, parts) -> {
+              if (type == ContentPartType.SHALLOW_METADATA) {
+                assertThat(parts).hasSize(1);
+                expectedStoreOnRef.setMetadata(parts.get(0));
+              } else {
+                parts.subList(0, parts.size() - 1).forEach(expectedStoreOnRef::addMoreParts);
+                expectedStoreOnRef.addCurrentParts(parts.get(parts.size() - 1));
+              }
+            });
+
+    ObjectTypes.Content parsed = ObjectTypes.Content.parseFrom(onReferenceState);
+
+    // Verify that all parts are present, the actual order within current-parts and more-parts does
+    // not matter, but is sadly not deterministic, not guaranteed for all kinds of childs either.
+
+    assertThat(parsed.getIcebergRefState().getCurrentPartsList())
+        .containsExactlyInAnyOrderElementsOf(expectedStoreOnRef.getCurrentPartsList());
+    assertThat(parsed.getIcebergRefState().getMorePartsList())
+        .containsExactlyInAnyOrderElementsOf(expectedStoreOnRef.getMorePartsList());
+
+    assertThat(parsed.getIcebergRefState().toBuilder().clearCurrentParts().clearMoreParts().build())
+        .isEqualTo(expectedStoreOnRef.clearCurrentParts().clearMoreParts().build());
+
+    // TODO validate that metadata is really shallow (no child object arrays)
+
+    Content deserialized =
+        worker.valueFromStore(
+            onReferenceState,
+            ALWAYS_THROWING_BYTE_STRING_SUPPLIER,
+            keys -> keys.map(attachments::get));
+
+    assertThat(deserialized).isEqualTo(table);
+  }
+
+  @Test
+  void testSerdeIcebergViewMetadata() throws Exception {
+    IcebergView view =
+        IcebergView.of(
+            loadJson("org/projectnessie/test-data/iceberg-metadata/view-simple/1.json"),
+            "foo://bar",
+            ID);
+
+    IcebergViewState baseStoreOnRef =
+        IcebergViewState.newBuilder()
+            .setVersionId(view.getVersionId())
+            .setSchemaId(view.getSchemaId())
+            .setMetadataLocation(view.getMetadataLocation())
+            .setDialect("")
+            .setSqlText(view.getSqlText())
+            .build();
+
+    Map<ContentAttachmentKey, ContentAttachment> attachments = new LinkedHashMap<>();
+
+    ByteString onReferenceState =
+        worker.toStoreOnReferenceState(view, att -> attachments.put(att.getKey(), att));
+
+    IcebergViewState.Builder expectedStoreOnRef = baseStoreOnRef.toBuilder();
+
+    attachments.entrySet().stream()
+        .map(
+            e -> {
+              ContentPartReference.Builder partReference =
+                  ContentPartReference.newBuilder()
+                      .setType(ContentPartType.valueOf(e.getKey().getAttachmentType()))
+                      .setAttachmentId(e.getKey().getAttachmentId());
+              if (e.getValue().getObjectId() != null) {
+                partReference.setObjectId(e.getValue().getObjectId());
+              }
+              return partReference;
+            })
+        .collect(Collectors.groupingBy(ContentPartReference.Builder::getType))
+        .forEach(
+            (type, parts) -> {
+              if (type == ContentPartType.SHALLOW_METADATA) {
+                assertThat(parts).hasSize(1);
+                expectedStoreOnRef.setMetadata(parts.get(0));
+              } else {
+                parts.subList(0, parts.size() - 1).forEach(expectedStoreOnRef::addMoreParts);
+                expectedStoreOnRef.addCurrentParts(parts.get(parts.size() - 1));
+              }
+            });
+
+    ObjectTypes.Content parsed = ObjectTypes.Content.parseFrom(onReferenceState);
+
+    // Verify that all parts are present, the actual order within current-parts and more-parts does
+    // not matter, but is sadly not deterministic, not guaranteed for all kinds of childs either.
+
+    assertThat(parsed.getIcebergViewState().getCurrentPartsList())
+        .containsExactlyInAnyOrderElementsOf(expectedStoreOnRef.getCurrentPartsList());
+    assertThat(parsed.getIcebergViewState().getMorePartsList())
+        .containsExactlyInAnyOrderElementsOf(expectedStoreOnRef.getMorePartsList());
+
+    assertThat(
+            parsed.getIcebergViewState().toBuilder().clearCurrentParts().clearMoreParts().build())
+        .isEqualTo(expectedStoreOnRef.clearCurrentParts().clearMoreParts().build());
+
+    // TODO validate that metadata is really shallow (no child object arrays)
+
+    Content deserialized =
+        worker.valueFromStore(
+            onReferenceState,
+            ALWAYS_THROWING_BYTE_STRING_SUPPLIER,
+            keys -> keys.map(attachments::get));
+
+    assertThat(deserialized).isEqualTo(view);
   }
 
   @Test

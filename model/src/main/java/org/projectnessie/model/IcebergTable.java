@@ -18,6 +18,7 @@ package org.projectnessie.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import javax.annotation.Nullable;
@@ -54,6 +55,9 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ImmutableIcebergTable.class)
 @JsonTypeName("ICEBERG_TABLE")
 public abstract class IcebergTable extends Content {
+
+  /** Constant for {@link GenericMetadata#getVariant()}. */
+  public static final String TABLE_METADATA = "Iceberg";
 
   /**
    * Location where Iceberg stored its {@code TableMetadata} file. The location depends on the
@@ -112,6 +116,23 @@ public abstract class IcebergTable extends Content {
         .schemaId(schemaId)
         .specId(specId)
         .sortOrderId(sortOrderId)
+        .id(contentId)
+        .build();
+  }
+
+  public static final String CURRENT_SNAPSHOT_ID = "current-snapshot-id";
+  public static final String CURRENT_SCHEMA_ID = "current-schema-id";
+  public static final String DEFAULT_SORT_ORDER_ID = "default-sort-order-id";
+  public static final String DEFAULT_SPEC_ID = "default-spec-id";
+
+  public static IcebergTable of(JsonNode metadata, String metadataLocation, String contentId) {
+    return builder()
+        .metadataLocation(metadataLocation)
+        .snapshotId(metadata.get(CURRENT_SNAPSHOT_ID).asLong(-1L))
+        .schemaId(metadata.get(CURRENT_SCHEMA_ID).asInt(0))
+        .specId(metadata.get(DEFAULT_SPEC_ID).asInt(0))
+        .sortOrderId(metadata.get(DEFAULT_SORT_ORDER_ID).asInt(0))
+        .metadata(GenericMetadata.of(TABLE_METADATA, metadata))
         .id(contentId)
         .build();
   }

@@ -22,29 +22,78 @@ option java_generate_equals_and_hash = true;
 
 message Content {
   oneof object_type {
+    // Deprecated: Old Iceberg table & view global state
     IcebergMetadataPointer iceberg_metadata_pointer = 1;
+    // Iceberg model - table metadata
     IcebergRefState iceberg_ref_state = 2;
+    // Iceberg model - view metadata IDs
     IcebergViewState iceberg_view_state = 3;
+
     DeltaLakeTable delta_lake_table = 4;
     Namespace namespace = 6;
   }
   string id = 5;
 }
 
+// Pointer to Iceberg table/view metadata, written by Nessie < 0.26.0.
+// Retained for backwards compatibility.
 message IcebergMetadataPointer {
   string metadata_location = 1;
 }
+
+// Rules for Iceberg table + view metadata - _how_ state is persisted:
+// 1. If 'metadata' is present, the (shallow) metadata and its child objects
+//    are held as Nessie content attachments - aka Iceberg metadata in Nessie.
+//    'metadata_location' _must_ contain a valid location.
+// 2. If 'metadata_location' is present, it refers to a table metadata location
+//    to be retrieved via Iceberg's FileIO.
+// 3. The table metadata location must be retrieved via Nessie's global state.
+//    (Both 'metadata' + 'metadata_location' are not present.)
+//
+// Matrix:
+//   'metadata'  | 'metadata_location' | Notes
+//   present     | present             |
+// --------------+---------------------+--------------------------------------
+//   Yes         | Yes                 | Reference to shallow metadata in
+//               |                     | 'metadata', current/default child
+//               |                     | objects in 'current_parts', other
+//               |                     | child objects in 'more_parts'.
+//               |                     | Commits written with Nessie >= 0.29.0
+//               |                     | _and_ clients supplying the metadata
+//               |                     | use this combination. Iceberg >= 1.0.
+// --------------+---------------------+--------------------------------------
+//   Yes         | No                  | INVALID COMBINATION
+// --------------+---------------------+--------------------------------------
+//   No          | Yes                 | Metadata location managed "on
+//               |                     | reference". Commits written with
+//               |                     | Nessie >= 0.26.0 are written this way.
+// --------------+---------------------+--------------------------------------
+//   No          | No                  | Metadata location managed via "global
+//               |                     | state". I.e. readers need to look up
+//               |                     | the current metadata location via
+//               |                     | global state, so exactly one metadata
+//               |                     | object for the same table/view.
+//               |                     | Commits written with Nessie < 0.26.0
+//               |                     | used this combination.
 
 message IcebergRefState {
   int64 snapshot_id = 1;
   int32 schema_id = 2;
   int32 spec_id = 3;
   int32 sort_order_id = 4;
-  // If metadata_location is present, the state of the Iceberg view is
-  // maintained purely on the reference/commit.
-  // If metadata_location not present, the location needs to be fetched
-  // from global state.
+
+  // See above for the rules how to retrieve metadata.
+
   optional string metadata_location = 5;
+
+  // Reference to the shallow table metadata
+  optional ContentPartReference metadata = 6;
+  // References to the current/default child objects. E.g. the reference to
+  // the snapshot referred to by table-metadata.current-snapshot-id.
+  repeated ContentPartReference current_parts = 7;
+  // References to the non-current/default child objects. E.g. references to
+  // snapshots with snapshot-id != table-metadata.current-snapshot-id.
+  repeated ContentPartReference more_parts = 8;
 }
 
 message IcebergViewState {
@@ -52,11 +101,42 @@ message IcebergViewState {
   int32 schema_id = 2;
   string sql_text = 3;
   string dialect = 4;
-  // If metadata_location is present, the state of the Iceberg view is
-  // maintained purely on the reference/commit.
-  // If metadata_location not present, the location needs to be fetched
-  // from global state.
+
+  // See above for the rules how to retrieve metadata.
+
   optional string metadata_location = 5;
+
+  // Reference to the shallow table metadata
+  optional ContentPartReference metadata = 6;
+  // References to the current/default child objects. E.g. the reference to
+  // the view version referred to by view-metadata.current-view-version-id.
+  repeated ContentPartReference current_parts = 7;
+  // References to the non-current/default child objects. E.g. references to
+  // snapshots with view-version-id != view-metadata.current-view-version-id.
+  repeated ContentPartReference more_parts = 8;
+}
+
+message ContentPartReference {
+  // Represents the attachment key's type. 'type' + 'attachment_id' are unique
+  // for each content ID.
+  ContentPartType type = 1;
+  // Represents the attachment key's ID. 'type' + 'attachment_id' are unique
+  // for each content ID.
+  string attachment_id = 2;
+  // Optional integer ID of an attachment content object representing e.g. the
+  // snapshot ID of an Iceberg table metadata. This field is _not_ part of the
+  // attachment key.
+  optional int64 object_id = 3;
+}
+
+enum ContentPartType {
+  UNKNOWN = 0;
+  SHALLOW_METADATA = 1;
+  SNAPSHOT = 2;
+  SCHEMA = 3;
+  PARTITION_SPEC = 4;
+  SORT_ORDER = 5;
+  VERSION = 6;
 }
 
 message DeltaLakeTable {

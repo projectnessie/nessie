@@ -143,6 +143,8 @@ nessieProject("nessie-perftest-simulations", "perftest/simulations")
 
 nessieProject("nessie-server-parent", "servers")
 
+nessieProject("nessie-servers-iceberg-fixtures", "servers/iceberg-fixtures")
+
 nessieProject("nessie-jaxrs", "servers/jax-rs")
 
 nessieProject("nessie-jaxrs-testextension", "servers/jax-rs-testextension")

@@ -18,8 +18,10 @@ package org.projectnessie.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import java.util.Iterator;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
@@ -30,6 +32,9 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ImmutableIcebergView.class)
 @JsonTypeName("ICEBERG_VIEW")
 public abstract class IcebergView extends Content {
+
+  /** Constant for {@link GenericMetadata#getVariant()}. */
+  public static final String VIEW_METADATA = "Iceberg";
 
   /**
    * Location where Iceberg stored its {@code ViewMetadata} file. The location depends on the
@@ -89,6 +94,40 @@ public abstract class IcebergView extends Content {
         .schemaId(schemaId)
         .dialect(dialect)
         .sqlText(sqlText)
+        .build();
+  }
+
+  static final String LOCATION = "location";
+  public static final String CURRENT_VERSION_ID = "current-version-id";
+  public static final String VERSIONS = "versions";
+  public static final String VERSION_ID = "version-id";
+  public static final String VIEW_DEFINITION = "view-definition";
+  private static final String SCHEMA_ID = "schema-id";
+
+  public static IcebergView of(JsonNode metadata, String metadataLocation, String id) {
+    int currentVersionId = metadata.get(CURRENT_VERSION_ID).asInt(-1);
+    String sqlText = "";
+    String dialect = ""; // TODO !!
+    int schemaId = 0;
+    for (Iterator<JsonNode> versionIter = metadata.get(VERSIONS).iterator();
+        versionIter.hasNext(); ) {
+      JsonNode version = versionIter.next();
+      if (version.get(VERSION_ID).asInt(-1) == currentVersionId) {
+        JsonNode viewDefinition = version.get(VIEW_DEFINITION);
+        sqlText = viewDefinition.get("sql").asText();
+        JsonNode schema = viewDefinition.get("schema");
+        schemaId = schema.get(SCHEMA_ID).asInt(0);
+      }
+    }
+
+    return builder()
+        .id(id)
+        .metadataLocation(metadataLocation)
+        .versionId(currentVersionId)
+        .schemaId(schemaId)
+        .dialect(dialect)
+        .sqlText(sqlText)
+        .metadata(GenericMetadata.of(VIEW_METADATA, metadata))
         .build();
   }
 }
