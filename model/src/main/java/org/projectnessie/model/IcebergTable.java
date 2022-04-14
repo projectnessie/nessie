@@ -15,9 +15,12 @@
  */
 package org.projectnessie.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import javax.annotation.Nullable;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -60,12 +63,16 @@ public abstract class IcebergTable extends Content {
   @NotBlank
   public abstract String getMetadataLocation();
 
+  /** Corresponds to Iceberg's {@code currentSnapshotId}. */
   public abstract long getSnapshotId();
 
+  /** Corresponds to Iceberg's {@code currentSchemaId}. */
   public abstract int getSchemaId();
 
+  /** Corresponds to Iceberg's {@code defaultSpecId}. */
   public abstract int getSpecId();
 
+  /** Corresponds to Iceberg's {@code defaultSortOrderId}. */
   public abstract int getSortOrderId();
 
   @Override
@@ -73,9 +80,17 @@ public abstract class IcebergTable extends Content {
     return Type.ICEBERG_TABLE;
   }
 
+  @Nullable
+  @JsonInclude(Include.NON_NULL)
+  public abstract GenericMetadata getMetadata();
+
+  public static ImmutableIcebergTable.Builder builder() {
+    return ImmutableIcebergTable.builder();
+  }
+
   public static IcebergTable of(
       String metadataLocation, long snapshotId, int schemaId, int specId, int sortOrderId) {
-    return ImmutableIcebergTable.builder()
+    return builder()
         .metadataLocation(metadataLocation)
         .snapshotId(snapshotId)
         .schemaId(schemaId)
@@ -91,7 +106,7 @@ public abstract class IcebergTable extends Content {
       int specId,
       int sortOrderId,
       String contentId) {
-    return ImmutableIcebergTable.builder()
+    return builder()
         .metadataLocation(metadataLocation)
         .snapshotId(snapshotId)
         .schemaId(schemaId)

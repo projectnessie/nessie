@@ -15,9 +15,12 @@
  */
 package org.projectnessie.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import javax.annotation.Nullable;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import org.immutables.value.Value;
@@ -36,6 +39,7 @@ public abstract class IcebergView extends Content {
   @NotBlank
   public abstract String getMetadataLocation();
 
+  /** Corresponds to Iceberg's {@code currentVersionId}. */
   public abstract int getVersionId();
 
   public abstract int getSchemaId();
@@ -44,8 +48,7 @@ public abstract class IcebergView extends Content {
   @NotNull
   public abstract String getSqlText();
 
-  @NotNull
-  @NotBlank
+  @Nullable // TODO this is currently undefined in Iceberg
   public abstract String getDialect();
 
   @Override
@@ -53,9 +56,17 @@ public abstract class IcebergView extends Content {
     return Type.ICEBERG_VIEW;
   }
 
+  @Nullable
+  @JsonInclude(Include.NON_NULL)
+  public abstract GenericMetadata getMetadata();
+
+  public static ImmutableIcebergView.Builder builder() {
+    return ImmutableIcebergView.builder();
+  }
+
   public static IcebergView of(
       String metadataLocation, int versionId, int schemaId, String dialect, String sqlText) {
-    return ImmutableIcebergView.builder()
+    return builder()
         .metadataLocation(metadataLocation)
         .versionId(versionId)
         .schemaId(schemaId)
@@ -71,7 +82,7 @@ public abstract class IcebergView extends Content {
       int schemaId,
       String dialect,
       String sqlText) {
-    return ImmutableIcebergView.builder()
+    return builder()
         .id(id)
         .metadataLocation(metadataLocation)
         .versionId(versionId)
