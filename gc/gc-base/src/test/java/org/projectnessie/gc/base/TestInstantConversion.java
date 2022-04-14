@@ -18,22 +18,28 @@ package org.projectnessie.gc.base;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 public class TestInstantConversion {
 
-  @Test
-  void testInstantConversion() {
-    Instant now = Instant.now();
-    long time = now.getEpochSecond();
-    long nano = now.getNano();
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void testInstantConversion(boolean isNanoPrecision) {
+    Instant instant =
+        isNanoPrecision
+            ? Instant.parse("2018-08-19T16:02:42.123456789Z")
+            : Instant.parse("2018-08-19T16:02:42.123456Z");
+    long time = instant.getEpochSecond();
+    long nano = instant.getNano();
     // current time in microseconds since epoch
     long micro = TimeUnit.SECONDS.toMicros(time) + TimeUnit.NANOSECONDS.toMicros(nano);
     Instant instantFromMicros = GCUtil.getInstantFromMicros(micro);
-    // Even though instant is capable of nanosecond precision,
-    // Instant.now() gives micro second precision by default.
-    // Because of that the below validation can pass.
-    assertThat(instantFromMicros).isEqualTo(now);
+    // Instant is capable of nanosecond precision.
+    // Hence, convert to microsecond precision before comparing.
+    Instant instantInMicros = instant.truncatedTo(ChronoUnit.MICROS);
+    assertThat(instantFromMicros).isEqualTo(instantInMicros);
   }
 }
