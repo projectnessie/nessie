@@ -1,5 +1,10 @@
 # Releases
 
+## 0.27.0 Release (April 14, 2022)
+
+* Support for Namespace properties
+* Make NessieContentGenerator extensible
+
 ## 0.26.0 Release (April 12, 2022)
 
 * Remove global state for Iceberg tables + views
