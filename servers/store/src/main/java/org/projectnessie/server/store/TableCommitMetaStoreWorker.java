@@ -257,9 +257,8 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
         // yes, Iceberg Views used global state before, but no longer do so
       case DELTA_LAKE_TABLE:
       case NAMESPACE:
-        return false;
       default:
-        throw new IllegalArgumentException("Unknown onRefContent " + content);
+        return false;
     }
   }
 
@@ -271,11 +270,8 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
         return !parsed.getIcebergRefState().hasMetadataLocation();
       case ICEBERG_VIEW_STATE:
         return !parsed.getIcebergViewState().hasMetadataLocation();
-      case DELTA_LAKE_TABLE:
-      case NAMESPACE:
-        return false;
       default:
-        throw new IllegalArgumentException("Unsupported on-ref content " + parsed);
+        return false;
     }
   }
 
