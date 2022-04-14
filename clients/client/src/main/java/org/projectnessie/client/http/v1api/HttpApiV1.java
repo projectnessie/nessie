@@ -35,6 +35,7 @@ import org.projectnessie.client.api.GetReferenceBuilder;
 import org.projectnessie.client.api.MergeReferenceBuilder;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.api.TransplantCommitsBuilder;
+import org.projectnessie.client.api.UpdateNamespaceBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -156,5 +157,10 @@ public final class HttpApiV1 implements NessieApiV1 {
   @Override
   public DeleteNamespaceBuilder deleteNamespace() {
     return new HttpDeleteNamespace(client);
+  }
+
+  @Override
+  public UpdateNamespaceBuilder updateProperties() {
+    return new HttpUpdateNamespace(client);
   }
 }

@@ -95,6 +95,15 @@ components:
               - b
               - d
 
+    namespaceUpdate:
+      value:
+        propertyUpdates:
+          key1: value1
+          key2: value2
+        propertyRemovals:
+          - key3
+          - key4
+
     iceberg:
       value:
         type: ICEBERG_TABLE

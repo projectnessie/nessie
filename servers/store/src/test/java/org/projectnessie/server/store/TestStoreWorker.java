@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
 import java.time.Instant;
 import java.util.AbstractMap;
@@ -459,7 +460,7 @@ class TestStoreWorker {
   }
 
   private static Stream<Map.Entry<ByteString, Content>> provideDeserialization() {
-    return Stream.of(getDelta(), getNamespace());
+    return Stream.of(getDelta(), getNamespace(), getNamespaceWithProperties());
   }
 
   private static Map.Entry<ByteString, Content> getDelta() {
@@ -499,6 +500,23 @@ class TestStoreWorker {
         ObjectTypes.Content.newBuilder()
             .setId(namespace.getId())
             .setNamespace(ObjectTypes.Namespace.newBuilder().addAllElements(elements).build())
+            .build()
+            .toByteString();
+    return new AbstractMap.SimpleImmutableEntry<>(bytes, namespace);
+  }
+
+  private static Map.Entry<ByteString, Content> getNamespaceWithProperties() {
+    List<String> elements = Arrays.asList("a", "b.c", "d");
+    Map<String, String> properties = ImmutableMap.of("key1", "val1");
+    Namespace namespace = Namespace.of(elements, properties);
+    ByteString bytes =
+        ObjectTypes.Content.newBuilder()
+            .setId(namespace.getId())
+            .setNamespace(
+                ObjectTypes.Namespace.newBuilder()
+                    .addAllElements(elements)
+                    .putAllProperties(properties)
+                    .build())
             .build()
             .toByteString();
     return new AbstractMap.SimpleImmutableEntry<>(bytes, namespace);

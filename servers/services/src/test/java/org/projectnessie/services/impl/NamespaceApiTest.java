@@ -32,7 +32,8 @@ public class NamespaceApiTest {
     assertThatThrownBy(
             () ->
                 api.createNamespace(
-                    NamespaceParams.builder().refName("main").namespace(Namespace.EMPTY).build()))
+                    NamespaceParams.builder().refName("main").namespace(Namespace.EMPTY).build(),
+                    Namespace.EMPTY))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Namespace name must not be empty");
   }

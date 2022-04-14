@@ -18,8 +18,11 @@ package org.projectnessie.jaxrs;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
@@ -56,7 +59,7 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
     assertThat(getApi().getNamespace().refName(branch.getName()).namespace(ns).get())
         .isEqualTo(namespace);
 
-    // the namespace in the error message will contain the reprensentation with u001D
+    // the namespace in the error message will contain the representation with u001D
     String namespaceInErrorMsg = namespaceName.replace("\u0000", "\u001D");
 
     assertThatThrownBy(
@@ -458,5 +461,52 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
                 .get()
                 .getNamespaces())
         .isEmpty();
+  }
+
+  @Test
+  public void testNamespaceWithProperties() throws BaseNessieClientServerException {
+    Branch branch = createBranch("namespaceWithProperties");
+    Map<String, String> properties = ImmutableMap.of("key1", "val1", "key2", "val2");
+    Namespace namespace = Namespace.of(properties, "a", "b", "c");
+
+    Namespace ns =
+        getApi()
+            .createNamespace()
+            .namespace(namespace)
+            .properties(properties)
+            .reference(branch)
+            .create();
+    assertThat(ns.getProperties()).isEqualTo(properties);
+
+    assertThatThrownBy(
+            () ->
+                getApi()
+                    .updateProperties()
+                    .reference(branch)
+                    .namespace("non-existing")
+                    .updateProperties(properties)
+                    .update())
+        .isInstanceOf(NessieNamespaceNotFoundException.class)
+        .hasMessage("Namespace 'non-existing' does not exist");
+
+    getApi()
+        .updateProperties()
+        .reference(branch)
+        .namespace(namespace)
+        .updateProperties(properties)
+        .update();
+
+    ns = getApi().getNamespace().reference(branch).namespace(namespace).get();
+    assertThat(ns.getProperties()).isEqualTo(properties);
+
+    getApi()
+        .updateProperties()
+        .reference(branch)
+        .namespace(namespace)
+        .updateProperties(ImmutableMap.of("key3", "val3", "key1", "xyz"))
+        .removeProperties(ImmutableSet.of("key2", "key5"))
+        .update();
+    ns = getApi().getNamespace().reference(branch).namespace(namespace).get();
+    assertThat(ns.getProperties()).isEqualTo(ImmutableMap.of("key1", "xyz", "key3", "val3"));
   }
 }

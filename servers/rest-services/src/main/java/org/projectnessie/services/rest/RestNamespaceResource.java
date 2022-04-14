@@ -24,6 +24,7 @@ import org.projectnessie.api.NamespaceApi;
 import org.projectnessie.api.http.HttpNamespaceApi;
 import org.projectnessie.api.params.MultipleNamespacesParams;
 import org.projectnessie.api.params.NamespaceParams;
+import org.projectnessie.api.params.NamespaceUpdate;
 import org.projectnessie.error.NessieNamespaceAlreadyExistsException;
 import org.projectnessie.error.NessieNamespaceNotEmptyException;
 import org.projectnessie.error.NessieNamespaceNotFoundException;
@@ -74,9 +75,9 @@ public class RestNamespaceResource implements HttpNamespaceApi {
   }
 
   @Override
-  public Namespace createNamespace(@NotNull NamespaceParams params)
+  public Namespace createNamespace(NamespaceParams params, Namespace namespace)
       throws NessieNamespaceAlreadyExistsException, NessieReferenceNotFoundException {
-    return resource().createNamespace(params);
+    return resource().createNamespace(params, namespace);
   }
 
   @Override
@@ -96,5 +97,11 @@ public class RestNamespaceResource implements HttpNamespaceApi {
   public GetNamespacesResponse getNamespaces(@NotNull MultipleNamespacesParams params)
       throws NessieReferenceNotFoundException {
     return resource().getNamespaces(params);
+  }
+
+  @Override
+  public void updateProperties(NamespaceParams params, NamespaceUpdate namespaceUpdate)
+      throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException {
+    resource().updateProperties(params, namespaceUpdate);
   }
 }

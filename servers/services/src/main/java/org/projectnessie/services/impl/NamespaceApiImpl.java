@@ -31,6 +31,7 @@ import javax.annotation.Nullable;
 import org.projectnessie.api.NamespaceApi;
 import org.projectnessie.api.params.MultipleNamespacesParams;
 import org.projectnessie.api.params.NamespaceParams;
+import org.projectnessie.api.params.NamespaceUpdate;
 import org.projectnessie.error.NessieNamespaceAlreadyExistsException;
 import org.projectnessie.error.NessieNamespaceNotEmptyException;
 import org.projectnessie.error.NessieNamespaceNotFoundException;
@@ -41,6 +42,7 @@ import org.projectnessie.model.Content.Type;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.GetNamespacesResponse;
 import org.projectnessie.model.ImmutableGetNamespacesResponse;
+import org.projectnessie.model.ImmutableNamespace;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
@@ -66,12 +68,11 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
   }
 
   @Override
-  public Namespace createNamespace(NamespaceParams params)
+  public Namespace createNamespace(NamespaceParams params, Namespace namespace)
       throws NessieNamespaceAlreadyExistsException, NessieReferenceNotFoundException {
     try {
       BranchName branch = branchFromRefName(params.getRefName());
 
-      Namespace namespace = params.getNamespace();
       Callable<Void> validator =
           () -> {
             Optional<Content> explicitlyCreatedNamespace =
@@ -91,6 +92,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
           };
 
       Preconditions.checkArgument(!namespace.isEmpty(), "Namespace name must not be empty");
+
       Put put = Put.of(ContentKey.of(namespace.getElements()), namespace);
       commit(branch, "create namespace " + namespace.name(), TreeApiImpl.toOp(put), validator);
 
@@ -141,9 +143,9 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
 
   /**
    * First tries to look whether a namespace with the given name was explicitly created via {@link
-   * NamespaceApi#createNamespace(NamespaceParams)}, and then checks if there is an implicit
-   * namespace. An implicitly created namespace generally occurs when adding a table 'a.b.c.table'
-   * where the 'a.b.c' part * represents the namespace.
+   * NamespaceApi#createNamespace(NamespaceParams, Namespace)}, and then checks if there is an
+   * implicit namespace. An implicitly created namespace generally occurs when adding a table
+   * 'a.b.c.table' where the 'a.b.c' part * represents the namespace.
    *
    * @param namespace The namespace to fetch
    * @param branch The ref to use
@@ -215,6 +217,35 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
       return response.build();
     } catch (ReferenceNotFoundException e) {
       throw refNotFoundException(e);
+    }
+  }
+
+  @Override
+  public void updateProperties(NamespaceParams params, NamespaceUpdate namespaceUpdate)
+      throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException {
+    try {
+      BranchName branch = branchFromRefName(params.getRefName());
+
+      Namespace namespace = getNamespace(params.getNamespace(), branch);
+      Map<String, String> properties = new HashMap<>(namespace.getProperties());
+      if (null != namespaceUpdate.getPropertyRemovals()) {
+        namespaceUpdate.getPropertyRemovals().forEach(properties::remove);
+      }
+      if (null != namespaceUpdate.getPropertyUpdates()) {
+        properties.putAll(namespaceUpdate.getPropertyUpdates());
+      }
+
+      Namespace updatedNamespace = ImmutableNamespace.copyOf(namespace).withProperties(properties);
+
+      Put put = Put.of(ContentKey.of(updatedNamespace.getElements()), updatedNamespace);
+      commit(
+          branch,
+          "update properties for namespace " + updatedNamespace.name(),
+          TreeApiImpl.toOp(put),
+          () -> null);
+
+    } catch (ReferenceNotFoundException | ReferenceConflictException e) {
+      throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }
   }
 

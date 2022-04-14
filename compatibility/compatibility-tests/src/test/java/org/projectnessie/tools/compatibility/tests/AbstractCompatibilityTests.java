@@ -16,15 +16,23 @@
 package org.projectnessie.tools.compatibility.tests;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.api.NessieApiV1;
+import org.projectnessie.error.NessieConflictException;
+import org.projectnessie.error.NessieNamespaceNotFoundException;
+import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.LogResponse.LogEntry;
+import org.projectnessie.model.Namespace;
 import org.projectnessie.model.NessieConfiguration;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
@@ -85,5 +93,54 @@ public abstract class AbstractCompatibilityTests {
 
     assertThat(api.getContent().refName(branch.getName()).key(key).get())
         .containsEntry(key, content);
+  }
+
+  @Test
+  @VersionCondition(minVersion = "0.23.1")
+  public void namespace() throws NessieNotFoundException, NessieConflictException {
+    Branch defaultBranch = api.getDefaultBranch();
+    Branch branch = Branch.of("createNamespace", defaultBranch.getHash());
+    Reference reference =
+        api.createReference().sourceRefName(defaultBranch.getName()).reference(branch).create();
+
+    Namespace namespace = Namespace.of("a", "b", "c");
+    api.createNamespace().namespace(namespace).reference(reference).create();
+    assertThat(api.getNamespace().namespace(namespace).reference(reference).get())
+        .isEqualTo(namespace);
+    assertThat(
+            api.getMultipleNamespaces()
+                .namespace(Namespace.EMPTY)
+                .reference(reference)
+                .get()
+                .getNamespaces())
+        .containsExactly(namespace);
+    api.deleteNamespace().reference(reference).namespace(namespace).delete();
+    assertThatThrownBy(() -> api.getNamespace().namespace(namespace).reference(reference).get())
+        .isInstanceOf(NessieNamespaceNotFoundException.class);
+  }
+
+  @Test
+  @VersionCondition(minVersion = "0.27.0")
+  public void namespaceWithProperties() throws NessieNotFoundException, NessieConflictException {
+    Branch defaultBranch = api.getDefaultBranch();
+    Branch branch = Branch.of("namespaceWithProperties", defaultBranch.getHash());
+    Reference reference =
+        api.createReference().sourceRefName(defaultBranch.getName()).reference(branch).create();
+
+    Map<String, String> properties = ImmutableMap.of("key1", "prop1", "key2", "prop2");
+    Namespace namespace = Namespace.of(properties, "a", "b", "c");
+
+    api.createNamespace().namespace(namespace).reference(reference).properties(properties).create();
+    assertThat(api.getNamespace().namespace(namespace).reference(reference).get())
+        .isEqualTo(namespace);
+
+    api.updateProperties()
+        .reference(branch)
+        .namespace(namespace)
+        .updateProperties(ImmutableMap.of("key3", "val3", "key1", "xyz"))
+        .removeProperties(ImmutableSet.of("key2", "key5"))
+        .update();
+    namespace = api.getNamespace().reference(branch).namespace(namespace).get();
+    assertThat(namespace.getProperties()).isEqualTo(ImmutableMap.of("key1", "xyz", "key3", "val3"));
   }
 }

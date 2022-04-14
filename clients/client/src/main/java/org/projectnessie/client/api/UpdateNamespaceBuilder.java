@@ -16,20 +16,25 @@
 package org.projectnessie.client.api;
 
 import java.util.Map;
-import org.projectnessie.error.NessieNamespaceAlreadyExistsException;
+import java.util.Set;
+import org.projectnessie.error.NessieNamespaceNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.Namespace;
 
 /**
- * Request builder for creating a {@link Namespace}.
+ * Request builder for updating properties of a {@link Namespace}.
  *
  * @since {@link NessieApiV1}
  */
-public interface CreateNamespaceBuilder extends OnNamespaceBuilder<CreateNamespaceBuilder> {
+public interface UpdateNamespaceBuilder extends OnNamespaceBuilder<UpdateNamespaceBuilder> {
 
-  CreateNamespaceBuilder properties(Map<String, String> properties);
+  UpdateNamespaceBuilder updateProperty(String key, String value);
 
-  CreateNamespaceBuilder property(String key, String value);
+  UpdateNamespaceBuilder removeProperty(String key);
 
-  Namespace create() throws NessieNamespaceAlreadyExistsException, NessieReferenceNotFoundException;
+  UpdateNamespaceBuilder updateProperties(Map<String, String> propertyUpdates);
+
+  UpdateNamespaceBuilder removeProperties(Set<String> propertyRemovals);
+
+  void update() throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException;
 }

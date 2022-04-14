@@ -43,9 +43,9 @@ public class NamespaceApiImplWithAuthorization extends NamespaceApiImpl {
   }
 
   @Override
-  public Namespace createNamespace(NamespaceParams params)
+  public Namespace createNamespace(NamespaceParams params, Namespace namespace)
       throws NessieNamespaceAlreadyExistsException, NessieReferenceNotFoundException {
-    return super.createNamespace(params);
+    return super.createNamespace(params, namespace);
   }
 
   @Override

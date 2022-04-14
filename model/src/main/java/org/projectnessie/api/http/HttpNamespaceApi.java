@@ -20,6 +20,7 @@ import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -28,11 +29,13 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.projectnessie.api.NamespaceApi;
 import org.projectnessie.api.params.MultipleNamespacesParams;
 import org.projectnessie.api.params.NamespaceParams;
+import org.projectnessie.api.params.NamespaceUpdate;
 import org.projectnessie.error.NessieNamespaceAlreadyExistsException;
 import org.projectnessie.error.NessieNamespaceNotEmptyException;
 import org.projectnessie.error.NessieNamespaceNotFoundException;
@@ -65,7 +68,8 @@ public interface HttpNamespaceApi extends NamespaceApi {
     @APIResponse(responseCode = "404", description = "Reference not found"),
     @APIResponse(responseCode = "409", description = "Namespace already exists"),
   })
-  Namespace createNamespace(@BeanParam @NotNull NamespaceParams params)
+  Namespace createNamespace(
+      @BeanParam @NotNull NamespaceParams params, @NotNull @RequestBody Namespace namespace)
       throws NessieNamespaceAlreadyExistsException, NessieReferenceNotFoundException;
 
   @Override
@@ -128,4 +132,29 @@ public interface HttpNamespaceApi extends NamespaceApi {
   })
   GetNamespacesResponse getNamespaces(@BeanParam @NotNull MultipleNamespacesParams params)
       throws NessieReferenceNotFoundException;
+
+  @Override
+  @POST
+  @Path("/namespace/{ref}/{name}")
+  @Produces(MediaType.APPLICATION_JSON)
+  @APIResponses({
+    @APIResponse(
+        responseCode = "200",
+        description = "Updates namespace properties for the given namespace."),
+    @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
+    @APIResponse(responseCode = "403", description = "Not allowed to update namespace properties"),
+    @APIResponse(responseCode = "404", description = "Reference or Namespace not found"),
+  })
+  void updateProperties(
+      @BeanParam @NotNull NamespaceParams params,
+      @RequestBody(
+              description = "Namespace properties to update/delete.",
+              content = {
+                @Content(
+                    mediaType = MediaType.APPLICATION_JSON,
+                    examples = {@ExampleObject(ref = "namespaceUpdate")})
+              })
+          @NotNull
+          NamespaceUpdate namespaceUpdate)
+      throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException;
 }
