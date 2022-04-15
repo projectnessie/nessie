@@ -17,11 +17,7 @@ package org.projectnessie.tools.contentgenerator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,7 +25,6 @@ import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
-import org.projectnessie.tools.contentgenerator.cli.NessieContentGenerator;
 
 class ITReadContent extends AbstractContentGeneratorTest {
 
@@ -44,59 +39,48 @@ class ITReadContent extends AbstractContentGeneratorTest {
   }
 
   @Test
-  void readContent() throws UnsupportedEncodingException {
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    try (PrintWriter out = new PrintWriter(new PrintStream(baos), true)) {
-      assertThat(
-              NessieContentGenerator.runMain(
-                  out,
-                  new String[] {
-                    "content",
-                    "--uri",
-                    NESSIE_API_URI,
-                    "--ref",
-                    branch.getName(),
-                    "--key",
-                    CONTENT_KEY.getElements().get(0),
-                    "--key",
-                    CONTENT_KEY.getElements().get(1)
-                  }))
-          .isEqualTo(0);
+  void readContent() {
 
-      String[] output = baos.toString(StandardCharsets.UTF_8.toString()).split("\n");
-      assertThat(output).anySatisfy(s -> assertThat(s).contains(contentId));
-      assertThat(output).anySatisfy(s -> assertThat(s).contains(CONTENT_KEY.toString()));
-    }
+    ProcessResult proc =
+        runGeneratorCmd(
+            "content",
+            "--uri",
+            NESSIE_API_URI,
+            "--ref",
+            branch.getName(),
+            "--key",
+            CONTENT_KEY.getElements().get(0),
+            "--key",
+            CONTENT_KEY.getElements().get(1));
+    assertThat(proc.getExitCode()).isEqualTo(0);
+    List<String> output = proc.getStdOutLines();
+
+    assertThat(output).anySatisfy(s -> assertThat(s).contains(contentId));
+    assertThat(output).anySatisfy(s -> assertThat(s).contains(CONTENT_KEY.toString()));
   }
 
   @Test
-  void readContentVerbose() throws UnsupportedEncodingException {
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    try (PrintWriter out = new PrintWriter(new PrintStream(baos), true)) {
-      assertThat(
-              NessieContentGenerator.runMain(
-                  out,
-                  new String[] {
-                    "content",
-                    "--uri",
-                    NESSIE_API_URI,
-                    "--ref",
-                    branch.getName(),
-                    "--verbose",
-                    "--key",
-                    CONTENT_KEY.getElements().get(0),
-                    "--key",
-                    CONTENT_KEY.getElements().get(1)
-                  }))
-          .isEqualTo(0);
+  void readContentVerbose() {
+    ProcessResult proc =
+        runGeneratorCmd(
+            "content",
+            "--uri",
+            NESSIE_API_URI,
+            "--ref",
+            branch.getName(),
+            "--verbose",
+            "--key",
+            CONTENT_KEY.getElements().get(0),
+            "--key",
+            CONTENT_KEY.getElements().get(1));
+    assertThat(proc.getExitCode()).isEqualTo(0);
+    List<String> output = proc.getStdOutLines();
 
-      String[] output = baos.toString(StandardCharsets.UTF_8.toString()).split("\n");
-      assertThat(output).anySatisfy(s -> assertThat(s).contains(contentId));
-      assertThat(output).anySatisfy(s -> assertThat(s).contains(CONTENT_KEY.toString()));
-      assertThat(output)
-          .anySatisfy(s -> assertThat(s).contains("key[0]: " + CONTENT_KEY.getElements().get(0)));
-      assertThat(output)
-          .anySatisfy(s -> assertThat(s).contains("key[1]: " + CONTENT_KEY.getElements().get(1)));
-    }
+    assertThat(output).anySatisfy(s -> assertThat(s).contains(contentId));
+    assertThat(output).anySatisfy(s -> assertThat(s).contains(CONTENT_KEY.toString()));
+    assertThat(output)
+        .anySatisfy(s -> assertThat(s).contains("key[0]: " + CONTENT_KEY.getElements().get(0)));
+    assertThat(output)
+        .anySatisfy(s -> assertThat(s).contains("key[1]: " + CONTENT_KEY.getElements().get(1)));
   }
 }

@@ -17,25 +17,16 @@ package org.projectnessie.tools.contentgenerator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
+import java.util.List;
 import org.junit.jupiter.api.Test;
-import org.projectnessie.tools.contentgenerator.cli.NessieContentGenerator;
 
 class ITReadReferences extends AbstractContentGeneratorTest {
 
   @Test
-  void readReferences() throws UnsupportedEncodingException {
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    try (PrintWriter out = new PrintWriter(new PrintStream(baos), true)) {
-      assertThat(
-              NessieContentGenerator.runMain(out, new String[] {"refs", "--uri", NESSIE_API_URI}))
-          .isEqualTo(0);
-      String[] output = baos.toString(StandardCharsets.UTF_8.toString()).split("\n");
-      assertThat(output).anySatisfy(s -> assertThat(s).contains("main"));
-    }
+  void readReferences() {
+    ProcessResult proc = runGeneratorCmd("refs", "--uri", NESSIE_API_URI);
+    assertThat(proc.getExitCode()).isEqualTo(0);
+    List<String> output = proc.getStdOutLines();
+    assertThat(output).anySatisfy(s -> assertThat(s).contains("main"));
   }
 }

@@ -23,7 +23,6 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.Content.Type;
-import org.projectnessie.tools.contentgenerator.cli.NessieContentGenerator;
 
 class ITGenerateContent extends AbstractContentGeneratorTest {
 
@@ -38,20 +37,18 @@ class ITGenerateContent extends AbstractContentGeneratorTest {
 
       String testCaseBranch = "type_" + contentType.name();
 
-      assertThat(
-              NessieContentGenerator.runMain(
-                  new String[] {
-                    "generate",
-                    "-n",
-                    Integer.toString(numCommits),
-                    "-u",
-                    NESSIE_API_URI,
-                    "-D",
-                    testCaseBranch,
-                    "--type=" + contentType.name()
-                  }))
-          .isEqualTo(0);
+      ProcessResult proc =
+          runGeneratorCmd(
+              "generate",
+              "-n",
+              Integer.toString(numCommits),
+              "-u",
+              NESSIE_API_URI,
+              "-D",
+              testCaseBranch,
+              "--type=" + contentType.name());
 
+      assertThat(proc.getExitCode()).isEqualTo(0);
       assertThat(api.getCommitLog().refName(testCaseBranch).get().getLogEntries())
           .hasSize(numCommits);
     }

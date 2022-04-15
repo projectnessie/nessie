@@ -17,11 +17,6 @@ package org.projectnessie.tools.contentgenerator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,7 +27,6 @@ import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.LogResponse.LogEntry;
-import org.projectnessie.tools.contentgenerator.cli.NessieContentGenerator;
 
 class ITReadCommits extends AbstractContentGeneratorTest {
 
@@ -47,18 +41,13 @@ class ITReadCommits extends AbstractContentGeneratorTest {
   }
 
   @Test
-  void readCommits() throws UnsupportedEncodingException, NessieNotFoundException {
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    PrintStream out = new PrintStream(baos);
-    System.setOut(out);
+  void readCommits() throws Exception {
+    ProcessResult proc =
+        runGeneratorCmd("commits", "--uri", NESSIE_API_URI, "--ref", branch.getName());
 
-    assertThat(
-            NessieContentGenerator.runMain(
-                new String[] {"commits", "--uri", NESSIE_API_URI, "--ref", branch.getName()}))
-        .isEqualTo(0);
+    assertThat(proc.getExitCode()).isEqualTo(0);
+    List<String> output = proc.getStdOutLines();
 
-    out.close();
-    String[] output = baos.toString(StandardCharsets.UTF_8.toString()).split("\n");
     assertThat(output).anySatisfy(s -> assertThat(s).contains(COMMIT_MSG));
     assertThat(output).noneSatisfy(s -> assertThat(s).contains(CONTENT_KEY.toString()));
 
@@ -68,26 +57,20 @@ class ITReadCommits extends AbstractContentGeneratorTest {
   }
 
   @Test
-  void readCommitsVerbose() throws UnsupportedEncodingException, NessieNotFoundException {
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    try (PrintWriter out = new PrintWriter(new PrintStream(baos), true)) {
-      assertThat(
-              NessieContentGenerator.runMain(
-                  out,
-                  new String[] {
-                    "commits", "--uri", NESSIE_API_URI, "--ref", branch.getName(), "--verbose"
-                  }))
-          .isEqualTo(0);
+  void readCommitsVerbose() throws Exception {
+    ProcessResult proc =
+        runGeneratorCmd("commits", "--uri", NESSIE_API_URI, "--ref", branch.getName(), "--verbose");
 
-      String[] output = baos.toString(StandardCharsets.UTF_8.toString()).split("\n");
-      assertThat(output).anySatisfy(s -> assertThat(s).contains(COMMIT_MSG));
-      assertThat(output).anySatisfy(s -> assertThat(s).contains(CONTENT_KEY.toString()));
-      assertThat(output)
-          .anySatisfy(s -> assertThat(s).contains("key[0]: " + CONTENT_KEY.getElements().get(0)));
-      assertThat(output)
-          .anySatisfy(s -> assertThat(s).contains("key[1]: " + CONTENT_KEY.getElements().get(1)));
-      assertThat(output).anySatisfy(s -> assertThat(s).contains(contentId));
-    }
+    assertThat(proc.getExitCode()).isEqualTo(0);
+    List<String> output = proc.getStdOutLines();
+
+    assertThat(output).anySatisfy(s -> assertThat(s).contains(COMMIT_MSG));
+    assertThat(output).anySatisfy(s -> assertThat(s).contains(CONTENT_KEY.toString()));
+    assertThat(output)
+        .anySatisfy(s -> assertThat(s).contains("key[0]: " + CONTENT_KEY.getElements().get(0)));
+    assertThat(output)
+        .anySatisfy(s -> assertThat(s).contains("key[1]: " + CONTENT_KEY.getElements().get(1)));
+    assertThat(output).anySatisfy(s -> assertThat(s).contains(contentId));
 
     try (NessieApiV1 api = buildNessieApi()) {
       List<LogEntry> logEntries =
