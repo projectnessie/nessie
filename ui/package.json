@@ -25,7 +25,7 @@
     "formik": "^2.2.9",
     "http-proxy-middleware": "^2.0.4",
     "identity-obj-proxy": "3.0.0",
-    "moment": "^2.29.2",
+    "moment": "^2.29.3",
     "pkg.json": "^2.0.8",
     "postcss": "8.4.12",
     "postcss-flexbugs-fixes": "5.0.2",
