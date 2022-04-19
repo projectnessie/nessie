@@ -489,6 +489,19 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
         .isInstanceOf(NessieNamespaceNotFoundException.class)
         .hasMessage("Namespace 'non-existing' does not exist");
 
+    // Re-run with invalid name, but different parameters to ensure that missing parameters do not
+    // fail the request before the name is validated.
+    assertThatThrownBy(
+            () ->
+                getApi()
+                    .updateProperties()
+                    .reference(branch)
+                    .namespace("non-existing")
+                    .removeProperties(properties.keySet())
+                    .update())
+        .isInstanceOf(NessieNamespaceNotFoundException.class)
+        .hasMessage("Namespace 'non-existing' does not exist");
+
     getApi()
         .updateProperties()
         .reference(branch)
