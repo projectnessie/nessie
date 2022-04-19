@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.persist.dynamodb;
 
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
@@ -61,6 +62,14 @@ public class LocalDynamoTestConnectionProviderSource extends DynamoTestConnectio
   }
 
   public void startDynamo() {
+    startDynamo(Optional.empty(), false);
+  }
+
+  /**
+   * Starts the DynamoDB mock with an optional Docker network ID and a flag to turn off all output
+   * to stdout and stderr.
+   */
+  public void startDynamo(Optional<String> containerNetworkId, boolean quiet) {
     if (container != null) {
       throw new IllegalStateException("Already started");
     }
@@ -71,16 +80,29 @@ public class LocalDynamoTestConnectionProviderSource extends DynamoTestConnectio
     String version = System.getProperty("it.nessie.container.dynalite.tag", "latest");
     String imageName = "dimaqq/dynalite:" + version;
 
+    if (!quiet) {
+      LOGGER.info("Starting Dynamo test container (network-id: {})", containerNetworkId);
+    }
+
     container =
         new GenericContainer<>(imageName)
-            .withLogConsumer(new Slf4jLogConsumer(LOGGER))
+            .withLogConsumer(quiet ? outputFrame -> {} : new Slf4jLogConsumer(LOGGER))
             .withExposedPorts(8000);
+    containerNetworkId.ifPresent(container::withNetworkMode);
     container.start();
 
-    Integer port = container.getFirstMappedPort();
-    String host = container.getHost();
+    Integer port = containerNetworkId.isPresent() ? 8000 : container.getFirstMappedPort();
+    String host =
+        containerNetworkId.isPresent()
+            ? container.getCurrentContainerInfo().getConfig().getHostName()
+            : container.getHost();
 
     endpointURI = String.format("http://%s:%d", host, port);
+
+    if (!quiet) {
+      LOGGER.info(
+          "Dynamo test container endpoint is {} (network-id: {})", endpointURI, containerNetworkId);
+    }
   }
 
   @Override

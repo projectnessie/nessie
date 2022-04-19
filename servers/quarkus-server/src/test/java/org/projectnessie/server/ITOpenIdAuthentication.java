@@ -15,11 +15,19 @@
  */
 package org.projectnessie.server;
 
+import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.quarkus.test.junit.TestProfile;
-import org.projectnessie.jaxrs.AbstractResteasyTest;
-import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfileMongo;
+import io.quarkus.test.oidc.server.OidcWiremockTestResource;
+import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 
 @QuarkusIntegrationTest
-@TestProfile(QuarkusTestProfileMongo.class)
-public class ITResteasyMongo extends AbstractResteasyTest {}
+@QuarkusTestResource(OidcWiremockTestResource.class)
+@TestProfile(value = AbstractOpenIdAuthentication.Profile.class)
+@DisabledIfSystemProperty(
+    named = "quarkus.container-image.build",
+    matches = "true",
+    disabledReason =
+        "The OidcWiremock resource runs on the Docker host, which is not accessible when the tested "
+            + "Nessie server runs in a Docker container.")
+public class ITOpenIdAuthentication extends AbstractOpenIdAuthentication {}

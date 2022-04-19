@@ -193,10 +193,14 @@
                 <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                 <quarkus.log.level>${test.log.level}</quarkus.log.level>
                 <quarkus.log.console.level>${test.log.level}</quarkus.log.console.level>
+                <native.image.path>${project.build.directory}/${project.build.finalName}-runner</native.image.path>
+                <quarkus.container-image.build>${quarkus.container-image.build}</quarkus.container-image.build>
               </systemPropertyVariables>
-              <excludes>
-                <exclude>**/ITNative*</exclude>
-              </excludes>
+              <environmentVariables>
+                <MP_JWT_VERIFY_PUBLICKEY_LOCATION>${project.build.directory}/test-classes/META-INF/resources/publicKey.pem</MP_JWT_VERIFY_PUBLICKEY_LOCATION>
+                <QUARKUS_SMALLRYE_JWT_ENABLED>true</QUARKUS_SMALLRYE_JWT_ENABLED>
+                <HTTP_ACCESS_LOG_LEVEL>${test.log.level}</HTTP_ACCESS_LOG_LEVEL>
+              </environmentVariables>
             </configuration>
           </execution>
         </executions>
@@ -226,37 +230,6 @@
       <properties>
         <quarkus.package.type>native</quarkus.package.type>
       </properties>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-failsafe-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>quarkus-native</id>
-                <goals>
-                  <goal>integration-test</goal>
-                  <goal>verify</goal>
-                </goals>
-                <configuration>
-                  <environmentVariables>
-                    <QUARKUS_LOG_LEVEL>DEBUG</QUARKUS_LOG_LEVEL>
-                    <MP_JWT_VERIFY_PUBLICKEY_LOCATION>${project.build.directory}/test-classes/META-INF/resources/publicKey.pem</MP_JWT_VERIFY_PUBLICKEY_LOCATION>
-                    <QUARKUS_SMALLRYE_JWT_ENABLED>true</QUARKUS_SMALLRYE_JWT_ENABLED>
-                    <HTTP_ACCESS_LOG_LEVEL>${test.log.level}</HTTP_ACCESS_LOG_LEVEL>
-                  </environmentVariables>
-                  <systemPropertyVariables>
-                    <native.image.path>${project.build.directory}/${project.build.finalName}-runner</native.image.path>
-                  </systemPropertyVariables>
-                  <includes>
-                    <include>**/ITNative*</include>
-                  </includes>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
     </profile>
     <profile>
       <!-- Profile "release" is rather exclusively used by CI -->

@@ -34,7 +34,7 @@ import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
 
-class AbstractTestBasicOperations {
+abstract class AbstractTestBasicOperations {
 
   private NessieApiV1 api;
 

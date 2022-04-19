@@ -15,20 +15,33 @@
  */
 package org.projectnessie.quarkus.tests.profiles;
 
+import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
+
 import com.google.common.collect.ImmutableMap;
+import io.quarkus.test.common.DevServicesContext;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import java.util.Map;
+import java.util.Optional;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 
-public class PostgresTestResourceLifecycleManager implements QuarkusTestResourceLifecycleManager {
+public class PostgresTestResourceLifecycleManager
+    implements QuarkusTestResourceLifecycleManager, DevServicesContext.ContextAware {
   private JdbcDatabaseContainer<?> container;
+
+  private Optional<String> containerNetworkId;
+
+  @Override
+  public void setIntegrationTestContext(DevServicesContext context) {
+    containerNetworkId = context.containerNetworkId();
+  }
 
   @Override
   public Map<String, String> start() {
     String version = System.getProperty("it.nessie.container.postgres.tag", "9.6.22");
-    container = new PostgreSQLContainer<>("postgres:" + version);
 
+    container = new PostgreSQLContainer<>("postgres:" + version).withLogConsumer(outputFrame -> {});
+    containerNetworkId.ifPresent(container::withNetworkMode);
     try {
       // Only start the Docker container (local Dynamo-compatible). The DynamoDatabaseClient will
       // be configured via Quarkus -> Quarkus-Dynamo / DynamoVersionStoreFactory.
@@ -37,13 +50,22 @@ public class PostgresTestResourceLifecycleManager implements QuarkusTestResource
       throw new RuntimeException(e);
     }
 
+    String jdbcUrl = container.getJdbcUrl();
+
+    if (containerNetworkId.isPresent()) {
+      String hostPort = container.getHost() + ':' + container.getMappedPort(POSTGRESQL_PORT);
+      String networkHostPort =
+          container.getCurrentContainerInfo().getConfig().getHostName() + ':' + POSTGRESQL_PORT;
+      jdbcUrl = jdbcUrl.replace(hostPort, networkHostPort);
+    }
+
     return ImmutableMap.of(
         "quarkus.datasource.username",
         container.getUsername(),
         "quarkus.datasource.password",
         container.getPassword(),
         "quarkus.datasource.jdbc.url",
-        container.getJdbcUrl(),
+        jdbcUrl,
         "quarkus.datasource.jdbc.extended-leak-report",
         "true");
   }

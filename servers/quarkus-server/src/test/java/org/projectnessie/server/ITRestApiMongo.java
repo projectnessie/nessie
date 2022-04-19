@@ -15,11 +15,11 @@
  */
 package org.projectnessie.server;
 
-import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.quarkus.test.junit.TestProfile;
 import org.projectnessie.jaxrs.AbstractTestRest;
 import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfileMongo;
 
-@QuarkusTest
+@QuarkusIntegrationTest
 @TestProfile(QuarkusTestProfileMongo.class)
 class ITRestApiMongo extends AbstractTestRest {}
