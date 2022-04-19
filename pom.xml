@@ -171,7 +171,7 @@
     <deltalake.version>1.1.0-nessie</deltalake.version>
     <dockerjava.version>3.2.13</dockerjava.version>
     <dynamodb.version>1.12.0</dynamodb.version>
-    <errorprone-slf4j.version>0.1.10</errorprone-slf4j.version>
+    <errorprone-slf4j.version>0.1.11</errorprone-slf4j.version>
     <flapdoodle.version>3.1.4</flapdoodle.version>
     <gatling.maven.version>4.1.5</gatling.maven.version>
     <gatling.version>3.7.6</gatling.version>
