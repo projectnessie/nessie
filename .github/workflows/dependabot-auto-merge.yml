@@ -35,15 +35,11 @@ jobs:
     # Note: the check `github.actor == 'dependabot[bot]'` ensures that auto-approve-and-merge
     # only happens when dependabot triggers the workflow runs - but not when another user pushes.
 
-    # PRs to bump flapdoodle/mongo are intentionally ignored (no version after 3.1.4 works fine on macOS)!
-
     if: >
       github.event.workflow_run.event == 'pull_request' &&
       github.event.workflow_run.conclusion == 'success' &&
       github.actor == 'dependabot[bot]' && (
         startsWith(github.event.workflow_run.head_commit.message, 'Bump')
-      ) && !(
-        startsWith(github.event.workflow_run.head_commit.message, 'Bump de.flapdoodle.embed.mongo')
       ) &&
       github.repository == 'projectnessie/nessie'
 

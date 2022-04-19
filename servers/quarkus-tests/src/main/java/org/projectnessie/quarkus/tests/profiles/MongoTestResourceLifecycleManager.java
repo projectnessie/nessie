@@ -15,38 +15,54 @@
  */
 package org.projectnessie.quarkus.tests.profiles;
 
+import static org.projectnessie.versioned.persist.mongodb.LocalMongoTestConnectionProviderSource.MONGO_DB_NAME;
+
 import com.google.common.collect.ImmutableMap;
+import io.quarkus.test.common.DevServicesContext;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import java.util.Map;
-import java.util.Objects;
-import org.projectnessie.versioned.persist.mongodb.FlapdoodleMongoTestConnectionProviderSource;
-import org.projectnessie.versioned.persist.mongodb.MongoClientConfig;
+import java.util.Optional;
+import org.projectnessie.versioned.persist.mongodb.LocalMongoTestConnectionProviderSource;
 
-public class MongoTestResourceLifecycleManager implements QuarkusTestResourceLifecycleManager {
-  private final FlapdoodleMongoTestConnectionProviderSource mongo =
-      new FlapdoodleMongoTestConnectionProviderSource();
+public class MongoTestResourceLifecycleManager
+    implements QuarkusTestResourceLifecycleManager, DevServicesContext.ContextAware {
+
+  private LocalMongoTestConnectionProviderSource mongo;
+
+  private Optional<String> containerNetworkId;
+
+  @Override
+  public void setIntegrationTestContext(DevServicesContext context) {
+    containerNetworkId = context.containerNetworkId();
+  }
 
   @Override
   public Map<String, String> start() {
+    mongo = new LocalMongoTestConnectionProviderSource();
+
     try {
-      mongo.start();
+      mongo.startMongo(containerNetworkId, true);
     } catch (Exception e) {
-      throw new IllegalStateException(e);
+      throw new RuntimeException(e);
     }
 
-    MongoClientConfig config = mongo.getConnectionProviderConfig();
-
     return ImmutableMap.of(
-        "quarkus.mongodb.connection-string", Objects.requireNonNull(config.getConnectionString()),
-        "quarkus.mongodb.database", Objects.requireNonNull(config.getDatabaseName()));
+        "quarkus.mongodb.connection-string",
+        mongo.getConnectionString(),
+        "quarkus.mongodb.database",
+        MONGO_DB_NAME);
   }
 
   @Override
   public void stop() {
-    try {
-      mongo.stop();
-    } catch (Exception e) {
-      throw new IllegalStateException(e);
+    if (mongo != null) {
+      try {
+        mongo.stop();
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      } finally {
+        mongo = null;
+      }
     }
   }
 }
