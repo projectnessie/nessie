@@ -19,6 +19,6 @@ import org.projectnessie.versioned.persist.tests.AbstractDatabaseAdapterTest;
 import org.projectnessie.versioned.persist.tests.LongerCommitTimeouts;
 import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
-@NessieExternalDatabase(FlapdoodleMongoTestConnectionProviderSource.class)
+@NessieExternalDatabase(LocalMongoTestConnectionProviderSource.class)
 public class ITDatabaseAdapterMongo extends AbstractDatabaseAdapterTest
     implements LongerCommitTimeouts {}

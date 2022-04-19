@@ -172,7 +172,6 @@
     <dockerjava.version>3.2.13</dockerjava.version>
     <dynamodb.version>1.12.0</dynamodb.version>
     <errorprone-slf4j.version>0.1.11</errorprone-slf4j.version>
-    <flapdoodle.version>3.1.4</flapdoodle.version>
     <gatling.maven.version>4.1.5</gatling.maven.version>
     <gatling.version>3.7.6</gatling.version>
     <google-error-prone.version>2.13.1</google-error-prone.version>
@@ -484,11 +483,6 @@
         <groupId>org.slf4j</groupId>
         <artifactId>log4j-over-slf4j</artifactId>
         <version>${slf4j.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>de.flapdoodle.embed</groupId>
-        <artifactId>de.flapdoodle.embed.mongo</artifactId>
-        <version>${flapdoodle.version}</version>
       </dependency>
       <dependency>
         <groupId>io.projectreactor</groupId>
