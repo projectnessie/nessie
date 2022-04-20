@@ -23,7 +23,7 @@
     "dotenv": "16.0.0",
     "dotenv-expand": "8.0.3",
     "formik": "^2.2.9",
-    "http-proxy-middleware": "^2.0.4",
+    "http-proxy-middleware": "^2.0.5",
     "identity-obj-proxy": "3.0.0",
     "moment": "^2.29.3",
     "pkg.json": "^2.0.8",
