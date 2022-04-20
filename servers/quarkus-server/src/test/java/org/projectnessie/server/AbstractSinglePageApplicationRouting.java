@@ -15,11 +15,15 @@
  */
 package org.projectnessie.server;
 
-import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.TestProfile;
-import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfileInmemory;
+import static io.restassured.RestAssured.given;
 
-@QuarkusTest
-@TestProfile(
-    QuarkusTestProfileInmemory.class) // use the QuarkusTestProfileInmemory, as it can be reused
-class TestSinglePageApplicationRouting extends AbstractSinglePageApplicationRouting {}
+import io.restassured.http.ContentType;
+import org.junit.jupiter.api.Test;
+
+abstract class AbstractSinglePageApplicationRouting {
+
+  @Test
+  public void makeSureNonHomePathServesHtml() {
+    given().when().get("/tree/123").then().contentType(ContentType.HTML).statusCode(200);
+  }
+}
