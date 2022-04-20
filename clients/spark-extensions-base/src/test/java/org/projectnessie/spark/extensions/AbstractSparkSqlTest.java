@@ -87,6 +87,7 @@ public abstract class AbstractSparkSqlTest {
 
     conf.set(SQLConf.PARTITION_OVERWRITE_MODE().key(), "dynamic")
         .set("spark.testing", "true")
+        .set("spark.sql.warehouse.dir", tempFile.toURI().toString())
         .set("spark.sql.shuffle.partitions", "4")
         .set("spark.sql.catalog.nessie.catalog-impl", "org.apache.iceberg.nessie.NessieCatalog")
         .set("spark.sql.catalog.nessie", "org.apache.iceberg.spark.SparkCatalog");
