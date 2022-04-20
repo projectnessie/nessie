@@ -15,14 +15,24 @@
  */
 package org.projectnessie.quarkus.tests.profiles;
 
+import io.quarkus.test.common.DevServicesContext;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 import org.projectnessie.versioned.persist.dynamodb.LocalDynamoTestConnectionProviderSource;
 
-public class DynamoTestResourceLifecycleManager implements QuarkusTestResourceLifecycleManager {
+public class DynamoTestResourceLifecycleManager
+    implements QuarkusTestResourceLifecycleManager, DevServicesContext.ContextAware {
 
   private LocalDynamoTestConnectionProviderSource dynamo;
+
+  private Optional<String> containerNetworkId = Optional.empty();
+
+  @Override
+  public void setIntegrationTestContext(DevServicesContext context) {
+    containerNetworkId = context.containerNetworkId();
+  }
 
   @Override
   public Map<String, String> start() {
@@ -31,8 +41,9 @@ public class DynamoTestResourceLifecycleManager implements QuarkusTestResourceLi
     try {
       // Only start the Docker container (local Dynamo-compatible). The DynamoDatabaseClient will
       // be configured via Quarkus -> Quarkus-Dynamo / DynamoVersionStoreFactory.
-      dynamo.startDynamo();
+      dynamo.startDynamo(containerNetworkId, true);
     } catch (Exception e) {
+      e.printStackTrace();
       throw new RuntimeException(e);
     }
 

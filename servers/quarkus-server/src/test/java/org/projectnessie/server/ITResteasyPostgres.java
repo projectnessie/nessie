@@ -15,11 +15,11 @@
  */
 package org.projectnessie.server;
 
-import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.quarkus.test.junit.TestProfile;
 import org.projectnessie.jaxrs.AbstractResteasyTest;
 import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfilePostgres;
 
-@QuarkusTest
+@QuarkusIntegrationTest
 @TestProfile(QuarkusTestProfilePostgres.class)
 public class ITResteasyPostgres extends AbstractResteasyTest {}

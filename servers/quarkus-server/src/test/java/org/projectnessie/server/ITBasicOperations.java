@@ -15,11 +15,10 @@
  */
 package org.projectnessie.server;
 
-import io.quarkus.test.junit.NativeImageTest;
+import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.quarkus.test.junit.TestProfile;
-import org.projectnessie.jaxrs.AbstractTestRest;
-import org.projectnessie.quarkus.tests.profiles.QuarkusNativeProfileRocks;
+import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfileInmemory;
 
-@NativeImageTest
-@TestProfile(QuarkusNativeProfileRocks.class)
-public class ITNativeRestApiRocks extends AbstractTestRest {}
+@QuarkusIntegrationTest
+@TestProfile(QuarkusTestProfileInmemory.class)
+public class ITBasicOperations extends AbstractTestBasicOperations {}

@@ -21,7 +21,7 @@ import io.restassured.RestAssured;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.jaxrs.AbstractTestRest;
 
-public class AbstractRestWithMetrics extends AbstractTestRest {
+public abstract class AbstractRestWithMetrics extends AbstractTestRest {
   // We need to extend the AbstractTestRest because all Nessie metrics are created lazily.
   // They will appear in the `/q/metrics` endpoint only when some REST actions are executed.
 
@@ -41,7 +41,6 @@ public class AbstractRestWithMetrics extends AbstractTestRest {
 
     // then
     assertThat(body).contains("jvm_threads_live_threads");
-    assertThat(body).contains("jvm_memory_committed_bytes");
     assertThat(body).contains("nessie_versionstore_request_seconds_max");
     assertThat(body).contains("nessie_versionstore_request_seconds_bucket");
     assertThat(body).contains("nessie_versionstore_request_seconds_count");
@@ -52,6 +51,5 @@ public class AbstractRestWithMetrics extends AbstractTestRest {
     assertThat(body).contains("/api/v1/trees/tree/{ref}/entries");
     assertThat(body).contains("http_server_connections_seconds_max");
     assertThat(body).contains("http_server_connections_seconds_active_count");
-    assertThat(body).contains("jvm_gc_live_data_size_bytes");
   }
 }

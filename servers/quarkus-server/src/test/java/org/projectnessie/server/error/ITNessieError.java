@@ -18,7 +18,7 @@ package org.projectnessie.server.error;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import io.quarkus.test.junit.NativeImageTest;
+import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.quarkus.test.junit.TestProfile;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,17 +29,17 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.Operation.Put;
-import org.projectnessie.quarkus.tests.profiles.QuarkusNativeProfileInmemory;
+import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfileInmemory;
 
 /**
  * Rudimentary version of {@link TestNessieError}, because we cannot dynamically add beans and
  * REST-endpoints declared in test-source to the native-image-binary; so this test checks just some
  * very basic validation functionality.
  */
-@NativeImageTest
+@QuarkusIntegrationTest
 @TestProfile(
-    QuarkusNativeProfileInmemory.class) // use the QuarkusNativeProfileInmemory, as it can be reused
-public class ITNativeNessieError {
+    QuarkusTestProfileInmemory.class) // use the QuarkusTestProfileInmemory, as it can be reused
+public class ITNessieError {
 
   private NessieApiV1 api;
 
