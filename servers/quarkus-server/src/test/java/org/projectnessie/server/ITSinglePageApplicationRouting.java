@@ -15,11 +15,11 @@
  */
 package org.projectnessie.server;
 
-import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.quarkus.test.junit.TestProfile;
 import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfileInmemory;
 
-@QuarkusTest
+@QuarkusIntegrationTest
 @TestProfile(
     QuarkusTestProfileInmemory.class) // use the QuarkusTestProfileInmemory, as it can be reused
-class TestSinglePageApplicationRouting extends AbstractSinglePageApplicationRouting {}
+class ITSinglePageApplicationRouting extends AbstractSinglePageApplicationRouting {}
