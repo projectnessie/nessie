@@ -107,7 +107,7 @@ final class OldNessieServer implements NessieServer {
   }
 
   static ClassLoader createSharedClassLoader() {
-    String rocksdbVersion = System.getProperty("rockdb.version");
+    String rocksdbVersion = System.getProperty("rocksdb.version");
     if (rocksdbVersion == null) {
       rocksdbVersion = FALLBACK_ROCKSDB_VERSION;
       LOGGER.warn(
