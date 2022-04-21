@@ -191,7 +191,7 @@
     <jsr305.version>3.0.2</jsr305.version>
     <junit.version>5.8.2</junit.version>
     <logback.version>1.2.11</logback.version>
-    <maven.resolver.version>1.8.0</maven.resolver.version>
+    <maven.resolver.version>1.7.3</maven.resolver.version>
     <maven.version>3.8.5</maven.version>
     <mockito.version>4.5.0</mockito.version>
     <nessie.version>${project.version}</nessie.version>
