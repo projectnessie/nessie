@@ -30,7 +30,6 @@ import org.junit.platform.engine.TestDescriptor;
 import org.junit.platform.engine.TestEngine;
 import org.junit.platform.engine.UniqueId;
 import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor;
-import org.junit.platform.engine.support.descriptor.EngineDescriptor;
 import org.projectnessie.tools.compatibility.api.Version;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,10 +54,12 @@ public class MultiNessieVersionsTestEngine implements TestEngine {
     return ENGINE_ID;
   }
 
+  @Override
   public Optional<String> getGroupId() {
     return Optional.of("org.projectnessie");
   }
 
+  @Override
   public Optional<String> getArtifactId() {
     return Optional.of("nessie-compatibility-common");
   }
@@ -106,16 +107,7 @@ public class MultiNessieVersionsTestEngine implements TestEngine {
 
   @Override
   public void execute(ExecutionRequest executionRequest) {
-    if (executionRequest.getRootTestDescriptor() instanceof SkipEngineDescriptor) {
-      return;
-    }
     delegate.execute(executionRequest);
-  }
-
-  private static final class SkipEngineDescriptor extends EngineDescriptor {
-    SkipEngineDescriptor(UniqueId id) {
-      super(id, "No Nessie versions");
-    }
   }
 
   private static final class NessieVersionTestDescriptor extends AbstractTestDescriptor {
