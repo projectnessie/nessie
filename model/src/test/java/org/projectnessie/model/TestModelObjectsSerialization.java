@@ -30,7 +30,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.model.BaseMergeTransplant.MergeBehavior;
 import org.projectnessie.model.BaseMergeTransplant.MergeKeyBehavior;
-import org.projectnessie.model.Content.Type;
 import org.projectnessie.model.LogResponse.LogEntry;
 
 /**
@@ -99,7 +98,7 @@ public class TestModelObjectsSerialization {
             EntriesResponse.builder()
                 .addEntries(
                     ImmutableEntry.builder()
-                        .type(Type.ICEBERG_TABLE)
+                        .type(Content.Type.ICEBERG_TABLE)
                         .name(ContentKey.fromPathString("/tmp/testpath"))
                         .build())
                 .token(HASH)

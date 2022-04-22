@@ -89,14 +89,12 @@ import org.projectnessie.versioned.persist.adapter.spi.TryLoopState;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.ContentIdWithBytes;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
-import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry.Builder;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.NamedReference;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogEntry.Operation;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogEntry.RefType;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefPointer;
-import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefPointer.Type;
 
 /**
  * Non-transactional database-adapter implementation suitable for no-sql databases.
@@ -511,7 +509,7 @@ public abstract class NonTransactionalDatabaseAdapter<
                       .setName(defaultBranchName)
                       .setRef(
                           RefPointer.newBuilder()
-                              .setType(Type.Branch)
+                              .setType(RefPointer.Type.Branch)
                               .setHash(NO_ANCESTOR.asBytes())))
               .setRefLogId(newRefLog.getRefLogId())
               .addRefLogParentsInclHead(newRefLog.getRefLogId())
@@ -695,12 +693,12 @@ public abstract class NonTransactionalDatabaseAdapter<
   }
 
   /** Get the protobuf-enum-value for a named-reference. */
-  protected static Type protoTypeForRef(NamedRef target) {
-    Type type;
+  protected static RefPointer.Type protoTypeForRef(NamedRef target) {
+    RefPointer.Type type;
     if (target instanceof BranchName) {
-      type = Type.Branch;
+      type = RefPointer.Type.Branch;
     } else if (target instanceof TagName) {
-      type = Type.Tag;
+      type = RefPointer.Type.Tag;
     } else {
       throw new IllegalArgumentException(target.getClass().getSimpleName());
     }
@@ -711,7 +709,7 @@ public abstract class NonTransactionalDatabaseAdapter<
    * Transform the protobuf-enum-value for the named-reference-type plus the reference name into a
    * {@link NamedRef}.
    */
-  protected static NamedRef toNamedRef(Type type, String name) {
+  protected static NamedRef toNamedRef(RefPointer.Type type, String name) {
     switch (type) {
       case Branch:
         return BranchName.of(name);
@@ -1431,7 +1429,7 @@ public abstract class NonTransactionalDatabaseAdapter<
       NonTransactionalOperationContext ctx,
       CompactionStats stats,
       List<ByteString> globalParentsReverse,
-      Builder currentEntry,
+      GlobalStateLogEntry.Builder currentEntry,
       List<ByteString> newLogIds)
       throws ReferenceConflictException {
     writeGlobalCommit(ctx, currentEntry.build());

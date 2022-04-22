@@ -21,7 +21,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotBlank;
@@ -48,8 +47,12 @@ import org.immutables.value.Value;
       @SchemaProperty(name = "hash", pattern = Validation.HASH_REGEX),
       @SchemaProperty(name = "metadata", nullable = true)
     })
-@JsonSubTypes({@Type(Branch.class), @Type(Tag.class), @Type(Detached.class)})
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+@JsonSubTypes({
+  @JsonSubTypes.Type(Branch.class),
+  @JsonSubTypes.Type(Tag.class),
+  @JsonSubTypes.Type(Detached.class)
+})
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public interface Reference extends Base {
   /** Human-readable reference name. */
   @NotBlank

@@ -38,7 +38,6 @@ import org.projectnessie.error.NessieNamespaceNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
-import org.projectnessie.model.Content.Type;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.GetNamespacesResponse;
 import org.projectnessie.model.ImmutableGetNamespacesResponse;
@@ -61,7 +60,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
 
   public NamespaceApiImpl(
       ServerConfig config,
-      VersionStore<Content, CommitMeta, Type> store,
+      VersionStore<Content, CommitMeta, Content.Type> store,
       Authorizer authorizer,
       Principal principal) {
     super(config, store, authorizer, principal);
@@ -113,12 +112,12 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
 
       Callable<Void> validator =
           () -> {
-            try (Stream<KeyEntry<Type>> keys = getStore().getKeys(branch)) {
+            try (Stream<KeyEntry<Content.Type>> keys = getStore().getKeys(branch)) {
               if (keys.anyMatch(
                   k ->
                       Namespace.of(k.getKey().getElements())
                               .isSameOrSubElementOf(params.getNamespace())
-                          && k.getType() != Type.NAMESPACE)) {
+                          && k.getType() != Content.Type.NAMESPACE)) {
                 throw namespaceNotEmptyException(params.getNamespace());
               }
             }
@@ -181,11 +180,11 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
       // (type==NAMESPACE) and collect implicitly created namespaces for all other content-types.
       Set<Key> explicitNamespaceKeys = new HashSet<>();
       Map<List<String>, Namespace> implicitNamespaces = new HashMap<>();
-      try (Stream<KeyEntry<Type>> stream =
+      try (Stream<KeyEntry<Content.Type>> stream =
           getNamespacesKeyStream(params.getNamespace(), branch, k -> true)) {
         stream.forEach(
             namespaceKeyWithType -> {
-              if (namespaceKeyWithType.getType() == Type.NAMESPACE) {
+              if (namespaceKeyWithType.getType() == Content.Type.NAMESPACE) {
                 explicitNamespaceKeys.add(namespaceKeyWithType.getKey());
               } else {
                 Namespace implicitNamespace = namespaceFromType(namespaceKeyWithType);
@@ -249,10 +248,10 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
     }
   }
 
-  private Stream<KeyEntry<Type>> getNamespacesKeyStream(
+  private Stream<KeyEntry<Content.Type>> getNamespacesKeyStream(
       @Nullable Namespace namespace,
       BranchName branch,
-      Predicate<KeyEntry<Type>> earlyFilterPredicate)
+      Predicate<KeyEntry<Content.Type>> earlyFilterPredicate)
       throws ReferenceNotFoundException {
     return getStore()
         .getKeys(branch)
@@ -261,18 +260,18 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
   }
 
   /**
-   * If the {@link Type} is an actual {@link Type#NAMESPACE}, then we're returning its name without
-   * modification as a {@link Namespace} instance. If the {@link Type} is for example {@link
-   * Type#ICEBERG_TABLE} / {@link Type#ICEBERG_VIEW} / {@link Type#DELTA_LAKE_TABLE}, then we are
-   * extracting its namespace name from the elements of {@link Key} without including the actual
-   * table name itself (which is the last element).
+   * If the {@link Content.Type} is an actual {@link Content.Type#NAMESPACE}, then we're returning
+   * its name without modification as a {@link Namespace} instance. If the {@link Content.Type} is
+   * for example {@link Content.Type#ICEBERG_TABLE} / {@link Content.Type#ICEBERG_VIEW} / {@link
+   * Content.Type#DELTA_LAKE_TABLE}, then we are extracting its namespace name from the elements of
+   * {@link Key} without including the actual table name itself (which is the last element).
    *
    * @param withType The {@link WithType} instance holding the key and type.
    * @return A {@link Namespace} instance.
    */
-  private Namespace namespaceFromType(KeyEntry<Type> withType) {
+  private Namespace namespaceFromType(KeyEntry<Content.Type> withType) {
     List<String> elements = withType.getKey().getElements();
-    if (Type.NAMESPACE != withType.getType()) {
+    if (Content.Type.NAMESPACE != withType.getType()) {
       elements = elements.subList(0, elements.size() - 1);
     }
     return Namespace.of(elements);
@@ -285,7 +284,8 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
 
   private Optional<Namespace> getImplicitlyCreatedNamespace(Namespace namespace, BranchName branch)
       throws ReferenceNotFoundException {
-    try (Stream<KeyEntry<Type>> stream = getNamespacesKeyStream(namespace, branch, k -> true)) {
+    try (Stream<KeyEntry<Content.Type>> stream =
+        getNamespacesKeyStream(namespace, branch, k -> true)) {
       return stream.findAny().map(this::namespaceFromType);
     }
   }

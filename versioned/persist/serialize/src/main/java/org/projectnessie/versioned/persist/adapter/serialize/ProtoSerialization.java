@@ -34,12 +34,11 @@ import org.projectnessie.versioned.persist.adapter.RefLog;
 import org.projectnessie.versioned.persist.adapter.RepoDescription;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RepoProps;
-import org.projectnessie.versioned.persist.serialize.AdapterTypes.RepoProps.Builder;
 
 public class ProtoSerialization {
 
   public static RepoProps toProto(RepoDescription repoDescription) {
-    Builder proto =
+    RepoProps.Builder proto =
         AdapterTypes.RepoProps.newBuilder().setRepoVersion(repoDescription.getRepoVersion());
     // Must be sorted
     new TreeMap<>(repoDescription.getProperties())

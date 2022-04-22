@@ -35,8 +35,6 @@ import io.micrometer.core.instrument.FunctionTimer;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Measurement;
 import io.micrometer.core.instrument.Meter;
-import io.micrometer.core.instrument.Meter.Id;
-import io.micrometer.core.instrument.Meter.Type;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
@@ -249,7 +247,7 @@ class TestMetricsVersionStore {
     VersionStore<String, String, DummyEnum> versionStore =
         new MetricsVersionStore<>(mockedVersionStore, registry, registry.clock);
 
-    Id timerId = timerId(opName, expectedThrow);
+    Meter.Id timerId = timerId(opName, expectedThrow);
 
     ThrowingConsumer<VersionStore<String, String, DummyEnum>> versionStoreExec =
         vs -> {
@@ -335,7 +333,7 @@ class TestMetricsVersionStore {
     DUMMY
   }
 
-  private static Id timerId(String opName, Exception expectedThrow) {
+  private static Meter.Id timerId(String opName, Exception expectedThrow) {
     // All exceptions except instances of VersionStoreException and IllegalArgumentExceptions
     // are server-errors.
     boolean isErrorException =
@@ -343,7 +341,7 @@ class TestMetricsVersionStore {
             && (!(expectedThrow instanceof VersionStoreException))
             && (!(expectedThrow instanceof IllegalArgumentException));
 
-    return new Id(
+    return new Meter.Id(
         "nessie.versionstore.request",
         Tags.of(
             "error",
@@ -354,7 +352,7 @@ class TestMetricsVersionStore {
             "Nessie"),
         "nanoseconds",
         null,
-        Type.TIMER);
+        Meter.Type.TIMER);
   }
 
   static class TestTimer extends AbstractTimer {
@@ -401,8 +399,8 @@ class TestMetricsVersionStore {
   static class TestMeterRegistry extends MeterRegistry {
     final TestClock clock;
 
-    final Map<Id, Gauge> gauges = new HashMap<>();
-    final Map<Id, TestTimer> timers = new HashMap<>();
+    final Map<Meter.Id, Gauge> gauges = new HashMap<>();
+    final Map<Meter.Id, TestTimer> timers = new HashMap<>();
 
     static TestMeterRegistry currentRegistry;
 
@@ -417,7 +415,7 @@ class TestMetricsVersionStore {
     }
 
     @Override
-    protected <T> Gauge newGauge(Id id, T obj, ToDoubleFunction<T> valueFunction) {
+    protected <T> Gauge newGauge(Meter.Id id, T obj, ToDoubleFunction<T> valueFunction) {
       Gauge gauge =
           new Gauge() {
             @Override
@@ -426,7 +424,7 @@ class TestMetricsVersionStore {
             }
 
             @Override
-            public Id getId() {
+            public Meter.Id getId() {
               return id;
             }
           };
@@ -435,13 +433,13 @@ class TestMetricsVersionStore {
     }
 
     @Override
-    protected Counter newCounter(Id id) {
+    protected Counter newCounter(Meter.Id id) {
       throw new UnsupportedOperationException();
     }
 
     @Override
     protected Timer newTimer(
-        Id id,
+        Meter.Id id,
         DistributionStatisticConfig distributionStatisticConfig,
         PauseDetector pauseDetector) {
       TestTimer timer =
@@ -453,18 +451,18 @@ class TestMetricsVersionStore {
 
     @Override
     protected DistributionSummary newDistributionSummary(
-        Id id, DistributionStatisticConfig distributionStatisticConfig, double scale) {
+        Meter.Id id, DistributionStatisticConfig distributionStatisticConfig, double scale) {
       throw new UnsupportedOperationException();
     }
 
     @Override
-    protected Meter newMeter(Id id, Type type, Iterable<Measurement> measurements) {
+    protected Meter newMeter(Meter.Id id, Meter.Type type, Iterable<Measurement> measurements) {
       throw new UnsupportedOperationException();
     }
 
     @Override
     protected <T> FunctionTimer newFunctionTimer(
-        Id id,
+        Meter.Id id,
         T obj,
         ToLongFunction<T> countFunction,
         ToDoubleFunction<T> totalTimeFunction,
@@ -474,7 +472,7 @@ class TestMetricsVersionStore {
 
     @Override
     protected <T> FunctionCounter newFunctionCounter(
-        Id id, T obj, ToDoubleFunction<T> countFunction) {
+        Meter.Id id, T obj, ToDoubleFunction<T> countFunction) {
       throw new UnsupportedOperationException();
     }
 

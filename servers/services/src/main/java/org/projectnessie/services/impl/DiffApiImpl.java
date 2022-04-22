@@ -27,7 +27,6 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.DiffResponse;
 import org.projectnessie.model.ImmutableDiffEntry;
 import org.projectnessie.model.ImmutableDiffResponse;
-import org.projectnessie.model.ImmutableDiffResponse.Builder;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.Diff;
@@ -56,7 +55,7 @@ public class DiffApiImpl extends BaseApiImpl implements DiffApi {
   }
 
   protected DiffResponse getDiff(Hash from, Hash to) throws NessieNotFoundException {
-    Builder builder = ImmutableDiffResponse.builder();
+    ImmutableDiffResponse.Builder builder = ImmutableDiffResponse.builder();
     try {
       try (Stream<Diff<Content>> diffs = getStore().getDiffs(from, to)) {
         diffs

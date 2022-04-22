@@ -63,7 +63,6 @@ import org.projectnessie.model.BaseMergeTransplant;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
-import org.projectnessie.model.Content.Type;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Detached;
 import org.projectnessie.model.EntriesResponse;
@@ -464,14 +463,14 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     //  all existing VersionStore implementations have to read all keys anyways so we don't get much
     try {
       ImmutableEntriesResponse.Builder response = EntriesResponse.builder();
-      try (Stream<KeyEntry<Type>> entryStream = getStore().getKeys(refWithHash.getHash())) {
+      try (Stream<KeyEntry<Content.Type>> entryStream = getStore().getKeys(refWithHash.getHash())) {
         Stream<EntriesResponse.Entry> entriesStream =
             filterEntries(refWithHash, entryStream, params.filter())
                 .map(
                     key ->
                         EntriesResponse.Entry.builder()
                             .name(fromKey(key.getKey()))
-                            .type((Type) key.getType())
+                            .type((Content.Type) key.getType())
                             .build());
         if (params.namespaceDepth() != null && params.namespaceDepth() > 0) {
           entriesStream =
@@ -492,7 +491,8 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     if (depth == null || depth < 1) {
       return entry;
     }
-    Type type = entry.getName().getElements().size() > depth ? Type.NAMESPACE : entry.getType();
+    Content.Type type =
+        entry.getName().getElements().size() > depth ? Content.Type.NAMESPACE : entry.getType();
     ContentKey key = ContentKey.of(entry.getName().getElements().subList(0, depth));
     return EntriesResponse.Entry.builder().type(type).name(key).build();
   }
@@ -504,8 +504,8 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
    * @param filter The filter to filter by
    * @return A potentially filtered {@link Stream} of entries based on the filter
    */
-  protected Stream<KeyEntry<Type>> filterEntries(
-      WithHash<NamedRef> refWithHash, Stream<KeyEntry<Type>> entries, String filter) {
+  protected Stream<KeyEntry<Content.Type>> filterEntries(
+      WithHash<NamedRef> refWithHash, Stream<KeyEntry<Content.Type>> entries, String filter) {
     if (Strings.isNullOrEmpty(filter)) {
       return entries;
     }

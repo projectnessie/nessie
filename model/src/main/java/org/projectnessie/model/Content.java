@@ -17,7 +17,6 @@ package org.projectnessie.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.util.Objects;
 import java.util.Optional;
@@ -40,12 +39,12 @@ import org.immutables.value.Value;
     },
     discriminatorProperty = "type")
 @JsonSubTypes({
-  @Type(IcebergTable.class),
-  @Type(DeltaLakeTable.class),
-  @Type(IcebergView.class),
-  @Type(Namespace.class)
+  @JsonSubTypes.Type(IcebergTable.class),
+  @JsonSubTypes.Type(DeltaLakeTable.class),
+  @JsonSubTypes.Type(IcebergView.class),
+  @JsonSubTypes.Type(Namespace.class)
 })
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public abstract class Content {
 
   public enum Type {

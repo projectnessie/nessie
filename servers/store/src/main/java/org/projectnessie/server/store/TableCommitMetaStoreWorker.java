@@ -23,13 +23,11 @@ import java.io.IOException;
 import java.util.function.Supplier;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
-import org.projectnessie.model.Content.Type;
 import org.projectnessie.model.DeltaLakeTable;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
-import org.projectnessie.model.ImmutableDeltaLakeTable.Builder;
 import org.projectnessie.model.ImmutableIcebergTable;
 import org.projectnessie.model.ImmutableIcebergView;
 import org.projectnessie.model.ImmutableNamespace;
@@ -119,7 +117,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
     switch (content.getObjectTypeCase()) {
       case DELTA_LAKE_TABLE:
         ObjectTypes.DeltaLakeTable deltaLakeTable = content.getDeltaLakeTable();
-        Builder builder =
+        ImmutableDeltaLakeTable.Builder builder =
             ImmutableDeltaLakeTable.builder()
                 .id(content.getId())
                 .addAllMetadataLocationHistory(deltaLakeTable.getMetadataLocationHistoryList())
@@ -213,12 +211,12 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
   }
 
   @Override
-  public Type getType(Content content) {
+  public Content.Type getType(Content content) {
     return content.getType();
   }
 
   @Override
-  public Type getType(Byte payload) {
+  public Content.Type getType(Byte payload) {
     if (payload == null || payload > Content.Type.values().length || payload < 0) {
       throw new IllegalArgumentException(
           String.format("Cannot create type from payload. Payload %d does not exist", payload));
@@ -227,22 +225,22 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
   }
 
   @Override
-  public Type getType(ByteString onRefContent) {
+  public Content.Type getType(ByteString onRefContent) {
     ObjectTypes.Content parsed = parse(onRefContent);
 
     if (parsed.hasIcebergRefState()) {
-      return Type.ICEBERG_TABLE;
+      return Content.Type.ICEBERG_TABLE;
     }
     if (parsed.hasIcebergViewState()) {
-      return Type.ICEBERG_VIEW;
+      return Content.Type.ICEBERG_VIEW;
     }
 
     if (parsed.hasDeltaLakeTable()) {
-      return Type.DELTA_LAKE_TABLE;
+      return Content.Type.DELTA_LAKE_TABLE;
     }
 
     if (parsed.hasNamespace()) {
-      return Type.NAMESPACE;
+      return Content.Type.NAMESPACE;
     }
 
     throw new IllegalArgumentException("Unsupported on-ref content " + parsed);
@@ -315,7 +313,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
   @Override
   public boolean isNamespace(ByteString type) {
     try {
-      return Type.NAMESPACE == getType(type);
+      return Content.Type.NAMESPACE == getType(type);
     } catch (Exception e) {
       return false;
     }

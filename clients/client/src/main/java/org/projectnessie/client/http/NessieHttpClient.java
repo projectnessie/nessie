@@ -40,7 +40,6 @@ import org.projectnessie.api.http.HttpDiffApi;
 import org.projectnessie.api.http.HttpNamespaceApi;
 import org.projectnessie.api.http.HttpRefLogApi;
 import org.projectnessie.api.http.HttpTreeApi;
-import org.projectnessie.client.http.HttpClient.Builder;
 import org.projectnessie.client.rest.NessieHttpResponseFilter;
 import org.projectnessie.error.BaseNessieClientServerException;
 
@@ -67,7 +66,7 @@ public class NessieHttpClient extends NessieApiClient {
   }
 
   private static HttpClient buildClient(
-      HttpAuthentication authentication, boolean enableTracing, Builder clientBuilder) {
+      HttpAuthentication authentication, boolean enableTracing, HttpClient.Builder clientBuilder) {
     clientBuilder.setObjectMapper(MAPPER);
     if (enableTracing) {
       addTracing(clientBuilder);

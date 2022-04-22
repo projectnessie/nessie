@@ -31,7 +31,6 @@ import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
-import org.projectnessie.model.Content.Type;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.IcebergTable;
@@ -46,15 +45,16 @@ import org.projectnessie.model.Operation.Unchanged;
 public abstract class AbstractRestContents extends AbstractRestCommitLog {
 
   public static final class ContentAndOperationType {
-    final Type type;
+    final Content.Type type;
     final Operation operation;
     final Operation globalOperation;
 
-    public ContentAndOperationType(Type type, Operation operation) {
+    public ContentAndOperationType(Content.Type type, Operation operation) {
       this(type, operation, null);
     }
 
-    public ContentAndOperationType(Type type, Operation operation, Operation globalOperation) {
+    public ContentAndOperationType(
+        Content.Type type, Operation operation, Operation globalOperation) {
       this.type = type;
       this.operation = operation;
       this.globalOperation = globalOperation;
@@ -81,26 +81,26 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
   public static Stream<ContentAndOperationType> contentAndOperationTypes() {
     return Stream.of(
         new ContentAndOperationType(
-            Type.ICEBERG_TABLE,
+            Content.Type.ICEBERG_TABLE,
             Put.of(
                 ContentKey.of("a", "iceberg"), IcebergTable.of("/iceberg/table", 42, 42, 42, 42))),
         new ContentAndOperationType(
-            Type.ICEBERG_VIEW,
+            Content.Type.ICEBERG_VIEW,
             Put.of(
                 ContentKey.of("a", "view_dremio"),
                 IcebergView.of("/iceberg/view", 1, 1, "Dremio", "SELECT foo FROM dremio"))),
         new ContentAndOperationType(
-            Type.ICEBERG_VIEW,
+            Content.Type.ICEBERG_VIEW,
             Put.of(
                 ContentKey.of("a", "view_presto"),
                 IcebergView.of("/iceberg/view", 1, 1, "Presto", "SELECT foo FROM presto"))),
         new ContentAndOperationType(
-            Type.ICEBERG_VIEW,
+            Content.Type.ICEBERG_VIEW,
             Put.of(
                 ContentKey.of("b", "view_spark"),
                 IcebergView.of("/iceberg/view2", 1, 1, "Spark", "SELECT foo FROM spark"))),
         new ContentAndOperationType(
-            Type.DELTA_LAKE_TABLE,
+            Content.Type.DELTA_LAKE_TABLE,
             Put.of(
                 ContentKey.of("c", "delta"),
                 ImmutableDeltaLakeTable.builder()
@@ -108,21 +108,21 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
                     .addMetadataLocationHistory("metadata")
                     .build())),
         new ContentAndOperationType(
-            Type.ICEBERG_TABLE, Delete.of(ContentKey.of("a", "iceberg_delete"))),
+            Content.Type.ICEBERG_TABLE, Delete.of(ContentKey.of("a", "iceberg_delete"))),
         new ContentAndOperationType(
-            Type.ICEBERG_TABLE, Unchanged.of(ContentKey.of("a", "iceberg_unchanged"))),
+            Content.Type.ICEBERG_TABLE, Unchanged.of(ContentKey.of("a", "iceberg_unchanged"))),
         new ContentAndOperationType(
-            Type.ICEBERG_VIEW, Delete.of(ContentKey.of("a", "view_dremio_delete"))),
+            Content.Type.ICEBERG_VIEW, Delete.of(ContentKey.of("a", "view_dremio_delete"))),
         new ContentAndOperationType(
-            Type.ICEBERG_VIEW, Unchanged.of(ContentKey.of("a", "view_dremio_unchanged"))),
+            Content.Type.ICEBERG_VIEW, Unchanged.of(ContentKey.of("a", "view_dremio_unchanged"))),
         new ContentAndOperationType(
-            Type.ICEBERG_VIEW, Delete.of(ContentKey.of("a", "view_spark_delete"))),
+            Content.Type.ICEBERG_VIEW, Delete.of(ContentKey.of("a", "view_spark_delete"))),
         new ContentAndOperationType(
-            Type.ICEBERG_VIEW, Unchanged.of(ContentKey.of("a", "view_spark_unchanged"))),
+            Content.Type.ICEBERG_VIEW, Unchanged.of(ContentKey.of("a", "view_spark_unchanged"))),
         new ContentAndOperationType(
-            Type.DELTA_LAKE_TABLE, Delete.of(ContentKey.of("a", "delta_delete"))),
+            Content.Type.DELTA_LAKE_TABLE, Delete.of(ContentKey.of("a", "delta_delete"))),
         new ContentAndOperationType(
-            Type.DELTA_LAKE_TABLE, Unchanged.of(ContentKey.of("a", "delta_unchanged"))));
+            Content.Type.DELTA_LAKE_TABLE, Unchanged.of(ContentKey.of("a", "delta_unchanged"))));
   }
 
   @Test
