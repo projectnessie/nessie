@@ -71,7 +71,6 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
 
   private Hash initialHash;
   private Hash firstCommit;
-  private Hash secondCommit;
   private Hash thirdCommit;
   private List<Commit<CommitMessage, BaseContent>> commits;
 
@@ -90,13 +89,12 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
 
     firstCommit =
         commit("First Commit").put("t1", V_1_1).put("t2", V_2_1).put("t3", V_3_1).toBranch(branch);
-    secondCommit =
-        commit("Second Commit")
-            .put("t1", V_1_2)
-            .delete("t2")
-            .delete("t3")
-            .put("t4", V_4_1)
-            .toBranch(branch);
+    commit("Second Commit")
+        .put("t1", V_1_2)
+        .delete("t2")
+        .delete("t3")
+        .put("t4", V_4_1)
+        .toBranch(branch);
     thirdCommit = commit("Third Commit").put("t2", V_2_2).unchanged("t4").toBranch(branch);
 
     commits = commitsList(branch, false).subList(0, 3);

@@ -310,16 +310,15 @@ public abstract class AbstractRestReferences extends AbstractRestMisc {
 
   @Test
   public void filterReferences() throws BaseNessieClientServerException {
-    Branch b1 =
-        getApi()
-            .commitMultipleOperations()
-            .branch(createBranch("refs.branch.1"))
-            .commitMeta(CommitMeta.fromMessage("some awkward message"))
-            .operation(
-                Put.of(
-                    ContentKey.of("hello.world.BaseTable"),
-                    IcebergView.of("path1", 1, 1, "Spark", "SELECT ALL THE THINGS")))
-            .commit();
+    getApi()
+        .commitMultipleOperations()
+        .branch(createBranch("refs.branch.1"))
+        .commitMeta(CommitMeta.fromMessage("some awkward message"))
+        .operation(
+            Put.of(
+                ContentKey.of("hello.world.BaseTable"),
+                IcebergView.of("path1", 1, 1, "Spark", "SELECT ALL THE THINGS")))
+        .commit();
     Branch b2 =
         getApi()
             .commitMultipleOperations()
@@ -330,16 +329,15 @@ public abstract class AbstractRestReferences extends AbstractRestMisc {
                     ContentKey.of("cool.stuff.Caresian"),
                     IcebergView.of("path2", 1, 1, "Spark", "CARTESIAN JOINS ARE AWESOME")))
             .commit();
-    Branch b3 =
-        getApi()
-            .commitMultipleOperations()
-            .branch(createBranch("archive"))
-            .commitMeta(CommitMeta.fromMessage("boring old stuff"))
-            .operation(
-                Put.of(
-                    ContentKey.of("super.old.Numbers"),
-                    IcebergView.of("path3", 1, 1, "Spark", "AGGREGATE EVERYTHING")))
-            .commit();
+    getApi()
+        .commitMultipleOperations()
+        .branch(createBranch("archive"))
+        .commitMeta(CommitMeta.fromMessage("boring old stuff"))
+        .operation(
+            Put.of(
+                ContentKey.of("super.old.Numbers"),
+                IcebergView.of("path3", 1, 1, "Spark", "AGGREGATE EVERYTHING")))
+        .commit();
     Tag t1 =
         (Tag)
             getApi()

@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.platform.testkit.engine.EngineExecutionResults;
 import org.junit.platform.testkit.engine.EngineTestKit;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.model.Branch;
@@ -70,11 +69,10 @@ class TestNessieCompatibilityExtensions {
 
   @Test
   void olderClients() {
-    EngineExecutionResults r =
-        EngineTestKit.engine(MultiNessieVersionsTestEngine.ENGINE_ID)
-            .configurationParameter("nessie.versions", "0.18.0,current")
-            .selectors(selectClass(OldClientsSample.class))
-            .execute();
+    EngineTestKit.engine(MultiNessieVersionsTestEngine.ENGINE_ID)
+        .configurationParameter("nessie.versions", "0.18.0,current")
+        .selectors(selectClass(OldClientsSample.class))
+        .execute();
     assertThat(OldClientsSample.allVersions)
         .containsExactly(Version.parseVersion("0.18.0"), Version.CURRENT);
     assertThat(OldClientsSample.minVersionHigh).containsExactly(Version.CURRENT);
@@ -84,11 +82,10 @@ class TestNessieCompatibilityExtensions {
 
   @Test
   void olderServers() {
-    EngineExecutionResults r =
-        EngineTestKit.engine(MultiNessieVersionsTestEngine.ENGINE_ID)
-            .configurationParameter("nessie.versions", "0.18.0,current")
-            .selectors(selectClass(OldServersSample.class))
-            .execute();
+    EngineTestKit.engine(MultiNessieVersionsTestEngine.ENGINE_ID)
+        .configurationParameter("nessie.versions", "0.18.0,current")
+        .selectors(selectClass(OldServersSample.class))
+        .execute();
     assertThat(OldServersSample.allVersions)
         .containsExactly(Version.parseVersion("0.18.0"), Version.CURRENT);
     assertThat(OldServersSample.minVersionHigh).containsExactly(Version.CURRENT);
@@ -98,11 +95,10 @@ class TestNessieCompatibilityExtensions {
 
   @Test
   void upgrade() {
-    EngineExecutionResults r =
-        EngineTestKit.engine(MultiNessieVersionsTestEngine.ENGINE_ID)
-            .configurationParameter("nessie.versions", "0.18.0,current")
-            .selectors(selectClass(UpgradeSample.class))
-            .execute();
+    EngineTestKit.engine(MultiNessieVersionsTestEngine.ENGINE_ID)
+        .configurationParameter("nessie.versions", "0.18.0,current")
+        .selectors(selectClass(UpgradeSample.class))
+        .execute();
     assertThat(UpgradeSample.allVersions)
         .containsExactly(Version.parseVersion("0.18.0"), Version.CURRENT);
     assertThat(UpgradeSample.minVersionHigh).containsExactly(Version.CURRENT);

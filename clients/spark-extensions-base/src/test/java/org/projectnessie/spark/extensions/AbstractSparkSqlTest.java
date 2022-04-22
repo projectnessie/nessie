@@ -371,7 +371,7 @@ public abstract class AbstractSparkSqlTest {
     String random = "randomTag";
     assertThat(sql("CREATE TAG %s IN nessie", random)).containsExactly(row("Tag", random, hash));
 
-    List<Object[]> commits = commitAndReturnLog(refName);
+    commitAndReturnLog(refName);
     sql("USE REFERENCE %s IN nessie", refName);
     sql("MERGE BRANCH %s INTO main IN nessie", refName);
     Reference main = api.getReference().refName("main").get();
@@ -379,7 +379,7 @@ public abstract class AbstractSparkSqlTest {
     assertThat(sql("ASSIGN TAG %s TO main IN nessie", random))
         .containsExactly(row("Tag", random, main.getHash()));
 
-    commits = fetchLog("main");
+    List<Object[]> commits = fetchLog("main");
     for (Object[] commit : commits) {
       String currentHash = (String) commit[2];
       assertThat(sql("ASSIGN TAG %s TO main AT %s IN nessie", random, currentHash))
