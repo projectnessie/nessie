@@ -62,6 +62,7 @@ public abstract class AbstractDatabaseAdapterTest {
   @NessieDbAdapter protected static DatabaseAdapter databaseAdapter;
 
   @Nested
+  @SuppressWarnings("ClassCanBeStatic")
   public class RepoDescription extends AbstractRepoDescription {
     RepoDescription() {
       super(databaseAdapter);
@@ -69,6 +70,7 @@ public abstract class AbstractDatabaseAdapterTest {
   }
 
   @Nested
+  @SuppressWarnings("ClassCanBeStatic")
   public class GlobalStates extends AbstractGlobalStates {
     GlobalStates() {
       super(databaseAdapter);
@@ -76,6 +78,7 @@ public abstract class AbstractDatabaseAdapterTest {
   }
 
   @Nested
+  @SuppressWarnings("ClassCanBeStatic")
   public class CommitScenarios extends AbstractCommitScenarios {
     CommitScenarios() {
       super(databaseAdapter);
@@ -83,6 +86,7 @@ public abstract class AbstractDatabaseAdapterTest {
   }
 
   @Nested
+  @SuppressWarnings("ClassCanBeStatic")
   public class ManyCommits extends AbstractManyCommits {
     ManyCommits() {
       super(databaseAdapter);
@@ -90,6 +94,7 @@ public abstract class AbstractDatabaseAdapterTest {
   }
 
   @Nested
+  @SuppressWarnings("ClassCanBeStatic")
   public class ManyKeys extends AbstractManyKeys {
     ManyKeys() {
       super(databaseAdapter);
@@ -97,6 +102,7 @@ public abstract class AbstractDatabaseAdapterTest {
   }
 
   @Nested
+  @SuppressWarnings("ClassCanBeStatic")
   public class Concurrency extends AbstractConcurrency {
     Concurrency() {
       super(databaseAdapter);
@@ -104,6 +110,7 @@ public abstract class AbstractDatabaseAdapterTest {
   }
 
   @Nested
+  @SuppressWarnings("ClassCanBeStatic")
   public class CompactGlobalLog extends AbstractCompactGlobalLog {
     CompactGlobalLog() {
       super(databaseAdapter);
@@ -433,6 +440,7 @@ public abstract class AbstractDatabaseAdapterTest {
   }
 
   @Nested
+  @SuppressWarnings("ClassCanBeStatic")
   public class MergeTransplant extends AbstractMergeTransplant {
     MergeTransplant() {
       super(databaseAdapter);
@@ -440,6 +448,7 @@ public abstract class AbstractDatabaseAdapterTest {
   }
 
   @Nested
+  @SuppressWarnings("ClassCanBeStatic")
   public class GetNamedReferences extends AbstractGetNamedReferences {
     GetNamedReferences() {
       super(databaseAdapter);
