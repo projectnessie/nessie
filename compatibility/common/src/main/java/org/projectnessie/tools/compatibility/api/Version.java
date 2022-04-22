@@ -118,7 +118,7 @@ public class Version implements Comparable<Version> {
     if (this == o) {
       return true;
     }
-    if (o == null || getClass() != o.getClass()) {
+    if (!(o instanceof Version)) {
       return false;
     }
     Version version = (Version) o;
@@ -132,10 +132,10 @@ public class Version implements Comparable<Version> {
 
   @Override
   public String toString() {
-    if (CURRENT == this) {
+    if (CURRENT.equals(this)) {
       return CURRENT_STRING;
     }
-    if (NOT_CURRENT == this) {
+    if (NOT_CURRENT.equals(this)) {
       return NOT_CURRENT_STRING;
     }
 

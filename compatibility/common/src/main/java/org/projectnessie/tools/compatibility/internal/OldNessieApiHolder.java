@@ -68,7 +68,7 @@ final class OldNessieApiHolder extends AbstractNessieApiHolder {
   }
 
   private ClassLoader createClassLoader() {
-    if (clientKey.getVersion() == Version.CURRENT) {
+    if (Version.CURRENT.equals(clientKey.getVersion())) {
       return Thread.currentThread().getContextClassLoader();
     }
 

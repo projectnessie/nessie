@@ -35,7 +35,7 @@ interface NessieServer extends CloseableResource {
 
   static NessieServer nessieServer(
       ExtensionContext context, ServerKey serverKey, BooleanSupplier initRepo) {
-    if (serverKey.getVersion() == Version.CURRENT) {
+    if (Version.CURRENT.equals(serverKey.getVersion())) {
       return currentNessieServer(context, serverKey, initRepo);
     } else {
       return oldNessieServer(context, serverKey, initRepo);
