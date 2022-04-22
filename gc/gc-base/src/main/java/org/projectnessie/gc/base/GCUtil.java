@@ -122,8 +122,10 @@ public final class GCUtil {
       // Use the custom client builder
       try {
         builder =
-            (NessieClientBuilder)
-                Class.forName(clientBuilderClassName).getDeclaredConstructor().newInstance();
+            Class.forName(clientBuilderClassName)
+                .asSubclass(NessieClientBuilder.class)
+                .getDeclaredConstructor()
+                .newInstance();
       } catch (ClassNotFoundException e) {
         throw new IllegalArgumentException(
             String.format(
