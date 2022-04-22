@@ -177,6 +177,7 @@ public abstract class TxDatabaseAdapter
     }
   }
 
+  @Override
   public Stream<ReferenceInfo<ByteString>> namedRefs(GetNamedRefsParams params)
       throws ReferenceNotFoundException {
     Preconditions.checkNotNull(params, "Parameter for GetNamedRefsParams must not be null.");
@@ -1096,8 +1097,9 @@ public abstract class TxDatabaseAdapter
   @Override
   protected Map<ContentId, ByteString> doFetchGlobalStates(
       ConnectionWrapper conn, Set<ContentId> contentIds) {
+    Map<ContentId, ByteString> result = new HashMap<>();
     if (contentIds.isEmpty()) {
-      return Collections.emptyMap();
+      return result;
     }
 
     String sql = sqlForManyPlaceholders(SqlStatements.SELECT_GLOBAL_STATE_MANY, contentIds.size());
@@ -1109,7 +1111,6 @@ public abstract class TxDatabaseAdapter
         ps.setString(i++, cid.getId());
       }
 
-      Map<ContentId, ByteString> result = new HashMap<>();
       try (ResultSet rs = ps.executeQuery()) {
         while (rs.next()) {
           ContentId contentId = ContentId.of(rs.getString(1));
