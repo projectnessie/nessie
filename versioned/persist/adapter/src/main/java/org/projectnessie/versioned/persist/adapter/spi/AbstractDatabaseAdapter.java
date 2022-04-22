@@ -117,6 +117,7 @@ import org.projectnessie.versioned.persist.adapter.TransplantParams;
 public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends DatabaseAdapterConfig>
     implements DatabaseAdapter {
 
+  @SuppressWarnings("UnnecessaryLambda") // intentional constant lambda reference
   private static final Function<Hash, CommitLogEntry> NO_IN_MEMORY_COMMITS = hash -> null;
 
   protected static final String TAG_HASH = "hash";
