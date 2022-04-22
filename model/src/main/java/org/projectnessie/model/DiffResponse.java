@@ -38,6 +38,7 @@ public interface DiffResponse {
     ContentKey getKey();
 
     @Nullable
+    @SuppressWarnings("immutables:from")
     Content getFrom();
 
     @Nullable
