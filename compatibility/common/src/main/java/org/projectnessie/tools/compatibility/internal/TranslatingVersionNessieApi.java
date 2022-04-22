@@ -41,7 +41,7 @@ import org.projectnessie.error.NessieError;
 final class TranslatingVersionNessieApi implements AutoCloseable {
 
   private final AutoCloseable oldVersionApiInstance;
-  private final Map<ClassLoader, Object> objectMappers = new IdentityHashMap<>();
+  private final IdentityHashMap<ClassLoader, Object> objectMappers = new IdentityHashMap<>();
   private final ClassLoader oldVersionClassLoader;
   private final NessieApi proxy;
 
@@ -355,6 +355,7 @@ final class TranslatingVersionNessieApi implements AutoCloseable {
     return o.getClass().getName().startsWith("org.projectnessie.model.");
   }
 
+  @SuppressWarnings("TypeParameterUnusedInFormals")
   private <T> T createProxy(
       Object o, ClassLoader classLoader, ClassLoader reverseClassLoader, Class<?>... interfaces) {
     Object proxy =
