@@ -377,7 +377,7 @@ public class DatabaseAdapterExtension
     return applyCustomConfig;
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
   private static <CONNECTOR extends DatabaseConnectionProvider<?>> CONNECTOR getConnectionProvider(
       ExtensionContext context) {
     TestConnectionProviderSource<?> connectionProvider =
