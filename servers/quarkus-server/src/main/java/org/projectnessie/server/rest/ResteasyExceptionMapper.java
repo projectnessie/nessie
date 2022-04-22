@@ -66,12 +66,12 @@ public class ResteasyExceptionMapper extends BaseExceptionMapper<ResteasyViolati
   }
 
   protected String unwrapException(Throwable t) {
-    StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
     doUnwrapException(sb, t);
     return sb.toString();
   }
 
-  private void doUnwrapException(StringBuffer sb, Throwable t) {
+  private void doUnwrapException(StringBuilder sb, Throwable t) {
     if (t == null) {
       return;
     }
