@@ -74,6 +74,11 @@
       <version>${deltalake.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.eclipse.microprofile.openapi</groupId>
+      <artifactId>microprofile-openapi-api</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
       <groupId>org.projectnessie</groupId>
       <artifactId>nessie-spark-3.2-extensions</artifactId>
       <version>${project.version}</version>

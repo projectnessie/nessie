@@ -48,16 +48,10 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
 
     final String name;
     String msg;
-    ThrowingFunction setup;
     ThrowingFunction function;
 
     ReferenceNotFoundFunction(String name) {
       this.name = name;
-    }
-
-    ReferenceNotFoundFunction setup(ThrowingFunction setup) {
-      this.setup = setup;
-      return this;
     }
 
     ReferenceNotFoundFunction function(ThrowingFunction function) {
@@ -270,10 +264,7 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
 
   @ParameterizedTest
   @MethodSource("referenceNotFoundFunctions")
-  void referenceNotFound(ReferenceNotFoundFunction f) throws Exception {
-    if (f.setup != null) {
-      f.setup.run(store());
-    }
+  void referenceNotFound(ReferenceNotFoundFunction f) {
     assertThatThrownBy(() -> f.function.run(store()))
         .isInstanceOf(ReferenceNotFoundException.class)
         .hasMessage(f.msg);
