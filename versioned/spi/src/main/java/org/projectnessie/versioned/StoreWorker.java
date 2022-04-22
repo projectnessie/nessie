@@ -33,6 +33,8 @@ public interface StoreWorker<CONTENT, COMMIT_METADATA, CONTENT_TYPE extends Enum
 
   CONTENT valueFromStore(ByteString onReferenceValue, Supplier<ByteString> globalState);
 
+  CONTENT applyId(CONTENT content, String id);
+
   String getId(CONTENT content);
 
   Byte getPayload(CONTENT content);

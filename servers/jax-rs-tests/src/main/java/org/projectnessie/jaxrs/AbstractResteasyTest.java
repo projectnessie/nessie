@@ -91,7 +91,7 @@ public abstract class AbstractResteasyTest {
         newReference,
         rest().get("trees/tree/test").then().statusCode(200).extract().as(Branch.class));
 
-    IcebergTable table = IcebergTable.of("/the/directory/over/there", 42, 42, 42, 42);
+    IcebergTable initialTable = IcebergTable.of("/the/directory/over/there", 42, 43, 44, 45);
 
     Branch commitResponse =
         rest()
@@ -100,7 +100,7 @@ public abstract class AbstractResteasyTest {
                     .addOperations(
                         ImmutablePut.builder()
                             .key(ContentKey.of("xxx", "test"))
-                            .content(table)
+                            .content(initialTable)
                             .build())
                     .commitMeta(CommitMeta.fromMessage(""))
                     .build())
@@ -111,6 +111,29 @@ public abstract class AbstractResteasyTest {
             .extract()
             .as(Branch.class);
     Assertions.assertNotEquals(newReference.getHash(), commitResponse.getHash());
+
+    // fetch the content
+    IcebergTable table =
+        rest()
+            .queryParam("ref", "test")
+            .get("contents/xxx.test")
+            .then()
+            .statusCode(200)
+            .extract()
+            .as(IcebergTable.class);
+    assertThat(table)
+        .extracting(
+            IcebergTable::getMetadataLocation,
+            IcebergTable::getSnapshotId,
+            IcebergTable::getSchemaId,
+            IcebergTable::getSpecId,
+            IcebergTable::getSortOrderId)
+        .containsExactly(
+            initialTable.getMetadataLocation(),
+            initialTable.getSnapshotId(),
+            initialTable.getSchemaId(),
+            initialTable.getSpecId(),
+            initialTable.getSortOrderId());
 
     Put[] updates = new Put[11];
     for (int i = 0; i < 10; i++) {
@@ -146,7 +169,7 @@ public abstract class AbstractResteasyTest {
 
     Response res =
         rest().queryParam("ref", "test").get("contents/xxx.test").then().extract().response();
-    Assertions.assertEquals(updates[10].getContent(), res.body().as(Content.class));
+    Assertions.assertEquals(updates[10].getContent(), withoutId(res.body().as(Content.class)));
 
     IcebergTable currentTable = table;
     table =
@@ -231,6 +254,13 @@ public abstract class AbstractResteasyTest {
         .delete("trees/branch/mainx")
         .then()
         .statusCode(204);
+  }
+
+  private static Content withoutId(Content content) {
+    if (content instanceof IcebergTable) {
+      return IcebergTable.builder().from(content).id(null).build();
+    }
+    throw new IllegalArgumentException("Expected IcebergTable, got " + content);
   }
 
   private static RequestSpecification rest() {
@@ -451,7 +481,7 @@ public abstract class AbstractResteasyTest {
             .extract()
             .as(Content.class);
 
-    assertThat(content).isEqualTo(table);
+    assertThat(withoutId(content)).isEqualTo(table);
   }
 
   @Test
@@ -477,8 +507,8 @@ public abstract class AbstractResteasyTest {
     assertThat(diffResponse.getDiffs()).hasSize(1);
     DiffEntry diff = diffResponse.getDiffs().get(0);
     assertThat(diff.getKey()).isEqualTo(contentKey);
-    assertThat(diff.getFrom()).isEqualTo(fromTable);
-    assertThat(diff.getTo()).isEqualTo(toTable);
+    assertThat(withoutId(diff.getFrom())).isEqualTo(fromTable);
+    assertThat(withoutId(diff.getTo())).isEqualTo(toTable);
   }
 
   @Test

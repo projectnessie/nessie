@@ -39,6 +39,7 @@ import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
+import org.projectnessie.model.ImmutableNamespace;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.server.store.proto.ObjectTypes;
 import org.projectnessie.server.store.proto.ObjectTypes.IcebergMetadataPointer;
@@ -46,8 +47,10 @@ import org.projectnessie.server.store.proto.ObjectTypes.IcebergRefState;
 import org.projectnessie.server.store.proto.ObjectTypes.IcebergViewState;
 
 class TestStoreWorker {
+
   private static final ObjectMapper MAPPER = new ObjectMapper();
   private static final String ID = "x";
+  public static final String CID = "cid";
   private final TableCommitMetaStoreWorker worker = new TableCommitMetaStoreWorker();
 
   @Test
@@ -56,7 +59,7 @@ class TestStoreWorker {
             () ->
                 worker.valueFromStore(
                     ObjectTypes.Content.newBuilder()
-                        .setId("cid")
+                        .setId(CID)
                         .setIcebergRefState(
                             ObjectTypes.IcebergRefState.newBuilder()
                                 .setSnapshotId(42)
@@ -75,7 +78,7 @@ class TestStoreWorker {
     Content value =
         worker.valueFromStore(
             ObjectTypes.Content.newBuilder()
-                .setId("cid")
+                .setId(CID)
                 .setIcebergRefState(
                     IcebergRefState.newBuilder()
                         .setSnapshotId(42)
@@ -86,7 +89,7 @@ class TestStoreWorker {
                 .toByteString(),
             () ->
                 ObjectTypes.Content.newBuilder()
-                    .setId("cid")
+                    .setId(CID)
                     .setIcebergMetadataPointer(
                         IcebergMetadataPointer.newBuilder()
                             .setMetadataLocation("metadata-location"))
@@ -109,7 +112,7 @@ class TestStoreWorker {
     Content value =
         worker.valueFromStore(
             ObjectTypes.Content.newBuilder()
-                .setId("cid")
+                .setId(CID)
                 .setIcebergRefState(
                     IcebergRefState.newBuilder()
                         .setSnapshotId(42)
@@ -138,7 +141,7 @@ class TestStoreWorker {
             () ->
                 worker.valueFromStore(
                     ObjectTypes.Content.newBuilder()
-                        .setId("cid")
+                        .setId(CID)
                         .setIcebergViewState(
                             ObjectTypes.IcebergViewState.newBuilder().setVersionId(42))
                         .build()
@@ -153,13 +156,13 @@ class TestStoreWorker {
     Content value =
         worker.valueFromStore(
             ObjectTypes.Content.newBuilder()
-                .setId("cid")
+                .setId(CID)
                 .setIcebergViewState(ObjectTypes.IcebergViewState.newBuilder().setVersionId(42))
                 .build()
                 .toByteString(),
             () ->
                 ObjectTypes.Content.newBuilder()
-                    .setId("cid")
+                    .setId(CID)
                     .setIcebergMetadataPointer(
                         IcebergMetadataPointer.newBuilder()
                             .setMetadataLocation("metadata-location"))
@@ -175,20 +178,20 @@ class TestStoreWorker {
   static Stream<Arguments> requiresGlobalStateModelType() {
     return Stream.of(
         Arguments.of(
-            Namespace.of("foo"),
+            withId(Namespace.of("foo")),
             false,
             ObjectTypes.Content.newBuilder()
-                .setId("foo")
+                .setId(CID)
                 .setNamespace(ObjectTypes.Namespace.newBuilder().addElements("foo")),
             null,
             false,
             Content.Type.NAMESPACE),
         //
         Arguments.of(
-            IcebergTable.of("metadata", 42, 43, 44, 45, "cid"),
+            IcebergTable.of("metadata", 42, 43, 44, 45, CID),
             false,
             ObjectTypes.Content.newBuilder()
-                .setId("cid")
+                .setId(CID)
                 .setIcebergRefState(
                     ObjectTypes.IcebergRefState.newBuilder()
                         .setSnapshotId(42)
@@ -196,7 +199,7 @@ class TestStoreWorker {
                         .setSpecId(44)
                         .setSortOrderId(45)),
             ObjectTypes.Content.newBuilder()
-                .setId("cid")
+                .setId(CID)
                 .setIcebergMetadataPointer(
                     ObjectTypes.IcebergMetadataPointer.newBuilder()
                         .setMetadataLocation("metadata")),
@@ -204,10 +207,10 @@ class TestStoreWorker {
             Content.Type.ICEBERG_TABLE),
         //
         Arguments.of(
-            IcebergTable.of("metadata", 42, 43, 44, 45, "cid"),
+            IcebergTable.of("metadata", 42, 43, 44, 45, CID),
             false,
             ObjectTypes.Content.newBuilder()
-                .setId("cid")
+                .setId(CID)
                 .setIcebergRefState(
                     ObjectTypes.IcebergRefState.newBuilder()
                         .setSnapshotId(42)
@@ -220,10 +223,10 @@ class TestStoreWorker {
             Content.Type.ICEBERG_TABLE),
         //
         Arguments.of(
-            IcebergView.of("cid", "metadata", 42, 43, "dialect", "sqlText"),
+            IcebergView.of(CID, "metadata", 42, 43, "dialect", "sqlText"),
             false,
             ObjectTypes.Content.newBuilder()
-                .setId("cid")
+                .setId(CID)
                 .setIcebergViewState(
                     ObjectTypes.IcebergViewState.newBuilder()
                         .setVersionId(42)
@@ -231,7 +234,7 @@ class TestStoreWorker {
                         .setDialect("dialect")
                         .setSqlText("sqlText")),
             ObjectTypes.Content.newBuilder()
-                .setId("cid")
+                .setId(CID)
                 .setIcebergMetadataPointer(
                     ObjectTypes.IcebergMetadataPointer.newBuilder()
                         .setMetadataLocation("metadata")),
@@ -239,10 +242,10 @@ class TestStoreWorker {
             Content.Type.ICEBERG_VIEW),
         //
         Arguments.of(
-            IcebergView.of("cid", "metadata", 42, 43, "dialect", "sqlText"),
+            IcebergView.of(CID, "metadata", 42, 43, "dialect", "sqlText"),
             false,
             ObjectTypes.Content.newBuilder()
-                .setId("cid")
+                .setId(CID)
                 .setIcebergViewState(
                     ObjectTypes.IcebergViewState.newBuilder()
                         .setVersionId(42)
@@ -256,13 +259,13 @@ class TestStoreWorker {
         //
         Arguments.of(
             ImmutableDeltaLakeTable.builder()
-                .id("cid")
+                .id(CID)
                 .addCheckpointLocationHistory("check")
                 .addMetadataLocationHistory("meta")
                 .build(),
             false,
             ObjectTypes.Content.newBuilder()
-                .setId("cid")
+                .setId(CID)
                 .setDeltaLakeTable(
                     ObjectTypes.DeltaLakeTable.newBuilder()
                         .addCheckpointLocationHistory("check")
@@ -330,7 +333,7 @@ class TestStoreWorker {
     Content value =
         worker.valueFromStore(
             ObjectTypes.Content.newBuilder()
-                .setId("cid")
+                .setId(CID)
                 .setIcebergViewState(
                     ObjectTypes.IcebergViewState.newBuilder()
                         .setVersionId(42)
@@ -495,7 +498,7 @@ class TestStoreWorker {
 
   private static Map.Entry<ByteString, Content> getNamespace() {
     List<String> elements = Arrays.asList("a", "b.c", "d");
-    Namespace namespace = Namespace.of(elements);
+    Namespace namespace = withId(Namespace.of(elements));
     ByteString bytes =
         ObjectTypes.Content.newBuilder()
             .setId(namespace.getId())
@@ -508,7 +511,7 @@ class TestStoreWorker {
   private static Map.Entry<ByteString, Content> getNamespaceWithProperties() {
     List<String> elements = Arrays.asList("a", "b.c", "d");
     Map<String, String> properties = ImmutableMap.of("key1", "val1");
-    Namespace namespace = Namespace.of(elements, properties);
+    Namespace namespace = withId(Namespace.of(elements, properties));
     ByteString bytes =
         ObjectTypes.Content.newBuilder()
             .setId(namespace.getId())
@@ -520,5 +523,9 @@ class TestStoreWorker {
             .build()
             .toByteString();
     return new AbstractMap.SimpleImmutableEntry<>(bytes, namespace);
+  }
+
+  private static Namespace withId(Namespace namespace) {
+    return ImmutableNamespace.builder().from(namespace).id(CID).build();
   }
 }

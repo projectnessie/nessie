@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.persist.store;
 
+import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 import java.util.Collection;
 import java.util.Collections;
@@ -22,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -111,44 +113,62 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
     for (Operation<CONTENT> operation : operations) {
       if (operation instanceof Put) {
         Put<CONTENT> op = (Put<CONTENT>) operation;
-        ContentId contentId = ContentId.of(storeWorker.getId(op.getValue()));
+        CONTENT content = op.getValue();
+        CONTENT expected = op.getExpectedValue();
+
+        if (storeWorker.getId(content) == null) {
+          // No content-ID --> New content
+
+          Preconditions.checkArgument(
+              expected == null,
+              "Expected content must not be set when creating new content. "
+                  + "The put operation's content has no content ID and is considered as new. "
+                  + "Key: '%s'",
+              op.getKey());
+
+          // assign content-ID
+          content = storeWorker.applyId(content, UUID.randomUUID().toString());
+        }
+
+        ContentId contentId = ContentId.of(storeWorker.getId(content));
         commitAttempt.addPuts(
             KeyWithBytes.of(
                 op.getKey(),
                 contentId,
-                storeWorker.getPayload(op.getValue()),
-                storeWorker.toStoreOnReferenceState(op.getValue())));
+                storeWorker.getPayload(content),
+                storeWorker.toStoreOnReferenceState(content)));
 
-        if (op.getExpectedValue() != null) {
-          ContentId expectedContentId = ContentId.of(storeWorker.getId(op.getExpectedValue()));
-          if (!contentId.equals(expectedContentId)) {
-            throw new IllegalArgumentException(
-                String.format(
-                    "Content Ids for new ('%s') and expected ('%s') content differ for key '%s'",
-                    contentId, expectedContentId, op.getKey()));
-          }
+        if (expected != null) {
+          String expectedId = storeWorker.getId(expected);
+          Preconditions.checkArgument(
+              expectedId != null,
+              "Content id for expected content must not be null, key '%s'",
+              op.getKey());
+          ContentId expectedContentId = ContentId.of(expectedId);
+          Preconditions.checkArgument(
+              contentId.equals(expectedContentId),
+              "Content ids for new ('%s') and expected ('%s') content differ for key '%s'",
+              contentId,
+              expectedContentId,
+              op.getKey());
         }
 
-        if (storeWorker.requiresGlobalState(op.getValue())) {
-          ByteString newState = storeWorker.toStoreGlobalState(op.getValue());
+        if (storeWorker.requiresGlobalState(content)) {
+          ByteString newState = storeWorker.toStoreGlobalState(content);
           Optional<ByteString> expectedValue;
-          if (op.getExpectedValue() != null) {
-            if (storeWorker.getType(op.getValue()) != storeWorker.getType(op.getExpectedValue())) {
-              throw new IllegalArgumentException(
-                  String.format(
-                      "Content-type for conditional put-operation for key '%s' for 'value' and 'expectedValue' must be the same, but are '%s' and '%s'.",
-                      op.getKey(),
-                      storeWorker.getType(op.getValue()),
-                      storeWorker.getType(op.getExpectedValue())));
-            }
-            if (!contentId.equals(ContentId.of(storeWorker.getId(op.getExpectedValue())))) {
-              throw new IllegalArgumentException(
-                  String.format(
-                      "Conditional put-operation key '%s' has different content-ids.",
-                      op.getKey()));
-            }
+          if (expected != null) {
+            Preconditions.checkArgument(
+                storeWorker.getType(content) == storeWorker.getType(expected),
+                "Content-type for conditional put-operation for key '%s' for 'value' and 'expectedValue' must be the same, but are '%s' and '%s'.",
+                op.getKey(),
+                storeWorker.getType(content),
+                storeWorker.getType(expected));
+            Preconditions.checkArgument(
+                contentId.equals(ContentId.of(storeWorker.getId(expected))),
+                "Conditional put-operation key '%s' has different content-ids.",
+                op.getKey());
 
-            expectedValue = Optional.of(storeWorker.toStoreGlobalState(op.getExpectedValue()));
+            expectedValue = Optional.of(storeWorker.toStoreGlobalState(expected));
           } else {
             expectedValue = Optional.empty();
           }
@@ -341,13 +361,12 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
       logEntry
           .getPuts()
           .forEach(
-              put -> {
-                commitBuilder.addOperations(
-                    Put.of(
-                        put.getKey(),
-                        storeWorker.valueFromStore(
-                            put.getValue(), () -> getGlobalContents.apply(put))));
-              });
+              put ->
+                  commitBuilder.addOperations(
+                      Put.of(
+                          put.getKey(),
+                          storeWorker.valueFromStore(
+                              put.getValue(), () -> getGlobalContents.apply(put)))));
     };
   }
 

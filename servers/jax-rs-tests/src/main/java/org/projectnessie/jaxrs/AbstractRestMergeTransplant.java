@@ -94,7 +94,9 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalidWit
     Branch base = createBranch("base");
     Branch branch = createBranch("branch");
 
+    ContentKey key1 = ContentKey.of("key1");
     IcebergTable table1 = IcebergTable.of("table1", 42, 42, 42, 42);
+    ContentKey key2 = ContentKey.of("key2");
     IcebergTable table2 = IcebergTable.of("table2", 43, 43, 43, 43);
 
     Branch committed1 =
@@ -103,9 +105,19 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalidWit
             .branchName(branch.getName())
             .hash(branch.getHash())
             .commitMeta(CommitMeta.fromMessage("test-branch1"))
-            .operation(Put.of(ContentKey.of("key1"), table1))
+            .operation(Put.of(key1, table1))
             .commit();
     assertThat(committed1.getHash()).isNotNull();
+
+    table1 =
+        getApi()
+            .getContent()
+            .reference(committed1)
+            .key(key1)
+            .get()
+            .get(key1)
+            .unwrap(IcebergTable.class)
+            .get();
 
     Branch committed2 =
         getApi()
@@ -113,7 +125,7 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalidWit
             .branchName(branch.getName())
             .hash(committed1.getHash())
             .commitMeta(CommitMeta.fromMessage("test-branch2"))
-            .operation(Put.of(ContentKey.of("key1"), table1, table1))
+            .operation(Put.of(key1, table1, table1))
             .commit();
     assertThat(committed2.getHash()).isNotNull();
 
@@ -132,7 +144,7 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalidWit
         .branchName(base.getName())
         .hash(base.getHash())
         .commitMeta(CommitMeta.fromMessage("test-main"))
-        .operation(Put.of(ContentKey.of("key2"), table2))
+        .operation(Put.of(key2, table2))
         .commit();
 
     actor.accept(Tuple.tuple(base, branch, committed1, committed2));
@@ -198,6 +210,16 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalidWit
             .operation(Put.of(key1, table1))
             .commit();
     assertThat(committed1.getHash()).isNotNull();
+
+    table1 =
+        getApi()
+            .getContent()
+            .reference(committed1)
+            .key(key1)
+            .get()
+            .get(key1)
+            .unwrap(IcebergTable.class)
+            .get();
 
     Branch committed2 =
         getApi()

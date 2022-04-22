@@ -20,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.UUID;
+import javax.annotation.Nullable;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.DiscriminatorMapping;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -61,10 +61,8 @@ public abstract class Content {
    * <p>This id is unique for the entire lifetime of this Content object and persists across
    * renames. Two content objects with the same key will have different id.
    */
-  @Value.Default
-  public String getId() {
-    return UUID.randomUUID().toString();
-  }
+  @Nullable
+  public abstract String getId();
 
   /**
    * Returns the {@link Type} enum constant for this content object.
