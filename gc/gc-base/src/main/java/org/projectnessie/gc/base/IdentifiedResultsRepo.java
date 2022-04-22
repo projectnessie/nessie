@@ -18,6 +18,7 @@ package org.projectnessie.gc.base;
 import static org.apache.iceberg.types.Types.NestedField.optional;
 import static org.apache.iceberg.types.Types.NestedField.required;
 
+import com.google.errorprone.annotations.FormatMethod;
 import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.List;
@@ -198,6 +199,7 @@ public final class IdentifiedResultsRepo {
         .collect(Collectors.toMap(t -> t._1, t -> t._2));
   }
 
+  @FormatMethod
   private Dataset<Row> sql(String sqlStatement, Object... args) {
     String sql = String.format(sqlStatement, args);
     LOGGER.debug("Executing the sql -> {}", sql);
