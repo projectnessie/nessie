@@ -20,7 +20,6 @@ import org.projectnessie.api.params.RefLogParams;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
-import org.projectnessie.model.Content.Type;
 import org.projectnessie.model.RefLogResponse;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
@@ -31,7 +30,7 @@ public class RefLogApiImplWithAuthorization extends RefLogApiImpl {
 
   public RefLogApiImplWithAuthorization(
       ServerConfig config,
-      VersionStore<Content, CommitMeta, Type> store,
+      VersionStore<Content, CommitMeta, Content.Type> store,
       Authorizer authorizer,
       Principal principal) {
     super(config, store, authorizer, principal);

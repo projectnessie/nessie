@@ -24,7 +24,6 @@ import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory.Builder;
 import org.projectnessie.versioned.persist.adapter.DatabaseConnectionConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseConnectionProvider;
 import org.projectnessie.versioned.persist.tests.SystemPropertiesConfigurer;
@@ -124,20 +123,26 @@ public class DatabaseAdapters {
   }
 
   private static DatabaseAdapter buildPre019(
-      Builder<DatabaseAdapterConfig, DatabaseAdapterConfig, DatabaseConnectionProvider<?>> builder,
+      DatabaseAdapterFactory.Builder<
+              DatabaseAdapterConfig, DatabaseAdapterConfig, DatabaseConnectionProvider<?>>
+          builder,
       Method build) {
     return doBuild(builder, build);
   }
 
   private static DatabaseAdapter buildWithStoreWorker(
-      Builder<DatabaseAdapterConfig, DatabaseAdapterConfig, DatabaseConnectionProvider<?>> builder)
+      DatabaseAdapterFactory.Builder<
+              DatabaseAdapterConfig, DatabaseAdapterConfig, DatabaseConnectionProvider<?>>
+          builder)
       throws NoSuchMethodException, ClassNotFoundException {
     Method build = DatabaseAdapterFactory.Builder.class.getMethod("build", StoreWorker.class);
     return doBuild(builder, build, new TableCommitMetaStoreWorker());
   }
 
   private static DatabaseAdapter buildWithContentVariantSupplier(
-      Builder<DatabaseAdapterConfig, DatabaseAdapterConfig, DatabaseConnectionProvider<?>> builder)
+      DatabaseAdapterFactory.Builder<
+              DatabaseAdapterConfig, DatabaseAdapterConfig, DatabaseConnectionProvider<?>>
+          builder)
       throws NoSuchMethodException, ClassNotFoundException, InvocationTargetException,
           InstantiationException, IllegalAccessException {
     Method build =
@@ -152,7 +157,9 @@ public class DatabaseAdapters {
   }
 
   private static DatabaseAdapter doBuild(
-      Builder<DatabaseAdapterConfig, DatabaseAdapterConfig, DatabaseConnectionProvider<?>> builder,
+      DatabaseAdapterFactory.Builder<
+              DatabaseAdapterConfig, DatabaseAdapterConfig, DatabaseConnectionProvider<?>>
+          builder,
       Method build,
       Object... args) {
     try {

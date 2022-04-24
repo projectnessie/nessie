@@ -37,7 +37,6 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieRefLogNotFoundException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
-import org.projectnessie.model.Content.Type;
 import org.projectnessie.model.ImmutableRefLogResponse;
 import org.projectnessie.model.ImmutableRefLogResponseEntry;
 import org.projectnessie.model.RefLogResponse;
@@ -54,7 +53,7 @@ public class RefLogApiImpl extends BaseApiImpl implements RefLogApi {
 
   public RefLogApiImpl(
       ServerConfig config,
-      VersionStore<Content, CommitMeta, Type> store,
+      VersionStore<Content, CommitMeta, Content.Type> store,
       Authorizer authorizer,
       Principal principal) {
     super(config, store, authorizer, principal);

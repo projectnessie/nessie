@@ -34,7 +34,7 @@ import org.projectnessie.error.NessieNamespaceNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.Content.Type;
+import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.IcebergTable;
@@ -71,8 +71,8 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
         getApi().getEntries().reference(refMode.transform(branch)).get().getEntries();
     List<Entry> expected =
         asList(
-            Entry.builder().name(a).type(Type.ICEBERG_TABLE).build(),
-            Entry.builder().name(b).type(Type.ICEBERG_VIEW).build());
+            Entry.builder().name(a).type(Content.Type.ICEBERG_TABLE).build(),
+            Entry.builder().name(b).type(Content.Type.ICEBERG_VIEW).build());
     assertThat(entries).containsExactlyInAnyOrderElementsOf(expected);
 
     entries =
@@ -237,7 +237,7 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
             .getEntries();
     assertThat(entries).hasSize(1);
     assertThat(entries.get(0))
-        .matches(e -> e.getType().equals(Type.NAMESPACE))
+        .matches(e -> e.getType().equals(Content.Type.NAMESPACE))
         .matches(e -> e.getName().equals(ContentKey.of("a")));
 
     entries =
@@ -250,13 +250,13 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
             .getEntries();
     assertThat(entries).hasSize(3);
     assertThat(entries.get(2))
-        .matches(e -> e.getType().equals(Type.ICEBERG_TABLE))
+        .matches(e -> e.getType().equals(Content.Type.ICEBERG_TABLE))
         .matches(e -> e.getName().equals(ContentKey.of("a", "thirdTable")));
     assertThat(entries.get(1))
-        .matches(e -> e.getType().equals(Type.NAMESPACE))
+        .matches(e -> e.getType().equals(Content.Type.NAMESPACE))
         .matches(e -> e.getName().equals(ContentKey.of("a", "b")));
     assertThat(entries.get(0))
-        .matches(e -> e.getType().equals(Type.NAMESPACE))
+        .matches(e -> e.getType().equals(Content.Type.NAMESPACE))
         .matches(e -> e.getName().equals(ContentKey.of("a", "boo")));
 
     entries =
@@ -269,10 +269,10 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
             .getEntries();
     assertThat(entries).hasSize(2);
     assertThat(entries.get(1))
-        .matches(e -> e.getType().equals(Type.NAMESPACE))
+        .matches(e -> e.getType().equals(Content.Type.NAMESPACE))
         .matches(e -> e.getName().equals(ContentKey.of("a", "b", "c")));
     assertThat(entries.get(0))
-        .matches(e -> e.getType().equals(Type.ICEBERG_TABLE))
+        .matches(e -> e.getType().equals(Content.Type.ICEBERG_TABLE))
         .matches(e -> e.getName().equals(ContentKey.of("a", "b", "fourthTable")));
 
     entries =
@@ -285,10 +285,10 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
             .getEntries();
     assertThat(entries).hasSize(2);
     assertThat(entries.get(1))
-        .matches(e -> e.getType().equals(Type.ICEBERG_TABLE))
+        .matches(e -> e.getType().equals(Content.Type.ICEBERG_TABLE))
         .matches(e -> e.getName().equals(ContentKey.of("a", "b", "c", "firstTable")));
     assertThat(entries.get(0))
-        .matches(e -> e.getType().equals(Type.ICEBERG_TABLE))
+        .matches(e -> e.getType().equals(Content.Type.ICEBERG_TABLE))
         .matches(e -> e.getName().equals(ContentKey.of("a", "b", "c", "secondTable")));
 
     entries =
@@ -311,13 +311,13 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
             .getEntries();
     assertThat(entries).hasSize(3);
     assertThat(entries.get(2))
-        .matches(e -> e.getType().equals(Type.NAMESPACE))
+        .matches(e -> e.getType().equals(Content.Type.NAMESPACE))
         .matches(e -> e.getName().equals(ContentKey.of("a", "b", "c")));
     assertThat(entries.get(1))
-        .matches(e -> e.getType().equals(Type.ICEBERG_TABLE))
+        .matches(e -> e.getType().equals(Content.Type.ICEBERG_TABLE))
         .matches(e -> e.getName().equals(ContentKey.of("a", "b", "fourthTable")));
     assertThat(entries.get(0))
-        .matches(e -> e.getType().equals(Type.ICEBERG_TABLE))
+        .matches(e -> e.getType().equals(Content.Type.ICEBERG_TABLE))
         .matches(e -> e.getName().equals(ContentKey.of("a", "boo", "fifthTable")));
 
     if (ReferenceMode.DETACHED != refMode) {

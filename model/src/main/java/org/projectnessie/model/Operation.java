@@ -16,7 +16,6 @@
 package org.projectnessie.model;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -39,9 +38,9 @@ import org.immutables.value.Value;
     },
     discriminatorProperty = "type")
 @JsonSubTypes({
-  @Type(Operation.Put.class),
-  @Type(Operation.Delete.class),
-  @Type(Operation.Unchanged.class)
+  @JsonSubTypes.Type(Operation.Put.class),
+  @JsonSubTypes.Type(Operation.Delete.class),
+  @JsonSubTypes.Type(Operation.Unchanged.class)
 })
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public interface Operation {

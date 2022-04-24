@@ -44,7 +44,6 @@ import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
 import org.projectnessie.versioned.persist.adapter.ImmutableRepoDescription;
-import org.projectnessie.versioned.persist.adapter.ImmutableRepoDescription.Builder;
 import org.projectnessie.versioned.persist.adapter.KeyList;
 import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
@@ -425,7 +424,8 @@ class TestSerialization {
   }
 
   static RepoDescription createRepoDescription() {
-    Builder builder = RepoDescription.builder().repoVersion(ThreadLocalRandom.current().nextInt());
+    ImmutableRepoDescription.Builder builder =
+        RepoDescription.builder().repoVersion(ThreadLocalRandom.current().nextInt());
     IntStream.range(0, ThreadLocalRandom.current().nextInt(20))
         .forEach(i -> builder.putProperties("key" + i, randomString(20)));
     return builder.build();

@@ -31,7 +31,6 @@ import org.projectnessie.error.NessieNamespaceNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
-import org.projectnessie.model.Content.Type;
 import org.projectnessie.model.GetNamespacesResponse;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.services.authz.Authorizer;
@@ -48,7 +47,7 @@ public class RestNamespaceResource implements HttpNamespaceApi {
   // NamespaceApi, empty resources (no REST methods defined) and potentially other.
 
   private final ServerConfig config;
-  private final VersionStore<Content, CommitMeta, Type> store;
+  private final VersionStore<Content, CommitMeta, Content.Type> store;
   private final Authorizer authorizer;
 
   @Context SecurityContext securityContext;
@@ -60,7 +59,9 @@ public class RestNamespaceResource implements HttpNamespaceApi {
 
   @Inject
   public RestNamespaceResource(
-      ServerConfig config, VersionStore<Content, CommitMeta, Type> store, Authorizer authorizer) {
+      ServerConfig config,
+      VersionStore<Content, CommitMeta, Content.Type> store,
+      Authorizer authorizer) {
     this.config = config;
     this.store = store;
     this.authorizer = authorizer;

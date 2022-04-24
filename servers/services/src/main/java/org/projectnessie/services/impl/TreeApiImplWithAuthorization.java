@@ -34,7 +34,6 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
-import org.projectnessie.model.Content.Type;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ImmutableLogEntry;
 import org.projectnessie.model.ImmutableLogResponse;
@@ -62,7 +61,7 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
 
   public TreeApiImplWithAuthorization(
       ServerConfig config,
-      VersionStore<Content, CommitMeta, Type> store,
+      VersionStore<Content, CommitMeta, Content.Type> store,
       Authorizer authorizer,
       Principal principal) {
     super(config, store, authorizer, principal);
@@ -142,8 +141,8 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
   }
 
   @Override
-  protected Stream<KeyEntry<Type>> filterEntries(
-      WithHash<NamedRef> refWithHash, Stream<KeyEntry<Type>> entries, String filter) {
+  protected Stream<KeyEntry<Content.Type>> filterEntries(
+      WithHash<NamedRef> refWithHash, Stream<KeyEntry<Content.Type>> entries, String filter) {
 
     startAccessCheck().canReadEntries(refWithHash.getValue()).checkAndThrow();
 
@@ -154,7 +153,7 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
 
     // First, collect the content-keys to which the user has no access to.
 
-    List<KeyEntry<Type>> entriesList =
+    List<KeyEntry<Content.Type>> entriesList =
         super.filterEntries(refWithHash, entries, filter).collect(Collectors.toList());
 
     BatchAccessChecker responseCheck = startAccessCheck();

@@ -19,7 +19,6 @@ import java.security.Principal;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
-import org.projectnessie.model.Content.Type;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.GetMultipleContentsRequest;
 import org.projectnessie.model.GetMultipleContentsResponse;
@@ -35,7 +34,7 @@ public class ContentApiImplWithAuthorization extends ContentApiImpl {
 
   public ContentApiImplWithAuthorization(
       ServerConfig config,
-      VersionStore<Content, CommitMeta, Type> store,
+      VersionStore<Content, CommitMeta, Content.Type> store,
       Authorizer authorizer,
       Principal principal) {
     super(config, store, authorizer, principal);

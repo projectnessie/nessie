@@ -53,7 +53,6 @@ import org.projectnessie.versioned.persist.adapter.ContentAndState;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitParams;
-import org.projectnessie.versioned.persist.adapter.ImmutableCommitParams.Builder;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterMetrics;
@@ -302,7 +301,7 @@ public abstract class AbstractConcurrency {
       Map<ContentId, ByteString> globalStates,
       Map<BranchName, Map<Key, ByteString>> onRefStates,
       BranchName branch,
-      Builder commitAttempt)
+      ImmutableCommitParams.Builder commitAttempt)
       throws ReferenceConflictException, ReferenceNotFoundException {
     CommitParams c = commitAttempt.build();
     databaseAdapter.commit(c);

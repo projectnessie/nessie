@@ -35,7 +35,6 @@ import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.services.authz.Check.CheckType;
-import org.projectnessie.services.authz.ImmutableCheck.Builder;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.DetachedRef;
 import org.projectnessie.versioned.TagName;
@@ -182,7 +181,7 @@ public class BatchAccessCheckerTest {
     return Arrays.stream(CheckType.values())
         .map(
             t -> {
-              Builder b = Check.builder(t);
+              ImmutableCheck.Builder b = Check.builder(t);
               if (t.isRef()) {
                 b.ref(BranchName.of("some-branch"));
               }
