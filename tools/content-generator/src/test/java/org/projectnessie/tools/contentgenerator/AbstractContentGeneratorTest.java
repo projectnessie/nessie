@@ -75,20 +75,20 @@ public class AbstractContentGeneratorTest {
     private final int exitCode;
     private final String stdOut;
 
-    protected ProcessResult(int exitCode, String stdOut) {
+    ProcessResult(int exitCode, String stdOut) {
       this.exitCode = exitCode;
       this.stdOut = stdOut;
     }
 
-    protected int getExitCode() {
+    int getExitCode() {
       return exitCode;
     }
 
-    protected String getStdOut() {
+    private String getStdOut() {
       return stdOut;
     }
 
-    protected List<String> getStdOutLines() {
+    List<String> getStdOutLines() {
       return Arrays.asList(stdOut.split("\n"));
     }
   }
