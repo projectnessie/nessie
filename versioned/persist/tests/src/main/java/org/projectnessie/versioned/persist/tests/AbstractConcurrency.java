@@ -140,8 +140,7 @@ public abstract class AbstractConcurrency {
       CountDownLatch startLatch = new CountDownLatch(1);
       Map<BranchName, Set<Key>> keysPerBranch = new HashMap<>();
       for (int i = 0; i < variation.threads; i++) {
-        BranchName branch =
-            BranchName.of("concurrency-" + ((variation.singleBranch ? "shared" : i)));
+        BranchName branch = BranchName.of("concurrency-" + (variation.singleBranch ? "shared" : i));
         List<Key> keys = new ArrayList<>(variation.tables);
 
         for (int k = 0; k < variation.tables; k++) {

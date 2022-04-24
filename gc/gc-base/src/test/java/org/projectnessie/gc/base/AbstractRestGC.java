@@ -75,7 +75,7 @@ public abstract class AbstractRestGC extends AbstractRest {
         .filter(op -> op instanceof Put)
         .forEach(
             op -> {
-              IcebergTable content = (IcebergTable) (((Put) op).getContent());
+              IcebergTable content = (IcebergTable) ((Put) op).getContent();
               // using only contentId, ref, snapshot id for validation
               // as metadata location will change based on new global state.
               expected.add(

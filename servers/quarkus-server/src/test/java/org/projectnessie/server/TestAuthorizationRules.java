@@ -274,7 +274,7 @@ class TestAuthorizationRules extends BaseClientAuthTest {
                 api()
                     .mergeRefIntoBranch()
                     .fromRef(branch)
-                    .branch((Branch.of(disallowedBranch, branch.getHash())))
+                    .branch(Branch.of(disallowedBranch, branch.getHash()))
                     .merge())
         .isInstanceOf(NessieForbiddenException.class)
         .hasMessageContaining(errorMessage);
@@ -285,7 +285,7 @@ class TestAuthorizationRules extends BaseClientAuthTest {
                     .transplantCommitsIntoBranch()
                     .hashesToTransplant(Arrays.asList(branch.getHash()))
                     .fromRefName(branch.getName())
-                    .branch((Branch.of(disallowedBranch, branch.getHash())))
+                    .branch(Branch.of(disallowedBranch, branch.getHash()))
                     .transplant())
         .isInstanceOf(NessieForbiddenException.class)
         .hasMessageContaining(errorMessage);
