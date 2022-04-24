@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.errorprone.annotations.FormatMethod;
 import java.io.File;
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -134,6 +135,7 @@ public abstract class AbstractSparkSqlTest {
     assertThat(actualRows).as("%s", context).containsExactlyElementsOf(expectedRows);
   }
 
+  @FormatMethod
   protected static List<Object[]> sql(String query, Object... args) {
     List<Row> rows = spark.sql(String.format(query, args)).collectAsList();
     if (rows.size() < 1) {
@@ -185,7 +187,7 @@ public abstract class AbstractSparkSqlTest {
     sql("INSERT INTO nessie.db.tbl select 23, \"test\"");
     assertThat(sql("SELECT * FROM nessie.db.tbl")).hasSize(1).containsExactly(row(23, "test"));
 
-    sql(String.format("MERGE BRANCH %s INTO main in nessie", refName));
+    sql("MERGE BRANCH %s INTO main in nessie", refName);
     assertThat(sql("SELECT * FROM nessie.db.`tbl@main`"))
         .hasSize(1)
         .containsExactly(row(23, "test"));
@@ -212,6 +214,7 @@ public abstract class AbstractSparkSqlTest {
         .containsExactlyInAnyOrder(row(23, "test"), row(24, "test24"));
   }
 
+  @FormatMethod
   private static List<Object[]> sqlWithEmptyCache(String query, Object... args) {
     try (SparkSession sparkWithEmptyCache = spark.cloneSession()) {
       List<Row> rows = sparkWithEmptyCache.sql(String.format(query, args)).collectAsList();
@@ -500,7 +503,7 @@ public abstract class AbstractSparkSqlTest {
     sql("MERGE BRANCH %s IN nessie", refName);
     // here we are skipping commit time as its variable
     assertThat(
-            sql("SHOW LOG main IN nessie", refName).stream()
+            sql("SHOW LOG main IN nessie").stream()
                 .map(AbstractSparkSqlTest::sqlResultWithoutHashAndTime)
                 .collect(Collectors.toList()))
         .containsExactlyElementsOf(resultList);
@@ -662,7 +665,7 @@ public abstract class AbstractSparkSqlTest {
 
   @Test
   void testInvalidCatalog() {
-    assertThatThrownBy(() -> sql(String.format("LIST REFERENCES IN %s", NON_NESSIE_CATALOG)))
+    assertThatThrownBy(() -> sql("LIST REFERENCES IN %s", NON_NESSIE_CATALOG))
         .hasMessageContaining("The command works only when the catalog is a NessieCatalog")
         .hasMessageContaining(
             String.format("but %s is a org.apache.iceberg.hive.HiveCatalog", NON_NESSIE_CATALOG));

@@ -18,6 +18,7 @@ package org.projectnessie.deltalake;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.ImmutableList;
+import com.google.errorprone.annotations.FormatMethod;
 import io.delta.sql.DeltaSparkSessionExtension;
 import java.io.File;
 import java.util.Arrays;
@@ -120,6 +121,7 @@ public class AbstractDeltaTest {
     assertThat(actualRows).as("%s", context).containsExactlyElementsOf(expectedRows);
   }
 
+  @FormatMethod
   protected static List<Object[]> sql(String query, Object... args) {
     List<Row> rows = spark.sql(String.format(query, args)).collectAsList();
     if (rows.size() < 1) {
