@@ -48,7 +48,7 @@ abstract class AbstractNessieApiHolder implements CloseableResource {
       Function<ExtensionContext, NessieServer> nessieServerSupplier) {
     ClientKey clientKey = createClientKey(context, field, version, nessieServerSupplier);
 
-    if (version == Version.CURRENT) {
+    if (version.equals(Version.CURRENT)) {
       return extensionStore(context)
           .getOrComputeIfAbsent(
               clientKey, CurrentNessieApiHolder::new, CurrentNessieApiHolder.class)
