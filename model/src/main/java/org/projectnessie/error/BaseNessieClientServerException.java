@@ -57,6 +57,7 @@ public class BaseNessieClientServerException extends IOException implements Erro
     return getErrorCode().httpStatus();
   }
 
+  @Override
   public ErrorCode getErrorCode() {
     return ErrorCode.UNKNOWN;
   }

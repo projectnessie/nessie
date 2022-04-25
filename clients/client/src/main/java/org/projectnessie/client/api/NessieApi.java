@@ -19,5 +19,6 @@ package org.projectnessie.client.api;
 public interface NessieApi extends AutoCloseable {
 
   // Overridden to "remove 'throws Exception'"
+  @Override
   void close();
 }

@@ -68,5 +68,6 @@ public interface HttpDiffApi extends DiffApi {
     @APIResponse(responseCode = "403", description = "Not allowed to view the given fromRef/toRef"),
     @APIResponse(responseCode = "404", description = "fromRef/toRef not found"),
   })
+  @Override
   DiffResponse getDiff(@BeanParam DiffParams params) throws NessieNotFoundException;
 }

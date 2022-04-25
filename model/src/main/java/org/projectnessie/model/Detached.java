@@ -53,6 +53,7 @@ public interface Detached extends Reference {
 
   /** Validation rule using {@link Validation#validateReferenceName(String)}. */
   @Value.Check
+  @Override
   default void checkHash() {
     validateHash(getHash());
   }
