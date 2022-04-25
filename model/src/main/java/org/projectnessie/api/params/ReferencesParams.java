@@ -111,7 +111,7 @@ public class ReferencesParams extends AbstractParams {
     if (this == o) {
       return true;
     }
-    if (o == null || getClass() != o.getClass()) {
+    if (!(o instanceof ReferencesParams)) {
       return false;
     }
     ReferencesParams that = (ReferencesParams) o;

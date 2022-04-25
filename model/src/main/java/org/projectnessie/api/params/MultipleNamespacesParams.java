@@ -88,7 +88,7 @@ public class MultipleNamespacesParams {
     if (this == o) {
       return true;
     }
-    if (o == null || getClass() != o.getClass()) {
+    if (!(o instanceof MultipleNamespacesParams)) {
       return false;
     }
     MultipleNamespacesParams that = (MultipleNamespacesParams) o;

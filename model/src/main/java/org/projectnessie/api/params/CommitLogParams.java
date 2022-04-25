@@ -139,7 +139,7 @@ public class CommitLogParams extends AbstractParams {
     if (this == o) {
       return true;
     }
-    if (o == null || getClass() != o.getClass()) {
+    if (!(o instanceof CommitLogParams)) {
       return false;
     }
     CommitLogParams that = (CommitLogParams) o;
