@@ -165,7 +165,7 @@
     <awssdk.version>2.17.175</awssdk.version>
     <bouncycastle.version>1.66</bouncycastle.version>
     <cel.version>0.3.3</cel.version>
-    <checkstyle.version>10.1</checkstyle.version>
+    <checkstyle.version>10.2</checkstyle.version>
     <!-- to fix circular dependencies with NessieClient, certain projects need to use the same Nessie version as Iceberg/Delta has -->
     <client.nessie.version>0.18.0</client.nessie.version>
     <deltalake.version>1.1.0-nessie</deltalake.version>
