@@ -25,6 +25,7 @@ import com.sun.net.httpserver.HttpsServer;
 import java.io.OutputStream;
 import java.math.BigInteger;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -72,9 +73,9 @@ class TestHttpsClient {
         h -> {
           Assertions.assertEquals("GET", h.getRequestMethod());
           String response = "hello";
-          h.sendResponseHeaders(200, response.getBytes().length);
+          h.sendResponseHeaders(200, response.getBytes(StandardCharsets.UTF_8).length);
           OutputStream os = h.getResponseBody();
-          os.write(response.getBytes());
+          os.write(response.getBytes(StandardCharsets.UTF_8));
           os.close();
         };
     TrustManager[][] trustManager = new TrustManager[1][];
