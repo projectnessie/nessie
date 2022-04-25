@@ -131,8 +131,8 @@ final class CelBatchAccessChecker extends AbstractBatchAccessChecker {
                   } catch (ScriptException e) {
                     throw new RuntimeException(
                         String.format(
-                            "Failed to execute authorization rule with id '%s' and expression '%s' due to: %s",
-                            entry.getKey(), entry.getValue(), e.getMessage()),
+                            "Failed to execute authorization rule with id '%s' due to: %s",
+                            entry.getKey(), e.getMessage()),
                         e);
                   }
                 });
