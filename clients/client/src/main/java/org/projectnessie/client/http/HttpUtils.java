@@ -15,6 +15,7 @@
  */
 package org.projectnessie.client.http;
 
+import com.google.errorprone.annotations.FormatMethod;
 import java.util.Objects;
 
 public final class HttpUtils {
@@ -36,6 +37,7 @@ public final class HttpUtils {
    * @param msg message with formatting
    * @param vars string format args
    */
+  @FormatMethod
   public static void checkArgument(boolean expression, String msg, Object... vars) {
     if (!expression) {
       throw new IllegalArgumentException(String.format(msg, vars));
