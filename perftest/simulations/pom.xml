@@ -114,8 +114,6 @@
               <goal>testCompile</goal>
             </goals>
             <configuration>
-              <sendJavaToScalac>false</sendJavaToScalac>
-              <scalaVersion>${scala2.13.version}</scalaVersion>
               <jvmArgs>
                 <jvmArg>-Xss100M</jvmArg>
               </jvmArgs>

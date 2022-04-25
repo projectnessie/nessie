@@ -321,7 +321,6 @@
                   <goal>doc-jar</goal>
                 </goals>
                 <configuration>
-                  <scalaVersion>${scala2.12.version}</scalaVersion>
                   <additionalDependencies>
                     <!-- Hack to let scaladoc pick up the generated code -->
                     <dependency>

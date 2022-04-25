@@ -313,9 +313,6 @@
                 <goals>
                   <goal>doc-jar</goal>
                 </goals>
-                <configuration>
-                  <scalaVersion>${scala2.12.version}</scalaVersion>
-                </configuration>
               </execution>
             </executions>
           </plugin>
