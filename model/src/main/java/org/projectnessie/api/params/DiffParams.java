@@ -114,7 +114,7 @@ public class DiffParams {
     if (this == o) {
       return true;
     }
-    if (o == null || getClass() != o.getClass()) {
+    if (!(o instanceof DiffParams)) {
       return false;
     }
     DiffParams that = (DiffParams) o;

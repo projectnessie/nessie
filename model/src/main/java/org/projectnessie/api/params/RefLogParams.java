@@ -119,7 +119,7 @@ public class RefLogParams extends AbstractParams {
     if (this == o) {
       return true;
     }
-    if (o == null || getClass() != o.getClass()) {
+    if (!(o instanceof RefLogParams)) {
       return false;
     }
     RefLogParams that = (RefLogParams) o;
