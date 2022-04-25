@@ -818,7 +818,6 @@
           <version>4.6.1</version>
           <configuration>
             <sendJavaToScalac>false</sendJavaToScalac>
-            <scalaVersion>${scala2.12.version}</scalaVersion>
           </configuration>
         </plugin>
         <plugin>

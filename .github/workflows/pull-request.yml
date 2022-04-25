@@ -53,7 +53,7 @@ jobs:
       env:
         SPARK_LOCAL_IP: localhost
       run: |
-        ./mvnw --batch-mode --threads 1C install javadoc:javadoc-no-fork -Pcode-coverage -Dtest.log.level=WARN
+        ./mvnw --batch-mode --threads 1C install scala:doc-jar javadoc:javadoc-no-fork -Pcode-coverage -Dtest.log.level=WARN
 
     - name: Capture Test Reports
       if: ${{ failure() }}
