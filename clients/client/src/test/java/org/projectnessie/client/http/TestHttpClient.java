@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
@@ -77,9 +78,9 @@ public class TestHttpClient {
         h -> {
           Assertions.assertEquals("GET", h.getRequestMethod());
           String response = MAPPER.writeValueAsString(inputBean);
-          h.sendResponseHeaders(200, response.getBytes().length);
+          h.sendResponseHeaders(200, response.getBytes(StandardCharsets.UTF_8).length);
           OutputStream os = h.getResponseBody();
-          os.write(response.getBytes());
+          os.write(response.getBytes(StandardCharsets.UTF_8));
           os.close();
         };
     try (TestServer server = new TestServer(handler)) {
@@ -194,9 +195,9 @@ public class TestHttpClient {
           Assertions.assertEquals("x=y", h.getRequestURI().getQuery());
           Assertions.assertEquals("GET", h.getRequestMethod());
           String response = MAPPER.writeValueAsString(inputBean);
-          h.sendResponseHeaders(200, response.getBytes().length);
+          h.sendResponseHeaders(200, response.getBytes(StandardCharsets.UTF_8).length);
           OutputStream os = h.getResponseBody();
-          os.write(response.getBytes());
+          os.write(response.getBytes(StandardCharsets.UTF_8));
           os.close();
         };
     try (TestServer server = new TestServer(handler)) {
@@ -218,9 +219,9 @@ public class TestHttpClient {
           Assertions.assertTrue(queryParamSet.contains("a=b"));
           Assertions.assertEquals("GET", h.getRequestMethod());
           String response = MAPPER.writeValueAsString(inputBean);
-          h.sendResponseHeaders(200, response.getBytes().length);
+          h.sendResponseHeaders(200, response.getBytes(StandardCharsets.UTF_8).length);
           OutputStream os = h.getResponseBody();
-          os.write(response.getBytes());
+          os.write(response.getBytes(StandardCharsets.UTF_8));
           os.close();
         };
     try (TestServer server = new TestServer(handler)) {
@@ -243,9 +244,9 @@ public class TestHttpClient {
           Assertions.assertNull(queryParams);
           Assertions.assertEquals("GET", h.getRequestMethod());
           String response = MAPPER.writeValueAsString(inputBean);
-          h.sendResponseHeaders(200, response.getBytes().length);
+          h.sendResponseHeaders(200, response.getBytes(StandardCharsets.UTF_8).length);
           OutputStream os = h.getResponseBody();
-          os.write(response.getBytes());
+          os.write(response.getBytes(StandardCharsets.UTF_8));
           os.close();
         };
     try (TestServer server = new TestServer(handler)) {
@@ -262,9 +263,9 @@ public class TestHttpClient {
         h -> {
           Assertions.assertEquals("GET", h.getRequestMethod());
           String response = MAPPER.writeValueAsString(inputBean);
-          h.sendResponseHeaders(200, response.getBytes().length);
+          h.sendResponseHeaders(200, response.getBytes(StandardCharsets.UTF_8).length);
           OutputStream os = h.getResponseBody();
-          os.write(response.getBytes());
+          os.write(response.getBytes(StandardCharsets.UTF_8));
           os.close();
         };
     try (TestServer server = new TestServer("/a/b", handler)) {
@@ -417,7 +418,7 @@ public class TestHttpClient {
       if (this == o) {
         return true;
       }
-      if (o == null || getClass() != o.getClass()) {
+      if (!(o instanceof ExampleBean)) {
         return false;
       }
       ExampleBean that = (ExampleBean) o;
