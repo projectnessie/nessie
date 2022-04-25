@@ -31,6 +31,7 @@ public class HttpResponse {
     this.mapper = mapper;
   }
 
+  @SuppressWarnings("TypeParameterUnusedInFormals")
   private <V> V readEntity(ObjectReader reader) {
     try {
       if (responseContext.getResponseCode().getCode() == Status.NO_CONTENT.getCode()) {

@@ -33,6 +33,7 @@ import java.security.KeyStore.TrustedCertificateEntry;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Date;
 import javax.net.ssl.KeyManagerFactory;
@@ -188,7 +189,7 @@ class TestHttpsClient {
     final KeyStore trustStore = KeyStore.getInstance(storeType);
     keyStore.load(null, null);
     trustStore.load(null, null);
-    ZonedDateTime now = ZonedDateTime.now();
+    ZonedDateTime now = ZonedDateTime.now(ZoneId.systemDefault());
     final SecureRandom random = new SecureRandom();
 
     KeyPair keyPair = generateKeyPair(random);

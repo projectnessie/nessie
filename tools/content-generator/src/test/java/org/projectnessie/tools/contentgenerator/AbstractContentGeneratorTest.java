@@ -84,10 +84,6 @@ public class AbstractContentGeneratorTest {
       return exitCode;
     }
 
-    private String getStdOut() {
-      return stdOut;
-    }
-
     List<String> getStdOutLines() {
       return Arrays.asList(stdOut.split("\n"));
     }

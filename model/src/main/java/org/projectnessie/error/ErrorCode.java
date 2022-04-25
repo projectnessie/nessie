@@ -40,6 +40,8 @@ public enum ErrorCode {
   ;
 
   private final int httpStatus;
+
+  @SuppressWarnings("ImmutableEnumChecker")
   private final Function<NessieError, ? extends Exception> exceptionBuilder;
 
   <T extends Exception & ErrorCodeAware> ErrorCode(
