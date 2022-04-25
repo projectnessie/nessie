@@ -1302,7 +1302,8 @@ limitations under the License.
               <compilerArgs combine.children="append">
                 <arg>-XDcompilePolicy=simple</arg>
                 <!-- Turning off Unicode check as it gives invalid errors in ErrorProne 2.11.0 -->
-                <arg>-Xplugin:ErrorProne -Xep:UnicodeInCode:OFF -XepExcludedPaths:.*/target/generated-(test-)?sources/.*</arg>
+                <!-- It's usually fine for Nessie's use case to use static final loggers  -->
+                <arg>-Xplugin:ErrorProne -Xep:UnicodeInCode:OFF -Xep:Slf4jLoggerShouldBeNonStatic:OFF -XepExcludedPaths:.*/target/generated-(test-)?sources/.*</arg>
               </compilerArgs>
               <showWarnings>true</showWarnings>
               <annotationProcessorPaths combine.children="append">
