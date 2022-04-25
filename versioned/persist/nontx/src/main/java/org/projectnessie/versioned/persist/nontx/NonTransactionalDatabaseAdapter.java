@@ -1258,7 +1258,10 @@ public abstract class NonTransactionalDatabaseAdapter<
     return refLogEntry;
   }
 
+  @SuppressWarnings("StaticAssignmentOfThrowable")
   private static final RuntimeException COMPACTION_NOT_NECESSARY_LENGTH = new RuntimeException();
+
+  @SuppressWarnings("StaticAssignmentOfThrowable")
   private static final RuntimeException COMPACTION_NOT_NECESSARY_WITHIN = new RuntimeException();
 
   protected Map<String, String> compactGlobalLog(
