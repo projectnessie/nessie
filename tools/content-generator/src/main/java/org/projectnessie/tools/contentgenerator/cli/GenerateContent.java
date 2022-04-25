@@ -115,6 +115,7 @@ public class GenerateContent extends AbstractCommand {
 
     ThreadLocalRandom random = ThreadLocalRandom.current();
 
+    @SuppressWarnings("JavaTimeDefaultTimeZone")
     String runStartTime =
         DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss").format(LocalDateTime.now());
 
