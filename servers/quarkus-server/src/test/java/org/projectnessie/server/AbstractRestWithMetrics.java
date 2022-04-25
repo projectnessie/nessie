@@ -47,6 +47,8 @@ public abstract class AbstractRestWithMetrics extends AbstractTestRest {
     assertThat(body).contains("nessie_versionstore_request_seconds_sum");
     assertThat(body).contains("/api/v1/diffs/{diff_params}");
     assertThat(body).contains("/api/v1/trees/{referenceType}/{ref}");
+    assertThat(body).contains("/api/v1/trees/branch/{branchName}/transplant");
+    assertThat(body).contains("/api/v1/trees/branch/{branchName}/merge");
     assertThat(body).contains("/api/v1/trees/branch/{ref}");
     assertThat(body).contains("/api/v1/trees/tree/{ref}/entries");
     assertThat(body).contains("/api/v1/namespaces/{ref}");
