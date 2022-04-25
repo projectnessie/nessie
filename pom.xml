@@ -1302,7 +1302,7 @@ limitations under the License.
               <compilerArgs combine.children="append">
                 <arg>-XDcompilePolicy=simple</arg>
                 <!-- Turning off Unicode check as it gives invalid errors in ErrorProne 2.11.0 -->
-                <arg>-Xplugin:ErrorProne -Xep:UnicodeInCode:OFF -XepExcludedPaths:.*/target/generated-*sources/.*</arg>
+                <arg>-Xplugin:ErrorProne -Xep:UnicodeInCode:OFF -XepExcludedPaths:.*/target/generated-(test-)?sources/.*</arg>
               </compilerArgs>
               <showWarnings>true</showWarnings>
               <annotationProcessorPaths combine.children="append">
