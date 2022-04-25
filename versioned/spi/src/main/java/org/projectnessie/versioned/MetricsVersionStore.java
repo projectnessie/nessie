@@ -209,20 +209,6 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
     sample.stop(timer);
   }
 
-  private <R> Stream<R> delegateStream(String requestName, Delegate<Stream<R>> delegate) {
-    Sample sample = Timer.start(clock);
-    try {
-      return delegate.handle().onClose(() -> measure(requestName, sample, null));
-    } catch (IllegalArgumentException e) {
-      // IllegalArgumentException indicates a user-error, not a server error
-      measure(requestName, sample, null);
-      throw e;
-    } catch (RuntimeException e) {
-      measure(requestName, sample, e);
-      throw e;
-    }
-  }
-
   private <R> Stream<R> delegateStream1Ex(
       String requestName, DelegateWith1<Stream<R>, ReferenceNotFoundException> delegate)
       throws ReferenceNotFoundException {
@@ -251,22 +237,6 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
     } catch (RuntimeException e) {
       measure("getreflog", sample, e);
       throw e;
-    }
-  }
-
-  private <R> R delegate(String requestName, Delegate<R> delegate) {
-    Sample sample = Timer.start(clock);
-    Exception failure = null;
-    try {
-      return delegate.handle();
-    } catch (IllegalArgumentException e) {
-      // IllegalArgumentException indicates a user-error, not a server error
-      throw e;
-    } catch (RuntimeException e) {
-      failure = e;
-      throw e;
-    } finally {
-      measure(requestName, sample, failure);
     }
   }
 
@@ -319,11 +289,6 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
     } finally {
       measure(requestName, sample, failure);
     }
-  }
-
-  @FunctionalInterface
-  interface Delegate<R> {
-    R handle();
   }
 
   @FunctionalInterface

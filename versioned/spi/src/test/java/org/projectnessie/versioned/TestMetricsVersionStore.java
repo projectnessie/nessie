@@ -245,7 +245,7 @@ class TestMetricsVersionStore {
     VersionStore<String, String, DummyEnum> mockedVersionStore = mock(VersionStore.class);
     versionStoreFunction.accept(stubber.when(mockedVersionStore));
     VersionStore<String, String, DummyEnum> versionStore =
-        new MetricsVersionStore<>(mockedVersionStore, registry, registry.clock);
+        new MetricsVersionStore<>(mockedVersionStore, registry, registry.testClock);
 
     Meter.Id timerId = timerId(opName, expectedThrow);
 
@@ -289,7 +289,10 @@ class TestMetricsVersionStore {
     // Assert some timings
     assertAll(
         () -> assertEquals(1L, timer.count()),
-        () -> assertEquals(registry.clock.expectedDuration, timer.totalTime(TimeUnit.NANOSECONDS)));
+        () ->
+            assertEquals(
+                (double) registry.testClock.expectedDuration,
+                timer.totalTime(TimeUnit.NANOSECONDS)));
   }
 
   static class VersionStoreInvocation<R> {
@@ -338,8 +341,8 @@ class TestMetricsVersionStore {
     // are server-errors.
     boolean isErrorException =
         expectedThrow != null
-            && (!(expectedThrow instanceof VersionStoreException))
-            && (!(expectedThrow instanceof IllegalArgumentException));
+            && !(expectedThrow instanceof VersionStoreException)
+            && !(expectedThrow instanceof IllegalArgumentException);
 
     return new Meter.Id(
         "nessie.versionstore.request",
@@ -397,7 +400,7 @@ class TestMetricsVersionStore {
   }
 
   static class TestMeterRegistry extends MeterRegistry {
-    final TestClock clock;
+    final TestClock testClock;
 
     final Map<Meter.Id, Gauge> gauges = new HashMap<>();
     final Map<Meter.Id, TestTimer> timers = new HashMap<>();
@@ -410,7 +413,7 @@ class TestMetricsVersionStore {
 
     TestMeterRegistry(TestClock testClock) {
       super(testClock);
-      this.clock = testClock;
+      this.testClock = testClock;
       currentRegistry = this;
     }
 
@@ -444,7 +447,7 @@ class TestMetricsVersionStore {
         PauseDetector pauseDetector) {
       TestTimer timer =
           new TestTimer(
-              id, clock, defaultHistogramConfig(), pauseDetector, getBaseTimeUnit(), false);
+              id, testClock, defaultHistogramConfig(), pauseDetector, getBaseTimeUnit(), false);
       assertNull(timers.putIfAbsent(id, timer), "duplicate timer with id " + id);
       return timer;
     }
