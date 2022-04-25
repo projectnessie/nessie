@@ -41,6 +41,11 @@
       <artifactId>nessie-perftest-gatling</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.eclipse.microprofile.openapi</groupId>
+      <artifactId>microprofile-openapi-api</artifactId>
+      <optional>true</optional>
+    </dependency>
   </dependencies>
 
   <build>
