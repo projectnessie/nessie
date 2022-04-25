@@ -216,6 +216,7 @@ class TestHttpsClient {
     ((HttpsServer) httpsServer)
         .setHttpsConfigurator(
             new HttpsConfigurator(sslContext) {
+              @Override
               public void configure(HttpsParameters params) {
                 try {
                   // Initialise the SSL context
