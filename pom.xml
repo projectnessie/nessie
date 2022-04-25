@@ -817,6 +817,7 @@
           <artifactId>scala-maven-plugin</artifactId>
           <version>4.6.1</version>
           <configuration>
+            <scalaVersion>${scala2.12.version}</scalaVersion>
             <sendJavaToScalac>false</sendJavaToScalac>
           </configuration>
         </plugin>
@@ -1348,9 +1349,6 @@ limitations under the License.
                 <goals>
                   <goal>doc-jar</goal>
                 </goals>
-                <configuration>
-                  <scalaVersion>${scala2.12.version}</scalaVersion>
-                </configuration>
               </execution>
             </executions>
           </plugin>

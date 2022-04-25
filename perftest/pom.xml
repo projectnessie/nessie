@@ -34,4 +34,20 @@
     <module>gatling</module>
     <module>simulations</module>
   </modules>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>net.alchim31.maven</groupId>
+          <artifactId>scala-maven-plugin</artifactId>
+          <version>4.6.1</version>
+          <configuration>
+            <scalaVersion>${scala2.13.version}</scalaVersion>
+            <sendJavaToScalac>false</sendJavaToScalac>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
 </project>
