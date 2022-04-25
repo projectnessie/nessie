@@ -44,6 +44,7 @@ public abstract class AbstractDatabaseAdapterVersionStoreTest extends AbstractVe
   }
 
   @Nested
+  @SuppressWarnings("ClassCanBeStatic")
   public class SingleBranch extends AbstractSingleBranch {
     public SingleBranch() {
       super(AbstractDatabaseAdapterVersionStoreTest.store);
@@ -51,6 +52,7 @@ public abstract class AbstractDatabaseAdapterVersionStoreTest extends AbstractVe
   }
 
   @Nested
+  @SuppressWarnings("ClassCanBeStatic")
   public class DuplicateTable extends AbstractDuplicateTable {
     public DuplicateTable() {
       super(AbstractDatabaseAdapterVersionStoreTest.store);
@@ -58,6 +60,7 @@ public abstract class AbstractDatabaseAdapterVersionStoreTest extends AbstractVe
   }
 
   @Nested
+  @SuppressWarnings("ClassCanBeStatic")
   public class Tracing extends AbstractTracing {
     public Tracing() {
       super(AbstractDatabaseAdapterVersionStoreTest.store);
