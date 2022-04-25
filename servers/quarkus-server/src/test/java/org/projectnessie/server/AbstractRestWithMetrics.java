@@ -49,6 +49,8 @@ public abstract class AbstractRestWithMetrics extends AbstractTestRest {
     assertThat(body).contains("/api/v1/trees/{referenceType}/{ref}");
     assertThat(body).contains("/api/v1/trees/branch/{ref}");
     assertThat(body).contains("/api/v1/trees/tree/{ref}/entries");
+    assertThat(body).contains("/api/v1/namespaces/{ref}");
+    assertThat(body).contains("/api/v1/namespaces/namespace/{ref}/{name}");
     assertThat(body).contains("http_server_connections_seconds_max");
     assertThat(body).contains("http_server_connections_seconds_active_count");
   }
