@@ -17,15 +17,10 @@ package org.projectnessie.tools.compatibility.internal;
 
 import static org.projectnessie.tools.compatibility.internal.AbstractMultiVersionExtension.multiVersionExtensionsForTestClass;
 
-import java.util.Arrays;
-import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.engine.descriptor.ClassBasedTestDescriptor;
 import org.junit.platform.engine.FilterResult;
 import org.junit.platform.engine.TestDescriptor;
-import org.junit.platform.engine.UniqueId;
-import org.junit.platform.engine.UniqueId.Segment;
 import org.junit.platform.launcher.PostDiscoveryFilter;
 
 /**
@@ -36,25 +31,10 @@ import org.junit.platform.launcher.PostDiscoveryFilter;
  * and runs the same tests, but those test instances do not have the expected Nessie client/server
  * running. Those tests are skipped, but with this filter it's nicer, because JUnit Jupiter does not
  * even run and therefore not appear - less user confusion.
- *
- * <p>Configuration: System property {@value #PROPERTY_NAME}, containing the comma-separated list of
- * engine-IDs, defaults to {@value #JUNIT_JUPITER}.
  */
 public class ExcludeJunitEnginesFilter implements PostDiscoveryFilter {
 
-  public static final String PROPERTY_NAME = "nessie.junit.skip-engines";
-  public static final String JUNIT_JUPITER = "junit-jupiter";
-  private final Set<Segment> skippedEngines;
-
-  public ExcludeJunitEnginesFilter() {
-    skippedEngines =
-        Arrays.stream(System.getProperty(PROPERTY_NAME, JUNIT_JUPITER).split(","))
-            .map(String::trim)
-            .filter(s -> !s.isEmpty())
-            .map(UniqueId::forEngine)
-            .map(UniqueId::getLastSegment)
-            .collect(Collectors.toSet());
-  }
+  public ExcludeJunitEnginesFilter() {}
 
   @Override
   public FilterResult apply(TestDescriptor object) {
