@@ -8,12 +8,14 @@ runs:
         name: gatling-logs
         path: perftest/simulations/target/gatling/*/simulation.log
     - uses: codecov/codecov-action@v2
+      if: github.repository_owner == 'projectnessie'
       with:
         verbose: true
         fail_ci_if_error: true
         flags: java
         files: code-coverage/target/site/jacoco-aggregate-all/jacoco.xml
     - uses: codecov/codecov-action@v2
+      if: github.repository_owner == 'projectnessie'
       with:
         verbose: true
         fail_ci_if_error: true

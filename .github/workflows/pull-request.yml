@@ -82,6 +82,7 @@ jobs:
       run: tox
       working-directory: ${{env.working-directory}}
     - uses: codecov/codecov-action@v2
+      if: github.repository_owner == 'projectnessie'
       with:
         verbose: true
         fail_ci_if_error: true
