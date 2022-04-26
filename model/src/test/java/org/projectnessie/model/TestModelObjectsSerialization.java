@@ -252,7 +252,10 @@ public class TestModelObjectsSerialization {
 
   static class Json { // Helps in building json strings, which can be used for verification.
 
+    @SuppressWarnings("InlineFormatString")
     private static final String STR_KV_FORMAT = "%s,\"%s\":\"%s\"";
+
+    @SuppressWarnings("InlineFormatString")
     private static final String NO_QUOTES_KV_FORMAT = "%s,\"%s\":%s";
 
     String currentContent;
