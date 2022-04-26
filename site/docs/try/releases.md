@@ -1,5 +1,12 @@
 # Releases
 
+## 0.28.0 Release (April 26, 2022)
+
+* Generate unique content IDs for explicitly created namespaces
+* Fix patterns for metrics
+* Various test improvements (CI + build)
+* Various minor code fixes (fixes for errorprone warnings)
+
 ## 0.27.0 Release (April 14, 2022)
 
 * Support for Namespace properties
