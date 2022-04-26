@@ -141,7 +141,7 @@ public abstract class AbstractTracing extends AbstractNestedVersionStore {
       if (this == o) {
         return true;
       }
-      if (o == null || getClass() != o.getClass()) {
+      if (!(o instanceof OperationHierarchy)) {
         return false;
       }
       OperationHierarchy that = (OperationHierarchy) o;
@@ -164,6 +164,7 @@ public abstract class AbstractTracing extends AbstractNestedVersionStore {
       }
     }
 
+    @SuppressWarnings("InlineMeInliner") // asks to use Java11's String.repeat()
     void toString(PrintWriter w, int indent) {
       w.printf("%s %s%n", Strings.repeat("    ", indent), name);
       for (OperationHierarchy child : children) {
@@ -200,6 +201,7 @@ public abstract class AbstractTracing extends AbstractNestedVersionStore {
       }
     }
 
+    @SuppressWarnings("InlineMeInliner") // asks to use Java11's String.repeat()
     void toString(PrintWriter w, int indent) {
       if (span != null) {
         w.printf(
