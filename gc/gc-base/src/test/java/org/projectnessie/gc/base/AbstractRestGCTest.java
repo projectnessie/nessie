@@ -84,17 +84,8 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
             table2.content,
             null);
     // one commit for TABLE_ONE on branch1, before cutoff time but as head commit for TABLE_ONE
-    table1 =
-        commitSingleOp(
-            prefix,
-            branch1,
-            table1.hash,
-            43,
-            CID_ONE,
-            TABLE_ONE,
-            METADATA_TWO,
-            table1.content,
-            null);
+    commitSingleOp(
+        prefix, branch1, table1.hash, 43, CID_ONE, TABLE_ONE, METADATA_TWO, table1.content, null);
 
     final Instant cutoffTime = Instant.now();
 
@@ -174,17 +165,16 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
     // Rename table TABLE_TWO to "table_2_renamed" on branch1.
     // Note that passing "beforeRename" argument.
     // So, internally commitSingleOp will do put + delete operation.
-    table2 =
-        commitSingleOp(
-            prefix,
-            branch1,
-            table2.hash,
-            44,
-            CID_TWO,
-            TABLE_TWO_RENAMED,
-            METADATA_THREE,
-            table2.content,
-            TABLE_TWO);
+    commitSingleOp(
+        prefix,
+        branch1,
+        table2.hash,
+        44,
+        CID_TWO,
+        TABLE_TWO_RENAMED,
+        METADATA_THREE,
+        table2.content,
+        TABLE_TWO);
 
     // rename table should not expire the live commits after cutoff timestamp.
     performGc(prefix, cutoffTime, null, expectedResult, true, null);
@@ -243,17 +233,16 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
     final Instant cutoffTime = Instant.now();
 
     // commit for TABLE_TWO_RENAMED on branch1
-    table2 =
-        commitSingleOp(
-            prefix,
-            branch1,
-            table2.hash,
-            44,
-            CID_TWO,
-            TABLE_TWO_RENAMED,
-            METADATA_THREE,
-            table2.content,
-            null);
+    commitSingleOp(
+        prefix,
+        branch1,
+        table2.hash,
+        44,
+        CID_TWO,
+        TABLE_TWO_RENAMED,
+        METADATA_THREE,
+        table2.content,
+        null);
 
     performGc(prefix, cutoffTime, null, expectedResult, true, null);
   }
@@ -301,17 +290,8 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
     final Instant cutoffTime = Instant.now();
 
     // one commit for TABLE_ONE on branch1
-    table1 =
-        commitSingleOp(
-            prefix,
-            branch1,
-            table1.hash,
-            43,
-            CID_ONE,
-            TABLE_ONE,
-            METADATA_TWO,
-            table1.content,
-            null);
+    commitSingleOp(
+        prefix, branch1, table1.hash, 43, CID_ONE, TABLE_ONE, METADATA_TWO, table1.content, null);
 
     performGc(prefix, cutoffTime, null, expectedResult, true, null);
   }
@@ -330,9 +310,8 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
 
     Branch branch1 = createBranch(prefix);
     // one commit for TABLE_ONE on branch1
-    CommitOutput table1 =
-        commitSingleOp(
-            prefix, branch1, branch1.getHash(), 42, CID_ONE, TABLE_ONE, METADATA_ONE, null, null);
+    commitSingleOp(
+        prefix, branch1, branch1.getHash(), 42, CID_ONE, TABLE_ONE, METADATA_ONE, null, null);
     // two commits for TABLE_TWO on branch1
     CommitOutput table2 =
         commitSingleOp(
@@ -375,9 +354,8 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
 
     Branch branch1 = createBranch(prefix);
     // one commit for TABLE_ONE on branch1
-    CommitOutput table1 =
-        commitSingleOp(
-            prefix, branch1, branch1.getHash(), 42, CID_ONE, TABLE_ONE, METADATA_ONE, null, null);
+    commitSingleOp(
+        prefix, branch1, branch1.getHash(), 42, CID_ONE, TABLE_ONE, METADATA_ONE, null, null);
     // two commits for TABLE_TWO on branch1
     CommitOutput table2 =
         commitSingleOp(
@@ -422,9 +400,8 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
 
     Branch branch1 = createBranch(prefix);
     // one commit for TABLE_ONE on branch1
-    CommitOutput table1 =
-        commitSingleOp(
-            prefix, branch1, branch1.getHash(), 42, CID_ONE, TABLE_ONE, METADATA_ONE, null, null);
+    commitSingleOp(
+        prefix, branch1, branch1.getHash(), 42, CID_ONE, TABLE_ONE, METADATA_ONE, null, null);
 
     final Instant cutoffTime = Instant.now();
 
@@ -644,30 +621,12 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
     final Instant cutoffTime = Instant.now();
 
     // commit for TABLE_TWO on branch1
-    b1table1 =
-        commitSingleOp(
-            prefix,
-            branch1,
-            b1.hash,
-            44,
-            CID_TWO,
-            TABLE_TWO,
-            METADATA_THREE,
-            b1table2.content,
-            null);
+    commitSingleOp(
+        prefix, branch1, b1.hash, 44, CID_TWO, TABLE_TWO, METADATA_THREE, b1table2.content, null);
 
     // commit for TABLE_ONE on branch3
-    CommitOutput b3table1 =
-        commitSingleOp(
-            prefix,
-            branch3,
-            b3.hash,
-            44,
-            CID_ONE,
-            TABLE_ONE,
-            METADATA_FIVE,
-            b2table1.content,
-            null);
+    commitSingleOp(
+        prefix, branch3, b3.hash, 44, CID_ONE, TABLE_ONE, METADATA_FIVE, b2table1.content, null);
 
     performGc(prefix, cutoffTime, null, expectedResult, true, null);
   }
@@ -716,17 +675,8 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
             METADATA_THREE,
             table1.content,
             null);
-    table1 =
-        commitSingleOp(
-            prefix,
-            branch1,
-            table1.hash,
-            45,
-            CID_ONE,
-            TABLE_ONE,
-            METADATA_FOUR,
-            table1.content,
-            null);
+    commitSingleOp(
+        prefix, branch1, table1.hash, 45, CID_ONE, TABLE_ONE, METADATA_FOUR, table1.content, null);
 
     // commits for TABLE_TWO
     table2 =
@@ -746,17 +696,8 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
     perRefCutoffTime.put(branch2.getName(), branch2CutoffTime);
 
     // commits for TABLE_TWO
-    table2 =
-        commitSingleOp(
-            prefix,
-            branch2,
-            table2.hash,
-            45,
-            CID_TWO,
-            TABLE_TWO,
-            METADATA_FOUR,
-            table2.content,
-            null);
+    commitSingleOp(
+        prefix, branch2, table2.hash, 45, CID_TWO, TABLE_TWO, METADATA_FOUR, table2.content, null);
 
     performGc(prefix, defaultCutoffTime, perRefCutoffTime, expectedResult, true, null);
   }
