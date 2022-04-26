@@ -15,7 +15,6 @@
  */
 package org.projectnessie.client;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -24,7 +23,6 @@ import com.sun.net.httpserver.HttpHandler;
 import io.opentracing.Scope;
 import io.opentracing.util.GlobalTracer;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -33,6 +31,7 @@ import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.client.rest.NessieInternalServerException;
 import org.projectnessie.client.rest.NessieNotAuthorizedException;
 import org.projectnessie.client.util.JaegerTestTracer;
+import org.projectnessie.client.util.TestHttpUtil;
 import org.projectnessie.client.util.TestServer;
 
 class TestNessieHttpClient {
@@ -137,14 +136,8 @@ class TestNessieHttpClient {
   static HttpHandler handlerForHeaderTest(String headerName, AtomicReference<String> receiver) {
     return h -> {
       receiver.set(h.getRequestHeaders().getFirst(headerName));
-
       h.getRequestBody().close();
-
-      byte[] body = "{\"maxSupportedApiVersion\":1}".getBytes(UTF_8);
-      h.sendResponseHeaders(200, body.length);
-      try (OutputStream out = h.getResponseBody()) {
-        out.write(body);
-      }
+      TestHttpUtil.writeResponseBody(h, "{\"maxSupportedApiVersion\":1}");
     };
   }
 }

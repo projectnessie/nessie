@@ -22,10 +22,8 @@ import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;
 import com.sun.net.httpserver.HttpsServer;
-import java.io.OutputStream;
 import java.math.BigInteger;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -59,6 +57,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
+import org.projectnessie.client.util.TestHttpUtil;
 import org.projectnessie.client.util.TestServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,11 +72,7 @@ class TestHttpsClient {
     HttpHandler handler =
         h -> {
           Assertions.assertEquals("GET", h.getRequestMethod());
-          String response = "hello";
-          h.sendResponseHeaders(200, response.getBytes(StandardCharsets.UTF_8).length);
-          OutputStream os = h.getResponseBody();
-          os.write(response.getBytes(StandardCharsets.UTF_8));
-          os.close();
+          TestHttpUtil.writeResponseBody(h, "hello");
         };
     TrustManager[][] trustManager = new TrustManager[1][];
     try (TestServer server =

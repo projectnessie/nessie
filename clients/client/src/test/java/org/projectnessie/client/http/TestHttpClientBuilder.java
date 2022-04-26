@@ -20,7 +20,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.sun.net.httpserver.HttpHandler;
-import java.io.OutputStream;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Base64;
@@ -37,6 +36,7 @@ import org.projectnessie.client.api.NessieApi;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.auth.BasicAuthenticationProvider;
 import org.projectnessie.client.auth.NessieAuthentication;
+import org.projectnessie.client.util.TestHttpUtil;
 import org.projectnessie.client.util.TestServer;
 
 @Execution(ExecutionMode.CONCURRENT)
@@ -140,14 +140,8 @@ public class TestHttpClientBuilder {
   static HttpHandler handlerForHeaderTest(String headerName, AtomicReference<String> receiver) {
     return h -> {
       receiver.set(h.getRequestHeaders().getFirst(headerName));
-
       h.getRequestBody().close();
-
-      byte[] body = "{\"maxSupportedApiVersion\":1}".getBytes(UTF_8);
-      h.sendResponseHeaders(200, body.length);
-      try (OutputStream out = h.getResponseBody()) {
-        out.write(body);
-      }
+      TestHttpUtil.writeResponseBody(h, "{\"maxSupportedApiVersion\":1}");
     };
   }
 }
