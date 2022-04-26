@@ -9,12 +9,14 @@ runs:
         path: perftest/simulations/target/gatling/*/simulation.log
     - uses: codecov/codecov-action@v2
       with:
+        fail_ci_if_error: true
         flags: java
         files: |
           code-coverage/target/site/jacoco-aggregate-all/jacoco.xml
           tools/apprunner-gradle-plugin/build/reports/jacoco/codeCoverageReport/codeCoverageReport.xml
     - uses: codecov/codecov-action@v2
       with:
+        fail_ci_if_error: true
         flags: javascript
         files: |
           ui/coverage/clover.xml

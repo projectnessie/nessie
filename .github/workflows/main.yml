@@ -144,4 +144,5 @@ jobs:
       working-directory: ${{env.working-directory}}
     - uses: codecov/codecov-action@v2
       with:
+        fail_ci_if_error: true
         flags: python
