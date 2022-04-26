@@ -30,6 +30,7 @@ public interface ToBranchParams {
 
   /** Expected HEAD of {@link #getToBranch()}. */
   @Value.Default
+  @SuppressWarnings("immutables:untype")
   default Optional<Hash> getExpectedHead() {
     return Optional.empty();
   }
