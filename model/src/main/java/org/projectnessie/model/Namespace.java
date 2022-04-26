@@ -64,14 +64,6 @@ public abstract class Namespace extends Content {
     return toPathString();
   }
 
-  @Override
-  @NotNull
-  @Derived
-  @JsonIgnore
-  public String getId() {
-    return name();
-  }
-
   @JsonIgnore
   @Value.Redacted
   public boolean isEmpty() {

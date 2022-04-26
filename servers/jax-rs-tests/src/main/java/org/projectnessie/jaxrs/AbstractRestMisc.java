@@ -17,7 +17,6 @@ package org.projectnessie.jaxrs;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
 import org.projectnessie.error.BaseNessieClientServerException;
@@ -42,17 +41,22 @@ public abstract class AbstractRestMisc extends AbstractRestMergeTransplant {
   public void checkSpecialCharacterRoundTrip() throws BaseNessieClientServerException {
     Branch branch = createBranch("specialchar");
     // ContentKey k = ContentKey.of("/%国","国.国");
-    ContentKey k = ContentKey.of("a.b", "c.txt");
-    IcebergTable ta = IcebergTable.of("path1", 42, 42, 42, 42);
+    ContentKey key = ContentKey.of("a.b", "c.txt");
+    IcebergTable table = IcebergTable.of("path1", 42, 42, 42, 42);
     getApi()
         .commitMultipleOperations()
         .branch(branch)
-        .operation(Put.of(k, ta))
+        .operation(Put.of(key, table))
         .commitMeta(CommitMeta.fromMessage("commit 1"))
         .commit();
 
-    assertThat(getApi().getContent().key(k).refName(branch.getName()).get()).containsEntry(k, ta);
-    assertEquals(ta, getApi().getContent().key(k).refName(branch.getName()).get().get(k));
+    assertThat(getApi().getContent().key(key).refName(branch.getName()).get())
+        .containsKey(key)
+        .hasEntrySatisfying(
+            key,
+            content ->
+                assertThat(content)
+                    .isEqualTo(IcebergTable.builder().from(table).id(content.getId()).build()));
   }
 
   @Test

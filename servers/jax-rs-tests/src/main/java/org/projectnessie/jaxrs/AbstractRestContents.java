@@ -186,27 +186,42 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
   @Test
   public void multiget() throws BaseNessieClientServerException {
     Branch branch = createBranch("foo");
-    ContentKey a = ContentKey.of("a");
-    ContentKey b = ContentKey.of("b");
-    IcebergTable ta = IcebergTable.of("path1", 42, 42, 42, 42);
-    IcebergTable tb = IcebergTable.of("path2", 42, 42, 42, 42);
+    ContentKey keyA = ContentKey.of("a");
+    ContentKey keyB = ContentKey.of("b");
+    IcebergTable tableA = IcebergTable.of("path1", 42, 42, 42, 42);
+    IcebergTable tableB = IcebergTable.of("path2", 42, 42, 42, 42);
     getApi()
         .commitMultipleOperations()
         .branch(branch)
-        .operation(Put.of(a, ta))
+        .operation(Put.of(keyA, tableA))
         .commitMeta(CommitMeta.fromMessage("commit 1"))
         .commit();
     getApi()
         .commitMultipleOperations()
         .branch(branch)
-        .operation(Put.of(b, tb))
+        .operation(Put.of(keyB, tableB))
         .commitMeta(CommitMeta.fromMessage("commit 2"))
         .commit();
     Map<ContentKey, Content> response =
-        getApi().getContent().key(a).key(b).key(ContentKey.of("noexist")).refName("foo").get();
+        getApi()
+            .getContent()
+            .key(keyA)
+            .key(keyB)
+            .key(ContentKey.of("noexist"))
+            .refName("foo")
+            .get();
     assertThat(response)
-        .containsEntry(a, ta)
-        .containsEntry(b, tb)
+        .containsKeys(keyA, keyB)
+        .hasEntrySatisfying(
+            keyA,
+            content ->
+                assertThat(content)
+                    .isEqualTo(IcebergTable.builder().from(tableA).id(content.getId()).build()))
+        .hasEntrySatisfying(
+            keyB,
+            content ->
+                assertThat(content)
+                    .isEqualTo(IcebergTable.builder().from(tableB).id(content.getId()).build()))
         .doesNotContainKey(ContentKey.of("noexist"));
   }
 }

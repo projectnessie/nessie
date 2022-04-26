@@ -48,9 +48,11 @@ import org.projectnessie.model.Operation.Put;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.KeyEntry;
 import org.projectnessie.versioned.Operation;
+import org.projectnessie.versioned.Ref;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
@@ -92,10 +94,20 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
 
       Preconditions.checkArgument(!namespace.isEmpty(), "Namespace name must not be empty");
 
-      Put put = Put.of(ContentKey.of(namespace.getElements()), namespace);
-      commit(branch, "create namespace " + namespace.name(), TreeApiImpl.toOp(put), validator);
+      ContentKey key = ContentKey.of(namespace.getElements());
+      Put put = Put.of(key, namespace);
+      Hash hash =
+          commit(branch, "create namespace " + namespace.name(), TreeApiImpl.toOp(put), validator);
 
-      return namespace;
+      Content content = getExplicitlyCreatedNamespace(namespace, hash).orElse(null);
+
+      Preconditions.checkState(
+          content instanceof Namespace,
+          "Expected %s to return the created Namespace, but got %s",
+          key,
+          content);
+
+      return (Namespace) content;
     } catch (ReferenceNotFoundException | ReferenceConflictException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }
@@ -277,9 +289,9 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
     return Namespace.of(elements);
   }
 
-  private Optional<Content> getExplicitlyCreatedNamespace(Namespace namespace, BranchName branch)
+  private Optional<Content> getExplicitlyCreatedNamespace(Namespace namespace, Ref ref)
       throws ReferenceNotFoundException {
-    return Optional.ofNullable(getStore().getValue(branch, Key.of(namespace.getElements())));
+    return Optional.ofNullable(getStore().getValue(ref, Key.of(namespace.getElements())));
   }
 
   private Optional<Namespace> getImplicitlyCreatedNamespace(Namespace namespace, BranchName branch)
@@ -321,13 +333,13 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
     return new NessieReferenceNotFoundException(e.getMessage(), e);
   }
 
-  private void commit(
+  private Hash commit(
       BranchName branch,
       String commitMsg,
       Operation<Content> contentOperation,
       Callable<Void> validator)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    getStore()
+    return getStore()
         .commit(
             branch,
             Optional.empty(),

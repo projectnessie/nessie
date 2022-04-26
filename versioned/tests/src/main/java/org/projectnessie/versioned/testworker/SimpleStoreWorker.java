@@ -22,6 +22,7 @@ import static org.projectnessie.versioned.testworker.OnRefOnly.onRef;
 import static org.projectnessie.versioned.testworker.WithGlobalStateContent.withGlobal;
 
 import com.google.protobuf.ByteString;
+import java.util.Objects;
 import java.util.function.Supplier;
 import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.StoreWorker;
@@ -98,6 +99,21 @@ public final class SimpleStoreWorker
       default:
         throw new IllegalArgumentException("" + onReferenceValue);
     }
+  }
+
+  @Override
+  public BaseContent applyId(BaseContent baseContent, String id) {
+    Objects.requireNonNull(baseContent, "baseContent must not be null");
+    Objects.requireNonNull(id, "id must not be null");
+    if (baseContent instanceof OnRefOnly) {
+      OnRefOnly onRef = (OnRefOnly) baseContent;
+      return OnRefOnly.onRef(onRef.getOnRef(), id);
+    }
+    if (baseContent instanceof WithGlobalStateContent) {
+      WithGlobalStateContent withGlobal = (WithGlobalStateContent) baseContent;
+      return WithGlobalStateContent.withGlobal(withGlobal.getGlobal(), withGlobal.getOnRef(), id);
+    }
+    throw new IllegalArgumentException("Unknown type " + baseContent);
   }
 
   @Override

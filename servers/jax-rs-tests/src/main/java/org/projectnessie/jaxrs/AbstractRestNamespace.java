@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.assertj.core.api.iterable.ThrowingExtractor;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -55,9 +56,13 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
     Namespace namespace =
         getApi().createNamespace().refName(branch.getName()).namespace(ns).create();
 
-    assertThat(namespace).isNotNull().isEqualTo(ns);
-    assertThat(getApi().getNamespace().refName(branch.getName()).namespace(ns).get())
-        .isEqualTo(namespace);
+    assertThat(namespace)
+        .isNotNull()
+        .extracting(Namespace::getElements, Namespace::toPathString)
+        .containsExactly(ns.getElements(), ns.toPathString());
+
+    Namespace got = getApi().getNamespace().refName(branch.getName()).namespace(ns).get();
+    assertThat(got).isEqualTo(namespace);
 
     // the namespace in the error message will contain the representation with u001D
     String namespaceInErrorMsg = namespaceName.replace("\u0000", "\u001D");
@@ -91,13 +96,21 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
   @Test
   public void testNamespacesRetrieval() throws BaseNessieClientServerException {
     Branch branch = createBranch("namespace");
-    Namespace one = Namespace.parse("a.b.c");
-    Namespace two = Namespace.parse("a.b.d");
-    Namespace three = Namespace.parse("x.y.z");
-    Namespace four = Namespace.parse("one.two");
+
+    ThrowingExtractor<String, Namespace, ?> createNamespace =
+        identifier ->
+            getApi()
+                .createNamespace()
+                .refName(branch.getName())
+                .namespace(Namespace.parse(identifier))
+                .create();
+
+    Namespace one = createNamespace.apply("a.b.c");
+    Namespace two = createNamespace.apply("a.b.d");
+    Namespace three = createNamespace.apply("x.y.z");
+    Namespace four = createNamespace.apply("one.two");
     for (Namespace namespace : Arrays.asList(one, two, three, four)) {
-      assertThat(getApi().createNamespace().refName(branch.getName()).namespace(namespace).create())
-          .isNotNull();
+      assertThat(namespace).isNotNull();
     }
 
     assertThat(getApi().getMultipleNamespaces().refName(branch.getName()).get().getNamespaces())
@@ -321,28 +334,37 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
     String firstName = "a.b\u0000c.d";
     String secondName = "a.b.c.d";
 
-    Namespace first = Namespace.parse(firstName);
-    Namespace second = Namespace.parse(secondName);
-    List<Namespace> namespaces = Arrays.asList(first, second);
-
     // perform creation and retrieval
-    for (Namespace namespace : namespaces) {
-      Namespace created =
-          getApi().createNamespace().refName(branch.getName()).namespace(namespace).create();
-      assertThat(created).isNotNull().isEqualTo(namespace);
-      assertThat(getApi().getNamespace().refName(branch.getName()).namespace(namespace).get())
-          .isEqualTo(created);
+    ThrowingExtractor<String, Namespace, ?> creator =
+        identifier -> {
+          Namespace namespace = Namespace.parse(identifier);
 
-      assertThatThrownBy(
-              () ->
-                  getApi()
-                      .createNamespace()
-                      .refName(branch.getName())
-                      .namespace(namespace)
-                      .create())
-          .isInstanceOf(NessieNamespaceAlreadyExistsException.class)
-          .hasMessage(String.format("Namespace '%s' already exists", namespace.name()));
-    }
+          Namespace created =
+              getApi().createNamespace().refName(branch.getName()).namespace(namespace).create();
+          assertThat(created)
+              .isNotNull()
+              .extracting(Namespace::getElements, Namespace::toPathString)
+              .containsExactly(namespace.getElements(), namespace.toPathString());
+
+          assertThat(getApi().getNamespace().refName(branch.getName()).namespace(namespace).get())
+              .isEqualTo(created);
+
+          assertThatThrownBy(
+                  () ->
+                      getApi()
+                          .createNamespace()
+                          .refName(branch.getName())
+                          .namespace(namespace)
+                          .create())
+              .isInstanceOf(NessieNamespaceAlreadyExistsException.class)
+              .hasMessage(String.format("Namespace '%s' already exists", namespace.name()));
+
+          return created;
+        };
+
+    Namespace first = creator.apply(firstName);
+    Namespace second = creator.apply(secondName);
+    List<Namespace> namespaces = Arrays.asList(first, second);
 
     // retrieval by prefix
     assertThat(getApi().getMultipleNamespaces().refName(branch.getName()).get().getNamespaces())

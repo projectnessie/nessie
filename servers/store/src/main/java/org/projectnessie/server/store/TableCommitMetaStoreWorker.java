@@ -17,9 +17,11 @@ package org.projectnessie.server.store;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.io.IOException;
+import java.util.Objects;
 import java.util.function.Supplier;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
@@ -163,6 +165,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
       case NAMESPACE:
         ObjectTypes.Namespace namespace = content.getNamespace();
         return ImmutableNamespace.builder()
+            .id(content.getId())
             .elements(namespace.getElementsList())
             .putAllProperties(namespace.getPropertiesMap())
             .build();
@@ -188,6 +191,24 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
   private static IllegalArgumentException noIcebergMetadataPointer() {
     return new IllegalArgumentException(
         "Iceberg content from reference must have global state, but has none");
+  }
+
+  @Override
+  public Content applyId(Content content, String id) {
+    Objects.requireNonNull(content, "content must not be null");
+    Preconditions.checkArgument(content.getId() == null, "content.getId() must be null");
+    Objects.requireNonNull(id, "id must not be null");
+    if (content instanceof IcebergTable) {
+      return IcebergTable.builder().from(content).id(id).build();
+    } else if (content instanceof DeltaLakeTable) {
+      return ImmutableDeltaLakeTable.builder().from(content).id(id).build();
+    } else if (content instanceof IcebergView) {
+      return IcebergView.builder().from(content).id(id).build();
+    } else if (content instanceof Namespace) {
+      return ImmutableNamespace.builder().from(content).id(id).build();
+    } else {
+      throw new IllegalArgumentException("Unknown type " + content);
+    }
   }
 
   @Override
