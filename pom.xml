@@ -799,7 +799,7 @@
           <version>1.12.1</version>
           <configuration>
             <installDirectory>${project.build.directory}</installDirectory>
-            <nodeVersion>v16.2.0</nodeVersion>
+            <nodeVersion>v16.14.2</nodeVersion>
           </configuration>
         </plugin>
         <plugin>
