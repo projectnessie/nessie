@@ -22,7 +22,7 @@ const camelcase = require("camelcase");
 // http://facebook.github.io/jest/docs/en/webpack.html
 
 module.exports = {
-  process(src, filename) {
+  process(sourceText, sourcePath, options) {
     const assetFilename = JSON.stringify(path.basename(filename));
 
     if (filename.match(/\.svg$/)) {
@@ -50,6 +50,8 @@ module.exports = {
       };`;
     }
 
-    return `module.exports = ${assetFilename};`;
+    return {
+      code: `module.exports = ${assetFilename};`
+    };
   },
 };
