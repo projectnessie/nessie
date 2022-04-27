@@ -30,6 +30,7 @@ import org.projectnessie.client.http.HttpClient;
  * <p>Takes parameters {@link org.projectnessie.client.NessieConfigConstants#CONF_NESSIE_USERNAME}
  * and {@link org.projectnessie.client.NessieConfigConstants#CONF_NESSIE_PASSWORD}.
  */
+@SuppressWarnings("deprecation") // Basic auth itself is deprecated
 public class BasicAuthenticationProvider implements NessieAuthenticationProvider {
 
   public static final String AUTH_TYPE_VALUE = "BASIC";
@@ -61,7 +62,6 @@ public class BasicAuthenticationProvider implements NessieAuthenticationProvider
   private static class BasicAuthentication implements HttpAuthentication {
     private final String authHeaderValue;
 
-    @SuppressWarnings("QsPrivateBeanMembersInspection")
     private BasicAuthentication(String username, String password) {
       if (username == null || password == null) {
         throw new NullPointerException(
