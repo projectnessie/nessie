@@ -19,7 +19,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
@@ -35,7 +34,7 @@ public interface GenericMetadata {
   @Schema(type = SchemaType.OBJECT)
   JsonNode getMetadata();
 
-  static GenericMetadata of(@NotNull String variant, @NotNull JsonNode metadata) {
+  static GenericMetadata of(String variant, JsonNode metadata) {
     return ImmutableGenericMetadata.builder().variant(variant).metadata(metadata).build();
   }
 }
