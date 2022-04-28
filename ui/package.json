@@ -117,7 +117,7 @@
     "jest": "28.0.1",
     "jest-circus": "28.0.2",
     "jest-environment-jsdom": "28.0.1",
-    "jest-resolve": "28.0.1",
+    "jest-resolve": "28.0.2",
     "jest-watch-typeahead": "1.1.0",
     "lint-staged": "^12.4.1",
     "mini-css-extract-plugin": "2.6.0",
