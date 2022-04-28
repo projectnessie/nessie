@@ -116,7 +116,7 @@
     "husky": "^7.0.4",
     "jest": "28.0.1",
     "jest-circus": "28.0.2",
-    "jest-environment-jsdom": "28.0.1",
+    "jest-environment-jsdom": "28.0.2",
     "jest-resolve": "28.0.2",
     "jest-watch-typeahead": "1.1.0",
     "lint-staged": "^12.4.1",
