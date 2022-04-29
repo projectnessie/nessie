@@ -33,7 +33,7 @@ public class CockroachTestConnectionProviderSource extends ContainerTestConnecti
 
   @Override
   protected JdbcDatabaseContainer<?> createContainer() {
-    String version = System.getProperty("it.nessie.container.cockroach.tag", "v21.1.6");
+    String version = System.getProperty("it.nessie.container.cockroach.tag", "latest-v21.2");
     return new CockroachContainer("cockroachdb/cockroach:" + version);
   }
 }
