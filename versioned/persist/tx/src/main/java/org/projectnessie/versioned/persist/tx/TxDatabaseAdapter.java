@@ -782,9 +782,14 @@ public abstract class TxDatabaseAdapter
       while (true) {
         Hash pointer = createRef ? null : fetchNamedRefHead(conn, namedReference);
 
-        Hash newHead;
         try {
-          newHead = loopOp.apply(conn, pointer);
+          Hash newHead = loopOp.apply(conn, pointer);
+
+          // The operation succeeded, if it returns a non-null hash value.
+          if (newHead != null) {
+            conn.commit();
+            return tryState.success(newHead);
+          }
         } catch (RetryTransactionException e) {
           conn.rollback();
           tryState.retry();
@@ -797,12 +802,6 @@ public abstract class TxDatabaseAdapter
           }
           throwIfReferenceConflictException(e, conflictErrorMessage);
           throw new RuntimeException(e);
-        }
-
-        // The operation succeeded, if it returns a non-null hash value.
-        if (newHead != null) {
-          conn.commit();
-          return tryState.success(newHead);
         }
 
         conn.rollback();
