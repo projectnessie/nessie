@@ -38,7 +38,7 @@ public class PostgresTestResourceLifecycleManager
 
   @Override
   public Map<String, String> start() {
-    String version = System.getProperty("it.nessie.container.postgres.tag", "9.6.22");
+    String version = System.getProperty("it.nessie.container.postgres.tag", "14");
 
     container = new PostgreSQLContainer<>("postgres:" + version).withLogConsumer(outputFrame -> {});
     containerNetworkId.ifPresent(container::withNetworkMode);
