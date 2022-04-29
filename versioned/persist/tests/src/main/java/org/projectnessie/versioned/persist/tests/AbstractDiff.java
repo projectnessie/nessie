@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.persist.tests;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.projectnessie.versioned.persist.tests.DatabaseAdapterTestUtils.ALWAYS_THROWING_ATTACHMENT_CONSUMER;
 
 import com.google.protobuf.ByteString;
 import java.util.Optional;
@@ -65,7 +66,8 @@ public abstract class AbstractDiff {
                 Key.of("key", Integer.toString(k)),
                 ContentId.of("C" + k),
                 SimpleStoreWorker.INSTANCE.getPayload(c),
-                SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(c)));
+                SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
+                    c, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
       }
       commits[i] = databaseAdapter.commit(commit.build());
     }
@@ -97,7 +99,8 @@ public abstract class AbstractDiff {
                               Optional.empty(),
                               Optional.empty(),
                               Optional.of(
-                                  SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(content)));
+                                  SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
+                                      content, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
                         })
                     .collect(Collectors.toList()));
       }
@@ -121,7 +124,8 @@ public abstract class AbstractDiff {
                               Key.of("key", Integer.toString(k)),
                               Optional.empty(),
                               Optional.of(
-                                  SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(content)),
+                                  SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
+                                      content, ALWAYS_THROWING_ATTACHMENT_CONSUMER)),
                               Optional.empty());
                         })
                     .collect(Collectors.toList()));
@@ -148,8 +152,12 @@ public abstract class AbstractDiff {
                           return Difference.of(
                               Key.of("key", Integer.toString(k)),
                               Optional.empty(),
-                              Optional.of(SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(from)),
-                              Optional.of(SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(to)));
+                              Optional.of(
+                                  SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
+                                      from, ALWAYS_THROWING_ATTACHMENT_CONSUMER)),
+                              Optional.of(
+                                  SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
+                                      to, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
                         })
                     .collect(Collectors.toList()));
       }

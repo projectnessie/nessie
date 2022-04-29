@@ -17,11 +17,13 @@ package org.projectnessie.versioned.persist.tests;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.projectnessie.versioned.persist.tests.DatabaseAdapterTestUtils.ALWAYS_THROWING_ATTACHMENT_CONSUMER;
 
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.IntFunction;
@@ -150,7 +152,8 @@ public abstract class AbstractCommitScenarios {
                     oldKey,
                     contentId,
                     payload,
-                    SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(initialContent)));
+                    SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
+                        initialContent, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
     Hash hashInitial = databaseAdapter.commit(commit.build());
 
     List<Hash> beforeRename =
@@ -168,7 +171,8 @@ public abstract class AbstractCommitScenarios {
                     newKey,
                     contentId,
                     payload,
-                    SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(renamContent)));
+                    SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
+                        renamContent, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
     Hash hashRename = databaseAdapter.commit(commit.build());
 
     List<Hash> beforeDelete =
@@ -269,7 +273,8 @@ public abstract class AbstractCommitScenarios {
               key,
               ContentId.of(cid),
               SimpleStoreWorker.INSTANCE.getPayload(c),
-              SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(c)));
+              SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
+                  c, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
     }
     Hash head = databaseAdapter.commit(commit.build());
 
@@ -288,7 +293,8 @@ public abstract class AbstractCommitScenarios {
                 keys.get(i),
                 ContentId.of(cid),
                 SimpleStoreWorker.INSTANCE.getPayload(newContent),
-                SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(newContent)));
+                SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
+                    newContent, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
       }
 
       Hash newHead = databaseAdapter.commit(commit.build());
@@ -345,7 +351,9 @@ public abstract class AbstractCommitScenarios {
                     key,
                     ContentId.of(cid),
                     SimpleStoreWorker.INSTANCE.getPayload(c),
-                    SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(c)))
+                    SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
+                        c, ALWAYS_THROWING_ATTACHMENT_CONSUMER)))
+            .putExpectedStates(ContentId.of(cid), Optional.empty())
             .validator(validator);
     databaseAdapter.commit(commit.build());
   }

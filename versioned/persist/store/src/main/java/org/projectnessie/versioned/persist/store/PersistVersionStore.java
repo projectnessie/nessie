@@ -136,7 +136,7 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
                 op.getKey(),
                 contentId,
                 storeWorker.getPayload(content),
-                storeWorker.toStoreOnReferenceState(content)));
+                storeWorker.toStoreOnReferenceState(content, commitAttempt::addAttachments)));
 
         if (expected != null) {
           String expectedId = storeWorker.getId(expected);
@@ -399,7 +399,9 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
                       Put.of(
                           put.getKey(),
                           storeWorker.valueFromStore(
-                              put.getValue(), () -> getGlobalContents.apply(put)))));
+                              put.getValue(),
+                              () -> getGlobalContents.apply(put),
+                              databaseAdapter::mapToAttachment))));
     };
   }
 
@@ -430,7 +432,8 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
   }
 
   private CONTENT mapContentAndState(ContentAndState<ByteString> cs) {
-    return storeWorker.valueFromStore(cs.getRefState(), cs::getGlobalState);
+    return storeWorker.valueFromStore(
+        cs.getRefState(), cs::getGlobalState, databaseAdapter::mapToAttachment);
   }
 
   @Override
@@ -444,10 +447,19 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
                 Diff.of(
                     d.getKey(),
                     d.getFromValue()
-                        .map(v -> storeWorker.valueFromStore(v, () -> d.getGlobal().orElse(null))),
+                        .map(
+                            v ->
+                                storeWorker.valueFromStore(
+                                    v,
+                                    () -> d.getGlobal().orElse(null),
+                                    databaseAdapter::mapToAttachment)),
                     d.getToValue()
                         .map(
-                            v -> storeWorker.valueFromStore(v, () -> d.getGlobal().orElse(null)))));
+                            v ->
+                                storeWorker.valueFromStore(
+                                    v,
+                                    () -> d.getGlobal().orElse(null),
+                                    databaseAdapter::mapToAttachment))));
   }
 
   private Hash refToHash(Ref ref) throws ReferenceNotFoundException {

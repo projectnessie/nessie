@@ -210,7 +210,9 @@ public class CheckContent extends BaseCommand {
           try {
             Object value =
                 worker.valueFromStore(
-                    contentAndState.getRefState(), contentAndState::getGlobalState);
+                    contentAndState.getRefState(),
+                    contentAndState::getGlobalState,
+                    databaseAdapter::mapToAttachment);
             report(generator, k, null, value);
           } catch (Exception e) {
             report(generator, k, e, null);
