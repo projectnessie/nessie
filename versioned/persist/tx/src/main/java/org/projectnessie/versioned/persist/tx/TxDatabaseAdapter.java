@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.persist.tx;
 
+import static java.util.Collections.emptyList;
 import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.protoToCommitLogEntry;
 import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.protoToKeyList;
 import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.protoToRefLog;
@@ -336,7 +337,7 @@ public abstract class TxDatabaseAdapter
                 newBranchCommit.getHash(),
                 commitParams.getToBranch(),
                 RefLogEntry.Operation.COMMIT,
-                Collections.emptyList());
+                emptyList());
 
             return resultHash;
           },
@@ -384,7 +385,7 @@ public abstract class TxDatabaseAdapter
                 hash,
                 ref,
                 RefLogEntry.Operation.CREATE_REFERENCE,
-                Collections.emptyList());
+                emptyList());
 
             return hash;
           },
@@ -426,7 +427,7 @@ public abstract class TxDatabaseAdapter
                 commitHash,
                 reference,
                 RefLogEntry.Operation.DELETE_REFERENCE,
-                Collections.emptyList());
+                emptyList());
 
             return pointer;
           },
@@ -512,7 +513,7 @@ public abstract class TxDatabaseAdapter
                 NO_ANCESTOR,
                 RefLogEntry.Operation.CREATE_REFERENCE,
                 commitTimeInMicros(),
-                Collections.emptyList());
+                emptyList());
         insertRefLogHead(newRefLog, conn);
 
         conn.commit();
@@ -1143,6 +1144,10 @@ public abstract class TxDatabaseAdapter
   @Override
   protected List<CommitLogEntry> doFetchMultipleFromCommitLog(
       ConnectionWrapper c, List<Hash> hashes) {
+    if (hashes.isEmpty()) {
+      return emptyList();
+    }
+
     String sql = sqlForManyPlaceholders(SqlStatements.SELECT_COMMIT_LOG_MANY, hashes.size());
 
     try (PreparedStatement ps = c.conn().prepareStatement(sql)) {
@@ -1249,6 +1254,10 @@ public abstract class TxDatabaseAdapter
 
   @Override
   protected Stream<KeyListEntity> doFetchKeyLists(ConnectionWrapper c, List<Hash> keyListsIds) {
+    if (keyListsIds.isEmpty()) {
+      return Stream.empty();
+    }
+
     try (Traced ignore = trace("doFetchKeyLists.stream")) {
       return JdbcSelectSpliterator.buildStream(
           c.conn(),
@@ -1619,6 +1628,9 @@ public abstract class TxDatabaseAdapter
 
   @Override
   protected List<RefLog> doFetchPageFromRefLog(ConnectionWrapper connection, List<Hash> hashes) {
+    if (hashes.isEmpty()) {
+      return emptyList();
+    }
     String sql = sqlForManyPlaceholders(SqlStatements.SELECT_REF_LOG_MANY, hashes.size());
 
     try (PreparedStatement ps = connection.conn().prepareStatement(sql)) {
