@@ -24,7 +24,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.assertj.core.api.iterable.ThrowingExtractor;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -193,13 +192,7 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
             .commitMultipleOperations()
             .branch(branch)
             .commitMeta(CommitMeta.fromMessage("verifyAllContentAndOperationTypes"));
-    contentAndOperationTypes()
-        .flatMap(
-            c ->
-                c.globalOperation == null
-                    ? Stream.of(c.operation)
-                    : Stream.of(c.operation, c.globalOperation))
-        .forEach(commit::operation);
+    contentAndOperationTypes().map(c -> c.operation).forEach(commit::operation);
     commit.commit();
 
     List<Entry> entries =

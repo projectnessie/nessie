@@ -15,9 +15,11 @@
  */
 package org.projectnessie.jaxrs;
 
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.InstanceOfAssertFactories.list;
+import static org.assertj.core.groups.Tuple.tuple;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.List;
 import java.util.Map;
@@ -26,16 +28,22 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.DiffResponse;
+import org.projectnessie.model.DiffResponse.DiffEntry;
 import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
+import org.projectnessie.model.ImmutablePut;
+import org.projectnessie.model.LogResponse;
+import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
@@ -47,25 +55,15 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
   public static final class ContentAndOperationType {
     final Content.Type type;
     final Operation operation;
-    final Operation globalOperation;
 
     public ContentAndOperationType(Content.Type type, Operation operation) {
-      this(type, operation, null);
-    }
-
-    public ContentAndOperationType(
-        Content.Type type, Operation operation, Operation globalOperation) {
       this.type = type;
       this.operation = operation;
-      this.globalOperation = globalOperation;
     }
 
     @Override
     public String toString() {
       String s = opString(operation);
-      if (globalOperation != null) {
-        s = "_" + opString(globalOperation);
-      }
       return s + "_" + operation.getKey().toPathString();
     }
 
@@ -129,27 +127,76 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
   public void verifyAllContentAndOperationTypes() throws BaseNessieClientServerException {
     Branch branch = createBranch("contentAndOperationAll");
 
+    List<ContentAndOperationType> contentAndOps =
+        contentAndOperationTypes().collect(Collectors.toList());
+
     CommitMultipleOperationsBuilder commit =
         getApi()
             .commitMultipleOperations()
             .branch(branch)
             .commitMeta(CommitMeta.fromMessage("verifyAllContentAndOperationTypes"));
-    contentAndOperationTypes()
-        .flatMap(
-            c ->
-                c.globalOperation == null
-                    ? Stream.of(c.operation)
-                    : Stream.of(c.operation, c.globalOperation))
-        .forEach(commit::operation);
-    commit.commit();
+    contentAndOps.forEach(contentAndOp -> commit.operation(contentAndOp.operation));
+    Branch committed = commit.commit();
 
-    List<Entry> entries = getApi().getEntries().refName(branch.getName()).get().getEntries();
-    List<Entry> expect =
-        contentAndOperationTypes()
-            .filter(c -> c.operation instanceof Put)
-            .map(c -> Entry.builder().type(c.type).name(c.operation.getKey()).build())
-            .collect(Collectors.toList());
-    assertThat(entries).containsExactlyInAnyOrderElementsOf(expect);
+    assertAll(
+        () -> {
+          List<Entry> entries = getApi().getEntries().refName(branch.getName()).get().getEntries();
+          List<Entry> expect =
+              contentAndOps.stream()
+                  .filter(c -> c.operation instanceof Put)
+                  .map(c -> Entry.builder().type(c.type).name(c.operation.getKey()).build())
+                  .collect(Collectors.toList());
+          assertThat(entries).containsExactlyInAnyOrderElementsOf(expect);
+        },
+        () -> {
+          // Diff against of committed HEAD and previous commit must yield the content in the
+          // Put operations
+          assertThat(getApi().getDiff().fromRef(committed).toRef(branch).get())
+              .extracting(DiffResponse::getDiffs, list(DiffEntry.class))
+              .extracting(DiffEntry::getKey, e -> clearIdOnContent(e.getFrom()), DiffEntry::getTo)
+              .containsExactlyInAnyOrderElementsOf(
+                  contentAndOps.stream()
+                      .map(c -> c.operation)
+                      .filter(op -> op instanceof Put)
+                      .map(Put.class::cast)
+                      .map(put -> tuple(put.getKey(), put.getContent(), null))
+                      .collect(Collectors.toList()));
+        },
+        () -> {
+          // Verify that 'get contents' for the HEAD commit returns exactly the committed contents
+          List<ContentKey> allKeys =
+              contentAndOps.stream()
+                  .map(contentAndOperationType -> contentAndOperationType.operation.getKey())
+                  .collect(Collectors.toList());
+          Map<ContentKey, Content> expected =
+              contentAndOps.stream()
+                  .filter(c -> c.operation instanceof Put)
+                  .collect(
+                      Collectors.toMap(
+                          e -> e.operation.getKey(), e -> ((Put) e.operation).getContent()));
+          assertThat(getApi().getContent().reference(committed).keys(allKeys).get())
+              .containsOnlyKeys(expected.keySet())
+              .allSatisfy(
+                  (key, content) ->
+                      assertThat(clearIdOnContent(content)).isEqualTo(expected.get(key)));
+        },
+        () ->
+            // Verify that the operations on the HEAD commit contains the committed operations
+            assertThat(
+                    getApi()
+                        .getCommitLog()
+                        .reference(committed)
+                        .fetch(FetchOption.ALL)
+                        .get()
+                        .getLogEntries())
+                .element(0)
+                .extracting(LogEntry::getOperations)
+                .extracting(this::clearIdOnOperations, list(Operation.class))
+                .containsExactlyInAnyOrderElementsOf(
+                    contentAndOps.stream()
+                        .map(c -> c.operation)
+                        .filter(op -> !(op instanceof Unchanged))
+                        .collect(Collectors.toList())));
   }
 
   @ParameterizedTest
@@ -163,24 +210,129 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
             .branch(branch)
             .commitMeta(CommitMeta.fromMessage("commit " + contentAndOperationType))
             .operation(contentAndOperationType.operation);
-    if (contentAndOperationType.globalOperation != null) {
-      commit.operation(contentAndOperationType.globalOperation);
-    }
-    commit.commit();
-    List<Entry> entries = getApi().getEntries().refName(branch.getName()).get().getEntries();
+    Branch committed = commit.commit();
+
     // Oh, yea - this is weird. The property ContentAndOperationType.operation.key.namespace is null
-    // (!!!)
-    // here, because somehow JUnit @MethodSource implementation re-constructs the objects returned
-    // from
-    // the source-method contentAndOperationTypes.
+    // (!!!) here, because somehow JUnit @MethodSource implementation re-constructs the objects
+    // returned from the source-method contentAndOperationTypes.
     ContentKey fixedContentKey =
         ContentKey.of(contentAndOperationType.operation.getKey().getElements());
-    List<Entry> expect =
-        contentAndOperationType.operation instanceof Put
-            ? singletonList(
-                Entry.builder().name(fixedContentKey).type(contentAndOperationType.type).build())
-            : emptyList();
-    assertThat(entries).containsExactlyInAnyOrderElementsOf(expect);
+
+    if (contentAndOperationType.operation instanceof Put) {
+      Put put = (Put) contentAndOperationType.operation;
+      assertAll(
+          () -> {
+            List<Entry> entries =
+                getApi().getEntries().refName(branch.getName()).get().getEntries();
+            assertThat(entries)
+                .containsExactly(
+                    Entry.builder()
+                        .name(fixedContentKey)
+                        .type(contentAndOperationType.type)
+                        .build());
+          },
+          () -> {
+            // Diff against of committed HEAD and previous commit must yield the content in the
+            // Put operation
+            assertThat(getApi().getDiff().fromRef(committed).toRef(branch).get())
+                .extracting(DiffResponse::getDiffs, list(DiffEntry.class))
+                .extracting(DiffEntry::getKey, e -> clearIdOnContent(e.getFrom()), DiffEntry::getTo)
+                .containsExactly(tuple(fixedContentKey, put.getContent(), null));
+          },
+          () -> {
+            // Compare content on HEAD commit with the committed content
+            Map<ContentKey, Content> content =
+                getApi().getContent().key(fixedContentKey).reference(committed).get();
+            assertThat(content)
+                .extractingByKey(fixedContentKey)
+                .extracting(this::clearIdOnContent)
+                .isEqualTo(put.getContent());
+          },
+          () -> {
+            // Compare operation on HEAD commit with the committed operation
+            LogResponse log =
+                getApi().getCommitLog().reference(committed).fetch(FetchOption.ALL).get();
+            assertThat(log)
+                .extracting(LogResponse::getLogEntries, list(LogEntry.class))
+                .element(0)
+                .extracting(LogEntry::getOperations, list(Operation.class))
+                .element(0)
+                // Clear content ID for comparison
+                .extracting(this::clearIdOnOperation)
+                .isEqualTo(put);
+          });
+    } else {
+      // not a Put operation
+      assertAll(
+          () -> {
+            List<Entry> entries =
+                getApi().getEntries().refName(branch.getName()).get().getEntries();
+            assertThat(entries).isEmpty();
+          },
+          () -> {
+            // Diff against of committed HEAD and previous commit must yield the content in the
+            // Put operations
+            assertThat(getApi().getDiff().fromRef(committed).toRef(branch).get())
+                .extracting(DiffResponse::getDiffs, list(DiffEntry.class))
+                .isEmpty();
+          },
+          () -> {
+            // Compare content on HEAD commit with the committed content
+            Map<ContentKey, Content> content =
+                getApi().getContent().key(fixedContentKey).reference(committed).get();
+            assertThat(content).isEmpty();
+          },
+          () -> {
+            // Compare operation on HEAD commit with the committed operation
+            LogResponse log =
+                getApi().getCommitLog().reference(committed).fetch(FetchOption.ALL).get();
+            assertThat(log)
+                .extracting(LogResponse::getLogEntries, list(LogEntry.class))
+                .element(0)
+                .extracting(LogEntry::getOperations)
+                .satisfies(
+                    ops -> {
+                      if (contentAndOperationType.operation instanceof Delete) {
+                        // Delete ops are persisted - must occur in commit
+                        assertThat(ops).containsExactly(contentAndOperationType.operation);
+                      } else if (contentAndOperationType.operation instanceof Unchanged) {
+                        // Unchanged ops are not persisted - cannot occur in commit
+                        assertThat(ops).isNullOrEmpty();
+                      } else {
+                        fail("Unexpected operation " + contentAndOperationType.operation);
+                      }
+                    });
+          });
+    }
+  }
+
+  private List<Operation> clearIdOnOperations(List<Operation> o) {
+    return o.stream().map(this::clearIdOnOperation).collect(Collectors.toList());
+  }
+
+  private Operation clearIdOnOperation(Operation o) {
+    try {
+      if (!(o instanceof Put)) {
+        return o;
+      }
+      Put put = (Put) o;
+      Content contentWithoutId = clearIdOnContent(put.getContent());
+      return ImmutablePut.builder().from(put).content(contentWithoutId).build();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private Content clearIdOnContent(Content content) {
+    try {
+      return (Content)
+          content
+              .getClass()
+              .getDeclaredMethod("withId", String.class)
+              .invoke(content, new Object[1]);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Test
