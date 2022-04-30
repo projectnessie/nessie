@@ -15,6 +15,8 @@
  */
 package org.projectnessie.versioned.persist.dynamodb;
 
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.singletonMap;
 import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.toProto;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.KEY_NAME;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_COMMIT_LOG;
@@ -30,7 +32,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -103,7 +104,7 @@ public class DynamoDatabaseAdapter
     this.keyPrefix = keyPrefix + PREFIX_SEPARATOR;
 
     globalPointerKeyMap =
-        Collections.singletonMap(KEY_NAME, AttributeValue.builder().s(this.keyPrefix).build());
+        singletonMap(KEY_NAME, AttributeValue.builder().s(this.keyPrefix).build());
   }
 
   // TODO find a way to wrap those DynamoDB-exceptions everywhere - even when returning Stream's
@@ -145,9 +146,7 @@ public class DynamoDatabaseAdapter
                                         client.client.deleteItem(
                                             b ->
                                                 b.tableName(table)
-                                                    .key(
-                                                        Collections.singletonMap(
-                                                            KEY_NAME, key))))));
+                                                    .key(singletonMap(KEY_NAME, key))))));
   }
 
   private <T> T loadById(String table, Hash id, Parser<T> parser) {
@@ -165,7 +164,7 @@ public class DynamoDatabaseAdapter
 
   private byte[] loadById(String table, String id) {
     Map<String, AttributeValue> key =
-        Collections.singletonMap(KEY_NAME, AttributeValue.builder().s(keyPrefix + id).build());
+        singletonMap(KEY_NAME, AttributeValue.builder().s(keyPrefix + id).build());
 
     GetItemResponse response = client.client.getItem(b -> b.tableName(table).key(key));
     if (!response.hasItem()) {
@@ -267,11 +266,11 @@ public class DynamoDatabaseAdapter
               b.tableName(TABLE_GLOBAL_POINTER)
                   .key(globalPointerKeyMap)
                   .expected(
-                      Collections.singletonMap(
+                      singletonMap(
                           VALUE_NAME,
                           ExpectedAttributeValue.builder().value(expectedBytes).build()))
                   .attributeUpdates(
-                      Collections.singletonMap(
+                      singletonMap(
                           VALUE_NAME,
                           AttributeValueUpdate.builder()
                               .action(AttributeAction.PUT)
@@ -318,7 +317,7 @@ public class DynamoDatabaseAdapter
                   .deleteRequest(
                       b ->
                           b.key(
-                              Collections.singletonMap(
+                              singletonMap(
                                   KEY_NAME,
                                   AttributeValue.builder().s(keyPrefix + hash.asString()).build())))
                   .build());
@@ -362,11 +361,11 @@ public class DynamoDatabaseAdapter
                 b.tableName(TABLE_REPO_DESC)
                     .key(globalPointerKeyMap)
                     .expected(
-                        Collections.singletonMap(
+                        singletonMap(
                             VALUE_NAME,
                             ExpectedAttributeValue.builder().value(expectedBytes).build()))
                     .attributeUpdates(
-                        Collections.singletonMap(
+                        singletonMap(
                             VALUE_NAME,
                             AttributeValueUpdate.builder()
                                 .action(AttributeAction.PUT)
@@ -407,17 +406,17 @@ public class DynamoDatabaseAdapter
         hashes.stream()
             .map(h -> keyPrefix + h.asString())
             .map(k -> AttributeValue.builder().s(k).build())
-            .map(k -> Collections.singletonMap(KEY_NAME, k))
+            .map(k -> singletonMap(KEY_NAME, k))
             .collect(Collectors.toList());
 
     Map<String, KeysAndAttributes> requestItems =
-        Collections.singletonMap(
+        singletonMap(
             table,
             KeysAndAttributes.builder().attributesToGet(KEY_NAME, VALUE_NAME).keys(keys).build());
 
     BatchGetItemResponse response = client.client.batchGetItem(b -> b.requestItems(requestItems));
     if (!response.hasResponses()) {
-      return Collections.emptyMap();
+      return emptyMap();
     }
 
     if (response.hasUnprocessedKeys() && !response.unprocessedKeys().isEmpty()) {
@@ -462,16 +461,14 @@ public class DynamoDatabaseAdapter
           AttributeValue.builder().b(SdkBytes.fromByteArray(serializer.apply(entry))).build());
 
       if (requests.size() == DYNAMO_BATCH_WRITE_MAX_REQUESTS) {
-        client.client.batchWriteItem(
-            b -> b.requestItems(Collections.singletonMap(tableName, requests)));
+        client.client.batchWriteItem(b -> b.requestItems(singletonMap(tableName, requests)));
         requests.clear();
       }
 
       WriteRequest write = WriteRequest.builder().putRequest(b -> b.item(item)).build();
       requests.add(write);
     }
-    client.client.batchWriteItem(
-        b -> b.requestItems(Collections.singletonMap(tableName, requests)));
+    client.client.batchWriteItem(b -> b.requestItems(singletonMap(tableName, requests)));
   }
 
   @Override

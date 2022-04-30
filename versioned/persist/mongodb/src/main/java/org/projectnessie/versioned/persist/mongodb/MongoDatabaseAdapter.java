@@ -161,9 +161,7 @@ public class MongoDatabaseAdapter
       throw writeException;
     }
 
-    if (!result.wasAcknowledged()) {
-      throw new IllegalStateException("Unacknowledged write to " + collection.getNamespace());
-    }
+    verifyAcknowledged(result, collection);
   }
 
   private static void insert(MongoCollection<Document> collection, List<Document> docs)
@@ -186,17 +184,13 @@ public class MongoDatabaseAdapter
       throw writeException;
     }
 
-    if (!result.wasAcknowledged()) {
-      throw new IllegalStateException("Unacknowledged write to " + collection.getNamespace());
-    }
+    verifyAcknowledged(result, collection);
   }
 
   private void delete(MongoCollection<Document> collection, Collection<Hash> ids) {
     DeleteResult result = collection.deleteMany(Filters.in(ID_PROPERTY_NAME, toIds(ids)));
 
-    if (!result.wasAcknowledged()) {
-      throw new IllegalStateException("Unacknowledged write to " + collection.getNamespace());
-    }
+    verifyAcknowledged(result, collection);
   }
 
   private <ID> byte[] loadById(MongoCollection<Document> collection, ID id) {
@@ -281,6 +275,10 @@ public class MongoDatabaseAdapter
   }
 
   private Hash idAsHash(Document doc) {
+    return Hash.of(idAsString(doc));
+  }
+
+  private String idAsString(Document doc) {
     Document id = doc.get(ID_PROPERTY_NAME, Document.class);
 
     String repo = id.getString(ID_REPO_NAME);
@@ -290,8 +288,7 @@ public class MongoDatabaseAdapter
               "Repository mismatch for id '%s' (expected repository ID: '%s')", id, repositoryId));
     }
 
-    String hash = id.getString(ID_HASH_NAME);
-    return Hash.of(hash);
+    return id.getString(ID_HASH_NAME);
   }
 
   private static byte[] data(Document doc) {
@@ -325,12 +322,17 @@ public class MongoDatabaseAdapter
                   Filters.and(
                       Filters.eq(globalPointerKey), Filters.eq(DATA_PROPERTY_NAME, expectedBytes)),
                   doc);
-      return result.wasAcknowledged()
-          && result.getMatchedCount() == 1
-          && result.getModifiedCount() == 1;
+      return verifySuccessfulUpdate(result, client.getRepoDesc());
     } else {
-      InsertOneResult result = client.getRepoDesc().insertOne(doc);
-      return result.wasAcknowledged();
+      try {
+        return client.getRepoDesc().insertOne(doc).wasAcknowledged();
+      } catch (MongoWriteException writeException) {
+        ErrorCategory category = writeException.getError().getCategory();
+        if (ErrorCategory.DUPLICATE_KEY.equals(category)) {
+          return false;
+        }
+        throw writeException;
+      }
     }
   }
 
@@ -408,10 +410,7 @@ public class MongoDatabaseAdapter
                 new Document("$set", doc),
                 new UpdateOptions().upsert(true));
 
-    if (!result.wasAcknowledged()) {
-      throw new IllegalStateException(
-          "Unacknowledged write to " + client.getGlobalPointers().getNamespace());
-    }
+    verifyAcknowledged(result, client.getGlobalPointers());
   }
 
   @Override
@@ -431,9 +430,7 @@ public class MongoDatabaseAdapter
                     Filters.eq(GLOBAL_ID_PROPERTY_NAME, expectedGlobalId)),
                 doc);
 
-    return result.wasAcknowledged()
-        && result.getMatchedCount() == 1
-        && result.getModifiedCount() == 1;
+    return verifySuccessfulUpdate(result, client.getGlobalPointers());
   }
 
   @Override
@@ -493,5 +490,38 @@ public class MongoDatabaseAdapter
   protected List<RefLog> doFetchPageFromRefLog(
       NonTransactionalOperationContext ctx, List<Hash> hashes) {
     return fetchPage(client.getRefLog(), hashes, ProtoSerialization::protoToRefLog);
+  }
+
+  private static boolean verifySuccessfulUpdate(
+      UpdateResult result, MongoCollection<Document> mongoCollection) {
+    verifyAcknowledged(result, mongoCollection);
+    return result.getMatchedCount() == 1 && result.getModifiedCount() == 1;
+  }
+
+  private static void verifyAcknowledged(
+      InsertOneResult result, MongoCollection<Document> mongoCollection) {
+    verifyAcknowledged(result.wasAcknowledged(), mongoCollection);
+  }
+
+  private static void verifyAcknowledged(
+      InsertManyResult result, MongoCollection<Document> mongoCollection) {
+    verifyAcknowledged(result.wasAcknowledged(), mongoCollection);
+  }
+
+  private static void verifyAcknowledged(
+      UpdateResult result, MongoCollection<Document> mongoCollection) {
+    verifyAcknowledged(result.wasAcknowledged(), mongoCollection);
+  }
+
+  private static void verifyAcknowledged(
+      DeleteResult result, MongoCollection<Document> mongoCollection) {
+    verifyAcknowledged(result.wasAcknowledged(), mongoCollection);
+  }
+
+  private static void verifyAcknowledged(
+      boolean acknowledged, MongoCollection<Document> mongoCollection) {
+    if (!acknowledged) {
+      throw new IllegalStateException("Unacknowledged write to " + mongoCollection.getNamespace());
+    }
   }
 }
