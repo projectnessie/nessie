@@ -216,7 +216,7 @@
     <sqlite.version>1.0.392</sqlite.version>
     <surefire.version>3.0.0-M6</surefire.version>
     <testcontainers.version>1.17.1</testcontainers.version>
-    <weld.version>3.1.8.Final</weld.version>
+    <weld.version>5.0.0.Final</weld.version>
   </properties>
 
   <dependencyManagement>
