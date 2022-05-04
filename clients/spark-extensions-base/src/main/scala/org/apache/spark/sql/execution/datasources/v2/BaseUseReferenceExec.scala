@@ -34,7 +34,12 @@ abstract class BaseUseReferenceExec(
   ): Seq[InternalRow] = {
 
     val ref = NessieUtils.calculateRef(branch, timestampOrHash, api)
-    NessieUtils.setCurrentRefForSpark(currentCatalog, catalog, ref)
+    NessieUtils.setCurrentRefForSpark(
+      currentCatalog,
+      catalog,
+      ref,
+      timestampOrHash.isDefined
+    )
 
     Seq(
       InternalRow(
