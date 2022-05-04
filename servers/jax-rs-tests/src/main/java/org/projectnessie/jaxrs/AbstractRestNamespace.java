@@ -524,17 +524,29 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
         .updateProperties(properties)
         .update();
 
-    ns = getApi().getNamespace().reference(branch).namespace(namespace).get();
+    // namespace does not exist at the previous hash
+    assertThatThrownBy(() -> getApi().getNamespace().reference(branch).namespace(namespace).get())
+        .isInstanceOf(NessieNamespaceNotFoundException.class);
+
+    Branch updated = (Branch) getApi().getReference().refName(branch.getName()).get();
+    ns = getApi().getNamespace().reference(updated).namespace(namespace).get();
     assertThat(ns.getProperties()).isEqualTo(properties);
 
     getApi()
         .updateProperties()
-        .reference(branch)
+        .reference(updated)
         .namespace(namespace)
         .updateProperties(ImmutableMap.of("key3", "val3", "key1", "xyz"))
         .removeProperties(ImmutableSet.of("key2", "key5"))
         .update();
-    ns = getApi().getNamespace().reference(branch).namespace(namespace).get();
+
+    // "updated" still points to the hash prior to the update
+    assertThat(
+            getApi().getNamespace().reference(updated).namespace(namespace).get().getProperties())
+        .isEqualTo(properties);
+
+    updated = (Branch) getApi().getReference().refName(branch.getName()).get();
+    ns = getApi().getNamespace().reference(updated).namespace(namespace).get();
     assertThat(ns.getProperties()).isEqualTo(ImmutableMap.of("key1", "xyz", "key3", "val3"));
   }
 }

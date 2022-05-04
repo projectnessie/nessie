@@ -105,6 +105,7 @@ public abstract class AbstractCompatibilityTests {
 
     Namespace namespace = Namespace.of("a", "b", "c");
     api.createNamespace().namespace(namespace).reference(reference).create();
+    reference = api.getReference().refName(reference.getName()).get();
     assertThat(api.getNamespace().namespace(namespace).reference(reference).get())
         .isEqualTo(namespace);
     assertThat(
@@ -115,7 +116,8 @@ public abstract class AbstractCompatibilityTests {
                 .getNamespaces())
         .containsExactly(namespace);
     api.deleteNamespace().reference(reference).namespace(namespace).delete();
-    assertThatThrownBy(() -> api.getNamespace().namespace(namespace).reference(reference).get())
+    Reference finalRef = api.getReference().refName(reference.getName()).get();
+    assertThatThrownBy(() -> api.getNamespace().namespace(namespace).reference(finalRef).get())
         .isInstanceOf(NessieNamespaceNotFoundException.class);
   }
 
