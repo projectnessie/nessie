@@ -24,7 +24,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import javax.annotation.Nullable;
-import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
@@ -61,7 +60,7 @@ abstract class BaseApiImpl {
   }
 
   WithHash<NamedRef> namedRefWithHashOrThrow(@Nullable String namedRef, @Nullable String hashOnRef)
-      throws NessieNotFoundException {
+      throws NessieReferenceNotFoundException {
     if (null == namedRef) {
       namedRef = config.getDefaultBranch();
     }
