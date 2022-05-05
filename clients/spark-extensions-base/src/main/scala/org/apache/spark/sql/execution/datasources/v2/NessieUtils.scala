@@ -194,18 +194,37 @@ object NessieUtils {
       .build(classOf[NessieApiV1])
   }
 
+  /** @param currentCatalog
+    *   The current Spark catalog
+    * @param catalog
+    *   The catalog to configure for Spark
+    * @param ref
+    *   The reference to configure for Spark
+    * @param configureRefAtHash
+    *   Whether to configure the ref at its given hash. Note that this should
+    *   only be done when reading data from the given ref at its particular
+    *   hash.
+    */
   def setCurrentRefForSpark(
       currentCatalog: CatalogPlugin,
       catalog: Option[String],
-      ref: Reference
+      ref: Reference,
+      configureRefAtHash: Boolean
   ): Unit = {
     val catalogName = catalog.getOrElse(currentCatalog.name)
     val catalogImpl =
       SparkSession.active.sessionState.catalogManager.catalog(catalogName)
     SparkSession.active.sparkContext.conf
       .set(s"spark.sql.catalog.$catalogName.ref", ref.getName)
-    SparkSession.active.sparkContext.conf
-      .set(s"spark.sql.catalog.$catalogName.ref.hash", ref.getHash)
+    if (configureRefAtHash) {
+      // we only configure ref.hash if we're reading data
+      SparkSession.active.sparkContext.conf
+        .set(s"spark.sql.catalog.$catalogName.ref.hash", ref.getHash)
+    } else {
+      // we need to clear it in case it was previously set
+      SparkSession.active.sparkContext.conf
+        .remove(s"spark.sql.catalog.$catalogName.ref.hash")
+    }
     val catalogConf = SparkSession.active.sparkContext.conf
       .getAllWithPrefix(s"spark.sql.catalog.$catalogName.")
       .toMap
