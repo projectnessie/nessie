@@ -23,8 +23,8 @@ extra_css:
 
 extra:
   versions:
-    java: 0.28.0
-    python: v0.28.0
+    java: 0.29.0
+    python: v0.29.0
     iceberg: 0.13.0
     iceberg_spark32: 3.2_2.12
   analytics:
