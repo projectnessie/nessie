@@ -1,5 +1,13 @@
 # Releases
 
+## 0.29.0 Release (May 5, 2022)
+
+* Spark SQL: Configure ref.hash for NessieCatalog only when explicitly requested
+* Escape all column names in SQL DML+DDL statements
+* Use hashOnRef when fetching Namespaces
+* Helm: Add ingress support for Kubernetes >=1.22
+* Fix CockroachDB transaction-retry behavior
+
 ## 0.28.0 Release (April 26, 2022)
 
 * Generate unique content IDs for explicitly created namespaces
