@@ -96,13 +96,14 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
       @Nonnull List<Operation<VALUE>> operations,
       @Nonnull Callable<Void> validator)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    return this.<Hash, ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
-        "Commit",
-        b ->
-            b.withTag(TAG_BRANCH, safeRefName(branch))
-                .withTag(TAG_HASH, safeToString(referenceHash))
-                .withTag(TAG_NUM_OPS, safeSize(operations)),
-        () -> delegate.commit(branch, referenceHash, metadata, operations, validator));
+    return TracingVersionStore
+        .<Hash, ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
+            "Commit",
+            b ->
+                b.withTag(TAG_BRANCH, safeRefName(branch))
+                    .withTag(TAG_HASH, safeToString(referenceHash))
+                    .withTag(TAG_NUM_OPS, safeSize(operations)),
+            () -> delegate.commit(branch, referenceHash, metadata, operations, validator));
   }
 
   @Override
@@ -115,21 +116,22 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
       Map<Key, MergeType> mergeTypes,
       MergeType defaultMergeType)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    this.<ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
-        "Transplant",
-        b ->
-            b.withTag(TAG_TARGET_BRANCH, safeRefName(targetBranch))
-                .withTag(TAG_HASH, safeToString(referenceHash))
-                .withTag(TAG_TRANSPLANTS, safeSize(sequenceToTransplant)),
-        () ->
-            delegate.transplant(
-                targetBranch,
-                referenceHash,
-                sequenceToTransplant,
-                updateCommitMetadata,
-                keepIndividualCommits,
-                mergeTypes,
-                defaultMergeType));
+    TracingVersionStore
+        .<ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
+            "Transplant",
+            b ->
+                b.withTag(TAG_TARGET_BRANCH, safeRefName(targetBranch))
+                    .withTag(TAG_HASH, safeToString(referenceHash))
+                    .withTag(TAG_TRANSPLANTS, safeSize(sequenceToTransplant)),
+            () ->
+                delegate.transplant(
+                    targetBranch,
+                    referenceHash,
+                    sequenceToTransplant,
+                    updateCommitMetadata,
+                    keepIndividualCommits,
+                    mergeTypes,
+                    defaultMergeType));
   }
 
   @Override
@@ -142,39 +144,41 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
       Map<Key, MergeType> mergeTypes,
       MergeType defaultMergeType)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    this.<ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
-        "Merge",
-        b ->
-            b.withTag(TAG_FROM_HASH, safeToString(fromHash))
-                .withTag(TAG_TO_BRANCH, safeRefName(toBranch))
-                .withTag(TAG_EXPECTED_HASH, safeToString(expectedHash)),
-        () ->
-            delegate.merge(
-                fromHash,
-                toBranch,
-                expectedHash,
-                updateCommitMetadata,
-                keepIndividualCommits,
-                mergeTypes,
-                defaultMergeType));
+    TracingVersionStore
+        .<ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
+            "Merge",
+            b ->
+                b.withTag(TAG_FROM_HASH, safeToString(fromHash))
+                    .withTag(TAG_TO_BRANCH, safeRefName(toBranch))
+                    .withTag(TAG_EXPECTED_HASH, safeToString(expectedHash)),
+            () ->
+                delegate.merge(
+                    fromHash,
+                    toBranch,
+                    expectedHash,
+                    updateCommitMetadata,
+                    keepIndividualCommits,
+                    mergeTypes,
+                    defaultMergeType));
   }
 
   @Override
   public void assign(NamedRef ref, Optional<Hash> expectedHash, Hash targetHash)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    this.<ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
-        "Assign",
-        b ->
-            b.withTag(TAG_REF, safeToString(ref))
-                .withTag(TracingVersionStore.TAG_EXPECTED_HASH, safeToString(expectedHash))
-                .withTag(TAG_TARGET_HASH, safeToString(targetHash)),
-        () -> delegate.assign(ref, expectedHash, targetHash));
+    TracingVersionStore
+        .<ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
+            "Assign",
+            b ->
+                b.withTag(TAG_REF, safeToString(ref))
+                    .withTag(TracingVersionStore.TAG_EXPECTED_HASH, safeToString(expectedHash))
+                    .withTag(TAG_TARGET_HASH, safeToString(targetHash)),
+            () -> delegate.assign(ref, expectedHash, targetHash));
   }
 
   @Override
   public Hash create(NamedRef ref, Optional<Hash> targetHash)
       throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
-    return this
+    return TracingVersionStore
         .<Hash, ReferenceNotFoundException, ReferenceAlreadyExistsException>callWithTwoExceptions(
             "Create",
             b ->
@@ -186,10 +190,11 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
   @Override
   public void delete(NamedRef ref, Optional<Hash> hash)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    this.<ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
-        "Delete",
-        b -> b.withTag(TAG_REF, safeToString(ref)).withTag(TAG_HASH, safeToString(hash)),
-        () -> delegate.delete(ref, hash));
+    TracingVersionStore
+        .<ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
+            "Delete",
+            b -> b.withTag(TAG_REF, safeToString(ref)).withTag(TAG_HASH, safeToString(hash)),
+            () -> delegate.delete(ref, hash));
   }
 
   @Override
@@ -250,7 +255,7 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
     return delegate.getRefLog(refLogId);
   }
 
-  private SpanHolder createSpan(String name, Consumer<SpanBuilder> spanBuilder) {
+  private static SpanHolder createSpan(String name, Consumer<SpanBuilder> spanBuilder) {
     Tracer tracer = GlobalTracer.get();
     String spanName = makeSpanName(name);
     SpanBuilder builder =
@@ -259,7 +264,7 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
     return new SpanHolder(builder.start());
   }
 
-  private Scope activeScope(Span span) {
+  private static Scope activeScope(Span span) {
     Tracer tracer = GlobalTracer.get();
     return tracer.activateSpan(span);
   }
@@ -269,7 +274,7 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
     return "VersionStore." + Character.toLowerCase(name.charAt(0)) + name.substring(1);
   }
 
-  private <R, E1 extends VersionStoreException> Stream<R> callStreamWithOneException(
+  private static <R, E1 extends VersionStoreException> Stream<R> callStreamWithOneException(
       String spanName,
       Consumer<SpanBuilder> spanBuilder,
       InvokerWithOneException<Stream<R>, E1> invoker)
@@ -287,7 +292,7 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
     }
   }
 
-  private <R, E1 extends VersionStoreException> R callWithOneException(
+  private static <R, E1 extends VersionStoreException> R callWithOneException(
       String spanName, Consumer<SpanBuilder> spanBuilder, InvokerWithOneException<R, E1> invoker)
       throws E1 {
     try (SpanHolder span = createSpan(spanName, spanBuilder);
@@ -303,7 +308,7 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
     }
   }
 
-  private <E1 extends VersionStoreException, E2 extends VersionStoreException>
+  private static <E1 extends VersionStoreException, E2 extends VersionStoreException>
       void callWithTwoExceptions(
           String spanName,
           Consumer<SpanBuilder> spanBuilder,
@@ -322,7 +327,7 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
     }
   }
 
-  private <R, E1 extends VersionStoreException, E2 extends VersionStoreException>
+  private static <R, E1 extends VersionStoreException, E2 extends VersionStoreException>
       R callWithTwoExceptions(
           String spanName,
           Consumer<SpanBuilder> spanBuilder,

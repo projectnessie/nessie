@@ -72,6 +72,13 @@ public class HttpRequest {
     return this;
   }
 
+  public HttpRequest queryParam(String name, Integer value) {
+    if (value != null) {
+      this.uriBuilder.queryParam(name, value.toString());
+    }
+    return this;
+  }
+
   public HttpRequest header(String name, String value) {
     headers.put(name, value);
     return this;
@@ -91,7 +98,7 @@ public class HttpRequest {
       try {
         headers.put(HEADER_ACCEPT, accept);
 
-        boolean postOrPut = method.equals(Method.PUT) || method.equals(Method.POST);
+        boolean postOrPut = method == Method.PUT || method == Method.POST;
 
         if (postOrPut) {
           // Need to set the Content-Type even if body==null, otherwise the server responds with

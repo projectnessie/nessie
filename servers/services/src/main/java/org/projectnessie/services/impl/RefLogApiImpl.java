@@ -120,7 +120,7 @@ public class RefLogApiImpl extends BaseApiImpl implements RefLogApi {
    * @param filter The filter to filter by
    * @return A potentially filtered {@link Stream} of reflog entries based on the filter
    */
-  private Stream<RefLogResponse.RefLogResponseEntry> filterRefLog(
+  private static Stream<RefLogResponse.RefLogResponseEntry> filterRefLog(
       Stream<RefLogResponse.RefLogResponseEntry> logEntries, String filter) {
     if (Strings.isNullOrEmpty(filter)) {
       return logEntries;

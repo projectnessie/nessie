@@ -53,7 +53,7 @@ public class RocksDbInstance implements DatabaseConnectionProvider<RocksDbConfig
   public static final String CF_KEY_LIST = "key_list";
   public static final String CF_REF_LOG = "ref_log";
 
-  public static final List<String> CF_ALL =
+  private static final List<String> CF_ALL =
       Arrays.asList(
           CF_REPO_PROPS, CF_GLOBAL_POINTER, CF_GLOBAL_LOG, CF_COMMIT_LOG, CF_KEY_LIST, CF_REF_LOG);
 

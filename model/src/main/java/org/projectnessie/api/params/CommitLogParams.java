@@ -148,7 +148,7 @@ public class CommitLogParams extends AbstractParams {
         && Objects.equals(maxRecords(), that.maxRecords())
         && Objects.equals(pageToken(), that.pageToken())
         && Objects.equals(filter, that.filter)
-        && Objects.equals(fetchOption, that.fetchOption);
+        && fetchOption == that.fetchOption;
   }
 
   @Override

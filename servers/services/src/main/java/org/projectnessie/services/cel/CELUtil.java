@@ -34,7 +34,7 @@ import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferenceMetadata;
 
 /** A utility class for CEL declarations and other things. */
-public class CELUtil {
+public final class CELUtil {
 
   public static final String CONTAINER = "org.projectnessie.model";
   public static final ScriptHost SCRIPT_HOST =
@@ -97,6 +97,8 @@ public class CELUtil {
       ImmutableList.of(
           Decls.newVar(
               VAR_REFLOG, Decls.newObjectType(RefLogResponse.RefLogResponseEntry.class.getName())));
+
+  private CELUtil() {}
 
   /**
    * 'Mirrored' interface wrapping a {@link Operation} for CEL to have convenience fields for CEL

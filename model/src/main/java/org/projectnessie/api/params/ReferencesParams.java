@@ -117,7 +117,7 @@ public class ReferencesParams extends AbstractParams {
     ReferencesParams that = (ReferencesParams) o;
     return Objects.equals(maxRecords(), that.maxRecords())
         && Objects.equals(pageToken(), that.pageToken())
-        && Objects.equals(fetchOption, that.fetchOption)
+        && fetchOption == that.fetchOption
         && Objects.equals(filter, that.filter);
   }
 
