@@ -292,7 +292,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
    * @param withType The {@link WithType} instance holding the key and type.
    * @return A {@link Namespace} instance.
    */
-  private Namespace namespaceFromType(KeyEntry<Content.Type> withType) {
+  private static Namespace namespaceFromType(KeyEntry<Content.Type> withType) {
     List<String> elements = withType.getKey().getElements();
     if (Content.Type.NAMESPACE != withType.getType()) {
       elements = elements.subList(0, elements.size() - 1);
@@ -309,33 +309,35 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
       throws ReferenceNotFoundException {
     try (Stream<KeyEntry<Content.Type>> stream =
         getNamespacesKeyStream(namespace, hash, k -> true)) {
-      return stream.findAny().map(this::namespaceFromType);
+      return stream.findAny().map(NamespaceApiImpl::namespaceFromType);
     }
   }
 
-  private NessieNamespaceAlreadyExistsException namespaceAlreadyExistsException(
+  private static NessieNamespaceAlreadyExistsException namespaceAlreadyExistsException(
       Namespace namespace) {
     return new NessieNamespaceAlreadyExistsException(
         String.format("Namespace '%s' already exists", namespace));
   }
 
-  private NessieNamespaceAlreadyExistsException otherContentAlreadyExistsException(
+  private static NessieNamespaceAlreadyExistsException otherContentAlreadyExistsException(
       Namespace namespace) {
     return new NessieNamespaceAlreadyExistsException(
         String.format("Another content object with name '%s' already exists", namespace));
   }
 
-  private NessieNamespaceNotFoundException namespaceDoesNotExistException(Namespace namespace) {
+  private static NessieNamespaceNotFoundException namespaceDoesNotExistException(
+      Namespace namespace) {
     return new NessieNamespaceNotFoundException(
         String.format("Namespace '%s' does not exist", namespace));
   }
 
-  private NessieNamespaceNotEmptyException namespaceNotEmptyException(Namespace namespace) {
+  private static NessieNamespaceNotEmptyException namespaceNotEmptyException(Namespace namespace) {
     return new NessieNamespaceNotEmptyException(
         String.format("Namespace '%s' is not empty", namespace));
   }
 
-  private NessieReferenceNotFoundException refNotFoundException(ReferenceNotFoundException e) {
+  private static NessieReferenceNotFoundException refNotFoundException(
+      ReferenceNotFoundException e) {
     return new NessieReferenceNotFoundException(e.getMessage(), e);
   }
 

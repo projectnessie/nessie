@@ -176,7 +176,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
     }
   }
 
-  private String metadataLocationFromGlobal(Supplier<ByteString> globalContent) {
+  private static String metadataLocationFromGlobal(Supplier<ByteString> globalContent) {
     ByteString globalBytes = globalContent.get();
     if (globalBytes == null) {
       throw noIcebergMetadataPointer();

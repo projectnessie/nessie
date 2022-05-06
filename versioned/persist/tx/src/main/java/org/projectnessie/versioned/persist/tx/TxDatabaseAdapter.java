@@ -666,7 +666,7 @@ public abstract class TxDatabaseAdapter
     }
   }
 
-  private ContentIdAndBytes globalContentFromRow(ResultSet rs) throws SQLException {
+  private static ContentIdAndBytes globalContentFromRow(ResultSet rs) throws SQLException {
     ContentId cid = ContentId.of(rs.getString(1));
     ByteString value = UnsafeByteOperations.unsafeWrap(rs.getBytes(2));
     return ContentIdAndBytes.of(cid, value);
@@ -902,7 +902,7 @@ public abstract class TxDatabaseAdapter
     }
   }
 
-  protected NamedRef namedRefFromRow(String type, String ref) {
+  protected static NamedRef namedRefFromRow(String type, String ref) {
     switch (type) {
       case REF_TYPE_BRANCH:
         return BranchName.of(ref);
@@ -930,7 +930,7 @@ public abstract class TxDatabaseAdapter
     }
   }
 
-  protected String referenceTypeDiscriminator(NamedRef ref) {
+  protected static String referenceTypeDiscriminator(NamedRef ref) {
     String refType;
     if (ref instanceof BranchName) {
       refType = REF_TYPE_BRANCH;
@@ -1072,9 +1072,7 @@ public abstract class TxDatabaseAdapter
             String newHash = newHasher().putBytes(newGlobBytes).hash().toString();
 
             if (contentId == null) {
-              throw new IllegalArgumentException(
-                  String.format(
-                      "No contentId in CommitAttempt.keyToContent content-id '%s'", contentId));
+              throw new IllegalArgumentException("Null contentId in CommitAttempt.keyToContent");
             }
 
             psInsert.setString(1, config.getRepositoryId());
@@ -1558,16 +1556,18 @@ public abstract class TxDatabaseAdapter
             conn.conn().prepareStatement(SqlStatements.SELECT_REF_LOG_HEAD)) {
       selectStatement.setString(1, config.getRepositoryId());
       // insert if the table is empty
-      if (!selectStatement.executeQuery().next()) {
-        try (PreparedStatement psUpdate =
-            conn.conn().prepareStatement(SqlStatements.INSERT_REF_LOG_HEAD)) {
-          psUpdate.setString(1, config.getRepositoryId());
-          psUpdate.setString(2, Hash.of(newRefLog.getRefLogId()).asString());
-          psUpdate.setBytes(3, refLogHeadParents(newRefLog).toByteArray());
-          if (psUpdate.executeUpdate() != 1) {
-            // No need to continue, just throw a legit constraint-violation that will be
-            // converted to a "proper ReferenceConflictException" later up in the stack.
-            throw newIntegrityConstraintViolationException();
+      try (ResultSet result = selectStatement.executeQuery()) {
+        if (!result.next()) {
+          try (PreparedStatement psUpdate =
+              conn.conn().prepareStatement(SqlStatements.INSERT_REF_LOG_HEAD)) {
+            psUpdate.setString(1, config.getRepositoryId());
+            psUpdate.setString(2, Hash.of(newRefLog.getRefLogId()).asString());
+            psUpdate.setBytes(3, refLogHeadParents(newRefLog).toByteArray());
+            if (psUpdate.executeUpdate() != 1) {
+              // No need to continue, just throw a legit constraint-violation that will be
+              // converted to a "proper ReferenceConflictException" later up in the stack.
+              throw newIntegrityConstraintViolationException();
+            }
           }
         }
       }

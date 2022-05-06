@@ -149,7 +149,7 @@ public class TryLoopState implements AutoCloseable {
     void sleepMillis(long nanos);
   }
 
-  static class DefaultMonotonicClock implements MonotonicClock {
+  static final class DefaultMonotonicClock implements MonotonicClock {
 
     static final MonotonicClock INSTANCE = new DefaultMonotonicClock();
 

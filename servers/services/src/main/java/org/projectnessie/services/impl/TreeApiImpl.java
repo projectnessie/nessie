@@ -153,7 +153,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
    * @param filter The filter to filter by
    * @return A potentially filtered {@link Stream} of commits based on the filter
    */
-  private Stream<Reference> filterReferences(Stream<Reference> references, String filter) {
+  private static Stream<Reference> filterReferences(Stream<Reference> references, String filter) {
     if (Strings.isNullOrEmpty(filter)) {
       return references;
     }
@@ -343,7 +343,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
    * @param filter The filter to filter by
    * @return A potentially filtered {@link Stream} of commits based on the filter
    */
-  private Stream<LogEntry> filterCommitLog(Stream<LogEntry> logEntries, String filter) {
+  private static Stream<LogEntry> filterCommitLog(Stream<LogEntry> logEntries, String filter) {
     if (Strings.isNullOrEmpty(filter)) {
       return logEntries;
     }
@@ -428,12 +428,12 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     }
   }
 
-  private boolean keepIndividualCommits(BaseMergeTransplant params) {
+  private static boolean keepIndividualCommits(BaseMergeTransplant params) {
     Boolean keep = params.keepIndividualCommits();
     return keep != null && keep;
   }
 
-  private Map<Key, MergeType> keyMergeTypes(BaseMergeTransplant params) {
+  private static Map<Key, MergeType> keyMergeTypes(BaseMergeTransplant params) {
     return params.getKeyMergeModes() != null
         ? params.getKeyMergeModes().stream()
             .collect(
@@ -442,7 +442,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
         : Collections.emptyMap();
   }
 
-  private MergeType defaultMergeType(BaseMergeTransplant params) {
+  private static MergeType defaultMergeType(BaseMergeTransplant params) {
     return params.getDefaultKeyMergeMode() != null
         ? MergeType.valueOf(params.getDefaultKeyMergeMode().name())
         : MergeType.NORMAL;
@@ -487,7 +487,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     }
   }
 
-  private EntriesResponse.Entry truncate(EntriesResponse.Entry entry, Integer depth) {
+  private static EntriesResponse.Entry truncate(EntriesResponse.Entry entry, Integer depth) {
     if (depth == null || depth < 1) {
       return entry;
     }

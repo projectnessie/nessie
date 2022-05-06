@@ -21,6 +21,7 @@ import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 /**
  * Construct a URI from base and paths. Adds query parameters, supports templates and handles url
@@ -28,6 +29,7 @@ import java.util.Objects;
  */
 class UriBuilder {
 
+  private static final Pattern BACKSLASH_PATTERN = Pattern.compile("\\+");
   private final URI baseUri;
   private final StringBuilder uri = new StringBuilder();
   private final StringBuilder query = new StringBuilder();
@@ -43,7 +45,7 @@ class UriBuilder {
     }
     String trimmedPath = HttpUtils.checkNonNullTrim(path);
     HttpUtils.checkArgument(
-        trimmedPath.length() > 0, "Path %s must be of length greater than 0", trimmedPath);
+        !trimmedPath.isEmpty(), "Path %s must be of length greater than 0", trimmedPath);
     uri.append(trimmedPath);
     return this;
   }
@@ -141,7 +143,7 @@ class UriBuilder {
     try {
       // URLEncoder encodes space ' ' to + according to how encoding forms should work. When
       // encoding URLs %20 should be used instead.
-      return URLEncoder.encode(s, "UTF-8").replaceAll("\\+", "%20");
+      return BACKSLASH_PATTERN.matcher(URLEncoder.encode(s, "UTF-8")).replaceAll("%20");
     } catch (UnsupportedEncodingException e) {
       throw new HttpClientException(String.format("Cannot url encode %s", s), e);
     }

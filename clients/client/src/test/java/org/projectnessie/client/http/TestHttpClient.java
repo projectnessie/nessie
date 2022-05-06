@@ -238,7 +238,10 @@ public class TestHttpClient {
         };
     try (TestServer server = new TestServer(handler)) {
       ExampleBean bean =
-          get(server.getAddress()).queryParam("x", null).get().readEntity(ExampleBean.class);
+          get(server.getAddress())
+              .queryParam("x", (String) null)
+              .get()
+              .readEntity(ExampleBean.class);
       Assertions.assertEquals(inputBean, bean);
     }
   }

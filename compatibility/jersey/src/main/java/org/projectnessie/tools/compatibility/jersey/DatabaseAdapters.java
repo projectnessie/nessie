@@ -38,7 +38,8 @@ import org.projectnessie.versioned.persist.tests.extension.TestConnectionProvide
  * org.projectnessie.tools.compatibility.internal.JerseyForOldServerClassLoader} and have access to
  * an old Nessie server's class path.
  */
-public class DatabaseAdapters {
+public final class DatabaseAdapters {
+  private DatabaseAdapters() {}
 
   public static DatabaseConnectionProvider<DatabaseConnectionConfig>
       createDatabaseConnectionProvider(

@@ -97,7 +97,7 @@ public abstract class ContentKey {
                 "Content key '%s' must not contain a zero byte (\\u0000) / group separator (\\u001D).",
                 elements));
       }
-      if ("".equals(e)) {
+      if (e.isEmpty()) {
         throw new IllegalArgumentException(
             String.format("Content key '%s' must not contain an empty element.", elements));
       }

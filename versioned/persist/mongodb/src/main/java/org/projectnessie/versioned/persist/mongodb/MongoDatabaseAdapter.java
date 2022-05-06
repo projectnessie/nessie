@@ -153,7 +153,7 @@ public class MongoDatabaseAdapter
       result = collection.insertOne(doc);
     } catch (MongoWriteException writeException) {
       ErrorCategory category = writeException.getError().getCategory();
-      if (ErrorCategory.DUPLICATE_KEY.equals(category)) {
+      if (ErrorCategory.DUPLICATE_KEY == category) {
         ReferenceConflictException ex = DatabaseAdapterUtil.hashCollisionDetected();
         ex.initCause(writeException);
         throw ex;
@@ -176,7 +176,7 @@ public class MongoDatabaseAdapter
       result = collection.insertMany(docs);
     } catch (MongoWriteException writeException) {
       ErrorCategory category = writeException.getError().getCategory();
-      if (ErrorCategory.DUPLICATE_KEY.equals(category)) {
+      if (ErrorCategory.DUPLICATE_KEY == category) {
         ReferenceConflictException ex = DatabaseAdapterUtil.hashCollisionDetected();
         ex.initCause(writeException);
         throw ex;
@@ -193,7 +193,7 @@ public class MongoDatabaseAdapter
     verifyAcknowledged(result, collection);
   }
 
-  private <ID> byte[] loadById(MongoCollection<Document> collection, ID id) {
+  private static <ID> byte[] loadById(MongoCollection<Document> collection, ID id) {
     Document doc = collection.find(Filters.eq(id)).first();
     if (doc == null) {
       return null;
@@ -211,7 +211,7 @@ public class MongoDatabaseAdapter
     return loadById(collection, toId(id), parser);
   }
 
-  private <T, ID> T loadById(MongoCollection<Document> collection, ID id, Parser<T> parser) {
+  private static <T, ID> T loadById(MongoCollection<Document> collection, ID id, Parser<T> parser) {
     byte[] data = loadById(collection, id);
     if (data == null) {
       return null;
@@ -328,7 +328,7 @@ public class MongoDatabaseAdapter
         return client.getRepoDesc().insertOne(doc).wasAcknowledged();
       } catch (MongoWriteException writeException) {
         ErrorCategory category = writeException.getError().getCategory();
-        if (ErrorCategory.DUPLICATE_KEY.equals(category)) {
+        if (ErrorCategory.DUPLICATE_KEY == category) {
           return false;
         }
         throw writeException;

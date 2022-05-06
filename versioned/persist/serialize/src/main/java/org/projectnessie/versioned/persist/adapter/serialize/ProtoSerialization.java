@@ -35,7 +35,9 @@ import org.projectnessie.versioned.persist.adapter.RepoDescription;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RepoProps;
 
-public class ProtoSerialization {
+public final class ProtoSerialization {
+
+  private ProtoSerialization() {}
 
   public static RepoProps toProto(RepoDescription repoDescription) {
     RepoProps.Builder proto =

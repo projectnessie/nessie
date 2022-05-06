@@ -65,17 +65,17 @@ public class ResteasyExceptionMapper extends BaseExceptionMapper<ResteasyViolati
     return buildExceptionResponse(ErrorCode.UNKNOWN, unwrapException(exception), exception);
   }
 
-  protected String unwrapException(Throwable t) {
+  protected static String unwrapException(Throwable t) {
     StringBuilder sb = new StringBuilder();
     doUnwrapException(sb, t);
     return sb.toString();
   }
 
-  private void doUnwrapException(StringBuilder sb, Throwable t) {
+  private static void doUnwrapException(StringBuilder sb, Throwable t) {
     if (t == null) {
       return;
     }
-    sb.append(t.toString());
+    sb.append(t);
     if (t.getCause() != null && t != t.getCause()) {
       sb.append('[');
       doUnwrapException(sb, t.getCause());

@@ -114,7 +114,7 @@ public abstract class Namespace extends Content {
                 "Namespace '%s' must not contain a zero byte (\\u0000) / group separator (\\u001D).",
                 Arrays.toString(elements)));
       }
-      if ("".equals(e)) {
+      if (e.isEmpty()) {
         throw new IllegalArgumentException(
             String.format(
                 "Namespace '%s' must not contain an empty element.", Arrays.toString(elements)));

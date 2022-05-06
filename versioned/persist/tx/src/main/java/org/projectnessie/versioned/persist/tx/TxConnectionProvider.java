@@ -76,7 +76,7 @@ public abstract class TxConnectionProvider<C extends TxConnectionConfig>
     }
   }
 
-  private void executeDDLs(boolean batchDDL, Stream<String> ddls, Statement st)
+  private static void executeDDLs(boolean batchDDL, Stream<String> ddls, Statement st)
       throws SQLException {
     if (batchDDL) {
       String ddl = ddls.map(s -> s + ";").collect(Collectors.joining("\n\n"));

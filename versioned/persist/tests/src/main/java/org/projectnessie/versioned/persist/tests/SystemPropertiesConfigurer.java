@@ -19,7 +19,9 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.projectnessie.versioned.persist.adapter.AdjustableDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
@@ -34,9 +36,12 @@ import org.projectnessie.versioned.persist.adapter.DatabaseConnectionConfig;
  * "with-function" that takes a {@code String} or {@code int}, with "camel-case-breaks" replaced
  * with dots.
  */
-public class SystemPropertiesConfigurer {
+public final class SystemPropertiesConfigurer {
 
   public static final String CONFIG_NAME_PREFIX = "nessie.store.";
+  private static final Pattern TO_PROPERTY_NAME_PATTERN = Pattern.compile("([a-z])([A-Z]+)");
+
+  private SystemPropertiesConfigurer() {}
 
   public static <T extends AdjustableDatabaseAdapterConfig> T configureAdapterFromSystemProperties(
       T config) {
@@ -102,6 +107,7 @@ public class SystemPropertiesConfigurer {
 
   /** Converts from camel-case to dotted-name. */
   private static String toPropertyName(String name) {
-    return CONFIG_NAME_PREFIX + name.replaceAll("([a-z])([A-Z]+)", "$1.$2").toLowerCase();
+    return CONFIG_NAME_PREFIX
+        + TO_PROPERTY_NAME_PATTERN.matcher(name).replaceAll("$1.$2").toLowerCase(Locale.ROOT);
   }
 }

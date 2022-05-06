@@ -33,8 +33,7 @@ class HttpRefLogClient implements HttpRefLogApi {
   public RefLogResponse getRefLog(@NotNull RefLogParams params) throws NessieNotFoundException {
     HttpRequest builder = client.newRequest().path("reflogs");
     return builder
-        .queryParam(
-            "maxRecords", params.maxRecords() != null ? params.maxRecords().toString() : null)
+        .queryParam("maxRecords", params.maxRecords())
         .queryParam("pageToken", params.pageToken())
         .queryParam("startHash", params.startHash())
         .queryParam("endHash", params.endHash())
