@@ -28,6 +28,7 @@ import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUti
 import static org.projectnessie.versioned.persist.adapter.spi.Traced.trace;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Sets;
 import com.google.common.hash.Hasher;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.UnsafeByteOperations;
@@ -191,13 +192,13 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     // verify expected global-states
     checkExpectedGlobalStates(ctx, commitParams, mismatches::add);
 
-    checkForModifiedKeysBetweenExpectedAndCurrentCommit(ctx, commitParams, branchHead, mismatches);
+    CommitLogEntry currentBranchEntry =
+        checkForModifiedKeysBetweenExpectedAndCurrentCommit(
+            ctx, commitParams, branchHead, mismatches);
 
     if (!mismatches.isEmpty()) {
       throw new ReferenceConflictException(String.join("\n", mismatches));
     }
-
-    CommitLogEntry currentBranchEntry = fetchFromCommitLog(ctx, branchHead);
 
     int parentsPerCommit = config.getParentsPerCommit();
     List<Hash> newParents = new ArrayList<>(parentsPerCommit);
@@ -211,6 +212,10 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       commitSeq = 1;
     }
 
+    // Helps when building a new key-list to not fetch the current commit again.
+    Function<Hash, CommitLogEntry> currentCommit =
+        h -> h.equals(branchHead) ? currentBranchEntry : null;
+
     CommitLogEntry newBranchCommit =
         buildIndividualCommit(
             ctx,
@@ -222,12 +227,12 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
             commitParams.getDeletes(),
             currentBranchEntry != null ? currentBranchEntry.getKeyListDistance() : 0,
             newKeyLists,
-            NO_IN_MEMORY_COMMITS);
+            currentCommit);
     writeIndividualCommit(ctx, newBranchCommit);
     return newBranchCommit;
   }
 
-  private void checkContentKeysUnique(CommitParams commitParams) {
+  private static void checkContentKeysUnique(CommitParams commitParams) {
     Set<Key> keys = new HashSet<>();
     Set<Key> duplicates = new HashSet<>();
     Stream.concat(
@@ -712,6 +717,10 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
 
   /** Load the commit-log entry for the given hash, return {@code null}, if not found. */
   protected final CommitLogEntry fetchFromCommitLog(OP_CONTEXT ctx, Hash hash) {
+    if (hash.equals(NO_ANCESTOR)) {
+      // Do not try to fetch NO_ANCESTOR - it won't exist.
+      return null;
+    }
     try (Traced ignore = trace("fetchFromCommitLog").tag(TAG_HASH, hash.asString())) {
       return doFetchFromCommitLog(ctx, hash);
     }
@@ -725,6 +734,11 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
    * returned as {@code null}.
    */
   private List<CommitLogEntry> fetchMultipleFromCommitLog(OP_CONTEXT ctx, List<Hash> hashes) {
+    if (hashes.contains(NO_ANCESTOR)) {
+      // Do not try to fetch NO_ANCESTOR - it won't exist.
+      hashes = new ArrayList<>(hashes);
+      hashes.remove(NO_ANCESTOR);
+    }
     if (hashes.isEmpty()) {
       return Collections.emptyList();
     }
@@ -890,6 +904,10 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
           previous = null;
           if (!page.isEmpty()) {
             currentBatch = fetcher.apply(ctx, page).iterator();
+            if (!currentBatch.hasNext()) {
+              eof = true;
+              return false;
+            }
           } else {
             eof = true;
             return false;
@@ -1045,7 +1063,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     KeyListBuildState buildState =
         new KeyListBuildState(entitySize(unwrittenEntry), newCommitEntry);
 
-    keysForCommitEntry(ctx, startHash, inMemoryCommits)
+    keysForCommitEntry(ctx, startHash, null, inMemoryCommits)
         .forEach(
             keyWithType -> {
               int keyTypeSize = entitySize(keyWithType);
@@ -1066,7 +1084,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
                 // filling linked key-lists via CommitLogEntry.keyListIds
 
                 if (buildState.currentSize + keyTypeSize
-                    > maxEntitySize(config.getMaxKeyListSize())) {
+                    > maxEntitySize(config.getMaxKeyListEntitySize())) {
                   // current KeyListEntity is "full", switch to a new one
                   buildState.finishKeyListEntity();
                   buildState.newKeyListEntity();
@@ -1107,20 +1125,27 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
    * expected/reference HEAD, verify that there is no conflict, like keys in the operations of the
    * commit(s) contained in keys of the commits 'expectedHead (excluding) .. currentHead
    * (including)'.
+   *
+   * @return commit log entry at {@code branchHead}
    */
-  protected void checkForModifiedKeysBetweenExpectedAndCurrentCommit(
+  protected CommitLogEntry checkForModifiedKeysBetweenExpectedAndCurrentCommit(
       OP_CONTEXT ctx, CommitParams commitParams, Hash branchHead, List<String> mismatches)
       throws ReferenceNotFoundException {
 
+    CommitLogEntry commitAtHead = null;
     if (commitParams.getExpectedHead().isPresent()) {
       Hash expectedHead = commitParams.getExpectedHead().get();
       if (!expectedHead.equals(branchHead)) {
-        Set<Key> operationKeys = new HashSet<>();
+        Set<Key> operationKeys =
+            Sets.newHashSetWithExpectedSize(
+                commitParams.getDeletes().size()
+                    + commitParams.getUnchanged().size()
+                    + commitParams.getPuts().size());
         operationKeys.addAll(commitParams.getDeletes());
         operationKeys.addAll(commitParams.getUnchanged());
         commitParams.getPuts().stream().map(KeyWithBytes::getKey).forEach(operationKeys::add);
 
-        boolean sinceSeen =
+        ConflictingKeyCheckResult conflictingKeyCheckResult =
             checkConflictingKeysForCommit(
                 ctx, branchHead, expectedHead, operationKeys, mismatches::add);
 
@@ -1128,27 +1153,44 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
         // ignore the fact that it has not been seen. Otherwise, raise a
         // ReferenceNotFoundException that the expected-hash does not exist on the target
         // branch.
-        if (!sinceSeen && !expectedHead.equals(NO_ANCESTOR)) {
+        if (!conflictingKeyCheckResult.sinceSeen && !expectedHead.equals(NO_ANCESTOR)) {
           throw hashNotFound(commitParams.getToBranch(), expectedHead);
         }
+
+        commitAtHead = conflictingKeyCheckResult.headCommit;
       }
     }
+
+    if (commitAtHead == null) {
+      commitAtHead = fetchFromCommitLog(ctx, branchHead);
+    }
+    return commitAtHead;
   }
 
   /** Retrieve the content-keys and their types for the commit-log-entry with the given hash. */
   protected Stream<KeyListEntry> keysForCommitEntry(
       OP_CONTEXT ctx, Hash hash, KeyFilterPredicate keyFilter) throws ReferenceNotFoundException {
-    return keysForCommitEntry(ctx, hash, NO_IN_MEMORY_COMMITS)
-        .filter(kt -> keyFilter.check(kt.getKey(), kt.getContentId(), kt.getType()));
+    return keysForCommitEntry(ctx, hash, keyFilter, NO_IN_MEMORY_COMMITS);
   }
 
   /** Retrieve the content-keys and their types for the commit-log-entry with the given hash. */
   protected Stream<KeyListEntry> keysForCommitEntry(
-      OP_CONTEXT ctx, Hash hash, @Nonnull Function<Hash, CommitLogEntry> inMemoryCommits)
+      OP_CONTEXT ctx,
+      Hash hash,
+      KeyFilterPredicate keyFilter,
+      @Nonnull Function<Hash, CommitLogEntry> inMemoryCommits)
       throws ReferenceNotFoundException {
     // walk the commit-logs in reverse order - starting with the last persisted key-list
 
     Set<Key> seen = new HashSet<>();
+
+    Predicate<KeyListEntry> predicate = keyListEntry -> seen.add(keyListEntry.getKey());
+    if (keyFilter != null) {
+      predicate =
+          predicate.and(kt -> keyFilter.check(kt.getKey(), kt.getContentId(), kt.getType()));
+    }
+    Predicate<KeyListEntry> keyPredicate = predicate;
+
     Stream<CommitLogEntry> log = readCommitLogStream(ctx, hash, inMemoryCommits);
     log = takeUntilIncludeLast(log, e -> e.getKeyList() != null);
     return log.flatMap(
@@ -1160,31 +1202,29 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
           // Return from CommitLogEntry.puts first
           Stream<KeyListEntry> stream =
               e.getPuts().stream()
-                  .filter(put -> seen.add(put.getKey()))
                   .map(
                       put ->
                           KeyListEntry.of(
-                              put.getKey(), put.getContentId(), put.getType(), e.getHash()));
+                              put.getKey(), put.getContentId(), put.getType(), e.getHash()))
+                  .filter(keyPredicate);
 
           if (e.getKeyList() != null) {
 
             // Return from CommitLogEntry.keyList after the keys in CommitLogEntry.puts
-            Stream<KeyListEntry> embedded =
-                e.getKeyList().getKeys().stream().filter(kt -> seen.add(kt.getKey()));
-
+            Stream<KeyListEntry> embedded = e.getKeyList().getKeys().stream().filter(keyPredicate);
             stream = Stream.concat(stream, embedded);
 
             if (!e.getKeyListsIds().isEmpty()) {
-              // If there are nested key-lists, retrieve those and add the keys from these
-              stream =
-                  Stream.concat(
-                      stream,
-                      // "lazily" fetch key-lists
-                      Stream.of(e.getKeyListsIds())
-                          .flatMap(ids -> fetchKeyLists(ctx, ids))
-                          .map(KeyListEntity::getKeys)
-                          .flatMap(keyList -> keyList.getKeys().stream())
-                          .filter(keyListEntry -> seen.add(keyListEntry.getKey())));
+              // If there are nested key-lists, retrieve those lazily and add the keys from these
+
+              Stream<KeyListEntry> entities =
+                  Stream.of(e.getKeyListsIds())
+                      .flatMap(ids -> fetchKeyLists(ctx, ids))
+                      .map(KeyListEntity::getKeys)
+                      .map(KeyList::getKeys)
+                      .flatMap(Collection::stream)
+                      .filter(keyPredicate);
+              stream = Stream.concat(stream, entities);
             }
           }
 
@@ -1370,28 +1410,44 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
   protected abstract void doWriteKeyListEntities(
       OP_CONTEXT ctx, List<KeyListEntity> newKeyListEntities);
 
+  protected static final class ConflictingKeyCheckResult {
+    private boolean sinceSeen;
+    private CommitLogEntry headCommit;
+
+    public boolean isSinceSeen() {
+      return sinceSeen;
+    }
+
+    public CommitLogEntry getHeadCommit() {
+      return headCommit;
+    }
+  }
+
   /**
    * Check whether the commits in the range {@code sinceCommitExcluding] .. [upToCommitIncluding}
    * contain any of the given {@link Key}s.
    *
    * <p>Conflicts are reported via {@code mismatches}.
    */
-  protected boolean checkConflictingKeysForCommit(
+  protected ConflictingKeyCheckResult checkConflictingKeysForCommit(
       OP_CONTEXT ctx,
       Hash upToCommitIncluding,
       Hash sinceCommitExcluding,
       Set<Key> keys,
       Consumer<String> mismatches)
       throws ReferenceNotFoundException {
-    boolean[] sinceSeen = new boolean[1];
+    ConflictingKeyCheckResult result = new ConflictingKeyCheckResult();
 
     Stream<CommitLogEntry> log = readCommitLogStream(ctx, upToCommitIncluding);
     log =
         takeUntilExcludeLast(
             log,
             e -> {
+              if (e.getHash().equals(upToCommitIncluding)) {
+                result.headCommit = e;
+              }
               if (e.getHash().equals(sinceCommitExcluding)) {
-                sinceSeen[0] = true;
+                result.sinceSeen = true;
                 return true;
               }
               return false;
@@ -1406,8 +1462,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
                     if (keys.contains(a.getKey()) && handled.add(a.getKey())) {
                       mismatches.accept(
                           String.format(
-                              "Key '%s' has conflicting put-operation from another commit.",
-                              a.getKey()));
+                              "Key '%s' has conflicting put-operation from commit '%s'.",
+                              a.getKey(), e.getHash().asString()));
                     }
                   });
           e.getDeletes()
@@ -1416,12 +1472,13 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
                     if (keys.contains(a) && handled.add(a)) {
                       mismatches.accept(
                           String.format(
-                              "Key '%s' has conflicting delete-operation from another commit.", a));
+                              "Key '%s' has conflicting delete-operation from commit '%s'.",
+                              a, e.getHash().asString()));
                     }
                   });
         });
 
-    return sinceSeen[0];
+    return result;
   }
 
   protected final class CommonAncestorState {

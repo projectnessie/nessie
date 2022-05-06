@@ -31,6 +31,7 @@ public interface DatabaseAdapterConfig {
   int DEFAULT_PARENTS_PER_COMMIT = 20;
   int DEFAULT_KEY_LIST_DISTANCE = 20;
   int DEFAULT_MAX_ENTITY_SIZE = 250_000;
+  int DEFAULT_MAX_KEY_LIST_ENTITY_SIZE = 1_000_000;
   int DEFAULT_COMMIT_TIMEOUT = 500;
   int DEFAULT_COMMIT_RETRIES = Integer.MAX_VALUE;
   int DEFAULT_PARENTS_PER_REFLOG_ENTRY = 20;
@@ -78,7 +79,7 @@ public interface DatabaseAdapterConfig {
    * Maximum size of a database object/row.
    *
    * <p>This parameter is respected for {@link
-   * org.projectnessie.versioned.persist.adapter.CommitLogEntry} with an {@link
+   * org.projectnessie.versioned.persist.adapter.CommitLogEntry} with a {@link
    * org.projectnessie.versioned.persist.adapter.KeyList}.
    *
    * <p>Not all kinds of databases have hard limits on the maximum size of a database object/row.
@@ -93,6 +94,38 @@ public interface DatabaseAdapterConfig {
   @Value.Default
   default int getMaxKeyListSize() {
     return DEFAULT_MAX_ENTITY_SIZE;
+  }
+
+  /**
+   * Maximum size of a database object/row.
+   *
+   * <p>This parameter is respected for {@link
+   * org.projectnessie.versioned.persist.adapter.KeyListEntity}.
+   *
+   * <p>Not all kinds of databases have hard limits on the maximum size of a database object/row.
+   *
+   * <p>This value must not be "on the edge" - means: it must leave enough room for
+   * database-serialization overhead and similar.
+   *
+   * <p>Values {@code <=0} are illegal, defaults to {@link #getDefaultMaxKeyListEntitySize()}.
+   */
+  @Value.Default
+  default int getMaxKeyListEntitySize() {
+    return getDefaultMaxKeyListEntitySize();
+  }
+
+  /**
+   * Database adapter implementations that actually do have a hard technical or highly recommended
+   * limit on a maximum db-object / db-row size limitation should override this method and return a
+   * "good" value.
+   *
+   * <p>As for {@link #getMaxKeyListSize()}, this value must not be "on the edge" - means: it must
+   * leave enough room for database-serialization overhead * and similar.
+   *
+   * <p>Defaults to {@value #DEFAULT_MAX_KEY_LIST_ENTITY_SIZE}.
+   */
+  default int getDefaultMaxKeyListEntitySize() {
+    return DEFAULT_MAX_KEY_LIST_ENTITY_SIZE;
   }
 
   /**
