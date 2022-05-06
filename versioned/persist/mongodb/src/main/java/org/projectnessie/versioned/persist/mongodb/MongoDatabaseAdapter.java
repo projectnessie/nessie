@@ -18,6 +18,7 @@ package org.projectnessie.versioned.persist.mongodb;
 import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.protoToKeyList;
 import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.toProto;
 
+import com.google.common.collect.Maps;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.mongodb.ErrorCategory;
 import com.mongodb.MongoWriteException;
@@ -31,8 +32,8 @@ import com.mongodb.client.result.InsertOneResult;
 import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -110,7 +111,7 @@ public class MongoDatabaseAdapter
     return idDoc;
   }
 
-  private List<Document> toIds(Collection<Hash> ids) {
+  private List<Document> toIdsFromHashes(Collection<Hash> ids) {
     return ids.stream().map(this::toId).collect(Collectors.toList());
   }
 
@@ -188,8 +189,7 @@ public class MongoDatabaseAdapter
   }
 
   private void delete(MongoCollection<Document> collection, Collection<Hash> ids) {
-    DeleteResult result = collection.deleteMany(Filters.in(ID_PROPERTY_NAME, toIds(ids)));
-
+    DeleteResult result = collection.deleteMany(Filters.in(ID_PROPERTY_NAME, toIdsFromHashes(ids)));
     verifyAcknowledged(result, collection);
   }
 
@@ -235,7 +235,7 @@ public class MongoDatabaseAdapter
     FindIterable<Document> docs =
         collection.find(Filters.in(ID_PROPERTY_NAME, ids)).limit(hashes.size());
 
-    HashMap<Hash, Document> loaded = new HashMap<>(hashes.size() * 4 / 3 + 1, 0.75f);
+    Map<Hash, Document> loaded = Maps.newHashMapWithExpectedSize(hashes.size());
     for (Document doc : docs) {
       loaded.put(idAsHash(doc), doc);
     }
@@ -380,12 +380,14 @@ public class MongoDatabaseAdapter
   @Override
   protected void doWriteKeyListEntities(
       NonTransactionalOperationContext ctx, List<KeyListEntity> newKeyListEntities) {
-    for (KeyListEntity keyList : newKeyListEntities) {
-      try {
-        insert(client.getKeyLists(), keyList.getId(), toProto(keyList.getKeys()).toByteArray());
-      } catch (ReferenceConflictException e) {
-        throw new IllegalStateException(e);
-      }
+    try {
+      List<Document> docs =
+          newKeyListEntities.stream()
+              .map(keyList -> toDoc(keyList.getId(), toProto(keyList.getKeys()).toByteArray()))
+              .collect(Collectors.toList());
+      insert(client.getKeyLists(), docs);
+    } catch (ReferenceConflictException e) {
+      throw new IllegalStateException(e);
     }
   }
 

@@ -44,7 +44,6 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import org.projectnessie.versioned.BackendLimitExceededException;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.KeyList;
@@ -130,23 +129,20 @@ public class DynamoDatabaseAdapter
     client.client.deleteItem(
         b -> b.tableName(TABLE_GLOBAL_POINTER).key(globalPointerKeyMap).build());
 
-    Stream.of(TABLE_GLOBAL_LOG, TABLE_COMMIT_LOG, TABLE_KEY_LISTS, TABLE_REF_LOG)
-        .forEach(
-            table ->
-                client
-                    .client
-                    .scanPaginator(b -> b.tableName(table))
-                    .forEach(
-                        r ->
-                            r.items().stream()
-                                .map(attrs -> attrs.get(KEY_NAME))
-                                .filter(key -> key.s().startsWith(keyPrefix))
-                                .forEach(
-                                    key ->
-                                        client.client.deleteItem(
-                                            b ->
-                                                b.tableName(table)
-                                                    .key(singletonMap(KEY_NAME, key))))));
+    try (BatchDelete batchDelete = new BatchDelete()) {
+      Stream.of(TABLE_GLOBAL_LOG, TABLE_COMMIT_LOG, TABLE_KEY_LISTS, TABLE_REF_LOG)
+          .forEach(
+              table ->
+                  client
+                      .client
+                      .scanPaginator(b -> b.tableName(table))
+                      .forEach(
+                          r ->
+                              r.items().stream()
+                                  .map(attrs -> attrs.get(KEY_NAME))
+                                  .filter(key -> key.s().startsWith(keyPrefix))
+                                  .forEach(key -> batchDelete.add(table, key))));
+    }
   }
 
   private <T> T loadById(String table, Hash id, Parser<T> parser) {
@@ -310,16 +306,15 @@ public class DynamoDatabaseAdapter
     private int requests;
 
     void add(String table, Hash hash) {
+      add(table, AttributeValue.builder().s(keyPrefix + hash.asString()).build());
+    }
+
+    void add(String table, AttributeValue key) {
       requestItems
           .computeIfAbsent(table, t -> new ArrayList<>())
           .add(
               WriteRequest.builder()
-                  .deleteRequest(
-                      b ->
-                          b.key(
-                              singletonMap(
-                                  KEY_NAME,
-                                  AttributeValue.builder().s(keyPrefix + hash.asString()).build())))
+                  .deleteRequest(b -> b.key(singletonMap(KEY_NAME, key)))
                   .build());
       requests++;
 
@@ -472,8 +467,7 @@ public class DynamoDatabaseAdapter
   }
 
   @Override
-  protected void doWriteRefLog(NonTransactionalOperationContext ctx, RefLogEntry entry)
-      throws ReferenceConflictException {
+  protected void doWriteRefLog(NonTransactionalOperationContext ctx, RefLogEntry entry) {
     insert(TABLE_REF_LOG, Hash.of(entry.getRefLogId()).asString(), entry.toByteArray());
   }
 
