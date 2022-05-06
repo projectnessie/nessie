@@ -1064,6 +1064,7 @@ public abstract class TxDatabaseAdapter
         try (Traced ignored = trace("upsertGlobalStatesInsert");
             PreparedStatement psInsert =
                 conn.conn().prepareStatement(SqlStatements.INSERT_GLOBAL_STATE)) {
+          int count = 0;
           for (ContentId contentId : newKeys) {
             ByteString newGlob = commitParams.getGlobal().get(contentId);
             byte[] newGlobBytes = newGlob.toByteArray();
@@ -1081,7 +1082,14 @@ public abstract class TxDatabaseAdapter
             psInsert.setString(3, newHash);
             psInsert.setBytes(4, newGlobBytes);
             psInsert.setLong(5, newCreatedAt);
-            psInsert.executeUpdate();
+            psInsert.addBatch();
+            if (++count == config.getBatchSize()) {
+              psInsert.executeBatch();
+              count = 0;
+            }
+          }
+          if (count > 0) {
+            psInsert.executeBatch();
           }
         }
       }
@@ -1572,8 +1580,7 @@ public abstract class TxDatabaseAdapter
     newRefLog.getParentsList().stream()
         .limit(config.getParentsPerRefLogEntry())
         .forEach(refLogParents::addRefLogParentsInclHead);
-    RefLogParents parents = refLogParents.build();
-    return parents;
+    return refLogParents.build();
   }
 
   protected RefLogHead getRefLogHead(ConnectionWrapper conn) throws SQLException {
