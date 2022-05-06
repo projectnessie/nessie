@@ -28,6 +28,7 @@ dependencies {
   implementation(projects.versioned.spi)
   implementation(projects.versioned.persist.adapter)
   api(projects.versioned.persist.serializeProto)
+  implementation("com.google.guava:guava")
 
   testImplementation(platform(rootProject))
 

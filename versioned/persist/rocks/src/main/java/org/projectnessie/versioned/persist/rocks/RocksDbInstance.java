@@ -56,6 +56,8 @@ public class RocksDbInstance implements DatabaseConnectionProvider<RocksDbConfig
   static final String CF_REF_HEADS = "ref_heads";
   static final String CF_REF_NAMES = "ref_names";
   static final String CF_REF_LOG_HEADS = "ref_log_heads";
+  public static final String CF_ATTACHMENTS = "attachments";
+  public static final String CF_ATTACHMENT_KEYS = "attachment_keys";
 
   private static final List<String> CF_ALL =
       Arrays.asList(
@@ -67,7 +69,9 @@ public class RocksDbInstance implements DatabaseConnectionProvider<RocksDbConfig
           CF_REF_LOG,
           CF_REF_HEADS,
           CF_REF_NAMES,
-          CF_REF_LOG_HEADS);
+          CF_REF_LOG_HEADS,
+          CF_ATTACHMENTS,
+          CF_ATTACHMENT_KEYS);
 
   private ColumnFamilyHandle cfRepoProps;
   private ColumnFamilyHandle cfGlobalPointer;
@@ -78,6 +82,8 @@ public class RocksDbInstance implements DatabaseConnectionProvider<RocksDbConfig
   private ColumnFamilyHandle cfRefHeads;
   private ColumnFamilyHandle cfRefNames;
   private ColumnFamilyHandle cfRefLogHeads;
+  private ColumnFamilyHandle cfAttachments;
+  private ColumnFamilyHandle cfAttachmentKeys;
 
   private final ReadWriteLock lock = new StampedLock().asReadWriteLock();
 
@@ -147,6 +153,8 @@ public class RocksDbInstance implements DatabaseConnectionProvider<RocksDbConfig
         cfRefHeads = columnFamilyHandleMap.get(CF_REF_HEADS);
         cfRefNames = columnFamilyHandleMap.get(CF_REF_NAMES);
         cfRefLogHeads = columnFamilyHandleMap.get(CF_REF_LOG_HEADS);
+        cfAttachments = columnFamilyHandleMap.get(CF_ATTACHMENTS);
+        cfAttachmentKeys = columnFamilyHandleMap.get(CF_ATTACHMENT_KEYS);
       } catch (RocksDBException e) {
         throw new RuntimeException("RocksDB failed to start", e);
       }
@@ -197,6 +205,14 @@ public class RocksDbInstance implements DatabaseConnectionProvider<RocksDbConfig
     return db;
   }
 
+  public ColumnFamilyHandle getCfAttachments() {
+    return cfAttachments;
+  }
+
+  public ColumnFamilyHandle getCfAttachmentKeys() {
+    return cfAttachmentKeys;
+  }
+
   public Stream<ColumnFamilyHandle> allExceptGlobalPointer() {
     return Stream.of(
         cfGlobalLog,
@@ -206,6 +222,8 @@ public class RocksDbInstance implements DatabaseConnectionProvider<RocksDbConfig
         cfRefLog,
         cfRefHeads,
         cfRefNames,
-        cfRefLogHeads);
+        cfRefLogHeads,
+        cfAttachments,
+        cfAttachmentKeys);
   }
 }

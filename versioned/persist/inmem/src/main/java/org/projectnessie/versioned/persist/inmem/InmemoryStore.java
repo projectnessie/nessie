@@ -37,6 +37,8 @@ public class InmemoryStore implements DatabaseConnectionProvider<InmemoryConfig>
   final ConcurrentMap<ByteString, ByteString> refHeads = new ConcurrentHashMap<>();
   final ConcurrentMap<ByteString, ByteString> refNames = new ConcurrentHashMap<>();
   final ConcurrentMap<ByteString, ByteString> refLogHeads = new ConcurrentHashMap<>();
+  final ConcurrentMap<ByteString, ByteString> attachments = new ConcurrentHashMap<>();
+  final ConcurrentMap<ByteString, ByteString> attachmentKeys = new ConcurrentHashMap<>();
 
   public InmemoryStore() {}
 
@@ -59,7 +61,9 @@ public class InmemoryStore implements DatabaseConnectionProvider<InmemoryConfig>
             refLog,
             refHeads,
             refNames,
-            refLogHeads)
+            refLogHeads,
+            attachments,
+            attachmentKeys)
         .forEach(map -> map.keySet().removeIf(bytes -> bytes.startsWith(keyPrefix)));
   }
 }
