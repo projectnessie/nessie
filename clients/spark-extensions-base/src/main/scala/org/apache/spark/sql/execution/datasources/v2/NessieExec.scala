@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 package org.apache.spark.sql.execution.datasources.v2
+
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
+import org.apache.spark.unsafe.types.UTF8String
 import org.projectnessie.client.api.NessieApiV1
+import org.projectnessie.model.Reference
 
 abstract class NessieExec(
     currentCatalog: CatalogPlugin,
@@ -26,11 +29,23 @@ abstract class NessieExec(
   protected def runInternal(api: NessieApiV1): Seq[InternalRow]
 
   protected def run(): Seq[InternalRow] = {
-    val api = NessieUtils.nessieAPI(currentCatalog, catalog);
+    val api = NessieUtils.nessieAPI(currentCatalog, catalog)
     try {
       runInternal(api)
     } finally {
       api.close()
     }
+  }
+
+  protected def singleRowForRef(ref: Reference): Seq[InternalRow] = {
+    Seq(rowForRef(ref))
+  }
+
+  protected def rowForRef(ref: Reference): InternalRow = {
+    InternalRow(
+      UTF8String.fromString(NessieUtils.getRefType(ref)),
+      UTF8String.fromString(ref.getName),
+      UTF8String.fromString(ref.getHash)
+    )
   }
 }

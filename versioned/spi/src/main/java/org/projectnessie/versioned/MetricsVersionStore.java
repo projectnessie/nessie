@@ -195,7 +195,7 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
 
   @Override
   public Stream<RefLogDetails> getRefLog(Hash refLogId) throws RefLogNotFoundException {
-    return delegateStreamRefLogEx(() -> delegate.getRefLog(refLogId));
+    return delegateStream1Ex("getreflog", () -> delegate.getRefLog(refLogId));
   }
 
   private void measure(String requestName, Sample sample, Exception failure) {
@@ -209,13 +209,12 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
     sample.stop(timer);
   }
 
-  private <R> Stream<R> delegateStream1Ex(
-      String requestName, DelegateWith1<Stream<R>, ReferenceNotFoundException> delegate)
-      throws ReferenceNotFoundException {
+  private <R, E extends VersionStoreException> Stream<R> delegateStream1Ex(
+      String requestName, DelegateWith1<Stream<R>, E> delegate) throws E {
     Sample sample = Timer.start(clock);
     try {
       return delegate.handle().onClose(() -> measure(requestName, sample, null));
-    } catch (IllegalArgumentException | ReferenceNotFoundException e) {
+    } catch (IllegalArgumentException | VersionStoreException e) {
       // IllegalArgumentException indicates a user-error, not a server error
       measure(requestName, sample, null);
       throw e;
@@ -225,36 +224,9 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
     }
   }
 
-  private <R> Stream<R> delegateStreamRefLogEx(
-      DelegateWith1<Stream<R>, RefLogNotFoundException> delegate) throws RefLogNotFoundException {
-    Sample sample = Timer.start(clock);
-    try {
-      return delegate.handle().onClose(() -> measure("getreflog", sample, null));
-    } catch (IllegalArgumentException | RefLogNotFoundException e) {
-      // IllegalArgumentException indicates a user-error, not a server error
-      measure("getreflog", sample, null);
-      throw e;
-    } catch (RuntimeException e) {
-      measure("getreflog", sample, e);
-      throw e;
-    }
-  }
-
   private <R, E1 extends VersionStoreException> R delegate1Ex(
       String requestName, DelegateWith1<R, E1> delegate) throws E1 {
-    Sample sample = Timer.start(clock);
-    Exception failure = null;
-    try {
-      return delegate.handle();
-    } catch (IllegalArgumentException e) {
-      // IllegalArgumentException indicates a user-error, not a server error
-      throw e;
-    } catch (RuntimeException e) {
-      failure = e;
-      throw e;
-    } finally {
-      measure(requestName, sample, failure);
-    }
+    return delegate2ExR(requestName, delegate::handle);
   }
 
   private <E1 extends VersionStoreException, E2 extends VersionStoreException> void delegate2Ex(

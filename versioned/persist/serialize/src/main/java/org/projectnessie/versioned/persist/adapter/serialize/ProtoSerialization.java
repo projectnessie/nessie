@@ -180,11 +180,7 @@ public class ProtoSerialization {
   public static KeyList protoToKeyList(ByteString serialized) {
     try {
       AdapterTypes.KeyList proto = AdapterTypes.KeyList.parseFrom(serialized);
-      ImmutableKeyList.Builder keyList = ImmutableKeyList.builder();
-      for (AdapterTypes.KeyListEntry key : proto.getKeysList()) {
-        keyList.addKeys(protoToKeyListEntry(key));
-      }
-      return keyList.build();
+      return protoToKeyList(proto);
     } catch (InvalidProtocolBufferException e) {
       throw new RuntimeException(e);
     }
@@ -193,14 +189,18 @@ public class ProtoSerialization {
   public static KeyList protoToKeyList(byte[] bytes) {
     try {
       AdapterTypes.KeyList proto = AdapterTypes.KeyList.parseFrom(bytes);
-      ImmutableKeyList.Builder keyList = ImmutableKeyList.builder();
-      for (AdapterTypes.KeyListEntry key : proto.getKeysList()) {
-        keyList.addKeys(protoToKeyListEntry(key));
-      }
-      return keyList.build();
+      return protoToKeyList(proto);
     } catch (InvalidProtocolBufferException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  private static ImmutableKeyList protoToKeyList(AdapterTypes.KeyList proto) {
+    ImmutableKeyList.Builder keyList = ImmutableKeyList.builder();
+    for (AdapterTypes.KeyListEntry key : proto.getKeysList()) {
+      keyList.addKeys(protoToKeyListEntry(key));
+    }
+    return keyList.build();
   }
 
   public static AdapterTypes.KeyWithBytes toProto(KeyWithBytes x) {

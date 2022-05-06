@@ -486,10 +486,7 @@ public abstract class AbstractRestReferences extends AbstractRestMisc {
       Reference reference,
       long expectedCommits)
       throws NessieNotFoundException {
-    List<LogEntry> commits =
-        getApi().getCommitLog().refName(branch.getName()).maxRecords(1).get().getLogEntries();
-    assertThat(commits).hasSize(1);
-    CommitMeta commitMeta = commits.get(0).getCommitMeta();
+    CommitMeta commitMeta = commitMetaForVerify(branch);
 
     ReferenceMetadata referenceMetadata = branch.getMetadata();
     assertThat(referenceMetadata).isNotNull();
@@ -501,10 +498,7 @@ public abstract class AbstractRestReferences extends AbstractRestMisc {
   }
 
   void verifyMetadataProperties(Tag tag) throws NessieNotFoundException {
-    List<LogEntry> commits =
-        getApi().getCommitLog().refName(tag.getName()).maxRecords(1).get().getLogEntries();
-    assertThat(commits).hasSize(1);
-    CommitMeta commitMeta = commits.get(0).getCommitMeta();
+    CommitMeta commitMeta = commitMetaForVerify(tag);
 
     ReferenceMetadata referenceMetadata = tag.getMetadata();
     assertThat(referenceMetadata).isNotNull();
@@ -513,5 +507,13 @@ public abstract class AbstractRestReferences extends AbstractRestMisc {
     assertThat(referenceMetadata.getCommitMetaOfHEAD()).isEqualTo(commitMeta);
     assertThat(referenceMetadata.getCommonAncestorHash()).isNull();
     assertThat(referenceMetadata.getNumTotalCommits()).isEqualTo(3);
+  }
+
+  private CommitMeta commitMetaForVerify(Reference ref) throws NessieNotFoundException {
+    List<LogEntry> commits =
+        getApi().getCommitLog().refName(ref.getName()).maxRecords(1).get().getLogEntries();
+    assertThat(commits).hasSize(1);
+    CommitMeta commitMeta = commits.get(0).getCommitMeta();
+    return commitMeta;
   }
 }

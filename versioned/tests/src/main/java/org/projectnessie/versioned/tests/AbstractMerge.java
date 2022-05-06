@@ -126,25 +126,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
 
     MetadataRewriter<CommitMessage> metadataRewriter = createMetadataRewriter("");
 
-    store()
-        .merge(
-            thirdCommit,
-            newBranch,
-            Optional.of(initialHash),
-            metadataRewriter,
-            individualCommits,
-            Collections.emptyMap(),
-            MergeType.NORMAL);
-    assertThat(
-            store()
-                .getValues(
-                    newBranch,
-                    Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"))))
-        .containsExactlyInAnyOrderEntriesOf(
-            ImmutableMap.of(
-                Key.of("t1"), V_1_2,
-                Key.of("t2"), V_2_2,
-                Key.of("t4"), V_4_1));
+    doMergeIntoEmpty(individualCommits, newBranch, metadataRewriter);
 
     if (individualCommits) {
       // not modifying commit meta, will just "fast forward"
@@ -166,6 +148,32 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                   .map(CommitMessage::getMessage)
                   .toArray(String[]::new));
     }
+  }
+
+  private void doMergeIntoEmpty(
+      boolean individualCommits,
+      BranchName newBranch,
+      MetadataRewriter<CommitMessage> metadataRewriter)
+      throws ReferenceNotFoundException, ReferenceConflictException {
+    store()
+        .merge(
+            thirdCommit,
+            newBranch,
+            Optional.of(initialHash),
+            metadataRewriter,
+            individualCommits,
+            Collections.emptyMap(),
+            MergeType.NORMAL);
+    assertThat(
+            store()
+                .getValues(
+                    newBranch,
+                    Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"))))
+        .containsExactlyInAnyOrderEntriesOf(
+            ImmutableMap.of(
+                Key.of("t1"), V_1_2,
+                Key.of("t2"), V_2_2,
+                Key.of("t4"), V_4_1));
   }
 
   @ParameterizedTest
@@ -213,25 +221,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
 
     MetadataRewriter<CommitMessage> metadataRewriter = createMetadataRewriter(", merged");
 
-    store()
-        .merge(
-            thirdCommit,
-            newBranch,
-            Optional.of(initialHash),
-            metadataRewriter,
-            individualCommits,
-            Collections.emptyMap(),
-            MergeType.NORMAL);
-    assertThat(
-            store()
-                .getValues(
-                    newBranch,
-                    Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"))))
-        .containsExactlyInAnyOrderEntriesOf(
-            ImmutableMap.of(
-                Key.of("t1"), V_1_2,
-                Key.of("t2"), V_2_2,
-                Key.of("t4"), V_4_1));
+    doMergeIntoEmpty(individualCommits, newBranch, metadataRewriter);
 
     // modify the commit meta, will generate new commits and therefore new commit hashes
     assertThat(store().hashOnReference(newBranch, Optional.empty())).isNotEqualTo(thirdCommit);

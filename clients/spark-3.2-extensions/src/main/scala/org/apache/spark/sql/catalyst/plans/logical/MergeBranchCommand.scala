@@ -16,31 +16,16 @@
 package org.apache.spark.sql.catalyst.plans.logical
 
 import org.apache.spark.sql.catalyst.expressions.Attribute
-import org.apache.spark.sql.types.{DataTypes, Metadata, StructField, StructType}
 
 case class MergeBranchCommand(
     branch: Option[String],
     toRefName: Option[String],
     catalog: Option[String]
 ) extends LeafCommand {
-  override lazy val output: Seq[Attribute] = new StructType(
-    Array[StructField](
-      StructField(
-        "name",
-        DataTypes.StringType,
-        nullable = false,
-        Metadata.empty
-      ),
-      StructField(
-        "hash",
-        DataTypes.StringType,
-        nullable = false,
-        Metadata.empty
-      )
-    )
-  ).toAttributes
+  override lazy val output: Seq[Attribute] =
+    NessieCommandOutputs.simpleReferenceOutput()
 
   override def simpleString(maxFields: Int): String = {
-    s"MergeBranch ${branch}"
+    s"MergeBranch $branch"
   }
 }
