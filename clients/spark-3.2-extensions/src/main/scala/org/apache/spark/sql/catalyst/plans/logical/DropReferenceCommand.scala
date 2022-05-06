@@ -16,25 +16,16 @@
 package org.apache.spark.sql.catalyst.plans.logical
 
 import org.apache.spark.sql.catalyst.expressions.Attribute
-import org.apache.spark.sql.types.{DataTypes, Metadata, StructField, StructType}
 
 case class DropReferenceCommand(
     reference: String,
     isBranch: Boolean,
     catalog: Option[String]
 ) extends LeafCommand {
-  override lazy val output: Seq[Attribute] = new StructType(
-    Array[StructField](
-      StructField(
-        "status",
-        DataTypes.StringType,
-        nullable = false,
-        Metadata.empty
-      )
-    )
-  ).toAttributes
+  override lazy val output: Seq[Attribute] =
+    NessieCommandOutputs.dropReferenceOutput()
 
   override def simpleString(maxFields: Int): String = {
-    s"DropReference ${reference}"
+    s"DropReference $reference"
   }
 }

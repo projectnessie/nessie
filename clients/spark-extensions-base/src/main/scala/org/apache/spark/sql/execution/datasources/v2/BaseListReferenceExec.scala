@@ -18,7 +18,6 @@ package org.apache.spark.sql.execution.datasources.v2
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
-import org.apache.spark.unsafe.types.UTF8String
 import org.projectnessie.client.api.NessieApiV1
 
 import scala.collection.JavaConverters._
@@ -36,13 +35,7 @@ abstract class BaseListReferenceExec(
       .get()
       .getReferences
       .asScala
-      .map(ref => {
-        InternalRow(
-          UTF8String.fromString(NessieUtils.getRefType(ref)),
-          UTF8String.fromString(ref.getName),
-          UTF8String.fromString(ref.getHash)
-        )
-      })
+      .map(ref => rowForRef(ref))
   }
 
   override def simpleString(maxFields: Int): String = {

@@ -16,65 +16,13 @@
 package org.apache.spark.sql.catalyst.plans.logical
 
 import org.apache.spark.sql.catalyst.expressions.Attribute
-import org.apache.spark.sql.types.{DataTypes, Metadata, StructField, StructType}
 
 case class ShowLogCommand(
     refName: Option[String],
     catalog: Option[String]
 ) extends Command {
-  override lazy val output: Seq[Attribute] = new StructType(
-    Array[StructField](
-      StructField(
-        "author",
-        DataTypes.StringType,
-        nullable = false,
-        Metadata.empty
-      ),
-      StructField(
-        "committer",
-        DataTypes.StringType,
-        nullable = false,
-        Metadata.empty
-      ),
-      StructField(
-        "hash",
-        DataTypes.StringType,
-        nullable = false,
-        Metadata.empty
-      ),
-      StructField(
-        "message",
-        DataTypes.StringType,
-        nullable = false,
-        Metadata.empty
-      ),
-      StructField(
-        "signedOffBy",
-        DataTypes.StringType,
-        nullable = false,
-        Metadata.empty
-      ),
-      StructField(
-        "authorTime",
-        DataTypes.TimestampType,
-        nullable = false,
-        Metadata.empty
-      ),
-      StructField(
-        "committerTime",
-        DataTypes.TimestampType,
-        false,
-        Metadata.empty
-      ),
-      StructField(
-        "properties",
-        DataTypes
-          .createMapType(DataTypes.StringType, DataTypes.StringType, false),
-        false,
-        Metadata.empty
-      )
-    )
-  ).toAttributes
+  override lazy val output: Seq[Attribute] =
+    NessieCommandOutputs.showLogOutput()
 
   override def simpleString(maxFields: Int): String = {
     s"ShowLog ${refName}"

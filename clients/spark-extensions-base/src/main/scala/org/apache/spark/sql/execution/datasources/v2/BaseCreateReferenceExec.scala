@@ -18,7 +18,6 @@ package org.apache.spark.sql.execution.datasources.v2
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
-import org.apache.spark.unsafe.types.UTF8String
 import org.projectnessie.client.api.NessieApiV1
 import org.projectnessie.error.NessieConflictException
 import org.projectnessie.model._
@@ -54,15 +53,9 @@ abstract class BaseCreateReferenceExec(
           throw e
         }
     }
-    val branchResult = api.getReference.refName(ref.getName).get()
+    val result = api.getReference.refName(ref.getName).get()
 
-    Seq(
-      InternalRow(
-        UTF8String.fromString(NessieUtils.getRefType(ref)),
-        UTF8String.fromString(branchResult.getName),
-        UTF8String.fromString(branchResult.getHash)
-      )
-    )
+    singleRowForRef(result)
   }
 
   override def simpleString(maxFields: Int): String = {
