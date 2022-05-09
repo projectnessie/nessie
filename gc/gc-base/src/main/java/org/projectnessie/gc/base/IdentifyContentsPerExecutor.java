@@ -166,6 +166,12 @@ public class IdentifyContentsPerExecutor implements Serializable {
               .get()
               .getEntries()
               .forEach(entries -> liveContentKeys.add(entries.getName()));
+
+          if (liveContentKeys.isEmpty()) {
+            // no contents are live at the time of cutoff time
+            foundAllLiveCommitHeadsBeforeCutoffTime.setTrue();
+            return;
+          }
         } catch (NessieNotFoundException e) {
           throw new RuntimeException(e);
         }
@@ -274,6 +280,10 @@ public class IdentifyContentsPerExecutor implements Serializable {
         content ->
             (liveContentsBloomFilterMap.get(content.getId()) == null
                 || !liveContentsBloomFilterMap.get(content.getId()).mightContain(content));
+    Predicate<Content> validSnapshotPredicate =
+        content ->
+            (content instanceof IcebergTable && ((IcebergTable) content).getSnapshotId() != -1
+                || content instanceof IcebergView && ((IcebergView) content).getVersionId() != -1);
     try {
       Iterator<Content> iterator =
           StreamingUtil.getCommitLogStream(
@@ -293,6 +303,7 @@ public class IdentifyContentsPerExecutor implements Serializable {
                   content ->
                       (content.getType() == Content.Type.ICEBERG_TABLE
                           || content.getType() == Content.Type.ICEBERG_VIEW))
+              .filter(validSnapshotPredicate)
               .filter(expiredContentPredicate)
               .iterator();
 

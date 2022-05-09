@@ -297,6 +297,76 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
   }
 
   @Test
+  public void testSingleRefDropTableSingleTable() throws BaseNessieClientServerException {
+    // ------  Time ---- | ---------- branch1 ------------------|
+    //         t0        |            create branch
+    //         t2        |            TABLE_TWO : 42 (expired)
+    //         t3        |            TABLE_TWO : 43 (expired)
+    //         t4        |            DROP TABLE_TWO
+    //         t5        | ------- cut off time ----------------|
+    String prefix = "singleRefDropTableSingleTable";
+    List<Row> expectedResult = new ArrayList<>();
+
+    Branch branch1 = createBranch(prefix);
+    // two commits for TABLE_TWO on branch1
+    CommitOutput table2 =
+        commitSingleOp(
+            prefix, branch1, branch1.getHash(), 42, CID_TWO, TABLE_TWO, METADATA_ONE, null, null);
+    table2 =
+        commitSingleOp(
+            prefix,
+            branch1,
+            table2.hash,
+            43,
+            CID_TWO,
+            TABLE_TWO,
+            METADATA_TWO,
+            table2.content,
+            null);
+    // both commits on table2 are expected to be expired due to drop table before cutoff time.
+    fillExpectedContents(Branch.of(branch1.getName(), table2.hash), 2, expectedResult);
+
+    // drop table TABLE_TWO.
+    dropTableCommit(prefix, branch1, table2.hash, TABLE_TWO);
+
+    final Instant cutoffTime = Instant.now();
+
+    performGc(prefix, cutoffTime, null, expectedResult, true, null);
+  }
+
+  @Test
+  public void testInvalidSnapshotFiltering() throws BaseNessieClientServerException {
+    // ------  Time ---- | ---------- branch1 ------------------|
+    //         t0        |            create branch
+    //         t2        |            TABLE_TWO : -1
+    //         t3        |            TABLE_TWO : 42
+    //         t5        | ------- cut off time ----------------|
+    String prefix = "singleRefDropTableSingleTable";
+    List<Row> expectedResult = new ArrayList<>();
+
+    Branch branch1 = createBranch(prefix);
+    // two commits for TABLE_TWO on branch1
+    CommitOutput table2 =
+        commitSingleOp(
+            prefix, branch1, branch1.getHash(), -1, CID_TWO, TABLE_TWO, METADATA_ONE, null, null);
+    table2 =
+        commitSingleOp(
+            prefix,
+            branch1,
+            table2.hash,
+            42,
+            CID_TWO,
+            TABLE_TWO,
+            METADATA_TWO,
+            table2.content,
+            null);
+
+    final Instant cutoffTime = Instant.now();
+    // expect nothing to be expired as -1 is considered as invalid snapshot for expiry.
+    performGc(prefix, cutoffTime, null, expectedResult, true, null);
+  }
+
+  @Test
   public void testSingleRefDropRefBeforeCutoff() throws BaseNessieClientServerException {
     // ------  Time ---- | ---------- branch1 ------------------|
     //         t0        |            create branch
