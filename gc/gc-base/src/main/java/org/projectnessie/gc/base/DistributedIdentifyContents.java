@@ -71,10 +71,13 @@ public class DistributedIdentifyContents {
    *
    * @param liveContentsBloomFilterMap live contents bloom filter per content id.
    * @param references list of all the references (JSON serialized) to walk (live and dead)
+   * @param droppedRefTimeMap map of dropped time for reference@hash (JSON serialized)
    * @return current run id of the completed gc task
    */
   public String identifyExpiredContents(
-      Map<String, ContentBloomFilter> liveContentsBloomFilterMap, List<String> references) {
+      Map<String, ContentBloomFilter> liveContentsBloomFilterMap,
+      List<String> references,
+      Map<String, Instant> droppedRefTimeMap) {
     String runId = UUID.randomUUID().toString();
     Timestamp startedAt = Timestamp.from(Instant.now());
     IdentifiedResultsRepo identifiedResultsRepo =
@@ -88,7 +91,8 @@ public class DistributedIdentifyContents {
         session
             .createDataset(references, Encoders.STRING())
             .mapPartitions(
-                executor.getExpiredContentRowsFunc(liveContentsBloomFilterMap, runId, startedAt),
+                executor.getExpiredContentRowsFunc(
+                    liveContentsBloomFilterMap, runId, startedAt, droppedRefTimeMap),
                 RowEncoder.apply(identifiedResultsRepo.getSchema()));
     identifiedResultsRepo.writeToOutputTable(rowDataset);
     return runId;

@@ -16,7 +16,6 @@
 package org.projectnessie.gc.base;
 
 import java.io.Serializable;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import javax.annotation.Nullable;
@@ -46,15 +45,6 @@ public interface GCParams extends Serializable {
    */
   @Nullable
   Integer getSparkPartitionsCount();
-
-  /**
-   * Commit protection duration to avoid expiring on going or recent commits. Default is 2 hours.
-   */
-  @Value.Default
-  default Duration getCommitProtectionDuration() {
-    // default is kept as 2 hours.
-    return Duration.ofHours(2);
-  }
 
   /**
    * Optional bloom filter expected live commits entries per reference. Default is total commits in
@@ -89,14 +79,31 @@ public interface GCParams extends Serializable {
 
   @Value.Check
   default void validate() {
-    Integer taskCount = getSparkPartitionsCount();
-    if (taskCount != null && taskCount <= 0) {
-      throw new IllegalArgumentException("taskCount has invalid value: " + taskCount);
-    }
-    Duration commitProtectionDuration = getCommitProtectionDuration();
-    if (commitProtectionDuration.isNegative()) {
+    Instant now = Instant.now();
+    if (getDefaultCutOffTimestamp().compareTo(now) > 0) {
       throw new IllegalArgumentException(
-          "commitProtectionDuration has invalid value: " + commitProtectionDuration);
+          "Cutoff time cannot be from the future: " + getDefaultCutOffTimestamp());
+    }
+    Instant deadReferenceCutOffTimeStamp = getDeadReferenceCutOffTimeStamp();
+    if (deadReferenceCutOffTimeStamp != null && deadReferenceCutOffTimeStamp.compareTo(now) > 0) {
+      throw new IllegalArgumentException(
+          "Dead Reference cutoff time cannot be from the future: " + deadReferenceCutOffTimeStamp);
+    }
+    Map<String, Instant> cutOffTimestampPerRef = getCutOffTimestampPerRef();
+    if (cutOffTimestampPerRef != null) {
+      cutOffTimestampPerRef.forEach(
+          (key, value) -> {
+            if (value.compareTo(now) > 0) {
+              throw new IllegalArgumentException(
+                  String.format(
+                      "Reference cutoff time for %s cannot be from the future: " + "%s",
+                      key, value));
+            }
+          });
+    }
+    Integer partitionsCount = getSparkPartitionsCount();
+    if (partitionsCount != null && partitionsCount <= 0) {
+      throw new IllegalArgumentException("partitionsCount has invalid value: " + partitionsCount);
     }
     Long bloomFilterExpectedEntries = getBloomFilterExpectedEntries();
     if (bloomFilterExpectedEntries != null && bloomFilterExpectedEntries < 0) {

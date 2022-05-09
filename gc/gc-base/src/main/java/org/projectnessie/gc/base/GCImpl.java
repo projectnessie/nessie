@@ -99,10 +99,11 @@ public class GCImpl {
     DistributedIdentifyContents distributedIdentifyContents;
     List<String> allRefs;
     Map<String, ContentBloomFilter> liveContentsBloomFilterMap;
+    Map<String, Instant> droppedReferenceTimeMap;
     try (NessieApiV1 api = GCUtil.getApi(gcParams.getNessieClientConfigs())) {
       distributedIdentifyContents = new DistributedIdentifyContents(session, gcParams);
       List<Reference> liveReferences = api.getAllReferences().get().getReferences();
-      Map<String, Instant> droppedReferenceTimeMap = collectDeadReferences(api);
+      droppedReferenceTimeMap = collectDeadReferences(api);
       // As this list of references is passed from Spark driver to executor,
       // using available Immutables JSON serialization instead of adding java serialization to the
       // classes.
@@ -122,7 +123,8 @@ public class GCImpl {
       getOrCreateEmptyBranch(api, gcParams.getOutputBranchName());
     }
     // Identify the expired contents
-    return distributedIdentifyContents.identifyExpiredContents(liveContentsBloomFilterMap, allRefs);
+    return distributedIdentifyContents.identifyExpiredContents(
+        liveContentsBloomFilterMap, allRefs, droppedReferenceTimeMap);
   }
 
   private long getTotalCommitsInDefaultReference(NessieApiV1 api) {

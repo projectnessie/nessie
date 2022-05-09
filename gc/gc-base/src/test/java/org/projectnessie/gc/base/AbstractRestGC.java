@@ -21,7 +21,6 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URI;
 import com.google.common.collect.ImmutableMap;
 import java.io.File;
 import java.sql.Timestamp;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
@@ -95,17 +94,12 @@ public abstract class AbstractRestGC extends AbstractRest {
       Instant cutoffTimeStamp,
       Map<String, Instant> cutOffTimeStampPerRef,
       List<Row> expectedDataSet,
-      boolean disableCommitProtection,
       Instant deadReferenceCutoffTime) {
 
     try (SparkSession sparkSession = getSparkSession()) {
       ImmutableGCParams.Builder builder = ImmutableGCParams.builder();
       final Map<String, String> options = new HashMap<>();
       options.put(CONF_NESSIE_URI, getUri().toString());
-      if (disableCommitProtection) {
-        // disable commit protection for test purposes.
-        builder.commitProtectionDuration(Duration.ZERO);
-      }
       ImmutableGCParams gcParams =
           builder
               .bloomFilterExpectedEntries(5L)

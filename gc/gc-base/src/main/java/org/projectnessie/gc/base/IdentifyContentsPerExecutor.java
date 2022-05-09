@@ -76,8 +76,11 @@ public class IdentifyContentsPerExecutor implements Serializable {
       getExpiredContentRowsFunc(
           Map<String, ContentBloomFilter> liveContentsBloomFilterMap,
           String runId,
-          Timestamp startedAt) {
-    return result -> getExpiredContentRows(result, liveContentsBloomFilterMap, runId, startedAt);
+          Timestamp startedAt,
+          Map<String, Instant> droppedRefTimeMap) {
+    return result ->
+        getExpiredContentRows(
+            result, liveContentsBloomFilterMap, runId, startedAt, droppedRefTimeMap);
   }
 
   // --- Methods for computing live content bloom filter ----------
@@ -232,7 +235,8 @@ public class IdentifyContentsPerExecutor implements Serializable {
       scala.collection.Iterator<String> references,
       Map<String, ContentBloomFilter> liveContentsBloomFilterMap,
       String runId,
-      Timestamp startedAt) {
+      Timestamp startedAt,
+      Map<String, Instant> droppedRefTimeMap) {
     NessieApiV1 api = GCUtil.getApi(gcParams.getNessieClientConfigs());
     TaskContext.get()
         .addTaskCompletionListener(
@@ -241,15 +245,18 @@ public class IdentifyContentsPerExecutor implements Serializable {
               api.close();
             });
     return references.flatMap(
-        reference ->
-            JavaConverters.asScalaIterator(
-                    walkAllCommitsInReference(
-                        api,
-                        GCUtil.deserializeReference(reference),
-                        liveContentsBloomFilterMap,
-                        runId,
-                        startedAt))
-                .toTraversable());
+        reference -> {
+          Reference ref = GCUtil.deserializeReference(reference);
+          return JavaConverters.asScalaIterator(
+                  walkAllCommitsInReference(
+                      api,
+                      ref,
+                      liveContentsBloomFilterMap,
+                      runId,
+                      startedAt,
+                      getCutoffTimeForRef(reference, droppedRefTimeMap)))
+              .toTraversable();
+        });
   }
 
   private Iterator<Row> walkAllCommitsInReference(
@@ -257,14 +264,13 @@ public class IdentifyContentsPerExecutor implements Serializable {
       Reference reference,
       Map<String, ContentBloomFilter> liveContentsBloomFilterMap,
       String runId,
-      Timestamp startedAt) {
-    Instant commitProtectionTime = Instant.now().minus(gcParams.getCommitProtectionDuration());
-    // Between the bloom filter creation and this step,
-    // there can be some more commits in the backend.
-    // Checking them against bloom filter will give false results.
-    // Hence, protect those commits using commitProtectionTime.
-    Predicate<LogResponse.LogEntry> unprotectedCommitsPredicate =
-        logEntry -> logEntry.getCommitMeta().getCommitTime().compareTo(commitProtectionTime) < 0;
+      Timestamp startedAt,
+      Instant cutoffTime) {
+    // To filter only the commits that are expired based on cutoff time.
+    // cutoff time also acts as a commit protection time for ongoing
+    // or new commits created after step-1 (filling bloom filter) of identify gc.
+    Predicate<LogResponse.LogEntry> cutoffTimePredicate =
+        logEntry -> logEntry.getCommitMeta().getCommitTime().compareTo(cutoffTime) < 0;
     // when no live bloom filter exist for this content id, all the contents are
     // definitely expired.
 
@@ -294,7 +300,7 @@ public class IdentifyContentsPerExecutor implements Serializable {
                           .refName(Detached.REF_NAME)
                           .fetch(FetchOption.ALL),
                   OptionalInt.empty())
-              .filter(unprotectedCommitsPredicate)
+              .filter(cutoffTimePredicate)
               .map(LogResponse.LogEntry::getOperations)
               .flatMap(operations -> operations.stream().filter(Operation.Put.class::isInstance))
               .map(Operation.Put.class::cast)
