@@ -341,7 +341,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
 
     final Instant cutoffTime = Instant.now();
 
-    performGc(prefix, cutoffTime, null, expectedResult, true, null);
+    performGc(prefix, cutoffTime, null, expectedResult, null);
   }
 
   @Test
@@ -373,7 +373,7 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
 
     final Instant cutoffTime = Instant.now();
     // expect nothing to be expired as -1 is considered as invalid snapshot for expiry.
-    performGc(prefix, cutoffTime, null, expectedResult, true, null);
+    performGc(prefix, cutoffTime, null, expectedResult, null);
   }
 
   @Test

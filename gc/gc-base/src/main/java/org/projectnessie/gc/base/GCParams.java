@@ -79,28 +79,6 @@ public interface GCParams extends Serializable {
 
   @Value.Check
   default void validate() {
-    Instant now = Instant.now();
-    if (getDefaultCutOffTimestamp().compareTo(now) > 0) {
-      throw new IllegalArgumentException(
-          "Cutoff time cannot be from the future: " + getDefaultCutOffTimestamp());
-    }
-    Instant deadReferenceCutOffTimeStamp = getDeadReferenceCutOffTimeStamp();
-    if (deadReferenceCutOffTimeStamp != null && deadReferenceCutOffTimeStamp.compareTo(now) > 0) {
-      throw new IllegalArgumentException(
-          "Dead Reference cutoff time cannot be from the future: " + deadReferenceCutOffTimeStamp);
-    }
-    Map<String, Instant> cutOffTimestampPerRef = getCutOffTimestampPerRef();
-    if (cutOffTimestampPerRef != null) {
-      cutOffTimestampPerRef.forEach(
-          (key, value) -> {
-            if (value.compareTo(now) > 0) {
-              throw new IllegalArgumentException(
-                  String.format(
-                      "Reference cutoff time for %s cannot be from the future: " + "%s",
-                      key, value));
-            }
-          });
-    }
     Integer partitionsCount = getSparkPartitionsCount();
     if (partitionsCount != null && partitionsCount <= 0) {
       throw new IllegalArgumentException("partitionsCount has invalid value: " + partitionsCount);

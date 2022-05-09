@@ -245,18 +245,16 @@ public class IdentifyContentsPerExecutor implements Serializable {
               api.close();
             });
     return references.flatMap(
-        reference -> {
-          Reference ref = GCUtil.deserializeReference(reference);
-          return JavaConverters.asScalaIterator(
-                  walkAllCommitsInReference(
-                      api,
-                      ref,
-                      liveContentsBloomFilterMap,
-                      runId,
-                      startedAt,
-                      getCutoffTimeForRef(reference, droppedRefTimeMap)))
-              .toTraversable();
-        });
+        reference ->
+            JavaConverters.asScalaIterator(
+                    walkAllCommitsInReference(
+                        api,
+                        GCUtil.deserializeReference(reference),
+                        liveContentsBloomFilterMap,
+                        runId,
+                        startedAt,
+                        getCutoffTimeForRef(reference, droppedRefTimeMap)))
+                .toTraversable());
   }
 
   private Iterator<Row> walkAllCommitsInReference(
