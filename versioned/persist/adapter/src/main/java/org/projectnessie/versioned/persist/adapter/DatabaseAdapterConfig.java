@@ -88,26 +88,10 @@ public interface DatabaseAdapterConfig {
    * org.projectnessie.versioned.persist.adapter.CommitLogEntry#getKeyListsIds()},
    * database-serialization overhead and similar.
    *
-   * <p>Values {@code <=0} are illegal, defaults to {@link #getDefaultMaxKeyListSize()}.
+   * <p>Values {@code <=0} are illegal, defaults to {@value #DEFAULT_MAX_KEY_LIST_SIZE}.
    */
   @Value.Default
   default int getMaxKeyListSize() {
-    return getDefaultMaxKeyListSize();
-  }
-
-  /**
-   * Database adapter implementations that actually do have a hard technical or highly recommended
-   * limit on a maximum db-object / db-row size limitation should override this method and return a
-   * "good" value.
-   *
-   * <p>As for {@link #getMaxKeyListSize()}, this value must not be "on the edge" - means: it must
-   * leave enough room for a somewhat large-ish list via {@link
-   * org.projectnessie.versioned.persist.adapter.CommitLogEntry#getKeyListsIds()},
-   * database-serialization overhead * and similar.
-   *
-   * <p>Defaults to {@value #DEFAULT_MAX_KEY_LIST_SIZE}.
-   */
-  default int getDefaultMaxKeyListSize() {
     return DEFAULT_MAX_KEY_LIST_SIZE;
   }
 

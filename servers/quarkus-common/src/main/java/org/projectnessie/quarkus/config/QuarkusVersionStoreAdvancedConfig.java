@@ -63,11 +63,6 @@ public interface QuarkusVersionStoreAdvancedConfig
   @Override
   int getMaxKeyListSize();
 
-  @WithName("default-max-key-list-size")
-  @WithDefault("" + DEFAULT_MAX_KEY_LIST_SIZE)
-  @Override
-  int getDefaultMaxKeyListSize();
-
   @WithName("commit-timeout")
   @WithDefault("" + DEFAULT_COMMIT_TIMEOUT)
   @Override
