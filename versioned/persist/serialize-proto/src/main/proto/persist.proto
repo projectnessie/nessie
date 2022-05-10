@@ -117,9 +117,13 @@ message GlobalStatePointer {
   optional bytes global_log_head = 6;
 }
 
-// Used by transactional database-adapters
 message RefLogParents {
   repeated bytes ref_log_parents_incl_head = 1;
+  optional bytes lock_id = 2;
+}
+
+message ReferenceNames {
+  repeated string ref_names = 1;
 }
 
 message NamedReference {

@@ -29,6 +29,7 @@ import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterConfig
 @ExtendWith(DatabaseAdapterExtension.class)
 @NessieDbAdapterConfigItem(name = "max.key.list.size", value = "2048")
 @NessieDbAdapterConfigItem(name = "global.log.entry.size", value = "2048")
+@NessieDbAdapterConfigItem(name = "references.segment.size", value = "2048")
 public abstract class AbstractDatabaseAdapterTest {
   @NessieDbAdapter protected static DatabaseAdapter databaseAdapter;
 
@@ -76,6 +77,14 @@ public abstract class AbstractDatabaseAdapterTest {
   @SuppressWarnings("ClassCanBeStatic")
   public class Concurrency extends AbstractConcurrency {
     Concurrency() {
+      super(databaseAdapter);
+    }
+  }
+
+  @Nested
+  @SuppressWarnings("ClassCanBeStatic")
+  public class RefLog extends AbstractRefLog {
+    RefLog() {
       super(databaseAdapter);
     }
   }

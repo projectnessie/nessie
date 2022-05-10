@@ -34,6 +34,9 @@ public class MongoDatabaseClient implements DatabaseConnectionProvider<MongoClie
   private static final String COMMIT_LOG = "commit_log";
   private static final String KEY_LIST = "key_list";
   private static final String REF_LOG = "ref_log";
+  static final String TABLE_REF_HEADS = "ref_heads";
+  static final String TABLE_REF_NAMES = "ref_names";
+  static final String TABLE_REF_LOG_HEADS = "ref_log_heads";
 
   private MongoClientConfig config;
   private MongoClient managedClient;
@@ -43,6 +46,9 @@ public class MongoDatabaseClient implements DatabaseConnectionProvider<MongoClie
   private MongoCollection<Document> commitLog;
   private MongoCollection<Document> keyLists;
   private MongoCollection<Document> refLog;
+  private MongoCollection<Document> refHeads;
+  private MongoCollection<Document> refNames;
+  private MongoCollection<Document> refLogHeads;
 
   @Override
   public void configure(MongoClientConfig config) {
@@ -84,6 +90,9 @@ public class MongoDatabaseClient implements DatabaseConnectionProvider<MongoClie
     commitLog = database.getCollection(COMMIT_LOG);
     keyLists = database.getCollection(KEY_LIST);
     refLog = database.getCollection(REF_LOG);
+    refHeads = database.getCollection(TABLE_REF_HEADS);
+    refNames = database.getCollection(TABLE_REF_NAMES);
+    refLogHeads = database.getCollection(TABLE_REF_LOG_HEADS);
   }
 
   public MongoCollection<Document> getRepoDesc() {
@@ -110,7 +119,20 @@ public class MongoDatabaseClient implements DatabaseConnectionProvider<MongoClie
     return refLog;
   }
 
+  public MongoCollection<Document> getRefHeads() {
+    return refHeads;
+  }
+
+  public MongoCollection<Document> getRefNames() {
+    return refNames;
+  }
+
+  public MongoCollection<Document> getRefLogHeads() {
+    return refLogHeads;
+  }
+
   public Stream<MongoCollection<Document>> allExceptGlobalPointer() {
-    return Stream.of(repoDesc, globalLog, commitLog, keyLists, refLog);
+    return Stream.of(
+        repoDesc, globalLog, commitLog, keyLists, refLog, refHeads, refNames, refLogHeads);
   }
 }

@@ -19,19 +19,22 @@ import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSeriali
 import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.protoToKeyList;
 import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.toProto;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.hashCollisionDetected;
+import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.referenceNotFound;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
-import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.projectnessie.versioned.Hash;
+import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceConflictException;
+import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
@@ -44,7 +47,11 @@ import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapter
 import org.projectnessie.versioned.persist.nontx.NonTransactionalOperationContext;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.NamedReference;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogEntry;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogParents;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefPointer;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.ReferenceNames;
 
 public class InmemoryDatabaseAdapter
     extends NonTransactionalDatabaseAdapter<NonTransactionalDatabaseAdapterConfig> {
@@ -70,6 +77,14 @@ public class InmemoryDatabaseAdapter
     return keyPrefix.concat(hash.asBytes());
   }
 
+  private ByteString dbKey(String name) {
+    return dbKey(ByteString.copyFromUtf8(name));
+  }
+
+  private ByteString dbKey(int i) {
+    return dbKey(Integer.toString(i));
+  }
+
   private ByteString dbKey(ByteString key) {
     return keyPrefix.concat(key);
   }
@@ -82,6 +97,158 @@ public class InmemoryDatabaseAdapter
   @Override
   protected GlobalStatePointer doFetchGlobalPointer(NonTransactionalOperationContext ctx) {
     return globalState().get();
+  }
+
+  @Override
+  protected void unsafeWriteRefLogStripe(
+      NonTransactionalOperationContext ctx, int stripe, RefLogParents refLogParents) {
+    store.refLogHeads.put(dbKey(stripe), refLogParents.toByteString());
+  }
+
+  @Override
+  protected RefLogParents doFetchRefLogParents(NonTransactionalOperationContext ctx, int stripe) {
+    try {
+      ByteString bytes = store.refLogHeads.get(dbKey(stripe));
+      return bytes != null ? RefLogParents.parseFrom(bytes) : null;
+    } catch (InvalidProtocolBufferException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  protected boolean doRefLogParentsCas(
+      NonTransactionalOperationContext ctx,
+      int stripe,
+      RefLogParents refLogParents,
+      RefLogParents newRefLogParents) {
+    ByteString update = newRefLogParents.toByteString();
+    if (refLogParents != null) {
+      ByteString expected = refLogParents.toByteString();
+      return store.refLogHeads.replace(dbKey(stripe), expected, update);
+    } else {
+      return store.refLogHeads.putIfAbsent(dbKey(stripe), update) == null;
+    }
+  }
+
+  @Override
+  protected NamedReference doFetchNamedReference(
+      NonTransactionalOperationContext ctx, String refName) {
+    try {
+      ByteString serialized = store.refHeads.get(dbKey(refName));
+      return serialized != null ? NamedReference.parseFrom(serialized) : null;
+    } catch (InvalidProtocolBufferException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  protected boolean doCreateNamedReference(
+      NonTransactionalOperationContext ctx, NamedRef ref, NamedReference namedReference) {
+    ByteString existing =
+        store.refHeads.putIfAbsent(dbKey(ref.getName()), namedReference.toByteString());
+    return existing == null;
+  }
+
+  @Override
+  protected boolean doDeleteNamedReference(
+      NonTransactionalOperationContext ctx, NamedRef ref, RefPointer refHead) {
+
+    NamedReference expected =
+        NamedReference.newBuilder().setName(ref.getName()).setRef(refHead).build();
+
+    return store.refHeads.remove(dbKey(ref.getName()), expected.toByteString());
+  }
+
+  @Override
+  protected void doUpdateNamedReferencesList(
+      Predicate<ReferenceNames> nextSegment,
+      Function<ReferenceNames, ReferenceNames.Builder> updateReferenceNames) {
+    for (int segment = 0; ; segment++) {
+      ByteString refNamesBytes = store.refNames.get(dbKey(segment));
+      if (refNamesBytes == null) {
+        if (segment != 0) {
+          break;
+        }
+      }
+
+      ReferenceNames referenceNames;
+      try {
+        referenceNames =
+            refNamesBytes == null
+                ? ReferenceNames.getDefaultInstance()
+                : ReferenceNames.parseFrom(refNamesBytes);
+      } catch (InvalidProtocolBufferException e) {
+        throw new RuntimeException(e);
+      }
+
+      if (nextSegment.test(referenceNames)) {
+        continue;
+      }
+
+      ReferenceNames.Builder referenceNamesBuilder = updateReferenceNames.apply(referenceNames);
+
+      ByteString newRefNameBytes = referenceNamesBuilder.build().toByteString();
+
+      if (refNamesBytes == null) {
+        if (store.refNames.putIfAbsent(dbKey(segment), newRefNameBytes) == null) {
+          break;
+        }
+      } else {
+        if (store.refNames.replace(dbKey(segment), refNamesBytes, newRefNameBytes)) {
+          break;
+        }
+      }
+
+      // CAS failed, retry same segment
+      segment--;
+    }
+  }
+
+  private static final class CasFailedException extends RuntimeException {
+    CasFailedException() {
+      super();
+    }
+  }
+
+  @Override
+  protected boolean doUpdateNamedReference(
+      NonTransactionalOperationContext ctx, NamedRef ref, RefPointer refHead, Hash newHead) {
+    try {
+      store.refHeads.compute(
+          dbKey(ref.getName()),
+          (k, existing) -> {
+            if (existing == null) {
+              throw new RuntimeException(referenceNotFound(ref));
+            }
+
+            NamedReference namedReference;
+            try {
+              namedReference = NamedReference.parseFrom(existing);
+            } catch (InvalidProtocolBufferException e) {
+              throw new RuntimeException(e);
+            }
+
+            if (!namedReference.getRef().equals(refHead)) {
+              throw new CasFailedException();
+            }
+
+            NamedReference newNamedReference =
+                namedReference.toBuilder()
+                    .setRef(namedReference.getRef().toBuilder().setHash(newHead.asBytes()))
+                    .build();
+
+            return newNamedReference.toByteString();
+          });
+
+      return true;
+    } catch (CasFailedException e) {
+      return false;
+    } catch (RuntimeException e) {
+      if (e.getCause() instanceof ReferenceNotFoundException) {
+        return false;
+      }
+      throw e;
+    }
   }
 
   @Override
@@ -103,11 +270,14 @@ public class InmemoryDatabaseAdapter
   }
 
   @Override
-  protected void doWriteGlobalCommit(
-      NonTransactionalOperationContext ctx, GlobalStateLogEntry entry)
-      throws ReferenceConflictException {
-    if (store.globalStateLog.putIfAbsent(dbKey(entry.getId()), entry.toByteString()) != null) {
-      throw hashCollisionDetected();
+  protected ReferenceNames doFetchReferenceNames(
+      NonTransactionalOperationContext ctx, int segment) {
+    try {
+      ByteString s = store.refNames.get(dbKey(segment));
+      return s != null ? ReferenceNames.parseFrom(s) : null;
+
+    } catch (InvalidProtocolBufferException e) {
+      throw new RuntimeException(e);
     }
   }
 
@@ -117,35 +287,20 @@ public class InmemoryDatabaseAdapter
     globalState().set(pointer);
   }
 
-  @Override
-  protected boolean doGlobalPointerCas(
-      NonTransactionalOperationContext ctx,
-      GlobalStatePointer expected,
-      GlobalStatePointer newPointer) {
-    return globalState().compareAndSet(expected, newPointer);
-  }
-
   private AtomicReference<GlobalStatePointer> globalState() {
     return store.globalStatePointer.computeIfAbsent(keyPrefix, k -> new AtomicReference<>());
   }
 
   @Override
   protected void doCleanUpCommitCas(
-      NonTransactionalOperationContext ctx,
-      Optional<Hash> globalHead,
-      Set<Hash> branchCommits,
-      Set<Hash> newKeyLists,
-      Hash refLogId) {
-    globalHead.ifPresent(h -> store.globalStateLog.remove(dbKey(h)));
+      NonTransactionalOperationContext ctx, Set<Hash> branchCommits, Set<Hash> newKeyLists) {
     branchCommits.forEach(h -> store.commitLog.remove(dbKey(h)));
     newKeyLists.forEach(h -> store.keyLists.remove(dbKey(h)));
-    store.refLog.remove(dbKey(refLogId));
   }
 
   @Override
-  protected void doCleanUpGlobalLog(
-      NonTransactionalOperationContext ctx, Collection<Hash> globalIds) {
-    globalIds.forEach(h -> store.globalStateLog.remove(dbKey(h)));
+  protected void doCleanUpRefLogWrite(NonTransactionalOperationContext ctx, Hash refLogId) {
+    store.refLog.remove(dbKey(refLogId));
   }
 
   @Override
@@ -246,10 +401,7 @@ public class InmemoryDatabaseAdapter
 
   @Override
   protected RefLog doFetchFromRefLog(NonTransactionalOperationContext ctx, Hash refLogId) {
-    if (refLogId == null) {
-      // set the current head as refLogId
-      refLogId = Hash.of(fetchGlobalPointer(ctx).getRefLogId());
-    }
+    Objects.requireNonNull(refLogId, "refLogId mut not be null");
     return ProtoSerialization.protoToRefLog(store.refLog.get(dbKey(refLogId)));
   }
 

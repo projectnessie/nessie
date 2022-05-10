@@ -25,6 +25,9 @@ final class Tables {
   static final String TABLE_COMMIT_LOG = "commit_log";
   static final String TABLE_KEY_LISTS = "key_lists";
   static final String TABLE_REF_LOG = "ref_log";
+  static final String TABLE_REF_HEADS = "ref_heads";
+  static final String TABLE_REF_NAMES = "ref_names";
+  static final String TABLE_REF_LOG_HEADS = "ref_log_heads";
 
   static final String KEY_NAME = "key";
   static final String VALUE_NAME = "val";
@@ -37,6 +40,13 @@ final class Tables {
 
   static Stream<String> allExceptGlobalPointer() {
     return Stream.of(
-        TABLE_REPO_DESC, TABLE_GLOBAL_LOG, TABLE_COMMIT_LOG, TABLE_KEY_LISTS, TABLE_REF_LOG);
+        TABLE_REPO_DESC,
+        TABLE_GLOBAL_LOG,
+        TABLE_COMMIT_LOG,
+        TABLE_KEY_LISTS,
+        TABLE_REF_LOG,
+        TABLE_REF_HEADS,
+        TABLE_REF_NAMES,
+        TABLE_REF_LOG_HEADS);
   }
 }

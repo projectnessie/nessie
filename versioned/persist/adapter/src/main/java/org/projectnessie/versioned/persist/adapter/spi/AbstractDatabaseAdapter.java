@@ -1999,17 +1999,8 @@ public abstract class AbstractDatabaseAdapter<
     return StreamSupport.stream(split, false);
   }
 
-  protected Spliterator<RefLog> readRefLog(OP_CONTEXT ctx, Hash initialHash)
-      throws RefLogNotFoundException {
-    if (NO_ANCESTOR.equals(initialHash)) {
-      return Spliterators.emptySpliterator();
-    }
-    RefLog initial = fetchFromRefLog(ctx, initialHash);
-    if (initial == null) {
-      throw RefLogNotFoundException.forRefLogId(initialHash.asString());
-    }
-    return logFetcher(ctx, initial, this::fetchPageFromRefLog, RefLog::getParents);
-  }
+  protected abstract Spliterator<RefLog> readRefLog(OP_CONTEXT ctx, Hash initialHash)
+      throws RefLogNotFoundException;
 
   protected void tryLoopStateCompletion(@Nonnull Boolean success, TryLoopState state) {
     tryLoopFinished(

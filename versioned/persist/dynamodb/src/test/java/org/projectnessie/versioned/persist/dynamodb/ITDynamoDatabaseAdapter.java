@@ -23,7 +23,6 @@ import com.google.protobuf.ByteString;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -110,8 +109,8 @@ public class ITDynamoDatabaseAdapter extends AbstractDatabaseAdapterTest
         .extracting(l -> l.get(0))
         .allMatch(Objects::nonNull);
 
-    implDatabaseAdapter()
-        .doCleanUpCommitCas(ctx, Optional.empty(), branchCommits, newKeyLists, refLogId);
+    implDatabaseAdapter().doCleanUpRefLogWrite(ctx, refLogId);
+    implDatabaseAdapter().doCleanUpCommitCas(ctx, branchCommits, newKeyLists);
 
     assertThat(implDatabaseAdapter().doFetchFromRefLog(ctx, refLogId)).isNull();
     assertThat(branchCommits)

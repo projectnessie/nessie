@@ -48,8 +48,11 @@ class TestTryLoopState {
     Arrays.fill(times, 0L);
     MonotonicClock clock = mockedClock(0L, times);
 
-    long lower = 1;
-    long upper = 2;
+    long initialLower = 1;
+    long initialUpper = 2;
+
+    long lower = initialLower;
+    long upper = initialUpper;
     TryLoopState tryLoopState =
         new TryLoopState(
             "test",
@@ -87,6 +90,31 @@ class TestTryLoopState {
     }
 
     verify(clock, times(1 + retries)).currentNanos();
+
+    // Similar for 'retryEndless'
+
+    lower = initialLower;
+    upper = initialUpper;
+    for (int i = 0; i < 3; i++) {
+      tryLoopState.retryEndless();
+      long finalLower = lower;
+      long finalUpper = upper;
+      ArgumentMatcher<Long> matcher =
+          new ArgumentMatcher<Long>() {
+            @Override
+            public boolean matches(Long l) {
+              return l >= finalLower && l < finalUpper && l <= maxSleep;
+            }
+
+            @Override
+            public String toString() {
+              return "lower = " + finalLower + ", upper = " + finalUpper + ", max = " + maxSleep;
+            }
+          };
+      inOrderClock.verify(clock, times(1)).sleepMillis(longThat(matcher));
+    }
+
+    verify(clock, times(1 + retries)).currentNanos();
   }
 
   @ParameterizedTest
@@ -112,6 +140,39 @@ class TestTryLoopState {
 
     verify(clock, times(1 + retries)).currentNanos();
     verify(clock, times(retries)).sleepMillis(anyLong());
+  }
+
+  @Test
+  void retryUnsuccessful() throws Exception {
+    int retries = 3;
+
+    Long[] times = new Long[retries];
+    Arrays.fill(times, 0L);
+    MonotonicClock clock = mockedClock(0L, times);
+
+    TryLoopState tryLoopState =
+        new TryLoopState(
+            "test",
+            this::retryErrorMessage,
+            mockedConfig(retries, 42L),
+            clock,
+            (success, tls) -> {});
+
+    for (int i = 0; i < retries - 1; i++) {
+      tryLoopState.retry();
+    }
+
+    for (int i = 0; i < 3; i++) {
+      tryLoopState.retryEndless();
+    }
+
+    assertThatThrownBy(tryLoopState::retry)
+        .isInstanceOf(ReferenceRetryFailureException.class)
+        .hasMessage(retryErrorMessage(null));
+
+    assertThatThrownBy(tryLoopState::retryEndless)
+        .isInstanceOf(ReferenceRetryFailureException.class)
+        .hasMessage(retryErrorMessage(null));
   }
 
   @ParameterizedTest
@@ -176,6 +237,21 @@ class TestTryLoopState {
 
       lower *= 2;
       upper *= 2;
+    }
+
+    // Similar for 'retryEndless'
+
+    lower = DatabaseAdapterConfig.DEFAULT_RETRY_INITIAL_SLEEP_MILLIS_LOWER;
+    upper = DatabaseAdapterConfig.DEFAULT_RETRY_INITIAL_SLEEP_MILLIS_UPPER;
+
+    for (int i = 0; i < 3; i++) {
+      tryLoopState.retryEndless();
+
+      long l = Math.min(lower, timeoutMillis);
+      long u = Math.min(upper, timeoutMillis);
+
+      verify(clock).sleepMillis(longThat(v -> v >= l && v <= u));
+      clearInvocations(clock);
     }
   }
 

@@ -26,17 +26,17 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.projectnessie.versioned.Hash;
+import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
@@ -51,6 +51,10 @@ import org.projectnessie.versioned.persist.nontx.NonTransactionalOperationContex
 import org.projectnessie.versioned.persist.serialize.AdapterTypes;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.NamedReference;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogParents;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefPointer;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.ReferenceNames;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.Holder;
 import org.rocksdb.RocksDBException;
@@ -91,6 +95,14 @@ public class RocksDatabaseAdapter
 
   private byte[] dbKey(ByteString key) {
     return keyPrefix.concat(key).toByteArray();
+  }
+
+  private byte[] dbKey(String key) {
+    return dbKey(ByteString.copyFromUtf8(key));
+  }
+
+  private byte[] dbKey(int key) {
+    return dbKey(Integer.toString(key));
   }
 
   private byte[] globalPointerKey() {
@@ -174,23 +186,6 @@ public class RocksDatabaseAdapter
   }
 
   @Override
-  protected void doWriteGlobalCommit(
-      NonTransactionalOperationContext ctx, GlobalStateLogEntry entry)
-      throws ReferenceConflictException {
-    Lock lock = dbInstance.getLock().writeLock();
-    lock.lock();
-    try {
-      byte[] key = dbKey(entry.getId());
-      checkForHashCollision(dbInstance.getCfGlobalLog(), key);
-      db.put(dbInstance.getCfGlobalLog(), key, entry.toByteArray());
-    } catch (RocksDBException e) {
-      throw new RuntimeException(e);
-    } finally {
-      lock.unlock();
-    }
-  }
-
-  @Override
   protected void unsafeWriteGlobalPointer(
       NonTransactionalOperationContext ctx, GlobalStatePointer pointer) {
     try {
@@ -201,48 +196,21 @@ public class RocksDatabaseAdapter
   }
 
   @Override
-  protected boolean doGlobalPointerCas(
-      NonTransactionalOperationContext ctx,
-      GlobalStatePointer expected,
-      GlobalStatePointer newPointer) {
-    Lock lock = dbInstance.getLock().writeLock();
-    lock.lock();
-    try {
-      byte[] bytes = db.get(dbInstance.getCfGlobalPointer(), globalPointerKey());
-      GlobalStatePointer oldPointer = bytes != null ? GlobalStatePointer.parseFrom(bytes) : null;
-      if (oldPointer == null || !oldPointer.getGlobalId().equals(expected.getGlobalId())) {
-        return false;
-      }
-      db.put(dbInstance.getCfGlobalPointer(), globalPointerKey(), newPointer.toByteArray());
-      return true;
-    } catch (InvalidProtocolBufferException | RocksDBException e) {
-      throw new RuntimeException(e);
-    } finally {
-      lock.unlock();
-    }
-  }
-
-  @Override
   protected void doCleanUpCommitCas(
-      NonTransactionalOperationContext ctx,
-      Optional<Hash> globalHead,
-      Set<Hash> branchCommits,
-      Set<Hash> newKeyLists,
-      Hash refLogId) {
+      NonTransactionalOperationContext ctx, Set<Hash> branchCommits, Set<Hash> newKeyLists) {
+    if (branchCommits.isEmpty() && newKeyLists.isEmpty()) {
+      return;
+    }
     Lock lock = dbInstance.getLock().writeLock();
     lock.lock();
     try {
       WriteBatch batch = new WriteBatch();
-      if (globalHead.isPresent()) {
-        batch.delete(dbInstance.getCfGlobalLog(), dbKey(globalHead.get()));
-      }
       for (Hash h : branchCommits) {
         batch.delete(dbInstance.getCfCommitLog(), dbKey(h));
       }
       for (Hash h : newKeyLists) {
         batch.delete(dbInstance.getCfKeyList(), dbKey(h));
       }
-      batch.delete(dbInstance.getCfRefLog(), dbKey(refLogId));
       db.write(new WriteOptions(), batch);
     } catch (RocksDBException e) {
       throw new RuntimeException(e);
@@ -252,22 +220,7 @@ public class RocksDatabaseAdapter
   }
 
   @Override
-  protected void doCleanUpGlobalLog(
-      NonTransactionalOperationContext ctx, Collection<Hash> globalIds) {
-    Lock lock = dbInstance.getLock().writeLock();
-    lock.lock();
-    try {
-      WriteBatch batch = new WriteBatch();
-      for (Hash h : globalIds) {
-        batch.delete(dbInstance.getCfGlobalLog(), dbKey(h));
-      }
-      db.write(new WriteOptions(), batch);
-    } catch (RocksDBException e) {
-      throw new RuntimeException(e);
-    } finally {
-      lock.unlock();
-    }
-  }
+  protected void doCleanUpRefLogWrite(NonTransactionalOperationContext ctx, Hash refLogId) {}
 
   @Override
   protected GlobalStateLogEntry doFetchFromGlobalLog(
@@ -397,6 +350,223 @@ public class RocksDatabaseAdapter
   }
 
   @Override
+  protected void unsafeWriteRefLogStripe(
+      NonTransactionalOperationContext ctx, int stripe, RefLogParents refLogParents) {
+    Lock lock = dbInstance.getLock().writeLock();
+    lock.lock();
+    try {
+      db.put(dbInstance.getCfRefLogHeads(), dbKey(stripe), refLogParents.toByteArray());
+    } catch (RocksDBException e) {
+      throw new RuntimeException(e);
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  @Override
+  protected boolean doRefLogParentsCas(
+      NonTransactionalOperationContext ctx,
+      int stripe,
+      RefLogParents refLogParents,
+      RefLogParents refLogEntry) {
+    Lock lock = dbInstance.getLock().writeLock();
+    lock.lock();
+    try {
+      byte[] bytes = db.get(dbInstance.getCfRefLogHeads(), dbKey(stripe));
+      RefLogParents parents = bytes != null ? RefLogParents.parseFrom(bytes) : null;
+      if (refLogParents != null) {
+        if (!refLogParents.equals(parents)) {
+          return false;
+        }
+      } else if (parents != null) {
+        return false;
+      }
+      db.put(dbInstance.getCfRefLogHeads(), dbKey(stripe), refLogEntry.toByteArray());
+      return true;
+    } catch (InvalidProtocolBufferException | RocksDBException e) {
+      throw new RuntimeException(e);
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  @Override
+  protected RefLogParents doFetchRefLogParents(NonTransactionalOperationContext ctx, int stripe) {
+    Lock lock = dbInstance.getLock().readLock();
+    lock.lock();
+    try {
+      byte[] bytes = db.get(dbInstance.getCfRefLogHeads(), dbKey(stripe));
+      if (bytes == null) {
+        return null;
+      }
+      return RefLogParents.parseFrom(bytes);
+    } catch (RocksDBException | InvalidProtocolBufferException e) {
+      throw new RuntimeException(e);
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  @Override
+  protected ReferenceNames doFetchReferenceNames(
+      NonTransactionalOperationContext ctx, int segment) {
+    try {
+      byte[] s = db.get(dbInstance.getCfRefNames(), dbKey(segment));
+      return s != null ? ReferenceNames.parseFrom(s) : null;
+    } catch (RocksDBException | InvalidProtocolBufferException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  protected NamedReference doFetchNamedReference(
+      NonTransactionalOperationContext ctx, String refName) {
+    Lock lock = dbInstance.getLock().readLock();
+    lock.lock();
+    try {
+      byte[] bytes = db.get(dbInstance.getCfRefHeads(), dbKey(refName));
+      if (bytes == null) {
+        return null;
+      }
+      return NamedReference.parseFrom(bytes);
+    } catch (RocksDBException | InvalidProtocolBufferException e) {
+      throw new RuntimeException(e);
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  @Override
+  protected boolean doCreateNamedReference(
+      NonTransactionalOperationContext ctx, NamedRef ref, NamedReference namedReference) {
+    Lock lock = dbInstance.getLock().writeLock();
+    lock.lock();
+    try {
+      byte[] existing = db.get(dbInstance.getCfRefHeads(), dbKey(ref.getName()));
+      if (existing != null) {
+        return false;
+      }
+
+      db.put(dbInstance.getCfRefHeads(), dbKey(ref.getName()), namedReference.toByteArray());
+
+      return true;
+    } catch (RocksDBException e) {
+      throw new RuntimeException(e);
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  @Override
+  protected boolean doDeleteNamedReference(
+      NonTransactionalOperationContext ctx, NamedRef ref, RefPointer refHead) {
+    Lock lock = dbInstance.getLock().writeLock();
+    lock.lock();
+    try {
+      byte[] existing = db.get(dbInstance.getCfRefHeads(), dbKey(ref.getName()));
+      if (existing == null) {
+        return false;
+      }
+
+      NamedReference expected =
+          NamedReference.newBuilder().setName(ref.getName()).setRef(refHead).build();
+
+      if (!Arrays.equals(existing, expected.toByteArray())) {
+        return false;
+      }
+
+      db.delete(dbInstance.getCfRefHeads(), dbKey(ref.getName()));
+
+      return true;
+
+    } catch (RocksDBException e) {
+      throw new RuntimeException(e);
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  @Override
+  protected void doUpdateNamedReferencesList(
+      Predicate<ReferenceNames> nextSegment,
+      Function<ReferenceNames, ReferenceNames.Builder> updateReferenceNames) {
+    Lock lock = dbInstance.getLock().writeLock();
+    lock.lock();
+    try {
+      for (int segment = 0; ; segment++) {
+        byte[] refNamesBytes = db.get(dbInstance.getCfRefNames(), dbKey(segment));
+        if (refNamesBytes == null) {
+          if (segment != 0) {
+            break;
+          }
+        }
+
+        ReferenceNames referenceNames;
+        try {
+          referenceNames =
+              refNamesBytes == null
+                  ? ReferenceNames.getDefaultInstance()
+                  : ReferenceNames.parseFrom(refNamesBytes);
+        } catch (InvalidProtocolBufferException e) {
+          throw new RuntimeException(e);
+        }
+
+        if (nextSegment.test(referenceNames)) {
+          continue;
+        }
+
+        ReferenceNames.Builder referenceNamesBuilder = updateReferenceNames.apply(referenceNames);
+
+        byte[] newRefNameBytes = referenceNamesBuilder.build().toByteArray();
+        db.put(dbInstance.getCfRefNames(), dbKey(segment), newRefNameBytes);
+
+        break;
+      }
+    } catch (RocksDBException e) {
+      throw new RuntimeException(e);
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  @Override
+  protected boolean doUpdateNamedReference(
+      NonTransactionalOperationContext ctx, NamedRef ref, RefPointer refHead, Hash newHead) {
+    Lock lock = dbInstance.getLock().writeLock();
+    lock.lock();
+    try {
+      byte[] existing = db.get(dbInstance.getCfRefHeads(), dbKey(ref.getName()));
+      if (existing == null) {
+        return false;
+      }
+
+      NamedReference namedReference;
+      try {
+        namedReference = NamedReference.parseFrom(existing);
+      } catch (InvalidProtocolBufferException e) {
+        throw new RuntimeException(e);
+      }
+
+      if (!namedReference.getRef().equals(refHead)) {
+        return false;
+      }
+
+      NamedReference newNamedReference =
+          namedReference.toBuilder()
+              .setRef(namedReference.getRef().toBuilder().setHash(newHead.asBytes()))
+              .build();
+
+      db.put(dbInstance.getCfRefHeads(), dbKey(ref.getName()), newNamedReference.toByteArray());
+
+      return true;
+    } catch (RocksDBException e) {
+      throw new RuntimeException(e);
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  @Override
   protected int entitySize(CommitLogEntry entry) {
     return toProto(entry).getSerializedSize();
   }
@@ -424,10 +594,7 @@ public class RocksDatabaseAdapter
 
   @Override
   protected RefLog doFetchFromRefLog(NonTransactionalOperationContext ctx, Hash refLogId) {
-    if (refLogId == null) {
-      // set the current head as refLogId
-      refLogId = Hash.of(fetchGlobalPointer(ctx).getRefLogId());
-    }
+    Objects.requireNonNull(refLogId, "refLogId mut not be null");
     try {
       byte[] v = db.get(dbInstance.getCfRefLog(), dbKey(refLogId));
       return protoToRefLog(v);

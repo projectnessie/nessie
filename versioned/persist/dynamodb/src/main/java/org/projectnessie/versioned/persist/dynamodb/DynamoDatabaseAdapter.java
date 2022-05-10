@@ -23,7 +23,10 @@ import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_COMMIT_L
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_GLOBAL_LOG;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_GLOBAL_POINTER;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_KEY_LISTS;
+import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_REF_HEADS;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_REF_LOG;
+import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_REF_LOG_HEADS;
+import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_REF_NAMES;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_REPO_DESC;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.VALUE_NAME;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.allExceptGlobalPointer;
@@ -32,12 +35,10 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -45,6 +46,7 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import org.projectnessie.versioned.BackendLimitExceededException;
 import org.projectnessie.versioned.Hash;
+import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.KeyList;
@@ -59,7 +61,11 @@ import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapter
 import org.projectnessie.versioned.persist.nontx.NonTransactionalOperationContext;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.NamedReference;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogEntry;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogParents;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefPointer;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.ReferenceNames;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.dynamodb.model.AttributeAction;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
@@ -79,6 +85,7 @@ public class DynamoDatabaseAdapter
 
   // DynamoDB limit
   private static final int DYNAMO_BATCH_WRITE_MAX_REQUESTS = 25;
+  private static final int DYNAMO_SAFE_ITEM_SIZE = 300 * 1024;
   private static final int DYNAMO_MAX_ITEM_SIZE = 375 * 1024;
 
   private static final char PREFIX_SEPARATOR = ':';
@@ -212,12 +219,6 @@ public class DynamoDatabaseAdapter
   }
 
   @Override
-  protected void doWriteGlobalCommit(
-      NonTransactionalOperationContext ctx, GlobalStateLogEntry entry) {
-    insert(TABLE_GLOBAL_LOG, Hash.of(entry.getId()).asString(), entry.toByteArray());
-  }
-
-  @Override
   protected void doWriteIndividualCommit(
       NonTransactionalOperationContext ctx, CommitLogEntry entry) {
     insert(TABLE_COMMIT_LOG, entry.getHash().asString(), toProto(entry).toByteArray());
@@ -250,57 +251,23 @@ public class DynamoDatabaseAdapter
   }
 
   @Override
-  protected boolean doGlobalPointerCas(
-      NonTransactionalOperationContext ctx,
-      GlobalStatePointer expected,
-      GlobalStatePointer newPointer) {
-    AttributeValue expectedBytes =
-        AttributeValue.builder().b(SdkBytes.fromByteArray(expected.toByteArray())).build();
-    AttributeValue newPointerBytes =
-        AttributeValue.builder().b(SdkBytes.fromByteArray(newPointer.toByteArray())).build();
-    try {
-      client.client.updateItem(
-          b ->
-              b.tableName(TABLE_GLOBAL_POINTER)
-                  .key(globalPointerKeyMap)
-                  .expected(
-                      singletonMap(
-                          VALUE_NAME,
-                          ExpectedAttributeValue.builder().value(expectedBytes).build()))
-                  .attributeUpdates(
-                      singletonMap(
-                          VALUE_NAME,
-                          AttributeValueUpdate.builder()
-                              .action(AttributeAction.PUT)
-                              .value(newPointerBytes)
-                              .build())));
-      return true;
-    } catch (ConditionalCheckFailedException e) {
-      return false;
-    }
-  }
-
-  @Override
   protected void doCleanUpCommitCas(
-      NonTransactionalOperationContext ctx,
-      Optional<Hash> globalHead,
-      Set<Hash> branchCommits,
-      Set<Hash> newKeyLists,
-      Hash refLogId) {
+      NonTransactionalOperationContext ctx, Set<Hash> branchCommits, Set<Hash> newKeyLists) {
     try (BatchDelete batchDelete = new BatchDelete()) {
       branchCommits.forEach(h -> batchDelete.add(TABLE_COMMIT_LOG, h));
       newKeyLists.forEach(h -> batchDelete.add(TABLE_KEY_LISTS, h));
-      globalHead.ifPresent(h -> batchDelete.add(TABLE_GLOBAL_LOG, h));
-      batchDelete.add(TABLE_REF_LOG, refLogId);
     }
   }
 
   @Override
-  protected void doCleanUpGlobalLog(
-      NonTransactionalOperationContext ctx, Collection<Hash> globalIds) {
-    try (BatchDelete batchDelete = new BatchDelete()) {
-      globalIds.forEach(h -> batchDelete.add(TABLE_GLOBAL_LOG, h));
-    }
+  protected void doCleanUpRefLogWrite(NonTransactionalOperationContext ctx, Hash refLogId) {
+    client.client.deleteItem(
+        b ->
+            b.tableName(TABLE_REF_LOG)
+                .key(
+                    singletonMap(
+                        KEY_NAME,
+                        AttributeValue.builder().s(keyPrefix + refLogId.asString()).build())));
   }
 
   private final class BatchDelete implements AutoCloseable {
@@ -377,6 +344,246 @@ public class DynamoDatabaseAdapter
                             KEY_NAME, globalPointerKeyMap.get(KEY_NAME), VALUE_NAME, updateToBytes))
                     .conditionExpression(String.format("attribute_not_exists(%s)", VALUE_NAME)));
       }
+      return true;
+    } catch (ConditionalCheckFailedException e) {
+      return false;
+    }
+  }
+
+  @Override
+  protected void unsafeWriteRefLogStripe(
+      NonTransactionalOperationContext ctx, int stripe, RefLogParents refLogParents) {
+    insert(TABLE_REF_LOG_HEADS, Integer.toString(stripe), refLogParents.toByteArray());
+  }
+
+  @Override
+  protected boolean doRefLogParentsCas(
+      NonTransactionalOperationContext ctx,
+      int stripe,
+      RefLogParents refLogParents,
+      RefLogParents refLogEntry) {
+    Map<String, ExpectedAttributeValue> expected =
+        refLogParents != null
+            ? singletonMap(
+                VALUE_NAME,
+                ExpectedAttributeValue.builder()
+                    .value(
+                        AttributeValue.builder()
+                            .b(SdkBytes.fromByteArray(refLogParents.toByteArray()))
+                            .build())
+                    .build())
+            : singletonMap(KEY_NAME, ExpectedAttributeValue.builder().exists(false).build());
+    AttributeValue newPointerBytes =
+        AttributeValue.builder().b(SdkBytes.fromByteArray(refLogEntry.toByteArray())).build();
+    try {
+      client.client.updateItem(
+          b ->
+              b.tableName(TABLE_REF_LOG_HEADS)
+                  .key(
+                      singletonMap(
+                          KEY_NAME, AttributeValue.builder().s(keyPrefix + stripe).build()))
+                  .expected(expected)
+                  .attributeUpdates(
+                      singletonMap(
+                          VALUE_NAME,
+                          AttributeValueUpdate.builder()
+                              .action(AttributeAction.PUT)
+                              .value(newPointerBytes)
+                              .build())));
+      return true;
+    } catch (ConditionalCheckFailedException e) {
+      return false;
+    }
+  }
+
+  @Override
+  protected RefLogParents doFetchRefLogParents(NonTransactionalOperationContext ctx, int stripe) {
+    return loadById(TABLE_REF_LOG_HEADS, Integer.toString(stripe), RefLogParents::parseFrom);
+  }
+
+  @Override
+  protected ReferenceNames doFetchReferenceNames(
+      NonTransactionalOperationContext ctx, int segment) {
+
+    GetItemResponse response =
+        client.client.getItem(
+            b ->
+                b.tableName(TABLE_REF_NAMES)
+                    .key(
+                        singletonMap(
+                            KEY_NAME, AttributeValue.builder().s(keyPrefix + segment).build())));
+    if (!response.hasItem()) {
+      return null;
+    }
+
+    Map<String, AttributeValue> attributes = response.item();
+
+    ReferenceNames.Builder refNames = ReferenceNames.newBuilder();
+
+    AttributeValue value = attributes.get(VALUE_NAME);
+    if (value != null) {
+      refNames.addAllRefNames(value.ss());
+    }
+
+    return refNames.build();
+  }
+
+  @Override
+  protected void doAddToNamedReferences(NonTransactionalOperationContext ctx, NamedRef ref) {
+    int minSize = Integer.MAX_VALUE;
+    int minSegment = -1;
+
+    // Add the new reference name to the smallest segment, otherwise add a new segment
+
+    for (int segment = 0; ; segment++) {
+      ReferenceNames refNames = doFetchReferenceNames(ctx, segment);
+      if (refNames == null) {
+        if (minSize >= DYNAMO_SAFE_ITEM_SIZE) {
+          minSegment = segment;
+        }
+        Map<String, AttributeValue> key =
+            singletonMap(KEY_NAME, AttributeValue.builder().s(keyPrefix + minSegment).build());
+        client.client.updateItem(
+            updateItem ->
+                updateItem
+                    .tableName(TABLE_REF_NAMES)
+                    .key(key)
+                    .attributeUpdates(
+                        singletonMap(
+                            VALUE_NAME,
+                            AttributeValueUpdate.builder()
+                                .action(AttributeAction.ADD)
+                                .value(b -> b.ss(ref.getName()))
+                                .build())));
+        break;
+      }
+
+      int serSize = refNames.getSerializedSize();
+      if (serSize < minSize) {
+        minSize = serSize;
+        minSegment = segment;
+      }
+    }
+  }
+
+  @Override
+  protected void doRemoveFromNamedReferences(NonTransactionalOperationContext ctx, NamedRef ref) {
+
+    for (int segment = 0; ; segment++) {
+      ReferenceNames refNames = doFetchReferenceNames(ctx, segment);
+      if (refNames == null) {
+        break;
+      }
+      if (refNames.getRefNamesList().contains(ref.getName())) {
+        Map<String, AttributeValue> key =
+            singletonMap(KEY_NAME, AttributeValue.builder().s(keyPrefix + segment).build());
+        client.client.updateItem(
+            update ->
+                update
+                    .tableName(TABLE_REF_NAMES)
+                    .key(key)
+                    .attributeUpdates(
+                        singletonMap(
+                            VALUE_NAME,
+                            AttributeValueUpdate.builder()
+                                .action(AttributeAction.DELETE)
+                                .value(b -> b.ss(ref.getName()))
+                                .build())));
+      }
+    }
+  }
+
+  @Override
+  protected NamedReference doFetchNamedReference(
+      NonTransactionalOperationContext ctx, String refName) {
+    return loadById(TABLE_REF_HEADS, refName, NamedReference::parseFrom);
+  }
+
+  @Override
+  protected boolean doCreateNamedReference(
+      NonTransactionalOperationContext ctx, NamedRef ref, NamedReference namedReference) {
+    AttributeValue newPointerBytes =
+        AttributeValue.builder().b(SdkBytes.fromByteArray(namedReference.toByteArray())).build();
+    try {
+      client.client.updateItem(
+          b ->
+              b.tableName(TABLE_REF_HEADS)
+                  .key(
+                      singletonMap(
+                          KEY_NAME, AttributeValue.builder().s(keyPrefix + ref.getName()).build()))
+                  .expected(
+                      singletonMap(
+                          KEY_NAME, ExpectedAttributeValue.builder().exists(false).build()))
+                  .attributeUpdates(
+                      singletonMap(
+                          VALUE_NAME,
+                          AttributeValueUpdate.builder()
+                              .action(AttributeAction.PUT)
+                              .value(newPointerBytes)
+                              .build())));
+      return true;
+    } catch (ConditionalCheckFailedException e) {
+      return false;
+    }
+  }
+
+  @Override
+  protected boolean doDeleteNamedReference(
+      NonTransactionalOperationContext ctx, NamedRef ref, RefPointer refHead) {
+    NamedReference namedReference =
+        NamedReference.newBuilder().setName(ref.getName()).setRef(refHead).build();
+    AttributeValue expectedBytes =
+        AttributeValue.builder().b(SdkBytes.fromByteArray(namedReference.toByteArray())).build();
+    try {
+      client.client.deleteItem(
+          b ->
+              b.tableName(TABLE_REF_HEADS)
+                  .key(
+                      singletonMap(
+                          KEY_NAME, AttributeValue.builder().s(keyPrefix + ref.getName()).build()))
+                  .expected(
+                      singletonMap(
+                          VALUE_NAME,
+                          ExpectedAttributeValue.builder().value(expectedBytes).build())));
+      return true;
+    } catch (ConditionalCheckFailedException e) {
+      return false;
+    }
+  }
+
+  @Override
+  protected boolean doUpdateNamedReference(
+      NonTransactionalOperationContext ctx, NamedRef ref, RefPointer refHead, Hash newHead) {
+    NamedReference namedReference =
+        NamedReference.newBuilder().setName(ref.getName()).setRef(refHead).build();
+    NamedReference newNamedReference =
+        NamedReference.newBuilder()
+            .setName(ref.getName())
+            .setRef(refHead.toBuilder().setHash(newHead.asBytes()))
+            .build();
+
+    AttributeValue expectedBytes =
+        AttributeValue.builder().b(SdkBytes.fromByteArray(namedReference.toByteArray())).build();
+    AttributeValue newPointerBytes =
+        AttributeValue.builder().b(SdkBytes.fromByteArray(newNamedReference.toByteArray())).build();
+    try {
+      client.client.updateItem(
+          b ->
+              b.tableName(TABLE_REF_HEADS)
+                  .key(
+                      singletonMap(
+                          KEY_NAME, AttributeValue.builder().s(keyPrefix + ref.getName()).build()))
+                  .expected(
+                      singletonMap(
+                          VALUE_NAME,
+                          ExpectedAttributeValue.builder().value(expectedBytes).build()))
+                  .attributeUpdates(
+                      singletonMap(
+                          VALUE_NAME,
+                          AttributeValueUpdate.builder()
+                              .action(AttributeAction.PUT)
+                              .value(newPointerBytes)
+                              .build())));
       return true;
     } catch (ConditionalCheckFailedException e) {
       return false;
@@ -480,10 +687,7 @@ public class DynamoDatabaseAdapter
 
   @Override
   protected RefLog doFetchFromRefLog(NonTransactionalOperationContext ctx, Hash refLogId) {
-    if (refLogId == null) {
-      // set the current head as refLogId
-      refLogId = Hash.of(fetchGlobalPointer(ctx).getRefLogId());
-    }
+    Objects.requireNonNull(refLogId, "refLogId mut not be null");
     return loadById(TABLE_REF_LOG, refLogId, ProtoSerialization::protoToRefLog);
   }
 

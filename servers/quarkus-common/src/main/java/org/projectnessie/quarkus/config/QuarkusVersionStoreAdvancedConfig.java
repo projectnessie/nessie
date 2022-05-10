@@ -112,4 +112,14 @@ public interface QuarkusVersionStoreAdvancedConfig
   @WithDefault("")
   @WithConverter(RepoIdConverter.class)
   String getJdbcSchema();
+
+  @WithName("references.segment.size")
+  @WithDefault("" + DEFAULT_REFERENCES_SEGMENT_SIZE)
+  @Override
+  int getReferencesSegmentSize();
+
+  @WithName("ref-log.stripes")
+  @WithDefault("" + DEFAULT_REF_LOG_STRIPES)
+  @Override
+  int getRefLogStripes();
 }

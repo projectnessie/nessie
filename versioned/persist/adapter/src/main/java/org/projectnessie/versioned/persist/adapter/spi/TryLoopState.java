@@ -40,9 +40,12 @@ public class TryLoopState implements AutoCloseable {
   private final Function<TryLoopState, String> retryErrorMessage;
   private final BiConsumer<Boolean, TryLoopState> completionNotifier;
   private final long maxSleep;
+  private final long initialLowerBound;
+  private final long initialUpperBound;
   private long lowerBound;
   private long upperBound;
   private int retries;
+  private boolean unsuccessful;
 
   TryLoopState(
       String opName,
@@ -56,8 +59,8 @@ public class TryLoopState implements AutoCloseable {
     this.maxRetries = config.getCommitRetries();
     this.monotonicClock = monotonicClock;
     this.t0 = monotonicClock.currentNanos();
-    this.lowerBound = config.getRetryInitialSleepMillisLower();
-    this.upperBound = config.getRetryInitialSleepMillisUpper();
+    this.lowerBound = this.initialLowerBound = config.getRetryInitialSleepMillisLower();
+    this.upperBound = this.initialUpperBound = config.getRetryInitialSleepMillisUpper();
     this.maxSleep = config.getRetryMaxSleepMillis();
     this.completionNotifier = completionNotifier;
     start();
@@ -109,6 +112,10 @@ public class TryLoopState implements AutoCloseable {
    * exceeded the configured values.
    */
   public void retry() throws ReferenceRetryFailureException {
+    if (unsuccessful) {
+      throw unsuccessful();
+    }
+
     stop();
 
     retries++;
@@ -117,6 +124,7 @@ public class TryLoopState implements AutoCloseable {
     long elapsed = current - t0;
 
     if (maxTime < elapsed || maxRetries < retries) {
+      unsuccessful = true;
       throw unsuccessful();
     }
 
@@ -132,6 +140,27 @@ public class TryLoopState implements AutoCloseable {
       lowerBound *= 2;
       upperBound = upper;
     }
+
+    start();
+  }
+
+  /**
+   * Similar to {@link #retry()}, but never throws a {@link ReferenceRetryFailureException} (unless
+   * a preceding call to {@link #retry()} already raised it) and always uses the initial lower and
+   * upper bounds for the sleep duration (no backoff).
+   */
+  public void retryEndless() throws ReferenceRetryFailureException {
+    if (unsuccessful) {
+      throw unsuccessful();
+    }
+
+    stop();
+
+    retries++;
+
+    long sleepMillis = ThreadLocalRandom.current().nextLong(initialLowerBound, initialUpperBound);
+
+    monotonicClock.sleepMillis(sleepMillis);
 
     start();
   }
