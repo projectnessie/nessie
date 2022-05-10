@@ -78,9 +78,8 @@ public interface DatabaseAdapterConfig {
   /**
    * Maximum size of a database object/row.
    *
-   * <p>This parameter is respected for {@link
-   * org.projectnessie.versioned.persist.adapter.CommitLogEntry} with a {@link
-   * org.projectnessie.versioned.persist.adapter.KeyList}.
+   * <p>This parameter is respected for {@link org.projectnessie.versioned.persist.adapter.KeyList}
+   * in a {@link org.projectnessie.versioned.persist.adapter.CommitLogEntry}.
    *
    * <p>Not all kinds of databases have hard limits on the maximum size of a database object/row.
    *
@@ -107,7 +106,7 @@ public interface DatabaseAdapterConfig {
    * <p>This value must not be "on the edge" - means: it must leave enough room for
    * database-serialization overhead and similar.
    *
-   * <p>Values {@code <=0} are illegal, defaults to {@value #DEFAULT_MAX_KEY_LIST_ENTITY_SIZE)}.
+   * <p>Values {@code <=0} are illegal, defaults to {@value #DEFAULT_MAX_KEY_LIST_ENTITY_SIZE}.
    */
   @Value.Default
   default int getMaxKeyListEntitySize() {
