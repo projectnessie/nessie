@@ -383,8 +383,8 @@ public class DynamoDatabaseAdapter
   }
 
   @Override
-  protected int maxEntitySize() {
-    return DYNAMO_MAX_ITEM_SIZE;
+  protected int maxEntitySize(int value) {
+    return Math.min(value, DYNAMO_MAX_ITEM_SIZE);
   }
 
   @Override

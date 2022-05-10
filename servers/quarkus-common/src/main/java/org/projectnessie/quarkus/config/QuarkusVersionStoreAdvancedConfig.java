@@ -59,7 +59,7 @@ public interface QuarkusVersionStoreAdvancedConfig
   int getKeyListDistance();
 
   @WithName("max-key-list-size")
-  @WithDefault("" + DEFAULT_MAX_KEY_LIST_SIZE)
+  @WithDefault("" + DEFAULT_MAX_ENTITY_SIZE)
   @Override
   int getMaxKeyListSize();
 

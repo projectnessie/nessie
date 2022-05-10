@@ -1053,7 +1053,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
                 // filling the embedded key-list in CommitLogEntry
 
                 if (buildState.currentSize + keyTypeSize
-                    < Math.min(maxEntitySize(), config.getMaxKeyListSize())) {
+                    < maxEntitySize(config.getMaxKeyListSize())) {
                   // CommitLogEntry.keyList still has room
                   buildState.addToEmbedded(keyWithType, keyTypeSize);
                 } else {
@@ -1066,7 +1066,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
                 // filling linked key-lists via CommitLogEntry.keyListIds
 
                 if (buildState.currentSize + keyTypeSize
-                    > Math.min(maxEntitySize(), config.getMaxKeyListSize())) {
+                    > maxEntitySize(config.getMaxKeyListSize())) {
                   // current KeyListEntity is "full", switch to a new one
                   buildState.finishKeyListEntity();
                   buildState.newKeyListEntity();
@@ -1092,8 +1092,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     return newCommitEntry.keyList(buildState.embeddedBuilder.build()).build();
   }
 
-  protected int maxEntitySize() {
-    return Integer.MAX_VALUE;
+  protected int maxEntitySize(int value) {
+    return value;
   }
 
   /** Calculate the expected size of the given {@link CommitLogEntry} in the database. */
