@@ -113,7 +113,7 @@
     "follow-redirects": ">=1.15.0",
     "fs-extra": "^10.1.0",
     "html-webpack-plugin": "5.5.0",
-    "husky": "^7.0.4",
+    "husky": "^8.0.1",
     "jest": "28.0.3",
     "jest-circus": "28.1.0",
     "jest-environment-jsdom": "28.1.0",
