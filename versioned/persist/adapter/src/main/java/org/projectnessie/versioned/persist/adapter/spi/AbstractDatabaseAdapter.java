@@ -35,6 +35,7 @@ import com.google.protobuf.UnsafeByteOperations;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -733,13 +734,12 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
   private List<CommitLogEntry> fetchMultipleFromCommitLog(
       OP_CONTEXT ctx, List<Hash> hashes, @Nonnull Function<Hash, CommitLogEntry> inMemoryCommits) {
     List<CommitLogEntry> result = new ArrayList<>(hashes.size());
-    List<Hash> remainingHashes = new ArrayList<>(hashes.size());
-    List<Integer> remainingIndexes = new ArrayList<>(hashes.size());
+    BitSet remainingHashes = null;
 
     // Prefetch commits already available in memory. Record indexes for the missing commits to
     // enable placing them in the correct positions later, when they are fetched from storage.
-    int idx = 0;
-    for (Hash hash : hashes) {
+    for (int i = 0; i < hashes.size(); i++) {
+      Hash hash = hashes.get(i);
       if (NO_ANCESTOR.equals(hash)) {
         result.add(null);
         continue;
@@ -749,30 +749,34 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       if (found != null) {
         result.add(found);
       } else {
+        if (remainingHashes == null) {
+          remainingHashes = new BitSet();
+        }
         result.add(null); // to be replaced with storage result below
-        remainingHashes.add(hash);
-        remainingIndexes.add(idx);
+        remainingHashes.set(i);
       }
-      idx++;
     }
 
-    if (!remainingHashes.isEmpty()) {
+    if (remainingHashes != null) {
       List<CommitLogEntry> fromStorage;
 
       try (Traced ignore =
           trace("fetchPageFromCommitLog")
               .tag(TAG_HASH, hashes.get(0).asString())
               .tag(TAG_COUNT, hashes.size())) {
-        fromStorage = doFetchMultipleFromCommitLog(ctx, remainingHashes);
+        fromStorage =
+            doFetchMultipleFromCommitLog(
+                ctx, remainingHashes.stream().mapToObj(hashes::get).collect(Collectors.toList()));
       }
 
       // Fill the gaps in the final result list. Note that fetchPageFromCommitLog must return the
       // list of the same size as its `remainingHashes` parameter.
-      idx = 0;
-      for (CommitLogEntry entry : fromStorage) {
-        int i = remainingIndexes.get(idx++);
-        result.set(i, entry);
-      }
+      Iterator<CommitLogEntry> iter = fromStorage.iterator();
+      remainingHashes.stream()
+          .forEach(
+              i -> {
+                result.set(i, iter.next());
+              });
     }
 
     return result;
