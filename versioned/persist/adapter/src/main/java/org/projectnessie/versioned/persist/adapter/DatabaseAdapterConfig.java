@@ -107,24 +107,10 @@ public interface DatabaseAdapterConfig {
    * <p>This value must not be "on the edge" - means: it must leave enough room for
    * database-serialization overhead and similar.
    *
-   * <p>Values {@code <=0} are illegal, defaults to {@link #getDefaultMaxKeyListEntitySize()}.
+   * <p>Values {@code <=0} are illegal, defaults to {@value #DEFAULT_MAX_KEY_LIST_ENTITY_SIZE)}.
    */
   @Value.Default
   default int getMaxKeyListEntitySize() {
-    return getDefaultMaxKeyListEntitySize();
-  }
-
-  /**
-   * Database adapter implementations that actually do have a hard technical or highly recommended
-   * limit on a maximum db-object / db-row size limitation should override this method and return a
-   * "good" value.
-   *
-   * <p>As for {@link #getMaxKeyListSize()}, this value must not be "on the edge" - means: it must
-   * leave enough room for database-serialization overhead * and similar.
-   *
-   * <p>Defaults to {@value #DEFAULT_MAX_KEY_LIST_ENTITY_SIZE}.
-   */
-  default int getDefaultMaxKeyListEntitySize() {
     return DEFAULT_MAX_KEY_LIST_ENTITY_SIZE;
   }
 
