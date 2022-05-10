@@ -95,6 +95,7 @@ import org.projectnessie.versioned.persist.adapter.spi.TryLoopState;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogEntry.Operation;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogParents;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefType;
 
 /**
  * Transactional/relational {@link AbstractDatabaseAdapter} implementation using JDBC primitives.
@@ -1713,8 +1714,7 @@ public abstract class TxDatabaseAdapter
 
       newParents = refLogHead.getRefLogParentsInclHead().stream().map(Hash::asBytes);
     }
-    RefLogEntry.RefType refType =
-        ref instanceof TagName ? RefLogEntry.RefType.Tag : RefLogEntry.RefType.Branch;
+    RefType refType = ref instanceof TagName ? RefType.Tag : RefType.Branch;
 
     RefLogEntry.Builder entry =
         RefLogEntry.newBuilder()

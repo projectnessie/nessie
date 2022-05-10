@@ -54,6 +54,7 @@ import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePoi
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.NamedReference;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefPointer;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefType;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RepoProps;
 
 /** (Re-)serialization tests using random data for relevant types. */
@@ -415,10 +416,7 @@ class TestSerialization {
       state.addNamedReferences(
           NamedReference.newBuilder()
               .setName(randomString(32))
-              .setRef(
-                  RefPointer.newBuilder()
-                      .setType(RefPointer.Type.Branch)
-                      .setHash(randomBytes(32))));
+              .setRef(RefPointer.newBuilder().setType(RefType.Branch).setHash(randomBytes(32))));
     }
     return state.build();
   }
@@ -510,7 +508,7 @@ class TestSerialization {
     }
     entry.setRefLogId(randomHash().asBytes());
     entry.setRefName(ByteString.copyFromUtf8("temp"));
-    entry.setRefType(RefLogEntry.RefType.Branch);
+    entry.setRefType(RefType.Branch);
     entry.setCommitHash(randomHash().asBytes());
     entry.setOperation(RefLogEntry.Operation.MERGE);
     return entry.build();
