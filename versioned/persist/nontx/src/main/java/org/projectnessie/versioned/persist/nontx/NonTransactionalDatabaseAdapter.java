@@ -1358,8 +1358,9 @@ public abstract class NonTransactionalDatabaseAdapter<
         GlobalStateLogEntry.Builder currentEntry =
             newGlobalLogEntryBuilder(commitTimeInMicros()).addParents(globalParentsReverse.get(0));
 
+        int maxEntitySize = maxEntitySize(config.getGlobalLogEntrySize());
         for (String cid : contentIdsByRecency) {
-          if (currentEntry.buildPartial().getSerializedSize() >= config.getGlobalLogEntrySize()) {
+          if (currentEntry.buildPartial().getSerializedSize() >= maxEntitySize) {
             compactGlobalLogWriteEntry(ctx, stats, globalParentsReverse, currentEntry, newLogIds);
 
             // Prepare new entry

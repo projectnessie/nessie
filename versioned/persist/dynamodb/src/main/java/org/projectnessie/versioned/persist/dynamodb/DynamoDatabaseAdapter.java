@@ -78,6 +78,7 @@ public class DynamoDatabaseAdapter
 
   // DynamoDB limit
   private static final int DYNAMO_BATCH_WRITE_MAX_REQUESTS = 25;
+  private static final int DYNAMO_MAX_ITEM_SIZE = 375 * 1024;
 
   private static final char PREFIX_SEPARATOR = ':';
   private final DynamoDatabaseClient client;
@@ -379,6 +380,11 @@ public class DynamoDatabaseAdapter
     } catch (ConditionalCheckFailedException e) {
       return false;
     }
+  }
+
+  @Override
+  protected int maxEntitySize(int value) {
+    return Math.min(value, DYNAMO_MAX_ITEM_SIZE);
   }
 
   @Override
