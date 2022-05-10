@@ -118,9 +118,6 @@ import org.projectnessie.versioned.persist.adapter.TransplantParams;
 public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends DatabaseAdapterConfig>
     implements DatabaseAdapter {
 
-  @SuppressWarnings("UnnecessaryLambda") // intentional constant lambda reference
-  private static final Function<Hash, CommitLogEntry> NO_IN_MEMORY_COMMITS = hash -> null;
-
   protected static final String TAG_HASH = "hash";
   protected static final String TAG_COUNT = "count";
   protected final CONFIG config;
@@ -733,23 +730,6 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
    * must have exactly as many elements as in the parameter {@code hashes}. Non-existing hashes are
    * returned as {@code null}.
    */
-  private List<CommitLogEntry> fetchMultipleFromCommitLog(OP_CONTEXT ctx, List<Hash> hashes) {
-    if (hashes.contains(NO_ANCESTOR)) {
-      // Do not try to fetch NO_ANCESTOR - it won't exist.
-      hashes = new ArrayList<>(hashes);
-      hashes.remove(NO_ANCESTOR);
-    }
-    if (hashes.isEmpty()) {
-      return Collections.emptyList();
-    }
-    try (Traced ignore =
-        trace("fetchPageFromCommitLog")
-            .tag(TAG_HASH, hashes.get(0).asString())
-            .tag(TAG_COUNT, hashes.size())) {
-      return doFetchMultipleFromCommitLog(ctx, hashes);
-    }
-  }
-
   private List<CommitLogEntry> fetchMultipleFromCommitLog(
       OP_CONTEXT ctx, List<Hash> hashes, @Nonnull Function<Hash, CommitLogEntry> inMemoryCommits) {
     List<CommitLogEntry> result = new ArrayList<>(hashes.size());
@@ -760,6 +740,11 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     // enable placing them in the correct positions later, when they are fetched from storage.
     int idx = 0;
     for (Hash hash : hashes) {
+      if (NO_ANCESTOR.equals(hash)) {
+        result.add(null);
+        continue;
+      }
+
       CommitLogEntry found = inMemoryCommits.apply(hash);
       if (found != null) {
         result.add(found);
@@ -772,7 +757,15 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     }
 
     if (!remainingHashes.isEmpty()) {
-      List<CommitLogEntry> fromStorage = fetchMultipleFromCommitLog(ctx, remainingHashes);
+      List<CommitLogEntry> fromStorage;
+
+      try (Traced ignore =
+          trace("fetchPageFromCommitLog")
+              .tag(TAG_HASH, hashes.get(0).asString())
+              .tag(TAG_COUNT, hashes.size())) {
+        fromStorage = doFetchMultipleFromCommitLog(ctx, remainingHashes);
+      }
+
       // Fill the gaps in the final result list. Note that fetchPageFromCommitLog must return the
       // list of the same size as its `remainingHashes` parameter.
       idx = 0;
@@ -791,7 +784,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
   /** Reads from the commit-log starting at the given commit-log-hash. */
   protected Stream<CommitLogEntry> readCommitLogStream(OP_CONTEXT ctx, Hash initialHash)
       throws ReferenceNotFoundException {
-    Spliterator<CommitLogEntry> split = readCommitLog(ctx, initialHash, NO_IN_MEMORY_COMMITS);
+    Spliterator<CommitLogEntry> split = readCommitLog(ctx, initialHash, h -> null);
     return StreamSupport.stream(split, false);
   }
 
@@ -820,16 +813,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
       throw referenceNotFound(initialHash);
     }
 
-    BiFunction<OP_CONTEXT, List<Hash>, List<CommitLogEntry>> fetcher;
-    // Avoid creating unnecessary transient lists for the common case of fetching old commits from
-    // storage.
-    // Note: == comparison is fine in this situation because the "in memory" function is local to
-    // this class both for the empty and in the non-empty cases.
-    if (inMemoryCommits == NO_IN_MEMORY_COMMITS) {
-      fetcher = this::fetchMultipleFromCommitLog;
-    } else {
-      fetcher = (c, hashes) -> fetchMultipleFromCommitLog(c, hashes, inMemoryCommits);
-    }
+    BiFunction<OP_CONTEXT, List<Hash>, List<CommitLogEntry>> fetcher =
+        (c, hashes) -> fetchMultipleFromCommitLog(c, hashes, inMemoryCommits);
 
     return logFetcher(ctx, initial, fetcher, CommitLogEntry::getParents);
   }
@@ -1170,7 +1155,7 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
   /** Retrieve the content-keys and their types for the commit-log-entry with the given hash. */
   protected Stream<KeyListEntry> keysForCommitEntry(
       OP_CONTEXT ctx, Hash hash, KeyFilterPredicate keyFilter) throws ReferenceNotFoundException {
-    return keysForCommitEntry(ctx, hash, keyFilter, NO_IN_MEMORY_COMMITS);
+    return keysForCommitEntry(ctx, hash, keyFilter, h -> null);
   }
 
   /** Retrieve the content-keys and their types for the commit-log-entry with the given hash. */
@@ -1312,7 +1297,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
                             .map(KeyListEntry::getCommitId)
                             .filter(Objects::nonNull)
                             .distinct()
-                            .collect(Collectors.toList()));
+                            .collect(Collectors.toList()),
+                        h -> null);
                 commitLogEntries.forEach(commitLogEntryHandler);
               }
 
