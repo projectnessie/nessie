@@ -244,18 +244,19 @@ public abstract class AbstractGlobalStates {
 
     Hash branchInitial = databaseAdapter.hashOnReference(branch, Optional.empty());
 
-    databaseAdapter.commit(
-        ImmutableCommitParams.builder()
-            .toBranch(branch)
-            .commitMetaSerialized(ByteString.EMPTY)
-            .addPuts(
-                KeyWithBytes.of(
-                    Key.of("my", "table", "num0"),
-                    ContentId.of("id-0"),
-                    (byte) 0,
-                    ByteString.copyFromUtf8("there")))
-            .putGlobal(ContentId.of("id-0"), ByteString.copyFromUtf8("global"))
-            .build());
+    Hash conflict =
+        databaseAdapter.commit(
+            ImmutableCommitParams.builder()
+                .toBranch(branch)
+                .commitMetaSerialized(ByteString.EMPTY)
+                .addPuts(
+                    KeyWithBytes.of(
+                        Key.of("my", "table", "num0"),
+                        ContentId.of("id-0"),
+                        (byte) 0,
+                        ByteString.copyFromUtf8("there")))
+                .putGlobal(ContentId.of("id-0"), ByteString.copyFromUtf8("global"))
+                .build());
 
     assertThatThrownBy(
             () ->
@@ -275,7 +276,9 @@ public abstract class AbstractGlobalStates {
                         .build()))
         .isInstanceOf(ReferenceConflictException.class)
         .hasMessageContaining(
-            "Key 'my.table.num0' has conflicting put-operation from another commit.");
+            String.format(
+                "Key 'my.table.num0' has conflicting put-operation from commit '%s'.",
+                conflict.asString()));
 
     assertThatThrownBy(
             () ->
