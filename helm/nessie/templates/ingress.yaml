@@ -1,9 +1,9 @@
 {{- if .Values.ingress.enabled -}}
 {{- $fullName := include "nessie.fullname" . -}}
 {{- $svcPort := .Values.service.port -}}
-{{- if semverCompare ">=1.22-0" .Capabilities.KubeVersion.GitVersion -}}
+{{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1" -}}
 apiVersion: networking.k8s.io/v1
-{{- else if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion -}}
+{{- else if .Capabilities.APIVersions.Has "networking.k8s.io/v1beta1" -}}
 apiVersion: networking.k8s.io/v1beta1
 {{- else -}}
 apiVersion: extensions/v1beta1
@@ -35,8 +35,9 @@ spec:
         paths:
           {{- range .paths }}
           - path: {{ . }}
+            pathType: ImplementationSpecific
             backend:
-              {{- if semverCompare ">=1.22-0" .Capabilities.KubeVersion.GitVersion }}
+              {{- if $.Capabilities.APIVersions.Has "networking.k8s.io/v1" }}
               service:
                 name: {{ $fullName }}
                 port:
