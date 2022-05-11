@@ -52,7 +52,7 @@
     "typescript-logging": "^2.0.1",
     "typescript-logging-log4ts-style": "^2.0.1",
     "url-loader": "4.1.1",
-    "webpack": "^5.72.0",
+    "webpack": "^5.72.1",
     "yup": "^0.32.11"
   },
   "scripts": {
