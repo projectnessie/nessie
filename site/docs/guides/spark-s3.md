@@ -13,8 +13,8 @@ Start the Nessie server container from the `projectnessie/nessie` Docker image i
 docker run -p 19120:19120 projectnessie/nessie:latest
 ```
 
-Note: this example with run the Nessie Server using in-memory storage for table metadata. If/when the container
-is deleted Nessie data about table changes will be lost, yet the data files in S3 will remain.
+Note: this example will run the Nessie Server using in-memory storage for table metadata. If/when the container
+is deleted, Nessie data about table changes will be lost, yet the data files in S3 will remain.
 
 ## Setting up Spark Session
 
@@ -87,5 +87,5 @@ environment variable.
 
 The Nessie Server in this example does not require authentication.
 
-If the Nessie Server runs with authentication enabled additional configuration parameters will be required in the
+If the Nessie Server runs with authentication enabled, additional configuration parameters will be required in the
 Spark session. Please refer to the [Authentication in Tools](../tools/auth_config.md) section for details.

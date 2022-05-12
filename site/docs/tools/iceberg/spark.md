@@ -184,6 +184,9 @@ The following properties are **required** in Spark when creating the Nessie Cata
 - `spark.sql.catalog.<catalog_name>` : This **must** be `org.apache.iceberg.spark.SparkCatalog`. This is a Spark
   option to set the catalog `<catalog_name>` to be managed by Nessie's Catalog implementation.
 
+!!! note
+    An example of configuring Spark with Iceberg and an S3 bucket for the `warehouse` location is available in the
+    [Guides](../../guides/spark-s3.md) section.
 
 ## Writing
 
