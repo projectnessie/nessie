@@ -122,6 +122,11 @@ public abstract class NonTransactionalDatabaseAdapter<
   }
 
   @Override
+  public NonTransactionalOperationContext borrowConnection() {
+    return NON_TRANSACTIONAL_OPERATION_CONTEXT;
+  }
+
+  @Override
   public Hash hashOnReference(NamedRef namedReference, Optional<Hash> hashOnReference)
       throws ReferenceNotFoundException {
     return hashOnRef(NON_TRANSACTIONAL_OPERATION_CONTEXT, namedReference, hashOnReference);
@@ -718,9 +723,9 @@ public abstract class NonTransactionalDatabaseAdapter<
   }
 
   /**
-   * Convenience method for {@link AbstractDatabaseAdapter#hashOnRef(Object, NamedRef, Optional,
-   * Hash) hashOnRef(ctx, reference.getReference(), branchHead(fetchGlobalPointer(ctx), reference),
-   * reference.getHashOnReference())}.
+   * Convenience method for {@link AbstractDatabaseAdapter#hashOnRef(AutoCloseable, NamedRef,
+   * Optional, Hash) hashOnRef(ctx, reference.getReference(), branchHead(fetchGlobalPointer(ctx),
+   * reference), reference.getHashOnReference())}.
    */
   protected Hash hashOnRef(
       NonTransactionalOperationContext ctx, NamedRef reference, Optional<Hash> hashOnRef)
@@ -729,8 +734,8 @@ public abstract class NonTransactionalDatabaseAdapter<
   }
 
   /**
-   * Convenience method for {@link AbstractDatabaseAdapter#hashOnRef(Object, NamedRef, Optional,
-   * Hash) hashOnRef(ctx, reference.getReference(), branchHead(pointer, reference),
+   * Convenience method for {@link AbstractDatabaseAdapter#hashOnRef(AutoCloseable, NamedRef,
+   * Optional, Hash) hashOnRef(ctx, reference.getReference(), branchHead(pointer, reference),
    * reference.getHashOnReference())}.
    */
   protected Hash hashOnRef(
