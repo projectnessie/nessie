@@ -15,11 +15,14 @@
  */
 package org.projectnessie.versioned.persist.nontx;
 
-public class NonTransactionalOperationContext {
+public class NonTransactionalOperationContext implements AutoCloseable {
 
   @SuppressWarnings("InstantiationOfUtilityClass")
   public static final NonTransactionalOperationContext NON_TRANSACTIONAL_OPERATION_CONTEXT =
       new NonTransactionalOperationContext();
 
   private NonTransactionalOperationContext() {}
+
+  @Override
+  public void close() {}
 }

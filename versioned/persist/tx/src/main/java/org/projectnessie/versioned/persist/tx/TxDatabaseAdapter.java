@@ -678,8 +678,8 @@ public abstract class TxDatabaseAdapter
   // /////////////////////////////////////////////////////////////////////////////////////////////
 
   /**
-   * Convenience for {@link AbstractDatabaseAdapter#hashOnRef(Object, NamedRef, Optional, Hash)
-   * hashOnRef(conn, ref, fetchNamedRefHead(conn, ref.getReference()))}.
+   * Convenience for {@link AbstractDatabaseAdapter#hashOnRef(AutoCloseable, NamedRef, Optional,
+   * Hash) hashOnRef(conn, ref, fetchNamedRefHead(conn, ref.getReference()))}.
    */
   protected Hash hashOnRef(ConnectionWrapper conn, NamedRef reference, Optional<Hash> hashOnRef)
       throws ReferenceNotFoundException {
@@ -696,7 +696,8 @@ public abstract class TxDatabaseAdapter
     return toProto(entry).getSerializedSize();
   }
 
-  protected ConnectionWrapper borrowConnection() {
+  @Override
+  public ConnectionWrapper borrowConnection() {
     return ConnectionWrapper.borrow(this::newConnection);
   }
 

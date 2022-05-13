@@ -27,6 +27,7 @@ import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUti
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.takeUntilIncludeLast;
 import static org.projectnessie.versioned.persist.adapter.spi.Traced.trace;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import com.google.common.hash.Hasher;
@@ -117,7 +118,8 @@ import org.projectnessie.versioned.persist.adapter.TransplantParams;
  *     For example, used to have one "borrowed" database connection per database-adapter operation.
  * @param <CONFIG> configuration interface type for the concrete implementation
  */
-public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends DatabaseAdapterConfig>
+public abstract class AbstractDatabaseAdapter<
+        OP_CONTEXT extends AutoCloseable, CONFIG extends DatabaseAdapterConfig>
     implements DatabaseAdapter {
 
   protected static final String TAG_HASH = "hash";
@@ -138,6 +140,14 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     this.config = config;
     this.storeWorker = storeWorker;
   }
+
+  @VisibleForTesting
+  public CONFIG getConfig() {
+    return config;
+  }
+
+  @VisibleForTesting
+  public abstract OP_CONTEXT borrowConnection();
 
   @Override
   public Hash noAncestorHash() {
@@ -715,7 +725,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
   }
 
   /** Load the commit-log entry for the given hash, return {@code null}, if not found. */
-  protected final CommitLogEntry fetchFromCommitLog(OP_CONTEXT ctx, Hash hash) {
+  @VisibleForTesting
+  public final CommitLogEntry fetchFromCommitLog(OP_CONTEXT ctx, Hash hash) {
     if (hash.equals(NO_ANCESTOR)) {
       // Do not try to fetch NO_ANCESTOR - it won't exist.
       return null;
@@ -1053,35 +1064,68 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     KeyListBuildState buildState =
         new KeyListBuildState(entitySize(unwrittenEntry), newCommitEntry);
 
+    Set<Key> keysToEnhanceWithCommitId = new HashSet<>();
+
+    Consumer<KeyListEntry> addKeyListEntry =
+        keyListEntry -> {
+          int keyTypeSize = entitySize(keyListEntry);
+          if (buildState.embedded) {
+            // filling the embedded key-list in CommitLogEntry
+
+            if (buildState.currentSize + keyTypeSize < maxEntitySize(config.getMaxKeyListSize())) {
+              // CommitLogEntry.keyList still has room
+              buildState.addToEmbedded(keyListEntry, keyTypeSize);
+            } else {
+              // CommitLogEntry.keyList is "full", switch to the first KeyListEntity
+              buildState.embedded = false;
+              buildState.newKeyListEntity();
+              buildState.addToKeyListEntity(keyListEntry, keyTypeSize);
+            }
+          } else {
+            // filling linked key-lists via CommitLogEntry.keyListIds
+
+            if (buildState.currentSize + keyTypeSize
+                > maxEntitySize(config.getMaxKeyListEntitySize())) {
+              // current KeyListEntity is "full", switch to a new one
+              buildState.finishKeyListEntity();
+              buildState.newKeyListEntity();
+            }
+            buildState.addToKeyListEntity(keyListEntry, keyTypeSize);
+          }
+        };
+
     keysForCommitEntry(ctx, startHash, null, inMemoryCommits)
         .forEach(
-            keyWithType -> {
-              int keyTypeSize = entitySize(keyWithType);
-              if (buildState.embedded) {
-                // filling the embedded key-list in CommitLogEntry
-
-                if (buildState.currentSize + keyTypeSize
-                    < maxEntitySize(config.getMaxKeyListSize())) {
-                  // CommitLogEntry.keyList still has room
-                  buildState.addToEmbedded(keyWithType, keyTypeSize);
-                } else {
-                  // CommitLogEntry.keyList is "full", switch to the first KeyListEntity
-                  buildState.embedded = false;
-                  buildState.newKeyListEntity();
-                  buildState.addToKeyListEntity(keyWithType, keyTypeSize);
-                }
+            keyListEntry -> {
+              if (keyListEntry.getCommitId() == null) {
+                keysToEnhanceWithCommitId.add(keyListEntry.getKey());
               } else {
-                // filling linked key-lists via CommitLogEntry.keyListIds
-
-                if (buildState.currentSize + keyTypeSize
-                    > maxEntitySize(config.getMaxKeyListEntitySize())) {
-                  // current KeyListEntity is "full", switch to a new one
-                  buildState.finishKeyListEntity();
-                  buildState.newKeyListEntity();
-                }
-                buildState.addToKeyListEntity(keyWithType, keyTypeSize);
+                addKeyListEntry.accept(keyListEntry);
               }
             });
+
+    if (!keysToEnhanceWithCommitId.isEmpty()) {
+      // Found KeyListEntry w/o commitId, need to add that information.
+      Spliterator<CommitLogEntry> clSplit = readCommitLog(ctx, startHash, inMemoryCommits);
+      while (true) {
+        boolean more =
+            clSplit.tryAdvance(
+                e -> {
+                  e.getDeletes().forEach(keysToEnhanceWithCommitId::remove);
+                  for (KeyWithBytes put : e.getPuts()) {
+                    if (keysToEnhanceWithCommitId.remove(put.getKey())) {
+                      KeyListEntry entry =
+                          KeyListEntry.of(
+                              put.getKey(), put.getContentId(), put.getType(), e.getHash());
+                      addKeyListEntry.accept(entry);
+                    }
+                  }
+                });
+        if (!more || keysToEnhanceWithCommitId.isEmpty()) {
+          break;
+        }
+      }
+    }
 
     // If there's an "unfinished" KeyListEntity, build it.
     if (buildState.currentKeyList != null) {
@@ -1353,7 +1397,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
   protected abstract Map<ContentId, ByteString> doFetchGlobalStates(
       OP_CONTEXT ctx, Set<ContentId> contentIds) throws ReferenceNotFoundException;
 
-  protected final Stream<KeyListEntity> fetchKeyLists(OP_CONTEXT ctx, List<Hash> keyListsIds) {
+  @VisibleForTesting
+  public final Stream<KeyListEntity> fetchKeyLists(OP_CONTEXT ctx, List<Hash> keyListsIds) {
     if (keyListsIds.isEmpty()) {
       return Stream.empty();
     }
@@ -1398,8 +1443,8 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
   protected abstract void doWriteMultipleCommits(OP_CONTEXT ctx, List<CommitLogEntry> entries)
       throws ReferenceConflictException;
 
-  protected final void writeKeyListEntities(
-      OP_CONTEXT ctx, List<KeyListEntity> newKeyListEntities) {
+  @VisibleForTesting
+  public final void writeKeyListEntities(OP_CONTEXT ctx, List<KeyListEntity> newKeyListEntities) {
     try (Traced ignore = trace("writeKeyListEntities").tag(TAG_COUNT, newKeyListEntities.size())) {
       doWriteKeyListEntities(ctx, newKeyListEntities);
     }
