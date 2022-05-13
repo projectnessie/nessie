@@ -517,8 +517,8 @@ public abstract class AbstractDatabaseAdapter<
    *     retrieved
    * @param defaultBranchHead prerequisite, the hash of the default branch's HEAD commit (depending
    *     on the database-adapter implementation). If {@code null}, {@link
-   *     #namedRefsWithDefaultBranchRelatedInfo(Object, GetNamedRefsParams, Stream, Hash)} will not
-   *     add additional default-branch related information (common ancestor and commits
+   *     #namedRefsWithDefaultBranchRelatedInfo(AutoCloseable, GetNamedRefsParams, Stream, Hash)}
+   *     will not add additional default-branch related information (common ancestor and commits
    *     behind/ahead).
    * @param refs current {@link Stream} of {@link ReferenceInfo} to be enhanced.
    * @return filtered/enhanced stream based on {@code refs}.
@@ -661,8 +661,8 @@ public abstract class AbstractDatabaseAdapter<
   }
 
   /**
-   * Convenience for {@link #hashOnRef(Object, Hash, NamedRef, Optional, Consumer) hashOnRef(ctx,
-   * knownHead, ref.getReference(), ref.getHashOnReference(), null)}.
+   * Convenience for {@link #hashOnRef(AutoCloseable, Hash, NamedRef, Optional, Consumer)
+   * hashOnRef(ctx, knownHead, ref.getReference(), ref.getHashOnReference(), null)}.
    */
   protected Hash hashOnRef(
       OP_CONTEXT ctx, NamedRef reference, Optional<Hash> hashOnRef, Hash knownHead)
@@ -836,7 +836,7 @@ public abstract class AbstractDatabaseAdapter<
   }
 
   /**
-   * Like {@link #readCommitLogStream(Object, Hash)}, but only returns the {@link Hash
+   * Like {@link #readCommitLogStream(AutoCloseable, Hash)}, but only returns the {@link Hash
    * commit-log-entry hashes}, which can be taken from {@link CommitLogEntry#getParents()}, thus no
    * need to perform a read-operation against every hash.
    */
@@ -861,8 +861,8 @@ public abstract class AbstractDatabaseAdapter<
 
   /**
    * Constructs a {@link Stream} of entries for either the global-state-log or a commit-log or a
-   * reflog entry. Use {@link #readCommitLogStream(Object, Hash)} or the similar implementation for
-   * the global-log or reflog entry for non-transactional adapters.
+   * reflog entry. Use {@link #readCommitLogStream(AutoCloseable, Hash)} or the similar
+   * implementation for the global-log or reflog entry for non-transactional adapters.
    */
   protected <T> Spliterator<T> logFetcher(
       OP_CONTEXT ctx,
@@ -985,7 +985,7 @@ public abstract class AbstractDatabaseAdapter<
     return Hash.of(UnsafeByteOperations.unsafeWrap(hasher.hash().asBytes()));
   }
 
-  /** Helper object for {@link #buildKeyList(Object, CommitLogEntry, Consumer, Function)}. */
+  /** Helper object for {@link #buildKeyList(AutoCloseable, CommitLogEntry, Consumer, Function)}. */
   private static class KeyListBuildState {
     final ImmutableCommitLogEntry.Builder newCommitEntry;
     /** Builder for {@link CommitLogEntry#getKeyList()}. */
