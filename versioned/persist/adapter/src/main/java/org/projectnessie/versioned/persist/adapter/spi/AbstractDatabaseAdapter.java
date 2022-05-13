@@ -52,6 +52,7 @@ import java.util.Spliterators;
 import java.util.Spliterators.AbstractSpliterator;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -1271,16 +1272,23 @@ public abstract class AbstractDatabaseAdapter<OP_CONTEXT, CONFIG extends Databas
     // share common functionality implemented in the function `commitLogEntryHandler`, which
     // handles the 'Put` operations.
 
+    AtomicBoolean keyListProcessed = new AtomicBoolean();
     try (Stream<CommitLogEntry> log =
         takeUntilExcludeLast(readCommitLogStream(ctx, refHead), e -> remainingKeys.isEmpty())) {
       log.forEach(
           entry -> {
             commitLogEntryHandler.accept(entry);
 
-            if (entry.getKeyList() != null) {
+            if (entry.getKeyList() != null && keyListProcessed.compareAndSet(false, true)) {
               // CommitLogEntry has a KeyList.
               // All keys in 'remainingKeys', that are _not_ in the KeyList(s), can be removed,
               // because at this point we know that these do not exist.
+              //
+              // But do only process the "newest" key-list - older key lists are irrelevant.
+              // KeyListEntry written before Nessie 0.22.0 do not have the commit-ID field set,
+              // which means the remaining commit-log needs to be searched for the commit that
+              // added the key - but processing older key-lists "on the way" makes no sense,
+              // because those will not have the key either.
 
               Set<KeyListEntry> remainingInKeyList = new HashSet<>();
               try (Stream<KeyList> keyLists =
