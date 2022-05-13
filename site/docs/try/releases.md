@@ -1,5 +1,14 @@
 # Releases
 
+## 0.30.0 Release (May 13, 2022)
+
+* Add commit-ID to KeyListEntry when writing new key-lists
+* Do not process old key-lists when retrieving values
+* Helm: Fix k8s version detection in ingress template
+* Database-adapter: commit optimizations
+* Remove the configurable default for the configurable values for getDefaultMaxKeyListSize
+* Dynamo/Mongo/TX: use bulk/batch requests where possible
+
 ## 0.29.0 Release (May 5, 2022)
 
 * Spark SQL: Configure ref.hash for NessieCatalog only when explicitly requested
