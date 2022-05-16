@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.StampedLock;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.projectnessie.versioned.persist.adapter.DatabaseConnectionProvider;
 import org.rocksdb.ColumnFamilyDescriptor;
 import org.rocksdb.ColumnFamilyHandle;
@@ -155,6 +156,10 @@ public class RocksDbInstance implements DatabaseConnectionProvider<RocksDbConfig
     return cfKeyList;
   }
 
+  public ColumnFamilyHandle getCfRefLog() {
+    return cfRefLog;
+  }
+
   public ReadWriteLock getLock() {
     return lock;
   }
@@ -163,7 +168,7 @@ public class RocksDbInstance implements DatabaseConnectionProvider<RocksDbConfig
     return db;
   }
 
-  public ColumnFamilyHandle getCfRefLog() {
-    return cfRefLog;
+  public Stream<ColumnFamilyHandle> allExceptGlobalPointer() {
+    return Stream.of(cfGlobalLog, cfCommitLog, cfRepoProps, cfKeyList, cfRefLog);
   }
 }

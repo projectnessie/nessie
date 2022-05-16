@@ -22,6 +22,7 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import java.util.Objects;
+import java.util.stream.Stream;
 import org.bson.Document;
 import org.projectnessie.versioned.persist.adapter.DatabaseConnectionProvider;
 
@@ -107,5 +108,9 @@ public class MongoDatabaseClient implements DatabaseConnectionProvider<MongoClie
 
   public MongoCollection<Document> getRefLog() {
     return refLog;
+  }
+
+  public Stream<MongoCollection<Document>> allExceptGlobalPointer() {
+    return Stream.of(repoDesc, globalLog, commitLog, keyLists, refLog);
   }
 }

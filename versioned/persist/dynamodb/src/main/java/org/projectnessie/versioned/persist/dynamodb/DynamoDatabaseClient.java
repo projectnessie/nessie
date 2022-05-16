@@ -16,16 +16,10 @@
 package org.projectnessie.versioned.persist.dynamodb;
 
 import static org.projectnessie.versioned.persist.dynamodb.Tables.KEY_NAME;
-import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_COMMIT_LOG;
-import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_GLOBAL_LOG;
-import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_GLOBAL_POINTER;
-import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_KEY_LISTS;
-import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_REF_LOG;
-import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_REPO_DESC;
+import static org.projectnessie.versioned.persist.dynamodb.Tables.all;
 
 import java.net.URI;
 import java.util.List;
-import java.util.stream.Stream;
 import org.projectnessie.versioned.persist.adapter.DatabaseConnectionProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -88,14 +82,7 @@ public class DynamoDatabaseClient implements DatabaseConnectionProvider<DynamoCl
           "Must provide a Dynamo-client-configuration of type DefaultDynamoClientConfig or ProvidedDynamoClientConfig.");
     }
 
-    Stream.of(
-            TABLE_REPO_DESC,
-            TABLE_GLOBAL_POINTER,
-            TABLE_GLOBAL_LOG,
-            TABLE_COMMIT_LOG,
-            TABLE_KEY_LISTS,
-            TABLE_REF_LOG)
-        .forEach(this::createIfMissing);
+    all().forEach(this::createIfMissing);
   }
 
   @Override
