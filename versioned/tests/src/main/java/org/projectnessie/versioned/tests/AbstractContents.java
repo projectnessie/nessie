@@ -18,7 +18,7 @@ package org.projectnessie.versioned.tests;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.projectnessie.versioned.testworker.CommitMessage.commitMessage;
-import static org.projectnessie.versioned.testworker.WithGlobalStateContent.newWithGlobal;
+import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 
 import com.google.common.collect.ImmutableList;
 import java.util.Optional;
@@ -57,7 +57,7 @@ public abstract class AbstractContents extends AbstractNestedVersionStore {
     store().create(branch, Optional.empty());
     // commit just something to have a "real" common ancestor and not "beginning of time", which
     // means no-common-ancestor
-    BaseContent initialState = newWithGlobal("initial-state", "value");
+    BaseContent initialState = newOnRef("value");
     Hash ancestor =
         store()
             .commit(
@@ -78,7 +78,7 @@ public abstract class AbstractContents extends AbstractNestedVersionStore {
     assertThat(store().getValue(branch, key)).isNull();
     assertThat(store().getValue(delete, key)).isNull();
 
-    BaseContent recreateState = newWithGlobal("recreate-state", "value");
+    BaseContent recreateState = newOnRef("value");
     Hash recreate =
         store()
             .commit(

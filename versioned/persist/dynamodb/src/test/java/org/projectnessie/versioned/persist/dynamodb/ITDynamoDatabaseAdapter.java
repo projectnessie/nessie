@@ -35,7 +35,6 @@ import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.KeyList;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalOperationContext;
-import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogEntry;
 import org.projectnessie.versioned.persist.tests.AbstractDatabaseAdapterTest;
 import org.projectnessie.versioned.persist.tests.LongerCommitTimeouts;
@@ -64,18 +63,14 @@ public class ITDynamoDatabaseAdapter extends AbstractDatabaseAdapterTest
   @ParameterizedTest
   @MethodSource("cleanUpCasBatch")
   public void cleanUpCasBatch(int numCommits, int numKeyLists) throws Exception {
-    Hash globalId = randomHash();
     Set<Hash> branchCommits = new HashSet<>();
     Set<Hash> newKeyLists = new HashSet<>();
     Hash refLogId = randomHash();
 
-    GlobalStateLogEntry globalStateLogEntry =
-        GlobalStateLogEntry.newBuilder().setId(globalId.asBytes()).build();
     RefLogEntry refLogEntry = RefLogEntry.newBuilder().setRefLogId(refLogId.asBytes()).build();
 
     NonTransactionalOperationContext ctx = NON_TRANSACTIONAL_OPERATION_CONTEXT;
     implDatabaseAdapter().doWriteRefLog(ctx, refLogEntry);
-    implDatabaseAdapter().doWriteGlobalCommit(ctx, globalStateLogEntry);
     for (int i = 0; i < numCommits; i++) {
       Hash commitId = randomHash();
       CommitLogEntry commit =
@@ -101,7 +96,6 @@ public class ITDynamoDatabaseAdapter extends AbstractDatabaseAdapterTest
       newKeyLists.add(keyListId);
     }
 
-    assertThat(implDatabaseAdapter().doFetchFromGlobalLog(ctx, globalId)).isNotNull();
     assertThat(implDatabaseAdapter().doFetchFromRefLog(ctx, refLogId)).isNotNull();
     assertThat(branchCommits)
         .map(id -> implDatabaseAdapter().doFetchFromCommitLog(ctx, id))
@@ -117,9 +111,8 @@ public class ITDynamoDatabaseAdapter extends AbstractDatabaseAdapterTest
         .allMatch(Objects::nonNull);
 
     implDatabaseAdapter()
-        .doCleanUpCommitCas(ctx, Optional.of(globalId), branchCommits, newKeyLists, refLogId);
+        .doCleanUpCommitCas(ctx, Optional.empty(), branchCommits, newKeyLists, refLogId);
 
-    assertThat(implDatabaseAdapter().doFetchFromGlobalLog(ctx, globalId)).isNull();
     assertThat(implDatabaseAdapter().doFetchFromRefLog(ctx, refLogId)).isNull();
     assertThat(branchCommits)
         .map(id -> implDatabaseAdapter().doFetchFromCommitLog(ctx, id))

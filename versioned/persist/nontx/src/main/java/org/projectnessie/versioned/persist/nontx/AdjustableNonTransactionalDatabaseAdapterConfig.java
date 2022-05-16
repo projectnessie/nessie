@@ -20,10 +20,4 @@ import org.projectnessie.versioned.persist.adapter.AdjustableDatabaseAdapterConf
 
 @Value.Immutable
 public interface AdjustableNonTransactionalDatabaseAdapterConfig
-    extends NonTransactionalDatabaseAdapterConfig, AdjustableDatabaseAdapterConfig {
-
-  AdjustableNonTransactionalDatabaseAdapterConfig withParentsPerGlobalCommit(
-      int parentsPerGlobalCommit);
-
-  AdjustableNonTransactionalDatabaseAdapterConfig withGlobalLogEntrySize(int globalLogEntrySize);
-}
+    extends NonTransactionalDatabaseAdapterConfig, AdjustableDatabaseAdapterConfig {}

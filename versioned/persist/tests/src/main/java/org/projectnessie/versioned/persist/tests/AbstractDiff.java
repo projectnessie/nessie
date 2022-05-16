@@ -32,8 +32,8 @@ import org.projectnessie.versioned.persist.adapter.Difference;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitParams;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
+import org.projectnessie.versioned.testworker.OnRefOnly;
 import org.projectnessie.versioned.testworker.SimpleStoreWorker;
-import org.projectnessie.versioned.testworker.WithGlobalStateContent;
 
 /** Verifies handling of repo-description in the database-adapters. */
 public abstract class AbstractDiff {
@@ -59,9 +59,7 @@ public abstract class AbstractDiff {
               .toBranch(branch)
               .commitMetaSerialized(ByteString.copyFromUtf8("commit " + i));
       for (int k = 0; k < 3; k++) {
-        WithGlobalStateContent c =
-            WithGlobalStateContent.withGlobal(
-                "global " + i + " for " + k, "on-ref " + i + " for " + k, "cid-" + i + "-" + k);
+        OnRefOnly c = OnRefOnly.onRef("on-ref " + i + " for " + k, "cid-" + i + "-" + k);
         commit.addPuts(
             KeyWithBytes.of(
                 Key.of("key", Integer.toString(k)),
@@ -92,11 +90,8 @@ public abstract class AbstractDiff {
                 IntStream.range(0, 3)
                     .mapToObj(
                         k -> {
-                          WithGlobalStateContent content =
-                              WithGlobalStateContent.withGlobal(
-                                  "global " + c + " for " + k,
-                                  "on-ref " + c + " for " + k,
-                                  "cid-" + c + "-" + k);
+                          OnRefOnly content =
+                              OnRefOnly.onRef("on-ref " + c + " for " + k, "cid-" + c + "-" + k);
                           return Difference.of(
                               Key.of("key", Integer.toString(k)),
                               Optional.empty(),
@@ -120,11 +115,8 @@ public abstract class AbstractDiff {
                 IntStream.range(0, 3)
                     .mapToObj(
                         k -> {
-                          WithGlobalStateContent content =
-                              WithGlobalStateContent.withGlobal(
-                                  "global " + c + " for " + k,
-                                  "on-ref " + c + " for " + k,
-                                  "cid-" + c + "-" + k);
+                          OnRefOnly content =
+                              OnRefOnly.onRef("on-ref " + c + " for " + k, "cid-" + c + "-" + k);
                           return Difference.of(
                               Key.of("key", Integer.toString(k)),
                               Optional.empty(),
@@ -148,16 +140,11 @@ public abstract class AbstractDiff {
                 IntStream.range(0, 3)
                     .mapToObj(
                         k -> {
-                          WithGlobalStateContent from =
-                              WithGlobalStateContent.withGlobal(
-                                  "global " + (c - 1) + " for " + k,
-                                  "on-ref " + (c - 1) + " for " + k,
-                                  "cid-" + (c - 1) + "-" + k);
-                          WithGlobalStateContent to =
-                              WithGlobalStateContent.withGlobal(
-                                  "global " + c + " for " + k,
-                                  "on-ref " + c + " for " + k,
-                                  "cid-" + c + "-" + k);
+                          OnRefOnly from =
+                              OnRefOnly.onRef(
+                                  "on-ref " + (c - 1) + " for " + k, "cid-" + (c - 1) + "-" + k);
+                          OnRefOnly to =
+                              OnRefOnly.onRef("on-ref " + c + " for " + k, "cid-" + c + "-" + k);
                           return Difference.of(
                               Key.of("key", Integer.toString(k)),
                               Optional.empty(),

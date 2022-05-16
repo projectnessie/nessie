@@ -50,14 +50,6 @@ public abstract class AbstractDatabaseAdapterTest {
 
   @Nested
   @SuppressWarnings("ClassCanBeStatic")
-  public class GlobalStates extends AbstractGlobalStates {
-    GlobalStates() {
-      super(databaseAdapter);
-    }
-  }
-
-  @Nested
-  @SuppressWarnings("ClassCanBeStatic")
   public class CommitScenarios extends AbstractCommitScenarios {
     CommitScenarios() {
       super(databaseAdapter);
@@ -84,14 +76,6 @@ public abstract class AbstractDatabaseAdapterTest {
   @SuppressWarnings("ClassCanBeStatic")
   public class Concurrency extends AbstractConcurrency {
     Concurrency() {
-      super(databaseAdapter);
-    }
-  }
-
-  @Nested
-  @SuppressWarnings("ClassCanBeStatic")
-  public class CompactGlobalLog extends AbstractCompactGlobalLog {
-    CompactGlobalLog() {
       super(databaseAdapter);
     }
   }

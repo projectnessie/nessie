@@ -26,7 +26,6 @@ import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUti
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.createConflictMessage;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.deleteConflictMessage;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.mergeConflictMessage;
-import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.newHasher;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.randomHash;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.referenceAlreadyExists;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.referenceNotFound;
@@ -49,7 +48,6 @@ import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -326,8 +324,6 @@ public abstract class TxDatabaseAdapter
             CommitLogEntry newBranchCommit =
                 commitAttempt(conn, timeInMicros, branchHead, commitParams, h -> {});
 
-            upsertGlobalStates(commitParams, conn, newBranchCommit.getCreatedTime());
-
             Hash resultHash =
                 tryMoveNamedReference(
                     conn, commitParams.getToBranch(), branchHead, newBranchCommit.getHash());
@@ -568,17 +564,6 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
-  public Stream<ContentId> globalKeys() {
-    ConnectionWrapper conn = borrowConnection();
-    return JdbcSelectSpliterator.buildStream(
-            conn.conn(),
-            SqlStatements.SELECT_GLOBAL_STATE_ALL,
-            ps -> ps.setString(1, config.getRepositoryId()),
-            (rs) -> ContentId.of(rs.getString(1)))
-        .onClose(conn::close);
-  }
-
-  @Override
   public Optional<ContentIdAndBytes> globalContent(ContentId contentId) {
     try (ConnectionWrapper conn = borrowConnection()) {
       try (Traced ignore = trace("globalContent");
@@ -597,41 +582,6 @@ public abstract class TxDatabaseAdapter
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
-  }
-
-  @Override
-  public Stream<ContentIdAndBytes> globalContent(Set<ContentId> keys) {
-    if (keys.isEmpty()) {
-      return Stream.empty();
-    }
-
-    // 1. Fetch the global states,
-    // 1.1. filter the requested keys + content-ids
-    // 1.2. extract the current state from the GLOBAL_STATE table
-
-    // 1. Fetch the global states,
-    ConnectionWrapper conn = borrowConnection();
-    return JdbcSelectSpliterator.buildStream(
-            conn.conn(),
-            sqlForManyPlaceholders(SqlStatements.SELECT_GLOBAL_STATE_MANY_WITH_LOGS, keys.size()),
-            ps -> {
-              ps.setString(1, config.getRepositoryId());
-              int i = 2;
-              for (ContentId key : keys) {
-                ps.setString(i++, key.getId());
-              }
-            },
-            (rs) -> {
-              ContentIdAndBytes global = globalContentFromRow(rs);
-              if (!keys.contains(global.getContentId())) {
-                // 1.1. filter the requested keys + content-ids
-                return null;
-              }
-
-              // 1.2. extract the current state from the GLOBAL_STATE table
-              return global;
-            })
-        .onClose(conn::close);
   }
 
   @Override
@@ -956,144 +906,6 @@ public abstract class TxDatabaseAdapter
       return fetchNamedRefHead(conn, params.getBaseReference());
     }
     return null;
-  }
-
-  /**
-   * Upserts the global-states to {@code global} and checks that the current values are equal to
-   * those in {@code expectedStates}.
-   *
-   * <p>The implementation is a bit verbose (b/c JDBC is verbose).
-   *
-   * <p>The algorithm works like this:
-   *
-   * <ol>
-   *   <li>Try to update the existing {@code Key + Content.id} rows in {@value
-   *       SqlStatements#TABLE_GLOBAL_STATE}
-   *       <ol>
-   *         <li>Perform a {@code SELECT} on {@value SqlStatements#TABLE_GLOBAL_STATE} fetching all
-   *             rows for the requested keys.
-   *         <li>Filter those rows that match the content-ids
-   *         <li>Perform the {@code UPDATE} on {@value SqlStatements#TABLE_GLOBAL_STATE}. If the
-   *             user requested to compare the current-global-state, perform a conditional update.
-   *             Otherwise blindly update it.
-   *       </ol>
-   *   <li>Insert the not updated (= new) rows into {@value SqlStatements#TABLE_GLOBAL_STATE}
-   * </ol>
-   */
-  protected void upsertGlobalStates(
-      CommitParams commitParams, ConnectionWrapper conn, long newCreatedAt) throws SQLException {
-    if (commitParams.getGlobal().isEmpty()) {
-      return;
-    }
-
-    String sql =
-        sqlForManyPlaceholders(
-            SqlStatements.SELECT_GLOBAL_STATE_MANY_WITH_LOGS, commitParams.getGlobal().size());
-
-    Set<ContentId> newKeys = new HashSet<>(commitParams.getGlobal().keySet());
-
-    try (Traced ignore = trace("upsertGlobalStates");
-        PreparedStatement psSelect = conn.conn().prepareStatement(sql);
-        PreparedStatement psUpdate =
-            conn.conn().prepareStatement(SqlStatements.UPDATE_GLOBAL_STATE);
-        PreparedStatement psUpdateUnconditional =
-            conn.conn().prepareStatement(SqlStatements.UPDATE_GLOBAL_STATE_UNCOND)) {
-
-      // 1.2. SELECT returns all already existing rows --> UPDATE
-
-      psSelect.setString(1, config.getRepositoryId());
-      int i = 2;
-      for (ContentId cid : commitParams.getGlobal().keySet()) {
-        psSelect.setString(i++, cid.getId());
-      }
-
-      try (ResultSet rs = psSelect.executeQuery()) {
-        while (rs.next()) {
-          ContentId contentId = ContentId.of(rs.getString(1));
-
-          // 1.3. Use only those rows from the SELECT against the GLOBAL_STATE table that match the
-          // key + content-id we need.
-
-          // content-id exists -> not a new row
-          newKeys.remove(contentId);
-
-          ByteString newState = commitParams.getGlobal().get(contentId);
-
-          ByteString expected =
-              commitParams
-                  .getExpectedStates()
-                  .getOrDefault(contentId, Optional.empty())
-                  .orElse(ByteString.EMPTY);
-
-          // 1.4. Perform the UPDATE. If an expected-state is present, perform a "conditional"
-          // update that compares the existing value.
-          // Note: always perform the conditional-UPDATE on the checksum field as a concurrent
-          // update might have already changed the GLOBAL_STATE.
-
-          byte[] newStateBytes = newState.toByteArray();
-          @SuppressWarnings("UnstableApiUsage")
-          String newHash = newHasher().putBytes(newStateBytes).hash().toString();
-
-          // Perform a conditional update, if the client asked us to do so.
-          try (Traced ignored = trace("upsertGlobalStatesPerform")) {
-            PreparedStatement ps = expected.isEmpty() ? psUpdateUnconditional : psUpdate;
-            ps.setBytes(1, newStateBytes);
-            ps.setString(2, newHash);
-            ps.setLong(3, newCreatedAt);
-            ps.setString(4, config.getRepositoryId());
-            ps.setString(5, contentId.getId());
-            if (!expected.isEmpty()) {
-              // Only perform a conditional update, if the client asked us to do so...
-
-              @SuppressWarnings("UnstableApiUsage")
-              String expectedHash =
-                  newHasher().putBytes(expected.asReadOnlyByteBuffer()).hash().toString();
-              ps.setString(6, expectedHash);
-            }
-
-            // Check whether the UPDATE worked. If not -> reference-conflict
-            if (ps.executeUpdate() != 1) {
-              // No need to continue, just throw a legit constraint-violation that will be
-              // converted to a "proper ReferenceConflictException" later up in the stack.
-              throw newIntegrityConstraintViolationException();
-            }
-          }
-        }
-      }
-
-      // 2. INSERT all global-state values for those keys that were not handled above.
-      if (!newKeys.isEmpty()) {
-        try (Traced ignored = trace("upsertGlobalStatesInsert");
-            PreparedStatement psInsert =
-                conn.conn().prepareStatement(SqlStatements.INSERT_GLOBAL_STATE)) {
-          int count = 0;
-          for (ContentId contentId : newKeys) {
-            ByteString newGlob = commitParams.getGlobal().get(contentId);
-            byte[] newGlobBytes = newGlob.toByteArray();
-            @SuppressWarnings("UnstableApiUsage")
-            String newHash = newHasher().putBytes(newGlobBytes).hash().toString();
-
-            if (contentId == null) {
-              throw new IllegalArgumentException("Null contentId in CommitAttempt.keyToContent");
-            }
-
-            psInsert.setString(1, config.getRepositoryId());
-            psInsert.setString(2, contentId.getId());
-            psInsert.setString(3, newHash);
-            psInsert.setBytes(4, newGlobBytes);
-            psInsert.setLong(5, newCreatedAt);
-            psInsert.addBatch();
-            if (++count == config.getBatchSize()) {
-              psInsert.executeBatch();
-              count = 0;
-            }
-          }
-          if (count > 0) {
-            psInsert.executeBatch();
-          }
-        }
-      }
-    }
   }
 
   protected String sqlForManyPlaceholders(String sql, int num) {

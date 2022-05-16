@@ -21,7 +21,6 @@ import com.google.protobuf.ByteString;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import org.projectnessie.versioned.GetNamedRefsParams;
@@ -205,20 +204,6 @@ public final class TracingDatabaseAdapter implements DatabaseAdapter {
       throws ReferenceConflictException {
     try (Traced ignore = trace("updateRepositoryDescription")) {
       delegate.updateRepositoryDescription(updater);
-    }
-  }
-
-  @Override
-  public Stream<ContentId> globalKeys() {
-    try (Traced ignore = trace("globalKeys.stream")) {
-      return delegate.globalKeys();
-    }
-  }
-
-  @Override
-  public Stream<ContentIdAndBytes> globalContent(Set<ContentId> keys) {
-    try (Traced ignore = trace("globalContent.stream").tag(TAG_COUNT, keys.size())) {
-      return delegate.globalContent(keys);
     }
   }
 

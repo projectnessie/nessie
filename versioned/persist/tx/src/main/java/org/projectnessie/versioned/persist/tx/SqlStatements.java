@@ -82,24 +82,6 @@ public final class SqlStatements {
   public static final String TABLE_GLOBAL_STATE = "global_state";
   public static final String DELETE_GLOBAL_STATE_ALL =
       String.format("DELETE FROM %s WHERE \"repo_id\" = ?", TABLE_GLOBAL_STATE);
-  public static final String UPDATE_GLOBAL_STATE_UNCOND =
-      String.format(
-          "UPDATE %s SET \"value\" = ?, \"chksum\" = ?, \"created_at\" = ? WHERE \"repo_id\" = ? AND \"cid\" = ?",
-          TABLE_GLOBAL_STATE);
-  public static final String UPDATE_GLOBAL_STATE =
-      String.format(
-          "UPDATE %s SET \"value\" = ?, \"chksum\" = ?, \"created_at\" = ? WHERE \"repo_id\" = ? AND \"cid\" = ? AND \"chksum\" = ?",
-          TABLE_GLOBAL_STATE);
-  public static final String INSERT_GLOBAL_STATE =
-      String.format(
-          "INSERT INTO %s (\"repo_id\", \"cid\", \"chksum\", \"value\", \"created_at\") VALUES (?, ?, ?, ?, ?)",
-          TABLE_GLOBAL_STATE);
-  public static final String SELECT_GLOBAL_STATE_MANY_WITH_LOGS =
-      String.format(
-          "SELECT \"cid\", \"value\", \"created_at\" FROM %s WHERE \"repo_id\" = ? AND \"cid\" IN (%%s)",
-          TABLE_GLOBAL_STATE);
-  public static final String SELECT_GLOBAL_STATE_ALL =
-      String.format("SELECT \"cid\", \"value\" FROM %s WHERE \"repo_id\" = ?", TABLE_GLOBAL_STATE);
   public static final String SELECT_GLOBAL_STATE_MANY =
       String.format(
           "SELECT \"cid\", \"value\" FROM %s WHERE \"repo_id\" = ? AND \"cid\" IN (%%s)",

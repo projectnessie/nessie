@@ -93,11 +93,6 @@ public interface QuarkusVersionStoreAdvancedConfig
   @Override
   long getRetryMaxSleepMillis();
 
-  @WithName("nontx.parents-per-global-commit")
-  @WithDefault("" + DEFAULT_PARENTS_PER_GLOBAL_COMMIT)
-  @Override
-  int getParentsPerGlobalCommit();
-
   @WithName("tx.batch-size")
   @WithDefault("" + DEFAULT_BATCH_SIZE)
   @Override
