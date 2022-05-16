@@ -16,28 +16,42 @@
 package org.projectnessie.versioned.persist.tests;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assumptions.assumeThat;
+import static org.mockito.Mockito.spy;
 
 import com.google.protobuf.ByteString;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitParams;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
+import org.projectnessie.versioned.persist.adapter.KeyList;
+import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
+import org.projectnessie.versioned.persist.adapter.spi.AbstractDatabaseAdapter;
+import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapter;
+import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterConfigItem;
+import org.projectnessie.versioned.testworker.OnRefOnly;
+import org.projectnessie.versioned.testworker.SimpleStoreWorker;
 
 /**
  * Verifies that a big-ish number of keys, split across multiple commits works and the correct
@@ -128,6 +142,143 @@ public abstract class AbstractManyKeys {
       assertThat(fetchedKeysStrings)
           .hasSize(allKeysStrings.size())
           .containsExactlyInAnyOrderElementsOf(allKeysStrings);
+    }
+  }
+
+  /**
+   * Nessie versions before 0.22.0 write key-lists without the ID of the commit that last updated
+   * the key. This test ensures that the commit-ID is added for newly written key-lists.
+   */
+  @Test
+  void enhanceKeyListWithCommitId(
+      @NessieDbAdapter
+          @NessieDbAdapterConfigItem(name = "key.list.distance", value = "5")
+          @NessieDbAdapterConfigItem(name = "max.key.list.size", value = "100")
+          @NessieDbAdapterConfigItem(name = "max.key.list.entity.size", value = "100")
+          DatabaseAdapter da)
+      throws Exception {
+
+    // All other database adapter implementation don't work, because they use "INSERT"-ish (no
+    // "upsert"), so the code to "break" the key-lists below, which is essential for the test to
+    // work, will fail.
+    assumeThat(da)
+        .extracting(Object::getClass)
+        .extracting(Class::getSimpleName)
+        .isIn("InmemoryDatabaseAdapter", "RocksDatabaseAdapter");
+
+    // Because we cannot write "old" KeyListEntry's, write a series of keys + commits here and then
+    // "break" the last written key-list-entities by removing the commitID. Then write a new
+    // key-list
+    // and verify that the key-list-entries have the (right) commit IDs.
+
+    @SuppressWarnings("unchecked")
+    AbstractDatabaseAdapter<AutoCloseable, ?> ada = (AbstractDatabaseAdapter<AutoCloseable, ?>) da;
+
+    int keyListDistance = ada.getConfig().getKeyListDistance();
+
+    String longString =
+        "keykeykeykeykeykeykeykeykeykeykeykeykeykeykeykeykeykeykey"
+            + "keykeykeykeykeykeykeykeykeykeykeykeykeykeykeykeykeykeykey";
+
+    BranchName branch = BranchName.of("main");
+    ByteString meta = ByteString.copyFromUtf8("msg");
+
+    Map<Key, Hash> keyToCommit = new HashMap<>();
+    for (int i = 0; i < 10 * keyListDistance; i++) {
+      Key key = Key.of("k" + i, longString);
+      Hash hash =
+          da.commit(
+              ImmutableCommitParams.builder()
+                  .toBranch(branch)
+                  .commitMetaSerialized(meta)
+                  .addPuts(
+                      KeyWithBytes.of(
+                          key,
+                          ContentId.of("c" + i),
+                          (byte) 0,
+                          SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
+                              OnRefOnly.onRef("r" + i, "c" + i))))
+                  .build());
+      keyToCommit.put(key, hash);
+    }
+
+    Hash head = da.namedRef(branch.getName(), GetNamedRefsParams.DEFAULT).getHash();
+
+    try (AutoCloseable ctx = ada.borrowConnection()) {
+      // Sanity: fetchKeyLists called exactly once
+      AbstractDatabaseAdapter<AutoCloseable, ?> adaSpy = spy(ada);
+      adaSpy.values(head, keyToCommit.keySet(), KeyFilterPredicate.ALLOW_ALL);
+
+      CommitLogEntry commit = ada.fetchFromCommitLog(ctx, head);
+      assertThat(commit).isNotNull();
+      try (Stream<KeyListEntity> keyListEntityStream =
+          ada.fetchKeyLists(ctx, commit.getKeyListsIds())) {
+
+        List<KeyListEntity> noCommitIds =
+            keyListEntityStream
+                .map(
+                    e ->
+                        KeyListEntity.of(
+                            e.getId(),
+                            KeyList.of(
+                                e.getKeys().getKeys().stream()
+                                    .map(
+                                        k ->
+                                            KeyListEntry.of(
+                                                k.getKey(), k.getContentId(), k.getType(), null))
+                                    .collect(Collectors.toList()))))
+                .collect(Collectors.toList());
+        ada.writeKeyListEntities(ctx, noCommitIds);
+      }
+
+      // Cross-check that commitIDs in all KeyListEntry is null.
+      try (Stream<KeyListEntity> keyListEntityStream =
+          ada.fetchKeyLists(ctx, commit.getKeyListsIds())) {
+        assertThat(keyListEntityStream)
+            .allSatisfy(
+                kl ->
+                    assertThat(kl.getKeys().getKeys())
+                        .allSatisfy(e -> assertThat(e.getCommitId()).isNull()));
+      }
+    }
+
+    for (int i = 0; i < keyListDistance; i++) {
+      Key key = Key.of("pre-fix-" + i);
+      Hash hash =
+          da.commit(
+              ImmutableCommitParams.builder()
+                  .toBranch(branch)
+                  .commitMetaSerialized(meta)
+                  .addPuts(
+                      KeyWithBytes.of(
+                          key,
+                          ContentId.of("c" + i),
+                          (byte) 0,
+                          SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
+                              OnRefOnly.onRef("pf" + i, "cpf" + i))))
+                  .build());
+      keyToCommit.put(key, hash);
+    }
+
+    Hash fixedHead = da.namedRef(branch.getName(), GetNamedRefsParams.DEFAULT).getHash();
+
+    try (AutoCloseable ctx = ada.borrowConnection()) {
+      CommitLogEntry commit = ada.fetchFromCommitLog(ctx, fixedHead);
+      assertThat(commit).isNotNull();
+
+      // Check that commitIDs in all KeyListEntry is NOT null and points to the expected commitId.
+      try (Stream<KeyListEntity> keyListEntityStream =
+          ada.fetchKeyLists(ctx, commit.getKeyListsIds())) {
+        assertThat(keyListEntityStream)
+            .allSatisfy(
+                kl ->
+                    assertThat(kl.getKeys().getKeys())
+                        .allSatisfy(
+                            e ->
+                                assertThat(e)
+                                    .extracting(KeyListEntry::getCommitId, KeyListEntry::getKey)
+                                    .containsExactly(keyToCommit.get(e.getKey()), e.getKey())));
+      }
     }
   }
 }
