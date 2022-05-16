@@ -40,12 +40,6 @@ public interface CommitParams extends ToBranchParams {
    */
   List<KeyWithBytes> getPuts();
 
-  /**
-   * Mapping of content-ids to the new content-state (think: Iceberg table-metadata), coming from
-   * the "content" property of a {@code PutGlobal} commit operation.
-   */
-  Map<ContentId, ByteString> getGlobal();
-
   /** List of "unchanged" keys, from {@code Unchanged} commit operations. */
   List<Key> getUnchanged();
 

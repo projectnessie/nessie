@@ -19,15 +19,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.projectnessie.versioned.testworker.CommitMessage.commitMessage;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
-import static org.projectnessie.versioned.testworker.WithGlobalStateContent.withGlobal;
 
 import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.IntFunction;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -52,21 +49,15 @@ public abstract class AbstractSingleBranch extends AbstractNestedVersionStore {
   static class SingleBranchParam {
     final String branchName;
     final IntFunction<String> tableNameGen;
-    final IntFunction<String> contentIdGen;
     final boolean allowInconsistentValueException;
-    final boolean globalState;
 
     SingleBranchParam(
         String branchName,
         IntFunction<String> tableNameGen,
-        IntFunction<String> contentIdGen,
-        boolean allowInconsistentValueException,
-        boolean globalState) {
+        boolean allowInconsistentValueException) {
       this.branchName = branchName;
       this.tableNameGen = tableNameGen;
-      this.contentIdGen = contentIdGen;
       this.allowInconsistentValueException = allowInconsistentValueException;
-      this.globalState = globalState;
     }
 
     @Override
@@ -77,39 +68,18 @@ public abstract class AbstractSingleBranch extends AbstractNestedVersionStore {
           + ", tableNameGen="
           + tableNameGen
           + ", allowInconsistentValueException="
-          + allowInconsistentValueException
-          + ", globalState="
-          + globalState;
+          + allowInconsistentValueException;
     }
   }
 
   @SuppressWarnings("unused")
   static List<SingleBranchParam> singleBranchManyUsersCases() {
     return Arrays.asList(
-        new SingleBranchParam(
-            "singleBranchManyUsersSingleTable",
-            user -> "single-table",
-            user -> "single-table",
-            true,
-            false),
-        new SingleBranchParam(
-            "singleBranchManyUsersSingleTableConditional",
-            user -> "single-table",
-            user -> "single-table",
-            true,
-            true),
+        new SingleBranchParam("singleBranchManyUsersSingleTable", user -> "single-table", true),
         new SingleBranchParam(
             "singleBranchManyUsersDistinctTables",
             user -> String.format("user-table-%d", user),
-            user -> String.format("user-table-%d", user),
-            false,
-            false),
-        new SingleBranchParam(
-            "singleBranchManyUsersDistinctTablesConditional",
-            user -> String.format("user-table-%d", user),
-            user -> String.format("user-table-%d", user),
-            false,
-            true));
+            false));
   }
 
   /**
@@ -129,7 +99,6 @@ public abstract class AbstractSingleBranch extends AbstractNestedVersionStore {
     Arrays.fill(hashesKnownByUser, createHash);
 
     List<CommitMessage> expectedValues = new ArrayList<>();
-    Map<Key, String> previousState = new HashMap<>();
     for (int commitNum = 0; commitNum < numCommits; commitNum++) {
       for (int user = 0; user < numUsers; user++) {
         Hash hashKnownByUser = hashesKnownByUser[user];
@@ -138,24 +107,8 @@ public abstract class AbstractSingleBranch extends AbstractNestedVersionStore {
         expectedValues.add(msg);
 
         Key key = Key.of(param.tableNameGen.apply(user));
-        String contentId = param.contentIdGen.apply(user);
-        Operation<BaseContent> put;
-        if (param.globalState) {
-          String state = String.format("%03d_%03d", user, commitNum);
-          if (previousState.containsKey(key)) {
-            put =
-                Put.of(
-                    key,
-                    withGlobal(state, "data_file", contentId),
-                    withGlobal(previousState.get(key), "foo", contentId));
-          } else {
-            put = Put.of(key, withGlobal(state, "data_file", contentId));
-          }
-          previousState.put(key, state);
-        } else {
-          BaseContent value = newOnRef(String.format("data_file_%03d_%03d", user, commitNum));
-          put = Put.of(key, value);
-        }
+        BaseContent value = newOnRef(String.format("data_file_%03d_%03d", user, commitNum));
+        Operation<BaseContent> put = Put.of(key, value);
 
         Hash commitHash;
         List<Operation<BaseContent>> ops = ImmutableList.of(put);

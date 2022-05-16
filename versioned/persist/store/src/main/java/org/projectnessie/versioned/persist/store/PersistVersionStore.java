@@ -107,9 +107,6 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
             .commitMetaSerialized(serializeMetadata(metadata))
             .validator(validator);
 
-    Map<ContentId, ByteString> globals = new HashMap<>();
-    Map<ContentId, Optional<ByteString>> expectedStates = new HashMap<>();
-
     for (Operation<CONTENT> operation : operations) {
       if (operation instanceof Put) {
         Put<CONTENT> op = (Put<CONTENT>) operation;
@@ -153,45 +150,9 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
               op.getKey());
         }
 
-        if (storeWorker.requiresGlobalState(content)) {
-          ByteString newState = storeWorker.toStoreGlobalState(content);
-          Optional<ByteString> expectedValue;
-          if (expected != null) {
-            Preconditions.checkArgument(
-                storeWorker.getType(content) == storeWorker.getType(expected),
-                "Content-type for conditional put-operation for key '%s' for 'value' and 'expectedValue' must be the same, but are '%s' and '%s'.",
-                op.getKey(),
-                storeWorker.getType(content),
-                storeWorker.getType(expected));
-            Preconditions.checkArgument(
-                contentId.equals(ContentId.of(storeWorker.getId(expected))),
-                "Conditional put-operation key '%s' has different content-ids.",
-                op.getKey());
-
-            expectedValue = Optional.of(storeWorker.toStoreGlobalState(expected));
-          } else {
-            expectedValue = Optional.empty();
-          }
-
-          // Handle the case when there are multiple operations against the same content-id.
-          if (!expectedStates.containsKey(contentId)) {
-            // First occurrence of contentId in this commit.
-            commitAttempt.putExpectedStates(contentId, expectedValue);
-            expectedStates.put(contentId, expectedValue);
-          } else {
-            // Consecutive occurrence of contentId in this commit.
-            if (expectedValue.isPresent()) {
-              // Operation expects a certain global, compare against the previous global-value
-              // from this commit.
-              if (!globals.get(contentId).equals(expectedValue.get())) {
-                // Value not equal - aka not expected -> report conflict.
-                throw new ReferenceConflictException(
-                    String.format("Mismatch in global-state for content-id '%s'.", contentId));
-              }
-            }
-          }
-          globals.put(contentId, newState);
-        }
+        Preconditions.checkState(
+            !storeWorker.requiresGlobalState(content),
+            "Nessie no longer supports content with global state");
       } else if (operation instanceof Delete) {
         commitAttempt.addDeletes(operation.getKey());
       } else if (operation instanceof Unchanged) {
@@ -201,7 +162,7 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
       }
     }
 
-    return databaseAdapter.commit(commitAttempt.global(globals).build());
+    return databaseAdapter.commit(commitAttempt.build());
   }
 
   @Override

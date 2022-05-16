@@ -20,11 +20,8 @@ import static java.util.Map.Entry.comparingByKey;
 import java.io.PrintWriter;
 import java.time.Duration;
 import java.util.Map;
-import org.projectnessie.versioned.persist.adapter.GlobalLogCompactionParams;
-import org.projectnessie.versioned.persist.adapter.ImmutableGlobalLogCompactionParams;
 import org.projectnessie.versioned.persist.adapter.RepoMaintenanceParams;
 import picocli.CommandLine.Command;
-import picocli.CommandLine.Option;
 
 @Command(
     name = "maintenance",
@@ -32,30 +29,9 @@ import picocli.CommandLine.Option;
     description = "Database adapter maintenance")
 public class RepoMaintenance extends BaseCommand {
 
-  @Option(
-      names = {"-L", "--no-compaction-up-to-length"},
-      description =
-          "When the global-log contains only up to this number of entries, global-log compaction will not happen, defaults to 50.")
-  Integer noCompactionUpToLength;
-
-  @Option(
-      names = {"-W", "--no-compaction-when-compacted-within"},
-      description =
-          "When the global-log contains a compacted entry within this number of entries, global-log compaction will not happen, defaults to 50.")
-  Integer noCompactionWhenCompactedWithin;
-
   @Override
   public Integer call() {
     warnOnInMemory();
-
-    ImmutableGlobalLogCompactionParams.Builder globalLogCompactionParams =
-        GlobalLogCompactionParams.builder();
-    if (noCompactionUpToLength != null) {
-      globalLogCompactionParams.noCompactionUpToLength(noCompactionUpToLength);
-    }
-    if (noCompactionWhenCompactedWithin != null) {
-      globalLogCompactionParams.noCompactionWhenCompactedWithin(noCompactionWhenCompactedWithin);
-    }
 
     PrintWriter out = spec.commandLine().getOut();
 
@@ -63,10 +39,7 @@ public class RepoMaintenance extends BaseCommand {
 
     long t0 = System.nanoTime();
     Map<String, Map<String, String>> statistics =
-        databaseAdapter.repoMaintenance(
-            RepoMaintenanceParams.builder()
-                .globalLogCompactionParams(globalLogCompactionParams.build())
-                .build());
+        databaseAdapter.repoMaintenance(RepoMaintenanceParams.builder().build());
     Duration duration = Duration.ofNanos(System.nanoTime() - t0);
 
     out.printf("Finished after %s%n", duration);

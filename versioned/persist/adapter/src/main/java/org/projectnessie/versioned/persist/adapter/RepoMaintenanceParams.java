@@ -19,7 +19,6 @@ import org.immutables.value.Value;
 
 @Value.Immutable
 public interface RepoMaintenanceParams {
-  GlobalLogCompactionParams getGlobalLogCompactionParams();
 
   static ImmutableRepoMaintenanceParams.Builder builder() {
     return ImmutableRepoMaintenanceParams.builder();

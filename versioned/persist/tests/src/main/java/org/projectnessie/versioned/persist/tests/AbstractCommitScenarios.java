@@ -22,8 +22,6 @@ import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.IntFunction;
@@ -41,7 +39,6 @@ import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
-import org.projectnessie.versioned.persist.adapter.ContentAndState;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitParams;
@@ -51,7 +48,6 @@ import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.testworker.BaseContent;
 import org.projectnessie.versioned.testworker.OnRefOnly;
 import org.projectnessie.versioned.testworker.SimpleStoreWorker;
-import org.projectnessie.versioned.testworker.WithGlobalStateContent;
 
 /** Tests performing commits. */
 public abstract class AbstractCommitScenarios {
@@ -67,24 +63,13 @@ public abstract class AbstractCommitScenarios {
     final int afterInitialCommits;
     final int afterRenameCommits;
     final int afterDeleteCommits;
-    final boolean globalState;
 
     RenameTable(
-        int setupCommits,
-        int afterInitialCommits,
-        int afterRenameCommits,
-        int afterDeleteCommits,
-        boolean globalState) {
+        int setupCommits, int afterInitialCommits, int afterRenameCommits, int afterDeleteCommits) {
       this.setupCommits = setupCommits;
       this.afterInitialCommits = afterInitialCommits;
       this.afterRenameCommits = afterRenameCommits;
       this.afterDeleteCommits = afterDeleteCommits;
-      this.globalState = globalState;
-    }
-
-    RenameTable globalState() {
-      return new RenameTable(
-          setupCommits, afterInitialCommits, afterRenameCommits, afterDeleteCommits, true);
     }
 
     @Override
@@ -96,25 +81,20 @@ public abstract class AbstractCommitScenarios {
           + ", afterRenameCommits="
           + afterRenameCommits
           + ", afterDeleteCommits="
-          + afterDeleteCommits
-          + ", globalState="
-          + globalState;
+          + afterDeleteCommits;
     }
   }
 
   static Stream<RenameTable> commitRenameTableParams() {
-    Stream<RenameTable> zero = Stream.of(new RenameTable(0, 0, 0, 0, false));
+    Stream<RenameTable> zero = Stream.of(new RenameTable(0, 0, 0, 0));
 
     Stream<RenameTable> intervals =
         IntStream.of(19, 20, 21)
             .boxed()
-            .flatMap(
-                i ->
-                    Stream.of(
-                        new RenameTable(i, i, i, i, false), new RenameTable(0, 0, 0, 0, false)));
+            .flatMap(i -> Stream.of(new RenameTable(i, i, i, i), new RenameTable(0, 0, 0, 0)));
 
     // duplicate all params to use and not use global state
-    return Stream.concat(zero, intervals).flatMap(p -> Stream.of(p, p.globalState()));
+    return Stream.concat(zero, intervals);
   }
 
   /**
@@ -157,16 +137,8 @@ public abstract class AbstractCommitScenarios {
 
     ImmutableCommitParams.Builder commit;
 
-    BaseContent initialContent;
-    BaseContent renamContent;
-    if (param.globalState) {
-      initialContent = WithGlobalStateContent.newWithGlobal("0", "initial commit content");
-      renamContent =
-          WithGlobalStateContent.withGlobal("0", "rename commit content", initialContent.getId());
-    } else {
-      initialContent = OnRefOnly.newOnRef("initial commit content");
-      renamContent = OnRefOnly.onRef("rename commit content", initialContent.getId());
-    }
+    BaseContent initialContent = OnRefOnly.newOnRef("initial commit content");
+    BaseContent renamContent = OnRefOnly.onRef("rename commit content", initialContent.getId());
     byte payload = SimpleStoreWorker.INSTANCE.getPayload(initialContent);
 
     commit =
@@ -179,11 +151,6 @@ public abstract class AbstractCommitScenarios {
                     contentId,
                     payload,
                     SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(initialContent)));
-    if (param.globalState) {
-      commit
-          .putGlobal(contentId, SimpleStoreWorker.INSTANCE.toStoreGlobalState(initialContent))
-          .putExpectedStates(contentId, Optional.empty());
-    }
     Hash hashInitial = databaseAdapter.commit(commit.build());
 
     List<Hash> beforeRename =
@@ -202,13 +169,6 @@ public abstract class AbstractCommitScenarios {
                     contentId,
                     payload,
                     SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(renamContent)));
-    if (param.globalState) {
-      commit
-          .putGlobal(contentId, SimpleStoreWorker.INSTANCE.toStoreGlobalState(renamContent))
-          .putExpectedStates(
-              contentId,
-              Optional.of(SimpleStoreWorker.INSTANCE.toStoreGlobalState(initialContent)));
-    }
     Hash hashRename = databaseAdapter.commit(commit.build());
 
     List<Hash> beforeDelete =
@@ -221,11 +181,6 @@ public abstract class AbstractCommitScenarios {
             .toBranch(branch)
             .commitMetaSerialized(ByteString.copyFromUtf8("delete table"))
             .addDeletes(newKey);
-    if (param.globalState) {
-      commit
-          .putGlobal(contentId, ByteString.copyFromUtf8("0"))
-          .putExpectedStates(contentId, Optional.of(ByteString.copyFromUtf8("0")));
-    }
     Hash hashDelete = databaseAdapter.commit(commit.build());
 
     List<Hash> afterDelete =
@@ -307,54 +262,33 @@ public abstract class AbstractCommitScenarios {
       keys.add(key);
 
       String cid = "id-" + i;
-      WithGlobalStateContent c =
-          WithGlobalStateContent.withGlobal("0", "initial commit content", cid);
+      OnRefOnly c = OnRefOnly.onRef("initial commit content", cid);
 
-      commit
-          .addPuts(
-              KeyWithBytes.of(
-                  key,
-                  ContentId.of(cid),
-                  SimpleStoreWorker.INSTANCE.getPayload(c),
-                  SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(c)))
-          .putGlobal(ContentId.of(cid), SimpleStoreWorker.INSTANCE.toStoreGlobalState(c))
-          .putExpectedStates(ContentId.of(cid), Optional.empty());
+      commit.addPuts(
+          KeyWithBytes.of(
+              key,
+              ContentId.of(cid),
+              SimpleStoreWorker.INSTANCE.getPayload(c),
+              SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(c)));
     }
     Hash head = databaseAdapter.commit(commit.build());
 
     for (int commitNum = 0; commitNum < 3; commitNum++) {
-      Map<Key, ContentAndState<ByteString>> values =
-          databaseAdapter.values(
-              databaseAdapter.hashOnReference(branch, Optional.empty()),
-              keys,
-              KeyFilterPredicate.ALLOW_ALL);
       commit =
           ImmutableCommitParams.builder()
               .toBranch(branch)
               .commitMetaSerialized(ByteString.copyFromUtf8("initial commit meta"));
       for (int i = 0; i < tablesPerCommit; i++) {
-        String currentState = values.get(keys.get(i)).getGlobalState().toStringUtf8();
-        String newGlobalState = Integer.toString(Integer.parseInt(currentState) + 1);
-
         String cid = "id-" + i;
 
-        WithGlobalStateContent newContent =
-            WithGlobalStateContent.withGlobal(newGlobalState, "branch value", cid);
+        OnRefOnly newContent = OnRefOnly.onRef("branch value", cid);
 
-        WithGlobalStateContent expectedContent =
-            WithGlobalStateContent.withGlobal(currentState, currentState, cid);
-
-        commit
-            .addPuts(
-                KeyWithBytes.of(
-                    keys.get(i),
-                    ContentId.of(cid),
-                    SimpleStoreWorker.INSTANCE.getPayload(newContent),
-                    SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(newContent)))
-            .putGlobal(ContentId.of(cid), SimpleStoreWorker.INSTANCE.toStoreGlobalState(newContent))
-            .putExpectedStates(
+        commit.addPuts(
+            KeyWithBytes.of(
+                keys.get(i),
                 ContentId.of(cid),
-                Optional.of(SimpleStoreWorker.INSTANCE.toStoreGlobalState(expectedContent)));
+                SimpleStoreWorker.INSTANCE.getPayload(newContent),
+                SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(newContent)));
       }
 
       Hash newHead = databaseAdapter.commit(commit.build());
@@ -400,8 +334,7 @@ public abstract class AbstractCommitScenarios {
 
   void doCommitWithValidation(BranchName branch, String cid, Key key, Callable<Void> validator)
       throws Exception {
-    WithGlobalStateContent c =
-        WithGlobalStateContent.withGlobal("0", "initial commit content", cid);
+    OnRefOnly c = OnRefOnly.onRef("initial commit content", cid);
 
     ImmutableCommitParams.Builder commit =
         ImmutableCommitParams.builder()
@@ -413,21 +346,17 @@ public abstract class AbstractCommitScenarios {
                     ContentId.of(cid),
                     SimpleStoreWorker.INSTANCE.getPayload(c),
                     SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(c)))
-            .putGlobal(ContentId.of(cid), SimpleStoreWorker.INSTANCE.toStoreGlobalState(c))
-            .putExpectedStates(ContentId.of(cid), Optional.empty())
             .validator(validator);
     databaseAdapter.commit(commit.build());
   }
 
-  @ParameterizedTest
-  @ValueSource(booleans = {true, false})
-  void duplicateKeys(boolean globalState) {
+  @Test
+  void duplicateKeys() {
     BranchName branch = BranchName.of("main");
 
     Key key = Key.of("my.awesome.table");
     ContentId contentsId = ContentId.of("cid");
     ByteString tableRefState = ByteString.copyFromUtf8("table ref state");
-    ByteString tableGlobalState = ByteString.copyFromUtf8("table global state");
 
     KeyWithBytes createPut1 =
         KeyWithBytes.of(key, contentsId, (byte) 0, ByteString.copyFromUtf8("no no"));
@@ -439,9 +368,6 @@ public abstract class AbstractCommitScenarios {
             .commitMetaSerialized(ByteString.copyFromUtf8("initial"))
             .addPuts(createPut1)
             .addPuts(createPut2);
-    if (globalState) {
-      commit1.putGlobal(contentsId, tableGlobalState);
-    }
     assertThatThrownBy(() -> databaseAdapter.commit(commit1.build()))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining(key.toString());
@@ -452,9 +378,6 @@ public abstract class AbstractCommitScenarios {
             .commitMetaSerialized(ByteString.copyFromUtf8("initial"))
             .addDeletes(key)
             .addPuts(createPut2);
-    if (globalState) {
-      commit2.putGlobal(contentsId, tableGlobalState);
-    }
     assertThatThrownBy(() -> databaseAdapter.commit(commit2.build()))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining(key.toString());
@@ -465,9 +388,6 @@ public abstract class AbstractCommitScenarios {
             .commitMetaSerialized(ByteString.copyFromUtf8("initial"))
             .addDeletes(key)
             .addUnchanged(key);
-    if (globalState) {
-      commit3.putGlobal(contentsId, tableGlobalState);
-    }
     assertThatThrownBy(() -> databaseAdapter.commit(commit3.build()))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining(key.toString());
@@ -478,9 +398,6 @@ public abstract class AbstractCommitScenarios {
             .commitMetaSerialized(ByteString.copyFromUtf8("initial"))
             .addUnchanged(key)
             .addPuts(createPut2);
-    if (globalState) {
-      commit4.putGlobal(contentsId, tableGlobalState);
-    }
     assertThatThrownBy(() -> databaseAdapter.commit(commit4.build()))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining(key.toString());

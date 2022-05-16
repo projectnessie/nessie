@@ -37,14 +37,13 @@ import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentAndState;
 import org.projectnessie.versioned.persist.adapter.ContentId;
-import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitParams;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
+import org.projectnessie.versioned.testworker.OnRefOnly;
 import org.projectnessie.versioned.testworker.SimpleStoreWorker;
-import org.projectnessie.versioned.testworker.WithGlobalStateContent;
 
 /**
  * Rather rudimentary test that verifies that multiple commits in a row work and the correct results
@@ -72,11 +71,7 @@ public abstract class AbstractManyCommits {
 
     for (int i = 0; i < numCommits; i++) {
       Key key = Key.of("many", "commits", Integer.toString(numCommits));
-      WithGlobalStateContent c =
-          WithGlobalStateContent.withGlobal(
-              "state for #" + i + " of " + numCommits,
-              "value for #" + i + " of " + numCommits,
-              fixed.getId());
+      OnRefOnly c = OnRefOnly.onRef("value for #" + i + " of " + numCommits, fixed.getId());
       byte payload = SimpleStoreWorker.INSTANCE.getPayload(c);
       ImmutableCommitParams.Builder commit =
           ImmutableCommitParams.builder()
@@ -84,34 +79,9 @@ public abstract class AbstractManyCommits {
               .commitMetaSerialized(ByteString.copyFromUtf8("commit #" + i + " of " + numCommits))
               .addPuts(
                   KeyWithBytes.of(
-                      key, fixed, payload, SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(c)))
-              .putGlobal(fixed, SimpleStoreWorker.INSTANCE.toStoreGlobalState(c));
-      if (i > 0) {
-        WithGlobalStateContent expected =
-            WithGlobalStateContent.withGlobal(
-                "state for #" + (i - 1) + " of " + numCommits,
-                "value for #" + (i - 1) + " of " + numCommits,
-                fixed.getId());
-        commit.putExpectedStates(
-            fixed, Optional.of(SimpleStoreWorker.INSTANCE.toStoreGlobalState(expected)));
-      }
+                      key, fixed, payload, SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(c)));
       Hash hash = databaseAdapter.commit(commit.build());
       commits[i] = hash;
-
-      try (Stream<ContentIdAndBytes> globals =
-          databaseAdapter.globalContent(Collections.singleton(fixed))) {
-
-        WithGlobalStateContent expected =
-            WithGlobalStateContent.withGlobal(
-                "state for #" + i + " of " + numCommits,
-                "value for #" + i + " of " + numCommits,
-                fixed.getId());
-
-        assertThat(globals)
-            .containsExactly(
-                ContentIdAndBytes.of(
-                    fixed, SimpleStoreWorker.INSTANCE.toStoreGlobalState(expected)));
-      }
     }
 
     try (Stream<CommitLogEntry> log =
@@ -152,15 +122,11 @@ public abstract class AbstractManyCommits {
           databaseAdapter.values(
               commit, Collections.singletonList(key), KeyFilterPredicate.ALLOW_ALL);
 
-      WithGlobalStateContent expected =
-          WithGlobalStateContent.withGlobal(
-              "state for #" + (numCommits - 1) + " of " + numCommits,
-              "value for #" + i + " of " + numCommits,
-              contentId.getId());
+      OnRefOnly expected =
+          OnRefOnly.onRef("value for #" + i + " of " + numCommits, contentId.getId());
 
       ByteString expectValue = SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(expected);
-      ByteString expectState = SimpleStoreWorker.INSTANCE.toStoreGlobalState(expected);
-      ContentAndState<ByteString> expect = ContentAndState.of(expectValue, expectState);
+      ContentAndState<ByteString> expect = ContentAndState.of(expectValue);
       assertThat(values).containsExactly(Maps.immutableEntry(key, expect));
     } catch (ReferenceNotFoundException e) {
       throw new RuntimeException(e);

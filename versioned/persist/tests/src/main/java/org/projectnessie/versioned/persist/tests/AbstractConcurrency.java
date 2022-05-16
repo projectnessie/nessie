@@ -38,7 +38,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntFunction;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -49,15 +48,14 @@ import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.ReferenceRetryFailureException;
 import org.projectnessie.versioned.persist.adapter.CommitParams;
-import org.projectnessie.versioned.persist.adapter.ContentAndState;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitParams;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterMetrics;
+import org.projectnessie.versioned.testworker.OnRefOnly;
 import org.projectnessie.versioned.testworker.SimpleStoreWorker;
-import org.projectnessie.versioned.testworker.WithGlobalStateContent;
 
 /**
  * Performs concurrent commits with four different strategies, just verifying that either no
@@ -87,25 +85,16 @@ public abstract class AbstractConcurrency {
   static class Variation {
     final int threads = Math.max(4, Runtime.getRuntime().availableProcessors());
     final boolean singleBranch;
-    final boolean sharedKeys;
     final int tables;
 
-    Variation(boolean singleBranch, boolean sharedKeys, int tables) {
+    Variation(boolean singleBranch, int tables) {
       this.singleBranch = singleBranch;
-      this.sharedKeys = sharedKeys;
       this.tables = tables;
     }
 
     @Override
     public String toString() {
-      return "threads="
-          + threads
-          + ", singleBranch="
-          + singleBranch
-          + ", sharedKeys="
-          + sharedKeys
-          + ", tables="
-          + tables;
+      return "threads=" + threads + ", singleBranch=" + singleBranch + ", tables=" + tables;
     }
   }
 
@@ -113,13 +102,7 @@ public abstract class AbstractConcurrency {
   @SuppressWarnings("unused")
   static Stream<Variation> concurrencyVariations() {
     return Stream.of(Boolean.FALSE, Boolean.TRUE)
-        .flatMap(
-            singleBranch ->
-                Stream.of(Boolean.FALSE, Boolean.TRUE)
-                    .flatMap(
-                        sharedKeys ->
-                            Stream.of(3)
-                                .map(tables -> new Variation(singleBranch, sharedKeys, tables))));
+        .flatMap(singleBranch -> Stream.of(3).map(tables -> new Variation(singleBranch, tables)));
   }
 
   @ParameterizedTest
@@ -134,7 +117,6 @@ public abstract class AbstractConcurrency {
     AtomicBoolean stopFlag = new AtomicBoolean();
     List<Runnable> tasks = new ArrayList<>(variation.threads);
     Map<Key, ContentId> keyToContentId = new HashMap<>();
-    Map<ContentId, ByteString> globalStates = new ConcurrentHashMap<>();
     Map<BranchName, Map<Key, ByteString>> onRefStates = new ConcurrentHashMap<>();
     try {
       CountDownLatch startLatch = new CountDownLatch(1);
@@ -144,7 +126,7 @@ public abstract class AbstractConcurrency {
         List<Key> keys = new ArrayList<>(variation.tables);
 
         for (int k = 0; k < variation.tables; k++) {
-          String variationKey = variation.sharedKeys ? "shared" : Integer.toString(i);
+          String variationKey = Integer.toString(i);
           Key key = Key.of("some", "key", variationKey, "table-" + k);
           keys.add(key);
           keyToContentId.put(key, ContentId.of(String.format("%s-table-%d", variationKey, k)));
@@ -161,33 +143,12 @@ public abstract class AbstractConcurrency {
                     break;
                   }
 
-                  List<ByteString> currentStates =
-                      databaseAdapter
-                          .values(
-                              databaseAdapter.hashOnReference(branch, Optional.empty()),
-                              keys,
-                              KeyFilterPredicate.ALLOW_ALL)
-                          .values()
-                          .stream()
-                          .map(ContentAndState::getGlobalState)
-                          .collect(Collectors.toList());
-
                   ImmutableCommitParams.Builder commitAttempt = ImmutableCommitParams.builder();
 
                   for (int ki = 0; ki < keys.size(); ki++) {
                     Key key = keys.get(ki);
                     ContentId contentId = keyToContentId.get(key);
-                    String newGlobal =
-                        Integer.toString(
-                            Integer.parseInt(currentStates.get(ki).toStringUtf8()) + 1);
-                    WithGlobalStateContent c =
-                        WithGlobalStateContent.withGlobal(newGlobal, "", contentId.getId());
-                    commitAttempt.putGlobal(
-                        contentId, SimpleStoreWorker.INSTANCE.toStoreGlobalState(c));
-                    if (!variation.sharedKeys) {
-                      commitAttempt.putExpectedStates(
-                          contentId, Optional.of(currentStates.get(ki)));
-                    }
+                    OnRefOnly c = OnRefOnly.onRef("", contentId.getId());
                     commitAttempt.addPuts(
                         KeyWithBytes.of(
                             keys.get(ki),
@@ -207,7 +168,7 @@ public abstract class AbstractConcurrency {
                                     + branch.getName()
                                     + " something "
                                     + ThreadLocalRandom.current().nextLong()));
-                    commitAndRecord(globalStates, onRefStates, branch, commitAttempt);
+                    commitAndRecord(onRefStates, branch, commitAttempt);
                     commitsOK.incrementAndGet();
                   } catch (ReferenceRetryFailureException retry) {
                     retryFailures.incrementAndGet();
@@ -231,16 +192,15 @@ public abstract class AbstractConcurrency {
                     ByteString.copyFromUtf8("initial commit for " + branch.getName()));
         for (Key k : branchKeys.getValue()) {
           ContentId contentId = keyToContentId.get(k);
-          WithGlobalStateContent c = WithGlobalStateContent.withGlobal("0", "", contentId.getId());
+          OnRefOnly c = OnRefOnly.onRef("", contentId.getId());
           commitAttempt.addPuts(
               KeyWithBytes.of(
                   k,
                   contentId,
                   SimpleStoreWorker.INSTANCE.getPayload(c),
                   SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(c)));
-          commitAttempt.putGlobal(contentId, SimpleStoreWorker.INSTANCE.toStoreGlobalState(c));
         }
-        commitAndRecord(globalStates, onRefStates, branch, commitAttempt);
+        commitAndRecord(onRefStates, branch, commitAttempt);
       }
 
       // Submit all 'Runnable's as 'CompletableFuture's and construct a combined 'CompletableFuture'
@@ -297,14 +257,12 @@ public abstract class AbstractConcurrency {
   }
 
   private void commitAndRecord(
-      Map<ContentId, ByteString> globalStates,
       Map<BranchName, Map<Key, ByteString>> onRefStates,
       BranchName branch,
       ImmutableCommitParams.Builder commitAttempt)
       throws ReferenceConflictException, ReferenceNotFoundException {
     CommitParams c = commitAttempt.build();
     databaseAdapter.commit(c);
-    globalStates.putAll(c.getGlobal());
     Map<Key, ByteString> onRef =
         onRefStates.computeIfAbsent(branch, b -> new ConcurrentHashMap<>());
     c.getPuts().forEach(kwb -> onRef.put(kwb.getKey(), kwb.getValue()));

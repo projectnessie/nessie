@@ -20,7 +20,6 @@ import com.google.protobuf.ByteString;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import org.projectnessie.versioned.Diff;
@@ -268,21 +267,6 @@ public interface DatabaseAdapter {
 
   // NOTE: the following is NOT a "proposed" API, just an idea of how the supporting functions
   // for Nessie-GC need to look like.
-
-  /**
-   * Retrieve all keys recorded in the global-content-log.
-   *
-   * <p>This operation is primarily used by Nessie-GC and must not be exposed via a public API.
-   */
-  Stream<ContentId> globalKeys();
-
-  /**
-   * Retrieve all global-content recorded in the global-content-log for the given keys +
-   * content-ids. Callers must assume that the result will not be grouped by key or key+content-id.
-   *
-   * <p>This operation is primarily used by Nessie-GC and must not be exposed via a public API.
-   */
-  Stream<ContentIdAndBytes> globalContent(Set<ContentId> keys);
 
   /**
    * Retrieves the global content for the given contents-id.
