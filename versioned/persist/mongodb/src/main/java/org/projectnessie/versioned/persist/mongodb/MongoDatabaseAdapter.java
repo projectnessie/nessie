@@ -97,10 +97,7 @@ public class MongoDatabaseAdapter
   public void eraseRepo() {
     client.getGlobalPointers().deleteMany(Filters.eq(globalPointerKey));
     Bson idPrefixFilter = Filters.eq(ID_REPO_PATH, repositoryId);
-    client.getGlobalLog().deleteMany(idPrefixFilter);
-    client.getCommitLog().deleteMany(idPrefixFilter);
-    client.getKeyLists().deleteMany(idPrefixFilter);
-    client.getRefLog().deleteMany(idPrefixFilter);
+    client.allExceptGlobalPointer().forEach(coll -> coll.deleteMany(idPrefixFilter));
   }
 
   private Document toId(Hash id) {

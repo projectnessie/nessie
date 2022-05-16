@@ -15,6 +15,8 @@
  */
 package org.projectnessie.versioned.persist.dynamodb;
 
+import java.util.stream.Stream;
+
 final class Tables {
 
   static final String TABLE_REPO_DESC = "repo_desc";
@@ -28,4 +30,13 @@ final class Tables {
   static final String VALUE_NAME = "val";
 
   private Tables() {}
+
+  static Stream<String> all() {
+    return Stream.concat(Stream.of(TABLE_GLOBAL_POINTER), allExceptGlobalPointer());
+  }
+
+  static Stream<String> allExceptGlobalPointer() {
+    return Stream.of(
+        TABLE_REPO_DESC, TABLE_GLOBAL_LOG, TABLE_COMMIT_LOG, TABLE_KEY_LISTS, TABLE_REF_LOG);
+  }
 }

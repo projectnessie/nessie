@@ -101,13 +101,8 @@ public class RocksDatabaseAdapter
   public void eraseRepo() {
     try {
       db.delete(dbInstance.getCfGlobalPointer(), globalPointerKey());
-      Stream.of(
-              dbInstance.getCfGlobalPointer(),
-              dbInstance.getCfGlobalLog(),
-              dbInstance.getCfCommitLog(),
-              dbInstance.getCfRepoProps(),
-              dbInstance.getCfKeyList(),
-              dbInstance.getCfRefLog())
+      dbInstance
+          .allExceptGlobalPointer()
           .forEach(
               cf -> {
                 try (RocksIterator iter = db.newIterator(cf)) {

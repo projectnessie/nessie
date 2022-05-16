@@ -26,6 +26,7 @@ import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_KEY_LIST
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_REF_LOG;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_REPO_DESC;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.VALUE_NAME;
+import static org.projectnessie.versioned.persist.dynamodb.Tables.allExceptGlobalPointer;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
@@ -127,11 +128,11 @@ public class DynamoDatabaseAdapter
 
   @Override
   public void eraseRepo() {
-    client.client.deleteItem(
-        b -> b.tableName(TABLE_GLOBAL_POINTER).key(globalPointerKeyMap).build());
+    client.client.deleteItem(b -> b.tableName(TABLE_GLOBAL_POINTER).key(globalPointerKeyMap));
 
     try (BatchDelete batchDelete = new BatchDelete()) {
-      Stream.of(TABLE_GLOBAL_LOG, TABLE_COMMIT_LOG, TABLE_KEY_LISTS, TABLE_REF_LOG)
+      allExceptGlobalPointer()
+          .filter(t -> !TABLE_GLOBAL_POINTER.equals(t))
           .forEach(
               table ->
                   client
