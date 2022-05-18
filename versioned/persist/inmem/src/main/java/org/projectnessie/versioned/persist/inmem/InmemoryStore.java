@@ -58,7 +58,8 @@ public class InmemoryStore implements DatabaseConnectionProvider<InmemoryConfig>
             keyLists,
             refLog,
             refHeads,
-            refNames)
+            refNames,
+            refLogHeads)
         .forEach(map -> map.keySet().removeIf(bytes -> bytes.startsWith(keyPrefix)));
   }
 }

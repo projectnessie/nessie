@@ -22,6 +22,7 @@ import com.google.common.collect.Maps;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.mongodb.DuplicateKeyException;
 import com.mongodb.ErrorCategory;
+import com.mongodb.MongoServerException;
 import com.mongodb.MongoWriteException;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
@@ -189,15 +190,13 @@ public class MongoDatabaseAdapter
     InsertOneResult result;
     try {
       result = collection.insertOne(doc);
-    } catch (MongoWriteException writeException) {
-      ErrorCategory category = writeException.getError().getCategory();
-      if (ErrorCategory.DUPLICATE_KEY == category) {
+    } catch (MongoServerException e) {
+      if (isDuplicateKeyError(e)) {
         ReferenceConflictException ex = DatabaseAdapterUtil.hashCollisionDetected();
-        ex.initCause(writeException);
+        ex.initCause(e);
         throw ex;
       }
-
-      throw writeException;
+      throw e;
     }
 
     verifyAcknowledged(result, collection);
@@ -212,15 +211,13 @@ public class MongoDatabaseAdapter
     InsertManyResult result;
     try {
       result = collection.insertMany(docs);
-    } catch (MongoWriteException writeException) {
-      ErrorCategory category = writeException.getError().getCategory();
-      if (ErrorCategory.DUPLICATE_KEY == category) {
+    } catch (MongoServerException e) {
+      if (isDuplicateKeyError(e)) {
         ReferenceConflictException ex = DatabaseAdapterUtil.hashCollisionDetected();
-        ex.initCause(writeException);
+        ex.initCause(e);
         throw ex;
       }
-
-      throw writeException;
+      throw e;
     }
 
     verifyAcknowledged(result, collection);
@@ -373,12 +370,11 @@ public class MongoDatabaseAdapter
     } else {
       try {
         return client.getRepoDesc().insertOne(doc).wasAcknowledged();
-      } catch (MongoWriteException writeException) {
-        ErrorCategory category = writeException.getError().getCategory();
-        if (ErrorCategory.DUPLICATE_KEY == category) {
+      } catch (MongoServerException e) {
+        if (isDuplicateKeyError(e)) {
           return false;
         }
-        throw writeException;
+        throw e;
       }
     }
   }
@@ -421,8 +417,11 @@ public class MongoDatabaseAdapter
       try {
         verifyAcknowledged(client.getRefLogHeads().insertOne(doc), client.getRefLogHeads());
         return true;
-      } catch (DuplicateKeyException e) {
-        return false;
+      } catch (MongoServerException e) {
+        if (isDuplicateKeyError(e)) {
+          return false;
+        }
+        throw e;
       }
     }
   }
@@ -440,14 +439,22 @@ public class MongoDatabaseAdapter
 
   @Override
   protected boolean doCreateNamedReference(
-      NonTransactionalOperationContext ctx, NamedRef ref, NamedReference namedReference) {
-    byte[] existing = loadById(client.getRefHeads(), ref.getName(), bytes -> bytes);
+      NonTransactionalOperationContext ctx, NamedReference namedReference) {
+    byte[] existing = loadById(client.getRefHeads(), namedReference.getName(), bytes -> bytes);
     if (existing != null) {
       return false;
     }
 
-    verifyAcknowledged(client.getRefHeads().insertOne(toDoc(namedReference)), client.getRefHeads());
-    return true;
+    try {
+      verifyAcknowledged(
+          client.getRefHeads().insertOne(toDoc(namedReference)), client.getRefHeads());
+      return true;
+    } catch (MongoServerException e) {
+      if (isDuplicateKeyError(e)) {
+        return false;
+      }
+      throw e;
+    }
   }
 
   @Override
@@ -466,24 +473,28 @@ public class MongoDatabaseAdapter
   }
 
   @Override
-  protected void doAddToNamedReferences(NonTransactionalOperationContext ctx, NamedRef ref) {
+  protected void doAddToNamedReferences(
+      NonTransactionalOperationContext ctx, Stream<NamedRef> refStream, int addToSegment) {
     verifyAcknowledged(
         client
             .getRefNames()
             .updateOne(
-                Filters.eq(toId(0)),
-                Updates.addToSet(DATA_PROPERTY_NAME, ref.getName()),
+                Filters.eq(toId(addToSegment)),
+                Updates.addEachToSet(
+                    DATA_PROPERTY_NAME,
+                    refStream.map(NamedRef::getName).collect(Collectors.toList())),
                 new UpdateOptions().upsert(true)),
         client.getRefNames());
   }
 
   @Override
-  protected void doRemoveFromNamedReferences(NonTransactionalOperationContext ctx, NamedRef ref) {
+  protected void doRemoveFromNamedReferences(
+      NonTransactionalOperationContext ctx, NamedRef ref, int removeFromSegment) {
     verifyAcknowledged(
         client
             .getRefNames()
             .updateOne(
-                Filters.eq(toId(0)),
+                Filters.eq(toId(removeFromSegment)),
                 Updates.pull(DATA_PROPERTY_NAME, ref.getName()),
                 new UpdateOptions().upsert(true)),
         client.getRefNames());
@@ -580,6 +591,26 @@ public class MongoDatabaseAdapter
   }
 
   @Override
+  protected boolean doGlobalPointerCas(
+      NonTransactionalOperationContext ctx,
+      GlobalStatePointer expected,
+      GlobalStatePointer newPointer) {
+    Document doc = toDoc(newPointer);
+    byte[] expectedGlobalId = expected.getGlobalId().toByteArray();
+
+    UpdateResult result =
+        client
+            .getGlobalPointers()
+            .replaceOne(
+                Filters.and(
+                    Filters.eq(globalPointerKey),
+                    Filters.eq(GLOBAL_ID_PROPERTY_NAME, expectedGlobalId)),
+                doc);
+
+    return verifySuccessfulUpdate(result, client.getGlobalPointers());
+  }
+
+  @Override
   protected void doCleanUpCommitCas(
       NonTransactionalOperationContext ctx, Set<Hash> branchCommits, Set<Hash> newKeyLists) {
     delete(client.getCommitLog(), branchCommits);
@@ -637,6 +668,17 @@ public class MongoDatabaseAdapter
   protected List<RefLog> doFetchPageFromRefLog(
       NonTransactionalOperationContext ctx, List<Hash> hashes) {
     return fetchPage(client.getRefLog(), hashes, ProtoSerialization::protoToRefLog);
+  }
+
+  private static boolean isDuplicateKeyError(MongoServerException e) {
+    if (e instanceof DuplicateKeyException) {
+      return true;
+    }
+    if (e instanceof MongoWriteException) {
+      MongoWriteException writeException = (MongoWriteException) e;
+      return writeException.getError().getCategory() == ErrorCategory.DUPLICATE_KEY;
+    }
+    return false;
   }
 
   private static boolean verifySuccessfulUpdate(

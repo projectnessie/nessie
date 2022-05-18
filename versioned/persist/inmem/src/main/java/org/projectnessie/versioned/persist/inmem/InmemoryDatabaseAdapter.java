@@ -27,8 +27,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.projectnessie.versioned.Hash;
@@ -143,9 +141,9 @@ public class InmemoryDatabaseAdapter
 
   @Override
   protected boolean doCreateNamedReference(
-      NonTransactionalOperationContext ctx, NamedRef ref, NamedReference namedReference) {
+      NonTransactionalOperationContext ctx, NamedReference namedReference) {
     ByteString existing =
-        store.refHeads.putIfAbsent(dbKey(ref.getName()), namedReference.toByteString());
+        store.refHeads.putIfAbsent(dbKey(namedReference.getName()), namedReference.toByteString());
     return existing == null;
   }
 
@@ -160,16 +158,11 @@ public class InmemoryDatabaseAdapter
   }
 
   @Override
-  protected void doUpdateNamedReferencesList(
-      Predicate<ReferenceNames> nextSegment,
-      Function<ReferenceNames, ReferenceNames.Builder> updateReferenceNames) {
-    for (int segment = 0; ; segment++) {
-      ByteString refNamesBytes = store.refNames.get(dbKey(segment));
-      if (refNamesBytes == null) {
-        if (segment != 0) {
-          break;
-        }
-      }
+  protected void doAddToNamedReferences(
+      NonTransactionalOperationContext ctx, Stream<NamedRef> refStream, int addToSegment) {
+    Set<String> refNamesToAdd = refStream.map(NamedRef::getName).collect(Collectors.toSet());
+    while (true) {
+      ByteString refNamesBytes = store.refNames.get(dbKey(addToSegment));
 
       ReferenceNames referenceNames;
       try {
@@ -181,26 +174,47 @@ public class InmemoryDatabaseAdapter
         throw new RuntimeException(e);
       }
 
-      if (nextSegment.test(referenceNames)) {
-        continue;
+      ByteString newRefNameBytes =
+          referenceNames.toBuilder().addAllRefNames(refNamesToAdd).build().toByteString();
+
+      boolean success =
+          refNamesBytes == null
+              ? store.refNames.putIfAbsent(dbKey(addToSegment), newRefNameBytes) == null
+              : store.refNames.replace(dbKey(addToSegment), refNamesBytes, newRefNameBytes);
+      if (success) {
+        break;
       }
+    }
+  }
 
-      ReferenceNames.Builder referenceNamesBuilder = updateReferenceNames.apply(referenceNames);
-
-      ByteString newRefNameBytes = referenceNamesBuilder.build().toByteString();
+  @Override
+  protected void doRemoveFromNamedReferences(
+      NonTransactionalOperationContext ctx, NamedRef ref, int removeFromSegment) {
+    while (true) {
+      ByteString refNamesBytes = store.refNames.get(dbKey(removeFromSegment));
 
       if (refNamesBytes == null) {
-        if (store.refNames.putIfAbsent(dbKey(segment), newRefNameBytes) == null) {
-          break;
-        }
-      } else {
-        if (store.refNames.replace(dbKey(segment), refNamesBytes, newRefNameBytes)) {
-          break;
-        }
+        break;
       }
 
-      // CAS failed, retry same segment
-      segment--;
+      ReferenceNames referenceNames;
+      try {
+        referenceNames = ReferenceNames.parseFrom(refNamesBytes);
+      } catch (InvalidProtocolBufferException e) {
+        throw new RuntimeException(e);
+      }
+
+      ReferenceNames.Builder newRefNames = referenceNames.toBuilder().clearRefNames();
+      referenceNames.getRefNamesList().stream()
+          .filter(n -> !n.equals(ref.getName()))
+          .forEach(newRefNames::addRefNames);
+      ByteString newRefNameBytes = newRefNames.build().toByteString();
+
+      boolean success =
+          store.refNames.replace(dbKey(removeFromSegment), refNamesBytes, newRefNameBytes);
+      if (success) {
+        break;
+      }
     }
   }
 
@@ -285,6 +299,14 @@ public class InmemoryDatabaseAdapter
   protected void unsafeWriteGlobalPointer(
       NonTransactionalOperationContext ctx, GlobalStatePointer pointer) {
     globalState().set(pointer);
+  }
+
+  @Override
+  protected boolean doGlobalPointerCas(
+      NonTransactionalOperationContext ctx,
+      GlobalStatePointer expected,
+      GlobalStatePointer newPointer) {
+    return globalState().compareAndSet(expected, newPointer);
   }
 
   private AtomicReference<GlobalStatePointer> globalState() {

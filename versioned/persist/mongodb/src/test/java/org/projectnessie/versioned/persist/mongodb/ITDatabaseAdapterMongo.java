@@ -15,10 +15,10 @@
  */
 package org.projectnessie.versioned.persist.mongodb;
 
-import org.projectnessie.versioned.persist.tests.AbstractDatabaseAdapterTest;
+import org.projectnessie.versioned.persist.nontx.AbstractNonTxDatabaseAdapterTest;
 import org.projectnessie.versioned.persist.tests.LongerCommitTimeouts;
 import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
 @NessieExternalDatabase(LocalMongoTestConnectionProviderSource.class)
-public class ITDatabaseAdapterMongo extends AbstractDatabaseAdapterTest
+public class ITDatabaseAdapterMongo extends AbstractNonTxDatabaseAdapterTest
     implements LongerCommitTimeouts {}

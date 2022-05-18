@@ -15,8 +15,8 @@
  */
 package org.projectnessie.versioned.persist.inmem;
 
-import org.projectnessie.versioned.persist.tests.AbstractDatabaseAdapterTest;
+import org.projectnessie.versioned.persist.nontx.AbstractNonTxDatabaseAdapterTest;
 import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
 @NessieExternalDatabase(InmemoryTestConnectionProviderSource.class)
-class TestDatabaseAdapterInmemory extends AbstractDatabaseAdapterTest {}
+class TestDatabaseAdapterInmemory extends AbstractNonTxDatabaseAdapterTest {}

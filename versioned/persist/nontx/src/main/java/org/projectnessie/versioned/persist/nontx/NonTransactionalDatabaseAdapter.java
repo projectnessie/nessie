@@ -33,11 +33,15 @@ import static org.projectnessie.versioned.persist.nontx.NonTransactionalDatabase
 import static org.projectnessie.versioned.persist.nontx.NonTransactionalOperationContext.NON_TRANSACTIONAL_OPERATION_CONTEXT;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Maps;
 import com.google.protobuf.ByteString;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -46,11 +50,12 @@ import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.Spliterators.AbstractSpliterator;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
+import java.util.function.IntFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -1052,41 +1057,128 @@ public abstract class NonTransactionalDatabaseAdapter<
         // Backwards compatibility, fetch named-reference's HEAD from global-pointer and create
         // the reference in the "new" format. We buy backwards-compatibility with an extra read
         // for non-existing branches.
-        namedRef = maybeMigrateLegacyNamedReferences(ctx, refName);
+        if (maybeMigrateLegacyNamedReferences(ctx)) {
+          namedRef = doFetchNamedReference(ctx, refName);
+        }
       }
       return namedRef;
     }
   }
 
   /**
-   * Migrates named references away from global-pointer. It's somewhat insecure, but probably good
-   * enough.
+   * Migrates named references away from global-pointer.
+   *
+   * <p>Implemented as a two-step process:
+   *
+   * <ol>
+   *   <li>Add all references from the global-pointer to the named-references-inventory, do not
+   *       modify the global-pointer.
+   *   <li>Create references from the global-pointer in the new, one-row-per-named-reference,
+   *       structure + purge the added references from global-pointer.
+   * </ol>
    */
-  private NamedReference maybeMigrateLegacyNamedReferences(
-      NonTransactionalOperationContext ctx, String refName) {
-    NamedReference namedRef = null;
+  private boolean maybeMigrateLegacyNamedReferences(NonTransactionalOperationContext ctx) {
+
     GlobalStatePointer pointer = fetchGlobalPointer(ctx);
-    if (pointer != null) {
-      if (pointer.getNamedReferencesCount() > 0) {
-        GlobalStatePointer.Builder newPointer = pointer.toBuilder().clearNamedReferences();
-        for (NamedReference legacyNamedRef : pointer.getNamedReferencesList()) {
-          if (legacyNamedRef.getName().equals(refName)) {
-            namedRef = legacyNamedRef;
+    if (pointer == null || pointer.getNamedReferencesCount() == 0) {
+      return false;
+    }
+
+    // Figure out the NamedReference instances, that need to be added to the named-references
+    // inventory.
+    Map<String, NamedReference> namedRefsFromGlobal =
+        Maps.newHashMapWithExpectedSize(pointer.getNamedReferencesCount());
+    pointer.getNamedReferencesList().forEach(nr -> namedRefsFromGlobal.put(nr.getName(), nr));
+
+    List<ReferenceNames> refNamesSegments = new ArrayList<>();
+    for (int segment = 0; ; segment++) {
+      ReferenceNames refNames = doFetchReferenceNames(ctx, segment);
+      if (refNames == null) {
+        break;
+      }
+      refNamesSegments.add(refNames);
+    }
+
+    // Add reference names from global pointer to named-references inventory.
+
+    Map<String, NamedReference> refsToAddToInventoryMap = new HashMap<>(namedRefsFromGlobal);
+    for (ReferenceNames refNames : refNamesSegments) {
+      refNames.getRefNamesList().forEach(refsToAddToInventoryMap::remove);
+    }
+
+    if (!refsToAddToInventoryMap.isEmpty()) {
+      Iterator<NamedReference> refsToAddToInventory = refsToAddToInventoryMap.values().iterator();
+
+      int namedReferencesSegment = 0;
+      List<NamedRef> refsToAddToSegment = new ArrayList<>();
+      IntFunction<Integer> calculateHeadRoomForSegment =
+          seg -> {
+            ReferenceNames referenceNamesSegment =
+                refNamesSegments.size() > seg ? refNamesSegments.get(seg) : null;
+            return maxEntitySize(config.getReferencesSegmentSize())
+                - (referenceNamesSegment != null ? referenceNamesSegment.getSerializedSize() : 0);
+          };
+
+      int headRoom = calculateHeadRoomForSegment.apply(namedReferencesSegment);
+
+      while (refsToAddToInventory.hasNext()) {
+        NamedReference namedRefToAdd = refsToAddToInventory.next();
+        // Simplified size estimation for a protobuf string list, but considers "wide" UTF-8
+        // characters.
+        int namedRefToAddSize = ByteString.copyFromUtf8(namedRefToAdd.getName()).size() + 3;
+
+        while (headRoom < namedRefToAddSize) {
+          if (!refsToAddToSegment.isEmpty()) {
+            doAddToNamedReferences(ctx, refsToAddToSegment.stream(), namedReferencesSegment);
+            refsToAddToSegment.clear();
           }
-          if (!createNamedReference(
-              ctx,
-              toNamedRef(legacyNamedRef.getRef().getType(), legacyNamedRef.getName()),
-              Hash.of(legacyNamedRef.getRef().getHash()))) {
-            if (doFetchNamedReference(ctx, refName) == null) {
-              newPointer.addNamedReferences(legacyNamedRef);
-            }
-          }
+
+          namedReferencesSegment++;
+          headRoom = calculateHeadRoomForSegment.apply(namedReferencesSegment);
         }
-        // TODO better use CAS?
-        unsafeWriteGlobalPointer(ctx, newPointer.build());
+
+        refsToAddToSegment.add(
+            toNamedRef(namedRefToAdd.getRef().getType(), namedRefToAdd.getName()));
+        headRoom -= namedRefToAddSize;
+      }
+
+      if (!refsToAddToSegment.isEmpty()) {
+        doAddToNamedReferences(ctx, refsToAddToSegment.stream(), namedReferencesSegment);
+        refsToAddToSegment.clear();
       }
     }
-    return namedRef;
+
+    // Create references in the "new structure"
+
+    while (true) {
+      // Pick a random reference from global-pointer
+
+      NamedReference namedRefToMigrate =
+          pointer
+              .getNamedReferencesList()
+              .get(ThreadLocalRandom.current().nextInt(pointer.getNamedReferencesCount()));
+
+      // Migrate that named reference
+
+      doCreateNamedReference(ctx, namedRefToMigrate);
+
+      GlobalStatePointer.Builder newPointerBuilder =
+          pointer.toBuilder().clearNamedReferences().setGlobalId(randomHash().asBytes());
+      pointer.getNamedReferencesList().stream()
+          .filter(nr -> !nr.getName().equals(namedRefToMigrate.getName()))
+          .forEach(newPointerBuilder::addNamedReferences);
+      GlobalStatePointer newPointer = newPointerBuilder.build();
+      if (globalPointerCas(ctx, pointer, newPointer)) {
+        pointer = newPointer;
+      } else {
+        pointer = fetchGlobalPointer(ctx);
+      }
+      if (pointer == null || pointer.getNamedReferencesCount() == 0) {
+        break;
+      }
+    }
+
+    return true;
   }
 
   protected abstract NamedReference doFetchNamedReference(
@@ -1095,7 +1187,7 @@ public abstract class NonTransactionalDatabaseAdapter<
   protected final Stream<NamedReference> fetchNamedReferences(
       NonTransactionalOperationContext ctx) {
 
-    maybeMigrateLegacyNamedReferences(ctx, null);
+    maybeMigrateLegacyNamedReferences(ctx);
 
     AbstractSpliterator<ReferenceNames> split =
         new AbstractSpliterator<ReferenceNames>(Long.MAX_VALUE, Spliterator.ORDERED) {
@@ -1117,6 +1209,9 @@ public abstract class NonTransactionalDatabaseAdapter<
     return StreamSupport.stream(split, false)
         .map(ReferenceNames::getRefNamesList)
         .flatMap(List::stream)
+        // The named references splits may contain duplicate names, which is probably very, very
+        // rare, but still possible.
+        .distinct()
         .map(ref -> fetchNamedReference(ctx, ref))
         .filter(Objects::nonNull);
   }
@@ -1137,25 +1232,36 @@ public abstract class NonTransactionalDatabaseAdapter<
       // fails, that's fine, because doFetchNamedReferences() does not return references that do
       // not exist in 'refNames'.
 
-      doAddToNamedReferences(ctx, ref);
+      int addToSegment = findAvailableNamedReferencesSegment(ctx);
+      doAddToNamedReferences(ctx, Stream.of(ref), addToSegment);
 
-      return doCreateNamedReference(ctx, ref, namedReference);
+      return doCreateNamedReference(ctx, namedReference);
     }
   }
 
-  protected void doAddToNamedReferences(NonTransactionalOperationContext ctx, NamedRef ref) {
-    doUpdateNamedReferencesList(
-        referenceNames -> referenceNames.getRefNamesList().contains(ref.getName()),
-        referenceNames -> {
-          ReferenceNames.Builder referenceNamesBuilder = ReferenceNames.newBuilder();
-          referenceNamesBuilder.addAllRefNames(referenceNames.getRefNamesList());
-          referenceNamesBuilder.addRefNames(ref.getName());
-          return referenceNamesBuilder;
-        });
+  /** Find the segment that has enough room for another {@link NamedReference}. */
+  protected int findAvailableNamedReferencesSegment(NonTransactionalOperationContext ctx) {
+    for (int segment = 0; ; segment++) {
+      ReferenceNames refNames = doFetchReferenceNames(ctx, segment);
+      if (refNames == null) {
+        return segment;
+      }
+
+      int serSize = refNames.getSerializedSize();
+      if (serSize < maxEntitySize(config.getReferencesSegmentSize())) {
+        return segment;
+      }
+    }
   }
 
+  protected abstract void doAddToNamedReferences(
+      NonTransactionalOperationContext ctx, Stream<NamedRef> refStream, int addToSegment);
+
+  protected abstract void doRemoveFromNamedReferences(
+      NonTransactionalOperationContext ctx, NamedRef ref, int removeFromSegment);
+
   protected abstract boolean doCreateNamedReference(
-      NonTransactionalOperationContext ctx, NamedRef ref, NamedReference namedReference);
+      NonTransactionalOperationContext ctx, NamedReference namedReference);
 
   protected final boolean deleteNamedReference(
       NonTransactionalOperationContext ctx, NamedRef ref, RefPointer refHead) {
@@ -1171,29 +1277,19 @@ public abstract class NonTransactionalDatabaseAdapter<
       //  currently being dropped may end up having its name *not* present in the list of
       //  references. The reference would still be accessible and deletable though.
 
-      doRemoveFromNamedReferences(ctx, ref);
+      for (int segment = 0; ; segment++) {
+        ReferenceNames refNames = doFetchReferenceNames(ctx, segment);
+        if (refNames == null) {
+          break;
+        }
+        if (refNames.getRefNamesList().contains(ref.getName())) {
+          doRemoveFromNamedReferences(ctx, ref, segment);
+          break;
+        }
+      }
 
       return true;
     }
-  }
-
-  protected void doRemoveFromNamedReferences(NonTransactionalOperationContext ctx, NamedRef ref) {
-    doUpdateNamedReferencesList(
-        referenceNames -> !referenceNames.getRefNamesList().contains(ref.getName()),
-        referenceNames -> {
-          ReferenceNames.Builder referenceNamesBuilder = ReferenceNames.newBuilder();
-          referenceNames.getRefNamesList().stream()
-              .filter(name -> !name.equals(ref.getName()))
-              .forEach(referenceNamesBuilder::addRefNames);
-          return referenceNamesBuilder;
-        });
-  }
-
-  protected void doUpdateNamedReferencesList(
-      Predicate<ReferenceNames> nextSegment,
-      Function<ReferenceNames, ReferenceNames.Builder> updateReferenceNames) {
-    throw new UnsupportedOperationException(
-        "Implementation is missing doUpdateNamedReferencesList or doAddToNamedReferences+doRemoveFromNamedReferences");
   }
 
   protected abstract boolean doDeleteNamedReference(
@@ -1229,6 +1325,24 @@ public abstract class NonTransactionalDatabaseAdapter<
    */
   protected abstract void unsafeWriteGlobalPointer(
       NonTransactionalOperationContext ctx, GlobalStatePointer pointer);
+
+  /**
+   * Atomically update the global-commit-pointer to the given new-global-head, if the value in the
+   * database is the given expected-global-head.
+   */
+  protected final boolean globalPointerCas(
+      NonTransactionalOperationContext ctx,
+      GlobalStatePointer expected,
+      GlobalStatePointer newPointer) {
+    try (Traced ignore = trace("globalPointerCas")) {
+      return doGlobalPointerCas(ctx, expected, newPointer);
+    }
+  }
+
+  protected abstract boolean doGlobalPointerCas(
+      NonTransactionalOperationContext ctx,
+      GlobalStatePointer expected,
+      GlobalStatePointer newPointer);
 
   /**
    * If a {@link #refLogParentsCas(NonTransactionalOperationContext, int, RefLogParents,

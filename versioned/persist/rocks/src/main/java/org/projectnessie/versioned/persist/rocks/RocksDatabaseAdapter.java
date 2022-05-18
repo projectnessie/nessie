@@ -31,7 +31,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -192,6 +191,28 @@ public class RocksDatabaseAdapter
       db.put(dbInstance.getCfGlobalPointer(), globalPointerKey(), pointer.toByteArray());
     } catch (RocksDBException e) {
       throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  protected boolean doGlobalPointerCas(
+      NonTransactionalOperationContext ctx,
+      GlobalStatePointer expected,
+      GlobalStatePointer newPointer) {
+    Lock lock = dbInstance.getLock().writeLock();
+    lock.lock();
+    try {
+      byte[] bytes = db.get(dbInstance.getCfGlobalPointer(), globalPointerKey());
+      GlobalStatePointer oldPointer = bytes != null ? GlobalStatePointer.parseFrom(bytes) : null;
+      if (oldPointer == null || !oldPointer.getGlobalId().equals(expected.getGlobalId())) {
+        return false;
+      }
+      db.put(dbInstance.getCfGlobalPointer(), globalPointerKey(), newPointer.toByteArray());
+      return true;
+    } catch (InvalidProtocolBufferException | RocksDBException e) {
+      throw new RuntimeException(e);
+    } finally {
+      lock.unlock();
     }
   }
 
@@ -438,16 +459,19 @@ public class RocksDatabaseAdapter
 
   @Override
   protected boolean doCreateNamedReference(
-      NonTransactionalOperationContext ctx, NamedRef ref, NamedReference namedReference) {
+      NonTransactionalOperationContext ctx, NamedReference namedReference) {
     Lock lock = dbInstance.getLock().writeLock();
     lock.lock();
     try {
-      byte[] existing = db.get(dbInstance.getCfRefHeads(), dbKey(ref.getName()));
+      byte[] existing = db.get(dbInstance.getCfRefHeads(), dbKey(namedReference.getName()));
       if (existing != null) {
         return false;
       }
 
-      db.put(dbInstance.getCfRefHeads(), dbKey(ref.getName()), namedReference.toByteArray());
+      db.put(
+          dbInstance.getCfRefHeads(),
+          dbKey(namedReference.getName()),
+          namedReference.toByteArray());
 
       return true;
     } catch (RocksDBException e) {
@@ -487,41 +511,60 @@ public class RocksDatabaseAdapter
   }
 
   @Override
-  protected void doUpdateNamedReferencesList(
-      Predicate<ReferenceNames> nextSegment,
-      Function<ReferenceNames, ReferenceNames.Builder> updateReferenceNames) {
+  protected void doAddToNamedReferences(
+      NonTransactionalOperationContext ctx, Stream<NamedRef> refStream, int addToSegment) {
+    Set<String> refNamesToAdd = refStream.map(NamedRef::getName).collect(Collectors.toSet());
     Lock lock = dbInstance.getLock().writeLock();
     lock.lock();
     try {
-      for (int segment = 0; ; segment++) {
-        byte[] refNamesBytes = db.get(dbInstance.getCfRefNames(), dbKey(segment));
-        if (refNamesBytes == null) {
-          if (segment != 0) {
-            break;
-          }
-        }
+      byte[] refNamesBytes = db.get(dbInstance.getCfRefNames(), dbKey(addToSegment));
 
-        ReferenceNames referenceNames;
-        try {
-          referenceNames =
-              refNamesBytes == null
-                  ? ReferenceNames.getDefaultInstance()
-                  : ReferenceNames.parseFrom(refNamesBytes);
-        } catch (InvalidProtocolBufferException e) {
-          throw new RuntimeException(e);
-        }
-
-        if (nextSegment.test(referenceNames)) {
-          continue;
-        }
-
-        ReferenceNames.Builder referenceNamesBuilder = updateReferenceNames.apply(referenceNames);
-
-        byte[] newRefNameBytes = referenceNamesBuilder.build().toByteArray();
-        db.put(dbInstance.getCfRefNames(), dbKey(segment), newRefNameBytes);
-
-        break;
+      ReferenceNames referenceNames;
+      try {
+        referenceNames =
+            refNamesBytes == null
+                ? ReferenceNames.getDefaultInstance()
+                : ReferenceNames.parseFrom(refNamesBytes);
+      } catch (InvalidProtocolBufferException e) {
+        throw new RuntimeException(e);
       }
+
+      byte[] newRefNameBytes =
+          referenceNames.toBuilder().addAllRefNames(refNamesToAdd).build().toByteArray();
+
+      db.put(dbInstance.getCfRefNames(), dbKey(addToSegment), newRefNameBytes);
+    } catch (RocksDBException e) {
+      throw new RuntimeException(e);
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  @Override
+  protected void doRemoveFromNamedReferences(
+      NonTransactionalOperationContext ctx, NamedRef ref, int removeFromSegment) {
+    Lock lock = dbInstance.getLock().writeLock();
+    lock.lock();
+    try {
+      byte[] refNamesBytes = db.get(dbInstance.getCfRefNames(), dbKey(removeFromSegment));
+      if (refNamesBytes == null) {
+        return;
+      }
+
+      ReferenceNames referenceNames;
+      try {
+        referenceNames = ReferenceNames.parseFrom(refNamesBytes);
+      } catch (InvalidProtocolBufferException e) {
+        throw new RuntimeException(e);
+      }
+
+      ReferenceNames.Builder newRefNames = referenceNames.toBuilder();
+      referenceNames.getRefNamesList().stream()
+          .filter(n -> !n.equals(ref.getName()))
+          .forEach(newRefNames::addRefNames);
+      byte[] newRefNameBytes = newRefNames.build().toByteArray();
+
+      db.put(dbInstance.getCfRefNames(), dbKey(removeFromSegment), newRefNameBytes);
     } catch (RocksDBException e) {
       throw new RuntimeException(e);
     } finally {

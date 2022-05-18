@@ -85,7 +85,6 @@ public class DynamoDatabaseAdapter
 
   // DynamoDB limit
   private static final int DYNAMO_BATCH_WRITE_MAX_REQUESTS = 25;
-  private static final int DYNAMO_SAFE_ITEM_SIZE = 300 * 1024;
   private static final int DYNAMO_MAX_ITEM_SIZE = 375 * 1024;
 
   private static final char PREFIX_SEPARATOR = ':';
@@ -248,6 +247,37 @@ public class DynamoDatabaseAdapter
         newKeyListEntities,
         KeyListEntity::getId,
         e -> ProtoSerialization.toProto(e.getKeys()).toByteArray());
+  }
+
+  @Override
+  protected boolean doGlobalPointerCas(
+      NonTransactionalOperationContext ctx,
+      GlobalStatePointer expected,
+      GlobalStatePointer newPointer) {
+    AttributeValue expectedBytes =
+        AttributeValue.builder().b(SdkBytes.fromByteArray(expected.toByteArray())).build();
+    AttributeValue newPointerBytes =
+        AttributeValue.builder().b(SdkBytes.fromByteArray(newPointer.toByteArray())).build();
+    try {
+      client.client.updateItem(
+          b ->
+              b.tableName(TABLE_GLOBAL_POINTER)
+                  .key(globalPointerKeyMap)
+                  .expected(
+                      singletonMap(
+                          VALUE_NAME,
+                          ExpectedAttributeValue.builder().value(expectedBytes).build()))
+                  .attributeUpdates(
+                      singletonMap(
+                          VALUE_NAME,
+                          AttributeValueUpdate.builder()
+                              .action(AttributeAction.PUT)
+                              .value(newPointerBytes)
+                              .build())));
+      return true;
+    } catch (ConditionalCheckFailedException e) {
+      return false;
+    }
   }
 
   @Override
@@ -429,45 +459,32 @@ public class DynamoDatabaseAdapter
   }
 
   @Override
-  protected void doAddToNamedReferences(NonTransactionalOperationContext ctx, NamedRef ref) {
-    int minSize = Integer.MAX_VALUE;
-    int minSegment = -1;
-
-    // Add the new reference name to the smallest segment, otherwise add a new segment
-
-    for (int segment = 0; ; segment++) {
-      ReferenceNames refNames = doFetchReferenceNames(ctx, segment);
-      if (refNames == null) {
-        if (minSize >= DYNAMO_SAFE_ITEM_SIZE) {
-          minSegment = segment;
-        }
-        Map<String, AttributeValue> key =
-            singletonMap(KEY_NAME, AttributeValue.builder().s(keyPrefix + minSegment).build());
-        client.client.updateItem(
-            updateItem ->
-                updateItem
-                    .tableName(TABLE_REF_NAMES)
-                    .key(key)
-                    .attributeUpdates(
-                        singletonMap(
-                            VALUE_NAME,
-                            AttributeValueUpdate.builder()
-                                .action(AttributeAction.ADD)
-                                .value(b -> b.ss(ref.getName()))
-                                .build())));
-        break;
-      }
-
-      int serSize = refNames.getSerializedSize();
-      if (serSize < minSize) {
-        minSize = serSize;
-        minSegment = segment;
-      }
-    }
+  protected void doAddToNamedReferences(
+      NonTransactionalOperationContext ctx, Stream<NamedRef> refStream, int addToSegment) {
+    Map<String, AttributeValue> key =
+        singletonMap(KEY_NAME, AttributeValue.builder().s(keyPrefix + addToSegment).build());
+    client.client.updateItem(
+        updateItem ->
+            updateItem
+                .tableName(TABLE_REF_NAMES)
+                .key(key)
+                .attributeUpdates(
+                    singletonMap(
+                        VALUE_NAME,
+                        AttributeValueUpdate.builder()
+                            .action(AttributeAction.ADD)
+                            .value(
+                                b ->
+                                    b.ss(
+                                        refStream
+                                            .map(NamedRef::getName)
+                                            .collect(Collectors.toList())))
+                            .build())));
   }
 
   @Override
-  protected void doRemoveFromNamedReferences(NonTransactionalOperationContext ctx, NamedRef ref) {
+  protected void doRemoveFromNamedReferences(
+      NonTransactionalOperationContext ctx, NamedRef ref, int removeFromSegment) {
 
     for (int segment = 0; ; segment++) {
       ReferenceNames refNames = doFetchReferenceNames(ctx, segment);
@@ -501,7 +518,7 @@ public class DynamoDatabaseAdapter
 
   @Override
   protected boolean doCreateNamedReference(
-      NonTransactionalOperationContext ctx, NamedRef ref, NamedReference namedReference) {
+      NonTransactionalOperationContext ctx, NamedReference namedReference) {
     AttributeValue newPointerBytes =
         AttributeValue.builder().b(SdkBytes.fromByteArray(namedReference.toByteArray())).build();
     try {
@@ -510,7 +527,8 @@ public class DynamoDatabaseAdapter
               b.tableName(TABLE_REF_HEADS)
                   .key(
                       singletonMap(
-                          KEY_NAME, AttributeValue.builder().s(keyPrefix + ref.getName()).build()))
+                          KEY_NAME,
+                          AttributeValue.builder().s(keyPrefix + namedReference.getName()).build()))
                   .expected(
                       singletonMap(
                           KEY_NAME, ExpectedAttributeValue.builder().exists(false).build()))
