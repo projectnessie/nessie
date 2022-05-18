@@ -47,6 +47,13 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>org.projectnessie</groupId>
+      <artifactId>nessie-versioned-persist-non-transactional</artifactId>
+      <version>${project.version}</version>
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.immutables</groupId>
       <artifactId>value</artifactId>
       <scope>provided</scope>
