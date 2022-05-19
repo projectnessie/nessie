@@ -93,7 +93,7 @@
     "babel-plugin-named-asset-import": "^0.3.8",
     "babel-preset-react-app": "^10.0.0",
     "case-sensitive-paths-webpack-plugin": "2.4.0",
-    "css-minimizer-webpack-plugin": "^3.4.1",
+    "css-minimizer-webpack-plugin": "^4.0.0",
     "eslint": "^8.15.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-config-react-app": "^7.0.1",
