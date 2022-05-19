@@ -13,4 +13,4 @@ Install the Helm chart:
 helm install -n nessie-ns nessie nessie-helm/nessie
 ```
 
-Additional docs (incl. configuration settings) can be found [here](https://github.com/projectnessie/nessie/blob/main/helm/README.md). 
+Additional docs (incl. configuration settings) can be found [here](https://github.com/projectnessie/nessie/blob/main/helm/nessie/README.md). 
