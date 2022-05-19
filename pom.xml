@@ -177,7 +177,7 @@
     <google-error-prone.version>2.13.1</google-error-prone.version>
     <google-java-format.version>1.15.0</google-java-format.version>
     <guava.version>31.1-jre</guava.version>
-    <hadoop.version>3.3.2</hadoop.version>
+    <hadoop.version>3.3.3</hadoop.version>
     <iceberg.version>0.13.1</iceberg.version>
     <immutables.version>2.9.0</immutables.version>
     <jackson.version>2.13.3</jackson.version>
@@ -249,125 +249,6 @@
         <groupId>org.rocksdb</groupId>
         <artifactId>rocksdbjni</artifactId>
         <version>${rocksdb.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.hadoop</groupId>
-        <artifactId>hadoop-common</artifactId>
-        <version>${hadoop.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>org.mortbay.jetty</groupId>
-            <artifactId>servlet-api</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.mortbay.jetty</groupId>
-            <artifactId>servlet-api-2.5</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.mortbay.jetty</groupId>
-            <artifactId>servlet-api-2.5</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>javax.servlet</groupId>
-            <artifactId>servlet-api</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>javax.servlet.jsp</groupId>
-            <artifactId>jsp-api</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-yarn-api</artifactId>
-          </exclusion>
-          <exclusion>
-            <artifactId>jets3t</artifactId>
-            <groupId>net.java.dev.jets3t</groupId>
-          </exclusion>
-          <exclusion>
-            <artifactId>log4j</artifactId>
-            <groupId>log4j</groupId>
-          </exclusion>
-          <exclusion>
-            <artifactId>slf4j-log4j12</artifactId>
-            <groupId>org.slf4j</groupId>
-          </exclusion>
-          <exclusion>
-            <artifactId>mockito-all</artifactId>
-            <groupId>org.mockito</groupId>
-          </exclusion>
-          <exclusion>
-            <artifactId>commons-logging-api</artifactId>
-            <groupId>commons-logging</groupId>
-          </exclusion>
-          <exclusion>
-            <artifactId>commons-logging</artifactId>
-            <groupId>commons-logging</groupId>
-          </exclusion>
-          <exclusion>
-            <groupId>com.sun.jersey</groupId>
-            <artifactId>jersey-core</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>com.sun.jersey</groupId>
-            <artifactId>jersey-server</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>com.sun.jersey</groupId>
-            <artifactId>jersey-json</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>com.sun.jersey</groupId>
-            <artifactId>jersey-client</artifactId>
-          </exclusion>
-          <exclusion>
-            <artifactId>core</artifactId>
-            <groupId>org.eclipse.jdt</groupId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.codehaus.jackson</groupId>
-            <artifactId>jackson-core-asl</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.codehaus.jackson</groupId>
-            <artifactId>jackson-mapper-asl</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.codehaus.jackson</groupId>
-            <artifactId>jackson-xc</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.codehaus.jackson</groupId>
-            <artifactId>jackson-jaxrs</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>commons-beanutils</groupId>
-            <artifactId>commons-beanutils</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.apache.avro</groupId>
-            <artifactId>avro</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-server</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-util</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-servlet</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-webapp</artifactId>
-          </exclusion>
-        </exclusions>
       </dependency>
       <dependency>
         <groupId>org.apache.iceberg</groupId>
