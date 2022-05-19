@@ -2,7 +2,7 @@
 
 ## Dev installation for local experiments
 
-See the [Helm Dev installation](https://github.com/projectnessie/nessie/blob/main/helm/README.md#dev-installation) section for how to
+See the [Helm Dev installation](https://github.com/projectnessie/nessie/blob/main/helm/nessie/README.md#dev-installation) section for how to
 set up Nessie via Helm on a local dev environment.
 
 
@@ -22,7 +22,7 @@ helm repo update
 helm -n nessie-ns install prometheus prometheus-community/kube-prometheus-stack
 ```
 
-3. Install Nessie (see also https://github.com/projectnessie/nessie/blob/main/helm/README.md)
+3. Install Nessie (see also https://github.com/projectnessie/nessie/blob/main/helm/nessie/README.md)
 ```sh
 helm repo add nessie-helm https://charts.projectnessie.org
 helm repo update
@@ -46,4 +46,4 @@ nohup kubectl -n nessie-ns port-forward svc/prometheus-grafana 3000:80 &
 helm uninstall --namespace nessie-ns prometheus
 ```
 
-See the [Helm Dev installation](https://github.com/projectnessie/nessie/blob/main/helm/README.md#dev-installation) section for how to stop/uninstall Nessie & minikube.
+See the [Helm Dev installation](https://github.com/projectnessie/nessie/blob/main/helm/nessie/README.md#dev-installation) section for how to stop/uninstall Nessie & minikube.
