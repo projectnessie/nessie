@@ -43,6 +43,12 @@ public interface BaseMergeTransplant {
   @JsonInclude(Include.NON_NULL)
   MergeBehavior getDefaultKeyMergeMode();
 
+  @Nullable
+  Boolean isDryRun();
+
+  @Nullable
+  Boolean isFetchAdditionalInfo();
+
   @Value.Immutable
   @JsonSerialize(as = ImmutableMergeKeyBehavior.class)
   @JsonDeserialize(as = ImmutableMergeKeyBehavior.class)

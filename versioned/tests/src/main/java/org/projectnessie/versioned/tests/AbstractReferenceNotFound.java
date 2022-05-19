@@ -208,7 +208,9 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                         metadataRewriter,
                         false,
                         Collections.emptyMap(),
-                        MergeType.NORMAL)),
+                        MergeType.NORMAL,
+                        false,
+                        false)),
         new ReferenceNotFoundFunction("transplant/hash/empty")
             .msg(
                 "Could not find commit '12341234123412341234123412341234123412341234' in reference 'main'.")
@@ -221,7 +223,9 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                         metadataRewriter,
                         true,
                         Collections.emptyMap(),
-                        MergeType.NORMAL)),
+                        MergeType.NORMAL,
+                        false,
+                        false)),
         new ReferenceNotFoundFunction("transplant/empty/hash")
             .msg("Commit '12341234123412341234123412341234123412341234' not found")
             .function(
@@ -233,7 +237,9 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                         metadataRewriter,
                         false,
                         Collections.emptyMap(),
-                        MergeType.NORMAL)),
+                        MergeType.NORMAL,
+                        false,
+                        false)),
         // merge()
         new ReferenceNotFoundFunction("merge/hash/empty")
             .msg("Commit '12341234123412341234123412341234123412341234' not found")
@@ -246,7 +252,9 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                         metadataRewriter,
                         true,
                         Collections.emptyMap(),
-                        MergeType.NORMAL)),
+                        MergeType.NORMAL,
+                        false,
+                        false)),
         new ReferenceNotFoundFunction("merge/empty/hash")
             .msg(
                 "Could not find commit '12341234123412341234123412341234123412341234' in reference 'main'.")
@@ -259,7 +267,9 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                         metadataRewriter,
                         true,
                         Collections.emptyMap(),
-                        MergeType.NORMAL)));
+                        MergeType.NORMAL,
+                        false,
+                        false)));
   }
 
   @ParameterizedTest

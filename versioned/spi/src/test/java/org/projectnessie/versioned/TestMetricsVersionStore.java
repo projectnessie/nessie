@@ -104,6 +104,12 @@ class TestMetricsVersionStore {
           }
         };
 
+    MergeResult<Object> dummyMergeResult =
+        MergeResult.builder()
+            .effectiveTargetHash(Hash.of("123456"))
+            .targetBranch(BranchName.of("foo"))
+            .build();
+
     // "Declare" test-invocations for all VersionStore functions with their respective outcomes
     // and exceptions.
     Stream<VersionStoreInvocation<?>> versionStoreFunctions =
@@ -134,7 +140,10 @@ class TestMetricsVersionStore {
                         metadataRewriter,
                         false,
                         Collections.emptyMap(),
-                        MergeType.NORMAL),
+                        MergeType.NORMAL,
+                        false,
+                        false),
+                () -> dummyMergeResult,
                 refNotFoundAndRefConflictThrows),
             new VersionStoreInvocation<>(
                 "merge",
@@ -146,7 +155,10 @@ class TestMetricsVersionStore {
                         metadataRewriter,
                         false,
                         null,
-                        null),
+                        null,
+                        false,
+                        false),
+                () -> dummyMergeResult,
                 refNotFoundAndRefConflictThrows),
             new VersionStoreInvocation<>(
                 "assign",

@@ -116,19 +116,25 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    *     commits to transplant
    * @param mergeTypes merge types per content key
    * @param defaultMergeType default merge type for all keys not present in {@code mergeTypes}
+   * @param dryRun whether to try the transplant, check for conflicts, but do not commit
+   * @param fetchAdditionalInfo whether to fetch additional commit information like
+   *     commit-operations and parent
+   * @return merge result
    * @throws ReferenceConflictException if {@code referenceHash} values do not match the stored
    *     values for {@code branch}
    * @throws ReferenceNotFoundException if {@code branch} or if any of the hashes from {@code
    *     sequenceToTransplant} is not present in the store.
    */
-  void transplant(
+  MergeResult<Commit<METADATA, VALUE>> transplant(
       BranchName targetBranch,
       Optional<Hash> referenceHash,
       List<Hash> sequenceToTransplant,
       MetadataRewriter<METADATA> updateCommitMetadata,
       boolean keepIndividualCommits,
       Map<Key, MergeType> mergeTypes,
-      MergeType defaultMergeType)
+      MergeType defaultMergeType,
+      boolean dryRun,
+      boolean fetchAdditionalInfo)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**
@@ -155,19 +161,25 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    *     commits to merge
    * @param mergeTypes merge types per content key
    * @param defaultMergeType default merge type for all keys not present in {@code mergeTypes}
+   * @param dryRun whether to try the merge, check for conflicts, but do not commit
+   * @param fetchAdditionalInfo whether to fetch additional commit information like
+   *     commit-operations and parent
+   * @return merge result
    * @throws ReferenceConflictException if {@code expectedBranchHash} doesn't match the stored hash
    *     for {@code toBranch}
    * @throws ReferenceNotFoundException if {@code toBranch} or {@code fromHash} is not present in
    *     the store.
    */
-  void merge(
+  MergeResult<Commit<METADATA, VALUE>> merge(
       Hash fromHash,
       BranchName toBranch,
       Optional<Hash> expectedHash,
       MetadataRewriter<METADATA> updateCommitMetadata,
       boolean keepIndividualCommits,
       Map<Key, MergeType> mergeTypes,
-      MergeType defaultMergeType)
+      MergeType defaultMergeType,
+      boolean dryRun,
+      boolean fetchAdditionalInfo)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**

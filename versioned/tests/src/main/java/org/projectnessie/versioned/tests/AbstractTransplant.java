@@ -149,7 +149,9 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             commitMetaModify,
             individualCommits,
             Collections.emptyMap(),
-            MergeType.NORMAL);
+            MergeType.NORMAL,
+            false,
+            false);
     assertThat(
             store()
                 .getValues(
@@ -184,7 +186,9 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             createMetadataRewriter(""),
             individualCommits,
             Collections.emptyMap(),
-            MergeType.NORMAL);
+            MergeType.NORMAL,
+            false,
+            false);
     assertThat(
             store()
                 .getValues(
@@ -218,7 +222,9 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                     createMetadataRewriter(""),
                     individualCommits,
                     Collections.emptyMap(),
-                    MergeType.NORMAL));
+                    MergeType.NORMAL,
+                    false,
+                    false));
   }
 
   @ParameterizedTest
@@ -237,7 +243,9 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             createMetadataRewriter(""),
             individualCommits,
             Collections.emptyMap(),
-            MergeType.NORMAL);
+            MergeType.NORMAL,
+            false,
+            false);
     assertThat(
             store()
                 .getValues(
@@ -265,7 +273,9 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                     createMetadataRewriter(""),
                     individualCommits,
                     Collections.emptyMap(),
-                    MergeType.NORMAL));
+                    MergeType.NORMAL,
+                    false,
+                    false));
   }
 
   @ParameterizedTest
@@ -285,7 +295,9 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                     createMetadataRewriter(""),
                     individualCommits,
                     Collections.emptyMap(),
-                    MergeType.NORMAL));
+                    MergeType.NORMAL,
+                    false,
+                    false));
   }
 
   @ParameterizedTest
@@ -305,7 +317,9 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             createMetadataRewriter(""),
             individualCommits,
             Collections.emptyMap(),
-            MergeType.NORMAL);
+            MergeType.NORMAL,
+            false,
+            false);
     assertThat(
             store()
                 .getValues(
@@ -338,7 +352,9 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                     createMetadataRewriter(""),
                     individualCommits,
                     Collections.emptyMap(),
-                    MergeType.NORMAL));
+                    MergeType.NORMAL,
+                    false,
+                    false));
   }
 
   @ParameterizedTest
@@ -367,7 +383,9 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                     createMetadataRewriter(""),
                     individualCommits,
                     Collections.emptyMap(),
-                    MergeType.NORMAL));
+                    MergeType.NORMAL,
+                    false,
+                    false));
   }
 
   @ParameterizedTest
@@ -385,7 +403,9 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             createMetadataRewriter(""),
             individualCommits,
             Collections.emptyMap(),
-            MergeType.NORMAL);
+            MergeType.NORMAL,
+            false,
+            false);
     assertThat(
             store().getValues(newBranch, Arrays.asList(Key.of("t1"), Key.of("t4"), Key.of("t5"))))
         .containsExactlyInAnyOrderEntriesOf(

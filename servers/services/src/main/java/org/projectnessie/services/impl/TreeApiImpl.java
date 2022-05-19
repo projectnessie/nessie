@@ -391,6 +391,9 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
       }
 
       boolean keepIndividual = keepIndividualCommits(transplant);
+      Boolean dryRun = transplant.isDryRun();
+      Boolean fetchAdditionalInfo = transplant.isFetchAdditionalInfo();
+
       getStore()
           .transplant(
               BranchName.of(branchName),
@@ -399,7 +402,9 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
               commitMetaUpdate(),
               keepIndividual,
               keyMergeTypes(transplant),
-              defaultMergeType(transplant));
+              defaultMergeType(transplant),
+              dryRun != null && dryRun,
+              fetchAdditionalInfo != null && fetchAdditionalInfo);
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
@@ -412,6 +417,9 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
       throws NessieNotFoundException, NessieConflictException {
     try {
       boolean keepIndividual = keepIndividualCommits(merge);
+      Boolean dryRun = merge.isDryRun();
+      Boolean fetchAdditionalInfo = merge.isFetchAdditionalInfo();
+
       getStore()
           .merge(
               toHash(merge.getFromRefName(), merge.getFromHash()),
@@ -420,7 +428,9 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
               commitMetaUpdate(),
               keepIndividual,
               keyMergeTypes(merge),
-              defaultMergeType(merge));
+              defaultMergeType(merge),
+              dryRun != null && dryRun,
+              fetchAdditionalInfo != null && fetchAdditionalInfo);
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {

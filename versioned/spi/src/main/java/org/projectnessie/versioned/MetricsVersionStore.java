@@ -88,49 +88,63 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
   }
 
   @Override
-  public void transplant(
+  public MergeResult<Commit<METADATA, VALUE>> transplant(
       BranchName targetBranch,
       Optional<Hash> referenceHash,
       List<Hash> sequenceToTransplant,
       MetadataRewriter<METADATA> updateCommitMetadata,
       boolean keepIndividualCommits,
       Map<Key, MergeType> mergeTypes,
-      MergeType defaultMergeType)
+      MergeType defaultMergeType,
+      boolean dryRun,
+      boolean fetchAdditionalInfo)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    this.<ReferenceNotFoundException, ReferenceConflictException>delegate2Ex(
-        "transplant",
-        () ->
-            delegate.transplant(
-                targetBranch,
-                referenceHash,
-                sequenceToTransplant,
-                updateCommitMetadata,
-                keepIndividualCommits,
-                mergeTypes,
-                defaultMergeType));
+    return this
+        .<MergeResult<Commit<METADATA, VALUE>>, ReferenceNotFoundException,
+            ReferenceConflictException>
+            delegate2ExR(
+                "transplant",
+                () ->
+                    delegate.transplant(
+                        targetBranch,
+                        referenceHash,
+                        sequenceToTransplant,
+                        updateCommitMetadata,
+                        keepIndividualCommits,
+                        mergeTypes,
+                        defaultMergeType,
+                        dryRun,
+                        fetchAdditionalInfo));
   }
 
   @Override
-  public void merge(
+  public MergeResult<Commit<METADATA, VALUE>> merge(
       Hash fromHash,
       BranchName toBranch,
       Optional<Hash> expectedHash,
       MetadataRewriter<METADATA> updateCommitMetadata,
       boolean keepIndividualCommits,
       Map<Key, MergeType> mergeTypes,
-      MergeType defaultMergeType)
+      MergeType defaultMergeType,
+      boolean dryRun,
+      boolean fetchAdditionalInfo)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    this.<ReferenceNotFoundException, ReferenceConflictException>delegate2Ex(
-        "merge",
-        () ->
-            delegate.merge(
-                fromHash,
-                toBranch,
-                expectedHash,
-                updateCommitMetadata,
-                keepIndividualCommits,
-                mergeTypes,
-                defaultMergeType));
+    return this
+        .<MergeResult<Commit<METADATA, VALUE>>, ReferenceNotFoundException,
+            ReferenceConflictException>
+            delegate2ExR(
+                "merge",
+                () ->
+                    delegate.merge(
+                        fromHash,
+                        toBranch,
+                        expectedHash,
+                        updateCommitMetadata,
+                        keepIndividualCommits,
+                        mergeTypes,
+                        defaultMergeType,
+                        dryRun,
+                        fetchAdditionalInfo));
   }
 
   @Override
