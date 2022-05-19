@@ -26,6 +26,7 @@ import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.RefLogNotFoundException;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
@@ -147,7 +148,7 @@ public interface DatabaseAdapter {
    *     branch due to a conflicting change or if the expected hash of {@code toBranch} is not its
    *     expected hEAD
    */
-  Hash transplant(TransplantParams transplantParams)
+  MergeResult<CommitLogEntry> transplant(TransplantParams transplantParams)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**
@@ -165,7 +166,8 @@ public interface DatabaseAdapter {
    *     branch due to a conflicting change or if the expected hash of {@code toBranch} is not its
    *     expected hEAD
    */
-  Hash merge(MergeParams mergeParams) throws ReferenceNotFoundException, ReferenceConflictException;
+  MergeResult<CommitLogEntry> merge(MergeParams mergeParams)
+      throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**
    * Resolve the current HEAD of the given named-reference and optionally additional information.

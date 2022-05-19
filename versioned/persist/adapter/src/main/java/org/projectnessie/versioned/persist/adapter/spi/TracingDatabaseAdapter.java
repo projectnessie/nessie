@@ -26,6 +26,7 @@ import java.util.stream.Stream;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.RefLogNotFoundException;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
@@ -122,7 +123,7 @@ public final class TracingDatabaseAdapter implements DatabaseAdapter {
   }
 
   @Override
-  public Hash transplant(TransplantParams transplantParams)
+  public MergeResult<CommitLogEntry> transplant(TransplantParams transplantParams)
       throws ReferenceNotFoundException, ReferenceConflictException {
     try (Traced ignore =
         trace("transplant").tag(TAG_REF, transplantParams.getToBranch().getName())) {
@@ -131,7 +132,7 @@ public final class TracingDatabaseAdapter implements DatabaseAdapter {
   }
 
   @Override
-  public Hash merge(MergeParams mergeParams)
+  public MergeResult<CommitLogEntry> merge(MergeParams mergeParams)
       throws ReferenceNotFoundException, ReferenceConflictException {
     try (Traced ignore =
         trace("merge")

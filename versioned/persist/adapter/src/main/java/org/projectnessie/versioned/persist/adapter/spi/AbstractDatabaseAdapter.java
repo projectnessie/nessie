@@ -42,6 +42,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -54,6 +55,7 @@ import java.util.Spliterators.AbstractSpliterator;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -68,8 +70,14 @@ import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.GetNamedRefsParams.RetrieveOptions;
 import org.projectnessie.versioned.Hash;
+import org.projectnessie.versioned.ImmutableKeyDetails;
+import org.projectnessie.versioned.ImmutableMergeResult;
 import org.projectnessie.versioned.ImmutableReferenceInfo;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.MergeConflictException;
+import org.projectnessie.versioned.MergeResult;
+import org.projectnessie.versioned.MergeResult.ConflictType;
+import org.projectnessie.versioned.MergeResult.KeyDetails;
 import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.RefLogNotFoundException;
@@ -278,7 +286,8 @@ public abstract class AbstractDatabaseAdapter<
       Hash toHead,
       Consumer<Hash> branchCommits,
       Consumer<Hash> newKeyLists,
-      MergeParams mergeParams)
+      MergeParams mergeParams,
+      ImmutableMergeResult.Builder<CommitLogEntry> mergeResult)
       throws ReferenceNotFoundException, ReferenceConflictException {
 
     validateHashExists(ctx, mergeParams.getMergeFromHash());
@@ -286,15 +295,23 @@ public abstract class AbstractDatabaseAdapter<
     // 1. ensure 'expectedHash' is a parent of HEAD-of-'toBranch'
     hashOnRef(ctx, mergeParams.getToBranch(), mergeParams.getExpectedHead(), toHead);
 
+    mergeParams.getExpectedHead().ifPresent(mergeResult::expectedHash);
+    mergeResult.targetBranch(mergeParams.getToBranch()).targetHash(toHead);
+
     // 2. find nearest common-ancestor between 'from' + 'fromHash'
     Hash commonAncestor =
         findCommonAncestor(ctx, mergeParams.getMergeFromHash(), mergeParams.getToBranch(), toHead);
+
+    mergeResult.commonAncestor(commonAncestor);
 
     // 3. Collect commit-log-entries
     List<CommitLogEntry> toEntriesReverseChronological =
         takeUntilExcludeLast(
                 readCommitLogStream(ctx, toHead), e -> e.getHash().equals(commonAncestor))
             .collect(Collectors.toList());
+
+    toEntriesReverseChronological.forEach(mergeResult::addTargetCommits);
+
     List<CommitLogEntry> commitsToMergeChronological =
         takeUntilExcludeLast(
                 readCommitLogStream(ctx, mergeParams.getMergeFromHash()),
@@ -311,6 +328,8 @@ public abstract class AbstractDatabaseAdapter<
               toHead));
     }
 
+    commitsToMergeChronological.forEach(mergeResult::addSourceCommits);
+
     return mergeTransplantCommon(
         ctx,
         timeInMicros,
@@ -319,7 +338,8 @@ public abstract class AbstractDatabaseAdapter<
         newKeyLists,
         commitsToMergeChronological,
         toEntriesReverseChronological,
-        mergeParams);
+        mergeParams,
+        mergeResult);
   }
 
   /**
@@ -337,11 +357,15 @@ public abstract class AbstractDatabaseAdapter<
       Hash targetHead,
       Consumer<Hash> branchCommits,
       Consumer<Hash> newKeyLists,
-      TransplantParams transplantParams)
+      TransplantParams transplantParams,
+      ImmutableMergeResult.Builder<CommitLogEntry> mergeResult)
       throws ReferenceNotFoundException, ReferenceConflictException {
     if (transplantParams.getSequenceToTransplant().isEmpty()) {
       throw new IllegalArgumentException("No hashes to transplant given.");
     }
+
+    transplantParams.getExpectedHead().ifPresent(mergeResult::expectedHash);
+    mergeResult.targetBranch(transplantParams.getToBranch()).targetHash(targetHead);
 
     // 1. ensure 'expectedHash' is a parent of HEAD-of-'targetBranch' & collect keys
     List<CommitLogEntry> targetEntriesReverseChronological = new ArrayList<>();
@@ -351,6 +375,8 @@ public abstract class AbstractDatabaseAdapter<
         transplantParams.getToBranch(),
         transplantParams.getExpectedHead(),
         targetEntriesReverseChronological::add);
+
+    targetEntriesReverseChronological.forEach(mergeResult::addTargetCommits);
 
     // Exclude the expected-hash on the target-branch from key-collisions check
     if (!targetEntriesReverseChronological.isEmpty()
@@ -363,7 +389,7 @@ public abstract class AbstractDatabaseAdapter<
     }
 
     // 4. ensure 'sequenceToTransplant' is sequential
-    int[] index = new int[] {transplantParams.getSequenceToTransplant().size() - 1};
+    int[] index = {transplantParams.getSequenceToTransplant().size() - 1};
     Hash lastHash =
         transplantParams
             .getSequenceToTransplant()
@@ -383,6 +409,8 @@ public abstract class AbstractDatabaseAdapter<
                 })
             .collect(Collectors.toList());
 
+    commitsToTransplantChronological.forEach(mergeResult::addSourceCommits);
+
     // 5. check for key-collisions
     return mergeTransplantCommon(
         ctx,
@@ -392,7 +420,8 @@ public abstract class AbstractDatabaseAdapter<
         newKeyLists,
         commitsToTransplantChronological,
         targetEntriesReverseChronological,
-        transplantParams);
+        transplantParams,
+        mergeResult);
   }
 
   protected Hash mergeTransplantCommon(
@@ -403,12 +432,55 @@ public abstract class AbstractDatabaseAdapter<
       Consumer<Hash> newKeyLists,
       List<CommitLogEntry> commitsToMergeChronological,
       List<CommitLogEntry> toEntriesReverseChronological,
-      MetadataRewriteParams params)
+      MetadataRewriteParams params,
+      ImmutableMergeResult.Builder<CommitLogEntry> mergeResult)
       throws ReferenceConflictException, ReferenceNotFoundException {
 
     // Collect modified keys.
     Collections.reverse(toEntriesReverseChronological);
-    Set<Key> keysTouchedOnTarget = collectModifiedKeys(toEntriesReverseChronological);
+
+    Map<Key, ImmutableKeyDetails.Builder> keyDetailsMap = new HashMap<>();
+
+    Function<Key, ImmutableKeyDetails.Builder> keyDetails =
+        key ->
+            keyDetailsMap.computeIfAbsent(
+                key,
+                x ->
+                    KeyDetails.builder()
+                        .mergeType(
+                            params
+                                .getMergeTypes()
+                                .getOrDefault(key, params.getDefaultMergeType())));
+
+    BiConsumer<Stream<CommitLogEntry>, BiConsumer<ImmutableKeyDetails.Builder, Iterable<Hash>>>
+        keysFromCommitsToKeyDetails =
+            (commits, receiver) -> {
+              Map<Key, Set<Hash>> keyHashesMap = new HashMap<>();
+              Function<Key, Set<Hash>> keyHashes =
+                  key -> keyHashesMap.computeIfAbsent(key, x -> new LinkedHashSet<>());
+              commits.forEach(
+                  commit -> {
+                    commit
+                        .getDeletes()
+                        .forEach(delete -> keyHashes.apply(delete).add(commit.getHash()));
+                    commit
+                        .getPuts()
+                        .forEach(put -> keyHashes.apply(put.getKey()).add(commit.getHash()));
+                  });
+              keyHashesMap.forEach((key, hashes) -> receiver.accept(keyDetails.apply(key), hashes));
+            };
+
+    Set<Key> keysTouchedOnTarget = new HashSet<>();
+    keysFromCommitsToKeyDetails.accept(
+        commitsToMergeChronological.stream(), ImmutableKeyDetails.Builder::addAllSourceCommits);
+    keysFromCommitsToKeyDetails.accept(
+        toEntriesReverseChronological.stream()
+            .peek(
+                e -> {
+                  e.getPuts().stream().map(KeyWithBytes::getKey).forEach(keysTouchedOnTarget::add);
+                  e.getDeletes().forEach(keysTouchedOnTarget::remove);
+                }),
+        ImmutableKeyDetails.Builder::addAllTargetCommits);
 
     Predicate<Key> skipCheckPredicate =
         k -> params.getMergeTypes().getOrDefault(k, params.getDefaultMergeType()).isSkipCheck();
@@ -418,10 +490,29 @@ public abstract class AbstractDatabaseAdapter<
     // Ignore keys in collision-check that will not be merged or collision-checked
     keysTouchedOnTarget.removeIf(skipCheckPredicate);
 
-    checkForKeyCollisions(ctx, toHead, keysTouchedOnTarget, commitsToMergeChronological);
+    boolean hasCollisions =
+        hasKeyCollisions(ctx, toHead, keysTouchedOnTarget, commitsToMergeChronological, keyDetails);
+    keyDetailsMap.forEach((key, details) -> mergeResult.putDetails(key, details.build()));
+
+    mergeResult.isSuccessful(!hasCollisions);
+
+    if (hasCollisions && !params.isDryRun()) {
+      MergeResult<CommitLogEntry> result = mergeResult.currentTargetHash(toHead).build();
+      throw new MergeConflictException(
+          String.format(
+              "The following keys have been changed in conflict: %s",
+              result.getDetails().entrySet().stream()
+                  .filter(e -> e.getValue().getConflictType() != ConflictType.NONE)
+                  .map(e -> String.format("'%s'", e.getKey()))
+                  .collect(Collectors.joining(", "))),
+          result);
+    }
+
+    if (params.isDryRun() || hasCollisions) {
+      return toHead;
+    }
 
     if (params.keepIndividualCommits() || commitsToMergeChronological.size() == 1) {
-      // (no need to verify the global states during a merge)
       // re-apply commits in 'sequenceToTransplant' onto 'targetBranch'
       toHead =
           copyCommits(
@@ -1614,12 +1705,13 @@ public abstract class AbstractDatabaseAdapter<
    * @param commitsChronological list of commit-log-entries, in order of commit-operations,
    *     chronological order
    */
-  protected void checkForKeyCollisions(
+  protected boolean hasKeyCollisions(
       OP_CONTEXT ctx,
       Hash refHead,
       Set<Key> keysTouchedOnTarget,
-      List<CommitLogEntry> commitsChronological)
-      throws ReferenceConflictException, ReferenceNotFoundException {
+      List<CommitLogEntry> commitsChronological,
+      Function<Key, ImmutableKeyDetails.Builder> keyDetails)
+      throws ReferenceNotFoundException {
     Set<Key> keyCollisions = new HashSet<>();
     for (int i = commitsChronological.size() - 1; i >= 0; i--) {
       CommitLogEntry sourceCommit = commitsChronological.get(i);
@@ -1637,14 +1729,11 @@ public abstract class AbstractDatabaseAdapter<
           commitsChronological.get(commitsChronological.size() - 1).getHash(),
           keyCollisions);
       if (!keyCollisions.isEmpty()) {
-        throw new ReferenceConflictException(
-            String.format(
-                "The following keys have been changed in conflict: %s",
-                keyCollisions.stream()
-                    .map(k -> String.format("'%s'", k.toString()))
-                    .collect(Collectors.joining(", "))));
+        keyCollisions.forEach(key -> keyDetails.apply(key).conflictType(ConflictType.UNRESOLVABLE));
+        return true;
       }
     }
+    return false;
   }
 
   /**
@@ -1678,22 +1767,6 @@ public abstract class AbstractDatabaseAdapter<
 
     // remove all keys related to namespaces from the existing collisions
     intersection.forEach(keyCollisions::remove);
-  }
-
-  /**
-   * For merge/transplant, collect the content-keys that were modified in the given list of entries.
-   *
-   * @param commitsReverseChronological list of commit-log-entries, in <em>reverse</em> order of
-   *     commit-operations, <em>reverse</em> chronological order
-   */
-  protected Set<Key> collectModifiedKeys(List<CommitLogEntry> commitsReverseChronological) {
-    Set<Key> keysTouchedOnTarget = new HashSet<>();
-    commitsReverseChronological.forEach(
-        e -> {
-          e.getPuts().stream().map(KeyWithBytes::getKey).forEach(keysTouchedOnTarget::add);
-          e.getDeletes().forEach(keysTouchedOnTarget::remove);
-        });
-    return keysTouchedOnTarget;
   }
 
   /**

@@ -26,16 +26,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
+import org.projectnessie.versioned.ImmutableKeyDetails;
+import org.projectnessie.versioned.ImmutableMergeResult;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.MergeConflictException;
+import org.projectnessie.versioned.MergeResult;
+import org.projectnessie.versioned.MergeResult.ConflictType;
+import org.projectnessie.versioned.MergeResult.KeyDetails;
+import org.projectnessie.versioned.MergeType;
 import org.projectnessie.versioned.MetadataRewriter;
-import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentAndState;
@@ -45,6 +53,7 @@ import org.projectnessie.versioned.persist.adapter.ImmutableCommitParams;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.MergeParams;
+import org.projectnessie.versioned.persist.adapter.MetadataRewriteParams;
 import org.projectnessie.versioned.persist.adapter.TransplantParams;
 import org.projectnessie.versioned.testworker.OnRefOnly;
 import org.projectnessie.versioned.testworker.SimpleStoreWorker;
@@ -59,34 +68,28 @@ public abstract class AbstractMergeTransplant {
   }
 
   @ParameterizedTest
-  @CsvSource(
-      value = {
-        "3,true",
-        "3,false",
-        DEFAULT_KEY_LIST_DISTANCE + ",true",
-        DEFAULT_KEY_LIST_DISTANCE + ",false",
-        (DEFAULT_KEY_LIST_DISTANCE + 1) + ",true",
-        (DEFAULT_KEY_LIST_DISTANCE + 1) + ",false"
-      })
+  @CsvSource({
+    "3,true",
+    "3,false",
+    DEFAULT_KEY_LIST_DISTANCE + ",true",
+    DEFAULT_KEY_LIST_DISTANCE + ",false",
+    (DEFAULT_KEY_LIST_DISTANCE + 1) + ",true",
+    (DEFAULT_KEY_LIST_DISTANCE + 1) + ",false"
+  })
   void merge(int numCommits, boolean keepIndividualCommits) throws Exception {
     AtomicInteger unifier = new AtomicInteger();
     MetadataRewriter<ByteString> metadataUpdater = createMetadataUpdater(unifier, "merged");
 
     mergeTransplant(
         numCommits,
-        (target, expectedHead, branch, commitHashes, i) ->
-            databaseAdapter.merge(
-                MergeParams.builder()
-                    .toBranch(target)
-                    .expectedHead(expectedHead)
-                    .mergeFromHash(
-                        keepIndividualCommits
-                            ? commitHashes[i]
-                            : commitHashes[commitHashes.length - 1])
-                    .updateCommitMetadata(metadataUpdater)
-                    .keepIndividualCommits(keepIndividualCommits)
-                    .build()),
-        keepIndividualCommits);
+        (commitHashes, i) ->
+            MergeParams.builder()
+                .updateCommitMetadata(metadataUpdater)
+                .keepIndividualCommits(keepIndividualCommits)
+                .mergeFromHash(commitHashes[i]),
+        params -> databaseAdapter.merge(params.build()),
+        keepIndividualCommits,
+        true);
 
     BranchName branch = BranchName.of("branch");
     BranchName branch2 = BranchName.of("branch2");
@@ -104,7 +107,8 @@ public abstract class AbstractMergeTransplant {
         .hasMessageStartingWith("No hashes to merge from '");
   }
 
-  private MetadataRewriter<ByteString> createMetadataUpdater(AtomicInteger unifier, String suffix) {
+  private static MetadataRewriter<ByteString> createMetadataUpdater(
+      AtomicInteger unifier, String suffix) {
     return new MetadataRewriter<ByteString>() {
       @Override
       public ByteString rewriteSingle(ByteString metadata) {
@@ -125,15 +129,14 @@ public abstract class AbstractMergeTransplant {
   }
 
   @ParameterizedTest
-  @CsvSource(
-      value = {
-        "3,true",
-        "3,false",
-        DEFAULT_KEY_LIST_DISTANCE + ",true",
-        DEFAULT_KEY_LIST_DISTANCE + ",false",
-        (DEFAULT_KEY_LIST_DISTANCE + 1) + ",true",
-        (DEFAULT_KEY_LIST_DISTANCE + 1) + ",false"
-      })
+  @CsvSource({
+    "3,true",
+    "3,false",
+    DEFAULT_KEY_LIST_DISTANCE + ",true",
+    DEFAULT_KEY_LIST_DISTANCE + ",false",
+    (DEFAULT_KEY_LIST_DISTANCE + 1) + ",true",
+    (DEFAULT_KEY_LIST_DISTANCE + 1) + ",false"
+  })
   void transplant(int numCommits, boolean keepIndividualCommits) throws Exception {
     AtomicInteger unifier = new AtomicInteger();
     MetadataRewriter<ByteString> metadataUpdater = createMetadataUpdater(unifier, "transplanted");
@@ -141,18 +144,14 @@ public abstract class AbstractMergeTransplant {
     Hash[] commits =
         mergeTransplant(
             numCommits,
-            (target, expectedHead, branch, commitHashes, i) ->
-                databaseAdapter.transplant(
-                    TransplantParams.builder()
-                        .toBranch(target)
-                        .expectedHead(expectedHead)
-                        .sequenceToTransplant(
-                            Arrays.asList(commitHashes)
-                                .subList(0, keepIndividualCommits ? i + 1 : commitHashes.length))
-                        .updateCommitMetadata(metadataUpdater)
-                        .keepIndividualCommits(keepIndividualCommits)
-                        .build()),
-            keepIndividualCommits);
+            (commitHashes, i) ->
+                TransplantParams.builder()
+                    .updateCommitMetadata(metadataUpdater)
+                    .keepIndividualCommits(keepIndividualCommits)
+                    .sequenceToTransplant(Arrays.asList(commitHashes).subList(0, i + 1)),
+            params -> databaseAdapter.transplant(params.build()),
+            keepIndividualCommits,
+            false);
 
     BranchName conflict = BranchName.of("conflict");
 
@@ -160,27 +159,31 @@ public abstract class AbstractMergeTransplant {
     // conflict-branch
     Hash noConflictHead = databaseAdapter.hashOnReference(conflict, Optional.empty());
     Hash transplanted =
-        databaseAdapter.transplant(
-            TransplantParams.builder()
-                .toBranch(conflict)
-                .expectedHead(Optional.of(noConflictHead))
-                .addSequenceToTransplant(commits)
-                .updateCommitMetadata(metadataUpdater)
-                .keepIndividualCommits(keepIndividualCommits)
-                .build());
+        databaseAdapter
+            .transplant(
+                TransplantParams.builder()
+                    .toBranch(conflict)
+                    .expectedHead(Optional.of(noConflictHead))
+                    .addSequenceToTransplant(commits)
+                    .updateCommitMetadata(metadataUpdater)
+                    .keepIndividualCommits(keepIndividualCommits)
+                    .build())
+            .getCurrentTargetHash();
     int offset = unifier.get();
 
     checkTransplantedCommits(keepIndividualCommits, commits, transplanted, offset);
 
     // again, no conflict (same as above, just again)
     transplanted =
-        databaseAdapter.transplant(
-            TransplantParams.builder()
-                .toBranch(conflict)
-                .addSequenceToTransplant(commits)
-                .updateCommitMetadata(metadataUpdater)
-                .keepIndividualCommits(keepIndividualCommits)
-                .build());
+        databaseAdapter
+            .transplant(
+                TransplantParams.builder()
+                    .toBranch(conflict)
+                    .addSequenceToTransplant(commits)
+                    .updateCommitMetadata(metadataUpdater)
+                    .keepIndividualCommits(keepIndividualCommits)
+                    .build())
+            .getCurrentTargetHash();
     offset = unifier.get();
 
     checkTransplantedCommits(keepIndividualCommits, commits, transplanted, offset);
@@ -230,22 +233,23 @@ public abstract class AbstractMergeTransplant {
   }
 
   @FunctionalInterface
-  interface MergeOrTransplant {
-    void apply(
-        BranchName target,
-        Optional<Hash> expectedHead,
-        BranchName branch,
-        Hash[] commitHashes,
-        int i)
-        throws Exception;
+  interface MergeOrTransplant<
+      PARAMS_BUILDER extends MetadataRewriteParams.Builder<PARAMS_BUILDER>> {
+    MergeResult<CommitLogEntry> apply(PARAMS_BUILDER paramsBuilder) throws Exception;
   }
 
-  private Hash[] mergeTransplant(
-      int numCommits, MergeOrTransplant mergeOrTransplant, boolean individualCommits)
-      throws Exception {
+  private <
+          PARAMS_BUILDER extends MetadataRewriteParams.Builder<PARAMS_BUILDER>,
+          PARAMS extends MetadataRewriteParams>
+      Hash[] mergeTransplant(
+          int numCommits,
+          BiFunction<Hash[], Integer, PARAMS_BUILDER> configurer,
+          MergeOrTransplant<PARAMS_BUILDER> mergeOrTransplant,
+          boolean individualCommits,
+          boolean merge)
+          throws Exception {
     BranchName main = BranchName.of("main");
     BranchName branch = BranchName.of("branch");
-    BranchName conflict = BranchName.of("conflict");
 
     databaseAdapter.create(branch, databaseAdapter.hashOnReference(main, Optional.empty()));
 
@@ -269,25 +273,99 @@ public abstract class AbstractMergeTransplant {
       commits[i] = databaseAdapter.commit(commit.build());
     }
 
-    Hash mainHead = databaseAdapter.hashOnReference(main, Optional.empty());
-    Hash targetHead = null;
+    List<CommitLogEntry> commitLogEntries;
+    try (Stream<CommitLogEntry> log =
+        databaseAdapter.commitLog(commits[commits.length - 1]).limit(commits.length)) {
+      commitLogEntries = log.collect(Collectors.toList());
+    }
 
+    Hash mainHead = databaseAdapter.hashOnReference(main, Optional.empty());
+    Hash targetHead =
+        mergeTransplantSuccess(
+            configurer,
+            mergeOrTransplant,
+            merge,
+            commits,
+            commitLogEntries,
+            mainHead,
+            individualCommits);
+
+    // Verify the content values on the target
+
+    assertThat(
+            databaseAdapter.values(targetHead, keysAndValue.keySet(), KeyFilterPredicate.ALLOW_ALL))
+        .isEqualTo(keysAndValue);
+
+    mergeTransplantConflict(
+        configurer, mergeOrTransplant, merge, commits, commitLogEntries, mainHead);
+
+    return commits;
+  }
+
+  private <PARAMS_BUILDER extends MetadataRewriteParams.Builder<PARAMS_BUILDER>>
+      Hash mergeTransplantSuccess(
+          BiFunction<Hash[], Integer, PARAMS_BUILDER> configurer,
+          MergeOrTransplant<PARAMS_BUILDER> mergeOrTransplant,
+          boolean merge,
+          Hash[] commits,
+          List<CommitLogEntry> commitLogEntries,
+          Hash mainHead,
+          boolean individualCommits)
+          throws Exception {
+    Hash targetHead = null;
     for (int i = 0; i < commits.length; i++) {
       BranchName target = BranchName.of("merge-transplant-" + i);
       databaseAdapter.create(target, mainHead);
 
-      mergeOrTransplant.apply(target, Optional.empty(), branch, commits, i);
+      List<CommitLogEntry> expectedSourceCommits =
+          commitLogEntries.subList(commits.length - 1 - i, commits.length);
+
+      ImmutableMergeResult.Builder<CommitLogEntry> expectedMergeResult =
+          successExpectedMergeResult(merge, target, mainHead, expectedSourceCommits);
+
+      // Merge/transplant / Dry run
+
+      MergeResult<CommitLogEntry> mergeResult =
+          mergeOrTransplant.apply(
+              configurer
+                  .apply(commits, i)
+                  .toBranch(target)
+                  .expectedHead(Optional.empty())
+                  .isDryRun(true));
+
+      assertThat(mergeResult).isEqualTo(expectedMergeResult.currentTargetHash(mainHead).build());
+
+      // Merge/transplant
+
+      mergeResult =
+          mergeOrTransplant.apply(
+              configurer.apply(commits, i).toBranch(target).expectedHead(Optional.empty()));
 
       targetHead = databaseAdapter.hashOnReference(target, Optional.empty());
+
+      assertThat(mergeResult)
+          .isEqualTo(expectedMergeResult.currentTargetHash(targetHead).isApplied(true).build());
+
+      // Briefly check commit log
 
       try (Stream<CommitLogEntry> targetLog = databaseAdapter.commitLog(targetHead)) {
         assertThat(targetLog).hasSize(individualCommits ? i + 1 : 1);
       }
     }
 
-    assertThat(
-            databaseAdapter.values(targetHead, keysAndValue.keySet(), KeyFilterPredicate.ALLOW_ALL))
-        .isEqualTo(keysAndValue);
+    return targetHead;
+  }
+
+  private <PARAMS_BUILDER extends MetadataRewriteParams.Builder<PARAMS_BUILDER>>
+      void mergeTransplantConflict(
+          BiFunction<Hash[], Integer, PARAMS_BUILDER> configurer,
+          MergeOrTransplant<PARAMS_BUILDER> mergeOrTransplant,
+          boolean merge,
+          Hash[] commits,
+          List<CommitLogEntry> commitLogEntries,
+          Hash mainHead)
+          throws Exception {
+    BranchName conflict = BranchName.of("conflict");
 
     // prepare conflict for keys 0 + 1
 
@@ -305,13 +383,114 @@ public abstract class AbstractMergeTransplant {
               SimpleStoreWorker.INSTANCE.getPayload(conflictValue),
               SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(conflictValue)));
     }
-    databaseAdapter.commit(commit.build());
+    Hash conflictHead = databaseAdapter.commit(commit.build());
+
+    List<CommitLogEntry> expectedSourceCommits =
+        commitLogEntries.subList(commits.length - 1 - 2, commits.length);
+
+    MergeResult<CommitLogEntry> expectedMergeResult =
+        conflictExpectedMergeResult(
+            merge, conflict, conflictBase, conflictHead, expectedSourceCommits);
+
+    // Merge/transplant w/ conflict / dry run
+
+    MergeResult<CommitLogEntry> mergeResult =
+        mergeOrTransplant.apply(
+            configurer
+                .apply(commits, 2)
+                .toBranch(conflict)
+                .expectedHead(Optional.of(conflictBase))
+                .isDryRun(true));
+    assertThat(mergeResult).isEqualTo(expectedMergeResult);
+
+    // Merge/transplant w/ conflict
 
     assertThatThrownBy(
-            () -> mergeOrTransplant.apply(conflict, Optional.of(conflictBase), branch, commits, 2))
-        .isInstanceOf(ReferenceConflictException.class)
-        .hasMessage("The following keys have been changed in conflict: 'key.0', 'key.1'");
+            () ->
+                mergeOrTransplant.apply(
+                    configurer
+                        .apply(commits, 2)
+                        .toBranch(conflict)
+                        .expectedHead(Optional.of(conflictBase))))
+        .isInstanceOf(MergeConflictException.class)
+        .hasMessage("The following keys have been changed in conflict: 'key.0', 'key.1'")
+        .asInstanceOf(InstanceOfAssertFactories.throwable(MergeConflictException.class))
+        .extracting(MergeConflictException::getMergeResult)
+        .isEqualTo(expectedMergeResult);
+  }
 
-    return commits;
+  private MergeResult<CommitLogEntry> conflictExpectedMergeResult(
+      boolean merge,
+      BranchName conflict,
+      Hash conflictBase,
+      Hash conflictHead,
+      List<CommitLogEntry> expectedSourceCommits)
+      throws ReferenceNotFoundException {
+
+    List<CommitLogEntry> conflictLogEntries;
+    try (Stream<CommitLogEntry> log = databaseAdapter.commitLog(conflictHead).limit(1)) {
+      conflictLogEntries = log.collect(Collectors.toList());
+    }
+
+    ImmutableMergeResult.Builder<CommitLogEntry> expectedMergeResult =
+        MergeResult.<CommitLogEntry>builder()
+            .currentTargetHash(conflictHead)
+            .targetBranch(conflict)
+            .targetHash(conflictHead)
+            .expectedHash(conflictBase)
+            .commonAncestor(merge ? conflictBase : null)
+            .addAllSourceCommits(expectedSourceCommits)
+            .addAllTargetCommits(conflictLogEntries);
+
+    for (int k = 0; k < 3; k++) {
+      Key key = Key.of("key", Integer.toString(k));
+
+      ImmutableKeyDetails.Builder details =
+          KeyDetails.builder()
+              .mergeType(MergeType.NORMAL)
+              .addAllSourceCommits(
+                  expectedSourceCommits.stream()
+                      .map(CommitLogEntry::getHash)
+                      .collect(Collectors.toList()));
+
+      if (k < 2) {
+        details.conflictType(ConflictType.UNRESOLVABLE).addTargetCommits(conflictHead);
+      }
+
+      expectedMergeResult.putDetails(key, details.build());
+    }
+
+    return expectedMergeResult.build();
+  }
+
+  private static ImmutableMergeResult.Builder<CommitLogEntry> successExpectedMergeResult(
+      boolean merge,
+      BranchName targetBranch,
+      Hash mainHead,
+      List<CommitLogEntry> expectedSourceCommits) {
+    ImmutableMergeResult.Builder<CommitLogEntry> expectedMergeResult =
+        MergeResult.<CommitLogEntry>builder()
+            .isSuccessful(true)
+            .targetBranch(targetBranch)
+            .targetHash(mainHead)
+            .expectedHash(null)
+            .commonAncestor(merge ? mainHead : null)
+            .addAllSourceCommits(expectedSourceCommits);
+
+    for (int k = 0; k < 3; k++) {
+      Key key = Key.of("key", Integer.toString(k));
+
+      ImmutableKeyDetails.Builder details =
+          KeyDetails.builder()
+              .conflictType(ConflictType.NONE)
+              .mergeType(MergeType.NORMAL)
+              .addAllSourceCommits(
+                  expectedSourceCommits.stream()
+                      .map(CommitLogEntry::getHash)
+                      .collect(Collectors.toList()));
+
+      expectedMergeResult.putDetails(key, details.build());
+    }
+    return expectedMergeResult;
   }
 }

@@ -54,6 +54,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -62,7 +63,9 @@ import java.util.stream.Stream;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
+import org.projectnessie.versioned.ImmutableMergeResult;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.RefLogNotFoundException;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
@@ -221,7 +224,7 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
-  public Hash merge(MergeParams mergeParams)
+  public MergeResult<CommitLogEntry> merge(MergeParams mergeParams)
       throws ReferenceNotFoundException, ReferenceConflictException {
     // The spec for 'VersionStore.merge' mentions "(...) until we arrive at a common ancestor",
     // but old implementations allowed a merge even if the "merge-from" and "merge-to" have no
@@ -233,36 +236,58 @@ public abstract class TxDatabaseAdapter
     // Note: "beginning-of-time" (aka creating a branch without specifying a "create-from")
     // creates a new commit-tree that is decoupled from other commit-trees.
     try {
-      return opLoop(
-          "merge",
-          mergeParams.getToBranch(),
-          false,
-          (conn, currentHead) -> {
-            long timeInMicros = commitTimeInMicros();
+      AtomicReference<ImmutableMergeResult.Builder<CommitLogEntry>> mergeResultHolder =
+          new AtomicReference<>();
 
-            Hash toHead =
-                mergeAttempt(conn, timeInMicros, currentHead, h -> {}, h -> {}, mergeParams);
+      Hash result =
+          opLoop(
+              "merge",
+              mergeParams.getToBranch(),
+              false,
+              (conn, currentHead) -> {
+                long timeInMicros = commitTimeInMicros();
 
-            if (toHead.equals(currentHead)) {
-              // nothing done
-              return currentHead;
-            }
+                ImmutableMergeResult.Builder<CommitLogEntry> mergeResult = MergeResult.builder();
+                mergeResultHolder.set(mergeResult);
 
-            Hash resultHash =
-                tryMoveNamedReference(conn, mergeParams.getToBranch(), currentHead, toHead);
+                Hash toHead =
+                    mergeAttempt(
+                        conn,
+                        timeInMicros,
+                        currentHead,
+                        h -> {},
+                        h -> {},
+                        mergeParams,
+                        mergeResult);
 
-            commitRefLog(
-                conn,
-                timeInMicros,
-                toHead,
-                mergeParams.getToBranch(),
-                RefLogEntry.Operation.MERGE,
-                Collections.singletonList(mergeParams.getMergeFromHash()));
+                if (toHead.equals(currentHead)) {
+                  // nothing done
+                  return currentHead;
+                }
 
-            return resultHash;
-          },
-          () -> mergeConflictMessage("Conflict", mergeParams),
-          () -> mergeConflictMessage("Retry-failure", mergeParams));
+                Hash resultHash =
+                    tryMoveNamedReference(conn, mergeParams.getToBranch(), currentHead, toHead);
+
+                commitRefLog(
+                    conn,
+                    timeInMicros,
+                    toHead,
+                    mergeParams.getToBranch(),
+                    RefLogEntry.Operation.MERGE,
+                    Collections.singletonList(mergeParams.getMergeFromHash()));
+
+                return resultHash;
+              },
+              () -> mergeConflictMessage("Conflict", mergeParams),
+              () -> mergeConflictMessage("Retry-failure", mergeParams));
+
+      ImmutableMergeResult.Builder<CommitLogEntry> mergeResult =
+          Objects.requireNonNull(
+              mergeResultHolder.get(), "Internal error, merge-result builder not set.");
+      if (!mergeParams.isDryRun()) {
+        mergeResult.isApplied(true);
+      }
+      return mergeResult.currentTargetHash(result).build();
     } catch (ReferenceNotFoundException | ReferenceConflictException | RuntimeException e) {
       throw e;
     } catch (Exception e) {
@@ -272,37 +297,57 @@ public abstract class TxDatabaseAdapter
 
   @SuppressWarnings("RedundantThrows")
   @Override
-  public Hash transplant(TransplantParams transplantParams)
+  public MergeResult<CommitLogEntry> transplant(TransplantParams transplantParams)
       throws ReferenceNotFoundException, ReferenceConflictException {
     try {
-      return opLoop(
-          "transplant",
-          transplantParams.getToBranch(),
-          false,
-          (conn, currentHead) -> {
-            long timeInMicros = commitTimeInMicros();
+      AtomicReference<ImmutableMergeResult.Builder<CommitLogEntry>> mergeResultHolder =
+          new AtomicReference<>();
 
-            Hash targetHead =
-                transplantAttempt(
-                    conn, timeInMicros, currentHead, h -> {}, h -> {}, transplantParams);
+      Hash result =
+          opLoop(
+              "transplant",
+              transplantParams.getToBranch(),
+              false,
+              (conn, currentHead) -> {
+                long timeInMicros = commitTimeInMicros();
 
-            Hash resultHash =
-                tryMoveNamedReference(
-                    conn, transplantParams.getToBranch(), currentHead, targetHead);
+                ImmutableMergeResult.Builder<CommitLogEntry> mergeResult = MergeResult.builder();
+                mergeResultHolder.set(mergeResult);
 
-            commitRefLog(
-                conn,
-                timeInMicros,
-                targetHead,
-                transplantParams.getToBranch(),
-                RefLogEntry.Operation.TRANSPLANT,
-                transplantParams.getSequenceToTransplant());
+                Hash targetHead =
+                    transplantAttempt(
+                        conn,
+                        timeInMicros,
+                        currentHead,
+                        h -> {},
+                        h -> {},
+                        transplantParams,
+                        mergeResult);
 
-            return resultHash;
-          },
-          () -> transplantConflictMessage("Conflict", transplantParams),
-          () -> transplantConflictMessage("Retry-failure", transplantParams));
+                Hash resultHash =
+                    tryMoveNamedReference(
+                        conn, transplantParams.getToBranch(), currentHead, targetHead);
 
+                commitRefLog(
+                    conn,
+                    timeInMicros,
+                    targetHead,
+                    transplantParams.getToBranch(),
+                    RefLogEntry.Operation.TRANSPLANT,
+                    transplantParams.getSequenceToTransplant());
+
+                return resultHash;
+              },
+              () -> transplantConflictMessage("Conflict", transplantParams),
+              () -> transplantConflictMessage("Retry-failure", transplantParams));
+
+      ImmutableMergeResult.Builder<CommitLogEntry> mergeResult =
+          Objects.requireNonNull(
+              mergeResultHolder.get(), "Internal error, merge-result builder not set.");
+      if (!transplantParams.isDryRun()) {
+        mergeResult.isApplied(true);
+      }
+      return mergeResult.currentTargetHash(result).build();
     } catch (ReferenceNotFoundException | ReferenceConflictException | RuntimeException e) {
       throw e;
     } catch (Exception e) {
